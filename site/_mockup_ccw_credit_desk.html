@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
+</style>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>CCW W4 Mockup — Corporate Credit Desk</title>
+
+<style>
+/* ── base tokens (mirrors bonds.html inline block) ─────────────────── */
+:root{
+  --blue:#285FFF; --indigo:#4559DC; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
+  --faint:#A0A0A0; --red:#D30B0B; --amber:#F5AD42; --green:#1a7f43; --teal:#1F8A70;
+  --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA;
+  /* theme.css-sourced tokens used by i18n-tip-pop; bridged here for the mockup */
+  --panel:var(--card); --line:var(--grid);
+}
+html[data-theme="dark"]{
+  --bg:#0f1115; --card:#181b21; --grid:#2a2f3a; --ink:#e8edf4; --text:#d7dce3;
+  --muted:#8b93a1; --faint:#6b7280;
+  --panel:#181b21; --line:#2a2f3a;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+
+/* ── layout ─────────────────────────────────────────────────────────── */
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.05fr .95fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+
+/* ── section head (bonds.html idiom) ────────────────────────────────── */
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+
+/* ── card (bonds.html idiom) ────────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;min-width:0;overflow-wrap:break-word;position:relative;overflow:hidden}
+.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+
+/* ── 3px top-stripe severity accent (us_stocks.html nbcard idiom) ────
+   Applied via .cs-card.cs-calm / .cs-amber / .cs-red / .cs-neutral
+   Uses severity tokens (--red/--amber/--green/--faint), NOT direction
+   tokens (--up/--down), so zh directional colour swap never fires.    */
+.cs-card{position:relative;overflow:visible}
+.cs-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;pointer-events:none;opacity:0}
+.cs-amber::before{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 30%,transparent));opacity:1}
+.cs-red::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+.cs-calm::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.cs-neutral::before{background:linear-gradient(90deg,var(--faint),color-mix(in srgb,var(--faint) 30%,transparent));opacity:1}
+
+/* ── hero state (bonds.html idiom) ──────────────────────────────────── */
+.hero-state{font-size:40px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;line-height:1;color:var(--ink)}
+.hero-meta{font-size:14px;color:var(--text);margin-bottom:8px}
+.verdict-lead{font-size:15px;color:var(--text);line-height:1.5;margin:8px 0 0}
+
+/* ── stance pill ─────────────────────────────────────────────────────── */
+.stance-pill{display:inline-block;padding:5px 16px;border-radius:999px;font-size:14px;font-weight:700;color:#fff;letter-spacing:.02em;margin:6px 0}
+.stance-amber{background:var(--amber);color:#5a3800}
+.stance-red{background:var(--red)}
+.stance-calm{background:var(--green)}
+.stance-neutral{background:var(--faint);color:var(--ink)}
+
+/* ── as-of stamp ─────────────────────────────────────────────────────── */
+.as-of{font-size:12px;color:var(--faint);margin-top:8px}
+
+/* ── market strip chips ─────────────────────────────────────────────── */
+.mkt-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.mkt-chip{display:inline-flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:12px;border:1px solid var(--grid);background:var(--card);cursor:help;min-width:0;flex:1;min-width:160px}
+.mkt-chip .chip-label{font-size:13px;font-weight:700;color:var(--ink)}
+.mkt-chip .chip-sub{font-size:11px;color:var(--muted)}
+.mkt-chip.chip-amber{border-color:color-mix(in srgb,var(--amber) 55%,var(--grid));background:color-mix(in srgb,var(--amber) 7%,var(--card))}
+.mkt-chip.chip-red{border-color:color-mix(in srgb,var(--red) 45%,var(--grid));background:color-mix(in srgb,var(--red) 6%,var(--card))}
+.mkt-chip.chip-calm{border-color:color-mix(in srgb,var(--green) 40%,var(--grid));background:color-mix(in srgb,var(--green) 5%,var(--card))}
+
+/* ── theme tiles ─────────────────────────────────────────────────────── */
+.theme-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:4px}
+.tile{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:16px;position:relative;overflow:hidden;cursor:help}
+.tile::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;pointer-events:none;opacity:0}
+.tile.t-amber::before{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 30%,transparent));opacity:1}
+.tile.t-red::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+.tile.t-calm::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.tile.t-neutral::before{background:linear-gradient(90deg,var(--faint),color-mix(in srgb,var(--faint) 30%,transparent));opacity:1}
+.tile .t-name{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+.tile .t-val{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1;margin-bottom:4px}
+.tile .t-sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.tile .t-stance{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.tile .ts-amber{background:color-mix(in srgb,var(--amber) 18%,transparent);color:#8a5c00}
+.tile .ts-red{background:color-mix(in srgb,var(--red) 15%,transparent);color:var(--red)}
+.tile .ts-calm{background:color-mix(in srgb,var(--green) 13%,transparent);color:var(--green)}
+.tile .ts-neutral{background:color-mix(in srgb,var(--faint) 20%,transparent);color:var(--faint)}
+html[data-theme="dark"] .tile .ts-amber{color:#e0a030}
+html[data-theme="dark"] .tile .ts-red{color:#ff6b6b}
+html[data-theme="dark"] .tile .ts-calm{color:#4ade80}
+html[data-theme="dark"] .tile .ts-neutral{color:var(--faint)}
+
+/* ── watch strip ─────────────────────────────────────────────────────── */
+.watch-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.watch-chip{display:inline-block;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:600;color:var(--ink);border:1px solid var(--grid);cursor:help;flex:1;min-width:200px;line-height:1.45}
+.watch-chip.wc-amber{border-color:color-mix(in srgb,var(--amber) 55%,var(--grid));background:color-mix(in srgb,var(--amber) 7%,var(--card));color:#6b4300}
+.watch-chip.wc-neutral{background:var(--card)}
+html[data-theme="dark"] .watch-chip.wc-amber{color:#e0a030}
+
+/* ── tape card ───────────────────────────────────────────────────────── */
+.tape-line{font-size:14px;font-weight:600;color:var(--ink);line-height:1.5;margin:6px 0 10px}
+.source-chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--grid);color:var(--muted)}
+
+/* ── maturity wall mini bars ─────────────────────────────────────────── */
+.mat-wall{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.mat-row{display:grid;grid-template-columns:128px 1fr;gap:10px;align-items:center;font-size:12px}
+.mat-label{color:var(--text);font-weight:600;min-width:0}
+.mat-bars{display:flex;gap:2px;height:14px;border-radius:4px;overflow:hidden}
+.mat-seg{display:block;height:100%;min-width:2px}
+.seg-0{background:color-mix(in srgb,var(--amber) 80%,var(--red))}/* 0-1y */
+.seg-1{background:var(--amber)}/* 1-3y */
+.seg-2{background:color-mix(in srgb,var(--blue) 60%,var(--faint))}/* 3-5y */
+.seg-3{background:var(--blue)}/* 5-10y */
+.seg-4{background:var(--indigo)}/* 10y+ */
+.mat-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--muted)}
+.mat-legend span{display:flex;align-items:center;gap:4px}
+.mat-legend .dot{width:8px;height:8px;border-radius:2px;flex:none}
+
+/* ── sub text ────────────────────────────────────────────────────────── */
+.sub{font-size:13px;color:var(--muted);min-width:0}
+.faint{color:var(--faint)}
+
+/* ── placeholder bars ────────────────────────────────────────────────── */
+.placeholder-bar{padding:12px 20px;background:color-mix(in srgb,var(--faint) 8%,var(--bg));border:1px dashed var(--grid);border-radius:10px;text-align:center;font-size:13px;color:var(--faint);font-style:italic;margin:10px 0}
+
+/* ── footer line ─────────────────────────────────────────────────────── */
+.foot-note{font-size:12px;color:var(--faint);margin-top:12px;line-height:1.6;border-top:1px solid var(--grid);padding-top:10px}
+
+/* ── i18n-tip-pop (copied from theme.css; needed since this page doesn't link theme.css) */
+.i18n-tip-pop{display:none;position:fixed;z-index:12500;max-width:min(320px,calc(100vw - 24px));padding:7px 10px;border-radius:8px;background:var(--panel);border:1px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,.18);font-size:11px;font-weight:500;line-height:1.5;color:var(--text);text-align:left;text-transform:none;letter-spacing:normal;white-space:normal}
+
+/* ── ambient aurora (bonds.html idiom) ──────────────────────────────── */
+html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 9%,transparent),transparent 68%),
+   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 8%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 7%,transparent),transparent 70%);}
+html[data-theme="dark"] body::before{
+  background:
+   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 20%,transparent),transparent 68%),
+   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 16%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 14%,transparent),transparent 70%);}
+
+/* ── responsive breakpoints ─────────────────────────────────────────── */
+@media(max-width:900px){
+  .cols-2,.cols-3,.cols-4{grid-template-columns:1fr}
+  .theme-tiles{grid-template-columns:repeat(2,1fr)}
+  .mkt-strip,.watch-strip{flex-direction:column}
+}
+@media(max-width:560px){
+  .wrap{padding:0 12px 48px}
+  .card{padding:16px}
+  .hero-state{font-size:32px}
+  .theme-tiles{grid-template-columns:1fr}
+  .mat-row{grid-template-columns:100px 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ── placeholder: existing bonds.html sections above ─────────────── -->
+  <div class="placeholder-bar">— existing bonds.html sections above —</div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       1. SECTION HEAD
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="sec-head" id="corpcredit">
+    <span class="l-en">Company bonds — credit watch</span><span class="l-zh">公司债 · 信用观察</span>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       2. HERO STANCE CARD
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="card cs-card cs-amber">
+    <h2><span class="l-en">Overall read</span><span class="l-zh">整体研判</span></h2>
+    <div class="hero-state">
+      <span class="l-en">Credit stress: low</span><span class="l-zh">信用压力：低</span>
+    </div>
+    <div>
+      <span class="stance-pill stance-amber">
+        <span class="l-en">Watch — don't chase</span><span class="l-zh">观望 · 勿追</span>
+      </span>
+    </div>
+    <div class="verdict-lead">
+      <span class="l-en">Company-bond stress is low; AI borrowing costs bear watching.</span><span class="l-zh">整体压力仍低；AI公司的借贷成本值得关注。</span>
+    </div>
+    <div class="as-of">as of 2026-07-13</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       3. MARKET STRIP — 4 state chips
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="card" style="margin-top:0">
+    <h2><span class="l-en">Spread gauges</span><span class="l-zh">利差仪表</span></h2>
+    <div class="mkt-strip">
+
+      <div class="mkt-chip chip-amber"
+           data-tip-en="Investment-grade extra yield 0.77% over Treasuries; 21-day change ranks 68th percentile of the last decade (widening)."
+           data-tip-zh="投资级相对国债的额外收益率0.77%；21日变化处于近十年第68百分位（走阔）。">
+        <span class="chip-label">
+          <span class="l-en">Quality-grade: creeping wider</span><span class="l-zh">投资级：微幅走阔</span>
+        </span>
+        <span class="chip-sub" style="color:#8a5c00">
+          <span class="l-en">extra yield +0.77%</span><span class="l-zh">额外收益率 +0.77%</span>
+        </span>
+      </div>
+
+      <div class="mkt-chip chip-calm"
+           data-tip-en="High-yield extra yield 2.69%; 21-day change mid-range (48th percentile)."
+           data-tip-zh="高收益额外收益率2.69%；21日变化处于中位（第48百分位）。">
+        <span class="chip-label">
+          <span class="l-en">Junk: steady</span><span class="l-zh">高收益：平稳</span>
+        </span>
+        <span class="chip-sub" style="color:var(--green)">
+          <span class="l-en">extra yield +2.69%</span><span class="l-zh">额外收益率 +2.69%</span>
+        </span>
+      </div>
+
+      <div class="mkt-chip chip-calm"
+           data-tip-en="The gap between junk and quality yields is a classic late-cycle gauge; compression to extremes preceded 2007 and 2021 tops."
+           data-tip-zh="高低评级利差是经典的周期后段指标；压缩至极端曾出现在2007与2021顶部之前。">
+        <span class="chip-label">
+          <span class="l-en">Junk-vs-quality gap: steady</span><span class="l-zh">高低评级利差：平稳</span>
+        </span>
+        <span class="chip-sub">
+          <span class="l-en">gap mid-range</span><span class="l-zh">利差居中</span>
+        </span>
+      </div>
+
+      <div class="mkt-chip chip-red"
+           data-tip-en="CCC-vs-BB gap widening over 21 days — the lowest-rated tier historically moves first in credit turns."
+           data-tip-zh="CCC与BB利差21日走阔——历史上最低评级层级在信用拐点时最先变动。">
+        <span class="chip-label">
+          <span class="l-en">Weakest borrowers: widening</span><span class="l-zh">最弱借款人：走阔</span>
+        </span>
+        <span class="chip-sub" style="color:var(--red)">
+          <span class="l-en">CCC tier moving first</span><span class="l-zh">CCC层级率先变动</span>
+        </span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       4. THEME TILES — 7 tiles (4 + 3 layout)
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="card" style="margin-top:0">
+    <h2><span class="l-en">AI &amp; tech themes</span><span class="l-zh">AI与科技主题</span></h2>
+    <div class="theme-tiles">
+
+      <!-- Hyperscalers -->
+      <div class="tile t-amber"
+           data-tip-en="158 bonds, $811M par tracked across MSFT/AMZN/META/GOOGL/ORCL; avg maturity 7.6y; extra yield +0.80% vs matched Treasuries (par-weighted, yield-to-maturity basis); prices are fund-reported estimates."
+           data-tip-zh="追踪MSFT/AMZN/META/GOOGL/ORCL共158只债券、面值8.11亿美元；平均期限7.6年；相对同期限国债额外收益+0.80%（面值加权、到期收益率口径）；价格为基金申报估值。">
+        <div class="t-name"><span class="l-en">Hyperscalers</span><span class="l-zh">超大规模云商</span></div>
+        <div class="t-val">+0.8%</div>
+        <div class="t-sub"><span class="l-en">5 giants · Oracle on watch</span><span class="l-zh">5家巨头 · 甲骨文在观察名单</span></div>
+        <span class="t-stance ts-amber"><span class="l-en">Watch</span><span class="l-zh">观望</span></span>
+      </div>
+
+      <!-- AI clouds -->
+      <div class="tile t-red"
+           data-tip-en="4 bonds, $116M par; junk-rated (B+); the highest borrowing cost of any theme we track; converts and private loans not visible here."
+           data-tip-zh="4只债券、面值1.16亿美元；高收益级（B+）；为所有主题中借贷成本最高；可转债与私募贷款不在此覆盖范围。">
+        <div class="t-name"><span class="l-en">AI clouds</span><span class="l-zh">新型AI云商</span></div>
+        <div class="t-val">+5.7%</div>
+        <div class="t-sub"><span class="l-en">CoreWeave only — junk-rated</span><span class="l-zh">仅CoreWeave · 高收益级</span></div>
+        <span class="t-stance ts-red"><span class="l-en">Watch closely</span><span class="l-zh">密切观望</span></span>
+      </div>
+
+      <!-- Memory chips -->
+      <div class="tile t-amber"
+           data-tip-en="9 bonds, $33M par (MU investment-grade + STX junk); SanDisk's loan and Samsung/SK Hynix paper are not index-visible."
+           data-tip-zh="9只债券、面值3300万美元（美光投资级+希捷高收益）；闪迪贷款及三星/海力士债券不在指数覆盖内。">
+        <div class="t-name"><span class="l-en">Memory chips</span><span class="l-zh">存储芯片</span></div>
+        <div class="t-val">+2.7%</div>
+        <div class="t-sub"><span class="l-en">Micron + Seagate mix</span><span class="l-zh">美光与希捷组合</span></div>
+        <span class="t-stance ts-amber"><span class="l-en">Watch</span><span class="l-zh">观望</span></span>
+      </div>
+
+      <!-- AI power -->
+      <div class="tile t-calm"
+           data-tip-en="44 bonds, $147M par across Vistra/Constellation/NextEra; tightest theme — the market sees contracted nuclear cash flows as safe."
+           data-tip-zh="44只债券、面值1.47亿美元（Vistra/Constellation/NextEra）；利差最窄——市场视核电长约现金流为安全。">
+        <div class="t-name"><span class="l-en">AI power</span><span class="l-zh">AI电力</span></div>
+        <div class="t-val">+0.6%</div>
+        <div class="t-sub" style="min-height:18px"></div>
+        <span class="t-stance ts-calm"><span class="l-en">Ignore</span><span class="l-zh">无需关注</span></span>
+      </div>
+
+      <!-- Data-centre landlords -->
+      <div class="tile t-calm"
+           data-tip-en="18 bonds, $50M par (Equinix, Digital Realty)."
+           data-tip-zh="18只债券、面值5000万美元（Equinix、Digital Realty）。">
+        <div class="t-name"><span class="l-en">Data-centre landlords</span><span class="l-zh">数据中心业主</span></div>
+        <div class="t-val">+0.6%</div>
+        <div class="t-sub" style="min-height:18px"></div>
+        <span class="t-stance ts-calm"><span class="l-en">Ignore</span><span class="l-zh">无需关注</span></span>
+      </div>
+
+      <!-- AI hardware -->
+      <div class="tile t-calm"
+           data-tip-en="25 bonds, $61M par (Dell)."
+           data-tip-zh="25只债券、面值6100万美元（戴尔）。">
+        <div class="t-name"><span class="l-en">AI hardware</span><span class="l-zh">AI硬件</span></div>
+        <div class="t-val">+0.6%</div>
+        <div class="t-sub" style="min-height:18px"></div>
+        <span class="t-stance ts-calm"><span class="l-en">Ignore</span><span class="l-zh">无需关注</span></span>
+      </div>
+
+      <!-- Telecom -->
+      <div class="tile t-neutral"
+           data-tip-en="44 bonds, $134M par (AT&amp;T/Verizon). The 1996-2002 telecom debt boom is the closest historical rhyme to today's AI build-out — this control group anchors the comparison."
+           data-tip-zh="44只债券、面值1.34亿美元（AT&amp;T/Verizon）。1996-2002电信债务潮是当前AI建设最接近的历史对照——该组用作比较基准。">
+        <div class="t-name"><span class="l-en">Telecom — the 1990s echo</span><span class="l-zh">电信 · 90年代对照组</span></div>
+        <div class="t-val">+0.7%</div>
+        <div class="t-sub" style="min-height:18px"></div>
+        <span class="t-stance ts-neutral"><span class="l-en">Context</span><span class="l-zh">对照参考</span></span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       5. WATCH STRIP — 3 chips
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="card" style="margin-top:0">
+    <h2><span class="l-en">On the watch list</span><span class="l-zh">观察名单</span></h2>
+    <div class="watch-strip">
+
+      <div class="watch-chip wc-amber"
+           data-tip-en="Oracle bonds yield 1.44% over Treasuries vs 0.74% for quality-grade peers at the same maturities; all three rating agencies have Oracle on negative outlook. A downgrade to junk would be the largest such event in history."
+           data-tip-zh="甲骨文债券相对国债收益率高1.44%，同期限投资级同行仅0.74%；三大评级机构均给予负面展望。若降至高收益级将成史上最大规模降级事件。">
+        <span style="font-weight:700">ORCL</span> —
+        <span class="l-en">Oracle pays +0.7% over similar bonds — the market votes before the raters</span><span class="l-zh">甲骨文比同级债券多付0.7% · 市场先于评级机构投票</span>
+      </div>
+
+      <div class="watch-chip wc-neutral">
+        <span class="l-en">No downgrades-in-motion visible yet — history building</span><span class="l-zh">尚未见降级迹象 · 数据积累中</span>
+      </div>
+
+      <div class="watch-chip wc-neutral">
+        <span class="l-en">New-issue tracking starts 14 Jul 2026</span><span class="l-zh">新发债跟踪自2026年7月14日起</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       6. MARKET TAPE CARD (FINRA breadth)
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="card cs-card cs-amber"
+       data-tip-en="Market-wide bond tape from actual trades. Price lows can reflect Treasury yields rising rather than company stress — read alongside the extra-yield gauges above. Our own fund-level tape ships separately once history accrues; the two are never blended."
+       data-tip-zh="基于真实成交的全市场债券行情。价格新低可能源于国债收益率上行而非公司风险——请结合上方额外收益指标解读。我们自建的基金层面行情将在数据积累后单独展示，两者不混合。">
+    <h2><span class="l-en">Bond market tape</span><span class="l-zh">债券市场行情</span></h2>
+    <div class="tape-line">
+      <span class="l-en">Yesterday: 9,126 bonds fell · 1,742 rose · 1,572 touched 1-year lows</span><span class="l-zh">昨日：9,126只下跌 · 1,742只上涨 · 1,572只创一年新低</span>
+    </div>
+    <span class="source-chip"><span class="l-en">FINRA trade data</span><span class="l-zh">FINRA成交数据</span></span>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       7. MATURITY WALL MINI-CARD
+       Data from data/corp_bonds/series/maturity_wall.parquet scope_type='theme'
+       as_of 2026-07-10. Values are par in $ expressed as fraction of row total
+       for bar widths. All zero 0_1y rows omitted (all themes have 0 in 0-1y).
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="card cs-card cs-neutral">
+    <h2><span class="l-en">When the debt comes due</span><span class="l-zh">债务到期分布</span></h2>
+    <div class="mat-wall">
+
+      <!-- helper: widths computed from parquet values, normalised per row to max total -->
+      <!-- hyperscaler_credit: 0/354.9/129.1/216.3/111.1  total=811.4M -->
+      <div class="mat-row">
+        <span class="mat-label"><span class="l-en">Hyperscalers</span><span class="l-zh">超大规模云商</span></span>
+        <div class="mat-bars" title="Hyperscalers maturity wall">
+          <span class="mat-seg seg-1" style="flex:354.9"></span>
+          <span class="mat-seg seg-2" style="flex:129.1"></span>
+          <span class="mat-seg seg-3" style="flex:216.3"></span>
+          <span class="mat-seg seg-4" style="flex:111.1"></span>
+        </div>
+      </div>
+
+      <!-- neocloud_credit: 0/0/58.4/57.7/0  total=116.1M -->
+      <div class="mat-row">
+        <span class="mat-label"><span class="l-en">AI clouds</span><span class="l-zh">新型AI云商</span></span>
+        <div class="mat-bars">
+          <span class="mat-seg seg-2" style="flex:58.4"></span>
+          <span class="mat-seg seg-3" style="flex:57.7"></span>
+        </div>
+      </div>
+
+      <!-- memory_credit: 0/2.6/4.3/26.1/0.4  total=33.4M -->
+      <div class="mat-row">
+        <span class="mat-label"><span class="l-en">Memory chips</span><span class="l-zh">存储芯片</span></span>
+        <div class="mat-bars">
+          <span class="mat-seg seg-1" style="flex:2.6"></span>
+          <span class="mat-seg seg-2" style="flex:4.3"></span>
+          <span class="mat-seg seg-3" style="flex:26.1"></span>
+          <span class="mat-seg seg-4" style="flex:0.4"></span>
+        </div>
+      </div>
+
+      <!-- ai_power_credit: 0/92.6/14.5/16.9/23.3  total=147.3M -->
+      <div class="mat-row">
+        <span class="mat-label"><span class="l-en">AI power</span><span class="l-zh">AI电力</span></span>
+        <div class="mat-bars">
+          <span class="mat-seg seg-1" style="flex:92.6"></span>
+          <span class="mat-seg seg-2" style="flex:14.5"></span>
+          <span class="mat-seg seg-3" style="flex:16.9"></span>
+          <span class="mat-seg seg-4" style="flex:23.3"></span>
+        </div>
+      </div>
+
+      <!-- dc_reit_credit: 0/33.3/10.9/5.3/0.4  total=49.9M -->
+      <div class="mat-row">
+        <span class="mat-label"><span class="l-en">Data-centre landlords</span><span class="l-zh">数据中心业主</span></span>
+        <div class="mat-bars">
+          <span class="mat-seg seg-1" style="flex:33.3"></span>
+          <span class="mat-seg seg-2" style="flex:10.9"></span>
+          <span class="mat-seg seg-3" style="flex:5.3"></span>
+          <span class="mat-seg seg-4" style="flex:0.4"></span>
+        </div>
+      </div>
+
+      <!-- ai_hardware_credit: 0/32.5/12.8/13.4/2.5  total=61.2M -->
+      <div class="mat-row">
+        <span class="mat-label"><span class="l-en">AI hardware</span><span class="l-zh">AI硬件</span></span>
+        <div class="mat-bars">
+          <span class="mat-seg seg-1" style="flex:32.5"></span>
+          <span class="mat-seg seg-2" style="flex:12.8"></span>
+          <span class="mat-seg seg-3" style="flex:13.4"></span>
+          <span class="mat-seg seg-4" style="flex:2.5"></span>
+        </div>
+      </div>
+
+      <!-- telecom_legacy: 0/36.7/24.3/55.1/17.7  total=133.8M -->
+      <div class="mat-row">
+        <span class="mat-label"><span class="l-en">Telecom</span><span class="l-zh">电信</span></span>
+        <div class="mat-bars">
+          <span class="mat-seg seg-1" style="flex:36.7"></span>
+          <span class="mat-seg seg-2" style="flex:24.3"></span>
+          <span class="mat-seg seg-3" style="flex:55.1"></span>
+          <span class="mat-seg seg-4" style="flex:17.7"></span>
+        </div>
+      </div>
+
+    </div>
+    <div class="mat-legend">
+      <span><span class="dot" style="background:color-mix(in srgb,var(--amber) 80%,var(--red))"></span><span class="l-en">0–1y</span><span class="l-zh">0–1年</span></span>
+      <span><span class="dot" style="background:var(--amber)"></span><span class="l-en">1–3y</span><span class="l-zh">1–3年</span></span>
+      <span><span class="dot" style="background:color-mix(in srgb,var(--blue) 60%,var(--faint))"></span><span class="l-en">3–5y</span><span class="l-zh">3–5年</span></span>
+      <span><span class="dot" style="background:var(--blue)"></span><span class="l-en">5–10y</span><span class="l-zh">5–10年</span></span>
+      <span><span class="dot" style="background:var(--indigo)"></span><span class="l-en">10y+</span><span class="l-zh">10年+</span></span>
+    </div>
+    <p class="sub faint" style="margin:8px 0 0;font-size:11px"><span class="l-en">All themes had zero bonds maturing within 1 year as of 2026-07-10.</span><span class="l-zh">截至2026年7月10日，所有主题均无1年内到期债券。</span></p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       8. STOCKS-VS-BONDS PLACEHOLDER CARD
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="card cs-card cs-neutral">
+    <h2><span class="l-en">Stocks vs their bonds</span><span class="l-zh">股票与其债券</span></h2>
+    <p class="verdict-lead">
+      <span class="l-en">The divergence read builds after ~1 month of daily history — the risk sign is stocks rising while their bonds weaken.</span><span class="l-zh">该背离指标需约1个月的日度数据积累——风险信号为股价上涨而债券走弱。</span>
+    </p>
+    <span class="faint" style="font-size:12px;display:block;margin-top:8px"><span class="l-en">History building · check back 14 Aug 2026</span><span class="l-zh">数据积累中 · 2026年8月14日后可查看</span></span>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       9. FOOTER NOTE
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="foot-note">
+    <span class="l-en">Prices are fund-reported estimates · covers bonds inside major index funds only · daily history builds from 14 Jul 2026</span><span class="l-zh">价格为基金申报估值 · 仅覆盖主要指数基金持仓债券 · 数据自2026年7月14日起每日积累</span>
+  </div>
+
+  <!-- ── placeholder: existing bonds.html sections below ─────────────── -->
+  <div class="placeholder-bar">— existing bonds.html sections below —</div>
+
+</div><!-- /.wrap -->
+
+<script src="theme.js"></script>
+</body>
+</html>

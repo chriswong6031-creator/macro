@@ -2129,3 +2129,28 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml openpyxl requests
       - name: CCW-W3 credit momentum tests
         run: python -m pytest tests/test_credit_momentum.py tests/test_corp_bond_holdings.py tests/test_finra_corp_bonds.py -v
+
+  ccw-w4-credit-desk:
+    # CCW-W4 corporate credit desk surfaces:
+    #   scripts/build_bonds.py — build_corp_credit_vm (null-safe vm builder),
+    #     _build_corp_credit_bond_health (bond_health.corporate_credit block),
+    #     _hero_stance, _theme_stance, _build_spread_gauges, _build_maturity_wall,
+    #     _build_finra_vm; templates/bonds.html.j2 corp-credit section (#corpcredit).
+    # Test coverage (tests/test_bonds_corp_credit_vm.py):
+    #   null-safety: missing credit_momentum.json → accruing state, no crash
+    #   hero stance determinism: fired/widening/calm mapping
+    #   per-theme stance: neocloud always red, telecom always neutral, level thresholds
+    #   spread gauges: widening→amber, widening_stress→red, level in sub_en
+    #   bond_health block schema: required keys, authority all-false, JSON-serializable
+    #   maturity-wall aggregation: 0-par excluded, segs positive flex, missing parquet→[]
+    #   FINRA breadth: advance_pct, lows_pct, accruing on None, missing→None
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
+      - name: CCW-W4 credit desk vm tests
+        run: python -m pytest tests/test_bonds_corp_credit_vm.py -v
