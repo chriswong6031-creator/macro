@@ -12,6 +12,7 @@ Coverage:
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -113,6 +114,18 @@ def _render(mk: dict) -> str:
     return tpl.render(mk=mk)
 
 
+_NULL_LEAK = re.compile(r">\s*(None|nan|NaN|NaT)\s*<")
+
+
+def _assert_no_null_leak(html: str) -> None:
+    """A leaked null renders as the ENTIRE text content of a cell/span (e.g.
+    ``<td>nan</td>``). Anchoring on the ``>…<`` element boundary means this does
+    NOT false-positive on legitimate prose (the word "domiNANce" contains "nan")
+    or CSS (".banner-stale") — only a real value leak trips it."""
+    m = _NULL_LEAK.search(html)
+    assert m is None, f"null value leaked into a rendered cell: {m.group(0)!r}"
+
+
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
 
@@ -154,9 +167,7 @@ class TestNullFieldSafety:
                     ticks_since_cross=None, rev_pctile=None)
         sec = _sector("Utilities", "NO_CLEAR_LEADER", members=[m])
         html = _render(_mk_board(sectors=[sec]))
-        assert "None" not in html, "Literal 'None' found in rendered output"
-        assert "NaN" not in html, "Literal 'NaN' found in rendered output"
-        assert "nan" not in html, "Literal 'nan' found in rendered output"
+        _assert_no_null_leak(html)
 
     def test_null_top_candidate_fields(self):
         tc = [{"ticker": "ZZZZ", "name": None, "sector": None,
@@ -204,11 +215,13 @@ class TestStaleBanner:
 
     def test_stale_banner_shown(self):
         html = _render(_mk_board(stale=True))
-        assert "stale" in html.lower() or "陈旧" in html
+        # the .banner-stale CSS rule is ALWAYS defined; assert the actual DIV renders
+        assert 'class="banner banner-stale"' in html
 
     def test_no_stale_banner_when_fresh(self):
         html = _render(_mk_board(stale=False))
-        assert "banner-stale" not in html
+        # …and is absent when fresh (must not match the ever-present CSS rule)
+        assert 'class="banner banner-stale"' not in html
 
 
 class TestHtmlStructure:
@@ -231,9 +244,7 @@ class TestHtmlStructure:
                "alpha": 1.8, "species": "FRESH_INITIATION", "trend_legs": 3,
                "fresh_cross": True, "ticks_since_cross": 2}]
         html = _render(_mk_board(top_candidates=tc, sectors=sectors, stale=False))
-        assert "None" not in html, "Literal 'None' in full-fixture render"
-        assert "NaN" not in html, "Literal 'NaN' in full-fixture render"
-        assert "nan" not in html, "Literal 'nan' in full-fixture render"
+        _assert_no_null_leak(html)
 
     def test_display_only_footer_present(self):
         html = _render(_mk_board())
@@ -260,20 +271,24 @@ class TestHtmlStructure:
         assert "ineligible" in html
 
     def test_witness_chips_absent_when_not_present(self):
-        """net_inflow_witness and options_context absent from member → no witness chips."""
-        m = _member("NVDA")
-        # Remove optional witness fields entirely
-        m.pop("net_inflow_witness", None)
-        m.pop("options_context", None)
-        sec = _sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m])
-        html = _render(_mk_board(sectors=[sec]))
-        # Should NOT render inflow/options badges when field absent
-        assert "Inflow" not in html and "净流入" not in html
+        """A member WITHOUT net_inflow_witness must not add the inflow chip. The
+        playbook prose mentions net-inflow, so the chip is isolated via the delta
+        against a member that HAS the witness (chip = exactly one extra '净流入')."""
+        m_no = _member("NVDA")
+        m_no.pop("net_inflow_witness", None)
+        m_no.pop("options_context", None)
+        m_yes = _member("NVDA")
+        m_yes["net_inflow_witness"] = True
+        html_no = _render(_mk_board(sectors=[_sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m_no])]))
+        html_yes = _render(_mk_board(sectors=[_sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m_yes])]))
+        assert html_yes.count("净流入") == html_no.count("净流入") + 1
 
     def test_witness_chip_renders_when_present(self):
-        """net_inflow_witness=True renders the inflow badge."""
-        m = _member("NVDA")
-        m["net_inflow_witness"] = True
-        sec = _sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m])
-        html = _render(_mk_board(sectors=[sec]))
-        assert "Inflow" in html or "净流入" in html
+        """net_inflow_witness=True adds the inflow chip above the prose baseline."""
+        m_no = _member("NVDA")
+        m_no.pop("net_inflow_witness", None)
+        m_yes = _member("NVDA")
+        m_yes["net_inflow_witness"] = True
+        html_no = _render(_mk_board(sectors=[_sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m_no])]))
+        html_yes = _render(_mk_board(sectors=[_sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m_yes])]))
+        assert html_yes.count("净流入") > html_no.count("净流入")
