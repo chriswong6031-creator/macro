@@ -100,6 +100,22 @@ run "$PY" ingest/refresh_ohlc_intl.py --days 10 --write
 # Final hydrate: pick up any OHLC written during Phase 2
 run "$PY" ingest/hydrate_prices.py --write
 
+# ── PUBLISH-INTEGRITY GATE (step-2 guard) ──
+# Assert every flagship manifest verdict still matches the v2 slice the card reads (build_universe's
+# reconcile pass is the fix; this is its post-condition). WARN-ONLY by default — verify_publish exits 0
+# on a mismatch so it runs in shadow and only logs. It blocks the swap ONLY when TERMINAL_VERIFY_STRICT=1
+# AND it exits nonzero; a crash or a warn-mode mismatch must NEVER freeze the nightly (a guard bug must
+# not do what the bug it guards against would). Flip TERMINAL_VERIFY_STRICT=1 in /opt/terminal/.env once
+# a few nights of logs read "verify_publish: OK".
+echo "[$(ts)] -> ingest/verify_publish.py"
+"$PY" ingest/verify_publish.py; VRC=$?
+if [ "$VRC" -ne 0 ] && [ "${TERMINAL_VERIFY_STRICT:-0}" = "1" ]; then
+  echo "[$(ts)] GUARD: verify_publish rc=$VRC and STRICT — keeping live, staging kept for forensics"
+  echo "[$(ts)] === terminal refresh done (verify-blocked) ==="
+  exit 1
+fi
+[ "$VRC" -ne 0 ] && echo "[$(ts)] WARN: verify_publish rc=$VRC (warn-only; not blocking swap)"
+
 # ── FINAL SWAP (full universe) ──
 NEW=$(count "$STAGE"); LIVEN=$(count "$LIVE")
 MIN=$(( LIVEN * 80 / 100 )); [ "$MIN" -lt 1000 ] && MIN=1000
