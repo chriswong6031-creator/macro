@@ -268,6 +268,24 @@ lanes:
           and data/corp_bonds/forward_log.jsonl (keep-FIRST ledger).
           Spread velocity-percentile is PRIMARY; oscillator crosses SECONDARY per
           CCW-R15. Display-tier; authority all-false. Non-fatal (CCW-R16).
+      - id: equity_earnings
+        module: collectors.equity_earnings
+        note: >
+          MLC-W5 root-cause fix (rotation-miss postmortem #2576): equity_earnings
+          existed but was never scheduled — earnings.parquet stayed empty and the
+          W1.5 blackout gate + W5 chips fail-open stale. Sweeps Nasdaq's public
+          calendar (~66 weekdays) → data/earnings/earnings.parquet (ticker-indexed:
+          next_date, next_time, eps_forecast, surprises_json, as_of). Bot-wall-aware:
+          a blocked first call keeps the existing cache and exits 0. ~50s/night.
+          Non-fatal. Writes data/earnings/earnings.parquet (git-tracked).
+      - id: audit_earnings_freshness
+        module: scripts.audit_earnings_freshness
+        note: >
+          MLC-W5 freshness tripwire. Reads the just-written earnings.parquet and
+          fires ::warning:: on the exact postmortem failure shape (fresh as_of but
+          0 / <50 rows, or rows present with zero next_dates) so a silent empty
+          store surfaces loudly instead of gating nothing. Writes
+          data/quality/earnings_freshness_audit.json. Non-fatal (never fails build).
 
   # ── daily.yml / engine ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
