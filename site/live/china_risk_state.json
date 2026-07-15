@@ -1,16 +1,16 @@
 {
   "schema": "china_risk_state.v1",
-  "built": "2026-07-15 03:52:54 UTC",
+  "built": "2026-07-15 06:07:58 UTC",
   "session": {
     "cn": {
       "region": "cn",
-      "open": false,
-      "local_time": "2026-07-15 11:52 CST"
+      "open": true,
+      "local_time": "2026-07-15 14:07 CST"
     },
     "hk": {
       "region": "hk",
       "open": true,
-      "local_time": "2026-07-15 11:52 HKT"
+      "local_time": "2026-07-15 14:07 HKT"
     }
   },
   "live_active": true,
@@ -20,11 +20,23 @@
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-14",
-  "n_live_symbols": 4,
+  "n_live_symbols": 11,
   "movers": [
     {
+      "sym": "SHCOMP",
+      "chg_pct": -0.07
+    },
+    {
+      "sym": "CSI300",
+      "chg_pct": 0.41
+    },
+    {
       "sym": "HSI",
-      "chg_pct": 1.53
+      "chg_pct": 1.66
+    },
+    {
+      "sym": "CNH",
+      "chg_pct": -0.17
     }
   ],
   "display": {
@@ -48,7 +60,7 @@
     "radar": {
       "state": "risk-off",
       "state_ungated": null,
-      "top_score": 95,
+      "top_score": 98,
       "label_en": "Breadth breakdown (all-boats)",
       "label_zh": "\u5e7f\u5ea6\u666e\u8dcc\uff08\u666e\u8dcc\uff09",
       "context_gate": null,
@@ -123,7 +135,7 @@
     }
   ],
   "legs_asof": {
-    "tape_trend": "2026-07-14",
+    "tape_trend": "live",
     "radar_capital_flow": "live",
     "radar_rate_shock": "2026-07-10",
     "breadth": "2026-07-14",
