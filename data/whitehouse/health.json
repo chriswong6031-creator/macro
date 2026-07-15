@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-15T17:38:34.916795+00:00",
+  "as_of": "2026-07-15T19:36:12.371840+00:00",
   "posts_seen": 14,
   "seen_total": 32,
-  "evaluated": 1,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-07-15-measuring-balance-of-payments-deficits",
-      "importance": 0,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }
