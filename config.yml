@@ -229,6 +229,15 @@ fred:
       ECIWAG: eci_wages           # ECI wages & salaries (quarterly, SA)
       CUSR0000SASLE: cpi_core_services  # CPI services less energy (the "core services" / sticky leg)
       CUSR0000SAH1: cpi_shelter   # CPI shelter (the lagging rent component vs core services)
+      # CPI Bridge block-scoring actuals (engine/release_block_scoring.py; display-tier only).
+      # Flat collection is sufficient — these are block-scoring actuals, NOT vintage-tracked.
+      # CPI component revisions are BLS seasonal-recalc only (≤0.1pp MoM) so flat-store
+      # look-ahead is negligible; tagged revision_optimistic in the scorer per leg.
+      # Only the 7 live bridge blocks need actuals here; dead-block series removed (FIX-A/clean).
+      # CUSR0000SASLE, CUSR0000SAH1 already collected above; APU000072610 in energy group below.
+      CUSR0000SAF11: cpi_food_at_home   # CPI: Food at home, SA — bridge block actual (food_at_home)
+      CUUR0000SAG1: cpi_gasoline        # CPI: Gasoline (all types), NSA — bridge block actual (energy_gasoline)
+      CUSR0000SACL1E: cpi_core_goods   # CPI: Commodities less food & energy, SA — bridge block actual (core_goods_pipeline; FIX-A: was NSA CUUR0000SACL1E)
     inflation_expectations:       # the market / survey / MODEL expectations triangle
       # Market = breakevens (T5YIE/T10YIE/T5YIFR, in rates/inflation_extra above);
       # Survey = UMich MICH (below). MODEL = Cleveland Fed expected-inflation curve.
