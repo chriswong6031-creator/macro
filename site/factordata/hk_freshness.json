@@ -1,10 +1,10 @@
 {
-  "checked_at": "2026-07-15T11:29:46+00:00",
+  "checked_at": "2026-07-15T11:13:17+00:00",
   "expected_session": "2026-07-15",
   "stores": {
     "cache": {
-      "asof": "2026-07-15",
-      "lag_days": 0,
+      "asof": "2026-07-14",
+      "lag_days": 1,
       "state": "fresh"
     },
     "bellwether": {
@@ -35,14 +35,14 @@
     "note": null
   },
   "regression": {
-    "ok": true,
+    "ok": false,
     "prev_cache_max": "2026-07-15",
-    "curr_cache_max": "2026-07-15",
-    "note": null
+    "curr_cache_max": "2026-07-14",
+    "note": "cache rolled BACK from 2026-07-15 to 2026-07-14 (likely -X theirs clobber)"
   },
-  "verdict": "degraded",
+  "verdict": "stale",
   "banner_message": {
-    "en": "HK data degraded \u2014 southbound \u2014 behind (last \u2014)",
-    "zh": "\u6e2f\u80a1\u6570\u636e\u964d\u7ea7 \u2014 southbound \u843d\u540e \u2014\uff08\u6700\u540e \u2014\uff09"
+    "en": "HK data stale \u2014 cache rolled BACK from 2026-07-15 to 2026-07-14 (likely -X theirs clobber); southbound \u2014 behind (last \u2014)",
+    "zh": "\u6e2f\u80a1\u6570\u636e\u5df2\u8fc7\u671f \u2014 \u7f13\u5b58\u6570\u636e\u56de\u9000\uff1a2026-07-15 \u2192 2026-07-14\uff1bsouthbound \u843d\u540e \u2014\uff08\u6700\u540e \u2014\uff09"
   }
 }

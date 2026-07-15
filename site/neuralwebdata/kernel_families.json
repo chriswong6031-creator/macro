@@ -13,9 +13,9 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 22,
-          "mean": 0.00051,
-          "wilson_ci_low": 0.307218
+          "n_eff": 21,
+          "mean": -0.004505,
+          "wilson_ci_low": 0.283437
         },
         "63d": {
           "n_eff": 112,
@@ -40,7 +40,7 @@
       },
       "staleness": {
         "date_last": "2026-06-28",
-        "days_since_last_fire": 16
+        "days_since_last_fire": 17
       },
       "armed": false,
       "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
@@ -87,7 +87,7 @@
       },
       "staleness": {
         "date_last": "2026-07-03",
-        "days_since_last_fire": 11
+        "days_since_last_fire": 12
       },
       "armed": false,
       "armed_reason": "accruing: 3/12 effective events",
@@ -134,7 +134,7 @@
       },
       "staleness": {
         "date_last": "2026-06-25",
-        "days_since_last_fire": 19
+        "days_since_last_fire": 20
       },
       "armed": false,
       "armed_reason": "accruing: 7/12 effective events",
@@ -154,9 +154,9 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 1490,
-          "mean": -0.004206,
-          "wilson_ci_low": 0.469291
+          "n_eff": 1353,
+          "mean": -0.006133,
+          "wilson_ci_low": 0.453885
         },
         "63d": {
           "n_eff": 1806,
@@ -181,7 +181,7 @@
       },
       "staleness": {
         "date_last": "2026-06-30",
-        "days_since_last_fire": 14
+        "days_since_last_fire": 15
       },
       "armed": false,
       "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
@@ -225,24 +225,24 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 10,
-          "mean": 0.031204,
+          "n_eff": 6,
+          "mean": 0.040827,
           "wilson_ci_low": null
         },
         "63d": {
-          "n_eff": 198,
-          "mean": 0.030962,
-          "wilson_ci_low": 0.677305
+          "n_eff": 193,
+          "mean": 0.031044,
+          "wilson_ci_low": 0.66938
         },
         "252d": {
-          "n_eff": 937,
-          "mean": 0.026533,
-          "wilson_ci_low": 0.721567
+          "n_eff": 931,
+          "mean": 0.026639,
+          "wilson_ci_low": 0.722028
         },
         "756d": {
-          "n_eff": 2929,
-          "mean": 0.026122,
-          "wilson_ci_low": 0.74767
+          "n_eff": 2925,
+          "mean": 0.026116,
+          "wilson_ci_low": 0.747678
         },
         "all": {
           "n_eff": 55492,
@@ -252,7 +252,7 @@
       },
       "staleness": {
         "date_last": "2026-06-24",
-        "days_since_last_fire": 20
+        "days_since_last_fire": 21
       },
       "armed": true,
       "armed_reason": "armed: pooled beats equal-weight on held-out tail",
@@ -278,9 +278,9 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 229,
-          "mean": 0.001218,
-          "wilson_ci_low": 0.463794
+          "n_eff": 114,
+          "mean": 0.002502,
+          "wilson_ci_low": 0.443882
         },
         "63d": {
           "n_eff": 758,
@@ -305,7 +305,7 @@
       },
       "staleness": {
         "date_last": "2026-06-24",
-        "days_since_last_fire": 20
+        "days_since_last_fire": 21
       },
       "armed": true,
       "armed_reason": "armed: pooled beats equal-weight on held-out tail",
@@ -316,7 +316,7 @@
   "generated_from": "sha256:1dbc4997d59fd65237a41996ffaff513e386943b607acc583f7ad99e303b8c91",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-07-14T09:50:22Z",
-  "inputs_hash": "sha256:dee5c8cf9619ec3d9de8907a84fa3b2e94056017892b29e0a1d4d8d9e26f5710",
+  "produced_at": "2026-07-15T08:55:26Z",
+  "inputs_hash": "sha256:d3d10cd127a17211bef7e085a9bbc73269d64d01d95ff63188d4fd0f400ab64d",
   "tier": "infrastructure"
 }
