@@ -1288,6 +1288,30 @@
   body.page-china .cnx-dlg-title{font-size:13px;font-weight:700;letter-spacing:.7px;text-transform:uppercase}
   body.page-china .cnx-dlg-close{background:none;border:1px solid rgba(255,255,255,.16);color:var(--text);width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;line-height:1}
   body.page-china .cnx-dlg-body{padding:18px 22px 22px}
+  @media(prefers-reduced-motion:no-preference){
+    body.page-china .cnx-dlg-backdrop{opacity:0;transition:opacity 240ms ease-out}
+    body.page-china .cnx-dlg.cnx-in .cnx-dlg-backdrop{opacity:1}
+    body.page-china .cnx-dlg-panel{opacity:0;transform:translateY(14px) scale(.965);transition:opacity 320ms cubic-bezier(.22,.9,.26,1.02),transform 320ms cubic-bezier(.22,.9,.26,1.02)}
+    body.page-china .cnx-dlg.cnx-in .cnx-dlg-panel{opacity:1;transform:translateY(0) scale(1)}
+    body.page-china .cnx-dlg.cnx-closing .cnx-dlg-backdrop{transition-duration:180ms}
+    body.page-china .cnx-dlg.cnx-closing .cnx-dlg-panel{transition-duration:180ms}
+    body.page-china .cnx-dlg-body > *{opacity:0;transform:translateY(10px);transition:opacity 300ms ease-out,transform 300ms cubic-bezier(.22,.9,.26,1.02)}
+    body.page-china .cnx-dlg.cnx-in .cnx-dlg-body > *{opacity:1;transform:translateY(0)}
+    body.page-china .cnx-dlg.cnx-in .cnx-dlg-body > *:nth-child(1){transition-delay:60ms}
+    body.page-china .cnx-dlg.cnx-in .cnx-dlg-body > *:nth-child(2){transition-delay:100ms}
+    body.page-china .cnx-dlg.cnx-in .cnx-dlg-body > *:nth-child(3){transition-delay:140ms}
+    body.page-china .cnx-dlg.cnx-in .cnx-dlg-body > *:nth-child(4){transition-delay:180ms}
+    body.page-china .cnx-dlg.cnx-in .cnx-dlg-body > *:nth-child(5){transition-delay:220ms}
+    body.page-china .cnx-dlg.cnx-in .cnx-dlg-body > *:nth-child(n+6){transition-delay:0ms}
+    body.page-china .cnx-dlg.cnx-closing .cnx-dlg-body > *{transition-delay:0ms!important}
+    body.page-china .cnx-pop{transform-origin:top left;animation:cnxPopIn .16s cubic-bezier(.22,.9,.26,1.02)}
+    @keyframes cnxPopIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+  }
+  @media(prefers-reduced-motion:reduce){
+    body.page-china .cnx-dlg.open .cnx-dlg-backdrop{opacity:1}
+    body.page-china .cnx-dlg.open .cnx-dlg-panel{opacity:1;transform:none}
+    body.page-china .cnx-dlg.open .cnx-dlg-body > *{opacity:1;transform:none}
+  }
   body.page-china .cnx-eyebrow{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
   body.page-china .cnx-eyebrow:first-child{margin-top:0}
   body.page-china .cnx-sep{height:1px;background:rgba(255,255,255,.07);margin:14px 0}
@@ -3037,10 +3061,11 @@ window.__CHART_SWAP__ = {
   function cnxOpenDlg(id){
     var el=document.getElementById(id);
     if(!el)return;
-    document.querySelectorAll('.cnx-dlg.open').forEach(function(d){d.classList.remove('open');});
+    document.querySelectorAll('.cnx-dlg.open').forEach(function(d){d.classList.remove('open','cnx-in','cnx-closing');});
     el.classList.add('open');
     document.body.style.overflow='hidden';
     history.replaceState(null,'',location.pathname+'#'+id);
+    requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add('cnx-in');});});
     /* Lazy-mount the China heatmap the first time the Markets dialog opens — the
        treemap needs a laid-out (visible) container, so we can't render it while hidden. */
     if(id==='cnx-dlg-markets'&&!_hmMounted&&window.MMHeatmap&&MMHeatmap.mountScorecard){
@@ -3050,7 +3075,15 @@ window.__CHART_SWAP__ = {
     }
   }
   function cnxCloseDlg(){
-    document.querySelectorAll('.cnx-dlg.open').forEach(function(d){d.classList.remove('open');});
+    document.querySelectorAll('.cnx-dlg.open').forEach(function(el){
+      var panel=el.querySelector('.cnx-dlg-panel');
+      el.classList.add('cnx-closing');el.classList.remove('cnx-in');
+      var fired=false;
+      var done=function(){if(fired)return;fired=true;if(panel)panel.removeEventListener('transitionend',onEnd);el.classList.remove('open','cnx-closing');};
+      var onEnd=function(e){if(e.target===panel)done();};
+      if(panel)panel.addEventListener('transitionend',onEnd);
+      setTimeout(done,360);
+    });
     document.body.style.overflow='';
     history.replaceState(null,'',location.pathname);
   }
