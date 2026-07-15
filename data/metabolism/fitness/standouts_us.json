@@ -1,6 +1,6 @@
 {
   "schema": "metabolism.standout_fitness.v1",
-  "as_of": "2026-07-14",
+  "as_of": "2026-07-15",
   "lobe": "site-us-standouts",
   "maturity": "accruing",
   "sensors": {
@@ -30,8 +30,8 @@
       "maturity": "accruing",
       "note": "M2: value=null until frozen_baseline anchored (SA-R4). Raw trailing-4wk count in 'reading'. Scoreboard coverage_monitor carries pre-maturity all-horizon diagnostic count.",
       "store": "data/standout_audit/us_attribution.parquet",
-      "reading": 365,
-      "trailing_4wk_buy_count": 365,
+      "reading": 380,
+      "trailing_4wk_buy_count": 380,
       "frozen_baseline": null
     },
     "missed_mover_rate": {
