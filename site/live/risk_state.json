@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-15 18:36:17 UTC",
+  "built": "2026-07-15 20:01:28 UTC",
   "session": {
     "region": "us",
-    "open": true,
-    "local_time": "2026-07-15 14:36 EDT"
+    "open": false,
+    "local_time": "2026-07-15 16:01 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -13,20 +13,20 @@
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-14",
-  "polygon_status": "ok",
+  "polygon_status": "unused",
   "n_live_symbols": 12,
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": 0.71
+      "chg_pct": 0.74
     },
     {
       "sym": "QQQ",
-      "chg_pct": 0.87
+      "chg_pct": 0.84
     },
     {
       "sym": "VIX",
-      "chg_pct": -8.45
+      "chg_pct": -8.51
     }
   ],
   "display": {
@@ -50,7 +50,7 @@
     "radar": {
       "state": "watch",
       "state_ungated": "watch",
-      "top_score": 59,
+      "top_score": 60,
       "label_en": "Bubble / blow-off unwind",
       "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
