@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
   "as_of": "2026-07-15",
-  "generated_utc": "2026-07-15T10:06:11Z",
+  "generated_utc": "2026-07-15T11:42:11Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -75,9 +75,9 @@
       "failed_up_seal_count": 6.0,
       "lianban_2plus": 0.0,
       "lianban_max": 1.0,
-      "universe_n": 1606.0,
-      "limit_up_breadth_pct": 0.6227,
-      "limit_down_breadth_pct": 0.4981
+      "universe_n": 1611.0,
+      "limit_up_breadth_pct": 0.6207,
+      "limit_down_breadth_pct": 0.4966
     },
     "name_summary": {
       "n_packets": 122,
@@ -230,16 +230,16 @@
     ],
     "conditions": {
       "roro": {
-        "roro": -0.131,
-        "roro_raw": -0.132,
+        "roro": 0.031,
+        "roro_raw": 0.031,
         "roro_state": "neutral",
         "china_roro_copper_gold": 2.55,
         "china_roro_breadth": -0.302,
-        "china_roro_southbound": -0.404,
+        "china_roro_southbound": 1.024,
         "china_roro_m1_m2": -0.822,
         "china_roro_turnover": 0.486,
         "china_roro_qvix": -0.641,
-        "china_roro_usdcnh": -1.432,
+        "china_roro_usdcnh": -1.558,
         "china_roro_margin": -0.492,
         "china_roro_ah_premium": null,
         "legs": [
@@ -261,8 +261,8 @@
             "key": "southbound",
             "name_en": "Southbound smart-money",
             "name_zh": "南向资金",
-            "value": -0.404,
-            "lean": "risk-off"
+            "value": 1.024,
+            "lean": "risk-on"
           },
           {
             "key": "m1_m2",
@@ -289,7 +289,7 @@
             "key": "usdcnh",
             "name_en": "Offshore yuan (20d)",
             "name_zh": "离岸人民币（20日）",
-            "value": -1.432,
+            "value": -1.558,
             "lean": "risk-off"
           },
           {
@@ -389,22 +389,22 @@
   },
   "external": {
     "yield_curve": {
-      "as_of": "2026-07-14",
-      "staleness_days": 1,
-      "cn_10y": 1.7402,
-      "cn_2y": 1.2698,
-      "cn_slope_10_2": 0.47039999999999993,
-      "cn_us_10y_spread": -2.8398000000000003
+      "as_of": "2026-07-15",
+      "staleness_days": 0,
+      "cn_10y": 1.7406,
+      "cn_2y": 1.271,
+      "cn_slope_10_2": 0.4696,
+      "cn_us_10y_spread": null
     },
     "cgb_curve": {
-      "as_of": "2026-07-14",
-      "staleness_days": 1,
-      "m3": 1.09,
+      "as_of": "2026-07-15",
+      "staleness_days": 0,
+      "m3": 1.08,
       "y1": 1.1197,
-      "y5": 1.4477,
-      "y10": 1.7402,
-      "y30": 2.2555,
-      "slope_10y_3m": 0.6502
+      "y5": 1.4426,
+      "y10": 1.7406,
+      "y30": 2.247,
+      "slope_10y_3m": 0.6606
     },
     "usdcnh": {
       "quote": 6.741,

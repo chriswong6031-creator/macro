@@ -1,61 +1,7 @@
 {
- "active": {
-  "hk_internet_tech:hk_tech_hardware->hk_platform_tech": {
-   "pair_id": "hk_internet_tech:hk_tech_hardware->hk_platform_tech",
-   "sector": "hk_internet_tech",
-   "from_leg": "hk_tech_hardware",
-   "to_leg": "hk_platform_tech",
-   "started": "2026-07-02",
-   "lapse_count": 4,
-   "last_receipts": {
-    "blowoff": {
-     "peak_date": "2026-06-02",
-     "runup_pct": 0.3869,
-     "runup_z": 2.37,
-     "drawdown_pct": 0.1215,
-     "qualified_by": "z"
-    },
-    "turn": {
-     "low_date": "2026-06-26",
-     "off_low_pct": 0.1697,
-     "reclaimed": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.1616,
-     "inflected": true,
-     "ratio_20s_high": true
-    },
-    "asof": "2026-07-08"
-   }
-  },
-  "hk_internet_tech:hk_tech_hardware->hk_china_tech": {
-   "pair_id": "hk_internet_tech:hk_tech_hardware->hk_china_tech",
-   "sector": "hk_internet_tech",
-   "from_leg": "hk_tech_hardware",
-   "to_leg": "hk_china_tech",
-   "started": "2026-07-03",
-   "lapse_count": 4,
-   "last_receipts": {
-    "blowoff": {
-     "peak_date": "2026-06-02",
-     "runup_pct": 0.3869,
-     "runup_z": 2.37,
-     "drawdown_pct": 0.1215,
-     "qualified_by": "z"
-    },
-    "turn": {
-     "low_date": "2026-06-26",
-     "off_low_pct": 0.1067,
-     "reclaimed": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.1063,
-     "inflected": true,
-     "ratio_20s_high": true
-    },
-    "asof": "2026-07-08"
-   }
-  }
- },
- "closed": {}
+ "active": {},
+ "closed": {
+  "hk_internet_tech:hk_tech_hardware->hk_platform_tech": "2026-07-15",
+  "hk_internet_tech:hk_tech_hardware->hk_china_tech": "2026-07-15"
+ }
 }
