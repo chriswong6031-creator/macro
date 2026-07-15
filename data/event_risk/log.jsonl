@@ -1,3 +1,4 @@
 {"date": "2026-06-25", "type": "GDP", "vol_tier": "elevated", "fragile": true, "realized_abs": 0.14, "up": true}
 {"date": "2026-07-02", "type": "NFP", "vol_tier": "high", "fragile": true, "realized_abs": 0.13, "up": false}
 {"date": "2026-07-14", "type": "CPI", "vol_tier": "high", "fragile": true, "realized_abs": null, "up": null}
+{"date": "2026-07-15", "type": "PPI", "vol_tier": "elevated", "fragile": true, "realized_abs": null, "up": null}

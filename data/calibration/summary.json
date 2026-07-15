@@ -1,12 +1,12 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-13",
+  "as_of": "2026-07-15",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
       "scored": 3,
-      "open": 28,
+      "open": 31,
       "hit_rate": 0.667,
       "dir_accuracy": 0.667,
       "conviction_monotone": null,
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 280,
+      "open": 298,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 4,
-      "open": 105,
+      "open": 108,
       "hit_rate": 0.25,
       "dir_accuracy": 0.0,
       "conviction_monotone": null,
@@ -800,8 +800,8 @@
       "name": "US Buy Board (v1)",
       "region": "US",
       "rel_path": "site/factordata/us_board_track.json",
-      "board_dates": 6,
-      "graded_rows": 1095,
+      "board_dates": 8,
+      "graded_rows": 1180,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
@@ -811,12 +811,12 @@
       "name": "CN Standout Track",
       "region": "CN",
       "rel_path": "data/china_standout_track/board.parquet",
-      "board_dates": 7,
+      "board_dates": 9,
       "graded_rows": 0,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
-      "health_note": "421 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+      "health_note": "541 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
     }
   ]
 }

@@ -1,0 +1,28 @@
+**DESK NOTE — Trend-Rider Thematic Analyst**
+**Market:** Canada / TSX · **Date:** 2026-07-13  
+**Leading durable theme:** Big Banks (ca_banks) — Rank #1, Durability Bar 0.73, Crowded  
+**Challenger themes (display-only):** Pipelines & Midstream (rank #2, durability 0.76), Insurers (rank #3, durability 0.79)
+
+---
+
+### The case for staying with the Big Banks theme
+
+**1. The only validated edge is absolute-trend adherence**  
+The detector’s backtest verifies that the absolute-trend gate materially reduces drawdowns and volatility on Canadian thematic baskets, even when the rotation-timing and cross-sectional momentum ranks carry no forward alpha. Here `gate_helps` is **true** — meaning that staying with a durable trend until it actually breaks (rather than trying to pre-empt tops) has historically protected capital on the TSX. Big Banks remain the outright leader, and the discipline dictates we stay with it until the trend objectively ends.
+
+**2. Durability bar supports trend persistence**  
+Big Banks’ durability bar of **0.73** sits well above the 0.5 “mixed” threshold and is close to the levels seen in the other top liquidity-led themes (Pipelines 0.76, Insurers 0.79). A durability bar this high suggests the theme is not a fragile, short-term breakout — it has breadth, internal cohesion, and a pattern of repeated monthly extensions that is characteristic of sustainable trends. While the Hurst tag is “mixed”, the absolute-trend gate overrides short-term fractal noise: as long as price stays above the gate’s trend filter, the theme’s staying-power metrics remain intact.
+
+**3. Crowding is a sizing caution — not a fade signal**  
+Yes, Big Banks register crowded (crowding Z = 1.53). The guardrails explicitly warn: *fading the dominant theme on a crowding flag is the documented failure mode.* Reflexivity can keep a crowded trend running far longer than valuation or mean-reversion instincts suggest. The appropriate response is to **cap** exposure, not exit or reverse. Given the absolute-trend gate is still intact, we accept the crowding signal only as a reminder to maintain disciplined position limits — it does not argue for stepping away from the leader.
+
+**4. The one-narrative structure is absent — leadership is broad and credible**  
+`one_narrative: false` means the market is not locked into a single, fragile story. Multiple themes (Financials, Energy pipelines, Insurers) are scoring well and showing durability, suggesting the Big Banks’ leadership is part of a wider “hard-asset / yield / rate-sensitive” cluster rather than a narrow speculative spike. Broad, multi-theme leadership tends to be more resilient to reversals, reinforcing the case to stay with the dominant basket instead of rotating early.
+
+---
+
+### Falsifiable conditional lean
+
+> **If the Big Banks theme (proxied by ZEB.TO) remains above its absolute-trend gate through the end of Q3 2026 (30 September 2026),** the trend-following discipline continues to support exposure; if the gate is breached, we must de-risk regardless of narrative. This statement is falsifiable against market data and contains no size, weight, or trade instruction.
+
+*No position size, weight, or trade advice herein. All views are conditional, fallible, and subject to the absolute-trend gate’s objective signal.*

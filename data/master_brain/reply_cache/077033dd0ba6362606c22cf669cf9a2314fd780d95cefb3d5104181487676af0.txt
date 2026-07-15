@@ -1,0 +1,38 @@
+{
+  "regime_context": "Memory, HBM & Storage dominates with a wide margin (score 4.6 vs 1.8 for crowded Cybersecurity), is eligible under the absolute-trend gate, and shows moderate breadth with no crowding. The gate, the only validated edge, helps control drawdowns historically. Rotation is broad but non-directional, and track record is absent—so any leans must be low conviction and strictly conditional.",
+  "theses": [
+    {
+      "subject": "Memory, HBM & Storage",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "The theme holds the top momentum rank with a wide lead and remains eligible (absolute-trend gate passed). It is not crowded and has moderate breadth, supporting a conditional overweight. The gate’s historical drawdown control is the primary justification, not return forecasting.",
+      "evidence": [
+        "rank 1, score 4.602, margin to challenger 2.8",
+        "eligible: true (absolute-trend gate active)",
+        "crowded: false (crowding_z -0.51)",
+        "breadth 0.25",
+        "durability_bar 0.55 (mixed, but still above gate threshold)"
+      ],
+      "dissent": "Mixed Hurst exponent signals fragile trend health; momentum can reverse abruptly, especially with an unscheduled news share of 0.73.",
+      "falsifier_text": "The theme loses eligibility (absolute-trend gate flips to false) or falls below rank 3 with a score under 1.0."
+    },
+    {
+      "subject": "Defense & Aerospace",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "This theme is ineligible (failing absolute-trend gate), has near-zero durability (0.11), and a negative momentum score. The validated gate argues for avoidance to control drawdown risk.",
+      "evidence": [
+        "eligible: false (absolute-trend gate not passed)",
+        "durability_bar 0.11, hurst_tag 'mean-revert'",
+        "score -0.537, rank 37 of 46",
+        "gate_helps: true (drawdown edge from trend discipline)"
+      ],
+      "dissent": "A geopolitical shock could reignite a flight to defense stocks overnight; current weakness may be an overextension.",
+      "falsifier_text": "The theme becomes eligible (trend gate true) and rises into the top 20 rank with a positive score."
+    }
+  ],
+  "emerging_watch": "AI Software & Platforms (rank 12, eligible, breadth 0.41, not crowded) — watch for a sustained move into top 10 with durable trend; kill if score turns negative or rank falls below 20.",
+  "confidence": "low"
+}

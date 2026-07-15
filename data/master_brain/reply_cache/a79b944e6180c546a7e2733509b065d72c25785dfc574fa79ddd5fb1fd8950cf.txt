@@ -1,0 +1,29 @@
+**Narrative-Emergence Desk Note**  
+**Date:** 2026-07-14  
+**Market:** China A‑shares (CSI 300)  
+**Role:** Narrative‑Emergence Scout – a fallible, falsifiable watch‑hypothesis only; never a position, weight, or trade.
+
+---
+
+### Single emerging-watch hypothesis: **Robotics & Automation (机器人自动化)** *may be forming*
+
+**Why it merits a watch (early, conditional, not a conclusion):**  
+
+- **Rank‑4 momentum score (0.865)** in a seven‑theme eligible set, yet far below the entrenched AI‑Compute leader (2.837) and Semiconductors (2.542). It sits at the top of the “second tier” – a plausible spot for a theme that is *beginning* to build relative strength without having been fully bid.  
+- **Trend health:** Hurst = “trend”, durability_bar = 0.62 (above the 0.5 threshold that signals a non‑random drift on this market). Breadth is modest at 0.364 – enough to show the move is not a single‑name spike, but not yet broad.  
+- **Crowding:** z = 0.46 (not crowded), so reflexivity‑risk of a sharp reversal is lower than for Pharma/CXO (z=1.29, crowded) or Semis (0.82). This leaves room for a narrative to build without immediate positioning‑flow tops.  
+- **Catalyst tailwind (coincident macro):** The dominant macro‑narrative slice is “ai_tech” (269 counts). Robotics is adjacent – automation hardware often rides the same capex tailwinds as AI compute, yet its own pure‑play A‑share ETF is missing (not scorable), making it less susceptible to the short‑term attention/inflow spike that typically marks a top.  
+
+**Kill‑criterion (explicit, date‑stamped check‑by):**  
+*If, by 2026‑08‑15, **breadth remains ≤ 0.25** (fails to broaden beyond ~1/4 of constituents participating) **or** the durability_bar falls below 0.45, the “forming leadership” hypothesis is falsified and the theme gets removed from the watchlist.* (A bar‑drop below 0.45 would signal trend breakdown; stuck‑low breadth suggests the move is a narrow, non‑thematic drift, not a leadership shift.)
+
+---
+
+### Implicit structural note (no edge extracted, guardrails observed)
+
+- **Not a rotation call:** The detector’s rotation‑timing has no validated edge; we do **not** predict a handoff from AI Compute.  
+- **Not a fade on the leader:** AI Compute & Optics remains the current leadership (score 2.837, durability 0.75, breadth 0.647, uncrowded). The guardrails explicitly forbid fading the dominant theme; this watch is not a contrary call.  
+- **False‑positive risk:** Only ~10% of early candidates persist into durable leadership. The probabilistic prior is that Robotics & Automation fails the kill‑criterion; the watch is a low‑conviction, conditional note to revisit, not a thesis to act on.  
+- **Gate‑helps false:** The absolute‑trend gate did **not** reduce drawdown on this market (mean‑reverting tape whipsaws), so even a confirmed durability signal must be treated as experimental here.  
+
+**Track record:** This is the first observation logged; no prior hit/miss data. The hypothesis is **falsifiable**, not a forecast. I will revisit by the kill‑date window and record the outcome.

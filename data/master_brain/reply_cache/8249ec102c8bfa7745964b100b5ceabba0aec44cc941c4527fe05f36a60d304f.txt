@@ -1,0 +1,28 @@
+**Desk Note: TREND-RIDER — China A‑shares Thematic Leadership**
+**As of:** 2026‑07‑14 | **Benchmark:** CSI 300 | **Edge framework:** absolute‑trend gate only (drawdown control, not return forecasting)
+
+### 1. The prevailing durable leadership cluster
+
+| Theme | Rank | Score | Durability bar | Breadth | Crowded | Hurst tag |
+|-------|------|-------|----------------|---------|---------|-----------|
+| **AI Compute & Optics** (`cn_ai_compute`) | 1 | 2.84 | 0.75 (trend) | 0.65 | No | trend |
+| **Semiconductors** (`cn_semis`) | 2 | 2.54 | 0.86 (trend) | 0.82 | No | trend |
+
+These two themes form a single coherent hardware‑AI block. Durability bars are high, breadth is solid (especially semis), and neither is flagged as crowded. The Hurst tags signal persistent trend regimes – the environment in which trend‑following disciplines are designed to participate.
+
+### 2. Why the strongest honest case is to stay with this cluster
+
+- **The discipline’s one validated edge is drawdown avoidance by staying with the trend, not calling tops.** Both themes are unambiguously above their absolute‑trend gates (implied by `hurst_tag = trend` and high durability). Premature exit here would violate the only proven mechanism the framework offers.
+- **Rotation remains narrow but not chaotic.** Only 7 of 22 themes are eligible, and capital is tilting toward the leader. Absorption is moderate (0.35) – no one‑narrative dominance, so the trend isn’t being starved.
+- **Semis provide a strong internal confirmation.** The challenger is high‑durability, high‑breadth, and still not crowded, which reduces the risk that the AI Compute trend is a fragile, isolated blow‑off.
+
+### 3. The humility required by this market’s backtest
+
+The historical gate didn’t reduce drawdown on this mean‑reverting tape (`gate_helps = false`). That means the discipline here is **experimental**, not a proven edge. So we hold the view lightly, knowing a whipsaw is a real possibility. Nonetheless, the logic that *not* exiting a durable trend prematurely avoids the major failure mode (fading the leader) still holds as a behavioural guardrail.
+
+### 4. Falsifiable conditional lean (no size, no weight, no trade)
+
+> **Lean:** Stay with the AI Compute & Optics + Semiconductors cluster for now, provided they remain above their respective absolute‑trend gates (durability bars hold above ~0.6) and neither flips to “crowded”.  
+> **Check‑by:** Month‑end 2026‑07‑31. If either theme’s durability bar drops below 0.5 or its Hurst tag shifts to “mixed”/“mean‑revert”, the discipline would treat that as a gate break and exit the theme.
+
+This is a fallible, conditional view – not a return forecast, not a top call, and not a signal to fade any theme. No position sizing, weighting, or trade is implied. The only edge honoured is the absolute‑trend gate; everything else (momentum rank, rotation margin, crowding) is coincident display, never a trigger.

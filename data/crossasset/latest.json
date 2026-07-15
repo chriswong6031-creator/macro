@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-14",
+  "date": "2026-07-15",
   "regime": "mixed / no clear trend",
   "breadth": 0.3,
   "favored": [
@@ -10,13 +10,13 @@
     "dollar"
   ],
   "correlation": "concentrated",
-  "asof": "2026-07-14",
+  "asof": "2026-07-15",
   "flows": {
     "schema": "crossasset_flows.v1",
     "display_only": true,
     "correlation": {
       "verdict": "concentrated",
-      "absorption_pctile": 0.95,
+      "absorption_pctile": 0.96,
       "n_markets": 6
     },
     "breadth": 0.3,
@@ -60,7 +60,7 @@
       },
       {
         "pair": "gold_silver",
-        "ratio": 68.952,
+        "ratio": 68.805,
         "trend": "mid"
       },
       {
@@ -127,7 +127,7 @@
           "follower": "HK",
           "lag": 1,
           "r": 0.295,
-          "t": 4.386,
+          "t": 4.387,
           "q": 0.0
         },
         {

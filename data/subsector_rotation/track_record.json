@@ -1,22 +1,22 @@
 {
   "schema": "subsector_rotation.track_record.v1",
   "as_of": "2026-07-14",
-  "generated_at": "2026-07-14T08:16:48.726469+00:00",
+  "generated_at": "2026-07-15T07:15:28.706911+00:00",
   "is_context_only": true,
   "n_snapshots": 3218,
   "n_days": 12,
   "horizons": {
     "5": {
       "n_matured": 1912,
-      "score_ic": 0.1618,
-      "score_ic_t_hac": 1.21,
+      "score_ic": 0.1617,
+      "score_ic_t_hac": 1.208,
       "score_ic_detail": {
-        "mean_ic": 0.1618,
-        "ic_vol": 0.4111,
-        "ic_ir": 0.394,
+        "mean_ic": 0.1617,
+        "ic_vol": 0.411,
+        "ic_ir": 0.393,
         "ic_ir_ann": 1.244,
-        "t_hac": 1.21,
-        "p_hac": 0.2264,
+        "t_hac": 1.208,
+        "p_hac": 0.2269,
         "hit": 0.75,
         "n": 8
       },

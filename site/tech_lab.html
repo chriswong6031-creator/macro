@@ -346,6 +346,26 @@ html[data-lang="zh"] .tl-help:hover::before { content:attr(data-tip-zh); }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--line);border-radius:3px; }
 
+/* ── 红涨绿跌: directional colour flips for Chinese mode ── */
+/* Bullish-green → red in zh (light: #1f9a55→#cf4040; dark: #3fc07e→#e06464) */
+html[data-lang="zh"] .r-pos { color:#cf4040; }
+html[data-theme="dark"][data-lang="zh"] .r-pos { color:#e06464; }
+html[data-lang="zh"] .g-hi i { background:#cf4040; }
+html[data-theme="dark"][data-lang="zh"] .g-hi i { background:#e06464; }
+html[data-lang="zh"] .band-Buy { color:#cf4040; }
+html[data-theme="dark"][data-lang="zh"] .band-Buy { color:#e06464; }
+html[data-lang="zh"] .edge-strong { color:#cf4040; }
+html[data-theme="dark"][data-lang="zh"] .edge-strong { color:#e06464; }
+html[data-lang="zh"] .sv-up { color:#cf4040; }
+html[data-theme="dark"][data-lang="zh"] .sv-up { color:#e06464; }
+html[data-lang="zh"] .cb-side-btn.active-long { color:#cf4040; }
+html[data-theme="dark"][data-lang="zh"] .cb-side-btn.active-long { color:#e06464; }
+/* These use var(--up) which auto-flips, but have a dark override; dark zh must use red */
+html[data-theme="dark"][data-lang="zh"] .confl-chip.buy-chip.active { color:#e06464; border-color:#e06464; }
+html[data-theme="dark"][data-lang="zh"] .dir-up { color:#e06464; }
+/* Bearish-red dark override → green in zh (dark: #ef6a6a→#45b873) */
+html[data-theme="dark"][data-lang="zh"] .dir-down { color:#45b873; }
+
 
 </style>
 
@@ -651,7 +671,7 @@ html[data-lang="zh"] .tl-help:hover::before { content:attr(data-tip-zh); }
   <p class="tl-sub"><span class="l-en">Signal screener + descriptive backtest profiles. Build confluence filters to find names where multiple signals align. Drill into any ticker for a per-stock signal breakdown. Descriptive framing — survivor mega-cap universe, not a verdict.</span><span class="l-zh">信号筛选器 + 描述性回测档案。构建多因子共振筛选条件，聚焦多信号同向股票。点击任意标的查看个股信号分解。描述性研究框架 — 幸存大盘股宇宙，非结论性研究。</span></p>
   <div class="tl-meta">
     <span class="chip tag-equities"><span class="l-en">Technical Signals</span><span class="l-zh">技术信号</span></span>
-    <span class="chip" id="hero-ts">2026-07-14 08:40 UTC</span>
+    <span class="chip" id="hero-ts">2026-07-15 07:37 UTC</span>
     <span class="chip" id="hero-n-signals">64 <span class="l-en">signals</span><span class="l-zh">信号</span></span>
     <span class="chip" id="hero-n-stocks">225 <span class="l-en">universe</span><span class="l-zh">覆盖标的</span></span>
     
@@ -1821,17 +1841,13 @@ window.tlComboChartDraw = function() {
     }
     if (fallback) fallback.style.display = 'none';
     var lw = LightweightCharts.createChart(container, tlChartOpts());
-    var series = lw.addCandlestickSeries({
-      upColor:'#1f9a55', downColor:'#d23f3f',
-      borderUpColor:'#1f9a55', borderDownColor:'#d23f3f',
-      wickUpColor:'#1f9a55', wickDownColor:'#d23f3f'
-    });
+    var series = tlAddCandles(lw);
     series.setData(bars);
     var dirUp = c.dir >= 0;
     var markers = (c.recent_fires || []).filter(function(f) { return f.ticker === tk; })
       .map(function(f) {
         return { time: f.date, position: dirUp ? 'belowBar' : 'aboveBar',
-          color: dirUp ? '#3fc07e' : '#ef6a6a', shape: dirUp ? 'arrowUp' : 'arrowDown',
+          color: dirUp ? tlCssVar('--up') || '#3fc07e' : tlCssVar('--down') || '#ef6a6a', shape: dirUp ? 'arrowUp' : 'arrowDown',
           text: 'entry' };
       })
       .filter(function(m) { return bars.some(function(b) { return b.time === m.time; }); })
@@ -2195,6 +2211,31 @@ function tlChartOpts() {
     crosshair: { mode: 1 }
   };
 }
+/* 红涨绿跌: read resolved CSS vars so candlestick charts honour zh colour convention */
+function tlCssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+function tlCandleColors() {
+  var up = tlCssVar('--up') || '#1f9a55';
+  var dn = tlCssVar('--down') || '#d23f3f';
+  return { upColor:up, downColor:dn, borderUpColor:up, borderDownColor:dn, wickUpColor:up, wickDownColor:dn };
+}
+/* Registry of live candle series so a zh/en toggle re-applies the swapped --up/--down.
+   Candle colours are baked at series-creation; without this, existing charts keep the
+   pre-toggle palette (green-up in a red-up zh session). Stale series (removed charts)
+   throw on applyOptions and are pruned. */
+window._tlCandleSeries = window._tlCandleSeries || [];
+function tlAddCandles(lw) {
+  var s = lw.addCandlestickSeries(tlCandleColors());
+  window._tlCandleSeries.push(s);
+  return s;
+}
+function tlRefreshCandleColors() {
+  var cols = tlCandleColors();
+  window._tlCandleSeries = window._tlCandleSeries.filter(function(s) {
+    try { s.applyOptions(cols); return true; } catch(e) { return false; }
+  });
+}
 
 function tlFetchOhlc(ticker, cb) {
   // Uses the same dbase-resolved URL as stock pages: ohlc/<T>.json
@@ -2286,11 +2327,7 @@ function tlDrawChart(containerId, fallbackId, noteId, ticker, sigId, ohlcData, e
   }
 
   var lw = LightweightCharts.createChart(container, tlChartOpts());
-  var series = lw.addCandlestickSeries({
-    upColor: '#1f9a55', downColor: '#d23f3f',
-    borderUpColor: '#1f9a55', borderDownColor: '#d23f3f',
-    wickUpColor: '#1f9a55', wickDownColor: '#d23f3f'
-  });
+  var series = tlAddCandles(lw);
   series.setData(bars);
 
   // Fire markers from tech_events
@@ -2302,7 +2339,7 @@ function tlDrawChart(containerId, fallbackId, noteId, ticker, sigId, ohlcData, e
       return {
         time: d,
         position: dir >= 0 ? 'belowBar' : 'aboveBar',
-        color: dir >= 0 ? '#3fc07e' : '#ef6a6a',
+        color: dir >= 0 ? tlCssVar('--up') || '#3fc07e' : tlCssVar('--down') || '#ef6a6a',
         shape: dir >= 0 ? 'arrowUp' : 'arrowDown',
         text: (SIGS[sigId]&&SIGS[sigId].display_en)||sigId
       };
@@ -2462,11 +2499,7 @@ window.tlOpenProfile = function(tk) {
       }
 
       var lw = LightweightCharts.createChart(container, tlChartOpts());
-      var series = lw.addCandlestickSeries({
-        upColor:'#1f9a55', downColor:'#d23f3f',
-        borderUpColor:'#1f9a55', borderDownColor:'#d23f3f',
-        wickUpColor:'#1f9a55', wickDownColor:'#d23f3f'
-      });
+      var series = tlAddCandles(lw);
       series.setData(bars);
 
       // ALL signals' fire markers clustered
@@ -2479,7 +2512,7 @@ window.tlOpenProfile = function(tk) {
           (sigData.fires||[]).forEach(function(d) {
             if (bars.some(function(b){ return b.time === d; })) {
               allMarkers.push({ time: d, position: dir >= 0 ? 'belowBar' : 'aboveBar',
-                color: dir >= 0 ? '#3fc07e' : '#ef6a6a',
+                color: dir >= 0 ? tlCssVar('--up') || '#3fc07e' : tlCssVar('--down') || '#ef6a6a',
                 shape: dir >= 0 ? 'arrowUp' : 'arrowDown',
                 text: (lab&&lab.display_en)||sigId });
             }
@@ -2559,6 +2592,7 @@ document.addEventListener('langchange', function(e) {
   tlRenderComboRail();
   tlBuildBuilderChips();
   if (_cbActiveCombo) tlOpenCombo(_cbActiveCombo.id);
+  tlRefreshCandleColors();   // 红涨绿跌: re-apply swapped --up/--down to live candle charts
 });
 
 /* ─── Data load ─────────────────────────────────────────────────────────── */
@@ -2646,5 +2680,6 @@ Promise.all([
 </script>
 
 <script src="theme.js"></script>
+<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

@@ -1802,8 +1802,8 @@
       "status": "ok",
       "n_leaders": 116,
       "base_json": "site/flowtracker/base.json",
-      "as_of": "2026-07-14T09:00:42.369784+00:00",
-      "checked_at": "2026-07-14T09:00:43.677362+00:00"
+      "as_of": "2026-07-15T07:59:34.234198+00:00",
+      "checked_at": "2026-07-15T07:59:35.700276+00:00"
     },
     "broad_flows": {
       "source": "broad_flows",
@@ -1862,11 +1862,11 @@
     },
     "flow_signals": {
       "status": "ok",
-      "n_new": 4509,
+      "n_new": 4441,
       "n_graded_ok": 0,
-      "elapsed_sec": 3.9,
-      "last_date": "2026-07-14",
-      "checked_at": "2026-07-14T09:35:39.866842+00:00"
+      "elapsed_sec": 5.7,
+      "last_date": "2026-07-15",
+      "checked_at": "2026-07-15T08:40:49.875372+00:00"
     },
     "cboe_cor_vol": {
       "source": "cboe_cor_vol",

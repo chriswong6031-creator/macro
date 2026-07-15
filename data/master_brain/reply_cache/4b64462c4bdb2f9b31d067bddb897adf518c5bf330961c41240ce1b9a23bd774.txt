@@ -1,0 +1,19 @@
+**Desk Note — Canada Narrative-Emergence Scout**
+**As of 2026-07-13 | Market: TSX | Prevailing leader: Big Banks (ca_banks, score 1.788, durability bar 0.73, crowded, mixed Hurst)**
+
+**Prevailing narrative:** Big Banks, not a one-narrative market (absorption 0.37, one_narrative false). Capital is rotating through a broad eligible set (75% eligible), but the leader is crowded and exhibits mixed trend health. Per guardrails, do not fade — cap only.
+
+**Early hypothesis (emerging_watch, display-only, never sized):**
+**Technology (ca_tech, ETF proxy XIT.TO) as a potential forming leadership theme.**
+- Rank 10, score -0.127 (lagging relative momentum).
+- Hurst tag: **trend**; durability bar **0.77** (high); breadth **0.90** (90% of constituents trending together); crowding **not crowded** (z 0.81).
+- The unusual combination — strong internal trend & breadth with low relative momentum — can be a precursor to a leadership handoff if the momentum gap closes.
+
+**Conditional (falsifiable):**
+If ca_tech’s score remains below -0.05 AND its durability bar falls below 0.65 by **2026‑08‑03**, the forming-leadership hypothesis is **killed** (false start). If score turns positive while trend and breadth hold, it graduates to a confirmed handoff candidate (still no trade, no size).
+
+**Why this respects the guardrails:**
+- I am **not** predicting the next narrative — only setting a watch condition with a kill date.
+- I am **not** fading the dominant theme (Big Banks).
+- I am **not** treating this as a return forecast, buy list, or sizing suggestion.
+- The only validated edge remains drawdown control via the absolute-trend gate; this is an attention lens, not alpha.

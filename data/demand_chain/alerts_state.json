@@ -13,6 +13,7 @@
   "INTU": "consensus_at_risk",
   "ITRI": "ahead_of_consensus",
   "LDOS": "ahead_of_consensus",
+  "LII": "consensus_at_risk",
   "LMT": "ahead_of_consensus",
   "MAS": "consensus_at_risk",
   "MDT": "ahead_of_consensus",

@@ -1,11 +1,11 @@
 {
- "generated": "2026-07-13T09:26:11.140901+00:00",
+ "generated": "2026-07-15T08:54:04.744388+00:00",
  "empty": true,
  "note": "SA-W5 v2 parallel lane (dual-gate+rotation-priority board). Lanes: v2_entry_open (aliased to 'buy' for precision@k comparability), v2_setting_up. lane_mapping applied in track only \u2014 raw parquet/snapshots retain original lane names. ISOLATED from main board track \u2014 never included in us_board_track.json aggregates.",
  "survivorship": {
   "n_skipped_no_price": 0,
   "n_rows_skipped_no_price": 0,
-  "n_board_rows_total": 10,
+  "n_board_rows_total": 23,
   "tickers_skipped": [],
   "n_recovered_by_dead_store": 0,
   "dead_store_active": true,

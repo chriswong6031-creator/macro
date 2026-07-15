@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-07-10",
+  "asof": "2026-07-13",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -26,69 +26,69 @@
     "assets_bn": 6735.609,
     "assets_chg_20d_bn": 10.212,
     "reserve_balances_bn": 3098.911,
-    "walcl_stale_days": 2,
+    "walcl_stale_days": 4,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-07-10"
+    "asof": "2026-07-13"
   },
   "treasury": {
-    "tga_bn": 744.637,
-    "tga_chg_20d_bn": -56.447,
-    "net_issuance_20d_bn": 124.1,
+    "tga_bn": 738.273,
+    "tga_chg_20d_bn": -61.244,
+    "net_issuance_20d_bn": 121.346,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
       "active": true,
       "direction": "drawdown",
-      "magnitude_bn": 174.5,
-      "days": 7,
+      "magnitude_bn": 180.9,
+      "days": 8,
       "since": "2026-06-30",
       "quarter_end_adjacent": true,
-      "summary_en": "Treasury spent down $174B of its cash account since Jun 30 — that cash re-enters the financial system (supportive while it lasts). Quarter-end seasonal pattern may be a contributing factor.",
-      "summary_zh": "自6月30日起，美国财政部已动用现金账户中的$174B — 这部分资金重新流入金融体系（短期内具支撑性）。 季末季节性规律可能是促成因素之一。"
+      "summary_en": "Treasury spent down $181B of its cash account since Jun 30 — that cash re-enters the financial system (supportive while it lasts). Quarter-end seasonal pattern may be a contributing factor.",
+      "summary_zh": "自6月30日起，美国财政部已动用现金账户中的$181B — 这部分资金重新流入金融体系（短期内具支撑性）。 季末季节性规律可能是促成因素之一。"
     },
-    "asof": "2026-07-09"
+    "asof": "2026-07-10"
   },
   "rrp": {
-    "rrp_bn": 0.545,
-    "rrp_chg_20d_bn": 0.085,
+    "rrp_bn": 0.795,
+    "rrp_chg_20d_bn": 0.341,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5990.427,
-    "netliq_chg_20d_bn": 65.007,
-    "netliq_chg_65d_bn": -6.188,
-    "netliq_pctile_expanding": 0.840208,
+    "netliq_bn": 5996.541,
+    "netliq_chg_20d_bn": 87.621,
+    "netliq_chg_65d_bn": -9.959,
+    "netliq_pctile_expanding": 0.842653,
     "overlay": "expanding"
   },
   "quality": {
     "label": "stress-expansion",
-    "fed_share": 0.21,
+    "fed_share": 0.14,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.7,
-      "hy_oas_z": 0.03,
+      "hy_oas_pct": 2.69,
+      "hy_oas_z": -0.03,
       "nfci": -0.515,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 2
+    "walcl_stale_days": 4
   },
   "funding": {
     "effr_minus_iorb_bp": -3.0,
     "effr_minus_iorb_d20_bp": 0.0,
-    "effr_minus_iorb_pctile": 0.8839,
-    "sofr_minus_iorb_bp": -12.0,
-    "sofr_minus_iorb_d20_bp": -7.0,
-    "sofr_minus_iorb_pctile": 0.0779,
-    "sofr_99pctl_minus_iorb_bp": 0.0,
-    "sofr_99pctl_minus_iorb_d20_bp": -4.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.3685,
+    "effr_minus_iorb_pctile": 0.884,
+    "sofr_minus_iorb_bp": -10.0,
+    "sofr_minus_iorb_d20_bp": -4.0,
+    "sofr_minus_iorb_pctile": 0.3006,
+    "sofr_99pctl_minus_iorb_bp": 2.0,
+    "sofr_99pctl_minus_iorb_d20_bp": 0.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.4704,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
     "reserve_scarcity_state": "normalizing",
-    "asof": "2026-07-09"
+    "asof": "2026-07-10"
   },
   "components": {
     "walcl": {
@@ -98,22 +98,18 @@
       "pctile": 0.7702
     },
     "rrp": {
-      "level_bn": 0.5,
-      "d20_bn": 0.1,
+      "level_bn": 0.8,
+      "d20_bn": 0.3,
       "d65_bn": 0.4,
-      "pctile": 0.1317
+      "pctile": 0.183
     },
     "tga": {
-      "level_bn": 744.6,
-      "d20_bn": -54.9,
-      "d65_bn": 47.6,
-      "pctile": 0.8553
+      "level_bn": 738.3,
+      "d20_bn": -77.8,
+      "d65_bn": 51.3,
+      "pctile": 0.8523
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-04-13",
-        "v": 5934.7
-      },
       {
         "d": "2026-04-14",
         "v": 5914.1
@@ -360,7 +356,11 @@
       },
       {
         "d": "2026-07-10",
-        "v": 5990.4
+        "v": 5996.8
+      },
+      {
+        "d": "2026-07-13",
+        "v": 5996.5
       }
     ],
     "reserves": {
@@ -390,7 +390,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-07-13T09:33:48Z",
-  "inputs_hash": "sha256:8e3ae5e7be6731cb398764fa06e81314a622a9ba4a8e60de6c6c6936317ef549",
+  "produced_at": "2026-07-15T09:02:10Z",
+  "inputs_hash": "sha256:089fb25f41f3f27cca1ee87d15d7fd1e93864c420558951505e8fe8af0b5ea54",
   "tier": "shadow"
 }

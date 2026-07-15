@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "MOS-BULL-20260709",
-  "asof": "2026-07-14",
+  "asof": "2026-07-15",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 67.9,
-  "raw_confidence": 67.9,
-  "delta_vs_base": 7.9,
+  "management_confidence": 67.8,
+  "raw_confidence": 67.6,
+  "delta_vs_base": 7.8,
   "recommended_action": "wait",
   "human_state": "Awaiting Trigger",
   "components": {
     "validity": 100.0,
     "progress": 4.7,
-    "pace": 98.9,
+    "pace": 96.1,
     "retention": 50.0,
     "overlay": 50.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.042,
     "dist_to_t1_r": 1.458,
     "dist_to_t2_r": 2.958,
-    "horizon_pct_used": 11.1,
+    "horizon_pct_used": 13.3,
     "p1": 0.0281,
     "p2": 0.0141,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 5,
-  "tau": 0.1111
+  "days_elapsed": 6,
+  "tau": 0.1333
 }

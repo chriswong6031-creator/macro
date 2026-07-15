@@ -1,0 +1,49 @@
+{
+  "summary": "Liquidity-led risk-on posture but only narrow leadership; restrictive real rates, a strengthening dollar, and a bear-flattening curve keep the regime mixed and conviction low.",
+  "regime_read": "The dominant driver is the liquidity impulse, with net liquidity expanding (+2.3σ) and HY outperforming IG (+1.0σ), but small vs large caps diverging (−0.8σ) and only 40% of fresh entries clearing the buy-filter — signalling narrow, rotational leadership rather than broad risk-on conviction. The equity quad is Q1 Goldilocks with low confidence (0.12) and a transitioning state. Meanwhile, the bonds (rates-credit) family, which carries a partial leading signal, shows a late-cycle bear flattener, restrictive real yields (10y at 2.32%), and a stock-bond correlation breakdown — bonds are not hedging. The cross-asset confirm is mixed at 50% agreement, with FX risk-on but a strengthening dollar that acts as a headwind to equities, gold, copper, and BTC. The net read: risk-on via liquidity, but it is fragile, quality/large-led, and capped by a hawkish rate structure.",
+  "conflicts": [
+    "Macro risk-on (Q1) with expanding liquidity vs a bear-flattening late-cycle bond regime — both can persist, but the bond backdrop pressures long-duration and small caps.",
+    "Liquidity impulse positive but small vs large −0.8σ: risk-on posture with a risk-off small-cap anomaly — a decomposition of one tape, not a cross-asset conflict.",
+    "Entry-quality breadth: 75% above 200-day (broad-up trend) but only 38% take-quality entries and 27% long-bias — narrow participation, not broad conviction.",
+    "FX risk-on but a strengthening USD creates headwinds for equities, EM, gold, and BTC — a self-limiting cross-current within the same price regime tape.",
+    "Policy-text read: Fed hawkish on hold with market pricing further hawkishness (implied cuts −2bp), while the policy-intel thesis anticipates a post-midterm pivot — a tension that could suddenly unwind rate pressure if data cracks."
+  ],
+  "rotation_check": "The rotation thesis (US large-cap semis → software/growth → ex-US → crypto) is partially intact. AI Semiconductors are re-rating (neural web themes), validating the early leg. However, software/growth is under pressure from the bear flattener (QQQ/XLK as headwinds), and ex-US (China/HK) is stuck in stagflation with weak peg outflow — no rotation. Crypto is in a DISTRIBUTE phase with negative momentum despite a macro tailwind. The small-cap leg is absent. The sequence is stalling after the semiconductor leadership, not progressing to broader risk-asset rotation.",
+  "transmission": [
+    "Real-rate channel: restrictive real 10y (2.32%) acts as a headwind for long-duration equities (QQQ, XLK) and crypto, while favouring value/large over growth/small.",
+    "Dollar choke-point: strengthening USD (US growth premium) transmits headwinds to gold, copper, EM equities, and BTC, and tailwinds to oil — a drag on broad risk appetite.",
+    "Credit canary watch: HY OAS tight (2.69%) and EBP negative; no credit stress yet, but a widening would be an early leading warning for equity drawdowns.",
+    "Stock-bond breakdown: correlation positive (0.57) means bonds fail to hedge equity drawdowns, amplifying vulnerability in a risk-off shock.",
+    "Policy-path pivot: a very cold CPI (p_cold 1.0) could challenge the hawkish market pricing, repricing the front end and potentially easing rate headwinds if the labour-inflation data split widens."
+  ],
+  "watch_items": [
+    "Whether the net liquidity impulse reverses — the invalidation condition for the risk-on driver.",
+    "FOMC on 29 July: any shift in guidance or dots that validates or breaks the hawkish front-end pricing.",
+    "CPI (today) and PPI (tomorrow) prints — a cold CPI could force rate repricing and alter the dollar/real-rate dynamic.",
+    "Small-cap catch-up: if IWM starts outperforming, it would broaden the risk-on base, aligning with the liquidity signal.",
+    "BTC stabilization and China/HK quad improvement as confirmation that the rotation thesis is moving to the later legs.",
+    "Credit spreads (HY OAS) for any widening that would flip the credit canary."
+  ],
+  "confidence": "low",
+  "forward_watch": [
+    {
+      "date": "2026-07-14",
+      "label": "CPI",
+      "kind": "CPI release",
+      "note": "Projection cold (p_cold 1.0, point 0.08% MoM); market implied 2.8%"
+    },
+    {
+      "date": "2026-07-15",
+      "label": "PPI (producer prices)",
+      "kind": "PPI",
+      "note": "Projection point 0.36% MoM; p_cold 0.73, inline 0.19"
+    },
+    {
+      "date": "2026-07-29",
+      "label": "FOMC rate decision",
+      "kind": "FOMC",
+      "note": "Market pricing hawkish: implied 12m cuts -2bp; guidance on hold"
+    }
+  ],
+  "forward_read": "CPI today expected cold, potentially challenging hawkish market pricing. PPI tomorrow provides a second inflation check. The FOMC on 29 July is the next policy event, with the Fed on hold but markets leaning hawkish — any softening in guidance or a cold CPI could trigger front-end repricing."
+}

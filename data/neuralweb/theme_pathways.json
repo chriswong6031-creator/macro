@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.theme_pathways.v1",
-  "as_of": "2026-07-14",
+  "as_of": "2026-07-15",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -31,7 +31,7 @@
   "theme_pathways": [
     {
       "theme_id": "ai_semiconductors",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 7,
       "edge_count": 6,
       "nodes": [
@@ -88,9 +88,9 @@
               },
               {
                 "basket_id": "ai_infra",
-                "radar_divergence_z": -2.247,
-                "note_en": "Radar divergence z=-2.25",
-                "note_zh": "雷达背离z=-2.25"
+                "radar_divergence_z": -2.635,
+                "note_en": "Radar divergence z=-2.63",
+                "note_zh": "雷达背离z=-2.63"
               }
             ],
             "bottleneck_band": null
@@ -109,9 +109,9 @@
             "basket_activity": [
               {
                 "basket_id": "semicap_equipment",
-                "radar_divergence_z": -1.169,
-                "note_en": "Radar divergence z=-1.17",
-                "note_zh": "雷达背离z=-1.17"
+                "radar_divergence_z": -1.98,
+                "note_en": "Radar divergence z=-1.98",
+                "note_zh": "雷达背离z=-1.98"
               }
             ],
             "bottleneck_band": null
@@ -131,15 +131,15 @@
             "basket_activity": [
               {
                 "basket_id": "data_center_power",
-                "radar_divergence_z": 1.586,
-                "note_en": "Radar divergence z=+1.59",
-                "note_zh": "雷达背离z=+1.59"
+                "radar_divergence_z": 1.196,
+                "note_en": "Radar divergence z=+1.20",
+                "note_zh": "雷达背离z=+1.20"
               },
               {
                 "basket_id": "ai_neoclouds",
-                "radar_divergence_z": -0.016,
-                "note_en": "Radar divergence z=-0.02",
-                "note_zh": "雷达背离z=-0.02"
+                "radar_divergence_z": -0.095,
+                "note_en": "Radar divergence z=-0.10",
+                "note_zh": "雷达背离z=-0.10"
               }
             ],
             "bottleneck_band": null
@@ -170,9 +170,9 @@
             "basket_activity": [
               {
                 "basket_id": "power_grid",
-                "radar_divergence_z": 0.909,
-                "note_en": "Radar divergence z=+0.91",
-                "note_zh": "雷达背离z=+0.91"
+                "radar_divergence_z": 0.835,
+                "note_en": "Radar divergence z=+0.83",
+                "note_zh": "雷达背离z=+0.83"
               }
             ],
             "bottleneck_band": null
@@ -233,7 +233,7 @@
     },
     {
       "theme_id": "memory_storage",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -352,7 +352,7 @@
     },
     {
       "theme_id": "semicap_equipment",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -397,9 +397,9 @@
             "basket_activity": [
               {
                 "basket_id": "semicap_equipment",
-                "radar_divergence_z": -1.169,
-                "note_en": "Radar divergence z=-1.17",
-                "note_zh": "雷达背离z=-1.17"
+                "radar_divergence_z": -1.98,
+                "note_en": "Radar divergence z=-1.98",
+                "note_zh": "雷达背离z=-1.98"
               }
             ],
             "bottleneck_band": "NEUTRAL"
@@ -418,9 +418,9 @@
             "basket_activity": [
               {
                 "basket_id": "semicap_equipment",
-                "radar_divergence_z": -1.169,
-                "note_en": "Radar divergence z=-1.17",
-                "note_zh": "雷达背离z=-1.17"
+                "radar_divergence_z": -1.98,
+                "note_en": "Radar divergence z=-1.98",
+                "note_zh": "雷达背离z=-1.98"
               }
             ],
             "bottleneck_band": null
@@ -469,7 +469,7 @@
     },
     {
       "theme_id": "data_center_power",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -487,9 +487,9 @@
             "basket_activity": [
               {
                 "basket_id": "ai_neoclouds",
-                "radar_divergence_z": -0.016,
-                "note_en": "Radar divergence z=-0.02",
-                "note_zh": "雷达背离z=-0.02"
+                "radar_divergence_z": -0.095,
+                "note_en": "Radar divergence z=-0.10",
+                "note_zh": "雷达背离z=-0.10"
               },
               {
                 "basket_id": "ai_semiconductors",
@@ -514,9 +514,9 @@
             "basket_activity": [
               {
                 "basket_id": "power_grid",
-                "radar_divergence_z": 0.909,
-                "note_en": "Radar divergence z=+0.91",
-                "note_zh": "雷达背离z=+0.91"
+                "radar_divergence_z": 0.835,
+                "note_en": "Radar divergence z=+0.83",
+                "note_zh": "雷达背离z=+0.83"
               }
             ],
             "bottleneck_band": "TIGHT (text)"
@@ -535,9 +535,9 @@
             "basket_activity": [
               {
                 "basket_id": "data_center_power",
-                "radar_divergence_z": 1.586,
-                "note_en": "Radar divergence z=+1.59",
-                "note_zh": "雷达背离z=+1.59"
+                "radar_divergence_z": 1.196,
+                "note_en": "Radar divergence z=+1.20",
+                "note_zh": "雷达背离z=+1.20"
               }
             ],
             "bottleneck_band": null
@@ -557,9 +557,9 @@
             "basket_activity": [
               {
                 "basket_id": "nuclear_power",
-                "radar_divergence_z": 1.726,
-                "note_en": "Radar divergence z=+1.73",
-                "note_zh": "雷达背离z=+1.73"
+                "radar_divergence_z": 1.737,
+                "note_en": "Radar divergence z=+1.74",
+                "note_zh": "雷达背离z=+1.74"
               },
               {
                 "basket_id": "uranium_miners",
@@ -622,7 +622,7 @@
     },
     {
       "theme_id": "nuclear_power",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -640,15 +640,15 @@
             "basket_activity": [
               {
                 "basket_id": "data_center_power",
-                "radar_divergence_z": 1.586,
-                "note_en": "Radar divergence z=+1.59",
-                "note_zh": "雷达背离z=+1.59"
+                "radar_divergence_z": 1.196,
+                "note_en": "Radar divergence z=+1.20",
+                "note_zh": "雷达背离z=+1.20"
               },
               {
                 "basket_id": "ai_neoclouds",
-                "radar_divergence_z": -0.016,
-                "note_en": "Radar divergence z=-0.02",
-                "note_zh": "雷达背离z=-0.02"
+                "radar_divergence_z": -0.095,
+                "note_en": "Radar divergence z=-0.10",
+                "note_zh": "雷达背离z=-0.10"
               }
             ],
             "bottleneck_band": null
@@ -688,9 +688,9 @@
             "basket_activity": [
               {
                 "basket_id": "nuclear_power",
-                "radar_divergence_z": 1.726,
-                "note_en": "Radar divergence z=+1.73",
-                "note_zh": "雷达背离z=+1.73"
+                "radar_divergence_z": 1.737,
+                "note_en": "Radar divergence z=+1.74",
+                "note_zh": "雷达背离z=+1.74"
               }
             ],
             "bottleneck_band": null
@@ -768,7 +768,7 @@
     },
     {
       "theme_id": "grid_electrification",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -785,9 +785,9 @@
             "basket_activity": [
               {
                 "basket_id": "data_center_power",
-                "radar_divergence_z": 1.586,
-                "note_en": "Radar divergence z=+1.59",
-                "note_zh": "雷达背离z=+1.59"
+                "radar_divergence_z": 1.196,
+                "note_en": "Radar divergence z=+1.20",
+                "note_zh": "雷达背离z=+1.20"
               }
             ],
             "bottleneck_band": null
@@ -806,9 +806,9 @@
             "basket_activity": [
               {
                 "basket_id": "power_grid",
-                "radar_divergence_z": 0.909,
-                "note_en": "Radar divergence z=+0.91",
-                "note_zh": "雷达背离z=+0.91"
+                "radar_divergence_z": 0.835,
+                "note_en": "Radar divergence z=+0.83",
+                "note_zh": "雷达背离z=+0.83"
               }
             ],
             "bottleneck_band": "TIGHT (text)"
@@ -827,9 +827,9 @@
             "basket_activity": [
               {
                 "basket_id": "power_grid",
-                "radar_divergence_z": 0.909,
-                "note_en": "Radar divergence z=+0.91",
-                "note_zh": "雷达背离z=+0.91"
+                "radar_divergence_z": 0.835,
+                "note_en": "Radar divergence z=+0.83",
+                "note_zh": "雷达背离z=+0.83"
               }
             ],
             "bottleneck_band": null
@@ -848,9 +848,9 @@
             "basket_activity": [
               {
                 "basket_id": "reshoring",
-                "radar_divergence_z": -0.065,
-                "note_en": "Radar divergence z=-0.07",
-                "note_zh": "雷达背离z=-0.07"
+                "radar_divergence_z": -0.171,
+                "note_en": "Radar divergence z=-0.17",
+                "note_zh": "雷达背离z=-0.17"
               }
             ],
             "bottleneck_band": null
@@ -907,7 +907,7 @@
     },
     {
       "theme_id": "cybersecurity",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -931,9 +931,9 @@
               },
               {
                 "basket_id": "ai_infra",
-                "radar_divergence_z": -2.247,
-                "note_en": "Radar divergence z=-2.25",
-                "note_zh": "雷达背离z=-2.25"
+                "radar_divergence_z": -2.635,
+                "note_en": "Radar divergence z=-2.63",
+                "note_zh": "雷达背离z=-2.63"
               }
             ],
             "bottleneck_band": null
@@ -1024,7 +1024,7 @@
     },
     {
       "theme_id": "defense_aerospace",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -1041,9 +1041,9 @@
             "basket_activity": [
               {
                 "basket_id": "defense",
-                "radar_divergence_z": 1.471,
-                "note_en": "Radar divergence z=+1.47",
-                "note_zh": "雷达背离z=+1.47"
+                "radar_divergence_z": 1.421,
+                "note_en": "Radar divergence z=+1.42",
+                "note_zh": "雷达背离z=+1.42"
               }
             ],
             "bottleneck_band": null
@@ -1062,9 +1062,9 @@
             "basket_activity": [
               {
                 "basket_id": "defense",
-                "radar_divergence_z": 1.471,
-                "note_en": "Radar divergence z=+1.47",
-                "note_zh": "雷达背离z=+1.47"
+                "radar_divergence_z": 1.421,
+                "note_en": "Radar divergence z=+1.42",
+                "note_zh": "雷达背离z=+1.42"
               }
             ],
             "bottleneck_band": "NEUTRAL"
@@ -1083,9 +1083,9 @@
             "basket_activity": [
               {
                 "basket_id": "defense",
-                "radar_divergence_z": 1.471,
-                "note_en": "Radar divergence z=+1.47",
-                "note_zh": "雷达背离z=+1.47"
+                "radar_divergence_z": 1.421,
+                "note_en": "Radar divergence z=+1.42",
+                "note_zh": "雷达背离z=+1.42"
               }
             ],
             "bottleneck_band": null
@@ -1104,9 +1104,9 @@
             "basket_activity": [
               {
                 "basket_id": "defense",
-                "radar_divergence_z": 1.471,
-                "note_en": "Radar divergence z=+1.47",
-                "note_zh": "雷达背离z=+1.47"
+                "radar_divergence_z": 1.421,
+                "note_en": "Radar divergence z=+1.42",
+                "note_zh": "雷达背离z=+1.42"
               }
             ],
             "bottleneck_band": null
@@ -1126,9 +1126,9 @@
             "basket_activity": [
               {
                 "basket_id": "robotics_automation",
-                "radar_divergence_z": 0.977,
-                "note_en": "Radar divergence z=+0.98",
-                "note_zh": "雷达背离z=+0.98"
+                "radar_divergence_z": 1.013,
+                "note_en": "Radar divergence z=+1.01",
+                "note_zh": "雷达背离z=+1.01"
               },
               {
                 "basket_id": "ai_semiconductors",
@@ -1179,7 +1179,7 @@
     },
     {
       "theme_id": "robotics_automation",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -1196,9 +1196,9 @@
             "basket_activity": [
               {
                 "basket_id": "reshoring",
-                "radar_divergence_z": -0.065,
-                "note_en": "Radar divergence z=-0.07",
-                "note_zh": "雷达背离z=-0.07"
+                "radar_divergence_z": -0.171,
+                "note_en": "Radar divergence z=-0.17",
+                "note_zh": "雷达背离z=-0.17"
               }
             ],
             "bottleneck_band": null
@@ -1217,9 +1217,9 @@
             "basket_activity": [
               {
                 "basket_id": "robotics_automation",
-                "radar_divergence_z": 0.977,
-                "note_en": "Radar divergence z=+0.98",
-                "note_zh": "雷达背离z=+0.98"
+                "radar_divergence_z": 1.013,
+                "note_en": "Radar divergence z=+1.01",
+                "note_zh": "雷达背离z=+1.01"
               }
             ],
             "bottleneck_band": "NEUTRAL"
@@ -1238,9 +1238,9 @@
             "basket_activity": [
               {
                 "basket_id": "robotics_automation",
-                "radar_divergence_z": 0.977,
-                "note_en": "Radar divergence z=+0.98",
-                "note_zh": "雷达背离z=+0.98"
+                "radar_divergence_z": 1.013,
+                "note_en": "Radar divergence z=+1.01",
+                "note_zh": "雷达背离z=+1.01"
               }
             ],
             "bottleneck_band": null
@@ -1260,9 +1260,9 @@
             "basket_activity": [
               {
                 "basket_id": "ai_infra",
-                "radar_divergence_z": -2.247,
-                "note_en": "Radar divergence z=-2.25",
-                "note_zh": "雷达背离z=-2.25"
+                "radar_divergence_z": -2.635,
+                "note_en": "Radar divergence z=-2.63",
+                "note_zh": "雷达背离z=-2.63"
               },
               {
                 "basket_id": "ai_semiconductors",
@@ -1325,7 +1325,7 @@
     },
     {
       "theme_id": "glp1_obesity",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 6,
       "edge_count": 5,
       "nodes": [
@@ -1342,9 +1342,9 @@
             "basket_activity": [
               {
                 "basket_id": "obesity_glp1",
-                "radar_divergence_z": -1.416,
-                "note_en": "Radar divergence z=-1.42",
-                "note_zh": "雷达背离z=-1.42"
+                "radar_divergence_z": -1.677,
+                "note_en": "Radar divergence z=-1.68",
+                "note_zh": "雷达背离z=-1.68"
               }
             ],
             "bottleneck_band": null
@@ -1363,9 +1363,9 @@
             "basket_activity": [
               {
                 "basket_id": "obesity_glp1",
-                "radar_divergence_z": -1.416,
-                "note_en": "Radar divergence z=-1.42",
-                "note_zh": "雷达背离z=-1.42"
+                "radar_divergence_z": -1.677,
+                "note_en": "Radar divergence z=-1.68",
+                "note_zh": "雷达背离z=-1.68"
               }
             ],
             "bottleneck_band": "TIGHTENING (fingerprint)"
@@ -1384,9 +1384,9 @@
             "basket_activity": [
               {
                 "basket_id": "obesity_glp1",
-                "radar_divergence_z": -1.416,
-                "note_en": "Radar divergence z=-1.42",
-                "note_zh": "雷达背离z=-1.42"
+                "radar_divergence_z": -1.677,
+                "note_en": "Radar divergence z=-1.68",
+                "note_zh": "雷达背离z=-1.68"
               }
             ],
             "bottleneck_band": null
@@ -1493,7 +1493,7 @@
     },
     {
       "theme_id": "fintech_payments",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -1510,9 +1510,9 @@
             "basket_activity": [
               {
                 "basket_id": "payments_fintech",
-                "radar_divergence_z": 0.3,
-                "note_en": "Radar divergence z=+0.30",
-                "note_zh": "雷达背离z=+0.30"
+                "radar_divergence_z": 0.189,
+                "note_en": "Radar divergence z=+0.19",
+                "note_zh": "雷达背离z=+0.19"
               }
             ],
             "bottleneck_band": null
@@ -1531,9 +1531,9 @@
             "basket_activity": [
               {
                 "basket_id": "payments_fintech",
-                "radar_divergence_z": 0.3,
-                "note_en": "Radar divergence z=+0.30",
-                "note_zh": "雷达背离z=+0.30"
+                "radar_divergence_z": 0.189,
+                "note_en": "Radar divergence z=+0.19",
+                "note_zh": "雷达背离z=+0.19"
               }
             ],
             "bottleneck_band": "NEUTRAL"
@@ -1552,9 +1552,9 @@
             "basket_activity": [
               {
                 "basket_id": "payments_fintech",
-                "radar_divergence_z": 0.3,
-                "note_en": "Radar divergence z=+0.30",
-                "note_zh": "雷达背离z=+0.30"
+                "radar_divergence_z": 0.189,
+                "note_en": "Radar divergence z=+0.19",
+                "note_zh": "雷达背离z=+0.19"
               }
             ],
             "bottleneck_band": null
@@ -1603,7 +1603,7 @@
     },
     {
       "theme_id": "space_satellite",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -1620,9 +1620,9 @@
             "basket_activity": [
               {
                 "basket_id": "space_economy",
-                "radar_divergence_z": 3.199,
-                "note_en": "Radar divergence z=+3.20",
-                "note_zh": "雷达背离z=+3.20"
+                "radar_divergence_z": 4.092,
+                "note_en": "Radar divergence z=+4.09",
+                "note_zh": "雷达背离z=+4.09"
               }
             ],
             "bottleneck_band": null
@@ -1641,9 +1641,9 @@
             "basket_activity": [
               {
                 "basket_id": "space_economy",
-                "radar_divergence_z": 3.199,
-                "note_en": "Radar divergence z=+3.20",
-                "note_zh": "雷达背离z=+3.20"
+                "radar_divergence_z": 4.092,
+                "note_en": "Radar divergence z=+4.09",
+                "note_zh": "雷达背离z=+4.09"
               }
             ],
             "bottleneck_band": "TIGHT (text)"
@@ -1662,9 +1662,9 @@
             "basket_activity": [
               {
                 "basket_id": "space_economy",
-                "radar_divergence_z": 3.199,
-                "note_en": "Radar divergence z=+3.20",
-                "note_zh": "雷达背离z=+3.20"
+                "radar_divergence_z": 4.092,
+                "note_en": "Radar divergence z=+4.09",
+                "note_zh": "雷达背离z=+4.09"
               }
             ],
             "bottleneck_band": null
@@ -1683,9 +1683,9 @@
             "basket_activity": [
               {
                 "basket_id": "space_economy",
-                "radar_divergence_z": 3.199,
-                "note_en": "Radar divergence z=+3.20",
-                "note_zh": "雷达背离z=+3.20"
+                "radar_divergence_z": 4.092,
+                "note_en": "Radar divergence z=+4.09",
+                "note_zh": "雷达背离z=+4.09"
               }
             ],
             "bottleneck_band": null
@@ -1742,7 +1742,7 @@
     },
     {
       "theme_id": "rare_earth_critical_min",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -1852,7 +1852,7 @@
     },
     {
       "theme_id": "copper_steel_electrify",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -1869,9 +1869,9 @@
             "basket_activity": [
               {
                 "basket_id": "reshoring",
-                "radar_divergence_z": -0.065,
-                "note_en": "Radar divergence z=-0.07",
-                "note_zh": "雷达背离z=-0.07"
+                "radar_divergence_z": -0.171,
+                "note_en": "Radar divergence z=-0.17",
+                "note_zh": "雷达背离z=-0.17"
               }
             ],
             "bottleneck_band": null
@@ -1890,9 +1890,9 @@
             "basket_activity": [
               {
                 "basket_id": "reshoring",
-                "radar_divergence_z": -0.065,
-                "note_en": "Radar divergence z=-0.07",
-                "note_zh": "雷达背离z=-0.07"
+                "radar_divergence_z": -0.171,
+                "note_en": "Radar divergence z=-0.17",
+                "note_zh": "雷达背离z=-0.17"
               }
             ],
             "bottleneck_band": "TIGHT (text)"
@@ -1911,9 +1911,9 @@
             "basket_activity": [
               {
                 "basket_id": "reshoring",
-                "radar_divergence_z": -0.065,
-                "note_en": "Radar divergence z=-0.07",
-                "note_zh": "雷达背离z=-0.07"
+                "radar_divergence_z": -0.171,
+                "note_en": "Radar divergence z=-0.17",
+                "note_zh": "雷达背离z=-0.17"
               }
             ],
             "bottleneck_band": null
@@ -1962,7 +1962,7 @@
     },
     {
       "theme_id": "ag_fertilizer",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 5,
       "edge_count": 4,
       "nodes": [
@@ -2065,7 +2065,7 @@
     },
     {
       "theme_id": "medical_devices",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -2145,9 +2145,9 @@
             "basket_activity": [
               {
                 "basket_id": "obesity_glp1",
-                "radar_divergence_z": -1.416,
-                "note_en": "Radar divergence z=-1.42",
-                "note_zh": "雷达背离z=-1.42"
+                "radar_divergence_z": -1.677,
+                "note_en": "Radar divergence z=-1.68",
+                "note_zh": "雷达背离z=-1.68"
               }
             ],
             "bottleneck_band": null
@@ -2184,7 +2184,7 @@
     },
     {
       "theme_id": "diagnostics_lifesci",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -2201,9 +2201,9 @@
             "basket_activity": [
               {
                 "basket_id": "obesity_glp1",
-                "radar_divergence_z": -1.416,
-                "note_en": "Radar divergence z=-1.42",
-                "note_zh": "雷达背离z=-1.42"
+                "radar_divergence_z": -1.677,
+                "note_en": "Radar divergence z=-1.68",
+                "note_zh": "雷达背离z=-1.68"
               }
             ],
             "bottleneck_band": null
@@ -2276,7 +2276,7 @@
     },
     {
       "theme_id": "solar",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "node_count": 4,
       "edge_count": 3,
       "nodes": [
@@ -5120,7 +5120,7 @@
   "stale_legs": [],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-14T09:51:04Z",
-  "inputs_hash": "sha256:e6ea1d668b7994d36028283fbd7ff2ac72d66fdf045c9cd91f2e3a4ba6d1f8ef",
+  "produced_at": "2026-07-15T09:03:42Z",
+  "inputs_hash": "sha256:8012a658f9c24c6ec93b747cd985d17e9b57f1f5995ded8524ccf98c080f4253",
   "tier": "display"
 }

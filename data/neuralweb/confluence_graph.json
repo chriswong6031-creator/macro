@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-07-12",
+  "asof": "2026-07-14",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -1435,7 +1435,7 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "up",
-        "asof": "2026-07-12",
+        "asof": "2026-07-14",
         "display_only": true,
         "source_lobe": "fx_dollar"
       }
@@ -1448,18 +1448,18 @@
         "subtype": "rates_transmission",
         "state": {
           "rates": {
-            "real_10y": 2.31,
+            "real_10y": 2.32,
             "real_10y_pctile": 0.98,
             "real_10y_chg_63d_bp": 42.0,
-            "nominal_10y": 4.54,
-            "curve_2s10s": 0.35,
-            "curve_tp_adj": 0.35,
-            "policy_gap": 0.54,
+            "nominal_10y": 4.56,
+            "curve_2s10s": 0.36,
+            "curve_tp_adj": 0.36,
+            "policy_gap": 0.59,
             "regime": "restrictive",
             "direction": "rising",
             "label": {
-              "en": "Real 10y 2.31% (restrictive, rising)",
-              "zh": "实际10年期 2.31%（偏紧）"
+              "en": "Real 10y 2.32% (restrictive, rising)",
+              "zh": "实际10年期 2.32%（偏紧）"
             }
           },
           "inflation": {
@@ -1478,15 +1478,15 @@
             }
           },
           "expectations": {
-            "breakeven_10y": 2.24,
-            "breakeven_5y5y": 2.2,
+            "breakeven_10y": 2.26,
+            "breakeven_5y5y": 2.21,
             "model_5y": 2.54,
             "survey_1y": 4.8,
-            "market_minus_model_bp": -34.0,
+            "market_minus_model_bp": -33.0,
             "anchoring": "drifting down",
             "label": {
-              "en": "5y5y breakeven 2.20% vs model 2.54% (drifting down)",
-              "zh": "5年5年盈亏平衡 2.20% vs 模型 2.54%（下行）"
+              "en": "5y5y breakeven 2.21% vs model 2.54% (drifting down)",
+              "zh": "5年5年盈亏平衡 2.21% vs 模型 2.54%（下行）"
             }
           }
         },
@@ -1495,7 +1495,7 @@
           "zh": "仅供展示。可计分腿检验：没有任何利率/通胀腿通过前瞻回撤门槛并满足清洗交叉验证稳健性（详见校准报告）。"
         },
         "yield_curve_regime": "bear_flattener",
-        "asof": "2026-07-10",
+        "asof": "2026-07-13",
         "display_only": true,
         "source_lobe": "rates_transmission"
       }
@@ -1508,8 +1508,8 @@
         "subtype": "rates_credit",
         "health_label": "healthy",
         "cycle_phase": "late",
-        "recession_risk": 4.679959132590886,
-        "asof": "2026-07-10",
+        "recession_risk": 4.677539465537072,
+        "asof": "2026-07-13",
         "display_only": true,
         "source_lobe": "rates_credit"
       }
@@ -1525,7 +1525,7 @@
           "Gold",
           "Copper"
         ],
-        "asof": "2026-07-10",
+        "asof": "2026-07-14",
         "display_only": true,
         "source_lobe": "commodity_context"
       }
@@ -1540,7 +1540,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-10",
+        "asof": "2026-07-13",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1555,7 +1555,7 @@
         "quad_name": "Stagflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-10",
+        "asof": "2026-07-13",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1570,7 +1570,7 @@
         "quad_name": "Stagflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-10",
+        "asof": "2026-07-13",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1585,7 +1585,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-10",
+        "asof": "2026-07-13",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -3742,6 +3742,56 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/risk_radar/forward_log.jsonl consumed by engine/run.py"
+    },
+    {
+      "src": "module:engine/risk_radar_scorecard.py",
+      "dst": "artifact:data-risk-radar-scorecard",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/risk_radar_scorecard.py writes data/risk_radar/scorecard.json"
+    },
+    {
+      "src": "artifact:data-risk-radar-scorecard",
+      "dst": "module:engine/market_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/risk_radar/scorecard.json consumed by engine/market_state.py"
+    },
+    {
+      "src": "artifact:data-risk-radar-scorecard",
+      "dst": "module:scripts/build_macro_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/risk_radar/scorecard.json consumed by scripts/build_macro_context.py"
+    },
+    {
+      "src": "module:engine/risk_radar_scorecard.py",
+      "dst": "artifact:site-riskdata-scorecard",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/risk_radar_scorecard.py writes site/riskdata/scorecard.json"
+    },
+    {
+      "src": "artifact:site-riskdata-scorecard",
+      "dst": "module:engine/neuralweb/mastermind_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/riskdata/scorecard.json consumed by engine/neuralweb/mastermind_context.py"
     },
     {
       "src": "module:engine/ignition_radar.py",
@@ -10034,6 +10084,46 @@
       "note": "structural: scripts/build_mastermind_feedback_summary.py writes data/governance/mastermind_feedback_summary.json"
     },
     {
+      "src": "module:scripts/build_orchestrator_log.py",
+      "dst": "artifact:neuralweb-orchestrator-runlog",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_orchestrator_log.py writes data/neuralweb/orchestrator_runlog.jsonl"
+    },
+    {
+      "src": "artifact:neuralweb-orchestrator-runlog",
+      "dst": "module:admin/neural_web.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/orchestrator_runlog.jsonl consumed by admin/neural_web.py"
+    },
+    {
+      "src": "module:scripts/build_orchestrator_log.py",
+      "dst": "artifact:site-neuralweb-orchestrator-runlog",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_orchestrator_log.py writes site/neuralwebdata/orchestrator_runlog.json"
+    },
+    {
+      "src": "artifact:site-neuralweb-orchestrator-runlog",
+      "dst": "module:admin/neural_web.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/neuralwebdata/orchestrator_runlog.json consumed by admin/neural_web.py"
+    },
+    {
       "src": "module:<RESEARCH_FACTORY_INGEST>",
       "dst": "artifact:research-factory-candidates",
       "edge_type": "feeds",
@@ -13774,6 +13864,16 @@
       "note": "structural: data/leader_radar/state_history.parquet consumed by scripts/build_leader_radar.py"
     },
     {
+      "src": "artifact:leader-radar-state-history",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/leader_radar/state_history.parquet consumed by scripts/build_site.py"
+    },
+    {
       "src": "module:scripts/build_leader_radar.py",
       "dst": "artifact:rs-series-store",
       "edge_type": "feeds",
@@ -14014,6 +14114,26 @@
       "note": "structural: data/intl_risk/latest.json consumed by scripts/build_bonds.py"
     },
     {
+      "src": "module:scripts/build_intl.py",
+      "dst": "artifact:cbf-flow-regime-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_intl.py writes data/flow_regime/latest.json"
+    },
+    {
+      "src": "module:scripts/build_intl.py",
+      "dst": "artifact:cbf-flow-regime-history",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_intl.py writes data/flow_regime/history.parquet"
+    },
+    {
       "src": "module:engine/standout_audit.py",
       "dst": "artifact:us-standout-attribution",
       "edge_type": "feeds",
@@ -14234,6 +14354,216 @@
       "note": "structural: data/metabolism/fitness/standouts_cn.json consumed by scripts/metabolism_digest.py"
     },
     {
+      "src": "module:engine/corp_credit.py",
+      "dst": "artifact:ccw-issuer-daily",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/corp_credit.py writes data/corp_bonds/series/issuer_daily.parquet"
+    },
+    {
+      "src": "artifact:ccw-issuer-daily",
+      "dst": "module:engine/corp_credit.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/series/issuer_daily.parquet consumed by engine/corp_credit.py"
+    },
+    {
+      "src": "module:engine/corp_credit.py",
+      "dst": "artifact:ccw-theme-daily",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/corp_credit.py writes data/corp_bonds/series/theme_daily.parquet"
+    },
+    {
+      "src": "artifact:ccw-theme-daily",
+      "dst": "module:engine/corp_credit.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/series/theme_daily.parquet consumed by engine/corp_credit.py"
+    },
+    {
+      "src": "module:engine/corp_credit.py",
+      "dst": "artifact:ccw-sector-daily",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/corp_credit.py writes data/corp_bonds/series/sector_daily.parquet"
+    },
+    {
+      "src": "artifact:ccw-sector-daily",
+      "dst": "module:engine/corp_credit.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/series/sector_daily.parquet consumed by engine/corp_credit.py"
+    },
+    {
+      "src": "module:engine/corp_credit.py",
+      "dst": "artifact:ccw-market-daily",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/corp_credit.py writes data/corp_bonds/series/market_daily.parquet"
+    },
+    {
+      "src": "artifact:ccw-market-daily",
+      "dst": "module:engine/corp_credit.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/series/market_daily.parquet consumed by engine/corp_credit.py"
+    },
+    {
+      "src": "module:engine/corp_credit.py",
+      "dst": "artifact:ccw-maturity-wall",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/corp_credit.py writes data/corp_bonds/series/maturity_wall.parquet"
+    },
+    {
+      "src": "artifact:ccw-maturity-wall",
+      "dst": "module:engine/corp_credit.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/series/maturity_wall.parquet consumed by engine/corp_credit.py"
+    },
+    {
+      "src": "module:engine/corp_credit.py",
+      "dst": "artifact:ccw-bond-panel-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/corp_credit.py writes data/corp_bonds/series/bond_panel_latest.parquet"
+    },
+    {
+      "src": "artifact:ccw-bond-panel-latest",
+      "dst": "module:engine/corp_credit.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/series/bond_panel_latest.parquet consumed by engine/corp_credit.py"
+    },
+    {
+      "src": "module:engine/corp_credit.py",
+      "dst": "artifact:ccw-latest-json",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/corp_credit.py writes data/corp_bonds/latest.json"
+    },
+    {
+      "src": "artifact:ccw-latest-json",
+      "dst": "module:engine/corp_credit.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/latest.json consumed by engine/corp_credit.py"
+    },
+    {
+      "src": "module:engine/corp_credit.py",
+      "dst": "artifact:ccw-validation-json",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/corp_credit.py writes data/corp_bonds/validation.json"
+    },
+    {
+      "src": "artifact:ccw-validation-json",
+      "dst": "module:engine/corp_credit.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/validation.json consumed by engine/corp_credit.py"
+    },
+    {
+      "src": "module:engine/credit_momentum.py",
+      "dst": "artifact:ccw-credit-momentum-json",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/credit_momentum.py writes data/corp_bonds/credit_momentum.json"
+    },
+    {
+      "src": "artifact:ccw-credit-momentum-json",
+      "dst": "module:engine/bonds_alerts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/credit_momentum.json consumed by engine/bonds_alerts.py"
+    },
+    {
+      "src": "artifact:ccw-credit-momentum-json",
+      "dst": "module:scripts/build_bonds.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/corp_bonds/credit_momentum.json consumed by scripts/build_bonds.py"
+    },
+    {
+      "src": "module:engine/credit_momentum.py",
+      "dst": "artifact:ccw-forward-log",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/credit_momentum.py writes data/corp_bonds/forward_log.jsonl"
+    },
+    {
+      "src": "data/regime/latest.json:regime_vector",
+      "dst": "data/regime/latest.json:risk_radar",
+      "edge_type": "contradicts",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "pair_id=regime_vector-vs-risk_radar kind=directional-opposition severity=tension a=quad=Q1 growth_score=0.267 (rising growth) b=state=caution dominant_scare=growth top_score=65.6"
+    },
+    {
       "src": "site/intelligence/by_ticker.json (demand/tape)",
       "dst": "site/intelligence/briefing.json",
       "edge_type": "contradicts",
@@ -14241,17 +14571,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=note a=2 ticker-level demand-vs-supply divergences b=n_divergences=2, top tickers=['NVDA', 'ZS']"
-    },
-    {
-      "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
-      "dst": "data/regime/latest.json:regime (equity)",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "pair_id=cross_asset_confirm-diverge kind=directional-opposition severity=tension a=bonds+FX cross-asset leg readings b=cross_asset_confirm verdict=diverge, agree_pct=50"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=note a=1 ticker-level demand-vs-supply divergences b=n_divergences=1, top tickers=['NVDA']"
     },
     {
       "src": "engine:altdata",
@@ -14334,11 +14654,11 @@
       "src": "options.skew_rising",
       "dst": "us_board.buy_lane",
       "edge_type": "contradicts",
-      "n": 3,
+      "n": 0,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-07-01); e.g. AAPL, ELV, PCG. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
+      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-07-06); e.g. none. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
     },
     {
       "src": "options.skew_decel",
@@ -14348,7 +14668,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-07-01); e.g. none. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
+      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-07-06); e.g. none. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
     },
     {
       "src": "options.ivspread_positive_call_doi",
@@ -14358,7 +14678,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-07-01); e.g. none. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
+      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-07-06); e.g. none. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
     },
     {
       "src": "options.skew_rising_or_call_wall_pin",
@@ -14378,7 +14698,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLB net=-0.397 verdict=headwind source_lobe=rates_transmission asof=2026-07-10"
+      "note": "rates headwind: asset=XLB net=-0.4 verdict=headwind source_lobe=rates_transmission asof=2026-07-13"
     },
     {
       "src": "macro:rates_transmission",
@@ -14388,7 +14708,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.388 verdict=headwind source_lobe=rates_transmission asof=2026-07-10"
+      "note": "rates headwind: asset=XLK net=-0.392 verdict=headwind source_lobe=rates_transmission asof=2026-07-13"
     },
     {
       "src": "macro:rates_transmission",
@@ -14398,7 +14718,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLV net=-0.376 verdict=headwind source_lobe=rates_transmission asof=2026-07-10"
+      "note": "rates headwind: asset=XLV net=-0.368 verdict=headwind source_lobe=rates_transmission asof=2026-07-13"
     },
     {
       "src": "macro:fx_dollar",
@@ -14408,7 +14728,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: fx_dollar contradicts regime:Q1 asof=2026-07-10 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: fx_dollar contradicts regime:Q1 asof=2026-07-13 source_lobe=contradictions/cross_asset_confirm"
     },
     {
       "src": "macro:rates_credit",
@@ -14418,51 +14738,51 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: rates_credit contradicts regime:Q1 asof=2026-07-10 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: rates_credit contradicts regime:Q1 asof=2026-07-13 source_lobe=contradictions/cross_asset_confirm"
     }
   ],
   "contradiction_summary": {
     "n": 2,
     "by_severity": {
-      "note": 1,
-      "tension": 1
+      "tension": 1,
+      "note": 1
     },
     "top_pair_ids": [
-      "briefing-divergences",
-      "cross_asset_confirm-diverge"
+      "regime_vector-vs-risk_radar",
+      "briefing-divergences"
     ]
   },
   "contradiction_records": [
     {
-      "pair_id": "briefing-divergences",
+      "pair_id": "regime_vector-vs-risk_radar",
       "a": {
-        "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "2 ticker-level demand-vs-supply divergences"
+        "artifact": "data/regime/latest.json:regime_vector",
+        "reading": "quad=Q1 growth_score=0.267 (rising growth)"
       },
       "b": {
-        "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=2, top tickers=['NVDA', 'ZS']"
-      },
-      "kind": "directional-opposition",
-      "severity": "note",
-      "as_of": "2026-07-13",
-      "note": "2 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: NVDA, ZS.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
-      "display_only": true
-    },
-    {
-      "pair_id": "cross_asset_confirm-diverge",
-      "a": {
-        "artifact": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
-        "reading": "bonds+FX cross-asset leg readings"
-      },
-      "b": {
-        "artifact": "data/regime/latest.json:regime (equity)",
-        "reading": "cross_asset_confirm verdict=diverge, agree_pct=50"
+        "artifact": "data/regime/latest.json:risk_radar",
+        "reading": "state=caution dominant_scare=growth top_score=65.6"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-07-10",
-      "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
+      "as_of": "2026-07-13",
+      "note": "Regime vector places growth in positive territory while the risk radar flags an elevated growth scare (caution).  This is typical of early growth-scare onset before the regime flips.  Display-only; neither cancels the other.",
+      "display_only": true
+    },
+    {
+      "pair_id": "briefing-divergences",
+      "a": {
+        "artifact": "site/intelligence/by_ticker.json (demand/tape)",
+        "reading": "1 ticker-level demand-vs-supply divergences"
+      },
+      "b": {
+        "artifact": "site/intelligence/briefing.json",
+        "reading": "n_divergences=1, top tickers=['NVDA']"
+      },
+      "kind": "directional-opposition",
+      "severity": "note",
+      "as_of": "2026-07-14",
+      "note": "1 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: NVDA.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     }
   ],
@@ -14483,7 +14803,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-13T09:27:36Z",
-  "inputs_hash": "sha256:0e656518fafdefa7a1f5c60b33adf7d0c8002a284321019691f1610abebca56e",
+  "produced_at": "2026-07-15T08:55:30Z",
+  "inputs_hash": "sha256:8cde576d990c7a7409db2988c8b9f99d55a153ccdf39fd696164e1860568efc1",
   "tier": "display"
 }

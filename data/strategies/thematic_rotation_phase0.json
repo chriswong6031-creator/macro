@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-07-14T08:43:39.684370+00:00",
+  "generated_at": "2026-07-15T07:40:38.645700+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -122,50 +122,50 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.3978,
-          "sharpe": 1.75,
+          "cagr": 0.4024,
+          "sharpe": 1.77,
           "max_dd": -0.1162,
-          "calmar": 3.42,
+          "calmar": 3.46,
           "n_months": 37,
-          "dsr": 0.92
+          "dsr": 0.925
         },
         "top3_mom12_rel": {
-          "cagr": 1.0557,
-          "sharpe": 1.44,
+          "cagr": 1.0962,
+          "sharpe": 1.48,
           "max_dd": -0.2645,
-          "calmar": 3.99,
+          "calmar": 4.14,
           "n_months": 25,
-          "dsr": 0.732
+          "dsr": 0.758
         },
         "top3_mom6_rel": {
-          "cagr": 1.4698,
-          "sharpe": 1.89,
+          "cagr": 1.5175,
+          "sharpe": 1.94,
           "max_dd": -0.1908,
-          "calmar": 7.7,
+          "calmar": 7.95,
           "n_months": 27,
-          "dsr": 0.895
+          "dsr": 0.916
         },
         "top3_mom12_dual": {
-          "cagr": 0.9876,
-          "sharpe": 1.42,
+          "cagr": 1.0268,
+          "sharpe": 1.46,
           "max_dd": -0.2645,
-          "calmar": 3.73,
+          "calmar": 3.88,
           "n_months": 25,
-          "dsr": 0.706
+          "dsr": 0.734
         },
         "top4_mom12_dual": {
-          "cagr": 0.9558,
-          "sharpe": 1.44,
+          "cagr": 0.9923,
+          "sharpe": 1.48,
           "max_dd": -0.2332,
-          "calmar": 4.1,
+          "calmar": 4.25,
           "n_months": 25,
-          "dsr": 0.711
+          "dsr": 0.738
         }
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0586,
-          "ic_t_hac": 1.31,
+          "mean_ic": 0.0625,
+          "ic_t_hac": 1.476,
           "hit": 0.52,
           "n_steps": 25
         },
@@ -178,21 +178,21 @@
       },
       "tsmom_conditional": {
         "above_trend": {
-          "mean": 0.0264,
-          "std": 0.1138,
-          "sharpe": 0.8,
-          "p05": -0.1325,
+          "mean": 0.0268,
+          "std": 0.1136,
+          "sharpe": 0.82,
+          "p05": -0.1315,
           "n": 1043
         },
         "below_trend": {
-          "mean": 0.0356,
-          "std": 0.1013,
+          "mean": 0.0357,
+          "std": 0.1014,
           "sharpe": 1.22,
           "p05": -0.0905,
           "n": 659
         },
-        "mean_diff_t": -1.75,
-        "mean_diff_p": 0.0811
+        "mean_diff_t": -1.69,
+        "mean_diff_p": 0.0918
       },
       "extension_drawdown": {
         "fwd_days": 63,
@@ -200,20 +200,20 @@
           "normal": {
             "mean_fwd_maxdd": -0.0801,
             "p05_fwd_maxdd": -0.2555,
-            "n": 17954
+            "n": 17951
           },
           "stretched": {
-            "mean_fwd_maxdd": -0.0853,
-            "p05_fwd_maxdd": -0.2871,
-            "n": 3467
+            "mean_fwd_maxdd": -0.0854,
+            "p05_fwd_maxdd": -0.2872,
+            "n": 3461
           },
           "parabolic": {
-            "mean_fwd_maxdd": -0.0867,
-            "p05_fwd_maxdd": -0.3022,
-            "n": 1211
+            "mean_fwd_maxdd": -0.0865,
+            "p05_fwd_maxdd": -0.3006,
+            "n": 1220
           }
         },
-        "spearman_ez_vs_fwd_maxdd": 0.005
+        "spearman_ez_vs_fwd_maxdd": 0.004
       },
       "warning": "HINDSIGHT-curated membership + only ~3y + ~15 names -> severely underpowered and survivorship-biased. Context only, never a validation."
     }

@@ -1,0 +1,24 @@
+{
+  "regime_context": "Hong Kong is in a narrow one-narrative regime dominated by Tech Hardware & Semis, with high durability (0.75) and a helpful absolute-trend gate. Only 5 of 17 themes are eligible; momentum rank is a coincident attention lens, not a return forecast. The validated edge is drawdown control via the trend gate.",
+  "theses": [
+    {
+      "subject": "Tech Hardware & Semis",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The theme holds the top momentum rank with strong durability and an intact trend (Hurst tag 'trend'), and it remains eligible under the absolute-trend gate — the one validated risk-control layer. I lean overweight not as a return call but as a trend-following discipline that historically cuts drawdown in this market; with no crowding flag, the risk of an abrupt reflexive unwind is lower. The one-narrative structure suggests any shake-out can be contained.",
+      "evidence": [
+        "Rank 1 with momentum score 2.532, far above the rest",
+        "Durability_bar 0.75, well above the 0.5 threshold",
+        "Eligible under absolute-trend gate (true)",
+        "Crowding_z 0.25, not crowded",
+        "Gate_helps is true for HK market history",
+        "One_narrative dominant, absorption 0.55"
+      ],
+      "dissent": "The high momentum rank could be a coincident peak of attention with no forward return edge; the tech hardware rally may stall if the macro backdrop (unscheduled surprise share 0.73, geopolitics) shifts sentiment. The theme is unscorable, so conviction can only be low.",
+      "falsifier_text": "If within 20 trading days the detector flips eligibility for Tech Hardware & Semis to false (absolute-trend gate breaks) and durability_bar drops below 0.50, the lean is invalidated."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

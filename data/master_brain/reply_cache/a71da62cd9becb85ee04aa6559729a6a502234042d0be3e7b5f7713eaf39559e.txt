@@ -1,0 +1,48 @@
+**DESK NOTE — CROWDING-SKEPTIC ANALYST**
+China A‑shares, CSI 300 | 2026‑07‑14  
+**Accountable, falsifiable, no position size**
+
+---
+
+### DETECTOR TRUST GRADED (display‑only, no alpha)
+- **Momentum rank IC ~0** — a focus lens, not a return forecast.
+- **Absolute‑trend gate DID NOT HOLD HERE** — the discipline did not cut drawdown on this market; the tape mean‑reverts it. Be especially humble.
+- **Rotation‑timing has no validated edge**, so do not hand‑off or predict the next theme.
+- **No basket‑drawdown edge from crowding** — only a sizing caution. Fading the dominant theme is the documented failure mode.
+- Guardrails honoured: no fade, no short, no sell, no next‑theme prediction, no directional certainty.
+
+---
+
+### WHICH THEME IS MOST OVER‑EXTENDED / CROWDED?
+**Innovative Pharma & CXO** (rank 6, eligible, `crowded: true`)  
+`crowding_z = 1.29` (highest in the eligible set)  
+`breadth = 1.0` (full participation — late‑cycle saturation)  
+`durability_bar = 0.90` (strong trend but no marginal buyer left if breadth is maxed)  
+Overall rotation is **narrowing** (eligible frac 0.32, view “narrowing”) — a macro caution.
+
+**Conclusion → SIZE‑DOWN**  
+This theme is the clearest cramming candidate. When a liquid theme shows crowding‑z >1.0 with breadth at 100%, the risk of an air‑pocket correction is elevated even if the absolute trend remains intact. Reflexivity is real — do not fade, but cap exposure. The crowding flag does **not** predict a top; it says the asymmetry is against the long when breadth is fully deployed.
+
+---
+
+### SHARPEST BEAR CASE ON EACH ELIGIBLE LONG
+(These are falsification arguments — they do not change the trend gate; they merely note where a position might be at risk of disappointment.)
+
+| Long theme | Bear case (crowding / fragility) | Check point |
+|------------|----------------------------------|-------------|
+| **AI Compute & Optics** (leader, score 2.84, breadth 0.65, not crowded) | **Headline exhaustion risk.** Leadership is increasingly reliant on a single catalyst (policy/macro AI spending). Breadth at 0.65 is decent but declining from recent highs; a break below 0.6 would signal that the theme is leaking participation — a classic top‑building pattern. The 0.75 durability bar is solid, but macro‑narrative dominance may shift abruptly (73% unscheduled news flow). | If breadth drops <0.6 and score compresses >0.5 points, the “strong leader” narrative is challenged. |
+| **Semiconductors** (rank 2, score 2.54, breadth 0.82, crowding_z 0.82, not flagged) | **Almost‑crowded with high sensitivity.** Crowding_z 0.82 is skating right below the flag; any incremental flow could tip it over. Breadth 0.82 already discounts much good news. The last 10% of breadth often coincides with distribution — the “smart money” exits before the crowd. | If crowding_z crosses 1.0 while breadth stays >0.8, expect a sharp de‑rating even without a trend break. |
+| **Consumer Electronics** (rank 3, score 1.08, breadth 0.40, not crowded) | **Thin breadth = fragile re‑acceleration.** With only 40% of constituents participating, the theme is hanging by a few large‑cap names. Any single‑stock blow‑up (e.g., supply‑chain shock) can evaporate the positive score. Durability_bar 0.69 suggests trend is merely “okay”, not robust. | A breadth drop below 0.3 would likely push the score negative; that’s a get‑out signal regardless of price. |
+| **Rare Earth & Magnets** (rank 5, score 0.61, breadth 0.111, hurst “mixed”) | **Extreme concentration — a lottery ticket, not a trend.** Breadth 0.111 is a fragile puddle; one or two names control the score. Durability_bar 0.42 and hurst “mixed” undermine the trend‑following premise. This is a policy‑event play, not a momentum theme. | A positive surprise (e.g., export control escalation) can spike it, but without breadth broadening, any long is a gamble. |
+| **Innovative Pharma & CXO** (rank 6, score 0.42, breadth 1.0, crowded) | **Peak crowd, no new buyers.** Crowding_z 1.29, breadth 1.0 — the theme has been fully adopted. Historically, full‑breadth themes on China A‑shares mean‑revert sharply once the marginal flow exhausts. The durability_bar 0.90 suggests the trend is healthy, but the room for disappointment is extreme. | Down‑size now; the crowding flag is a sizing risk control. If breadth retreats from 1.0, the air pocket has already opened. |
+
+---
+
+### ONE FALSIFIABLE CONDITIONAL LEAN (with check‑by horizon)
+**Lean:** The Innovative Pharma & CXO crowding cluster (z > 1.0, breadth = 1.0) signals that the theme’s forward risk/reward is asymmetric to the downside **despite** the strong trend.  
+**Conditional that would falsify this caution:** If breadth re‑expands *from a pullback* (i.e., dips to ~0.7 then recovers to new highs with new names coming in), it would indicate a healthy rotation within the theme — not an exhaustion.  
+**Check‑by:** Re‑evaluate in two weeks (2026‑07‑28). If breadth is still pinned at 1.0 and crowding_z has not cooled, the sizing caution remains justified.
+
+---
+
+*This note is a fallible, falsifiable conditional view — no position size, no trade recommendation, no certainty. The discipline’s only validated edge is drawdown control via the absolute‑trend gate; beyond that, the detector is a coincident focus lens.*

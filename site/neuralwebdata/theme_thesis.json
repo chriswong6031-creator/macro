@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-14",
-  "generated_at": "2026-07-14T09:51:04Z",
+  "as_of": "2026-07-15",
+  "generated_at": "2026-07-15T09:03:42Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -28,10 +28,10 @@
   "theses": [
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "thesis_id": "ai_semiconductors.v1",
-      "content_hash": "sha256:481d065df7f52fcd0145beb489717f7d0c87727ae7355e347bacb9cdd90c6aac",
-      "prev_content_hash": "sha256:eb7cb1aa698925e91076191589fd054bfced7288b29ad25d351f5381f09f316b",
+      "content_hash": "sha256:2cbc21c85365660122e54c399d2080f67d909dff80708017c3fcf64fb5f51bcf",
+      "prev_content_hash": "sha256:481d065df7f52fcd0145beb489717f7d0c87727ae7355e347bacb9cdd90c6aac",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -109,7 +109,7 @@
           "rule_en": "If crowding on the ai_semiconductors or ai_infra basket exceeds 0.7 (z-score), the risk-adjusted opportunity is diminished — variant perception has become consensus.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.492"
+          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.573"
         },
         {
           "id": "ai_semi_f4",
@@ -214,10 +214,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "thesis_id": "semicap_equipment.v1",
-      "content_hash": "sha256:ecf39c67f19db5fdb4a9ea6e7649b1f6b278fbdadd6685108ca15c8cf93f338f",
-      "prev_content_hash": "sha256:f4075bb879557b853ef482cdc38571428a9476e8a9809e0397fbc98ff5ace9fd",
+      "content_hash": "sha256:f04f1f971ccd672f0221c4e3db7e679dcc48a0ec42a5a5588e866b90704b2b80",
+      "prev_content_hash": "sha256:ecf39c67f19db5fdb4a9ea6e7649b1f6b278fbdadd6685108ca15c8cf93f338f",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -272,7 +272,7 @@
           "rule_en": "If revision_breadth for semicap_equipment turns negative, foundry capex guidance is being cut and WFE order book is deteriorating.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.879"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.854"
         },
         {
           "id": "wfe_f2",
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:86f7fc5dde36c547e114314498c428d4968904d433692dfcdd6d8b7614c5ace8",
-      "prev_content_hash": "sha256:d279f788f15e1f2d42e6a56be140e2aaa72f05e54f44bad0e30cb181c063069d",
+      "content_hash": "sha256:cee5edb532db1570ce945ac4553682438eca3fa08be652f8215d4c4628a3cef6",
+      "prev_content_hash": "sha256:86f7fc5dde36c547e114314498c428d4968904d433692dfcdd6d8b7614c5ace8",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -534,7 +534,7 @@
           "rule_en": "If reshoring basket score falls below 30 or moves to 'avoid' label, the industrial-capex driver underpinning automation demand is weakening.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=42.0"
+          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=47.0"
         },
         {
           "id": "robo_f3",
@@ -892,10 +892,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "thesis_id": "defense_aerospace.v1",
-      "content_hash": "sha256:1ad41070bcb3a203262824ac29d6551daf6d084867ad9ef8a0b67702f7e4ed77",
-      "prev_content_hash": "sha256:0b55f1ba9acb6da02e6a00f7b69e1736b1e08395383060f6b138224f74acf0f7",
+      "content_hash": "sha256:322b5225af39762688e26d67015cb4f09d60e413961dcfa03388e02280a375e4",
+      "prev_content_hash": "sha256:1ad41070bcb3a203262824ac29d6551daf6d084867ad9ef8a0b67702f7e4ed77",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -953,7 +953,7 @@
           "rule_en": "If revision_breadth for defense_aerospace falls below 0.0, budget headwinds or program cancellations are spreading through earnings revisions.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.398"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.455"
         },
         {
           "id": "def_f2",
@@ -1380,10 +1380,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-09",
+      "as_of": "2026-07-15",
       "thesis_id": "ag_fertilizer.v1",
-      "content_hash": "sha256:3e31a2cdcb3a8f010dc8d38ac6aea32865a33880dd0b8a54574086fe968c170a",
-      "prev_content_hash": null,
+      "content_hash": "sha256:c94cc3d8fafe951cd9867687548d2566fbe968f4dac4337016e10aa0b9d50030",
+      "prev_content_hash": "sha256:3e31a2cdcb3a8f010dc8d38ac6aea32865a33880dd0b8a54574086fe968c170a",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1437,7 +1437,7 @@
           "rule_en": "If revision_breadth for ag_fertilizer falls negative, crop commodity prices are declining faster than fertilizer input cost savings — farmer economics are deteriorating.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.156"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.185"
         },
         {
           "id": "ag_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-14T09:51:04Z",
-  "inputs_hash": "sha256:1f024cad52f7bcaa72e9af0660a203e2d1f65b155e1d2402256b0a18776d1393",
+  "produced_at": "2026-07-15T09:03:42Z",
+  "inputs_hash": "sha256:12d0bbbc11fd50564a884a81644e3f927ff3b2def4745eb040da339544e74d11",
   "tier": "display"
 }

@@ -1,0 +1,42 @@
+{
+  "stance": "A genuine cyclical co-movement cluster (Consumer Discretionary, Real Estate, Industrials, Financials) is visible, with broad leadership in Financials and Real Estate but narrow Industrials breadth; Information Technology and Health Care are separate, high-RS momentum groups outside this macro rotation. Avoid high-HHI, single-name-driven sectors like Utilities and Energy.",
+  "candidates": [
+    {
+      "subject": "Financials",
+      "lean": "overweight",
+      "rationale": "Broad leadership (HHI 0.038, 53 names), part of the cyclical co-movement cluster, quiet stage.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Real Estate",
+      "lean": "overweight",
+      "rationale": "Cohering with broad leadership (HHI 0.06, 31 names), in the dominant cluster, though cooling stage suggests near-term pause.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Consumer Discretionary",
+      "lean": "overweight",
+      "rationale": "Broad leadership, part of the cyclical cluster; not yet cohering but structural participation is genuine.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "overweight",
+      "rationale": "In the cluster and top pair with Materials, but leadership breadth flagged as narrow—raises fragility concerns.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "rationale": "Cooling, not cohering, and absent from the cyclical cluster; high RS driven by sub-themes rather than macro rotation.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Utilities",
+      "lean": "avoid",
+      "rationale": "High HHI (0.281) driven by two names—a single-name mirage, not a genuine theme.",
+      "strength": "strong"
+    }
+  ],
+  "key_risk": "Industrials' narrow leadership breaks the Industrials-Materials pair correlation, dissolving the cyclical cluster narrative."
+}

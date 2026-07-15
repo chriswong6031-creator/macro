@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-07-14",
-  "n_events_logged": 53,
+  "asof": "2026-07-15",
+  "n_events_logged": 71,
   "n_events_graded": 0,
   "classes": [
     {
@@ -21,7 +21,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 7,
+      "n": 8,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -45,9 +45,22 @@
       "verdict": "insufficient"
     },
     {
+      "event_type": "guidance_cut",
+      "direction": "bearish",
+      "n": 2,
+      "n_graded": 0,
+      "hit_5d": null,
+      "hit_21d": null,
+      "avg_rel_5d": null,
+      "avg_rel_21d": null,
+      "wilson_low_5d": null,
+      "wilson_high_5d": null,
+      "verdict": "insufficient"
+    },
+    {
       "event_type": "guidance_raise",
       "direction": "bullish",
-      "n": 1,
+      "n": 3,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -60,7 +73,7 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 24,
+      "n": 33,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -86,7 +99,7 @@
     {
       "event_type": "management_change",
       "direction": "mixed",
-      "n": 2,
+      "n": 3,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -123,6 +136,19 @@
       "verdict": "insufficient"
     },
     {
+      "event_type": "product_delay",
+      "direction": "bearish",
+      "n": 1,
+      "n_graded": 0,
+      "hit_5d": null,
+      "hit_21d": null,
+      "avg_rel_5d": null,
+      "avg_rel_21d": null,
+      "wilson_low_5d": null,
+      "wilson_high_5d": null,
+      "verdict": "insufficient"
+    },
+    {
       "event_type": "product_launch",
       "direction": "bullish",
       "n": 3,
@@ -138,7 +164,7 @@
     {
       "event_type": "rating_change",
       "direction": "mixed",
-      "n": 1,
+      "n": 2,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -151,7 +177,7 @@
     {
       "event_type": "regulatory_probe",
       "direction": "bearish",
-      "n": 2,
+      "n": 3,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -163,7 +189,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 169,
+    "n_sampled": 177,
     "n_graded": 0,
     "classes": []
   }

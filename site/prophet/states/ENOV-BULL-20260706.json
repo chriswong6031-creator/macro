@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ENOV-BULL-20260706",
-  "asof": "2026-07-14",
+  "asof": "2026-07-15",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 67.1,
-  "raw_confidence": 67.4,
-  "delta_vs_base": 7.1,
+  "management_confidence": 67.0,
+  "raw_confidence": 66.9,
+  "delta_vs_base": 7.0,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
     "validity": 100.0,
     "progress": 7.5,
-    "pace": 90.5,
+    "pace": 85.8,
     "retention": 50.0,
     "overlay": 53.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.079,
     "dist_to_t1_r": 1.421,
     "dist_to_t2_r": 2.921,
-    "horizon_pct_used": 17.8,
+    "horizon_pct_used": 20.0,
     "p1": 0.0528,
     "p2": 0.0264,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 8,
-  "tau": 0.1778
+  "days_elapsed": 9,
+  "tau": 0.2
 }

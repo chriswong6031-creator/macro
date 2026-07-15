@@ -5,19 +5,19 @@
   "article3": {
     "granted": false,
     "lift_lb": null,
-    "reason": "insufficient-n: n=9 < min_n=25",
-    "evidence_asof": "2026-07-13",
-    "evaluated_at": "2026-07-13T09:28:29+00:00"
+    "reason": "insufficient-n: n=13 < min_n=25",
+    "evidence_asof": "2026-07-14",
+    "evaluated_at": "2026-07-15T08:56:20+00:00"
   },
-  "generated_at": "2026-07-13T09:28:29.433008+00:00",
-  "state_asof": "2026-07-13",
+  "generated_at": "2026-07-15T08:56:20.861578+00:00",
+  "state_asof": "2026-07-15",
   "model": "claude-opus-4-8",
   "regime_read": null,
   "regime_read_zh": null,
   "theses": [],
   "track_record": {
     "schema": "altdata_brain_track_record.v1",
-    "as_of": "2026-07-13",
+    "as_of": "2026-07-15",
     "scored_total": 0,
     "open": 0,
     "unscored_soft": 0,

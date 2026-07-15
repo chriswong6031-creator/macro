@@ -1,0 +1,28 @@
+**Narrative‑Emergence Scout Desk Note**
+Hong Kong | 2026‑07‑14 | purely conditional, falsifiable, never a size
+
+---
+
+### Watch Hypothesis: Biotech, Pharma & CXO (`hk_biotech`) may be quietly forming a base for eventual leadership
+
+**What we see (coincident, no forward edge claimed):**
+- **Breadth = 0.667 — highest of all 17 themes today.** That means the majority of constituents are participating in whatever trend‑like behaviour the durability bar is measuring, even though the headline momentum score (0.265) remains low. In a momentum‑rank world where rank‑IC ~0, breadth is often the earliest structural signal of an emerging narrative, well before it catches the attention lens.
+- **Durability_bar = 0.48, Hurst_tag = “trend”.** The theme is not in a mean‑reverting funk; it’s sustaining pairwise trend‑health that is above the median of the eligible set, even though it’s not yet eligible itself.
+- **Crowding_z = –0.36, crowded = false.** No sign of the reflexivity top that kills many nascent themes early.
+- **Macro narrative window (5‑day):** ai_tech dominates, healthcare absent — so there is no immediate “attention spike” that would normally mark a top. If anything, invisibility is helpful for a forming base.
+- **One‑narrative dominant is true** (Tech Hardware & Semis, absorption 0.55). This environment typically starves secondary themes of flows, so a “forming” call here is strictly a watch for a structural shift, not a call on relative return.
+
+**The forming hypothesis, spelled out:**
+> If the macro/policy narrative begins to shift toward healthcare innovation (e.g., biotech‑specific industrial policy, CXO pipeline news, or margin normalisation in China pharma), *and* the theme’s momentum score begins to rise while breadth holds above 0.5 and the durability bar does not collapse, *then* `hk_biotech` has the internal cohesion to become a credible challenger when the current leader’s absorption eventually relaxes.
+
+**Kill criterion (check‑by date: ~2026‑08‑14):**
+- **Absolute kill:** The momentum score declines further (below 0.0) OR breadth drops below 0.4, indicating the internal trend‑health was a short‑lived structure.
+- **Relative kill:** Durability bar falls below 0.35, signalling the trend‑like behaviour is dissolving back into noise.
+- **Implicit invalidation horizon:** If, over the next ~month, the macro‑narrative mix still shows zero healthcare‑related flow and the theme’s rank does not improve by at least 2 spots, the “quiet base” narrative lacks any catalyst ignition — downgrade to “no event, no trade.”
+
+**Accountability note (read this twice):**
+- This is **not** a forecast that Biotech will lead. The detector’s backtest is clear: rotation‑timing has no validated early‑handoff edge, and momentum rank should not be read as a return forecast.
+- The only validated edge is drawdown/shake‑out control via the absolute‑trend gate. This “forming” hypothesis is an **attention flag**, not a position.
+- If the leader’s dominance holds (one_narrative persists) and biotech’s score crawls sideways, the hypothesis does NOT turn into a “buy”. It lapses quietly.
+
+**In short:** I am watching `hk_biotech` for a structural shift in cohesion that *could* matter if the market’s one‑narrative regime cracks. If the bar above fails, I kill it with no regret.

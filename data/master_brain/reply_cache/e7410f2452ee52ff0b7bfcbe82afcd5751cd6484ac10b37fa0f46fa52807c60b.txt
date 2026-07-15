@@ -1,0 +1,22 @@
+{
+  "regime_context": "The Canada/TSX thematic detector shows Big Banks as the clear momentum leader (rank 1, score 1.788) with Pipelines a distant second (0.622). The lead margin is wide (1.166) and rotation is not directional. Broad eligibility (75%) indicates a broad trend environment, not one-narrative dominance. The absolute trend gate—validated in this market to cut drawdowns—currently green-lights the leader, but Big Banks is crowded (z=1.53), which is a sizing caution, not a fade trigger. Rank-IC is negligible, so momentum rank is an attention lens, not alpha.",
+  "theses": [
+    {
+      "subject": "Big Banks",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The Big Banks theme remains the dominant trend with wide margin, eligibility under the drawdown-avoiding trend gate, and high durability. The gate-help history in this market suggests staying with it offers better downside control. The lean is overweight, acknowledging that crowding demands caution but does not justify a fade. The call is falsifiable: if the gate fails, the lean is void.",
+      "evidence": [
+        "Rank 1 with wide margin over challenger (1.166)",
+        "Eligible under absolute trend gate with durability_bar 0.73",
+        "Gate helps in this market history (drawdown avoidance validated)",
+        "Broad rotation breadth (75% eligible) supports trend-following structure"
+      ],
+      "dissent": "Overcrowding (z=1.53) and a mixed Hurst tag imply fragility; 73% of recent macro flow is unscheduled surprises, making a crowded leader vulnerable to sharp reversals.",
+      "falsifier_text": "If Big Banks loses eligibility (durability_bar drops below 0.6 or Hurst turns mean-reverting) before 2026-08-03, the overweight lean is void."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

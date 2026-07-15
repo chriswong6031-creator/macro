@@ -16,3 +16,8 @@
 {"asof": "2026-07-12", "domain": "canada", "field": "canada_cycle_tag", "from_value": "late", "to_value": "mid", "macro_context_id": "8519acbf68ceb555"}
 {"asof": "2026-07-13", "domain": "us", "field": "us_vrp_state", "from_value": "normal", "to_value": "collapsing (de-risk)", "macro_context_id": "38920726d4d6471a"}
 {"asof": "2026-07-13", "domain": "fx", "field": "fx_liquidity_dir", "from_value": "supportive", "to_value": "soft", "macro_context_id": "38920726d4d6471a"}
+{"asof": "2026-07-15", "domain": "us", "field": "us_fused_risk", "from_value": "risk-on", "to_value": "neutral", "macro_context_id": "de97bebd8e611c7b"}
+{"asof": "2026-07-15", "domain": "us", "field": "us_froth_band", "from_value": "calm", "to_value": "watch", "macro_context_id": "de97bebd8e611c7b"}
+{"asof": "2026-07-15", "domain": "us", "field": "us_repricing_state", "from_value": "QUIET", "to_value": "ELEVATED", "macro_context_id": "de97bebd8e611c7b"}
+{"asof": "2026-07-15", "domain": "us", "field": "cross_asset_verdict", "from_value": "diverge", "to_value": "mixed", "macro_context_id": "de97bebd8e611c7b"}
+{"asof": "2026-07-15", "domain": "china", "field": "china_fe_band", "from_value": "Neutral", "to_value": "Greed", "macro_context_id": "de97bebd8e611c7b"}

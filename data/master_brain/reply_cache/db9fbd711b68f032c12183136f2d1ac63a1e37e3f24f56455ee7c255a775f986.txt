@@ -1,0 +1,31 @@
+**Desk Note — Narrative-Emergence Scout**
+2026-07-14 | US Market
+
+**Emerging Watch Hypothesis**
+**Theme:** US Defense & Government Services (Federal IT/Consulting)
+**Status:** FORMING (early, noisy candidate radar)
+
+**Why it’s worth watching**
+The theme_candidates radar is displaying a small, cohesive cluster of names that are not currently organised as a named theme in the rotation leaderboard: BAH, CACI, FCN, LDOS, PSN, SAIC. Cohesion just reached 0.571 with a +0.204 improvement over the prior window, suggesting some early convergence. These firms share a common thread — defence/intelligence IT, federal consulting, and government modernisation — yet they are absent from the dominant narratives (“Memory/HBM”, “Cybersecurity”, etc.), offering the possibility of an uncontested narrative if momentum develops.
+The macro narrative backdrop (geopolitics as the #2 dominant theme, industrial policy mentions) could provide a receptive environment, but this remains purely a “story that might catch” rather than a story that has caught.
+
+**Evidence snapshot (from candidate radar only)**
+- Cohesion: 0.571 (modest; early-stage)
+- Cohesion change: +0.204 (forming, not yet persistent)
+- IPO wave: No (no artificial supply boost)
+- No dedicated ETF or basket; outside current momentum ranks
+
+**Kill criterion (falsifiable, time-bound)**
+This watch hypothesis is invalidated if, over the next **10 trading days (through ~2026-07-28)**:
+1. The cluster’s average pairwise cohesion degrades below **0.45**, OR
+2. The equal-weighted basket of these six names closes below its **20-day simple moving average** (using daily data, starting from 2026-07-14).
+
+Either condition signals that the nascent coherence has been noise and not an emergent narrative.
+
+**Accountability & guardrails**
+- This is a **display-only** emergence flag from a noisy radar (~10% persistence). No forward edge, no position, no size.
+- I am not predicting a leadership handoff; I am only noting a cluster that might coalesce into a theme.
+- The prevailing leader (Memory, HBM & Storage) is unchallenged and has a wide lead; this watch does not fade it.
+- Every item in `narrative_rotation.guardrails.do_not_conclude` is respected, especially: no return forecast, no buy list, no next-theme certainty.
+
+*This note is a fallible, falsifiable conditional, never a trade.*

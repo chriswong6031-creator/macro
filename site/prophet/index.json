@@ -1,12 +1,51 @@
 {
   "schema": "prophet.index/v1",
-  "asof": "2026-07-14",
+  "asof": "2026-07-15",
   "cadence": "nightly-EOD",
   "authority_tier": "display",
   "gate_go": false,
-  "plan_count": 24,
-  "active_count": 22,
+  "plan_count": 27,
+  "active_count": 25,
   "plans": [
+    {
+      "id": "PLTR-BULL-20260701",
+      "asset": "PLTR",
+      "direction": "BULL",
+      "entry": 130.0,
+      "invalidation": 104.05,
+      "targets": [
+        168.925,
+        207.85
+      ],
+      "trigger": 132.4,
+      "option_contract": null,
+      "_r_unit": 25.95,
+      "_conviction_score": 90,
+      "_signal_date": "2026-07-01",
+      "phase": "pre_trigger",
+      "management_confidence": 52.0,
+      "recommended_action": "wait",
+      "what_to_do_now": [
+        "Watch for price to reach the trigger level ($132.40) before entering. No position until trigger is confirmed.",
+        "Keep size small on initial entry; the buy zone extends from trigger up to $168.93 (T1). There is no need to rush.",
+        "If trigger confirms, scale in gradually. Invalidation is $104.05; exit on a close below that level."
+      ],
+      "profit_plan": [
+        {
+          "level": 168.925,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 207.85,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "PLTR \u2014 conviction 90/100 (high) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: accounting warn; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+    },
     {
       "id": "REZI-BULL-20260703",
       "asset": "REZI",
@@ -62,7 +101,7 @@
       "_conviction_score": 87,
       "_signal_date": "2026-07-01",
       "phase": "pre_trigger",
-      "management_confidence": 62.8,
+      "management_confidence": 57.9,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($33.36) before entering. No position until trigger is confirmed.",
@@ -86,6 +125,84 @@
       "thesis": "PAHC \u2014 conviction 87/100 (neutral) Entry grade: solid. Drivers: entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
     },
     {
+      "id": "PAHC-BULL-20260629",
+      "asset": "PAHC",
+      "direction": "BULL",
+      "entry": 33.04,
+      "invalidation": 27.55,
+      "targets": [
+        41.275,
+        49.51
+      ],
+      "trigger": 33.38,
+      "option_contract": null,
+      "_r_unit": 5.49,
+      "_conviction_score": 86,
+      "_signal_date": "2026-06-29",
+      "phase": "pre_trigger",
+      "management_confidence": 52.0,
+      "recommended_action": "wait",
+      "what_to_do_now": [
+        "Watch for price to reach the trigger level ($33.38) before entering. No position until trigger is confirmed.",
+        "Keep size small on initial entry; the buy zone extends from trigger up to $41.27 (T1). There is no need to rush.",
+        "If trigger confirms, scale in gradually. Invalidation is $27.55; exit on a close below that level."
+      ],
+      "profit_plan": [
+        {
+          "level": 41.275,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 49.51,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "PAHC \u2014 conviction 86/100 (neutral) Entry grade: solid. Drivers: entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+    },
+    {
+      "id": "STEP-BULL-20260707",
+      "asset": "STEP",
+      "direction": "BULL",
+      "entry": 43.42,
+      "invalidation": 38.35,
+      "targets": [
+        51.025,
+        58.63
+      ],
+      "trigger": 44.01,
+      "option_contract": null,
+      "_r_unit": 5.07,
+      "_conviction_score": 84,
+      "_signal_date": "2026-07-07",
+      "phase": "pre_trigger",
+      "management_confidence": 61.3,
+      "recommended_action": "wait",
+      "what_to_do_now": [
+        "Watch for price to reach the trigger level ($44.01) before entering. No position until trigger is confirmed.",
+        "Keep size small on initial entry; the buy zone extends from trigger up to $51.02 (T1). There is no need to rush.",
+        "If trigger confirms, scale in gradually. Invalidation is $38.35; exit on a close below that level."
+      ],
+      "profit_plan": [
+        {
+          "level": 51.025,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 58.63,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "STEP \u2014 conviction 84/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+    },
+    {
       "id": "ADBE-BULL-20260706",
       "asset": "ADBE",
       "direction": "BULL",
@@ -101,7 +218,7 @@
       "_conviction_score": 81,
       "_signal_date": "2026-07-06",
       "phase": "pre_trigger",
-      "management_confidence": 66.1,
+      "management_confidence": 65.8,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($233.00) before entering. No position until trigger is confirmed.",
@@ -140,7 +257,7 @@
       "_conviction_score": 81,
       "_signal_date": "2026-07-06",
       "phase": "pre_trigger",
-      "management_confidence": 66.0,
+      "management_confidence": 65.7,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($293.70) before entering. No position until trigger is confirmed.",
@@ -179,7 +296,7 @@
       "_conviction_score": 80,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 62.9,
+      "management_confidence": 62.0,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($33.89).",
@@ -218,7 +335,7 @@
       "_conviction_score": 80,
       "_signal_date": "2026-07-09",
       "phase": "pre_trigger",
-      "management_confidence": 67.9,
+      "management_confidence": 67.8,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($22.60) before entering. No position until trigger is confirmed.",
@@ -295,7 +412,7 @@
       "_conviction_score": 79,
       "_signal_date": "2026-07-03",
       "phase": "pre_trigger",
-      "management_confidence": 65.1,
+      "management_confidence": 64.7,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($147.20) before entering. No position until trigger is confirmed.",
@@ -373,7 +490,7 @@
       "_conviction_score": 75,
       "_signal_date": "2026-07-06",
       "phase": "pre_trigger",
-      "management_confidence": 67.1,
+      "management_confidence": 67.0,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($26.50) before entering. No position until trigger is confirmed.",
@@ -412,7 +529,7 @@
       "_conviction_score": 75,
       "_signal_date": "2026-07-10",
       "phase": "pre_trigger",
-      "management_confidence": 60.3,
+      "management_confidence": 56.5,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($192.80) before entering. No position until trigger is confirmed.",
@@ -451,7 +568,7 @@
       "_conviction_score": 73,
       "_signal_date": "2026-07-01",
       "phase": "pre_trigger",
-      "management_confidence": 44.3,
+      "management_confidence": 44.0,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($174.80) before entering. No position until trigger is confirmed.",
@@ -490,7 +607,7 @@
       "_conviction_score": 72,
       "_signal_date": "2026-06-25",
       "phase": "triggered_pre_t1",
-      "management_confidence": 60.0,
+      "management_confidence": 58.9,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($3410.80).",
@@ -529,7 +646,7 @@
       "_conviction_score": 72,
       "_signal_date": "2026-06-26",
       "phase": "pre_trigger",
-      "management_confidence": 44.3,
+      "management_confidence": 43.7,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($529.20) before entering. No position until trigger is confirmed.",
@@ -568,7 +685,7 @@
       "_conviction_score": 71,
       "_signal_date": "2026-07-08",
       "phase": "pre_trigger",
-      "management_confidence": 59.3,
+      "management_confidence": 59.0,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($251.30) before entering. No position until trigger is confirmed.",
@@ -607,7 +724,7 @@
       "_conviction_score": 70,
       "_signal_date": "2026-06-23",
       "phase": "pre_trigger",
-      "management_confidence": 60.8,
+      "management_confidence": 60.1,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($75.59) before entering. No position until trigger is confirmed.",
@@ -684,7 +801,7 @@
       "_conviction_score": 67,
       "_signal_date": "2026-07-09",
       "phase": "pre_trigger",
-      "management_confidence": 56.6,
+      "management_confidence": 53.1,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($195.20) before entering. No position until trigger is confirmed.",
@@ -723,7 +840,7 @@
       "_conviction_score": 62,
       "_signal_date": "2026-06-05",
       "phase": "triggered_pre_t1",
-      "management_confidence": 46.0,
+      "management_confidence": 44.8,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($120.71).",
@@ -808,7 +925,7 @@
       "_conviction_score": 46,
       "_signal_date": "2026-07-02",
       "phase": "pre_trigger",
-      "management_confidence": 54.6,
+      "management_confidence": 53.8,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($228.50) before entering. No position until trigger is confirmed.",
@@ -847,7 +964,7 @@
       "_conviction_score": 42,
       "_signal_date": "2026-07-02",
       "phase": "triggered_pre_t1",
-      "management_confidence": 60.9,
+      "management_confidence": 60.3,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($135.31).",

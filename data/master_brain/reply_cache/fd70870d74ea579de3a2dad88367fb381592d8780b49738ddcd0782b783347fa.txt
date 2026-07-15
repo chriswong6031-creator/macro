@@ -1,0 +1,20 @@
+**Macro‑regime desk note — Canada / TSX — 2026‑07‑13**  
+*Accountable, falsifiable, never a sizing or trade instruction.*
+
+### Regime snapshot
+- **Headline leader:** Big Banks (durability 0.73, crowded, breadth 1.0, no cash signal).  
+- **Rotation structure:** broad (12/16 eligible), margin over challenger 1.17, absorption 0.37 — not a one‑narrative market.  
+- **Trend gate:** `gate_helps = true` — the only validated edge (drawdown/shake‑out avoidance) is intact.  
+- **Cash guidance:** headline cash = 0.0; no thematic emergency brake, but that is per‑theme, not macro‑level.  
+- **Macro backdrop:** headline flow dominated by AI/tech and geopolitics; unscheduled share 0.73 — event‑driven noise is high, not a calm “risk‑on” soundtrack.
+
+### Does the regime support risk‑on theme exposure?
+**No, not in a broad, bullish sense.** The combination of a broad rotation, low narrative absorption (0.37), a crowded leader, and a market‑level macro flow heavy on unscheduled geopolitical/AI noise points to a choppy, low‑conviction environment. When absorption is low, chasing the leader often meets mean‑reversion whipsaws; when breadth is wide, momentum is diluted. The absolute‑trend gate being “helpful” tells us the discipline of sitting out weak trends reduces drawdowns — arguing for keeping size small and cash ready, not for leaning into themes.
+
+### Falsifiable conditional lean
+- **Lean:** The current regime favours capital preservation over aggressive thematic exposure. I would not initiate fresh risk‑on positions unless absorption rises decisively and the rotation narrows.  
+- **Check‑by horizon:** If within the next 10 trading days (by 2026‑07‑28) absorption moves above 0.6 *and* the rotation narrows to <8 eligible themes (or `one_narrative` flips true), the environment would then plausibly sustain a single‑theme risk‑on move. Absent that, the default is smaller size/higher cash.
+
+### Guardrails honoured
+- No return forecast from the momentum rank; no fade call on Big Banks (cap, don’t fade); no next‑narrative prediction; no treating crowding as a short signal.  
+- This note is a fallible, falsifiable conditional — not edge extracted from the detector. My track record here is n=0; I report, I do not promise.

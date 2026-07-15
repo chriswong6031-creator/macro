@@ -1,0 +1,23 @@
+{
+  "prediction_id": "PCE_CORE:2026-06:first:2026-07-15:v1",
+  "asof": "2026-07-15",
+  "features": {
+    "pce_core_mom_lag1": 0.34868471804365697,
+    "pce_core_mom_lag2": 0.2715058130090764,
+    "pce_core_mom_lag3": 0.32593765278325915,
+    "sticky_mom_lag1": 0.238615079,
+    "median_mom_lag1": 0.3003460840664163,
+    "flex_mom_lag1": 1.107630624,
+    "ppifes_mom_lag1": 0.05906942929843062
+  },
+  "legs": {
+    "flex_mom_lag1": "present",
+    "median_mom_lag1": "present",
+    "pce_core_mom_lag1": "present",
+    "pce_core_mom_lag2": "present",
+    "pce_core_mom_lag3": "present",
+    "ppifes_mom_lag1": "present",
+    "sticky_mom_lag1": "present"
+  },
+  "inputs_hash": ""
+}

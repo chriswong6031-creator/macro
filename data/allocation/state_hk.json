@@ -1,16 +1,18 @@
 {
-  "cash": 0.25,
+  "cash": 0.0,
   "crash": false,
   "eligible": [
     "hk_banks",
     "hk_conglo",
     "hk_dividend",
+    "hk_industrials",
     "hk_tech_hardware"
   ],
   "held": [
     "hk_tech_hardware",
-    "hk_banks",
-    "hk_dividend"
+    "hk_conglo",
+    "hk_dividend",
+    "hk_industrials"
   ],
   "leader": "hk_tech_hardware",
   "names": {

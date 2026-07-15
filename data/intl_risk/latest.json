@@ -1,9 +1,9 @@
 {
-  "built": "2026-07-14T09:35:48.499679+00:00",
+  "built": "2026-07-15T08:40:58.500472+00:00",
   "timing_sec": 1.33,
   "em_stress": {
     "state": "strained",
-    "thermometer": 48.0,
+    "thermometer": 47.8,
     "lead_lag": "coincident thermometer — not leading",
     "n_legs_available": 6,
     "n_legs_total": 6,
@@ -36,15 +36,15 @@
         "note": "2011+ history; EVZ ended 2025-03 and is not used"
       },
       "em_fx_basket": {
-        "value": -2.59,
-        "rvol_20d": 2.45,
-        "dd_pctile": 56.9,
-        "rvol_pctile": 0.3,
-        "pctile": 28.6,
+        "value": -2.37,
+        "rvol_20d": 2.92,
+        "dd_pctile": 53.4,
+        "rvol_pctile": 1.4,
+        "pctile": 27.4,
         "vel_5d_z": null,
-        "vel_20d_z": 0.266,
+        "vel_20d_z": 0.566,
         "z": null,
-        "asof": "2026-07-14",
+        "asof": "2026-07-15",
         "stale": false,
         "window_days": 504,
         "pairs_used": [
@@ -107,8 +107,8 @@
       }
     },
     "gaps": [],
-    "as_of": "2026-07-14",
-    "built": "2026-07-14T09:35:47.248919+00:00",
+    "as_of": "2026-07-15",
+    "built": "2026-07-15T08:40:57.249490+00:00",
     "k_of_n_params": {
       "stressed_threshold": 3,
       "strained_threshold": 2,
@@ -725,7 +725,7 @@
     },
     "berg_pattillo_receipt": "Historical early-warning-system caveat (Berg-Pattillo): best-in-class EWS models missed approximately 68% of currency/debt crises out-of-sample; approximately 60% of their 'danger' signals proved false alarms. This table is a fragility MAP — it identifies who is vulnerable, not when a crisis will occur.",
     "note": "BIS credit-to-GDP gap: only US and CN currently in store; other countries accrue as the BIS adapter extends.",
-    "built": "2026-07-14T09:35:47.336430+00:00"
+    "built": "2026-07-15T08:40:57.332101+00:00"
   },
   "spillover": {
     "total_connectedness": 82.2,
@@ -1008,8 +1008,8 @@
       "SPY: OHLC absent — using close-return vol proxy"
     ],
     "as_of": "2026-07-13",
-    "built": "2026-07-14T09:35:47.460928+00:00",
-    "timing_sec": 0.12,
+    "built": "2026-07-15T08:40:57.462159+00:00",
+    "timing_sec": 0.13,
     "params": {
       "window": 150,
       "var_lag": 2,
@@ -1040,7 +1040,7 @@
     "tightening": false,
     "gaps": [],
     "as_of": "2026-07-13",
-    "built": "2026-07-14T09:35:48.384986+00:00"
+    "built": "2026-07-15T08:40:58.387927+00:00"
   },
   "two_tier": {
     "state": "contained",
@@ -1097,7 +1097,7 @@
           "caveat": "Quarter-end spikes (late Dec/Mar/Jun/Sep) are technical — not structural funding stress; verify calendar proximity."
         },
         "safety_bid_flag": {
-          "dxy_5d_chg": 0.029,
+          "dxy_5d_chg": -0.247,
           "dgs2_5d_chg": 7.0,
           "safety_bid": false,
           "hot": false,
@@ -1108,7 +1108,7 @@
     "safety_bid": false,
     "gaps": [],
     "state_logic": "quiet: tier1 calm | contained: tier1>=strained, 0 tier2 hot | watching: 1 tier2 hot | transmitting: >=2 tier2 hot with tier1>=strained",
-    "built": "2026-07-14T09:35:48.420370+00:00"
+    "built": "2026-07-15T08:40:58.421801+00:00"
   },
   "cb_desk": {
     "cbs": [
@@ -1143,7 +1143,7 @@
         },
         "next_meeting": {
           "date": "2026-07-29",
-          "days": 15
+          "days": 14
         },
         "asof": "2026-07-10",
         "stale": false
@@ -1179,7 +1179,7 @@
         },
         "next_meeting": {
           "date": "2026-07-23",
-          "days": 9
+          "days": 8
         },
         "asof": "2026-07-13",
         "stale": false
@@ -1215,7 +1215,7 @@
         },
         "next_meeting": {
           "date": "2026-07-31",
-          "days": 17
+          "days": 16
         },
         "asof": "2026-05-01",
         "stale": false
@@ -1243,7 +1243,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-07-30",
-          "days": 16
+          "days": 15
         },
         "asof": "2026-01-01",
         "stale": true
@@ -1271,7 +1271,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-09-17",
-          "days": 65
+          "days": 64
         },
         "asof": "2026-05-01",
         "stale": false
@@ -1299,7 +1299,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-07-15",
-          "days": 1
+          "days": 0
         },
         "asof": "2026-05-01",
         "stale": false
@@ -1327,7 +1327,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-08-11",
-          "days": 28
+          "days": 27
         },
         "asof": "2026-05-01",
         "stale": false
@@ -1341,7 +1341,7 @@
       "RBA: balance-sheet series not available (honest null)"
     ],
     "as_of": "2026-07-13",
-    "built": "2026-07-14T09:35:48.449495+00:00",
+    "built": "2026-07-15T08:40:58.450964+00:00",
     "bs_note": "Balance-sheet impulse available for: FED (WALCL), ECB (ECBASSETSW), BoJ (JPNASSETS). BoE: FRED provides annual-only balance-sheet data — honest null. PBoC: no clean keyless balance-sheet series available — honest null. SNB/BoC/RBA: no balance-sheet series configured — honest null.",
     "irdr7_note": "IRD-R7: This desk is DESCRIPTIVE. It reports realized policy rates, observed changes, and published meeting dates. No policy-intent projection, no forward guidance scoring, no consensus-surprise computation (no free consensus source)."
   },
@@ -1388,7 +1388,7 @@
       }
     ],
     "synchronized": false,
-    "built": "2026-07-14T09:35:48.491413+00:00"
+    "built": "2026-07-15T08:40:58.492434+00:00"
   },
   "swap_lines_bn": 0.2,
   "top_transmitters_display": [
