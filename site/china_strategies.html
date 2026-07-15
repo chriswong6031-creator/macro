@@ -129,6 +129,10 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
 .mm-v{display:block;font-size:15px;font-weight:800;color:var(--ink);margin-top:2px}
 .mm-d{display:block;font-size:9.5px;color:var(--faint)}
 .mm-go{font-size:13px;font-weight:800;color:var(--accent)}
+/* zh: swap green→red in directional gradients */
+html[data-lang="zh"] .mm-hero{background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(120deg,var(--red),#285fff,#a855f7) border-box}
+html[data-lang="zh"] .mm-title{background:linear-gradient(90deg,var(--red),#285fff,#a855f7,var(--red));background-size:300% 100%;-webkit-background-clip:text;background-clip:text}
+html[data-lang="zh"] .mm-meter{background:linear-gradient(90deg,var(--red),#e0a106,#a855f7)}
 </style>
 <style>
 /* ambient aurora — fixed accents blended into transparent, pinned behind all
@@ -725,7 +729,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   </div>
 
   <div class="foot">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-14 11:56 UTC<br>
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-15 00:00 UTC<br>
     <span class="made">© 2026 Mastermind Inc</span>
   </div>
 </div>
