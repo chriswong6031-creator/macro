@@ -1756,6 +1756,142 @@ def _froth_fragility_view(latest: dict) -> dict | None:
         return None
 
 
+def _leadership_board_view() -> dict | None:
+    """Assemble the MLC-W1 Leadership Board payload (display-only, MLC-R2).
+
+    Joins three sources — all DISPLAY-ONLY; no new scoring/ranking math:
+      1. data/mag7_regime/latest.json   — M7C cohort state + per-member fields
+      2. data/leader_radar/state_history.parquet — LRV lifecycle state per name
+      3. data/earnings/earnings.parquet — next_date / as_of for earnings chip (MLC-R10)
+      4. site/sectordata/sector_central.json — sector RS ranks (momentum.rs_rank/lead)
+
+    Returns None on any hard failure (panel fails open / silent).
+    Individual per-name fields are None when absent (Jinja guards handle nulls).
+    Never raises — additive, display-tier, never fatal to the build.
+    """
+    try:
+        import datetime
+
+        # ── 1. M7C cohort payload (required: if absent, skip whole panel) ────────
+        m7_path = config.data_dir() / "mag7_regime" / "latest.json"
+        if not m7_path.exists():
+            return None
+        m7 = json.loads(m7_path.read_text(encoding="utf-8"))
+        if not m7.get("trend_state"):
+            return None  # degraded artifact
+
+        M7_SYMS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
+
+        # ── 2. LRV lifecycle states (optional — fail-open per name) ─────────────
+        lifecycle_by_sym: dict[str, str] = {}
+        try:
+            import pandas as pd
+            lp = config.data_dir() / "leader_radar" / "state_history.parquet"
+            if lp.exists():
+                ldf = pd.read_parquet(lp)
+                # latest row per ticker (parquet is date-sorted; last wins)
+                for sym in M7_SYMS:
+                    rows = ldf[ldf["ticker"] == sym]
+                    if not rows.empty:
+                        lifecycle_by_sym[sym] = str(rows.iloc[-1]["confirmed_state"])
+        except Exception as _le:  # noqa: BLE001
+            log.warning("leadership_board: lifecycle load failed (%s)", _le)
+
+        # ── 3. Earnings chip (MLC-R10: disclosure only, not a gate) ─────────────
+        earnings_by_sym: dict[str, dict] = {}
+        try:
+            import pandas as pd
+            ep = config.data_dir() / "earnings" / "earnings.parquet"
+            if ep.exists():
+                edf = pd.read_parquet(ep)
+                today = datetime.date.today()
+                for sym in M7_SYMS:
+                    if sym not in edf.index:
+                        continue
+                    row = edf.loc[sym]
+                    nd = row.get("next_date")
+                    ao = row.get("as_of")
+                    if pd.isna(nd) or nd is None:
+                        continue
+                    # as_of freshness gate: stale store must not show wrong dates
+                    if ao is not None and not pd.isna(ao):
+                        try:
+                            ao_str = str(ao)[:10]  # ISO date prefix
+                            ao_date = datetime.date.fromisoformat(ao_str)
+                            stale = (today - ao_date).days > 7
+                        except Exception:  # noqa: BLE001
+                            stale = True
+                    else:
+                        stale = True
+                    if stale:
+                        continue
+                    try:
+                        next_dt = datetime.date.fromisoformat(str(nd)[:10])
+                        days_until = (next_dt - today).days
+                        if 0 <= days_until <= 14:
+                            earnings_by_sym[sym] = {
+                                "next_date": str(nd)[:10],
+                                "days_until": days_until,
+                            }
+                    except Exception:  # noqa: BLE001
+                        pass
+        except Exception as _ee:  # noqa: BLE001
+            log.warning("leadership_board: earnings load failed (%s)", _ee)
+
+        # ── 4. Sector RS strip from sector_central.json (already written) ────────
+        sector_rs: list[dict] = []
+        try:
+            _cfg_paths = config.load().get("paths", {})
+            sc_path = Path(_cfg_paths.get("site", "site")) / "sectordata" / "sector_central.json"
+            if not sc_path.exists():
+                # fallback: resolve relative to repo root
+                sc_path = Path(__file__).parent.parent / "site" / "sectordata" / "sector_central.json"
+            if sc_path.exists():
+                sc_doc = json.loads(sc_path.read_text(encoding="utf-8"))
+                raw_sectors = sc_doc.get("sectors") or []
+                for sec in raw_sectors:
+                    mom = sec.get("momentum") or {}
+                    rr = mom.get("rs_rank")
+                    lead = mom.get("lead")
+                    if rr is None:
+                        continue  # skip if rank absent
+                    sector_rs.append({
+                        "ticker": sec.get("ticker", ""),
+                        "name": sec.get("name", ""),
+                        "name_zh": sec.get("name_zh", ""),
+                        "rs_rank": rr,
+                        "lead": lead,  # "leading" / "mid-pack" / "lagging"
+                        "conviction_en": (sec.get("conviction") or {}).get("label_en"),
+                        "conviction_zh": (sec.get("conviction") or {}).get("label_zh"),
+                    })
+                sector_rs.sort(key=lambda x: x["rs_rank"])
+        except Exception as _se:  # noqa: BLE001
+            log.warning("leadership_board: sector RS load failed (%s)", _se)
+
+        # ── 5. Enrich per-member tiles with lifecycle + earnings ─────────────────
+        members_out = []
+        for m in (m7.get("members") or []):
+            sym = m.get("sym", "")
+            lifecycle = lifecycle_by_sym.get(sym)  # None if absent
+            earn = earnings_by_sym.get(sym)         # None if absent / stale / >14d
+            members_out.append({**m, "lifecycle": lifecycle, "earnings": earn})
+
+        return {
+            "as_of": m7.get("as_of"),
+            "trend_state": m7.get("trend_state"),
+            "run": m7.get("run") or {},
+            "generals": m7.get("generals") or {},
+            "k7": m7.get("k7") or {},
+            "cw": m7.get("cw") or {},
+            "ew": m7.get("ew") or {},
+            "members": members_out,
+            "sector_rs": sector_rs,
+        }
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("leadership_board_view failed (%s)", e)
+        return None
+
+
 def _mag7_regime_view() -> dict | None:
     """Load the Mag 7 regime artifact (data/mag7_regime/latest.json) for the
     us_stocks panel.  DISPLAY-ONLY; cap-weighted context read, not a scored signal.
@@ -3784,6 +3920,7 @@ def main() -> int:
         policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
         flip_confirmation=_flip_confirmation_view(),  # T+1 sector-flip confirmation lens (Policy-Shock W1-C, display-only)
         shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
+        leadership_board=_leadership_board_view(),  # MLC-W1: megacap + sector RS glance surface (display-only)
         **_master_brief_vm(),
     )
 

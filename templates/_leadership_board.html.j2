@@ -1,0 +1,409 @@
+{# ============================================================================
+   LEADERSHIP BOARD (.ldb) — MLC-W1
+   七巨头个股面板 + 板块相对强度条
+
+   Consumes (all display-only; MLC-R2):
+     • data/mag7_regime/latest.json   — M7C cohort state (M7C owns the math)
+     • data/leader_radar/state_history.parquet — LRV per-name lifecycle states
+     • data/earnings/earnings.parquet — earnings-date chip (disclosure; MLC-R10)
+     • site/sectordata/sector_central.json — sector RS ranks (engine/sectors.py owns)
+
+   Import and call:
+       {% from "_leadership_board.html.j2" import leadership_board %}
+       {% if leadership_board %}{{ leadership_board(leadership_board) }}{% endif %}
+
+   Renders NOTHING when the payload is absent (fail-open; MLC-R2).
+   All field access via .get() / truthiness guards — never `is not none` (Jinja gotcha).
+
+   Design doctrine (DESIGN_DOCTRINE.md):
+     Tier 1 glance: state + plain-word stance, ≤14 words per line.
+     Tier 2 hover:  data-tip-en/zh receipts (mechanics, raw numbers, ages).
+     Banned on Tier 1: raw enum slugs, internal organ names, untranslated stats.
+     Every tile answers "so what do I do" (MLC-R9).
+     Null honesty: absent → "no trend read" (never blank, never crash).
+   ============================================================================ #}
+
+{# ── helpers ─────────────────────────────────────────────────────────────── #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{% macro tip(en, zh='') %}
+ data-tip-en="{{ en | e }}" data-tip-zh="{{ (zh if zh else en) | e }}"
+{%- endmacro %}
+
+{# ── lifecycle state → plain-word Tier 1 label (never print raw enum) ─────── #}
+{% macro lifecycle_en(state) -%}
+{%- if state == 'LEADERSHIP' %}leading the market
+{%- elif state == 'BREAKAWAY' %}breaking out
+{%- elif state == 'QUIET_ACCUMULATION' %}quietly building
+{%- elif state == 'CROWDED' %}crowded
+{%- elif state == 'SUPPRESSED' %}held back
+{%- elif state == 'FAILED' %}trend failed
+{%- elif state == 'CATALYST_WINDOW' %}near a catalyst
+{%- elif state == 'NONE' or not state %}no trend read
+{%- else %}no trend read{% endif %}
+{%- endmacro %}
+
+{% macro lifecycle_zh(state) -%}
+{%- if state == 'LEADERSHIP' %}领涨市场
+{%- elif state == 'BREAKAWAY' %}突破上行
+{%- elif state == 'QUIET_ACCUMULATION' %}悄然积累
+{%- elif state == 'CROWDED' %}拥挤过热
+{%- elif state == 'SUPPRESSED' %}走势受压
+{%- elif state == 'FAILED' %}趋势已败
+{%- elif state == 'CATALYST_WINDOW' %}临近催化剂窗口
+{%- elif state == 'NONE' or not state %}暂无趋势判断
+{%- else %}暂无趋势判断{% endif %}
+{%- endmacro %}
+
+{# ── lifecycle state → CSS accent class ─────────────────────────────────── #}
+{% macro lifecycle_cls(state) -%}
+{%- if state == 'LEADERSHIP' or state == 'BREAKAWAY' %}ldb-tile-lead
+{%- elif state == 'CROWDED' %}ldb-tile-crowded
+{%- elif state == 'FAILED' or state == 'SUPPRESSED' %}ldb-tile-weak
+{%- else %}ldb-tile-neutral{% endif %}
+{%- endmacro %}
+
+{# ── "so what do I do" stance by lifecycle state (MLC-R9) ───────────────── #}
+{% macro sowhat_en(state, m) -%}
+{%- if state == 'LEADERSHIP' %}In favour
+{%- elif state == 'BREAKAWAY' %}Get ready
+{%- elif state == 'QUIET_ACCUMULATION' %}Watch — building quietly
+{%- elif state == 'CROWDED' %}Watch — don't chase
+{%- elif state == 'SUPPRESSED' %}Stand aside
+{%- elif state == 'FAILED' %}Stand aside
+{%- else %}Watch — no trend read{% endif %}
+{%- endmacro %}
+
+{% macro sowhat_zh(state, m) -%}
+{%- if state == 'LEADERSHIP' %}有利，关注
+{%- elif state == 'BREAKAWAY' %}准备就绪
+{%- elif state == 'QUIET_ACCUMULATION' %}观望 — 悄然布局中
+{%- elif state == 'CROWDED' %}观望，勿追
+{%- elif state == 'SUPPRESSED' %}观望为主
+{%- elif state == 'FAILED' %}观望为主
+{%- else %}观望 — 暂无趋势{% endif %}
+{%- endmacro %}
+
+{# ── company names (Tier 1: display names, not raw tickers) ─────────────── #}
+{% macro cname_en(sym) -%}
+{%- if sym == 'AAPL' %}Apple
+{%- elif sym == 'MSFT' %}Microsoft
+{%- elif sym == 'NVDA' %}Nvidia
+{%- elif sym == 'AMZN' %}Amazon
+{%- elif sym == 'GOOGL' or sym == 'GOOG' %}Alphabet
+{%- elif sym == 'META' %}Meta
+{%- elif sym == 'TSLA' %}Tesla
+{%- else %}{{ sym }}{% endif %}
+{%- endmacro %}
+
+{% macro cname_zh(sym) -%}
+{%- if sym == 'AAPL' %}苹果
+{%- elif sym == 'MSFT' %}微软
+{%- elif sym == 'NVDA' %}英伟达
+{%- elif sym == 'AMZN' %}亚马逊
+{%- elif sym == 'GOOGL' or sym == 'GOOG' %}谷歌
+{%- elif sym == 'META' %}Meta
+{%- elif sym == 'TSLA' %}特斯拉
+{%- else %}{{ sym }}{% endif %}
+{%- endmacro %}
+
+{# ── cohort trend_state → plain Tier 1 label (reuse mag7 pattern) ───────── #}
+{% macro cohort_label_en(state) -%}
+{%- if state == 'running_broad' %}Running — broad
+{%- elif state == 'running_narrow' %}Running — narrow
+{%- elif state == 'turning_up' %}Turning up
+{%- elif state == 'cooling' %}Cooling
+{%- elif state == 'rolling_over' %}Rolling over
+{%- elif state == 'down' %}Falling
+{%- else %}Mixed{% endif %}
+{%- endmacro %}
+
+{% macro cohort_label_zh(state) -%}
+{%- if state == 'running_broad' %}运行 — 广泛
+{%- elif state == 'running_narrow' %}运行 — 集中
+{%- elif state == 'turning_up' %}拐头向上
+{%- elif state == 'cooling' %}降温
+{%- elif state == 'rolling_over' %}顶部回落
+{%- elif state == 'down' %}下跌
+{%- else %}震荡{% endif %}
+{%- endmacro %}
+
+{# ── cohort stance ────────────────────────────────────────────────────────── #}
+{% macro cohort_stance_en(state) -%}
+{%- if state == 'running_broad' %}In favour
+{%- elif state == 'running_narrow' %}In favour — watch, don't chase
+{%- elif state == 'turning_up' %}Get ready
+{%- elif state == 'cooling' %}Watch — no rush
+{%- elif state == 'rolling_over' %}Protect gains
+{%- elif state == 'down' %}Stand aside
+{%- else %}Watch — no rush{% endif %}
+{%- endmacro %}
+
+{% macro cohort_stance_zh(state) -%}
+{%- if state == 'running_broad' %}有利
+{%- elif state == 'running_narrow' %}有利 — 观望，勿追
+{%- elif state == 'turning_up' %}准备就绪
+{%- elif state == 'cooling' %}观望，不急
+{%- elif state == 'rolling_over' %}保护收益
+{%- elif state == 'down' %}观望为主
+{%- else %}观望，不急{% endif %}
+{%- endmacro %}
+
+{# ── sector RS "lead" word → plain Tier 1 (never print raw "mid-pack") ──── #}
+{% macro rs_word_en(lead) -%}
+{%- if lead == 'leading' %}leading
+{%- elif lead == 'lagging' %}lagging
+{%- else %}mid-pack{% endif %}
+{%- endmacro %}
+
+{% macro rs_word_zh(lead) -%}
+{%- if lead == 'leading' %}领先
+{%- elif lead == 'lagging' %}落后
+{%- else %}中游{% endif %}
+{%- endmacro %}
+
+{# ══════════════════════════════════════════════════════════════════════════
+   MAIN MACRO — CSS injected once per call, inside the {%- if d %} guard.
+   ══════════════════════════════════════════════════════════════════════════ #}
+{% macro leadership_board(d) -%}
+{%- if d %}
+<style>
+/* ── .ldb Leadership Board ──────────────────────────────────────────── */
+.ldb { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 16px 18px 14px; margin-bottom: 12px; position: relative; overflow: hidden; }
+.ldb::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  pointer-events: none; border-radius: 10px 10px 0 0; }
+.ldb.ldb-turning::before { background: linear-gradient(90deg, var(--up), color-mix(in srgb, var(--up) 30%, transparent)); }
+.ldb.ldb-running::before { background: linear-gradient(90deg, #4c8bf5, color-mix(in srgb, #4c8bf5 30%, transparent)); }
+.ldb.ldb-cooling::before { background: linear-gradient(90deg, var(--warn), color-mix(in srgb, var(--warn) 30%, transparent)); }
+.ldb.ldb-down::before  { background: linear-gradient(90deg, var(--down), color-mix(in srgb, var(--down) 30%, transparent)); }
+.ldb-top { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.ldb-h2  { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-2); margin: 0; }
+.ldb-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+  background: var(--panel3); color: var(--ink-1); white-space: nowrap; }
+.ldb-run  { font-size: 12px; color: var(--ink-2); }
+.ldb-stance { font-size: 12px; font-weight: 600; color: var(--ink-1); margin-left: auto; }
+.ldb-asof { font-size: 10px; color: var(--ink-3); white-space: nowrap; }
+.ldb-help { display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%; font-size: 10px; font-weight: 700;
+  background: var(--panel3); color: var(--ink-3); cursor: default; flex-shrink: 0; }
+.ldb-cohort { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 12px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--line); font-size: 12px; }
+.ldb-cohort-item { color: var(--ink-2); }
+.ldb-cohort-item b { color: var(--ink-1); }
+.ldb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.ldb-tile { background: var(--panel3); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 11px 8px; position: relative; overflow: hidden; }
+.ldb-tile::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.ldb-tile.ldb-tile-lead::before    { background: var(--up); }
+.ldb-tile.ldb-tile-crowded::before { background: var(--warn); }
+.ldb-tile.ldb-tile-weak::before    { background: var(--down); }
+.ldb-tile.ldb-tile-neutral::before { background: var(--line); }
+.ldb-tile-sym  { font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 1px; }
+.ldb-tile-name { font-size: 12px; font-weight: 600; color: var(--ink-1); display: block; margin-bottom: 4px; }
+.ldb-tile-state { font-size: 11px; color: var(--ink-2); display: block; margin-bottom: 3px; }
+.ldb-tile-sowhat { font-size: 11px; font-weight: 600; color: var(--ink-1); display: block; }
+.ldb-tile-sowhat.sw-in-favour  { color: var(--up); }
+.ldb-tile-sowhat.sw-stand-aside { color: var(--down); }
+.ldb-tile-sowhat.sw-watch      { color: var(--ink-2); }
+.ldb-earn { display: inline-block; font-size: 10px; font-weight: 700;
+  background: color-mix(in srgb, var(--warn) 18%, transparent);
+  color: var(--warn); border-radius: 3px; padding: 1px 5px; margin-top: 4px; }
+.ldb-rs { padding-top: 10px; border-top: 1px solid var(--line); }
+.ldb-rs-h { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 6px; }
+.ldb-rs-rows { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.ldb-rs-row  { display: flex; align-items: center; gap: 5px; font-size: 11px; }
+.ldb-rs-rank { font-family: var(--num, monospace); font-size: 10px; font-weight: 700;
+  color: var(--ink-3); min-width: 18px; text-align: right; }
+.ldb-rs-name { color: var(--ink-1); }
+.ldb-rs-word { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; white-space: nowrap; }
+.ldb-rs-word.rs-leading { background: color-mix(in srgb, var(--up) 15%, transparent); color: var(--up); }
+.ldb-rs-word.rs-mid     { background: var(--panel3); color: var(--ink-3); }
+.ldb-rs-word.rs-lagging { background: color-mix(in srgb, var(--down) 12%, transparent); color: var(--down); }
+.ldb-footnote { font-size: 10px; color: var(--ink-3); margin-top: 10px; }
+</style>
+{%- set state  = d.trend_state if d.trend_state else 'cooling' -%}
+{%- set run    = d.run if d.run else {} -%}
+{%- set gens   = d.generals if d.generals else {} -%}
+{%- set k7     = d.k7 if d.k7 else {} -%}
+{%- set cw     = d.cw if d.cw else {} -%}
+{%- set ew     = d.ew if d.ew else {} -%}
+{%- set members = d.members if d.members else [] -%}
+{%- set sector_rs = d.sector_rs if d.sector_rs else [] -%}
+
+{# stripe class driven by cohort state #}
+{%- set stripe_cls = 'ldb-turning' if state in ('turning_up',) else
+                     'ldb-running' if state in ('running_broad','running_narrow') else
+                     'ldb-cooling' if state in ('cooling',) else
+                     'ldb-down' -%}
+
+{# run descriptor: "day 8 · Mag 7 +2% since Jul 1 vs S&P +0%" #}
+{%- set run_days = run.sessions if run.sessions is defined else none -%}
+{%- set run_cw   = (run.cw_ret * 100)|round|int if run.cw_ret is defined and run.cw_ret != none else none -%}
+{%- set run_spy  = (run.spy_ret * 100)|round|int if run.spy_ret is defined and run.spy_ret != none else none -%}
+{%- set run_start = run.start if run.start else '' -%}
+{%- set _mon = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+                '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
+{%- set _rsp = run_start.split('-') -%}
+{%- set run_start_lbl    = (_mon.get(_rsp[1], _rsp[1]) ~ ' ' ~ _rsp[2]) if _rsp|length >= 3 else run_start -%}
+{%- set run_start_lbl_zh = (_rsp[1]|int ~ '月' ~ _rsp[2]|int ~ '日') if _rsp|length >= 3 else run_start -%}
+
+{# cw vs ew spread — plain word (no math, just the supplied fields) #}
+{%- set cw_r10  = (cw.r10 * 100)|round(1) if cw.r10 is defined and cw.r10 != none else none -%}
+{%- set ew_r10  = (ew.r10 * 100)|round(1) if ew.r10 is defined and ew.r10 != none else none -%}
+{%- set cw_r20  = (cw.r20 * 100)|round(1) if cw.r20 is defined and cw.r20 != none else none -%}
+{%- set ew_r20  = (ew.r20 * 100)|round(1) if ew.r20 is defined and ew.r20 != none else none -%}
+{%- set cw_ew_tip_en = ('10d: cap-weight ' ~ ('+' if cw_r10 and cw_r10 > 0) ~ cw_r10 ~ '% vs equal-weight ' ~ ('+' if ew_r10 and ew_r10 > 0) ~ ew_r10 ~ '%') if (cw_r10 is not none and ew_r10 is not none) else 'cap-weight vs equal-weight data unavailable' -%}
+{%- set cw_ew_tip_zh = ('10日：市值加权 ' ~ ('+' if cw_r10 and cw_r10 > 0) ~ cw_r10 ~ '% vs 等权 ' ~ ('+' if ew_r10 and ew_r10 > 0) ~ ew_r10 ~ '%') if (cw_r10 is not none and ew_r10 is not none) else '市值加权与等权数据暂不可用' -%}
+{%- set cw_ew_word_en = 'cap-weight beating equal-weight' if (cw_r10 is not none and ew_r10 is not none and cw_r10 > ew_r10) else 'equal-weight leading' if (cw_r10 is not none and ew_r10 is not none and ew_r10 > cw_r10) else 'cap-weight ≈ equal-weight' -%}
+{%- set cw_ew_word_zh = '市值加权跑赢等权' if (cw_r10 is not none and ew_r10 is not none and cw_r10 > ew_r10) else '等权领先' if (cw_r10 is not none and ew_r10 is not none and ew_r10 > cw_r10) else '市值加权 ≈ 等权' -%}
+
+{# generals names #}
+{%- set now_names  = gens.now if gens.now else [] -%}
+{%- set join_names = gens.joining if gens.joining else [] -%}
+{%- macro name_en(sym) %}{{ cname_en(sym) }}{% endmacro -%}
+
+{# panel help tip (Tier 2) #}
+{%- set help_en = 'Megacap Leadership Board — 7 stocks, each shown individually. Lifecycle reads are descriptive trend reads (not scored signals — a heads-up). Sector momentum rank from 60d relative strength. A heads-up, not a buy signal; the Buy lanes below decide entries.' -%}
+{%- set help_zh = '七巨头领涨面板 — 7只个股独立展示。个股趋势为描述性趋势判断（参考，非评分信号）。板块动量排名来自60日相对强度。仅供参考，非买入信号；下方买入通道仍决定入场。' -%}
+
+<div class="span12 ldb {{ stripe_cls }}">
+
+  {# ── ROW 1: title · cohort badge · ? · run line · stance · as-of ─────── #}
+  <div class="ldb-top">
+    <h2 class="ldb-h2">{{ t('Leadership Board', '领涨面板') }}</h2>
+    <span class="ldb-badge">
+      <span class="l-en">Mag 7 — {{ cohort_label_en(state) }}</span>
+      <span class="l-zh">七巨头 — {{ cohort_label_zh(state) }}</span>
+    </span>
+    <span class="ldb-help"{{ tip(help_en, help_zh) }}>?</span>
+    {%- if run_days is not none %}
+    <span class="ldb-run">
+      <span class="l-en">day {{ run_days }}{%- if run_cw is not none %} · Mag 7 {{ '+' if run_cw > 0 }}{{ run_cw }}% since {{ run_start_lbl }} vs S&P {{ '+' if run_spy is not none and run_spy > 0 }}{{ run_spy if run_spy is not none else '—' }}%{% endif %}</span>
+      <span class="l-zh">第{{ run_days }}日{%- if run_cw is not none %} · 七巨头 {{ run_start_lbl_zh }} 起 {{ '+' if run_cw > 0 }}{{ run_cw }}%，标普 {{ '+' if run_spy is not none and run_spy > 0 }}{{ run_spy if run_spy is not none else '—' }}%{% endif %}</span>
+    </span>
+    {%- endif %}
+    <span class="ldb-stance">
+      <span class="l-en">{{ cohort_stance_en(state) }}</span>
+      <span class="l-zh">{{ cohort_stance_zh(state) }}</span>
+    </span>
+    {%- if d.as_of %}<span class="ldb-asof">{{ t('as of ' ~ d.as_of, '截至 ' ~ d.as_of) }}</span>{%- endif %}
+  </div>
+
+  {# ── ROW 2: cohort strip (generals · cw vs ew · K7) ──────────────────── #}
+  <div class="ldb-cohort">
+    {%- if now_names %}
+    {%- set gen_list_en = now_names | map('replace','AAPL','Apple') | map('replace','MSFT','Microsoft') | map('replace','NVDA','Nvidia') | map('replace','AMZN','Amazon') | map('replace','META','Meta') | map('replace','TSLA','Tesla') | map('replace','GOOGL','Alphabet') | map('replace','GOOG','Alphabet') | list %}
+    {%- set gen_list_zh = now_names | map('replace','AAPL','苹果') | map('replace','MSFT','微软') | map('replace','NVDA','英伟达') | map('replace','AMZN','亚马逊') | map('replace','META','Meta') | map('replace','TSLA','特斯拉') | map('replace','GOOGL','谷歌') | map('replace','GOOG','谷歌') | list %}
+    {%- set join_list_en = join_names | map('replace','AAPL','Apple') | map('replace','MSFT','Microsoft') | map('replace','NVDA','Nvidia') | map('replace','AMZN','Amazon') | map('replace','META','Meta') | map('replace','TSLA','Tesla') | map('replace','GOOGL','Alphabet') | map('replace','GOOG','Alphabet') | list %}
+    {%- set join_list_zh = join_names | map('replace','AAPL','苹果') | map('replace','MSFT','微软') | map('replace','NVDA','英伟达') | map('replace','AMZN','亚马逊') | map('replace','META','Meta') | map('replace','TSLA','特斯拉') | map('replace','GOOGL','谷歌') | map('replace','GOOG','谷歌') | list %}
+    <div class="ldb-cohort-item">
+      <span class="l-en"><b>Led by {{ gen_list_en | join(' + ') }}</b>{% if join_list_en %} · joining: {{ join_list_en | join(', ') }}{% endif %}</span>
+      <span class="l-zh"><b>领涨：{{ gen_list_zh | join(' + ') }}</b>{% if join_list_zh %} · 加入：{{ join_list_zh | join('、') }}{% endif %}</span>
+    </div>
+    {%- endif %}
+    {%- if run_days is not none %}
+    <div class="ldb-cohort-item">
+      <span class="l-en">run: <b>{{ run_days }} days</b></span>
+      <span class="l-zh">运行：<b>{{ run_days }}日</b></span>
+    </div>
+    {%- endif %}
+    {%- if cw_r10 is not none or ew_r10 is not none %}
+    <div class="ldb-cohort-item" data-tip-en="{{ cw_ew_tip_en | e }}" data-tip-zh="{{ cw_ew_tip_zh | e }}">
+      <span class="l-en"><b>{{ cw_ew_word_en }}</b> ~</span>
+      <span class="l-zh"><b>{{ cw_ew_word_zh }}</b> ~</span>
+    </div>
+    {%- endif %}
+    {%- if k7.trend is defined and k7.trend != none %}
+    <div class="ldb-cohort-item"
+      data-tip-en="{{ k7.trend }} of 7 in an uptrend · {{ k7.rs if k7.rs is defined else '—' }} of 7 leading vs market"
+      data-tip-zh="{{ k7.trend }}/7 处于上升趋势 · {{ k7.rs if k7.rs is defined else '—' }}/7 相对市场领先">
+      <span class="l-en"><b>{{ k7.trend }}/7</b> trending up</span>
+      <span class="l-zh"><b>{{ k7.trend }}/7</b> 处于上升趋势</span>
+    </div>
+    {%- endif %}
+  </div>
+
+  {# ── ROW 3: seven megacap tiles ────────────────────────────────────────── #}
+  {%- if members %}
+  <div class="ldb-tiles">
+    {%- for m in members %}
+    {%- set sym = m.sym if m.sym else '' %}
+    {%- set lc  = m.lifecycle if m.lifecycle else 'NONE' %}
+    {%- set earn = m.earnings if m.earnings else none %}
+    {%- set above50  = m.above50 if m.above50 is defined else none %}
+    {%- set above200 = m.above200 if m.above200 is defined else none %}
+    {%- set r5   = (m.r5 * 100)|round(1)  if m.r5 is defined and m.r5 != none else none %}
+    {%- set r10  = (m.r10 * 100)|round(1) if m.r10 is defined and m.r10 != none else none %}
+    {%- set r20  = (m.r20 * 100)|round(1) if m.r20 is defined and m.r20 != none else none %}
+    {%- set rs20 = (m.rs20 * 100)|round(1) if m.rs20 is defined and m.rs20 != none else none %}
+    {# hover receipt — Tier 2: raw numbers demoted here #}
+    {%- set tip_en %}{{ cname_en(sym) }} · {{ above50 | string | replace('True','above') | replace('False','below') | replace('None','—') }} 50dma · {{ above200 | string | replace('True','above') | replace('False','below') | replace('None','—') }} 200dma · 20d {{ ('+' if r20 and r20 > 0) ~ r20 ~ '%' if r20 is not none else '—' }} · vs market {{ ('+' if rs20 and rs20 > 0) ~ rs20 ~ '%' if rs20 is not none else '—' }}{%- endset %}
+    {%- set tip_zh %}{{ cname_zh(sym) }} · 50日均线{{ '上方' if above50 else '下方' if above50 is not none and above50 == false else '—' }} · 200日均线{{ '上方' if above200 else '下方' if above200 is not none and above200 == false else '—' }} · 20日 {{ ('+' if r20 and r20 > 0) ~ r20 ~ '%' if r20 is not none else '—' }} · 相对市场 {{ ('+' if rs20 and rs20 > 0) ~ rs20 ~ '%' if rs20 is not none else '—' }}{%- endset %}
+    {# sowhat CSS #}
+    {%- set sw_cls = 'sw-in-favour' if lc in ('LEADERSHIP','BREAKAWAY') else 'sw-stand-aside' if lc in ('FAILED','SUPPRESSED') else 'sw-watch' %}
+    <div class="ldb-tile {{ lifecycle_cls(lc) }}"{{ tip(tip_en, tip_zh) }}>
+      <span class="ldb-tile-sym">{{ sym }}</span>
+      <span class="ldb-tile-name">
+        <span class="l-en">{{ cname_en(sym) }}</span>
+        <span class="l-zh">{{ cname_zh(sym) }}</span>
+      </span>
+      <span class="ldb-tile-state">
+        <span class="l-en">{{ lifecycle_en(lc) }}</span>
+        <span class="l-zh">{{ lifecycle_zh(lc) }}</span>
+      </span>
+      <span class="ldb-tile-sowhat {{ sw_cls }}">
+        <span class="l-en">{{ sowhat_en(lc, m) }}</span>
+        <span class="l-zh">{{ sowhat_zh(lc, m) }}</span>
+      </span>
+      {%- if earn and earn.get('days_until') is not none and earn.get('days_until') <= 14 %}
+      <span class="ldb-earn">
+        <span class="l-en">reports in {{ earn.days_until }}d</span>
+        <span class="l-zh">{{ earn.days_until }}日后发布财报</span>
+      </span>
+      {%- endif %}
+    </div>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+
+  {# ── ROW 4: sector RS rank strip ─────────────────────────────────────── #}
+  {%- if sector_rs %}
+  <div class="ldb-rs">
+    <div class="ldb-rs-h">{{ t('Sector momentum rank', '板块动量排名') }}</div>
+    <div class="ldb-rs-rows">
+      {%- for sec in sector_rs %}
+      {%- set rs_cls = 'rs-leading' if sec.lead == 'leading' else 'rs-lagging' if sec.lead == 'lagging' else 'rs-mid' %}
+      {%- set cv_en  = sec.conviction_en if sec.conviction_en else '' %}
+      {%- set cv_zh  = sec.conviction_zh if sec.conviction_zh else '' %}
+      {%- set stip_en %}RS #{{ sec.rs_rank }} — {{ sec.name }}: {{ rs_word_en(sec.lead) }}{{ ' · conviction: ' ~ cv_en if cv_en else '' }}{%- endset %}
+      {%- set stip_zh %}RS #{{ sec.rs_rank }} — {{ sec.name_zh }}: {{ rs_word_zh(sec.lead) }}{{ ' · 评级：' ~ cv_zh if cv_zh else '' }}{%- endset %}
+      <div class="ldb-rs-row" data-tip-en="{{ stip_en | e }}" data-tip-zh="{{ stip_zh | e }}">
+        <span class="ldb-rs-name">
+          <span class="l-en">{{ sec.name }}</span>
+          <span class="l-zh">{{ sec.name_zh if sec.name_zh else sec.name }}</span>
+        </span>
+        <span class="ldb-rs-word {{ rs_cls }}">
+          <span class="l-en">{{ rs_word_en(sec.lead) }}</span>
+          <span class="l-zh">{{ rs_word_zh(sec.lead) }}</span>
+        </span>
+      </div>
+      {%- endfor %}
+    </div>
+  </div>
+  {%- endif %}
+
+  {# ── FOOTNOTE ──────────────────────────────────────────────────────────── #}
+  <div class="ldb-footnote">
+    <span class="l-en">Trend reads are a heads-up, not a buy signal — entries still decided by the lanes below.</span>
+    <span class="l-zh">趋势判断仅供参考，非买入信号 — 入场时机仍由下方通道决定。</span>
+  </div>
+
+</div>
+{%- endif %}
+{%- endmacro %}
