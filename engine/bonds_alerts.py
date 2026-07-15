@@ -261,3 +261,209 @@ def rebuild(fr: pd.DataFrame) -> list[dict]:
 def recent(events: list[dict], days: int) -> list[dict]:
     cutoff = (datetime.now(timezone.utc) - pd.Timedelta(days=days)).isoformat()
     return [e for e in events if e["ts"] >= cutoff]
+
+
+# ---------------------------------------------------------------------------
+# CCW-W3 additive extension: credit_market_turn + credit_theme_stress debounced
+# state-flip events.  Reuses the existing _ev / _debounce / _transitions idiom
+# exactly.  ADDITIVE ONLY — does not modify any existing function.
+# ---------------------------------------------------------------------------
+
+# Debounce constants (Fix 6 — mirroring engine/credit_momentum.py)
+_DEBOUNCE_MARKET_TURN  = 5   # bars: credit_market_turn state must persist >= 5 bars
+_DEBOUNCE_THEME_STRESS = 3   # bars: credit_theme_stress state must persist >= 3 bars
+
+
+def compute_credit_events(credit_json_path: "str | None" = None) -> list[dict]:
+    """Compute debounced state-flip events from credit_momentum.json.
+
+    Reads data/corp_bonds/credit_momentum.json (written by engine.credit_momentum).
+    Returns events for credit_market_turn and per-theme credit_theme_stress.
+    Returns [] if the JSON does not exist or is unreadable (non-fatal).
+
+    Fix 6 — REAL DEBOUNCE using the existing _ev / _debounce / _transitions idiom:
+    Debounce requires a state HISTORY (time series), not just today's snapshot.
+    With a single-date JSON today, we cannot debounce across days — the correct
+    behaviour is to emit nothing until enough history accrues (no crash, no flip).
+    The history required is: for credit_market_turn >= _DEBOUNCE_MARKET_TURN days of
+    consecutive 'active' state (5 bars), for theme_stress >= 3 bars.
+
+    The mechanism: we load the existing alerts stream to check the prior state.
+    If the last event for this type/theme was 'active' and today is also 'active',
+    we count how many consecutive calendar days of 'active' we have seen. Only after
+    the state has persisted for >= debounce days do we emit a new event. This matches
+    the _debounce() bar-count logic (business-daily frame).
+
+    On first run with no history: no events emitted (safe start, no crash).
+    """
+    import os
+    from lib import config as _cfg
+
+    if credit_json_path is None:
+        credit_json_path = str(_cfg.data_dir() / "corp_bonds" / "credit_momentum.json")
+
+    if not os.path.exists(credit_json_path):
+        log.debug("bonds_alerts: credit_momentum.json not found, skipping CCW events")
+        return []
+
+    try:
+        with open(credit_json_path) as f:
+            cm = json.load(f)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("bonds_alerts: credit_momentum.json read failed: %s", exc)
+        return []
+
+    out: list[dict] = []
+    as_of_str = cm.get("as_of", str(__import__("datetime").date.today()))
+    ts = pd.Timestamp(as_of_str)
+
+    # Load existing events to extract prior state history for debouncing.
+    # We count consecutive 'active' events of each type to implement debounce.
+    prior_events = load_events()
+
+    def _count_consecutive_active(event_type: str, asset_key: str, min_debounce: int) -> bool:
+        """Return True if this type/asset has had >= min_debounce consecutive 'active'
+        events in the alerts stream (including today if it fires again).
+
+        If no prior events exist for this type/asset, returns False (safe start).
+        The 'active' state series is reconstructed from prior events sorted by date.
+        With only today's state, we have 1 bar — below any debounce threshold >= 2.
+        """
+        relevant = [
+            e for e in prior_events
+            if e.get("type") == event_type and asset_key in e.get("asset", "")
+        ]
+        if not relevant:
+            # No history: 1 bar (today) < min_debounce (always False unless debounce=1)
+            return min_debounce <= 1
+        # Reconstruct a state series from event timestamps
+        # Each event implies 'active' on its ts date; gaps = 'inactive'
+        dates = sorted(set(pd.Timestamp(e["ts"]).date() for e in relevant))
+        # Count consecutive most-recent active run ending at or before today.
+        # Compare each date against the next-later date (not against today_d),
+        # so weekend gaps (Fri→Mon = gap 3 cal days) are correctly handled.
+        today_d = ts.date()
+        # Include today as the 'most recent' reference point
+        all_dates = sorted(set(list(dates) + [today_d]))
+        consecutive = 1  # the current (today) state counts as 1
+        prev_d = today_d
+        for d in reversed(all_dates):
+            if d >= today_d:
+                continue  # skip today itself (already counted)
+            # Gap between this date and the one immediately after it in the sorted sequence
+            day_gap = (prev_d - d).days
+            if day_gap <= 3:  # allow weekend gaps (Fri→Mon = 3 cal days = 1 business gap)
+                consecutive += 1
+                prev_d = d
+            else:
+                break
+        return consecutive >= min_debounce
+
+    # --- credit_market_turn ---
+    mt = cm.get("tags", {}).get("credit_market_turn", {})
+    if mt:
+        fired = mt.get("fired", False)
+        score = mt.get("score", 0)
+        legs  = mt.get("legs", {})
+        # Only emit after debounce threshold (Fix 6: real debounce, no emit before history)
+        if fired and _count_consecutive_active("credit_market_turn", "credit", _DEBOUNCE_MARKET_TURN):
+            ev_id = f"bonds:credit:credit_market_turn:{as_of_str}:active"
+            out.append({
+                "id":          ev_id,
+                "ts":          ts.isoformat(),
+                "source":      "bonds_ccw",
+                "asset":       "credit",
+                "type":        "credit_market_turn",
+                "severity":    "medium",
+                "headline":    f"Credit market turn tag fired (score {score}/3)",
+                "detail":      (
+                    f"credit_market_turn K-of-N tag: score={score}/3. "
+                    f"Legs: HY vel≥85={legs.get('hy_vel21_pctile_ge85',False)}, "
+                    f"quality spread widening={legs.get('quality_spread_widening_21d',False)}, "
+                    f"CCC-BB widening={legs.get('ccc_bb_widening_21d',False)}. "
+                    f"Debounced: >= {_DEBOUNCE_MARKET_TURN} consecutive active bars. "
+                    "DISPLAY-ONLY / NOT VALIDATED. No track record yet — first events accruing."
+                ),
+                "headline_zh": f"信用市场转向标签触发（得分 {score}/3）",
+                "detail_zh":   (
+                    f"信用市场转向K-of-N标签：得分={score}/3。"
+                    f"防抖：连续≥{_DEBOUNCE_MARKET_TURN}根K线活跃。"
+                    "仅供展示 / 未经验证。尚无历史记录 — 首次事件正在积累。"
+                ),
+                "context":     {"score": score, "legs": legs,
+                                "debounce_bars": _DEBOUNCE_MARKET_TURN},
+                "anchor":      "#credit",
+            })
+        elif fired:
+            log.debug("bonds_alerts: credit_market_turn fired but debounce not met (%d bars required)",
+                      _DEBOUNCE_MARKET_TURN)
+
+    # --- credit_theme_stress (per theme) ---
+    theme_tags = cm.get("tags", {}).get("credit_theme_stress", [])
+    for tt in theme_tags:
+        if not isinstance(tt, dict):
+            continue
+        theme = tt.get("theme", "unknown")
+        fired = tt.get("fired", False)
+        score = tt.get("score", 0)
+        legs  = tt.get("legs", {})
+        if fired and _count_consecutive_active("credit_theme_stress", theme, _DEBOUNCE_THEME_STRESS):
+            ev_id = f"bonds:credit:credit_theme_stress:{theme}:{as_of_str}:active"
+            out.append({
+                "id":          ev_id,
+                "ts":          ts.isoformat(),
+                "source":      "bonds_ccw",
+                "asset":       f"credit/{theme}",
+                "type":        "credit_theme_stress",
+                "severity":    "medium",
+                "headline":    f"Credit theme stress: {theme} (score {score}/3)",
+                "detail":      (
+                    f"credit_theme_stress for {theme}: score={score}/3. "
+                    f"Legs: vel_pctile≥85={legs.get('vel21_pctile_ge85',False)}, "
+                    f"spread 3B bull-cross widening={legs.get('spread_3b_bull_cross_widening_secondary',False)}, "
+                    f"price 3B bear-cross={legs.get('price_3b_bear_cross',False)}. "
+                    f"Debounced: >= {_DEBOUNCE_THEME_STRESS} consecutive active bars. "
+                    "DISPLAY-ONLY / NOT VALIDATED. No track record yet — first events accruing."
+                ),
+                "headline_zh": f"信用主题压力：{theme}（得分 {score}/3）",
+                "detail_zh":   (
+                    f"信用主题压力（{theme}）：得分={score}/3。"
+                    f"防抖：连续≥{_DEBOUNCE_THEME_STRESS}根K线活跃。"
+                    "仅供展示 / 未经验证。尚无历史记录 — 首次事件正在积累。"
+                ),
+                "context":     {"theme": theme, "score": score, "legs": legs,
+                                "debounce_bars": _DEBOUNCE_THEME_STRESS},
+                "anchor":      "#credit",
+            })
+        elif fired:
+            log.debug("bonds_alerts: credit_theme_stress %s fired but debounce not met (%d bars required)",
+                      theme, _DEBOUNCE_THEME_STRESS)
+
+    return out
+
+
+def rebuild_with_credit(fr: pd.DataFrame, credit_json_path: "str | None" = None) -> list[dict]:
+    """Rebuild bonds alerts including CCW credit events.
+
+    Extends rebuild() with debounced credit_market_turn and credit_theme_stress events.
+    Uses the existing by_id dedup pattern (idempotent, keep-first on existing events).
+    Falls back to rebuild()-equivalent behavior when credit_momentum.json is absent
+    (compute_credit_events returns [] when the file does not exist — non-fatal).
+
+    Fix 6 (CCW review): replaces the previous rebuild(fr) call in build_bonds.py with
+    rebuild_with_credit(fr) so CCW credit events are wired into the alerts stream.
+    """
+    bond_events   = compute_all_events(fr)
+    credit_events = compute_credit_events(credit_json_path)
+
+    # Merge: bond events first (established stream), credit events additive
+    by_id = {e["id"]: e for e in bond_events}
+    for e in credit_events:
+        # keep-first: don't overwrite existing bond events
+        by_id.setdefault(e["id"], e)
+
+    all_events = sorted(by_id.values(), key=lambda e: e["ts"], reverse=True)
+    write_events(all_events)
+    log.info("bonds alerts (with credit): %d events, latest %s",
+             len(all_events), all_events[0]["ts"] if all_events else "none")
+    return all_events

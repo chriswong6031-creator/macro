@@ -256,6 +256,18 @@ lanes:
           data/corp_bonds/series/{issuer_daily,theme_daily,sector_daily,market_daily,
           maturity_wall,bond_panel_latest}.parquet + data/corp_bonds/latest.json +
           data/corp_bonds/validation.json. Non-fatal (CCW-R16).
+      - id: credit_momentum
+        module: engine.credit_momentum
+        note: >
+          CCW-W3 credit momentum organ (§3-P3). Runs AFTER corp_credit (reads its
+          series output). Reads archive-merged FRED spread series (hy_oas/ig_oas
+          1996→, ladder ~3y), Moody's DBAA/DAAA, FINRA breadth/sentiment
+          (data/corp_bonds/finra_*.parquet from W5 collector), yahoo ETF prices
+          (LQD/HYG/TLT/IEF), theme/market series from corp_credit, and holdings
+          snapshots for own-store breadth. Writes data/corp_bonds/credit_momentum.json
+          and data/corp_bonds/forward_log.jsonl (keep-FIRST ledger).
+          Spread velocity-percentile is PRIMARY; oscillator crosses SECONDARY per
+          CCW-R15. Display-tier; authority all-false. Non-fatal (CCW-R16).
 
   # ── daily.yml / engine ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml

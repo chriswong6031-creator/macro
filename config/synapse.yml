@@ -12942,3 +12942,70 @@ artifacts:
       spec (CCW-R16 non-fatal). 'PENDING_SAMPLE' for criteria requiring
       data/corp_bonds/validation_sample/*.parquet (fetched separately via
       scripts/fetch_ishares_validation_sample.py). Authority: all-false.
+
+  # --- CCW W3 (credit momentum + breadth + watch) artifacts ---
+
+  ccw-credit-momentum-json:
+    path: data/corp_bonds/credit_momentum.json
+    format: json
+    producer: engine/credit_momentum.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.credit_momentum.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/bonds_alerts.py
+      - scripts/build_bonds.py
+    external_consumers: []
+    notes: >
+      CCW-W3 §3-P3. Credit momentum organ snapshot: spread velocity/pctile +
+      oscillator states (secondary — DEMOTED/SECONDARY-CONFIRMED per oscillator_sanity.json
+      discrimination study) for deep-history FRED spreads (hy_oas/ig_oas 1996→,
+      Moody's Baa-Aaa, quality_spread, CCC-BB, ladder ~3y), ETF prices
+      (LQD/HYG/TLT/IEF), accruing theme/market g-spread series (density-gated —
+      gate applies to own-panel series only; FRED/ETF index series are index-native
+      and gate-exempt per CCW-R15 R15 interpretation of record),
+      confluence tags (credit_market_turn / credit_theme_stress K-of-N),
+      interim TLT/IEF T-bond block (R6 — removed when RIC ships yield_momentum),
+      own-store breadth + FINRA breadth (distinctly labeled, never blended,
+      CCW-R14), fallen-angel watch, credit-vs-equity divergence per theme.
+      Velocity-percentile PRIMARY; oscillator crosses SECONDARY (CCW-R15/§2.5-6;
+      sanity study in data/corp_bonds/oscillator_sanity.json). Authority all-false.
+      Non-fatal (CCW-R16). Consumer: engine/bonds_alerts.py (CCW-W3 wired, via
+      rebuild_with_credit in build_bonds.py); bonds.html desk consumer arrives W4.
+
+  ccw-forward-log:
+    path: data/corp_bonds/forward_log.jsonl
+    format: jsonl
+    producer: engine/credit_momentum.py
+    known_extra_writers: []
+    owner_program: ccw
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: ccw.forward_log.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CCW-W3 §3-P3. Forward event ledger (keep-FIRST per event_id). One row per
+      velocity-threshold entry or tag fire ONLY (oscillator crosses EXCLUDED —
+      failed episode discrimination in sanity study; prior 12.8k cross rows
+      contaminated, file starts empty and accrues from next nightly).
+      Frozen ruler: primary h21 / secondary h63. Fields at emission: series_id,
+      event_type, as_of, registered_at (run date), source='live', direction,
+      orientation; graded fields (direction_hit, delta_bp, equity_twin) filled
+      by future grader. Nightly-lane only (COLLECT_LANE=='nightly' guard mirrors
+      engine/ownership_ledger.py:79-82). Interim TLT/IEF series never emit
+      (display-only, R6 removability). Authority all-false. Non-fatal (CCW-R16).

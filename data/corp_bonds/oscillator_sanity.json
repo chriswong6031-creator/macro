@@ -1,0 +1,318 @@
+{
+  "as_of": "2026-07-14",
+  "generated_at": "2026-07-14T21:57:40.434412+00:00",
+  "series": [
+    "hy_oas",
+    "ig_oas"
+  ],
+  "grids": [
+    "1D",
+    "3B"
+  ],
+  "episodes": [
+    "GFC_2008",
+    "EURO_2011",
+    "ENERGY_2015",
+    "COVID_2020",
+    "HIKING_2022"
+  ],
+  "verdict": "DEMOTED \u2014 no episode discrimination: episode/calm bear-cross ratio 0.67x below pre-declared threshold of 1.5x. Crosses print as context with caveat; excluded from ledger and never a tag's sole basis. K-of-N tags retain cross legs as 1-of-3 contributors (never sole basis) \u2014 this is consistent with the multi-signal confluence design (CCW-R15/\u00a72.5-6). Velocity-percentile remains PRIMARY.",
+  "discrimination_threshold": 1.5,
+  "discrimination_ratios": {
+    "hy_oas": {
+      "1D": 0.887,
+      "3B": 0.873
+    },
+    "ig_oas": {
+      "1D": 0.668,
+      "3B": 0.83
+    }
+  },
+  "verdict_caveat": "If verdict is DEMOTED: crosses are retained as secondary context only \u2014 1-of-3 in K-of-N tags (never sole basis). If SECONDARY-CONFIRMED: crosses remain secondary (velocity-percentile is always PRIMARY).",
+  "verdict_detail": "Oscillator crosses are RETAINED as secondary context \u2014 they may fire during widening episodes, but with lag vs episode onset and non-trivial calm-regime false-fire rates. See discrimination_ratios for episode/calm rate per series\u00d7grid. Velocity-percentile (\u039421/\u039463 vs 10y rolling window) is the primary spread read per CCW-R15. This file is the evidence record.",
+  "analyses": [
+    {
+      "series_id": "hy_oas",
+      "1D": {
+        "n_bars_total": 7711,
+        "n_bars_episodes": 1645,
+        "n_bars_calm": 6066,
+        "episodes": [
+          {
+            "name": "GFC_2008",
+            "label": "2008 Global Financial Crisis",
+            "description": "IG OAS ~100\u2192600bp; HY OAS ~250\u21922000bp",
+            "n_bars_in_episode": 523,
+            "stochk_pin_ge80_count": 177,
+            "stochk_pin_ge80_frac": 0.338,
+            "bear_cross_count": 18,
+            "bear_cross_lag_bars": 26,
+            "bull_cross_count": 19,
+            "bull_cross_lag_bars": 1
+          },
+          {
+            "name": "EURO_2011",
+            "label": "2011 Euro debt crisis",
+            "description": "Sovereign contagion; HY OAS ~450\u2192800bp",
+            "n_bars_in_episode": 480,
+            "stochk_pin_ge80_count": 128,
+            "stochk_pin_ge80_frac": 0.267,
+            "bear_cross_count": 22,
+            "bear_cross_lag_bars": 3,
+            "bull_cross_count": 22,
+            "bull_cross_lag_bars": 22
+          },
+          {
+            "name": "ENERGY_2015",
+            "label": "2015-16 Energy/EM shock",
+            "description": "HY OAS ~350\u2192850bp; energy/CCC sector stress",
+            "n_bars_in_episode": 262,
+            "stochk_pin_ge80_count": 71,
+            "stochk_pin_ge80_frac": 0.271,
+            "bear_cross_count": 14,
+            "bear_cross_lag_bars": 7,
+            "bull_cross_count": 14,
+            "bull_cross_lag_bars": 16
+          },
+          {
+            "name": "COVID_2020",
+            "label": "2020 COVID shock",
+            "description": "HY OAS ~350\u21921100bp in weeks; fastest widening episode",
+            "n_bars_in_episode": 98,
+            "stochk_pin_ge80_count": 27,
+            "stochk_pin_ge80_frac": 0.276,
+            "bear_cross_count": 3,
+            "bear_cross_lag_bars": 28,
+            "bull_cross_count": 4,
+            "bull_cross_lag_bars": 5
+          },
+          {
+            "name": "HIKING_2022",
+            "label": "2022 Fed hiking cycle",
+            "description": "Spread widening with rate rise; HY OAS ~300\u2192600bp",
+            "n_bars_in_episode": 282,
+            "stochk_pin_ge80_count": 76,
+            "stochk_pin_ge80_frac": 0.27,
+            "bear_cross_count": 12,
+            "bear_cross_lag_bars": 27,
+            "bull_cross_count": 13,
+            "bull_cross_lag_bars": 3
+          }
+        ],
+        "calm_bear_crosses_per_year": 11.92,
+        "calm_bull_crosses_per_year": 11.8
+      },
+      "3B": {
+        "n_bars_total": 2570,
+        "n_bars_episodes": 549,
+        "n_bars_calm": 2021,
+        "episodes": [
+          {
+            "name": "GFC_2008",
+            "label": "2008 Global Financial Crisis",
+            "description": "IG OAS ~100\u2192600bp; HY OAS ~250\u21922000bp",
+            "n_bars_in_episode": 175,
+            "stochk_pin_ge80_count": 54,
+            "stochk_pin_ge80_frac": 0.309,
+            "bear_cross_count": 7,
+            "bear_cross_lag_bars": 25,
+            "bull_cross_count": 7,
+            "bull_cross_lag_bars": 4
+          },
+          {
+            "name": "EURO_2011",
+            "label": "2011 Euro debt crisis",
+            "description": "Sovereign contagion; HY OAS ~450\u2192800bp",
+            "n_bars_in_episode": 160,
+            "stochk_pin_ge80_count": 35,
+            "stochk_pin_ge80_frac": 0.219,
+            "bear_cross_count": 6,
+            "bear_cross_lag_bars": 2,
+            "bull_cross_count": 6,
+            "bull_cross_lag_bars": 14
+          },
+          {
+            "name": "ENERGY_2015",
+            "label": "2015-16 Energy/EM shock",
+            "description": "HY OAS ~350\u2192850bp; energy/CCC sector stress",
+            "n_bars_in_episode": 87,
+            "stochk_pin_ge80_count": 20,
+            "stochk_pin_ge80_frac": 0.23,
+            "bear_cross_count": 3,
+            "bear_cross_lag_bars": 15,
+            "bull_cross_count": 3,
+            "bull_cross_lag_bars": 21
+          },
+          {
+            "name": "COVID_2020",
+            "label": "2020 COVID shock",
+            "description": "HY OAS ~350\u21921100bp in weeks; fastest widening episode",
+            "n_bars_in_episode": 33,
+            "stochk_pin_ge80_count": 8,
+            "stochk_pin_ge80_frac": 0.242,
+            "bear_cross_count": 1,
+            "bear_cross_lag_bars": 13,
+            "bull_cross_count": 0,
+            "bull_cross_lag_bars": null
+          },
+          {
+            "name": "HIKING_2022",
+            "label": "2022 Fed hiking cycle",
+            "description": "Spread widening with rate rise; HY OAS ~300\u2192600bp",
+            "n_bars_in_episode": 94,
+            "stochk_pin_ge80_count": 22,
+            "stochk_pin_ge80_frac": 0.234,
+            "bear_cross_count": 6,
+            "bear_cross_lag_bars": 19,
+            "bull_cross_count": 6,
+            "bull_cross_lag_bars": 5
+          }
+        ],
+        "calm_bear_crosses_per_year": 12.1,
+        "calm_bull_crosses_per_year": 12.22
+      }
+    },
+    {
+      "series_id": "ig_oas",
+      "1D": {
+        "n_bars_total": 7710,
+        "n_bars_episodes": 1645,
+        "n_bars_calm": 6065,
+        "episodes": [
+          {
+            "name": "GFC_2008",
+            "label": "2008 Global Financial Crisis",
+            "description": "IG OAS ~100\u2192600bp; HY OAS ~250\u21922000bp",
+            "n_bars_in_episode": 523,
+            "stochk_pin_ge80_count": 201,
+            "stochk_pin_ge80_frac": 0.384,
+            "bear_cross_count": 14,
+            "bear_cross_lag_bars": 12,
+            "bull_cross_count": 14,
+            "bull_cross_lag_bars": 14
+          },
+          {
+            "name": "EURO_2011",
+            "label": "2011 Euro debt crisis",
+            "description": "Sovereign contagion; HY OAS ~450\u2192800bp",
+            "n_bars_in_episode": 480,
+            "stochk_pin_ge80_count": 137,
+            "stochk_pin_ge80_frac": 0.285,
+            "bear_cross_count": 15,
+            "bear_cross_lag_bars": 4,
+            "bull_cross_count": 15,
+            "bull_cross_lag_bars": 23
+          },
+          {
+            "name": "ENERGY_2015",
+            "label": "2015-16 Energy/EM shock",
+            "description": "HY OAS ~350\u2192850bp; energy/CCC sector stress",
+            "n_bars_in_episode": 262,
+            "stochk_pin_ge80_count": 94,
+            "stochk_pin_ge80_frac": 0.359,
+            "bear_cross_count": 6,
+            "bear_cross_lag_bars": 41,
+            "bull_cross_count": 7,
+            "bull_cross_lag_bars": 16
+          },
+          {
+            "name": "COVID_2020",
+            "label": "2020 COVID shock",
+            "description": "HY OAS ~350\u21921100bp in weeks; fastest widening episode",
+            "n_bars_in_episode": 98,
+            "stochk_pin_ge80_count": 28,
+            "stochk_pin_ge80_frac": 0.286,
+            "bear_cross_count": 2,
+            "bear_cross_lag_bars": 26,
+            "bull_cross_count": 3,
+            "bull_cross_lag_bars": 4
+          },
+          {
+            "name": "HIKING_2022",
+            "label": "2022 Fed hiking cycle",
+            "description": "Spread widening with rate rise; HY OAS ~300\u2192600bp",
+            "n_bars_in_episode": 282,
+            "stochk_pin_ge80_count": 88,
+            "stochk_pin_ge80_frac": 0.312,
+            "bear_cross_count": 9,
+            "bear_cross_lag_bars": 28,
+            "bull_cross_count": 9,
+            "bull_cross_lag_bars": 8
+          }
+        ],
+        "calm_bear_crosses_per_year": 10.55,
+        "calm_bull_crosses_per_year": 10.47
+      },
+      "3B": {
+        "n_bars_total": 2570,
+        "n_bars_episodes": 549,
+        "n_bars_calm": 2021,
+        "episodes": [
+          {
+            "name": "GFC_2008",
+            "label": "2008 Global Financial Crisis",
+            "description": "IG OAS ~100\u2192600bp; HY OAS ~250\u21922000bp",
+            "n_bars_in_episode": 175,
+            "stochk_pin_ge80_count": 68,
+            "stochk_pin_ge80_frac": 0.389,
+            "bear_cross_count": 5,
+            "bear_cross_lag_bars": 23,
+            "bull_cross_count": 5,
+            "bull_cross_lag_bars": 2
+          },
+          {
+            "name": "EURO_2011",
+            "label": "2011 Euro debt crisis",
+            "description": "Sovereign contagion; HY OAS ~450\u2192800bp",
+            "n_bars_in_episode": 160,
+            "stochk_pin_ge80_count": 43,
+            "stochk_pin_ge80_frac": 0.269,
+            "bear_cross_count": 4,
+            "bear_cross_lag_bars": 3,
+            "bull_cross_count": 3,
+            "bull_cross_lag_bars": 21
+          },
+          {
+            "name": "ENERGY_2015",
+            "label": "2015-16 Energy/EM shock",
+            "description": "HY OAS ~350\u2192850bp; energy/CCC sector stress",
+            "n_bars_in_episode": 87,
+            "stochk_pin_ge80_count": 37,
+            "stochk_pin_ge80_frac": 0.425,
+            "bear_cross_count": 2,
+            "bear_cross_lag_bars": 16,
+            "bull_cross_count": 2,
+            "bull_cross_lag_bars": 39
+          },
+          {
+            "name": "COVID_2020",
+            "label": "2020 COVID shock",
+            "description": "HY OAS ~350\u21921100bp in weeks; fastest widening episode",
+            "n_bars_in_episode": 33,
+            "stochk_pin_ge80_count": 9,
+            "stochk_pin_ge80_frac": 0.273,
+            "bear_cross_count": 1,
+            "bear_cross_lag_bars": 13,
+            "bull_cross_count": 0,
+            "bull_cross_lag_bars": null
+          },
+          {
+            "name": "HIKING_2022",
+            "label": "2022 Fed hiking cycle",
+            "description": "Spread widening with rate rise; HY OAS ~300\u2192600bp",
+            "n_bars_in_episode": 94,
+            "stochk_pin_ge80_count": 18,
+            "stochk_pin_ge80_frac": 0.191,
+            "bear_cross_count": 4,
+            "bear_cross_lag_bars": 19,
+            "bull_cross_count": 4,
+            "bull_cross_lag_bars": 6
+          }
+        ],
+        "calm_bear_crosses_per_year": 8.85,
+        "calm_bull_crosses_per_year": 9.1
+      }
+    }
+  ],
+  "_timing_s": 0.36
+}

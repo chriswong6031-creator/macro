@@ -1,0 +1,1569 @@
+{
+  "organ": "credit_momentum.v1",
+  "as_of": "2026-07-14",
+  "authority": {
+    "rank": false,
+    "size": false,
+    "gate": false,
+    "escalate": false
+  },
+  "accruing": "DISPLAY-ONLY / NOT VALIDATED. Forward ledger accruing since first nightly run. Spread velocity-percentile is the PRIMARY read; oscillator crosses ship as SECONDARY per CCW-R15/\u00a72.5-6. Oscillator sanity study documented in data/corp_bonds/oscillator_sanity.json. Promotion requires pre-registered gauntlet (CCW-R10). Nulls are printed, not hidden.",
+  "oscillator_sanity": {
+    "verdict": "DEMOTED \u2014 no episode discrimination: episode/calm bear-cross ratio 0.67x below pre-declared threshold of 1.5x. Crosses print as context with caveat; excluded from ledger and never a tag's sole basis. K-of-N tags retain cross legs as 1-of-3 contributors (never sole basis) \u2014 this is consistent with the multi-signal confluence design (CCW-R15/\u00a72.5-6). Velocity-percentile remains PRIMARY.",
+    "source": "data/corp_bonds/oscillator_sanity.json",
+    "note": "DEMOTED or SECONDARY-CONFIRMED per discrimination study. Cross states carry 'sanity' field referencing this verdict. Crosses are retained as secondary context (1-of-3 in K-of-N tags, never sole basis) regardless of verdict \u2014 velocity-percentile PRIMARY."
+  },
+  "roster": {
+    "hy_oas": {
+      "series_id": "hy_oas",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 2.69,
+      "d1": -0.01,
+      "d21": -0.09,
+      "velocity": {
+        "vel21": -0.09,
+        "vel63": -0.16,
+        "vel21_pctile": 47.4603,
+        "vel63_pctile": 45.2778,
+        "vel21_pctile_post2021": 45.4357,
+        "vel63_pctile_post2021": 44.8824,
+        "accel_vel21": 0.01
+      },
+      "grids": {
+        "1D": {
+          "macd": 1.1983,
+          "signal": 1.8088,
+          "hist": -0.6104,
+          "hist_vel3": -0.0301,
+          "k": 25.2306,
+          "d": 25.6222,
+          "depth_pctile": 58.6111,
+          "as_of": "2026-07-10",
+          "n_bars": 7711,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": -2.1774,
+          "signal": -2.5704,
+          "hist": 0.3931,
+          "hist_vel3": -0.6848,
+          "k": 55.3515,
+          "d": 65.2051,
+          "depth_pctile": 38.0952,
+          "as_of": "2026-07-09",
+          "n_bars": 3855,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": -3.3154,
+          "signal": -3.6663,
+          "hist": 0.3509,
+          "hist_vel3": -0.1526,
+          "k": 49.3064,
+          "d": 62.9731,
+          "depth_pctile": 34.201,
+          "as_of": "2026-07-09",
+          "n_bars": 2570,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": {
+          "macd": -2.2199,
+          "signal": -1.903,
+          "hist": -0.3169,
+          "hist_vel3": 0.6611,
+          "k": 33.7644,
+          "d": 22.2842,
+          "depth_pctile": 38.9646,
+          "as_of": "2026-07-10",
+          "n_bars": 1541,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        }
+      },
+      "state": "stable"
+    },
+    "ig_oas": {
+      "series_id": "ig_oas",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 0.77,
+      "d1": 0.01,
+      "d21": 0.02,
+      "velocity": {
+        "vel21": 0.02,
+        "vel63": -0.03,
+        "vel21_pctile": 67.8175,
+        "vel63_pctile": 53.1349,
+        "vel21_pctile_post2021": 67.6817,
+        "vel63_pctile_post2021": 48.1661,
+        "accel_vel21": 0.01
+      },
+      "grids": {
+        "1D": {
+          "macd": 7.4706,
+          "signal": 6.6379,
+          "hist": 0.8327,
+          "hist_vel3": 0.5892,
+          "k": 74.2082,
+          "d": 62.6234,
+          "depth_pctile": 77.8571,
+          "as_of": "2026-07-10",
+          "n_bars": 7710,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": -0.6661,
+          "signal": -2.2126,
+          "hist": 1.5465,
+          "hist_vel3": 0.1694,
+          "k": 79.9085,
+          "d": 72.2173,
+          "depth_pctile": 47.0635,
+          "as_of": "2026-07-10",
+          "n_bars": 3855,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": -2.7557,
+          "signal": -3.6146,
+          "hist": 0.8589,
+          "hist_vel3": 0.6622,
+          "k": 88.6251,
+          "d": 82.0431,
+          "depth_pctile": 40.6888,
+          "as_of": "2026-07-10",
+          "n_bars": 2570,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": {
+          "macd": -1.2661,
+          "signal": -1.1937,
+          "hist": -0.0724,
+          "hist_vel3": 1.0296,
+          "k": 47.937,
+          "d": 29.4236,
+          "depth_pctile": 46.8665,
+          "as_of": "2026-07-10",
+          "n_bars": 1541,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        }
+      },
+      "state": "widening"
+    },
+    "quality_spread": {
+      "series_id": "quality_spread",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 1.92,
+      "d1": -0.02,
+      "d21": -0.11,
+      "velocity": {
+        "vel21": -0.11,
+        "vel63": -0.13,
+        "vel21_pctile": 38.5317,
+        "vel63_pctile": 43.8095,
+        "vel21_pctile_post2021": 37.1626,
+        "vel63_pctile_post2021": 44.6367,
+        "accel_vel21": -0.0
+      },
+      "grids": {
+        "1D": {
+          "macd": -0.2198,
+          "signal": 0.5662,
+          "hist": -0.786,
+          "hist_vel3": -0.1182,
+          "k": 20.4992,
+          "d": 21.0831,
+          "depth_pctile": 49.881,
+          "as_of": "2026-07-10",
+          "n_bars": 7710,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": -1.9603,
+          "signal": -1.912,
+          "hist": -0.0483,
+          "hist_vel3": -0.8239,
+          "k": 34.8325,
+          "d": 47.5027,
+          "depth_pctile": 38.7698,
+          "as_of": "2026-07-10",
+          "n_bars": 3855,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": -2.792,
+          "signal": -2.6368,
+          "hist": -0.1553,
+          "hist_vel3": -0.5008,
+          "k": 33.6711,
+          "d": 58.939,
+          "depth_pctile": 35.4025,
+          "as_of": "2026-07-10",
+          "n_bars": 2570,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": {
+          "macd": -2.199,
+          "signal": -1.8414,
+          "hist": -0.3576,
+          "hist_vel3": 0.4744,
+          "k": 29.5313,
+          "d": 21.6273,
+          "depth_pctile": 35.3542,
+          "as_of": "2026-07-10",
+          "n_bars": 1541,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        }
+      },
+      "state": "stable"
+    },
+    "moodys_spread": {
+      "series_id": "moodys_spread",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 0.42,
+      "d1": 0.0,
+      "d21": -0.09,
+      "velocity": {
+        "vel21": -0.09,
+        "vel63": -0.21,
+        "vel21_pctile": 9.7619,
+        "vel63_pctile": 6.9444,
+        "vel21_pctile_post2021": 6.3135,
+        "vel63_pctile_post2021": 5.5878,
+        "accel_vel21": 0.01
+      },
+      "grids": {
+        "1D": {
+          "macd": -7.925,
+          "signal": -8.9438,
+          "hist": 1.0187,
+          "hist_vel3": -0.2106,
+          "k": 69.1699,
+          "d": 77.2341,
+          "depth_pctile": 5.2381,
+          "as_of": "2026-07-10",
+          "n_bars": 10166,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": -13.5,
+          "signal": -13.3028,
+          "hist": -0.1972,
+          "hist_vel3": 1.6858,
+          "k": 53.2656,
+          "d": 37.4701,
+          "depth_pctile": 3.8492,
+          "as_of": "2026-07-10",
+          "n_bars": 5083,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": -7.8188,
+          "signal": -5.4982,
+          "hist": -2.3206,
+          "hist_vel3": 0.2461,
+          "k": 0.0,
+          "d": 0.0,
+          "depth_pctile": 12.8175,
+          "as_of": "2026-07-08",
+          "n_bars": 3388,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": {
+          "macd": -3.6449,
+          "signal": -1.4296,
+          "hist": -2.2153,
+          "hist_vel3": -0.5654,
+          "k": 0.0,
+          "d": 0.2859,
+          "depth_pctile": 28.0607,
+          "as_of": "2026-07-10",
+          "n_bars": 2115,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        }
+      },
+      "state": "tightening"
+    },
+    "ccc_bb": {
+      "series_id": "ccc_bb",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 8.11,
+      "d1": -0.04,
+      "d21": 0.24,
+      "velocity": {
+        "vel21": 0.24,
+        "vel63": 0.6,
+        "vel21_pctile": 67.0157,
+        "vel63_pctile": 70.2216,
+        "vel21_pctile_post2021": 67.0157,
+        "vel63_pctile_post2021": 70.2216,
+        "accel_vel21": -0.04
+      },
+      "grids": {
+        "1D": {
+          "macd": 7.3063,
+          "signal": 7.2412,
+          "hist": 0.0651,
+          "hist_vel3": -0.0141,
+          "k": 71.9762,
+          "d": 82.9356,
+          "depth_pctile": 77.2472,
+          "as_of": "2026-07-10",
+          "n_bars": 785,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": 4.6721,
+          "signal": 3.6599,
+          "hist": 1.0123,
+          "hist_vel3": 0.1996,
+          "k": 100.0,
+          "d": 97.4327,
+          "depth_pctile": 67.3981,
+          "as_of": "2026-07-09",
+          "n_bars": 392,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": 5.0912,
+          "signal": 3.9718,
+          "hist": 1.1194,
+          "hist_vel3": 0.3431,
+          "k": 97.9288,
+          "d": 98.6192,
+          "depth_pctile": 60.6383,
+          "as_of": "2026-07-08",
+          "n_bars": 261,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": null
+      },
+      "state": "widening"
+    }
+  },
+  "etf_prices": {
+    "LQD": {
+      "series_id": "LQD",
+      "orientation": "price",
+      "severity_note": null,
+      "level": 106.96,
+      "d1": -0.5,
+      "d21": -0.8212,
+      "velocity": {
+        "vel21": -0.8212,
+        "vel63": -1.4028,
+        "vel21_pctile": 26.5079,
+        "vel63_pctile": 24.6429,
+        "vel21_pctile_post2021": 34.7763,
+        "vel63_pctile_post2021": 30.9524,
+        "accel_vel21": -0.2509
+      },
+      "grids": {
+        "1D": {
+          "macd": -4.1462,
+          "signal": -2.018,
+          "hist": -2.1282,
+          "hist_vel3": -0.564,
+          "k": 0.9778,
+          "d": 0.9778,
+          "depth_pctile": 24.9206,
+          "as_of": "2026-07-13",
+          "n_bars": 6026,
+          "secondary_note": null
+        },
+        "2B": {
+          "macd": -2.4242,
+          "signal": -1.1964,
+          "hist": -1.2278,
+          "hist_vel3": -1.6807,
+          "k": 0.0,
+          "d": 18.6003,
+          "depth_pctile": 34.6825,
+          "as_of": "2026-07-13",
+          "n_bars": 3013,
+          "secondary_note": null
+        },
+        "3B": {
+          "macd": -2.5243,
+          "signal": -2.5234,
+          "hist": -0.001,
+          "hist_vel3": -0.7855,
+          "k": 52.2916,
+          "d": 70.4586,
+          "depth_pctile": 34.3669,
+          "as_of": "2026-07-09",
+          "n_bars": 2008,
+          "secondary_note": null
+        },
+        "W-FRI": {
+          "macd": -3.7146,
+          "signal": -3.4781,
+          "hist": -0.2365,
+          "hist_vel3": -0.3061,
+          "k": 46.1272,
+          "d": 64.672,
+          "depth_pctile": 25.9133,
+          "as_of": "2026-07-10",
+          "n_bars": 1250,
+          "secondary_note": null
+        }
+      },
+      "state": "active"
+    },
+    "HYG": {
+      "series_id": "HYG",
+      "orientation": "price",
+      "severity_note": null,
+      "level": 79.52,
+      "d1": -0.19,
+      "d21": 0.4167,
+      "velocity": {
+        "vel21": 0.4167,
+        "vel63": 0.3819,
+        "vel21_pctile": 52.4603,
+        "vel63_pctile": 30.2381,
+        "vel21_pctile_post2021": 52.8139,
+        "vel63_pctile_post2021": 32.6118,
+        "accel_vel21": -0.0407
+      },
+      "grids": {
+        "1D": {
+          "macd": 0.3081,
+          "signal": 0.5474,
+          "hist": -0.2393,
+          "hist_vel3": -0.6668,
+          "k": 33.2766,
+          "d": 45.2936,
+          "depth_pctile": 48.9286,
+          "as_of": "2026-07-13",
+          "n_bars": 4844,
+          "secondary_note": null
+        },
+        "2B": {
+          "macd": -1.8551,
+          "signal": -2.0476,
+          "hist": 0.1925,
+          "hist_vel3": -0.1213,
+          "k": 68.0879,
+          "d": 71.5475,
+          "depth_pctile": 36.1005,
+          "as_of": "2026-07-13",
+          "n_bars": 2422,
+          "secondary_note": null
+        },
+        "3B": {
+          "macd": -3.0119,
+          "signal": -3.3936,
+          "hist": 0.3817,
+          "hist_vel3": 0.3348,
+          "k": 60.7575,
+          "d": 51.1904,
+          "depth_pctile": 27.0604,
+          "as_of": "2026-07-09",
+          "n_bars": 1614,
+          "secondary_note": null
+        },
+        "W-FRI": {
+          "macd": -4.6431,
+          "signal": -4.5283,
+          "hist": -0.1148,
+          "hist_vel3": 0.2075,
+          "k": 43.5285,
+          "d": 52.1386,
+          "depth_pctile": 20.7082,
+          "as_of": "2026-07-10",
+          "n_bars": 1005,
+          "secondary_note": null
+        }
+      },
+      "state": "active"
+    },
+    "TLT": {
+      "series_id": "TLT",
+      "orientation": "price",
+      "severity_note": null,
+      "level": 83.97,
+      "d1": -0.5,
+      "d21": -0.5977,
+      "velocity": {
+        "vel21": -0.5977,
+        "vel63": -1.8642,
+        "vel21_pctile": 45.0794,
+        "vel63_pctile": 37.5,
+        "vel21_pctile_post2021": 49.9278,
+        "vel63_pctile_post2021": 45.5267,
+        "accel_vel21": -0.2609
+      },
+      "grids": {
+        "1D": {
+          "macd": -2.961,
+          "signal": -0.7338,
+          "hist": -2.2272,
+          "hist_vel3": 0.1421,
+          "k": 3.6824,
+          "d": 3.1029,
+          "depth_pctile": 31.7063,
+          "as_of": "2026-07-13",
+          "n_bars": 6026,
+          "secondary_note": null
+        },
+        "2B": {
+          "macd": -0.2103,
+          "signal": 0.8854,
+          "hist": -1.0956,
+          "hist_vel3": -1.7496,
+          "k": 0.0,
+          "d": 11.6596,
+          "depth_pctile": 48.1349,
+          "as_of": "2026-07-13",
+          "n_bars": 3013,
+          "secondary_note": null
+        },
+        "3B": {
+          "macd": -0.9126,
+          "signal": -1.1725,
+          "hist": 0.2599,
+          "hist_vel3": -1.2306,
+          "k": 57.7025,
+          "d": 75.5101,
+          "depth_pctile": 43.7726,
+          "as_of": "2026-07-09",
+          "n_bars": 2008,
+          "secondary_note": null
+        },
+        "W-FRI": {
+          "macd": -1.5981,
+          "signal": -1.6355,
+          "hist": 0.0374,
+          "hist_vel3": -0.289,
+          "k": 64.9797,
+          "d": 82.0823,
+          "depth_pctile": 40.4418,
+          "as_of": "2026-07-10",
+          "n_bars": 1250,
+          "secondary_note": null
+        }
+      },
+      "state": "active"
+    },
+    "IEF": {
+      "series_id": "IEF",
+      "orientation": "price",
+      "severity_note": null,
+      "level": 93.29,
+      "d1": -0.34,
+      "d21": -0.0919,
+      "velocity": {
+        "vel21": -0.0919,
+        "vel63": -1.349,
+        "vel21_pctile": 44.6825,
+        "vel63_pctile": 28.4921,
+        "vel21_pctile_post2021": 48.1962,
+        "vel63_pctile_post2021": 36.6522,
+        "accel_vel21": -0.2503
+      },
+      "grids": {
+        "1D": {
+          "macd": -0.5285,
+          "signal": 0.7644,
+          "hist": -1.2929,
+          "hist_vel3": -0.1927,
+          "k": 10.1344,
+          "d": 8.7805,
+          "depth_pctile": 50.0,
+          "as_of": "2026-07-13",
+          "n_bars": 6026,
+          "secondary_note": null
+        },
+        "2B": {
+          "macd": -2.0551,
+          "signal": -1.7795,
+          "hist": -0.2756,
+          "hist_vel3": -1.2766,
+          "k": 22.4594,
+          "d": 37.9992,
+          "depth_pctile": 38.0159,
+          "as_of": "2026-07-13",
+          "n_bars": 3013,
+          "secondary_note": null
+        },
+        "3B": {
+          "macd": -4.2489,
+          "signal": -4.8035,
+          "hist": 0.5546,
+          "hist_vel3": -0.3164,
+          "k": 76.6546,
+          "d": 83.3152,
+          "depth_pctile": 23.6176,
+          "as_of": "2026-07-09",
+          "n_bars": 2008,
+          "secondary_note": null
+        },
+        "W-FRI": {
+          "macd": -5.3149,
+          "signal": -5.2347,
+          "hist": -0.0803,
+          "hist_vel3": 0.3085,
+          "k": 54.0286,
+          "d": 56.9699,
+          "depth_pctile": 16.9924,
+          "as_of": "2026-07-10",
+          "n_bars": 1250,
+          "secondary_note": null
+        }
+      },
+      "state": "active"
+    },
+    "JNK": {
+      "series_id": "JNK",
+      "state": "accruing",
+      "note": "data not available"
+    }
+  },
+  "ladder": {
+    "aaa_oas": {
+      "series_id": "aaa_oas",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 0.4,
+      "d1": 0.01,
+      "d21": 0.06,
+      "velocity": {
+        "vel21": 0.06,
+        "vel63": 0.07,
+        "vel21_pctile": 92.1466,
+        "vel63_pctile": 88.3657,
+        "vel21_pctile_post2021": 92.1466,
+        "vel63_pctile_post2021": 88.3657,
+        "accel_vel21": 0.01
+      },
+      "grids": {
+        "1D": {
+          "macd": 9.1186,
+          "signal": 9.0753,
+          "hist": 0.0433,
+          "hist_vel3": 0.2616,
+          "k": 33.8512,
+          "d": 30.1447,
+          "depth_pctile": 94.9438,
+          "as_of": "2026-07-10",
+          "n_bars": 785,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": 4.1855,
+          "signal": 2.5461,
+          "hist": 1.6395,
+          "hist_vel3": -0.1204,
+          "k": 92.4753,
+          "d": 87.4589,
+          "depth_pctile": 74.2947,
+          "as_of": "2026-07-09",
+          "n_bars": 392,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": 0.6572,
+          "signal": -0.8207,
+          "hist": 1.4779,
+          "hist_vel3": 0.0466,
+          "k": 92.1753,
+          "d": 94.9005,
+          "depth_pctile": 45.7447,
+          "as_of": "2026-07-08",
+          "n_bars": 261,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": null
+      },
+      "state": "widening_stress"
+    },
+    "aa_oas": {
+      "series_id": "aa_oas",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 0.55,
+      "d1": 0.01,
+      "d21": 0.06,
+      "velocity": {
+        "vel21": 0.06,
+        "vel63": 0.06,
+        "vel21_pctile": 91.8848,
+        "vel63_pctile": 85.3186,
+        "vel21_pctile_post2021": 91.8848,
+        "vel63_pctile_post2021": 85.3186,
+        "accel_vel21": 0.01
+      },
+      "grids": {
+        "1D": {
+          "macd": 10.7932,
+          "signal": 9.9466,
+          "hist": 0.8465,
+          "hist_vel3": 1.223,
+          "k": 77.1753,
+          "d": 59.8807,
+          "depth_pctile": 96.9101,
+          "as_of": "2026-07-10",
+          "n_bars": 785,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": 3.7069,
+          "signal": 2.0591,
+          "hist": 1.6478,
+          "hist_vel3": -0.1571,
+          "k": 93.4785,
+          "d": 93.4785,
+          "depth_pctile": 71.1599,
+          "as_of": "2026-07-09",
+          "n_bars": 392,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": 0.6494,
+          "signal": -0.7078,
+          "hist": 1.3572,
+          "hist_vel3": 0.2209,
+          "k": 93.5407,
+          "d": 95.6938,
+          "depth_pctile": 48.9362,
+          "as_of": "2026-07-08",
+          "n_bars": 261,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": null
+      },
+      "state": "widening_stress"
+    },
+    "a_oas": {
+      "series_id": "a_oas",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 0.64,
+      "d1": 0.01,
+      "d21": 0.01,
+      "velocity": {
+        "vel21": 0.01,
+        "vel63": -0.02,
+        "vel21_pctile": 66.0995,
+        "vel63_pctile": 52.4931,
+        "vel21_pctile_post2021": 66.0995,
+        "vel63_pctile_post2021": 52.4931,
+        "accel_vel21": 0.01
+      },
+      "grids": {
+        "1D": {
+          "macd": 4.8656,
+          "signal": 4.3935,
+          "hist": 0.4721,
+          "hist_vel3": 0.6809,
+          "k": 65.9508,
+          "d": 50.1511,
+          "depth_pctile": 74.2978,
+          "as_of": "2026-07-10",
+          "n_bars": 785,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": -1.1704,
+          "signal": -2.0074,
+          "hist": 0.837,
+          "hist_vel3": -0.3304,
+          "k": 72.5447,
+          "d": 76.3611,
+          "depth_pctile": 40.4389,
+          "as_of": "2026-07-09",
+          "n_bars": 392,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": -3.2576,
+          "signal": -3.7609,
+          "hist": 0.5033,
+          "hist_vel3": 0.3711,
+          "k": 98.9248,
+          "d": 87.0307,
+          "depth_pctile": 27.6596,
+          "as_of": "2026-07-08",
+          "n_bars": 261,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": null
+      },
+      "state": "widening"
+    },
+    "bbb_oas": {
+      "series_id": "bbb_oas",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 0.96,
+      "d1": 0.02,
+      "d21": 0.02,
+      "velocity": {
+        "vel21": 0.02,
+        "vel63": -0.05,
+        "vel21_pctile": 71.3351,
+        "vel63_pctile": 49.169,
+        "vel21_pctile_post2021": 71.3351,
+        "vel63_pctile_post2021": 49.169,
+        "accel_vel21": 0.02
+      },
+      "grids": {
+        "1D": {
+          "macd": 7.2304,
+          "signal": 6.4996,
+          "hist": 0.7308,
+          "hist_vel3": 0.7382,
+          "k": 52.1825,
+          "d": 38.451,
+          "depth_pctile": 80.7584,
+          "as_of": "2026-07-10",
+          "n_bars": 785,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": -2.6638,
+          "signal": -3.7843,
+          "hist": 1.1205,
+          "hist_vel3": -0.4412,
+          "k": 77.9352,
+          "d": 81.471,
+          "depth_pctile": 33.2288,
+          "as_of": "2026-07-09",
+          "n_bars": 392,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": -4.8629,
+          "signal": -5.4957,
+          "hist": 0.6329,
+          "hist_vel3": 0.4069,
+          "k": 85.3587,
+          "d": 82.8273,
+          "depth_pctile": 17.5532,
+          "as_of": "2026-07-08",
+          "n_bars": 261,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": null
+      },
+      "state": "widening"
+    },
+    "bb_oas": {
+      "series_id": "bb_oas",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 1.59,
+      "d1": 0.0,
+      "d21": -0.1,
+      "velocity": {
+        "vel21": -0.1,
+        "vel63": -0.14,
+        "vel21_pctile": 33.2461,
+        "vel63_pctile": 40.4432,
+        "vel21_pctile_post2021": 33.2461,
+        "vel63_pctile_post2021": 40.4432,
+        "accel_vel21": 0.01
+      },
+      "grids": {
+        "1D": {
+          "macd": 0.5614,
+          "signal": 1.1957,
+          "hist": -0.6343,
+          "hist_vel3": -0.0039,
+          "k": 23.7528,
+          "d": 23.8891,
+          "depth_pctile": 56.882,
+          "as_of": "2026-07-10",
+          "n_bars": 785,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": -2.2556,
+          "signal": -2.4708,
+          "hist": 0.2152,
+          "hist_vel3": -0.7099,
+          "k": 47.1301,
+          "d": 58.933,
+          "depth_pctile": 29.1536,
+          "as_of": "2026-07-09",
+          "n_bars": 392,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": -3.7673,
+          "signal": -4.1346,
+          "hist": 0.3673,
+          "hist_vel3": 0.2839,
+          "k": 70.1381,
+          "d": 72.0913,
+          "depth_pctile": 9.0426,
+          "as_of": "2026-07-08",
+          "n_bars": 261,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": null
+      },
+      "state": "tightening"
+    },
+    "b_oas": {
+      "series_id": "b_oas",
+      "orientation": "spread",
+      "severity_note": "spread: widening = deterioration",
+      "level": 2.87,
+      "d1": -0.02,
+      "d21": -0.12,
+      "velocity": {
+        "vel21": -0.12,
+        "vel63": -0.2,
+        "vel21_pctile": 40.9686,
+        "vel63_pctile": 40.8587,
+        "vel21_pctile_post2021": 40.9686,
+        "vel63_pctile_post2021": 40.8587,
+        "accel_vel21": 0.02
+      },
+      "grids": {
+        "1D": {
+          "macd": 0.4077,
+          "signal": 1.0971,
+          "hist": -0.6893,
+          "hist_vel3": -0.3224,
+          "k": 25.1757,
+          "d": 29.964,
+          "depth_pctile": 57.0225,
+          "as_of": "2026-07-10",
+          "n_bars": 785,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "2B": {
+          "macd": -3.5233,
+          "signal": -3.9296,
+          "hist": 0.4064,
+          "hist_vel3": -0.6389,
+          "k": 59.9962,
+          "d": 73.2528,
+          "depth_pctile": 22.884,
+          "as_of": "2026-07-09",
+          "n_bars": 392,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "3B": {
+          "macd": -4.9627,
+          "signal": -5.3497,
+          "hist": 0.387,
+          "hist_vel3": 0.6086,
+          "k": 82.3275,
+          "d": 82.3248,
+          "depth_pctile": 5.8511,
+          "as_of": "2026-07-08",
+          "n_bars": 261,
+          "secondary_note": "oscillator crosses secondary \u2014 velocity-pctile is primary"
+        },
+        "W-FRI": null
+      },
+      "state": "stable"
+    }
+  },
+  "market": {
+    "ig": {
+      "series_id": "market_ig_gspread",
+      "orientation": "spread",
+      "level": null,
+      "d1": null,
+      "d21": null,
+      "velocity": {},
+      "grids": {},
+      "state": "accruing",
+      "accruing_note": "accruing (1 dates of history)"
+    },
+    "hy": {
+      "series_id": "market_hy_gspread",
+      "orientation": "spread",
+      "level": null,
+      "d1": null,
+      "d21": null,
+      "velocity": {},
+      "grids": {},
+      "state": "accruing",
+      "accruing_note": "accruing (1 dates of history)"
+    }
+  },
+  "themes": {
+    "ai_hardware_credit": {
+      "theme": "ai_hardware_credit",
+      "n_dates": 1,
+      "density_gate": {
+        "open": false,
+        "reason": "fewer than 21 dates in theme_daily (accruing)"
+      },
+      "spread": {
+        "series_id": "theme_ai_hardware_credit_gspread",
+        "orientation": "spread",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "density gate closed: fewer than 21 dates in theme_daily (accruing) \u2014 velocity only, no oscillator"
+      },
+      "price": {
+        "series_id": "theme_ai_hardware_credit_price",
+        "orientation": "price",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "series not available"
+      }
+    },
+    "ai_power_credit": {
+      "theme": "ai_power_credit",
+      "n_dates": 1,
+      "density_gate": {
+        "open": false,
+        "reason": "fewer than 21 dates in theme_daily (accruing)"
+      },
+      "spread": {
+        "series_id": "theme_ai_power_credit_gspread",
+        "orientation": "spread",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "density gate closed: fewer than 21 dates in theme_daily (accruing) \u2014 velocity only, no oscillator"
+      },
+      "price": {
+        "series_id": "theme_ai_power_credit_price",
+        "orientation": "price",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "series not available"
+      }
+    },
+    "dc_reit_credit": {
+      "theme": "dc_reit_credit",
+      "n_dates": 1,
+      "density_gate": {
+        "open": false,
+        "reason": "fewer than 21 dates in theme_daily (accruing)"
+      },
+      "spread": {
+        "series_id": "theme_dc_reit_credit_gspread",
+        "orientation": "spread",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "density gate closed: fewer than 21 dates in theme_daily (accruing) \u2014 velocity only, no oscillator"
+      },
+      "price": {
+        "series_id": "theme_dc_reit_credit_price",
+        "orientation": "price",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "series not available"
+      }
+    },
+    "hyperscaler_credit": {
+      "theme": "hyperscaler_credit",
+      "n_dates": 1,
+      "density_gate": {
+        "open": false,
+        "reason": "fewer than 21 dates in theme_daily (accruing)"
+      },
+      "spread": {
+        "series_id": "theme_hyperscaler_credit_gspread",
+        "orientation": "spread",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "density gate closed: fewer than 21 dates in theme_daily (accruing) \u2014 velocity only, no oscillator"
+      },
+      "price": {
+        "series_id": "theme_hyperscaler_credit_price",
+        "orientation": "price",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "series not available"
+      }
+    },
+    "memory_credit": {
+      "theme": "memory_credit",
+      "n_dates": 1,
+      "density_gate": {
+        "open": false,
+        "reason": "fewer than 21 dates in theme_daily (accruing)"
+      },
+      "spread": {
+        "series_id": "theme_memory_credit_gspread",
+        "orientation": "spread",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "density gate closed: fewer than 21 dates in theme_daily (accruing) \u2014 velocity only, no oscillator"
+      },
+      "price": {
+        "series_id": "theme_memory_credit_price",
+        "orientation": "price",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "series not available"
+      }
+    },
+    "neocloud_credit": {
+      "theme": "neocloud_credit",
+      "n_dates": 1,
+      "density_gate": {
+        "open": false,
+        "reason": "fewer than 21 dates in theme_daily (accruing)"
+      },
+      "spread": {
+        "series_id": "theme_neocloud_credit_gspread",
+        "orientation": "spread",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "density gate closed: fewer than 21 dates in theme_daily (accruing) \u2014 velocity only, no oscillator"
+      },
+      "price": {
+        "series_id": "theme_neocloud_credit_price",
+        "orientation": "price",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "series not available"
+      }
+    },
+    "telecom_legacy": {
+      "theme": "telecom_legacy",
+      "n_dates": 1,
+      "density_gate": {
+        "open": false,
+        "reason": "fewer than 21 dates in theme_daily (accruing)"
+      },
+      "spread": {
+        "series_id": "theme_telecom_legacy_gspread",
+        "orientation": "spread",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "density gate closed: fewer than 21 dates in theme_daily (accruing) \u2014 velocity only, no oscillator"
+      },
+      "price": {
+        "series_id": "theme_telecom_legacy_price",
+        "orientation": "price",
+        "level": null,
+        "d1": null,
+        "d21": null,
+        "velocity": {},
+        "grids": {},
+        "state": "accruing",
+        "accruing_note": "series not available"
+      }
+    }
+  },
+  "tags": {
+    "credit_market_turn": {
+      "tag": "credit_market_turn",
+      "fired": false,
+      "score": 1,
+      "legs": {
+        "hy_vel21_pctile_ge85": false,
+        "quality_spread_widening_21d": false,
+        "ccc_bb_widening_21d": true
+      },
+      "track_record_note": "no track record yet \u2014 first events accruing"
+    },
+    "credit_theme_stress": []
+  },
+  "interim_tlt": {
+    "_label": "interim proxy \u2014 the rates program's yield organ replaces this",
+    "TLT": {
+      "series_id": "interim_TLT",
+      "orientation": "price",
+      "severity_note": null,
+      "level": 83.97,
+      "d1": -0.5,
+      "d21": -0.5977,
+      "velocity": {
+        "vel21": -0.5977,
+        "vel63": -1.8642,
+        "vel21_pctile": 45.0794,
+        "vel63_pctile": 37.5,
+        "vel21_pctile_post2021": 49.9278,
+        "vel63_pctile_post2021": 45.5267,
+        "accel_vel21": -0.2609
+      },
+      "grids": {
+        "1D": {
+          "macd": -2.961,
+          "signal": -0.7338,
+          "hist": -2.2272,
+          "hist_vel3": 0.1421,
+          "k": 3.6824,
+          "d": 3.1029,
+          "depth_pctile": 31.7063,
+          "as_of": "2026-07-13",
+          "n_bars": 6026,
+          "secondary_note": null
+        },
+        "2B": {
+          "macd": -0.2103,
+          "signal": 0.8854,
+          "hist": -1.0956,
+          "hist_vel3": -1.7496,
+          "k": 0.0,
+          "d": 11.6596,
+          "depth_pctile": 48.1349,
+          "as_of": "2026-07-13",
+          "n_bars": 3013,
+          "secondary_note": null
+        },
+        "3B": {
+          "macd": -0.9126,
+          "signal": -1.1725,
+          "hist": 0.2599,
+          "hist_vel3": -1.2306,
+          "k": 57.7025,
+          "d": 75.5101,
+          "depth_pctile": 43.7726,
+          "as_of": "2026-07-09",
+          "n_bars": 2008,
+          "secondary_note": null
+        },
+        "W-FRI": {
+          "macd": -1.5981,
+          "signal": -1.6355,
+          "hist": 0.0374,
+          "hist_vel3": -0.289,
+          "k": 64.9797,
+          "d": 82.0823,
+          "depth_pctile": 40.4418,
+          "as_of": "2026-07-10",
+          "n_bars": 1250,
+          "secondary_note": null
+        }
+      },
+      "state": "active"
+    },
+    "IEF": {
+      "series_id": "interim_IEF",
+      "orientation": "price",
+      "severity_note": null,
+      "level": 93.29,
+      "d1": -0.34,
+      "d21": -0.0919,
+      "velocity": {
+        "vel21": -0.0919,
+        "vel63": -1.349,
+        "vel21_pctile": 44.6825,
+        "vel63_pctile": 28.4921,
+        "vel21_pctile_post2021": 48.1962,
+        "vel63_pctile_post2021": 36.6522,
+        "accel_vel21": -0.2503
+      },
+      "grids": {
+        "1D": {
+          "macd": -0.5285,
+          "signal": 0.7644,
+          "hist": -1.2929,
+          "hist_vel3": -0.1927,
+          "k": 10.1344,
+          "d": 8.7805,
+          "depth_pctile": 50.0,
+          "as_of": "2026-07-13",
+          "n_bars": 6026,
+          "secondary_note": null
+        },
+        "2B": {
+          "macd": -2.0551,
+          "signal": -1.7795,
+          "hist": -0.2756,
+          "hist_vel3": -1.2766,
+          "k": 22.4594,
+          "d": 37.9992,
+          "depth_pctile": 38.0159,
+          "as_of": "2026-07-13",
+          "n_bars": 3013,
+          "secondary_note": null
+        },
+        "3B": {
+          "macd": -4.2489,
+          "signal": -4.8035,
+          "hist": 0.5546,
+          "hist_vel3": -0.3164,
+          "k": 76.6546,
+          "d": 83.3152,
+          "depth_pctile": 23.6176,
+          "as_of": "2026-07-09",
+          "n_bars": 2008,
+          "secondary_note": null
+        },
+        "W-FRI": {
+          "macd": -5.3149,
+          "signal": -5.2347,
+          "hist": -0.0803,
+          "hist_vel3": 0.3085,
+          "k": 54.0286,
+          "d": 56.9699,
+          "depth_pctile": 16.9924,
+          "as_of": "2026-07-10",
+          "n_bars": 1250,
+          "secondary_note": null
+        }
+      },
+      "state": "active"
+    }
+  },
+  "breadth": {
+    "own_store": {
+      "_source": "own-store holdings (SPSB/SPIB/SPLB/JNK/SPHY)",
+      "n_snapshots": 1,
+      "ig": {
+        "state": "accruing"
+      },
+      "hy": {
+        "state": "accruing"
+      },
+      "all": {
+        "state": "accruing"
+      },
+      "note": "accruing \u2014 1 snapshot(s); need \u22652 for advancing/declining"
+    },
+    "finra": {
+      "_source": "FINRA trade data",
+      "_note": "CCW-R14: never blended with own-store numbers; distinctly labeled",
+      "breadth": {
+        "all securities": {
+          "advance_share_latest": 0.16028708133971292,
+          "advance_share_5d_ma": 0.28840754093780696,
+          "vel21_advance_share": -0.1383,
+          "vel21_pctile_advance_share": 15.3425,
+          "wk52_high_low_net_share": -0.1151,
+          "n_days": 751,
+          "latest_date": "2026-07-13",
+          "momentum_1d": {
+            "macd": -3.8647,
+            "signal": -2.6236,
+            "hist": -1.2411,
+            "hist_vel3": 0.2779,
+            "k": 16.8472,
+            "d": 15.391,
+            "depth_pctile": 5.8997,
+            "as_of": "2026-07-13",
+            "n_bars": 751
+          }
+        },
+        "investment grade": {
+          "advance_share_latest": 0.13627125895817735,
+          "advance_share_5d_ma": 0.2676167833766542,
+          "vel21_advance_share": -0.1605,
+          "vel21_pctile_advance_share": 13.9726,
+          "wk52_high_low_net_share": -0.1427,
+          "n_days": 751,
+          "latest_date": "2026-07-13",
+          "momentum_1d": {
+            "macd": -3.9713,
+            "signal": -2.7254,
+            "hist": -1.2459,
+            "hist_vel3": 0.3595,
+            "k": 16.8341,
+            "d": 15.3157,
+            "depth_pctile": 5.1622,
+            "as_of": "2026-07-13",
+            "n_bars": 751
+          }
+        },
+        "high yield": {
+          "advance_share_latest": 0.296759941089838,
+          "advance_share_5d_ma": 0.40339650021857915,
+          "vel21_advance_share": -0.016,
+          "vel21_pctile_advance_share": 46.8493,
+          "wk52_high_low_net_share": 0.0212,
+          "n_days": 751,
+          "latest_date": "2026-07-13",
+          "momentum_1d": {
+            "macd": -2.2088,
+            "signal": -1.0941,
+            "hist": -1.1147,
+            "hist_vel3": -0.7594,
+            "k": 9.737,
+            "d": 13.2291,
+            "depth_pctile": 21.8289,
+            "as_of": "2026-07-13",
+            "n_bars": 751
+          }
+        },
+        "convertibles": {
+          "advance_share_latest": 0.40372670807453415,
+          "advance_share_5d_ma": 0.4555804190917014,
+          "vel21_advance_share": 0.0149,
+          "vel21_pctile_advance_share": 57.2603,
+          "wk52_high_low_net_share": 0.0174,
+          "n_days": 751,
+          "latest_date": "2026-07-13",
+          "momentum_1d": {
+            "macd": -0.9631,
+            "signal": 0.6958,
+            "hist": -1.6589,
+            "hist_vel3": -1.0711,
+            "k": 3.148,
+            "d": 7.6399,
+            "depth_pctile": 33.4808,
+            "as_of": "2026-07-13",
+            "n_bars": 751
+          }
+        }
+      },
+      "sentiment": {
+        "investment grade": {
+          "buy_sell_ratio_latest": 1.0439,
+          "buy_sell_ratio_5d_ma": 1.0693,
+          "buy_vol_latest": 11563.855163,
+          "sell_vol_latest": 11077.331675,
+          "n_days": 751,
+          "latest_date": "2026-07-13",
+          "_note": "ratio>1 = customer net buyer; productCategory carries buy/sell; tradeType carries grade (CCW-W5 FINRA schema)"
+        },
+        "high yield": {
+          "buy_sell_ratio_latest": 1.1162,
+          "buy_sell_ratio_5d_ma": 1.1076,
+          "buy_vol_latest": 1060.350295,
+          "sell_vol_latest": 949.958466,
+          "n_days": 751,
+          "latest_date": "2026-07-13",
+          "_note": "ratio>1 = customer net buyer; productCategory carries buy/sell; tradeType carries grade (CCW-W5 FINRA schema)"
+        },
+        "all securities": {
+          "buy_sell_ratio_latest": 1.0578,
+          "buy_sell_ratio_5d_ma": 1.0682,
+          "buy_vol_latest": 13228.844625,
+          "sell_vol_latest": 12505.984512,
+          "n_days": 751,
+          "latest_date": "2026-07-13",
+          "_note": "ratio>1 = customer net buyer; productCategory carries buy/sell; tradeType carries grade (CCW-W5 FINRA schema)"
+        }
+      },
+      "n_days_breadth": 751
+    },
+    "_note": "Two breadth sources; labeled distinctly; NEVER blended (CCW-R14)"
+  },
+  "watch": {
+    "transition": {
+      "n_snapshots": 1,
+      "fallen_angel_candidates": [],
+      "rising_star_candidates": [],
+      "new_issuance_events": [],
+      "note": "accruing \u2014 fewer than 2 holdings snapshots (need \u22652 to detect transitions)"
+    },
+    "orcl": {
+      "issuer": "ORCL",
+      "g_spread_bp_pw": 144.33,
+      "ig_peer_median_bp": 74.33,
+      "premium_vs_ig_peers_bp": 70.0,
+      "peer_group": "IG-segment bonds at matched maturity bucket (no per-bond ratings available; BBB-median deferred)",
+      "note": "live \u2014 labeled vs IG peers at matched maturity"
+    }
+  },
+  "divergence": [
+    {
+      "theme": "ai_hardware_credit",
+      "quadrant": "accruing",
+      "credit_d21_bp": null,
+      "equity_return_21d": null,
+      "n_equity_tickers": 0,
+      "note": "accruing \u2014 fewer than 22 theme_daily dates"
+    },
+    {
+      "theme": "ai_power_credit",
+      "quadrant": "accruing",
+      "credit_d21_bp": null,
+      "equity_return_21d": null,
+      "n_equity_tickers": 0,
+      "note": "accruing \u2014 fewer than 22 theme_daily dates"
+    },
+    {
+      "theme": "dc_reit_credit",
+      "quadrant": "accruing",
+      "credit_d21_bp": null,
+      "equity_return_21d": null,
+      "n_equity_tickers": 0,
+      "note": "accruing \u2014 fewer than 22 theme_daily dates"
+    },
+    {
+      "theme": "hyperscaler_credit",
+      "quadrant": "accruing",
+      "credit_d21_bp": null,
+      "equity_return_21d": null,
+      "n_equity_tickers": 0,
+      "note": "accruing \u2014 fewer than 22 theme_daily dates"
+    },
+    {
+      "theme": "memory_credit",
+      "quadrant": "accruing",
+      "credit_d21_bp": null,
+      "equity_return_21d": null,
+      "n_equity_tickers": 0,
+      "note": "accruing \u2014 fewer than 22 theme_daily dates"
+    },
+    {
+      "theme": "neocloud_credit",
+      "quadrant": "accruing",
+      "credit_d21_bp": null,
+      "equity_return_21d": null,
+      "n_equity_tickers": 0,
+      "note": "accruing \u2014 fewer than 22 theme_daily dates"
+    },
+    {
+      "theme": "telecom_legacy",
+      "quadrant": "accruing",
+      "credit_d21_bp": null,
+      "equity_return_21d": null,
+      "n_equity_tickers": 0,
+      "note": "accruing \u2014 fewer than 22 theme_daily dates"
+    }
+  ],
+  "_timing_s": 3.49,
+  "_n_ledger_new": 0
+}

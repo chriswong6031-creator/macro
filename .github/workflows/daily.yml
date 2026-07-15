@@ -494,6 +494,17 @@ jobs:
         run: |
           python -m engine.corp_credit \
             || echo "::warning::corp_credit engine failed (non-fatal)"
+      - name: CCW W3 — credit momentum organ (non-fatal)
+        # Runs AFTER corp_credit so theme/market series are fresh.
+        # Reads: archive-merged FRED spreads (hy_oas/ig_oas 1996→, ladder ~3y),
+        #   Moody's DBAA/DAAA, FINRA breadth/sentiment (W5), yahoo ETF prices,
+        #   corp_credit series output, holdings snapshots (own-store breadth).
+        # Writes: data/corp_bonds/credit_momentum.json + forward_log.jsonl.
+        # Spread velocity-percentile PRIMARY; oscillator crosses SECONDARY (CCW-R15).
+        # Display-tier; authority all-false. Non-fatal (CCW-R16).
+        run: |
+          python -m engine.credit_momentum \
+            || echo "::warning::credit_momentum engine failed (non-fatal)"
       - name: commit tail data
         run: |
           git config user.name "dashboard-bot"

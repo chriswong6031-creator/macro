@@ -567,12 +567,20 @@ def main() -> int:
         charts = {k: "" for k in _CHART_KEYS}
 
     # alert timeline (deterministic, recomputed each build)
+    # Fix 6: use rebuild_with_credit(fr) so CCW credit_market_turn + credit_theme_stress
+    # events are included. Falls back to rebuild(fr) behavior when credit_momentum.json
+    # is absent (rebuild_with_credit is null-safe — compute_credit_events returns [] on
+    # missing file per bonds_alerts.py implementation).
     acfg = config.load()["bonds"]["alerts"]
     try:
-        events = bonds_alerts.rebuild(fr)
+        events = bonds_alerts.rebuild_with_credit(fr)
     except Exception as e:  # noqa: BLE001 — timeline is optional, never break the page
-        log.warning("bonds alerts rebuild failed (%s)", e)
-        events = bonds_alerts.load_events()
+        log.warning("bonds alerts rebuild_with_credit failed (%s); falling back to rebuild", e)
+        try:
+            events = bonds_alerts.rebuild(fr)
+        except Exception as e2:  # noqa: BLE001
+            log.warning("bonds alerts rebuild also failed (%s)", e2)
+            events = bonds_alerts.load_events()
     recent = bonds_alerts.recent(events, acfg["timeline_days"])
     timeline = _group_timeline(recent)
 
