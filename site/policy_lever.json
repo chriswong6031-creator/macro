@@ -37,7 +37,7 @@
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.1678,
+        "flatness": 0.1659,
         "armed": false,
         "params": {
           "stoch_k_period": 14,

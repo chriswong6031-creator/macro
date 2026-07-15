@@ -211,11 +211,11 @@
     },
     {
       "ticker": "GC=F",
-      "rs": 5.397496651846329,
-      "mom_20d_pct": -5.26,
-      "mom_60d_pct": -20.86,
+      "rs": 5.392442252924038,
+      "mom_20d_pct": -5.35,
+      "mom_60d_pct": -20.93,
       "above_200d_trend": false,
-      "pctile_252d": 11.1,
+      "pctile_252d": 10.7,
       "rank": 19
     }
   ],
@@ -260,7 +260,7 @@
     },
     "copper_gold": {
       "level": 0.0016,
-      "chg_20d_pct": 4.69
+      "chg_20d_pct": 4.74
     }
   },
   "alerts": [
@@ -437,7 +437,7 @@
       "skew_pctile": 0.45337301587301587,
       "stock_bond_corr": 0.5697954160609259,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.5493584699460838,
+      "roro": 0.5502499974009807,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.984007697430446,
       "news_sentiment": 0.12348560243844986,
@@ -8735,17 +8735,17 @@
       "Crypto": {
         "US": 0.41,
         "Crypto": 1.0,
-        "China": -0.0,
+        "China": 0.0,
         "HK": -0.02,
         "Commodities": 0.25,
         "Dollar": 0.42
       },
       "China": {
         "US": 0.43,
-        "Crypto": -0.0,
+        "Crypto": 0.0,
         "China": 1.0,
         "HK": 0.39,
-        "Commodities": 0.44,
+        "Commodities": 0.43,
         "Dollar": 0.16
       },
       "HK": {
@@ -8759,7 +8759,7 @@
       "Commodities": {
         "US": 0.56,
         "Crypto": 0.25,
-        "China": 0.44,
+        "China": 0.43,
         "HK": 0.23,
         "Commodities": 1.0,
         "Dollar": 0.5
@@ -8810,8 +8810,8 @@
     "dir_sign": 1,
     "confidence": "low",
     "confidence_zh": "\u4f4e",
-    "strength": 1.19,
-    "dominance_ratio": 1.13,
+    "strength": 1.2,
+    "dominance_ratio": 1.15,
     "agreement": 0.87,
     "runner_up": "oil_shock",
     "runner_up_label": "Oil shock",
@@ -8848,8 +8848,8 @@
         "label": "Liquidity impulse",
         "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
         "family": "liquidity",
-        "projection": 1.19,
-        "strength": 1.19,
+        "projection": 1.2,
+        "strength": 1.2,
         "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
       },
       {
@@ -8857,8 +8857,8 @@
         "label": "Oil shock",
         "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
         "family": "inflation",
-        "projection": 1.05,
-        "strength": 1.05,
+        "projection": 1.04,
+        "strength": 1.04,
         "direction": "oil spiking \u2014 energy leads, breakevens up"
       },
       {
@@ -8871,6 +8871,15 @@
         "direction": "AI/semis leadership \u2014 narrow tech-led tape"
       },
       {
+        "driver": "crypto_liquidity",
+        "label": "Crypto liquidity",
+        "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
+        "family": "crypto",
+        "projection": 0.7,
+        "strength": 0.7,
+        "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
+      },
+      {
         "driver": "china_stimulus",
         "label": "China stimulus",
         "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
@@ -8880,21 +8889,12 @@
         "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
       },
       {
-        "driver": "crypto_liquidity",
-        "label": "Crypto liquidity",
-        "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
-        "family": "crypto",
-        "projection": 0.63,
-        "strength": 0.63,
-        "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
-      },
-      {
         "driver": "usd_shock",
         "label": "USD shock",
         "label_zh": "\u7f8e\u5143\u51b2\u51fb",
         "family": "fx",
-        "projection": -0.39,
-        "strength": 0.39,
+        "projection": -0.38,
+        "strength": 0.38,
         "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
       },
       {
@@ -8920,8 +8920,8 @@
         "label": "Real-rate shock",
         "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
         "family": "rates",
-        "projection": -0.03,
-        "strength": 0.03,
+        "projection": -0.02,
+        "strength": 0.02,
         "direction": "real yields falling \u2014 easing, gold & duration bid"
       }
     ],
@@ -8964,33 +8964,33 @@
           "Dollar": 0.167
         },
         "risk_contrib": {
-          "US": 0.125,
-          "Crypto": 0.364,
+          "US": 0.124,
+          "Crypto": 0.365,
           "China": 0.108,
           "HK": 0.099,
-          "Commodities": 0.273,
+          "Commodities": 0.272,
           "Dollar": 0.032
         },
-        "port_vol_ann": 0.138,
+        "port_vol_ann": 0.139,
         "diversification_ratio": 1.61,
-        "max_risk_contrib": 0.364
+        "max_risk_contrib": 0.365
       },
       "inverse_vol": {
         "scheme": "inverse_vol",
         "weights": {
           "US": 0.174,
-          "Crypto": 0.055,
+          "Crypto": 0.054,
           "China": 0.134,
           "HK": 0.127,
           "Commodities": 0.08,
-          "Dollar": 0.43
+          "Dollar": 0.431
         },
         "risk_contrib": {
           "US": 0.203,
           "Crypto": 0.123,
           "China": 0.158,
           "HK": 0.148,
-          "Commodities": 0.2,
+          "Commodities": 0.199,
           "Dollar": 0.169
         },
         "port_vol_ann": 0.091,
@@ -9001,10 +9001,10 @@
         "scheme": "erc",
         "weights": {
           "US": 0.147,
-          "Crypto": 0.069,
+          "Crypto": 0.068,
           "China": 0.142,
           "HK": 0.14,
-          "Commodities": 0.069,
+          "Commodities": 0.07,
           "Dollar": 0.434
         },
         "risk_contrib": {
@@ -9162,7 +9162,7 @@
   },
   "fed_path": {
     "asof": "2026-07-14",
-    "built": "2026-07-14T22:19:20.021828+00:00",
+    "built": "2026-07-14T23:29:13.820342+00:00",
     "policy_rate": 3.62,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -9312,7 +9312,7 @@
         "zh": "\u76c8\u4e8f\u5e73\u8861\u5927\u81f4\u5e73\u7a33\u2014\u2014\u65e0\u53ef\u64cd\u4f5c\u53d8\u52a8\u3002"
       },
       "costate": {
-        "oil_chg_20d_pct": 5.3,
+        "oil_chg_20d_pct": 5.1,
         "real10y_chg_20d_bp": 18.0,
         "nom10y_chg_20d_bp": 13.0,
         "hy_oas_z": -0.91,
@@ -14862,96 +14862,6 @@
         }
       },
       {
-        "theme": "rare_earth_critical_min",
-        "name": "Rare Earth & Critical Minerals",
-        "stage": "BROADENING (text)",
-        "tier": "P",
-        "rationale": "language signal TIGHT and revisions rising \u2014 text-only; awaiting numeric physical confirmation \u00b7 policy pipeline: comment close in 1d (2026-07-15); 6 proposed rule(s) last 60d; 6 final rule(s) last 60d",
-        "entry_ready": false,
-        "entry_note": "text-only thesis \u2014 awaiting numeric physical confirmation; no entry until FRED bottleneck leg fires",
-        "bottleneck_band": "TIGHT (text)",
-        "bottleneck_text_only": true,
-        "bottleneck_fingerprint_only": false,
-        "tightness": 0.43,
-        "bottleneck_regime": false,
-        "demand_band": null,
-        "demand_strength": null,
-        "capex_yoy": null,
-        "revision_breadth": 0.111,
-        "revision_level": "POSITIVE",
-        "broadening_state": "RISING",
-        "est_drift_90d": 4.96,
-        "guidance_band": null,
-        "guidance_net": null,
-        "guidance_raisers": null,
-        "guidance_cutters": null,
-        "altdata_summary": null,
-        "n_altdata_leading": 0,
-        "altdata_members": null,
-        "glut_band": "STABLE",
-        "glut_score": 0.03,
-        "theme_feed_summary": null,
-        "divergence_share": null,
-        "ppi_yoy_latest": 5.8,
-        "language_accel": 2.0,
-        "policy_reg_chip": {
-          "theme": "rare_earth_critical_min",
-          "summary": "comment close in 1d (2026-07-15); 6 proposed rule(s) last 60d; 6 final rule(s) last 60d",
-          "days_to_comment_close": 1,
-          "days_to_rule_effective": null,
-          "prorule_inflow_60d": 6,
-          "rule_finalization_60d": 6,
-          "next_comment_close_date": "2026-07-15",
-          "next_comment_close_title": "Energy Conservation Program: Energy Conservation Standards for Distribution Transformers",
-          "evidence_class": "dated-structured"
-        },
-        "score": 50.0,
-        "score_detail": {
-          "score": 50.0,
-          "base": 83.6,
-          "axes": {
-            "magnitude": null,
-            "acceleration": 0.9,
-            "bottleneck": null,
-            "pricing_power": 0.79,
-            "underpricing": 1.0,
-            "purity": null,
-            "timing": 0.4
-          },
-          "n_axes_live": 4,
-          "caps": [
-            "text-only (no physical bottleneck) -> capped at 50"
-          ],
-          "verdict": "watch",
-          "physical_confirmed": false,
-          "earliness": 1.0
-        },
-        "size_band": "WATCH",
-        "size_note": "thesis on unconfirmed evidence (text/fingerprint) \u2014 watch, no size until real-time physical confirms",
-        "derisk": false,
-        "size_mult": 0.06,
-        "size_detail": {
-          "band": "WATCH",
-          "derisk": false,
-          "note": "thesis on unconfirmed evidence (text/fingerprint) \u2014 watch, no size until real-time physical confirms",
-          "earliness": 1.0,
-          "earliness_tilt": 1.25,
-          "cluster_dilution": {
-            "cluster_id": "c2",
-            "cluster_size": 3,
-            "enb_cluster": 1.46,
-            "factor": 0.4867,
-            "note": "dilution = min(1, ENB=1.5 / size=3) = 0.49"
-          },
-          "size_mult_breakdown": {
-            "stage_cap": 0.1,
-            "earliness_tilt": 1.25,
-            "cluster_dilution": 0.4867,
-            "product": 0.06
-          }
-        }
-      },
-      {
         "theme": "copper_steel_electrify",
         "name": "Copper, Steel & Electrification",
         "stage": "BROADENING (text)",
@@ -15038,6 +14948,96 @@
             "earliness_tilt": 1.0441,
             "cluster_dilution": 0.4867,
             "product": 0.05
+          }
+        }
+      },
+      {
+        "theme": "rare_earth_critical_min",
+        "name": "Rare Earth & Critical Minerals",
+        "stage": "BROADENING (text)",
+        "tier": "P",
+        "rationale": "language signal TIGHT and revisions rising \u2014 text-only; awaiting numeric physical confirmation \u00b7 policy pipeline: comment close in 1d (2026-07-15); 6 proposed rule(s) last 60d; 6 final rule(s) last 60d",
+        "entry_ready": false,
+        "entry_note": "text-only thesis \u2014 awaiting numeric physical confirmation; no entry until FRED bottleneck leg fires",
+        "bottleneck_band": "TIGHT (text)",
+        "bottleneck_text_only": true,
+        "bottleneck_fingerprint_only": false,
+        "tightness": 0.43,
+        "bottleneck_regime": false,
+        "demand_band": null,
+        "demand_strength": null,
+        "capex_yoy": null,
+        "revision_breadth": 0.111,
+        "revision_level": "POSITIVE",
+        "broadening_state": "RISING",
+        "est_drift_90d": 4.96,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
+        "altdata_summary": null,
+        "n_altdata_leading": 0,
+        "altdata_members": null,
+        "glut_band": "STABLE",
+        "glut_score": 0.03,
+        "theme_feed_summary": null,
+        "divergence_share": null,
+        "ppi_yoy_latest": 5.8,
+        "language_accel": 2.0,
+        "policy_reg_chip": {
+          "theme": "rare_earth_critical_min",
+          "summary": "comment close in 1d (2026-07-15); 6 proposed rule(s) last 60d; 6 final rule(s) last 60d",
+          "days_to_comment_close": 1,
+          "days_to_rule_effective": null,
+          "prorule_inflow_60d": 6,
+          "rule_finalization_60d": 6,
+          "next_comment_close_date": "2026-07-15",
+          "next_comment_close_title": "Energy Conservation Program: Energy Conservation Standards for Distribution Transformers",
+          "evidence_class": "dated-structured"
+        },
+        "score": 50.0,
+        "score_detail": {
+          "score": 50.0,
+          "base": 83.6,
+          "axes": {
+            "magnitude": null,
+            "acceleration": 0.9,
+            "bottleneck": null,
+            "pricing_power": 0.79,
+            "underpricing": 1.0,
+            "purity": null,
+            "timing": 0.4
+          },
+          "n_axes_live": 4,
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false,
+          "earliness": 1.0
+        },
+        "size_band": "WATCH",
+        "size_note": "thesis on unconfirmed evidence (text/fingerprint) \u2014 watch, no size until real-time physical confirms",
+        "derisk": false,
+        "size_mult": 0.06,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "thesis on unconfirmed evidence (text/fingerprint) \u2014 watch, no size until real-time physical confirms",
+          "earliness": 1.0,
+          "earliness_tilt": 1.25,
+          "cluster_dilution": {
+            "cluster_id": "c2",
+            "cluster_size": 3,
+            "enb_cluster": 1.46,
+            "factor": 0.4867,
+            "note": "dilution = min(1, ENB=1.5 / size=3) = 0.49"
+          },
+          "size_mult_breakdown": {
+            "stage_cap": 0.1,
+            "earliness_tilt": 1.25,
+            "cluster_dilution": 0.4867,
+            "product": 0.06
           }
         }
       },
@@ -17097,32 +17097,6 @@
         ]
       },
       {
-        "theme": "rare_earth_critical_min",
-        "name": "Rare Earth & Critical Minerals",
-        "stage": "BROADENING (text)",
-        "lit_sources": [],
-        "n_lit": 0,
-        "n_available": 3,
-        "source_available": {
-          "physical": true,
-          "demand": false,
-          "guidance": false,
-          "altdata": true,
-          "edgar_scarcity": true
-        },
-        "earliness": 1.0,
-        "earliness_absent": false,
-        "earliness_available": true,
-        "n_earliness_legs": 3,
-        "physical_confirmed": false,
-        "heat": 0.0,
-        "score": 50.0,
-        "size_band": "WATCH",
-        "signals": [],
-        "n_signals": 0,
-        "cross_surface": []
-      },
-      {
         "theme": "copper_steel_electrify",
         "name": "Copper, Steel & Electrification",
         "stage": "BROADENING (text)",
@@ -17137,6 +17111,32 @@
           "edgar_scarcity": true
         },
         "earliness": 0.588,
+        "earliness_absent": false,
+        "earliness_available": true,
+        "n_earliness_legs": 3,
+        "physical_confirmed": false,
+        "heat": 0.0,
+        "score": 50.0,
+        "size_band": "WATCH",
+        "signals": [],
+        "n_signals": 0,
+        "cross_surface": []
+      },
+      {
+        "theme": "rare_earth_critical_min",
+        "name": "Rare Earth & Critical Minerals",
+        "stage": "BROADENING (text)",
+        "lit_sources": [],
+        "n_lit": 0,
+        "n_available": 3,
+        "source_available": {
+          "physical": true,
+          "demand": false,
+          "guidance": false,
+          "altdata": true,
+          "edgar_scarcity": true
+        },
+        "earliness": 1.0,
         "earliness_absent": false,
         "earliness_available": true,
         "n_earliness_legs": 3,
@@ -18636,7 +18636,7 @@
       "phase": null
     },
     "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-    "_timing_s": 2.38,
+    "_timing_s": 2.14,
     "forward_log": {
       "market": "us",
       "n_graded": 0,
@@ -18811,7 +18811,7 @@
       }
     ],
     "flow": null,
-    "_timing_s": 0.09
+    "_timing_s": 0.08
   },
   "index_momentum": {
     "organ": "index_momentum.v1",
@@ -20444,11 +20444,11 @@
       ]
     },
     "n_roster": 13,
-    "_timing_s": 2.27
+    "_timing_s": 2.14
   },
   "vol_shock": {
-    "score": 46.2,
-    "score_int": 46,
+    "score": 46.6,
+    "score_int": 47,
     "band": "elevated",
     "band_zh": "\u5347\u9ad8",
     "asof": "2026-07-14",
@@ -20503,14 +20503,14 @@
         "key": "vix_term",
         "label": "VIX term structure (inversion)",
         "label_zh": "VIX \u671f\u9650\u7ed3\u6784\uff08\u5012\u6302\uff09",
-        "value": 0.809,
+        "value": 0.855,
         "weight": 0.8,
         "available": true,
-        "sub": 0.0,
+        "sub": 2.5,
         "note": "contango \u2014 calm term structure",
         "note_zh": "Contango\u2014\u2014\u671f\u9650\u7ed3\u6784\u5e73\u9759",
         "color": "#5a9bd4",
-        "points": 0.0
+        "points": 0.4
       },
       {
         "key": "vrp_skew",
@@ -23096,14 +23096,14 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4058.0,
+        "price": 4054.2,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -6.1,
-        "pct_vs_200dma": -9.4,
+        "pct_vs_50dma": -6.2,
+        "pct_vs_200dma": -9.5,
         "rsi14": 42.0,
         "macd_pos": true,
-        "off_52w_high_pct": -23.7,
+        "off_52w_high_pct": -23.8,
         "season_this": "Jul: +1.0% avg, up 58% of years (n=26)",
         "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.0%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
         "mom_60d_pct": -14.3
@@ -23111,26 +23111,26 @@
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 80.09,
+        "price": 79.96,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -5.4,
-        "pct_vs_200dma": 7.4,
+        "pct_vs_50dma": -5.6,
+        "pct_vs_200dma": 7.2,
         "rsi14": 57.0,
         "macd_pos": true,
-        "off_52w_high_pct": -29.1,
+        "off_52w_high_pct": -29.2,
         "season_this": "Jul: +1.3% avg, up 69% of years (n=26)",
         "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.3%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -13.8
+        "mom_60d_pct": -14.0
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.37,
+        "price": 6.36,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 0.9,
-        "pct_vs_200dma": 11.1,
+        "pct_vs_200dma": 11.0,
         "rsi14": 57.0,
         "macd_pos": true,
         "off_52w_high_pct": -4.3,
@@ -23227,7 +23227,7 @@
   },
   "freshness": {
     "asof": "2026-07-14",
-    "built_at": "2026-07-14T22:19:30Z",
+    "built_at": "2026-07-14T23:29:23Z",
     "age_days": 0,
     "age_sessions": 0,
     "max_age_sessions": 1,
