@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-15T09:14:45.077341+00:00",
+  "generated_at": "2026-07-15T10:54:52.535011+00:00",
   "grade_horizons": [
     5,
     21,
@@ -9,20 +9,20 @@
   "by_desk": {
     "altdata": {
       "5": {
-        "n_obs": 146,
+        "n_obs": 147,
         "n_dates": 13,
-        "hit_rate": 0.513699,
-        "excess_mean": 0.000796,
+        "hit_rate": 0.510204,
+        "excess_mean": 0.00059,
         "wilson_ci_low": 0.291434,
         "state": "ACCRUING"
       }
     },
     "radar": {
       "5": {
-        "n_obs": 3480,
+        "n_obs": 3486,
         "n_dates": 17,
-        "hit_rate": 0.512431,
-        "excess_mean": -0.003145,
+        "hit_rate": 0.512993,
+        "excess_mean": -0.003134,
         "wilson_ci_low": 0.309629,
         "state": "ACCRUING"
       },
@@ -157,20 +157,20 @@
   "by_family": {
     "altdata": {
       "5": {
-        "n_obs": 146,
+        "n_obs": 147,
         "n_dates": 13,
-        "hit_rate": 0.513699,
-        "excess_mean": 0.000796,
+        "hit_rate": 0.510204,
+        "excess_mean": 0.00059,
         "wilson_ci_low": 0.291434,
         "state": "ACCRUING"
       }
     },
     "radar": {
       "5": {
-        "n_obs": 3480,
+        "n_obs": 3486,
         "n_dates": 17,
-        "hit_rate": 0.512431,
-        "excess_mean": -0.003145,
+        "hit_rate": 0.512993,
+        "excess_mean": -0.003134,
         "wilson_ci_low": 0.309629,
         "state": "ACCRUING"
       },
@@ -339,13 +339,13 @@
     }
   },
   "counts": {
-    "n_claims": 17164,
-    "n_grades": 12966,
+    "n_claims": 17182,
+    "n_grades": 12973,
     "n_placebo": 594,
     "n_rejected": 0,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 10186
+      "next_bar": 10193
     },
     "n_claims_unstamped_regime": 5773
   },
@@ -815,15 +815,15 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-15T09:14:53.065906+00:00",
+  "ladder_states_at": "2026-07-15T10:55:00.273481+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
         "n_dates": 13,
         "needed": 25,
         "wilson_ci_low": 0.291434,
-        "hit_rate": 0.513699,
-        "excess_mean": 0.000796,
+        "hit_rate": 0.510204,
+        "excess_mean": 0.00059,
         "ready": false,
         "approaching": false,
         "projected_ready_date": "2026-07-28",
@@ -1347,8 +1347,8 @@
         "n_dates": 17,
         "needed": 25,
         "wilson_ci_low": 0.309629,
-        "hit_rate": 0.512431,
-        "excess_mean": -0.003145,
+        "hit_rate": 0.512993,
+        "excess_mean": -0.003134,
         "ready": false,
         "approaching": false,
         "projected_ready_date": "2026-07-22",
@@ -1519,7 +1519,7 @@
     },
     "_duel_context": {
       "altdata": {
-        "challenger_excess_mean_5d": 0.000796,
+        "challenger_excess_mean_5d": 0.00059,
         "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 13,
         "wilson_ci_low_5d": 0.291434
@@ -1609,7 +1609,7 @@
         "wilson_ci_low_5d": null
       },
       "radar": {
-        "challenger_excess_mean_5d": -0.003145,
+        "challenger_excess_mean_5d": -0.003134,
         "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 17,
         "wilson_ci_low_5d": 0.309629
@@ -1640,5 +1640,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-15T09:15:04.248948+00:00"
+  "promotion_readiness_at": "2026-07-15T10:55:11.146384+00:00"
 }
