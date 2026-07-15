@@ -2,17 +2,16 @@
 
 # Active Build Map
 
-Generated: 2026-07-14T10:08:01.254405+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `af83a501ad4ba15aae17bf5ce115b589efea73f1`
+Generated: 2026-07-15T05:16:03.986785+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `dab09dfc0d710bc8ecf9c5f961e9ffe4e1ecffca`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #2536 | feat(flow-ml): FS-3 prereg — flow-score ML gauntlet registered before the trainer exists (FDR family 28→36) | `claude/fs3-ml-prereg` | 2026-07-14 | — |
-| #2535 | 红涨绿跌: Chinese-mode colours for market-direction gauges + macro hero state-driven glance | `claude/serene-goldwasser-2be9ab` | 2026-07-14 | DRAFT |
+| #2572 | research: study intraday large-cap tech leaders | `codex/large-cap-leader-study-20260714` | 2026-07-14 | — |
+| #2568 | feat(flow-ml): FS-4 — trainer + calibrated scorer + display surfaces (prereg-frozen) | `claude/fs4-flow-score` | 2026-07-14 | ⚠ protected:1 |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
-> ℹ 2 of 2 PRs: mergeability not yet computed by GitHub (UNKNOWN).
 
 ## File Collisions
 
@@ -22,6 +21,37 @@ _No file collisions detected among open PRs._
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #2587 | fix(daily): stop the nightly failing — engine timeout 120→150, tolerant oracle git-add, R2 tripwire 2h→26h | 2026-07-15 |
+| #2586 | ci(ccw-w4): add plotly to ccw-w4-credit-desk install deps | 2026-07-15 |
+| #2585 | research(ccw): W6 Study S1 — spread-velocity lead test (LEADS, with honest caveats) | 2026-07-15 |
+| #2584 | docs(release_forecast): bridge forward-proxy field guide (understanding phase) | 2026-07-15 |
+| #2583 | chore(deploy): mirror terminal-data publish-integrity gate | 2026-07-15 |
+| #2582 | feat(ccw): W4 surfaces — the ratified Corporate credit desk on bonds.html | 2026-07-15 |
+| #2581 | feat(mlc): W5 earnings-proximity wiring — un-stale the store + report-date chips | 2026-07-15 |
+| #2580 | feat(mlc): W1 Leadership Board — megacap tiles + cohort + sector RS (macro & us_stocks) | 2026-07-15 |
+| #2579 | fix(v11): fence NIPA re-base seams on the walk-forward TARGET side (follow-up to #2575) | 2026-07-15 |
+| #2578 | research(registry): append missing sector_rotation_schedule.v1 kill row (Oracle TM adjudication) | 2026-07-15 |
+| #2577 | feat(release_forecast): combined_point v1 — pre-registered forecast-combination layer (MRI-R40) | 2026-07-14 |
+| #2576 | docs(mlc): 2026-07-14 rotation-miss postmortem + Megacap & Leadership Coherence masterplan (W0) | 2026-07-14 |
+| #2575 | fix(release_forecast): extend FIX 2 range guard to v11 PCE/PPI feature builders (#2574 follow-up) | 2026-07-14 |
+| #2574 | fix(release_forecast): CPI June-2026 post-mortem P0 — feature units, mf_energy gamma, range guard, scoring PIT | 2026-07-14 |
+| #2573 | feat(ccw): W3 credit momentum organs — velocity, breadth, fallen-angel watch (crosses honestly DEMOTED) | 2026-07-15 |
+| #2571 | fix(analytics): geo_enrich hardening — skip non-routable IPs, no NULL-pin on unresolved | 2026-07-14 |
+| #2570 | fix(analytics): real visitor IP behind the CDN | 2026-07-14 |
+| #2569 | research(ric): proactive-learning pass — HS-1/HS-2 + MRI miss anatomy + risk-radar episode atlas | 2026-07-14 |
+| #2567 | feat(admin-analytics): Frequent Visitors tab + IP/state in Sessions + geo-enrich UA fix | 2026-07-14 |
+| #2566 | feat(cycle): mobile UX overhaul — working touch gestures, native drag sheet, category filter | 2026-07-14 |
+| #2565 | fix(china-stocks): act-now SECTOR tag chips render bilingual twins (tag_zh) | 2026-07-14 |
+| #2564 | fix(capability-broker): stop journal artifact paths tripping the base64 redline selftest | 2026-07-14 |
+| #2563 | fix(china-stocks): act-now board — imminent no longer 'Buy Now', HTF curl-down de-escalates, rows link out | 2026-07-14 |
+| #2562 | test: repair stale qvix end-marker in china W0.9 copy tests | 2026-07-14 |
+| #2561 | fix(analytics-deploy): browser UA for Supabase Management API (Cloudflare 1010) | 2026-07-14 |
+| #2560 | macro: integrate Release Radar into Events-dialog calendar cards | 2026-07-14 |
+| #2559 | fix: audit sweep of recent PRs (#2529–#2554) — 11 correctness/CI fixes | 2026-07-14 |
+| #2558 | chore(analytics): deploy-analytics workflow (migrate + wire + restart) | 2026-07-14 |
+| #2557 | feat(ccw): W5 FINRA lane — corporate bond market breadth + flow sentiment collector | 2026-07-14 |
+| #2556 | CCW W2 — g-spread engine + aggregates + validation gate (PASS; MV/Par empirically CLEAN) | 2026-07-14 |
+| #2555 | research(ccw): W6a field guide — the AI-capex credit cycle | 2026-07-14 |
 | #2554 | feat(ccw): W1 data spine — SSGA bond-fund PIT store, issuer→theme registry, FRED credit ladder + us20y | 2026-07-14 |
 | #2553 | perf(nightly): split collect into core + collect_tail so engine starts ~30-75m earlier | 2026-07-14 |
 | #2552 | docs(ccw): Corporate Credit Watch masterplan (W0) — corporate bond tracking by theme, g-spread + credit momentum (CCW-R1..R16) | 2026-07-14 |
@@ -40,6 +70,8 @@ _No file collisions detected among open PRs._
 | #2539 | ops(runners): dedicated macstudio-light runner for live lanes — end 47-144m queue stalls | 2026-07-14 |
 | #2538 | feat(vsb): W6 — accruing Tier-B radar legs + correlation floor-break alert | 2026-07-14 |
 | #2537 | feat(vsb): W5 surface — vol-weather strip + AI-vs-the-rest panel (Market Sentiment dialog) | 2026-07-14 |
+| #2536 | feat(flow-ml): FS-3 prereg — flow-score ML gauntlet registered before the trainer exists (FDR family 28→36) | 2026-07-14 |
+| #2535 | 红涨绿跌: Chinese-mode colours for market-direction gauges + macro hero state-driven glance | 2026-07-14 |
 | #2534 | feat(vsb): W4 — AI-adjacency tag layer + decomposed breadth engine | 2026-07-14 |
 | #2533 | feat(vsb): W2 — PIT context ledger columns (vol-suppression/bifurcation stack) | 2026-07-14 |
 | #2532 | feat(flow-ml): FS-2 field guide + descriptive atlas — practice writeup, playbook priors, measured base rates | 2026-07-14 |
@@ -489,39 +521,6 @@ _No file collisions detected among open PRs._
 | #2067 | feat(til-w10): ClinicalTrials.gov theme-level pipeline density | 2026-07-10 |
 | #2066 | feat(ts-u0): repeal tape blackout — graded modes + staleness honesty | 2026-07-10 |
 | #2065 | feat(ts-u2): mtf_upturn.v1 — per-stock multi-timeframe upturn-confluence organ | 2026-07-10 |
-| #2064 | feat(ts-u1): NYSE session_date() helper + fix UTC-midnight stamp bugs (TS-R2) | 2026-07-10 |
-| #2063 | docs(turn-sensitivity): TSU masterplan — per-stock MTF turn detection + dashboard reach | 2026-07-10 |
-| #2062 | feat(taskboard): Slate PWA conversion + command palette | 2026-07-10 |
-| #2061 | feat(causal): operator ruling — OAuth identity for scheduled auto-loop + auto_loop ON (CHF-R8 amendment) | 2026-07-10 |
-| #2060 | test(measurement): make stale hubv2 pins durable (gap_type enum + shared absent-context render) | 2026-07-10 |
-| #2059 | docs(tv-parity): TV-parity charting program docket | 2026-07-10 |
-| #2058 | feat(til-w8): Census HS-code import-flow trace — physical-flow leg for onshoring themes | 2026-07-10 |
-| #2057 | fix(til): cortex schema parity for all ask_brain read tools | 2026-07-09 |
-| #2056 | feat(til-w9): EDGAR phrase-velocity + GitHub adoption two-source discovery confluence | 2026-07-09 |
-| #2055 | fix(til-w7): DOL_CERTS_STORE directory semantics + hermetic store tests | 2026-07-09 |
-| #2054 | fix(til-w7): PERM FY2026 layout change + crash isolation in DOL collector | 2026-07-09 |
-| #2053 | feat(oracle): TAPE-ONSET (unconfirmed) display tier per registration (FTR W7) | 2026-07-09 |
-| #2052 | feat(til-w7): DOL PERM/LCA hiring-intent leg (PR-W7) | 2026-07-09 |
-| #2051 | feat(causal): W6 — anti-mirage auditor + confluence tags + admin Causal Lab (CHF-R10/R13) | 2026-07-09 |
-| #2050 | feat(causal): W5 — gated LLM brainstorm runner + cortex read-tool + factory handoff (CHF-R2/R8/R17) | 2026-07-09 |
-| #2049 | feat(taskboard): Slate Brain notebook + responsive upgrade | 2026-07-09 |
-| #2048 | fix(til): W5 follow-up — CJK routing, falsifier count semantics, synapse provenance | 2026-07-09 |
-| #2047 | feat(til): TIL W5 — NW citizenship for thematic state (PR-G) | 2026-07-09 |
-| #2046 | feat(ftr-w3): tape band + turn-watch cards + disagreement chips + anatomy panel (Variant B, operator-approved) (FTR W3+W8-UI) | 2026-07-09 |
-| #2045 | feat(ftr-w9): basket_turn.v1 cohort claims + tape_disagreement.v1 survival ledger (FTR W9) | 2026-07-09 |
-| #2044 | feat(ftr-w10): Discord alerts for turn-watch IGNITION / shock activation / tape disagreement (FTR W10) | 2026-07-09 |
-| #2043 | research(oracle): TAPE-ONSET (unconfirmed) tier registration (FTR W7) | 2026-07-09 |
-| #2042 | feat(ftr-w4): basket turn-watch K-of-N organ + ledger + complex pulse block (FTR W4+W5-data) | 2026-07-09 |
-| #2041 | fix(ftr): live-quotes universe covers basket members (cap raise or prioritized universe) — measured | 2026-07-09 |
-| #2040 | feat(hk-pick-lab): HK Pick Lab — 20 organ-integrated books + 1D Velocity Desk flagship-2 + stale-cross diagnostic (HKPL-R1..R10) | 2026-07-09 |
-| #2039 | fix(ftr-w0): allocation staleness root-cause + surface-freshness sentinel + scorecard THEME fix (FTR W0) | 2026-07-09 |
-| #2038 | feat(ftr-w2): intraday+premarket basket pulse (site/live/basket_pulse.json) + fastpath premarket window (FTR W2b/c) | 2026-07-09 |
-| #2037 | feat(ftr-w1/w2a): shock-banner + lever chip + horizon labels + member live-spans on basket/allocation surfaces (FTR W1+W2a) | 2026-07-09 |
-| #2036 | feat(ftr-w6): early-close provisional render lane (earlyclose.yml + engine-render scope=fast) (FTR W6) | 2026-07-09 |
-| #2035 | fix(launchd): optionsmatrix TCC-safe exec paths + ET-intent hours for both theta jobs | 2026-07-09 |
-| #2034 | docs(fast-turn): FTR two-speed tape masterplan (FT-R1..R13, W0-W10) | 2026-07-09 |
-| #2033 | fix(pass4-j): TCC-safe matrix REPO + rescued poller baseline + VEX sign comments | 2026-07-09 |
-| #2032 | fix(chainheat): TCC-safe deploy worktree paths + nullable field coercion | 2026-07-09 |
 
 ---
 

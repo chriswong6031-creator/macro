@@ -1,82 +1,228 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-14T10:08:01.254405+00:00",
+  "generated_at": "2026-07-15T05:16:03.986785+00:00",
   "base": {
-    "sha": "af83a501ad4ba15aae17bf5ce115b589efea73f1"
+    "sha": "dab09dfc0d710bc8ecf9c5f961e9ffe4e1ecffca"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 2536,
-      "title": "feat(flow-ml): FS-3 prereg \u2014 flow-score ML gauntlet registered before the trainer exists (FDR family 28\u219236)",
-      "head_ref": "claude/fs3-ml-prereg",
-      "updated_at": "2026-07-14T05:17:57Z",
+      "number": 2572,
+      "title": "research: study intraday large-cap tech leaders",
+      "head_ref": "codex/large-cap-leader-study-20260714",
+      "updated_at": "2026-07-14T20:27:15Z",
       "is_draft": false,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
-      "files_count": 3,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 12,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "research/FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE.md",
-        "research/OPTIONS_ALPHA_FLOW_SCORE_AMENDMENT.md",
-        "research/OPTIONS_ALPHA_MASTERPLAN.md"
+        "research/INTRADAY_LARGE_CAP_TECH_LEADER_PHASE0_RESULTS.md",
+        "research/INTRADAY_LARGE_CAP_TECH_LEADER_PREREG.md",
+        "research/intraday_large_cap_tech_leader_phase0/chronological_blocks.csv",
+        "research/intraday_large_cap_tech_leader_phase0/exploratory_full_day_atlas.csv",
+        "research/intraday_large_cap_tech_leader_phase0/feature_atlas.csv",
+        "research/intraday_large_cap_tech_leader_phase0/leave_one_out.csv",
+        "research/intraday_large_cap_tech_leader_phase0/manifest.json",
+        "research/intraday_large_cap_tech_leader_phase0/selector_metrics.csv",
+        "research/intraday_large_cap_tech_leader_phase0/session_events.csv",
+        "research/intraday_large_cap_tech_leader_phase0/winner_census.csv",
+        "scripts/research/intraday_large_cap_tech_leader_study.py",
+        "tests/test_intraday_large_cap_tech_leader_study.py"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 2535,
-      "title": "\u7ea2\u6da8\u7eff\u8dcc: Chinese-mode colours for market-direction gauges + macro hero state-driven glance",
-      "head_ref": "claude/serene-goldwasser-2be9ab",
-      "updated_at": "2026-07-14T05:33:54Z",
-      "is_draft": true,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
-      "files_count": 34,
+      "number": 2568,
+      "title": "feat(flow-ml): FS-4 \u2014 trainer + calibrated scorer + display surfaces (prereg-frozen)",
+      "head_ref": "claude/fs4-flow-score",
+      "updated_at": "2026-07-14T19:19:48Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 14,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "site/allocation_scorecard.js",
-        "site/baskets_desk.js",
-        "site/live.js",
-        "site/macro.html",
-        "site/theme.css",
-        "site/wh_banner.js",
-        "templates/_mag7_panel.css.j2",
-        "templates/alerts.html.j2",
-        "templates/allocation.html.j2",
-        "templates/allocation_scorecard.js",
-        "templates/basket_detail.html.j2",
-        "templates/baskets.html.j2",
-        "templates/baskets_desk.js",
-        "templates/china_altdata.html.j2",
-        "templates/china_intel.html.j2",
-        "templates/china_narrative_radar.html.j2",
-        "templates/china_policy_watch.html.j2",
-        "templates/china_radar.html.j2",
-        "templates/china_sector_desk.html.j2",
-        "templates/china_strategies.html.j2",
-        "templates/dashboard.html.j2",
-        "templates/factors.html.j2",
-        "templates/forex.html.j2",
-        "templates/intraday_flow.html.j2",
-        "templates/leader_radar.html.j2",
-        "templates/live.js",
-        "templates/spr.html.j2",
-        "templates/spvector.html.j2",
-        "templates/subsectors.html.j2",
-        "templates/subsectors_china.html.j2",
-        "templates/tech_lab.html.j2",
-        "templates/theme.css",
-        "templates/wh_banner.js",
-        "templates/whitehouse.html.j2"
+        ".github/workflows/ci.yml",
+        ".gitignore",
+        "config/flow_score.yml",
+        "lib/flow_score.py",
+        "research/FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE.md",
+        "research/OPTIONS_ALPHA_MASTERPLAN.md",
+        "scripts/build_flow_desk.py",
+        "scripts/build_flow_signals.py",
+        "scripts/build_stock_library.py",
+        "scripts/ops_train_flow_score.py",
+        "templates/flow_desk.html.j2",
+        "tests/test_flow_score_stock_block.py",
+        "tests/test_fs4_flow_scorer.py",
+        "tests/test_fs4_flow_trainer.py"
       ],
-      "protected_paths_touched": []
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
     }
   ],
   "collisions": [],
   "recent_merged": [
+    {
+      "number": 2587,
+      "title": "fix(daily): stop the nightly failing \u2014 engine timeout 120\u2192150, tolerant oracle git-add, R2 tripwire 2h\u219226h",
+      "merged_at": "2026-07-15T05:13:27Z"
+    },
+    {
+      "number": 2586,
+      "title": "ci(ccw-w4): add plotly to ccw-w4-credit-desk install deps",
+      "merged_at": "2026-07-15T05:12:30Z"
+    },
+    {
+      "number": 2585,
+      "title": "research(ccw): W6 Study S1 \u2014 spread-velocity lead test (LEADS, with honest caveats)",
+      "merged_at": "2026-07-15T05:01:34Z"
+    },
+    {
+      "number": 2584,
+      "title": "docs(release_forecast): bridge forward-proxy field guide (understanding phase)",
+      "merged_at": "2026-07-15T05:08:33Z"
+    },
+    {
+      "number": 2583,
+      "title": "chore(deploy): mirror terminal-data publish-integrity gate",
+      "merged_at": "2026-07-15T04:52:19Z"
+    },
+    {
+      "number": 2582,
+      "title": "feat(ccw): W4 surfaces \u2014 the ratified Corporate credit desk on bonds.html",
+      "merged_at": "2026-07-15T04:06:37Z"
+    },
+    {
+      "number": 2581,
+      "title": "feat(mlc): W5 earnings-proximity wiring \u2014 un-stale the store + report-date chips",
+      "merged_at": "2026-07-15T04:39:14Z"
+    },
+    {
+      "number": 2580,
+      "title": "feat(mlc): W1 Leadership Board \u2014 megacap tiles + cohort + sector RS (macro & us_stocks)",
+      "merged_at": "2026-07-15T04:30:27Z"
+    },
+    {
+      "number": 2579,
+      "title": "fix(v11): fence NIPA re-base seams on the walk-forward TARGET side (follow-up to #2575)",
+      "merged_at": "2026-07-15T04:10:35Z"
+    },
+    {
+      "number": 2578,
+      "title": "research(registry): append missing sector_rotation_schedule.v1 kill row (Oracle TM adjudication)",
+      "merged_at": "2026-07-15T01:33:57Z"
+    },
+    {
+      "number": 2577,
+      "title": "feat(release_forecast): combined_point v1 \u2014 pre-registered forecast-combination layer (MRI-R40)",
+      "merged_at": "2026-07-14T23:50:17Z"
+    },
+    {
+      "number": 2576,
+      "title": "docs(mlc): 2026-07-14 rotation-miss postmortem + Megacap & Leadership Coherence masterplan (W0)",
+      "merged_at": "2026-07-14T23:21:15Z"
+    },
+    {
+      "number": 2575,
+      "title": "fix(release_forecast): extend FIX 2 range guard to v11 PCE/PPI feature builders (#2574 follow-up)",
+      "merged_at": "2026-07-14T22:58:51Z"
+    },
+    {
+      "number": 2574,
+      "title": "fix(release_forecast): CPI June-2026 post-mortem P0 \u2014 feature units, mf_energy gamma, range guard, scoring PIT",
+      "merged_at": "2026-07-14T22:36:31Z"
+    },
+    {
+      "number": 2573,
+      "title": "feat(ccw): W3 credit momentum organs \u2014 velocity, breadth, fallen-angel watch (crosses honestly DEMOTED)",
+      "merged_at": "2026-07-15T01:24:33Z"
+    },
+    {
+      "number": 2571,
+      "title": "fix(analytics): geo_enrich hardening \u2014 skip non-routable IPs, no NULL-pin on unresolved",
+      "merged_at": "2026-07-14T20:11:44Z"
+    },
+    {
+      "number": 2570,
+      "title": "fix(analytics): real visitor IP behind the CDN",
+      "merged_at": "2026-07-14T19:49:24Z"
+    },
+    {
+      "number": 2569,
+      "title": "research(ric): proactive-learning pass \u2014 HS-1/HS-2 + MRI miss anatomy + risk-radar episode atlas",
+      "merged_at": "2026-07-14T19:29:22Z"
+    },
+    {
+      "number": 2567,
+      "title": "feat(admin-analytics): Frequent Visitors tab + IP/state in Sessions + geo-enrich UA fix",
+      "merged_at": "2026-07-14T18:34:55Z"
+    },
+    {
+      "number": 2566,
+      "title": "feat(cycle): mobile UX overhaul \u2014 working touch gestures, native drag sheet, category filter",
+      "merged_at": "2026-07-14T13:43:32Z"
+    },
+    {
+      "number": 2565,
+      "title": "fix(china-stocks): act-now SECTOR tag chips render bilingual twins (tag_zh)",
+      "merged_at": "2026-07-14T13:38:48Z"
+    },
+    {
+      "number": 2564,
+      "title": "fix(capability-broker): stop journal artifact paths tripping the base64 redline selftest",
+      "merged_at": "2026-07-14T13:15:56Z"
+    },
+    {
+      "number": 2563,
+      "title": "fix(china-stocks): act-now board \u2014 imminent no longer 'Buy Now', HTF curl-down de-escalates, rows link out",
+      "merged_at": "2026-07-14T13:21:48Z"
+    },
+    {
+      "number": 2562,
+      "title": "test: repair stale qvix end-marker in china W0.9 copy tests",
+      "merged_at": "2026-07-14T13:11:03Z"
+    },
+    {
+      "number": 2561,
+      "title": "fix(analytics-deploy): browser UA for Supabase Management API (Cloudflare 1010)",
+      "merged_at": "2026-07-14T12:43:02Z"
+    },
+    {
+      "number": 2560,
+      "title": "macro: integrate Release Radar into Events-dialog calendar cards",
+      "merged_at": "2026-07-14T12:41:47Z"
+    },
+    {
+      "number": 2559,
+      "title": "fix: audit sweep of recent PRs (#2529\u2013#2554) \u2014 11 correctness/CI fixes",
+      "merged_at": "2026-07-14T12:47:20Z"
+    },
+    {
+      "number": 2558,
+      "title": "chore(analytics): deploy-analytics workflow (migrate + wire + restart)",
+      "merged_at": "2026-07-14T12:36:06Z"
+    },
+    {
+      "number": 2557,
+      "title": "feat(ccw): W5 FINRA lane \u2014 corporate bond market breadth + flow sentiment collector",
+      "merged_at": "2026-07-14T12:38:49Z"
+    },
+    {
+      "number": 2556,
+      "title": "CCW W2 \u2014 g-spread engine + aggregates + validation gate (PASS; MV/Par empirically CLEAN)",
+      "merged_at": "2026-07-14T21:15:52Z"
+    },
+    {
+      "number": 2555,
+      "title": "research(ccw): W6a field guide \u2014 the AI-capex credit cycle",
+      "merged_at": "2026-07-14T11:24:11Z"
+    },
     {
       "number": 2554,
       "title": "feat(ccw): W1 data spine \u2014 SSGA bond-fund PIT store, issuer\u2192theme registry, FRED credit ladder + us20y",
@@ -166,6 +312,16 @@
       "number": 2537,
       "title": "feat(vsb): W5 surface \u2014 vol-weather strip + AI-vs-the-rest panel (Market Sentiment dialog)",
       "merged_at": "2026-07-14T05:30:48Z"
+    },
+    {
+      "number": 2536,
+      "title": "feat(flow-ml): FS-3 prereg \u2014 flow-score ML gauntlet registered before the trainer exists (FDR family 28\u219236)",
+      "merged_at": "2026-07-14T11:49:06Z"
+    },
+    {
+      "number": 2535,
+      "title": "\u7ea2\u6da8\u7eff\u8dcc: Chinese-mode colours for market-direction gauges + macro hero state-driven glance",
+      "merged_at": "2026-07-14T12:02:50Z"
     },
     {
       "number": 2534,
@@ -2411,171 +2567,6 @@
       "number": 2065,
       "title": "feat(ts-u2): mtf_upturn.v1 \u2014 per-stock multi-timeframe upturn-confluence organ",
       "merged_at": "2026-07-10T03:18:33Z"
-    },
-    {
-      "number": 2064,
-      "title": "feat(ts-u1): NYSE session_date() helper + fix UTC-midnight stamp bugs (TS-R2)",
-      "merged_at": "2026-07-10T02:57:12Z"
-    },
-    {
-      "number": 2063,
-      "title": "docs(turn-sensitivity): TSU masterplan \u2014 per-stock MTF turn detection + dashboard reach",
-      "merged_at": "2026-07-10T02:32:47Z"
-    },
-    {
-      "number": 2062,
-      "title": "feat(taskboard): Slate PWA conversion + command palette",
-      "merged_at": "2026-07-10T01:46:21Z"
-    },
-    {
-      "number": 2061,
-      "title": "feat(causal): operator ruling \u2014 OAuth identity for scheduled auto-loop + auto_loop ON (CHF-R8 amendment)",
-      "merged_at": "2026-07-10T01:40:06Z"
-    },
-    {
-      "number": 2060,
-      "title": "test(measurement): make stale hubv2 pins durable (gap_type enum + shared absent-context render)",
-      "merged_at": "2026-07-10T01:34:05Z"
-    },
-    {
-      "number": 2059,
-      "title": "docs(tv-parity): TV-parity charting program docket",
-      "merged_at": "2026-07-10T01:28:08Z"
-    },
-    {
-      "number": 2058,
-      "title": "feat(til-w8): Census HS-code import-flow trace \u2014 physical-flow leg for onshoring themes",
-      "merged_at": "2026-07-10T01:32:49Z"
-    },
-    {
-      "number": 2057,
-      "title": "fix(til): cortex schema parity for all ask_brain read tools",
-      "merged_at": "2026-07-09T21:48:47Z"
-    },
-    {
-      "number": 2056,
-      "title": "feat(til-w9): EDGAR phrase-velocity + GitHub adoption two-source discovery confluence",
-      "merged_at": "2026-07-09T21:50:28Z"
-    },
-    {
-      "number": 2055,
-      "title": "fix(til-w7): DOL_CERTS_STORE directory semantics + hermetic store tests",
-      "merged_at": "2026-07-09T20:31:48Z"
-    },
-    {
-      "number": 2054,
-      "title": "fix(til-w7): PERM FY2026 layout change + crash isolation in DOL collector",
-      "merged_at": "2026-07-09T20:24:18Z"
-    },
-    {
-      "number": 2053,
-      "title": "feat(oracle): TAPE-ONSET (unconfirmed) display tier per registration (FTR W7)",
-      "merged_at": "2026-07-09T20:46:21Z"
-    },
-    {
-      "number": 2052,
-      "title": "feat(til-w7): DOL PERM/LCA hiring-intent leg (PR-W7)",
-      "merged_at": "2026-07-09T20:15:37Z"
-    },
-    {
-      "number": 2051,
-      "title": "feat(causal): W6 \u2014 anti-mirage auditor + confluence tags + admin Causal Lab (CHF-R10/R13)",
-      "merged_at": "2026-07-09T21:04:19Z"
-    },
-    {
-      "number": 2050,
-      "title": "feat(causal): W5 \u2014 gated LLM brainstorm runner + cortex read-tool + factory handoff (CHF-R2/R8/R17)",
-      "merged_at": "2026-07-09T20:27:34Z"
-    },
-    {
-      "number": 2049,
-      "title": "feat(taskboard): Slate Brain notebook + responsive upgrade",
-      "merged_at": "2026-07-09T19:38:31Z"
-    },
-    {
-      "number": 2048,
-      "title": "fix(til): W5 follow-up \u2014 CJK routing, falsifier count semantics, synapse provenance",
-      "merged_at": "2026-07-09T19:23:00Z"
-    },
-    {
-      "number": 2047,
-      "title": "feat(til): TIL W5 \u2014 NW citizenship for thematic state (PR-G)",
-      "merged_at": "2026-07-09T19:18:31Z"
-    },
-    {
-      "number": 2046,
-      "title": "feat(ftr-w3): tape band + turn-watch cards + disagreement chips + anatomy panel (Variant B, operator-approved) (FTR W3+W8-UI)",
-      "merged_at": "2026-07-09T20:09:26Z"
-    },
-    {
-      "number": 2045,
-      "title": "feat(ftr-w9): basket_turn.v1 cohort claims + tape_disagreement.v1 survival ledger (FTR W9)",
-      "merged_at": "2026-07-09T19:59:47Z"
-    },
-    {
-      "number": 2044,
-      "title": "feat(ftr-w10): Discord alerts for turn-watch IGNITION / shock activation / tape disagreement (FTR W10)",
-      "merged_at": "2026-07-09T19:30:06Z"
-    },
-    {
-      "number": 2043,
-      "title": "research(oracle): TAPE-ONSET (unconfirmed) tier registration (FTR W7)",
-      "merged_at": "2026-07-09T18:54:42Z"
-    },
-    {
-      "number": 2042,
-      "title": "feat(ftr-w4): basket turn-watch K-of-N organ + ledger + complex pulse block (FTR W4+W5-data)",
-      "merged_at": "2026-07-09T17:28:14Z"
-    },
-    {
-      "number": 2041,
-      "title": "fix(ftr): live-quotes universe covers basket members (cap raise or prioritized universe) \u2014 measured",
-      "merged_at": "2026-07-09T17:25:01Z"
-    },
-    {
-      "number": 2040,
-      "title": "feat(hk-pick-lab): HK Pick Lab \u2014 20 organ-integrated books + 1D Velocity Desk flagship-2 + stale-cross diagnostic (HKPL-R1..R10)",
-      "merged_at": "2026-07-09T15:37:23Z"
-    },
-    {
-      "number": 2039,
-      "title": "fix(ftr-w0): allocation staleness root-cause + surface-freshness sentinel + scorecard THEME fix (FTR W0)",
-      "merged_at": "2026-07-09T16:53:01Z"
-    },
-    {
-      "number": 2038,
-      "title": "feat(ftr-w2): intraday+premarket basket pulse (site/live/basket_pulse.json) + fastpath premarket window (FTR W2b/c)",
-      "merged_at": "2026-07-09T16:27:03Z"
-    },
-    {
-      "number": 2037,
-      "title": "feat(ftr-w1/w2a): shock-banner + lever chip + horizon labels + member live-spans on basket/allocation surfaces (FTR W1+W2a)",
-      "merged_at": "2026-07-09T15:32:10Z"
-    },
-    {
-      "number": 2036,
-      "title": "feat(ftr-w6): early-close provisional render lane (earlyclose.yml + engine-render scope=fast) (FTR W6)",
-      "merged_at": "2026-07-09T15:26:37Z"
-    },
-    {
-      "number": 2035,
-      "title": "fix(launchd): optionsmatrix TCC-safe exec paths + ET-intent hours for both theta jobs",
-      "merged_at": "2026-07-09T14:18:26Z"
-    },
-    {
-      "number": 2034,
-      "title": "docs(fast-turn): FTR two-speed tape masterplan (FT-R1..R13, W0-W10)",
-      "merged_at": "2026-07-09T14:03:54Z"
-    },
-    {
-      "number": 2033,
-      "title": "fix(pass4-j): TCC-safe matrix REPO + rescued poller baseline + VEX sign comments",
-      "merged_at": "2026-07-09T14:13:53Z"
-    },
-    {
-      "number": 2032,
-      "title": "fix(chainheat): TCC-safe deploy worktree paths + nullable field coercion",
-      "merged_at": "2026-07-09T14:01:05Z"
     }
   ]
 }
