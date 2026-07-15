@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-14T11:00:37.884115+00:00",
-  "as_of": "2026-07-14",
+  "generated_at": "2026-07-15T09:15:04.917784+00:00",
+  "as_of": "2026-07-15",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 403,
@@ -33,9 +33,9 @@
       },
       {
         "feature": "ivspread_5d_chg",
-        "n_nonnull": 331,
+        "n_nonnull": 338,
         "n_total": 403,
-        "share_nonnull": 0.8213
+        "share_nonnull": 0.8387
       },
       {
         "feature": "skew",
@@ -45,9 +45,9 @@
       },
       {
         "feature": "skew_5d_chg",
-        "n_nonnull": 356,
+        "n_nonnull": 360,
         "n_total": 403,
-        "share_nonnull": 0.8834
+        "share_nonnull": 0.8933
       },
       {
         "feature": "net_doi",
@@ -57,9 +57,9 @@
       },
       {
         "feature": "doi_pc",
-        "n_nonnull": 319,
+        "n_nonnull": 340,
         "n_total": 403,
-        "share_nonnull": 0.7916
+        "share_nonnull": 0.8437
       },
       {
         "feature": "fresh_contracts",
@@ -69,9 +69,9 @@
       },
       {
         "feature": "fresh_premium_mn",
-        "n_nonnull": 318,
+        "n_nonnull": 330,
         "n_total": 403,
-        "share_nonnull": 0.7891
+        "share_nonnull": 0.8189
       },
       {
         "feature": "zerodte_share",
@@ -123,9 +123,9 @@
       },
       {
         "feature": "pin_risk",
-        "n_nonnull": 286,
+        "n_nonnull": 277,
         "n_total": 403,
-        "share_nonnull": 0.7097
+        "share_nonnull": 0.6873
       },
       {
         "feature": "gex_confirm_verdict",
@@ -350,7 +350,7 @@
       "null_share": 1.0,
       "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
       "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
-      "current_opex_days": 3,
+      "current_opex_days": 2,
       "next_opex_date": "2026-07-17",
       "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
     },
@@ -377,38 +377,39 @@
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-13",
+          "latest_as_of": "2026-07-14",
           "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
           "latest_as_of": "2026-07-13 09:26 UTC",
-          "age_days_from_today": 1,
+          "age_days_from_today": 2,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-07-01",
-          "age_days_from_today": 13,
+          "age_days_from_today": 14,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-14T11:00:37.850493+00:00",
+      "generated_at": "2026-07-15T09:15:04.881571+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
+        "CHAINS AT LIMIT: latest chain file is 2026-07-14 (exactly 1 trading day(s) behind last_td=2026-07-15) \u2014 OK today but will trip if tomorrow's accrual is missed",
         "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
       ]
     }
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-14T11:00:37.884108+00:00",
-    "as_of": "2026-07-14",
+    "generated_at_utc": "2026-07-15T09:15:04.917777+00:00",
+    "as_of": "2026-07-15",
     "absent_stores": []
   }
 }
