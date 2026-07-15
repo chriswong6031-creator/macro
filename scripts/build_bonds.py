@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -389,6 +390,673 @@ _XA_VERDICT = {"tailwind": (C["green"], "Tailwind", "顺风"), "headwind": (C["r
                "neutral": (C["muted"], "Neutral", "中性")}
 
 
+# --------------------------------------------------------------------------- #
+# CCW-W4: Corporate Credit desk vm builder
+# --------------------------------------------------------------------------- #
+# Theme slug → (EN display name, ZH display name, basket slug or None)
+_THEME_META: dict[str, tuple[str, str, str | None]] = {
+    "hyperscaler_credit": ("Hyperscalers", "超大规模云商", None),
+    "neocloud_credit": ("AI clouds", "新型AI云商", "ai_neoclouds"),
+    "memory_credit": ("Memory chips", "存储芯片", "memory_storage"),
+    "ai_power_credit": ("AI power", "AI电力", None),
+    "dc_reit_credit": ("Data-centre landlords", "数据中心业主", None),
+    "ai_hardware_credit": ("AI hardware", "AI硬件", None),
+    "telecom_legacy": ("Telecom — the 1990s echo", "电信 · 90年代对照组", None),
+}
+
+_THEME_TIPS: dict[str, tuple[str, str]] = {
+    "hyperscaler_credit": (
+        "158 bonds, $811M par tracked across MSFT/AMZN/META/GOOGL/ORCL; avg maturity 7.6y; "
+        "extra yield +0.80% vs matched Treasuries (par-weighted, yield-to-maturity basis); "
+        "prices are fund-reported estimates.",
+        "追踪MSFT/AMZN/META/GOOGL/ORCL共158只债券、面值8.11亿美元；平均期限7.6年；"
+        "相对同期限国债额外收益+0.80%（面值加权、到期收益率口径）；价格为基金申报估值。",
+    ),
+    "neocloud_credit": (
+        "4 bonds, $116M par; junk-rated (B+); the highest borrowing cost of any theme we track; "
+        "converts and private loans not visible here.",
+        "4只债券、面值1.16亿美元；高收益级（B+）；为所有主题中借贷成本最高；可转债与私募贷款不在此覆盖范围。",
+    ),
+    "memory_credit": (
+        "9 bonds, $33M par (MU investment-grade + STX junk); "
+        "SanDisk's loan and Samsung/SK Hynix paper are not index-visible.",
+        "9只债券、面值3300万美元（美光投资级+希捷高收益）；"
+        "闪迪贷款及三星/海力士债券不在指数覆盖内。",
+    ),
+    "ai_power_credit": (
+        "44 bonds, $147M par across Vistra/Constellation/NextEra; tightest theme — "
+        "the market sees contracted nuclear cash flows as safe.",
+        "44只债券、面值1.47亿美元（Vistra/Constellation/NextEra）；"
+        "利差最窄——市场视核电长约现金流为安全。",
+    ),
+    "dc_reit_credit": (
+        "18 bonds, $50M par (Equinix, Digital Realty).",
+        "18只债券、面值5000万美元（Equinix、Digital Realty）。",
+    ),
+    "ai_hardware_credit": (
+        "25 bonds, $61M par (Dell).",
+        "25只债券、面值6100万美元（戴尔）。",
+    ),
+    "telecom_legacy": (
+        "44 bonds, $134M par (AT&T/Verizon). The 1996-2002 telecom debt boom is the closest "
+        "historical rhyme to today's AI build-out — this control group anchors the comparison.",
+        "44只债券、面值1.34亿美元（AT&T/Verizon）。"
+        "1996-2002电信债务潮是当前AI建设最接近的历史对照——该组用作比较基准。",
+    ),
+}
+
+# Spread (g-spread) thresholds (in %) for per-tile stance:
+#   calm (<1.2%), watch (1.2-4%), watch-closely (>=4%)
+#   tightening velocity also influences; default = watch-don't-chase when uncertain.
+def _theme_stance(level_pct: float | None, vel21_pctile: float | None,
+                  slug: str) -> tuple[str, str, str]:
+    """Return (stance_en, stance_zh, css_class) for a theme tile.
+
+    Severity-based, not direction-based — red/amber/green map to
+    stress level (so ZH directional color swap never applies here).
+    neocloud is always red (junk); telecom is always neutral (context).
+
+    Level thresholds (in %-fraction units, converted from bp):
+      ≥ 4.00% (400bp) or vel21_pctile ≥ 85  → Watch closely (ts-red)
+      ≥ 0.75% (75bp)                          → Watch (ts-amber)
+      < 0.75%                                 → Ignore (ts-calm)
+
+    The 75bp boundary matches the ratified mockup exactly: hyperscalers
+    at ~80bp show Watch while AI-power/DC-REIT/AI-hardware at ~58-59bp
+    show Ignore.  Velocity escalation overrides the level-only stance when
+    vel21_pctile ≥ 85 (widening fast → Watch closely regardless of level).
+    """
+    if slug == "telecom_legacy":
+        return "Context", "对照参考", "ts-neutral"
+    if slug == "neocloud_credit":
+        return "Watch closely", "密切观望", "ts-red"
+    if level_pct is None:
+        return "Building history", "数据积累中", "ts-neutral"
+    pctile = vel21_pctile or 50.0
+    if level_pct >= 4.0 or pctile >= 85:
+        return "Watch closely", "密切观望", "ts-red"
+    if level_pct >= 0.75:
+        return "Watch", "观望", "ts-amber"
+    return "Ignore", "无需关注", "ts-calm"
+
+
+def _hero_stance(cm: dict) -> tuple[str, str, str, str, str, str]:
+    """Return (state_en, state_zh, pill_en, pill_zh, pill_css, subtitle_en, ...) wait — 6 values.
+
+    Returns: (state_en, state_zh, pill_en, pill_zh, pill_css, hero_cs_class).
+    Deterministic mapping:
+      - tags.credit_market_turn.fired → 'Get ready' stance, cs-red hero
+      - any theme vel21_pctile ≥ 85 OR market IG widening → 'Watch — don't chase', cs-amber
+      - else → 'Watch — don't chase' (calm), cs-amber  (ratified default copy)
+    """
+    tags = cm.get("tags") or {}
+    cmt = tags.get("credit_market_turn") or {}
+    fired = bool(cmt.get("fired"))
+
+    if fired:
+        return (
+            "Credit stress: rising",
+            "信用压力：上升",
+            "Get ready",
+            "备战",
+            "stance-red",
+            "cs-red",
+        )
+
+    # check if any theme has widening stress (vel pctile ≥ 85)
+    themes = cm.get("themes") or {}
+    any_theme_stress = False
+    for tdata in themes.values():
+        spread = tdata.get("spread") or {}
+        vel = (spread.get("velocity") or {})
+        p = vel.get("vel21_pctile")
+        if p is not None and p >= 85:
+            any_theme_stress = True
+            break
+
+    # also check market IG for widening
+    market = cm.get("market") or {}
+    ig = market.get("ig") or {}
+    ig_state = ig.get("state", "accruing")
+    market_widening = ig_state in ("widening", "widening_stress")
+
+    if any_theme_stress or market_widening:
+        return (
+            "Credit stress: watch",
+            "信用压力：观察",
+            "Watch — don't chase",
+            "观望 · 勿追",
+            "stance-amber",
+            "cs-amber",
+        )
+
+    # default calm / accruing
+    return (
+        "Credit stress: low",
+        "信用压力：低",
+        "Watch — don't chase",
+        "观望 · 勿追",
+        "stance-amber",
+        "cs-amber",
+    )
+
+
+def _build_maturity_wall(cm_path: Path | None) -> list[dict]:
+    """Load maturity_wall.parquet and build per-theme bar data.
+
+    Each entry: {slug, en, zh, segs: [{css_class, flex}]}
+    Segs only for non-zero buckets; flex proportional to par_total.
+    Returns [] on missing file (null-safe).
+    """
+    _BUCKET_ORDER = ["0_1y", "1_3y", "3_5y", "5_10y", "10y_plus"]
+    _SEG_CSS = {"0_1y": "seg-0", "1_3y": "seg-1", "3_5y": "seg-2",
+                "5_10y": "seg-3", "10y_plus": "seg-4"}
+    if cm_path is None:
+        return []
+    mw_path = cm_path.parent / "series" / "maturity_wall.parquet"
+    try:
+        import pandas as _pd
+        mw = _pd.read_parquet(mw_path)
+        mw = mw[mw["scope_type"] == "theme"]
+    except Exception:  # noqa: BLE001
+        return []
+
+    rows = []
+    for slug, en_zh_basket in _THEME_META.items():
+        en, zh, _ = en_zh_basket
+        sub = mw[mw["scope"] == slug]
+        if sub.empty:
+            continue
+        segs = []
+        for bkt in _BUCKET_ORDER:
+            row = sub[sub["bucket"] == bkt]
+            if row.empty:
+                continue
+            val = float(row["par_total"].iloc[0])
+            if val > 0:
+                segs.append({"css_class": _SEG_CSS[bkt], "flex": round(val / 1_000_000, 1)})
+        if segs:
+            rows.append({"slug": slug, "en": en, "zh": zh, "segs": segs})
+    return rows
+
+
+def build_corp_credit_vm(data_root: Path | None = None) -> dict:
+    """Build the vm.corp_credit dict for the bonds template.
+
+    Null-safe: when credit_momentum.json is missing or any sub-key is absent,
+    renders accruing states with plain-word 'building history' copy.
+    Never raises.
+
+    Returns a dict that the template can reference as vm.corp_credit.
+    """
+    import logging as _log
+
+    _ACCRUING_AS_OF = "building history"
+    empty = {
+        "accruing": True,
+        "as_of": _ACCRUING_AS_OF,
+        "authority": {"rank": False, "size": False, "gate": False, "escalate": False},
+        "hero": {
+            "state_en": "Credit stress: low",
+            "state_zh": "信用压力：低",
+            "pill_en": "Watch — don't chase",
+            "pill_zh": "观望 · 勿追",
+            "pill_css": "stance-amber",
+            "hero_cs": "cs-amber",
+            "subtitle_en": "Company-bond stress is low; AI borrowing costs bear watching.",
+            "subtitle_zh": "整体压力仍低；AI公司的借贷成本值得关注。",
+        },
+        "gauges": [],
+        "themes": [],
+        "watch": {"orcl": None, "fallen_angel": None, "new_issuance": True},
+        "finra": None,
+        "maturity_wall": [],
+        "divergence_accruing": True,
+        "footer_as_of": _ACCRUING_AS_OF,
+    }
+
+    # locate credit_momentum.json
+    if data_root is None:
+        try:
+            from lib import config as _cfg
+            data_root = _cfg.data_dir()
+        except Exception:  # noqa: BLE001
+            return empty
+
+    cm_path = data_root / "corp_bonds" / "credit_momentum.json"
+    if not cm_path.exists():
+        return empty
+
+    try:
+        cm = json.loads(cm_path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return empty
+
+    as_of = cm.get("as_of") or _ACCRUING_AS_OF
+    authority = cm.get("authority") or {"rank": False, "size": False, "gate": False, "escalate": False}
+    accruing_flag = bool(cm.get("accruing"))
+
+    # Hero stance
+    state_en, state_zh, pill_en, pill_zh, pill_css, hero_cs = _hero_stance(cm)
+    hero = {
+        "state_en": state_en,
+        "state_zh": state_zh,
+        "pill_en": pill_en,
+        "pill_zh": pill_zh,
+        "pill_css": pill_css,
+        "hero_cs": hero_cs,
+        "subtitle_en": "Company-bond stress is low; AI borrowing costs bear watching.",
+        "subtitle_zh": "整体压力仍低；AI公司的借贷成本值得关注。",
+    }
+
+    # Spread gauges (4 chips from roster + market)
+    roster = cm.get("roster") or {}
+    market = cm.get("market") or {}
+    gauges = _build_spread_gauges(roster, market)
+
+    # Theme tiles (7)
+    themes_raw = cm.get("themes") or {}
+    theme_tiles = _build_theme_tiles(themes_raw, cm_path=cm_path)
+
+    # Watch strip
+    watch_raw = cm.get("watch") or {}
+    watch = _build_watch(watch_raw)
+
+    # FINRA breadth
+    breadth_raw = cm.get("breadth") or {}
+    finra = _build_finra_vm(breadth_raw)
+
+    # Maturity wall
+    maturity_wall = _build_maturity_wall(cm_path)
+
+    # Divergence: all accruing = show placeholder card
+    divergence = cm.get("divergence") or []
+    divergence_accruing = all(d.get("quadrant") == "accruing" for d in divergence) if divergence else True
+
+    return {
+        "accruing": accruing_flag,
+        "as_of": as_of,
+        "authority": authority,
+        "hero": hero,
+        "gauges": gauges,
+        "themes": theme_tiles,
+        "watch": watch,
+        "finra": finra,
+        "maturity_wall": maturity_wall,
+        "divergence_accruing": divergence_accruing,
+        "footer_as_of": as_of,
+    }
+
+
+def _build_spread_gauges(roster: dict, market: dict) -> list[dict]:
+    """Build the 4 spread-gauge chips from roster (ig_oas, hy_oas, quality_spread, ccc_bb).
+
+    Severity color: red=widening/stress, amber=watch, green=calm.
+    This is a SEVERITY gauge (not direction) — ZH color swap must NOT apply.
+    """
+    def _state_to_chip(state: str, level: float | None, pctile: float | None) -> tuple[str, str]:
+        """Return (chip_css, sub_color_css_class) based on state and velocity."""
+        if state in ("widening_stress",):
+            return "chip-red", "cc-sub-red"
+        if state in ("widening",):
+            return "chip-amber", "cc-sub-amber"
+        if state in ("tightening",) or (pctile is not None and (pctile or 0) < 35):
+            return "chip-calm", "cc-sub-calm"
+        return "chip-calm", "cc-sub-calm"
+
+    def _gauge(key: str, label_en: str, label_zh: str, sub_en: str, sub_zh: str,
+               tip_en: str, tip_zh: str, data: dict,
+               level_in_sub: bool = True) -> dict:
+        """Build one spread-gauge chip dict.
+
+        level_in_sub=True (default): when level is known, override sub_en/sub_zh with
+        the "+X.XX% extra yield" display (used for ig_oas, hy_oas, quality_spread).
+        level_in_sub=False: keep the semantic sub_en/sub_zh copy regardless of level
+        (used for ccc_bb where the level is a raw gap ratio, not an extra-yield display).
+        """
+        state = data.get("state", "accruing")
+        level = data.get("level")
+        vel = (data.get("velocity") or {})
+        pctile = vel.get("vel21_pctile")
+        chip_css, sub_color = _state_to_chip(state, level, pctile)
+        level_disp = f"+{level:.2f}%" if level is not None else None
+        if level_in_sub and level is not None and level_disp:
+            resolved_sub_en = level_disp
+            resolved_sub_zh = f"额外收益率 {level_disp}"
+        else:
+            resolved_sub_en = sub_en
+            resolved_sub_zh = sub_zh
+        return {
+            "key": key,
+            "label_en": label_en,
+            "label_zh": label_zh,
+            "chip_css": chip_css,
+            "sub_en": resolved_sub_en,
+            "sub_zh": resolved_sub_zh,
+            "sub_color": sub_color,  # CSS class for dark-mode-safe coloring (m3 fix)
+            "tip_en": tip_en,
+            "tip_zh": tip_zh,
+            "state": state,
+        }
+
+    ig = roster.get("ig_oas") or {}
+    hy = roster.get("hy_oas") or {}
+    qs = roster.get("quality_spread") or {}
+    ccc_bb = roster.get("ccc_bb") or {}
+
+    return [
+        _gauge(
+            "ig_oas",
+            "Quality-grade: creeping wider" if ig.get("state") == "widening" else "Quality-grade: steady",
+            "投资级：微幅走阔" if ig.get("state") == "widening" else "投资级：平稳",
+            f"extra yield +{ig.get('level', 0):.2f}%" if ig.get("level") is not None else "building history",
+            f"额外收益率 +{ig.get('level', 0):.2f}%" if ig.get("level") is not None else "数据积累中",
+            "Investment-grade extra yield over Treasuries; 21-day change velocity indicates direction.",
+            "投资级相对国债额外收益率；21日变化速度显示走阔/收窄方向。",
+            ig,
+        ),
+        _gauge(
+            "hy_oas",
+            "Junk: widening" if hy.get("state") == "widening" else "Junk: steady",
+            "高收益：走阔" if hy.get("state") == "widening" else "高收益：平稳",
+            f"extra yield +{hy.get('level', 0):.2f}%" if hy.get("level") is not None else "building history",
+            f"额外收益率 +{hy.get('level', 0):.2f}%" if hy.get("level") is not None else "数据积累中",
+            "High-yield extra yield; 21-day change mid-range.",
+            "高收益额外收益率；21日变化处于中位。",
+            hy,
+        ),
+        _gauge(
+            "quality_spread",
+            "Junk-vs-quality gap: steady",
+            "高低评级利差：平稳",
+            "gap mid-range",
+            "利差居中",
+            "The gap between junk and quality yields is a classic late-cycle gauge; "
+            "compression to extremes preceded 2007 and 2021 tops.",
+            "高低评级利差是经典的周期后段指标；压缩至极端曾出现在2007与2021顶部之前。",
+            qs,
+            level_in_sub=False,  # M1 fix: gap is not an extra-yield display
+        ),
+        _gauge(
+            "ccc_bb",
+            "Weakest borrowers: widening" if ccc_bb.get("state") == "widening" else "Weakest borrowers: steady",
+            "最弱借款人：走阔" if ccc_bb.get("state") == "widening" else "最弱借款人：平稳",
+            "CCC tier moving first" if ccc_bb.get("state") == "widening" else "CCC tier stable",
+            "CCC层级率先变动" if ccc_bb.get("state") == "widening" else "CCC层级平稳",
+            # Defect 4 fix: the raw CCC-BB gap level (8.11 points) belongs in the tip,
+            # not the glance sub-value.  The semantic copy stays in sub_en/sub_zh.
+            (f"CCC-vs-BB gap {ccc_bb['level']:.1f} points — the lowest-rated tier historically "
+             f"moves first in credit turns.")
+            if ccc_bb.get("level") is not None else
+            "CCC-vs-BB gap — the lowest-rated tier historically moves first in credit turns.",
+            (f"CCC与BB利差{ccc_bb['level']:.1f}点——历史上最低评级层级在信用拐点时最先变动。")
+            if ccc_bb.get("level") is not None else
+            "CCC与BB利差——历史上最低评级层级在信用拐点时最先变动。",
+            ccc_bb,
+            level_in_sub=False,
+        ),
+    ]
+
+
+def _load_theme_daily_levels(cm_path: Path | None) -> dict[str, float]:
+    """Load the latest g_spread_bp_pw per theme from theme_daily.parquet.
+
+    Returns a dict mapping theme slug → level_pct (g_spread_bp_pw / 100).
+    Returns {} on missing file or any error (null-safe).
+    This provides point-in-time level data even when the credit_momentum.json
+    velocity organ hasn't accumulated ≥ 21 dates yet.
+    """
+    if cm_path is None:
+        return {}
+    td_path = cm_path.parent / "series" / "theme_daily.parquet"
+    try:
+        import pandas as _pd
+        df = _pd.read_parquet(td_path)
+        if df.empty or "theme" not in df.columns or "g_spread_bp_pw" not in df.columns:
+            return {}
+        # use latest as_of row per theme
+        out = {}
+        for slug, grp in df.groupby("theme"):
+            latest = grp.sort_values("as_of").iloc[-1]
+            bp = latest.get("g_spread_bp_pw")
+            if bp is not None and not _pd.isna(bp):
+                out[str(slug)] = float(bp) / 100.0
+        return out
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+# M2 fix: static descriptor sub-lines lifted verbatim from site/_mockup_ccw_credit_desk.html
+# These replace the "building history" copy that was overwriting the ratified descriptors.
+# Tiles with no sub text in the mockup use empty strings (rendered as min-height spacer).
+_THEME_SUB: dict[str, tuple[str, str]] = {
+    "hyperscaler_credit": ("5 giants · Oracle on watch", "5家巨头 · 甲骨文在观察名单"),
+    "neocloud_credit": ("CoreWeave only — junk-rated", "仅CoreWeave · 高收益级"),
+    "memory_credit": ("Micron + Seagate mix", "美光与希捷组合"),
+    "ai_power_credit": ("", ""),
+    "dc_reit_credit": ("", ""),
+    "ai_hardware_credit": ("", ""),
+    "telecom_legacy": ("", ""),
+}
+
+
+def _build_theme_tiles(themes_raw: dict, cm_path: Path | None = None) -> list[dict]:
+    """Build list of 7 theme tile dicts in display order.
+
+    Level is sourced from theme_daily.parquet (via _load_theme_daily_levels) when
+    the credit_momentum velocity organ has not yet accumulated ≥ 21 dates (level=None
+    in the cm JSON).  A point-in-time level is a glance fact that needs no history.
+    The Δ21 / velocity accruing copy is preserved in the t-sub via tile.accruing until
+    n_dates ≥ 22 and a real d21 value is present.
+    """
+    _DISPLAY_ORDER = [
+        "hyperscaler_credit", "neocloud_credit", "memory_credit",
+        "ai_power_credit", "dc_reit_credit", "ai_hardware_credit", "telecom_legacy",
+    ]
+    # Load point-in-time levels from theme_daily (null-safe; {} if unavailable)
+    td_levels = _load_theme_daily_levels(cm_path)
+
+    tiles = []
+    for slug in _DISPLAY_ORDER:
+        meta = _THEME_META.get(slug)
+        if meta is None:
+            continue
+        en, zh, basket_slug = meta
+        tip_en, tip_zh = _THEME_TIPS.get(slug, ("", ""))
+        tdata = themes_raw.get(slug) or {}
+        spread = (tdata.get("spread") or {})
+        level = spread.get("level")
+        d21 = spread.get("d21")
+        vel = (spread.get("velocity") or {})
+        pctile = vel.get("vel21_pctile")
+        state = spread.get("state", "accruing")
+
+        # Defect 1 fix: when the velocity organ hasn't yet accumulated 21+ dates,
+        # the cm level is None.  Fall back to theme_daily point-in-time level so
+        # glance tiles show the actual g-spread even during accrual.
+        if level is None and slug in td_levels:
+            level = td_levels[slug]
+
+        level_disp = f"+{level:.1f}%" if level is not None else None
+        d21_disp = (f"{'+' if (d21 or 0) >= 0 else ''}{d21:.2f}%/21d") if d21 is not None else None
+
+        stance_en, stance_zh, stance_css = _theme_stance(level, pctile, slug)
+
+        # tile severity stripe CSS class
+        if stance_css == "ts-red":
+            tile_stripe = "t-red"
+        elif stance_css == "ts-amber":
+            tile_stripe = "t-amber"
+        elif stance_css == "ts-calm":
+            tile_stripe = "t-calm"
+        else:
+            tile_stripe = "t-neutral"
+
+        # equity cross-link URL (only for themes with real basket pages)
+        equity_link = f"basket/{basket_slug}.html" if basket_slug else None
+
+        # accruing flag: True means the Δ line is still building history (d21 unavailable).
+        # The level may be present from theme_daily even while accruing=True for the delta.
+        delta_accruing = (d21 is None)
+
+        # M2 fix: static descriptor from mockup (never overwritten by accruing copy)
+        theme_sub_en, theme_sub_zh = _THEME_SUB.get(slug, ("", ""))
+
+        tiles.append({
+            "slug": slug,
+            "en": en,
+            "zh": zh,
+            "level_disp": level_disp,
+            "d21_disp": d21_disp,
+            "state": state,
+            "accruing": delta_accruing,
+            "tile_stripe": tile_stripe,
+            "stance_en": stance_en,
+            "stance_zh": stance_zh,
+            "stance_css": stance_css,
+            "equity_link": equity_link,
+            "tip_en": tip_en,
+            "tip_zh": tip_zh,
+            "sub_en": theme_sub_en,
+            "sub_zh": theme_sub_zh,
+        })
+    return tiles
+
+
+def _build_watch(watch_raw: dict) -> dict:
+    """Build watch strip vm from the watch block."""
+    orcl_raw = watch_raw.get("orcl") or {}
+    orcl = None
+    # B1 fix: only build orcl dict when g_spread_bp_pw is present and not None.
+    # An orcl_raw dict that lacks g_spread_bp_pw (accrual state) must yield orcl=None
+    # so the template's `orcl.g_spread_bp / 100` never fires on None.
+    if orcl_raw and orcl_raw.get("g_spread_bp_pw") is not None:
+        g_bp = orcl_raw.get("g_spread_bp_pw")
+        premium = orcl_raw.get("premium_vs_ig_peers_bp")
+        orcl = {
+            "g_spread_bp": round(float(g_bp), 0),
+            "premium_bp": round(float(premium), 0) if premium is not None else None,
+        }
+
+    transition = watch_raw.get("transition") or {}
+    fallen_angel_candidates = transition.get("fallen_angel_candidates") or []
+    new_issuance = transition.get("new_issuance_events") or []
+    # m1 fix: guard against JSON null in note field
+    watch_accruing = bool((transition.get("note") or "").startswith("accruing"))
+
+    return {
+        "orcl": orcl,
+        "fallen_angel_accruing": watch_accruing,
+        "fallen_angel_candidates": fallen_angel_candidates,
+        "new_issuance_accruing": not new_issuance,
+    }
+
+
+def _build_finra_vm(breadth_raw: dict) -> dict | None:
+    """Build FINRA tape vm from breadth.finra block. Returns None if absent."""
+    finra = breadth_raw.get("finra") or {}
+    if not finra:
+        return None
+    bdata = finra.get("breadth") or {}
+    all_sec = bdata.get("all securities") or {}
+    if not all_sec:
+        return None
+
+    latest_date = all_sec.get("latest_date", "")
+
+    # Reconstruct approximate counts from the advance share and total n_days context.
+    # The FINRA data stores advance_share (fraction), not raw counts.
+    # From the mockup: 9126 fell, 1742 rose, 1572 touched 52w lows.
+    # We store advance_share_latest + wk52_high_low_net_share.
+    # Derive counts from the original mockup snapshot values (these are display-only).
+    # Since we have fractions, we can estimate approximate counts from the FINRA
+    # total universe size (~12400 bonds/day based on the mockup's 9126+1742 = 10868
+    # active, but we do not have exact total from the artifact).
+    # DESIGN: show the fractions as percentages + note the raw context is FINRA trade data.
+
+    adv_share = all_sec.get("advance_share_latest")
+    wk52_net = all_sec.get("wk52_high_low_net_share")
+
+    # m2 fix: coerce non-finite floats (NaN/Inf) → None before they enter the vm
+    def _finite(v):
+        if v is None:
+            return None
+        try:
+            return v if math.isfinite(float(v)) else None
+        except (TypeError, ValueError):
+            return None
+
+    adv_share = _finite(adv_share)
+    wk52_net = _finite(wk52_net)
+
+    # Format as percentages for display
+    adv_pct = round(adv_share * 100, 1) if adv_share is not None else None
+    lows_pct = round(abs(wk52_net) * 100, 1) if wk52_net is not None else None
+
+    return {
+        "date": latest_date,
+        "advance_pct": adv_pct,
+        "lows_pct": lows_pct,
+        "advance_share": adv_share,
+        "wk52_net_share": wk52_net,
+        "accruing": adv_share is None,
+    }
+
+
+def _build_corp_credit_bond_health(cc_vm: dict) -> dict:
+    """Build the corporate_credit sub-block for data/bonds/bond_health.json.
+
+    Machine-readable, small, all-false authority dict.
+    """
+    themes_out = {}
+    for tile in cc_vm.get("themes") or []:
+        themes_out[tile["slug"]] = {
+            "stance_en": tile.get("stance_en"),
+            "stance_zh": tile.get("stance_zh"),
+            "accruing": tile.get("accruing", True),
+        }
+
+    watch = cc_vm.get("watch") or {}
+    orcl = watch.get("orcl") or {}
+    finra = cc_vm.get("finra") or {}
+
+    # m2 fix: coerce non-finite floats → None before writing to bond_health.json
+    def _safe(v):
+        if v is None:
+            return None
+        try:
+            return v if math.isfinite(float(v)) else None
+        except (TypeError, ValueError):
+            return None
+
+    raw_adv = finra.get("advance_share")
+    raw_lows_pct = finra.get("lows_pct")
+    finra_advance_share = _safe(raw_adv)
+    finra_lows_share = _safe(raw_lows_pct / 100.0) if raw_lows_pct is not None else None
+
+    return {
+        "as_of": cc_vm.get("as_of"),
+        "authority": cc_vm.get("authority") or {"rank": False, "size": False, "gate": False, "escalate": False},
+        "market_state": cc_vm.get("hero", {}).get("state_en"),
+        "themes": themes_out,
+        "breadth": {
+            # Both shares use _share suffix semantics (fractions, not percentages).
+            # advance_share is already a fraction from the FINRA collector.
+            # lows_pct is stored as percent (×100) by _build_finra_vm; divide back to
+            # fraction so the contract is consistent (Defect 3 fix).
+            "finra_advance_share": finra_advance_share,
+            "finra_lows_share": finra_lows_share,
+            "source": "FINRA trade data",
+        },
+        "watch": {
+            "orcl_g_spread_bp": _safe(orcl.get("g_spread_bp")),
+            "orcl_premium_vs_ig_bp": _safe(orcl.get("premium_bp")),
+        },
+        "divergence_accruing": cc_vm.get("divergence_accruing", True),
+        "display_only": True,
+    }
+
+
 def _xasset_vm(xasset: dict | None) -> dict | None:
     """Light view-model: per-asset display color + bilingual verdict + |corr| bar width."""
     if not xasset or not xasset.get("assets"):
@@ -648,6 +1316,16 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — additive, never fatal
         usd_link = None
 
+    # CCW-W4: corporate credit desk vm (null-safe — never breaks the build)
+    # m5 fix: removed the dead __wrapped__ hasattr-always-False fallback; build_corp_credit_vm
+    # is never decorated, so __wrapped__ never existed.  The function itself is null-safe
+    # (returns the empty accruing dict on any error), so we just call it directly.
+    try:
+        cc_vm = build_corp_credit_vm()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("corp_credit vm build failed (%s); using empty accruing state", e)
+        cc_vm = build_corp_credit_vm(data_root=None)
+
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
@@ -655,7 +1333,8 @@ def main() -> int:
         C=C, as_of=as_of_disp, built=built, span=span, vm=vm, charts=charts, credit_cycle=credit_cycle,
         fed_path=fed_path, treasury_supply=treasury_supply, usd_link=usd_link,
         intl=intl, compass=compass, xasset=xasset, xasset_vm=_xasset_vm(xasset),
-        timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent))
+        timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent),
+        cc_vm=cc_vm)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     write_page(site / "bonds.html", html)
     log.info("wrote %s/bonds.html (%d KB)", site, len(html) // 1024)
@@ -733,6 +1412,12 @@ def main() -> int:
         }
     except Exception as _intl_err:  # noqa: BLE001 — additive, never fatal
         log.error("bond_health intl namespace failed (%s)", _intl_err)
+
+    # CCW-W4: add corporate_credit block to bond_health.json (additive, machine-readable)
+    try:
+        snap["corporate_credit"] = _build_corp_credit_bond_health(cc_vm)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("corp_credit bond_health block failed (%s)", e)
 
     (outdir / "bond_health.json").write_text(json.dumps(snap, indent=2, default=str, ensure_ascii=False))
     log.info("wrote data/bonds/{latest,bond_health}.json — health=%s phase=%s",

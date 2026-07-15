@@ -176,6 +176,7 @@ html[data-theme="dark"] .xa-bar{background:#222732}
     <a href="#transmission">🔀 {{ t('Bonds → Markets', '债券 → 各市场') }}</a>
     <a href="#supply">🏦 {{ t('Supply & Fed', '供给与美联储') }}</a>
     <a href="#timeline">🕑 {{ t('Timeline', '时间线') }}</a>
+    <a href="#corpcredit">🏢 {{ t('Corp Credit', '公司债') }}</a>
   </div>
 
   <!-- ===================== HEALTH HERO ===================== -->
@@ -362,6 +363,310 @@ html[data-theme="dark"] .xa-bar{background:#222732}
       <div class="sub faint" style="margin-top:6px">{{ t('Real yields are the discount rate; breakevens are the inflation read; term premium is the extra reward for duration risk.', '实际利率是贴现率；盈亏平衡通胀是通胀读数；期限溢价是承担久期风险的额外回报。') }}</div>
     </div>
   </div>
+
+  <!-- ===================== CCW-W4: CORPORATE CREDIT DESK ===================== -->
+<style>
+/* ── CCW-W4 corporate credit desk — page-scoped styles ───────────────────── */
+/* card base overrides (bonds.html already defines .card; these extend it) */
+.cc-sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+/* 3px top-stripe severity accent — uses severity tokens (--red/--amber/--green/--faint)
+   NOT direction tokens, so zh directional colour swap NEVER fires here (R13). */
+.cs-card{position:relative;overflow:hidden}
+.cs-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;pointer-events:none;opacity:0}
+.cs-amber::before{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 30%,transparent));opacity:1}
+.cs-red::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+.cs-calm::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.cs-neutral::before{background:linear-gradient(90deg,var(--faint),color-mix(in srgb,var(--faint) 30%,transparent));opacity:1}
+/* hero */
+.cc-hero-state{font-size:40px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;line-height:1;color:var(--ink)}
+.cc-verdict-lead{font-size:15px;color:var(--text);line-height:1.5;margin:8px 0 0}
+.cc-as-of{font-size:12px;color:var(--faint);margin-top:8px}
+/* stance pill — severity, not direction */
+.stance-pill{display:inline-block;padding:5px 16px;border-radius:999px;font-size:14px;font-weight:700;color:#fff;letter-spacing:.02em;margin:6px 0}
+.stance-amber{background:var(--amber);color:#5a3800}
+.stance-red{background:var(--red)}
+.stance-calm{background:var(--green)}
+.stance-neutral{background:var(--faint);color:var(--ink)}
+/* market strip chips */
+.cc-mkt-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.cc-mkt-chip{display:inline-flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:12px;border:1px solid var(--grid);background:var(--card);cursor:help;flex:1;min-width:160px}
+.cc-mkt-chip .chip-label{font-size:13px;font-weight:700;color:var(--ink)}
+.cc-mkt-chip .chip-sub{font-size:11px;color:var(--muted)}
+.cc-mkt-chip.chip-amber{border-color:color-mix(in srgb,var(--amber) 55%,var(--grid));background:color-mix(in srgb,var(--amber) 7%,var(--card))}
+.cc-mkt-chip.chip-red{border-color:color-mix(in srgb,var(--red) 45%,var(--grid));background:color-mix(in srgb,var(--red) 6%,var(--card))}
+.cc-mkt-chip.chip-calm{border-color:color-mix(in srgb,var(--green) 40%,var(--grid));background:color-mix(in srgb,var(--green) 5%,var(--card))}
+/* m3 fix: chip-sub color classes for dark-mode-safe coloring (no inline hex) */
+.cc-sub-amber{color:#8a5c00}
+.cc-sub-red{color:var(--red)}
+.cc-sub-calm{color:var(--green)}
+html[data-theme="dark"] .cc-sub-amber{color:#e0a030}
+html[data-theme="dark"] .cc-sub-red{color:#ff6b6b}
+html[data-theme="dark"] .cc-sub-calm{color:#4ade80}
+/* theme tiles */
+.cc-theme-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:4px}
+.cc-tile{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:16px;position:relative;overflow:hidden;cursor:help}
+.cc-tile::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;pointer-events:none;opacity:0}
+.cc-tile.t-amber::before{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 30%,transparent));opacity:1}
+.cc-tile.t-red::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+.cc-tile.t-calm::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.cc-tile.t-neutral::before{background:linear-gradient(90deg,var(--faint),color-mix(in srgb,var(--faint) 30%,transparent));opacity:1}
+.cc-tile .t-name{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+.cc-tile .t-val{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1;margin-bottom:4px}
+.cc-tile .t-sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.cc-tile .t-stance{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.cc-tile .ts-amber{background:color-mix(in srgb,var(--amber) 18%,transparent);color:#8a5c00}
+.cc-tile .ts-red{background:color-mix(in srgb,var(--red) 15%,transparent);color:var(--red)}
+.cc-tile .ts-calm{background:color-mix(in srgb,var(--green) 13%,transparent);color:var(--green)}
+.cc-tile .ts-neutral{background:color-mix(in srgb,var(--faint) 20%,transparent);color:var(--faint)}
+html[data-theme="dark"] .cc-tile .ts-amber{color:#e0a030}
+html[data-theme="dark"] .cc-tile .ts-red{color:#ff6b6b}
+html[data-theme="dark"] .cc-tile .ts-calm{color:#4ade80}
+html[data-theme="dark"] .cc-tile .ts-neutral{color:var(--faint)}
+/* watch strip */
+.cc-watch-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.cc-watch-chip{display:inline-block;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:600;color:var(--ink);border:1px solid var(--grid);flex:1;min-width:200px;line-height:1.45}
+.cc-watch-chip.wc-amber{border-color:color-mix(in srgb,var(--amber) 55%,var(--grid));background:color-mix(in srgb,var(--amber) 7%,var(--card));color:#6b4300}
+.cc-watch-chip.wc-neutral{background:var(--card)}
+html[data-theme="dark"] .cc-watch-chip.wc-amber{color:#e0a030}
+/* tape card */
+.cc-tape-line{font-size:14px;font-weight:600;color:var(--ink);line-height:1.5;margin:6px 0 10px}
+.cc-source-chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--grid);color:var(--muted)}
+/* maturity wall mini bars */
+.cc-mat-wall{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.cc-mat-row{display:grid;grid-template-columns:128px 1fr;gap:10px;align-items:center;font-size:12px}
+.cc-mat-label{color:var(--text);font-weight:600;min-width:0}
+.cc-mat-bars{display:flex;gap:2px;height:14px;border-radius:4px;overflow:hidden}
+.cc-mat-seg{display:block;height:100%;min-width:2px}
+.cc-seg-0{background:color-mix(in srgb,var(--amber) 80%,var(--red))}
+.cc-seg-1{background:var(--amber)}
+.cc-seg-2{background:color-mix(in srgb,var(--blue) 60%,var(--faint))}
+.cc-seg-3{background:var(--blue)}
+.cc-seg-4{background:var(--indigo)}
+.cc-mat-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--muted)}
+.cc-mat-legend span{display:flex;align-items:center;gap:4px}
+.cc-mat-legend .cc-dot{width:8px;height:8px;border-radius:2px;flex:none}
+.cc-placeholder-bar{padding:12px 20px;background:color-mix(in srgb,var(--faint) 8%,var(--bg));border:1px dashed var(--grid);border-radius:10px;text-align:center;font-size:13px;color:var(--faint);font-style:italic;margin:10px 0}
+.cc-foot-note{font-size:12px;color:var(--faint);margin-top:12px;line-height:1.6;border-top:1px solid var(--grid);padding-top:10px}
+@media(max-width:900px){
+  .cc-theme-tiles{grid-template-columns:repeat(2,1fr)}
+  .cc-mkt-strip,.cc-watch-strip{flex-direction:column}
+}
+@media(max-width:560px){
+  .cc-hero-state{font-size:32px}
+  .cc-theme-tiles{grid-template-columns:1fr}
+  .cc-mat-row{grid-template-columns:100px 1fr}
+}
+</style>
+
+{% if cc_vm is defined %}
+  {# 1. SECTION HEAD #}
+  <div class="cc-sec-head" id="corpcredit">
+    <span class="l-en">Company bonds — credit watch</span><span class="l-zh">公司债 · 信用观察</span>
+  </div>
+
+  {# 2. HERO STANCE CARD #}
+  <div class="card cs-card {{ cc_vm.hero.hero_cs }}">
+    <h2>{{ t('Overall read', '整体研判') }}</h2>
+    <div class="cc-hero-state">
+      <span class="l-en">{{ cc_vm.hero.state_en }}</span><span class="l-zh">{{ cc_vm.hero.state_zh }}</span>
+    </div>
+    <div>
+      <span class="stance-pill {{ cc_vm.hero.pill_css }}">
+        <span class="l-en">{{ cc_vm.hero.pill_en }}</span><span class="l-zh">{{ cc_vm.hero.pill_zh }}</span>
+      </span>
+    </div>
+    <div class="cc-verdict-lead">
+      <span class="l-en">{{ cc_vm.hero.subtitle_en }}</span><span class="l-zh">{{ cc_vm.hero.subtitle_zh }}</span>
+    </div>
+    <div class="cc-as-of">{{ t('as of', '截至') }} {{ cc_vm.as_of }}</div>
+  </div>
+
+  {# 3. SPREAD GAUGES (4 chips) #}
+  <div class="card" style="margin-top:0">
+    <h2>{{ t('Spread gauges', '利差仪表') }}</h2>
+    <div class="cc-mkt-strip">
+      {% for g in cc_vm.gauges %}
+      <div class="cc-mkt-chip {{ g.chip_css }}"
+           data-tip-en="{{ g.tip_en }}"
+           data-tip-zh="{{ g.tip_zh }}">
+        <span class="chip-label">
+          <span class="l-en">{{ g.label_en }}</span><span class="l-zh">{{ g.label_zh }}</span>
+        </span>
+        <span class="chip-sub {{ g.sub_color }}">
+          <span class="l-en">{{ g.sub_en }}</span><span class="l-zh">{{ g.sub_zh }}</span>
+        </span>
+      </div>
+      {% endfor %}
+      {% if not cc_vm.gauges %}
+      <span class="faint" style="font-size:13px">{{ t('Building history — check back soon.', '数据积累中，稍后查看。') }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {# 4. THEME TILES (7 tiles) #}
+  <div class="card" style="margin-top:0">
+    <h2>{{ t('AI & tech themes', 'AI与科技主题') }}</h2>
+    <div class="cc-theme-tiles">
+      {% for tile in cc_vm.themes %}
+      <div class="cc-tile {{ tile.tile_stripe }}"
+           data-tip-en="{{ tile.tip_en }}"
+           data-tip-zh="{{ tile.tip_zh }}">
+        <div class="t-name">
+          {% if tile.equity_link %}
+          <a href="{{ tile.equity_link }}" style="color:var(--muted);text-decoration:none">
+            <span class="l-en">{{ tile.en }}</span><span class="l-zh">{{ tile.zh }}</span>
+          </a>
+          {% else %}
+          <span class="l-en">{{ tile.en }}</span><span class="l-zh">{{ tile.zh }}</span>
+          {% endif %}
+        </div>
+        <div class="t-val">
+          {% if tile.level_disp %}{{ tile.level_disp }}{% else %}<span class="faint" style="font-size:16px">—</span>{% endif %}
+        </div>
+        <div class="t-sub">
+          {# M2 fix: always show ratified static descriptor as the primary sub line.
+             The Δ21 delta is only rendered as a separate small line once d21 is present.
+             Never overwrite the descriptor with "building history". #}
+          {% if tile.sub_en %}
+          <span class="l-en">{{ tile.sub_en }}</span><span class="l-zh">{{ tile.sub_zh }}</span>
+          {% else %}
+          <span style="min-height:18px;display:block"></span>
+          {% endif %}
+          {% if not tile.accruing and tile.d21_disp %}
+          <span style="font-size:10px;color:var(--faint);display:block;margin-top:2px">{{ tile.d21_disp }}</span>
+          {% endif %}
+        </div>
+        <span class="t-stance {{ tile.stance_css }}">
+          <span class="l-en">{{ tile.stance_en }}</span><span class="l-zh">{{ tile.stance_zh }}</span>
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# 5. WATCH STRIP #}
+  <div class="card" style="margin-top:0">
+    <h2>{{ t('On the watch list', '观察名单') }}</h2>
+    <div class="cc-watch-strip">
+
+      {% if cc_vm.watch.orcl and cc_vm.watch.orcl.g_spread_bp is not none %}
+      {% set orcl = cc_vm.watch.orcl %}
+      {# B1 fix: guard requires both orcl truthy AND g_spread_bp not None before division.
+         Defect 2 fix: display in plain % form (+0.7%), not raw bp (banned Tier-1 vocab).
+         g_spread_bp and premium_bp are in basis points; divide by 100 for % display. #}
+      <div class="cc-watch-chip wc-amber"
+           data-tip-en="Oracle bonds yield {{ '%.2f'|format(orcl.g_spread_bp / 100) }}% over Treasuries{% if orcl.premium_bp is not none %} vs {{ '%.2f'|format((orcl.g_spread_bp - orcl.premium_bp) / 100) }}% for quality-grade peers at the same maturities{% endif %}; all three rating agencies have Oracle on negative outlook. A downgrade to junk would be the largest such event in history."
+           data-tip-zh="甲骨文债券相对国债收益率高{{ '%.2f'|format(orcl.g_spread_bp / 100) }}%{% if orcl.premium_bp is not none %}，同期限投资级同行仅{{ '%.2f'|format((orcl.g_spread_bp - orcl.premium_bp) / 100) }}%{% endif %}；三大评级机构均给予负面展望。若降至高收益级将成史上最大规模降级事件。">
+        <span style="font-weight:700">ORCL</span> —
+        {% if orcl.premium_bp is not none %}
+        <span class="l-en">Oracle pays +{{ '%.1f'|format(orcl.premium_bp / 100) }}% over similar bonds — the market votes before the raters</span><span class="l-zh">甲骨文比同级债券多付{{ '%.1f'|format(orcl.premium_bp / 100) }}% · 市场先于评级机构投票</span>
+        {% else %}
+        <span class="l-en">Oracle pays a premium over similar bonds — the market votes before the raters</span><span class="l-zh">甲骨文比同级债券利率更高 · 市场先于评级机构投票</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if cc_vm.watch.fallen_angel_accruing %}
+      <div class="cc-watch-chip wc-neutral">
+        <span class="l-en">No downgrades-in-motion visible yet — history building</span><span class="l-zh">尚未见降级迹象 · 数据积累中</span>
+      </div>
+      {% else %}
+      {% for candidate in cc_vm.watch.fallen_angel_candidates %}
+      <div class="cc-watch-chip wc-amber">
+        <span style="font-weight:700">{{ candidate.issuer }}</span> — {{ t('downgrade candidate', '降级候选') }}
+      </div>
+      {% endfor %}
+      {% if not cc_vm.watch.fallen_angel_candidates %}
+      <div class="cc-watch-chip wc-neutral">
+        <span class="l-en">No fallen-angel candidates in motion</span><span class="l-zh">暂无天使跌落候选</span>
+      </div>
+      {% endif %}
+      {% endif %}
+
+      {% if cc_vm.watch.new_issuance_accruing %}
+      <div class="cc-watch-chip wc-neutral">
+        <span class="l-en">New-issue tracking starts 14 Jul 2026</span><span class="l-zh">新发债跟踪自2026年7月14日起</span>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  {# 6. FINRA TAPE CARD #}
+  {% if cc_vm.finra %}
+  {% set finra = cc_vm.finra %}
+  <div class="card cs-card cs-amber"
+       data-tip-en="Market-wide bond tape from actual trades. Price lows can reflect Treasury yields rising rather than company stress — read alongside the extra-yield gauges above. Our own fund-level tape ships separately once history accrues; the two are never blended."
+       data-tip-zh="基于真实成交的全市场债券行情。价格新低可能源于国债收益率上行而非公司风险——请结合上方额外收益指标解读。我们自建的基金层面行情将在数据积累后单独展示，两者不混合。">
+    <h2>{{ t('Bond market tape', '债券市场行情') }}</h2>
+    {% if finra.accruing %}
+    <div class="cc-tape-line">
+      <span class="l-en">Bond market breadth — building history</span><span class="l-zh">债券市场广度 · 数据积累中</span>
+    </div>
+    {% else %}
+    <div class="cc-tape-line">
+      <span class="l-en">{{ t('Latest:', '最新：') }} {{ finra.advance_pct }}% {{ t('of bonds rose', '债券上涨') }} · {{ finra.lows_pct }}% {{ t('touched 1-year lows', '创一年新低') }} · {{ t('as of', '截至') }} {{ finra.date }}</span>
+      <span class="l-zh">最新：{{ finra.advance_pct }}%债券上涨 · {{ finra.lows_pct }}%创一年新低 · 截至{{ finra.date }}</span>
+    </div>
+    {% endif %}
+    <span class="cc-source-chip"><span class="l-en">FINRA trade data</span><span class="l-zh">FINRA成交数据</span></span>
+  </div>
+  {% else %}
+  <div class="card cs-card cs-neutral">
+    <h2>{{ t('Bond market tape', '债券市场行情') }}</h2>
+    <div class="cc-tape-line">
+      <span class="l-en">Bond market breadth — building history</span><span class="l-zh">债券市场广度 · 数据积累中</span>
+    </div>
+    <span class="cc-source-chip"><span class="l-en">FINRA trade data</span><span class="l-zh">FINRA成交数据</span></span>
+  </div>
+  {% endif %}
+
+  {# 7. MATURITY WALL MINI-CARD #}
+  {% if cc_vm.maturity_wall %}
+  <div class="card cs-card cs-neutral">
+    <h2>{{ t('When the debt comes due', '债务到期分布') }}</h2>
+    <div class="cc-mat-wall">
+      {% for row in cc_vm.maturity_wall %}
+      <div class="cc-mat-row">
+        <span class="cc-mat-label">
+          <span class="l-en">{{ row.en }}</span><span class="l-zh">{{ row.zh }}</span>
+        </span>
+        <div class="cc-mat-bars">
+          {% for seg in row.segs %}
+          <span class="cc-mat-seg cc-{{ seg.css_class }}" style="flex:{{ seg.flex }}"></span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="cc-mat-legend">
+      <span><span class="cc-dot" style="background:color-mix(in srgb,var(--amber) 80%,var(--red))"></span><span class="l-en">0–1y</span><span class="l-zh">0–1年</span></span>
+      <span><span class="cc-dot" style="background:var(--amber)"></span><span class="l-en">1–3y</span><span class="l-zh">1–3年</span></span>
+      <span><span class="cc-dot" style="background:color-mix(in srgb,var(--blue) 60%,var(--faint))"></span><span class="l-en">3–5y</span><span class="l-zh">3–5年</span></span>
+      <span><span class="cc-dot" style="background:var(--blue)"></span><span class="l-en">5–10y</span><span class="l-zh">5–10年</span></span>
+      <span><span class="cc-dot" style="background:var(--indigo)"></span><span class="l-en">10y+</span><span class="l-zh">10年+</span></span>
+    </div>
+    <p class="sub faint" style="margin:8px 0 0;font-size:11px">{{ t('All themes had zero bonds maturing within 1 year as of ' ~ cc_vm.as_of ~ '.', '截至' ~ cc_vm.as_of ~ '，所有主题均无1年内到期债券。') }}</p>
+  </div>
+  {% endif %}
+
+  {# 8. STOCKS VS BONDS PLACEHOLDER #}
+  <div class="card cs-card cs-neutral">
+    <h2>{{ t('Stocks vs their bonds', '股票与其债券') }}</h2>
+    <p class="cc-verdict-lead">
+      <span class="l-en">The divergence read builds after ~1 month of daily history — the risk sign is stocks rising while their bonds weaken.</span><span class="l-zh">该背离指标需约1个月的日度数据积累——风险信号为股价上涨而债券走弱。</span>
+    </p>
+    <span class="faint" style="font-size:12px;display:block;margin-top:8px">
+      <span class="l-en">History building · check back 14 Aug 2026</span><span class="l-zh">数据积累中 · 2026年8月14日后可查看</span>
+    </span>
+  </div>
+
+  {# 9. FOOTER NOTE #}
+  <div class="cc-foot-note">
+    <span class="l-en">Prices are fund-reported estimates · covers bonds inside major index funds only · daily history builds from 14 Jul 2026</span><span class="l-zh">价格为基金申报估值 · 仅覆盖主要指数基金持仓债券 · 数据自2026年7月14日起每日积累</span>
+  </div>
+{% endif %}
+{# END CCW-W4 corporate credit desk #}
 
   <!-- ===================== STRESS + CROSS-ASSET ===================== -->
   <div id="stress" class="sec-head">{{ t('④ Stress & plumbing · ⑤ the stock-bond hedge', '④ 压力与资金管道 · ⑤ 股债对冲') }}</div>
