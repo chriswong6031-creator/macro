@@ -81,28 +81,36 @@ def confluence_onset(close: pd.Series, *, fresh_within: int = FRESH_WITHIN,
         if conf is None or conf.empty:
             return out
         last = conf.iloc[-1]
-        tail = conf.tail(int(max(1, fresh_within)))
-        cb_recent = bool(tail["CB"].any())
         cs_active = bool(last.get("CS", False))
         # K-of-N multi-timeframe trend legs (persistent states, not point events)
         legs = int(sum(bool(last.get(c, False))
                        for c in ("w2_bull", "w_bull", "mo_bull", "above200")))
 
+        # Ignition freshness is derived from the SAME canonical confluence-buy (CB)
+        # grid as the trend legs — NOT from postcross — so ticks_since_cross can never
+        # disagree with cb_recent. (postcross rides a different RSI warm-up than
+        # canon; see the MK hardening note. That is a separate, shared-module issue.)
+        # ticks = number of 3D buckets since the last CB.
+        cb = conf["CB"].astype(bool).to_numpy()
+        cb_hits = np.flatnonzero(cb)
+        ticks = int(len(cb) - 1 - cb_hits[-1]) if cb_hits.size else None
+        cb_recent = ticks is not None and ticks <= int(fresh_within)
+
+        # postcross supplies the auxiliary extension / structure reads only.
         pc = postcross(close, atr_series)
-        ticks = pc.get("ticks_since_cross")
         ext_atr = pc.get("ext_atr")
-        extended = ext_atr is not None and float(ext_atr) > float(extended_atr)
+        extended = None if ext_atr is None else (float(ext_atr) > float(extended_atr))
 
         # FRESH_INITIATION: a confluence buy printed within `fresh_within` buckets
-        # and the move is not already stretched past the entry screen.
-        fresh = bool(cb_recent and not extended)
+        # AND the move is confirmed not-yet-stretched past the entry screen.
+        fresh = bool(cb_recent and extended is False)
         species = ("FRESH_INITIATION" if fresh
                    else "ESTABLISHED_CONTINUATION" if legs >= MIN_TREND_LEGS
                    else None)
 
         out.update({"fresh_cross": fresh, "trend_legs": legs,
-                    "ticks_since_cross": (int(ticks) if ticks is not None else None),
-                    "species": species, "extended": bool(extended),
+                    "ticks_since_cross": ticks,
+                    "species": species, "extended": extended,
                     "cb_recent": cb_recent, "cs_active": cs_active,
                     "based": bool(pc.get("based")), "shaken": bool(pc.get("shaken")),
                     "ext_atr": (round(float(ext_atr), 3) if ext_atr is not None else None)})
@@ -132,17 +140,25 @@ def classify_name(res_rec: dict, onset: dict, *,
     entry = res_rec.get("entry")
     legs = onset.get("trend_legs")
 
-    g1 = alpha is not None and float(alpha) >= float(alpha_min)
-    g2 = (legs is not None and int(legs) >= int(min_legs)
-          and not bool(onset.get("cs_active")))
-    g3 = (not bool(onset.get("extended"))) and entry != "extended"
+    a_ok = alpha is not None and np.isfinite(float(alpha))
+    legs_ok = legs is not None and int(legs) >= int(min_legs)
+    g1 = a_ok and float(alpha) >= float(alpha_min)
+    g2 = legs_ok and not bool(onset.get("cs_active"))
+    # G3 is FAIL-CLOSED: an UNKNOWN extension (None — short history / no postcross)
+    # blocks eligibility rather than passing silently. Only a confirmed not-extended
+    # (extended is False) and a residual overlay that isn't "extended" clears it.
+    g3 = (onset.get("extended") is False) and entry != "extended"
 
     reasons = []
     if not g1:
         reasons.append("alpha_below_leader")
-    if not g2:
-        reasons.append("weak_confluence" if not (legs and legs >= min_legs) else "active_sell")
-    if not g3:
+    if not legs_ok:
+        reasons.append("weak_confluence")
+    if bool(onset.get("cs_active")):
+        reasons.append("active_sell")
+    if onset.get("extended") is None:
+        reasons.append("not_enough_history")
+    elif not g3:
         reasons.append("extended")
 
     return {
@@ -181,25 +197,34 @@ def sector_state(members: list[dict], *, dominance_tau: float = DOMINANCE_TAU) -
     """
     def _a(m):
         v = m.get("alpha")
-        return float(v) if v is not None else float("-inf")
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            return float("-inf")
+        return v if np.isfinite(v) else float("-inf")
 
     ranked = sorted(members, key=_a, reverse=True)
     eligibles = [m for m in ranked if m.get("eligible")]
 
-    if not eligibles:
+    if not eligibles or not np.isfinite(_a(eligibles[0])):
         return {"state": "NO_CLEAR_LEADER", "leader": None,
                 "dominance_margin": None, "ranked": ranked}
 
     top = eligibles[0]
-    second_alpha = _a(ranked[1]) if len(ranked) >= 2 else None
-    margin = (_a(top) - second_alpha) if second_alpha is not None else _a(top)
-    margin = None if not np.isfinite(margin) else round(float(margin), 3)
+    # Margin over the strongest FINITE-alpha competitor in the whole field (any name,
+    # not just eligible ones — the leader must separate from the full pack). A null /
+    # -inf alpha member is skipped, never treated as a real competitor (BUG-2). A lone
+    # member with no comparable competitor cannot demonstrate dominance → abstain (BUG-4).
+    second = next((m for m in ranked if m is not top and np.isfinite(_a(m))), None)
+    if second is None:
+        return {"state": "NO_CLEAR_LEADER", "leader": None,
+                "dominance_margin": None, "ranked": ranked}
 
-    if margin is not None and margin >= float(dominance_tau):
-        state, leader = "LEADER_CANDIDATE", top.get("ticker")
-    else:
-        state, leader = "CONTESTED", None
-    return {"state": state, "leader": leader,
+    margin = round(float(_a(top) - _a(second)), 3)
+    if margin >= float(dominance_tau):
+        return {"state": "LEADER_CANDIDATE", "leader": top.get("ticker"),
+                "dominance_margin": margin, "ranked": ranked}
+    return {"state": "CONTESTED", "leader": None,
             "dominance_margin": margin, "ranked": ranked}
 
 

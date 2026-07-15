@@ -1,0 +1,407 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% set mk = mk if mk else {} %}
+{% set cov = mk.coverage if mk.coverage is defined and mk.coverage is not none else {} %}
+{% set top_candidates = mk.top_candidates if mk.top_candidates is defined and mk.top_candidates is not none else [] %}
+{% set sectors = mk.sectors if mk.sectors is defined and mk.sectors is not none else [] %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Momentum King · 动量之王</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  *{box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;margin:0;padding:18px;}
+  @media(min-width:1100px){body{padding:24px max(40px,calc((100vw - 1360px)/2));}}
+  a{text-decoration:none;color:inherit;}
+  h1{font-size:20px;margin:0;}
+  h2{font-size:14px;margin:0 0 10px;font-weight:600;letter-spacing:.2px;}
+  h3{font-size:12px;margin:0 0 6px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+  .muted{color:var(--muted);}.sm{font-size:12px;}.xs{font-size:11px;}
+  .topline{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;}
+  .badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;border:1px solid;white-space:nowrap;}
+  .badge-green{color:var(--up);border-color:var(--up);}
+  .badge-orange{color:var(--orange,#f97316);border-color:var(--orange,#f97316);}
+  .badge-muted{color:var(--muted);border-color:var(--line);}
+  .banner{padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;border:1px solid;}
+  .banner-stale{background:rgba(239,68,68,.08);border-color:var(--down);color:var(--down);}
+  .banner-source{background:var(--panel2);border-color:var(--line);color:var(--muted);}
+  .tbl-wrap{overflow-x:auto;}
+  table.ltbl{width:100%;border-collapse:collapse;font-size:12px;}
+  table.ltbl th{padding:6px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:2px solid var(--line);white-space:nowrap;}
+  table.ltbl td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  table.ltbl tr:last-child td{border-bottom:none;}
+  table.ltbl tr:hover td{background:var(--panel2);}
+  .tk{font-weight:700;font-size:13px;color:var(--blue,#3b82f6);}
+  .k-chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);}
+  .k-hi{background:rgba(34,197,94,.15);border-color:var(--up);color:var(--up);}
+  .playbook{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+  .pb-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px;user-select:none;}
+  .pb-hd:hover{background:var(--panel2);}
+  .pb-hd .car{font-size:11px;color:var(--muted);transition:transform .2s;}
+  .pb-hd.open .car{transform:rotate(90deg);}
+  .pb-bd{display:none;padding:12px 14px;font-size:12px;line-height:1.6;border-top:1px solid var(--line);}
+  .pb-hd.open+.pb-bd{display:block;}
+  /* Sector cards */
+  .sector-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+  .sector-hd{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;user-select:none;}
+  .sector-hd:hover{background:var(--panel2);}
+  .sector-hd .car{font-size:11px;color:var(--muted);margin-left:auto;transition:transform .2s;}
+  .sector-hd.open .car{transform:rotate(90deg);}
+  .sector-body{display:none;border-top:1px solid var(--line);}
+  .sector-hd.open+.sector-body{display:block;}
+  /* residual_entry chips */
+  .re-extended{color:var(--orange,#f97316);border-color:var(--orange,#f97316);}
+  .re-pullback{color:var(--blue,#3b82f6);border-color:var(--blue,#3b82f6);}
+  .re-intact{color:var(--up);border-color:var(--up);}
+  .re-laggard,.re-neutral{color:var(--muted);border-color:var(--line);}
+  /* eligibility dim */
+  tr.ineligible td{opacity:.55;}
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  {% include '_navlinks.html.j2' %}
+</nav>
+<div style="max-width:1360px;margin:0 auto;">
+
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px;">
+  <h1>👑 {{ t('Momentum King', '动量之王') }}</h1>
+  <span class="muted sm">{{ t('Sector-neutral residual-alpha leaders at fresh confluence onset', '板块中性残差阿尔法领袖 · 新交叉起点') }}</span>
+</div>
+<div class="topline muted xs" style="margin-bottom:14px;">
+  <span>{{ t('As of', '截至') }} {{ mk.as_of[:10] if mk.as_of is defined and mk.as_of is not none else '—' }}</span>
+  {% if cov.n_sectors is defined and cov.n_sectors is not none %}<span>{{ t('Sectors', '板块') }}: {{ cov.n_sectors }}</span>{% endif %}
+  {% if cov.n_leader_candidates is defined and cov.n_leader_candidates is not none %}<span>{{ t('Leader candidates', '领袖候选') }}: {{ cov.n_leader_candidates }}</span>{% endif %}
+  {% if cov.n_contested is defined and cov.n_contested is not none %}<span>{{ t('Contested', '争议') }}: {{ cov.n_contested }}</span>{% endif %}
+  {% if cov.n_no_clear_leader is defined and cov.n_no_clear_leader is not none %}<span>{{ t('No clear leader', '无明显领袖') }}: {{ cov.n_no_clear_leader }}</span>{% endif %}
+</div>
+
+{# ── Banners ──────────────────────────────────────────────────────── #}
+{% if mk.stale is defined and mk.stale %}
+<div class="banner banner-stale">
+  ⚠ {{ t('Board is stale — price data may not reflect the latest session. State machine frozen.', '看板数据陈旧 — 价格数据可能未反映最新场次，状态机已冻结。') }}
+</div>
+{% endif %}
+
+<div class="banner banner-source">
+  {{ t('Display-only · no authority surface · K-of-N boolean, not a score · witnesses never promote a candidate', '仅供展示 · 不输入任何权威面 · K/N布尔值，非评分 · 见证指标不得晋升候选资格') }}
+</div>
+
+{# ── Top Candidates ───────────────────────────────────────────────── #}
+<div class="panel">
+<h2>{{ t('Top Candidates', '顶部候选') }}</h2>
+<div class="sm muted" style="margin-bottom:10px;">
+  {{ t('Names where residual alpha clears the dominance threshold and a fresh confluence cross is intact. Sorted by alpha-z descending.', '残差阿尔法超过主导阈值且新汇聚交叉完好的标的，按阿尔法Z降序排列。') }}
+</div>
+
+{% if top_candidates %}
+<div class="tbl-wrap">
+<table class="ltbl">
+<thead>
+<tr>
+  <th>{{ t('Ticker', '代码') }}</th>
+  <th>{{ t('Name', '名称') }}</th>
+  <th>{{ t('Sector', '板块') }}</th>
+  <th>{{ t('Alpha-Z', '阿尔法Z') }}</th>
+  <th>{{ t('Species', '类型') }}</th>
+  <th>{{ t('Trend Legs', '趋势腿') }}</th>
+  <th>{{ t('Fresh ✓', '新交叉') }}</th>
+  <th>{{ t('Ticks Since Cross', '交叉后计时') }}</th>
+</tr>
+</thead>
+<tbody>
+{% for c in top_candidates %}
+<tr>
+  <td><a href="us_stocks.html#{{ c.ticker }}" class="tk">{{ c.ticker }}</a></td>
+  <td class="sm">{{ c.name if c.name is defined and c.name is not none else '<span class="muted">—</span>'|safe }}</td>
+  <td class="sm muted">{{ c.sector if c.sector is defined and c.sector is not none else '<span class="muted">—</span>'|safe }}</td>
+  <td>
+    {% if c.alpha is defined and c.alpha is not none %}
+      <span style="font-weight:700;">{{ '%.2f'|format(c.alpha) }}</span>
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if c.species is defined and c.species is not none %}
+      {% if c.species == 'FRESH_INITIATION' %}
+        <span class="badge badge-green">{{ t('Fresh', '新起') }}</span>
+      {% elif c.species == 'ESTABLISHED_CONTINUATION' %}
+        <span class="badge badge-muted">{{ t('Cont.', '延续') }}</span>
+      {% else %}
+        <span class="badge badge-muted">{{ c.species }}</span>
+      {% endif %}
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if c.trend_legs is defined and c.trend_legs is not none %}
+      <span class="k-chip {% if c.trend_legs >= 3 %}k-hi{% endif %}">{{ c.trend_legs }}/4</span>
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if c.fresh_cross is defined and c.fresh_cross is not none %}
+      {% if c.fresh_cross %}
+        <span style="color:var(--up);">✓</span>
+      {% else %}
+        <span class="muted">✗</span>
+      {% endif %}
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if c.ticks_since_cross is defined and c.ticks_since_cross is not none %}
+      {{ c.ticks_since_cross }}
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="muted sm" style="padding:10px 0;">
+  {{ t('No momentum kings today — honest abstain, not missing data.', '今日无动量之王候选 — 诚实弃权，非数据缺失。') }}
+  {% set n_no = cov.n_no_clear_leader if cov.n_no_clear_leader is defined and cov.n_no_clear_leader is not none else 0 %}
+  {{ n_no }} {{ t('sectors show no residual-alpha separation above the dominance threshold.', '个板块未见残差阿尔法分离高于主导阈值。') }}
+</div>
+{% endif %}
+</div>
+
+{# ── Sectors ──────────────────────────────────────────────────────── #}
+<div class="panel">
+<h2>{{ t('Sectors', '板块') }}</h2>
+<div class="sm muted" style="margin-bottom:10px;">
+  {{ t('Per-sector state machine. Expand a sector to see member details.', '各板块状态机，展开板块以查看成员详情。') }}
+</div>
+
+{% for sec in sectors %}
+{% set sec_members = sec.members if sec.members is defined and sec.members is not none else [] %}
+<div class="sector-card">
+  <div class="sector-hd" onclick="this.classList.toggle('open')">
+    <span style="font-weight:700;font-size:13px;">{{ sec.sector if sec.sector is defined and sec.sector is not none else '—' }}</span>
+
+    {# State badge #}
+    {% if sec.state is defined and sec.state is not none %}
+      {% if sec.state == 'LEADER_CANDIDATE' %}
+        <span class="badge badge-green">{{ t('Leader Candidate', '领袖候选') }}</span>
+      {% elif sec.state == 'CONTESTED' %}
+        <span class="badge badge-orange">{{ t('Contested', '争议') }}</span>
+      {% elif sec.state == 'NO_CLEAR_LEADER' %}
+        <span class="badge badge-muted">{{ t('No Clear Leader', '无明显领袖') }}</span>
+      {% else %}
+        <span class="badge badge-muted">{{ sec.state }}</span>
+      {% endif %}
+    {% else %}
+      <span class="badge badge-muted"><span class="muted">—</span></span>
+    {% endif %}
+
+    {# Leader chip #}
+    {% if sec.leader is defined and sec.leader is not none %}
+      <span class="xs muted">{{ t('Leader', '领袖') }}: <span class="tk">{{ sec.leader }}</span></span>
+    {% endif %}
+
+    {# Dominance margin #}
+    {% if sec.dominance_margin is defined and sec.dominance_margin is not none %}
+      <span class="xs muted">{{ t('Margin', '差距') }}: {{ '%.2f'|format(sec.dominance_margin) }}</span>
+    {% endif %}
+
+    {# n members #}
+    {% if sec.n is defined and sec.n is not none %}
+      <span class="xs muted">n={{ sec.n }}</span>
+    {% endif %}
+
+    <span class="car">▸</span>
+  </div>
+  <div class="sector-body">
+    {% if sec_members %}
+    <div class="tbl-wrap">
+    <table class="ltbl">
+    <thead>
+    <tr>
+      <th>{{ t('Ticker', '代码') }}</th>
+      <th>{{ t('Alpha-Z', '阿尔法Z') }}</th>
+      <th>{{ t('Rank', '排名') }}</th>
+      <th>{{ t('Species', '类型') }}</th>
+      <th>{{ t('Trend Legs', '趋势腿') }}</th>
+      <th>{{ t('Entry', '入场') }}</th>
+      <th>{{ t('Rev Pctile', '修正分位') }}</th>
+      <th>{{ t('Ticks', '计时') }}</th>
+      <th>{{ t('Notes', '说明') }}</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for m in sec_members %}
+    <tr{% if m.eligible is defined and m.eligible is not none and not m.eligible %} class="ineligible"{% endif %}>
+      <td>
+        <a href="us_stocks.html#{{ m.ticker }}" class="tk">{{ m.ticker }}</a>
+        {# Optional future witnesses — render ONLY if present #}
+        {% if m.net_inflow_witness is defined and m.net_inflow_witness %}
+          <span class="badge badge-green" style="margin-left:4px;">{{ t('Inflow', '净流入') }}</span>
+        {% endif %}
+        {% if m.options_context is defined and m.options_context %}
+          <span class="badge badge-muted" style="margin-left:4px;">{{ t('Options', '期权') }}</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if m.alpha is defined and m.alpha is not none %}
+          {{ '%.2f'|format(m.alpha) }}
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if m.sector_rank is defined and m.sector_rank is not none and m.sector_n is defined and m.sector_n is not none %}
+          <span class="k-chip {% if m.sector_rank == 1 %}k-hi{% endif %}">{{ m.sector_rank }}/{{ m.sector_n }}</span>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if m.species is defined and m.species is not none %}
+          {% if m.species == 'FRESH_INITIATION' %}
+            <span class="badge badge-green">{{ t('Fresh', '新起') }}</span>
+          {% elif m.species == 'ESTABLISHED_CONTINUATION' %}
+            <span class="badge badge-muted">{{ t('Cont.', '延续') }}</span>
+          {% else %}
+            <span class="badge badge-muted xs">{{ m.species }}</span>
+          {% endif %}
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if m.trend_legs is defined and m.trend_legs is not none %}
+          <span class="k-chip {% if m.trend_legs >= 3 %}k-hi{% endif %}">{{ m.trend_legs }}/4</span>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if m.residual_entry is defined and m.residual_entry is not none %}
+          {% if m.residual_entry == 'extended' %}
+            <span class="badge re-extended">{{ t('Extended', '超买') }}</span>
+          {% elif m.residual_entry == 'pullback' %}
+            <span class="badge re-pullback">{{ t('Pullback', '回调') }}</span>
+          {% elif m.residual_entry == 'intact' %}
+            <span class="badge re-intact">{{ t('Intact', '完好') }}</span>
+          {% elif m.residual_entry == 'laggard' %}
+            <span class="badge re-laggard">{{ t('Laggard', '滞后') }}</span>
+          {% elif m.residual_entry == 'neutral' %}
+            <span class="badge re-neutral">{{ t('Neutral', '中性') }}</span>
+          {% else %}
+            <span class="badge badge-muted">{{ m.residual_entry }}</span>
+          {% endif %}
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if m.rev_pctile is defined and m.rev_pctile is not none %}
+          {{ m.rev_pctile | int }}
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if m.ticks_since_cross is defined and m.ticks_since_cross is not none %}
+          {{ m.ticks_since_cross }}
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td class="muted xs">
+        {# Gates (only for eligible members — show as terse chip row) #}
+        {% if m.eligible is defined and m.eligible is not none and m.eligible %}
+          {% set g = m.gates if m.gates is defined and m.gates is not none else {} %}
+          {% if g.alpha_leader is defined and not g.alpha_leader %}<span class="badge badge-muted" style="margin-right:2px;">α✗</span>{% endif %}
+          {% if g.confluence_bull is defined and not g.confluence_bull %}<span class="badge badge-muted" style="margin-right:2px;">bull✗</span>{% endif %}
+          {% if g.not_extended is defined and not g.not_extended %}<span class="badge badge-orange" style="margin-right:2px;">{{ t('Ext', '超买') }}</span>{% endif %}
+        {% elif m.eligible is defined and not m.eligible %}
+          {# Ineligible: show reasons if present #}
+          {% set reasons = m.reasons if m.reasons is defined and m.reasons is not none else [] %}
+          {% if reasons %}
+            {% for r in reasons %}<span class="muted xs">{{ r }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+          {% else %}
+            <span class="muted">{{ t('Not eligible', '不符合条件') }}</span>
+          {% endif %}
+        {% endif %}
+        {% if m.based is defined and m.based is not none and m.based %}<span class="badge badge-green" style="margin-left:2px;">{{ t('Based', '有基') }}</span>{% endif %}
+        {% if m.extended is defined and m.extended is not none and m.extended %}<span class="badge badge-orange" style="margin-left:2px;">{{ t('Ext', '超买') }}</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="muted xs" style="padding:10px 14px;">{{ t('No members in this sector.', '该板块暂无成员。') }}</div>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<div class="muted sm">{{ t('No sector data available.', '暂无板块数据。') }}</div>
+{% endfor %}
+</div>
+
+{# ── Playbook accordion ───────────────────────────────────────────── #}
+<div class="panel">
+<h2>{{ t('Playbook', '操作手册') }}</h2>
+
+<div class="playbook">
+<div class="pb-hd" onclick="this.classList.toggle('open')">
+  {{ t('What the state machine describes', '状态机描述的内容') }}<span class="car">▸</span>
+</div>
+<div class="pb-bd">
+  <p>{{ t('The Momentum King board tracks names where sector-neutral residual alpha (alpha after removing the sector beta component) clears the dominance threshold above their sector peers. Each sector emits one state: LEADER_CANDIDATE (one name dominates), CONTESTED (two or more names are close), or NO_CLEAR_LEADER (no name clears the minimum threshold). The board describes the distribution of residual alpha — it does not predict price direction.', '动量之王看板追踪板块中性残差阿尔法（扣除板块贝塔分量后的阿尔法）超过主导阈值的标的。每个板块输出一种状态：LEADER_CANDIDATE（一个标的主导），CONTESTED（两个或更多标的接近），或NO_CLEAR_LEADER（无标的超过最低阈值）。看板描述残差阿尔法的分布——不预测价格方向。') }}</p>
+</div>
+</div>
+
+<div class="playbook">
+<div class="pb-hd" onclick="this.classList.toggle('open')">
+  {{ t('Why witnesses never promote', '为何见证指标不得晋升候选资格') }}<span class="car">▸</span>
+</div>
+<div class="pb-bd">
+  <p>{{ t('Net-inflow and options context witnesses are displayed as context chips when present (MK-P2 and later). They describe additional observable coincidences — they never change a sector state from NO_CLEAR_LEADER to LEADER_CANDIDATE, and they never override the alpha-leader gate. A witness chip is honest coincidence, not confirmation. The state machine is the sole arbiter of candidate status.', '净流入和期权背景见证指标作为背景指示牌展示（MK-P2及之后）。它们描述额外的可观测巧合——不会将板块状态从NO_CLEAR_LEADER改为LEADER_CANDIDATE，不会覆盖阿尔法领袖门槛。见证指示牌是诚实的巧合，非确认。状态机是候选资格的唯一裁定者。') }}</p>
+</div>
+</div>
+
+<div class="playbook">
+<div class="pb-hd" onclick="this.classList.toggle('open')">
+  {{ t('Onset = fresh cross + not-extended, not late-run', '起点 = 新交叉 + 未超买，非滞后跟进') }}<span class="car">▸</span>
+</div>
+<div class="pb-bd">
+  <p>{{ t('A name qualifies for Top Candidates only when (1) fresh_cross is True — the trend-leg confluence triggered within the last fresh_within calendar days, and (2) the residual_entry is not "extended" — the name is not already stretched above its own sector-neutral baseline. This is an onset filter, not a momentum-chasing filter. Names that already ran cannot re-enter Top Candidates until a new cross occurs.', '只有满足以下条件的标的才能进入顶部候选：(1) fresh_cross为True——趋势腿汇聚在最近fresh_within个日历日内触发，且(2) residual_entry不为"extended"——标的未超过其板块中性基准。这是起点筛选，非动量追逐筛选。已有涨幅的标的须等新交叉出现后方可重新进入顶部候选。') }}</p>
+</div>
+</div>
+
+<div class="playbook">
+<div class="pb-hd" onclick="this.classList.toggle('open')">
+  {{ t('Thresholds are frozen pre-registered seeds — display, not validated alpha', '阈值为冻结的预注册种子 — 仅作展示，非经验证的阿尔法') }}<span class="car">▸</span>
+</div>
+<div class="pb-bd">
+  <p>{{ t('The dominance threshold (alpha_leader_min), the minimum trend legs count (min_trend_legs), the dominance tau (dominance_tau), and the freshness window (fresh_within) are pre-registered configuration seeds. They were set before this page existed and have not been tuned to produce attractive-looking boards. Changing them post-hoc would be p-hacking. The board is a descriptive display surface — it has never been evaluated as a return predictor.', '主导阈值（alpha_leader_min）、最低趋势腿数（min_trend_legs）、主导tau（dominance_tau）和新鲜度窗口（fresh_within）均为预注册配置种子。它们在本页创建前即已设置，未经调整以产生好看的看板。事后修改将构成数据挖掘。本看板为描述性展示页面——从未作为收益预测指标进行评估。') }}</p>
+</div>
+</div>
+</div>
+
+<div class="muted xs" style="margin-top:8px;line-height:1.6;">
+  {{ t('Display-only. No signal validates buy/sell. Nothing here feeds any authority surface. Context, not sizing.', '仅供展示。无信号验证买入/卖出。本页内容不输入任何权威面。背景参考，非仓位依据。') }}
+</div>
+
+</div>
+<script src="theme.js"></script>
+</body>
+</html>

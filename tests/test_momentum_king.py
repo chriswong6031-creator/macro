@@ -144,12 +144,55 @@ def test_build_board_none_on_missing_residual():
 # ── confluence_onset: smoke on a real series + short-series guard ────────────────
 
 def test_confluence_onset_smoke_long_series():
-    o = confluence_onset(_price_series(420))
+    from engine.canon import confluence_signals
+    s = _price_series(420)
+    o = confluence_onset(s)
+    conf = confluence_signals(s)
     assert set(o) >= {"fresh_cross", "trend_legs", "species", "extended", "cs_active"}
     # on a sufficiently long series the trend-leg count is a real int in [0, 4]
     assert o["trend_legs"] is None or 0 <= o["trend_legs"] <= 4
+    # BUG-1 regression: ticks_since_cross rides the SAME canon CB grid as cb_recent,
+    # so if canon saw any confluence buy, onset MUST report a tick count.
+    if not conf.empty and bool(conf["CB"].any()):
+        assert o["ticks_since_cross"] is not None
+    # a "recent" cross is within FRESH_WITHIN buckets by construction (no divergence).
+    if o.get("cb_recent"):
+        assert o["ticks_since_cross"] is not None and o["ticks_since_cross"] <= 3
 
 
 def test_confluence_onset_short_series_is_all_null():
     o = confluence_onset(_price_series(40))
     assert o["trend_legs"] is None and o["fresh_cross"] is None and o["species"] is None
+
+
+def test_state_null_alpha_second_member_still_crowns_leader():
+    # BUG-2: a null-alpha #2 must be SKIPPED, not poison the margin into a false CONTESTED
+    members = [{"ticker": "A", "alpha": 2.0, "eligible": True},
+               {"ticker": "B", "alpha": None, "eligible": False},
+               {"ticker": "C", "alpha": 0.3, "eligible": False}]
+    st = sector_state(members, dominance_tau=0.5)
+    assert st["state"] == "LEADER_CANDIDATE" and st["leader"] == "A"
+    assert st["dominance_margin"] == round(2.0 - 0.3, 3)
+
+
+def test_state_single_member_cannot_demonstrate_dominance():
+    # BUG-4: a lone member (no competitor in the field) abstains regardless of alpha
+    st = sector_state([{"ticker": "A", "alpha": 3.0, "eligible": True}], dominance_tau=0.5)
+    assert st["state"] == "NO_CLEAR_LEADER" and st["leader"] is None
+
+
+def test_classify_dual_reason_weak_and_active_sell():
+    # BUG-5: BOTH failure causes must surface in reasons, not just the first
+    m = classify_name(_rec("AAA", 1.0), _onset(trend_legs=1, cs_active=True))
+    assert m["eligible"] is False
+    assert "weak_confluence" in m["reasons"] and "active_sell" in m["reasons"]
+
+
+def test_classify_unknown_extension_fails_closed():
+    # BUG-3: extended=None (short history / no postcross) must BLOCK, not pass silently
+    onset = {"trend_legs": 3, "cs_active": False, "extended": None, "species": None,
+             "fresh_cross": False, "ticks_since_cross": None, "based": None}
+    m = classify_name(_rec("AAA", 1.0), onset)
+    assert m["eligible"] is False
+    assert m["gates"]["not_extended"] is False
+    assert "not_enough_history" in m["reasons"]
