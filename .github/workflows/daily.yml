@@ -826,6 +826,10 @@ jobs:
           # writes site/flowleaders/leaders.json + renders site/flow_leaders.html.
           # Display-only; exit 0 always; never breaks the render.
           run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders
+          # Momentum King board — MK-1. AFTER build_flow_leaders (independent stores).
+          # Reuses residual_alpha (alpha king) + canon/postcross (onset gate); emits
+          # site/momentumking/board.json (schema momentum_king.v1). Display-only; exit 0.
+          run_py "momentum king board (build_momentum_king)" scripts.build_momentum_king
           # Leader Radar — LR W2a. AFTER build_flow_leaders (independent stores), BEFORE
           # build_pick_lab (plab_leader_precipice/plab_leader_onset consume radar.json).
           # Resolves universe (mag7+AI+Dow-30+NDX ∩ ohlcv); builds/appends
