@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-15 14:17:26 UTC",
+  "built": "2026-07-15 15:58:22 UTC",
   "session": {
     "region": "us",
     "open": true,
-    "local_time": "2026-07-15 10:17 EDT"
+    "local_time": "2026-07-15 11:58 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -18,15 +18,15 @@
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": 0.79
+      "chg_pct": 0.57
     },
     {
       "sym": "QQQ",
-      "chg_pct": 1.35
+      "chg_pct": 0.62
     },
     {
       "sym": "VIX",
-      "chg_pct": -6.88
+      "chg_pct": -6.18
     }
   ],
   "display": {
@@ -34,14 +34,14 @@
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
     "color": "green",
-    "score": 78,
+    "score": 77,
     "band_changed": false,
     "pending": null
   },
   "live": {
     "verdict": "RISK_ON",
-    "score": 78,
-    "raw_score": 78,
+    "score": 77,
+    "raw_score": 77,
     "color": "green",
     "label_en": "Risk-on",
     "label_zh": "\u98ce\u9669\u504f\u597d",
@@ -50,7 +50,7 @@
     "radar": {
       "state": "watch",
       "state_ungated": "watch",
-      "top_score": 61,
+      "top_score": 58,
       "label_en": "Bubble / blow-off unwind",
       "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
@@ -90,7 +90,7 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 88,
+      "score": 85,
       "basis": "live",
       "asof": "live"
     },
