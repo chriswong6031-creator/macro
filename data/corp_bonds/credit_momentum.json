@@ -1,6 +1,6 @@
 {
   "organ": "credit_momentum.v1",
-  "as_of": "2026-07-14",
+  "as_of": "2026-07-15",
   "authority": {
     "rank": false,
     "size": false,
@@ -1499,9 +1499,9 @@
     },
     "orcl": {
       "issuer": "ORCL",
-      "g_spread_bp_pw": 144.33,
+      "g_spread_bp_pw": 142.89,
       "ig_peer_median_bp": 74.33,
-      "premium_vs_ig_peers_bp": 70.0,
+      "premium_vs_ig_peers_bp": 68.56,
       "peer_group": "IG-segment bonds at matched maturity bucket (no per-bond ratings available; BBB-median deferred)",
       "note": "live \u2014 labeled vs IG peers at matched maturity"
     }
@@ -1564,6 +1564,6 @@
       "note": "accruing \u2014 fewer than 22 theme_daily dates"
     }
   ],
-  "_timing_s": 3.49,
+  "_timing_s": 4.18,
   "_n_ledger_new": 0
 }

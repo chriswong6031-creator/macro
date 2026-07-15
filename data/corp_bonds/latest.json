@@ -1,6 +1,6 @@
 {
   "organ": "corp_credit.v1",
-  "as_of": "2026-07-14",
+  "as_of": "2026-07-15",
   "data_as_of": "2026-07-10",
   "price_convention": "clean",
   "authority": {
@@ -16,7 +16,7 @@
       "par_total": 23331711501.12,
       "price_clean_pw": 98.09059700665931,
       "ytm_pct_pw": 4.937276076448514,
-      "g_spread_bp_pw": 63.48864165629142,
+      "g_spread_bp_pw": 62.65700169972263,
       "wam_yrs": 5.141175215680578
     },
     "hy": {
@@ -24,18 +24,18 @@
       "par_total": 18832324957.769997,
       "price_clean_pw": 98.11951842497342,
       "ytm_pct_pw": 7.8996237346382285,
-      "g_spread_bp_pw": 357.14555267213944,
+      "g_spread_bp_pw": 356.8412472324952,
       "wam_yrs": 5.727866181257334
     },
-    "quality_spread_bp": 293.65691101584804
+    "quality_spread_bp": 294.1842455327726
   },
   "themes": {
     "ai_hardware_credit": {
       "n_bonds": 25,
       "n_issuers": 1,
-      "g_spread_bp_pw": 59.33733643126162,
+      "g_spread_bp_pw": 59.05211178375197,
       "ytm_pct_pw": 4.855243961075901,
-      "dispersion_bp": 69.70730495167538,
+      "dispersion_bp": 60.210186550579714,
       "dispersion_basis": "p90_p10",
       "small_n": false,
       "wam_yrs": 4.032390264673921,
@@ -47,9 +47,9 @@
     "ai_power_credit": {
       "n_bonds": 44,
       "n_issuers": 3,
-      "g_spread_bp_pw": 58.85065579375809,
+      "g_spread_bp_pw": 58.38022535834235,
       "ytm_pct_pw": 4.933088724338099,
-      "dispersion_bp": 75.45575186201648,
+      "dispersion_bp": 69.95459561084454,
       "dispersion_basis": "p90_p10",
       "small_n": false,
       "wam_yrs": 8.595808668365011,
@@ -62,9 +62,9 @@
     "dc_reit_credit": {
       "n_bonds": 18,
       "n_issuers": 2,
-      "g_spread_bp_pw": 58.60584986490001,
+      "g_spread_bp_pw": 58.495378678303936,
       "ytm_pct_pw": 4.797587401291771,
-      "dispersion_bp": 54.62323540174532,
+      "dispersion_bp": 43.52448694880073,
       "dispersion_basis": "p90_p10",
       "small_n": false,
       "wam_yrs": 2.992536305907121,
@@ -76,9 +76,9 @@
     "hyperscaler_credit": {
       "n_bonds": 158,
       "n_issuers": 5,
-      "g_spread_bp_pw": 80.29095057967535,
+      "g_spread_bp_pw": 79.12865973057367,
       "ytm_pct_pw": 5.176758778912188,
-      "dispersion_bp": 202.97679026306477,
+      "dispersion_bp": 190.40677409577557,
       "dispersion_basis": "p90_p10",
       "small_n": false,
       "wam_yrs": 7.551771488398827,
@@ -93,9 +93,9 @@
     "memory_credit": {
       "n_bonds": 9,
       "n_issuers": 2,
-      "g_spread_bp_pw": 272.38919650304564,
+      "g_spread_bp_pw": 272.20865866822095,
       "ytm_pct_pw": 7.048298681727915,
-      "dispersion_bp": 238.6558789470376,
+      "dispersion_bp": 248.78318900863928,
       "dispersion_basis": "p90_p10",
       "small_n": false,
       "wam_yrs": 5.371899082630568,
@@ -121,9 +121,9 @@
     "telecom_legacy": {
       "n_bonds": 44,
       "n_issuers": 1,
-      "g_spread_bp_pw": 70.63376021885762,
+      "g_spread_bp_pw": 69.13117413332061,
       "ytm_pct_pw": 5.101595453558438,
-      "dispersion_bp": 79.81122319329717,
+      "dispersion_bp": 63.43364562117207,
       "dispersion_basis": "p90_p10",
       "small_n": false,
       "wam_yrs": 7.571488125156193,
@@ -138,67 +138,67 @@
       "sector": "Financials",
       "n_bonds": 671,
       "par_total": 4117447722.0,
-      "g_spread_bp_pw": 59.96967209820711
+      "g_spread_bp_pw": 59.3531752337524
     },
     {
       "sector": "Consumer Discretionary",
       "n_bonds": 291,
       "par_total": 1255940335.0,
-      "g_spread_bp_pw": 73.56459934401528
+      "g_spread_bp_pw": 73.01647400213501
     },
     {
       "sector": "Utilities",
       "n_bonds": 346,
       "par_total": 873144515.0,
-      "g_spread_bp_pw": 86.91511191986406
+      "g_spread_bp_pw": 85.80018374336379
     },
     {
       "sector": "Industrials",
       "n_bonds": 317,
       "par_total": 855065449.69,
-      "g_spread_bp_pw": 72.31929921311978
+      "g_spread_bp_pw": 71.62533171401196
     },
     {
       "sector": "Communication Services",
       "n_bonds": 213,
       "par_total": 753062661.0,
-      "g_spread_bp_pw": 66.48182973348558
+      "g_spread_bp_pw": 65.41060869369574
     },
     {
       "sector": "Health Care",
       "n_bonds": 244,
       "par_total": 675884000.0,
-      "g_spread_bp_pw": 60.58152657270295
+      "g_spread_bp_pw": 59.17108006241699
     },
     {
       "sector": "Information Technology",
       "n_bonds": 195,
       "par_total": 653770541.0,
-      "g_spread_bp_pw": 119.57952034657282
+      "g_spread_bp_pw": 118.59803758823888
     },
     {
       "sector": "Real Estate",
       "n_bonds": 243,
       "par_total": 609853972.0,
-      "g_spread_bp_pw": 78.86054843001229
+      "g_spread_bp_pw": 78.58714436058662
     },
     {
       "sector": "Consumer Staples",
       "n_bonds": 217,
       "par_total": 458796682.0,
-      "g_spread_bp_pw": 46.39771146829487
+      "g_spread_bp_pw": 45.596350670828095
     },
     {
       "sector": "Energy",
       "n_bonds": 165,
       "par_total": 293939000.0,
-      "g_spread_bp_pw": 68.6561175963784
+      "g_spread_bp_pw": 67.50057894807611
     },
     {
       "sector": "Materials",
       "n_bonds": 67,
       "par_total": 102228000.0,
-      "g_spread_bp_pw": 58.336332208203586
+      "g_spread_bp_pw": 56.95086042909308
     }
   ],
   "maturity_wall": {
@@ -266,6 +266,7 @@
       "DGS5",
       "DGS7",
       "DGS10",
+      "DGS20",
       "DGS30"
     ]
   },
@@ -292,5 +293,5 @@
       }
     }
   },
-  "_timing_s": 3.77
+  "_timing_s": 4.58
 }

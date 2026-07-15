@@ -1,7 +1,7 @@
 {
   "schema": "discovery_confluence.v1",
   "as_of": "2026-07-14",
-  "generated_at": "2026-07-14T07:35:50.006071+00:00",
+  "generated_at": "2026-07-15T06:52:39.614593+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -15,8 +15,8 @@
   },
   "honesty_header": "Two-source confluence: EDGAR phrase acceleration + GitHub adoption velocity. Both legs must accelerate for a confluence flag. Detection is noisy — ~half of flags are real. Early-entry edge ≈ 0. Candidate for curated review only — never auto-promoted.",
   "sources": {
-    "phrase_velocity": "/Users/chriswong/actions-runner-3/_work/macro/macro/site/basketdata/phrase_velocity.json",
-    "github_adoption": "/Users/chriswong/actions-runner-3/_work/macro/macro/site/basketdata/github_adoption.json"
+    "phrase_velocity": "/Users/chriswong/actions-runner-1/_work/macro/macro/site/basketdata/phrase_velocity.json",
+    "github_adoption": "/Users/chriswong/actions-runner-1/_work/macro/macro/site/basketdata/github_adoption.json"
   },
   "confluence_candidates": [
     {

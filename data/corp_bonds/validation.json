@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-14",
+  "as_of": "2026-07-15",
   "price_convention": "clean",
   "criteria": {
     "a": {
@@ -55,13 +55,13 @@
     },
     "c": {
       "status": "PASS",
-      "latest_diff_bp": 13.51,
+      "latest_diff_bp": 14.34,
       "overlaps": [
         {
           "as_of": "2026-07-10",
-          "g_spread_bp_pw": 63.49,
+          "g_spread_bp_pw": 62.66,
           "baml_oas_bp": 77.0,
-          "diff_bp": 13.51
+          "diff_bp": 14.34
         }
       ],
       "threshold_bp": 30.0
