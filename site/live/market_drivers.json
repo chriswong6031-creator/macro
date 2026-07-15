@@ -12,7 +12,7 @@
   "confidence": "high",
   "confidence_zh": "\u9ad8",
   "strength": 1.4,
-  "dominance_ratio": 1.54,
+  "dominance_ratio": 1.59,
   "agreement": 1.0,
   "runner_up": "liquidity_impulse",
   "runner_up_label": "Liquidity impulse",
@@ -58,8 +58,8 @@
       "label": "Liquidity impulse",
       "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
       "family": "liquidity",
-      "projection": 0.91,
-      "strength": 0.91,
+      "projection": 0.88,
+      "strength": 0.88,
       "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
     },
     {
@@ -99,6 +99,15 @@
       "direction": "credit spreads compressing \u2014 risk-on"
     },
     {
+      "driver": "crypto_liquidity",
+      "label": "Crypto liquidity",
+      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
+      "family": "crypto",
+      "projection": -0.32,
+      "strength": 0.32,
+      "direction": "crypto liquidity draining \u2014 BTC/ETH lead down"
+    },
+    {
       "driver": "usd_shock",
       "label": "USD shock",
       "label_zh": "\u7f8e\u5143\u51b2\u51fb",
@@ -106,15 +115,6 @@
       "projection": 0.31,
       "strength": 0.31,
       "direction": "dollar surging \u2014 squeeze, commodities & EM pressured"
-    },
-    {
-      "driver": "crypto_liquidity",
-      "label": "Crypto liquidity",
-      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
-      "family": "crypto",
-      "projection": -0.19,
-      "strength": 0.19,
-      "direction": "crypto liquidity draining \u2014 BTC/ETH lead down"
     },
     {
       "driver": "china_stimulus",
