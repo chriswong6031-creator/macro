@@ -505,6 +505,29 @@ jobs:
         run: |
           python -m engine.credit_momentum \
             || echo "::warning::credit_momentum engine failed (non-fatal)"
+      - name: MLC-W5 — US earnings calendar sweep (non-fatal)
+        # Root-cause fix (MLC postmortem 07-14): collectors/equity_earnings.py was never
+        # wired into the nightly pipeline — earnings.parquet was permanently empty/missing,
+        # making the W1.5 blackout gate and the W5 display chips always stale-fail-open.
+        # Sweeps Nasdaq's public calendar for the next 66 weekdays (~one quarter), writing
+        # data/earnings/earnings.parquet (ticker-indexed: next_date, next_time, eps_forecast,
+        # surprises_json, as_of). Bot-wall-aware: if the first calendar call is blocked
+        # (Akamai 403), the existing cache is kept untouched and the step exits 0 (non-fatal).
+        # MUST run in collect_tail, NOT collect (house law: new accrual steps go in collect_tail).
+        # Wall time: calendar sweep ~66 × 0.25s ≈ 17s + surprise drip capped at max_new=120
+        # names × 0.25s ≈ 30s → ~50s per night, well within the 150m budget.
+        # Writes data/earnings/earnings.parquet — covered by `git add data/` below.
+        run: |
+          python -m collectors.equity_earnings \
+            || echo "::warning::equity_earnings sweep failed (non-fatal)"
+      - name: MLC-W5 — earnings freshness tripwire (non-fatal)
+        # Reads the just-written data/earnings/earnings.parquet and checks that
+        # the store's as_of is within the expected SLA (2 trading days).
+        # Writes data/quality/earnings_freshness_audit.json for observability.
+        # Emits ::warning:: when stale so CI surfaces the gap without failing the build.
+        run: |
+          python -m scripts.audit_earnings_freshness \
+            || echo "::warning::audit_earnings_freshness crashed (non-fatal)"
       - name: commit tail data
         run: |
           git config user.name "dashboard-bot"

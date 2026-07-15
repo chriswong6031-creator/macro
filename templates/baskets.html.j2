@@ -1628,10 +1628,13 @@ function renderActNow(){
   const ACT={enter:['ENTER','建仓','#16a34a'],accumulate:['ACCUMULATE','加仓','#22c55e'],trim:['TRIM','减仓','#f97316'],avoid:['AVOID','回避','#ef4444']};
   function actColor(c){if(!isZh())return c;if(c==='#16a34a'||c==='#22c55e')return'#ef4444';if(c==='#ef4444')return'#22c55e';return c;}
   const row=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];const clr=actColor(ac[2]);
+    // MLC-W5: near_earnings_chip_en/zh — append only when present (disclosure, no gate effect).
+    const earnChip=x.near_earnings_chip_en
+      ?` · 📅 ${L(esc(x.near_earnings_chip_en),esc(x.near_earnings_chip_zh||x.near_earnings_chip_en))}`:'';
     return `<a class="anrow" href="basket/${x.id}.html">
       <span class="anverb" style="color:${clr};border-color:${clr}">${L(ac[0],ac[1])}</span>
       <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
-      <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}</span>
+      <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}${earnChip}</span>
       <span class="ansc">${x.score}</span></a>`;};
   // wait-for-a-pullback rows: same reco verb (muted) + the honest per-theme reason.
   const rowWait=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];const clr=actColor(ac[2]);
