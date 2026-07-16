@@ -88,14 +88,17 @@ def build_panel(
 
     # Injected provider (Phase-B ThetaData path) — appends to the same panel
     if chain_provider is not None:
+        # WP-RESOLVER: a provider run is meaningless without a store → required=True.
+        # Resolved OUTSIDE the try below so the failure raises instead of being
+        # swallowed into a warning (fail-loud contract for validators).
+        from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
+        td_store = resolve_thetadata_store(
+            required=True, purpose="validate_options_ivspread chain_provider panel")
         try:
-            from engine.thetadata_store import universe as td_universe, store_root  # noqa: PLC0415
-            import os  # noqa: PLC0415
-            td_store = os.environ.get("THETADATA_STORE")
+            from engine.thetadata_store import universe as td_universe  # noqa: PLC0415
             roots = td_universe(store=td_store)
-            from engine.thetadata_store import store_root  # noqa: PLC0415, F811
             for root in roots:
-                base = store_root(td_store) / "greeks" / root
+                base = td_store / "greeks" / root
                 if not base.exists():
                     continue
                 for f in sorted(base.glob("*.parquet")):
@@ -163,9 +166,16 @@ def main() -> None:
 
     chain_provider = None
     if args.store == "thetadata":
-        from engine.thetadata_store import make_chain_provider  # noqa: PLC0415
-        chain_provider = make_chain_provider(require_iv=True)
-        log.info("Using ThetaData chain provider (--store thetadata)")
+        # WP-RESOLVER: resolve ONCE up front (required=True — the validator is
+        # meaningless without a store) and hand the SAME store to the provider,
+        # so the provider reads exactly the store the panel enumerates.
+        from engine.thetadata_store import (  # noqa: PLC0415
+            make_chain_provider, resolve_thetadata_store,
+        )
+        td_store = resolve_thetadata_store(
+            required=True, purpose="validate_options_ivspread --store thetadata")
+        chain_provider = make_chain_provider(store=td_store, require_iv=True)
+        log.info("Using ThetaData chain provider (--store thetadata, store=%s)", td_store)
 
     panel = build_panel(chain_provider=chain_provider)
     n_dates = panel["date"].nunique() if not panel.empty else 0

@@ -669,8 +669,8 @@ def _fmt(v) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--store", default=None,
-                        help="ThetaData store root override (default: THETADATA_STORE env "
-                             "or data/thetadata_eod)")
+                        help="ThetaData store root override (default: canonical resolver — "
+                             "THETADATA_STORE env, then data_dir()/thetadata_eod, then ops-wt)")
     parser.add_argument("--smoke", action="store_true",
                         help="Smoke mode: run mechanics on whatever store exists; "
                              "clearly label output SMOKE; do NOT write gate JSON files")
@@ -687,22 +687,43 @@ def main() -> None:
         log.info("SMOKE MODE — mechanics proof only; no gate JSON files written")
         log.info("=" * 60)
 
-    # Resolve store root
-    from engine.thetadata_store import store_root  # noqa: PLC0415
-    sroot = store_root(args.store)
+    # Resolve store root — WP-RESOLVER: --store CLI wins, else the canonical
+    # resolver chain (THETADATA_STORE env → data_dir()/thetadata_eod → ops-wt,
+    # content-checked). Fail-loud contract: in a real (non-smoke) run, a missing
+    # store exits nonzero WITHOUT writing gate JSON files.
+    from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
+    if args.store:
+        sroot = Path(args.store)
+    else:
+        sroot = resolve_thetadata_store(
+            required=False, purpose="rerun_options_gates_thetadata")
+    if sroot is None or not sroot.exists():
+        if args.smoke:
+            log.warning("[SMOKE] no ThetaData store resolves — nothing to run; "
+                        "exiting 0 (smoke mode writes no gate files anyway)")
+            return
+        log.error("no ThetaData store resolves — exiting nonzero (gate JSON files "
+                  "NOT written). Set THETADATA_STORE env or use --store to point "
+                  "at the ops store.")
+        sys.exit(1)
+    store_arg = str(sroot)
     log.info("Store root: %s", sroot)
 
     # Universe
-    roots = universe(store=args.store)
+    roots = universe(store=store_arg)
     log.info("Roots in store: %s", roots)
 
     if not roots:
-        log.warning("No roots found in store. Exiting. "
-                    "Set THETADATA_STORE env or use --store to point at the ops store.")
-        return
+        if args.smoke:
+            log.warning("[SMOKE] No roots found in store. Exiting 0.")
+            return
+        log.error("No roots found in store — exiting nonzero (gate JSON files "
+                  "NOT written). Set THETADATA_STORE env or use --store to point "
+                  "at the ops store.")
+        sys.exit(1)
 
     # IV coverage
-    iv_cov = iv_coverage(store=args.store)
+    iv_cov = iv_coverage(store=store_arg)
     log.info("IV coverage: %d roots with greeks", len(iv_cov))
     if iv_cov:
         for r, v in sorted(iv_cov.items()):
@@ -723,9 +744,9 @@ def main() -> None:
         log.info("TR closes: %d dates × %d names", len(tr_closes), len(tr_closes.columns))
 
     # Run gates
-    doi_gate = run_s_doi(roots, tr_closes, store=args.store, smoke=args.smoke)
-    cwiv_gate = run_s_cwiv_or_xzz("cwiv", roots, iv_cov, store=args.store, smoke=args.smoke)
-    xzz_gate = run_s_cwiv_or_xzz("xzz", roots, iv_cov, store=args.store, smoke=args.smoke)
+    doi_gate = run_s_doi(roots, tr_closes, store=store_arg, smoke=args.smoke)
+    cwiv_gate = run_s_cwiv_or_xzz("cwiv", roots, iv_cov, store=store_arg, smoke=args.smoke)
+    xzz_gate = run_s_cwiv_or_xzz("xzz", roots, iv_cov, store=store_arg, smoke=args.smoke)
 
     all_gates = {"S-DOI": doi_gate, "S-CWIV": cwiv_gate, "S-XZZ": xzz_gate}
 

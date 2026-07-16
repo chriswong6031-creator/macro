@@ -18,8 +18,14 @@ OI TIMING LAW (LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE §8 ¶1):
   doi_series() enforces this via pandas shift(1) BEFORE computing deltas.
 
 STORE ROOT:
-  Read from env THETADATA_STORE; default "data/thetadata_eod" (relative to CWD for
-  tests, resolved via lib.config for production usage).
+  resolve_thetadata_store() is THE canonical resolver (WP-RESOLVER): env
+  THETADATA_STORE → lib.config data_dir()/thetadata_eod → the ops-host worktree
+  store — every candidate existence- AND content-checked (must contain at least
+  one of eod/, oi/, greeks/). An empty stub dir does NOT resolve: that is the
+  exact shape of the options_witness 0/18 incident, where a GH runner resolved
+  an empty repo-local store and published an all-suppressed artifact.
+  store_root() remains as a back-compat wrapper (always returns a Path, may not
+  exist — it warns when it doesn't); new callers should use the resolver.
 """
 from __future__ import annotations
 
@@ -65,6 +71,92 @@ def clear_parquet_cache() -> None:
 # store root resolution                                                         #
 # --------------------------------------------------------------------------- #
 
+# Canonical ops-host store path (the launchd theta-ops worktree). This constant
+# lives HERE and only here — per-module copies of this path were the fragmented
+# resolution that enabled the options_witness empty-store incident.
+_OPS_WT_STORE = Path("/Users/chriswong/theta-ops-wt/data/thetadata_eod")
+
+# A directory only counts as a store when at least one tier subdir is present.
+_STORE_TIERS = ("eod", "oi", "greeks")
+
+
+def _has_store_content(p: Path) -> bool:
+    """True when `p` exists and contains at least one of eod/, oi/, greeks/.
+
+    An empty stub directory (exists, no tier subdirs) does NOT count — resolving
+    one silently yields empty frames everywhere downstream, which is the exact
+    incident shape (options_witness published 0/18 themes from a stub store).
+    """
+    try:
+        return p.is_dir() and any((p / t).is_dir() for t in _STORE_TIERS)
+    except OSError:
+        return False
+
+
+def resolve_thetadata_store(required: bool = False,
+                            purpose: str = "") -> Path | None:
+    """THE canonical ThetaData store resolver (WP-RESOLVER) — single fallback chain.
+
+    Chain (first content-bearing hit wins):
+      1. THETADATA_STORE env — warns loudly when set but missing/stub, then
+         falls through (a misconfigured env var must not silently win).
+      2. lib.config data_dir()/thetadata_eod (the repo-local store / symlink).
+      3. the ops-host worktree store (_OPS_WT_STORE).
+
+    A candidate resolves only if it EXISTS and contains at least one of
+    eod/, oi/, greeks/ (see _has_store_content).
+
+    Args:
+        required: when True and nothing resolves, raise RuntimeError naming
+                  every path tried and the purpose. Builders that would
+                  otherwise publish empty/suppressed artifacts should either
+                  pass required=True or exit nonzero themselves on None.
+        purpose:  short caller tag, included in every log line.
+
+    Returns the resolved store root Path, or None (required=False only).
+    """
+    candidates: list[tuple[str, Path]] = []
+    env = os.environ.get("THETADATA_STORE")
+    if env:
+        candidates.append(("env", Path(env)))
+    try:
+        from lib import config  # noqa: PLC0415
+        candidates.append(("data_dir", config.data_dir() / "thetadata_eod"))
+    except Exception:  # noqa: BLE001
+        candidates.append(("data_dir", Path("data") / "thetadata_eod"))
+    candidates.append(("ops-wt", _OPS_WT_STORE))
+
+    tried: list[str] = []
+    for source, path in candidates:
+        if _has_store_content(path):
+            log.info("thetadata_store: resolved store=%s source=%s purpose=%s",
+                     path, source, purpose or "-")
+            return path
+        if source == "env":
+            if not path.exists():
+                log.warning(
+                    "thetadata_store: THETADATA_STORE=%s is SET but the path does "
+                    "not exist — ignoring the env override and falling through "
+                    "(purpose=%s)", env, purpose or "-")
+            else:
+                log.warning(
+                    "thetadata_store: THETADATA_STORE=%s exists but contains none "
+                    "of eod/ oi/ greeks/ — empty stub, not a store; falling "
+                    "through (purpose=%s)", env, purpose or "-")
+        tried.append(f"{source}:{path}")
+
+    log.error("thetadata_store: resolved store=NONE purpose=%s — tried %s",
+              purpose or "-", ", ".join(tried))
+    if required:
+        raise RuntimeError(
+            f"ThetaData store required (purpose={purpose or '-'}) but no path "
+            f"resolves. Tried: {', '.join(tried)}. A path only resolves if it "
+            f"exists and contains at least one of eod/, oi/, greeks/. Set "
+            f"THETADATA_STORE or point the caller at a real store."
+        )
+    return None
+
+
 def _default_store_root() -> Path:
     """Resolve the default store root: THETADATA_STORE env, else data/thetadata_eod."""
     env = os.environ.get("THETADATA_STORE")
@@ -78,10 +170,27 @@ def _default_store_root() -> Path:
         return Path("data") / "thetadata_eod"
 
 
+# store_root() paths already warned about (once per process, not per read)
+_WARNED_MISSING_ROOTS: set[str] = set()
+
+
 def store_root(override: str | Path | None = None) -> Path:
-    if override is not None:
-        return Path(override)
-    return _default_store_root()
+    """Back-compat wrapper: always returns a Path, which may NOT exist.
+
+    Downstream loaders return empty frames on a missing root, so this warns
+    (once per path per process) when the result does not exist. New callers
+    should use resolve_thetadata_store(), which fails loud instead of empty.
+    """
+    p = Path(override) if override is not None else _default_store_root()
+    if not p.exists():
+        key = str(p)
+        if key not in _WARNED_MISSING_ROOTS:
+            _WARNED_MISSING_ROOTS.add(key)
+            log.warning(
+                "thetadata_store.store_root: %s does not exist — parquet reads "
+                "will silently return EMPTY frames; prefer "
+                "resolve_thetadata_store() for fail-loud resolution", p)
+    return p
 
 
 # --------------------------------------------------------------------------- #

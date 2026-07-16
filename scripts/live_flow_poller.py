@@ -368,13 +368,43 @@ def _fetch_root(root: str, session_date: str,
 
 # ── OI loader ────────────────────────────────────────────────────────────────
 
+# WP-RESOLVER: resolve the ThetaData store ONCE per poller session via the
+# canonical resolver. A missing store must NEVER crash the live lane — it is
+# logged at ERROR exactly once and surfaced as a meta note; every subsequent
+# _load_oi_prev call degrades to None silently.
+_OI_STORE_RESOLVED = False
+_OI_STORE: Path | None = None
+
+
+def _oi_store() -> Path | None:
+    """Session-cached canonical store resolution for the t-1 OI reads."""
+    global _OI_STORE_RESOLVED, _OI_STORE
+    if not _OI_STORE_RESOLVED:
+        try:
+            from engine.thetadata_store import resolve_thetadata_store
+            _OI_STORE = resolve_thetadata_store(
+                required=False, purpose="live_flow_poller oi_prev")
+        except Exception as e:  # noqa: BLE001 — resolver failure must not kill the lane
+            log.error("poller: store resolution failed: %s", e)
+            _OI_STORE = None
+        _OI_STORE_RESOLVED = True
+        if _OI_STORE is None:
+            log.error(
+                "poller: ThetaData store missing — t-1 OI unavailable for this "
+                "whole session (OI-dependent context degrades; poller continues)")
+    return _OI_STORE
+
+
 def _load_oi_prev(root: str, session_date: str) -> object | None:
     """Load t-1 OI from thetadata_eod; returns None gracefully."""
     try:
         from engine import thetadata_store as ts
+        store = _oi_store()
+        if store is None:
+            return None
         d_prev = datetime.strptime(session_date, "%Y-%m-%d").date() - timedelta(days=1)
         for _ in range(5):
-            chain = ts.chain(str(d_prev), root.upper())
+            chain = ts.chain(str(d_prev), root.upper(), store=store)
             if not chain.empty and "open_interest" in chain.columns:
                 cols = [c for c in ("expiration", "strike", "right", "open_interest")
                         if c in chain.columns]
@@ -1077,6 +1107,9 @@ def run_cycle(
                          "using full-day re-pull each cycle.")
     if truncated:
         notes.append(f"Events capped at {lf.MAX_EVENTS}; oldest dropped.")
+    # WP-RESOLVER: surface a missing ThetaData store in meta (store_missing shape)
+    if _OI_STORE_RESOLVED and _OI_STORE is None:
+        notes.append("ThetaData store missing — t-1 OI context unavailable this session.")
     # Deduplicate meta_notes: same note from N roots appears only once
     seen_notes: set[str] = set()
     for note in meta_notes:
