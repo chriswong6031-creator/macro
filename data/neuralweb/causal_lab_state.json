@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-07-15T09:07:39Z",
+  "asof": "2026-07-16T07:59:10Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -42,9 +42,9 @@
     "value_heuristic_formula": "score = UNEXPLORED_BONUS(10 if unexplored) + DATA_PRESENT_BONUS(5 if present) + ERA_BREADTH_BONUS(min(era_coverage_len, 4) * 1.0) - NULL_BASIN_PENALTY(20 if null_basin) - KILLED_PENALTY(100 if killed)"
   },
   "surprise_queue": {
-    "size": 0,
-    "stalest_source": "",
-    "stalest_source_asof": ""
+    "size": 3,
+    "stalest_source": "data/release_forecast/forward_ledger.jsonl",
+    "stalest_source_asof": "2026-07-16"
   },
   "drift_events": [],
   "llm_lane": {
