@@ -333,3 +333,40 @@ def test_echo_stats_cross_desk_breadth():
 
 def test_echo_stats_missing_key():
     assert qbus.echo_stats("nope", df=_mk_df([_row(title="x", entities=["A"])])) is None
+
+
+# --------------------------------------------------------------------------- #
+# event_key_for_title — shingled-title lookup for non-ingested headlines
+# --------------------------------------------------------------------------- #
+def _clustered_df(rows, thresh=0.4):
+    clustered = qbus.assign_event_keys(rows, thresh=thresh, window_days=3)
+    return pd.DataFrame(clustered, columns=list(qbus.COLUMNS)), clustered
+
+
+def test_event_key_for_title_paraphrase_matches_cluster():
+    df, clustered = _clustered_df([
+        _row(title="Fed holds interest rates steady", source="reuters",
+             entities=["SPY"], themes=["monetary"], url="https://reuters.com/a"),
+        _row(title="Fed holds interest rates steady in June", source="ap",
+             entities=["SPY"], themes=["monetary"], url="https://apnews.com/b"),
+    ])
+    key = qbus.event_key_for_title("Fed holds interest rates steady today",
+                                   date(2026, 6, 19), df=df, thresh=0.4)
+    assert key == clustered[0]["event_key"]
+
+
+def test_event_key_for_title_unrelated_or_out_of_window_returns_none():
+    df, _ = _clustered_df([
+        _row(title="Fed holds interest rates steady", source="reuters",
+             entities=["SPY"], themes=["monetary"], url="https://reuters.com/a"),
+    ])
+    # unrelated title inside the window
+    assert qbus.event_key_for_title("OPEC agrees to cut oil output",
+                                    date(2026, 6, 19), df=df) is None
+    # same title but asof far outside the ±3d window
+    assert qbus.event_key_for_title("Fed holds interest rates steady",
+                                    date(2026, 7, 19), df=df) is None
+    # no asof / empty store stay fail-open
+    assert qbus.event_key_for_title("Fed holds interest rates steady",
+                                    None, df=df) is None
+    assert qbus.event_key_for_title("", date(2026, 6, 19), df=df) is None
