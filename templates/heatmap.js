@@ -1452,8 +1452,11 @@
   function injectStyle() {
     if (document.getElementById('mm-heatmap-style')) return;
     var css = ''
-      + ':root{--hm-up-v:#14ad6c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:var(--panel2);}'
-      + 'html[data-theme="light"]{--hm-up-v:#1aa869;--hm-dn-v:#d83a48;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 13%,var(--line));--hm-frame:#ffffff;}'
+      // --hm-frame is transparent in both themes: the treemap frame + inter-tile
+      // gaps + section-header strips inherit whatever panel the map sits in, so
+      // there is no painted background box — just transparent gaps (operator ask).
+      + ':root{--hm-up-v:#14ad6c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:transparent;}'
+      + 'html[data-theme="light"]{--hm-up-v:#1aa869;--hm-dn-v:#d83a48;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 13%,var(--line));--hm-frame:transparent;}'
       + 'html[data-lang="zh"]{--hm-up-v:#e4435a;--hm-dn-v:#14ad6c;}'
       + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#d83a48;--hm-dn-v:#1aa869;}'
       + '.hm-scope{font-family:Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;}'
