@@ -1328,3 +1328,25 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
    Only the glyph metrics are overridden; the circle box stays as each page
    defines it (so the icon footprint / alignment is unchanged). */
 span.help { font-size: 9px; line-height: 1; }
+
+/* 2026-07-16: unify the look with the "new" Mag7 / Leadership icons — a filled pill
+   (panel2 fill + subtle line border + bolder glyph) instead of the thin outline — and
+   route the tooltip through theme.js's viewport-clamped tap-to-toggle popover.
+   BOTH the restyle and the popover apply ONLY to icons theme.js has confirmed are
+   canonical help() "?" glyphs (upgradeHelpIcons → .help-upgraded). This scoping is
+   deliberate and load-bearing: the bare `.help` class is reused on NON-icon content
+   (market-state factor labels `f-name help`, the seasonality cell, the anticipation
+   `idxbadge … help`) whose rich tooltips + styling must be left untouched — those are
+   never upgraded, so they never match .help-upgraded. */
+span.help.help-upgraded { font-size: 9.5px; font-weight: 700;
+  background: var(--panel2); border-color: var(--line); color: var(--muted); }
+/* once upgraded, suppress the old nested :hover tooltip so it doesn't double up with
+   the popover (progressive enhancement — .tip stays live until JS marks the icon). */
+.help.help-upgraded .tip { display: none !important; }
+
+/* The upgraded "?" icons (and the sibling Mag7 / Leadership / table-header icons) must
+   not select-on-hold or pop the iOS callout menu on touch — a long press should do
+   nothing (the popover opens on tap), not start a text selection. Scoped so content
+   rows keep normal selection; the popover body (.i18n-tip-pop) also stays selectable. */
+.help.help-upgraded, .m7p-help, .ldb-help, .st-th-tip {
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
