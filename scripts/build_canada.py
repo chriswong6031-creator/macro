@@ -151,55 +151,62 @@ def _lifespan_rows(quad: pd.Series) -> list[dict]:
     return rows
 
 
+def _drilldown_closes() -> tuple[pd.DataFrame, str | None]:
+    """Close matrix for the per-sector drill-down holdings cards.
+
+    Source of record is the curated breadth cache (canada_breadth/_closes_cache.parquet,
+    written by the collect lane). It is gitignored rebuild-only, so on the re-render
+    lanes (build_vector -> build_canada with no collectors) and in fresh worktrees it is
+    absent; there we fall back to the COMMITTED broad S&P/TSX Composite panel
+    (canada_search/closes.parquet, ~218 iShares-XIC names) which carries 73/74 curated
+    constituents with deep history. Curated cache is tried FIRST so the nightly lane's
+    drill-down is unchanged; the fallback only rescues lanes that lack the cache. Same
+    two sources as engine.board_ledger._load_ca_wide(). Returns (df, source_label);
+    (empty, None) when neither source is usable."""
+    dd = config.data_dir()
+    sources = [
+        (dd / "canada_breadth" / "_closes_cache.parquet", "canada_breadth"),
+        (dd / "canada_search" / "closes.parquet", "canada_search"),
+    ]
+    for path, label in sources:
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_parquet(path)
+        except Exception as exc:  # noqa: BLE001
+            log.error("HKCA-13: canada drill-down panel %s unreadable: %s", label, exc)
+            continue
+        if df.empty or df.shape[1] == 0:
+            continue
+        return df, label
+    return pd.DataFrame(), None
+
+
 def _check_closes_cache() -> dict | None:
-    """HKCA-13: canada_breadth/_closes_cache.parquet is gitignored rebuild-only.
-    In a fresh worktree (or after any worktree wipe) it is absent, which makes
-    the per-sector drill-down pages render with zero stock-level cards -- silently.
-    This check makes the absence VISIBLE in the health table at build time.
-    DO NOT rebuild the cache here; that belongs in the collect lane (canada_breadth)."""
-    cache = config.data_dir() / "canada_breadth" / "_closes_cache.parquet"
-    if not cache.exists():
+    """HKCA-13: surface a TRULY empty per-sector drill-down in the health table.
+
+    The drill-down holdings read _drilldown_closes() -- the curated breadth cache
+    (gitignored, rebuilt only by the collect lane) with a fallback to the committed
+    canada_search Composite panel. A warning row is emitted ONLY when NEITHER source
+    yields usable closes, i.e. the drill-down would genuinely ship with zero stock
+    cards. DO NOT rebuild the cache here; that belongs in the collect lane."""
+    df, label = _drilldown_closes()
+    if df.empty:
         log.error(
-            "HKCA-13: canada_breadth/_closes_cache.parquet is MISSING -- "
-            "sector drill-down pages will ship with empty stock-level cards.  "
-            "Fix: run scripts/collect.py --only canada_breadth to rebuild it."
+            "HKCA-13: no canada drill-down close panel (neither canada_breadth cache "
+            "nor canada_search) -- sector pages will ship with empty stock-level cards.  "
+            "Fix: run scripts/collect.py --only canada_breadth (or canada_universe)."
         )
         return {
-            "en": "Sector drill-down cache (MISSING -- run canada_breadth collector)",
-            "zh": "板块下钻缓存（缺失 -- 请运行 canada_breadth 收集器）",
+            "en": "Sector drill-down data (MISSING -- run canada_breadth collector)",
+            "zh": "板块下钻数据（缺失 -- 请运行 canada_breadth 收集器）",
             "status": "MISSING",
             "rows": 0,
             "last": "—",
         }
-    try:
-        df = pd.read_parquet(cache)
-    except Exception as exc:  # noqa: BLE001
-        log.error("HKCA-13: canada_breadth/_closes_cache.parquet unreadable: %s", exc)
-        return {
-            "en": "Sector drill-down cache (UNREADABLE -- see build log)",
-            "zh": "板块下钻缓存（不可读 -- 查看构建日志）",
-            "status": "ERROR",
-            "rows": 0,
-            "last": "—",
-        }
-    if df.empty or df.shape[1] == 0:
-        log.error(
-            "HKCA-13: canada_breadth/_closes_cache.parquet exists but is empty "
-            "(%s) -- sector drill-down pages will ship hollow.  "
-            "Fix: run scripts/collect.py --only canada_breadth to rebuild it.",
-            cache,
-        )
-        return {
-            "en": "Sector drill-down cache (EMPTY -- run canada_breadth collector)",
-            "zh": "板块下钻缓存（为空 -- 请运行 canada_breadth 收集器）",
-            "status": "EMPTY",
-            "rows": 0,
-            "last": "—",
-        }
     last_date = df.index.max().date() if hasattr(df.index, "max") else "?"
-    n_names = df.shape[1]
-    log.info("canada_breadth/_closes_cache.parquet: %d names, last=%s", n_names, last_date)
-    return None   # None = healthy; no warning row needed
+    log.info("canada drill-down panel: %s (%d names, last=%s)", label, df.shape[1], last_date)
+    return None   # None = healthy; drill-down has a usable close panel
 
 
 def _health_rows() -> list[dict]:
@@ -390,8 +397,7 @@ def _build_sector_pages(env) -> int:
                   "Real Estate": "Real Estate", "Consumer Staples": "Staples",
                   "Consumer Discretionary": "Discretionary", "Communication Services": "Communication"}
     closes = canada_closes()
-    cache = config.data_dir() / "canada_breadth" / "_closes_cache.parquet"
-    ccloses = pd.read_parquet(cache) if cache.exists() else pd.DataFrame()
+    ccloses, _ = _drilldown_closes()
     outdir = Path(config.load()["storage"]["site_dir"]) / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
     built = 0
