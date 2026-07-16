@@ -236,8 +236,11 @@ def append_placebo_tape(
             "n_watch_skipped": 0,
         }
 
-    # All known theme ids from the flag log (the "tier pool")
-    all_theme_ids = list({f.get("theme", "") for f in foresight_flags if f.get("theme")})
+    # All known theme ids from the flag log (the "tier pool").
+    # sorted() is load-bearing: set iteration order varies with PYTHONHASHSEED,
+    # and this list becomes the rng.sample pool — unsorted, the docstring's
+    # determinism guarantee is false across processes.
+    all_theme_ids = sorted({f.get("theme", "") for f in foresight_flags if f.get("theme")})
 
     # Load existing tape dedup keys
     existing_keys = _load_existing_keys(tape_path)

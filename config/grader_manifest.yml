@@ -40,7 +40,7 @@ files:
       attention leg crossings.  Writes data/foresight/earliness_grades.json.
 
   - path: engine/theme_placebo.py
-    sha256: 61d870747841766862cbeb0cfc9d85cb015cb29e54d6f870f28a3eaef1a09be7
+    sha256: f3089c26abd263725a535272696e2586ca6be0dece3d5d7a998101f63d934d04
     role: placebo
     notes: >
       Placebo tape: appends K=3 random peer themes + 1 time-shifted variant to
@@ -49,6 +49,11 @@ files:
       2026-07-16 hash update ratifies the #2598 COLLECT_LANE=nightly write gate
       (single-writer hardening, write-site only): replay vs the frozen foresight
       corpus is byte-identical in the nightly lane; grading semantics unchanged.
+      2026-07-16 second hash update ratifies sorted() peer pool: set-iteration
+      order made random_peer selection PYTHONHASHSEED-dependent (docstring
+      determinism claim was false across processes; each nightly leaked a few
+      re-drawn peer rows past dedup). Replay vs the frozen corpus is now
+      byte-identical across hash seeds; peer pool remains a uniform seeded draw.
 
   - path: engine/qledger_falsifier.py
     sha256: 3ce3f410c17a2de59d994b5eae1ea8c64b8fb6f7ceb14b093837b315efb8ffdc
