@@ -573,6 +573,13 @@ jobs:
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: [self-hosted, macstudio]
     timeout-minutes: 150    # was 120 — engine runtime crept 61m→116m→125m through 2026-07 and breached the 120 cap on 07-13/07-14, getting CANCELLED mid-run BEFORE the commit/upload steps → stale deploy (durable fix: split the LLM/desk band off the critical path). Earlier: was 70 — observed the job hitting exactly 70m on a congested runner and getting CANCELLED at the special-situations step (~step 30 of 50), AFTER it had successfully rebuilt every page (china/gex/vol-regime/etc.) but BEFORE the "commit engine outputs" step (50). Because pages.yml deploys the COMMITTED main tree, a skipped commit means the fresh build never lands and the live site serves a stale dashboard (missing nav links, new heroes, new JSON) until a run happens to finish under the cap. 150m restores headroom to always reach the commit. residual-alpha measured ~1s (never the bottleneck the old comment guessed). DONE: the ~22 regional/desk builders between build_site and the hub now run as parallel independent clusters (the "regional + desk builders (parallelised)" step) instead of serially — band wall-clock dropped from ~75m to ~its longest single cluster (special-situations' ~28m EDGAR sweep, now the long pole). Next lever if more is needed: speed up that EDGAR sweep.
+    env:
+      COLLECT_LANE: nightly   # job-level sentinel: inherited by every step; ensures all
+                              # forward-ledger writers in this job (build_track_record,
+                              # build_flip_confirmation, oracle_nightly, demand_ledger,
+                              # build_confluence_strength, archive_signals,
+                              # archive_context_snapshots, build_thematic_state,
+                              # grade_thematic) can advance their ledgers.
     steps:
       - uses: actions/checkout@v4
         with:

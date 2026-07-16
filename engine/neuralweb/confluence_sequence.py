@@ -90,6 +90,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import os
 import statistics
 from datetime import datetime, timezone
 from pathlib import Path
@@ -98,6 +99,16 @@ from typing import Any
 from engine.neuralweb._law import assert_no_authority
 
 log = logging.getLogger(__name__)
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 _SCHEMA_TAPE = "neuralweb.confluence_tape.v1"
 _SCHEMA_SEQ = "neuralweb.confluence_sequence.v1"
@@ -218,7 +229,16 @@ def _read_tape(tape_path: Path, gaps: list[str]) -> list[dict]:
 
 
 def _write_tape(tape_path: Path, rows: list[dict], gaps: list[str]) -> None:
-    """Write rows to tape jsonl (overwrite)."""
+    """Write rows to tape jsonl (overwrite).
+
+    Gated by COLLECT_LANE=nightly: no-ops outside the nightly lane.
+    """
+    if not _ledger_advance_enabled():
+        log.debug(
+            "confluence_sequence._write_tape: write skipped "
+            "(COLLECT_LANE != nightly)"
+        )
+        return
     try:
         tape_path.parent.mkdir(parents=True, exist_ok=True)
         tape_path.write_text(

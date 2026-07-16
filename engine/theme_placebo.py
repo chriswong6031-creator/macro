@@ -31,12 +31,23 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import random
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 log = logging.getLogger(__name__)
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -271,11 +282,17 @@ def append_placebo_tape(
     ) - n_watch_skipped  # already counted; just use n_watch_skipped
 
     if new_rows and not dry_run:
-        tape_path.parent.mkdir(parents=True, exist_ok=True)
-        with tape_path.open("a", encoding="utf-8") as fh:
-            for row in new_rows:
-                fh.write(json.dumps(row, separators=(",", ":")) + "\n")
-        log.info("theme_placebo: appended %d new placebo rows to %s", n_new, tape_path)
+        if _ledger_advance_enabled():
+            tape_path.parent.mkdir(parents=True, exist_ok=True)
+            with tape_path.open("a", encoding="utf-8") as fh:
+                for row in new_rows:
+                    fh.write(json.dumps(row, separators=(",", ":")) + "\n")
+            log.info("theme_placebo: appended %d new placebo rows to %s", n_new, tape_path)
+        else:
+            log.debug(
+                "theme_placebo.append_placebo_tape: write skipped "
+                "(COLLECT_LANE != nightly)"
+            )
     elif new_rows:
         log.info("theme_placebo: dry_run — would append %d rows", n_new)
 

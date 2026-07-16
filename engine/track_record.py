@@ -66,6 +66,19 @@ from engine import regime_vector as _rv  # W0-stageB: vector stamping
 
 logger = logging.getLogger(__name__)
 
+import os as _os
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env (and mirroring the collect-job's lane sentinel).  US_LANE is accepted as
+    a legacy alias so existing tests continue to pass.
+    """
+    val = _os.environ.get("COLLECT_LANE", "") or _os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
+
 
 def _is_null(v: Any) -> bool:
     """NaN-aware null test.
@@ -960,8 +973,14 @@ def update_track_record(
             f"coverage — §3.4; these pre-date the persisted vector)",
         )
 
-    # --- write ---
-    _write_parquet(out_df, out_path)
+    # --- write (gated: nightly lane only) ---
+    if _ledger_advance_enabled():
+        _write_parquet(out_df, out_path)
+    else:
+        logger.debug(
+            "track_record.update_track_record: ledger write skipped "
+            "(COLLECT_LANE != nightly)"
+        )
 
     return {
         "new_rows": len(new_rows),
@@ -1075,7 +1094,13 @@ def log_near_misses(
         out["n_new"] += 1
 
     if out["n_new"]:
-        all_rows = list(existing_keys.values())
-        _write_parquet(pd.DataFrame(all_rows, columns=_ALL_COLS), out_path)
+        if _ledger_advance_enabled():
+            all_rows = list(existing_keys.values())
+            _write_parquet(pd.DataFrame(all_rows, columns=_ALL_COLS), out_path)
+        else:
+            logger.debug(
+                "track_record.log_near_misses: ledger write skipped "
+                "(COLLECT_LANE != nightly)"
+            )
     logger.info("log_near_misses: %s", out)
     return out

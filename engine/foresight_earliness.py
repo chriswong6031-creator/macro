@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -39,6 +40,16 @@ import pandas as pd
 from lib import config
 
 log = logging.getLogger(__name__)
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 # Legs that are scaled 0..1 where HIGHER = MORE attention (later / more crowded).
 # earliness = 1 - rank_pct(mean of available attention legs).
@@ -398,5 +409,11 @@ def _append_log(payload: dict) -> None:
         lines.append(json.dumps(row, separators=(",", ":")))
 
     if lines:
+        if not _ledger_advance_enabled():
+            log.debug(
+                "foresight_earliness._append_log: write skipped "
+                "(COLLECT_LANE != nightly)"
+            )
+            return
         with p.open("a") as fh:
             fh.write("\n".join(lines) + "\n")

@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -46,6 +47,16 @@ from typing import Any
 import pandas as pd
 
 log = logging.getLogger(__name__)
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -380,11 +391,17 @@ def evaluate_falsifiers(
         new_rows.append(row)
 
     if new_rows and not dry_run:
-        eval_path.parent.mkdir(parents=True, exist_ok=True)
-        with eval_path.open("a", encoding="utf-8") as fh:
-            for row in new_rows:
-                fh.write(json.dumps(row, separators=(",", ":")) + "\n")
-        log.info("qledger_falsifier: wrote %d evaluations to %s", len(new_rows), eval_path)
+        if _ledger_advance_enabled():
+            eval_path.parent.mkdir(parents=True, exist_ok=True)
+            with eval_path.open("a", encoding="utf-8") as fh:
+                for row in new_rows:
+                    fh.write(json.dumps(row, separators=(",", ":")) + "\n")
+            log.info("qledger_falsifier: wrote %d evaluations to %s", len(new_rows), eval_path)
+        else:
+            log.debug(
+                "qledger_falsifier.evaluate_falsifiers: write skipped "
+                "(COLLECT_LANE != nightly)"
+            )
     elif new_rows:
         log.info("qledger_falsifier: dry_run — would write %d evaluations", len(new_rows))
 

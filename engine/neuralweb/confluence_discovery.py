@@ -47,12 +47,23 @@ from __future__ import annotations
 import json
 import logging
 import math
+import os
 import statistics
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 log = logging.getLogger(__name__)
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -412,7 +423,13 @@ def build_and_write(
         for g in gaps:
             log.warning("  - %s", g)
 
-    # Write candidates
+    # Write candidates (gated: nightly lane only)
+    if not _ledger_advance_enabled():
+        log.debug(
+            "confluence_discovery.build_and_write: candidates write skipped "
+            "(COLLECT_LANE != nightly)"
+        )
+        return candidates
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(

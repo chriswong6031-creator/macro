@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,6 +39,16 @@ from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("archive_context_snapshots")
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 ARCHIVE_FILE = "context_daily.parquet"
 
@@ -324,7 +335,10 @@ def _build_row(regime: dict, ms: dict, fear_greed: float | None,
 
 
 def _append(archive_path: Path, row: dict) -> bool:
-    """Append row to archive, keep-FIRST per date. Returns True if written."""
+    """Append row to archive, keep-FIRST per date. Returns True if written.
+
+    Gated by COLLECT_LANE=nightly: no-ops outside the nightly lane.
+    """
     date = row["date"]
     if not date:
         log.warning("no date resolved — skipping")
@@ -332,6 +346,13 @@ def _append(archive_path: Path, row: dict) -> bool:
     old = pd.read_parquet(archive_path) if archive_path.exists() else None
     if old is not None and "date" in old.columns and date in set(old["date"].astype(str)):
         log.info("context_daily — already logged for %s (keep-first)", date)
+        return False
+    if not _ledger_advance_enabled():
+        log.debug(
+            "archive_context_snapshots._append: write skipped for date=%s "
+            "(COLLECT_LANE != nightly)",
+            date,
+        )
         return False
     logged_at = datetime.now(timezone.utc).isoformat()
     new_row = {"logged_at": logged_at, **row}
