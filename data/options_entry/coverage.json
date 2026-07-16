@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-16T04:54:22.755659+00:00",
+  "generated_at": "2026-07-16T09:13:38.825692+00:00",
   "as_of": "2026-07-16",
   "absent_stores": [],
   "feature_coverage": {
@@ -33,9 +33,9 @@
       },
       {
         "feature": "ivspread_5d_chg",
-        "n_nonnull": 338,
+        "n_nonnull": 356,
         "n_total": 403,
-        "share_nonnull": 0.8387
+        "share_nonnull": 0.8834
       },
       {
         "feature": "skew",
@@ -45,9 +45,9 @@
       },
       {
         "feature": "skew_5d_chg",
-        "n_nonnull": 360,
+        "n_nonnull": 375,
         "n_total": 403,
-        "share_nonnull": 0.8933
+        "share_nonnull": 0.9305
       },
       {
         "feature": "net_doi",
@@ -57,9 +57,9 @@
       },
       {
         "feature": "doi_pc",
-        "n_nonnull": 1,
+        "n_nonnull": 0,
         "n_total": 403,
-        "share_nonnull": 0.0025
+        "share_nonnull": 0.0
       },
       {
         "feature": "fresh_contracts",
@@ -69,9 +69,9 @@
       },
       {
         "feature": "fresh_premium_mn",
-        "n_nonnull": 313,
+        "n_nonnull": 326,
         "n_total": 403,
-        "share_nonnull": 0.7767
+        "share_nonnull": 0.8089
       },
       {
         "feature": "zerodte_share",
@@ -93,9 +93,9 @@
       },
       {
         "feature": "dist_to_flip_pct",
-        "n_nonnull": 304,
+        "n_nonnull": 324,
         "n_total": 403,
-        "share_nonnull": 0.7543
+        "share_nonnull": 0.804
       },
       {
         "feature": "wall_up_dist_pct",
@@ -123,9 +123,9 @@
       },
       {
         "feature": "pin_risk",
-        "n_nonnull": 277,
+        "n_nonnull": 267,
         "n_total": 403,
-        "share_nonnull": 0.6873
+        "share_nonnull": 0.6625
       },
       {
         "feature": "gex_confirm_verdict",
@@ -183,75 +183,75 @@
         "2026-W25": 6,
         "2026-W26": 41,
         "2026-W27": 26,
-        "2026-W28": 2
+        "2026-W28": 7
       },
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=2",
-        "post_wc_fires": 2,
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
+        "post_wc_fires": 7,
         "post_wc_span_days": 1
       }
     },
     {
       "family": "S-DOI",
       "status": "building_history",
-      "n_cond": 10,
-      "n_base": 17,
+      "n_cond": 13,
+      "n_base": 19,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
         "2026-W27": 26,
-        "2026-W28": 2
+        "2026-W28": 7
       },
-      "n_stamped_cond": 27,
-      "cond_hit_share": 0.36,
+      "n_stamped_cond": 32,
+      "cond_hit_share": 0.4,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=2",
-        "post_wc_fires": 2,
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
+        "post_wc_fires": 7,
         "post_wc_span_days": 1
       }
     },
     {
       "family": "S-VOI",
       "status": "building_history",
-      "n_cond": 64,
-      "n_base": 9,
+      "n_cond": 68,
+      "n_base": 10,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
         "2026-W27": 26,
-        "2026-W28": 2
+        "2026-W28": 7
       },
-      "n_stamped_cond": 73,
-      "cond_hit_share": 0.9733,
+      "n_stamped_cond": 78,
+      "cond_hit_share": 0.975,
       "readiness_forecast": {
         "forecast": "already_ready",
-        "n_cond": 64
+        "n_cond": 68
       }
     },
     {
       "family": "S-IVSPREAD-F",
       "status": "building_history",
-      "n_cond": 16,
-      "n_base": 11,
+      "n_cond": 19,
+      "n_base": 13,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
         "2026-W27": 26,
-        "2026-W28": 2
+        "2026-W28": 7
       },
-      "n_stamped_cond": 27,
-      "cond_hit_share": 0.36,
+      "n_stamped_cond": 32,
+      "cond_hit_share": 0.4,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=2",
-        "post_wc_fires": 2,
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
+        "post_wc_fires": 7,
         "post_wc_span_days": 1
       }
     },
@@ -259,41 +259,41 @@
       "family": "S-SKEW_DECEL",
       "status": "building_history",
       "n_cond": 3,
-      "n_base": 24,
+      "n_base": 29,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
         "2026-W27": 26,
-        "2026-W28": 2
+        "2026-W28": 7
       },
-      "n_stamped_cond": 28,
-      "cond_hit_share": 0.3733,
+      "n_stamped_cond": 33,
+      "cond_hit_share": 0.4125,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=2",
-        "post_wc_fires": 2,
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
+        "post_wc_fires": 7,
         "post_wc_span_days": 1
       }
     },
     {
       "family": "S-TOP_RISK",
       "status": "building_history",
-      "n_cond": 14,
-      "n_base": 13,
+      "n_cond": 18,
+      "n_base": 14,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
         "2026-W27": 26,
-        "2026-W28": 2
+        "2026-W28": 7
       },
-      "n_stamped_cond": 27,
-      "cond_hit_share": 0.36,
+      "n_stamped_cond": 32,
+      "cond_hit_share": 0.4,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=2",
-        "post_wc_fires": 2,
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
+        "post_wc_fires": 7,
         "post_wc_span_days": 1
       }
     },
@@ -301,20 +301,20 @@
       "family": "S-PIN_RISK",
       "status": "building_history",
       "n_cond": 0,
-      "n_base": 28,
+      "n_base": 33,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
         "2026-W27": 26,
-        "2026-W28": 2
+        "2026-W28": 7
       },
-      "n_stamped_cond": 28,
-      "cond_hit_share": 0.3733,
+      "n_stamped_cond": 33,
+      "cond_hit_share": 0.4125,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=2",
-        "post_wc_fires": 2,
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
+        "post_wc_fires": 7,
         "post_wc_span_days": 1
       }
     },
@@ -328,14 +328,14 @@
         "2026-W25": 6,
         "2026-W26": 41,
         "2026-W27": 26,
-        "2026-W28": 2
+        "2026-W28": 7
       },
-      "n_stamped_cond": 73,
-      "cond_hit_share": 0.9733,
+      "n_stamped_cond": 78,
+      "cond_hit_share": 0.975,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=2",
-        "post_wc_fires": 2,
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
+        "post_wc_fires": 7,
         "post_wc_span_days": 1
       }
     }
@@ -385,14 +385,14 @@
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-14",
-          "age_days_from_today": 2,
+          "latest_as_of": "2026-07-16",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-07-15 08:54 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-07-16 07:44 UTC",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
@@ -405,7 +405,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-16T04:54:22.711708+00:00",
+      "generated_at": "2026-07-16T09:13:38.789003+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -415,7 +415,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-16T04:54:22.755651+00:00",
+    "generated_at_utc": "2026-07-16T09:13:38.825685+00:00",
     "as_of": "2026-07-16",
     "absent_stores": []
   }
