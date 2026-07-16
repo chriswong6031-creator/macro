@@ -30,8 +30,7 @@ from engine import stock_technicals  # noqa: E402  — richer close-only technic
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
-from engine.setups import ALIGN_MIN_KEEP  # noqa: E402
-from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's gate)
+from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade; HK inclusion gate (2026-07-16)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 from scripts.build_hk import tv_symbol  # noqa: E402
@@ -880,9 +879,10 @@ def hk_xbar_sessions(bars, mult: int) -> int | None:
     return int(bars) * mult
 
 
-# Module-level helpers for alignment gating (also used in tests/test_hk_robustness_w5.py).
-# These mirror the local _entry_ok / _atier closures inside compute_hk_standouts exactly;
-# having them at module level allows tests to call the PRODUCTION logic (F5-b fix).
+# Module-level helpers used in tests/test_hk_robustness_w5.py (F5-b).
+# hk_entry_ok: cycle/entry-axis guard — no longer an inclusion gate (2026-07-16; gate is now
+#   cascade via signal_gate); kept for card badge use and test imports.
+# hk_atier: alignment-context badge helper — stamps align_tier on every buy row.
 def hk_entry_ok(e: dict) -> bool:
     """True when the enriched entry is not cycle-blocked and entry axis z > -0.1."""
     c = e.get("conviction") or {}
@@ -896,6 +896,14 @@ def hk_atier(e: dict) -> str | None:
     """Alignment tier: 'aligned' | 'near' | None."""
     a = (e.get("conviction") or {}).get("alignment") or {}
     return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+
+
+def hk_cascade_eligible(sig_verdict: dict, ticker: str) -> bool:
+    """The board's INCLUSION predicate (owner-ratified 2026-07-16, mirroring CN 2026-06-29):
+    True iff the name's signal_gate T1->T4 cascade verdict is `eligible`. None-safe: names
+    with <60 close bars have no sig_verdict entry — excluded, never a crash. F5-b:
+    production and tests both call this."""
+    return bool((sig_verdict.get(ticker) or {}).get("eligible"))
 
 
 def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 6) -> dict | None:
@@ -919,8 +927,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
 
         UNIVERSE = names passing hygiene (ADV floor · not suspended · price fresh · not
                    placement-flagged [HK])
-        INCLUDE  = bottoming-alignment ∈ {PRIME, ARMED} (existing gate; near-aligned
-                   backfill to min 10 when thin)
+        INCLUDE  = confluence cascade eligible (signal_gate T1-T4; owner-ratified 2026-07-16,
+                   mirroring CN 2026-06-29) — bottoming-alignment retained as per-card context badge
         GROUP    = entry-open (confluence T1-T3 buyable ∧ in/near buy-zone) > setting-up
                    (aligned, awaiting trigger)
         RANK     = within group, edge-stack z percentile (HK: hk_edge fused z as shipped)
@@ -1142,7 +1150,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         except Exception:  # noqa: BLE001 — additive, never fatal
             close_s = None
         if close_s is not None and len(close_s) >= 60:
-            # COMBINE: owner's confluence T1->T4 cascade — additive badge only; never gates inclusion.
+            # CONFLUENCE GATE (owner directive, 2026-07-16 — mirroring CN 2026-06-29):
+            # sig_verdict is now the INCLUSION gate for the HK standout board (T1->T4 cascade).
             try:
                 sig_verdict[t] = signal_gate.gate(t, close_s)
             except Exception as ex:  # noqa: BLE001 — additive, never fatal
@@ -1235,60 +1244,38 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         z = c.get("composite_z")
         return z if z is not None else -9.0
 
-    # Delegate to module-level production helpers (F5-b: tests can import and call these).
-    _entry_ok = hk_entry_ok
+    # Module-level helpers (F5-b: tests import hk_entry_ok / hk_atier directly).
+    # _atier stamps the per-card alignment-context badge on every buy row.
+    # hk_entry_ok is retained for badge/test use — no longer an inclusion gate.
     _atier = hk_atier
 
-    def _ascore(e: dict):
-        a = (e.get("conviction") or {}).get("alignment") or {}
-        return ((a.get("score") or 0.0), comp(e))
-
     ranked = sorted(enriched, key=comp, reverse=True)
-    # BOTTOMING-ALIGNMENT gate (the HK parallel of the US/CN fix): a name is BUYABLE only
-    # when its weekly/3-day/daily are aligned to the upside (engine.cycles.mtf_alignment) —
-    # weekly not-falling + 3-day nearing a bullish cross + daily just-crossed/about-to — so a
-    # mid-weekly-bear name the southbound crowd is accumulating into a fall (or a cheaper-and-
-    # cheaper A/H value leg) can no longer be sold as a buy. NEAR-aligned names backfill only
-    # when too few are fully aligned; aligned names rank by alignment score then conviction.
-    elig = [e for e in ranked if _entry_ok(e) and _atier(e)]
+    # CONFLUENCE CASCADE INCLUSION GATE (owner directive, 2026-07-16 — mirroring CN 2026-06-29):
+    # a name is BUYABLE iff its signal_gate cascade verdict is `eligible` (T1->T4, freshness- and
+    # not-topped-guarded inside signal_gate.gate). Bottoming-alignment is NO LONGER an inclusion
+    # gate; it is retained as per-card context (align_tier badge). hk_entry_ok is also no longer
+    # an inclusion gate (entry gauge stays on cards via entry_signal).
+    elig = [e for e in ranked if hk_cascade_eligible(sig_verdict, e["ticker"])]
     _pre_health: list[dict] = []
     if not elig:
-        # No aligned or near-aligned names passed the bottoming gate — the buy strip
-        # will be backfilled from the highest-conviction near-aligned names.  Surface
-        # this as a health entry so the page never renders a buy list in false confidence.
         _pre_health.append({
-            "leg": "alignment",
-            "en": "No fully-aligned names found — buy strip backfilled from near-aligned names.",
-            "zh": "未找到完全对齐的标的 —— 买入列表已从接近对齐的标的回填。",
+            "leg": "confluence",
+            "en": "No names show a fresh entry signal tonight — the board is intentionally thin, not broken.",
+            "zh": "今晚没有出现新入场信号的个股 —— 榜单有意精简，并非故障。",
         })
-    aligned = sorted([e for e in elig if _atier(e) == "aligned"], key=_ascore, reverse=True)
-    near = sorted([e for e in elig if _atier(e) == "near"], key=_ascore, reverse=True)
-    buys = (aligned if len(aligned) >= ALIGN_MIN_KEEP
-            else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])[:n_buy]
-    # COMBINE re-rank: keep the aligned-above-near inclusion, order WITHIN each tier by the owner's
-    # weighted cascade blend (conviction composite percentile lifted by the T1->T4 weight). Names
-    # with no verdict keep their conviction rank (weight 0 = no boost). Inclusion is UNCHANGED.
-    import bisect as _bisect
-    _czs = sorted(comp(e) for e in buys)
-    _bn = len(_czs) or 1
-
-    def _combine_key(e):
-        w = (sig_verdict.get(e["ticker"]) or {}).get("weight") or 0.0
-        pct = _bisect.bisect_right(_czs, comp(e)) / _bn
-        return (0 if _atier(e) == "aligned" else 1, -(pct + 0.5 * w))
-    buys = sorted(buys, key=_combine_key)
+    buys = elig[:n_buy]
     for e in buys:
-        e["align_tier"] = _atier(e)
+        e["align_tier"] = _atier(e)   # context badge — may be None; key always present
         e["signal"] = signal_gate.compact(sig_verdict.get(e["ticker"]))   # confluence T1->T4 badge
 
     # ---- RIPE-LIST CONTRACT (§5.0): make the board order EXACTLY the contract -------------
     # INCLUSION is already the contract's UNIVERSE→INCLUDE (hygiene via compute_hk_scoreboard's
-    # tradability screen + the bottoming-alignment {aligned≈PRIME, near≈ARMED} gate above,
-    # near-aligned backfilling to ALIGN_MIN_KEEP). Here we impose the contract's GROUP → RANK →
-    # TIEBREAK deterministically:
+    # tradability screen + the confluence cascade (signal_gate T1-T4, owner-ratified 2026-07-16)
+    # gate above). Here we impose the contract's GROUP → RANK → TIEBREAK deterministically:
     #   GROUP    entry-open (confluence T1-T3 buyable ∧ in/near buy-zone)  >  setting-up
     #   RANK     within group, by the FUSED hk_edge z percentile (edge stacks; timing gates)
     #   TIEBREAK 63d ADV desc  (proxy: the per-name 63d dollar-turnover; falls back to conviction)
+    import bisect as _bisect
     _ez_vals = sorted(e.get("edge_z") for e in buys if e.get("edge_z") is not None)
     _ezn = len(_ez_vals) or 1
 
@@ -1448,6 +1435,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                 # None when the placement store was degraded this render: 'not
                 # stamped' must stay distinct from 'checked, clean'.
                 "placement_flag": (bool(e.get("placement_flag")) if _plc_ok else None),
+                # Inclusion-gate version — enables Q4/W7 grading to split pre/post cascade-swap.
+                "gate_ver": "cascade_v1",
             })
         _n = board_ledger.append_board(calls, market="HK", asof=str(as_of) if as_of else None)
         if _n:
@@ -1481,14 +1470,14 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
            "liquidity_regime": liquidity_regime,   # H5 ACCRUE conditioner — deskhero chip
            "health": health or None,
            "board_track": board_track,
-           "eligible": len(aligned),
+           "eligible": len(elig),  # pre-demote cascade-eligible count
            "universe": len(enriched)}
     if disp_regime:                                  # selection-regime gross dial (board context)
         out["dispersion_regime"] = disp_regime
     # ---- WASHOUT WATCH (additive, fail-open) — ignition organ for the stock-board revamp.
-    # Operates on the FULL enriched list so cycle-blocked/DECLINE names (excluded by _entry_ok)
-    # are visible.  Survives eligible:0 (risk-off blackout).  The existing board dict is
-    # UNCHANGED when this block errors — the try/except is the only guard needed.
+    # Operates on the FULL enriched list (including cascade-excluded names) so cycle-blocked /
+    # DECLINE names are visible.  Survives eligible:0 (risk-off blackout).  The existing board
+    # dict is UNCHANGED when this block errors — the try/except is the only guard needed.
     try:
         from engine import hk_washout_watch as _ww
         # Collect organ snapshots fail-open; each missing organ → that signal absent.
