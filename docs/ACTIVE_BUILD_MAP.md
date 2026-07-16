@@ -2,14 +2,13 @@
 
 # Active Build Map
 
-Generated: 2026-07-15T06:41:55.468759+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `0e99297278b5b44127ff696e346c5eebf60d00d7`
+Generated: 2026-07-16T05:41:43.215065+00:00  |  Open PRs: 0  |  Merged (window): 500  |  base: `668fb4acb72313decb9d98063c8b90e0833053a7`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #2572 | research: study intraday large-cap tech leaders | `codex/large-cap-leader-study-20260714` | 2026-07-14 | — |
-| #2568 | feat(flow-ml): FS-4 — trainer + calibrated scorer + display surfaces (prereg-frozen) | `claude/fs4-flow-score` | 2026-07-14 | ⚠ protected:1 |
+| — | No open PRs | — | — | — |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
@@ -21,6 +20,25 @@ _No file collisions detected among open PRs._
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #2609 | fix(tests): stop pytest writing the real data/ tree + MM_DATA_GUARD tripwire | 2026-07-16 |
+| #2608 | feat(mlc): remove Leadership Board from us_stocks too — gone from all pages | 2026-07-16 |
+| #2607 | feat(ui): unify help '?' icons site-wide (new popover + mobile fixes) + align China header with US | 2026-07-16 |
+| #2606 | fix(china stocks): mobile Table toggle + table pagination + mobile column scroll | 2026-07-16 |
+| #2605 | fix(leader-radar): unfreeze state_history append + repoint board lifecycle to radar.json | 2026-07-16 |
+| #2604 | feat(mlc): remove Leadership Board from macro.html (keep on us_stocks) | 2026-07-16 |
+| #2603 | feat(schedule): two-build cutover — Build A crons live, Build B to 18:30 ET, earlyclose retired | 2026-07-16 |
+| #2602 | fix(china): translate remaining English in china_stocks.html Chinese mode | 2026-07-16 |
+| #2601 | fix(stocks): unify Standout 'See more' on Intl + tighten help '?' icon | 2026-07-16 |
+| #2600 | china: match US light-mode card shadows + company names in heatmap | 2026-07-16 |
+| #2599 | feat(closing-bell): Build A — full-market close render, non-ledger-advancing (dispatch-only) | 2026-07-16 |
+| #2598 | feat(ledgers): COLLECT_LANE gates on all ungated forward-ledger appenders (two-build Step 0) | 2026-07-16 |
+| #2597 | fix(us-boards): staleness disclosure + generals/dots receipt + index_leadership dead-wire wiring | 2026-07-16 |
+| #2596 | china: fix light-mode — mx5 glass was dark-only, now matches US dashboard | 2026-07-16 |
+| #2595 | china: fix pullback-risk radar wiring + gauge/needle/heatmap/mobile audit fixes | 2026-07-16 |
+| #2594 | china: fix hero popover z-index (rendered behind tiles) + live sub-line mismatch | 2026-07-15 |
+| #2593 | china: fix dialog chart overflow + duplicate heatmap Expand button | 2026-07-15 |
+| #2592 | china: add US mx5 open/close animations to the macro dialogs | 2026-07-15 |
+| #2591 | china: fix half-width macro layout (.grid → block) | 2026-07-15 |
 | #2590 | feat(release_forecast): block-level component scoring for cpi_bridge | 2026-07-15 |
 | #2589 | china: mx5 glance + popup redesign for the macro dashboard | 2026-07-15 |
 | #2588 | docs(release_forecast): ENERGY_COLLAPSE surprise-anatomy family + June-2026 episode | 2026-07-15 |
@@ -39,9 +57,11 @@ _No file collisions detected among open PRs._
 | #2575 | fix(release_forecast): extend FIX 2 range guard to v11 PCE/PPI feature builders (#2574 follow-up) | 2026-07-14 |
 | #2574 | fix(release_forecast): CPI June-2026 post-mortem P0 — feature units, mf_energy gamma, range guard, scoring PIT | 2026-07-14 |
 | #2573 | feat(ccw): W3 credit momentum organs — velocity, breadth, fallen-angel watch (crosses honestly DEMOTED) | 2026-07-15 |
+| #2572 | research: study intraday large-cap tech leaders | 2026-07-15 |
 | #2571 | fix(analytics): geo_enrich hardening — skip non-routable IPs, no NULL-pin on unresolved | 2026-07-14 |
 | #2570 | fix(analytics): real visitor IP behind the CDN | 2026-07-14 |
 | #2569 | research(ric): proactive-learning pass — HS-1/HS-2 + MRI miss anatomy + risk-radar episode atlas | 2026-07-14 |
+| #2568 | feat(flow-ml): FS-4 — trainer + calibrated scorer + display surfaces (prereg-frozen) | 2026-07-15 |
 | #2567 | feat(admin-analytics): Frequent Visitors tab + IP/state in Sessions + geo-enrich UA fix | 2026-07-14 |
 | #2566 | feat(cycle): mobile UX overhaul — working touch gestures, native drag sheet, category filter | 2026-07-14 |
 | #2565 | fix(china-stocks): act-now SECTOR tag chips render bilingual twins (tag_zh) | 2026-07-14 |
@@ -500,27 +520,6 @@ _No file collisions detected among open PRs._
 | #2093 | fix(options-hub): root wall budget 420s (was skipping SPY/QQQ) | 2026-07-10 |
 | #2092 | chore(gexstate): dedup double mirror in matrix runner | 2026-07-10 |
 | #2091 | fix(dag): declare build_sp500_heatmap fastpath step (drift heal) | 2026-07-10 |
-| #2090 | harden(metabolism-a45): close 3 durability gaps from adversarial review | 2026-07-10 |
-| #2089 | feat(heatmap): Finviz-grade labels, full-page expand, simpler hover cards, intraday + closing-bell refresh | 2026-07-10 |
-| #2088 | fix(gexstate): mirror regime files to R2 (GEX tab 503 heal) | 2026-07-10 |
-| #2087 | feat(tech-lab): chart-grammar families — ichimoku / trend_ribbon / rsi_stack / bollinger_events (DT-R18) | 2026-07-10 |
-| #2086 | research(dannytrades): indicator docket + adjudication DT-R17..R24 | 2026-07-10 |
-| #2085 | deploy(caddy): slate.greydeercapital.com site block | 2026-07-10 |
-| #2084 | docs(tv-parity): Phase 8 — overnight/extended-hours pricing + watchlist columns | 2026-07-10 |
-| #2083 | fix(macro): keep EN/ZH separated — no language leaks in live risk-state & Release Radar | 2026-07-10 |
-| #2082 | feat(metabolism): Phase A A4 PROPOSE + A5 ADJUDICATE two-key (INERT) | 2026-07-10 |
-| #2080 | fix(options-hub): OOM prevention + incremental publish + gex_state R2 mirror | 2026-07-10 |
-| #2079 | perf(hub): snappy front page — pause-aware globe, no per-frame backdrop blurs, native explore scroll | 2026-07-10 |
-| #2078 | feat(metabolism): Phase A spine — journal, preflight, fitness card, verify, budget, digest | 2026-07-10 |
-| #2077 | feat(metabolism): Phase 0 cage -- F0 kill-switch, F1 grader-immutability, F2 self-mod fence, F3 capability broker | 2026-07-10 |
-| #2076 | docs(tv-parity): Phase 7 — right-click context suite | 2026-07-10 |
-| #2074 | docs(tv-parity): Phase 6 — watchlist flags, composite baskets, smart search | 2026-07-10 |
-| #2073 | docs(autonomic): the Metabolism — self-improving loop masterplan | 2026-07-10 |
-| #2072 | feat(til-w11): options-tape crowding-hazard witness — 3-leg display organ | 2026-07-10 |
-| #2071 | feat(ts-u3): dashboard turn surfaces — tape band, turn-watch strip, per-stock MTF table, two-reads chip | 2026-07-10 |
-| #2070 | fix(nightly): guard-echo one-liners inverted success into step failure — 42 sites (TSU U5) | 2026-07-10 |
-| #2069 | feat(ts-u4): mtf_upturn UPTURN_CONFIRMED alert reach — cohort + Mag7 transition (TS-R7) | 2026-07-10 |
-| #2068 | fix(til-w10): heal registry pin 327→329 + SIGNAL_BUS regen | 2026-07-10 |
 
 ---
 

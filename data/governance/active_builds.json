@@ -1,73 +1,109 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-15T06:41:55.468759+00:00",
+  "generated_at": "2026-07-16T05:41:43.215065+00:00",
   "base": {
-    "sha": "0e99297278b5b44127ff696e346c5eebf60d00d7"
+    "sha": "668fb4acb72313decb9d98063c8b90e0833053a7"
   },
   "merged_days": 14,
   "merged_truncated": true,
-  "open_prs": [
-    {
-      "number": 2572,
-      "title": "research: study intraday large-cap tech leaders",
-      "head_ref": "codex/large-cap-leader-study-20260714",
-      "updated_at": "2026-07-14T20:27:15Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 12,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "research/INTRADAY_LARGE_CAP_TECH_LEADER_PHASE0_RESULTS.md",
-        "research/INTRADAY_LARGE_CAP_TECH_LEADER_PREREG.md",
-        "research/intraday_large_cap_tech_leader_phase0/chronological_blocks.csv",
-        "research/intraday_large_cap_tech_leader_phase0/exploratory_full_day_atlas.csv",
-        "research/intraday_large_cap_tech_leader_phase0/feature_atlas.csv",
-        "research/intraday_large_cap_tech_leader_phase0/leave_one_out.csv",
-        "research/intraday_large_cap_tech_leader_phase0/manifest.json",
-        "research/intraday_large_cap_tech_leader_phase0/selector_metrics.csv",
-        "research/intraday_large_cap_tech_leader_phase0/session_events.csv",
-        "research/intraday_large_cap_tech_leader_phase0/winner_census.csv",
-        "scripts/research/intraday_large_cap_tech_leader_study.py",
-        "tests/test_intraday_large_cap_tech_leader_study.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 2568,
-      "title": "feat(flow-ml): FS-4 \u2014 trainer + calibrated scorer + display surfaces (prereg-frozen)",
-      "head_ref": "claude/fs4-flow-score",
-      "updated_at": "2026-07-14T19:19:48Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 14,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/ci.yml",
-        ".gitignore",
-        "config/flow_score.yml",
-        "lib/flow_score.py",
-        "research/FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE.md",
-        "research/OPTIONS_ALPHA_MASTERPLAN.md",
-        "scripts/build_flow_desk.py",
-        "scripts/build_flow_signals.py",
-        "scripts/build_stock_library.py",
-        "scripts/ops_train_flow_score.py",
-        "templates/flow_desk.html.j2",
-        "tests/test_flow_score_stock_block.py",
-        "tests/test_fs4_flow_scorer.py",
-        "tests/test_fs4_flow_trainer.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    }
-  ],
+  "open_prs": [],
   "collisions": [],
   "recent_merged": [
+    {
+      "number": 2609,
+      "title": "fix(tests): stop pytest writing the real data/ tree + MM_DATA_GUARD tripwire",
+      "merged_at": "2026-07-16T05:34:43Z"
+    },
+    {
+      "number": 2608,
+      "title": "feat(mlc): remove Leadership Board from us_stocks too \u2014 gone from all pages",
+      "merged_at": "2026-07-16T05:11:24Z"
+    },
+    {
+      "number": 2607,
+      "title": "feat(ui): unify help '?' icons site-wide (new popover + mobile fixes) + align China header with US",
+      "merged_at": "2026-07-16T05:29:58Z"
+    },
+    {
+      "number": 2606,
+      "title": "fix(china stocks): mobile Table toggle + table pagination + mobile column scroll",
+      "merged_at": "2026-07-16T05:30:52Z"
+    },
+    {
+      "number": 2605,
+      "title": "fix(leader-radar): unfreeze state_history append + repoint board lifecycle to radar.json",
+      "merged_at": "2026-07-16T04:51:14Z"
+    },
+    {
+      "number": 2604,
+      "title": "feat(mlc): remove Leadership Board from macro.html (keep on us_stocks)",
+      "merged_at": "2026-07-16T04:05:39Z"
+    },
+    {
+      "number": 2603,
+      "title": "feat(schedule): two-build cutover \u2014 Build A crons live, Build B to 18:30 ET, earlyclose retired",
+      "merged_at": "2026-07-16T03:54:20Z"
+    },
+    {
+      "number": 2602,
+      "title": "fix(china): translate remaining English in china_stocks.html Chinese mode",
+      "merged_at": "2026-07-16T04:00:31Z"
+    },
+    {
+      "number": 2601,
+      "title": "fix(stocks): unify Standout 'See more' on Intl + tighten help '?' icon",
+      "merged_at": "2026-07-16T03:35:01Z"
+    },
+    {
+      "number": 2600,
+      "title": "china: match US light-mode card shadows + company names in heatmap",
+      "merged_at": "2026-07-16T03:23:11Z"
+    },
+    {
+      "number": 2599,
+      "title": "feat(closing-bell): Build A \u2014 full-market close render, non-ledger-advancing (dispatch-only)",
+      "merged_at": "2026-07-16T01:57:53Z"
+    },
+    {
+      "number": 2598,
+      "title": "feat(ledgers): COLLECT_LANE gates on all ungated forward-ledger appenders (two-build Step 0)",
+      "merged_at": "2026-07-16T01:57:32Z"
+    },
+    {
+      "number": 2597,
+      "title": "fix(us-boards): staleness disclosure + generals/dots receipt + index_leadership dead-wire wiring",
+      "merged_at": "2026-07-16T01:52:41Z"
+    },
+    {
+      "number": 2596,
+      "title": "china: fix light-mode \u2014 mx5 glass was dark-only, now matches US dashboard",
+      "merged_at": "2026-07-16T01:54:02Z"
+    },
+    {
+      "number": 2595,
+      "title": "china: fix pullback-risk radar wiring + gauge/needle/heatmap/mobile audit fixes",
+      "merged_at": "2026-07-16T01:35:35Z"
+    },
+    {
+      "number": 2594,
+      "title": "china: fix hero popover z-index (rendered behind tiles) + live sub-line mismatch",
+      "merged_at": "2026-07-15T11:10:40Z"
+    },
+    {
+      "number": 2593,
+      "title": "china: fix dialog chart overflow + duplicate heatmap Expand button",
+      "merged_at": "2026-07-15T10:58:14Z"
+    },
+    {
+      "number": 2592,
+      "title": "china: add US mx5 open/close animations to the macro dialogs",
+      "merged_at": "2026-07-15T10:07:49Z"
+    },
+    {
+      "number": 2591,
+      "title": "china: fix half-width macro layout (.grid \u2192 block)",
+      "merged_at": "2026-07-15T09:59:05Z"
+    },
     {
       "number": 2590,
       "title": "feat(release_forecast): block-level component scoring for cpi_bridge",
@@ -159,6 +195,11 @@
       "merged_at": "2026-07-15T01:24:33Z"
     },
     {
+      "number": 2572,
+      "title": "research: study intraday large-cap tech leaders",
+      "merged_at": "2026-07-15T10:40:30Z"
+    },
+    {
       "number": 2571,
       "title": "fix(analytics): geo_enrich hardening \u2014 skip non-routable IPs, no NULL-pin on unresolved",
       "merged_at": "2026-07-14T20:11:44Z"
@@ -172,6 +213,11 @@
       "number": 2569,
       "title": "research(ric): proactive-learning pass \u2014 HS-1/HS-2 + MRI miss anatomy + risk-radar episode atlas",
       "merged_at": "2026-07-14T19:29:22Z"
+    },
+    {
+      "number": 2568,
+      "title": "feat(flow-ml): FS-4 \u2014 trainer + calibrated scorer + display surfaces (prereg-frozen)",
+      "merged_at": "2026-07-15T10:40:24Z"
     },
     {
       "number": 2567,
@@ -2462,111 +2508,6 @@
       "number": 2091,
       "title": "fix(dag): declare build_sp500_heatmap fastpath step (drift heal)",
       "merged_at": "2026-07-10T07:41:36Z"
-    },
-    {
-      "number": 2090,
-      "title": "harden(metabolism-a45): close 3 durability gaps from adversarial review",
-      "merged_at": "2026-07-10T07:40:27Z"
-    },
-    {
-      "number": 2089,
-      "title": "feat(heatmap): Finviz-grade labels, full-page expand, simpler hover cards, intraday + closing-bell refresh",
-      "merged_at": "2026-07-10T07:38:03Z"
-    },
-    {
-      "number": 2088,
-      "title": "fix(gexstate): mirror regime files to R2 (GEX tab 503 heal)",
-      "merged_at": "2026-07-10T07:36:49Z"
-    },
-    {
-      "number": 2087,
-      "title": "feat(tech-lab): chart-grammar families \u2014 ichimoku / trend_ribbon / rsi_stack / bollinger_events (DT-R18)",
-      "merged_at": "2026-07-10T08:18:18Z"
-    },
-    {
-      "number": 2086,
-      "title": "research(dannytrades): indicator docket + adjudication DT-R17..R24",
-      "merged_at": "2026-07-10T07:27:53Z"
-    },
-    {
-      "number": 2085,
-      "title": "deploy(caddy): slate.greydeercapital.com site block",
-      "merged_at": "2026-07-10T07:24:59Z"
-    },
-    {
-      "number": 2084,
-      "title": "docs(tv-parity): Phase 8 \u2014 overnight/extended-hours pricing + watchlist columns",
-      "merged_at": "2026-07-10T07:22:26Z"
-    },
-    {
-      "number": 2083,
-      "title": "fix(macro): keep EN/ZH separated \u2014 no language leaks in live risk-state & Release Radar",
-      "merged_at": "2026-07-10T07:27:19Z"
-    },
-    {
-      "number": 2082,
-      "title": "feat(metabolism): Phase A A4 PROPOSE + A5 ADJUDICATE two-key (INERT)",
-      "merged_at": "2026-07-10T07:20:31Z"
-    },
-    {
-      "number": 2080,
-      "title": "fix(options-hub): OOM prevention + incremental publish + gex_state R2 mirror",
-      "merged_at": "2026-07-10T07:31:50Z"
-    },
-    {
-      "number": 2079,
-      "title": "perf(hub): snappy front page \u2014 pause-aware globe, no per-frame backdrop blurs, native explore scroll",
-      "merged_at": "2026-07-10T05:34:22Z"
-    },
-    {
-      "number": 2078,
-      "title": "feat(metabolism): Phase A spine \u2014 journal, preflight, fitness card, verify, budget, digest",
-      "merged_at": "2026-07-10T06:41:07Z"
-    },
-    {
-      "number": 2077,
-      "title": "feat(metabolism): Phase 0 cage -- F0 kill-switch, F1 grader-immutability, F2 self-mod fence, F3 capability broker",
-      "merged_at": "2026-07-10T04:57:46Z"
-    },
-    {
-      "number": 2076,
-      "title": "docs(tv-parity): Phase 7 \u2014 right-click context suite",
-      "merged_at": "2026-07-10T04:43:47Z"
-    },
-    {
-      "number": 2074,
-      "title": "docs(tv-parity): Phase 6 \u2014 watchlist flags, composite baskets, smart search",
-      "merged_at": "2026-07-10T04:40:40Z"
-    },
-    {
-      "number": 2073,
-      "title": "docs(autonomic): the Metabolism \u2014 self-improving loop masterplan",
-      "merged_at": "2026-07-10T04:26:46Z"
-    },
-    {
-      "number": 2072,
-      "title": "feat(til-w11): options-tape crowding-hazard witness \u2014 3-leg display organ",
-      "merged_at": "2026-07-10T03:42:52Z"
-    },
-    {
-      "number": 2071,
-      "title": "feat(ts-u3): dashboard turn surfaces \u2014 tape band, turn-watch strip, per-stock MTF table, two-reads chip",
-      "merged_at": "2026-07-10T03:54:18Z"
-    },
-    {
-      "number": 2070,
-      "title": "fix(nightly): guard-echo one-liners inverted success into step failure \u2014 42 sites (TSU U5)",
-      "merged_at": "2026-07-10T03:18:30Z"
-    },
-    {
-      "number": 2069,
-      "title": "feat(ts-u4): mtf_upturn UPTURN_CONFIRMED alert reach \u2014 cohort + Mag7 transition (TS-R7)",
-      "merged_at": "2026-07-10T03:48:04Z"
-    },
-    {
-      "number": 2068,
-      "title": "fix(til-w10): heal registry pin 327\u2192329 + SIGNAL_BUS regen",
-      "merged_at": "2026-07-10T03:05:13Z"
     }
   ]
 }
