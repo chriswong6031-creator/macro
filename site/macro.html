@@ -522,6 +522,12 @@
          border: 1px solid color-mix(in srgb, var(--m7-col) 40%, var(--line)); }
   .m7p .m7p-asof { margin-left: auto; font-size: 10.5px; color: var(--muted);
          font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* plain-word staleness stamp — shared by the Mag 7 panel and the ldb panel
+     (unique m7p- prefix keeps it collision-safe outside the .m7p scope; the doubled
+     .ldb-asof.m7p-stale selector out-specificities the ldb template's later-rendered
+     .ldb-asof color rule) */
+  .m7p-stale, .ldb-asof.m7p-stale { margin-left: 6px; font-size: 10.5px;
+         color: #d97706; white-space: nowrap; }
 
   /* row 2 — evidence: dots · generals · structure · legs · flow */
   .m7p .m7p-ev { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
@@ -2409,7 +2415,7 @@
     <span class="ldb-stance">
       <span class="l-en">Get ready</span>
       <span class="l-zh">准备就绪</span>
-    </span><span class="ldb-asof"><span class="l-en">as of 2026-07-13</span><span class="l-zh">截至 2026-07-13</span></span>
+    </span><span class="ldb-asof"><span class="l-en">as of 2026-07-13</span><span class="l-zh">截至 2026-07-13</span></span><span class="ldb-asof m7p-stale"><span class="l-en">data 3 days old</span><span class="l-zh">数据滞后3天</span></span>
   </div>
 
   
@@ -2439,7 +2445,7 @@
     
     
     <div class="ldb-tile ldb-tile-neutral"
- data-tip-en="Apple · above 50dma · above 200dma · 20d +7.3% · vs market +7.1%" data-tip-zh="苹果 · 50日均线上方 · 200日均线上方 · 20日 +7.3% · 相对市场 +7.1%">
+ data-tip-en="Apple · above 50dma · above 200dma · 20d +7.3% · vs market +5.5%" data-tip-zh="苹果 · 50日均线上方 · 200日均线上方 · 20日 +7.3% · 相对市场 +5.5%">
       <span class="ldb-tile-sym">AAPL</span>
       <span class="ldb-tile-name">
         <span class="l-en">Apple</span>
@@ -2457,7 +2463,7 @@
     
     
     <div class="ldb-tile ldb-tile-weak"
- data-tip-en="Microsoft · below 50dma · below 200dma · 20d +0.2% · vs market -0.1%" data-tip-zh="微软 · 50日均线下方 · 200日均线下方 · 20日 +0.2% · 相对市场 -0.1%">
+ data-tip-en="Microsoft · below 50dma · below 200dma · 20d +0.2% · vs market -1.6%" data-tip-zh="微软 · 50日均线下方 · 200日均线下方 · 20日 +0.2% · 相对市场 -1.6%">
       <span class="ldb-tile-sym">MSFT</span>
       <span class="ldb-tile-name">
         <span class="l-en">Microsoft</span>
@@ -2475,7 +2481,7 @@
     
     
     <div class="ldb-tile ldb-tile-neutral"
- data-tip-en="Nvidia · below 50dma · above 200dma · 20d -0.7% · vs market -0.9%" data-tip-zh="英伟达 · 50日均线下方 · 200日均线上方 · 20日 -0.7% · 相对市场 -0.9%">
+ data-tip-en="Nvidia · below 50dma · above 200dma · 20d -0.7% · vs market -2.5%" data-tip-zh="英伟达 · 50日均线下方 · 200日均线上方 · 20日 -0.7% · 相对市场 -2.5%">
       <span class="ldb-tile-sym">NVDA</span>
       <span class="ldb-tile-name">
         <span class="l-en">Nvidia</span>
@@ -2493,7 +2499,7 @@
     
     
     <div class="ldb-tile ldb-tile-neutral"
- data-tip-en="Amazon · below 50dma · above 200dma · 20d +2.4% · vs market +2.1%" data-tip-zh="亚马逊 · 50日均线下方 · 200日均线上方 · 20日 +2.4% · 相对市场 +2.1%">
+ data-tip-en="Amazon · below 50dma · above 200dma · 20d +2.4% · vs market +0.6%" data-tip-zh="亚马逊 · 50日均线下方 · 200日均线上方 · 20日 +2.4% · 相对市场 +0.6%">
       <span class="ldb-tile-sym">AMZN</span>
       <span class="ldb-tile-name">
         <span class="l-en">Amazon</span>
@@ -2511,7 +2517,7 @@
     
     
     <div class="ldb-tile ldb-tile-weak"
- data-tip-en="Alphabet · below 50dma · above 200dma · 20d -1.5% · vs market -1.7%" data-tip-zh="谷歌 · 50日均线下方 · 200日均线上方 · 20日 -1.5% · 相对市场 -1.7%">
+ data-tip-en="Alphabet · below 50dma · above 200dma · 20d -1.5% · vs market -3.3%" data-tip-zh="谷歌 · 50日均线下方 · 200日均线上方 · 20日 -1.5% · 相对市场 -3.3%">
       <span class="ldb-tile-sym">GOOGL</span>
       <span class="ldb-tile-name">
         <span class="l-en">Alphabet</span>
@@ -2529,7 +2535,7 @@
     
     
     <div class="ldb-tile ldb-tile-neutral"
- data-tip-en="Meta · above 50dma · above 200dma · 20d +15.6% · vs market +15.4%" data-tip-zh="Meta · 50日均线上方 · 200日均线上方 · 20日 +15.6% · 相对市场 +15.4%">
+ data-tip-en="Meta · above 50dma · above 200dma · 20d +15.6% · vs market +13.8%" data-tip-zh="Meta · 50日均线上方 · 200日均线上方 · 20日 +15.6% · 相对市场 +13.8%">
       <span class="ldb-tile-sym">META</span>
       <span class="ldb-tile-name">
         <span class="l-en">Meta</span>
@@ -2547,7 +2553,7 @@
     
     
     <div class="ldb-tile ldb-tile-weak"
- data-tip-en="Tesla · below 50dma · below 200dma · 20d -1.1% · vs market -1.4%" data-tip-zh="特斯拉 · 50日均线下方 · 200日均线下方 · 20日 -1.1% · 相对市场 -1.4%">
+ data-tip-en="Tesla · below 50dma · below 200dma · 20d -1.1% · vs market -2.9%" data-tip-zh="特斯拉 · 50日均线下方 · 200日均线下方 · 20日 -1.1% · 相对市场 -2.9%">
       <span class="ldb-tile-sym">TSLA</span>
       <span class="ldb-tile-name">
         <span class="l-en">Tesla</span>
@@ -5713,7 +5719,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <div class="mx2-score-block">
           <div class="mx2-score-top">
-            <span class="v-score" id="ms-score">79</span>
+            <span class="v-score" id="ms-score">78</span>
             <span class="v-outof">/100</span>
             <div class="mx2-score-label-stack">
               <span class="mx2-score-label"><span class="l-en">Market state</span><span class="l-zh">市场状态</span></span>
@@ -5726,8 +5732,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx2-prog-wrap">
             <div class="mx2-prog-track">
-              <div class="mx2-prog-fill" style="width:79%"></div>
-              <span class="tick" id="ms-tick" style="left:79%"></span>
+              <div class="mx2-prog-fill" style="width:78%"></div>
+              <span class="tick" id="ms-tick" style="left:78%"></span>
             </div>
             <div class="mx2-prog-labels">
               
@@ -5902,7 +5908,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-sc-gauge-row mx5-score-green">
         
         <svg class="mx5-gauge-svg" viewBox="0 0 140 88" fill="none"
-             aria-label="Risk-on — score 79"
+             aria-label="Risk-on — score 78"
              data-gauge-arc-len="175.93"
              data-gauge-radius="56"
              data-gauge-cx="70" data-gauge-cy="75">
@@ -5921,7 +5927,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <path id="mx5-gauge-arc-fill"
                 d="M 14 75 A 56 56 0 0 1 126 75" stroke="#f59e0b" stroke-width="10" stroke-linecap="round" fill="none"
-                stroke-dasharray="139.0 36.9" filter="url(#mx5ArcGlow)"/>
+                stroke-dasharray="137.2 38.7" filter="url(#mx5ArcGlow)"/>
           
           <g stroke="rgba(255,255,255,.22)" stroke-width="1.2">
             <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-90 70 75)"/>
@@ -5935,7 +5941,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <text x="70"  y="14" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">50</text>
           <text x="132" y="84" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">100</text>
           
-          <g id="mx5-gauge-needle" transform="rotate(52.2 70 75)" filter="url(#mx5NeedleGlow)">
+          <g id="mx5-gauge-needle" transform="rotate(50.4 70 75)" filter="url(#mx5NeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
             <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
             <circle cx="70" cy="75" r="7"  fill="rgba(255,255,255,.10)"/>
@@ -5947,7 +5953,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <text id="mx5-score-numeral"
                 x="70" y="62" fill="#22d97a" font-size="24" font-weight="800"
                 text-anchor="middle" font-family="-apple-system,Inter,sans-serif"
-                style="filter:drop-shadow(0 0 10px rgba(34,217,122,.7))">79</text>
+                style="filter:drop-shadow(0 0 10px rgba(34,217,122,.7))">78</text>
           <text x="70" y="73" fill="rgba(255,255,255,.32)" font-size="11"
                 text-anchor="middle" font-family="-apple-system,Inter,sans-serif">/ 100</text>
         </svg>
@@ -5960,7 +5966,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <span class="l-zh"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span> &nbsp;&middot;&nbsp; 转换中</span>
           </div>
           <div class="mx5-score-line">
-            <span class="mx5-big-score">79</span>
+            <span class="mx5-big-score">78</span>
             <span class="mx5-verdict-word"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span></span>
           </div>
           <div class="mx5-sub-line">
@@ -6036,10 +6042,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 <span class="mx5-factor-name">
                   <span class="l-en">Trend &amp; technicals</span><span class="l-zh">趋势与技术</span>
                 </span>
-                <span class="mx5-factor-score">88</span>
+                <span class="mx5-factor-score">82</span>
               </div>
               <div class="mx5-factor-bar-track">
-                <div class="mx5-factor-bar-fill" style="width:88%"></div>
+                <div class="mx5-factor-bar-fill" style="width:82%"></div>
               </div>
               
             </div>
@@ -6348,10 +6354,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
       <div class="mx5-path-plot">
       <svg class="mx5-path-svg" viewBox="0 0 1000 224" preserveAspectRatio="none"
-           data-points='[{"d": "2026-06-26", "md": "Jun 26", "mz": "6\u670826", "s": 28, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 44.0, "y": 142.48}, {"d": "2026-06-29", "md": "Jun 29", "mz": "6\u670829", "s": 34, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 122.67, "y": 131.44}, {"d": "2026-06-30", "md": "Jun 30", "mz": "6\u670830", "s": 28, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 201.33, "y": 142.48}, {"d": "2026-07-01", "md": "Jul 1", "mz": "7\u67081", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 280.0, "y": 102.0}, {"d": "2026-07-02", "md": "Jul 2", "mz": "7\u67082", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 358.67, "y": 120.4}, {"d": "2026-07-06", "md": "Jul 6", "mz": "7\u67086", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 437.33, "y": 90.96}, {"d": "2026-07-07", "md": "Jul 7", "mz": "7\u67087", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 516.0, "y": 120.4}, {"d": "2026-07-08", "md": "Jul 8", "mz": "7\u67088", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 594.67, "y": 90.96}, {"d": "2026-07-09", "md": "Jul 9", "mz": "7\u67089", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 673.33, "y": 52.32}, {"d": "2026-07-10", "md": "Jul 10", "mz": "7\u670810", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 752.0, "y": 52.32}, {"d": "2026-07-13", "md": "Jul 13", "mz": "7\u670813", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 830.67, "y": 90.96}, {"d": "2026-07-14", "md": "Jul 14", "mz": "7\u670814", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 909.33, "y": 52.32}, {"d": "2026-07-15", "md": "Jul 15", "mz": "7\u670815", "s": 79, "v": "Risk-on", "vz": "\u504f\u591a", "x": 988.0, "y": 48.64}]'
+           data-points='[{"d": "2026-06-26", "md": "Jun 26", "mz": "6\u670826", "s": 28, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 44.0, "y": 142.48}, {"d": "2026-06-29", "md": "Jun 29", "mz": "6\u670829", "s": 34, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 122.67, "y": 131.44}, {"d": "2026-06-30", "md": "Jun 30", "mz": "6\u670830", "s": 28, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 201.33, "y": 142.48}, {"d": "2026-07-01", "md": "Jul 1", "mz": "7\u67081", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 280.0, "y": 102.0}, {"d": "2026-07-02", "md": "Jul 2", "mz": "7\u67082", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 358.67, "y": 120.4}, {"d": "2026-07-06", "md": "Jul 6", "mz": "7\u67086", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 437.33, "y": 90.96}, {"d": "2026-07-07", "md": "Jul 7", "mz": "7\u67087", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 516.0, "y": 120.4}, {"d": "2026-07-08", "md": "Jul 8", "mz": "7\u67088", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 594.67, "y": 90.96}, {"d": "2026-07-09", "md": "Jul 9", "mz": "7\u67089", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 673.33, "y": 52.32}, {"d": "2026-07-10", "md": "Jul 10", "mz": "7\u670810", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 752.0, "y": 52.32}, {"d": "2026-07-13", "md": "Jul 13", "mz": "7\u670813", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 830.67, "y": 90.96}, {"d": "2026-07-14", "md": "Jul 14", "mz": "7\u670814", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 909.33, "y": 52.32}, {"d": "2026-07-15", "md": "Jul 15", "mz": "7\u670815", "s": 78, "v": "Risk-on", "vz": "\u504f\u591a", "x": 988.0, "y": 50.48}]'
            data-px0="44" data-pxw="944" data-py0="10" data-pyb="194"
            data-vbw="1000" data-vbh="224"
-           role="img" aria-label="13-session macro score path, 28 to 79">
+           role="img" aria-label="13-session macro score path, 28 to 78">
         <defs>
           <linearGradient id="mx5PathAreaGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%"   stop-color="#22d97a" stop-opacity=".40"/>
@@ -6376,8 +6382,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </g>
         
         
-        <path d="M44.0,142.48 L122.67,131.44 L201.33,142.48 L280.0,102.0 L358.67,120.4 L437.33,90.96 L516.0,120.4 L594.67,90.96 L673.33,52.32 L752.0,52.32 L830.67,90.96 L909.33,52.32 L988.0,48.64 L988,194 L44,194 Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
-        <polyline points="44.0,142.48 122.67,131.44 201.33,142.48 280.0,102.0 358.67,120.4 437.33,90.96 516.0,120.4 594.67,90.96 673.33,52.32 752.0,52.32 830.67,90.96 909.33,52.32 988.0,48.64" fill="none" stroke="#22d97a" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
+        <path d="M44.0,142.48 L122.67,131.44 L201.33,142.48 L280.0,102.0 L358.67,120.4 L437.33,90.96 L516.0,120.4 L594.67,90.96 L673.33,52.32 L752.0,52.32 L830.67,90.96 L909.33,52.32 L988.0,50.48 L988,194 L44,194 Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
+        <polyline points="44.0,142.48 122.67,131.44 201.33,142.48 280.0,102.0 358.67,120.4 437.33,90.96 516.0,120.4 594.67,90.96 673.33,52.32 752.0,52.32 830.67,90.96 909.33,52.32 988.0,50.48" fill="none" stroke="#22d97a" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
         
         <line x1="44" y1="194" x2="988" y2="194" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
         
@@ -6463,7 +6469,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
         
         
-        <span class="mx5-pl-today" style="left:98.8%;top:21.714%;color:#22d97a"></span>
+        <span class="mx5-pl-today" style="left:98.8%;top:22.536%;color:#22d97a"></span>
       </div>
       
       <div class="mx5-path-cross" aria-hidden="true"></div>
@@ -6695,8 +6701,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-action-sub">
               
               
-              <span class="l-en">Composite 79/100 &middot; 6 of 6 signals aligned</span>
-              <span class="l-zh">综合评分 79/100 &middot; 6/6 项信号一致</span>
+              <span class="l-en">Composite 78/100 &middot; 6 of 6 signals aligned</span>
+              <span class="l-zh">综合评分 78/100 &middot; 6/6 项信号一致</span>
             </div>
           </div>
         </div>
@@ -9162,11 +9168,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         
-        <div class="mx5-mkt-tile up" data-sym="SPY" data-mkt="us">
+        <div class="mx5-mkt-tile dn" data-sym="SPY" data-mkt="us">
           <div class="mx5-mkt-ticker">SPY</div>
           <div class="mx5-mkt-sub"><span class="l-en">US Equities</span><span class="l-zh">美股</span></div>
-          <div class="mx5-mkt-price nb-px" data-sym="SPY" data-mkt="us" data-bare>754.81</div>
-          <div class="mx5-mkt-delta up nb-chg" data-sym="SPY" data-mkt="us">+0.40%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="SPY" data-mkt="us" data-bare>749.17</div>
+          <div class="mx5-mkt-delta dn nb-chg" data-sym="SPY" data-mkt="us">-0.77%</div>
           
           
           
@@ -9257,20 +9263,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
           
           
-          <div class="mx5-spark mx5-spark-up">
+          <div class="mx5-spark mx5-spark-dn">
             <svg viewBox="0 0 120 34" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="spkGrad_SPY" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#22d97a" stop-opacity=".12"/>
-                  <stop offset="100%" stop-color="#22d97a" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="#ef4444" stop-opacity=".12"/>
+                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
                 </linearGradient>
               </defs>
               <path class="mx5-spark-area"
-                d="M0.0,8.1 L6.3,19.6 L12.6,10.1 L18.9,13.0 L25.3,26.3 L31.6,26.8 L37.9,25.5 L44.2,32.0 L50.5,17.2 L56.8,10.1 L63.2,11.3 L69.5,12.5 L75.8,4.5 L82.1,8.9 L88.4,11.8 L94.7,4.0 L101.1,0.0 L107.4,7.1 L113.7,3.8 L120.0,0.2 L120,34 L0,34 Z"
+                d="M0.0,18.6 L6.3,2.5 L12.6,8.1 L18.9,19.6 L25.3,10.1 L31.6,13.0 L37.9,26.3 L44.2,26.8 L50.5,25.5 L56.8,32.0 L63.2,17.2 L69.5,10.1 L75.8,11.3 L82.1,12.5 L88.4,4.5 L94.7,8.9 L101.1,11.8 L107.4,4.0 L113.7,0.0 L120.0,7.1 L120,34 L0,34 Z"
                 fill="url(#spkGrad_SPY)" stroke="none"/>
               <polyline class="mx5-spark-line"
-                points="0.0,8.1 6.3,19.6 12.6,10.1 18.9,13.0 25.3,26.3 31.6,26.8 37.9,25.5 44.2,32.0 50.5,17.2 56.8,10.1 63.2,11.3 69.5,12.5 75.8,4.5 82.1,8.9 88.4,11.8 94.7,4.0 101.1,0.0 107.4,7.1 113.7,3.8 120.0,0.2"
-                fill="none" stroke="#22d97a" stroke-width="1.5" opacity=".75"/>
+                points="0.0,18.6 6.3,2.5 12.6,8.1 18.9,19.6 25.3,10.1 31.6,13.0 37.9,26.3 44.2,26.8 50.5,25.5 56.8,32.0 63.2,17.2 69.5,10.1 75.8,11.3 82.1,12.5 88.4,4.5 94.7,8.9 101.1,11.8 107.4,4.0 113.7,0.0 120.0,7.1"
+                fill="none" stroke="#ef4444" stroke-width="1.5" opacity=".75"/>
             </svg>
           </div>
           
@@ -9285,8 +9291,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-mkt-tile dn" data-sym="QQQ" data-mkt="us">
           <div class="mx5-mkt-ticker">QQQ</div>
           <div class="mx5-mkt-sub"><span class="l-en">Nasdaq</span><span class="l-zh">纳指</span></div>
-          <div class="mx5-mkt-price nb-px" data-sym="QQQ" data-mkt="us" data-bare>717.74</div>
-          <div class="mx5-mkt-delta dn nb-chg" data-sym="QQQ" data-mkt="us">-0.27%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="QQQ" data-mkt="us" data-bare>711.74</div>
+          <div class="mx5-mkt-delta dn nb-chg" data-sym="QQQ" data-mkt="us">-1.90%</div>
           
           
           
@@ -9386,10 +9392,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 </linearGradient>
               </defs>
               <path class="mx5-spark-area"
-                d="M0.0,10.3 L6.3,17.4 L12.6,0.0 L18.9,1.8 L25.3,25.1 L31.6,28.1 L37.9,22.5 L44.2,32.0 L50.5,15.1 L56.8,3.3 L63.2,14.1 L69.5,26.2 L75.8,16.3 L82.1,29.2 L88.4,27.3 L94.7,15.9 L101.1,13.7 L107.4,27.0 L113.7,19.3 L120.0,21.2 L120,34 L0,34 Z"
+                d="M0.0,19.8 L6.3,0.0 L12.6,12.3 L18.9,18.7 L25.3,2.9 L31.6,4.6 L37.9,25.8 L44.2,28.4 L50.5,23.4 L56.8,32.0 L63.2,16.7 L69.5,5.9 L75.8,15.7 L82.1,26.7 L88.4,17.8 L94.7,29.5 L101.1,27.7 L107.4,17.4 L113.7,15.4 L120.0,27.4 L120,34 L0,34 Z"
                 fill="url(#spkGrad_QQQ)" stroke="none"/>
               <polyline class="mx5-spark-line"
-                points="0.0,10.3 6.3,17.4 12.6,0.0 18.9,1.8 25.3,25.1 31.6,28.1 37.9,22.5 44.2,32.0 50.5,15.1 56.8,3.3 63.2,14.1 69.5,26.2 75.8,16.3 82.1,29.2 88.4,27.3 94.7,15.9 101.1,13.7 107.4,27.0 113.7,19.3 120.0,21.2"
+                points="0.0,19.8 6.3,0.0 12.6,12.3 18.9,18.7 25.3,2.9 31.6,4.6 37.9,25.8 44.2,28.4 50.5,23.4 56.8,32.0 63.2,16.7 69.5,5.9 75.8,15.7 82.1,26.7 88.4,17.8 94.7,29.5 101.1,27.7 107.4,17.4 113.7,15.4 120.0,27.4"
                 fill="none" stroke="#ef4444" stroke-width="1.5" opacity=".75"/>
             </svg>
           </div>
@@ -9402,11 +9408,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         
-        <div class="mx5-mkt-tile up" data-sym="^DJI" data-mkt="us">
+        <div class="mx5-mkt-tile dn" data-sym="^DJI" data-mkt="us">
           <div class="mx5-mkt-ticker">DJI</div>
           <div class="mx5-mkt-sub"><span class="l-en">Dow Jones</span><span class="l-zh">道琼斯</span></div>
-          <div class="mx5-mkt-price nb-px" data-sym="^DJI" data-mkt="us" data-bare>52,658.64</div>
-          <div class="mx5-mkt-delta up nb-chg" data-sym="^DJI" data-mkt="us">+0.29%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="^DJI" data-mkt="us" data-bare>52,498.64</div>
+          <div class="mx5-mkt-delta dn nb-chg" data-sym="^DJI" data-mkt="us">-0.26%</div>
           
           
           
@@ -9497,20 +9503,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
           
           
-          <div class="mx5-spark mx5-spark-up">
+          <div class="mx5-spark mx5-spark-dn">
             <svg viewBox="0 0 120 34" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="spkGrad_DJI" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#22d97a" stop-opacity=".12"/>
-                  <stop offset="100%" stop-color="#22d97a" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="#ef4444" stop-opacity=".12"/>
+                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
                 </linearGradient>
               </defs>
               <path class="mx5-spark-area"
-                d="M0.0,21.6 L6.3,32.0 L12.6,30.5 L18.9,27.5 L25.3,28.4 L31.6,24.7 L37.9,23.2 L44.2,24.1 L50.5,17.9 L56.8,15.1 L63.2,15.4 L69.5,3.2 L75.8,0.0 L82.1,2.7 L88.4,14.5 L94.7,11.6 L101.1,8.6 L107.4,11.4 L113.7,11.2 L120.0,8.1 L120,34 L0,34 Z"
+                d="M0.0,32.0 L6.3,23.9 L12.6,18.2 L18.9,27.0 L25.3,25.7 L31.6,23.2 L37.9,24.0 L44.2,20.8 L50.5,19.6 L56.8,20.4 L63.2,15.1 L69.5,12.7 L75.8,13.0 L82.1,2.7 L88.4,0.0 L94.7,2.3 L101.1,12.2 L107.4,9.8 L113.7,7.2 L120.0,9.6 L120,34 L0,34 Z"
                 fill="url(#spkGrad_DJI)" stroke="none"/>
               <polyline class="mx5-spark-line"
-                points="0.0,21.6 6.3,32.0 12.6,30.5 18.9,27.5 25.3,28.4 31.6,24.7 37.9,23.2 44.2,24.1 50.5,17.9 56.8,15.1 63.2,15.4 69.5,3.2 75.8,0.0 82.1,2.7 88.4,14.5 94.7,11.6 101.1,8.6 107.4,11.4 113.7,11.2 120.0,8.1"
-                fill="none" stroke="#22d97a" stroke-width="1.5" opacity=".75"/>
+                points="0.0,32.0 6.3,23.9 12.6,18.2 18.9,27.0 25.3,25.7 31.6,23.2 37.9,24.0 44.2,20.8 50.5,19.6 56.8,20.4 63.2,15.1 69.5,12.7 75.8,13.0 82.1,2.7 88.4,0.0 94.7,2.3 101.1,12.2 107.4,9.8 113.7,7.2 120.0,9.6"
+                fill="none" stroke="#ef4444" stroke-width="1.5" opacity=".75"/>
             </svg>
           </div>
           
@@ -9522,11 +9528,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         
-        <div class="mx5-mkt-tile up" data-sym="^RUT" data-mkt="us">
+        <div class="mx5-mkt-tile dn" data-sym="^RUT" data-mkt="us">
           <div class="mx5-mkt-ticker">RUT</div>
           <div class="mx5-mkt-sub"><span class="l-en">Small Cap</span><span class="l-zh">小盘股</span></div>
-          <div class="mx5-mkt-price nb-px" data-sym="^RUT" data-mkt="us" data-bare>2,976.26</div>
-          <div class="mx5-mkt-delta up nb-chg" data-sym="^RUT" data-mkt="us">+0.39%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="^RUT" data-mkt="us" data-bare>2,953.17</div>
+          <div class="mx5-mkt-delta dn nb-chg" data-sym="^RUT" data-mkt="us">-0.83%</div>
           
           
           
@@ -9617,20 +9623,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
           
           
-          <div class="mx5-spark mx5-spark-up">
+          <div class="mx5-spark mx5-spark-dn">
             <svg viewBox="0 0 120 34" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="spkGrad_RUT" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#22d97a" stop-opacity=".12"/>
-                  <stop offset="100%" stop-color="#22d97a" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="#ef4444" stop-opacity=".12"/>
+                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
                 </linearGradient>
               </defs>
               <path class="mx5-spark-area"
-                d="M0.0,25.6 L6.3,32.0 L12.6,13.4 L18.9,6.0 L25.3,14.7 L31.6,11.4 L37.9,5.0 L44.2,4.3 L50.5,4.2 L56.8,0.0 L63.2,3.5 L69.5,8.5 L75.8,4.5 L82.1,12.6 L88.4,20.4 L94.7,9.6 L101.1,14.0 L107.4,21.4 L113.7,17.9 L120.0,14.5 L120,34 L0,34 Z"
+                d="M0.0,24.2 L6.3,17.8 L12.6,25.6 L18.9,32.0 L25.3,13.4 L31.6,6.0 L37.9,14.7 L44.2,11.4 L50.5,5.0 L56.8,4.3 L63.2,4.2 L69.5,0.0 L75.8,3.5 L82.1,8.5 L88.4,4.5 L94.7,12.6 L101.1,20.4 L107.4,9.6 L113.7,14.0 L120.0,21.4 L120,34 L0,34 Z"
                 fill="url(#spkGrad_RUT)" stroke="none"/>
               <polyline class="mx5-spark-line"
-                points="0.0,25.6 6.3,32.0 12.6,13.4 18.9,6.0 25.3,14.7 31.6,11.4 37.9,5.0 44.2,4.3 50.5,4.2 56.8,0.0 63.2,3.5 69.5,8.5 75.8,4.5 82.1,12.6 88.4,20.4 94.7,9.6 101.1,14.0 107.4,21.4 113.7,17.9 120.0,14.5"
-                fill="none" stroke="#22d97a" stroke-width="1.5" opacity=".75"/>
+                points="0.0,24.2 6.3,17.8 12.6,25.6 18.9,32.0 25.3,13.4 31.6,6.0 37.9,14.7 44.2,11.4 50.5,5.0 56.8,4.3 63.2,4.2 69.5,0.0 75.8,3.5 82.1,8.5 88.4,4.5 94.7,12.6 101.1,20.4 107.4,9.6 113.7,14.0 120.0,21.4"
+                fill="none" stroke="#ef4444" stroke-width="1.5" opacity=".75"/>
             </svg>
           </div>
           
@@ -9767,11 +9773,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">XLF</span>
         
+        <span class="mx5-ai-ticker-pill">KRE</span>
+        
         <span class="mx5-ai-ticker-pill">GLD</span>
         
-        <span class="mx5-ai-ticker-pill">MS</span>
-        
-        <span class="mx5-ai-ticker-pill">KRE</span>
+        <span class="mx5-ai-ticker-pill">GS</span>
         
       </div>
       
@@ -9779,14 +9785,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">analyst views</span><br>
-          5 high-impact signals across channels
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 High-Impact Items</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
+          9 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">分析师观点</span><br>
-          5 条高影响信号
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 条高影响信息</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
+          9 条高影响信号
         </span>
         
       </div>
@@ -9919,7 +9925,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-eyebrow"><span class="l-en">Composite Score</span><span class="l-zh">综合评分</span></div>
         <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px">
           
-          <span style="font-size:40px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--up);line-height:1">79</span>
+          <span style="font-size:40px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--up);line-height:1">78</span>
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--up)">
               <span class="l-en">Risk-on</span>
@@ -9951,10 +9957,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
           </div>
           <div>
-            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:88%;background:var(--up)"></div></div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:82%;background:var(--up)"></div></div>
             <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
           </div>
-          <div class="mx5-dlg-factor-score" style="color:var(--up)">88</div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">82</div>
         </div>
         
         
@@ -10086,11 +10092,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <tr>
             <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">59</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">55</span></span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">64</span></span></td>
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">62</span></span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">66</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">63</span></span></td>
             
             <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">75</span></span></td>
             
@@ -10100,13 +10106,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <tr>
             <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Nasdaq 100</span><span class="l-zh">纳指100</span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">50</span></span></td>
+            <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">47</span></span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">58</span></span></td>
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">56</span></span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">62</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">60</span></span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">74</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">72</span></span></td>
             
             <td style="text-align:right"><span class="mx5-dlg-mtf-conf good"><span class="l-en">Uptrend</span><span class="l-zh">上升趋势</span></span></td>
           </tr>
@@ -10114,13 +10120,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <tr>
             <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Russell 2000</span><span class="l-zh">罗素2000</span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">53</span></span></td>
+            <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">49</span></span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">66</span></span></td>
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">63</span></span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">67</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">64</span></span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">71</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">70</span></span></td>
             
             <td style="text-align:right"><span class="mx5-dlg-mtf-conf good"><span class="l-en">Uptrend</span><span class="l-zh">上升趋势</span></span></td>
           </tr>
@@ -10392,12 +10398,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">SPY</div>
             <div class="mx5-dlg-idx-name">S&amp;P 500</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="SPY" data-mkt="us" data-bare>754.81</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="SPY" data-mkt="us">+0.40%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="SPY" data-mkt="us" data-bare>749.17</div>
+            <div class="mx5-dlg-idx-chg dn nb-chg" data-sym="SPY" data-mkt="us">-0.77%</div>
             <div class="mx5-dlg-idx-chips">
               
               
-              <span class="mx5-dlg-idx-chip ok" title="Distance from 52-week high">-0.4% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-1.1% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
               
               
               <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average"><span class="l-en">Above 50-day ✓</span><span class="l-zh">高于50日线 ✓</span></span>
@@ -10410,7 +10416,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 58"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 55"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -10424,12 +10430,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">QQQ</div>
             <div class="mx5-dlg-idx-name">Nasdaq 100</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>717.74</div>
-            <div class="mx5-dlg-idx-chg dn nb-chg" data-sym="QQQ" data-mkt="us">-0.27%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>711.74</div>
+            <div class="mx5-dlg-idx-chg dn nb-chg" data-sym="QQQ" data-mkt="us">-1.90%</div>
             <div class="mx5-dlg-idx-chips">
               
               
-              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-3.7% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-4.5% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
               
               
               <span class="mx5-dlg-idx-chip mt" title="vs 50-day moving average"><span class="l-en">Below 50-day ✕</span><span class="l-zh">低于50日线 ✕</span></span>
@@ -10442,7 +10448,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 50"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 48"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -10456,12 +10462,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">DJI</div>
             <div class="mx5-dlg-idx-name">Dow Jones</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="^DJI" data-mkt="us" data-bare>52,658.64</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="^DJI" data-mkt="us">+0.29%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="^DJI" data-mkt="us" data-bare>52,498.64</div>
+            <div class="mx5-dlg-idx-chg dn nb-chg" data-sym="^DJI" data-mkt="us">-0.26%</div>
             <div class="mx5-dlg-idx-chips">
               
               
-              <span class="mx5-dlg-idx-chip ok" title="Distance from 52-week high">-0.7% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-1.1% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
               
               
               <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average"><span class="l-en">Above 50-day ✓</span><span class="l-zh">高于50日线 ✓</span></span>
@@ -10474,7 +10480,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 62"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 60"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -10488,12 +10494,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">RUT</div>
             <div class="mx5-dlg-idx-name">Russell 2000</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="^RUT" data-mkt="us" data-bare>2,976.26</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="^RUT" data-mkt="us">+0.39%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="^RUT" data-mkt="us" data-bare>2,953.17</div>
+            <div class="mx5-dlg-idx-chg dn nb-chg" data-sym="^RUT" data-mkt="us">-0.83%</div>
             <div class="mx5-dlg-idx-chips">
               
               
-              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-1.6% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-2.4% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
               
               
               <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average"><span class="l-en">Above 50-day ✓</span><span class="l-zh">高于50日线 ✓</span></span>
@@ -10506,7 +10512,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 53"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 50"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -10608,7 +10614,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <div class="mx5-dlg-asset-tile">
             <div class="mx5-dlg-asset-lbl">VIX</div>
-            <div class="mx5-dlg-asset-val" style="color:var(--up)">15.7</div>
+            <div class="mx5-dlg-asset-val" style="color:var(--up)">17.2</div>
             <div class="mx5-dlg-asset-ctx"><span class="l-en">calm</span><span class="l-zh">平静</span></div>
           </div>
           
@@ -11158,10 +11164,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             
             <div class="mx2-sent-row">
-              <div class="mx2-sent-key"><span class="num">99</span>
-                <span class="chip c-up"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
+              <div class="mx2-sent-key"><span class="num">73</span>
+                <span class="chip c-up"><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
               </div>
-              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:99%;background:var(--up)"></div></div>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:73%;background:var(--up)"></div></div>
             </div>
             <div class="grad-labels" style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:6px">
               <span><span class="l-en">Panic</span><span class="l-zh">恐慌</span></span><span><span class="l-en">Fear</span><span class="l-zh">恐惧</span></span><span><span class="l-en">Neutral</span><span class="l-zh">中性</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span><span><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
@@ -11180,8 +11186,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             <div class="mx2-sent-row" id="froth-fragility">
               <div class="mx2-sent-key"><span class="l-en">Froth &amp; Fragility</span><span class="l-zh">狂热与脆弱</span></div>
-              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:28.3%;background:var(--muted)"></div></div>
-              <div class="mx2-sent-val"><span class="num">28</span>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:25.8%;background:var(--muted)"></div></div>
+              <div class="mx2-sent-val"><span class="num">26</span>
                 <span class="l-en">Watch</span><span class="l-zh">关注</span>
                 <span class="l-en muted"> provisional</span><span class="l-zh muted"> 暂定</span>
               </div>
@@ -11196,7 +11202,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             <div class="froth-split">
               <div class="froth-split-item"><div class="froth-split-lbl"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></div><div class="froth-split-val">20</div></div>
-              <div class="froth-split-item"><div class="froth-split-lbl"><span class="l-en">Fragility / distribution</span><span class="l-zh">脆弱／派发</span></div><div class="froth-split-val">40</div></div>
+              <div class="froth-split-item"><div class="froth-split-lbl"><span class="l-en">Fragility / distribution</span><span class="l-zh">脆弱／派发</span></div><div class="froth-split-val">33</div></div>
             </div>
             <div class="muted sm" style="margin-top:8px"><span class="l-en">Forward record accruing.</span><span class="l-zh">前瞻记录积累中。</span> <span class="l-en">Display-only — the response is sizing, not selection.</span><span class="l-zh">仅供展示——应对是调整仓位，而非选股。</span></div>
             
@@ -11232,7 +11238,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </span>
             <div>
               <div style="font-size:13px;font-weight:600"><span class="l-en">No active policy pressure</span><span class="l-zh">当前无积极政策压力</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">As of 2026-07-15</span><span class="l-zh">截至 2026-07-15</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">As of 2026-07-13</span><span class="l-zh">截至 2026-07-13</span></div>
             </div>
           </div>
           
@@ -11569,6 +11575,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item" open>
             <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">Earnings Snapshot: ASML beats across Q2 top and bottom lines, hikes full-year guidance and capacity target boosts</span><span class="l-zh">财报速览：ASML第二季度营收及利润均超预期，上调全年指引及产能目标</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4613821-earnings-snapshot-asml-beats-across-q2-top-and-bottom-lines-hikes-full-year-guidance-and-capacity-target-boosts?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
               <span class="nb-htitle"><span class="l-en">We&#39;re raising our price target on Goldman Sachs after a blowout quarter, upbeat outlook</span><span class="l-zh">高盛季度业绩强劲、展望乐观，我们上调其目标价</span></span>
             </summary>
@@ -11581,21 +11598,21 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Morgan Stanley posts record quarterly revenue and profit as equities trading surges 69%</span><span class="l-zh">Morgan Stanley posts record quarterly revenue and profit as equities trading surges 69%</span></span>
+              <span class="nb-htitle"><span class="l-en">Bank earnings, Warsh heads to the Hill, Chipotle&#39;s Mexico push and more in Morning Squawk</span><span class="l-zh">银行财报、Warsh赴国会听证、Chipotle进军墨西哥等——Morning Squawk摘要</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/15/morgan-stanley-ms-earnings-q2-2026-.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/14/5-things-to-know-before-the-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nb-htitle"><span class="l-en">SpaceX stock sinks below $135 IPO price for the first time</span><span class="l-zh">SpaceX stock sinks below $135 IPO price for the first time</span></span>
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">IBM stock craters 25%, the worst day on record, after company issues second-quarter earnings warning</span><span class="l-zh">IBM股价暴跌25%，创单日最大跌幅，公司发布第二季度盈利预警</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/15/spacex-spcx-stock-ipo-price.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/14/ibm-warns-second-quarter-earnings-fell-short-of-expectations.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11603,10 +11620,32 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-              <span class="nb-htitle"><span class="l-en">Inflation cools, Morgan Stanley earnings, IBM&#39;s bad day and more in Morning Squawk</span><span class="l-zh">Inflation cools, Morgan Stanley earnings, IBM&#39;s bad day and more in Morning Squawk</span></span>
+              <span class="nb-htitle"><span class="l-en">Asian shares mostly climb on cool U.S. CPI, defying weak China GDP and Iran conflict risks</span><span class="l-zh">美国CPI降温推动亚洲股市多数上涨，未受中国GDP疲软及伊朗冲突风险影响</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/15/5-things-to-know-before-the-stock-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4613813-asian-shares-mostly-climb-on-cool-us-cpi-defying-weak-china-gdp-and-iran-conflict-risks?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nb-htitle"><span class="l-en">Wells Fargo intends to hike Q3 common stock dividend by 11% to $0.50</span><span class="l-zh">富国银行计划将第三季度普通股股息提高11%至0.50美元</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4613833-wells-fargo-intends-to-hike-q3-common-stock-dividend-by-11-to-050?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">As bank earnings approach, a market anomaly emerges</span><span class="l-zh">银行财报季临近，市场出现反常现象</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/10/as-bank-earnings-approach-a-market-anomaly-emerges.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11624,22 +11663,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Eos Energy surges after winning Golden Dome contract from Pentagon</span><span class="l-zh">Eos Energy surges after winning Golden Dome contract from Pentagon</span></span>
+              <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+              <span class="nb-htitle"><span class="l-en">Rio Tinto Q2 iron ore sales rise 7%; lowers copper cost guidance</span><span class="l-zh">力拓第二季度铁矿石销量增长7%；下调铜成本指引</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614316-eos-energy-surges-after-winning-golden-dome-contract-from-pentagon?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nb-htitle"><span class="l-en">SpaceX’s stock breaks below its IPO price for the first time. Why it could still fall further.</span><span class="l-zh">SpaceX’s stock breaks below its IPO price for the first time. Why it could still fall further.</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.marketwatch.com/story/spacexs-stock-breaks-below-its-ipo-price-for-the-first-time-8826dc9a?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4613831-rio-tinto-q2-iron-ore-sales-rise-7-lowers-copper-cost-guidance?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11647,32 +11675,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nb-htitle"><span class="l-en">A big dividend cut and a $2 billion charge: Conagra’s results signal more pain ahead for food industry</span><span class="l-zh">A big dividend cut and a $2 billion charge: Conagra’s results signal more pain ahead for food industry</span></span>
+              <span class="nb-htitle"><span class="l-en">Oil Tanker Stock With Big Dividend Near Buy Point Amid Hormuz Crisis</span><span class="l-zh">霍尔木兹危机下，高股息油轮股逼近买点</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.marketwatch.com/story/a-big-dividend-cut-and-a-2-billion-charge-conagras-results-signal-more-pain-ahead-for-food-industry-8613bd71?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">SA Asks: Should Disney get out of the streaming business?</span><span class="l-zh">SA Asks: Should Disney get out of the streaming business?</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614314-sa-asks-should-disney-get-out-of-the-streaming-business?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-              <span class="nb-htitle"><span class="l-en">Dimon Backs JPMorgan’s New Consumer-Banking Chief After Analyst Questions Experience</span><span class="l-zh">Dimon Backs JPMorgan’s New Consumer-Banking Chief After Analyst Questions Experience</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.barrons.com/livecoverage/wells-fargo-bank-of-america-goldman-sachs-jpmorgan-chase-citigroup-bank-earnings/card/dimon-backs-jpmorgan-s-new-consumer-banking-chief-after-analyst-questions-experience-CMqKk9EedVpKqHsIISUf?siteid=yhoof2&amp;yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.investors.com/research/ibd-stock-of-the-day/oil-tanker-stock-with-big-dividend-near-buy-point-amid-hormuz-crisis/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -14388,9 +14394,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-15 23:21 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-16 01:55 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-15 23:21 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-16 01:55 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   

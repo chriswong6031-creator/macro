@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-15T23:20:34.523829+00:00",
-  "as_of": "2026-07-15",
+  "generated_utc": "2026-07-16T01:54:43.678002+00:00",
+  "as_of": "2026-07-16",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5924,15 +5924,6 @@
           "parties": "D/Democratic"
         },
         {
-          "ticker": "TDG",
-          "net": 16,
-          "buys": 16,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 128008.0,
-          "parties": "D"
-        },
-        {
           "ticker": "AMD",
           "net": 14,
           "buys": 14,
@@ -5949,6 +5940,15 @@
           "members": 1,
           "est_usd": 112007.0,
           "parties": "D/Democratic"
+        },
+        {
+          "ticker": "TDG",
+          "net": 14,
+          "buys": 14,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 112007.0,
+          "parties": "D"
         },
         {
           "ticker": "STE",
@@ -6178,7 +6178,7 @@
           "parties": "D"
         },
         {
-          "ticker": "MORN",
+          "ticker": "NSRGY",
           "net": -6,
           "buys": 0,
           "sells": 6,
@@ -6477,13 +6477,8 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 18,
+        "count": 17,
         "items": "8.01"
-      },
-      {
-        "ticker": "SPCX",
-        "count": 5,
-        "items": "1.01, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "MSTR",
@@ -6504,6 +6499,11 @@
         "ticker": "PSKY",
         "count": 4,
         "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "SPCX",
+        "count": 4,
+        "items": "5.02, 7.01, 8.01"
       },
       {
         "ticker": "ASPI",
@@ -6571,11 +6571,6 @@
         "items": "8.01"
       },
       {
-        "ticker": "AES",
-        "count": 2,
-        "items": "1.01, 2.03, 7.01, 8.01"
-      },
-      {
         "ticker": "ALGN",
         "count": 2,
         "items": "5.02, 7.01"
@@ -6586,11 +6581,6 @@
         "items": "1.01, 2.03, 8.01"
       },
       {
-        "ticker": "APLD",
-        "count": 2,
-        "items": "1.01, 2.03"
-      },
-      {
         "ticker": "ATO",
         "count": 2,
         "items": "1.01, 8.01"
@@ -6599,6 +6589,16 @@
         "ticker": "AVGO",
         "count": 2,
         "items": "8.01"
+      },
+      {
+        "ticker": "AXP",
+        "count": 2,
+        "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "CPRT",
+        "count": 2,
+        "items": "5.02, 7.01"
       }
     ],
     "special_situations": [
@@ -44832,13 +44832,6 @@
         "sample": "Surabgene Lomparvovec Administered in the Suprachoroidal Space in Adult Participants With Diabetic Retinopathy Without Center-Involved Diabetic Macular Edema"
       },
       {
-        "ticker": "GILD",
-        "phase3_starts": 3,
-        "halts": 1,
-        "hot": true,
-        "sample": "Study of Lenacapavir, Teropavimab, and Zinlirvimab in Virologically Suppressed Adults With HIV-1 on Stable Oral Treatment Regimens"
-      },
-      {
         "ticker": "RHHBY",
         "phase3_starts": 3,
         "halts": 2,
@@ -44855,9 +44848,16 @@
       {
         "ticker": "BMY",
         "phase3_starts": 2,
-        "halts": 2,
+        "halts": 1,
         "hot": true,
         "sample": "Relapse Prevention Trial Evaluating KarXT Treatment in Schizophrenia"
+      },
+      {
+        "ticker": "GILD",
+        "phase3_starts": 2,
+        "halts": 1,
+        "hot": true,
+        "sample": "Study of Lenacapavir, Teropavimab, and Zinlirvimab in Virologically Suppressed Adults With HIV-1 on Stable Oral Treatment Regimens"
       },
       {
         "ticker": "BIIB",
@@ -44986,6 +44986,13 @@
     ],
     "lobbying": [
       {
+        "ticker": "MSI",
+        "spend_usd": 570000.0,
+        "filings": 3,
+        "spike_x": null,
+        "top_issue": "Communications/Broadcasting/Radio/TV"
+      },
+      {
         "ticker": "CRMD",
         "spend_usd": 380000.0,
         "filings": 1,
@@ -45005,6 +45012,20 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Trade (domestic/foreign)"
+      },
+      {
+        "ticker": "PCAR",
+        "spend_usd": 180000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Manufacturing"
+      },
+      {
+        "ticker": "NTRA",
+        "spend_usd": 170000.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Medicare/Medicaid"
       },
       {
         "ticker": "UNM",
@@ -45033,13 +45054,6 @@
         "filings": 2,
         "spike_x": null,
         "top_issue": "Financial Institutions/Investments/Securities"
-      },
-      {
-        "ticker": "CLSK",
-        "spend_usd": 130000.0,
-        "filings": 2,
-        "spike_x": null,
-        "top_issue": "Banking"
       },
       {
         "ticker": "JBTM",
@@ -45075,20 +45089,6 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Taxation/Internal Revenue Code"
-      },
-      {
-        "ticker": "TECK",
-        "spend_usd": 75000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Energy/Nuclear"
-      },
-      {
-        "ticker": "ASRT",
-        "spend_usd": 70000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Health Issues"
       }
     ],
     "offexchange": [
@@ -45098,7 +45098,7 @@
         "otc_total": 159461769.0,
         "dpi": 0.56,
         "lean": "balanced",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "ADTX",
@@ -45106,7 +45106,7 @@
         "otc_total": 110045530.0,
         "dpi": 0.292,
         "lean": "accumulation",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "AAL",
@@ -45114,7 +45114,7 @@
         "otc_total": 108193663.0,
         "dpi": 0.393,
         "lean": "accumulation",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "CWD",
@@ -45122,7 +45122,7 @@
         "otc_total": 95796565.0,
         "dpi": 0.556,
         "lean": "balanced",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "SURG",
@@ -45130,7 +45130,7 @@
         "otc_total": 89624263.0,
         "dpi": 0.587,
         "lean": "balanced",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "OPEN",
@@ -45138,7 +45138,7 @@
         "otc_total": 72636652.0,
         "dpi": 0.602,
         "lean": "distribution",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "ABTC",
@@ -45146,7 +45146,7 @@
         "otc_total": 69869399.0,
         "dpi": 0.733,
         "lean": "distribution",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "OLPX",
@@ -45154,7 +45154,7 @@
         "otc_total": 64006100.0,
         "dpi": 0.052,
         "lean": "accumulation",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "ONDS",
@@ -45162,7 +45162,7 @@
         "otc_total": 54751093.0,
         "dpi": 0.412,
         "lean": "balanced",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "SOFI",
@@ -45170,7 +45170,7 @@
         "otc_total": 52486448.0,
         "dpi": 0.485,
         "lean": "balanced",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "NVDA",
@@ -45178,7 +45178,7 @@
         "otc_total": 52094900.0,
         "dpi": 0.322,
         "lean": "accumulation",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "T",
@@ -45186,7 +45186,7 @@
         "otc_total": 51671235.0,
         "dpi": 0.307,
         "lean": "accumulation",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "INTC",
@@ -45194,7 +45194,7 @@
         "otc_total": 50547445.0,
         "dpi": 0.316,
         "lean": "accumulation",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "NMHI",
@@ -45202,7 +45202,7 @@
         "otc_total": 48549085.0,
         "dpi": 0.401,
         "lean": "balanced",
-        "stale": false
+        "stale": true
       },
       {
         "ticker": "INLF",
@@ -45210,7 +45210,7 @@
         "otc_total": 45772223.0,
         "dpi": 0.403,
         "lean": "balanced",
-        "stale": false
+        "stale": true
       }
     ],
     "insiders": {
