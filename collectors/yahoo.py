@@ -222,3 +222,73 @@ class YahooAdapter(Adapter):
                 log.warning("yfinance batch failed (%s); retry in %.0fs", e, wait)
                 time.sleep(wait)
         raise last_exc  # type: ignore[misc]
+
+
+# ---------------------------------------------------------------------------
+# Store-level freshness tripwire (the check_cor_vol_freshness idiom from
+# collectors/cboe_indices, VSB W1a). detect_stale_series (collectors/base) only
+# inspects frames a fetch RETURNED, so a series NO adapter fetches is invisible
+# to it. That is exactly how data/yahoo/_GSPC.parquet froze silently for a month
+# (last obs 2026-06-12): ^GSPC was seeded once by a one-shot backtest script
+# (scripts/spvector_baseline.py) and never entered any config["yahoo"]["tickers"]
+# group, while eight engines kept reading it via store.read("yahoo", "^GSPC").
+# The pinned list below is deliberately IN CODE, not derived from the config
+# ticker groups — a config-derived expectation goes blind the moment a name
+# falls out of the list, which is the failure class this tripwire guards.
+# ---------------------------------------------------------------------------
+ENGINE_CRITICAL_SERIES: tuple[str, ...] = (
+    "^GSPC",   # US price-index benchmark: intl_performance RRG, cycle_proxies,
+               # equity_alloc, financial_news, intl_claims, lab, live_overlay, signal_lab
+    "SPY",     # master US total-return benchmark — engine.inputs features + many more
+    "^VIX",    # vol-regime / dislocation OHLC substrate
+)
+
+
+def check_yahoo_freshness(max_lag_sessions: int = 3, min_rows: int = 1000) -> list[dict]:
+    """NYSE-calendar freshness + row-floor check on the engine-critical yahoo names.
+
+    Reads the STORE (not the fetch result) against the exchange calendar, so it
+    fires no matter WHY a series stopped accruing: never in the ticker config
+    (the ^GSPC failure), dropped from a group, breaker wedged, or upstream
+    serving a frozen tail with 200-OK. Warn/alert only — it writes named
+    run_status["stale_series"] entries and logs; it NEVER fails the lane."""
+    from datetime import timedelta
+
+    from collectors.base import _write_stale_series
+    from lib import nyse_calendar
+
+    expected = nyse_calendar.expected_last_session()
+    problems: list[dict] = []
+    for series in ENGINE_CRITICAL_SERIES:
+        df = store.read("yahoo", series)
+        rows = 0 if df is None else len(df)
+        last = None if (df is None or df.empty) else pd.Timestamp(df.index.max()).date()
+        lag = 0
+        if last is not None:
+            # sessions missing from the store: NYSE sessions in (last, expected]
+            d = last + timedelta(days=1)
+            while d <= expected and lag <= max_lag_sessions + 1:
+                if nyse_calendar.is_session(d):
+                    lag += 1
+                d += timedelta(days=1)
+        reason = None
+        if df is None:
+            reason = "missing from store"
+        elif rows < min_rows:
+            reason = f"row floor: {rows} < {min_rows} (stub re-seed)"
+        elif lag > max_lag_sessions:
+            reason = f"stale: last obs {last} is >{max_lag_sessions} sessions behind {expected}"
+        if reason:
+            entry = {"group": "yahoo", "series": series, "rows": rows,
+                     "last_obs": str(last) if last else None,
+                     "cadence_days": 1,
+                     "age_days": (expected - last).days if last else None,
+                     "reason": reason}
+            problems.append(entry)
+            log.warning("yahoo freshness: %s — %s", series, reason)
+    if problems:
+        _write_stale_series(problems)
+    else:
+        log.info("yahoo freshness: all %d engine-critical series fresh "
+                 "(last expected session %s)", len(ENGINE_CRITICAL_SERIES), expected)
+    return problems
