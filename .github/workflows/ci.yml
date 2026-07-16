@@ -21,6 +21,9 @@ on:
       # hub-a11y guard: five static a11y regressions on globe-deck pages.
       - "scripts/check_hub_a11y.py"
       - "tests/test_check_hub_a11y.py"
+      # font-ui guard: body-level var(--font-ui) must resolve (theme.css or local def) — #2647.
+      - "scripts/check_font_ui_defined.py"
+      - "tests/test_check_font_ui_defined.py"
       - "site/theme.js"
       # analytics identity capture — registered-visitor email attribution (server reads the
       # shared Supabase session cookie off the beacon) + read-side coalescing.
@@ -1724,6 +1727,29 @@ jobs:
         run: python -m scripts.check_hub_a11y site
       - name: hub a11y guard unit tests (violating + passing fixtures per check)
         run: python -m pytest tests/test_check_hub_a11y.py -q
+
+  font-ui-defined:
+    # Font-UI definition guard (PR #2647 recurrence tripwire): any template whose
+    # body-level CSS sets the page font via var(--font-ui) must either link
+    # theme.css (<link rel="stylesheet"> href attribute — never the bare string,
+    # CSS comments mention theme.css) or define --font-ui: locally (+ warning if
+    # the _interfonts.html.j2 include is missing). An undefined custom property
+    # makes font-family invalid-at-computed-value -> unset, so the whole page
+    # renders in the browser default serif (Times) — the #2195 sweep broke 6
+    # standalone page families this way. Partials only warn (token resolves at
+    # host-page level). Pure stdlib / re — no browser, no extra deps.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: font-ui definition guard (body-level var(--font-ui) coverage)
+        run: python -m scripts.check_font_ui_defined templates
+      - name: font-ui guard unit tests (violating + passing fixtures per check)
+        run: python -m pytest tests/test_check_font_ui_defined.py -q
 
   ratio-lens:
     # Ratio Lens W1 (RL-R1..R16): AUTHORITY block, forbidden-key walk,

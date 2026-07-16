@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-11"
+updated: "2026-07-16"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -273,6 +273,62 @@ checks:
       (ci.yml already triggers on templates/**). Render lanes never write
       templates/, so a hand-edited PR is the only drift vector — pr_ci is the
       complete enforcement point; no render/publish wiring needed.
+
+  - law_id: ui.font_ui_defined
+    summary: >
+      Every templates/*.html.j2 whose body-level CSS sets the page font via
+      var(--font-ui) (font-family: or the font: shorthand in a body{} rule)
+      must either link theme.css (a <link rel="stylesheet"> whose href
+      attribute points at theme.css — the href VALUE, never the bare string,
+      because CSS comments mention theme.css and defeat naive greps) or define
+      --font-ui: locally, and should also include _interfonts.html.j2 so the
+      self-hosted Inter actually loads (warning if missing). An undefined
+      custom property makes the font-family declaration
+      invalid-at-computed-value -> unset, so the ENTIRE page renders in the
+      browser default serif (Times) — the #2195 sweep broke 6 standalone page
+      families this way, fixed in #2647 (local :root definition +
+      _interfonts include, commodities.html.j2 precedent). Partials
+      (_*.html.j2) referencing var(--font-ui) are allowed (the token resolves
+      at host-page level) and emit a warning-level note only.
+    source_ref:
+      - scripts/check_font_ui_defined.py
+      - "PR #2647"
+      - "PR #2195"
+    severity: hard
+    check_script: scripts/check_font_ui_defined.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: font-ui-defined
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      Pure-stdlib static checker; functional coverage provided by
+      tests/test_check_font_ui_defined.py (44 cases incl. the real pre-#2647
+      broken shapes, minified/uppercase CSS, Jinja-in-style-block, and the
+      naive-grep theme.css comment trap).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Textual flat CSS scan (selector{block} realignment; Jinja tags are
+        pre-stripped so an interpolation inside a style block cannot void the
+        scan) — a body font rule contributed to a host page by an included
+        partial is attributed to the partial (warning) rather than the host,
+        and Jinja-conditional branches are treated as always-active.
+      - Presence-based, not cascade-resolved — a theme.css link with
+        media="print" or disabled satisfies the check even though the sheet
+        never applies on screen, and a --font-ui definition anywhere in the
+        page counts regardless of selector reachability.
+      - Checks templates/ only, not rendered site/ copies — render lanes
+        regenerate pages from these templates, so the template is the sole
+        drift vector.
+      - Does not verify that _interfonts.html.j2's referenced .woff2 files
+        ship in site/fonts/ (ui.interfonts_theme_sync guards the partial's
+        @font-face contents).
+    owner_program: engine-fix-masterplan
+    notes: >
+      var(--font-ui, fallback) usages with an explicit fallback are still
+      held to the same rule — the page would silently lose Inter even though
+      it would not fall all the way back to Times.
 
   - law_id: ui.ms_board_coherence
     summary: >
