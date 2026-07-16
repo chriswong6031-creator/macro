@@ -689,6 +689,36 @@ def _setup_score(rec: dict) -> tuple[float, dict] | None:
     return setup_score(rec, alpha_weight=CN_ALPHA_WEIGHT)
 
 
+def _detach_board_track_plumbing(bt) -> tuple[dict | None, dict | None]:
+    """Pop grade()'s F7 ``fwd_excess_map_21d`` off the board-track dict before it is
+    attached to the china_standouts artifact. The map is INTERNAL plumbing keyed by
+    (ticker, date) TUPLES — json.dumps rejects tuple KEYS (``default=`` only covers
+    values), so leaving it on ``bt`` crashes the final artifact write and the board
+    goes stale on the persisted fallback (07-13→07-16 outage, 5×SLA). Returns
+    (bt, fwd_map); ``bt`` is mutated in place. The tuple keys stay intact for the
+    one legitimate consumer, china_standout_audit.run_attribution."""
+    if not isinstance(bt, dict):
+        return bt, None
+    return bt, bt.pop("fwd_excess_map_21d", None)
+
+
+def _find_bad_json_keys(obj, path: str = "$") -> list[str]:
+    """Locate dict keys json.dumps would reject (anything not str/int/float/bool/None),
+    returning JSONPath-ish strings. Diagnostic for the artifact-write guard below —
+    a bare TypeError from json.dumps never says WHICH key, so regressions were
+    unlocatable from CI logs."""
+    bad: list[str] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if not isinstance(k, (str, int, float, bool, type(None))):
+                bad.append(f"{path}.{k!r} (key type {type(k).__name__})")
+            bad.extend(_find_bad_json_keys(v, f"{path}.{k}"))
+    elif isinstance(obj, (list, tuple)):
+        for i, v in enumerate(obj):
+            bad.extend(_find_bad_json_keys(v, f"{path}[{i}]"))
+    return bad
+
+
 def main(alpha: dict | None = None) -> dict | None:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "chinastockdata"
@@ -2061,6 +2091,9 @@ def main(alpha: dict | None = None) -> dict | None:
                 log.warning("china_regime_store.append failed (%s) — board track continues", _rs_e)
             _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
             _bt = china_standout_track.grade()
+            # Detach the tuple-keyed F7 map BEFORE _bt reaches wide/setups — it must
+            # never ride into the JSON artifact (see _detach_board_track_plumbing).
+            _bt, _fwd_map = _detach_board_track_plumbing(_bt)
             if _bt.get("available"):
                 # Interim (unrealized) mark-to-latest-close read — shown while the forward ledger
                 # is still pre-maturity so the panel isn't a black box until ~07-29. Labeled
@@ -2083,8 +2116,8 @@ def main(alpha: dict | None = None) -> dict | None:
                 from engine import china_standout_audit as _cn_audit  # noqa: PLC0415
                 from engine.china_standout_track import _bench_close as _cn_bench  # noqa: PLC0415,SLF001
                 _bench = _cn_bench()
-                # F7: thread the pre-computed map (grade() already opened these stores)
-                _fwd_map = _bt.get("fwd_excess_map_21d") if isinstance(_bt, dict) else None
+                # F7: thread the pre-computed map (grade() already opened these stores);
+                # _fwd_map was detached from _bt right after grade() above.
                 _audit_result = _cn_audit.run_attribution(
                     bench_close=_bench, lane=_lane, fwd_excess_map=_fwd_map,
                 )
@@ -2245,8 +2278,17 @@ def main(alpha: dict | None = None) -> dict | None:
                      len(_ripening_rows) + len(_ripening_falling), _rn)
         except Exception as _re:  # noqa: BLE001 — ledger is additive, never fatal
             log.warning("W1-B ripening ledger failed (%s)", _re)
-        _standouts_path.write_text(
-            json.dumps(wide, separators=(",", ":"), default=str))
+        # Serialize BEFORE opening the file; on TypeError name the offending key path
+        # (a bare "keys must be str..." from json.dumps is unlocatable in CI logs —
+        # that anonymity is what let the 07-13 tuple-key crash run for 3 sessions).
+        try:
+            _standouts_payload = json.dumps(wide, separators=(",", ":"), default=str)
+        except TypeError:
+            _bad = _find_bad_json_keys(wide)
+            log.error("china_standouts.json NOT written — non-JSON dict keys at: %s",
+                      "; ".join(_bad[:20]) or "(none found — non-key TypeError)")
+            raise
+        _standouts_path.write_text(_standouts_payload)
         log.info("wrote china_standouts.json (%d buy [%d ENTRY/%d RAN_LATE] / %d RIPENING"
                  " [%d READY+%d BASING] / %d FALLING / %d RAN / %d eligible / %d universe)",
                  len(wide["buy"]), _n_entry, _n_ran_late,
