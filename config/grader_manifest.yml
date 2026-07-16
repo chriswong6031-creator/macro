@@ -40,20 +40,26 @@ files:
       attention leg crossings.  Writes data/foresight/earliness_grades.json.
 
   - path: engine/theme_placebo.py
-    sha256: c1abf4cfc57753c93570f3853445d61edb6e185db952707a81865127fdcc97c2
+    sha256: 61d870747841766862cbeb0cfc9d85cb015cb29e54d6f870f28a3eaef1a09be7
     role: placebo
     notes: >
       Placebo tape: appends K=3 random peer themes + 1 time-shifted variant to
       data/foresight/theme_placebo_tape.jsonl (append-only, deduped).
       Guards against cherry-picked comparisons.
+      2026-07-16 hash update ratifies the #2598 COLLECT_LANE=nightly write gate
+      (single-writer hardening, write-site only): replay vs the frozen foresight
+      corpus is byte-identical in the nightly lane; grading semantics unchanged.
 
   - path: engine/qledger_falsifier.py
-    sha256: cbc51b8dc6a694adba6e9f67e7674cfb7024f2f8c759d2dd9cf4fb580154ea41
+    sha256: 3ce3f410c17a2de59d994b5eae1ea8c64b8fb6f7ceb14b093837b315efb8ffdc
     role: falsifier
     notes: >
       Falsifier auto-evaluation: evaluates qledger claims whose check_by has
       arrived and appends FALSIFIER_TRIPPED / CONFIRMED / UNVERIFIABLE rows to
       data/qledger/falsifier_evaluations.jsonl (append-only, capped).
+      2026-07-16 hash update ratifies the #2598 COLLECT_LANE=nightly write gate
+      (single-writer hardening, write-site only): replay vs the frozen claims
+      corpus yields identical evaluations; grading semantics unchanged.
 
   - path: scripts/sample_qledger_placebo.py
     sha256: 15fb32261fb5971c359524f20e09199e325464d449a97c0ae5542cf4c6b042be
