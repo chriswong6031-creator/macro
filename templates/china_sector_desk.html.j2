@@ -11,8 +11,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>China Sector Desk — Market Intelligence</title>
+{% include "_interfonts.html.j2" %}
 <style>
 :root{
+  /* Inter loads via the _interfonts @font-face partial; the token mirrors
+     theme.css --font-ui (this standalone page does not link theme.css). */
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
   --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}}; --grid:{{C.grid}}; --card:{{C.card}};
   --bg:{{C.bg}}; --green:#1FA971;
