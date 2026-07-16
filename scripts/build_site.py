@@ -1761,7 +1761,7 @@ def _leadership_board_view() -> dict | None:
 
     Joins three sources — all DISPLAY-ONLY; no new scoring/ranking math:
       1. data/mag7_regime/latest.json   — M7C cohort state + per-member fields
-      2. data/leader_radar/state_history.parquet — LRV lifecycle state per name
+      2. site/leaderradar/radar.json    — LRV lifecycle state per name (rows[].state)
       3. data/earnings/earnings.parquet — next_date / as_of for earnings chip (MLC-R10)
       4. site/sectordata/sector_central.json — sector RS ranks (momentum.rs_rank/lead)
 
@@ -1783,17 +1783,36 @@ def _leadership_board_view() -> dict | None:
         M7_SYMS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
 
         # ── 2. LRV lifecycle states (optional — fail-open per name) ─────────────
+        # Source: site/leaderradar/radar.json (schema leader_radar.v1), rebuilt by
+        # build_leader_radar every engine run — rows[].state IS the hysteresis-
+        # confirmed lifecycle state (the builder writes "state": confirmed_state).
+        # The prior source (the leader_radar state-history parquet store) sat
+        # frozen at its 2026-07-11 seed (nightly append env-gated off pre-#2598,
+        # then dtype-crashed) and this join had no freshness gate — silently-
+        # stale reads. (Store named without its path literal on purpose: the
+        # synapse read-gate scans path literals and would flag a phantom read.)
+        # Gate mirrors the earnings block below: absent / self-reported stale /
+        # as_of older than 7 calendar days → empty map → every tile renders the
+        # plain-word null ("no trend read") and the footnote discloses why
+        # (lifecycle_stale). Fail-open, display-only, never fatal (MLC-R2).
         lifecycle_by_sym: dict[str, str] = {}
+        lifecycle_stale = True  # honest default: no fresh radar → disclose
         try:
-            import pandas as pd
-            lp = config.data_dir() / "leader_radar" / "state_history.parquet"
-            if lp.exists():
-                ldf = pd.read_parquet(lp)
-                # latest row per ticker (parquet is date-sorted; last wins)
-                for sym in M7_SYMS:
-                    rows = ldf[ldf["ticker"] == sym]
-                    if not rows.empty:
-                        lifecycle_by_sym[sym] = str(rows.iloc[-1]["confirmed_state"])
+            _cfg_paths = config.load().get("paths", {})
+            _site_root = (
+                Path(_cfg_paths["site"]) if _cfg_paths.get("site")
+                else Path(__file__).parent.parent / "site"
+            )
+            rr_path = _site_root / "leaderradar" / "radar.json"
+            if rr_path.exists():
+                rr_doc = json.loads(rr_path.read_text(encoding="utf-8"))
+                rr_age = _asof_age_days(rr_doc.get("as_of"))
+                if not rr_doc.get("stale") and rr_age is not None and rr_age <= 7:
+                    lifecycle_stale = False
+                    for r in (rr_doc.get("rows") or []):
+                        sym = r.get("ticker")
+                        if sym in M7_SYMS and r.get("state"):
+                            lifecycle_by_sym[sym] = str(r["state"])
         except Exception as _le:  # noqa: BLE001
             log.warning("leadership_board: lifecycle load failed (%s)", _le)
 
@@ -1879,6 +1898,7 @@ def _leadership_board_view() -> dict | None:
         return {
             "as_of": m7.get("as_of"),
             "age_days": _asof_age_days(m7.get("as_of")),
+            "lifecycle_stale": lifecycle_stale,
             "trend_state": m7.get("trend_state"),
             "run": m7.get("run") or {},
             "generals": m7.get("generals") or {},

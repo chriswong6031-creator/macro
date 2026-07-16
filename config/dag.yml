@@ -348,6 +348,16 @@ lanes:
         note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
       - id: build_site
         module: scripts.build_site
+      - id: build_index_leadership
+        module: scripts.build_index_leadership
+        note: >
+          Index Leadership rotation board — dead-wire fix #2597 wired it into
+          daily.yml (AFTER build_site: reads subsector_confluence*/regime_timeline
+          written by the render pass; BEFORE build_stock_board_v2, its consumer;
+          COLLECT_LANE=nightly arms the snapshots.jsonl forward-ledger append).
+          Declared here post-hoc — #2597 added the workflow step without the
+          dag.yml row, hard-failing dag-conformance on every PR (healed in #2605).
+          outputs: [site/marketdata/index_leadership.json]
       - id: build_stock_board_v2
         module: scripts.build_stock_board_v2
       - id: build_flow_leaders

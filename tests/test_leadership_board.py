@@ -426,12 +426,15 @@ def _base_vm_with_lb() -> dict:
 
 
 def test_dashboard_macro_mode_with_leadership_board():
-    """dashboard.html.j2 macro mode renders without exception when leadership_board present."""
+    """dashboard.html.j2 macro mode must NOT render the board (#2604: operator
+    removed it from macro.html — `mode == 'stocks'` gate; us_stocks-only now).
+    This test asserted presence while the file wasn't CI-wired; flipped to the
+    current contract the same night the file entered ci.yml (#2605)."""
     env = _full_env()
     html = env.get_template("dashboard.html.j2").render(**_base_vm_with_lb(), mode="macro")
     assert len(html) > 50_000
-    assert "Leadership Board" in html
-    assert "领涨面板" in html
+    assert "Leadership Board" not in html
+    assert "领涨面板" not in html
 
 
 def test_dashboard_stocks_mode_with_leadership_board():
@@ -583,3 +586,108 @@ def test_leadership_board_view_earnings_stale_omitted(tmp_path, monkeypatch):
     aapl_member = next((m for m in result["members"] if m.get("sym") == "AAPL"), None)
     assert aapl_member is not None
     assert aapl_member.get("earnings") is None
+
+
+# ── LRV lifecycle from radar.json (frozen-store fix, 2026-07-16) ──────────────
+# The board's per-tile lifecycle used to read data/leader_radar/state_history
+# .parquet, which sat frozen at its 2026-07-11 seed with no freshness gate.
+# It now reads site/leaderradar/radar.json rows[].state behind an as_of gate.
+
+def _radar_view(tmp_path, monkeypatch, radar_doc):
+    """m7 fixture + optional radar.json; returns _leadership_board_view()."""
+    import types
+    (tmp_path / "mag7_regime").mkdir(exist_ok=True)
+    m7 = {"as_of": "2026-07-14", "trend_state": "turning_up",
+          "members": [{"sym": "AAPL", "above50": True},
+                      {"sym": "NVDA", "above50": False}],
+          "run": {}, "generals": {}, "k7": {}, "cw": {}, "ew": {}}
+    (tmp_path / "mag7_regime" / "latest.json").write_text(json.dumps(m7))
+    (tmp_path / "site").mkdir(exist_ok=True)
+    if radar_doc is not None:
+        rr_dir = tmp_path / "site" / "leaderradar"
+        rr_dir.mkdir(parents=True, exist_ok=True)
+        (rr_dir / "radar.json").write_text(json.dumps(radar_doc))
+    fake_config = types.ModuleType("config")
+    fake_config.data_dir = lambda: tmp_path
+    fake_config.load = lambda: {"paths": {"site": str(tmp_path / "site")}}
+    import scripts.build_site as bs
+    monkeypatch.setattr(bs, "config", fake_config)
+    return bs._leadership_board_view()
+
+
+def _fresh_asof() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat()
+
+
+def test_view_lifecycle_from_fresh_radar(tmp_path, monkeypatch):
+    """Fresh radar.json → rows[].state mapped onto members; not stale."""
+    result = _radar_view(tmp_path, monkeypatch, {
+        "as_of": _fresh_asof(), "stale": False,
+        "rows": [{"ticker": "AAPL", "state": "QUIET_ACCUMULATION"},
+                 {"ticker": "NVDA", "state": "NONE"},
+                 {"ticker": "ZZZZ", "state": "BREAKAWAY"}],  # non-M7: ignored
+    })
+    assert result is not None
+    assert result["lifecycle_stale"] is False
+    by_sym = {m["sym"]: m for m in result["members"]}
+    assert by_sym["AAPL"]["lifecycle"] == "QUIET_ACCUMULATION"
+    assert by_sym["NVDA"]["lifecycle"] == "NONE"
+
+
+def test_view_lifecycle_stale_radar_gated(tmp_path, monkeypatch):
+    """as_of older than 7 calendar days → no lifecycle reads, stale disclosed."""
+    from datetime import datetime, timedelta, timezone
+    old = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    result = _radar_view(tmp_path, monkeypatch, {
+        "as_of": old, "stale": False,
+        "rows": [{"ticker": "AAPL", "state": "QUIET_ACCUMULATION"}],
+    })
+    assert result is not None
+    assert result["lifecycle_stale"] is True
+    by_sym = {m["sym"]: m for m in result["members"]}
+    assert by_sym["AAPL"]["lifecycle"] is None
+
+
+def test_view_lifecycle_radar_absent(tmp_path, monkeypatch):
+    """No radar.json at all → fail-open, stale disclosed, members lifecycle None."""
+    result = _radar_view(tmp_path, monkeypatch, None)
+    assert result is not None
+    assert result["lifecycle_stale"] is True
+    assert all(m["lifecycle"] is None for m in result["members"])
+
+
+def test_view_lifecycle_radar_self_reported_stale(tmp_path, monkeypatch):
+    """radar.json stale:true → gated even when as_of is fresh."""
+    result = _radar_view(tmp_path, monkeypatch, {
+        "as_of": _fresh_asof(), "stale": True,
+        "rows": [{"ticker": "AAPL", "state": "QUIET_ACCUMULATION"}],
+    })
+    assert result is not None
+    assert result["lifecycle_stale"] is True
+    by_sym = {m["sym"]: m for m in result["members"]}
+    assert by_sym["AAPL"]["lifecycle"] is None
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_footnote_stale_disclosure_renders():
+    """lifecycle_stale → bilingual plain-word disclosure in the footnote."""
+    env = _env()
+    payload = dict(FULL_PAYLOAD)
+    payload["lifecycle_stale"] = True
+    html = env.from_string(RENDER_TMPL).render(d=payload)
+    assert "Per-stock trend reads unavailable" in html
+    assert "个股趋势读数暂不可用" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_footnote_no_disclosure_when_fresh_or_missing_key():
+    """No stale line when lifecycle_stale is False — or absent (old payloads)."""
+    env = _env()
+    fresh = dict(FULL_PAYLOAD)
+    fresh["lifecycle_stale"] = False
+    html = env.from_string(RENDER_TMPL).render(d=fresh)
+    assert "Per-stock trend reads unavailable" not in html
+    # missing key entirely (pre-fix payload) must render safely without the line
+    html2 = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    assert "Per-stock trend reads unavailable" not in html2
