@@ -77,8 +77,17 @@ def _redirect_breadth_divergence_stamp(tmp_path_factory):
     appends the repo's real forward ledger (three separate suites did:
     test_theme_regionalize, test_flip_distance, test_theme_scoring).  Redirect
     the default stamp target to a session tmp for every test; unit tests of
-    log_stamp itself pass an explicit path= and are unaffected."""
-    from engine import basket_breadth_divergence as bd
+    log_stamp itself pass an explicit path= and are unaffected.
+
+    Minimal CI lanes (pip install pytest + one or two deps) cannot import the
+    engine stack (numpy/pandas/yaml absent) — their suites never reach theme
+    intel, so there is nothing to redirect; skip rather than error every test
+    at session setup."""
+    try:
+        from engine import basket_breadth_divergence as bd
+    except ModuleNotFoundError:
+        yield
+        return
     target = tmp_path_factory.mktemp("bd_stamp") / "forward_log.parquet"
     mp = pytest.MonkeyPatch()
     mp.setattr(bd, "_log_path", lambda: target)
