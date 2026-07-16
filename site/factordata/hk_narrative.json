@@ -1,8 +1,8 @@
 {
   "display_only": true,
   "organ": "hk_narrative",
-  "as_of": "2026-07-15",
-  "generated_utc": "2026-07-16T06:32:22+00:00",
+  "as_of": "2026-07-16",
+  "generated_utc": "2026-07-16T09:51:37+00:00",
   "freshness": "degraded",
   "entities": [
     {
@@ -36,13 +36,13 @@
       "ticker": "3690.HK",
       "name_en": "Meituan",
       "name_zh": "\u7f8e\u56e2",
-      "attention_shock_z": null,
-      "tone_pctile": null,
-      "narrative_state": null,
-      "young": true,
-      "n_obs": 0,
-      "as_of_date": null,
-      "no_data_reason": "young series: 0 < 20 obs"
+      "attention_shock_z": 0.102,
+      "tone_pctile": 92.9,
+      "narrative_state": "tone_positive_shift",
+      "young": false,
+      "n_obs": 86,
+      "as_of_date": "2026-07-16",
+      "no_data_reason": null
     },
     {
       "slug": "xiaomi",
@@ -88,12 +88,12 @@
       "ticker": "1024.HK",
       "name_en": "Kuaishou",
       "name_zh": "\u5feb\u624b",
-      "attention_shock_z": -0.554,
+      "attention_shock_z": 2.122,
       "tone_pctile": null,
-      "narrative_state": "quiet",
+      "narrative_state": "attention_spike",
       "young": false,
       "n_obs": 86,
-      "as_of_date": "2026-07-13",
+      "as_of_date": "2026-07-16",
       "no_data_reason": null
     },
     {
