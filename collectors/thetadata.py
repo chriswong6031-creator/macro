@@ -67,6 +67,14 @@ Endpoints implemented (measured live 2026-07-04):
                                           → bulk_trade_quote_day() (both legs, 1 day)
                                           → trade_quote() (single-contract, any range)
 
+Snapshot endpoints (measured live 2026-07-16 — U-CHAIN lane, research/THETADATA_PROBE.md):
+  GET /v3/option/snapshot/greeks/first_order   → snapshot_greeks(root, order="first")
+  GET /v3/option/snapshot/greeks/second_order  → snapshot_greeks(root, order="second")
+  GET /v3/option/snapshot/open_interest        → snapshot_open_interest(root)
+  Unlike the history greeks endpoints, snapshots ACCEPT expiration=* AND strike=*:
+  one request returns the full live chain (SPY: 14,065 rows in 0.96s first-order,
+  0.83s second-order, 0.21s OI).  Market closed → last-known close-ish values.
+
 GREEKS NOTE (v3 doc-vs-live finding, measured 2026-07-04):
   The correct endpoint for EOD greeks is /v3/option/history/greeks/eod (NOT /greeks/all).
   /greeks/eod returns one row per contract per day with all greek orders, OHLCV, bid/ask,
@@ -90,6 +98,17 @@ CSV headers (verbatim from live API, 2026-07-04):
                sequence,ext_condition1,ext_condition2,ext_condition3,ext_condition4,
                condition,size,exchange,price,bid_size,bid_exchange,bid,bid_condition,
                ask_size,ask_exchange,ask,ask_condition
+
+CSV headers (verbatim from live API, 2026-07-16 — snapshot endpoints):
+  snapshot greeks/first_order:  symbol,expiration,strike,right,timestamp,bid,ask,
+               delta,theta,vega,rho,epsilon,lambda,implied_vol,iv_error,
+               underlying_timestamp,underlying_price
+  snapshot greeks/second_order: symbol,expiration,strike,right,timestamp,bid,ask,
+               gamma,vanna,charm,vomma,veta,implied_vol,iv_error,
+               underlying_timestamp,underlying_price
+  snapshot open_interest: timestamp,symbol,expiration,strike,right,open_interest
+               (NOTE: timestamp is the FIRST column here, unlike the greeks
+               snapshots — normalization is by column name, never by position)
 
 OI update timing (confirmed from v2 docs, still applies in v3):
   OPRA reports OI once per day at ~06:30 ET; the value represents end-of-previous-day
@@ -994,6 +1013,163 @@ def _normalize_greeks_df(df: pd.DataFrame, *, order: int = 1) -> pd.DataFrame:
         )
 
     return df.reset_index(drop=True)
+
+
+# --------------------------------------------------------------------------- #
+# Snapshot API — U-CHAIN intraday lane (measured live 2026-07-16)
+# --------------------------------------------------------------------------- #
+
+# Column subsets kept per snapshot endpoint (beyond the contract key + snapshot_ts).
+# second_order also returns implied_vol/iv_error/bid/ask/underlying_price — kept here
+# so each frame stands alone; the chain_snapshot_poller joins only the second-order
+# greek columns onto the first-order base.
+_SNAPSHOT_KEEP_COLS = {
+    "first":  ["bid", "ask", "delta", "theta", "vega", "rho", "epsilon", "lambda",
+               "implied_vol", "iv_error", "underlying_price"],
+    "second": ["bid", "ask", "gamma", "vanna", "charm", "vomma", "veta",
+               "implied_vol", "iv_error", "underlying_price"],
+}
+
+
+def _normalize_snapshot_df(df: pd.DataFrame, keep_cols: list[str],
+                           label: str) -> pd.DataFrame:
+    """Normalize a raw v3 snapshot CSV DataFrame (greeks or open_interest).
+
+    Column selection is by NAME, never by position: the OI snapshot header leads
+    with timestamp while the greeks snapshots lead with symbol (both measured
+    verbatim 2026-07-16 — see module docstring).
+
+    snapshot_ts is parsed from the response 'timestamp' column (the terminal's
+    per-contract quote timestamp; the OI snapshot stamp is ~06:30 ET, when OPRA
+    publishes EOD t-1 positions).
+
+    API DEDUP: the same full-row drop_duplicates law as the history endpoints
+    (see _normalize_eod_df docstring) is applied after column selection.
+    """
+    if df.empty:
+        return df
+
+    for col in ("symbol", "expiration", "right"):
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip('"').str.strip()
+
+    # snapshot_ts from the response timestamp (never the wall clock)
+    if "timestamp" in df.columns:
+        df["snapshot_ts"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    else:
+        df["snapshot_ts"] = pd.NaT
+
+    if "expiration" in df.columns:
+        df["expiration"] = pd.to_datetime(df["expiration"], errors="coerce")
+
+    if "right" in df.columns:
+        df["right"] = df["right"].map({"CALL": "C", "PUT": "P"}).fillna(df["right"])
+
+    if "strike" in df.columns:
+        df["strike"] = pd.to_numeric(df["strike"], errors="coerce")
+
+    for col in keep_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    if "symbol" in df.columns:
+        df = df.rename(columns={"symbol": "root"})
+
+    keep = ["root", "expiration", "strike", "right", "snapshot_ts"] + keep_cols
+    available = [c for c in keep if c in df.columns]
+    df = df[available].reset_index(drop=True)
+
+    # API dedup: drop full-row duplicates (same v3 API law as EOD/OI/greeks).
+    n_before = len(df)
+    df = df.drop_duplicates()
+    n_dropped = n_before - len(df)
+    if n_dropped > 0:
+        log.info(
+            "thetadata: _normalize_snapshot_df(%s) dropped %d full-row API duplicates "
+            "(%d → %d rows)",
+            label, n_dropped, n_before, len(df),
+        )
+
+    return df.reset_index(drop=True)
+
+
+def _snapshot_get(root: str, path: str, keep_cols: list[str],
+                  label: str) -> pd.DataFrame | None:
+    """Shared fetch+normalize for the snapshot endpoints.
+
+    NO reachable() pre-check (deliberate deviation from the bulk_* helpers):
+    reachable() downloads the full 15,636-root symbol list (~0.5s) per call,
+    which would roughly double a 150-root sweep at max_concurrent=1.  The
+    INERT contract is preserved by _get_csv's error paths (unreachable /
+    non-200 / truncated → one WARNING, return None); the chain_snapshot_poller
+    probes reachable() once at startup instead.
+    """
+    params = {"symbol": root.upper(), "expiration": "*", "strike": "*"}
+    session = _session()
+    try:
+        df = _get_csv(session, path, params)
+    except _StreamTruncated as e:
+        log.warning("thetadata: %s(%s) truncated — returning None: %s", label, root, e)
+        return None
+    if df is None:
+        log.warning("thetadata: %s(%s) failed — returning None", label, root)
+        return None
+    if df.empty:
+        return pd.DataFrame()
+    return _normalize_snapshot_df(df, keep_cols=keep_cols, label=label)
+
+
+def snapshot_greeks(root: str, order: str = "first") -> pd.DataFrame | None:
+    """Live full-chain greeks snapshot for one root (U-CHAIN lane).
+
+    Endpoint: GET /v3/option/snapshot/greeks/{first,second}_order
+    v3 params: symbol=ROOT, expiration=*, strike=*  (wildcards ACCEPTED on
+    snapshots, unlike /history/greeks/* — measured 2026-07-16: full SPY chain
+    14,065 rows in 0.96s first-order, 0.83s second-order).
+
+    order="first"  → delta, theta, vega, rho, epsilon, lambda, implied_vol,
+                     iv_error (+ bid, ask, underlying_price)
+    order="second" → gamma, vanna, charm, vomma, veta (+ bid, ask,
+                     implied_vol, iv_error, underlying_price)
+
+    Market closed → the terminal returns last-known close-ish values (still
+    structurally valid; timestamps carry the truth).
+
+    Returns DataFrame: root, expiration (datetime64), strike (float, $),
+    right ("C"/"P"), snapshot_ts (datetime64, from response timestamps),
+    [value columns per order] — or None on any terminal error (INERT).
+    """
+    if order not in ("first", "second"):
+        raise ValueError(f"order must be 'first' or 'second'; got {order!r}")
+    return _snapshot_get(
+        root,
+        f"/v3/option/snapshot/greeks/{order}_order",
+        keep_cols=_SNAPSHOT_KEEP_COLS[order],
+        label=f"snapshot_greeks/{order}",
+    )
+
+
+def snapshot_open_interest(root: str) -> pd.DataFrame | None:
+    """Live full-chain open-interest snapshot for one root (U-CHAIN lane).
+
+    Endpoint: GET /v3/option/snapshot/open_interest (expiration=*, strike=*).
+    Measured 2026-07-16: full SPY chain 13,731 rows in 0.21s.
+
+    OI TIMING LAW: the snapshot is stamped ~06:30 ET, when OPRA publishes OI —
+    the value represents END-OF-PREVIOUS-DAY positions and does NOT update
+    intraday.  One pull per root per day is sufficient; same-day OI in a day-t
+    feature is a data leak (see the module docstring).
+
+    Returns DataFrame: root, expiration (datetime64), strike (float, $),
+    right ("C"/"P"), snapshot_ts (datetime64), open_interest (numeric)
+    — or None on any terminal error (INERT).
+    """
+    return _snapshot_get(
+        root,
+        "/v3/option/snapshot/open_interest",
+        keep_cols=["open_interest"],
+        label="snapshot_open_interest",
+    )
 
 
 def bulk_trade_quote_day(root: str, target_date: date | str | int) -> pd.DataFrame | None:
