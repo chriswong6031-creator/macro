@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-07-16T02:24:59+00:00",
+  "checked_at": "2026-07-16T03:39:40+00:00",
   "expected_session": "2026-07-15",
   "stores": {
     "cache": {
@@ -13,8 +13,8 @@
       "state": "fresh"
     },
     "standouts": {
-      "asof": "2026-07-14",
-      "lag_days": 1,
+      "asof": "2026-07-15",
+      "lag_days": 0,
       "state": "fresh"
     },
     "regime": {
@@ -29,10 +29,10 @@
     }
   },
   "coherence": {
-    "ok": false,
-    "standouts_asof": "2026-07-14",
+    "ok": true,
+    "standouts_asof": "2026-07-15",
     "regime_date": "2026-07-15",
-    "note": "standouts.as_of != regime.date \u2014 snapshot is incoherent"
+    "note": null
   },
   "regression": {
     "ok": true,
@@ -40,9 +40,9 @@
     "curr_cache_max": "2026-07-15",
     "note": null
   },
-  "verdict": "stale",
+  "verdict": "degraded",
   "banner_message": {
-    "en": "HK data stale \u2014 snapshot incoherent \u2014 standouts 2026-07-14 vs regime 2026-07-15; southbound \u2014 behind (last \u2014)",
-    "zh": "\u6e2f\u80a1\u6570\u636e\u5df2\u8fc7\u671f \u2014 \u5feb\u7167\u4e0d\u4e00\u81f4 \u2014 \u7cbe\u9009\u4e2a\u80a1 2026-07-14 vs \u5468\u671f\u5224\u65ad 2026-07-15\uff1bsouthbound \u843d\u540e \u2014\uff08\u6700\u540e \u2014\uff09"
+    "en": "HK data degraded \u2014 southbound \u2014 behind (last \u2014)",
+    "zh": "\u6e2f\u80a1\u6570\u636e\u964d\u7ea7 \u2014 southbound \u843d\u540e \u2014\uff08\u6700\u540e \u2014\uff09"
   }
 }
