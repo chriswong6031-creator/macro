@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-16T17:39:49.186932+00:00",
-  "posts_seen": 15,
-  "seen_total": 33,
-  "evaluated": 0,
+  "as_of": "2026-07-16T19:34:19.159966+00:00",
+  "posts_seen": 16,
+  "seen_total": 34,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-16-trump-administration-unleashes-global-campaign-to-crush-radical-left-terrorism",
+      "importance": 20,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }
