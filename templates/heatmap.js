@@ -1227,11 +1227,21 @@
       // House law: no text below 11px — a tile that can't fit an 11px ticker
       // drops the label entirely (demote to hover) rather than shrinking it.
       if (tw < 30 || th < 16) return '';
-      var nch = (t.t || '').length || 1;
-      var fitF = (tw - 6) / (nch * 0.78);
+      // CN/HK opt into company-name labels (data.tile_label==='name') — a bare
+      // 601398 code is meaningless at a glance. Prefer the (short) Chinese name,
+      // fall back to English name, then the ticker. US / Canada keep the ticker.
+      var sym = data.tile_label === 'name' ? (t.name_zh || t.name || dispT(t.t)) : dispT(t.t);
+      // CJK glyphs are ~full-em wide vs ~0.6em for latin/digits, so a 4-char name
+      // needs a wider per-char budget than a 6-digit code to fit the same tile —
+      // this is what lets the names land in the largest rectangles only.
+      var cjk = false; for (var _i = 0; _i < sym.length; _i++) { var _cc = sym.charCodeAt(_i); if (_cc >= 0x3400 && _cc <= 0x9fff) { cjk = true; break; } }
+      var nch = sym.length || 1;
+      var fitF = (tw - 6) / (nch * (cjk ? 1.06 : 0.78));
       var symF = Math.min(tw / 4.2, th * 0.5, fitF, 18);
-      if (symF < 11) return '';
-      var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
+      // CJK glyphs stay legible smaller than latin (the full treemap allows 8px),
+      // so let names land on a couple more tiles; latin tickers keep the 11px floor.
+      if (symF < (cjk ? 10 : 11)) return '';
+      var s = '<span class="sym' + (symF < 13 ? ' sm' : '') + '" style="font-size:' + symF.toFixed(1) + 'px">' + esc(sym) + '</span>';
       if (tw >= 46 && th >= 30) {
         var pcText = fmtPc(t.perf[TF]);
         var pcF = Math.min(tw / 5.6, th * 0.32, fitTextFont(tw, pcText, 0.62, 11, 12));
