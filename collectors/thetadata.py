@@ -115,7 +115,9 @@ AMBIGUITIES RESOLVED (as of 2026-07-04 probe):
      long ranges stall (stall fix: windowed pulls). /history/greeks/eod REJECTS multi-day
      wildcard (HTTP 400) — keeps day-by-day loop.
   A8 (History depth): Measured — starts 2012-06-01 (NOT 2013-01-02 as initially guessed).
-  A9 (Password in argv): v3 uses --api-key flag (not positional user/pass) — IMPROVED.
+  A9 (Password in argv): v3 accepts --api-key flag OR THETADATA_API_KEY env var.
+     Launcher uses the env var (2026-07-16): --api-key put the key in plaintext argv,
+     readable by any local process via `ps`.
 """
 from __future__ import annotations
 
