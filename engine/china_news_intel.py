@@ -377,15 +377,44 @@ def _item_sentiment(blob: str) -> float:
         return 0.0
 
 
-def _scheduled_ref_for(seendate_iso: str, scheduled: dict[str, str]) -> str:
+# Release TYPE -> the narrative themes an article can plausibly be ABOUT when it
+# reacts to that release: the release's own macro channel, plus the rate-path
+# (monetary) and market-reaction (markets) buckets. tech/geo/politics/… never get
+# stamped — those are the headline-shock themes that must stay UNstamped (the
+# MN-06 leak stamped ACTIVITY on 461 same-window articles incl. Mid-East wires,
+# and here the stamp feeds importance_score at accrual: +0.30/+0.40 baked into
+# the PIT store). Fail-closed: a type missing here stamps nothing (test-enforced
+# to cover _HIGH_IMPACT_CAL). Mirrors news_vector._SCHEDULED_REF_THEMES.
+_SCHEDULED_REF_THEMES: dict[str, frozenset[str]] = {
+    "LPR":      frozenset({"monetary", "markets"}),
+    "MLF":      frozenset({"monetary", "markets"}),
+    "FXRES":    frozenset({"monetary", "markets"}),
+    "CPI":      frozenset({"inflation", "monetary", "markets"}),
+    "PPI":      frozenset({"inflation", "monetary", "markets"}),
+    "PMI":      frozenset({"growth", "monetary", "markets"}),
+    "GDP":      frozenset({"growth", "monetary", "markets"}),
+    "ACTIVITY": frozenset({"growth", "monetary", "markets"}),
+    "CREDIT":   frozenset({"credit", "monetary", "markets"}),
+}
+
+
+def _scheduled_ref_for(seendate_iso: str, scheduled: dict[str, str],
+                       theme: str = "") -> str:
+    """'TYPE@YYYY-MM-DD' when the article is plausibly the calendar-explained flow
+    of a high-impact release: the release fell ON the article date or the DAY
+    BEFORE (reaction window — a release tomorrow cannot explain today's flow), AND
+    the article's theme sits in that release's macro channel. Else ''. PURE.
+    Forward-only: accrual is keep-FIRST, so already-accrued rows keep their
+    historical stamps and importance scores — never rewritten."""
     try:
         d = date.fromisoformat((seendate_iso or "")[:10])
     except (ValueError, TypeError):
         return ""
-    for delta in (0, -1, 1):
+    for delta in (0, -1):
         key = (d + timedelta(days=delta)).isoformat()
-        if key in scheduled:
-            return f"{scheduled[key]}@{key}"
+        rtype = scheduled.get(key)
+        if rtype and theme in _SCHEDULED_REF_THEMES.get(rtype, frozenset()):
+            return f"{rtype}@{key}"
     return ""
 
 
@@ -422,7 +451,13 @@ def _clean_time(value: str, title: str = "") -> str:
 def build_records(articles: list[dict], scheduled: dict[str, str],
                   first_seen_utc: str) -> list[dict]:
     """Raw flashes/RSS items -> theme-gated, basket+ticker-tagged, importance+sentiment-scored
-    event records. PURE (no network/clock; first_seen_utc injected)."""
+    event records. PURE (no network/clock; first_seen_utc injected).
+
+    No low-value junk gate here (unlike news_vector MN-05): assessed 2026-07-16 —
+    CN format-junk (午评 recaps / 涨停复盘 / listicles) is ~1% of the accrued store
+    because the theme gate + curated flash wires already filter it, and
+    news_common's EN patterns don't transfer to CJK (substring traps, e.g.
+    集中签约 ⊃ 中签). Revisit only if a junk class measurably grows."""
     out: list[dict] = []
     seen: set[str] = set()
     for a in articles:
@@ -440,7 +475,7 @@ def build_records(articles: list[dict], scheduled: dict[str, str],
         seendate = _clean_time(a.get("seendate") or a.get("time") or "", title)
         tier = source_tier(a.get("source", ""), dom)
         baskets = tag_baskets(blob)
-        sref = _scheduled_ref_for(str(seendate), scheduled)
+        sref = _scheduled_ref_for(str(seendate), scheduled, theme)
         hrs = _hours_since(seendate, first_seen_utc)
         out.append({
             "event_id": eid, "first_seen_utc": first_seen_utc, "seendate": str(seendate),
