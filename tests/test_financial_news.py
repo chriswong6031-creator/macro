@@ -9,12 +9,23 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import financial_news as fn  # noqa: E402
 from engine import news_common as nc     # noqa: E402
 
 _NOW = datetime(2026, 6, 19, 12, 0, 0, tzinfo=timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_qbus_store(tmp_path, monkeypatch):
+    """_normalise emits a qbus row (qbus.append_items → config.data_dir()) for
+    every KEPT headline — unredirected, the synthetic fixture rows append to
+    the real data/qbus/items.parquet."""
+    from lib import config
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
 
 
 # --------------------------------------------------------------------------- #

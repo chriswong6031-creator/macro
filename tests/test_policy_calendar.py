@@ -151,8 +151,16 @@ def test_latency_join_multiple_rin():
 # 4. Forward dating: past comment-close never appears in upcoming_events
 # ---------------------------------------------------------------------------
 
-def test_forward_dating_excludes_past():
+def test_forward_dating_excludes_past(tmp_path, monkeypatch):
     """A row with comments_close_on in the past must not appear in upcoming_events."""
+    from lib import config
+
+    # compute_policy_calendar seeds the forward ledger via _append_ledger →
+    # config.data_dir(). Unredirected, this synthetic (solar, asof) row lands in
+    # the REAL data/foresight ledger — it did once: the committed
+    # 2026-07-04T00:30:49Z solar row is this fixture.
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
+
     today = date(2026, 7, 3)
     past_date = "2026-07-01"   # 2 days ago
     future_date = "2026-08-01"  # 29 days away
@@ -172,6 +180,31 @@ def test_forward_dating_excludes_past():
         f"Past date {past_date} must not appear in upcoming_events"
     assert future_date in dates_in_upcoming, \
         f"Future date {future_date} must appear in upcoming_events"
+
+    # sanity: the ledger append went to the isolated tree, not the repo
+    ledger = tmp_path / "data" / "foresight" / "policy_calendar_ledger.jsonl"
+    assert ledger.exists(), "ledger row must land in the redirected data dir"
+
+
+def test_append_ledger_gated_off_outside_nightly_lane(tmp_path, monkeypatch):
+    """COLLECT_LANE != nightly must suppress the forward-ledger append (the
+    #2598 idiom; policy_calendar was the one appender the sweep missed)."""
+    from lib import config
+
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
+    monkeypatch.delenv("COLLECT_LANE", raising=False)
+    monkeypatch.delenv("US_LANE", raising=False)
+
+    rows = [
+        _doc("DOC-FUTURE", "solar", "proposed_rule", "2026-07-01",
+             comments_close_on="2026-08-01"),
+    ]
+    result = compute_policy_calendar(df=_make_df(rows), today=date(2026, 7, 3))
+
+    assert result is not None  # display payload unaffected by the gate
+    ledger = tmp_path / "data" / "foresight" / "policy_calendar_ledger.jsonl"
+    assert not ledger.exists(), \
+        "forward ledger must not advance outside the nightly lane"
 
 
 # ---------------------------------------------------------------------------
