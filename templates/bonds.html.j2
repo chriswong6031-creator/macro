@@ -141,12 +141,78 @@ html[data-theme="dark"] .xa-bar{background:#222732}
   .xa-row>.xa-verd{grid-area:1/2;min-width:0}
   .xa-row>.xa-bar{grid-area:2/1/3/3}
 }
+/* ═══════════════════════════════════════════════════════════════════════════
+   MACRO-STYLE MAKEOVER — depth + hierarchy layer, loaded last so it wins on order.
+   The palette already matches theme.css (--bg/--card/--grid/--blue); this adds the
+   soft card elevation, layered surfaces, calmer section headers, a bolder hero and
+   tokenised chips that give macro.html its polish. Scoped to .wrap so the shared
+   nav (_vector_polish) is untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{--panel2:#eef1f6;
+  --card-shadow:0 1px 2px rgba(20,30,50,.045), 0 6px 20px -10px rgba(20,32,64,.13);
+  --card-shadow-lg:0 2px 6px rgba(20,30,50,.06), 0 18px 42px -18px rgba(20,32,64,.22);
+  --card-brd:#e9edf3}
+html[data-theme="dark"]{--panel2:#1e222a;
+  --card-shadow:0 1px 0 rgba(255,255,255,.03), 0 10px 28px -14px rgba(0,0,0,.6);
+  --card-shadow-lg:0 1px 0 rgba(255,255,255,.04), 0 22px 50px -20px rgba(0,0,0,.72);
+  --card-brd:#242a36}
+/* cards float instead of sitting flat — the single biggest lift */
+.wrap .card{border-radius:18px;border-color:var(--card-brd);box-shadow:var(--card-shadow);
+  transition:box-shadow .22s ease,transform .22s ease}
+/* size cards to their content — kills the dead space the equal-height grid stretch
+   left under short cards (e.g. the health-history chart had ~290px of blank bottom) */
+.wrap .grid{align-items:start}
+/* page header — larger, tighter */
+.wrap>.brand{font-size:27px;letter-spacing:-.025em;margin:12px 0 5px}
+.wrap>.lead{font-size:14.5px;line-height:1.55;max-width:800px;margin-bottom:18px}
+/* jump-nav → floating pill row */
+.wrap .jump-nav{gap:7px;margin:8px 0 26px}
+.wrap .jump-nav a{background:var(--card);box-shadow:var(--card-shadow);border-color:transparent;padding:6px 13px}
+.wrap .jump-nav a:hover{box-shadow:var(--card-shadow-lg);color:var(--ink);transform:translateY(-1px)}
+/* section headers — quiet kicker + hairline that fades to the edge */
+.wrap .sec-head{display:flex;align-items:center;gap:12px;padding:0;border-bottom:none;
+  font-size:11.5px;color:var(--muted);letter-spacing:.09em;margin:38px 0 15px}
+.wrap .sec-head::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--grid),transparent)}
+/* card titles — macro's small muted kicker */
+.wrap .card h2{font-size:11.5px;letter-spacing:.07em;margin-bottom:9px}
+/* hero — bolder score, calmer supporting copy */
+.wrap .hero-state{font-size:54px;letter-spacing:-.03em;line-height:1;margin:2px 0 8px}
+.wrap .hero-state small{font-size:19px}
+.wrap .hero-meta{font-size:13.5px;line-height:1.7}
+.wrap .verdict-lead{font-size:15px;line-height:1.6;color:var(--text);margin-top:12px;max-width:62ch}
+/* chips / pills / flags — tokenised soft fills */
+.wrap .pill{background:var(--panel2);color:var(--ink);border:1px solid transparent;font-weight:600}
+.wrap .band-chip,.wrap .bias-chip{box-shadow:0 1px 3px rgba(20,30,50,.14)}
+.wrap .flag{border-radius:11px;padding:9px 13px}
+/* kpi group — each metric gets a soft little tile */
+.wrap .kpis{gap:11px 12px}
+.wrap .kpi{background:var(--panel2);border-radius:12px;padding:11px 14px;min-width:96px}
+.wrap .kpi b{margin-top:3px}
+/* bars — softer track using the panel-2 surface */
+.wrap .leg .lbar,.wrap .xa-bar{background:var(--panel2)}
+.wrap .measured-edge{border-radius:12px}
+/* mobile — the bolder desktop hero/brand/kpi sizes above sit at (0,2,0) and would
+   otherwise beat the base ≤560 rules, so restate them tighter for phones */
+@media(max-width:560px){
+  .wrap>.brand{font-size:22px}
+  .wrap .hero-state{font-size:38px}
+  .wrap .card{border-radius:14px}
+  .wrap .kpi{min-width:0;flex:1 1 42%;padding:9px 11px}
+  .wrap .sec-head{margin:28px 0 12px}
+}
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
 <body>
 <nav class="site-nav" style="max-width:1180px;margin:18px auto 16px;padding:0 20px">
   {% include "_navlinks.html.j2" %}
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
