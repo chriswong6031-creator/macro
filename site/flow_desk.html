@@ -91,6 +91,16 @@
   .etf-cell .etf-flow { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
   .etf-cell .etf-5d { font-size:11px; color:var(--muted); }
 
+  /* ── Flow Score panel (FS-4 Lane C) ───────────────────────────── */
+  .fs-badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; border:1px solid var(--muted); color:var(--muted); vertical-align:middle; }
+  .fs-badge-building { border-color:var(--orange,#f97316); color:var(--orange,#f97316); }
+  .fs-n { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .fs-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+  .fs-receipt { margin-top:10px; }
+  .fs-receipt-row { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); padding:3px 0; border-top:1px solid var(--line); }
+  .fs-receipt-row .rk { flex:1; }
+  .fs-receipt-row .rv { font-variant-numeric:tabular-nums; text-align:right; }
+
   /* ── Two-col layout on wide ────────────────────────────────────── */
   @media (min-width:900px) {
     .fd-main { display:grid; grid-template-columns:2fr 1fr; gap:14px; align-items:start; }
@@ -389,6 +399,7 @@
     </div>
   </div>
 </nav>
+
 
 
 
@@ -1354,6 +1365,62 @@
   
 </div>
 
+
+<!-- Section 5: Flow Score — FS-4 Lane C (display-only glance panel) -->
+
+<div class="panel">
+  <h2><span class="l-en">Options Flow Score</span><span class="l-zh">期权流量评分</span>
+    <span class="help">?<span class="tip"><span class="l-en">Pattern history for options-flow events logged since 2026-07-13. Events are recorded; a scoring model is being built from this history. This is a heads-up — not a buy or sell signal, and not a measure of direction.</span><span class="l-zh">期权流量事件记录始于2026-07-13。事件已积累；评分模型正在基于该历史构建。此为提示信息——非买入或卖出信号，亦非方向性判断。</span></span></span>
+  </h2>
+  
+  
+  <div style="margin-bottom:10px">
+    <span class="fs-badge fs-badge-building">
+      <span class="l-en">Building history</span><span class="l-zh">历史积累中</span>
+    </span>
+  </div>
+  <div class="fs-n tabnum">8,950</div>
+  <div class="fs-sub">
+    <span class="l-en">events logged since 2026-07-13</span>
+    <span class="l-zh">事件已记录，始于2026-07-13</span>
+  </div>
+  <p class="muted sm note" style="margin-top:8px">
+    <span class="l-en">Not yet a signal — nothing to act on yet. Once enough history is logged, similar past events will be compared to show how often a move of a given size followed. Ignore for now.</span>
+    <span class="l-zh">尚未形成信号——暂无需操作。历史积累充分后，将对比历史相似事件，展示特定幅度涨跌的出现频率。目前可忽略。</span>
+  </p>
+  
+  <div class="fs-receipt">
+    <div class="xs muted" style="margin-bottom:4px;font-weight:600">
+      <span class="l-en">Events by option time-to-expiry</span><span class="l-zh">按到期剩余天数分类</span>
+    </div>
+    
+    <div class="fs-receipt-row">
+      <span class="rk"><span class="l-en">Same-day (0DTE)</span><span class="l-zh">当日到期 (0DTE)</span></span>
+      <span class="rv">953</span>
+    </div>
+    
+    <div class="fs-receipt-row">
+      <span class="rk"><span class="l-en">1–7 days</span><span class="l-zh">1–7天</span></span>
+      <span class="rv">4,461</span>
+    </div>
+    
+    <div class="fs-receipt-row">
+      <span class="rk"><span class="l-en">8–30 days</span><span class="l-zh">8–30天</span></span>
+      <span class="rv">1,473</span>
+    </div>
+    
+    <div class="fs-receipt-row">
+      <span class="rk"><span class="l-en">31–90 days</span><span class="l-zh">31–90天</span></span>
+      <span class="rv">2,063</span>
+    </div>
+    
+  </div>
+  
+  
+  
+</div>
+
+
 </div>
 </div>
 
@@ -1419,6 +1486,5 @@
 })();
 </script>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
