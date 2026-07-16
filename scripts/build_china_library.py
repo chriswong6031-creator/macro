@@ -1648,6 +1648,20 @@ def main(alpha: dict | None = None) -> dict | None:
         r["stage_sublabel_zh"] = _stage_res.get("sublabel_zh")
         r["stage_detail"] = _stage_res.get("detail") or {}
         r["why_ranked"] = _why_ranked(r)
+        # MACD D/2D/3D column feed (display-tier, no rank/stage change): the cascade's
+        # 2D/3D RSI-MACD histograms off the gate verdict (sign → ▲/▼ glyph) + the daily
+        # price-MACD hist last value (same construction as the ripening rows below).
+        r["macd_d2"] = _sv.get("hist_d2")
+        r["macd_d3"] = _sv.get("hist_d3")
+        try:
+            _c_b = _close_map.get(_t)
+            _c_b = _c_b.dropna() if _c_b is not None else None
+            if _c_b is not None and len(_c_b) >= 35:
+                _mh_b = _macd_parts(_c_b)["hist"].dropna()
+                if len(_mh_b):
+                    r["macd_hist_d"] = round(float(_mh_b.iloc[-1]), 4)
+        except Exception:  # noqa: BLE001 — display-only, never fatal
+            pass
 
     # After stage assignment: propagate muted_entry from stage_detail to the row dict
     # so Jinja can suppress green banding without reading the nested detail dict.
@@ -1688,11 +1702,25 @@ def main(alpha: dict | None = None) -> dict | None:
                 "maxup_pct": _hold_s.get("maxup_pct"),
                 "invalidation": _hold_s.get("invalidation"),
             }
+        # MACD D/2D/3D column feed (display-tier; only computed for rows that pass the
+        # RAN filters above, so the _macd_parts cost stays on the small shelf set).
+        _ran_macd_d: float | None = None
+        try:
+            _c_r = _close_w.dropna() if _close_w is not None else None
+            if _c_r is not None and len(_c_r) >= 35:
+                _mh_r = _macd_parts(_c_r)["hist"].dropna()
+                if len(_mh_r):
+                    _ran_macd_d = round(float(_mh_r.iloc[-1]), 4)
+        except Exception:  # noqa: BLE001 — display-only, never fatal
+            pass
         _ran_rows.append({
             "ticker": _t, "name": _name_w or _t, "sector": _sector_w or "",
             "cross_date": _lci["cross_date"],
             "sessions_since": _lci["sessions_since"],
             "pct_since": _lci.get("pct_since"),
+            "macd_hist_d": _ran_macd_d,
+            "macd_d2": _sv.get("hist_d2"),
+            "macd_d3": _sv.get("hist_d3"),
             "sublabel": _stage_r.get("sublabel"),
             "basing_chip": (_stage_r.get("detail") or {}).get("basing_chip"),
             "launched_chip": (_stage_r.get("detail") or {}).get("launched_chip"),
@@ -1854,6 +1882,10 @@ def main(alpha: dict | None = None) -> dict | None:
             "spot_pct_in_range": (_ws.get("base") or {}).get("spot_pct_in_range"),
             "ret_5d": _ret5d,
             "macd_hist_d": _macd_hist_last,
+            # 2D/3D RSI-MACD histogram off the gate verdict (display-tier glyph feed;
+            # _sv may be None for names outside the verdict map → slots render ·).
+            "macd_d2": (_sv or {}).get("hist_d2"),
+            "macd_d3": (_sv or {}).get("hist_d3"),
             "macd_hist_slope": (
                 1 if (_macd_hist_last is not None and _macd_hist_prev is not None
                       and _macd_hist_last > _macd_hist_prev)

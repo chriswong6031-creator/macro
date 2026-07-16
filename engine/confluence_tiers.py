@@ -50,7 +50,8 @@ MIN_HISTORY = 200
 WEIGHTS = {"T1": 0.9, "T2": 1.0, "T3": 0.6, "T4": 0.4}
 _BLANK = {"tier": None, "weight": 0.0, "sub": None, "eligible": False,
           "bars_to_cross": None, "asof": None, "not_topped": True, "ticks": None,
-          "provisional": False, "htf": {"s1": False, "s2": False}}
+          "provisional": False, "htf": {"s1": False, "s2": False},
+          "hist_d2": None, "hist_d3": None}
 
 # HTF super-tier constants (S1/S2 display-only, rank-neutral, 2026-07-06)
 # Frozen per research/signal_engine/HTF_SUPER_TIERS_ADJUDICATION_AND_PREREG.md Part 2.
@@ -241,6 +242,19 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             nt_raw = ~((k3_d >= OB) | (d3_d >= OB) | (k3_d < d3_d) | (m3_d < s3_d))
             not_topped = bool(hysteretic_not_topped(nt_raw, confirm=confirm).iloc[-1])
 
+        # Display-tier 2D/3D RSI-MACD histogram as of the latest daily bar — the same m−s
+        # spreads the tier legs read, exposed (incl. on blank returns) so boards can render
+        # D/2D/3D direction glyphs. Sign is the contract; NaN warmup → None. Never a gate,
+        # rank or stage input here.
+        def _hist_last(m_s, s_s):
+            try:
+                h = float(m_s.iloc[last]) - float(s_s.iloc[last])
+                return round(h, 4) if np.isfinite(h) else None
+            except Exception:
+                return None
+        hist_d2 = _hist_last(m2_d, s2_d)
+        hist_d3 = _hist_last(m3_d, s3_d)
+
         # 3D-tick age of the operative buy arrow: the §7 take/pending DATE if supplied, else the
         # raw 3D RSI-MACD cross. Exposed on every return (incl. blank) so the caller can age a
         # pending master too. 0 = arrow on the latest 3D bar; 1 = one tick (3 days) ago.
@@ -248,7 +262,7 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         cross3_date = di[int(idx3[-1])] if len(idx3) else None
         t1_ticks = _ticks_since(sk3, take_date if take_date is not None else cross3_date)
         blank = dict(_BLANK, asof=str(di[last].date()), not_topped=not_topped, ticks=t1_ticks,
-                     htf=htf)
+                     htf=htf, hist_d2=hist_d2, hist_d3=hist_d3)
         if not not_topped:
             return blank                                # topped/rolled-over: never a fresh buy
 
@@ -306,6 +320,7 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             # only T3 carries the flag (calibration/provisional_replay.json repaint.by_tier).
             "provisional": tier == "T3",
             "htf": htf,   # S1/S2 display-only badges (rank-neutral)
+            "hist_d2": hist_d2, "hist_d3": hist_d3,   # display-only glyph feed
         }
     except Exception:
         return dict(_BLANK)
