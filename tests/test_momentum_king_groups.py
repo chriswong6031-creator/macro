@@ -162,3 +162,25 @@ def test_absent_loaders_are_safe(monkeypatch):
     closes = _long_closes(["A", "B"], n=200)
     assert bmk._build_theme_groups(closes, {}) == ({}, {})
     assert bmk._build_subindustry_groups(closes, {}) == ({}, {})
+
+
+def test_cohort_breadth_counts_confluence_bull_members():
+    # AAA is confluence-bull (legs 3), BBB is not (legs 1) → cohort breadth 1/2, display-only
+    cache = {"AAA": _onset(), "BBB": _onset(trend_legs=1)}
+    by_group = {"G": {"n": 5, "leaders": [_rec("AAA", 3.0), _rec("BBB", 0.4)]}}
+    rows = _assemble_groups(by_group, pd.DataFrame(), label_key="theme",
+                            onset_cache=cache, **_COMMON)
+    b = rows[0]["breadth"]
+    assert b["n_shown"] == 2 and b["n_confluence_bull"] == 1
+    assert b["bull_frac"] == 0.5 and b["authority_tier"] == "display"
+
+
+def test_cohort_breadth_does_not_change_state():
+    # breadth is derived AFTER the state machine — a group's state is identical whether
+    # or not we read breadth (it is a pure display annotation).
+    cache = {"AAA": _onset(), "BBB": _onset(trend_legs=1)}
+    by_group = {"G": {"n": 5, "leaders": [_rec("AAA", 3.0), _rec("BBB", 0.4)]}}
+    rows = _assemble_groups(by_group, pd.DataFrame(), label_key="sector",
+                            onset_cache=cache, **_COMMON)
+    assert rows[0]["state"] == "LEADER_CANDIDATE" and rows[0]["leader"] == "AAA"
+    assert "breadth" in rows[0] and rows[0]["breadth"]["authority_tier"] == "display"

@@ -271,9 +271,19 @@ def _assemble_groups(by_group: dict, closes: pd.DataFrame, *, label_key: str,
             classified.append(m)
 
         st = sector_state(classified, dominance_tau=dominance_tau)
+        # Cohort breadth (display-only witness): of this group's shown leaders, how many
+        # are in a multi-TF confluence uptrend? Distinguishes a lone-spike leader (narrow)
+        # from a broadly-participating cohort (broad). Derived from the already-classified
+        # members AFTER the state machine — it never feeds sector_state, so it annotates
+        # the group but can never change its state (same subordinate-witness discipline).
+        n_shown = len(classified)
+        n_bull = sum(1 for m in classified if (m.get("gates") or {}).get("confluence_bull"))
         row = {label_key: gid, "state": st["state"], "leader": st["leader"],
                "dominance_margin": st["dominance_margin"],
-               "n": int(blk.get("n", len(classified))), "members": st["ranked"]}
+               "n": int(blk.get("n", len(classified))), "members": st["ranked"],
+               "breadth": {"n_shown": n_shown, "n_confluence_bull": n_bull,
+                           "bull_frac": (round(n_bull / n_shown, 3) if n_shown else None),
+                           "authority_tier": "display"}}
         if gid in meta:
             for k, v in meta[gid].items():
                 row.setdefault(k, v)   # merge display meta; never clobber state fields

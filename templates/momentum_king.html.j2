@@ -204,6 +204,11 @@
       <span class="xs muted">n={{ row.n }}</span>
     {% endif %}
 
+    {# Cohort breadth witness (display-only): how many shown leaders are in confluence #}
+    {% if row.breadth is defined and row.breadth is not none and row.breadth.n_shown %}
+      <span class="xs muted" title="{{ t('leaders in a multi-timeframe confluence uptrend — broad vs lone-spike; display-only, does not change state', '处于多周期汇聚上行的领头标的——广度 vs 单标的孤涨；仅供展示，不改变状态') }}">{{ t('breadth', '广度') }} {{ row.breadth.n_confluence_bull }}/{{ row.breadth.n_shown }}</span>
+    {% endif %}
+
     <span class="car">▸</span>
   </div>
   <div class="sector-body">
