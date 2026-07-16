@@ -101,6 +101,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from engine.i18n import tr
+
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
@@ -400,10 +402,10 @@ def assemble_act_now(
                 _bw_row["organ_state"] = _organ_st
                 if _organ_st in ("TURNING", "CONFIRMED"):
                     _bw_row["organ_chip_en"] = f"organ: {_organ_st} (tape)"
-                    _bw_row["organ_chip_zh"] = f"器官：{_organ_st}（纸带）"
+                    _bw_row["organ_chip_zh"] = f"器官：{tr(_organ_st)}（纸带）"
                 else:
                     _bw_row["organ_chip_en"] = f"organ: {_organ_st}"
-                    _bw_row["organ_chip_zh"] = f"器官：{_organ_st}"
+                    _bw_row["organ_chip_zh"] = f"器官：{tr(_organ_st)}"
 
         # Surface NEW baskets from organ (TURNING/CONFIRMED) not already in the lane
         # These are baskets the forward_log Trough+osc rule did not surface but the
@@ -457,7 +459,7 @@ def assemble_act_now(
             _new_bw_row["rel20"] = _rel20
             _new_bw_row["organ_state"] = _org_st
             _new_bw_row["organ_chip_en"] = f"organ: {_org_st} (tape)"
-            _new_bw_row["organ_chip_zh"] = f"器官：{_org_st}（纸带）"
+            _new_bw_row["organ_chip_zh"] = f"器官：{tr(_org_st)}（纸带）"
             bottoming_watch.append(_new_bw_row)
             # Fix 2: register both raw and canonical ids so b-/non-b- variants
             # can't produce duplicate rows across nightly passes
