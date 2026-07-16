@@ -464,7 +464,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
   <div class="big">
     <div class="lead"><span class="l-en">Prevailing narrative — current best place to allocate</span><span class="l-zh">主导叙事 — 当前最佳配置去向</span></div>
     <!-- FT-R11 horizon label: honest framing of the strategic construction (SKIP_D=21, 63/126/252d ensemble) -->
-    <div style="font-size:11px;color:var(--muted);margin:2px 0 4px;font-style:italic"><span class="l-en">Strategic horizon (3–12m): skip-month momentum by construction — this view is deliberately slow. See the Tape strip for the current session.</span><span class="l-zh">战略视角（3–12个月）：结构上使用跳月动量 — 此视图有意放慢。当前交易状态请参阅快速行情区。</span></div>
+    <div style="font-size:11px;color:var(--muted);margin:2px 0 4px;font-style:italic"><span class="l-en">A slow book — ranked on 3–12 month trends with the most recent month deliberately excluded. It reacts over months, not days; scores refresh nightly.</span><span class="l-zh">慢速账本 — 基于3–12个月趋势排名（刻意剔除最近一个月）。它以月为单位反应，而非以日；评分每晚更新。</span></div>
     <div class="name"><span class="l-en">AI Compute &amp; Optics</span><span class="l-zh">AI算力与光模块</span></div>
     <div class="wt"><span class="l-en">Suggested weight</span><span class="l-zh">建议权重</span> <b>25%</b>
       · <span class="l-en">cash</span><span class="l-zh">现金</span> 0%</div>
@@ -504,7 +504,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
 <div class="panel">
   <div class="alloc">
     
-    <div class="arow">
+    <div class="arow" data-sid="cn_ai_compute">
       <span class="nm">#1 <span class="l-en">AI Compute &amp; Optics</span><span class="l-zh">AI算力与光模块</span>
         
         </span>
@@ -512,7 +512,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
       <span class="wv">25%</span>
     </div>
     
-    <div class="arow">
+    <div class="arow" data-sid="cn_pharma_cxo">
       <span class="nm">#3 <span class="l-en">Innovative Pharma &amp; CXO</span><span class="l-zh">创新药与CXO</span>
         <span class="chip hot" style="margin-left:4px"><span class="l-en">crowded</span><span class="l-zh">拥挤</span></span>
         </span>
@@ -520,7 +520,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
       <span class="wv">25%</span>
     </div>
     
-    <div class="arow">
+    <div class="arow" data-sid="cn_robotics">
       <span class="nm">#5 <span class="l-en">Robotics &amp; Automation</span><span class="l-zh">机器人与自动化</span>
         
         </span>
@@ -528,7 +528,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
       <span class="wv">25%</span>
     </div>
     
-    <div class="arow">
+    <div class="arow" data-sid="cn_rare_earth">
       <span class="nm">#6 <span class="l-en">Rare Earth &amp; Magnets</span><span class="l-zh">稀土永磁</span>
         
         </span>
@@ -1084,7 +1084,7 @@ fetch('policy_lever.json',{cache:'no-cache'})
 
 
 <footer>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-16 21:57 UTC<br>
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-16 23:08 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
 <script>
@@ -1162,7 +1162,36 @@ function renderRotAlerts(){
   el.innerHTML=`<div style="display:flex;justify-content:flex-end"><a href="alerts.html" class="muted" style="font-size:11px;text-decoration:underline">${L('Alert Center →','警报中心 →')}</a></div>`+
     evs.map(e=>`<div class="palert"><span class="pdt">${esc((e.ts||'').slice(0,10))}</span><span class="sev-${esc(e.severity)}">${L(esc(e.headline),esc(e.headline_zh||e.headline))}</span></div>`).join('');
 }
-(function(){ function go(){ renderEntries(); renderRiskTime(); renderRotAlerts(); }
+// MLC-W2b: inject mixed-reads / split-view chips on allocation position rows.
+// Fetches stance_matrix.json once; appends a bilingual chip warn to rows whose id matches
+// and agreement is mixed or split. Fail-silent on any fetch/parse error.
+// Chip text ≤2 words per language per DESIGN_DOCTRINE word budget law.
+function renderAllocStanceChips(){
+  fetch('mlcdata/stance_matrix.json').then(function(r){ return r.ok?r.json():null; }).then(function(data){
+    if(!data||!data.rows) return;
+    const byId={};
+    data.rows.forEach(function(r){ if(r&&r.id) byId[r.id]=r; });
+    document.querySelectorAll('.arow[data-sid]').forEach(function(row){
+      const sid=row.getAttribute('data-sid');
+      const entry=byId[sid];
+      if(!entry||!entry.agreement) return;
+      const ag=entry.agreement;
+      if(ag!=='mixed'&&ag!=='split') return;
+      if(row.querySelector('.mlc-stance-chip')) return;
+      const chipEn=ag==='split'?'split view':'mixed reads';
+      const chipZh=ag==='split'?'严重分歧':'观点分歧';
+      const chip=document.createElement('span');
+      chip.className='chip warn mlc-stance-chip';
+      chip.style.marginLeft='4px';
+      chip.setAttribute('data-tip-en',esc(entry.tip_en||''));
+      chip.setAttribute('data-tip-zh',esc(entry.tip_zh||''));
+      chip.innerHTML=`<span class="l-en">${esc(chipEn)}</span><span class="l-zh">${esc(chipZh)}</span>`;
+      const nm=row.querySelector('.nm');
+      if(nm) nm.appendChild(chip); else row.appendChild(chip);
+    });
+  }).catch(function(){/* absent file or fetch error — no chip */});
+}
+(function(){ function go(){ renderEntries(); renderRiskTime(); renderRotAlerts(); try{ renderAllocStanceChips(); }catch(e){} }
   if(document.readyState!=='loading') go(); else document.addEventListener('DOMContentLoaded',go); })();
 </script>
 <script src="ai_desk_thematic.js"></script>

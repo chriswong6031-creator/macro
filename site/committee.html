@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="theme.css">
 <script>
   window.SUPABASE_CFG = {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"};
-  window.COMMITTEE_GENERATED = "2026-07-16 21:17";
+  window.COMMITTEE_GENERATED = "2026-07-16 22:41";
 </script>
 <style>
 * { box-sizing:border-box; }
@@ -102,8 +102,27 @@ h3 { font-size:15px; margin:0 0 8px; }
 body { padding-bottom:56px; }
 
 /* ── Synapse map canvas ── */
-.graph-wrap { position:relative; border-radius:12px; overflow:hidden; background:radial-gradient(ellipse at 50% 40%, color-mix(in srgb,var(--panel2) 70%,#050810) 0%, #050810 100%); }
-[data-theme=light] .graph-wrap { background:radial-gradient(ellipse at 50% 40%, color-mix(in srgb,var(--panel2) 80%,#0a0f1e) 0%, #0a0f1e 100%); }
+/* Deep-space backdrop (both themes — the map is deliberately a dark window even in light mode).
+   Layers top→bottom: vignette, 4 tiled star layers (non-harmonic tile sizes so no visible grid),
+   3 corner nebulas echoing the lobe palette, base depth gradient. Center stays darkest so the
+   core's white glow and low-alpha wiring edges keep contrast. */
+.graph-wrap {
+  position:relative; border-radius:12px; overflow:hidden;
+  background-color:#02030c;
+  background-image:
+    radial-gradient(ellipse 120% 100% at 50% 42%, transparent 58%, rgba(1,2,8,.55) 100%),
+    radial-gradient(1.6px 1.6px at 137px 41px, rgba(230,239,255,.8), transparent 50%),
+    radial-gradient(1.2px 1.2px at 23px 108px, rgba(218,231,255,.6), transparent 50%),
+    radial-gradient(1px 1px at 191px 67px, rgba(214,228,255,.45), transparent 50%),
+    radial-gradient(1px 1px at 79px 152px, rgba(200,216,255,.3), transparent 50%),
+    radial-gradient(ellipse 55% 42% at 14% 8%, rgba(79,97,255,.13), transparent 62%),
+    radial-gradient(ellipse 48% 40% at 87% 12%, rgba(56,189,248,.09), transparent 60%),
+    radial-gradient(ellipse 58% 48% at 80% 98%, rgba(168,85,247,.12), transparent 62%),
+    linear-gradient(180deg, #050818 0%, #02030c 48%, #030410 100%);
+  background-repeat:no-repeat, repeat, repeat, repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size:100% 100%, 347px 347px, 289px 289px, 231px 231px, 173px 173px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--line) 55%,transparent);
+}
 #graph_canvas { width:100%; height:640px; display:block; cursor:grab; touch-action:none; }
 @media(max-width:719px){ #graph_canvas { height:420px; } }
 #graph_canvas:active { cursor:grabbing; }

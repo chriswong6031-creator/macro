@@ -4386,6 +4386,9 @@ body.mx5-dlg-open{ overflow:hidden; }
   display:flex;flex-direction:column;
 }
 [data-theme="light"] .mx5-dlg-panel{
+  /* opaque white in light mode: the frosted translucent fill let the dark
+     backdrop scrim bleed through and read grey — operator wants a clean white
+     popup surface in light mode (dark mode keeps the frosted glass). */
   background:#ffffff;
   border-color:rgba(255,255,255,.6);
   box-shadow:0 32px 96px rgba(0,0,0,.18),
@@ -5578,6 +5581,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </div>
               <div class="mx5-factor-bar-track">
                 <div class="mx5-factor-bar-fill" style="width:85%"></div>
+              </div>
+              
+            </div>
+            
+            
+            <div class="mx5-factor-row">
+              <div class="mx5-factor-header">
+                <span class="mx5-factor-name">
+                  <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
+                </span>
+                <span class="mx5-factor-score">70</span>
+              </div>
+              <div class="mx5-factor-bar-track">
+                <div class="mx5-factor-bar-fill" style="width:70%"></div>
               </div>
               
             </div>
@@ -9318,7 +9335,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">GLD</span>
         
-        <span class="mx5-ai-ticker-pill">GS</span>
+        <span class="mx5-ai-ticker-pill">XLF</span>
+        
+        <span class="mx5-ai-ticker-pill">UNH</span>
         
         <span class="mx5-ai-ticker-pill">UNH</span>
         
@@ -10707,8 +10726,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             <div class="mx2-sent-row" id="froth-fragility">
               <div class="mx2-sent-key"><span class="l-en">Froth &amp; Fragility</span><span class="l-zh">狂热与脆弱</span></div>
-              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:20.8%;background:var(--muted)"></div></div>
-              <div class="mx2-sent-val"><span class="num">21</span>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:23.7%;background:var(--muted)"></div></div>
+              <div class="mx2-sent-val"><span class="num">24</span>
                 <span class="l-en">Calm</span><span class="l-zh">平静</span>
                 <span class="l-en muted"> provisional</span><span class="l-zh muted"> 暂定</span>
               </div>
@@ -11071,8 +11090,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-              <span class="nb-htitle"><span class="l-en">Netflix stock falls as company narrows guidance, says it will give fewer engagement updates</span><span class="l-zh">Netflix stock falls as company narrows guidance, says it will give fewer engagement updates</span></span>
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">Netflix stock falls as earnings forecast disappoints, company says it will give fewer engagement updates</span><span class="l-zh">Netflix stock falls as earnings forecast disappoints, company says it will give fewer engagement updates</span></span>
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://www.cnbc.com/2026/07/16/netflix-nflx-earnings-q2-2026.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
@@ -11115,11 +11134,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nb-htitle"><span class="l-en">Omnicom declares $0.80 dividend</span><span class="l-zh">Omnicom declares $0.80 dividend</span></span>
+              <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+              <span class="nb-htitle"><span class="l-en">Prologis raises 2026 core FFO outlook to $6.22-$6.30 as development starts target $5.5B-$6.5B</span><span class="l-zh">Prologis raises 2026 core FFO outlook to $6.22-$6.30 as development starts target $5.5B-$6.5B</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614719-omnicom-declares-0_80-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614731-prologis-raises-2026-core-ffo-outlook-to-6_22-6_30-as-development-starts-target-5_5b-6_5b?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11138,10 +11157,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Cycurion receives delisting determination letter from Nasdaq</span><span class="l-zh">Cycurion receives delisting determination letter from Nasdaq</span></span>
+              <span class="nb-htitle"><span class="l-en">CES Energy Solutions gets TSX approval for renewed 18.1M-share NCIB</span><span class="l-zh">CES Energy Solutions gets TSX approval for renewed 18.1M-share NCIB</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614712-cycurion-receives-delisting-determination-letter-from-nasdaq?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614727-ces-energy-solutions-gets-tsx-approval-for-renewed-181m-share-ncib?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11149,10 +11168,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Labrador Resources adopts semi-annual financial reporting under pilot program</span><span class="l-zh">Labrador Resources adopts semi-annual financial reporting under pilot program</span></span>
+              <span class="nb-htitle"><span class="l-en">Alphabet’s stock falls as Gemini delays suggest Google is struggling to keep up in the AI race</span><span class="l-zh">Alphabet’s stock falls as Gemini delays suggest Google is struggling to keep up in the AI race</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614724-labrador-resources-adopts-semi-annual-financial-reporting-under-pilot-program?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.marketwatch.com/story/alphabets-stock-falls-as-gemini-delays-suggest-google-is-struggling-to-keep-up-in-the-ai-race-4d821205?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11160,10 +11179,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Lockheed Martin unit wins $101.8M South Korea defense deal: Check details</span><span class="l-zh">Lockheed Martin unit wins $101.8M South Korea defense deal: Check details</span></span>
+              <span class="nb-htitle"><span class="l-en">Citizens outlines 4Q ’26 NIM of 3.22%-3.27% while targeting $450M Reimagine the Bank benefit exiting ’28</span><span class="l-zh">Citizens outlines 4Q ’26 NIM of 3.22%-3.27% while targeting $450M Reimagine the Bank benefit exiting ’28</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614722-lockheed-martin-unit-wins-1018m-south-korea-defense-deal-check-details?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614730-citizens-outlines-4q-26-nim-of-3_22-percentminus-3_27-percent-while-targeting-450m-reimagine?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -13897,9 +13916,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-16 21:17 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-16 22:41 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-16 21:17 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-16 22:41 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
