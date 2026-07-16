@@ -11,6 +11,7 @@ Config block 'live_flow:' in config.yml:
   etf_floor:      1000000 # $ gross premium floor for ETF anchors
   name_floor:     250000  # $ gross premium floor for single names
   retention_hours: 24     # trailing window for feed events
+  state_retention_days: 5 # local day_state files kept (newest N sessions; current day never pruned)
 
 Usage:
   # Single cycle (smoke / testing)
@@ -40,6 +41,7 @@ import gc
 import json
 import logging
 import os
+import re
 import resource
 import sys
 import time
@@ -529,6 +531,81 @@ def _save_day_state(session_date: str, state: dict) -> None:
         tmp.rename(p)
     except Exception as e:  # noqa: BLE001
         log.warning("poller: could not save day state: %s", e)
+
+
+# ── day-state retention sweep ────────────────────────────────────────────────
+# day_state files run 50-70 MB per session and R2 archive pruning does not cover
+# them — without a local sweep they accumulate unbounded (~500 MB/2wk measured).
+
+DAY_STATE_RETENTION_DAYS_DEFAULT = 5
+_DAY_STATE_RE = re.compile(r"^day_state_(\d{4}-\d{2}-\d{2})(?:\.tmp)?\.json$")
+
+
+def _select_prunable_day_states(
+    filenames: list[str],
+    session_date: str,
+    keep_days: int,
+) -> list[str]:
+    """Return the day_state filenames that fall outside the retention window.
+
+    Pure selection (no I/O).  Keeps the `keep_days` most recent embedded dates
+    present in `filenames` — files only exist for trading sessions, so the count
+    is in sessions, not calendar days.  The current session's files are NEVER
+    selected regardless of the window.  Filenames that don't match the
+    day_state pattern or carry an invalid date are never selected (and don't
+    consume keep slots).  Crash-residue .tmp.json files follow the same date
+    rule as their clean counterparts.
+    """
+    keep_days = max(1, int(keep_days))
+    dated: list[tuple[str, str]] = []
+    for fn in filenames:
+        m = _DAY_STATE_RE.match(Path(fn).name)
+        if not m:
+            continue
+        try:
+            date.fromisoformat(m.group(1))
+        except ValueError:
+            continue
+        dated.append((m.group(1), fn))
+    keep_dates = set(sorted({d for d, _ in dated}, reverse=True)[:keep_days])
+    keep_dates.add(session_date)
+    return sorted(fn for d, fn in dated if d not in keep_dates)
+
+
+def _prune_day_states(session_date: str, cfg: dict) -> None:
+    """Delete local day_state files older than the newest state_retention_days
+    sessions (default 5).  The current session's file is never touched; every
+    deletion is logged.  INERT: never raises.
+    """
+    try:
+        keep_days = int(cfg.get("state_retention_days", DAY_STATE_RETENTION_DAYS_DEFAULT))
+        sdir = _state_dir()
+        names = sorted(p.name for p in sdir.glob("day_state_*") if p.is_file())
+        doomed = _select_prunable_day_states(names, session_date, keep_days)
+        if not doomed:
+            log.debug("poller: day_state retention sweep — nothing to prune (keep=%d sessions)",
+                      keep_days)
+            return
+        n_pruned, freed = 0, 0
+        for name in doomed:
+            p = sdir / name
+            try:
+                size = p.stat().st_size
+                p.unlink()
+                n_pruned += 1
+                freed += size
+                log.info("poller: pruned day_state %s (%.1f MB)", name, size / (1024 * 1024))
+            except FileNotFoundError:
+                pass
+            except Exception as e:  # noqa: BLE001
+                log.warning("poller: could not prune day_state %s: %s", name, e)
+        log.info(
+            "poller: day_state retention sweep — pruned %d file(s), freed %.1f MB "
+            "(keep=%d sessions)",
+            n_pruned, freed / (1024 * 1024), keep_days,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("poller: day_state retention sweep failed: %s", e)
 
 
 # ── JSON file writers ─────────────────────────────────────────────────────────
@@ -1290,6 +1367,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         log.warning("poller: R2_BUCKET not set — uploads will be skipped")
         s3 = None
 
+    # Retention sweep — prune day_state files older than state_retention_days
+    # sessions (default 5); the current session's file is never touched.
+    _prune_day_states(session_date, cfg)
+
     # Day state (persist emitted_ids, contract_vol, etc.)
     day_state  = _load_day_state(session_date)
     watermarks: dict = {}
@@ -1525,6 +1606,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
 
         # --rth-only: exit at end of each cycle once outside RTH
         if args.rth_only and not _within_rth():
+            _prune_day_states(session_date, cfg)   # end-of-session sweep
             log.info("poller: --rth-only outside RTH window — exiting cleanly")
             return 0
 
