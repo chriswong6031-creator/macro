@@ -14,8 +14,11 @@ Outputs:
 
 Kill-switch: config momentum_king.enabled: false → noindex stub at site/momentum_king.html, skip JSON.
 Display-tier: zero data/ writes; fail-soft; always exits 0.
-Subordinate witnesses (net-inflow, options) are MK-P2 — the hooks exist here but
-are left unpopulated in MK-P1 so the board never carries a false witness zero.
+Subordinate witnesses (MK-P2): net-inflow from flow_leaders.v1 (site/flowleaders/
+leaders.json) + options net-flow tide from options_flow.context.v1 (site/flow/
+mastermind.json), scoped to the leader tickers. Signing-free fields only; they
+annotate a leader, never create/kill one (engine invariant). Absent source → the
+witness is simply omitted (never a false zero).
 """
 from __future__ import annotations
 
@@ -60,6 +63,10 @@ _THEME_MIN_MEMBERS = 5     # curated baskets are small & concentrated (Mag7 = 7)
 _SUB_MIN_MEMBERS = 6       # sub-industry peer sets — matches residual_alpha min_sector
 _GROUP_MIN_ROWS = 147      # default form(252)/skip(21) need ≥147 non-NaN residual rows
 _MAX_GROUPS = 60           # render-budget cap per family (one residual pass each)
+
+# ── MK-P2 subordinate-witness sources (EOD-safe, committed nightly artifacts) ──
+_FLOW_LEADERS_JSON = ROOT / "site" / "flowleaders" / "leaders.json"   # net-inflow (flow_leaders.v1)
+_OPTIONS_CTX_JSON = ROOT / "site" / "flow" / "mastermind.json"        # options tide (options_flow.context.v1)
 
 
 # ── Kill-switch stub ──────────────────────────────────────────────────────────
@@ -239,6 +246,104 @@ def _build_subindustry_groups(closes, ns_real, *, min_members=_SUB_MIN_MEMBERS,
         return {}, {}
 
 
+def _leader_tickers(residual: dict, by_theme: dict, by_sub: dict) -> set:
+    """Union of every leader-row ticker across all three granularities — the names
+    actually rendered in the member tables. Witnesses are scoped to these."""
+    out: set = set()
+    groups = list((residual or {}).get("by_sector", {}).values())
+    groups += list((by_theme or {}).values()) + list((by_sub or {}).values())
+    for blk in groups:
+        for rec in blk.get("leaders", []):
+            t = rec.get("ticker")
+            if t:
+                out.add(t)
+    return out
+
+
+# net-inflow: signing-FREE magnitude/frequency reads only. net_premium_mn and
+# B5_flow_inflect are BANNED (~-soft direction).
+_FLOW_SAFE = ("signing_source", "recurrence_count", "flow_z", "rel_volume",
+              "A7_vol_confirm", "A1_flow_recur", "A2_flow_z_hot", "ts_breadth_count",
+              "zerodte_dominated")
+
+
+def _build_flow_witness(leader_tickers: set) -> dict:
+    """{ticker -> net-inflow witness} from the shipped flow_leaders.v1 desk. Absent-safe:
+    missing file/ticker/field → omitted (never a false zero). Signing-free only; the
+    engine force-sets authority_tier='display' at attach, so we never set it here."""
+    try:
+        if not _FLOW_LEADERS_JSON.exists():
+            return {}
+        payload = json.loads(_FLOW_LEADERS_JSON.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_momentum_king: flow witness load failed: %s", e)
+        return {}
+    index: dict = {}
+    for bk in ("board_a", "board_b"):
+        for rec in payload.get(bk) or []:
+            t = rec.get("ticker")
+            if t and t not in index:
+                index[t] = rec
+    etf_index = {r.get("ticker"): r for r in (payload.get("etf_strip") or []) if r.get("ticker")}
+    stale = bool(payload.get("stale", False))
+    cold = bool(payload.get("cold_start", False))
+    out: dict = {}
+    for t in leader_tickers:
+        rec = index.get(t)
+        if rec is None:
+            erec = etf_index.get(t)
+            if erec is None:
+                continue
+            w = {"source": "flow_leaders.v1/etf_strip", "stale": stale}
+            if erec.get("zerodte_dominated") is not None:
+                w["zerodte_dominated"] = erec.get("zerodte_dominated")
+            out[t] = w
+            continue
+        w = {k: rec.get(k) for k in _FLOW_SAFE if rec.get(k) is not None}
+        w["source"] = "flow_leaders.v1"
+        w["stale"] = stale        # meaningful even when False → set AFTER the None-prune
+        w["cold_start"] = cold
+        out[t] = w
+    return out
+
+
+# options: signing-FREE ΔOI fields only. signed_pc / tone / verdict / gamma_flow_bn /
+# delta_flow_mn are BANNED (direction-bearing). net_premium_mn → abs magnitude only.
+_OPT_SAFE = ("net_doi", "doi_pc", "positioning_lean", "zerodte_share", "fresh_contracts")
+
+
+def _build_options_context(leader_tickers: set) -> dict:
+    """{ticker -> options net-flow tide witness} from options_flow.context.v1. Absent-safe.
+    Signing-free fields only; net_premium_mn surfaced as ABS magnitude under
+    net_premium_mn_mag with direction_reliable=False (~-soft) — no signed value ever escapes."""
+    try:
+        if not _OPTIONS_CTX_JSON.exists():
+            return {}
+        payload = json.loads(_OPTIONS_CTX_JSON.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_momentum_king: options context load failed: %s", e)
+        return {}
+    names = payload.get("names") or {}
+    asof = payload.get("asof")
+    out: dict = {}
+    for t in leader_tickers:
+        rec = names.get(t)
+        if rec is None:
+            continue
+        w = {k: rec.get(k) for k in _OPT_SAFE if rec.get(k) is not None}
+        npm = rec.get("net_premium_mn")
+        if not w and npm is None:
+            continue          # nothing useful → omit (no bare chip)
+        w["source"] = "options_flow.context.v1"
+        if asof is not None:
+            w["asof"] = asof
+        if npm is not None:
+            w["net_premium_mn_mag"] = abs(float(npm))   # MAGNITUDE ONLY — sign never escapes
+        w["direction_reliable"] = False                  # meaningful False → set after prune
+        out[t] = w
+    return out
+
+
 def build() -> dict | None:
     if not _enabled():
         _write_noindex_stub()
@@ -271,12 +376,20 @@ def build() -> dict | None:
     by_theme, theme_meta = _build_theme_groups(closes, ns_real)
     by_sub, sub_meta = _build_subindustry_groups(closes, ns_real)
 
+    # MK-P2 subordinate witnesses — net-inflow (flow_leaders.v1) + options net-flow
+    # tide (options_flow.context.v1), scoped to the leader tickers actually rendered.
+    # Display-tier: they annotate a leader, never create/kill one (engine invariant).
+    leaders = _leader_tickers(residual, by_theme, by_sub)
+    flow_witness = _build_flow_witness(leaders)
+    options_ctx = _build_options_context(leaders)
+
     board = build_board(
         residual, closes,
         as_of=residual.get("as_of"),
         stale=_is_stale(closes),
         by_sub_industry=by_sub, sub_meta=sub_meta,
         by_theme=by_theme, theme_meta=theme_meta,
+        flow_witness=flow_witness, options_ctx=options_ctx,
     )
     if not board:
         log.warning("build_momentum_king: empty board")

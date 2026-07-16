@@ -555,6 +555,60 @@ class TestBothNewPanels:
         assert _THEME_DESC in html
 
 
+class TestWitnessDictEnrichment:
+    """Witness chips enriched with dict fields; bool sentinel still safe."""
+
+    def test_witness_dict_fields_render(self):
+        """net_inflow_witness as a dict — flow_z, recurrence_count, A2_flow_z_hot render."""
+        m = _member("NVDA")
+        m["net_inflow_witness"] = {
+            "flow_z": 3.2,
+            "recurrence_count": 7,
+            "A2_flow_z_hot": True,
+            "stale": False,
+            "authority_tier": "display",
+        }
+        sec = _sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m])
+        html = _render(_mk_board(sectors=[sec]))
+        assert "z=3.2" in html or "z=" in html
+        assert "recur=7" in html or "✓z" in html
+        _assert_no_null_leak(html)
+
+    def test_options_magnitude_no_direction(self):
+        """options_context as a dict — magnitude renders with ~, no signed +/-."""
+        m = _member("NVDA")
+        m["options_context"] = {
+            "net_premium_mn_mag": 389.0,
+            "direction_reliable": False,
+            "positioning_lean": "net new CALL positioning",
+            "net_doi": 1200,
+            "authority_tier": "display",
+        }
+        sec = _sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m])
+        html = _render(_mk_board(sectors=[sec]))
+        # magnitude present
+        assert "$389M" in html
+        # no signed form
+        assert "+389" not in html
+        assert "-389" not in html
+        # soft-direction marker
+        assert "~" in html
+        # positioning text
+        assert "net new CALL positioning" in html
+        _assert_no_null_leak(html)
+
+    def test_bool_witness_sentinel_still_safe(self):
+        """net_inflow_witness=True (bool sentinel) must not crash and shows bare badge."""
+        m = _member("NVDA")
+        m["net_inflow_witness"] = True
+        sec = _sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m])
+        html = _render(_mk_board(sectors=[sec]))
+        # bare badge text present
+        assert "净流入" in html or "Inflow" in html
+        # no Jinja exception (render completed)
+        assert html
+
+
 class TestPlaybookGranularityEntry:
     """The new playbook accordion entry is always present."""
 

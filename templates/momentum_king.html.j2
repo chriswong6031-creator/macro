@@ -25,12 +25,30 @@
 <tr{% if m.eligible is defined and m.eligible is not none and not m.eligible %} class="ineligible"{% endif %}>
   <td>
     <a href="us_stocks.html#{{ m.ticker }}" class="tk">{{ m.ticker }}</a>
-    {# Optional future witnesses — render ONLY if present #}
+    {# ── Witness chips — subordinate display context only; never promote a candidate ── #}
     {% if m.net_inflow_witness is defined and m.net_inflow_witness %}
       <span class="badge badge-green" style="margin-left:4px;">{{ t('Inflow', '净流入') }}</span>
+      {% if m.net_inflow_witness is mapping %}
+        {% set w = m.net_inflow_witness %}
+        {% if w.flow_z is defined and w.flow_z is not none %}<span class="muted xs"> z={{ '%.1f'|format(w.flow_z) }}</span>{% endif %}
+        {% if w.recurrence_count is defined and w.recurrence_count is not none %}<span class="muted xs"> recur={{ w.recurrence_count|int }}</span>{% endif %}
+        {% if w.rel_volume is defined and w.rel_volume is not none %}<span class="muted xs"> rvol={{ '%.1f'|format(w.rel_volume) }}</span>{% endif %}
+        {% if w.A2_flow_z_hot is defined and w.A2_flow_z_hot %}<span class="muted xs">✓z</span>{% endif %}
+        {% if w.A1_flow_recur is defined and w.A1_flow_recur %}<span class="muted xs">✓recur</span>{% endif %}
+        {% if w.A7_vol_confirm is defined and w.A7_vol_confirm %}<span class="muted xs">✓vol</span>{% endif %}
+        {% if w.zerodte_dominated is defined and w.zerodte_dominated %}<span class="muted xs">0DTE-heavy</span>{% endif %}
+      {% endif %}
     {% endif %}
     {% if m.options_context is defined and m.options_context %}
       <span class="badge badge-muted" style="margin-left:4px;">{{ t('Options', '期权') }}</span>
+      {% if m.options_context is mapping %}
+        {% set o = m.options_context %}
+        {% if o.positioning_lean is defined and o.positioning_lean is not none %}<span class="muted xs"> {{ o.positioning_lean }}</span>{% endif %}
+        {% if o.net_doi is defined and o.net_doi is not none %}<span class="muted xs"> ΔOI={{ o.net_doi|int }}</span>{% endif %}
+        {% if o.fresh_contracts is defined and o.fresh_contracts is not none %}<span class="muted xs"> fresh={{ o.fresh_contracts|int }}</span>{% endif %}
+        {% if o.zerodte_share is defined and o.zerodte_share is not none %}<span class="muted xs"> 0DTE={{ '%.0f'|format(o.zerodte_share * 100) }}%</span>{% endif %}
+        {% if o.net_premium_mn_mag is defined and o.net_premium_mn_mag is not none %}<span class="muted xs">${{ '%.0f'|format(o.net_premium_mn_mag) }}M{% if not o.direction_reliable %} ~{% endif %}</span>{% endif %}
+      {% endif %}
     {% endif %}
   </td>
   <td>
@@ -287,7 +305,7 @@
 {% endif %}
 
 <div class="banner banner-source">
-  {{ t('Display-only · no authority surface · K-of-N boolean, not a score · witnesses never promote a candidate', '仅供展示 · 不输入任何权威面 · K/N布尔值，非评分 · 见证指标不得晋升候选资格') }}
+  {{ t('Display-only · no authority surface · K-of-N boolean, not a score · witnesses never promote a candidate · ~ = options direction is soft (magnitude leads); positioning is ΔOI, T-2', '仅供展示 · 不输入任何权威面 · K/N布尔值，非评分 · 见证指标不得晋升候选资格 · ~ = 期权方向偏软（幅度先行）；持仓为未平仓变动，T-2') }}
 </div>
 
 {# ── Top Candidates ───────────────────────────────────────────────── #}
