@@ -1739,9 +1739,9 @@
   {% if mode == 'stocks' and latest.mag7_regime %}{{ mag7_panel(latest.mag7_regime) }}{% endif %}
   {% endif %}
   {# Leadership Board — MLC-W1: seven megacap tiles + sector RS rank strip.
-     Renders on BOTH us_stocks (mode='stocks') and macro (mode!='stocks').
+     us_stocks ONLY (removed from macro.html per operator 2026-07-15).
      Fail-open: absent when payload is None (stores not yet built). #}
-  {% if leadership_board %}{{ lboard(leadership_board) }}{% endif %}
+  {% if mode == 'stocks' and leadership_board %}{{ lboard(leadership_board) }}{% endif %}
 
   {% if mode != 'stocks' %}
   <!-- ======================= HEADER ======================= -->
