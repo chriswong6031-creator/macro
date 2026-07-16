@@ -1,7 +1,7 @@
 {
   "schema": "theme_clinical.v1",
-  "as_of": "2026-07-15",
-  "generated_at": "2026-07-15T06:52:38.781927+00:00",
+  "as_of": "2026-07-16",
+  "generated_at": "2026-07-16T05:48:02.634187+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -18,7 +18,7 @@
     "total_themes": 3,
     "themes_with_data": 3,
     "total_modalities_configured": 9,
-    "total_studies_stored": 2454,
+    "total_studies_stored": 2455,
     "parquet_absent": false
   },
   "themes": {
@@ -26,9 +26,9 @@
       "theme_id": "diagnostics_lifesci",
       "n_modalities_configured": 6,
       "n_modalities_with_data": 6,
-      "n_studies_total": 1808,
+      "n_studies_total": 1809,
       "year_month_max": "2026-07",
-      "theme_registration_yoy_pct": 15.93,
+      "theme_registration_yoy_pct": 15.67,
       "theme_registration_velocity_read": "accelerating",
       "theme_registration_magnitude_band": "moderate",
       "n_phase3_trailing12m": 31,
@@ -86,19 +86,19 @@
         },
         "adc_antibody_drug_conjugate": {
           "modality_id": "adc_antibody_drug_conjugate",
-          "n_studies_total": 414,
+          "n_studies_total": 415,
           "year_month_max": "2026-07",
-          "registration_yoy_pct": 23.38,
+          "registration_yoy_pct": 21.79,
           "registration_velocity_read": "accelerating",
           "registration_magnitude_band": "moderate",
-          "enrollment_yoy_pct": 51.3,
+          "enrollment_yoy_pct": 49.97,
           "enrollment_velocity_read": "accelerating",
           "n_phase3_trailing12m": 15,
           "phase_distribution_read": "high_late_stage",
           "phase_distribution_share_phase2plus_recent": 0.6211,
           "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
-          "coverage_note": "414 INDUSTRY-sponsored studies; most recent registration: 2026-07; 97 months of registration data",
-          "coverage_note_zh": "共414个行业赞助研究；最近注册月份：2026-07；97个月的注册数据",
+          "coverage_note": "415 INDUSTRY-sponsored studies; most recent registration: 2026-07; 97 months of registration data",
+          "coverage_note_zh": "共415个行业赞助研究；最近注册月份：2026-07；97个月的注册数据",
           "expected_read": "rising phase-3 = nearing monetization"
         },
         "car_t_cell_therapy": {
@@ -136,8 +136,8 @@
           "expected_read": "rising registrations = mRNA platform capital commitment"
         }
       },
-      "coverage_note": "6/6 modalities have data; 1808 total INDUSTRY-sponsored studies; most recent: 2026-07",
-      "coverage_note_zh": "6个模态中6个有数据；共1808个行业赞助研究；最新月份：2026-07"
+      "coverage_note": "6/6 modalities have data; 1809 total INDUSTRY-sponsored studies; most recent: 2026-07",
+      "coverage_note_zh": "6个模态中6个有数据；共1809个行业赞助研究；最新月份：2026-07"
     },
     "glp1_obesity": {
       "theme_id": "glp1_obesity",

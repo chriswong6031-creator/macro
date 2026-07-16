@@ -1,7 +1,7 @@
 {
   "schema": "discovery_confluence.v1",
-  "as_of": "2026-07-14",
-  "generated_at": "2026-07-15T06:52:39.614593+00:00",
+  "as_of": "2026-07-15",
+  "generated_at": "2026-07-16T05:48:03.440460+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -15,36 +15,10 @@
   },
   "honesty_header": "Two-source confluence: EDGAR phrase acceleration + GitHub adoption velocity. Both legs must accelerate for a confluence flag. Detection is noisy — ~half of flags are real. Early-entry edge ≈ 0. Candidate for curated review only — never auto-promoted.",
   "sources": {
-    "phrase_velocity": "/Users/chriswong/actions-runner-1/_work/macro/macro/site/basketdata/phrase_velocity.json",
-    "github_adoption": "/Users/chriswong/actions-runner-1/_work/macro/macro/site/basketdata/github_adoption.json"
+    "phrase_velocity": "/Users/chriswong/actions-runner-2/_work/macro/macro/site/basketdata/phrase_velocity.json",
+    "github_adoption": "/Users/chriswong/actions-runner-2/_work/macro/macro/site/basketdata/github_adoption.json"
   },
-  "confluence_candidates": [
-    {
-      "theme_id": "ai_semiconductors",
-      "baskets": [
-        "ai_semiconductors",
-        "ai_infra"
-      ],
-      "phrase_accelerating": true,
-      "adoption_positive": true,
-      "top_phrases": [
-        {
-          "phrase": "on allocation",
-          "recent_count": 2,
-          "prior_count": 1,
-          "recent_filers": 2,
-          "prior_filers": 1,
-          "velocity_z": 1.0,
-          "is_affinity_phrase": true
-        }
-      ],
-      "basket_z_scores": {
-        "ai_semiconductors": 0.621,
-        "ai_infra": 0.621
-      },
-      "confidence": "both_legs"
-    }
-  ],
+  "confluence_candidates": [],
   "single_leg_phrase": [
     {
       "theme_id": "ag_fertilizer",
@@ -68,15 +42,6 @@
           "recent_filers": 2,
           "prior_filers": 1,
           "velocity_z": 1.0,
-          "is_affinity_phrase": false
-        },
-        {
-          "phrase": "on allocation",
-          "recent_count": 5,
-          "prior_count": 4,
-          "recent_filers": 4,
-          "prior_filers": 4,
-          "velocity_z": 0.25,
           "is_affinity_phrase": false
         }
       ],
@@ -106,15 +71,6 @@
           "prior_filers": 1,
           "velocity_z": 1.0,
           "is_affinity_phrase": false
-        },
-        {
-          "phrase": "on allocation",
-          "recent_count": 5,
-          "prior_count": 4,
-          "recent_filers": 4,
-          "prior_filers": 4,
-          "velocity_z": 0.25,
-          "is_affinity_phrase": false
         }
       ],
       "basket_z_scores": {},
@@ -143,15 +99,6 @@
           "prior_filers": 1,
           "velocity_z": 1.0,
           "is_affinity_phrase": false
-        },
-        {
-          "phrase": "on allocation",
-          "recent_count": 5,
-          "prior_count": 4,
-          "recent_filers": 4,
-          "prior_filers": 4,
-          "velocity_z": 0.25,
-          "is_affinity_phrase": false
         }
       ],
       "basket_z_scores": {},
@@ -159,6 +106,21 @@
     }
   ],
   "single_leg_adoption": [
+    {
+      "theme_id": "ai_semiconductors",
+      "baskets": [
+        "ai_semiconductors",
+        "ai_infra"
+      ],
+      "phrase_accelerating": false,
+      "adoption_positive": true,
+      "top_phrases": [],
+      "basket_z_scores": {
+        "ai_semiconductors": 0.509,
+        "ai_infra": 0.509
+      },
+      "confidence": "adoption_only"
+    },
     {
       "theme_id": "cybersecurity",
       "baskets": [
@@ -168,7 +130,7 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "cybersecurity": 4.455
+        "cybersecurity": 4.011
       },
       "confidence": "adoption_only"
     }
@@ -196,11 +158,11 @@
     }
   ],
   "summary": {
-    "both_legs_count": 1,
+    "both_legs_count": 0,
     "single_leg_phrase_count": 3,
-    "single_leg_adoption_count": 1,
+    "single_leg_adoption_count": 2,
     "novel_phrase_count": 2,
     "themes_evaluated": 18,
-    "note": "1 themes show confluence (both legs accelerating). 3 show phrase-only acceleration. 1 show adoption-only positive. 2 novel phrase clusters with no theme home."
+    "note": "0 themes show confluence (both legs accelerating). 3 show phrase-only acceleration. 2 show adoption-only positive. 2 novel phrase clusters with no theme home."
   }
 }
