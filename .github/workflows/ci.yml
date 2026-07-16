@@ -156,6 +156,14 @@ on:
       # MLC-W1 Leadership Board: template partial + build_site view + radar builder.
       - "templates/_leadership_board.html.j2"
       - "tests/test_leadership_board.py"
+      # MLC-W2b stance matrix + conflicted shelf: builder, theme_scoring demotion, templates.
+      - "scripts/build_stance_matrix.py"
+      - "engine/theme_scoring.py"
+      - "templates/baskets.html.j2"
+      - "templates/baskets_desk.js"
+      - "templates/allocation.html.j2"
+      - "tests/test_stance_matrix.py"
+      - "tests/test_theme_scoring_conflicted.py"
       # FL-D FC-R5: cohort flow chips on turn surfaces + cohort_flow.v1 forward ledger.
       - "engine/basket_turn_watch.py"
       - "templates/basket_detail.html.j2"
@@ -887,6 +895,8 @@ jobs:
           tests/test_ignition_persistence.py
           tests/test_mag7_panel.py
           tests/test_leadership_board.py
+          tests/test_stance_matrix.py
+          tests/test_theme_scoring_conflicted.py
           tests/test_index_momentum.py
           tests/test_cohort_flow_chips.py
           tests/test_statement_tape.py

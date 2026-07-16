@@ -1107,6 +1107,14 @@ jobs:
         # which could run inside cl_china only because both its deps lived in that one cluster).
         # Additive (the builder returns 0 on any failure), so it can never break the deploy.
         run: python -m scripts.build_sector_central
+      - name: MLC W2b stance matrix (build_stance_matrix)
+        # MLC-W2b coherence layer: per-basket stance matrix collecting sector/theme/confluence/
+        # allocation/m7c verdicts mapped to a signed tier scale (-2..+2). Reads
+        # baskets.json (build_baskets), sector_central.json (build_sector_central above),
+        # basket_confluence.json, allocation.json, and mag7_regime latest.json.
+        # Output site/mlcdata/stance_matrix.json rides the existing `git add data/ site/` commit.
+        # Additive (always exits 0 — never breaks the deploy).
+        run: python -m scripts.build_stance_matrix || echo "::warning::build_stance_matrix non-fatal failure"
       - name: FTR W9 grading pack (basket_turn.v1 cohort claims + tape_disagreement.v1)
         # basket_turn.v1: one qledger claim per IGNITION-day cohort (equal-weight basket EW vs
         # SPY, 21d horizon, expected-NULL forward meter per FT-R9). Reads
