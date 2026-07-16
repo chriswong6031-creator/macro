@@ -1187,6 +1187,9 @@ def macro_headlines(today: date | None = None) -> dict | None:
             "top_channels": synth.get("top_channels", []),
             "top_tickers": synth.get("top_tickers", []),
             "synthesis": synth,
+            # bilingual chip labels for the news surfaces — raw channel/tier slugs
+            # never render on glance surfaces (doctrine Law 2)
+            "channel_label": CHANNEL_LABEL, "tier_label": TIER_LABEL,
             "rejected": _rejected,
             "degraded_reason": (reason or official_reason or news_reason) if not kept else None,
             "disclaimer": DISCLAIMER_TEXT}

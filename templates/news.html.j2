@@ -7,6 +7,10 @@
 {% set SYN         = (macro_news.synthesis if macro_news and macro_news.synthesis else {}) %}
 {% set SYN_CHANNELS = (SYN.top_channels if SYN.top_channels else []) %}
 {% set SYN_TICKERS  = (SYN.top_tickers  if SYN.top_tickers  else []) %}
+{# bilingual channel-slug labels from engine/macro_news.CHANNEL_LABEL — raw slugs
+   never render on glance surfaces (doctrine Law 2); older cached payloads without
+   the dict degrade to de-underscored words. #}
+{% set CHL         = (macro_news.channel_label if macro_news and macro_news.channel_label else {}) %}
 {% set RA_COND     = ((latest.conditions or {}).get('risk_appetite') or {} if latest and latest.conditions else {}) %}
 
 {# Split heads into event heads (Delta Board) and context heads (old accordion) #}
@@ -610,7 +614,7 @@
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                {% for c in (h.get('channels') or [])[:4] %}<span class="na-pill">{{ c|replace('_',' ') }}</span>{% endfor %}
+                {% for c in (h.get('channels') or [])[:4] %}{% set _cl = CHL.get(c) or [c|replace('_',' '), c|replace('_',' ')] %}<span class="na-pill">{{ t(_cl[0], _cl[1]) }}</span>{% endfor %}
                 {% for tk in (h.get('tickers') or [])[:5] %}<span class="na-pill tk">{{ tk }}</span>{% endfor %}
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">

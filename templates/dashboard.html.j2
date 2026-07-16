@@ -8057,8 +8057,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% set _abTheme = _abSyn.get('dominant_theme','') %}
     {% set _abHiCnt = _abSyn.get('high_impact_count') %}
     {# v5 face — AI BRIEF (ticker pills + structured bilingual lines + required not-a-signal note) #}
-    {% set _abDomCh_clean = _aibf_ch.get(_abCh, _abCh | replace('_',' ')) if _abCh else '' %}
-    {% set _abDomCh_clean_zh = _aibf_ch_zh.get(_abCh, _abCh) if _abCh else '' %}
+    {# prefer the engine's bilingual CHANNEL_LABEL payload dict (doctrine Law 2 — no raw
+       slugs on glance surfaces); inline dicts remain the fallback for older payloads,
+       de-underscored in BOTH languages (the old zh fallback leaked the raw slug). #}
+    {% set _abChl = ((macro_news.channel_label or {}) if macro_news else {}).get(_abCh) %}
+    {% set _abDomCh_clean = (_abChl[0] if _abChl else _aibf_ch.get(_abCh, _abCh | replace('_',' '))) if _abCh else '' %}
+    {% set _abDomCh_clean_zh = (_abChl[1] if _abChl else _aibf_ch_zh.get(_abCh, _abCh | replace('_',' '))) if _abCh else '' %}
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-aibrief')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-aibrief');}">
       <div class="mx5-card-title"><span class="l-en">AI Brief</span><span class="l-zh">AI简报</span></div>
       {# Top ticker pills (VIS-02: wraps freely, no fixed-width clip) #}
@@ -9016,9 +9020,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _dlg_syn = macro_news.synthesis %}
         {% set _dlg_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','fiscal_trade':'财政与贸易','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
         {% set _dlg_ch_en = {'capital_return':'buybacks','fiscal_trade':'fiscal & trade','stock_wire':'stock wire','monetary':'Fed & rates'} %}
+        {# prefer the engine's bilingual CHANNEL_LABEL payload dict (doctrine Law 2 — no raw
+           slugs on glance surfaces); inline dicts remain the fallback for older payloads. #}
+        {% set _dc = _dlg_syn.get('dominant_channel') %}
+        {% set _dcl = (macro_news.channel_label or {}).get(_dc) if _dc else none %}
         <div class="isle-aibrief-body">
-          <span class="l-en">{{ _dlg_syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _dlg_syn.get('high_impact_count', 0) != 1 }} today{% if _dlg_syn.get('dominant_channel') %} · dominant: <strong>{{ _dlg_ch_en.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel|replace('_',' ')) }}</strong>{% endif %}</span>
-          <span class="l-zh">今日 {{ _dlg_syn.get('high_impact_count', 0) }} 条高影响信息{% if _dlg_syn.get('dominant_channel') %} · 主导：<strong>{{ _dlg_ch_zh.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel) }}</strong>{% endif %}</span>
+          <span class="l-en">{{ _dlg_syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _dlg_syn.get('high_impact_count', 0) != 1 }} today{% if _dc %} · dominant: <strong>{{ _dcl[0] if _dcl else _dlg_ch_en.get(_dc, _dc|replace('_',' ')) }}</strong>{% endif %}</span>
+          <span class="l-zh">今日 {{ _dlg_syn.get('high_impact_count', 0) }} 条高影响信息{% if _dc %} · 主导：<strong>{{ _dcl[1] if _dcl else _dlg_ch_zh.get(_dc, _dc|replace('_',' ')) }}</strong>{% endif %}</span>
         </div>
         {% else %}
         <div class="isle-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
@@ -10407,102 +10415,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
 
 
-  {% if False %}{# INT-07/09dt: legacy news & catalysts board RETIRED — the sx-news-v2
-     island owns news for macro mode and stocks mode never rendered this panel.
-     False-gated (not deleted) to keep inner Jinja balanced; remove on next cleanup. #}
-  {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
-  <style id="nb-css">
-  body.page-macro #now-board .nb-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 14px;font-size:11px}
-  body.page-macro #now-board .nb-strip-h{font-family:var(--num);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-right:4px}
-  body.page-macro #now-board .nb-ev{display:inline-flex;align-items:center;gap:5px;border:var(--rule) solid var(--hair);border-radius:7px;padding:3px 8px;background:var(--tile);color:var(--ink-2)}
-  body.page-macro #now-board .nb-ev b{color:var(--ink-1);font-family:var(--num);font-size:10px}
-  body.page-macro #now-board .nb-relief{display:flex;align-items:center;gap:8px;border-radius:9px;padding:9px 12px;margin:0 0 12px;font-size:12.5px;font-weight:600;border:var(--rule) solid color-mix(in srgb,var(--rc,var(--ink-3)) 40%,var(--hair));background:color-mix(in srgb,var(--rc,var(--ink-3)) 10%,var(--tile));color:var(--ink-1)}
-  body.page-macro #now-board .nb-relief.firing{--rc:var(--up)}
-  body.page-macro #now-board .nb-relief.building{--rc:var(--warn)}
-  body.page-macro #now-board .nb-acc{display:grid;gap:0;border:var(--rule) solid var(--hair);border-radius:11px;overflow:hidden;background:var(--tile)}
-  body.page-macro #now-board .nb-item{border-bottom:var(--rule) solid var(--hair)}
-  body.page-macro #now-board .nb-item:last-child{border-bottom:0}
-  body.page-macro #now-board .nb-item[open]{background:color-mix(in srgb,var(--link) 5%,transparent)}
-  body.page-macro #now-board .nb-sum{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:11px 14px}
-  body.page-macro #now-board .nb-sum::-webkit-details-marker{display:none}
-  body.page-macro #now-board .nb-sum:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}
-  body.page-macro #now-board .nb-theme{font-family:var(--num);font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap;color:var(--ink-2);border:var(--rule) solid var(--hair);background:var(--panel)}
-  body.page-macro #now-board .nb-htitle{font-size:13.5px;font-weight:650;color:var(--ink-1);line-height:1.3;min-width:0}
-  body.page-macro #now-board .nb-item[open] .nb-htitle{color:var(--link)}
-  body.page-macro #now-board .nb-meta{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink-3);font-size:11px;font-family:var(--num)}
-  body.page-macro #now-board .nb-chev{transition:transform .2s}
-  body.page-macro #now-board .nb-item[open] .nb-chev{transform:rotate(180deg)}
-  body.page-macro #now-board .nb-body{padding:0 14px 13px;display:grid;gap:9px}
-  body.page-macro #now-board .nb-sumtext{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin:0}
-  body.page-macro #now-board .nb-sumtext b{color:var(--ink-1);font-weight:700}
-  body.page-macro #now-board .nb-tags{display:flex;flex-wrap:wrap;gap:5px}
-  body.page-macro #now-board .nb-pill{font-size:10px;border:var(--rule) solid var(--hair);border-radius:6px;padding:2px 7px;color:var(--ink-3);background:var(--panel)}
-  body.page-macro #now-board .nb-pill.tk{color:var(--link);border-color:color-mix(in srgb,var(--link) 38%,var(--hair))}
-  body.page-macro #now-board .nb-read{color:var(--link);font-size:12px;font-weight:700}
-  body.page-macro #now-board .nb-foot{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:12px;font-size:11.5px;color:var(--ink-3)}
-  body.page-macro #now-board .nb-cat b{color:var(--ink-2);font-family:var(--num);font-size:10.5px}
-  html[data-lang="zh"] body.page-macro #now-board .nb-strip-h{letter-spacing:0}
-  </style>
-  <div class="panel span6" id="{{ 'now-board' if mode == 'stocks' else 'now-board-legacy' }}">
-    <div class="mx-panel-hdr">
-      <span class="mx-panel-eyebrow">{{ t('News & Catalysts','新闻与日程') }}</span>
-      <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
-    </div>
-    <h2 style="margin-top:0">{{ t('Market news & catalysts','市场新闻与日程') }}
-      {{ help("Reputable, macro-relevant headlines — filtered, theme-tagged and ranked by impact. Press a story to open a condensed read. Plus the US high-impact event window and any active relief-radar snap. All CONTEXT — never scored; the mechanical model never reads it.", "可靠、与宏观相关的头条 — 经筛选、标注主题并按影响排序。点按展开精简解读。另含美国高影响事件窗口与正在触发的反弹雷达。全部为背景 — 从不评分，机械模型从不读取。") }}
-    </h2>
-
-    <div class="nb-strip">
-      <span class="nb-strip-h">{{ t('Next 14d','未来14天') }}</span>
-      {% for s in event_strip[:8] %}<span class="nb-ev" title="{{ s.label }}{% if s.time_et %} · {{ s.time_et }} ET{% endif %}"><b>{{ s.type }}</b> {{ s.dow }} {{ s.md }}</span>
-      {% else %}<span class="muted">{{ t('Clear — no top-tier US prints in the window.','空窗 — 窗口内无一线美国数据。') }}</span>{% endfor %}
-    </div>
-
-    {% if regime_snap and regime_snap.status in ('firing','building') %}
-    {% set RS = regime_snap %}
-    <div class="nb-relief {{ RS.status }}">⚡ <b>{{ t('Relief radar','反弹雷达') }}:</b>
-      {% if RS.status == 'firing' %}{{ t('a risk-on snap is FIRING','风险偏好急转 触发中') }}{% else %}{{ t('a snap is building — watch','急转酝酿 — 留意') }}{% endif %}
-      <span class="muted" style="font-weight:400">· {{ RS.legs_up }}/{{ RS.legs_total }} {{ t('legs risk-on','项转向') }} · {{ t('velocity','速度') }} {{ ((RS.vel_pctile*100)|round|int) if RS.vel_pctile is not none else '—' }}%ile · {{ t('coincident, not a buy signal','同步信号，非买入') }}</span>
-    </div>
-    {% endif %}
-
-    {% if macro_news and macro_news.headlines %}
-    <div class="nb-acc">
-      {% for h in macro_news.headlines[:6] %}
-      {% set tl = TL.get(h.theme, [h.theme, h.theme]) %}
-      <details class="nb-item"{% if loop.first %} open{% endif %}>
-        <summary class="nb-sum">
-          <span class="nb-theme">{{ t(tl[0], tl[1]) }}</span>
-          <span class="nb-htitle"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>
-          <span class="nb-meta">{% if h.importance in ['high','critical'] %}<span class="mx-ni-impact high">{{ t('HIGH','高') }}</span>{% elif h.importance == 'medium' %}<span class="mx-ni-impact med">{{ t('MED','中') }}</span>{% endif %}{% if h.pub_date %}<span class="mx-ni-date">{{ h.pub_date[:10] }}</span>{% endif %} {{ h.source_name or h.domain }}{% if h.importance_score %} · {{ h.importance_score }}{% endif %} <span class="nb-chev">▾</span></span>
-        </summary>
-        <div class="nb-body">
-          <p class="nb-sumtext">
-            <span class="l-en">A <b>{{ h.importance }}</b>-impact <b>{{ tl[0] }}</b> headline{% if h.tickers %} in focus on {{ h.tickers[:3]|join(', ') }}{% endif %}{% if h.channels %}, touching {{ (h.channels[:3]|map('replace','_',' ')|list)|join(', ') }}{% endif %}.{% if h.importance_reasons %} Flagged: {{ h.importance_reasons[:2]|join('; ') }}.{% endif %} — {{ h.source_name or h.domain }}</span>
-            <span class="l-zh">一条<b>{{ h.importance }}</b>影响级的<b>{{ tl[1] }}</b>新闻{% if h.tickers %}，聚焦 {{ h.tickers[:3]|join('、') }}{% endif %}{% if h.channels %}，涉及 {{ (h.channels[:3]|map('replace','_',' ')|list)|join('、') }}{% endif %}。{% if h.importance_reasons %} 入选：{{ h.importance_reasons[:2]|join('；') }}。{% endif %} — {{ h.source_name or h.domain }}</span>
-          </p>
-          {% if h.channels or h.tickers %}
-          <div class="nb-tags">
-            {% for c in h.channels[:4] %}<span class="nb-pill">{{ c|replace('_',' ') }}</span>{% endfor %}
-            {% for tk in h.tickers[:5] %}<span class="nb-pill tk">{{ tk }}</span>{% endfor %}
-          </div>
-          {% endif %}
-          <a class="nb-read" href="{{ h.url }}" target="_blank" rel="noopener">{{ t('Read source','阅读原文') }} →</a>
-        </div>
-      </details>
-      {% endfor %}
-    </div>
-    <div class="nb-foot">
-      <a href="news.html" style="color:var(--link);font-weight:700">{{ t('Open the full news feed','打开完整新闻流') }} →</a>
-      {% if macro_news.n_kept %}<span>{{ macro_news.n_kept }} {{ t('stories kept','保留条目') }}{% if macro_news.n_raw %} · {{ macro_news.n_raw }} {{ t('scanned','已扫描') }}{% endif %}</span>{% endif %}
-      {% if macro_catalysts %}<span class="nb-cat" style="margin-left:auto">{{ t('Next catalyst','下个催化') }}: <b>{{ macro_catalysts[0].date }}</b> {{ macro_catalysts[0].type }} <span class="l-en">{{ macro_catalysts[0].label }}</span><span class="l-zh">{{ macro_catalysts[0].get('label_zh') or macro_catalysts[0].label }}</span></span>{% endif %}
-    </div>
-    {% else %}
-    <p class="muted sm">{{ t('No macro headlines right now — the fetch is off or the tape is quiet. Catalysts above remain live.','暂无宏观头条 — 抓取关闭或行情平静。上方日程仍保持更新。') }}</p>
-    {% endif %}
-  </div>
-  {% endif %}{# /mode != stocks — news & catalysts board #}
-  {% endif %}{# /INT-07dt False-gate — retired legacy news board #}
+  {# INT-07/09dt: the legacy news & catalysts board (macro_news accordion) was
+     False-gated here and has been deleted — the sx-news-v2 island + dlg-news
+     dialog own US news for macro mode; stocks mode never rendered it. #}
+  {% endif %}{# /mode != 'stocks' #}
 
   <!-- Fear ↔ Euphoria synthesis merged into the #sentiment-regime scorecard near the top of the board -->
 
