@@ -29,6 +29,9 @@
   .help:hover .tip { display:block; }
   .tabnum { font-variant-numeric:tabular-nums; }
   .lag-tag { display:inline-block; font-size:10px; background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--muted); vertical-align:middle; margin-left:6px; }
+  .topline .asof { margin-left:auto; color:var(--muted); font-size:12px; }
+  .topline .asof b { font-weight:600; color:var(--text); }
+  .topline .asof.is-stale b { color:var(--down); font-weight:700; }
   .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--orange,#f97316); margin-left:4px; }
 
   /* ── Market Tide ───────────────────────────────────────────────── */
@@ -412,6 +415,7 @@
   <div class="topline">
     <h1>🌊 <span class="l-en">Group Flow Heatmap &amp; Market Tide</span><span class="l-zh">资金潮汐与板块流量图</span></h1>
     <span class="lag-tag"><span class="l-en">EOD · direction approx</span><span class="l-zh">EOD · 方向近似</span></span>
+    <span class="asof tabnum" id="fd-asof" data-asof="2026-07-15"><span class="l-en">data as of</span><span class="l-zh">数据截至</span> <b>2026-07-15</b> · <span class="l-en">updated</span><span class="l-zh">更新</span> 2026-07-15</span>
   </div>
   <p class="muted sm note"><span class="l-en">EOD options-flow rollup across 353 names — gross premium magnitude is reliable; net premium direction is SOFT (minute tick-rule signing, not NBBO). Z-scores vs own history (min 20 obs — raw shown below threshold). Tape-flow breadth where ThetaData signed columns are present (auto-upgrades as accrual grows). ETF creation/redemption is a proxy (delta(SO)×NAV), labeled accordingly. No score or rank path; display-tier only.</span><span class="l-zh">353只标的的收盘期权资金汇总 — 名义权利金绝对值可信；净权利金方向为软性近似（逐分钟打单规则签名，非NBBO）。Z分数对比自身历史（最低20个观测值 — 低于阈值时显示原始值）。有ThetaData签名列时显示资金广度（随积累自动升级）。ETF申购/赎回为代理指标（delta(SO)×NAV），已标注。不进入评分或排名路径；仅展示层。</span></p>
 </div>
@@ -1437,6 +1441,12 @@
 </p>
 
 <script>
+(function(){
+  // staleness flag: EOD data older than ~5 days (covers weekend + holiday) turns the header date red
+  var el = document.getElementById('fd-asof');
+  var d = el ? el.getAttribute('data-asof') : '';
+  if (el && d && (Date.now() - new Date(d + 'T21:00:00Z').getTime()) / 864e5 > 5) el.classList.add('is-stale');
+})();
 (function(){
   // ── Data injected from Python ────────────────────────────────────
   var SPARK = [{"date": "2026-05-29", "net_premium_mn": 0.0, "premium_mn": 4263.700000000001}, {"date": "2026-06-01", "net_premium_mn": 0.0, "premium_mn": 3776.81}, {"date": "2026-06-02", "net_premium_mn": 0.0, "premium_mn": 4086.25}, {"date": "2026-06-03", "net_premium_mn": 0.0, "premium_mn": 3604.81}, {"date": "2026-06-04", "net_premium_mn": 0.0, "premium_mn": 4512.27}, {"date": "2026-06-05", "net_premium_mn": 0.0, "premium_mn": 19273.63}, {"date": "2026-06-08", "net_premium_mn": 0.0, "premium_mn": 5012.11}, {"date": "2026-06-09", "net_premium_mn": 0.0, "premium_mn": 10480.45}, {"date": "2026-06-10", "net_premium_mn": 0.0, "premium_mn": 8316.230000000001}, {"date": "2026-06-11", "net_premium_mn": 0.0, "premium_mn": 9615.169999999998}, {"date": "2026-06-12", "net_premium_mn": 0.0, "premium_mn": 7359.450000000001}, {"date": "2026-06-15", "net_premium_mn": 0.0, "premium_mn": 5078.509999999999}, {"date": "2026-06-16", "net_premium_mn": 0.0, "premium_mn": 5554.870000000001}, {"date": "2026-06-17", "net_premium_mn": 0.0, "premium_mn": 9599.03}, {"date": "2026-06-18", "net_premium_mn": 0.0, "premium_mn": 4593.1}, {"date": "2026-06-22", "net_premium_mn": 0.0, "premium_mn": 3584.31}, {"date": "2026-06-23", "net_premium_mn": 0.0, "premium_mn": 5340.05}, {"date": "2026-06-24", "net_premium_mn": 0.0, "premium_mn": 5222.54}, {"date": "2026-06-25", "net_premium_mn": 0.0, "premium_mn": 4612.6}, {"date": "2026-06-26", "net_premium_mn": 0.0, "premium_mn": 4583.38}, {"date": "2026-06-29", "net_premium_mn": 0.0, "premium_mn": 4732.369999999999}, {"date": "2026-06-30", "net_premium_mn": 0.0, "premium_mn": 4570.62}, {"date": "2026-07-01", "net_premium_mn": 0.0, "premium_mn": 4085.89}, {"date": "2026-07-02", "net_premium_mn": 881.3399999999999, "premium_mn": 5028.489999999999}, {"date": "2026-07-06", "net_premium_mn": 614.0600000000001, "premium_mn": 3678.4000000000005}, {"date": "2026-07-09", "net_premium_mn": 377.67, "premium_mn": 3700.68}, {"date": "2026-07-10", "net_premium_mn": 51.18, "premium_mn": 2962.08}, {"date": "2026-07-13", "net_premium_mn": 484.09000000000003, "premium_mn": 3974.88}, {"date": "2026-07-14", "net_premium_mn": 554.8799999999999, "premium_mn": 3383.13}, {"date": "2026-07-15", "net_premium_mn": 932.0500000000001, "premium_mn": 3943.7799999999997}];
