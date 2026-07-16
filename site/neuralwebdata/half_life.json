@@ -111,7 +111,7 @@
   "notes": "W2 re-scoped to holding-horizon decay (B1: no age-at-fire column in spine). Staleness half-life: measured when replay_delay.parquet is present (nwqs-d); unmeasured on CI runners (Mac-local artifact, EI R9). Conservative defaults: family_floor=200, curve_floor=3, cell_floor=12, bootstrap=90pct event-block 200 resamples. Expected outcome: horizon families mostly null (track_record IC rises; radar/us_board < 3 horizons). family_half_life naming recommendation: the 'half_life' column is a family-level constant broadcast to rows; future consumers should not read it as a per-signal value.",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/half_life.py",
-  "produced_at": "2026-07-15T08:55:29Z",
+  "produced_at": "2026-07-16T07:45:09Z",
   "inputs_hash": "sha256:9795ab794aab5ba0b778b130870d4157fa115bf19af5174864618da4175f12f6",
   "tier": "infrastructure"
 }

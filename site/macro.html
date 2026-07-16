@@ -16,6 +16,8 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -479,104 +481,7 @@
     .igs .igs-stance { margin-left: 0; }
     .igs .igs-asof { margin-left: 0; }
   }
-  /* ============================================================================
-     MAG 7 PANEL (.m7p) — cap-weighted Mag 7 context read.
-     Blue-info accent. Class prefix: .m7p (no collision with .igx/.rrx).
-     Included by dashboard.html.j2 (stocks mode only, adjacent to ignition radar).
-     ============================================================================ */
-  /* span12 rides on the root div (dashboard 12-col .grid child — without it the
-     panel collapses to one skinny track, the 2026-07-11 desktop bug). Two compact
-     horizontal rows: .m7p-top (title/state/stance/as-of) + .m7p-ev (evidence). */
-  .m7p { --m7-col: var(--info);
-         display: flex; flex-direction: column; gap: 8px; padding: 11px 16px 12px;
-         border-radius: 12px; background: var(--panel); border: 1px solid var(--line);
-         border-left: 4px solid var(--m7-col); font-size: 12.5px; line-height: 1.4;
-         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
-  /* state-based accent overrides */
-  .m7p.m7p-running_broad   { --m7-col: var(--ok); }
-  .m7p.m7p-running_narrow  { --m7-col: var(--info); }
-  .m7p.m7p-turning_up      { --m7-col: var(--ok); }
-  .m7p.m7p-cooling         { --m7-col: var(--warn); }
-  .m7p.m7p-rolling_over    { --m7-col: var(--warn); }
-  .m7p.m7p-down            { --m7-col: var(--act); }
 
-  /* row 1 — title · badge · ? · run read · stance · as-of */
-  .m7p .m7p-top { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 10px; }
-  .m7p .m7p-h2  { margin: 0; font-weight: 700; font-size: 13px; color: var(--text); }
-  .m7p .m7p-badge { font-weight: 800; letter-spacing: .03em; color: var(--m7-col);
-         font-size: 11px; font-variant-numeric: tabular-nums; padding: 1px 7px;
-         border-radius: 5px;
-         background: color-mix(in srgb, var(--m7-col) 14%, transparent);
-         border: 1px solid color-mix(in srgb, var(--m7-col) 35%, transparent); }
-  .m7p .m7p-help { display: inline-flex; align-items: center; justify-content: center;
-         width: 14px; height: 14px; border-radius: 50%;
-         background: var(--panel2); border: 1px solid var(--line);
-         color: var(--muted); font-size: 9px; font-weight: 700; cursor: help; }
-  /* state + stance + as-of (inline in row 1) */
-  .m7p .m7p-state  { font-size: 12.5px; color: var(--text); font-weight: 600; }
-  .m7p .m7p-stance { font-size: 10.5px; color: var(--m7-col); font-weight: 800;
-         text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px;
-         border-radius: 99px;
-         background: color-mix(in srgb, var(--m7-col) 10%, transparent);
-         border: 1px solid color-mix(in srgb, var(--m7-col) 40%, var(--line)); }
-  .m7p .m7p-asof { margin-left: auto; font-size: 10.5px; color: var(--muted);
-         font-variant-numeric: tabular-nums; white-space: nowrap; }
-  /* plain-word staleness stamp — shared by the Mag 7 panel and the ldb panel
-     (unique m7p- prefix keeps it collision-safe outside the .m7p scope; the doubled
-     .ldb-asof.m7p-stale selector out-specificities the ldb template's later-rendered
-     .ldb-asof color rule) */
-  .m7p-stale, .ldb-asof.m7p-stale { margin-left: 6px; font-size: 10.5px;
-         color: #d97706; white-space: nowrap; }
-
-  /* row 2 — evidence: dots · generals · structure · legs · flow */
-  .m7p .m7p-ev { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
-
-  /* 7-dot member bar (horizontal dot + ticker pairs) */
-  .m7p .m7p-dots { display: inline-flex; gap: 4px 11px; flex-wrap: wrap; align-items: center; }
-  .m7p .m7p-dot-wrap { display: inline-flex; flex-direction: row; align-items: center; gap: 4px;
-         cursor: help; }
-  .m7p .m7p-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
-  .m7p .m7p-dot.m7p-dot-green { background: var(--up); }
-  .m7p .m7p-dot.m7p-dot-amber { background: var(--warn); }
-  .m7p .m7p-dot.m7p-dot-grey  { background: color-mix(in srgb, var(--muted) 40%, var(--panel2)); }
-  .m7p .m7p-dot-lbl { font-size: 9px; font-weight: 700; color: var(--muted);
-         letter-spacing: .03em; font-variant-numeric: tabular-nums; }
-
-  /* generals */
-  .m7p .m7p-generals { font-size: 12px; color: var(--text); }
-  .m7p .m7p-generals b { color: var(--up); }
-  .m7p .m7p-joining { color: var(--warn); }
-
-  /* structure chip */
-  .m7p .m7p-structure { display: inline-flex; align-items: center; gap: 4px;
-         background: color-mix(in srgb, var(--warn) 10%, var(--panel2));
-         border: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
-         border-radius: 6px; padding: 3px 9px; font-size: 11px; font-weight: 600;
-         color: var(--warn); }
-
-  /* tech-legs strip */
-  .m7p .m7p-legs { display: flex; flex-wrap: wrap; gap: 5px; }
-  .m7p .m7p-leg { display: inline-flex; align-items: center; gap: 5px;
-         padding: 3px 9px; border-radius: 6px; font-size: 11px; cursor: help;
-         background: var(--panel2); border: 1px solid var(--line); color: var(--text); }
-  .m7p .m7p-leg-name { font-weight: 600; }
-  .m7p .m7p-leg-word { color: var(--muted); }
-  .m7p .m7p-leg.up  .m7p-leg-word { color: var(--up); font-weight: 700; }
-  .m7p .m7p-leg.up2 .m7p-leg-word { color: var(--up); font-weight: 800; }
-  .m7p .m7p-leg.dn  .m7p-leg-word { color: var(--down); font-weight: 700; }
-  .m7p .m7p-leg.dn2 .m7p-leg-word { color: var(--down); font-weight: 800; }
-
-  /* responsive */
-  @media (max-width: 560px) {
-    .m7p { padding: 11px 13px; gap: 8px; }
-    .m7p .m7p-asof { flex-basis: 100%; margin-left: 0; }
-    .m7p .m7p-legs .m7p-leg-name.l-zh,
-    .m7p .m7p-legs .m7p-leg-name.l-en { font-size: 10.5px; }
-  }
-  /* ── 红涨绿跌: directional colour flips for Chinese mode ── */
-  html[data-lang="zh"] .m7p.m7p-running_broad { --m7-col: var(--up); }
-  html[data-lang="zh"] .m7p.m7p-turning_up    { --m7-col: var(--up); }
-  html[data-lang="zh"] .m7p.m7p-down          { --m7-col: var(--down); }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -5462,7 +5367,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   
                   <a class="ms-sig sev-warn" data-ms-dlg="dlg-events" href="#dlg-events">
                     <div class="ms-sig-head"><span class="ms-sig-ico">📅</span><span class="ms-sig-title"><span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: PPI (producer prices) today — elevated two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：生产者物价指数（PPI）（今天）—— 预计升高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: FOMC rate decision in 13 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：美联储议息会议（13 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
                     <div class="ms-sig-what"><span class="l-en">A high-impact scheduled release (CPI, Fed decision, jobs report) lands in the coming sessions — the message says which and when. Moves around these prints are two-sided and often retraced — a volatility warning, not a directional call. Size positions for the noise; avoid forcing new trades right into the print.</span><span class="l-zh">未来数个交易日内将有高影响力的既定事件（CPI、美联储决议、就业报告）——具体是哪个、何时，见提示内容。事件前后的波动是双向的、常被回补 —这是波动性提示，并非方向判断。按噪声调整仓位，避免在数据公布前强行开新仓。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — a volatility window, not a direction call. Size for the noise.</span><span class="l-zh">背景 — 波动窗口而非方向判断。按噪声调整仓位。</span></div>
                   </a>
@@ -5474,9 +5379,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             
             
-            <span class="v2chip c-warn" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-              <span class="l-en" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">PPI (producer prices) 07-15</span>
-              <span class="l-zh" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">生产者物价指数（PPI） 07-15</span>
+            <span class="v2chip c-info" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              <span class="l-en" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">Initial jobless claims 07-16</span>
+              <span class="l-zh" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;white-space:nowrap">初请失业金 07-16</span>
             </span>
             
           </div>
@@ -6361,12 +6266,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en">Expect noise around PPI (producer prices) &mdash; don&rsquo;t read the first move as trend.</span>
-              <span class="l-zh">生产者物价指数（PPI）前后噪音加大 &mdash; 勿将初动解读为趋势。</span>
+              <span class="l-en">Expect noise around FOMC rate decision &mdash; don&rsquo;t read the first move as trend.</span>
+              <span class="l-zh">美联储议息会议前后噪音加大 &mdash; 勿将初动解读为趋势。</span>
             </div>
             <div class="mx5-action-sub">
-              <span class="l-en">PPI (producer prices) 07-15 &middot; HIGH impact</span>
-              <span class="l-zh">生产者物价指数（PPI） 07-15 &middot; 高影响</span>
+              <span class="l-en">FOMC rate decision 07-29 &middot; HIGH impact</span>
+              <span class="l-zh">美联储议息会议 07-29 &middot; 高影响</span>
             </div>
           </div>
         </div>
@@ -6440,27 +6345,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       </div>
       <div class="mx5-events-sub">
         
-        <span class="l-en">2 high-impact prints ahead</span>
-        <span class="l-zh">2 项高影响数据待发</span>
+        <span class="l-en">3 high-impact prints ahead</span>
+        <span class="l-zh">3 项高影响数据待发</span>
         
       </div>
       
       <div class="mx5-timeline">
         <div class="mx5-timeline-rail"></div>
         <div class="mx5-tl-items">
-          
-          
-          
-          
-          <div class="mx5-tl-item">
-            <div class="mx5-tl-dot mx5-dot-high"></div>
-            <div class="mx5-tl-name"><span class="l-en">PPI (pro</span><span class="l-zh">生产者物价</span></div>
-            <div class="mx5-tl-date">Jul 15</div>
-            <div class="mx5-tl-badge high">
-              <span class="l-en">HIGH</span>
-              <span class="l-zh">高</span>
-            </div>
-          </div>
           
           
           
@@ -6507,6 +6399,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-tl-item">
             <div class="mx5-tl-dot mx5-dot-med"></div>
             <div class="mx5-tl-name"><span class="l-en">Initial </span><span class="l-zh">初请失业金</span></div>
+            <div class="mx5-tl-date">Jul 23</div>
+            <div class="mx5-tl-badge med">
+              <span class="l-en">MED</span>
+              <span class="l-zh">中</span>
+            </div>
+          </div>
+          
+          
+          
+          
+          <div class="mx5-tl-item">
+            <div class="mx5-tl-dot mx5-dot-med"></div>
+            <div class="mx5-tl-name"><span class="l-en">10-Year </span><span class="l-zh">10年期国</span></div>
             <div class="mx5-tl-date">Jul 23</div>
             <div class="mx5-tl-badge med">
               <span class="l-en">MED</span>
@@ -8602,7 +8507,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
               stroke="#f59e0b" stroke-width="4" stroke-linecap="round"
-              transform="rotate(9.0, 190, 185)"
+              transform="rotate(5.4, 190, 185)"
               filter="url(#dialGlow5)"/>
         <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="#f59e0b" stroke-width="2.5"/>
         <circle class="fg-mark-f" cx="190" cy="185" r="4"  fill="#f59e0b"/>
@@ -8616,12 +8521,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <span class="l-zh">中性</span>
     </div>
     <div class="mx5-sentiment-label">
-      <span class="l-en">Composite at 55 &middot; neutral zone</span>
-      <span class="l-zh">综合指数 55 &middot; 中性区间</span>
+      <span class="l-en">Composite at 53 &middot; neutral zone</span>
+      <span class="l-zh">综合指数 53 &middot; 中性区间</span>
     </div>
     
     
     
+    
+    <div id="vsb-sentiment-caveat" style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.4));margin-top:6px;line-height:1.4">
+      <span class="l-en">AI-linked names lagging while the rest holds up</span>
+      <span class="l-zh">AI 相关个股落后，非 AI 板块相对支撑</span>
+    </div>
     
     
   </div>
@@ -8645,13 +8555,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </span>
         
         <span class="mx5-sector-chip hot">
-          <span class="l-en">AI Software &amp; Platforms</span>
-          <span class="l-zh">AI 软件与平台</span>
+          <span class="l-en">Magnificent Seven</span>
+          <span class="l-zh">七巨头</span>
         </span>
         
         <span class="mx5-sector-chip hot">
-          <span class="l-en">GLP-1 &amp; Obesity</span>
-          <span class="l-zh">GLP-1 与减肥药</span>
+          <span class="l-en">Payments &amp; Fintech</span>
+          <span class="l-zh">支付与金融科技</span>
         </span>
         
       </div>
@@ -8663,18 +8573,18 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-sector-chips">
         
         <span class="mx5-sector-chip cold">
-          <span class="l-en">Memory, HBM &amp; Storage</span>
-          <span class="l-zh">内存、HBM 与存储</span>
+          <span class="l-en">Insurance &amp; Brokers</span>
+          <span class="l-zh">保险与经纪</span>
         </span>
         
         <span class="mx5-sector-chip cold">
-          <span class="l-en">Payments &amp; Fintech</span>
-          <span class="l-zh">支付与金融科技</span>
+          <span class="l-en">Big Pharma</span>
+          <span class="l-zh">大型药企</span>
         </span>
         
         <span class="mx5-sector-chip cold">
-          <span class="l-en">Semiconductor Equipment (WFE)</span>
-          <span class="l-zh">半导体设备（晶圆厂设备）</span>
+          <span class="l-en">GLP-1 &amp; Obesity</span>
+          <span class="l-zh">GLP-1 与减肥药</span>
         </span>
         
       </div>
@@ -8738,7 +8648,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <div class="mx5-sector-heat-col">
-          <div class="mx5-sector-heat-bar" style="height:13px;background:rgba(239,68,68,0.25);"></div>
+          <div class="mx5-sector-heat-bar" style="height:11px;background:rgba(239,68,68,0.18);"></div>
         </div>
         
         
@@ -9388,9 +9298,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
       <div class="mx5-ai-ticker-pills">
         
-        <span class="mx5-ai-ticker-pill">XLF</span>
+        <span class="mx5-ai-ticker-pill">USO</span>
         
-        <span class="mx5-ai-ticker-pill">KRE</span>
+        <span class="mx5-ai-ticker-pill">XLE</span>
         
         <span class="mx5-ai-ticker-pill">GLD</span>
         
@@ -9402,14 +9312,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          9 high-impact signals across channels
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 High-Impact Items</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">rates</span><br>
+          8 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          9 条高影响信号
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 条高影响信息</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">利率</span><br>
+          8 条高影响信号
         </span>
         
       </div>
@@ -9455,8 +9365,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="l-zh">重大事件临近 — 双向波动或加大</span>
             </div>
             <div class="mx5-alert-detail">
-              <span class="l-en">Event-risk window: PPI (producer prices) today — elevated two-sided volatility expected · positioned fragile. Not a sell…</span>
-              <span class="l-zh">事件风险窗口：生产者物价指数（PPI）（今天）—— 预计升高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span>
+              <span class="l-en">Event-risk window: FOMC rate decision in 13 days — high two-sided volatility expected · positioned fragile. Not a sell s…</span>
+              <span class="l-zh">事件风险窗口：美联储议息会议（13 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span>
             </div>
           </div>
         </div>
@@ -9785,25 +9695,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           
-          <div class="mx5-dlg-cal-card hot" data-cal-date="2026-07-15">
-            <div class="mx5-dlg-cal-date">Jul 15</div>
-            <div class="mx5-dlg-cal-title">
-              <span class="l-en">PPI (producer prices)</span>
-              <span class="l-zh">生产者物价指数（PPI）</span>
-            </div>
-            <div class="mx5-dlg-cal-meta">
-              <span class="mx5-dlg-cal-time">08:30 ET</span>
-              <span class="mx5-dlg-cal-badge high">
-                <span class="l-en">HIGH</span>
-                <span class="l-zh">高</span>
-              </span>
-            </div>
-            
-            
-          </div>
-          
-          
-          
           <div class="mx5-dlg-cal-card" data-cal-date="2026-07-16">
             <div class="mx5-dlg-cal-date">Jul 16</div>
             <div class="mx5-dlg-cal-title">
@@ -9907,6 +9798,44 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </div>
             <div class="mx5-dlg-cal-meta">
               <span class="mx5-dlg-cal-time">14:00 ET</span>
+              <span class="mx5-dlg-cal-badge high">
+                <span class="l-en">HIGH</span>
+                <span class="l-zh">高</span>
+              </span>
+            </div>
+            
+            
+          </div>
+          
+          
+          
+          <div class="mx5-dlg-cal-card hot" data-cal-date="2026-07-30">
+            <div class="mx5-dlg-cal-date">Jul 30</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">GDP (BEA estimate)</span>
+              <span class="l-zh">GDP 数据</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">08:30 ET</span>
+              <span class="mx5-dlg-cal-badge high">
+                <span class="l-en">HIGH</span>
+                <span class="l-zh">高</span>
+              </span>
+            </div>
+            
+            
+          </div>
+          
+          
+          
+          <div class="mx5-dlg-cal-card hot" data-cal-date="2026-07-30">
+            <div class="mx5-dlg-cal-date">Jul 30</div>
+            <div class="mx5-dlg-cal-title">
+              <span class="l-en">PCE / personal income (BEA)</span>
+              <span class="l-zh">PCE 物价指数</span>
+            </div>
+            <div class="mx5-dlg-cal-meta">
+              <span class="mx5-dlg-cal-time">08:30 ET</span>
               <span class="mx5-dlg-cal-badge high">
                 <span class="l-en">HIGH</span>
                 <span class="l-zh">高</span>
@@ -10153,19 +10082,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></span>
               <span class="mx5-dlg-sector-rk">#2</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span>
               <span class="mx5-dlg-sector-rk">#3</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
               <span class="mx5-dlg-sector-rk">#4</span>
             </div>
             
@@ -10175,26 +10104,26 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">内存、HBM 与存储</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span>
               <span class="mx5-dlg-sector-rk">#5</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span>
-              <span class="mx5-dlg-sector-rk">#6</span>
-            </div>
-            
-            <div class="mx5-dlg-sector-row">
-              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
               <span class="mx5-dlg-sector-rk">#7</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span>
-              <span class="mx5-dlg-sector-rk">#8</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
+              <span class="mx5-dlg-sector-rk">#9</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span></span>
+              <span class="mx5-dlg-sector-rk">#10</span>
             </div>
             
           </div>
@@ -10382,7 +10311,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     </div>
     
     <div class="rrx-rec-cats"><span class="rrx-rec-k"><span class="l-en">Central banks</span><span class="l-zh">央行</span></span>
-      <span class="rrx-rec-chip fresh">💵 <span class="l-en">Fed liquidity expanding</span><span class="l-zh">美联储流动性扩张</span><span class="help">?<span class="tip"><span class="l-en">Net liquidity (WALCL − RRP − TGA) rising (+$88B/20d) — Treasury spent down $181B since Jun 30 (cash flows into system).</span><span class="l-zh">净流动性（WALCL − RRP − TGA）上升（+876亿美元/20日）— 财政部自6月30日起动用现金账户1809亿美元（资金流入系统）。</span></span></span></span>
+      <span class="rrx-rec-chip fresh">💵 <span class="l-en">Fed liquidity expanding</span><span class="l-zh">美联储流动性扩张</span><span class="help">?<span class="tip"><span class="l-en">Net liquidity (WALCL − RRP − TGA) rising (+$214B/20d) — Treasury spent down $131B since Jun 30 (cash flows into system).</span><span class="l-zh">净流动性（WALCL − RRP − TGA）上升（+2141亿美元/20日）— 财政部自6月30日起动用现金账户1313亿美元（资金流入系统）。</span></span></span></span>
     </div>
     <div class="rrx-rec-sal">
       <span class="l-en">When liquidity is expanding like this, buying dips has historically worked ~6pp more often over the next month (a measured odds edge, not a promise).</span>
@@ -10794,8 +10723,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             <div class="mx2-sent-row">
               <div class="mx2-sent-key"><span class="l-en">Fear/Greed</span><span class="l-zh">恐贪指数</span></div>
-              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:55%;background:var(--warn)"></div></div>
-              <div class="mx2-sent-val"><span class="num">55</span>
+              <div class="mx2-sent-bar"><div class="mx2-sent-fill" style="width:53%;background:var(--warn)"></div></div>
+              <div class="mx2-sent-val"><span class="num">53</span>
                 <span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
             </div>
             
@@ -10929,7 +10858,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="isle-aibrief-icon">AI</div>
           <div>
             <div style="font-size:13px;font-weight:700;color:var(--text)"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
-            <div class="num" style="font-size:11px;color:var(--muted)">2026-07-14</div>
+            <div class="num" style="font-size:11px;color:var(--muted)">2026-07-15</div>
           </div>
           
           <span class="isle-aibrief-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
@@ -10939,14 +10868,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.7;margin-bottom:14px">
-          <span class="l-en">Liquidity-led risk-on posture but only narrow leadership; restrictive real rates, a strengthening dollar, and a bear-flattening curve keep the regime mixed and conviction low.</span>
-          <span class="l-zh">流动性驱动的风险偏好姿态，但领导力狭窄；限制性的实际利率、走强的美元以及熊市平坦化曲线使市场格局混杂，信念低迷。</span>
+          <span class="l-en">Goldilocks backdrop weakening with crypto liquidity as the focal driver, but BTC&#39;s internal model signals distribution and negative momentum; rising USD and real rates act as headwinds, entry quality narrow — a fragile risk-on tape with conflicting cross-asset reads.</span>
+          <span class="l-zh">金发女孩背景减弱，加密流动性为焦点驱动力，但BTC内部模型显示分布和负动量；美元和实际利率上升构成逆风，入场质量狭窄——一个脆弱的risk-on市场，存在相互冲突的跨资产解读。</span>
         </div>
         
         
         <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:14px">
-          <span class="l-en">The dominant driver is the liquidity impulse, with net liquidity expanding (+2.3σ) and HY outperforming IG (+1.0σ), but small vs large caps diverging (−0.8σ) and only 40% of fresh entries clearing the buy-filter — signalling narrow, rotational leadership rather than broad risk-on conviction. The equity quad is Q1 Goldilocks with low confidence (0.12) and a transitioning state. Meanwhile, the bonds (rates-credit) family, which carries a partial leading signal, shows a late-cycle bear flattener, restrictive real yields (10y at 2.32%), and a stock-bond correlation breakdown — bonds are not hedging. The cross-asset confirm is mixed at 50% agreement, with FX risk-on but a strengthening dollar that acts as a headwind to equities, gold, copper, and BTC. The net read: risk-on via liquidity, but it is fragile, quality/large-led, and capped by a hawkish rate structure.</span>
-          <span class="l-zh">主导因素是流动性脉冲，净流动性扩张（+2.3σ），高收益债券跑赢投资级债券（+1.0σ），但小盘股与大盘股分化（-0.8σ），仅40%的新入场者通过买入过滤器——表明领导力狭窄且轮动性，而非广泛的风险偏好信念。股票四分位为第一季度金发女孩状态，信心低迷（0.12），处于过渡阶段。同时，债券（利率-信用）家族带有部分领先信号，显示出周期后期的熊市平坦化、限制性的实际收益率（10年期为2.32%），以及股债相关性破裂——债券未起到对冲作用。跨资产确认混杂，共识度为50%，外汇风险偏好但美元走强，对股票、黄金、铜和BTC构成逆风。总体解读：流动性驱动的风险偏好，但脆弱、以优质/大盘股为主导，且受鹰派利率结构限制。</span>
+          <span class="l-en">The macro quad is Q1 (Goldilocks) with expanding liquidity, but the transition state is WEAKENING and the primary market driver is crypto liquidity (Bitcoin +0.9σ, Ether +1.0σ) per the deterministic cross-asset attribution. However, the BTC desk reads DISTRIBUTE with high risk and negative momentum (-0.36), a direct conflict within the price_regime tape. Meanwhile, the USD is strengthening (US growth premium), which is a headwind for Bitcoin, gold, equities, and EM; real 10y yields are restrictive and rising at 2.33%, and the yield curve is a bear steepener favoring value over growth and pressuring duration. Credit is tight (HY OAS 2.72) and systemic stress is calm, suggesting no impending credit event. Risk appetite is risk-on (RORO 0.82), but entry-quality breadth reveals narrow leadership (only 36% take-quality entries, 23% long bias) despite trend breadth broad-up — a flag that the risk-on regime lacks broad participation and conviction. The stock-bond correlation has broken down (0.57), bonds are not hedging, and the Fed remains hawkish (policy_text: on_hold, market ≈ Fed), anchoring restrictive rates. This is a fragile risk-on environment where crypto carries the momentum but faces internal contradiction, while tightening conditions via USD and real rates pressure the rest of the tape.</span>
+          <span class="l-zh">宏观象限为Q1（金发女孩）且流动性扩张，但过渡状态为WEAKENING，主要市场驱动力为加密流动性（比特币+0.9σ，以太坊+1.0σ），依据确定性跨资产归因。然而，BTC交易台读出DISTRIBUTE，高风险和负动量（-0.36），与价格机制市场存在直接冲突。同时，美元走强（美国增长溢价），对比特币、黄金、股票和新兴市场构成逆风；实际10年期收益率处于限制性且上升至2.33%，收益率曲线为熊陡，偏好价值而非成长，并施压久期。信用紧缩（高收益OAS 2.72），系统压力平静，暗示无迫在眉睫的信用事件。风险偏好为risk-on（RORO 0.82），但入场质量广度显示领导力狭窄（仅36%优质入场，23%多头倾向），尽管趋势广度广泛向上——表明risk-on机制缺乏广泛参与和信心。股债相关性已跌破（0.57），债券无法对冲，美联储仍鹰派（政策文本：按兵不动，市场≈美联储），锚定限制性利率。这是一个脆弱的risk-on环境，加密带动动量但面临内部矛盾，而美元和实际利率收紧条件施压市场其余部分。</span>
         </div>
         
         
@@ -10957,32 +10886,32 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Macro risk-on (Q1) with expanding liquidity vs a bear-flattening late-cycle bond regime — both can persist, but the bond backdrop pressures long-duration and small caps.</span>
-            <span class="l-zh">宏观风险偏好（第一季度）伴随流动性扩张，与熊市平坦化的周期后期债券制度——两者都可能持续，但债券背景对长久期和小盘股构成压力。</span>
+            <span class="l-en">Market drivers identifies crypto liquidity as the primary driver (BTC +0.9σ, ETH +1.0σ), but BTC desk reads DISTRIBUTE, high risk, negative momentum — a conflict within the price_regime tape decomposition; suggests crypto strength may be ETH-led or a recent surge that has not shifted BTC&#39;s momentum, weakening the driver conviction.</span>
+            <span class="l-zh">市场驱动因素将加密流动性识别为主要驱动力（BTC +0.9σ, ETH +1.0σ），但BTC交易台读出DISTRIBUTE、高风险、负动量——价格机制市场分解内的冲突；暗示加密强势可能由ETH引领或为近期飙升，尚未改变BTC动量，削弱驱动因素信心。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Liquidity impulse positive but small vs large −0.8σ: risk-on posture with a risk-off small-cap anomaly — a decomposition of one tape, not a cross-asset conflict.</span>
-            <span class="l-zh">流动性脉冲为正，但小盘股与大盘股差值为-0.8σ：风险偏好姿态伴随小盘股风险回避异常——这是单个市场内部的分化，而非跨资产冲突。</span>
+            <span class="l-en">Risk-on macro posture (RORO, VIX term contango) vs narrow entry-quality breadth (36% take-quality entries, 23% long bias) — signals rotation/leadership narrow, not broad conviction; the risk-on regime is fragile.</span>
+            <span class="l-zh">risk-on宏观姿态（RORO，VIX期限升水）与狭窄的入场质量广度（36%优质入场，23%多头倾向）对比——信号显示轮动/领导力狭窄，非广泛信心；risk-on机制脆弱。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Entry-quality breadth: 75% above 200-day (broad-up trend) but only 38% take-quality entries and 27% long-bias — narrow participation, not broad conviction.</span>
-            <span class="l-zh">入场质量广度：75%的股票高于200日均线（广泛上升趋势），但仅38%为优质入场，27%为长期偏向——参与度狭窄，非广泛信心。</span>
+            <span class="l-en">USD strengthening (US growth premium) acts as a headwind for Bitcoin, gold, and equities, contradicting the risk-on asset class leadership of crypto; if USD strength persists, it should eventually cap crypto upside per transmission correlation (-0.26 for BTC), creating a tension point.</span>
+            <span class="l-zh">美元走强（美国增长溢价）对比特币、黄金和股票构成逆风，与加密作为risk-on资产类别领导力相矛盾；如果美元强势持续，根据传导相关性（BTC为-0.26），最终应限制加密上行空间，造成紧张点。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">FX risk-on but a strengthening USD creates headwinds for equities, EM, gold, and BTC — a self-limiting cross-current within the same price regime tape.</span>
-            <span class="l-zh">外汇风险偏好上升，但美元走强对股市、新兴市场、黄金和比特币构成逆风——这是同一价格机制磁带内的自我限制的交叉流。</span>
+            <span class="l-en">Rate/inflation transmission shows rising real rates (2.33%) as a headwind for SPY, XLK, QQQ, while the yield curve (bear steepener) pressures growth/tech and favors value — this conflicts with the risk-on equity regime&#39;s typical leadership (growth) though AI semis theme is re-rating, indicating sector rotation within equities, not broad growth expansion.</span>
+            <span class="l-zh">利率/通胀传导显示实际利率上升（2.33%）成为SPY、XLK、QQQ的逆风，同时收益率曲线（熊市陡化）对成长/科技板块构成压力并利好价值股——这与风险偏好型股票市场惯常的领涨板块（成长股）相矛盾，尽管人工智能半导体主题正在重新估值，表明股市内部存在板块轮动，而非广泛的增长扩张。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Policy-text read: Fed hawkish on hold with market pricing further hawkishness (implied cuts −2bp), while the policy-intel thesis anticipates a post-midterm pivot — a tension that could suddenly unwind rate pressure if data cracks.</span>
-            <span class="l-zh">政策文本解读：美联储鹰派按兵不动，市场定价进一步鹰派（隐含降息-2个基点），而政策情报论预期中期选举后转向——这种紧张局势若数据出现裂痕，可能突然解除利率压力。</span>
+            <span class="l-en">Policy intel thesis posits a structural push for lower real yields post-midterm, but current Fed stance is hawkish and the OIS path implies a 1bp net hike; the stagflationary split (oil spike + labor crack) adds uncertainty — the PRIOR hasn&#39;t been validated, so trade the hawkish tape, not the narrative.</span>
+            <span class="l-zh">政策情报论假定中期选举后实际利率将结构性下降，但当前美联储立场鹰派，隔夜指数互换路径暗示净加息1个基点；滞胀性分裂（油价飙升+劳动力市场裂痕）增加了不确定性——前提尚未得到验证，因此应依据鹰派的市场走势交易，而非依据叙事。</span>
           </div>
           
         </div>
@@ -10991,8 +10920,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <div class="mx5-dlg-eyebrow"><span class="l-en">Rotation</span><span class="l-zh">轮动</span></div>
         <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:14px">
-          <span class="l-en">The rotation thesis (US large-cap semis → software/growth → ex-US → crypto) is partially intact. AI Semiconductors are re-rating (neural web themes), validating the early leg. However, software/growth is under pressure from the bear flattener (QQQ/XLK as headwinds), and ex-US (China/HK) is stuck in stagflation with weak peg outflow — no rotation. Crypto is in a DISTRIBUTE phase with negative momentum despite a macro tailwind. The small-cap leg is absent. The sequence is stalling after the semiconductor leadership, not progressing to broader risk-asset rotation.</span>
-          <span class="l-zh">轮动理论（美国大盘半导体 → 软件/成长 → 海外 → 加密货币）部分保持完整。AI半导体正在重新估值（神经网络主题），验证了早期阶段。然而，软件/成长面临熊市平坦化的压力（QQQ/XLK成为逆风），海外（中国/香港）陷入滞胀，联系汇率下资金外流疲弱——轮动未发生。加密货币处于分配阶段，尽管有宏观顺风，但动能负面。小盘股环节缺失。在半导体引领之后，这一序列停滞不前，未向更广泛的风险资产轮动推进。</span>
+          <span class="l-en">The working thesis (US large-cap semis → software/growth → ex-US → crypto as liquidity expands) is not tracking cleanly. China (stagflation, contracting liquidity) and Hong Kong (weak-side peg, outflow) are not receiving rotation; they are in a de-risking phase. US risk-on is narrow and value-leaning, driven by financials and energy (bear steepener), not by growth/software leadership — AI semis are re-rating, but that&#39;s a concentrated thematic, not a broad growth rotation. Crypto is surging per the driver, but BTC&#39;s distribute state and negative momentum suggest the surge may be Ethereum-led or a late-stage impulse, not a uniform crypto liquidity wave. The sequence from semis to crypto appears fractured, and the ex-US leg is missing entirely.</span>
+          <span class="l-zh">工作假设（美国大盘半导体 → 软件/成长 → 美国以外 → 加密随着流动性扩张）并未顺利追踪。中国（滞胀，流动性收缩）和香港（弱方联系汇率，资金外流）未接收到轮动；它们处于去风险阶段。美国risk-on狭窄且偏向价值，由金融和能源驱动（熊陡），而非成长/软件领导力——AI半导体正在重新估值，但这是一个集中的主题，并非广泛的成长轮动。加密按驱动力飙升，但BTC的分配状态和负动量表明这一飙升可能是以太坊引领或后期脉冲，而非统一的加密流动性浪潮。从半导体到加密的序列似乎断裂，而美国以外部分完全缺失。</span>
         </div>
         
         
@@ -11003,32 +10932,26 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Real-rate channel: restrictive real 10y (2.32%) acts as a headwind for long-duration equities (QQQ, XLK) and crypto, while favouring value/large over growth/small.</span>
-            <span class="l-zh">实际利率渠道：限制性的10年期实际利率（2.32%）对长久期股票（QQQ、XLK）和加密货币构成逆风，同时有利于价值/大盘股而非成长/小盘股。</span>
+            <span class="l-en">USD strengthening → headwind for gold (corr -0.75), copper (-0.66), and Bitcoin (-0.26) — watch for the dollar to cap commodity and crypto upside even if risk-on persists.</span>
+            <span class="l-zh">美元走强→对黄金（相关性-0.75）、铜（-0.66）和比特币（-0.26）构成逆风——即使风险偏好持续，也需关注美元限制大宗商品和加密货币的上行空间。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Dollar choke-point: strengthening USD (US growth premium) transmits headwinds to gold, copper, EM equities, and BTC, and tailwinds to oil — a drag on broad risk appetite.</span>
-            <span class="l-zh">美元瓶颈点：美元走强（美国增长溢价）对黄金、铜、新兴市场股票和比特币构成逆风，对石油构成顺风——拖累整体风险偏好。</span>
+            <span class="l-en">Bear steepener &amp; rising real yields → pressure long-duration equities (QQQ, XLK) and support financials/energy/value; if 10y continues rising, it could force rotation OUT of duration-sensitive themes, potentially undercutting the AI semis re-rating.</span>
+            <span class="l-zh">熊市陡化与实际利率上升→对长久期股票（QQQ、XLK）构成压力，并支撑金融/能源/价值股；如果10年期收益率继续上升，可能迫使资金轮动出对久期敏感的主题，从而削弱人工智能半导体的重新估值。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Credit canary watch: HY OAS tight (2.69%) and EBP negative; no credit stress yet, but a widening would be an early leading warning for equity drawdowns.</span>
-            <span class="l-zh">信用金丝雀观察：高收益债券OAS收紧（2.69%）且EBP为负；尚无明显信用压力，但利差扩大将是股市回撤的早期领先预警。</span>
+            <span class="l-en">Crypto-liquidity driver fades if BTC momentum does not flip positive and the BTC desk&#39;s DISTRIBUTE state leads to a breakdown below 63k → would remove the primary market driver, leaving the tape without a clear catalyst, possibly opening drawdown risk.</span>
+            <span class="l-zh">若比特币动能未转为正值，且比特币交易台的DISTRIBUTE状态导致跌破63000，则加密流动性驱动因素消退——这将移除主要市场驱动因素，使市场缺乏明确催化剂，可能开启回撤风险。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Stock-bond breakdown: correlation positive (0.57) means bonds fail to hedge equity drawdowns, amplifying vulnerability in a risk-off shock.</span>
-            <span class="l-zh">股债负相关失效：相关性为正（0.57）意味着债券无法对冲股市回撤，在避险冲击中放大脆弱性。</span>
-          </div>
-          
-          
-          <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Policy-path pivot: a very cold CPI (p_cold 1.0) could challenge the hawkish market pricing, repricing the front end and potentially easing rate headwinds if the labour-inflation data split widens.</span>
-            <span class="l-zh">政策路径转向：极低的CPI（p_cold 1.0）可能挑战鹰派市场定价，重新定价前端利率，若劳动力与通胀数据分化扩大，则可能缓解利率逆风。</span>
+            <span class="l-en">Policy intel&#39;s stagflationary split (Iran re-escalation oil spike + labor crack) — if labor data (claims 7/16, next payroll) weakens further while inflation stays sticky, a September hike could paradoxically tighten into weakness, flipping the Goldilocks quad to stagflation risk globally, with negative spillover for equities and credit.</span>
+            <span class="l-zh">政策情报的滞胀性分裂（伊朗再度升级导致油价飙升+劳动力市场裂痕）——如果劳动力数据（7月16日失业金申请人数、下月非农就业）进一步走弱而通胀仍具粘性，9月加息可能矛盾地在疲软时收紧，将金发姑娘象限转变为全球滞胀风险，对股票和信贷产生负面溢出。</span>
           </div>
           
         </div>
@@ -11041,38 +10964,26 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Whether the net liquidity impulse reverses — the invalidation condition for the risk-on driver.</span>
-            <span class="l-zh">净流动性冲动是否逆转——风险偏好驱动失效的条件。</span>
+            <span class="l-en">BTC price action and composite state shift — if BTC breaks higher (e.g., &gt;65k) and its momentum turns positive, it would resolve the driver conflict upward; if it breaks below 62k, it invalidates the crypto-liquidity driver.</span>
+            <span class="l-zh">BTC价格走势与复合状态转变——如果BTC突破上行（例如&gt;65k）且动能转为正值，则将向上解决驱动因素冲突；如果跌破62k，则会否定加密流动性驱动因素。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">FOMC on 29 July: any shift in guidance or dots that validates or breaks the hawkish front-end pricing.</span>
-            <span class="l-zh">7月29日FOMC会议：任何指引或点阵图的转变，若确认或打破鹰派前端定价。</span>
+            <span class="l-en">US claims data (7/16) and the FOMC (7/29) — any signal of labor deceleration or dovish shift would challenge the hawkish rate regime and could alter the stagflation narrative.</span>
+            <span class="l-zh">美国申领数据（7/16）和联邦公开市场委员会会议（7/29）——任何劳动力放缓或鸽派转向的信号都将挑战鹰派利率机制，并可能改变滞胀叙事。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">CPI (today) and PPI (tomorrow) prints — a cold CPI could force rate repricing and alter the dollar/real-rate dynamic.</span>
-            <span class="l-zh">CPI（今日）和PPI（明日）数据公布——若CPI疲软，可能迫使利率重新定价并改变美元/实际利率动态。</span>
+            <span class="l-en">USD Index (DXY) trajectory — sustained break above recent ranges (e.g., above 101) would intensify headwinds for gold, copper, and EM, potentially triggering a broader risk-off shift despite the current risk-on posture.</span>
+            <span class="l-zh">美元指数（DXY）走势——持续突破近期区间（例如高于101）将加剧黄金、铜和新兴市场的逆风，尽管当前风险偏好较高，但可能引发更广泛的避险转变。</span>
           </div>
           
           
           <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Small-cap catch-up: if IWM starts outperforming, it would broaden the risk-on base, aligning with the liquidity signal.</span>
-            <span class="l-zh">小盘股追赶：若IWM开始跑赢，将扩大风险偏好基础，与流动性信号一致。</span>
-          </div>
-          
-          
-          <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">BTC stabilization and China/HK quad improvement as confirmation that the rotation thesis is moving to the later legs.</span>
-            <span class="l-zh">BTC企稳及中国/香港四重改善，确认轮动逻辑正进入后期阶段。</span>
-          </div>
-          
-          
-          <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">Credit spreads (HY OAS) for any widening that would flip the credit canary.</span>
-            <span class="l-zh">信用利差（HY OAS）的任何扩大，只要足以翻转信用金丝雀。</span>
+            <span class="l-en">Entry-quality breadth improvement — a rise in take-quality entries above 50% and long-bias above 40% would confirm broad risk-on conviction; failure to do so on a pullback could flag a stealth distribution.</span>
+            <span class="l-zh">入场质量广度改善——优质做多入场比例上升至50%以上且多头倾向高于40%将确认广泛的风险偏好信念；若在回调时未能做到，则可能预示隐性派发。</span>
           </div>
           
         </div>
@@ -11083,7 +10994,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:12px">
           <span class="l-en">Confidence: low</span><span class="l-zh">置信度：low</span>
            · 
-          <span>as of 2026-07-14</span>
+          <span>as of 2026-07-15</span>
           
         </div>
         
@@ -11114,7 +11025,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div style="width:8px;height:8px;border-radius:50%;background:var(--mx5-warn);flex-shrink:0;margin-top:5px"></div>
             <div>
               <div style="font-size:13px;font-weight:600;color:var(--mx5-warn);margin-bottom:4px"><span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: PPI (producer prices) today — elevated two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：生产者物价指数（PPI）（今天）—— 预计升高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: FOMC rate decision in 13 days — high two-sided volatility expected · positioned fragile. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：美联储议息会议（13 天后）—— 预计偏高的两面性波动 · 仓位脆弱。非卖出信号；按噪声调整仓位。</span></div>
             </div>
           </div>
           
@@ -11166,10 +11077,21 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item" open>
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Earnings Snapshot: ASML beats across Q2 top and bottom lines, hikes full-year guidance and capacity target boosts</span><span class="l-zh">财报速览：ASML第二季度营收及利润均超预期，上调全年指引及产能目标</span></span>
+              <span class="nb-htitle"><span class="l-en">UnitedHealth blows past estimates, hikes earnings outlook as it reins in costs</span><span class="l-zh">UnitedHealth blows past estimates, hikes earnings outlook as it reins in costs</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4613821-earnings-snapshot-asml-beats-across-q2-top-and-bottom-lines-hikes-full-year-guidance-and-capacity-target-boosts?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/16/unitedhealth-group-unh-earnings-q2-2026.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">Grocery sales, United earnings, Anthropic&#39;s IPO prep and more in Morning Squawk</span><span class="l-zh">Grocery sales, United earnings, Anthropic&#39;s IPO prep and more in Morning Squawk</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/16/5-things-to-know-before-the-stock-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11187,55 +11109,22 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Bank earnings, Warsh heads to the Hill, Chipotle&#39;s Mexico push and more in Morning Squawk</span><span class="l-zh">银行财报、Warsh赴国会听证、Chipotle进军墨西哥等——Morning Squawk摘要</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/14/5-things-to-know-before-the-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">IBM stock craters 25%, the worst day on record, after company issues second-quarter earnings warning</span><span class="l-zh">IBM股价暴跌25%，创单日最大跌幅，公司发布第二季度盈利预警</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/14/ibm-warns-second-quarter-earnings-fell-short-of-expectations.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nb-htitle"><span class="l-en">Wells Fargo intends to hike Q3 common stock dividend by 11% to $0.50</span><span class="l-zh">富国银行计划将第三季度普通股股息提高11%至0.50美元</span></span>
+              <span class="nb-htitle"><span class="l-en">WEC Energy declares $0.9525 dividend</span><span class="l-zh">WEC Energy declares $0.9525 dividend</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4613833-wells-fargo-intends-to-hike-q3-common-stock-dividend-by-11-to-050?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614641-wec-energy-declares-0_9525-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-              <span class="nb-htitle"><span class="l-en">Asian shares mostly climb on cool U.S. CPI, defying weak China GDP and Iran conflict risks</span><span class="l-zh">美国CPI降温推动亚洲股市多数上涨，未受中国GDP疲软及伊朗冲突风险影响</span></span>
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">&#39;Not a junk rally:&#39; How to trade the strongest small-cap stock market in three decades</span><span class="l-zh">&#39;Not a junk rally:&#39; How to trade the strongest small-cap stock market in three decades</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4613813-asian-shares-mostly-climb-on-cool-us-cpi-defying-weak-china-gdp-and-iran-conflict-risks?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">As bank earnings approach, a market anomaly emerges</span><span class="l-zh">银行财报季临近，市场出现反常现象</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/10/as-bank-earnings-approach-a-market-anomaly-emerges.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/16/best-stock-market-trades-small-caps.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11253,11 +11142,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-              <span class="nb-htitle"><span class="l-en">Rio Tinto Q2 iron ore sales rise 7%; lowers copper cost guidance</span><span class="l-zh">力拓第二季度铁矿石销量增长7%；下调铜成本指引</span></span>
+              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nb-htitle"><span class="l-en">Bassett Furniture declares $0.20 dividend</span><span class="l-zh">Bassett Furniture declares $0.20 dividend</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4613831-rio-tinto-q2-iron-ore-sales-rise-7-lowers-copper-cost-guidance?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614642-bassett-furniture-declares-0_20-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11265,10 +11154,32 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nb-htitle"><span class="l-en">Oil Tanker Stock With Big Dividend Near Buy Point Amid Hormuz Crisis</span><span class="l-zh">霍尔木兹危机下，高股息油轮股逼近买点</span></span>
+              <span class="nb-htitle"><span class="l-en">Quaint Oak Bancorp declares $0.04 dividend</span><span class="l-zh">Quaint Oak Bancorp declares $0.04 dividend</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.investors.com/research/ibd-stock-of-the-day/oil-tanker-stock-with-big-dividend-near-buy-point-amid-hormuz-crisis/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614640-quaint-oak-bancorp-declares-0_04-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">Excelerate Energy rated new Buy, NextDecade Neutral at Goldman Sachs</span><span class="l-zh">Excelerate Energy rated new Buy, NextDecade Neutral at Goldman Sachs</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4614634-excelerate-energy-rated-new-buy-nextdecade-neutral-at-goldman-sachs?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="nb-htitle"><span class="l-en">States sue to stop Paramount-Warner Bros blockbuster merger</span><span class="l-zh">多州起诉阻止派拉蒙与华纳兄弟的巨额合并交易</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://www.npr.org/2026/07/13/nx-s1-5879286/paramount-warner-bros-discovery-lawsuit" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11697,7 +11608,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <div class="fg-neutral" style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-          <div style="font-size:40px;font-weight:800;color:var(--fg-col, #f59e0b);line-height:1;font-variant-numeric:tabular-nums">55</div>
+          <div style="font-size:40px;font-weight:800;color:var(--fg-col, #f59e0b);line-height:1;font-variant-numeric:tabular-nums">53</div>
           <div>
             <div style="font-size:18px;font-weight:700;color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
             <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Composite sentiment · 0 = Extreme Fear · 100 = Extreme Greed</span><span class="l-zh">综合情绪 · 0=极度恐慌 · 100=极度贪婪</span></div>
@@ -11716,8 +11627,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">SPX momentum (vs 125d MA)</span><span class="l-zh">标普动量（对比125日均线）</span></div>
             <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:73.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">73</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:78.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">78</div>
         </div>
         
         
@@ -11725,6 +11636,61 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-factor-row fg-neutral">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">52-week strength (new-high ratio)</span><span class="l-zh">52周强势（新高比例）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:45.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">45</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row fg-neutral">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">McClellan oscillator</span><span class="l-zh">麦克莱伦振荡器</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:51.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">51</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row fg-greed">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">Junk demand (HY OAS)</span><span class="l-zh">高收益需求（HY 利差）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:96.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">96</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row fg-neutral">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">Safe haven demand (SPY − TLT 20d)</span><span class="l-zh">避险需求（SPY−TLT 20日）</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:54.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">54</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row fg-greed">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></div>
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
+          </div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:63.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">63</div>
+        </div>
+        
+        
+        
+        <div class="mx5-dlg-factor-row fg-neutral">
+          <div>
+            <div class="mx5-dlg-factor-name"><span class="l-en">VIX trend (20d change)</span><span class="l-zh">VIX 趋势（20日变动）</span></div>
             <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
           </div>
           <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:57.0%;background:var(--fg-col, #f59e0b)"></div></div>
@@ -11735,66 +11701,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <div class="mx5-dlg-factor-row fg-greed">
           <div>
-            <div class="mx5-dlg-factor-name"><span class="l-en">McClellan oscillator</span><span class="l-zh">麦克莱伦振荡器</span></div>
-            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
-          </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:64.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">64</div>
-        </div>
-        
-        
-        
-        <div class="mx5-dlg-factor-row fg-greed">
-          <div>
-            <div class="mx5-dlg-factor-name"><span class="l-en">Junk demand (HY OAS)</span><span class="l-zh">高收益需求（HY 利差）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
-          </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:97.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">97</div>
-        </div>
-        
-        
-        
-        <div class="mx5-dlg-factor-row fg-greed">
-          <div>
-            <div class="mx5-dlg-factor-name"><span class="l-en">Safe haven demand (SPY − TLT 20d)</span><span class="l-zh">避险需求（SPY−TLT 20日）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
-          </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:71.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">71</div>
-        </div>
-        
-        
-        
-        <div class="mx5-dlg-factor-row fg-neutral">
-          <div>
-            <div class="mx5-dlg-factor-name"><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></div>
-            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
-          </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:53.0%;background:var(--fg-col, #f59e0b)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">53</div>
-        </div>
-        
-        
-        
-        <div class="mx5-dlg-factor-row fg-neutral">
-          <div>
-            <div class="mx5-dlg-factor-name"><span class="l-en">VIX trend (20d change)</span><span class="l-zh">VIX 趋势（20日变动）</span></div>
-            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
-          </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:53.0%;background:var(--fg-col, #f59e0b)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">53</div>
-        </div>
-        
-        
-        
-        <div class="mx5-dlg-factor-row fg-greed">
-          <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span></div>
             <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)"><span class="l-en">Greed zone</span><span class="l-zh">贪婪区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:92.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">92</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:86.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">86</div>
         </div>
         
         
@@ -11804,8 +11715,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">CBOE SKEW (tail risk pricing)</span><span class="l-zh">CBOE SKEW（尾部风险定价）</span></div>
             <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #ef4444)"><span class="l-en">Fear zone</span><span class="l-zh">恐慌区间</span></div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:6.0%;background:var(--fg-col, #ef4444)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #ef4444)">6</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:4.0%;background:var(--fg-col, #ef4444)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #ef4444)">4</div>
         </div>
         
         
@@ -11855,15 +11766,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Volatility is in a normal range. &middot; higher than 50% of days</span>
-              <span class="l-zh">波动率处于正常区间。 &middot; 高于历史 50% 的交易日</span>
+              <span class="l-en">Volatility is low by recent standards. &middot; lower than 80% of days</span>
+              <span class="l-zh">近期波动率偏低。 &middot; 低于历史 80% 的交易日</span>
             </div>
             
           </div>
           <div></div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            17.2
+            15.7
             
           </div>
         </div>
@@ -11878,15 +11789,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX velocity (5d change)</span><span class="l-zh">VIX 速度（5日变动）</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Volatility change is within normal daily variation. &middot; higher than 80% of days</span>
-              <span class="l-zh">波动率变化处于正常日常波动范围内。 &middot; 高于历史 80% 的交易日</span>
+              <span class="l-en">Volatility change is within normal daily variation. &middot; lower than 73% of days</span>
+              <span class="l-zh">波动率变化处于正常日常波动范围内。 &middot; 低于历史 73% 的交易日</span>
             </div>
             
           </div>
           <div></div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            1.59
+            -1.23
             
           </div>
         </div>
@@ -11901,15 +11812,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX term slope (9D / 3M)</span><span class="l-zh">VIX 期限斜率（9D / 3M）</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">The curve is steeply in contango — vol market is calm, sellers in control. &middot; lower than 98% of days</span>
-              <span class="l-zh">曲线深度顺结构，波动率市场平静，做空方占主导。 &middot; 低于历史 98% 的交易日</span>
+              <span class="l-en">The curve is steeply in contango — vol market is calm, sellers in control. &middot; lower than 97% of days</span>
+              <span class="l-zh">曲线深度顺结构，波动率市场平静，做空方占主导。 &middot; 低于历史 97% 的交易日</span>
             </div>
             
           </div>
           <div></div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            0.6
+            0.638
             
           </div>
         </div>
@@ -11924,15 +11835,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">VVIX / VIX divergence</span><span class="l-zh">VVIX / VIX 背离</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Implied vol-of-vol is within normal range. &middot; lower than 64% of days</span>
-              <span class="l-zh">隐含波动率的波动率处于正常区间。 &middot; 低于历史 64% 的交易日</span>
+              <span class="l-en">Implied vol-of-vol is within normal range. &middot; lower than 80% of days</span>
+              <span class="l-zh">隐含波动率的波动率处于正常区间。 &middot; 低于历史 80% 的交易日</span>
             </div>
             
           </div>
           <div></div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            5.552
+            5.862
             
           </div>
         </div>
@@ -11947,15 +11858,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX1D (intraday vol demand)</span><span class="l-zh">VIX1D（盘中波动需求）</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Very short-term vol demand is normal. &middot; higher than 65% of days</span>
-              <span class="l-zh">超短期波动需求处于正常水平。 &middot; 高于历史 65% 的交易日</span>
+              <span class="l-en">Very short-term vol demand is low — intraday hedging costs are below average. &middot; lower than 88% of days</span>
+              <span class="l-zh">超短期波动需求偏低，盘中对冲成本低于均值。 &middot; 低于历史 88% 的交易日</span>
             </div>
             
           </div>
           <div></div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            14.63
+            9.51
             
           </div>
         </div>
@@ -11970,15 +11881,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">COR1M (1-month implied correlation)</span><span class="l-zh">COR1M（1个月隐含相关性）</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Stocks are moving more independently — the market is rewarding stock selection. &middot; lower than 97% of days</span>
-              <span class="l-zh">股票走势更加独立，市场正在奖励个股选择能力。 &middot; 低于历史 97% 的交易日</span>
+              <span class="l-en">Stocks are moving more independently — the market is rewarding stock selection. &middot; lower than 99% of days</span>
+              <span class="l-zh">股票走势更加独立，市场正在奖励个股选择能力。 &middot; 低于历史 99% 的交易日</span>
             </div>
             
           </div>
           <div></div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            5.51
+            3.7
             
           </div>
         </div>
@@ -11993,15 +11904,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">COR3M (3-month implied correlation)</span><span class="l-zh">COR3M（3个月隐含相关性）</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Stocks are expected to behave more independently over the coming quarter. &middot; lower than 96% of days</span>
-              <span class="l-zh">预计未来一个季度股票走势将更加独立。 &middot; 低于历史 96% 的交易日</span>
+              <span class="l-en">Stocks are expected to behave more independently over the coming quarter. &middot; lower than 99% of days</span>
+              <span class="l-zh">预计未来一个季度股票走势将更加独立。 &middot; 低于历史 99% 的交易日</span>
             </div>
             
           </div>
           <div></div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            8.36
+            7.23
             
           </div>
         </div>
@@ -12016,22 +11927,22 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">DSPX (single-stock vol vs index)</span><span class="l-zh">DSPX（个股波动 vs 指数）</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Single-stock vol is running well above index vol — individual names are unusually risky relative to the market. &middot; higher than 99% of days</span>
-              <span class="l-zh">个股波动率远高于指数波动率，个股相对市场的风险溢价偏高。 &middot; 高于历史 99% 的交易日</span>
+              <span class="l-en">Single-stock vol is running well above index vol — individual names are unusually risky relative to the market. &middot; higher than 98% of days</span>
+              <span class="l-zh">个股波动率远高于指数波动率，个股相对市场的风险溢价偏高。 &middot; 高于历史 98% 的交易日</span>
             </div>
             
           </div>
           <div></div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            46.87
+            46.77
             
           </div>
         </div>
         
         
         
-        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:2px"><span class="l-en">As of 2026-07-13</span><span class="l-zh">数据日期 2026-07-13</span></div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:2px"><span class="l-en">As of 2026-07-15</span><span class="l-zh">数据日期 2026-07-15</span></div>
         
         
 
@@ -12047,7 +11958,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--ink-1,rgba(255,255,255,.85))">
-          <span class="l-en">participation broad, not just the AI complex — watch for rotation</span><span class="l-zh">普涨格局，非局限于 AI 板块 — 留意轮动信号</span>
+          <span class="l-en">AI-linked names lagging while the rest holds up</span><span class="l-zh">AI 相关个股落后，非 AI 板块相对支撑</span>
         </div>
         
         
@@ -12059,7 +11970,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">AI-linked names above their 50-day trend</span><span class="l-zh">AI 相关个股站上 50 日均线</span></div>
           </div>
           <div></div>
-          <div style="font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.85))">68%</div>
+          <div style="font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.85))">46%</div>
         </div>
         
         
@@ -12068,7 +11979,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="mx5-dlg-factor-name"><span class="l-en">Everyone else</span><span class="l-zh">其他个股</span></div>
           </div>
           <div></div>
-          <div style="font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.85))">67%</div>
+          <div style="font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.85))">65%</div>
         </div>
         
         
@@ -12088,7 +11999,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-zh">注意：AI 基础设施建设在相关个股间循环资金。若股票重新同步波动，表面平静可能迅速打破，保持观察而非追高。</span>
         </div>
         
-        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">As of 2026-07-14</span><span class="l-zh">数据日期 2026-07-14</span></div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">As of 2026-07-15</span><span class="l-zh">数据日期 2026-07-15</span></div>
         
         
 
@@ -12101,7 +12012,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         
         
-        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-13</span><span class="l-zh">数据日期 2026-07-13</span></div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-15</span><span class="l-zh">数据日期 2026-07-15</span></div>
         
       </div>
     </div>
@@ -12130,7 +12041,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <span class="mx5-dlg-sector-arr heat">&#9650;</span>
             <span class="mx5-dlg-sector-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+4<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+7<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
             
             
@@ -12142,23 +12053,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <div class="mx5-dlg-sector-row">
             <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+18<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
-            
-            
-            
-            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
-            
-          </div>
-          
-          
-          
-          <div class="mx5-dlg-sector-row">
-            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
-            
-            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+4<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+34<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
             
             
@@ -12170,9 +12067,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <div class="mx5-dlg-sector-row">
             <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-1<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-2<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+            
+            
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">dominant</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+5<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
             
             
@@ -12190,16 +12101,25 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <div class="mx5-dlg-sector-row">
             <span class="mx5-dlg-sector-arr cool">&#9660;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Memory, HBM &amp; Storage</span><span class="l-zh">内存、HBM 与存储</span></span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+17<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-3<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
           </div>
           
           
           <div class="mx5-dlg-sector-row">
             <span class="mx5-dlg-sector-arr cool">&#9660;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
+            
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-3<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            
+          </div>
+          
+          
+          <div class="mx5-dlg-sector-row">
+            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></span>
             
             <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-4<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
@@ -12208,16 +12128,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <div class="mx5-dlg-sector-row">
             <span class="mx5-dlg-sector-arr cool">&#9660;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></span>
-            
-            <span class="mx5-dlg-sector-rk" style="color:rgba(34,217,122,.7)">+3<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
-            
-          </div>
-          
-          
-          <div class="mx5-dlg-sector-row">
-            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span>
+            <span class="mx5-dlg-sector-name"><span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span></span>
             
             <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-7<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
@@ -12232,7 +12143,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-zh">板块排名每晚更新。领跑板块显示持续资金流入；落后板块持续资金外流。排名反映相对强弱，非绝对判断。</span>
         </div>
         
-        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-14</span><span class="l-zh">数据日期 2026-07-14</span></div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of 2026-07-15</span><span class="l-zh">数据日期 2026-07-15</span></div>
         
         
       </div>
@@ -12673,7 +12584,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>10439</td><td>2026-07-15</td>
+        <td>10440</td><td>2026-07-15</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12682,7 +12593,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>700</td><td>2026-07-15</td>
+        <td>701</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12691,7 +12602,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>28</td><td>2026-07-15</td>
+        <td>27</td><td>2026-07-15</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12718,7 +12629,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12727,7 +12638,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5</td><td>2026-07-15</td>
+        <td>6</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12736,7 +12647,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12745,7 +12656,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>2525</td><td>2026-07-15</td>
+        <td>2525</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12754,7 +12665,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>180</td><td>2026-07-14</td>
+        <td>180</td><td>2026-07-15</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12763,7 +12674,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12772,7 +12683,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5</td><td>2026-07-14</td>
+        <td>5</td><td>2026-07-15</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12781,7 +12692,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12790,7 +12701,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12799,7 +12710,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>8973</td><td>2026-07-15</td>
+        <td>8975</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12808,7 +12719,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>638</td><td>2026-07-15</td>
+        <td>13394</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12817,7 +12728,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>8034</td><td>2026-07-15</td>
+        <td>8035</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12826,7 +12737,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>4338</td><td>2026-07-15</td>
+        <td>2763</td><td>2026-07-15</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12835,7 +12746,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>140666</td><td>2026-07-15</td>
+        <td>140697</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12844,7 +12755,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>62073</td><td>2026-07-15</td>
+        <td>140416</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12853,7 +12764,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>62073</td><td>2026-07-15</td>
+        <td>43260</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12862,7 +12773,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -12871,7 +12782,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13105,7 +13016,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>0</td><td>2026-07-15</td>
+        <td>0</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13204,7 +13115,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>593</td><td>2026-07-15</td>
+        <td>594</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13213,7 +13124,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5720</td><td>2026-07-15</td>
+        <td>5721</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13222,7 +13133,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>709</td><td>2026-07-15</td>
+        <td>710</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13231,7 +13142,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13240,7 +13151,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13249,7 +13160,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>41</td><td>2026-07-15</td>
+        <td>41</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13276,7 +13187,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13285,7 +13196,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13294,7 +13205,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1449</td><td>2026-07-14</td>
+        <td>1450</td><td>2026-07-15</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13303,7 +13214,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13312,7 +13223,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>165</td><td>2026-07-15</td>
+        <td>169</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13339,7 +13250,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13348,7 +13259,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-14</td>
+        <td>1</td><td>2026-07-15</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13357,7 +13268,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>20667</td><td>2026-07-15</td>
+        <td>11695</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13366,7 +13277,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-15</td>
+        <td>1</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13375,7 +13286,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>367</td><td>2026-07-15</td>
+        <td>367</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
       
@@ -13384,7 +13295,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>100</td><td>2026-07-14</td>
+        <td>100</td><td>2026-07-15</td>
         <td class="l muted"></td>
       </tr>
       
@@ -14002,9 +13913,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-16 05:48 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-16 18:43 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-16 05:48 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-16 18:43 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -14257,6 +14168,5 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

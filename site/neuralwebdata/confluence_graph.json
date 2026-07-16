@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-07-14",
+  "asof": "2026-07-15",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -1435,7 +1435,7 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "up",
-        "asof": "2026-07-14",
+        "asof": "2026-07-15",
         "display_only": true,
         "source_lobe": "fx_dollar"
       }
@@ -1525,7 +1525,7 @@
           "Gold",
           "Copper"
         ],
-        "asof": "2026-07-14",
+        "asof": "2026-07-15",
         "display_only": true,
         "source_lobe": "commodity_context"
       }
@@ -1540,7 +1540,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-13",
+        "asof": "2026-07-14",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1555,7 +1555,7 @@
         "quad_name": "Stagflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-13",
+        "asof": "2026-07-14",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1570,7 +1570,7 @@
         "quad_name": "Stagflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-13",
+        "asof": "2026-07-14",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -13844,6 +13844,16 @@
       "note": "structural: site/leaderradar/radar.json consumed by engine/pick_lab/candidates.py"
     },
     {
+      "src": "artifact:site-leader-radar",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/leaderradar/radar.json consumed by scripts/build_site.py"
+    },
+    {
       "src": "module:scripts/build_leader_radar.py",
       "dst": "artifact:leader-radar-state-history",
       "edge_type": "feeds",
@@ -13862,16 +13872,6 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/leader_radar/state_history.parquet consumed by scripts/build_leader_radar.py"
-    },
-    {
-      "src": "artifact:leader-radar-state-history",
-      "dst": "module:scripts/build_site.py",
-      "edge_type": "feeds",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "structural: data/leader_radar/state_history.parquet consumed by scripts/build_site.py"
     },
     {
       "src": "module:scripts/build_leader_radar.py",
@@ -14554,16 +14554,6 @@
       "note": "structural: engine/credit_momentum.py writes data/corp_bonds/forward_log.jsonl"
     },
     {
-      "src": "data/regime/latest.json:regime_vector",
-      "dst": "data/regime/latest.json:risk_radar",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "pair_id=regime_vector-vs-risk_radar kind=directional-opposition severity=tension a=quad=Q1 growth_score=0.267 (rising growth) b=state=caution dominant_scare=growth top_score=65.6"
-    },
-    {
       "src": "site/intelligence/by_ticker.json (demand/tape)",
       "dst": "site/intelligence/briefing.json",
       "edge_type": "contradicts",
@@ -14654,11 +14644,11 @@
       "src": "options.skew_rising",
       "dst": "us_board.buy_lane",
       "edge_type": "contradicts",
-      "n": 0,
+      "n": 1,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-07-06); e.g. none. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
+      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-07-06); e.g. BA. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
     },
     {
       "src": "options.skew_decel",
@@ -14719,56 +14709,18 @@
       "display_only": true,
       "regime": null,
       "note": "rates headwind: asset=XLV net=-0.368 verdict=headwind source_lobe=rates_transmission asof=2026-07-13"
-    },
-    {
-      "src": "macro:fx_dollar",
-      "dst": "regime:Q1",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "cross_asset diverge: fx_dollar contradicts regime:Q1 asof=2026-07-13 source_lobe=contradictions/cross_asset_confirm"
-    },
-    {
-      "src": "macro:rates_credit",
-      "dst": "regime:Q1",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "cross_asset diverge: rates_credit contradicts regime:Q1 asof=2026-07-13 source_lobe=contradictions/cross_asset_confirm"
     }
   ],
   "contradiction_summary": {
-    "n": 2,
+    "n": 1,
     "by_severity": {
-      "tension": 1,
       "note": 1
     },
     "top_pair_ids": [
-      "regime_vector-vs-risk_radar",
       "briefing-divergences"
     ]
   },
   "contradiction_records": [
-    {
-      "pair_id": "regime_vector-vs-risk_radar",
-      "a": {
-        "artifact": "data/regime/latest.json:regime_vector",
-        "reading": "quad=Q1 growth_score=0.267 (rising growth)"
-      },
-      "b": {
-        "artifact": "data/regime/latest.json:risk_radar",
-        "reading": "state=caution dominant_scare=growth top_score=65.6"
-      },
-      "kind": "directional-opposition",
-      "severity": "tension",
-      "as_of": "2026-07-13",
-      "note": "Regime vector places growth in positive territory while the risk radar flags an elevated growth scare (caution).  This is typical of early growth-scare onset before the regime flips.  Display-only; neither cancels the other.",
-      "display_only": true
-    },
     {
       "pair_id": "briefing-divergences",
       "a": {
@@ -14781,7 +14733,7 @@
       },
       "kind": "directional-opposition",
       "severity": "note",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "note": "1 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: NVDA.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     }
@@ -14803,7 +14755,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-15T08:55:30Z",
-  "inputs_hash": "sha256:8cde576d990c7a7409db2988c8b9f99d55a153ccdf39fd696164e1860568efc1",
+  "produced_at": "2026-07-16T07:45:11Z",
+  "inputs_hash": "sha256:511f7dd1685e3cc4710e79a4e8a940a7dba188fa92c656b6339b3171ed24d8ee",
   "tier": "display"
 }
