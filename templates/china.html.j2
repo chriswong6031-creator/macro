@@ -902,6 +902,36 @@
   body.page-china .cnx-stword.ok{color:var(--up)}
   body.page-china .cnx-stword.warn{color:var(--warn)}
   body.page-china .cnx-stword.bad{color:var(--down)}
+  /* ── Light-mode tokens + overrides — align page-china with body.page-macro ──
+     The mx5 glass CSS was ported dark-only: .cnx-card reads
+     var(--mx5-glass-bg,<dark fallback>) which was never defined for light, and
+     popovers / dialogs / hairline borders were hardcoded dark rgba — so in light
+     mode every card rendered as a dark block with dark text. Define the light
+     glass tokens (same values as body.page-macro.mx4-grid) + override every
+     hardcoded dark surface. All scoped to [data-theme="light"] so dark mode is
+     untouched; colored chips (.hot/.turn) are excluded so their tints survive. */
+  [data-theme="light"] body.page-china{--mx5-glass-bg:rgba(255,255,255,.82);--mx5-glass-border:rgba(0,0,0,.06);--mx5-pop-bg:rgba(255,255,255,.97)}
+  [data-theme="light"] body.page-china .cnx-card[role="button"]:hover{background:rgba(0,0,0,.035);border-color:rgba(0,0,0,.14);box-shadow:0 6px 24px rgba(0,0,0,.10)}
+  [data-theme="light"] body.page-china .cnx-pop{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1);box-shadow:0 12px 40px rgba(0,0,0,.16)}
+  [data-theme="light"] body.page-china .cnx-dlg-panel{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1)}
+  [data-theme="light"] body.page-china .cnx-dlg-backdrop{background:rgba(20,24,30,.34)}
+  [data-theme="light"] body.page-china .cnx-dlg-head{border-bottom-color:rgba(0,0,0,.09)}
+  [data-theme="light"] body.page-china .cnx-dlg-close{border-color:rgba(0,0,0,.18)}
+  [data-theme="light"] body.page-china .cnx-hm-wrap.hm-full{background:rgba(255,255,255,.99)}
+  [data-theme="light"] body.page-china .cnx-links a,[data-theme="light"] body.page-china .cnx-dh{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.09)}
+  [data-theme="light"] body.page-china .cnx-hero-left{border-right-color:rgba(0,0,0,.08)}
+  [data-theme="light"] body.page-china .cnx-row,[data-theme="light"] body.page-china .cnx-kv,[data-theme="light"] body.page-china .cnx-foot,[data-theme="light"] body.page-china .cnx-stk,[data-theme="light"] body.page-china .cnx-ledd,[data-theme="light"] body.page-china .cnx-receipt,[data-theme="light"] body.page-china table.cnx-mt td,[data-theme="light"] body.page-china table.cnx-mt th{border-color:rgba(0,0,0,.08)}
+  [data-theme="light"] body.page-china .cnx-pop-bar,[data-theme="light"] body.page-china .cnx-sep,[data-theme="light"] body.page-china .cnx-fbar,[data-theme="light"] body.page-china .cnx-heat i.n{background:rgba(0,0,0,.09)}
+  [data-theme="light"] body.page-china .cnx-hbtn{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.12)}
+  [data-theme="light"] body.page-china .cnx-hbtn:hover{background:rgba(0,0,0,.06)}
+  [data-theme="light"] body.page-china .cnx-chip:not(.hot):not(.turn),[data-theme="light"] body.page-china .cnx-ev,[data-theme="light"] body.page-china .cnx-ihcard,[data-theme="light"] body.page-china .cnx-hm-wrap,[data-theme="light"] body.page-china .cnx-nchip{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.1)}
+  [data-theme="light"] body.page-china .cnx-regime-pill{border-color:rgba(0,0,0,.12)}
+  [data-theme="light"] body.page-china .cnx-chart-ph{border-color:rgba(0,0,0,.14)}
+  [data-theme="light"] body.page-china .cnx-hm-expand{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.16)}
+  [data-theme="light"] body.page-china .cnx-chip.hot,[data-theme="light"] body.page-china .cnx-imp.high,[data-theme="light"] body.page-china .cnx-fq.stag{color:#b4232a}
+  [data-theme="light"] body.page-china .cnx-chip.turn{color:#1f7a44}
+  [data-theme="light"] body.page-china .cnx-tkr-btn{color:#2456a8}
+  [data-theme="light"] body.page-china .cnx-fq.refl{color:#9a6b0e}
 {%- endif %}{# /mode != stocks — MX5 CSS #}
 </style>
 </head>
