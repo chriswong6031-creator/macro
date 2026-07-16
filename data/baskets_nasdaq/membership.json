@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-14",
+ "as_of": "2026-07-16",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -40,16 +40,16 @@
      "name": "Texas Instruments Inc"
     },
     {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
+    },
+    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
     },
     {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
-    },
-    {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
     },
     {
      "ticker": "NXPI",
@@ -394,16 +394,16 @@
      "name": "Texas Instruments Inc"
     },
     {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
+    },
+    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
     },
     {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
-    },
-    {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
     },
     {
      "ticker": "NXPI",
