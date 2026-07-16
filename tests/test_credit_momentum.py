@@ -584,7 +584,10 @@ class TestAlertsDebounce:
         }
         data = {
             "organ": "credit_momentum.v1",
-            "as_of": "2026-07-14",
+            # as_of must share the date.today() anchor of the debounce-history
+            # builders below: the engine counts consecutive prior events looking
+            # back from as_of, so a literal date rots once the calendar advances.
+            "as_of": str(date.today()),
             "authority": {"rank": False, "size": False, "gate": False, "escalate": False},
             "tags": {
                 "credit_market_turn": {
