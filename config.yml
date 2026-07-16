@@ -6216,7 +6216,8 @@ yahoo:
     extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH,   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
              SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN,  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
              MAGS,                # Roundhill Magnificent Seven ETF — mega-cap leadership concentration tracker (hk_context_chips em_dm_rs / HKRV-W4)
-             "^KS11"]             # KOSPI composite (Korea) — EM-Asia bellwether; hk_context_chips complement
+             "^KS11",             # KOSPI composite (Korea) — EM-Asia bellwether; hk_context_chips complement
+             "^GSPC"]             # S&P 500 price index — intl_performance US-vs-world benchmark + cycle_proxies/equity_alloc/intl_claims/lab/live_overlay/signal_lab. Store was seeded once by scripts/spvector_baseline.py (2026-06-14) and froze at 2026-06-12 because the ticker was never in ANY group here; freshness now guarded by collectors.yahoo.check_yahoo_freshness
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)

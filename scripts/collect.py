@@ -772,6 +772,20 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             log.warning("cor/vol freshness tripwire crashed (non-fatal): %s", e)
 
+    # ^GSPC incident (frozen 2026-06-12→07-16): same store-level tripwire for the
+    # pinned engine-critical yahoo names (collectors.yahoo.ENGINE_CRITICAL_SERIES).
+    # A series no adapter fetches — never in a config ticker group, dropped from
+    # one, or seeded once by a one-shot script — never appears in any frames dict,
+    # so detect_stale_series can never see it; only a store-vs-exchange-calendar
+    # read catches the class. Runs AFTER write_status so its stale_series entries
+    # survive the merge. Warn-only.
+    if "yahoo" in registry:
+        try:
+            from collectors.yahoo import check_yahoo_freshness
+            check_yahoo_freshness()
+        except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
+            log.warning("yahoo freshness tripwire crashed (non-fatal): %s", e)
+
     ok = sum(1 for r in results if r.status in ("ok", "stale"))
     log.info("collection done: %d/%d sources usable", ok, len(results))
 
