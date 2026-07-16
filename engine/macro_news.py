@@ -332,6 +332,7 @@ REGULATORY_NOISE_TERMS = [
 # headlines rarely put "CPI"/"Fed" in the title).
 from engine import news_common as _nc
 from engine import news_events as _ne   # W2: event-identity layer (display-only)
+from engine import qkernel as _qk       # W2: item_id basis shared with the qbus desks
 
 _NEWS_SOURCES = list(_nc.TIER1_SOURCES) + list(_nc.TIER2_SOURCES)
 
@@ -587,6 +588,11 @@ def enrich_headline(h: dict) -> dict:
         "related_tickers": ticker_hits,
         "source_tier": source_tier,
         "source_lang": h.get("source_lang", "en"),
+        # Same id basis the qbus-emitting desks use (norm_title|url-host) so the
+        # echo read-back's item_id join can actually match a stored row. lang="en"
+        # to mirror financial_news/news_vector rows (their norm branch).
+        "_id": _qk.item_id(h.get("domain", "") or h.get("source", ""),
+                           h.get("url", ""), title, "en"),
     })
     # W2: attach event identity + centrality (pure, display-only; never gates keep/drop).
     try:
@@ -1086,6 +1092,61 @@ def _fetch_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str 
     return articles, reason
 
 
+def _attach_qbus_readback(kept: list[dict], asof: date, qbus_df) -> None:
+    """Backfill novelty_z + echo on every KEPT headline from ONE pre-loaded qbus
+    df (mutates the dicts in place). Display-only — never changes keep/drop —
+    and fail-open per headline. Extracted from macro_headlines so the join is
+    testable with an injected df."""
+    from engine import qbus as _qbus
+    for _h in kept:
+        try:
+            _tickers = _h.get("tickers") or []
+            _theme = _h.get("theme") or ""
+            # Subject selection for novelty_z:
+            # - Tickers pass through unchanged (they exist in the qbus store).
+            # - Theme tokens MUST be mapped via _MACRO_THEME_TO_QBUS because
+            #   macro_news theme vocabulary differs from the qbus store's
+            #   theme vocabulary (e.g. 'stocks' in macro_news vs 'markets' in
+            #   qbus).  If the map returns None (no semantically honest
+            #   counterpart), skip the call and leave novelty_z=None rather
+            #   than joining against the wrong bucket.
+            if _tickers:
+                _subject: str | None = _tickers[0]
+            else:
+                _subject = _MACRO_THEME_TO_QBUS.get(_theme)  # None = skip
+            if _subject:
+                _h["novelty_z"] = _qbus.novelty_z(_subject, asof, df=qbus_df)
+            else:
+                _h.setdefault("novelty_z", None)
+            # echo: exact item_id join first (macro _id shares the wire desks'
+            # norm_title|host basis, so a story BOTH crawled matches exactly) …
+            _ek = ""
+            _hid = _h.get("_id", "")
+            if _hid and "item_id" in qbus_df.columns:
+                _sub = qbus_df[qbus_df["item_id"] == _hid]
+                if len(_sub) > 0:
+                    _ek = str(_sub.iloc[0].get("event_key") or "")
+            if not _ek:
+                # … falling back to the shingled-title cluster match: macro_news
+                # emits no qbus rows, so most headlines exist in the store only
+                # as another desk's crawl of the same story (different host /
+                # slightly different title). Window keys off the headline's own
+                # seendate day when parseable, else the build asof.
+                _dt = _parse_dt(_h.get("seendate", ""))
+                _ek = _qbus.event_key_for_title(_h.get("title", ""),
+                                                _dt.date() if _dt else asof,
+                                                df=qbus_df) or ""
+            if _ek:
+                _raw_echo = _qbus.echo_stats(_ek, df=qbus_df, asof=asof)
+                if _raw_echo:
+                    _h["echo"] = {
+                        "n_sources": _raw_echo.get("n_sources"),
+                        "n_desks": _raw_echo.get("n_desks"),
+                    }
+        except Exception:  # noqa: BLE001
+            pass
+
+
 # --------------------------------------------------------------------------- #
 # public: filtered macro headlines
 # --------------------------------------------------------------------------- #
@@ -1113,44 +1174,7 @@ def macro_headlines(today: date | None = None) -> dict | None:
         from engine import qbus as _qbus
         _qbus_df = _qbus.read_items()
         if _qbus_df is not None and len(_qbus_df) > 0 and kept:
-            _asof_date = (today or date.today())
-            for _h in kept:
-                try:
-                    _tickers = _h.get("tickers") or []
-                    _theme = _h.get("theme") or ""
-                    # Subject selection for novelty_z:
-                    # - Tickers pass through unchanged (they exist in the qbus store).
-                    # - Theme tokens MUST be mapped via _MACRO_THEME_TO_QBUS because
-                    #   macro_news theme vocabulary differs from the qbus store's
-                    #   theme vocabulary (e.g. 'stocks' in macro_news vs 'markets' in
-                    #   qbus).  If the map returns None (no semantically honest
-                    #   counterpart), skip the call and leave novelty_z=None rather
-                    #   than joining against the wrong bucket.
-                    if _tickers:
-                        _subject: str | None = _tickers[0]
-                    else:
-                        _subject = _MACRO_THEME_TO_QBUS.get(_theme)  # None = skip
-                    if _subject:
-                        _h["novelty_z"] = _qbus.novelty_z(_subject, _asof_date,
-                                                           df=_qbus_df)
-                    else:
-                        _h.setdefault("novelty_z", None)
-                    # echo: look up event_key via item_id
-                    _hid = _h.get("_id", "")
-                    if _hid and "item_id" in _qbus_df.columns:
-                        _sub = _qbus_df[_qbus_df["item_id"] == _hid]
-                        if len(_sub) > 0:
-                            _ek = str(_sub.iloc[0].get("event_key") or "")
-                            if _ek:
-                                _raw_echo = _qbus.echo_stats(_ek, df=_qbus_df,
-                                                              asof=_asof_date)
-                                if _raw_echo:
-                                    _h["echo"] = {
-                                        "n_sources": _raw_echo.get("n_sources"),
-                                        "n_desks": _raw_echo.get("n_desks"),
-                                    }
-                except Exception:  # noqa: BLE001
-                    pass
+            _attach_qbus_readback(kept, today or date.today(), _qbus_df)
     except Exception:  # noqa: BLE001 — always display-only, never raises
         pass
 

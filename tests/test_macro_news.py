@@ -451,3 +451,78 @@ def test_macro_synthesis_top_channels_carry_bilingual_labels():
     # unmapped slugs de-underscore instead of leaking raw
     en, zh = mn._slug_label("some_new_channel", mn.CHANNEL_LABEL)
     assert en == "some new channel" and zh == "some new channel"
+
+
+# --------------------------------------------------------------------------- #
+# W2 qbus read-back — echo must actually attach to macro headlines
+# (audit W2-PARTIAL: the item_id join never matched because macro headlines
+# carried no _id; now _id shares the wire desks' basis + a title fallback)
+# --------------------------------------------------------------------------- #
+def _qbus_fixture_df():
+    """Two crawls of the SAME Fed story from two desks/sources, clustered into
+    one event_key — the minimal 'confirmed elsewhere' store."""
+    import pandas as pd
+    from engine import qbus
+    rows = [
+        {"desk": "news_vector", "source": "reuters.com",
+         "url": "https://reuters.com/markets/fed-holds-rates",
+         "title": "Fed holds interest rates steady",
+         "seendate": "2026-06-19T12:00:00+00:00",
+         "_crawled_at": "2026-06-19T12:05:00+00:00",
+         "entities": [], "themes": ["monetary"], "lang": "en"},
+        {"desk": "financial_news", "source": "cnbc.com",
+         "url": "https://cnbc.com/2026/06/19/fed-decision.html",
+         "title": "Fed holds interest rates steady in June",
+         "seendate": "2026-06-19T13:00:00+00:00",
+         "_crawled_at": "2026-06-19T13:02:00+00:00",
+         "entities": [], "themes": ["monetary"], "lang": "en"},
+    ]
+    clustered = qbus.assign_event_keys(rows, thresh=0.4, window_days=3)
+    assert clustered[0]["event_key"] == clustered[1]["event_key"]
+    return pd.DataFrame(clustered, columns=list(qbus.COLUMNS))
+
+
+def test_enrich_headline_populates_wire_desk_id():
+    from engine import qkernel
+    h = mn.enrich_headline({"title": "Fed holds interest rates steady",
+                            "url": "https://reuters.com/markets/fed-holds-rates",
+                            "domain": "reuters.com", "theme": "monetary",
+                            "seendate": "2026-06-19T12:00:00+00:00"})
+    assert h["_id"] == qkernel.item_id("reuters.com",
+                                       "https://reuters.com/markets/fed-holds-rates",
+                                       "Fed holds interest rates steady", "en")
+
+
+def test_macro_headline_gets_echo_via_exact_item_id_join():
+    df = _qbus_fixture_df()
+    # same title + same host as the stored news_vector crawl → _id joins exactly
+    h = mn.enrich_headline({"title": "Fed holds interest rates steady",
+                            "url": "https://reuters.com/markets/fed-holds-rates",
+                            "domain": "reuters.com", "theme": "monetary",
+                            "seendate": "2026-06-19T12:00:00+00:00"})
+    assert (df["item_id"] == h["_id"]).any()   # the join key really matches
+    mn._attach_qbus_readback([h], date(2026, 6, 19), df)
+    assert h.get("echo") == {"n_sources": 2, "n_desks": 2}
+
+
+def test_macro_headline_gets_echo_via_title_fallback():
+    df = _qbus_fixture_df()
+    # different host (FT) → item_id can NOT match any stored row; the shingled
+    # title fallback must still find the story's cluster.
+    h = mn.enrich_headline({"title": "Fed holds interest rates steady",
+                            "url": "https://www.ft.com/content/fed-holds",
+                            "domain": "ft.com", "theme": "monetary",
+                            "seendate": "2026-06-19T14:00:00+00:00"})
+    assert not (df["item_id"] == h["_id"]).any()
+    mn._attach_qbus_readback([h], date(2026, 6, 19), df)
+    assert h.get("echo") == {"n_sources": 2, "n_desks": 2}
+
+
+def test_macro_headline_unrelated_title_gets_no_echo():
+    df = _qbus_fixture_df()
+    h = mn.enrich_headline({"title": "Eurozone PMI slides to a nine-month low",
+                            "url": "https://www.ft.com/content/pmi",
+                            "domain": "ft.com", "theme": "growth",
+                            "seendate": "2026-06-19T14:00:00+00:00"})
+    mn._attach_qbus_readback([h], date(2026, 6, 19), df)
+    assert "echo" not in h
