@@ -339,6 +339,38 @@ def _leaderboard() -> dict | None:
                         sorted(sb, key=lambda x: (x.get("NET_BUY_AMT") or 0))[:4]]}
 
 
+def _drilldown_closes() -> tuple[pd.DataFrame, str | None]:
+    """Constituent close matrix for the per-sector drill-down holdings cards.
+
+    Source of record is the curated breadth cache (china_breadth/_closes_cache.parquet,
+    written by the collect lane). It is gitignored rebuild-only, so on the re-render
+    lanes (build_vector -> build_china, no collectors) and in fresh worktrees it can be
+    absent; there we fall back to the COMMITTED broad A-share search panel
+    (china_search/closes.parquet, ~1560 top-mcap names) which carries 76/82 curated
+    constituents with deep history. Curated cache is tried FIRST so the nightly lane's
+    drill-down is byte-unchanged; the fallback only rescues lanes that lack the cache --
+    the same china_search-first precedence build_china_library.universe() already uses,
+    and mirrors scripts/build_canada.py::_drilldown_closes() (HKCA-13). Returns
+    (df, source_label); (empty, None) when neither source is usable."""
+    dd = config.data_dir()
+    sources = [
+        (dd / "china_breadth" / "_closes_cache.parquet", "china_breadth"),
+        (dd / "china_search" / "closes.parquet", "china_search"),
+    ]
+    for path, label in sources:
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_parquet(path)
+        except Exception as exc:  # noqa: BLE001 — corrupt committed parquet must not break the build
+            log.error("china drill-down panel %s unreadable: %s", label, exc)
+            continue
+        if df.empty or df.shape[1] == 0:
+            continue
+        return df, label
+    return pd.DataFrame(), None
+
+
 def _build_sector_pages(env) -> int:
     """Per-sector drill-down: the ETF's own cycle + each curated constituent analyzed.
     Output site/sectors/<FUND>.html (e.g. site/sectors/512690.SS.html)."""
@@ -349,8 +381,10 @@ def _build_sector_pages(env) -> int:
     names = cfg["yahoo"]["sector_etfs"]
     constituents = cfg["constituents"]
     closes = china_closes()
-    cache = config.data_dir() / "china_breadth" / "_closes_cache.parquet"
-    ccloses = pd.read_parquet(cache) if cache.exists() else pd.DataFrame()
+    ccloses, _dd_src = _drilldown_closes()
+    if not ccloses.empty:
+        log.info("china sector drill-down: constituent panel = %s (%d names)",
+                 _dd_src, ccloses.shape[1])
     outdir = Path(config.load()["storage"]["site_dir"]) / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
     built = 0
