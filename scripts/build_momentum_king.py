@@ -144,10 +144,20 @@ def _group_residual(group_closes, label: str, min_members: int) -> dict | None:
     """One within-group residual pass. market=None → residual_alpha loads SPY as the
     MARKET leg; the group's own equal-weight peer is the SECTOR leg (within-group
     neutralization — 'who leads THIS group'). NEVER pass the peer basket as market,
-    that would double-neutralize. Returns the by_sector block for `label`, or None."""
+    that would double-neutralize. Returns the by_sector block for `label`, or None.
+
+    Window: group passes use a 126-day (~6-month) beta+formation window, NOT the
+    252-day sector-spine window. A small group has far fewer full-history members
+    than the 1500-name universe, and the default 252-day residual needs ~252 rows of
+    per-name history to survive — which silently starved group coverage (a 252-window
+    run yielded 0 sub-industries). 126 aligns with the ≥147-row _GROUP_MIN_ROWS floor,
+    keeps the boards populated, and gives a more responsive current-leader read; the
+    slightly less-stable betas are acceptable for a display-tier group signal. The
+    252-day sector spine (the main residual pass) is unchanged."""
     res = compute_residual_alpha(
         closes=group_closes, market=None,
         tkr_sector={t: label for t in group_closes.columns},
+        win=126, form=126, skip=21,
         min_names=min_members, min_sector=min_members)
     if not res or label not in res.get("by_sector", {}):
         return None
