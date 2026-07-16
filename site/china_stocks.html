@@ -1126,14 +1126,25 @@
   /* long names truncate instead of widening the table */
   .st-table td.st-name { max-width:230px; overflow:hidden; text-overflow:ellipsis; }
 
-  /* mobile: low-priority columns hide so the core view fits without scrolling */
+  /* mobile: keep EVERY column but let the lower-priority ones (sector / price /
+     mkt-cap / off-high, marked .st-hide-sm) scroll horizontally instead of vanishing.
+     The identity stays on screen first (Stage · Ticker · Name), and the sticky Stage
+     column keeps the row anchored while the reader swipes across to the metrics.
+     Spacing is tightened and the Name column is language-aware: long English names
+     truncate hard, while the compact 3–4-character Chinese names get a narrower cap. */
   @media (max-width:680px) {
     .st-table { font-size:10.5px; }
-    .st-table td, .st-table th { padding:4px 5px; }
-    .st-table .st-chip { font-size:8.5px; padding:1px 5px; }
+    .st-table td, .st-table th { padding:4px 6px; }
+    .st-table .st-chip { font-size:8px; padding:1px 5px; }
     .st-table .st-sarrow-idle { display:none; }
-    .st-table td.st-hide-sm, .st-table th.st-hide-sm { display:none; }
-    .st-table td.st-name { max-width:74px; }
+    .st-table td.st-name, .st-table th.st-name { max-width:96px; }        /* long EN names truncate */
+    html[data-lang="zh"] .st-table td.st-name,
+    html[data-lang="zh"] .st-table th.st-name { max-width:60px; }         /* compact CJK names */
+    /* the .st-hide-sm columns are now on-screen (scrollable) here, so the shared
+       stocktable.js rule that hides their column-chooser rows at ≤680px is wrong for
+       this page — restore them so they can still be toggled off. (Higher specificity
+       than the injected `.stf-ch-row.st-hide-sm{display:none}`.) */
+    body.page-china-stocks .stf-ch-row.st-hide-sm { display:flex; }
   }
   /* W8-R7 organ chip — inline to avoid collision with theme.css in-flight PRs */
   .anv2-chip-organ { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
@@ -17221,6 +17232,7 @@ window.__CHART_SWAP__ = {
     optionLabels: OPTION_LABELS,
     searchPlaceholder: ['Search name or theme…','搜索名称或主题…'],
     rankFn: setupRank,
+    pageSize: 25,   // paginate the long board (165+ rows) — footer "Show more / all"
   });
 
   /* restore persisted view */
