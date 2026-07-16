@@ -1,14 +1,23 @@
-"""scripts/build_stance_matrix.py — MLC W2b stance-matrix builder.
+"""scripts/build_stance_matrix.py — MLC W2b / W2b-2 stance-matrix builder.
 
-Program: MLC (Megacap Leadership Coherence) W2b coherence layer.
-Rulings: MLC-W2b.
+Program: MLC (Megacap Leadership Coherence) W2b + W2b-2 coherence layer.
+Rulings: MLC-W2b, MLC-W2b-2.
 
 Per basket slug (union of theme_intel.themes ids), emits a row collecting
-each available verdict mapped onto one signed tier scale (-2..+2).
+each available verdict mapped onto one signed tier scale (-2..+2).  MLC-W2b-2
+ADDITIVE: also emits a top-level `sectors` array (one row per SPDR sector ETF
+present in the freshness-gated sector_central doc) with three verdicts each:
+  • conviction — same label→tier map as the basket-side sector organ
+  • rs         — momentum.lead → tier (leading +1, mid-pack 0, lagging −1;
+                 narrower ±1 range: RS lead is a coarser read)
+  • baskets    — median tier of member-basket theme verdicts (reverse-mapped
+                 via the existing inline sector-proxy dict; emitted only when
+                 ≥1 member basket carries a theme verdict)
+Schema stays mlc.stance_matrix.v1 (additive key; no version bump).
 
-Tier-mapping tables are pre-registered-arbitrary (MLC-W2b; frozen — no tuning
-on observed cases). All mappings are DISPLAY-ONLY: nothing here ranks, gates,
-sizes, or escalates. CONST-ART2 authority: false.
+Tier-mapping tables are pre-registered-arbitrary (MLC-W2b, MLC-W2b-2; frozen
+— no tuning on observed cases). All mappings are DISPLAY-ONLY: nothing here
+ranks, gates, sizes, or escalates. CONST-ART2 authority: false.
 
 Output: site/mlcdata/stance_matrix.json  (schema: mlc.stance_matrix.v1)
 
@@ -22,6 +31,8 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
+import statistics
 import sys
 from datetime import date, datetime
 from pathlib import Path
@@ -87,6 +98,15 @@ _SECTOR_PROXY_INLINE: dict[str, str] = {
 # Pre-registered-arbitrary (MLC-W2b; frozen): semis inherit Technology (XLK).
 _CONVICTION_ETF_FALLBACK_INLINE: dict[str, str] = {
     "SMH": "XLK",  # pre-registered-arbitrary (MLC-W2b; frozen): semis inherit Technology
+}
+
+# RS momentum.lead -> signed tier for sector rows (MLC-W2b-2; frozen — no tuning on observed cases).
+# Deliberately narrower ±1 range: RS lead is a coarser read than conviction.
+# Pre-registered-arbitrary (MLC-W2b-2; frozen — no tuning on observed cases).
+_RS_LEAD_TIER: dict[str, int] = {
+    "leading": +1,
+    "mid-pack": 0,
+    "lagging": -1,
 }
 
 
@@ -220,6 +240,61 @@ def _build_tip(verdicts: dict[str, dict]) -> tuple[str, str]:
         val_zh = raw_zh.get(organ, {}).get(str(raw), str(raw))
         parts_en.append(f"{lbl_en}: {val_en}")
         parts_zh.append(f"{lbl_zh}：{val_zh}")
+    return " · ".join(parts_en), " · ".join(parts_zh)
+
+
+def _round_half_away_from_zero(x: float) -> int:
+    """Round a float to int, rounding halves away from zero (not banker's rounding).
+
+    Python's built-in round() uses banker's rounding (round-half-to-even), which
+    would map 0.5 → 0 and -0.5 → 0. For the sector baskets-median verdict we want
+    conventional half-away-from-zero: 0.5 → 1, -0.5 → -1.
+    Rounding rule: pre-registered-arbitrary (MLC-W2b-2; frozen — no tuning on observed cases).
+    """
+    return int(math.copysign(math.floor(abs(x) + 0.5), x))
+
+
+def _build_sector_tip(conviction_raw: str | None, rs_raw: str | None,
+                      baskets_tier: int | None, n_members: int) -> tuple[str, str]:
+    """Build Tier-2 receipt strings for sector row data-tip-en / data-tip-zh.
+
+    Format mirrors basket rows: label:value pairs separated by ' · '.
+    ZH conviction labels sourced from engine/sector_central.TIERS (canonical).
+    ZH RS labels sourced from _leadership_board.html.j2 rs_word_zh macro.
+    Pre-registered-arbitrary (MLC-W2b-2; frozen — no tuning on observed cases).
+    """
+    # EN conviction display
+    conv_en_map = {
+        "Accumulate": "Accumulate", "Constructive": "Constructive",
+        "Neutral": "Neutral", "Cautious": "Cautious", "Reduce": "Reduce",
+    }
+    # ZH conviction labels — from engine/sector_central.TIERS (lines 43-49)
+    conv_zh_map = {
+        "Accumulate": "积极配置", "Constructive": "建设性",
+        "Neutral": "中性", "Cautious": "谨慎", "Reduce": "减配",
+    }
+    # RS lead display — mirrors rs_word_en/rs_word_zh in _leadership_board.html.j2
+    rs_en_map = {"leading": "leading", "mid-pack": "mid-pack", "lagging": "lagging"}
+    rs_zh_map = {"leading": "领先", "mid-pack": "中游", "lagging": "落后"}
+    # Baskets tier → hold/trim/enter word (same 0-level map; display only)
+    _tier_word_en = {2: "enter", 1: "accumulate", 0: "hold", -1: "trim", -2: "avoid"}
+    _tier_word_zh = {2: "建仓", 1: "加仓", 0: "持有", -1: "减仓", -2: "回避"}
+
+    parts_en: list[str] = []
+    parts_zh: list[str] = []
+
+    if conviction_raw:
+        parts_en.append(f"Conviction: {conv_en_map.get(conviction_raw, conviction_raw)}")
+        parts_zh.append(f"评级：{conv_zh_map.get(conviction_raw, conviction_raw)}")
+    if rs_raw:
+        parts_en.append(f"RS: {rs_en_map.get(rs_raw, rs_raw)}")
+        parts_zh.append(f"动量：{rs_zh_map.get(rs_raw, rs_raw)}")
+    if baskets_tier is not None:
+        bword_en = _tier_word_en.get(baskets_tier, "hold")
+        bword_zh = _tier_word_zh.get(baskets_tier, "持有")
+        parts_en.append(f"Baskets: {bword_en} (median of {n_members})")
+        parts_zh.append(f"篮子：{bword_zh}（{n_members}个中位数）")
+
     return " · ".join(parts_en), " · ".join(parts_zh)
 
 
@@ -391,6 +466,99 @@ def build(root: Path | None = None) -> dict:
         }
         rows.append(row)
 
+    # ── 2b. Build sector-grain rows (MLC-W2b-2 additive) ────────────────────
+    # Derives entirely from already-loaded artifacts: sector_central (_sc_by_etf,
+    # sc_doc) and the per-basket rows built above. Zero new input reads.
+    # Only emitted when sector_central is fresh (same gate as the basket-side
+    # sector organ: _sc_fresh must be True).
+    sector_rows: list[dict] = []
+    if _sc_fresh:
+        # Build reverse map: ETF -> list of basket theme-verdict tiers
+        # (includes the SMH-proxied baskets via conviction_etf_fallback: they
+        # count toward XLK's member set — same twin as the basket-side two-step).
+        _etf_basket_tiers: dict[str, list[int]] = {}
+        for _brow in rows:
+            _bid = _brow.get("id") or ""
+            _raw_etf = sector_proxy.get(_bid)  # direct proxy (may be SMH)
+            # resolve to GICS SPDR ETF via fallback (e.g. SMH -> XLK)
+            _resolved_etf = conviction_etf_fallback.get(_raw_etf, _raw_etf) if _raw_etf else None
+            if not _resolved_etf:
+                continue
+            _theme_verdict = _brow.get("verdicts", {}).get("theme")
+            if _theme_verdict is not None:
+                _etf_basket_tiers.setdefault(_resolved_etf, []).append(
+                    _theme_verdict["tier"]
+                )
+
+        for _sec in (sc_doc.get("sectors") or []):
+            _etf = _sec.get("ticker") or ""
+            if not _etf:
+                continue
+            _conv_block = _sec.get("conviction") or {}
+            _conv_label = _conv_block.get("label_en") or ""
+            _conv_zh = _conv_block.get("label_zh") or _conv_label
+            _mom = _sec.get("momentum") or {}
+            _lead = _mom.get("lead")  # "leading" / "mid-pack" / "lagging"
+            _name = _sec.get("name") or _etf
+            _name_zh = _sec.get("name_zh") or ""
+
+            sec_verdicts: dict[str, dict[str, Any]] = {}
+
+            # — conviction verdict (reuses same map and constants as basket-side) —
+            _conv_tier = _SECTOR_TIER.get(_conv_label)
+            if _conv_tier is not None:
+                _sv: dict[str, Any] = {"raw": _conv_label, "tier": _conv_tier}
+                if sc_as_of:
+                    _sv["as_of"] = sc_as_of
+                sec_verdicts["conviction"] = _sv
+
+            # — rs verdict (new narrower ±1 map; pre-registered-arbitrary MLC-W2b-2) —
+            _rs_tier = _RS_LEAD_TIER.get(_lead) if _lead else None
+            if _rs_tier is not None:
+                sec_verdicts["rs"] = {"raw": _lead, "tier": _rs_tier}
+
+            # — baskets verdict (median of member-basket theme tiers) —
+            # Emitted only when ≥1 member basket carries a theme verdict.
+            # Rounding: half-away-from-zero (see _round_half_away_from_zero docstring).
+            # Pre-registered-arbitrary (MLC-W2b-2; frozen — no tuning on observed cases).
+            _member_tiers = _etf_basket_tiers.get(_etf) or []
+            _n_members = len(_member_tiers)
+            _baskets_tier: int | None = None
+            if _n_members >= 1:
+                _median_raw = statistics.median(_member_tiers)
+                _baskets_tier = _round_half_away_from_zero(float(_median_raw))
+                sec_verdicts["baskets"] = {"raw": _baskets_tier, "tier": _baskets_tier,
+                                           "n_members": _n_members}
+
+            # — aggregate spread / agreement —
+            sec_n_reads = len(sec_verdicts)
+            sec_tiers = [sv["tier"] for sv in sec_verdicts.values()]
+            if len(sec_tiers) >= 2:
+                sec_spread: int | None = max(sec_tiers) - min(sec_tiers)
+            else:
+                sec_spread = None
+            sec_agreement = _agreement(sec_spread)
+
+            # — bilingual Tier-2 receipts —
+            stip_en, stip_zh = _build_sector_tip(
+                _conv_label or None,
+                _lead,
+                _baskets_tier,
+                _n_members,
+            )
+
+            sector_rows.append({
+                "ticker": _etf,
+                "name": _name,
+                "name_zh": _name_zh,
+                "verdicts": sec_verdicts,
+                "n_reads": sec_n_reads,
+                "spread": sec_spread,
+                "agreement": sec_agreement,
+                "tip_en": stip_en,
+                "tip_zh": stip_zh,
+            })
+
     # ── 3. Assemble payload ──────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "schema": "mlc.stance_matrix.v1",
@@ -403,6 +571,7 @@ def build(root: Path | None = None) -> dict:
             "mag7": mag7_as_of,
         },
         "rows": rows,
+        "sectors": sector_rows,  # MLC-W2b-2 additive; empty list when sector_central stale/absent
     }
 
     # ── 4. Write ─────────────────────────────────────────────────────────────
@@ -429,7 +598,8 @@ def main() -> int:
     args = ap.parse_args()
     try:
         result = build(root=args.root)
-        log.info("build_stance_matrix: done, %d rows", len(result.get("rows") or []))
+        log.info("build_stance_matrix: done, %d basket rows, %d sector rows",
+                 len(result.get("rows") or []), len(result.get("sectors") or []))
     except Exception as exc:  # noqa: BLE001 — must never raise from main()
         log.error("build_stance_matrix: unexpected error: %s", exc, exc_info=True)
     return 0
