@@ -72,6 +72,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -79,6 +80,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -438,9 +449,15 @@ def _step_ledger(oracle_state: dict, data_dir: Path, dry_run: bool) -> int:
             new_rows.append(row)
 
         if new_rows and not dry_run:
-            with open(ledger_path, "a") as fh:
-                for r in new_rows:
-                    fh.write(json.dumps(r, default=str) + "\n")
+            if _ledger_advance_enabled():
+                with open(ledger_path, "a") as fh:
+                    for r in new_rows:
+                        fh.write(json.dumps(r, default=str) + "\n")
+            else:
+                log.debug(
+                    "oracle_nightly._step_ledger: forward_ledger write skipped "
+                    "(COLLECT_LANE != nightly)"
+                )
 
         log.info("forward_ledger: %d new entries (keep-FIRST)", len(new_rows))
         return len(new_rows)
@@ -675,21 +692,27 @@ def _step_compound_live_accrual(data_dir: Path, dry_run: bool) -> bool:
                         existing_fire_keys.add(fire_key)
 
             if new_fires and not dry_run:
-                live_ledger_path.parent.mkdir(parents=True, exist_ok=True)
-                with open(live_ledger_path, "a") as fh:
-                    for row in new_fires:
-                        fh.write(_json.dumps(row, separators=(",", ":"), default=str) + "\n")
-                n_fired += len(new_fires)
-                log.info("compound_live_accrual: %s fired %d new times on %s",
-                         cid, len(new_fires), latest_date.isoformat())
+                if _ledger_advance_enabled():
+                    live_ledger_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(live_ledger_path, "a") as fh:
+                        for row in new_fires:
+                            fh.write(_json.dumps(row, separators=(",", ":"), default=str) + "\n")
+                    n_fired += len(new_fires)
+                    log.info("compound_live_accrual: %s fired %d new times on %s",
+                             cid, len(new_fires), latest_date.isoformat())
 
-                # Flip screened → accruing on first live fire
-                if compound.get("status") == "screened":
-                    update_compound_status(compounds_dir, cid, STATUS_ACCRUING)
-                    log.info("compound_live_accrual: %s screened → accruing", cid)
+                    # Flip screened → accruing on first live fire
+                    if compound.get("status") == "screened":
+                        update_compound_status(compounds_dir, cid, STATUS_ACCRUING)
+                        log.info("compound_live_accrual: %s screened → accruing", cid)
+                else:
+                    log.debug(
+                        "oracle_nightly._step_compound_live_accrual: "
+                        "live_ledger write skipped (COLLECT_LANE != nightly)"
+                    )
 
         # Outcome grading pass: re-read live_ledger, grade mature rows
-        if not dry_run and live_ledger_path.exists():
+        if not dry_run and _ledger_advance_enabled() and live_ledger_path.exists():
             raw_lines = live_ledger_path.read_text().splitlines()
             updated_lines = []
             for line in raw_lines:
@@ -789,7 +812,7 @@ def _step_compound_live_accrual(data_dir: Path, dry_run: bool) -> bool:
             live_ledger_path.write_text("\n".join(updated_lines) + "\n")
 
         # Update registry live_n / live_effect per compound
-        if not dry_run and live_ledger_path.exists():
+        if not dry_run and _ledger_advance_enabled() and live_ledger_path.exists():
             live_rows = []
             for line in live_ledger_path.read_text().splitlines():
                 line_s = line.strip()

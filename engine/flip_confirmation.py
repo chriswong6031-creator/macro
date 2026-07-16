@@ -58,6 +58,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -68,6 +69,16 @@ import pandas as pd
 from lib import config, store
 
 log = logging.getLogger("flip_confirmation")
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 # ── configuration ──────────────────────────────────────────────────────────────
 DEFENSIVE = ("XLP", "XLU", "XLV")   # equal-weight defensive composite
@@ -351,8 +362,14 @@ def append_ledger(events: list[dict], root: Path | None = None) -> int:
     """Append new events to the ledger (keep-first per event_date).
 
     Only writes events with event_date >= SHIP_DATE.
+    Gated by COLLECT_LANE=nightly: returns 0 (no-op) outside the nightly lane.
     Returns the number of NEW rows written.
     """
+    if not _ledger_advance_enabled():
+        log.debug(
+            "flip_confirmation.append_ledger: skipped (COLLECT_LANE != nightly)"
+        )
+        return 0
     path = _ledger_path(root)
     existing = _load_ledger(path)
     written = 0

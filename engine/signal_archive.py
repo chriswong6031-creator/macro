@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -49,6 +50,16 @@ import pandas as pd
 from lib import config
 
 log = logging.getLogger(__name__)
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 # date keys tried, in order, when a snapshot does not name one explicitly
 _ASOF_KEYS = ("date", "as_of", "asof", "state_asof", "generated_at", "updated")
@@ -125,6 +136,13 @@ def archive_snapshot(label: str, snap: dict, asof: str, *,
     old = pd.read_parquet(parquet) if parquet.exists() else None
     if old is not None and "asof" in old.columns and asof in set(old["asof"].astype(str)):
         return False  # keep-first: this date is already recorded
+    if not _ledger_advance_enabled():
+        log.debug(
+            "signal_archive.archive_snapshot: write skipped for label=%s asof=%s "
+            "(COLLECT_LANE != nightly)",
+            label, asof,
+        )
+        return False
     logged_at = logged_at or datetime.now(timezone.utc).isoformat()
 
     row = {"asof": asof, "logged_at": logged_at,

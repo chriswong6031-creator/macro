@@ -27,6 +27,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -34,6 +35,16 @@ from typing import Any
 import yaml
 
 log = logging.getLogger(__name__)
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 # ---------------------------------------------------------------------------
 # Schema / authority constants
@@ -686,6 +697,12 @@ def append_phase_history(root: Path, artifact: dict) -> int:
         last_hash[tid] = _row_hash(row)
 
     if new_lines:
+        if not _ledger_advance_enabled():
+            log.debug(
+                "thematic_state.append_phase_history: write skipped "
+                "(COLLECT_LANE != nightly)"
+            )
+            return 0
         try:
             with path.open("a", encoding="utf-8") as fh:
                 fh.write("\n".join(new_lines) + "\n")

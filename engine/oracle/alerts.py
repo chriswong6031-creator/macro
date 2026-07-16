@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,16 @@ import pandas as pd
 from lib import config
 
 log = logging.getLogger(__name__)
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 KEEP_DAYS = 90
 REGION = "us"
@@ -415,12 +426,20 @@ def recent(days: int = 30, as_of: str | None = None) -> list[dict]:
 def rebuild(oracle_state: dict) -> list[dict]:
     """Diff vs prior state, append+dedup new events, persist state.
 
+    Gated by COLLECT_LANE=nightly: when outside the nightly lane, state is
+    diffed but the resulting events and state are NOT persisted to disk.
     Returns events fired THIS run (empty on the seed run).
     """
     if not oracle_state:
         return []
     prior = load_state()
     new_events = compute_events(oracle_state, prior)
+
+    if not _ledger_advance_enabled():
+        log.debug(
+            "oracle.alerts.rebuild: ledger write skipped (COLLECT_LANE != nightly)"
+        )
+        return new_events
 
     # Idempotent merge: setdefault keeps FIRST occurrence
     by_id = {e["id"]: e for e in load_events()}

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import date
 from pathlib import Path
 
@@ -40,6 +41,16 @@ from engine import demand_chain as dc
 from lib import config
 
 log = logging.getLogger("demand_ledger")
+
+
+def _ledger_advance_enabled() -> bool:
+    """True only when running in the nightly engine lane.
+
+    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
+    env.  US_LANE is accepted as a legacy alias.
+    """
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
 
 _BENCH = "SPY"
 _THRESH = 0.05          # ±5% relative-return falsification band (matches ai_desk)
@@ -217,9 +228,14 @@ def emit(root=None, today=None) -> list[dict]:
     seen_vint = {r.get("vintage") for r in ledger.values()}
     fresh = [t for t in build_theses(root, today) if t["vintage"] not in seen_vint]
     if fresh:
-        with open(d / "theses.jsonl", "a", encoding="utf-8") as f:
-            for t in fresh:
-                f.write(json.dumps(t, ensure_ascii=False) + "\n")
+        if _ledger_advance_enabled():
+            with open(d / "theses.jsonl", "a", encoding="utf-8") as f:
+                for t in fresh:
+                    f.write(json.dumps(t, ensure_ascii=False) + "\n")
+        else:
+            log.debug(
+                "demand_ledger.emit: theses write skipped (COLLECT_LANE != nightly)"
+            )
     log.info("demand-ledger: +%d new theses (%d already logged)", len(fresh), len(ledger))
     return fresh
 
@@ -239,12 +255,24 @@ def score(root=None, today=None) -> dict:
         if s:
             new.append(s)
     if new:
-        with open(d / "scored.jsonl", "a", encoding="utf-8") as f:
-            for s in new:
-                f.write(json.dumps(s, ensure_ascii=False) + "\n")
+        if _ledger_advance_enabled():
+            with open(d / "scored.jsonl", "a", encoding="utf-8") as f:
+                for s in new:
+                    f.write(json.dumps(s, ensure_ascii=False) + "\n")
+        else:
+            log.debug(
+                "demand_ledger.score: scored.jsonl write skipped "
+                "(COLLECT_LANE != nightly)"
+            )
     tr = _scorer._aggregate(list(scored.values()) + new, led, today)
     tr["schema"] = "demand_chain_track_record.v1"
-    (d / "track_record.json").write_text(json.dumps(tr, indent=2, ensure_ascii=False))
+    if _ledger_advance_enabled():
+        (d / "track_record.json").write_text(json.dumps(tr, indent=2, ensure_ascii=False))
+    else:
+        log.debug(
+            "demand_ledger.score: track_record.json write skipped "
+            "(COLLECT_LANE != nightly)"
+        )
     log.info("demand-ledger: scored=%d open=%d (+%d newly scored)",
              tr.get("scored_total", 0), tr.get("open", 0), len(new))
     return tr
