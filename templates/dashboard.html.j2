@@ -3884,7 +3884,10 @@ body.mx5-dlg-open{ overflow:hidden; }
   display:flex;flex-direction:column;
 }
 [data-theme="light"] .mx5-dlg-panel{
-  background:rgba(255,255,255,.82);
+  /* opaque white in light mode: the frosted translucent fill let the dark
+     backdrop scrim bleed through and read grey — operator wants a clean white
+     popup surface in light mode (dark mode keeps the frosted glass). */
+  background:#ffffff;
   border-color:rgba(255,255,255,.6);
   box-shadow:0 32px 96px rgba(0,0,0,.18),
              0 1px 0 rgba(255,255,255,.9) inset,
@@ -3911,7 +3914,7 @@ body.mx5-dlg-open{ overflow:hidden; }
   border-bottom:1px solid rgba(255,255,255,.07);
 }
 [data-theme="light"] .mx5-dlg-header{
-  background:rgba(255,255,255,.88);border-bottom-color:rgba(0,0,0,.07);
+  background:#ffffff;border-bottom-color:rgba(0,0,0,.07);
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .mx5-dlg-header{background:var(--mx5-pop-bg,rgba(13,18,26,.98));}
