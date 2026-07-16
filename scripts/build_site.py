@@ -3955,7 +3955,7 @@ def main() -> int:
         policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
         flip_confirmation=_flip_confirmation_view(),  # T+1 sector-flip confirmation lens (Policy-Shock W1-C, display-only)
         shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
-        leadership_board=_leadership_board_view(),  # MLC-W1: megacap + sector RS glance surface (display-only)
+        leadership_board=_leadership_board_view(),  # MLC-W1 — board NO LONGER RENDERED (removed from all pages 2026-07-15); call retained (dormant, still assembles the payload). Audit its synapse consumer edges (mag7_regime / leaderradar / earnings) before deleting.
         **_master_brief_vm(),
     )
 

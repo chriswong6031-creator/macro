@@ -438,11 +438,16 @@ def test_dashboard_macro_mode_with_leadership_board():
 
 
 def test_dashboard_stocks_mode_with_leadership_board():
-    """dashboard.html.j2 stocks mode renders without exception when leadership_board present."""
+    """dashboard.html.j2 stocks mode must NOT render the board either — operator
+    removed it from us_stocks.html too (follow-up to #2604; the panel is now gone
+    from every page). The `_leadership_board.html.j2` partial and the
+    _leadership_board_view engine remain (dormant) and are still covered by the
+    partial/view unit tests above."""
     env = _full_env()
     html = env.get_template("dashboard.html.j2").render(**_base_vm_with_lb(), mode="stocks")
     assert len(html) > 50_000
-    assert "Leadership Board" in html
+    assert "Leadership Board" not in html
+    assert "领涨面板" not in html
 
 
 def test_dashboard_macro_mode_null_leadership_board():
