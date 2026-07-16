@@ -123,11 +123,16 @@ if [[ ! -f "$JAR_PATH" ]]; then
 fi
 
 # ── Kill any existing terminal process ───────────────────────────────────────
-EXISTING=$(pgrep -f "ThetaTerminalv3.jar" 2>/dev/null || true)
+# ThetaTerminalv3.jar is a BOOTSTRAPPER: it spawns the real server as an inner
+# JVM from $THETA_DIR/lib/<build>.jar (orphaned to PPID 1, holds port 25503).
+# Match BOTH jars — killing only the outer one leaves a stale inner server on
+# the port and the relaunch dies silently (measured 2026-07-16).
+EXISTING=$(pgrep -f "theta/ThetaTerminalv3\.jar|theta/lib/[^ ]*\.jar" 2>/dev/null || true)
 if [[ -n "$EXISTING" ]]; then
-    echo "Existing Theta Terminal v3 process found (PID $EXISTING) — killing..."
-    kill "$EXISTING" 2>/dev/null || true
-    sleep 1
+    echo "Existing Theta Terminal v3 process(es) found — killing PID(s): $(echo "$EXISTING" | tr '\n' ' ')"
+    # shellcheck disable=SC2086  # word-splitting on PIDs is intended
+    kill $EXISTING 2>/dev/null || true
+    sleep 2
 fi
 
 # ── Launch ────────────────────────────────────────────────────────────────────
