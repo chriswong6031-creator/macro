@@ -568,7 +568,9 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     <div class="panel-head">
       <h1>{{ t('Signal Committee — per-ticker provenance', '信号委员会 — 个股信号溯源') }}</h1>
       <div class="cm-search-wrap">
-        <input id="cm_q" type="text" autocomplete="off" placeholder="{{ t('Search ticker — US stocks', '搜索代码 — 美股') | striptags }}">
+        {# EN literal in placeholder + data-ph-zh, relabeled by JS — striptags here
+           concatenated both languages into one string (see options_screener.html.j2) #}
+        <input id="cm_q" type="text" autocomplete="off" placeholder="Search ticker — US stocks" data-ph-zh="搜索代码 — 美股">
         <div id="cm_sugg"></div>
       </div>
     </div>
@@ -626,9 +628,9 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     <div class="ask-box" id="ask_box">
       <div class="ask-row">
         <textarea id="ask_q" class="ask-q" maxlength="500" rows="2"
-          placeholder="{{ t('Ask an explanatory question…', '提问…') | striptags }}"></textarea>
+          placeholder="Ask an explanatory question…" data-ph-zh="提问…"></textarea>
         <input id="ask_ticker" class="ask-ticker" type="text" maxlength="12"
-          placeholder="{{ t('Ticker (opt.)', '代码（可选）') | striptags }}" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+          placeholder="Ticker (opt.)" data-ph-zh="代码（可选）" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
         <button id="ask_btn" class="ask-btn">{{ t('Ask', '提问') }}</button>
       </div>
       <div class="ask-row" style="align-items:center;gap:14px">
@@ -826,6 +828,23 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
 <script>
 (function () {
   'use strict';
+
+  // ── Lang-aware placeholders (theme.js dispatches 'langchange' on document) ──
+  // Explicit ids — the nav-search box has its own relabel inside theme.js.
+  (function () {
+    var els = ['cm_q', 'ask_q', 'ask_ticker'].map(function (id) {
+      return document.getElementById(id);
+    }).filter(Boolean);
+    els.forEach(function (el) { el.setAttribute('data-ph-en', el.placeholder); });
+    function applyPhLang() {
+      var zh = document.documentElement.getAttribute('data-lang') === 'zh';
+      els.forEach(function (el) {
+        el.placeholder = el.getAttribute(zh ? 'data-ph-zh' : 'data-ph-en') || el.placeholder;
+      });
+    }
+    applyPhLang();
+    document.addEventListener('langchange', applyPhLang);
+  })();
 
   // ── Shared memo cache (for ask-the-brain offline fallback) ─────────────────
   var _memoCache = null;
