@@ -16,6 +16,8 @@ from pathlib import Path
 import jinja2
 import pytest
 
+from engine.macro_news import CHANNEL_LABEL, TIER_LABEL
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -150,6 +152,9 @@ def _full_vm() -> dict:
             "n_official": 2,
             "n_news_rss": 1,
             "n_gdelt": 1,
+            # bilingual chip labels — the real engine dicts, exactly like the payload
+            "channel_label": CHANNEL_LABEL,
+            "tier_label": TIER_LABEL,
         },
         macro_news_disclaimer="Context only — not a signal.",
         macro_news_disclaimer_zh="仅作背景，非信号。",
@@ -346,6 +351,39 @@ def test_full_vm_no_translated_title_attrs():
         # Chinese chars: any CJK unified ideograph
         assert not any('一' <= c <= '鿿' for c in t_val), \
             f"Translated text found in title= attribute: {t_val!r}"
+
+
+# --------------------------------------------------------------------------- #
+# Tests — channel-chip i18n (doctrine Law 2: no raw slugs on glance surfaces)
+# --------------------------------------------------------------------------- #
+
+def test_context_channel_pills_are_bilingual_not_raw_slugs():
+    """Channel chips map through the engine's CHANNEL_LABEL payload dict as
+    l-en/l-zh toggle pairs — the raw slug never renders as chip text."""
+    html = _render_full()
+    # 'rates' is in CHANNEL_LABEL → ('rates', '利率') toggle pair
+    assert '<span class="l-en">rates</span><span class="l-zh">利率</span>' in html
+    # raw slug never renders as visible text ('monetary_policy' is not a
+    # CHANNEL_LABEL key — it must de-underscore, not pass through)
+    assert ">monetary_policy<" not in html
+
+
+def test_context_channel_pills_degrade_without_label_dict():
+    """Payloads cached before the engine shipped channel_label de-underscore,
+    never raw-slug."""
+    vm = _full_vm()
+    vm["macro_news"].pop("channel_label")
+    html = _env().get_template("news.html.j2").render(**vm)
+    assert ">monetary_policy<" not in html
+    assert "monetary policy" in html
+
+
+def test_importance_reasons_never_render():
+    """Internal scorer strings stay machine-only in the payload — no surface
+    on the news page may print them."""
+    html = _render_full()
+    assert "tier1_source" not in html
+    assert "macro_theme" not in html
 
 
 # --------------------------------------------------------------------------- #

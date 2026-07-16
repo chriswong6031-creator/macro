@@ -158,7 +158,7 @@ jobs:
               templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|scripts/build_baskets.py|scripts/build_methodology.py) echo baskets;;
-              templates/dashboard.html.j2|templates/stock.html.j2|scripts/build_site.py) echo macro;;
+              templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|scripts/build_site.py) echo macro;;
               templates/*|scripts/build_*.py|config.yml|lib/*) echo all;;
               *) echo skip;;
             esac
