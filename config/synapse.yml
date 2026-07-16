@@ -12098,6 +12098,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/pick_lab/candidates.py
+      - scripts/build_site.py
     external_consumers: []
     notes: >
       LR W2a. Leader Radar nightly artifact: per-name lifecycle states (raw + confirmed
@@ -12130,7 +12131,6 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_leader_radar.py
-      - scripts/build_site.py
     external_consumers: []
     notes: >
       LR W2a. Per-session (date, ticker, raw_state, confirmed_state) state history

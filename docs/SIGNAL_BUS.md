@@ -369,11 +369,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| leader-radar-state-history | `data/leader_radar/state_history.parquet` | parquet | daily-engine | infrastructure | 2 | 0 |
+| site-leader-radar | `site/leaderradar/radar.json` | json | daily-engine | display | 2 | 0 |
 | leader-radar-revisions-history | `data/leader_radar/revisions_history.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| leader-radar-state-history | `data/leader_radar/state_history.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | rs-series-store | `data/rs_series/` | parquet | daily-engine | infrastructure | 1 | 0 |
 | sec-insider-quarterly | `data/sec_insider/insider.parquet` | parquet | daily-engine | display | 1 | 0 |
-| site-leader-radar | `site/leaderradar/radar.json` | json | daily-engine | display | 1 | 0 |
 
 ### long-hold
 
