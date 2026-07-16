@@ -1,16 +1,16 @@
 {
   "schema": "china_risk_state.v1",
-  "built": "2026-07-16 06:12:43 UTC",
+  "built": "2026-07-16 08:39:07 UTC",
   "session": {
     "cn": {
       "region": "cn",
-      "open": true,
-      "local_time": "2026-07-16 14:12 CST"
+      "open": false,
+      "local_time": "2026-07-16 16:39 CST"
     },
     "hk": {
       "region": "hk",
-      "open": true,
-      "local_time": "2026-07-16 14:12 HKT"
+      "open": false,
+      "local_time": "2026-07-16 16:39 HKT"
     }
   },
   "live_active": true,
@@ -20,34 +20,21 @@
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-15",
-  "n_live_symbols": 10,
-  "movers": [
-    {
-      "sym": "SHCOMP",
-      "chg_pct": -1.46
-    },
-    {
-      "sym": "CSI300",
-      "chg_pct": -1.51
-    },
-    {
-      "sym": "HSI",
-      "chg_pct": 1.81
-    }
-  ],
+  "n_live_symbols": 2,
+  "movers": [],
   "display": {
     "verdict": "RISK_OFF",
     "label_en": "Risk-off",
     "label_zh": "\u907f\u9669",
     "color": "red",
-    "score": 34,
-    "band_changed": true,
+    "score": 36,
+    "band_changed": false,
     "pending": null
   },
   "live": {
     "verdict": "RISK_OFF",
-    "score": 34,
-    "raw_score": 34,
+    "score": 36,
+    "raw_score": 36,
     "color": "red",
     "label_en": "Risk-off",
     "label_zh": "\u907f\u9669",
@@ -90,7 +77,7 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 37,
+      "score": 46,
       "basis": "live",
       "asof": "live"
     },
@@ -131,7 +118,7 @@
     }
   ],
   "legs_asof": {
-    "tape_trend": "live",
+    "tape_trend": "2026-07-15",
     "radar_capital_flow": "live",
     "radar_rate_shock": "2026-07-14",
     "breadth": "2026-07-15",
