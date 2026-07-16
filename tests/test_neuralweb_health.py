@@ -147,6 +147,43 @@ def test_stale_by_sla(tmp_path):
     assert lobes["world-state"]["status"] == "stale"
 
 
+# ---- test 2b: status-enum degraded self-report --------------------------------
+
+def test_status_enum_degraded_self_report(tmp_path):
+    """An artifact self-reporting via a status enum starting with 'degraded'
+    (e.g. causal_llm_lane.json status='degraded_pack_only', no boolean flag)
+    → lobe status='degraded' with the reason surfaced in gaps, and the lobe is
+    excluded from the top-level as_of min-rollup so a stuck degraded artifact
+    cannot back-date the whole panel header."""
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    fresh_ts = (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    lane_ts = (now - timedelta(hours=50)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    # Within its generous 200h SLA by asof — freshness alone would call it
+    # fresh and drag the rollup back to lane_ts.
+    _nw_json_artifact(tmp_path, "data/neuralweb/causal_llm_lane.json", {
+        "status": "degraded_pack_only",
+        "asof": lane_ts,
+        "reason": "generator failed: auth_invalid_all",
+    })
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {
+        "as_of": fresh_ts,
+        "produced_at": fresh_ts,
+    })
+    root = _make_repo(tmp_path, {
+        "causal-llm-lane": _art("data/neuralweb/causal_llm_lane.json", freshness_sla_hours=200.0),
+        "world-state": _art("data/neuralweb/world_state.json", freshness_sla_hours=30.0),
+    })
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    lane = lobes["causal-llm-lane"]
+    assert lane["status"] == "degraded", lane
+    assert any("generator failed: auth_invalid_all" in g for g in lane["gaps"]), lane["gaps"]
+    # Only the genuinely fresh lobe feeds the rollup.
+    assert result["as_of"] == fresh_ts
+
+
 # ---- test 3a: missing (git-storage) -----------------------------------------
 
 def test_missing_git_storage(tmp_path):

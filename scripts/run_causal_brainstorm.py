@@ -121,6 +121,10 @@ def _write_lane_status(
             "asof": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "reason": reason,
         }
+        if status.startswith("degraded"):
+            # Explicit flag so health.py's lobe check treats the artifact as a
+            # degraded self-report regardless of status-enum spelling.
+            doc["degraded"] = True
         lane_path.write_text(json.dumps(doc, indent=2), encoding="utf-8")
     except Exception as exc:  # noqa: BLE001
         log.warning("run_causal_brainstorm: could not write lane status (%s)", exc)

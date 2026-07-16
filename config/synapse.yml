@@ -8467,7 +8467,7 @@ artifacts:
     cadence: intraday
     storage: git
     asof_field: as_of
-    freshness_sla_hours: 30
+    freshness_sla_hours: 48
     schema: treasury_watch.v1
     tier: display
     horizon_role: context
@@ -8491,6 +8491,11 @@ artifacts:
       brain/treasury_context.py (fail-soft reader; MASTERMIND_TREASURY_CONTEXT, dark-shipped
       default OFF) as a Neural Web context layer; vendored via the site tree. cadence
       intraday: written by the whitehouse-sentinel workflow (hourly best-effort).
+      SLA 48h (not 30): as_of is the last tga.parquet date and the Treasury DTS
+      API publishes each business day T+1 ~20:00 UTC, so at morning build time
+      the inner as_of is structurally ~2 calendar days back; the sentinel
+      advances it every evening post-publish. staleness_from: produced_at is
+      NOT an option here — the artifact carries no produced_at field.
 
   # --- RLT-R2: Rebalance Pulse (display/context, append-only ledger) ---
   rebalance-pulse-events:

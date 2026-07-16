@@ -464,6 +464,24 @@ class TestStatusOnly(unittest.TestCase):
             doc = json.loads(lane.read_text())
         self.assertEqual(doc["status"], "awaiting_phase_a")
 
+    def test_degraded_status_writes_explicit_flag(self):
+        """degraded_* statuses stamp degraded:true so health.py's boolean
+        self-report check fires regardless of status-enum spelling; healthy
+        statuses must NOT carry the flag."""
+        import tempfile
+        import scripts.run_causal_brainstorm as runner
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runner._write_lane_status(
+                "degraded_pack_only", "generator failed: auth_invalid_all", root=root)
+            doc = json.loads(self._lane_path(root).read_text())
+            self.assertIs(doc["degraded"], True)
+            self.assertEqual(doc["reason"], "generator failed: auth_invalid_all")
+
+            runner._write_lane_status("armed", "auto_loop armed", root=root)
+            doc = json.loads(self._lane_path(root).read_text())
+            self.assertNotIn("degraded", doc)
+
 
 # ---------------------------------------------------------------------------
 # 3. Pack always rebuilt fresh (never reused)
