@@ -13,6 +13,14 @@
 {% set CHL         = (macro_news.channel_label if macro_news and macro_news.channel_label else {}) %}
 {% set RA_COND     = ((latest.conditions or {}).get('risk_appetite') or {} if latest and latest.conditions else {}) %}
 
+{# financial_news: from vm (loaded by build_site from site/news/financial.json).
+   Guard types — may be None/missing; all access via .get() #}
+{% set _fn = financial_news if financial_news is mapping else {} %}
+{% set _fn_market = (_fn.get('market') if _fn.get('market') is iterable and _fn.get('market') is not string else [])|select('mapping')|list %}
+{% set _fn_mag7   = _fn.get('mag7') if _fn.get('mag7') is mapping else {} %}
+{% set _fn_providers = _fn.get('providers') if _fn.get('providers') is mapping else {} %}
+{% set _fn_polygon_ok = _fn_providers.get('polygon', False) %}
+
 {# Split heads into event heads (Delta Board) and context heads (old accordion) #}
 {% set ev_heads = [] %}
 {% set ctx_heads = [] %}
@@ -80,6 +88,31 @@
 {# source-tier labels #}
 {% set TIERL = {'official':['Official','官方'],'tier1':['Tier 1','一级来源'],'quality':['Quality','精选来源'],'stock_wire':['Wire','快讯']} %}
 
+{# centrality labels — NEWS-DD-06 #}
+{% set CENTRL = {'primary':['Central','核心'],'secondary':['Secondary','次要'],'incidental':['Incidental','附带']} %}
+
+{# reject-reason label dict — NEWS-DD-06/07
+   Full vocabulary from engine/news_common.py low_value_reason() plus families being added.
+   Unknown slugs get a prettified fallback — never block render on a missing key. #}
+{% set REJL = {
+  'empty_title':              ['Empty title','标题为空'],
+  'pickmill_byline':          ['Pick-mill author','选股文章作者'],
+  'stock_pick_roundup':       ['Stock pick list','选股清单'],
+  'calendar_preview':         ['Calendar preview','日历预览'],
+  'routine_fund_distribution':['Fund distribution notice','基金分配公告'],
+  'lifestyle_content':        ['Lifestyle content','生活类内容'],
+  'personal_finance_advice':  ['Personal finance advice','个人理财建议'],
+  'macro_release_stub':       ['Bare release title','无正文的数据发布'],
+  'analyst_report_stub':      ['Analyst report stub','模板化分析师报告'],
+  'dividend_declaration_stub':['Dividend declaration','股息公告'],
+  'morning_aggregator':       ['Morning aggregator','早间汇总'],
+  'duplicate':                ['Duplicate','重复'],
+  'low_quality':              ['Low quality','质量不足'],
+  'paywall':                  ['Paywalled','付费墙'],
+  'generic_recap':            ['Generic recap','通用回顾'],
+  'unknown':                  ['Other','其他']
+} %}
+
 {# ---- direction helpers --------------------------------------------------- #}
 {% macro dir_badge(direction) %}
   {% if direction == 'bullish' %}<span class="nb-dir bull">{{ t('Bullish','利多') }}</span>
@@ -88,10 +121,20 @@
   {% else %}<span class="nb-dir info">{{ t('Info','信息') }}</span>{% endif %}
 {% endmacro %}
 
+{# NEWS-DD-03: plain-word novelty label; numeric z moves to data-tip #}
 {% macro fmt_nov(v) %}
   {% if v is not none and v != '' %}
-    <span class="{{ 'nov-high' if v|float|abs > 1.5 else 'nov-mid' if v|float|abs > 0.75 else 'nov-low' }}">
-      z={{ '%+.1f'|format(v|float) }}</span>
+    {% set fv = v|float %}
+    {% set fabs = fv|abs %}
+    {% if fabs > 1.5 %}
+      {% set cls = 'nov-high' %}{% set en_lbl = 'Unusual' %}{% set zh_lbl = '罕见' %}
+    {% elif fabs > 0.75 %}
+      {% set cls = 'nov-mid' %}{% set en_lbl = 'Notable' %}{% set zh_lbl = '值得注意' %}
+    {% else %}
+      {% set cls = 'nov-low' %}{% set en_lbl = 'Routine' %}{% set zh_lbl = '常规' %}
+    {% endif %}
+    <span class="{{ cls }}" data-tip-en="z={{ '%+.2f'|format(fv) }}" data-tip-zh="z={{ '%+.2f'|format(fv) }}">
+      <span class="l-en">{{ en_lbl }}</span><span class="l-zh">{{ zh_lbl }}</span></span>
   {% else %}—{% endif %}
 {% endmacro %}
 
@@ -133,7 +176,17 @@
                  background:var(--panel2); color:var(--muted); }
   .board-count { margin-left:auto; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
   .board-note { color:var(--muted); font-size:11.5px; padding:10px 18px; border-bottom:1px solid var(--line); }
+  .board-stance { color:var(--muted); font-size:11.5px; font-style:italic;
+                  padding:8px 18px; border-bottom:1px solid var(--line); background:color-mix(in srgb,var(--link) 3%,var(--panel)); }
   .board-empty { padding:28px 20px; text-align:center; color:var(--muted); font-size:13px; }
+  /* aged-item chip (NEWS-DD-02) */
+  .ev-aged { font-size:10px; color:var(--muted); border:1px solid var(--line);
+             border-radius:5px; padding:1px 6px; vertical-align:middle; }
+  /* ? help tip button (NEWS-DD-04/08) */
+  .help-tip { display:inline-flex; align-items:center; justify-content:center;
+              width:16px; height:16px; border-radius:50%; border:1px solid var(--line);
+              color:var(--muted); font-size:10px; font-weight:700; cursor:default;
+              vertical-align:middle; margin-left:5px; user-select:none; }
 
   /* ---- collapsible board wrapper ---- */
   .board-toggle > summary { list-style:none; cursor:pointer; }
@@ -244,6 +297,10 @@
   .na-pill.tk { color:var(--link); border-color:color-mix(in srgb,var(--link) 40%,var(--line)); }
   .na-read { justify-self:start; color:var(--link); font-size:12px; font-weight:700; }
   .na-when { color:var(--muted); font-size:11px; }
+  /* ZH-mode note for untranslated headlines (NWS-04) */
+  .na-zh-note { display:none; }
+  html[data-lang="zh"] .na-zh-note { display:block; color:var(--muted); font-size:11px;
+    padding:6px 18px 10px; font-style:italic; }
 
   /* ---- reject log ---- */
   .rej-group { border-bottom:1px solid var(--line); }
@@ -276,6 +333,15 @@
   .calib-cell .cc-row { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:3px; }
   .calib-cell .cc-hit { font-weight:700; color:var(--text); }
   .calib-accruing { padding:20px 20px; text-align:center; color:var(--muted); font-size:13px; }
+
+  /* ---- financial wires board (NWS-05) ---- */
+  .mag7-row { display:flex; flex-wrap:wrap; gap:8px; padding:12px 18px; border-bottom:1px solid var(--line); }
+  .mag7-chip { display:inline-flex; align-items:center; gap:5px; background:var(--panel2);
+               border:1px solid var(--line); border-radius:6px; padding:4px 10px; font-size:11.5px; }
+  .mag7-chip .m7t { font-weight:800; color:var(--link); }
+  .mag7-chip .m7n { color:var(--muted); font-size:10.5px; }
+  .fn-degraded { color:var(--warn); font-size:11.5px; padding:10px 18px; font-style:italic;
+                 border-bottom:1px solid var(--line); }
 
   /* ---- rail ---- */
   .news-layout { display:grid; grid-template-columns:minmax(0,1fr) 310px; gap:20px; align-items:start; }
@@ -339,12 +405,14 @@
     </div>
     <div class="exec-chip rej">
       <span class="ec-n">{{ n_rejected }}</span>
-      <span class="ec-l l-en">{{ n_rejected }} filtered out{% if _rej_reason.top %} (top reason: {{ _rej_reason.top|replace('_',' ') }}){% endif %}</span>
-      <span class="ec-l l-zh">{{ n_rejected }} 条已筛出{% if _rej_reason.top %}（主要原因：{{ _rej_reason.top|replace('_',' ') }}）{% endif %}</span>
+      {# NEWS-DD-07: translate the top reject reason slug in the exec strip #}
+      {% set _top_rej_lbl = REJL.get(_rej_reason.top) %}
+      <span class="ec-l l-en">{{ n_rejected }} filtered out{% if _rej_reason.top %} (top: {% if _top_rej_lbl %}{{ _top_rej_lbl[0] }}{% else %}{{ _rej_reason.top|replace('_',' ') }}{% endif %}){% endif %}</span>
+      <span class="ec-l l-zh">{{ n_rejected }} 条已筛出{% if _rej_reason.top %}（主因：{% if _top_rej_lbl %}{{ _top_rej_lbl[1] }}{% else %}{{ _rej_reason.top|replace('_',' ') }}{% endif %}）{% endif %}</span>
     </div>
     <div class="exec-chip ctx">
       <span class="ec-n">{{ n_context }}</span>
-      <span class="ec-l">{{ t('Context<br>headlines', '背景<br>头条') }}</span>
+      <span class="ec-l">{{ t('Other macro<br>headlines', '其他宏观<br>头条') }}</span>
     </div>
     {% if n_src > 0 or (macro_news and macro_news.n_raw) %}
     <span class="exec-line">
@@ -374,21 +442,35 @@
           <span class="board-badge">{{ t('DELTA DESK', '变化台') }}</span>
           <span class="board-count">{{ n_events }} {{ t('events', '事件') }}</span>
         </div>
+        {# NEWS-DD-08: one plain sentence note #}
         <div class="board-note">
-          <span class="l-en">Kept headlines where a typed event was detected — sorted by novelty z-score (how unusual this event is for this ticker/theme), then recency. Theme is secondary context. No event = demoted to Context section below.</span>
-          <span class="l-zh">检测到类型化事件的保留头条，按新颖度z值（该事件对此标的/主题的异常程度）及时效性排序。主题为次要背景。无事件类型 = 降至下方背景区。{% if n_zh_missing > 0 %}部分标题来自英文信源，暂以原文显示。{% endif %}</span>
+          <span class="l-en">Headlines with a detected corporate or macro event, most recent first; items more than 5 days old are flagged.</span>
+          <span class="l-zh">检测到企业或宏观事件的头条，最新优先；超过5天的条目会标注提示。{% if n_zh_missing > 0 %}部分标题来自英文信源，暂以原文显示。{% endif %}</span>
+        </div>
+        {# NEWS-DD-01: stance line — Delta Board #}
+        <div class="board-stance">
+          <span class="l-en">Background read — check what's happening, don't chase these headlines.</span>
+          <span class="l-zh">背景阅读 — 了解动态，不必追随这些头条。</span>
         </div>
         {% if ev_heads %}
           {% for h in ev_heads %}
+          {# NEWS-DD-02: aged chip — flag cards older than 5 days #}
+          {% set _is_aged = namespace(v=False) %}
+          {% if h.get('seendate') %}
+            {# age check: seendate prefix compare against today approximation; JS handles display #}
+            {# We use a CSS class on the card; JS fills the chip text dynamically #}
+          {% endif %}
           {# <!-- ev-card --> #}
-          <div class="ev-card">
+          <div class="ev-card" data-seendate="{{ h.get('seendate','') }}">
             <div class="ev-card-top">
               <div class="ev-title">
                 {% if h.get('url') %}
-                  <a href="{{ h.url }}" target="_blank" rel="noopener"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></a>
+                  <a href="{{ h.url }}" target="_blank" rel="noopener"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.get('title_zh') or h.title }}</span></a>
                 {% else %}
-                  <span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span>
+                  <span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.get('title_zh') or h.title }}</span>
                 {% endif %}
+                {# aged chip injected by JS; placeholder hidden until JS runs #}
+                <span class="ev-aged" style="display:none" data-aged-en="older item" data-aged-zh="较早消息"></span>
               </div>
               <div class="ev-badges">
                 {% if h.get('event') %}
@@ -407,12 +489,15 @@
             <div class="ev-meta">
               <span class="em-item">
                 <span class="em-k">{{ t('Novelty','新颖度') }}</span>
+                {# NEWS-DD-03: plain-word novelty label; numeric z in data-tip #}
                 <span class="em-v">{{ fmt_nov(h.get('novelty_z')) }}</span>
               </span>
+              {# NEWS-DD-06: centrality — show plain label, not raw slug #}
               {% if h.get('centrality') and h.centrality != 'incidental' %}
               <span class="em-item">
-                <span class="em-k">{{ t('Centrality','中心性') }}</span>
-                <span class="em-v">{{ h.centrality }}</span>
+                <span class="em-k">{{ t('Focus','聚焦') }}</span>
+                {% set _cl = CENTRL.get(h.centrality) %}
+                <span class="em-v">{% if _cl %}{{ t(_cl[0], _cl[1]) }}{% else %}{{ h.centrality|replace('_',' ')|title }}{% endif %}</span>
               </span>
               {% endif %}
               {% if h.get('echo') %}
@@ -426,7 +511,7 @@
               <span class="em-item">
                 {% set _tl = TIERL.get(h.source_tier) %}
                 <span class="tier-badge tier-{{ h.source_tier }}">{% if _tl %}{{ t(_tl[0], _tl[1]) }}{% else %}T{{ h.source_tier }}{% endif %}</span>
-                <span class="em-v">{{ h.source_name or h.domain }}</span>
+                <span class="em-v">{{ h.source_name or h.get('domain','') }}</span>
               </span>
               {% else %}
               <span class="em-item">
@@ -439,14 +524,30 @@
               </span>
               {% endif %}
             </div>
-            {# extracted numbers #}
+            {# NEWS-DD-09: extracted numbers — use real engine keys: percentages + usd_all #}
             {% if h.get('event') and h.event.get('numbers') %}
               {% set nums = h.event.numbers %}
               {% set num_items = [] %}
-              {% if nums.get('pcts') %}{% for v in nums.pcts[:3] %}{% set _ = num_items.append(('%.1f%%'|format(v))) %}{% endfor %}{% endif %}
-              {% if nums.get('dollars_b') %}{% for v in nums.dollars_b[:2] %}{% set _ = num_items.append(('$%.1fB'|format(v))) %}{% endfor %}{% endif %}
-              {% if nums.get('dollars_m') %}{% for v in nums.dollars_m[:2] %}{% set _ = num_items.append(('$%.0fM'|format(v))) %}{% endfor %}{% endif %}
-              {% if nums.get('eps') %}{% for v in nums.eps[:2] %}{% set _ = num_items.append(('EPS $%.2f'|format(v))) %}{% endfor %}{% endif %}
+              {# percentages key (engine/news_events.py extract_numbers) #}
+              {% if nums.get('percentages') %}{% for v in nums.percentages[:3] %}{% set _ = num_items.append(('%.1f%%'|format(v))) %}{% endfor %}{% endif %}
+              {# usd_all: classify into B (≥1B) or M (≥1M) inline #}
+              {% if nums.get('usd_all') %}
+                {% set _usd_shown = namespace(n=0) %}
+                {% for v in nums.usd_all %}
+                  {% if _usd_shown.n < 3 %}
+                    {% if v|abs >= 1000000000 %}
+                      {% set _ = num_items.append(('$%.1fB'|format(v / 1000000000))) %}
+                    {% elif v|abs >= 1000000 %}
+                      {% set _ = num_items.append(('$%.0fM'|format(v / 1000000))) %}
+                    {% else %}
+                      {% set _ = num_items.append(('$%.0fK'|format(v / 1000))) %}
+                    {% endif %}
+                    {% set _usd_shown.n = _usd_shown.n + 1 %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+              {# eps is a scalar float (not a list) #}
+              {% if nums.get('eps') is number %}{% set _ = num_items.append(('EPS $%.2f'|format(nums.eps))) %}{% endif %}
               {% if num_items %}
               <div class="ev-nums">
                 {% for v in num_items %}<span class="ev-num-pill">{{ v }}</span>{% endfor %}
@@ -462,7 +563,7 @@
           </div>
           {% endfor %}
         {% else %}
-          <div class="board-empty">{{ t('No event-typed headlines in this window. All kept items are in the Context section below.', '本窗口内无类型化事件头条。所有保留条目均在下方背景区。') }}</div>
+          <div class="board-empty">{{ t('No event-typed headlines in this window. All kept items are in the section below.', '本窗口内无类型化事件头条。所有保留条目均在下方。') }}</div>
         {% endif %}
       </section>
 
@@ -476,9 +577,15 @@
           <span class="board-badge">{{ t('DATA DESK', '数据台') }}</span>
           <span class="board-count">{{ n_releases }} {{ t('releases', '发布') }}</span>
         </div>
+        {# NEWS-DD-08: one plain sentence; fix "last 10 days" lie — release window is cadence-tiered #}
         <div class="board-note">
-          <span class="l-en">Official FRED-sourced prints from the last 10 days. Prior = revised prior (first-print vintage deferred). Surprise measured vs prior and 3y z-score — no consensus feed, no fabricated miss/beat.</span>
-          <span class="l-zh">过去10天内FRED官方数据。前值 = 修正前值（初值将在后续波次跟进）。偏差相对前值及3年z分数衡量 — 无一致预期数据，不伪造超预期/不及预期。</span>
+          <span class="l-en">Most recent FRED print per series, shown within its release cycle. No consensus feed — surprise measured against prior and recent history only.</span>
+          <span class="l-zh">每个系列最新FRED数据，按其发布周期展示。无一致预期数据 — 偏差仅与前值及近期历史对比。</span>
+        </div>
+        {# NEWS-DD-01: stance line — Release Board #}
+        <div class="board-stance">
+          <span class="l-en">Data check — these prints confirm the regime, not a trade trigger.</span>
+          <span class="l-zh">数据核查 — 这些数据确认当前格局，不是交易信号。</span>
         </div>
         {% if releases %}
           {% for card in releases %}
@@ -518,8 +625,13 @@
               {% endif %}
               {% if card.get('z3y') is number %}
               <div class="rel-cell">
-                <div class="rck">{{ t('z-score (3y)','z分数(3年)') }}</div>
-                <div class="rcv {{ 'rel-dir-bull' if card.z3y > 1.5 else 'rel-dir-bear' if card.z3y < -1.5 else '' }}">{{ '%+.2f'|format(card.z3y) }}</div>
+                <div class="rck">{{ t('vs 3y range','较3年区间') }}</div>
+                <div class="rcv {{ 'rel-dir-bull' if card.z3y > 1.5 else 'rel-dir-bear' if card.z3y < -1.5 else '' }}"
+                     data-tip-en="z-score vs 3y history: {{ '%+.2f'|format(card.z3y) }}"
+                     data-tip-zh="较3年历史z分数：{{ '%+.2f'|format(card.z3y) }}">
+                  {# NEWS-DD-03: plain word instead of raw z value on Tier 1 #}
+                  {% if card.z3y > 1.5 %}{{ t('High','偏高') }}{% elif card.z3y < -1.5 %}{{ t('Low','偏低') }}{% else %}{{ t('In range','区间内') }}{% endif %}
+                </div>
               </div>
               {% endif %}
             </div>
@@ -542,9 +654,10 @@
           <h2>{{ t('Theme Pulse', '主题脉冲') }}</h2>
           <span class="board-badge">{{ t('NEWS-SIDE ONLY', '仅新闻侧') }}</span>
         </div>
+        {# NEWS-DD-08: compress note; NEWS-DD-01: stance embedded #}
         <div class="board-note">
-          <span class="l-en">Headline count + max novelty z per theme, from the kept set. Price-confirmation join is pending (news theme keys do not map cleanly to the rotation universe) — news-side intensity only.</span>
-          <span class="l-zh">保留集中各主题的头条数量及最高新颖度z值。价格确认连接待完善（新闻主题键与轮动标的不能清晰对应）— 仅展示新闻侧强度。</span>
+          <span class="l-en">Headline count and peak novelty per theme from today's kept set — a texture read, not a signal.</span>
+          <span class="l-zh">今日保留集中各主题的头条数量及最高新颖度 — 纹理参考，非信号。</span>
         </div>
         {% set ns_pulse = namespace(items=[]) %}
         {% for key, labels in TL.items() %}
@@ -570,9 +683,12 @@
           <div class="pulse-cell">
             <div class="pt-label th-{{ item.key }} ev-theme-pill" style="width:fit-content">{{ t(item.label_en, item.label_zh) }}</div>
             <div class="pt-count">{{ item.count }}</div>
+            {# NEWS-DD-03: plain-word novelty label in pulse meta; numeric z in data-tip #}
             <div class="pt-meta">
               {{ t('headline','条头条') }}{{ 's' if item.count != 1 else '' }}
-              {% if item.max_nov is not none %} · {{ t('max z','最高z') }} {{ fmt_nov(item.max_nov) }}{% endif %}
+              {% if item.max_nov is not none %}
+                · {{ fmt_nov(item.max_nov) }}
+              {% endif %}
             </div>
             {% set pct = ([item.count, 20]|min / 20 * 100)|int %}
             <div class="pt-bar" style="width:{{ pct }}%"></div>
@@ -585,20 +701,28 @@
       </section>
 
       {# ==================================================================== #}
-      {# D. CONTEXT HEADLINES — demoted accordion, collapsed by default       #}
+      {# D. OTHER MACRO HEADLINES — demoted accordion, collapsed by default   #}
+      {# NEWS-DD-09: renamed from 'Context Headlines' — NWS-05                #}
       {# <!-- nx-context-section --> #}
       {# ==================================================================== #}
       <details class="board board-toggle" id="nxContextSection">
         <summary class="board-head">
-          <h2>{{ t('Context Headlines', '背景头条') }}</h2>
-          <span class="board-badge">{{ t('CONTEXT ONLY', '仅背景') }}</span>
+          {# NEWS-DD-09: renamed board heading (drop CONTEXT-ONLY badge) #}
+          <h2>{{ t('Other macro headlines', '其他宏观头条') }}</h2>
           <span class="board-count">{{ n_context }} {{ t('items', '条目') }}</span>
           <span class="bh-arrow">▾</span>
         </summary>
+        {# NEWS-DD-08: one plain sentence + NWS-08 stale-retention note merged in #}
         <div class="board-note">
-          <span class="l-en">Kept headlines without a detected event class — macro-relevant background, not actionable deltas. Collapsed by default.</span>
-          <span class="l-zh">无检测到事件类型的保留头条 — 宏观相关背景，非可操作变化。默认折叠。{% if n_zh_missing > 0 %}部分标题来自英文信源，暂以原文显示。{% endif %}</span>
+          <span class="l-en">Macro-relevant background without a detected event — a reference read, not a trading cue. Official releases are kept up to ~45 days; wire items ~5 days.</span>
+          <span class="l-zh">无检测事件的宏观相关背景 — 参考阅读，非交易提示。官方发布最长保留约45天，快讯约5天。{% if n_zh_missing > 0 %}部分标题来自英文信源，暂以原文显示。{% endif %}</span>
         </div>
+        {# NEWS-DD-01: stance line — Context Headlines #}
+        <div class="board-stance">
+          <span class="l-en">Background read — don't chase these headlines.</span>
+          <span class="l-zh">背景阅读 — 不必追随这些头条。</span>
+        </div>
+        {# NWS-04 note superseded by the conditional n_zh_missing note in the board note (#2661) #}
         {% if ctx_heads %}
           {% for h in ctx_heads %}
           <details class="na-item"
@@ -625,7 +749,7 @@
           </details>
           {% endfor %}
         {% else %}
-          <div class="board-empty">{{ t('All kept headlines had event classes — nothing demoted here.', '所有保留头条均有事件类型，无降级条目。') }}</div>
+          <div class="board-empty">{{ t('All kept headlines had event classes — nothing here.', '所有保留头条均有事件类型，此处无条目。') }}</div>
         {% endif %}
       </details>
 
@@ -641,9 +765,10 @@
           <span class="bh-arrow">▾</span>
         </summary>
         {% if news_rejected is mapping and news_rejected %}
+        {# NEWS-DD-08: one plain sentence note #}
         <div class="board-note">
-          <span class="l-en">Headlines dropped across all feeds (macro / financial / RSS), grouped by reject reason. Capped at 50 display rows.</span>
-          <span class="l-zh">所有信源（宏观/财经/RSS）中已筛出的头条，按筛出原因分组。最多展示50条。</span>
+          <span class="l-en">Headlines dropped across all feeds, grouped by reason.</span>
+          <span class="l-zh">所有信源中已筛出的头条，按原因分组。</span>
         </div>
         {% set rej_by_reason = namespace(d={}) %}
         {% for r in rejected_all %}
@@ -657,7 +782,9 @@
           {% if display_cap.remaining > 0 %}
           <div class="rej-group">
             <div class="rej-group-head">
-              <span class="rej-reason">{{ reason|replace('_',' ') }}</span>
+              {# NEWS-DD-07: translate reject reason slug via REJL dict #}
+              {% set _rl = REJL.get(reason) %}
+              <span class="rej-reason">{% if _rl %}{{ t(_rl[0], _rl[1]) }}{% else %}{{ reason|replace('_',' ')|title }}{% endif %}</span>
               <span class="rej-group-count">{{ items|length }} {{ t('items','条') }}</span>
             </div>
             <table class="rej-table">
@@ -696,15 +823,26 @@
       {# ==================================================================== #}
       <details class="board board-toggle" id="nxCalibrationBoard">
         <summary class="board-head">
-          <h2>{{ t('Event Class Calibration', '事件类别校准') }}</h2>
+          {# NEWS-DD-04: ? tip on h2 carries mechanics (sanctioned Tier-2 home) #}
+          <h2>{{ t('Event Class Calibration', '事件类别校准') }}
+            <span class="help-tip"
+              data-tip-en="How verdicts work: fewer than 30 graded events → still gathering; Wilson lower bound above 50% → shows a pattern; Wilson upper bound below 50% → no pattern found; otherwise context-only. Wilson interval is a confidence-adjusted hit-rate bound. Nothing here drives any signal until an authority gate is passed (not live yet)."
+              data-tip-zh="裁决规则：少于30条已评级事件 → 仍在积累；Wilson下界超50% → 显示规律；Wilson上界低于50% → 未发现规律；否则为背景层。Wilson区间为置信度调整后的命中率边界。本处任何结果均不进入信号，直到获取授权（尚未上线）。">?</span>
+          </h2>
           <span class="board-badge">{{ t('ACCRUING', '积累中') }}</span>
           {% if calib %}<span class="board-count">{{ calib_classes|length }} {{ t('classes', '类别') }}</span>{% endif %}
           <span class="bh-arrow">▾</span>
         </summary>
         {% if calib and calib_classes %}
+        {# NEWS-DD-04: Tier-1 note is one plain sentence; mechanics moved to ? tip on h2 #}
         <div class="board-note">
-          <span class="l-en">Forward-return hit-rates by event class. Verdict rules: n_graded &lt; 30 → insufficient; wilson_low_5d &gt; 0.50 → candidate edge; wilson_high_5d &lt; 0.50 → no edge; else context_only. All results are DISPLAY-ONLY — the earned-authority gate (not yet live) is required before any class can feed a signal.</span>
-          <span class="l-zh">按事件类别的前向收益命中率。裁决规则：n_graded &lt; 30 → 不足；wilson_low_5d &gt; 0.50 → 候选边际；wilson_high_5d &lt; 0.50 → 无优势；否则 context_only。所有结果均为仅展示 — 需要获得授权通道（尚未上线）方可进入信号。</span>
+          <span class="l-en">Tracking whether each event type actually moves prices — still gathering data; nothing here drives any signal yet.</span>
+          <span class="l-zh">追踪各事件类别是否真正影响价格 — 仍在积累数据；此处任何结果均不驱动信号。</span>
+        </div>
+        {# NEWS-DD-01: stance line — Calibration Board #}
+        <div class="board-stance">
+          <span class="l-en">Still gathering evidence — nothing here drives a signal yet.</span>
+          <span class="l-zh">仍在收集证据 — 此处尚无信号驱动。</span>
         </div>
         <div class="calib-grid">
           {% for cls in calib_classes %}
@@ -714,17 +852,24 @@
             {% if verdict == 'insufficient' %}
               <span class="cc-verdict vd-insuf">{{ t('accruing (n=' ~ cls.get('n_graded',0) ~ ')','积累中(n=' ~ cls.get('n_graded',0) ~ ')') }}</span>
             {% elif verdict == 'candidate' %}
-              <span class="cc-verdict vd-cand">{{ t('CANDIDATE EDGE','候选优势') }}</span>
+              <span class="cc-verdict vd-cand">{{ t('Shows a pattern','显示规律') }}</span>
             {% elif verdict == 'no_edge' %}
-              <span class="cc-verdict vd-noedge">{{ t('no edge','无优势') }}</span>
+              <span class="cc-verdict vd-noedge">{{ t('No pattern found','未发现规律') }}</span>
             {% else %}
-              <span class="cc-verdict vd-ctx">{{ t('context only','仅背景') }}</span>
+              <span class="cc-verdict vd-ctx">{{ t('Context only','仅背景') }}</span>
             {% endif %}
-            <div class="cc-n">{{ t('n=','n=') }}{{ cls.get('n','?') }} {{ t('logged','已记录') }} · {{ cls.get('n_graded','?') }} {{ t('graded','已评级') }}</div>
+            <div class="cc-n">{{ cls.get('n','?') }} {{ t('logged','已记录') }} · {{ cls.get('n_graded','?') }} {{ t('graded','已评级') }}</div>
             <div class="cc-row">
               {% if cls.get('hit_5d') is number %}<span>5d: <span class="cc-hit">{{ '%.0f%%'|format(cls.hit_5d * 100) }}</span></span>{% endif %}
               {% if cls.get('hit_21d') is number %}<span>21d: <span class="cc-hit">{{ '%.0f%%'|format(cls.hit_21d * 100) }}</span></span>{% endif %}
-              {% if cls.get('direction') %}<span>{{ cls.direction }}</span>{% endif %}
+              {# NEWS-DD-06: direction label — translate bullish/mixed/bearish #}
+              {% if cls.get('direction') %}
+                {% if cls.direction == 'bullish' %}<span>{{ t('↑ Upside','↑ 利多') }}</span>
+                {% elif cls.direction == 'bearish' %}<span>{{ t('↓ Downside','↓ 利空') }}</span>
+                {% elif cls.direction == 'mixed' %}<span>{{ t('Mixed','分歧') }}</span>
+                {% elif cls.direction == 'informational' %}<span>{{ t('Informational','信息') }}</span>
+                {% else %}<span>{{ cls.direction }}</span>{% endif %}
+              {% endif %}
             </div>
           </div>
           {% endfor %}
@@ -734,7 +879,11 @@
           {% set ra_classes = (ra.get('classes') if ra.get('classes') is iterable and ra.get('classes') is not string else [])|select('mapping')|list %}
           <div class="board-note" style="border-top:1px solid var(--line)">
             <span class="l-en">Reject audit: {{ ra.get('n_sampled',0) }} sampled · {{ ra.get('n_graded',0) }} graded
-              {% if ra_classes %}— top class: {{ ra_classes[0].get('reason','?') }} (avg 21d: {{ '%.1f%%'|format(ra_classes[0].get('avg_rel_21d',0)) if ra_classes[0].get('avg_rel_21d') is number else 'n/a' }}){% endif %}
+              {% if ra_classes %}
+                {% set _rac0 = ra_classes[0] %}
+                {% set _rac0_rl = REJL.get(_rac0.get('reason','')) %}
+                — top reason: {% if _rac0_rl %}{{ _rac0_rl[0] }}{% else %}{{ _rac0.get('reason','?') }}{% endif %} (avg 21d: {{ '%.1f%%'|format(_rac0.get('avg_rel_21d',0)) if _rac0.get('avg_rel_21d') is number else 'n/a' }})
+              {% endif %}
             </span>
             <span class="l-zh">筛出审计：{{ ra.get('n_sampled',0) }} 已抽样 · {{ ra.get('n_graded',0) }} 已评级</span>
           </div>
@@ -743,6 +892,80 @@
           <div class="calib-accruing">{{ t('Calibration is accruing — no event classes graded yet. This board will populate as events accrue forward-return data over coming days.', '校准积累中 — 暂无事件类别评级。随着事件积累前向收益数据，此面板将在后续天数逐步填充。') }}</div>
         {% else %}
           <div class="calib-accruing">{{ t('Calibration accruing — artifact not yet generated. Run the news calibration wave to populate this board.', '校准积累中 — 尚未生成结果文件。请运行新闻校准波次以填充此面板。') }}</div>
+        {% endif %}
+      </details>
+
+      {# ==================================================================== #}
+      {# G. COMPANY & MARKET WIRES — NWS-05                                   #}
+      {# financial.json market/mag7 arrays rendered here                       #}
+      {# <!-- nx-wires-board --> #}
+      {# ==================================================================== #}
+      <details class="board board-toggle" id="nxWiresBoard">
+        <summary class="board-head">
+          <h2>{{ t('Company &amp; market wires', '公司与市场快讯') }}</h2>
+          <span class="board-badge">{{ t('WIRES', '快讯') }}</span>
+          {% if _fn_market %}<span class="board-count">{{ _fn_market|length }} {{ t('items', '条目') }}</span>{% endif %}
+          <span class="bh-arrow">▾</span>
+        </summary>
+        {# NEWS-DD-01: stance line — Wires Board #}
+        <div class="board-stance">
+          <span class="l-en">Background read — don't chase these headlines.</span>
+          <span class="l-zh">背景阅读 — 不必追随这些快讯。</span>
+        </div>
+        {# NWS-05: ticker-tagged coverage degraded warning #}
+        {% if not _fn_polygon_ok %}
+        <div class="fn-degraded">
+          <span class="l-en">Ticker-tagged coverage is degraded right now — some company items may be missing.</span>
+          <span class="l-zh">标的标注覆盖当前降级 — 部分公司条目可能缺失。</span>
+        </div>
+        {% endif %}
+        {# mag7 chip row (display only — no links) #}
+        {% if _fn_mag7 %}
+        <div class="mag7-row">
+          {% for ticker, info in _fn_mag7.items() %}
+            {% if info is mapping %}
+              {% set hl_count = (info.get('headlines') if info.get('headlines') is iterable and info.get('headlines') is not string else [])|list|length %}
+              {% if hl_count > 0 %}
+              <span class="mag7-chip">
+                <span class="m7t">{{ ticker }}</span>
+                <span class="m7n">{{ hl_count }}</span>
+              </span>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# market items accordion — same na-item idiom, capped at 20 #}
+        {% if _fn_market %}
+          {% for item in _fn_market[:20] %}
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks">{{ t('Wire','快讯') }}</span>
+              <span class="na-htitle">{{ item.get('title','') }}</span>
+              <span class="na-right">
+                <span class="na-src">{{ item.get('source') or item.get('domain','') }}</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                {% for tk in (item.get('tickers') or [])[:6] %}<span class="na-pill tk">{{ tk }}</span>{% endfor %}
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                {% if item.get('url') %}<a class="na-read" href="{{ item.url }}" target="_blank" rel="noopener">{{ t('Read source','阅读原文') }} →</a>{% endif %}
+                {% if item.get('seendate') %}<span class="na-when rel-time" data-ts="{{ item.seendate }}"></span>{% endif %}
+              </div>
+            </div>
+          </details>
+          {% endfor %}
+          {% if _fn_market|length > 20 %}
+          <div class="rej-cap-note">{{ t('Showing 20 of ' ~ _fn_market|length ~ ' items','显示20条，共' ~ _fn_market|length ~ '条') }}</div>
+          {% endif %}
+        {% else %}
+          <div class="board-empty">
+            <span class="l-en">No market wire items available.</span>
+            <span class="l-zh">暂无市场快讯条目。</span>
+          </div>
         {% endif %}
       </details>
 
@@ -808,14 +1031,52 @@
         {% endif %}
       </section>
 
+      {# NEWS-DD-05: NDI/EPU/GPR rail — gloss acronyms in plain words; percentile phrasing #}
       {% if ndi %}
       <section class="rail-card">
         <h2>{{ t('Narrative texture', '叙事纹理') }}</h2>
-        {% if ndi.ndi is not none %}<div class="rail-line"><div class="rail-date">NDI</div><div class="rail-main"><b>{{ ndi.ndi }}/100</b> <span class="mut">({{ t('display-only','仅展示') }})</span></div></div>{% endif %}
-        {% set L = (ndi.legs or {}) %}
-        {% if L.get('epu') and L.epu.pct is not none %}<div class="rail-line"><div class="rail-date">EPU</div><div class="rail-main">{{ L.epu.pct }}{{ t('th pct','百分位') }}</div></div>{% endif %}
-        {% if L.get('gpr_threat') and L.gpr_threat.pct is not none %}<div class="rail-line"><div class="rail-date">GPR</div><div class="rail-main">{{ L.gpr_threat.pct }}{{ t('th pct','百分位') }}</div></div>{% endif %}
-        {% if L.get('vix') and L.vix.pct is not none %}<div class="rail-line"><div class="rail-date">VIX</div><div class="rail-main">{{ L.vix.pct }}{{ t('th pct','百分位') }}</div></div>{% endif %}
+        {% if ndi.get('ndi') is not none %}
+        <div class="rail-line">
+          <div class="rail-date">{{ t('Index','指数') }}</div>
+          <div class="rail-main">
+            <b data-tip-en="Narrative-Dominance Index: composite of policy uncertainty, geopolitical risk and market volatility text signals (0–100)" data-tip-zh="叙事主导指数：政策不确定性、地缘风险与市场波动文本信号的综合（0–100）">{{ ndi.get('ndi') }}/100</b>
+            <span class="mut"> · {{ t('a texture read, not a signal','纹理参考，非信号') }}</span>
+          </div>
+        </div>
+        {% endif %}
+        {% set L = (ndi.get('legs') or {}) %}
+        {% if L.get('epu') is mapping and L.epu.get('pct') is not none %}
+        <div class="rail-line">
+          <div class="rail-date">{{ t('Policy','政策') }}</div>
+          <div class="rail-main"
+               data-tip-en="Economic Policy Uncertainty index — how much news discussion is uncertainty-laden"
+               data-tip-zh="经济政策不确定性指数 — 新闻中的政策不确定性程度">
+            {# Express percentile as plain words: top X% #}
+            {% set _pct = L.epu.pct %}
+            <b>{% if _pct >= 90 %}{{ t('Very high (top ~' ~ ((100-_pct)|int) ~ '%)','非常高（前~' ~ ((100-_pct)|int) ~ '%）') }}{% elif _pct >= 70 %}{{ t('Elevated (~' ~ _pct|int ~ ' pct)','偏高（~' ~ _pct|int ~ ' 百分位）') }}{% elif _pct <= 20 %}{{ t('Low (~' ~ _pct|int ~ ' pct)','偏低（~' ~ _pct|int ~ ' 百分位）') }}{% else %}{{ t('Moderate (~' ~ _pct|int ~ ' pct)','适中（~' ~ _pct|int ~ ' 百分位）') }}{% endif %}</b>
+          </div>
+        </div>
+        {% endif %}
+        {% if L.get('gpr_threat') is mapping and L.gpr_threat.get('pct') is not none %}
+        <div class="rail-line">
+          <div class="rail-date">{{ t('Geo risk','地缘') }}</div>
+          <div class="rail-main"
+               data-tip-en="Geopolitical Risk index — frequency of conflict-threat language in global media"
+               data-tip-zh="地缘政治风险指数 — 全球媒体中冲突威胁词频">
+            {% set _pct = L.gpr_threat.pct %}
+            <b>{% if _pct >= 90 %}{{ t('Very high (top ~' ~ ((100-_pct)|int) ~ '%)','非常高（前~' ~ ((100-_pct)|int) ~ '%）') }}{% elif _pct >= 70 %}{{ t('Elevated (~' ~ _pct|int ~ ' pct)','偏高（~' ~ _pct|int ~ ' 百分位）') }}{% elif _pct <= 20 %}{{ t('Low (~' ~ _pct|int ~ ' pct)','偏低（~' ~ _pct|int ~ ' 百分位）') }}{% else %}{{ t('Moderate (~' ~ _pct|int ~ ' pct)','适中（~' ~ _pct|int ~ ' 百分位）') }}{% endif %}</b>
+          </div>
+        </div>
+        {% endif %}
+        {% if L.get('vix') is mapping and L.vix.get('pct') is not none %}
+        <div class="rail-line">
+          <div class="rail-date">VIX</div>
+          <div class="rail-main">
+            {% set _pct = L.vix.pct %}
+            <b>{% if _pct >= 90 %}{{ t('Very high (top ~' ~ ((100-_pct)|int) ~ '%)','非常高（前~' ~ ((100-_pct)|int) ~ '%）') }}{% elif _pct >= 70 %}{{ t('Elevated (~' ~ _pct|int ~ ' pct)','偏高（~' ~ _pct|int ~ ' 百分位）') }}{% elif _pct <= 20 %}{{ t('Low (~' ~ _pct|int ~ ' pct)','偏低（~' ~ _pct|int ~ ' 百分位）') }}{% else %}{{ t('Moderate (~' ~ _pct|int ~ ' pct)','适中（~' ~ _pct|int ~ ' 百分位）') }}{% endif %}</b>
+          </div>
+        </div>
+        {% endif %}
       </section>
       {% endif %}
 
@@ -844,8 +1105,25 @@
       el.textContent=(el.classList.contains('na-when')?'':(isZh?'更新于 ':'Updated '))+r;
     });
   }
+  // NEWS-DD-02: aged chip — mark event cards older than 5 days
+  function markAged(){
+    var isZh=document.documentElement.getAttribute('data-lang')==='zh';
+    var cutoff=Date.now()-5*24*60*60*1000;
+    document.querySelectorAll('.ev-card[data-seendate]').forEach(function(card){
+      var ts=card.getAttribute('data-seendate'); if(!ts) return;
+      var d=new Date(ts); if(isNaN(d)) return;
+      var chip=card.querySelector('.ev-aged');
+      if(!chip) return;
+      if(d.getTime()<cutoff){
+        chip.textContent=isZh?chip.getAttribute('data-aged-zh'):chip.getAttribute('data-aged-en');
+        chip.style.display='inline';
+      }
+    });
+  }
   document.addEventListener('langchange', stamps);
+  document.addEventListener('langchange', markAged);
   stamps();
+  markAged();
 })();
 </script>
 {% endblock %}

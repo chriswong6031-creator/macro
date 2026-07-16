@@ -419,6 +419,105 @@ def test_is_low_value_empty():
     assert nc.is_low_value(None) is True
 
 
+# --------------------------------------------------------------------------- #
+# F3a: analyst_report_stub (new family 2026-07-16)
+# --------------------------------------------------------------------------- #
+def test_analyst_report_stub_dropped():
+    """Yahoo/Argus batch stubs anchored at '^Analyst Report:' are dropped."""
+    assert nc.is_low_value("Analyst Report: AAPL") is True
+    assert nc.low_value_reason("Analyst Report: AAPL") == "analyst_report_stub"
+    assert nc.is_low_value("Analyst Report: Microsoft (MSFT)") is True
+
+
+def test_analyst_report_stub_does_not_fire_on_real_analyst_news():
+    """Real analyst upgrades, downgrades, and commentary must not be caught."""
+    assert nc.is_low_value("JPMorgan upgrades Apple to Overweight") is False
+    assert nc.is_low_value("Analyst raises Nvidia price target to $180") is False
+    # The word 'analyst' appears mid-title — must not fire anchor match
+    assert nc.is_low_value("Wall Street analysts turn bullish on chips") is False
+
+
+# --------------------------------------------------------------------------- #
+# F3b: dividend_declaration_stub (new family 2026-07-16)
+# --------------------------------------------------------------------------- #
+def test_dividend_stub_drops_microcap_dollar_declarations():
+    """Microcap '$N dividend' declarations occupying feed slots must be dropped."""
+    assert nc.is_low_value("Smart Sand declares $0.10 dividend") is True
+    assert nc.low_value_reason("Smart Sand declares $0.10 dividend") == "dividend_declaration_stub"
+    assert nc.is_low_value("Saratoga Investment declares $0.56 dividend") is True
+
+
+def test_dividend_stub_exempts_megacap_aliases():
+    """Titles containing a megacap alias are exempt from the stub filter."""
+    assert nc.is_low_value("Apple declares $0.25 quarterly dividend") is False
+    assert nc.is_low_value("Microsoft announces $0.94 dividend") is False
+    assert nc.is_low_value("Nvidia announces first dividend of $0.10") is False
+
+
+def test_dividend_stub_keeps_non_dollar_raise_forms():
+    """'Apple raises quarterly dividend 4%' has no $amount and is not a stub."""
+    assert nc.is_low_value("Apple raises quarterly dividend 4%, announces $110B buyback") is False
+
+
+def test_dividend_change_stories_kept_even_smallcap():
+    """A cut/suspension/raise/special is NEWS even from a non-megacap — the
+    change-word guard exempts it from the routine-declaration stub family."""
+    assert nc.is_low_value("Ford announces 20% dividend cut") is False
+    assert nc.is_low_value("GM announces $2B buyback and cuts dividend") is False
+    assert nc.is_low_value("Whirlpool declares $1.75 special dividend") is False
+    assert nc.is_low_value("Devon Energy announces $0.22 dividend increase") is False
+    # Routine declaration without a change-word still drops.
+    assert nc.low_value_reason("Smart Sand declares $0.10 dividend") == "dividend_declaration_stub"
+
+
+# --------------------------------------------------------------------------- #
+# F3c: morning_aggregator (new family 2026-07-16)
+# --------------------------------------------------------------------------- #
+def test_morning_aggregator_and_more_in_dropped():
+    """'… and more in <show name>' teasers are morning-aggregator roundups."""
+    assert nc.is_low_value(
+        "Grocery sales, United earnings, Anthropic's IPO prep and more in Morning Squawk") is True
+    assert nc.low_value_reason(
+        "Grocery sales, United earnings, Anthropic's IPO prep and more in Morning Squawk"
+    ) == "morning_aggregator"
+
+
+def test_morning_aggregator_keeps_standalone_show_mention():
+    """A real story that merely mentions a show by name is not a teaser."""
+    assert nc.is_low_value("Morning Squawk: Powell says rates likely higher for longer") is False
+    assert nc.is_low_value("CNBC Squawk Box interview — Fed Chair discusses inflation") is False
+
+
+def test_morning_aggregator_keeps_and_more_in_line_with():
+    """'and more in' followed by ordinary prose (no show/aggregator noun) is NOT
+    a teaser — 'in line with' was a verified false-drop in review."""
+    assert nc.is_low_value("Fed sees costs rising and more in line with expectations") is False
+    assert nc.is_low_value("Housing starts fall, and more in line with the 2019 trend") is False
+    # The show-noun form still drops.
+    assert nc.low_value_reason(
+        "Jobs data, bank earnings and more in today's rundown") == "morning_aggregator"
+
+
+# --------------------------------------------------------------------------- #
+# F4/MN-09: 'what to know' trailing-suffix narrowing
+# --------------------------------------------------------------------------- #
+def test_what_to_know_trailing_suffix_kept():
+    """'... Here's what to know' at the end of a substantive title is NOT a roundup."""
+    assert nc.is_low_value("Trump national address tonight. Here's what to know") is False
+    assert nc.is_low_value("CPI print surprised. Here is what to know") is False
+
+
+def test_what_to_know_at_start_still_dropped():
+    """'What to watch/know/expect' as the opener of a title is a calendar-preview stub."""
+    assert nc.low_value_reason("What to watch this week") == "calendar_preview"
+    assert nc.low_value_reason("What to know about the Fed meeting Wednesday") == "calendar_preview"
+
+
+def test_what_to_expect_after_colon_dropped():
+    """'<label>: what to expect from …' is a structural roundup."""
+    assert nc.low_value_reason("Earnings preview: what to expect from Nvidia") == "calendar_preview"
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:
