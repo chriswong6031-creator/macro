@@ -1,12 +1,15 @@
 """W5 robustness tests for HK pipeline fixes.
 
 Covers:
-  (1) eligible=0 health banner: when no aligned/near-aligned names exist, a health
-      entry with leg='alignment' appears in the returned board data.
+  (1) confluence-empty health banner: when no cascade-eligible names exist, a health
+      entry with leg='confluence' appears in the returned board data.
+      (Previously leg='alignment' before the 2026-07-16 gate swap.)
   (2) Southbound staleness in trading days: Friday->Monday gap = 1 td, not 3 cal days.
   (3) Freshness sentinel southbound check: flags stale southbound holdings store.
   (4) Pick-lab producer stale-cross NaN guard: hk_xbar_sessions maps NaN/None -> None
       (int(NaN) crashed the producer block nightly; 1D Velocity Desk dead wire).
+  (5) Cascade inclusion gate: eligible=True -> included in buys regardless of atier;
+      eligible=False but aligned=True -> NOT in buys (may appear in watch).
 """
 from __future__ import annotations
 
@@ -22,82 +25,154 @@ import pytest
 
 
 # ---------------------------------------------------------------------------
-# (1) alignment pool empty -> health banner appears
+# (1) confluence-empty pool -> health banner appears (leg='confluence')
 # ---------------------------------------------------------------------------
 
 class TestAlignmentEmptyBanner:
-    """When the aligned + near pool is empty, compute_hk_standouts must surface
-    a health entry (leg='alignment') rather than silently rendering with 0 buys."""
+    """When no cascade-eligible names exist, compute_hk_standouts must surface
+    a health entry with leg='confluence' (not 'alignment') rather than silently
+    rendering with 0 buys.
 
-    def _make_minimal_enriched(self, n: int = 3) -> list[dict]:
-        """Return n enriched entries with NO alignment (atier returns None) and
-        a positive conviction composite so they rank above the -9.0 floor."""
-        entries = []
-        for i in range(n):
-            entries.append({
-                "ticker": f"TEST{i:04d}.HK",
-                "dir": "up",
-                "price": 10.0 + i,
-                "_chart": [10.0] * 64,
-                "_adv63": 1_000_000.0,
-                "edge_z": 0.5,
-                "conviction": {
-                    "composite_z": 0.5 + i * 0.1,
-                    "cycle_blocked": False,
-                    "alignment": {},   # no aligned, no near -> _atier returns None
-                    "axes": {},
-                },
-                "entry_signal": None,
-                "_row": None,
-            })
-        return entries
+    Gate swap 2026-07-16: inclusion is now signal_gate cascade eligible, not
+    bottoming-alignment. The banner leg was updated from 'alignment' to 'confluence'.
+    """
 
-    def test_empty_alignment_produces_health_entry(self):
-        """When elig is empty, _pre_health must have leg='alignment'."""
-        # F5-b fix: call the PRODUCTION hk_entry_ok / hk_atier from scripts.build_hk_library,
-        # not a re-implementation.  This guards against divergence between test and production.
-        from scripts.build_hk_library import hk_entry_ok, hk_atier
+    def _make_sig_verdict(self, tickers: list[str], eligible: bool) -> dict:
+        """Return a sig_verdict dict with all tickers set to the given eligibility."""
+        return {t: {"eligible": eligible, "weight": 0.0} for t in tickers}
 
-        entries = self._make_minimal_enriched(3)
+    def test_empty_cascade_produces_confluence_health_entry(self):
+        """When no cascade-eligible names exist, the health leg is 'confluence' —
+        gated on the PRODUCTION hk_cascade_eligible predicate (F5-b)."""
+        from scripts.build_hk_library import hk_cascade_eligible
+        tickers = [f"TEST{i:04d}.HK" for i in range(3)]
+        sig_verdict = self._make_sig_verdict(tickers, eligible=False)
 
-        elig = [e for e in entries if hk_entry_ok(e) and hk_atier(e)]
+        elig = [t for t in tickers if hk_cascade_eligible(sig_verdict, t)]
         _pre_health: list[dict] = []
         if not elig:
             _pre_health.append({
-                "leg": "alignment",
-                "en": "No fully-aligned names found — buy strip backfilled from near-aligned names.",
-                "zh": "未找到完全对齐的标的 —— 买入列表已从接近对齐的标的回填。",
+                "leg": "confluence",
+                "en": "No names show a fresh entry signal tonight — the board is intentionally thin, not broken.",
+                "zh": "今晚没有出现新入场信号的个股 —— 榜单有意精简，并非故障。",
             })
 
-        assert elig == [], "Expected empty eligible pool with the test fixtures"
+        assert elig == [], "Expected empty eligible pool with eligible=False sig_verdict"
         assert len(_pre_health) == 1, "Expected exactly one health entry"
         entry = _pre_health[0]
-        assert entry["leg"] == "alignment"
-        assert "alignment" in entry["en"].lower() or "aligned" in entry["en"].lower()
+        assert entry["leg"] == "confluence", (
+            f"Expected leg='confluence', got {entry['leg']!r}")
+        assert "entry signal" in entry["en"].lower()  # plain-word Tier-1 copy, no jargon
         assert entry["zh"]  # bilingual
 
-    def test_nonempty_alignment_no_spurious_banner(self):
-        """When at least one name is aligned, no alignment health entry is added."""
-        from scripts.build_hk_library import hk_entry_ok, hk_atier
+    def test_eligible_cascade_no_spurious_banner(self):
+        """When at least one cascade-eligible name exists, no confluence health entry is added."""
+        from scripts.build_hk_library import hk_cascade_eligible
+        tickers = ["0700.HK"]
+        sig_verdict = self._make_sig_verdict(tickers, eligible=True)
 
-        entries = [
-            {
-                "ticker": "0700.HK",
-                "conviction": {
-                    "composite_z": 1.0,
-                    "cycle_blocked": False,
-                    "alignment": {"aligned": True, "score": 0.9},
-                    "axes": {},
-                },
-            }
-        ]
-        elig = [e for e in entries if hk_entry_ok(e) and hk_atier(e)]
+        elig = [t for t in tickers if hk_cascade_eligible(sig_verdict, t)]
         _pre_health: list[dict] = []
         if not elig:
-            _pre_health.append({"leg": "alignment", "en": "...", "zh": "..."})
+            _pre_health.append({"leg": "confluence", "en": "...", "zh": "..."})
 
         assert elig, "Expected at least one eligible name"
-        assert _pre_health == [], "No spurious health entry when names are aligned"
+        assert _pre_health == [], "No spurious health entry when cascade is eligible"
+
+    def test_missing_sig_verdict_entry_excluded_not_crash(self):
+        """A name with <60 bars has NO sig_verdict entry: the production predicate
+        must exclude it (False), never crash — the None-safety the cascade relies on."""
+        from scripts.build_hk_library import hk_cascade_eligible
+        assert hk_cascade_eligible({}, "0001.HK") is False
+        assert hk_cascade_eligible({"0001.HK": None}, "0001.HK") is False
+
+
+# ---------------------------------------------------------------------------
+# (5) Cascade inclusion gate — eligible=True included; eligible=False excluded
+# ---------------------------------------------------------------------------
+
+class TestCascadeInclusionGate:
+    """Gate swap 2026-07-16: inclusion = cascade eligible, not bottoming-alignment.
+
+    (a) A name with eligible=True but align_tier=None MUST appear in buys.
+    (b) A name with eligible=False but aligned=True must NOT appear in buys
+        (it may end up in watch via the watch-strip logic, but MUST NOT be in buys).
+
+    Uses the PRODUCTION inclusion predicate from build_hk_library to guard
+    against divergence (F5-b style).
+    """
+
+    def _make_enriched(self, ticker: str, eligible: bool, aligned: bool) -> dict:
+        """Minimal enriched row for testing cascade inclusion."""
+        return {
+            "ticker": ticker,
+            "dir": "up",
+            "price": 20.0,
+            "_chart": [10.0] * 64,
+            "_adv63": 1_000_000.0,
+            "edge_z": 0.5,
+            "conviction": {
+                "composite_z": 0.8,
+                "cycle_blocked": False,
+                "alignment": {"aligned": aligned, "score": 0.9} if aligned else {},
+                "axes": {},
+            },
+            "entry_signal": None,
+            "_row": None,
+        }
+
+    def test_eligible_true_atier_none_is_included(self):
+        """eligible=True AND align_tier=None -> MUST be in buys (cascade is the gate)."""
+        from scripts.build_hk_library import hk_cascade_eligible, hk_atier
+        ticker = "9988.HK"
+        enriched = [self._make_enriched(ticker, eligible=True, aligned=False)]
+        sig_verdict = {ticker: {"eligible": True, "weight": 0.5}}
+
+        elig = [e for e in enriched if hk_cascade_eligible(sig_verdict, e["ticker"])]
+        buys = elig  # [:n_buy], but n=1 so same
+
+        assert any(e["ticker"] == ticker for e in buys), (
+            "eligible=True name must be in buys regardless of alignment tier")
+        assert hk_atier(buys[0]) is None, "context badge is None — inclusion unaffected"
+
+    def test_eligible_false_aligned_true_is_excluded_from_buys(self):
+        """eligible=False AND aligned=True -> must NOT be in buys."""
+        from scripts.build_hk_library import hk_cascade_eligible, hk_atier
+        ticker = "0700.HK"
+        enriched = [self._make_enriched(ticker, eligible=False, aligned=True)]
+        sig_verdict = {ticker: {"eligible": False, "weight": 0.0}}
+
+        elig = [e for e in enriched if hk_cascade_eligible(sig_verdict, e["ticker"])]
+        buys = elig
+
+        assert hk_atier(enriched[0]) == "aligned", "fixture sanity: the name IS aligned"
+        assert not any(e["ticker"] == ticker for e in buys), (
+            "eligible=False name must NOT be in buys even if aligned=True")
+
+    def test_mixed_pool_only_eligible_in_buys(self):
+        """Mix of eligible/ineligible names: only eligible ones land in buys."""
+        from scripts.build_hk_library import hk_cascade_eligible
+        entries = [
+            self._make_enriched("3690.HK", eligible=True, aligned=True),
+            self._make_enriched("0941.HK", eligible=True, aligned=False),
+            self._make_enriched("0005.HK", eligible=False, aligned=True),
+            self._make_enriched("1398.HK", eligible=False, aligned=False),
+        ]
+        sig_verdict = {
+            "3690.HK": {"eligible": True, "weight": 0.8},
+            "0941.HK": {"eligible": True, "weight": 0.3},
+            "0005.HK": {"eligible": False, "weight": 0.0},
+            "1398.HK": {"eligible": False, "weight": 0.0},
+        }
+
+        elig = [e for e in entries if hk_cascade_eligible(sig_verdict, e["ticker"])]
+        buy_tickers = {e["ticker"] for e in elig}
+
+        assert "3690.HK" in buy_tickers, "eligible=True/aligned=True must be in buys"
+        assert "0941.HK" in buy_tickers, "eligible=True/aligned=False must be in buys"
+        assert "0005.HK" not in buy_tickers, "eligible=False/aligned=True must NOT be in buys"
+        assert "1398.HK" not in buy_tickers, "eligible=False/aligned=False must NOT be in buys"
+        assert len(buy_tickers) == 2, f"Expected exactly 2 eligible names, got {buy_tickers}"
 
 
 # ---------------------------------------------------------------------------
