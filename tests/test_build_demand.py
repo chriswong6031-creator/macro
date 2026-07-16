@@ -25,8 +25,12 @@ def test_div_order_complete():
     assert set(bd._DIV_ORDER) == set(bd._DIV_META)
 
 
-def test_build_smoke_renders_page():
-    # integration: build against committed repo data; must emit the page skeleton
+def test_build_smoke_renders_page(tmp_path, monkeypatch):
+    # integration: build against committed repo data; must emit the page skeleton.
+    # Redirect the page write to tmp — never the repo's real site/ tree.
+    monkeypatch.setattr(
+        bd, "write_page", lambda path, html: (tmp_path / path.name).write_text(html)
+    )
     html = bd.build()
     assert "Demand Desk" in html
     assert 'class="cards"' in html and "Ahead of consensus" in html

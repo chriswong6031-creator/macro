@@ -326,8 +326,15 @@ class TestBuild:
     def test_main_returns_zero(self, tmp_path, monkeypatch):
         """main() never raises; always exits 0."""
         import scripts.build_flow_leaders as mod
+        from lib import config
 
-        # Point ROOT to tmp so config lookups degrade gracefully
+        # Redirect every default root to tmp so build() degrades gracefully
+        # without touching the repo's real site/ tree (MM_DATA_GUARD).
+        config.load()  # warm the lru_cache before ROOT moves
+        monkeypatch.setattr(config, "ROOT", tmp_path)
+        monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
+        (tmp_path / "site").mkdir()
+        (tmp_path / "data").mkdir()
         monkeypatch.chdir(tmp_path)
         result = mod.main()
         assert result == 0

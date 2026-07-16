@@ -14,8 +14,8 @@ test_basket_turn_watch.py) pop COLLECT_LANE / US_LANE directly via
 expected.  Monkeypatch-based gate tests work identically (``monkeypatch.delenv``
 removes the key before the assertion, and monkeypatch restores after).
 
-data/ write tripwire (MM_DATA_GUARD)
-------------------------------------
+data/ + site/ write tripwire (MM_DATA_GUARD)
+--------------------------------------------
 Because COLLECT_LANE=nightly is armed for every test, any test that reaches a
 writer WITHOUT isolation (root= param, monkeypatched lib.config
 data_dir/ROOT) mutates the repo's REAL data/ tree.  Those writes ride any
@@ -25,9 +25,16 @@ data/foresight/policy_calendar_ledger.jsonl carries a committed synthetic
 test row (theme=solar, asof=2026-07-03, logged 2026-07-04T00:30:49Z) from
 exactly this failure mode.
 
-The guard snapshots ``git status --porcelain -- data/`` at session start and
-fails the run (exit 1) when NEW entries appear by session end.  Modes via the
-MM_DATA_GUARD env var:
+The tracked site/ tree has the same failure mode through builder entry
+points that default their output dir to the repo's real site/ (render
+helpers, snapshot writers): synthetic test fixtures overwrite committed
+pages/JSON and ride any later ``git add site/``.  Render-oriented tests are
+legitimate — they must redirect output (tmp_path out dir, monkeypatched
+lib.config ROOT/SITE), never write the real tree.
+
+The guard snapshots ``git status --porcelain`` for each watched tree
+(``data/``, ``site/``) at session start and fails the run (exit 1) when NEW
+entries appear by session end.  Modes via the MM_DATA_GUARD env var:
 
   (unset)  session-level tripwire (default; two git calls per session)
   off      disable entirely (deliberate data-writing local flows only)
@@ -65,15 +72,18 @@ def _set_nightly_lane(monkeypatch):
 # data/ write tripwire
 # ---------------------------------------------------------------------------
 
+_WATCHED_TREES = ("data/", "site/")
+
+
 def _data_guard_mode() -> str:
     return os.environ.get("MM_DATA_GUARD", "").strip().lower()
 
 
 def _data_status() -> list[str] | None:
-    """Sorted ``git status --porcelain -- data/`` lines; None if git unusable."""
+    """Sorted ``git status --porcelain`` lines for watched trees; None if git unusable."""
     try:
         out = subprocess.run(
-            ["git", "status", "--porcelain", "--", "data/"],
+            ["git", "status", "--porcelain", "--", *_WATCHED_TREES],
             cwd=_REPO_ROOT, capture_output=True, text=True, timeout=120,
         )
     except (OSError, subprocess.TimeoutExpired):
@@ -94,10 +104,13 @@ def _new_entries(baseline: list[str] | None) -> list[str]:
 
 
 _GUARD_MSG = (
-    "Tests must never write the repo's real data/ tree: pass root=tmp_path, or\n"
-    "monkeypatch lib.config data_dir/ROOT, or pass explicit empty payloads to\n"
-    "entry points that lazily recompute tiers (compute_foresight_cascade et al.).\n"
-    "Heal the tree:  git checkout -- data/ && git clean -fd data/\n"
+    "Tests must never write the repo's real data/ or site/ trees: pass\n"
+    "root=tmp_path / an explicit out dir, or monkeypatch lib.config\n"
+    "data_dir/ROOT, or pass explicit empty payloads to entry points that\n"
+    "lazily recompute tiers (compute_foresight_cascade et al.).  Render\n"
+    "tests redirect output to tmp_path — site/ output is legitimate, the\n"
+    "destination is not.\n"
+    "Heal the tree:  git checkout -- data/ site/ && git clean -fd data/ site/\n"
     "Hunt a culprit: MM_DATA_GUARD=trace python -m pytest <suspect files>\n"
     "Bypass (deliberate local data flows only): MM_DATA_GUARD=off"
 )
@@ -139,7 +152,7 @@ def pytest_sessionfinish(session, exitstatus):
     body = "\n".join(report)
     print(
         f"\n{'=' * 70}\n"
-        f"MM_DATA_GUARD: test session dirtied the real data/ tree:\n{body}\n"
+        f"MM_DATA_GUARD: test session dirtied the real data/ or site/ tree:\n{body}\n"
         f"{_GUARD_MSG}\n{'=' * 70}"
     )
     if session.exitstatus == 0:
