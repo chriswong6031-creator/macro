@@ -1,16 +1,16 @@
 {
   "schema": "china_risk_state.v1",
-  "built": "2026-07-15 08:40:45 UTC",
+  "built": "2026-07-16 03:56:12 UTC",
   "session": {
     "cn": {
       "region": "cn",
       "open": false,
-      "local_time": "2026-07-15 16:40 CST"
+      "local_time": "2026-07-16 11:56 CST"
     },
     "hk": {
       "region": "hk",
-      "open": false,
-      "local_time": "2026-07-15 16:40 HKT"
+      "open": true,
+      "local_time": "2026-07-16 11:56 HKT"
     }
   },
   "live_active": true,
@@ -19,31 +19,40 @@
   "delayed_min": 15,
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
-  "nightly_asof": "2026-07-14",
-  "n_live_symbols": 2,
-  "movers": [],
+  "nightly_asof": "2026-07-15",
+  "n_live_symbols": 4,
+  "movers": [
+    {
+      "sym": "HSI",
+      "chg_pct": 1.9
+    }
+  ],
   "display": {
     "verdict": "MIXED",
     "label_en": "Mixed",
     "label_zh": "\u6df7\u5408",
     "color": "yellow",
-    "score": 44,
+    "score": 36,
     "band_changed": false,
-    "pending": null
+    "pending": {
+      "verdict": "RISK_OFF",
+      "ticks": 1,
+      "needs": 2
+    }
   },
   "live": {
-    "verdict": "MIXED",
-    "score": 44,
-    "raw_score": 44,
-    "color": "yellow",
-    "label_en": "Mixed",
-    "label_zh": "\u6df7\u5408",
-    "headline_en": "Mixed / transition \u2014 the signals disagree. Trade smaller, favour quality, take profits faster; don't position aggressively.",
-    "headline_zh": "\u6df7\u5408 / \u8f6c\u6362 \u2014 \u4fe1\u53f7\u5206\u6b67\u3002\u7f29\u5c0f\u4ed3\u4f4d\u3001\u504f\u597d\u8d28\u91cf\u3001\u66f4\u5feb\u83b7\u5229\u4e86\u7ed3\uff1b\u52ff\u6fc0\u8fdb\u5e03\u5c40\u3002",
+    "verdict": "RISK_OFF",
+    "score": 36,
+    "raw_score": 36,
+    "color": "red",
+    "label_en": "Risk-off",
+    "label_zh": "\u907f\u9669",
+    "headline_en": "Risk-off \u2014 stress is elevated; defend capital first.",
+    "headline_zh": "\u907f\u9669 \u2014 \u538b\u529b\u5347\u9ad8\uff1b\u4f18\u5148\u9632\u5b88\u3002",
     "radar": {
       "state": "risk-off",
       "state_ungated": null,
-      "top_score": 95,
+      "top_score": 98,
       "label_en": "Breadth breakdown (all-boats)",
       "label_zh": "\u5e7f\u5ea6\u666e\u8dcc\uff08\u666e\u8dcc\uff09",
       "context_gate": null,
@@ -53,18 +62,18 @@
     "overrides": []
   },
   "nightly": {
-    "verdict": "MIXED",
-    "score": 44,
-    "raw_score": 44,
-    "color": "yellow",
-    "label_en": "Mixed",
-    "label_zh": "\u6df7\u5408",
-    "headline_en": "Mixed / transition \u2014 the signals disagree. Trade smaller, favour quality, take profits faster; don't position aggressively.",
-    "headline_zh": "\u6df7\u5408 / \u8f6c\u6362 \u2014 \u4fe1\u53f7\u5206\u6b67\u3002\u7f29\u5c0f\u4ed3\u4f4d\u3001\u504f\u597d\u8d28\u91cf\u3001\u66f4\u5feb\u83b7\u5229\u4e86\u7ed3\uff1b\u52ff\u6fc0\u8fdb\u5e03\u5c40\u3002",
+    "verdict": "RISK_OFF",
+    "score": 36,
+    "raw_score": 36,
+    "color": "red",
+    "label_en": "Risk-off",
+    "label_zh": "\u907f\u9669",
+    "headline_en": "Risk-off \u2014 stress is elevated; defend capital first.",
+    "headline_zh": "\u907f\u9669 \u2014 \u538b\u529b\u5347\u9ad8\uff1b\u4f18\u5148\u9632\u5b88\u3002",
     "radar": {
       "state": "risk-off",
       "state_ungated": null,
-      "top_score": 95,
+      "top_score": 98,
       "label_en": "Breadth breakdown (all-boats)",
       "label_zh": "\u5e7f\u5ea6\u666e\u8dcc\uff08\u666e\u8dcc\uff09",
       "context_gate": null,
@@ -84,48 +93,48 @@
     {
       "key": "risk",
       "label_en": "Risk appetite",
-      "score": 50,
+      "score": 47,
       "basis": "carried",
-      "asof": "2026-07-14"
+      "asof": "2026-07-15"
     },
     {
       "key": "vol",
       "label_en": "Volatility & froth",
-      "score": 38,
+      "score": 39,
       "basis": "carried",
-      "asof": "2026-07-14"
+      "asof": "2026-07-15"
     },
     {
       "key": "breadth",
       "label_en": "Breadth & participation",
-      "score": 14,
+      "score": 18,
       "basis": "carried",
-      "asof": "2026-07-14"
+      "asof": "2026-07-15"
     },
     {
       "key": "liquidity",
       "label_en": "PBoC liquidity & credit",
-      "score": 50,
+      "score": 16,
       "basis": "carried",
-      "asof": "2026-07-14"
+      "asof": "2026-07-15"
     },
     {
       "key": "stress",
       "label_en": "Downturn-risk guard",
-      "score": 74,
+      "score": 47,
       "basis": "carried",
-      "asof": "2026-07-14"
+      "asof": "2026-07-15"
     }
   ],
   "legs_asof": {
-    "tape_trend": "2026-07-14",
+    "tape_trend": "2026-07-15",
     "radar_capital_flow": "live",
     "radar_rate_shock": "2026-07-10",
-    "breadth": "2026-07-14",
-    "vol_qvix": "2026-07-14",
-    "risk_roro": "2026-07-14",
-    "liquidity_pboc": "2026-07-14",
-    "stress_guards": "2026-07-14"
+    "breadth": "2026-07-15",
+    "vol_qvix": "2026-07-15",
+    "risk_roro": "2026-07-15",
+    "liquidity_pboc": "2026-07-15",
+    "stress_guards": "2026-07-15"
   },
   "note": "SAME display-only construction as the nightly China Market State board (engine.market_state CN_PROFILE). Fast legs (tape/trend, USD/CNH + DXY radar capital-flow) recomputed on ~15-min-delayed Yahoo prices during HKEX RTH; slow legs (RORO composite, QVIX, breadth percentile, PBoC liquidity, drawdown guards) carried from the nightly build and stamped with their own as-of. The continuous score moves every tick; the band word is debounced. De-risk = sizing, not selection."
 }
