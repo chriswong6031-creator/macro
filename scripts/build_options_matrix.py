@@ -156,8 +156,18 @@ def main() -> None:
     out_dir = Path(args.out) if args.out else (_REPO / "data" / "live_flow_out" / "options_matrix")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── store path from env ──────────────────────────────────────────────────
-    theta_store = os.environ.get("THETADATA_STORE") or None
+    # ── store path — canonical resolver (WP-RESOLVER) ─────────────────────────
+    # THETADATA_STORE env → data_dir()/thetadata_eod → ops-wt, content-checked.
+    # Fail-loud contract: this builder publishes matrices — when no store
+    # resolves it exits nonzero instead of writing/uploading no-data payloads.
+    from engine.thetadata_store import resolve_thetadata_store
+    theta_store = resolve_thetadata_store(required=False, purpose="build_options_matrix")
+    if theta_store is None:
+        log.error(
+            "options_matrix_builder: no ThetaData store resolves — exiting "
+            "nonzero WITHOUT writing/publishing no-data matrices "
+            "(set THETADATA_STORE or fix the store path)")
+        sys.exit(1)
 
     # ── R2 setup ─────────────────────────────────────────────────────────────
     s3 = None

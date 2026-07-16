@@ -49,14 +49,11 @@ sys.path.insert(0, str(_HERE))
 # --------------------------------------------------------------------------- #
 
 def _store_root() -> Path:
-    env = os.environ.get("THETADATA_STORE")
-    if env:
-        return Path(env)
-    try:
-        from lib import config  # noqa: PLC0415
-        return config.data_dir() / "thetadata_eod"
-    except Exception:  # noqa: BLE001
-        return Path("data") / "thetadata_eod"
+    """Canonical resolver, required=True — a dedup scan/repair is meaningless
+    without a store (WP-RESOLVER). Raises RuntimeError naming every path tried
+    when nothing resolves; an explicit --store bypasses this entirely."""
+    from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
+    return resolve_thetadata_store(required=True, purpose="repair_thetadata_dedup")
 
 
 # --------------------------------------------------------------------------- #
@@ -111,7 +108,9 @@ def run(
     """Scan (dry-run) or repair the store.  Returns summary dict.
 
     Args:
-        store:  store root (default: env THETADATA_STORE or data/thetadata_eod)
+        store:  store root (default: canonical resolver — THETADATA_STORE env,
+                then data_dir()/thetadata_eod, then ops-wt; raises when nothing
+                resolves)
         tiers:  list of tiers to scan (default: all — eod, oi, greeks)
         roots:  list of roots to scan (default: all roots found)
         apply:  if True, rewrite dup files atomically; default False (dry-run)
@@ -229,7 +228,9 @@ def main() -> int:
     ap.add_argument("--roots", default=None,
                     help="comma-separated roots to scan (default: all)")
     ap.add_argument("--store", default=None,
-                    help="store root path (default: env THETADATA_STORE or data/thetadata_eod)")
+                    help="store root path (default: canonical resolver — "
+                         "THETADATA_STORE env, then data_dir()/thetadata_eod, "
+                         "then ops-wt)")
     ap.add_argument("--verbose", action="store_true", help="show all files, not just dup files")
     args = ap.parse_args()
 

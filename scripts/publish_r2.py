@@ -234,12 +234,20 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
     site = config.ROOT / config.load()["storage"]["site_dir"]
     up = skip = 0
     data = config.ROOT / config.load()["storage"]["data_dir"]
-    # Per-dir store-path overrides: env vars let the ops host publish stores that live
-    # outside the repo checkout (e.g. THETADATA_STORE for the theta-ops worktree).
-    # If the env var is absent, the default repo-relative data/<dir> path is used.
+    # Per-dir store-path overrides: let the ops host publish stores that live
+    # outside the repo checkout (e.g. the theta-ops worktree).
+    # WP-RESOLVER: thetadata_eod routes through the canonical resolver
+    # (THETADATA_STORE env → data_dir()/thetadata_eod → ops-wt, content-checked).
+    # Publish semantics are unchanged: absent dirs are skipped below and the
+    # _data_dir_syncable shrink guard still gates the sync; when nothing
+    # resolves the default repo-relative data/thetadata_eod path is used (and
+    # skipped as absent, exactly as before).
     _store_overrides: dict[str, Path] = {}
-    if ts := os.environ.get("THETADATA_STORE"):
-        _store_overrides["thetadata_eod"] = Path(ts)
+    if "thetadata_eod" in dirs:  # resolve only when actually publishing that dir
+        from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
+        _theta = resolve_thetadata_store(required=False, purpose="publish_r2 thetadata_eod")
+        if _theta is not None:
+            _store_overrides["thetadata_eod"] = _theta
     if ts := os.environ.get("ATTENTION_STORE"):
         _store_overrides["attention"] = Path(ts)
     for d in dirs:

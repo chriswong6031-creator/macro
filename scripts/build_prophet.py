@@ -513,7 +513,19 @@ def main() -> None:
     log.info("build_prophet: %d existing plans loaded", len(existing_ids))
 
     # ── 2. Originate new plans ────────────────────────────────────────────────
-    thetadata_store = os.environ.get("THETADATA_STORE")
+    # WP-RESOLVER: canonical store resolution (THETADATA_STORE env →
+    # data_dir()/thetadata_eod → ops-wt, content-checked). Option resolution is
+    # an optional enrichment — plans/ledger still advance without a store — but
+    # a missing store is now LOUD instead of a silent per-plan info line, and a
+    # store that exists without the env var being set is now actually found.
+    from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
+    _resolved_store = resolve_thetadata_store(
+        required=False, purpose="build_prophet option-resolution")
+    if _resolved_store is None:
+        log.error(
+            "build_prophet: no ThetaData store resolves — option recommendations "
+            "will be SKIPPED for all new plans (plans/ledger still advance)")
+    thetadata_store = str(_resolved_store) if _resolved_store is not None else None
     new_plans = originate_plans(
         standouts_path=STANDOUTS_PATH,
         asof=asof,

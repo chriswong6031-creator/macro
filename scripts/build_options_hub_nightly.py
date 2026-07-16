@@ -515,32 +515,31 @@ def main() -> None:
     tape_flow_dir = data_root / _TAPE_FLOW_SUBDIR
     live_flow_out_dir = data_root / "live_flow_out"  # poller archive root
 
-    # Item 5 — THETADATA_STORE env: explicit override wins over all auto-detect paths.
-    # Priority: --theta-store CLI > THETADATA_STORE env > data/thetadata_eod default.
-    _theta_store_env = os.environ.get("THETADATA_STORE")
+    # WP-RESOLVER — store resolution is canonical: --theta-store CLI wins, then
+    # engine.thetadata_store.resolve_thetadata_store (THETADATA_STORE env →
+    # data_dir()/thetadata_eod → ops-wt), every candidate content-checked.
+    # Fail-loud contract: this builder PUBLISHES artifacts, so when no store
+    # resolves it exits nonzero instead of building/publishing empty payloads
+    # (the options_witness 0/18 empty-store incident shape).
+    from engine.thetadata_store import _has_store_content, resolve_thetadata_store
     if args.theta_store:
         theta_store = Path(args.theta_store)
-    elif _theta_store_env:
-        theta_store = Path(_theta_store_env)
-        log.info("options_hub_builder: THETADATA_STORE env → %s", theta_store)
-    else:
-        theta_store = data_root / "thetadata_eod"
-
-    # If the configured store has no eod/ or greeks/ subdirectories, fall back to the
-    # canonical Mac ops-wt path (the brief: "T1 store via symlink data/thetadata_eod ->
-    # /Users/chriswong/theta-ops-wt/data/thetadata_eod (create if missing)").
-    # This convenience auto-detect ONLY fires when neither --theta-store nor
-    # THETADATA_STORE env are set (guarded by the else branch above).
-    if not args.theta_store and not _theta_store_env:
-        _OPS_WT_STORE = Path("/Users/chriswong/theta-ops-wt/data/thetadata_eod")
-        if (not (theta_store / "eod").exists() and
-                not (theta_store / "greeks").exists() and
-                _OPS_WT_STORE.exists()):
-            log.info(
-                "options_hub_builder: %s has no eod/greeks subdirs — falling back to %s",
-                theta_store, _OPS_WT_STORE,
+        if not _has_store_content(theta_store):
+            log.error(
+                "options_hub_builder: --theta-store %s is missing or contains none "
+                "of eod/oi/greeks — refusing to build/publish from an empty store",
+                theta_store,
             )
-            theta_store = _OPS_WT_STORE
+            sys.exit(1)
+    else:
+        theta_store = resolve_thetadata_store(
+            required=False, purpose="build_options_hub_nightly")
+        if theta_store is None:
+            log.error(
+                "options_hub_builder: no ThetaData store resolves — exiting "
+                "nonzero WITHOUT writing/publishing empty artifacts "
+                "(set THETADATA_STORE or pass --theta-store)")
+            sys.exit(1)
 
     # ── resolve roots ─────────────────────────────────────────────────────────
     if args.roots:
