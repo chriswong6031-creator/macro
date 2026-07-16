@@ -1030,14 +1030,14 @@
       {# PR-4: hover card payload — cloned by theme.js into a .row-pop overlay #}
       <span class="rp-src" hidden>
         <div class="row-pop-hd">
-          <span class="row-pop-name"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or row.name }}</span></span>
-          <span class="row-pop-kind">{{ row.kind }}</span>
+          <span class="row-pop-name"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or tr(row.name) }}</span></span>
+          <span class="row-pop-kind"><span class="l-en">{{ row.kind }}</span><span class="l-zh">{{ tr(row.kind) }}</span></span>
           {%- if row.reco_en -%}
-          <span class="row-pop-tag {{ _rptag_cls }}"><span class="l-en">{{ row.reco_en }}</span><span class="l-zh">{{ row.reco_zh or row.reco_en }}</span></span>
+          <span class="row-pop-tag {{ _rptag_cls }}"><span class="l-en">{{ row.reco_en }}</span><span class="l-zh">{{ row.reco_zh or tr(row.reco_en) }}</span></span>
           {%- elif row.tag -%}
-          <span class="row-pop-tag warn"><span class="l-en">{{ row.tag }}</span><span class="l-zh">{{ row.tag }}</span></span>
+          <span class="row-pop-tag warn"><span class="l-en">{{ row.tag }}</span><span class="l-zh">{{ row.tag_zh or tr(row.tag) }}</span></span>
           {%- elif row.phase -%}
-          <span class="row-pop-tag warn"><span class="l-en">{{ row.phase }}</span><span class="l-zh">{{ row.phase }}</span></span>
+          <span class="row-pop-tag warn"><span class="l-en">{{ row.phase }}</span><span class="l-zh">{{ tr(row.phase) }}</span></span>
           {%- endif -%}
         </div>
         <div class="row-pop-div"></div>
@@ -1060,7 +1060,7 @@
           {%- endif -%}
           {%- if row.phase is not none -%}
           <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle phase · position</span><span class="l-zh">周期阶段 · 位置</span></span>
-            <span class="row-pop-val">{{ row.phase }}{% if row.pos is not none %} <span class="mut">· {{ '%.0f'|format(row.pos) }}%</span>{% endif %}</span></div>
+            <span class="row-pop-val"><span class="l-en">{{ row.phase }}</span><span class="l-zh">{{ tr(row.phase) }}</span>{% if row.pos is not none %} <span class="mut">· {{ '%.0f'|format(row.pos) }}%</span>{% endif %}</span></div>
           {%- endif -%}
           {%- if row.osc_slope is not none -%}
           <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Turn oscillator</span><span class="l-zh">转向振荡器</span></span>
@@ -1068,7 +1068,7 @@
           {%- endif -%}
           {%- if row.organ_state is not none -%}
           <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Tape organ</span><span class="l-zh">器官（纸带）</span></span>
-            <span class="row-pop-val">{{ row.organ_state }}</span></div>
+            <span class="row-pop-val"><span class="l-en">{{ row.organ_state }}</span><span class="l-zh">{{ tr(row.organ_state) }}</span></span></div>
           {%- endif -%}
           {# SECTOR rows: enrich from sector card via sectors_by_ticker #}
           {%- if _sc is not none -%}
@@ -1098,14 +1098,14 @@
             <span class="row-pop-val"><span class="l-en">{{ _sce.get('text') or '' }}</span><span class="l-zh">{{ _sce.get('text_zh') or _sce.get('text') or '' }}</span>{% if _sc.get('age_short') is not none %} <span class="mut">· <span class="l-en">{{ _sc.get('age_short') }}</span><span class="l-zh">{{ _sc.get('age_short_zh') or _sc.get('age_short') }}</span></span>{% endif %}</span></div>
           {%- endif -%}
           {%- if _sc.get('eq_badge') is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">EQ</span></span>
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">入场质量</span></span>
             <span class="row-pop-val">{{ _sc.get('eq_badge') }}</span></div>
           {%- endif -%}
           {%- endif -%}{# /_sc enrichment #}
         </div>
         {%- if row.reasons -%}
         <ul class="row-pop-why">
-          {%- for _r in row.reasons -%}<li>{{ _r }}</li>{%- endfor -%}
+          {%- for _r in row.reasons -%}<li><span class="l-en">{{ _r }}</span><span class="l-zh">{{ tr(_r) }}</span></li>{%- endfor -%}
         </ul>
         {%- endif -%}
         <div class="row-pop-ft">
@@ -1114,9 +1114,9 @@
       </span>
       <div class="anv2-row-top">
         {%- if row.href -%}
-        <a class="anv2-name anv2-name-link" href="{{ row.href }}"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or row.name }}</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+        <a class="anv2-name anv2-name-link" href="{{ row.href }}"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or tr(row.name) }}</span><span class="anv2-go" aria-hidden="true">↗</span></a>
         {%- else -%}
-        <span class="anv2-name"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or row.name }}</span></span>
+        <span class="anv2-name"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or tr(row.name) }}</span></span>
         {%- endif -%}
         {% if row.score is not none %}<span class="anv2-score{% if row.score >= 60 %} anv2-score-hi{% elif row.score >= 40 %} anv2-score-mid{% else %} anv2-score-lo{% endif %}">{{ row.score }}</span>{% endif %}
       </div>
@@ -1124,9 +1124,9 @@
         {# type chips (THEME/SECTOR/BASKET) removed by operator request 2026-07-10 —
            row provenance lives in the board help() tooltip instead #}
         {# reco chip (theme rows) #}
-        {% if row.reco_en %}<span class="anv2-chip anv2-chip-reco-{{ row.reco or 'hold' }}">{{ t(row.reco_en, row.reco_zh or row.reco_en) }}</span>{% endif %}
+        {% if row.reco_en %}<span class="anv2-chip anv2-chip-reco-{{ row.reco or 'hold' }}">{{ t(row.reco_en, row.reco_zh or tr(row.reco_en)) }}</span>{% endif %}
         {# sector urgency/tag chip #}
-        {% if row.tag and row.kind != 'THEME' %}<span class="anv2-chip anv2-chip-tag">{{ t(row.tag, row.tag_zh or row.tag) }}</span>{% endif %}
+        {% if row.tag and row.kind != 'THEME' %}<span class="anv2-chip anv2-chip-tag">{{ t(row.tag, row.tag_zh or tr(row.tag)) }}</span>{% endif %}
         {# dual-read chip on reduce lane #}
         {% if lane == 'reduce' and row.dual_read %}
         <span class="anv2-chip anv2-chip-washout" data-tip-en="Mixed picture: the longer trend still says reduce, but the recent price action shows early signs of a bottom. This name also appears in Bottoming Watch — both reads are shown so you see the disagreement." data-tip-zh="信号矛盾：长期趋势仍建议减仓，但近期价格已初现筑底迹象。该名称同时出现在洗盘观察栏——两种判读并列显示，便于看清分歧。">{{ t(row.dual_chip_en, row.dual_chip_zh) }}</span>
@@ -1137,12 +1137,12 @@
         <span class="anv2-chip anv2-chip-turn" data-tip-en="Momentum is turning up from the low — higher number = sharper turn. A first hint, not a buy signal." data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">↗ {{ '%.1f'|format(row.osc_slope) }}</span>
         {% endif %}
         {# organ chip (W8-R7 rider) — TURNING/CONFIRMED state from basket_turn_cn #}
-        {% if row.organ_chip_en %}<span class="anv2-chip anv2-chip-organ">{{ t(row.organ_chip_en, row.organ_chip_zh or row.organ_chip_en) }}</span>{% endif %}
+        {% if row.organ_chip_en %}<span class="anv2-chip anv2-chip-organ">{{ t(row.organ_chip_en, row.organ_chip_zh or tr(row.organ_chip_en)) }}</span>{% endif %}
       </div>
       {# stat line: rel20 for themes, rs_63d+pos for bottoming #}
       {% if lane == 'bot' %}
       <div class="anv2-stat">
-        {% if row.rs_63d is not none %}<span class="{% if row.rs_63d < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rs_63d) }}%</span><span class="muted"> 63d RS</span>{% endif %}
+        {% if row.rs_63d is not none %}<span class="{% if row.rs_63d < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rs_63d) }}%</span><span class="muted"> {{ t('63d RS','63日相对强度') }}</span>{% endif %}
         {% if row.pos is not none %} · <span class="muted">{{ t('pos','位置') }} {{ '%.0f'|format(row.pos) }}%</span>{% endif %}
       </div>
       {% elif row.rel20 is not none %}
@@ -2539,7 +2539,7 @@
           {% if _mpkt %}
             {% set _ls = _mpkt.get('limit_state') %}
             {% set _cv = (_mpkt.get('chase_veto') or {}) %}
-            {% if _ls and _ls != 'open' %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)" data-tip-en="Microstructure: limit state={{ _ls }}. Context only — CN-SYS-R3." data-tip-zh="市场结构：涨跌停状态={{ _ls }}。仅供参考 — CN-SYS-R3。"><span class="l-en">{{ _ls }}</span><span class="l-zh">{{ _ls }}</span></span>{% endif %}
+            {% if _ls and _ls != 'open' %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)" data-tip-en="Microstructure: limit state={{ _ls }}. Context only — CN-SYS-R3." data-tip-zh="市场结构：涨跌停状态={{ _ls }}。仅供参考 — CN-SYS-R3。"><span class="l-en">{{ _ls }}</span><span class="l-zh">{{ tr(_ls) }}</span></span>{% endif %}
             {# CN-SYS-R3: chase-veto ZH tooltip uses generic Chinese reason #}
             {% if _cv.get('flag') %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--down) 13%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)" data-tip-en="Chase veto: {{ _cv.get('reason') or 'limit-up context (CN-SYS-R3)' }}" data-tip-zh="追涨否决：近期涨幅过大（追高风险）— CN-SYS-R3"><span class="l-en">chase ⚑</span><span class="l-zh">追涨 ⚑</span></span>{% endif %}
           {% endif %}

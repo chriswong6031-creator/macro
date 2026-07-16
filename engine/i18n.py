@@ -31,6 +31,8 @@ def tr(en: str) -> str:
     """Canonical Chinese for a finite-vocab English label, else the English."""
     if en is None:
         return en
+    if not isinstance(en, str):  # dynamic callers may pass ints/None-likes; pass through
+        return en
     return LEX.get(en, LEX.get(en.strip(), en))
 
 
@@ -257,6 +259,80 @@ LEX: dict[str, str] = {
     "Coal": "煤炭",
     "Automobiles": "汽车",
     "Media": "传媒",
+    # --- China A-share "Act Now" board — sector / basket names, cycle-phase,
+    #     organ-state, kind and finite reason vocabulary. The board is dynamic
+    #     (it rotates the full Shenwan-sector + basket universe nightly), so the
+    #     glossary carries the whole finite set, not just today's visible rows.
+    #     Canonical zh sources: engine/china_sector_cycles._SW (Shenwan L1),
+    #     scripts/seed_china_baskets.py (basket seeds), engine/theme_scoring.py.
+    # Shenwan L1 sector names (cycle rows) not already mapped above
+    "Agriculture": "农林牧渔",
+    "Chemicals": "基础化工",
+    "Steel": "钢铁",
+    "Electronics": "电子",
+    "Home Appliances": "家用电器",
+    "Food & Beverage": "食品饮料",
+    "Textiles & Apparel": "纺织服饰",
+    "Light Manufacturing": "轻工制造",
+    "Pharma & Biotech": "医药生物",
+    "Transportation": "交通运输",
+    "Retail & Commerce": "商贸零售",
+    "Consumer Services": "社会服务",
+    "Conglomerates": "综合",
+    "Building Materials": "建筑材料",
+    "Construction": "建筑装饰",
+    "Power Equipment": "电力设备",
+    "Computers": "计算机",
+    "Telecoms": "通信",
+    "Non-bank Financials": "非银金融",
+    "Machinery": "机械设备",
+    "Oil & Petrochem": "石油石化",
+    "Environmental": "环保",
+    "Beauty & Care": "美容护理",
+    # Basket seed names (bottoming-watch pulls baskets by forward_log Trough+osc)
+    "AI Compute & Optics": "AI算力与光模块",
+    "Consumer Electronics": "消费电子",
+    "Software & AI Apps": "软件与AI应用",
+    "Battery & Lithium": "锂电池",
+    "Solar / Photovoltaics": "光伏",
+    "Autos & NEV Makers": "汽车整车",
+    "Baijiu / Liquor": "白酒",
+    "Innovative Pharma & CXO": "创新药与CXO",
+    "Medical Devices & TCM": "医疗器械与中药",
+    "Brokers & Securities": "券商",
+    "Insurers": "保险",
+    "SOE Blue Chips (中特估)": "中特估·央企",
+    "Industrial Metals": "有色金属",
+    "Rare Earth & Magnets": "稀土永磁",
+    # cycle-phase enums (forward_log 'phase' — china_sector_cycles reuses the
+    # sector_cycles model: Trough/Recovery/Expansion/Peak/Downturn). zh mirrors
+    # engine/sector_central._PHASE_ZH; Recovery→复苏 / Expansion→扩张 mapped above.
+    "Trough": "筑底",
+    "Peak": "见顶",
+    "Downturn": "回落",
+    # basket-turn organ states (engine/china_basket_turn) — CONFIRMED already mapped
+    "TURNING": "转向",
+    "WASHED_OUT": "超跌洗盘",
+    "BASING": "筑底",
+    "FALLING": "下行",
+    # act-now row provenance badges (row.kind)
+    "SECTOR": "板块",
+    "BASKET": "篮子",
+    "THEME": "主题",
+    # theme-scoring finite reason tokens (composed metric reasons stay at source)
+    "accelerating": "加速",
+    "decelerating": "减速",
+    "all timeframes aligned up": "多周期共振向上",
+    "dip within an uptrend": "上升趋势中回调",
+    "unconfirmed turn vs the bigger trend": "相对大趋势未确认转向",
+    "downtrend across timeframes": "多周期下行趋势",
+    "crowded co-movement": "交易拥挤（同向）",
+    "one name carrying it": "单一权重股支撑",
+    "mixed signals": "信号混杂",
+    # microstructure limit_state badge (engine/china_microstructure; 'open' hidden)
+    "sealed_up": "封涨停",
+    "touched_up_failed": "触涨停未封",
+    "sealed_down": "封跌停",
     # --- Hong Kong / Hang Seng dashboard vocabulary -----------------------------
     "Hong Kong": "香港",
     "Hang Seng": "恒生",
