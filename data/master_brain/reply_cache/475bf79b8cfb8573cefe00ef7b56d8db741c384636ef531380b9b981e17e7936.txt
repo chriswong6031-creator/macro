@@ -1,0 +1,21 @@
+**Desk note — narrative‑emergence scout (Canada / TSX, 2026‑07‑15)**
+
+**Prevailing structure**  
+Big Banks dominate (score 1.75, mixed Hurst, crowded), with a wide margin over Pipelines (0.595). Rotation breadth is broad (69% eligible), but absorption is low (0.36) – no single story has seized everything, and the one‑narrative flag is absent. The absolute‑trend gate has helped control drawdown in this market (gate_helps = true), so trend health is the condition that matters.
+
+**One early‑watch hypothesis (forming)**  
+**Utilities & Renewables (ca_utilities).**  
+Currently rank 7 with a barely negative score (–0.02), decent breadth (0.69), uncrowded positioning, and a mean‑revert Hurst tag. The mean‑revert character means it has been weak but is not trending lower; if it can reclaim a positive score while breadth holds – and especially if the absolute‑trend gate flips from “off” to “on” – it could become a defensive challenger in a rotation that isn’t here yet.  
+- **Kill criterion for this formation hypothesis:** the score stays *negative* and the absolute‑trend signal remains off by **2026‑08‑15** (check‑by horizon). If that occurs, the hypothesis is invalid and I drop it with no further inference.  
+- **What would NOT kill it immediately:** a single weekly drawdown, or the persistence of a mean‑revert tag; only a failure to turn positive on the score and trend gate.
+
+**Why not other candidates**  
+- *Base Metals* has positive score but extremely thin breadth (0.11) and low durability (0.46) – not yet “forming” in a leadership sense.  
+- *Tech* shows trend and high durability, but the score is deeply negative (–0.39) and the theme is not eligible; it’s a fade candidate, and I am forbidden from calling a fade of the leader or predicting the next narrative.  
+- *Pipelines* is already a clear challenger, not “early”.  
+
+**Accountability notes**  
+- This is a falsifiable, conditional lean – no position size, no weight, no trade.  
+- The momentum rank is a focus lens (rank‑IC ~0 on clean sectors), and rotation‑timing has no validated edge. The only validated edge is drawdown control via the absolute‑trend gate, which I incorporate by requiring a gate‑on confirmation.  
+- Crowding flags do not imply a sell or a basket‑drawdown timer; I am not fading the dominant Big Banks theme on the crowding flag.  
+- The track record of this specific watch is n=0; hit rate is unknown. The detector is trust‑graded and display‑only.

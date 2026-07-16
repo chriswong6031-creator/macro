@@ -5,10 +5,10 @@
       "pending": null
     },
     "reco": {
-      "ca_pipelines": {
-        "bucket": "2026-07-13",
+      "ca_insurers": {
+        "bucket": "2026-07-15",
         "count": 1,
-        "from": "avoid",
+        "from": "hold",
         "to": "accumulate"
       }
     }
@@ -17,65 +17,65 @@
     "label": "deteriorating",
     "name": "Asset Managers & Alternatives",
     "name_zh": "\u8d44\u4ea7\u7ba1\u7406\u4e0e\u53e6\u7c7b\u6295\u8d44",
-    "rank": 11,
+    "rank": 10,
     "reco": "avoid",
-    "score": 38
+    "score": 48
   },
   "ca_banks": {
     "label": "dominant",
     "name": "Big Banks",
     "name_zh": "\u5927\u578b\u94f6\u884c",
     "rank": 1,
-    "reco": "accumulate",
-    "score": 64
+    "reco": "hold",
+    "score": 71
   },
   "ca_base_metals": {
     "label": "deteriorating",
     "name": "Base Metals & Copper",
     "name_zh": "\u57fa\u672c\u91d1\u5c5e\u4e0e\u94dc",
-    "rank": 16,
+    "rank": 13,
     "reco": "avoid",
-    "score": 22
+    "score": 32
   },
   "ca_consumer": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "Consumer Staples & Retail",
     "name_zh": "\u5fc5\u9700\u6d88\u8d39\u4e0e\u96f6\u552e",
-    "rank": 7,
-    "reco": "avoid",
-    "score": 55
+    "rank": 8,
+    "reco": "hold",
+    "score": 53
   },
   "ca_gold": {
     "label": "deteriorating",
     "name": "Gold Miners",
     "name_zh": "\u9ec4\u91d1\u77ff\u4e1a",
-    "rank": 13,
+    "rank": 15,
     "reco": "avoid",
-    "score": 29
+    "score": 27
   },
   "ca_insurers": {
-    "label": "neutral",
+    "label": "dominant",
     "name": "Insurers",
     "name_zh": "\u4fdd\u9669",
     "rank": 3,
-    "reco": "hold",
-    "score": 60
+    "reco": "accumulate",
+    "score": 63
   },
   "ca_materials": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "Fertilizer, Chemicals & Forestry",
     "name_zh": "\u5316\u80a5\u5316\u5de5\u4e0e\u6797\u4e1a",
-    "rank": 10,
-    "reco": "avoid",
+    "rank": 11,
+    "reco": "hold",
     "score": 43
   },
   "ca_oil_gas": {
     "label": "neutral",
     "name": "Oil & Gas Producers",
     "name_zh": "\u6cb9\u6c14\u751f\u4ea7",
-    "rank": 8,
+    "rank": 9,
     "reco": "hold",
-    "score": 54
+    "score": 50
   },
   "ca_pipelines": {
     "label": "dominant",
@@ -89,9 +89,9 @@
     "label": "neutral",
     "name": "Rails & Industrials",
     "name_zh": "\u94c1\u8def\u4e0e\u5de5\u4e1a",
-    "rank": 9,
+    "rank": 6,
     "reco": "hold",
-    "score": 53
+    "score": 55
   },
   "ca_reits": {
     "label": "neutral",
@@ -99,7 +99,7 @@
     "name_zh": "\u623f\u5730\u4ea7\u4fe1\u6258",
     "rank": 5,
     "reco": "hold",
-    "score": 58
+    "score": 57
   },
   "ca_silver_royalty": {
     "label": "deteriorating",
@@ -113,9 +113,9 @@
     "label": "neutral",
     "name": "Technology",
     "name_zh": "\u79d1\u6280",
-    "rank": 4,
+    "rank": 7,
     "reco": "hold",
-    "score": 58
+    "score": 54
   },
   "ca_telecom": {
     "label": "deteriorating",
@@ -123,13 +123,13 @@
     "name_zh": "\u7535\u4fe1",
     "rank": 12,
     "reco": "avoid",
-    "score": 35
+    "score": 36
   },
   "ca_uranium": {
     "label": "deteriorating",
     "name": "Uranium & Nuclear",
     "name_zh": "\u94c0\u4e0e\u6838\u80fd",
-    "rank": 15,
+    "rank": 16,
     "reco": "avoid",
     "score": 24
   },
@@ -137,8 +137,8 @@
     "label": "neutral",
     "name": "Utilities & Renewables",
     "name_zh": "\u516c\u7528\u4e8b\u4e1a\u4e0e\u53ef\u518d\u751f\u80fd\u6e90",
-    "rank": 6,
+    "rank": 4,
     "reco": "hold",
-    "score": 56
+    "score": 58
   }
 }

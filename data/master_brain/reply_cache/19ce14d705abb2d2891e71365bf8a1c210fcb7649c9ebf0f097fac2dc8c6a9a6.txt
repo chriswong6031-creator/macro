@@ -1,0 +1,24 @@
+{
+  "stance": "This lens has no forward edge; current high RS sectors show weak cohesion and negative stock-specific alpha, consistent with noise-driven mean-reversion. The low-VIX, fear-rebuilding regime further undermines any trend-chasing signal.",
+  "candidates": [
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "rationale": "RS pctile 0.87 but top returns are from deeply negative-alpha names (NABL -2.09, QLYS -0.89), indicating beta-driven, likely-to-mean-revert sector performance.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Health Care",
+      "lean": "underweight",
+      "rationale": "Confirmed stage and RS pctile 0.93 mask low cohesion (0.204) and concentration of positive return in MRNA while other leaders show negative alpha, making the rally coincident and fragile.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "underweight",
+      "rationale": "Cooling stage with high RS (0.68) and falling cohesion, led by negative-alpha stocks (MLKN, NSP, LZ), points to a survivorship artifact not a durable theme.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "A VIX spike above 25 would shift into stress regime where flow signals have historically shown marginal predictive power, potentially cutting against the mean-reversion fade."
+}

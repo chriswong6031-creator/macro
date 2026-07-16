@@ -1,18 +1,18 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-15",
+  "as_of": "2026-07-16",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
-      "scored": 3,
-      "open": 31,
-      "hit_rate": 0.667,
-      "dir_accuracy": 0.667,
+      "scored": 7,
+      "open": 30,
+      "hit_rate": 0.714,
+      "dir_accuracy": 0.857,
       "conviction_monotone": null,
       "regimes": [],
       "health": "cold",
-      "health_note": "only 3 scored \u2014 check-by windows still maturing; treat as provisional"
+      "health_note": "only 7 scored \u2014 check-by windows still maturing; treat as provisional"
     },
     {
       "name": "Policy Intent",
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 298,
+      "open": 309,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 4,
-      "open": 108,
+      "open": 103,
       "hit_rate": 0.25,
       "dir_accuracy": 0.0,
       "conviction_monotone": null,
@@ -801,7 +801,7 @@
       "region": "US",
       "rel_path": "site/factordata/us_board_track.json",
       "board_dates": 8,
-      "graded_rows": 1180,
+      "graded_rows": 1210,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
@@ -811,12 +811,12 @@
       "name": "CN Standout Track",
       "region": "CN",
       "rel_path": "data/china_standout_track/board.parquet",
-      "board_dates": 9,
+      "board_dates": 10,
       "graded_rows": 0,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
-      "health_note": "541 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+      "health_note": "602 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
     }
   ]
 }

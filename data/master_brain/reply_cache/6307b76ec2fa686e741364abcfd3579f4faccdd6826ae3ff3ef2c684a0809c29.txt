@@ -1,0 +1,11 @@
+Tech Hardware & Semis remains the monolithic leader — a “trend” narrative with high durability (0.74), low crowding (z=0.24), and a widening margin over the next name (1.46). No theme_candidates were surfaced, so the emergence radar is silent. Emergence in such a concentrated one‑narrative market typically reads late; any early‑stage signal would need to clear a high bar.
+
+### Early‑hypothesis watch (forming, not confirmed)
+
+**Watch theme: Biotech, Pharma & CXO (hk_biotech)**
+
+- **Why it’s worth watching:** Despite a middling rank (#4, score 0.425), it shows the highest breadth (0.80) among all themes, a respectable durability bar (0.56, trending), no crowding (z=-0.10), and sits at the intersection of a macro narrative still dominated by “ai_tech” but with rising industrial‑policy mentions. The high breadth suggests the underlying move is not one‑stock driven, giving it a potential base if the macro spotlight widens.
+- **What it would need to become a leadership candidate:** The score would need to sustainably exceed ~1.0, durability push above 0.65, and breadth remain >0.5 — while absolute trend health holds. Without that, it remains a well‑behaved but secondary group.
+- **Kill‑criterion:** If, by the end of August 2026, the score fails to break above 0.9 *and* durability retreats below 0.50, the forming hypothesis is invalidated, and the watch is removed. Also immediately invalidated if breadth collapses below 0.4, regardless of score.
+
+This is a conditional, falsifiable watch — not a call to rotate, and certainly not a fade of the dominant hardware narrative. The only validated edge remains the absolute‑trend gate for drawdown control, not early‑rotation forecasting.

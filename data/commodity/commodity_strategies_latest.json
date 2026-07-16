@@ -6,7 +6,7 @@
     "copper",
     "oil"
   ],
-  "built": "2026-07-15 08:42 UTC",
+  "built": "2026-07-16 07:32 UTC",
   "cards": [
     {
       "key": "cm_gold_swap",
@@ -25,43 +25,43 @@
     {
       "key": "cm_silver_swap",
       "name": "Silver Trend Swap",
-      "cagr": 5.25,
+      "cagr": 5.23,
       "sharpe": 0.35,
       "maxdd": -75.9
     },
     {
       "key": "cm_silver_macro",
       "name": "Silver Macro + Industrial Model",
-      "cagr": 8.06,
+      "cagr": 8.04,
       "sharpe": 0.5,
       "maxdd": -54.6
     },
     {
       "key": "cm_copper_swap",
       "name": "Copper Trend Swap",
-      "cagr": 7.7,
+      "cagr": 7.75,
       "sharpe": 0.53,
       "maxdd": -50.6
     },
     {
       "key": "cm_copper_macro",
       "name": "Copper Growth & Dollar Model",
-      "cagr": 7.94,
-      "sharpe": 0.55,
+      "cagr": 7.97,
+      "sharpe": 0.56,
       "maxdd": -38.4
     },
     {
       "key": "cm_oil_swap",
       "name": "Oil Trend Swap",
-      "cagr": 3.14,
+      "cagr": 3.11,
       "sharpe": 0.26,
       "maxdd": -44.4
     },
     {
       "key": "cm_oil_macro",
       "name": "Oil Macro Multifactor",
-      "cagr": 5.53,
-      "sharpe": 0.39,
+      "cagr": 5.51,
+      "sharpe": 0.38,
       "maxdd": -43.5
     },
     {
@@ -74,15 +74,15 @@
     {
       "key": "cm_silver_active",
       "name": "Silver Active (levered)",
-      "cagr": 16.03,
+      "cagr": 16.02,
       "sharpe": 0.68,
       "maxdd": -64.6
     },
     {
       "key": "cm_copper_active",
       "name": "Copper Active (levered)",
-      "cagr": 9.53,
-      "sharpe": 0.53,
+      "cagr": 9.56,
+      "sharpe": 0.54,
       "maxdd": -60.6
     }
   ]

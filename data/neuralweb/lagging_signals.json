@@ -1934,10 +1934,10 @@
       "flagged": []
     },
     "track_record": {
-      "n_recent_fires": 1160,
+      "n_recent_fires": 1120,
       "n_hostile_regime": 0,
-      "n_breadth_unconfirmed": 225,
-      "n_repeat_fire": 15,
+      "n_breadth_unconfirmed": 185,
+      "n_repeat_fire": 10,
       "repeat_fire_proxy_note": "repeat_fire proxies extension (>=3 prior fires in 21d for same (engine,symbol)) until per-ticker price context lands; NOT a genuine extension metric",
       "flagged": [
         {
@@ -3573,7 +3573,7 @@
   "gaps": [],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/lagging.py",
-  "produced_at": "2026-07-15T08:55:27Z",
-  "inputs_hash": "sha256:12d799198f13e201b9d46cf1a07b4dc8cc1c0a042509c246a16c9f6fc0d2ada0",
+  "produced_at": "2026-07-16T07:45:07Z",
+  "inputs_hash": "sha256:b9135c903afb6799257f8696694de0f89a43cb1b4c8449aa959ac037c3544057",
   "tier": "infrastructure"
 }

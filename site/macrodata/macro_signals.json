@@ -1,6 +1,6 @@
 {
   "date": "2026-07-15",
-  "generated_utc": "2026-07-16 06:04",
+  "generated_utc": "2026-07-16 05:48",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4225,7 +4225,7 @@
   "fear_euphoria": {
     "fe_score": 98,
     "band": "Euphoria",
-    "roro": 0.8793953945144147,
+    "roro": 0.8198569357910719,
     "roro_state": "risk-on",
     "legs": [
       {

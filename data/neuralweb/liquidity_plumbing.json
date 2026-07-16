@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-07-13",
+  "asof": "2026-07-15",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -26,98 +26,90 @@
     "assets_bn": 6735.609,
     "assets_chg_20d_bn": 10.212,
     "reserve_balances_bn": 3098.911,
-    "walcl_stale_days": 4,
+    "walcl_stale_days": 5,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-07-13"
+    "asof": "2026-07-15"
   },
   "treasury": {
-    "tga_bn": 738.273,
-    "tga_chg_20d_bn": -61.244,
-    "net_issuance_20d_bn": 121.346,
+    "tga_bn": 787.814,
+    "tga_chg_20d_bn": -191.977,
+    "net_issuance_20d_bn": 94.154,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
       "active": true,
       "direction": "drawdown",
-      "magnitude_bn": 180.9,
-      "days": 8,
+      "magnitude_bn": 131.3,
+      "days": 10,
       "since": "2026-06-30",
       "quarter_end_adjacent": true,
-      "summary_en": "Treasury spent down $181B of its cash account since Jun 30 — that cash re-enters the financial system (supportive while it lasts). Quarter-end seasonal pattern may be a contributing factor.",
-      "summary_zh": "自6月30日起，美国财政部已动用现金账户中的$181B — 这部分资金重新流入金融体系（短期内具支撑性）。 季末季节性规律可能是促成因素之一。"
+      "summary_en": "Treasury spent down $131B of its cash account since Jun 30 — that cash re-enters the financial system (supportive while it lasts). Quarter-end seasonal pattern may be a contributing factor.",
+      "summary_zh": "自6月30日起，美国财政部已动用现金账户中的$131B — 这部分资金重新流入金融体系（短期内具支撑性）。 季末季节性规律可能是促成因素之一。"
     },
-    "asof": "2026-07-10"
+    "asof": "2026-07-14"
   },
   "rrp": {
-    "rrp_bn": 0.795,
-    "rrp_chg_20d_bn": 0.341,
+    "rrp_bn": 0.151,
+    "rrp_chg_20d_bn": -10.57,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5996.541,
-    "netliq_chg_20d_bn": 87.621,
-    "netliq_chg_65d_bn": -9.959,
-    "netliq_pctile_expanding": 0.842653,
+    "netliq_bn": 5947.644,
+    "netliq_chg_20d_bn": 214.081,
+    "netliq_chg_65d_bn": 12.91,
+    "netliq_pctile_expanding": 0.819127,
     "overlay": "expanding"
   },
   "quality": {
     "label": "stress-expansion",
-    "fed_share": 0.14,
+    "fed_share": 0.12,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.69,
-      "hy_oas_z": -0.03,
-      "nfci": -0.515,
+      "hy_oas_pct": 2.72,
+      "hy_oas_z": 0.53,
+      "nfci": -0.538,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 4
+    "walcl_stale_days": 5
   },
   "funding": {
-    "effr_minus_iorb_bp": -3.0,
+    "effr_minus_iorb_bp": -2.0,
     "effr_minus_iorb_d20_bp": 0.0,
-    "effr_minus_iorb_pctile": 0.884,
-    "sofr_minus_iorb_bp": -10.0,
-    "sofr_minus_iorb_d20_bp": -4.0,
-    "sofr_minus_iorb_pctile": 0.3006,
-    "sofr_99pctl_minus_iorb_bp": 2.0,
-    "sofr_99pctl_minus_iorb_d20_bp": 0.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.4704,
+    "effr_minus_iorb_pctile": 0.9115,
+    "sofr_minus_iorb_bp": -2.0,
+    "sofr_minus_iorb_d20_bp": -2.0,
+    "sofr_minus_iorb_pctile": 0.8519,
+    "sofr_99pctl_minus_iorb_bp": 7.0,
+    "sofr_99pctl_minus_iorb_d20_bp": -2.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.8154,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
-    "reserve_scarcity_state": "normalizing",
-    "asof": "2026-07-10"
+    "reserve_scarcity_state": "tightening",
+    "asof": "2026-07-14"
   },
   "components": {
     "walcl": {
       "level_bn": 6735.6,
       "d20_bn": 10.2,
       "d65_bn": 41.7,
-      "pctile": 0.7702
+      "pctile": 0.7703
     },
     "rrp": {
-      "level_bn": 0.8,
-      "d20_bn": 0.3,
-      "d65_bn": 0.4,
-      "pctile": 0.183
+      "level_bn": 0.2,
+      "d20_bn": -10.6,
+      "d65_bn": -0.1,
+      "pctile": 0.055
     },
     "tga": {
-      "level_bn": 738.3,
-      "d20_bn": -77.8,
-      "d65_bn": 51.3,
-      "pctile": 0.8523
+      "level_bn": 787.8,
+      "d20_bn": -193.3,
+      "d65_bn": 28.9,
+      "pctile": 0.8817
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-04-14",
-        "v": 5914.1
-      },
-      {
-        "d": "2026-04-15",
-        "v": 5781.0
-      },
       {
         "d": "2026-04-16",
         "v": 5734.4
@@ -360,7 +352,15 @@
       },
       {
         "d": "2026-07-13",
-        "v": 5996.5
+        "v": 5984.5
+      },
+      {
+        "d": "2026-07-14",
+        "v": 5947.5
+      },
+      {
+        "d": "2026-07-15",
+        "v": 5947.6
       }
     ],
     "reserves": {
@@ -390,7 +390,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-07-15T09:02:10Z",
-  "inputs_hash": "sha256:089fb25f41f3f27cca1ee87d15d7fd1e93864c420558951505e8fe8af0b5ea54",
+  "produced_at": "2026-07-16T07:52:37Z",
+  "inputs_hash": "sha256:5983d30b714970366405329404294751a510b9094a08286e199a26057579a4ce",
   "tier": "shadow"
 }

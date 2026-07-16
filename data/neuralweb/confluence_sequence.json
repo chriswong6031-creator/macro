@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_sequence.v1",
   "artifact_id": "confluence-sequence",
-  "asof": "2026-07-15",
+  "asof": "2026-07-16",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -605,8 +605,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-14",
-      "n_sessions_in_tape": 3
+      "last_as_of": "2026-07-15",
+      "n_sessions_in_tape": 4
     },
     {
       "pair_id": "regime_vector-vs-risk_radar",
@@ -617,9 +617,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 66,
+  "n_tape_rows": 67,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-07-15T08:56:20Z",
+  "produced_at": "2026-07-16T07:46:00Z",
   "authority_check": []
 }

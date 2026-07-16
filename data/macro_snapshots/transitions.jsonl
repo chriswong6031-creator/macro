@@ -21,3 +21,9 @@
 {"asof": "2026-07-15", "domain": "us", "field": "us_repricing_state", "from_value": "QUIET", "to_value": "ELEVATED", "macro_context_id": "de97bebd8e611c7b"}
 {"asof": "2026-07-15", "domain": "us", "field": "cross_asset_verdict", "from_value": "diverge", "to_value": "mixed", "macro_context_id": "de97bebd8e611c7b"}
 {"asof": "2026-07-15", "domain": "china", "field": "china_fe_band", "from_value": "Neutral", "to_value": "Greed", "macro_context_id": "de97bebd8e611c7b"}
+{"asof": "2026-07-16", "domain": "us", "field": "us_transition_state", "from_value": "TRANSITIONING", "to_value": "WEAKENING", "macro_context_id": "2150316d4b287e92"}
+{"asof": "2026-07-16", "domain": "us", "field": "us_froth_band", "from_value": "watch", "to_value": "calm", "macro_context_id": "2150316d4b287e92"}
+{"asof": "2026-07-16", "domain": "us", "field": "us_repricing_state", "from_value": "ELEVATED", "to_value": "QUIET", "macro_context_id": "2150316d4b287e92"}
+{"asof": "2026-07-16", "domain": "us", "field": "us_vrp_state", "from_value": "collapsing (de-risk)", "to_value": "normal", "macro_context_id": "2150316d4b287e92"}
+{"asof": "2026-07-16", "domain": "transmission", "field": "yield_curve_regime", "from_value": "bear_flattener", "to_value": "bear_steepener", "macro_context_id": "2150316d4b287e92"}
+{"asof": "2026-07-16", "domain": "china", "field": "china_fe_band", "from_value": "Greed", "to_value": "Neutral", "macro_context_id": "2150316d4b287e92"}

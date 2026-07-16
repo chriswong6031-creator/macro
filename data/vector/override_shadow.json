@@ -2,7 +2,7 @@
   "schema": "override_shadow.v1",
   "stub": false,
   "stub_note": "v1: W1 measured overlay merged onto the W3 panel payload (weekly gated-vs-raw series, prior-cycle same-point context, cum gap). Per-cycle attribution + breakeven fan live in data/vector/gate_attribution.json.",
-  "generated_at": "2026-07-15 08:40 UTC",
+  "generated_at": "2026-07-16 07:30 UTC",
   "audience": "owner-only",
   "override": {
     "id": "midterm_blackout",
@@ -40,7 +40,7 @@
     "pivot_fit_note": "IN-SAMPLE: the same pivots also set the 1064/364 parameters \u2014 this is fit quality, not forecast skill."
   },
   "counterfactual": {
-    "asof": "2026-07-15",
+    "asof": "2026-07-16",
     "gated_pct": {
       "conservative": 0.0,
       "moderate": 0.0,
@@ -55,9 +55,9 @@
     },
     "raw_source": "signals.parquet alloc_*_raw (W0 dual series)",
     "parity_ok": true,
-    "ytd_raw_mean_pct": 14.8,
+    "ytd_raw_mean_pct": 14.7,
     "ytd_raw_days_gt0": 101,
-    "ytd_days": 196
+    "ytd_days": 197
   },
   "falsifiers": {
     "items": [
@@ -72,7 +72,7 @@
       {
         "key": "timing",
         "level": "ok",
-        "text": "Pre-bottom: ~78d until the projected window opens (Oct 2026). Scale in, don't lump in.",
+        "text": "Pre-bottom: ~77d until the projected window opens (Oct 2026). Scale in, don't lump in.",
         "evaluability": "in_window",
         "evaluable": true,
         "why": "W2: escalates to WATCH past the halving clock's worst historical case (2026-10-31 \u2014 inside the gate window), ALERT past the peak-anchored trail (2026-12-10)."
@@ -261,16 +261,16 @@
       },
       {
         "year": 2022,
-        "raw_at_same_elapsed_pct": -17.9,
+        "raw_at_same_elapsed_pct": -17.5,
         "raw_by_release_pct": -15.2
       }
     ],
-    "framing": "Both sides (D3): the gate is ahead of the ungated engine by 5.9pp since Jan 1; in 2018 the ungated engine was -13.3% at this same point and finished the gate window at -19.9%; in 2022 the ungated engine was -17.9% at this same point and finished the gate window at -15.2%.",
+    "framing": "Both sides (D3): the gate is ahead of the ungated engine by 5.9pp since Jan 1; in 2018 the ungated engine was -13.3% at this same point and finished the gate window at -19.9%; in 2022 the ungated engine was -17.5% at this same point and finished the gate window at -15.2%.",
     "no_action_affordances": true
   },
-  "as_of": "2026-07-15",
+  "as_of": "2026-07-16",
   "gate_engaged": "2026-01-01",
-  "days_since_gate": 195,
+  "days_since_gate": 196,
   "current_ungated_alloc": 0.0,
   "current_gated_alloc": 0.0,
   "cum_gap_pct": -5.85,
@@ -437,11 +437,11 @@
       "gate_verdict": "saved"
     },
     "2022": {
-      "same_point_raw_gap_pct": -17.87,
+      "same_point_raw_gap_pct": -17.52,
       "full_window_raw_return_pct": -15.17,
       "btc_window_return_pct": -61.14,
       "gate_verdict": "saved"
     }
   },
-  "framing_note": "n=3 path shapes. At this point (195d into gate), current raw is -5.9% vs gated (cash). 2018: raw -13.3% (trailing gated cash) at same point, full window raw=-19.9% \u2192 gate SAVED money | 2022: raw -17.9% (trailing gated cash) at same point, full window raw=-15.2% \u2192 gate SAVED money. Gate saved in 2/3, cost in 0/3 prior cycles. No action recommended."
+  "framing_note": "n=3 path shapes. At this point (196d into gate), current raw is -5.9% vs gated (cash). 2018: raw -13.3% (trailing gated cash) at same point, full window raw=-19.9% \u2192 gate SAVED money | 2022: raw -17.5% (trailing gated cash) at same point, full window raw=-15.2% \u2192 gate SAVED money. Gate saved in 2/3, cost in 0/3 prior cycles. No action recommended."
 }

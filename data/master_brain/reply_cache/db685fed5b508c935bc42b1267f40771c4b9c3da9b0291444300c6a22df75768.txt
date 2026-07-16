@@ -1,0 +1,21 @@
+**Desk Note: Canada/TSX Regime Assessment**  
+**Analyst:** Macro-Regime Desk  
+**Date:** 2026-07-15  
+
+**Regime Verdict:** **Cautious risk-on — supports thematic exposure, but warrants smaller sizing and elevated cash relative to full risk.**  
+
+**Observations driving the verdict**  
+1. **Leadership & Narrative Structure** – Big Banks hold a clear lead (score 1.75) with solid durability (0.74) and maximum breadth (1.0). However, the market is *not* in a one-narrative absorption (absorption = 0.36, one_narrative = false). Rotation breadth is broad (69% of themes eligible), signalling healthy but fragmented participation. This is not a self‑reinforcing risk‑on cascade; it is a contained rotation within a trend‑filtered market.  
+2. **Crowding** – Big Banks and Pipelines are crowded (z > 1.6). Per guardrails, crowding is a **cap, not a fade**. It raises the cost of a reversal but does not invalidate the trend while durability and breadth hold.  
+3. **Absolute‑Trend Gate (the only validated edge)** – The detector’s `gate_helps = true` confirms that respecting the trend‑filter materially reduces drawdown on the TSX. This is the core discipline, not a return forecast. The gate’s status is the primary risk‑on/off switch.  
+4. **Macro Narrative Backdrop** – Headlines are dominated by AI/tech and geopolitics, with an extremely high unscheduled‑share (0.70). This indicates a fat‑tailed news environment; even a strong local theme should be sized conservatively.  
+5. **Trend Health** – Leader hurst_tag is “mixed,” meaning the trend is not purely persistent. Paired with high macro surprise rates, this argues for humility in sizing.  
+
+**Falsifiable Conditional Lean (check‑by: 2026-07-31)**  
+*If the Big Banks theme sustains durability ≥0.7, breadth ≥0.8, and the S&P/TSX absolute‑trend gate remains “risk‑on” through month‑end, then the regime will have supported modest thematic exposure (underweight vs. full risk). Should any of these conditions break – gate flips, durability drops, breadth decays – the regime would have favoured a larger shift to cash.*  
+
+**Discipline Reminder**  
+- This is a fallible, falsifiable conditional structure; not a prediction or a trade.  
+- The momentum rank is an attention lens (rank‑IC ~0), not alpha.  
+- Crowding is not a sell signal – do not fade the leader.  
+- No next‑narrative forecast; only a confirmed handoff would change the headline.

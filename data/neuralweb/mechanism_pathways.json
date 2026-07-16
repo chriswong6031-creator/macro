@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-07-15",
+  "as_of": "2026-07-16",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -23,15 +23,116 @@
       "mastermind_arming"
     ]
   },
-  "pathways": [],
-  "no_pathway": {
-    "reason": "scare_unattributed",
-    "printed": true,
-    "trigger_context": {
-      "dominant_scare": "growth",
-      "label_en": "Growth scare / defensive rotation",
-      "label_zh": "增长恐慌/防御轮动",
-      "state": "watch"
+  "pathways": [
+    {
+      "family": "ai_semis",
+      "driver": "ai_semis",
+      "pathway_role": "primary",
+      "as_of": "2026-07-16",
+      "direction_en": "Bubble / blow-off unwind",
+      "direction_zh": "泡沫/见顶回吐",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_ai_semis",
+          "as_of": "2026-07-16",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "ai_semis",
+          "observation": {
+            "en": "Bubble / blow-off unwind",
+            "zh": "泡沫/见顶回吐"
+          },
+          "direction": "",
+          "value": 59.4,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        }
+      ],
+      "edges": [],
+      "coverage_basis": "scare_trigger",
+      "source_trigger": "risk_radar",
+      "scare": "bubble"
+    },
+    {
+      "family": "crypto",
+      "driver": "crypto_liquidity",
+      "pathway_role": "alternate",
+      "as_of": "2026-07-16",
+      "direction_en": "crypto liquidity surging — BTC/ETH lead up",
+      "direction_zh": "",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_crypto_liquidity",
+          "as_of": "2026-07-16",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "crypto_liquidity",
+          "observation": {
+            "en": "crypto liquidity surging — BTC/ETH lead up",
+            "zh": ""
+          },
+          "direction": "",
+          "value": 0.86,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        }
+      ],
+      "edges": [],
+      "coverage_basis": "scare_trigger"
+    },
+    {
+      "family": "liquidity",
+      "driver": "liquidity_impulse",
+      "pathway_role": "alternate",
+      "as_of": "2026-07-16",
+      "direction_en": "net liquidity expanding — broad risk-on tailwind",
+      "direction_zh": "",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_liquidity_impulse",
+          "as_of": "2026-07-16",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "liquidity_impulse",
+          "observation": {
+            "en": "net liquidity expanding — broad risk-on tailwind",
+            "zh": ""
+          },
+          "direction": "",
+          "value": 0.86,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        }
+      ],
+      "edges": [],
+      "coverage_basis": "scare_trigger"
     }
-  }
+  ]
 }

@@ -1,0 +1,30 @@
+{
+  "summary": "Late-cycle markdown distribution with bearish momentum and weak on-chain demand conflicts with expanding global liquidity; risk-reward skewed to downside despite fair valuation.",
+  "regime_read": "The deterministic system flags a DISTRIBUTE composite with froth context, high-risk regime, and zero optimal allocation. Bitcoin is deep into a markdown cycle phase (cphase 77.7% complete, ~81 days to next pivot) with bearish momentum, broken structure, and low efficiency. Valuation sits in fair territory (MVRV-Z 0.37, 22nd percentile), not yet at extreme discounts, but the cycle position overrides cheapness. Derivatives show extremely low implied volatility (DVOL 3.9th percentile) and a pronounced put skew (risk reversal -5.1), signaling that options markets are pricing downside protection despite the low vol surface. On-chain flows are weak: the stablecoin regime is contracting (z -1.46), Coinbase premium is negative, and ETF flows are neutral. Miner stress (hash ribbon capitulation, low Puell) adds to the supply-side unease. This picture suggests a market that has not found demand and risks further drift lower in the short-to-medium term.\n\nContrast this with the macro backdrop. Global liquidity is expanding (global M2 +7% YoY), the US economy is in a Goldilocks quadrant with low macro risk, and the bond market is healthy (late-cycle, curve steepening, credit tight). Historically, such an environment would be a tailwind for Bitcoin under the working thesis, but the crypto-native on-chain liquidity and cycle position are not confirming. The transmission appears delayed or broken—likely due to still-elevated real yields (2.33%) and a crypto-specific distribution overhang. The structural breakdown, weak on-chain flows, and bearish momentum are currently dominating the macro tailwind.",
+  "conflicts": [
+    "Global M2 expanding (+7%) vs. stablecoin supply contracting (z -1.46) and Coinbase premium discount — macro liquidity tailwind absent on-chain.",
+    "Fair valuation (MVRV-Z 22nd percentile) but cycle in markdown with bearish momentum — cheapness not sufficient without trend reversal.",
+    "COT asset managers extreme long (z=2.83) while price structure is broken — historically a contrarian bearish signal.",
+    "Extremely low DVOL (3.9th percentile) amid a broken structure and puts rich (risk reversal -5.1) — options complacency vs. realized breakdown.",
+    "Goldilocks macro (low risk, expanding liquidity) but Bitcoin’s own cycle is distribution — macro benign but crypto-specific cycle overriding."
+  ],
+  "rotation_check": "Reality tracks the working thesis insofar as global liquidity expansion has historically led Bitcoin higher, but currently the transmission is missing. The crypto-native liquidity channel (stablecoin growth, spot premiums) is contracting, and the halving-cycle position (late markdown) and bearish structural/tech signals are dominating. The thesis's premise that liquidity expansion alone drives BTC is challenged by the absence of on-chain confirmation. The lag may stem from still-high real yields (2.33%) keeping capital expensive, or from a crypto-specific overhang (miner capitulation, distribution fatigue). The thesis needs the on-chain flows and momentum to realign with macro before it can be re-validated.",
+  "transmission": [
+    "Stablecoin growth z-score turning positive → indicates on-chain capital inflows resuming.",
+    "Coinbase premium flipping positive alongside ETF inflow acceleration → US-led spot demand returns.",
+    "Momentum turning positive and structure reclaiming key ma/trendline → technical trend reversal.",
+    "Real 10Y yield dropping below 2% → reduces discount rate pressure and fuels high-beta re-leverage.",
+    "Markdown cycle pivot approaching (Oct 2026) → narrative shift to re-accumulation if on-chain confirms."
+  ],
+  "watch_items": [
+    "Stablecoin supply growth (current z -1.46) – watch for z crossing above zero.",
+    "Coinbase premium – sustained positive readings would challenge the bearish on-chain view.",
+    "ETF daily flows – a shift to persistent inflows would add demand-side momentum.",
+    "Real 10Y yield – a move below 2% would align macro with the ‘liquidity expansion’ tailwind.",
+    "DVOL vs VIX divergence – a spike in DVOL while VIX stays low could signal a crypto-specific breakdown.",
+    "Price reclaiming 68k–70k region with conviction – would negate the broken structure and bearish momentum.",
+    "COT asset manager long positioning – an unwind from extreme longs would add selling pressure.",
+    "Cphase pivot date Oct 2026 and the behavior around it – potential cycle low if on-chain data improves."
+  ],
+  "confidence": "medium"
+}

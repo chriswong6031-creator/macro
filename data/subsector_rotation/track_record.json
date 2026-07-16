@@ -1,65 +1,72 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-07-14",
-  "generated_at": "2026-07-15T07:15:28.706911+00:00",
+  "as_of": "2026-07-16",
+  "generated_at": "2026-07-16T06:01:35.687187+00:00",
   "is_context_only": true,
-  "n_snapshots": 3218,
-  "n_days": 12,
+  "n_snapshots": 3487,
+  "n_days": 13,
   "horizons": {
     "5": {
-      "n_matured": 1912,
-      "score_ic": 0.1617,
-      "score_ic_t_hac": 1.208,
+      "n_matured": 2391,
+      "score_ic": 0.2122,
+      "score_ic_t_hac": 2.122,
       "score_ic_detail": {
-        "mean_ic": 0.1617,
-        "ic_vol": 0.411,
-        "ic_ir": 0.393,
-        "ic_ir_ann": 1.244,
-        "t_hac": 1.208,
-        "p_hac": 0.2269,
-        "hit": 0.75,
-        "n": 8
+        "mean_ic": 0.2122,
+        "ic_vol": 0.3836,
+        "ic_ir": 0.553,
+        "ic_ir_ann": 1.749,
+        "t_hac": 2.122,
+        "p_hac": 0.0338,
+        "hit": 0.8,
+        "n": 10
       },
       "by_stage": {
         "emerging": {
-          "n": 72,
-          "mean_fwd_rel": 0.0022,
+          "n": 90,
+          "mean_fwd_rel": 0.0027,
           "hit_rate": 0.556
         },
         "neutral": {
-          "n": 1752,
-          "mean_fwd_rel": -0.0006,
+          "n": 2191,
+          "mean_fwd_rel": -0.002,
           "hit_rate": null
         },
         "fading": {
-          "n": 88,
-          "mean_fwd_rel": -0.0206,
-          "hit_rate": 0.727
+          "n": 110,
+          "mean_fwd_rel": -0.0234,
+          "hit_rate": 0.782
         }
       }
     },
     "10": {
-      "n_matured": 1195,
-      "score_ic": null,
+      "n_matured": 1434,
+      "score_ic": 0.0793,
       "score_ic_t_hac": null,
       "score_ic_detail": {
-        "n_days": 5
+        "mean_ic": 0.0793,
+        "ic_vol": 0.2764,
+        "ic_ir": 0.287,
+        "ic_ir_ann": 1.284,
+        "t_hac": null,
+        "p_hac": null,
+        "hit": 0.667,
+        "n": 6
       },
       "by_stage": {
         "emerging": {
-          "n": 43,
-          "mean_fwd_rel": -0.0033,
-          "hit_rate": 0.512
+          "n": 53,
+          "mean_fwd_rel": -0.0077,
+          "hit_rate": 0.491
         },
         "neutral": {
-          "n": 1097,
-          "mean_fwd_rel": -0.0042,
+          "n": 1315,
+          "mean_fwd_rel": -0.0058,
           "hit_rate": null
         },
         "fading": {
-          "n": 55,
-          "mean_fwd_rel": -0.0186,
-          "hit_rate": 0.6
+          "n": 66,
+          "mean_fwd_rel": -0.0205,
+          "hit_rate": 0.621
         }
       }
     },
@@ -82,18 +89,18 @@
       "by_stage": {}
     }
   },
-  "lead_time_d": null,
-  "peak_score_ic": null,
+  "lead_time_d": 5,
+  "peak_score_ic": 0.2122,
   "proven": {
-    "5": false,
+    "5": true,
     "10": false,
     "21": false,
     "63": false
   },
   "any_matured": true,
-  "verdict": "measuring",
-  "note": "Accruing forward observations; no horizon clears the Newey-West significance bar yet. Early numbers are provisional, context-only.",
-  "note_zh": "\u6b63\u5728\u7d2f\u79ef\u524d\u77bb\u89c2\u6d4b\uff1b\u5c1a\u65e0\u5468\u671f\u901a\u8fc7 Newey-West \u663e\u8457\u6027\u68c0\u9a8c\u3002\u65e9\u671f\u6570\u636e\u4e3a\u6682\u5b9a\uff0c\u4ec5\u4f9b\u53c2\u8003\u3002",
+  "verdict": "validated",
+  "note": "Emerging-score IC is significant at the 5d horizon (measured). Context-only \u2014 informs the read, never sizes.",
+  "note_zh": "\u5347\u6e29\u8bc4\u5206\u7684\u4fe1\u606f\u7cfb\u6570\u5728 5 \u5929\u5468\u671f\u4e0a\u663e\u8457\uff08\u5df2\u6d4b\u5f97\uff09\u3002\u4ec5\u4f9b\u53c2\u8003\u2014\u2014\u8f85\u52a9\u7814\u5224\uff0c\u4ece\u4e0d\u7528\u4e8e\u4ed3\u4f4d\u3002",
   "recent_misses": [],
   "disclaimer": "A falsifiable scorecard of the rotation read's own calls \u2014 emerging_score rank and emerging/fading labels graded against realized member-equal-weight SPY-relative forward returns. Until a horizon matures and clears a Newey-West significance bar it is 'measuring', never trusted. Members are frozen point-in-time; only priceable members are used. Nothing here sizes a position.",
   "disclaimer_zh": "\u5bf9\u8f6e\u52a8\u7814\u5224\u81ea\u8eab\u7814\u5224\u7684\u53ef\u8bc1\u4f2a\u8bb0\u5206\u5361\u2014\u2014\u5347\u6e29\u8bc4\u5206\u6392\u540d\u4e0e\u5347\u6e29/\u9000\u6f6e\u6807\u7b7e\uff0c\u4ee5\u6210\u5206\u80a1\u7b49\u6743\u3001\u76f8\u5bf9 SPY \u7684\u5b9e\u9645\u524d\u77bb\u6536\u76ca\u8fdb\u884c\u8bc4\u5206\u3002\u5728\u67d0\u5468\u671f\u5230\u671f\u5e76\u901a\u8fc7 Newey-West \u663e\u8457\u6027\u68c0\u9a8c\u4e4b\u524d\uff0c\u59cb\u7ec8\u4e3a\u300c\u6d4b\u91cf\u4e2d\u300d\uff0c\u4e0d\u4e88\u91c7\u4fe1\u3002\u6210\u5206\u80a1\u6309\u65f6\u95f4\u70b9\u51bb\u7ed3\uff0c\u4ec5\u4f7f\u7528\u53ef\u5b9a\u4ef7\u6210\u5206\u80a1\u3002\u6b64\u5904\u4efb\u4f55\u5185\u5bb9\u90fd\u4e0d\u7528\u4e8e\u786e\u5b9a\u4ed3\u4f4d\u3002"

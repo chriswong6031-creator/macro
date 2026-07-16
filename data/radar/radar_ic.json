@@ -1,101 +1,101 @@
 {
   "schema": "radar_ic.v1",
-  "as_of": "2026-07-15",
-  "generated_at": "2026-07-15T08:56:43.135197+00:00",
+  "as_of": "2026-07-16",
+  "generated_at": "2026-07-16T07:46:29.581948+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
     63
   ],
-  "n_snapshots": 4907,
-  "n_matured": 359,
-  "ic_all": -0.3515,
-  "ic_rolling_90": -0.1343,
+  "n_snapshots": 5150,
+  "n_matured": 698,
+  "ic_all": -0.3056,
+  "ic_rolling_90": -0.1208,
   "by_bucket": {
     "0-40": {
-      "n": 265,
-      "hit_rate": 0.521,
-      "mean_fwd_ret": -0.0004
+      "n": 527,
+      "hit_rate": 0.455,
+      "mean_fwd_ret": -0.0088
     },
     "40-70": {
-      "n": 67,
-      "hit_rate": 0.209,
-      "mean_fwd_ret": -0.1228
+      "n": 118,
+      "hit_rate": 0.212,
+      "mean_fwd_ret": -0.1145
     },
     "70-100": {
-      "n": 27,
-      "hit_rate": 0.296,
-      "mean_fwd_ret": -0.0881
+      "n": 53,
+      "hit_rate": 0.226,
+      "mean_fwd_ret": -0.0877
     }
   },
   "by_state": {
     "POSITIVE_DIVERGENCE": {
-      "n": 163,
-      "dir_accuracy": 0.46,
-      "mean_fwd_ret": -0.0314
+      "n": 325,
+      "dir_accuracy": 0.366,
+      "mean_fwd_ret": -0.0386
     },
     "CONFIRMED_UP": {
-      "n": 163,
-      "dir_accuracy": 0.429,
-      "mean_fwd_ret": -0.0344
+      "n": 303,
+      "dir_accuracy": 0.406,
+      "mean_fwd_ret": -0.0304
     },
     "NEGATIVE_DIVERGENCE": {
-      "n": 16,
-      "dir_accuracy": 0.438,
-      "mean_fwd_ret": -0.0033
+      "n": 34,
+      "dir_accuracy": 0.529,
+      "mean_fwd_ret": -0.0241
     },
     "CONFIRMED_DOWN": {
-      "n": 17,
-      "dir_accuracy": 0.471,
-      "mean_fwd_ret": 0.0048
+      "n": 36,
+      "dir_accuracy": 0.472,
+      "mean_fwd_ret": -0.0051
     }
   },
-  "note": "359 matured observations (horizon=21d). IC_all=-0.3515, IC_rolling_90=-0.1343. CONTEXT-ONLY \u2014 never fed into a score/size/allocation.",
+  "note": "698 matured observations (horizon=21d). IC_all=-0.3056, IC_rolling_90=-0.1208. CONTEXT-ONLY \u2014 never fed into a score/size/allocation.",
   "by_horizon": {
     "21": {
-      "n_matured": 359,
-      "ic_all": -0.3515,
-      "ic_rolling_90": -0.1343,
+      "n_matured": 698,
+      "ic_all": -0.3056,
+      "ic_rolling_90": -0.1208,
       "by_bucket": {
         "0-40": {
-          "n": 265,
-          "hit_rate": 0.521,
-          "mean_fwd_ret": -0.0004
+          "n": 527,
+          "hit_rate": 0.455,
+          "mean_fwd_ret": -0.0088
         },
         "40-70": {
-          "n": 67,
-          "hit_rate": 0.209,
-          "mean_fwd_ret": -0.1228
+          "n": 118,
+          "hit_rate": 0.212,
+          "mean_fwd_ret": -0.1145
         },
         "70-100": {
-          "n": 27,
-          "hit_rate": 0.296,
-          "mean_fwd_ret": -0.0881
+          "n": 53,
+          "hit_rate": 0.226,
+          "mean_fwd_ret": -0.0877
         }
       },
       "by_state": {
         "POSITIVE_DIVERGENCE": {
-          "n": 163,
-          "dir_accuracy": 0.46,
-          "mean_fwd_ret": -0.0314
+          "n": 325,
+          "dir_accuracy": 0.366,
+          "mean_fwd_ret": -0.0386
         },
         "CONFIRMED_UP": {
-          "n": 163,
-          "dir_accuracy": 0.429,
-          "mean_fwd_ret": -0.0344
+          "n": 303,
+          "dir_accuracy": 0.406,
+          "mean_fwd_ret": -0.0304
         },
         "NEGATIVE_DIVERGENCE": {
-          "n": 16,
-          "dir_accuracy": 0.438,
-          "mean_fwd_ret": -0.0033
+          "n": 34,
+          "dir_accuracy": 0.529,
+          "mean_fwd_ret": -0.0241
         },
         "CONFIRMED_DOWN": {
-          "n": 17,
-          "dir_accuracy": 0.471,
-          "mean_fwd_ret": 0.0048
+          "n": 36,
+          "dir_accuracy": 0.472,
+          "mean_fwd_ret": -0.0051
         }
       },
-      "note": "359 matured observations (horizon=21d). IC_all=-0.3515, IC_rolling_90=-0.1343. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
+      "note": "698 matured observations (horizon=21d). IC_all=-0.3056, IC_rolling_90=-0.1208. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
     },
     "63": {
       "n_matured": 0,

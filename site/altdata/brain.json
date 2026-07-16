@@ -5,12 +5,12 @@
   "article3": {
     "granted": false,
     "lift_lb": null,
-    "reason": "insufficient-n: n=13 < min_n=25",
-    "evidence_asof": "2026-07-14",
-    "evaluated_at": "2026-07-15T08:56:20+00:00"
+    "reason": "insufficient-n: n=14 < min_n=25",
+    "evidence_asof": "2026-07-16",
+    "evaluated_at": "2026-07-16T07:46:01+00:00"
   },
-  "generated_at": "2026-07-15T08:56:20.861578+00:00",
-  "state_asof": "2026-07-15",
+  "generated_at": "2026-07-16T07:46:01.489652+00:00",
+  "state_asof": "2026-07-16",
   "model": "claude-opus-4-8",
   "regime_read": null,
   "regime_read_zh": null,
