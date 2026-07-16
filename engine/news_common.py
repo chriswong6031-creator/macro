@@ -164,6 +164,27 @@ _ROUNDUP_RE = re.compile(
     r"|\bstocks?\s+(?:that\s+could|to)\s+(?:soar|surge|explode|double|triple|skyrocket|make\s+you)\b"
     r")", re.I)
 
+# SINGLE-stock advertorials that dodge the roundup framing above because they name
+# one ticker instead of a list ("Prediction: This Will Be Nvidia Stock Price Next
+# Year (Hint: The Time to Buy Is Now)", "Is Silo Pharma an AI Opportunity",
+# "Better AI Stock: Nvidia vs. Palantir") — the MN-05 leak class polluting the
+# news_vector theme counts. Each branch is a STRUCTURAL pick-mill frame no real
+# single-event story uses: anchored "Prediction:" opener, the "(Hint:" parenthetical,
+# the anchored "Better <adj> Stock/Buy:" comparison, the "Is <ticker> a Buy /
+# an <adj> Opportunity / a Millionaire-Maker" question, "Should You Buy <X>", and
+# the "Where Will <X> Be in N Years" speculation frame. "Prediction markets surge"
+# (no colon) and "Berkshire sees opportunity in Japan" (no Is/Should opener) survive.
+_ADVERTORIAL_RE = re.compile(
+    r"(?:"
+    r"^\s*prediction\s*:"
+    r"|\(\s*hint\s*:"
+    r"|^\s*better\s+(?:[\w'’-]+\s+){0,3}?(?:stocks?|buys?|etfs?)\s*:"
+    r"|^\s*is\b.{0,60}?\b(?:a\s+buy|a\s+sell|an?\s+(?:[\w'’-]+\s+){0,2}?opportunit(?:y|ies))\b"
+    r"|^\s*should\s+you\s+(?:buy|sell)\b"
+    r"|\bmillionaire[-\s]?maker\b"
+    r"|\bwhere\s+will\b.{0,60}?\bbe\s+in\s+(?:\d{1,2}|one|two|three|five|ten)\s+years?\b"
+    r")", re.I)
+
 # First-person personal-finance ADVICE columns (e.g. MarketWatch "Moneyist" /
 # retirement / tax Q&A: "I'm spending $170,000... Can I get tax breaks?"). These
 # are off-topic for a market dashboard. Conservative: a personal opener AND a "?".
@@ -199,6 +220,7 @@ _PREVIEW_RE = re.compile(
     # the stock market this coming week"). 'things to watch' allows adjectives
     # between the count and the noun, so it catches "N big things to watch" too.
     r"|\b(?:the\s+)?(?:week|day)\s+ahead\b"
+    r"|^\s*this\s+week\s+in\b"
     r"|\bwhat\s+to\s+(?:watch|know|expect)\b"
     r"|\bthings?\s+to\s+(?:watch|know|consider)\b"
     r"|\bto\s+watch\s+(?:this|next|the\s+coming|coming)\s+week\b"
@@ -294,9 +316,9 @@ def low_value_reason(title: str, domain: str = "", author: str = "") -> str | No
     None. This is the observable core behind is_low_value(): every drop names WHY,
     so filter leaks are logged/regression-testable instead of silent. PURE.
 
-    Reasons: pickmill_byline · stock_pick_roundup · calendar_preview ·
-    routine_fund_distribution · lifestyle_content · personal_finance_advice ·
-    macro_release_stub."""
+    Reasons: pickmill_byline · stock_pick_roundup · single_stock_advertorial ·
+    calendar_preview · routine_fund_distribution · lifestyle_content ·
+    personal_finance_advice · macro_release_stub."""
     t = (title or "").strip()
     if not t:
         return "empty_title"
@@ -305,6 +327,8 @@ def low_value_reason(title: str, domain: str = "", author: str = "") -> str | No
         return "pickmill_byline"
     if _ROUNDUP_RE.search(t):
         return "stock_pick_roundup"
+    if _ADVERTORIAL_RE.search(t):
+        return "single_stock_advertorial"
     if _PREVIEW_RE.search(t):
         return "calendar_preview"
     if _FUND_DIST_RE.search(t) and _FUND_VEHICLE_RE.search(t):

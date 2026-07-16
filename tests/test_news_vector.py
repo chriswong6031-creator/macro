@@ -69,15 +69,98 @@ def test_build_records_gates_and_stamps():
     assert len(recs) == 2, "dedup + allowlist + theme gate should leave exactly 2"
     assert [r["theme"] for r in recs] == ["geopolitics", "trade"]
     assert all(r["first_seen_utc"] == "2026-06-10T20:00:00+00:00" for r in recs)
-    # scheduled_ref: CPI on 06-10 catches the 06-10 article AND (±1 day) the 06-09 one
-    assert recs[0]["scheduled_ref"] == "CPI@2026-06-10"
-    assert recs[1]["scheduled_ref"] == "CPI@2026-06-10"
+    # MN-06: CPI on 06-10 must NOT stamp the geopolitics/trade articles — neither
+    # theme is in CPI's macro channel, so neither move is "explained" by the print.
+    assert recs[0]["scheduled_ref"] == ""
+    assert recs[1]["scheduled_ref"] == ""
 
 
-def test_scheduled_ref_window():
-    assert nv._scheduled_ref_for("2026-06-12T00:00:00+00:00", _SCHED) == ""   # 2 days away -> no stamp
-    assert nv._scheduled_ref_for("2026-06-11T00:00:00+00:00", _SCHED) == "CPI@2026-06-10"  # +1 day
-    assert nv._scheduled_ref_for("bad-date", _SCHED) == ""
+def test_scheduled_ref_reaction_window_and_channel():
+    # same-day inflation article -> stamped
+    assert nv._scheduled_ref_for("2026-06-10T14:00:00+00:00", _SCHED, "inflation") == "CPI@2026-06-10"
+    # day-AFTER reaction (release yesterday) -> stamped
+    assert nv._scheduled_ref_for("2026-06-11T00:00:00+00:00", _SCHED, "inflation") == "CPI@2026-06-10"
+    # rate-path and market-wrap reactions are the calendar-explained flow too
+    assert nv._scheduled_ref_for("2026-06-10T14:00:00+00:00", _SCHED, "monetary") == "CPI@2026-06-10"
+    assert nv._scheduled_ref_for("2026-06-10T14:00:00+00:00", _SCHED, "markets") == "CPI@2026-06-10"
+    # day-BEFORE preview (release tomorrow) can't explain today's flow -> no stamp
+    assert nv._scheduled_ref_for("2026-06-09T00:00:00+00:00", _SCHED, "inflation") == ""
+    # off-channel themes are the headline-shock flow -> never stamped (MN-06)
+    for theme in ("geopolitics", "trade", "industrial_policy", "ai_tech", "energy"):
+        assert nv._scheduled_ref_for("2026-06-10T14:00:00+00:00", _SCHED, theme) == "", theme
+    # 2 days away / garbage dates -> no stamp
+    assert nv._scheduled_ref_for("2026-06-12T00:00:00+00:00", _SCHED, "inflation") == ""
+    assert nv._scheduled_ref_for("bad-date", _SCHED, "inflation") == ""
+
+
+def test_scheduled_ref_channel_map_covers_high_impact():
+    """Fail-closed contract: every _HIGH_IMPACT release type must have a channel
+    entry — an unmapped type stamps NOTHING (silently reverting to the blanket
+    stamp is the MN-06 bug), so the map must stay in lockstep."""
+    missing = nv._HIGH_IMPACT - set(nv._SCHEDULED_REF_THEMES)
+    assert not missing, f"_SCHEDULED_REF_THEMES missing high-impact types: {missing}"
+    # unmapped type -> fail closed, no stamp even on a matching-looking theme
+    assert nv._scheduled_ref_for("2026-06-10T14:00:00+00:00", {"2026-06-10": "RETAIL"},
+                                 "inflation") == ""
+
+
+# --------------------------------------------------------------------------- #
+# MN-05: low-value junk gate — listicles/advertorials must not pollute the theme
+# counts that feed news_flow velocity (a scored leg via theme_activity)
+# --------------------------------------------------------------------------- #
+def test_low_value_advertorials_dropped_from_build():
+    junk = [
+        {"title": "Prediction: This Will Be Nvidia Stock Price Next Year "
+                  "(Hint: The Time to Buy Is Now)",
+         "domain": "cnbc.com", "seendate": "2026-06-10T12:00:00+00:00"},
+        {"title": "Is Silo Pharma an AI Opportunity",
+         "domain": "cnbc.com", "seendate": "2026-06-10T12:00:00+00:00"},
+        {"title": "3 Artificial Intelligence Stocks to Buy Before the Fed Cuts Rates",
+         "domain": "cnbc.com", "seendate": "2026-06-10T12:00:00+00:00"},
+    ]
+    real = [
+        {"title": "Nvidia announces new data center chip partnership with OpenAI",
+         "domain": "reuters.com", "seendate": "2026-06-10T12:00:00+00:00"},
+    ]
+    recs = nv.build_records(junk + real, _SCHED, _ALLOW, "2026-06-10T20:00:00+00:00")
+    titles = [r["title"] for r in recs]
+    assert len(recs) == 1 and titles[0].startswith("Nvidia announces"), (
+        f"low-value junk leaked into the accrual: {titles}")
+
+
+def test_low_value_gate_degrades_open():
+    """If news_common is unavailable the gate must degrade to NO filtering (the
+    pre-filter behavior) — a broken helper must never blank the accrual. Patches
+    BOTH resolution paths of `from engine import news_common` (the sys.modules
+    entry and the already-set package attribute)."""
+    import sys
+    from unittest.mock import patch
+    import engine as engine_pkg
+    junk = [{"title": "Is Silo Pharma an AI Opportunity",   # would be dropped when healthy
+             "domain": "cnbc.com", "seendate": "2026-06-10T12:00:00+00:00"}]
+    with patch.dict(sys.modules, {"engine.news_common": None}), \
+         patch.object(engine_pkg, "news_common", None, create=True):
+        recs = nv.build_records(junk, _SCHED, _ALLOW, "2026-06-10T20:00:00+00:00")
+    assert len(recs) == 1, "degrade-open failed: gate blanked the accrual without news_common"
+
+
+def test_already_accrued_junk_is_not_rewritten():
+    """Forward-only contract: the filter changes what accrues from NOW on; rows
+    already in the store (junk or not, old blanket stamps included) are preserved
+    verbatim by keep-FIRST accrual — history is never rewritten."""
+    import pandas as pd
+    legacy = pd.DataFrame([{
+        "event_id": nv.event_id("Is Silo Pharma an AI Opportunity", "cnbc.com"),
+        "first_seen_utc": "2026-06-01T20:00:00+00:00", "seendate": "2026-06-01T10:00:00+00:00",
+        "title": "Is Silo Pharma an AI Opportunity", "url": "u", "domain": "cnbc.com",
+        "theme": "ai_tech", "source_tier": 2, "scheduled_ref": "PPI@2026-06-01",
+    }])
+    recs = nv.build_records(_ARTS, _SCHED, _ALLOW, "2026-06-10T20:00:00+00:00")
+    merged = nv.accrue(legacy, recs)
+    old = merged[merged["event_id"] == legacy["event_id"].iloc[0]]
+    assert len(old) == 1, "legacy junk row must survive accrual untouched"
+    assert old["scheduled_ref"].iloc[0] == "PPI@2026-06-01", "historical stamp rewritten"
+    assert len(merged) == 1 + 2
 
 
 # --------------------------------------------------------------------------- #
@@ -156,7 +239,8 @@ def test_llm_extract_stays_off_even_when_bus_enabled():
 # news_vector may import only these engine siblings (other LEAF modules).
 # qbus is a W2 LEAF — allowed for the ingest_to_qbus boundary call.
 # gdelt_client is the shared GDELT transport LEAF (lib.config only) — allowed.
-_ALLOWED_ENGINE = {"macro_news", "event_calendar", "qbus", "gdelt_client"}
+# news_common is the shared news-suite LEAF (low_value_reason junk gate, MN-05).
+_ALLOWED_ENGINE = {"macro_news", "event_calendar", "qbus", "gdelt_client", "news_common"}
 # mechanical-core modules nothing in any scoring path may pull into this leaf.
 _FORBIDDEN_ROOTS = {"engine.conditions", "engine.regime", "engine.run", "engine.inputs",
                     "engine.cycles", "engine.equity_alloc", "engine.calibrate"}
