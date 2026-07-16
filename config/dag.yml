@@ -346,6 +346,15 @@ lanes:
       - id: build_policy_lever
         module: scripts.build_policy_lever
         note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
+      # NWS-01 fix (#2658): build_news + grade_news_events moved out of cl_baskets to the
+      # serial spine BEFORE build_site, so news.html renders against the CURRENT
+      # macro_releases.json / rejected.json / calibration.json instead of the prior run's.
+      - id: build_news
+        module: scripts.build_news
+        note: display-tier/leaf (context-only); ~1-3 min serial cost accepted for board coherence
+      - id: grade_news_events
+        module: scripts.grade_news_events
+        note: writes site/news/calibration.json which build_site reads (W4 side-artifact)
       - id: build_site
         module: scripts.build_site
       - id: build_index_leadership
@@ -370,6 +379,10 @@ lanes:
           build_pick_lab (Pick Lab plab_flow_leader/plab_flow_washout books
           consume leaders.json). Absent stores → honest nulls; always exits 0.
           outputs: [site/flowleaders/leaders.json, site/flow_leaders.html]
+      # moved before build_leader_radar to match daily.yml (#2672 reorder; declared-order heal in #2658)
+      - id: build_dispersion_regime
+        module: scripts.build_dispersion_regime
+        note: NW Rails W2 PR-4 — L3 dispersion regime lens (display-only, seconds)
       - id: build_leader_radar
         module: scripts.build_leader_radar
         note: >
@@ -392,9 +405,6 @@ lanes:
         note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
       - id: build_impulse
         module: scripts.build_impulse
-      - id: build_dispersion_regime
-        module: scripts.build_dispersion_regime
-        note: NW Rails W2 PR-4 — L3 dispersion regime lens (display-only, seconds)
       - id: build_dt_contra_state
         module: scripts.build_dt_contra_state
         note: DT-NW-1 — aggregate per-ticker dt_contra chip state into NW display artifact (display-only, seconds)
@@ -449,8 +459,7 @@ lanes:
             - scripts.build_rotation_events
             # RLT-R2 Rebalance Pulse — declared to match daily.yml (off render path, display/context)
             - scripts.build_rebalance_pulse
-            - scripts.build_news
-            - scripts.grade_news_events
+            # build_news + grade_news_events moved to the serial spine pre-build_site (#2658 NWS-01)
             - scripts.build_methodology
             - scripts.build_nasdaq_internals
             - scripts.build_rotation_events

@@ -3990,10 +3990,13 @@ def main() -> int:
     # view model as the dashboard tab, but gives it a first-class reading surface.
     # W3: load the news side-artifacts written by build_news.py (macro_releases,
     # rejected log, calibration).  All are additive/optional — never fatal.
+    # NWS-05: also load financial.json (market/mag7/by_ticker arrays) for the
+    # Company & market wires board — display-only, never scored.
     _news_dir = site / "news"
     _macro_releases_data = None
     _news_rejected_data = None
     _news_calibration_data = None
+    _financial_news_data = None
     try:
         _mr_path = _news_dir / "macro_releases.json"
         if _mr_path.exists():
@@ -4012,6 +4015,12 @@ def main() -> int:
             _news_calibration_data = json.loads(_cal_path.read_text())
     except Exception as _e:  # noqa: BLE001 — additive, never fatal
         log.warning("news calibration.json load failed: %s", _e)
+    try:
+        _fn_path = _news_dir / "financial.json"
+        if _fn_path.exists():
+            _financial_news_data = json.loads(_fn_path.read_text())
+    except Exception as _e:  # noqa: BLE001 — additive, never fatal
+        log.warning("news financial.json load failed: %s", _e)
     # W3 fix: sort event-typed headlines by |novelty_z| desc then seendate desc so
     # the Delta Board renders in spec order without relying on Jinja abs().  Context
     # (non-event) headlines are left in their original intelligence_score order and
@@ -4022,14 +4031,19 @@ def main() -> int:
             _raw_heads = _news_vm_macro_news["headlines"]
             _ev   = [h for h in _raw_heads if h.get("event")]
             _ctx  = [h for h in _raw_heads if not h.get("event")]
-            # Two-pass stable sort: secondary (seendate desc) first, then primary
-            # (abs novelty_z desc).  Python's Timsort is stable so equal-primary items
-            # preserve their secondary order.
+            # Three-pass stable sort: seendate desc, then abs(novelty_z) desc, then
+            # a fresh-first partition (NEWS-DD-02: an aged official item must never
+            # take the lead slot on novelty alone — a >5d-old card sorts after every
+            # fresh card regardless of novelty).  Timsort stability preserves the
+            # inner order within each partition.
+            from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+            _fresh_cut = (_dt.now(_tz.utc) - _td(days=5)).isoformat()
             _ev.sort(key=lambda h: h.get("seendate") or "", reverse=True)
             _ev.sort(
                 key=lambda h: abs(float(h["novelty_z"])) if h.get("novelty_z") is not None else 0.0,
                 reverse=True,
             )
+            _ev.sort(key=lambda h: (h.get("seendate") or "") >= _fresh_cut, reverse=True)
             _sorted_macro_news = dict(_news_vm_macro_news)
             _sorted_macro_news["headlines"] = _ev + _ctx
         except Exception as _e:  # noqa: BLE001 — sort is best-effort; degrade to raw order
@@ -4055,6 +4069,7 @@ def main() -> int:
             macro_releases=_macro_releases_data,
             news_rejected=_news_rejected_data,
             news_calibration=_news_calibration_data,
+            financial_news=_financial_news_data,
         )
     except Exception as _e:  # noqa: BLE001 — degrade, never raise
         log.error("news.html render failed (%s: %s) — retrying without side-artifacts",
@@ -4066,6 +4081,7 @@ def main() -> int:
                 macro_releases=None,
                 news_rejected=None,
                 news_calibration=None,
+                financial_news=None,
             )
         except Exception as _e2:  # noqa: BLE001 — degrade, never raise
             log.error("news.html artifact-free render failed too (%s: %s) — "

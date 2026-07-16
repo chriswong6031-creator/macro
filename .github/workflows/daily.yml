@@ -832,6 +832,16 @@ jobs:
           # Reads CL=F via yahoo store + data/whitehouse/alerts.jsonl (READ ONLY).
           # Non-fatal: main() always returns 0; a missing artifact degrades gracefully on the page.
           run_py "policy-lever card (build_policy_lever)" scripts.build_policy_lever
+          # NWS-01 fix: build_news must run BEFORE build_site so that build_site
+          # renders news.html against the CURRENT macro_releases.json (not the
+          # previous run's artifact).  build_news is display-tier/leaf (context-only);
+          # it adds ~1-3 min serial wall-time here (FRED fetches cached 12h; LLM
+          # enrichment ~20-60s with DeepSeek; worst-case cold ~3-4 min).  The
+          # site no longer ships a desync'd board.
+          # news_calib (grade_news_events) runs immediately after — it writes
+          # site/news/calibration.json which build_site also reads (W3 side-artifact).
+          run_py "news suite (build_news)" scripts.build_news
+          run_py "news event calibration (grade_news_events)" scripts.grade_news_events
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           # Index Leadership rotation board — DEAD-WIRE FIX 2026-07-16: this builder had NO
           # workflow caller since its 2026-07-01 hand-run, so site/marketdata/index_leadership.json
@@ -978,7 +988,7 @@ jobs:
         # a stable order AFTER the barrier (never interleaved) and per-builder wall-times go
         # to the step summary. Builders read build_site's output (spine, above) + the
         # collect job's data; the only cross-builder reads are kept INSIDE one cluster
-        # (news after baskets; crossasset/transmission after commodity/forex/bonds;
+        # (crossasset/transmission after commodity/forex/bonds;
         # policy_watch after policy_intent). special_situations stays IN this job (not a
         # sibling job like factor_series) because it writes a PAGE + hub card that must be
         # in THIS run's deploy artifact — it is event-driven, so a one-run lag is wrong.
@@ -1051,9 +1061,7 @@ jobs:
             brun rotation_events "Rotation Command W1 — rotation events + sector fragmentation (build_rotation_events)" scripts.build_rotation_events
             # RLT-R2 Rebalance Pulse: mechanical volume day-classifier (display/context, off render path)
             brun rebalance_pulse "RLT-R2 rebalance pulse — calendar × volume classifier (build_rebalance_pulse)" scripts.build_rebalance_pulse
-            brun news        "news suite (build_news)"                 scripts.build_news
-            # output: data/news/event_log.parquet + site/news/calibration.json — both covered by the git add data/ site/ commit step
-            brun news_calib  "news event calibration (grade_news_events)" scripts.grade_news_events
+            # build_news + news_calib moved BEFORE build_site (NWS-01 fix — see above)
             brun methodology "methodology page (build_methodology)"    scripts.build_methodology
             brun nasdaq_internals "nasdaq-100 archetype-group internals (build_nasdaq_internals)" scripts.build_nasdaq_internals
           }
@@ -1086,7 +1094,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse news methodology nasdaq_internals seasonality reports measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

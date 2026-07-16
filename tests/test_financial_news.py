@@ -263,14 +263,15 @@ def test_feed_end_to_end_monkeypatched():
     orig_rss = fn._rss_news
 
     try:
-        # _polygon_news(cfg, now) -> list of normalised items
-        fn._polygon_news = lambda cfg, now: [nvda_item, spy_item, aapl_item]
-        # _finnhub_news(cfg, now) -> (market_wide, company) tuple
-        fn._finnhub_news = lambda cfg, now: ([], [])
-        # _gdelt_thematic(cfg, emap, now) -> {"market": [...], "sectors": {etf: [...]}}
+        # _polygon_news(cfg, now) -> (items, detail)  [updated signature]
+        fn._polygon_news = lambda cfg, now: ([nvda_item, spy_item, aapl_item], "ok")
+        # _finnhub_news(cfg, now) -> (market_wide, company, detail)  [updated signature]
+        fn._finnhub_news = lambda cfg, now: ([], [], "no_key")
+        # _gdelt_thematic(cfg, emap, now) -> {"market": [...], "sectors": {etf: [...]}, "detail": str}
         fn._gdelt_thematic = lambda cfg, emap, now: {
             "market": [],
             "sectors": {etf: [] for etf in fn._SECTOR_QUERIES},
+            "detail": "no_rows",
         }
         # _rss_news(cfg, emap, now) -> {market, company, sectors}. Mock to empty so the
         # routing assertions stay deterministic (live wires would otherwise crowd the
@@ -320,11 +321,12 @@ def test_feed_nvda_in_ai_basket_if_basket_member():
     orig_gdelt = fn._gdelt_thematic
 
     try:
-        fn._polygon_news = lambda cfg, now: [nvda_item]
-        fn._finnhub_news = lambda cfg, now: ([], [])
+        fn._polygon_news = lambda cfg, now: ([nvda_item], "ok")
+        fn._finnhub_news = lambda cfg, now: ([], [], "no_key")
         fn._gdelt_thematic = lambda cfg, emap, now: {
             "market": [],
             "sectors": {etf: [] for etf in fn._SECTOR_QUERIES},
+            "detail": "no_rows",
         }
         result = fn.feed(use_cache=False)
     finally:
@@ -445,6 +447,250 @@ def test_quiver_news_agency_headline_untagged(tmp_path, monkeypatch):
     finance = by_title["ICE reports record Q2 earnings as exchange volumes surge"]
     assert agency["tickers"] == [], "agency headline must lose the ICE tag"
     assert finance["tickers"] == ["ICE"], "exchange earnings headline keeps ICE"
+
+# --------------------------------------------------------------------------- #
+# POLY-003 / GDELT-002: provider tri-state detail in _polygon_news /
+# _finnhub_news return values and feed() providers_detail field.
+# --------------------------------------------------------------------------- #
+def test_polygon_news_no_key_returns_empty_and_no_key_detail(monkeypatch):
+    """_polygon_news returns ([], 'no_key') when both API key secrets are absent."""
+    monkeypatch.setattr("engine.financial_news.config.secret", lambda _k: None)
+    items, detail = fn._polygon_news({}, _NOW)
+    assert items == []
+    assert detail == "no_key"
+
+
+def test_polygon_news_http_error_returns_status_detail(monkeypatch):
+    """_polygon_news returns http_<code> detail on non-200 HTTP responses."""
+    monkeypatch.setattr("engine.financial_news.config.secret", lambda _k: "fake-key")
+
+    class _FakeResp:
+        status_code = 403
+
+    import types
+    fake_requests = types.SimpleNamespace(
+        get=lambda *a, **kw: _FakeResp()
+    )
+    monkeypatch.setattr("engine.financial_news.config.secret", lambda _k: "fake-key")
+    import importlib
+    import sys as _sys
+    orig = _sys.modules.get("requests")
+    _sys.modules["requests"] = fake_requests
+    try:
+        items, detail = fn._polygon_news({}, _NOW)
+    finally:
+        if orig is None:
+            _sys.modules.pop("requests", None)
+        else:
+            _sys.modules["requests"] = orig
+    assert items == []
+    assert detail == "http_403"
+
+
+def test_finnhub_news_no_key_returns_empty_and_no_key_detail(monkeypatch):
+    """_finnhub_news returns ([], [], 'no_key') when both key secrets are absent."""
+    monkeypatch.setattr("engine.financial_news.config.secret", lambda _k: None)
+    market, company, detail = fn._finnhub_news({}, _NOW)
+    assert market == []
+    assert company == []
+    assert detail == "no_key"
+
+
+def test_feed_providers_detail_present_and_additive(monkeypatch, tmp_path):
+    """feed() output always contains providers_detail without removing providers."""
+    # patch config so cache writes go to tmp_path
+    from lib import config as _cfg_mod
+    monkeypatch.setattr(_cfg_mod, "data_dir", lambda: tmp_path / "data")
+
+    orig_polygon = fn._polygon_news
+    orig_finnhub = fn._finnhub_news
+    orig_gdelt = fn._gdelt_thematic
+    orig_rss = fn._rss_news
+    try:
+        fn._polygon_news = lambda cfg, now: ([], "no_key")
+        fn._finnhub_news = lambda cfg, now: ([], [], "no_key")
+        fn._gdelt_thematic = lambda cfg, emap, now: {"market": [], "sectors": {}, "detail": "no_rows"}
+        fn._rss_news = lambda cfg, emap, now: {"market": [], "company": [], "sectors": {}}
+        result = fn.feed(use_cache=False)
+    finally:
+        fn._polygon_news = orig_polygon
+        fn._finnhub_news = orig_finnhub
+        fn._gdelt_thematic = orig_gdelt
+        fn._rss_news = orig_rss
+
+    assert result is not None
+    # providers (backward-compat booleans) must still be present
+    assert "providers" in result
+    assert isinstance(result["providers"], dict)
+    # providers_detail must be present (additive)
+    assert "providers_detail" in result
+    pd = result["providers_detail"]
+    assert pd["polygon"] == "no_key"
+    assert pd["finnhub"] == "no_key"
+    # degraded_reason should name the dark providers
+    dr = result.get("degraded_reason") or ""
+    assert "polygon_no_key" in dr
+    assert "finnhub_no_key" in dr
+
+
+def test_feed_providers_detail_ok_when_polygon_live(monkeypatch, tmp_path):
+    """providers_detail.polygon='ok' when polygon returns items."""
+    from lib import config as _cfg_mod
+    monkeypatch.setattr(_cfg_mod, "data_dir", lambda: tmp_path / "data")
+
+    nvda_item = _make_norm("NVDA chip demand", "reuters.com", ["NVDA"], 85)
+    nvda_item["per_ticker_sentiment"] = {"NVDA": "pos"}
+
+    orig_polygon = fn._polygon_news
+    orig_finnhub = fn._finnhub_news
+    orig_gdelt = fn._gdelt_thematic
+    orig_rss = fn._rss_news
+    try:
+        fn._polygon_news = lambda cfg, now: ([nvda_item], "ok")
+        fn._finnhub_news = lambda cfg, now: ([], [], "no_key")
+        fn._gdelt_thematic = lambda cfg, emap, now: {"market": [], "sectors": {}, "detail": "no_rows"}
+        fn._rss_news = lambda cfg, emap, now: {"market": [], "company": [], "sectors": {}}
+        result = fn.feed(use_cache=False)
+    finally:
+        fn._polygon_news = orig_polygon
+        fn._finnhub_news = orig_finnhub
+        fn._gdelt_thematic = orig_gdelt
+        fn._rss_news = orig_rss
+
+    assert result is not None
+    assert result["providers"]["polygon"] is True
+    assert result["providers_detail"]["polygon"] == "ok"
+    assert result["providers_detail"]["finnhub"] == "no_key"
+    # degraded_reason should be None or at least not include polygon_no_key
+    dr = result.get("degraded_reason") or ""
+    assert "polygon_no_key" not in dr
+
+
+# --------------------------------------------------------------------------- #
+# MN-10: market-pool 60-char normalised-title-prefix dedup within feed().
+# --------------------------------------------------------------------------- #
+def test_feed_market_pool_dedup_collapses_same_event(monkeypatch, tmp_path):
+    """Two items with near-identical titles (same 60-char prefix) should produce
+    only one market headline (the higher-quality one is kept)."""
+    from lib import config as _cfg_mod
+    monkeypatch.setattr(_cfg_mod, "data_dir", lambda: tmp_path / "data")
+
+    # Titles that share the same 60-char normalised prefix — classic cross-domain dupe
+    title_a = "Netflix earnings beat estimates on strong subscriber growth"
+    title_b = "Netflix earnings beat estimates on strong subscriber growth Q2"  # same prefix
+    item_a = _make_norm(title_a, "reuters.com", ["SPY"], quality=80)
+    item_b = _make_norm(title_b, "bloomberg.com", ["SPY"], quality=70)
+
+    orig_polygon = fn._polygon_news
+    orig_finnhub = fn._finnhub_news
+    orig_gdelt = fn._gdelt_thematic
+    orig_rss = fn._rss_news
+    try:
+        fn._polygon_news = lambda cfg, now: ([], "no_key")
+        fn._finnhub_news = lambda cfg, now: ([item_a, item_b], [], "no_rows")
+        fn._gdelt_thematic = lambda cfg, emap, now: {"market": [], "sectors": {}, "detail": "no_rows"}
+        fn._rss_news = lambda cfg, emap, now: {"market": [], "company": [], "sectors": {}}
+        result = fn.feed(use_cache=False)
+    finally:
+        fn._polygon_news = orig_polygon
+        fn._finnhub_news = orig_finnhub
+        fn._gdelt_thematic = orig_gdelt
+        fn._rss_news = orig_rss
+
+    assert result is not None
+    market_titles = [h["title"] for h in result["market"]]
+    # At most one of the two near-identical headlines should appear
+    netflix_count = sum(1 for t in market_titles if "Netflix earnings beat" in t)
+    assert netflix_count <= 1, (
+        f"Expected at most 1 Netflix earnings headline after dedup, got {netflix_count}: "
+        f"{market_titles}"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# NEVER-DARKEN GUARD: _should_keep_existing table-driven tests.
+# --------------------------------------------------------------------------- #
+def _make_artifact(providers: dict, tickers_covered: int, age_hours: float = 0.0) -> dict:
+    """Build a minimal financial.json-like dict for guard tests."""
+    from datetime import timedelta
+    fetched = (datetime.now(timezone.utc) - timedelta(hours=age_hours)).isoformat()
+    return {
+        "schema": "financial_news.v1",
+        "fetched_at": fetched,
+        "providers": providers,
+        "counts": {"tickers_covered": tickers_covered, "tagged": tickers_covered, "raw": 0},
+    }
+
+
+# Import the guard function from build_news
+import importlib as _il
+import sys as _sys
+
+# Insert the repo root so build_news can be imported without the __main__ guard firing
+_bn = _il.import_module("scripts.build_news")
+_should_keep = _bn._should_keep_existing
+
+
+def test_guard_dark_over_healthy_blocked():
+    """A dark (polygon:False) candidate must not replace a healthy (polygon:True) existing."""
+    existing = _make_artifact({"polygon": True, "finnhub": True, "quiver": False, "gdelt": True},
+                              tickers_covered=643, age_hours=6)
+    candidate = _make_artifact({"polygon": False, "finnhub": False, "quiver": False, "gdelt": True},
+                               tickers_covered=11, age_hours=0)
+    assert _should_keep(existing, candidate) is True, \
+        "Guard must block dark-over-healthy overwrite"
+
+
+def test_guard_healthy_over_dark_allowed():
+    """A healthy candidate replaces a dark existing (guard returns False = allow write)."""
+    existing = _make_artifact({"polygon": False, "finnhub": False, "quiver": False, "gdelt": True},
+                              tickers_covered=11, age_hours=6)
+    candidate = _make_artifact({"polygon": True, "finnhub": True, "quiver": False, "gdelt": True},
+                               tickers_covered=643, age_hours=0)
+    assert _should_keep(existing, candidate) is False, \
+        "Guard must allow healthy-over-dark overwrite"
+
+
+def test_guard_stale_healthy_may_be_replaced():
+    """An existing artifact older than 36 h may be replaced even if healthier."""
+    existing = _make_artifact({"polygon": True, "finnhub": True, "quiver": False, "gdelt": True},
+                              tickers_covered=643, age_hours=37.0)   # > 36 h stale
+    candidate = _make_artifact({"polygon": False, "finnhub": False, "quiver": False, "gdelt": True},
+                               tickers_covered=11, age_hours=0)
+    assert _should_keep(existing, candidate) is False, \
+        "Guard must allow replacement when existing is stale (>36 h)"
+
+
+def test_guard_equal_health_newer_replaces_older():
+    """Same provider mix: guard returns False so newer candidate replaces older existing."""
+    existing = _make_artifact({"polygon": True, "finnhub": False, "quiver": False, "gdelt": True},
+                              tickers_covered=200, age_hours=10)
+    candidate = _make_artifact({"polygon": True, "finnhub": False, "quiver": False, "gdelt": True},
+                               tickers_covered=210, age_hours=0)
+    assert _should_keep(existing, candidate) is False, \
+        "Guard must allow overwrite when candidate health equals or exceeds existing"
+
+
+def test_guard_ticker_ratio_blocks_material_drop():
+    """Candidate with <1/3 the ticker coverage of a fresh existing is blocked."""
+    existing = _make_artifact({"polygon": True, "finnhub": True, "quiver": False, "gdelt": True},
+                              tickers_covered=300, age_hours=2)
+    # 80 < 300/3 = 100 — materially fewer tickers
+    candidate = _make_artifact({"polygon": True, "finnhub": True, "quiver": False, "gdelt": True},
+                               tickers_covered=80, age_hours=0)
+    assert _should_keep(existing, candidate) is True, \
+        "Guard must block when candidate covers materially fewer tickers"
+
+
+def test_guard_ticker_ratio_allows_minor_drop():
+    """Candidate with >1/3 the ticker coverage is allowed through."""
+    existing = _make_artifact({"polygon": True, "finnhub": True, "quiver": False, "gdelt": True},
+                              tickers_covered=300, age_hours=2)
+    # 150 > 300/3 = 100 — not a material drop
+    candidate = _make_artifact({"polygon": True, "finnhub": True, "quiver": False, "gdelt": True},
+                               tickers_covered=150, age_hours=0)
+    assert _should_keep(existing, candidate) is False, \
+        "Guard must allow overwrite when ticker drop is not material"
 
 
 if __name__ == "__main__":

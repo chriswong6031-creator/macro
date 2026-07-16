@@ -3700,7 +3700,7 @@ macro_news:
   lang: eng
   window_days: 4                  # fetch the last N days of macro news
   max_records: 200                # candidates pulled from GDELT before filtering
-  max_show: 18                    # headlines shown after filtering
+  max_show: 36                    # headlines shown after filtering (accordion handles any length)
   min_importance_score: 34        # drops official/wire plumbing that is not macro-relevant
   min_request_interval_s: 6       # GDELT pacing
   gdelt_attempts: 2
@@ -3711,6 +3711,9 @@ macro_news:
   news_window_days: 5
   official_window_days: 45
   cache_dir: data/macro/news_cache
+  # cache_ttl_hours: within-day re-fetch suppression ONLY — suppresses a second
+  # network hit when the build re-runs on the same calendar day.  It does NOT
+  # govern content freshness; use official_window_days / news_window_days for that.
   cache_ttl_hours: 12
   catalysts_horizon_days: 14
   # reputable macro/financial source allowlist (substring match on article domain).

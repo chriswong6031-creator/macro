@@ -221,7 +221,11 @@ _PREVIEW_RE = re.compile(
     # between the count and the noun, so it catches "N big things to watch" too.
     r"|\b(?:the\s+)?(?:week|day)\s+ahead\b"
     r"|^\s*this\s+week\s+in\b"
-    r"|\bwhat\s+to\s+(?:watch|know|expect)\b"
+    # MN-09: narrow 'what to know/watch/expect' so trailing-suffix forms don't fire.
+    # "Trump national address tonight. Here's what to know" is genuine news;
+    # "What to watch this week" or "Earnings preview: what to expect from Nvidia"
+    # are structural roundups. Match only at title-start or after a colon/semicolon.
+    r"|(?:^|[;:]\s*)what\s+to\s+(?:watch|know|expect)\b"
     r"|\bthings?\s+to\s+(?:watch|know|consider)\b"
     r"|\bto\s+watch\s+(?:this|next|the\s+coming|coming)\s+week\b"
     r"|\bto\s+watch\s+(?:this\s+week|today|next\s+week|tomorrow|on\s+\w+day)\b"
@@ -294,6 +298,66 @@ _PICKMILL_BYLINES = (
     "insider monkey", "simply wall st", "gurufocus", "stocknews",
 )
 
+# --------------------------------------------------------------------------- #
+# Phase-0 reject families — three additional leak families discovered 2026-07-16
+# --------------------------------------------------------------------------- #
+
+# F3a: Analyst-report batch stubs ("Analyst Report: AAPL") — Yahoo Finance /
+# Argus batch-feed stubs.  Three occupied 2026-07-16 at importance 49. Pattern
+# anchored at title start to avoid dropping real stories that mention analysts.
+# DO NOT match bare 'analyst' keyword: real upgrades/downgrades must still pass.
+_ANALYST_REPORT_STUB_RE = re.compile(r"^Analyst\s+Report\s*:", re.I)
+
+# F3b: Microcap dividend declaration stubs ("Smart Sand declares $0.10 dividend").
+# Pattern: <short company name> + declares/announces + $amount + dividend keyword.
+# EXEMPTED: titles containing any megacap alias from _MEGACAP_ALIASES — a real
+# Apple/Microsoft dividend change is macro-relevant; a micro-cap $0.10 is not.
+# Note: _FUND_DIST_RE already covers fund-vehicle distributions; this catches the
+# standalone corporate wire stubs that lack a fund-vehicle token.
+_DIV_DECL_RE = re.compile(
+    r"^\S+(?:\s\S+){0,3}\s+(?:declares?|announces?)\s+\$?[\d.]+.*\bdividend\b", re.I)
+
+# A dividend CHANGE (cut/suspension/raise/special) is genuine news even from a
+# small cap — only the routine "declares $0.NN dividend" wire stub is low-value.
+_DIV_CHANGE_RE = re.compile(
+    r"\b(?:cuts?|slash\w*|suspend\w*|rais\w*|hik\w*|increas\w*|boost\w*|special)\b", re.I)
+
+# All megacap alias strings flattened to a single lowercase set for fast O(1) lookup.
+# This avoids importing _MEGACAP_ALIASES at module level (it is defined further down).
+# Built lazily; callers use _megacap_alias_set() instead of referencing this directly.
+_MEGACAP_ALIAS_SET: frozenset[str] | None = None
+
+
+def _megacap_alias_set() -> frozenset[str]:
+    """Lazily build the flat set of all megacap alias strings (lowercase)."""
+    global _MEGACAP_ALIAS_SET
+    if _MEGACAP_ALIAS_SET is None:
+        _MEGACAP_ALIAS_SET = frozenset(
+            alias.lower()
+            for aliases in _MEGACAP_ALIASES.values()
+            for alias in aliases
+        )
+    return _MEGACAP_ALIAS_SET
+
+
+# F3c: Morning aggregator teaser roundups ("Grocery sales, United earnings,
+# Anthropic's IPO prep and more in Morning Squawk").  Check _PREVIEW_RE first;
+# this family extends it for the '… and more in <show-name>' pattern that
+# the existing branches don't catch.
+# Also drops "^\d+ things to know" style openers not already covered by
+# _PREVIEW_RE's 'things to' branch.
+# The '…and more in X' branch requires a show/aggregator noun after 'in' —
+# a bare '.{0,40}$' tail also matches genuine constructions like
+# "…and more in line with expectations" (verified false-drop in review).
+_MORNING_AGGREGATOR_RE = re.compile(
+    r"(?:"
+    r"\band\s+more\s+in\b[^,;]{0,40}"
+    r"\b(?:squawk|briefing|rundown|roundup|newsletter|brief|recap|wrap|bell|"
+    r"five\s+things|morning|midday)\b"   # '…and more in Morning Squawk'
+    r"|\band\s+more\s+ahead\s+of\b.{0,40}$"  # '…and more ahead of CPI'
+    r"|\bmore\s+in\s+(?:today\'?s?|this\s+week\'?s?)\s+(?:wrap|recap|rundown|roundup|briefing)\b"
+    r")", re.I)
+
 
 def is_low_value(title: str, domain: str = "", author: str = "") -> bool:
     """True for headlines to DROP outright: stock-pick roundup/advertorial
@@ -318,7 +382,8 @@ def low_value_reason(title: str, domain: str = "", author: str = "") -> str | No
 
     Reasons: pickmill_byline · stock_pick_roundup · single_stock_advertorial ·
     calendar_preview · routine_fund_distribution · lifestyle_content ·
-    personal_finance_advice · macro_release_stub."""
+    personal_finance_advice · analyst_report_stub · dividend_declaration_stub ·
+    morning_aggregator · macro_release_stub."""
     t = (title or "").strip()
     if not t:
         return "empty_title"
@@ -339,6 +404,23 @@ def low_value_reason(title: str, domain: str = "", author: str = "") -> str | No
         return "personal_finance_advice"
     if "?" in t and _PF_TOKEN_RE.search(t) and _FIRST_PERSON_RE.search(t):
         return "personal_finance_advice"
+    # F3a: Yahoo/Argus analyst-report batch stubs ("Analyst Report: AAPL").
+    # Anchored at title start; real analyst upgrades/downgrades are unaffected
+    # because they never start with the exact "Analyst Report:" prefix.
+    if _ANALYST_REPORT_STUB_RE.match(t):
+        return "analyst_report_stub"
+    # F3b: Microcap dividend-declaration stubs ("Smart Sand declares $0.10 dividend").
+    # Exempted if the title contains any megacap alias (AAPL dividend change is
+    # macro-relevant; a SmallCo $0.10 declaration occupies a slot for nothing) or
+    # any change-word (a cut/suspension/raise/special is news, not a routine stub).
+    if _DIV_DECL_RE.match(t) and not _DIV_CHANGE_RE.search(t):
+        tl = t.lower()
+        if not any(alias in tl for alias in _megacap_alias_set()):
+            return "dividend_declaration_stub"
+    # F3c: Morning-aggregator teaser roundups ("…and more in Morning Squawk").
+    # Check only if not already handled by _PREVIEW_RE above.
+    if _MORNING_AGGREGATOR_RE.search(t):
+        return "morning_aggregator"
     # Bare official-release title stubs ("Manufacturing and Trade Inventories and
     # Sales") carry no values — suppress with dedicated reason so the reject log
     # is traceable.  The check is delegated to the release registry so the alias

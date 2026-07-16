@@ -488,9 +488,22 @@ def _source_weight(source_tier: str, source_name: str = "", domain: str = "") ->
     return 0, ""
 
 
-def _sec_noise(title: str, source_name: str = "", domain: str = "") -> bool:
+def _regulatory_plumbing_noise(title: str, source_name: str = "", domain: str = "") -> bool:
+    """True for SEC AND Federal Reserve enforcement/consent-order items that carry
+    legal-plumbing noise, not macro-signal.  Widened from the original _sec_noise
+    to cover 'Federal Reserve Board issues enforcement action with TS Banking Group'
+    (scored 61 on federalreserve.gov, slipping into the top-10 over genuine macro
+    news).  Domain check: fires on both sec.gov and federalreserve.gov when the title
+    matches a REGULATORY_NOISE_TERMS keyword."""
     blob = f"{title} {source_name} {domain}".lower()
-    return ("sec" in blob or "sec.gov" in blob) and any(k in blob for k in REGULATORY_NOISE_TERMS)
+    is_regulatory_domain = ("sec" in blob or "sec.gov" in blob
+                            or "federalreserve.gov" in blob or "federal reserve" in blob)
+    return is_regulatory_domain and any(k in blob for k in REGULATORY_NOISE_TERMS)
+
+
+# Legacy alias — kept so any external import still resolves; internal callers use
+# the canonical name below.
+_sec_noise = _regulatory_plumbing_noise
 
 
 def _parse_dt(value: str) -> datetime | None:
@@ -515,6 +528,10 @@ def _parse_dt(value: str) -> datetime | None:
 
 
 def _freshness_points(value: str) -> int:
+    """Freshness bonus for items ≤ 168 h old; continuous PENALTY beyond 7 days.
+    The penalty is -2 per full week past the 7-day mark, floored at -12.  This
+    prevents a 29-day-old official statement (base importance 68) from outranking
+    a fresh tier-1 item scoring 65-66 purely on base importance."""
     dt = _parse_dt(value)
     if not dt:
         return 0
@@ -527,7 +544,10 @@ def _freshness_points(value: str) -> int:
         return 3
     if age_h <= 168:
         return 1
-    return 0
+    # Past 7 days: -2 per full week beyond the 7-day mark, floor -12.
+    # Example: 29 days old = 3 full extra weeks → -6 (nets to base_score - 6).
+    extra_weeks = int((age_h - 168) // 168)
+    return max(-12, -2 * extra_weeks)
 
 
 def _importance(title: str, theme: str, source_tier: str = "", source_name: str = "",
@@ -556,7 +576,7 @@ def _importance(title: str, theme: str, source_tier: str = "", source_name: str 
     if theme == "macro" and not hits_hi and not hits_med and source_tier != "tier1":
         score -= 10
         reasons.append("low title-level macro specificity")
-    if _sec_noise(title, source_name, domain):
+    if _regulatory_plumbing_noise(title, source_name, domain):
         score -= 34
         reasons.append("regulatory plumbing de-boost")
     score = max(0, min(100, score))
@@ -632,13 +652,15 @@ def filter_headlines(articles: list[dict], cfg: dict | None = None,
         if _nc.is_blocked(dom):
             if _rejected is not None and len(_rejected) < 200:
                 _rejected.append({"title": a.get("title", ""), "domain": dom,
-                                   "reason": "blocked_source"})
+                                   "reason": "blocked_source",
+                                   "feed": a.get("source", "")})
             continue
         _lv_reason = _nc.low_value_reason(a.get("title", ""), dom)
         if _lv_reason is not None:
             if _rejected is not None and len(_rejected) < 200:
                 _rejected.append({"title": a.get("title", ""), "domain": dom,
-                                   "reason": _lv_reason})
+                                   "reason": _lv_reason,
+                                   "feed": a.get("source", "")})
             continue
         official_ok = a.get("source_tier") == "official" or a.get("source") == "official"
         stock_ok = a.get("source_tier") == "stock_wire"
@@ -669,6 +691,32 @@ def filter_headlines(articles: list[dict], cfg: dict | None = None,
             continue
         seen.add(key)
         kept.append(enriched)
+    # MN-03: official-tier same-event dedup — collapse to the single highest-scored
+    # item per (domain, calendar-date, theme) for official-tier items only.  This
+    # catches the live case where the Fed emits both a statement AND an economic-
+    # projections release on the same seendate (2026-06-17, federalreserve.gov):
+    # the 60-char title-prefix dedup above cannot collapse them because the titles
+    # differ.  Non-official items are unaffected (they may legitimately run multiple
+    # stories about the same theme on the same day from the same domain).
+    _official_seen: dict[tuple, int] = {}   # (domain, date, theme) -> index in kept
+    _official_dedup: list[dict] = []
+    for h in kept:
+        if h.get("source_tier") == "official":
+            sd = h.get("seendate", "")
+            cal_date = sd[:10] if sd else ""            # 'YYYY-MM-DD' prefix
+            okey = (h.get("domain", ""), cal_date, h.get("theme", ""))
+            if okey in _official_seen:
+                prev_idx = _official_seen[okey]
+                prev = _official_dedup[prev_idx]
+                if (h.get("intelligence_score", 0) or 0) > (prev.get("intelligence_score", 0) or 0):
+                    _official_dedup[prev_idx] = h       # replace with higher-scored item
+                # else: keep existing winner; discard current h
+            else:
+                _official_seen[okey] = len(_official_dedup)
+                _official_dedup.append(h)
+        else:
+            _official_dedup.append(h)
+    kept = _official_dedup
     kept.sort(key=lambda h: (
         int(h.get("intelligence_score", h.get("importance_score", 0)) or 0),
         int(h.get("importance_score", 0) or 0),
@@ -1011,7 +1059,14 @@ def _fetch_official_pages(cfg: dict, today: date | None = None) -> tuple[list[di
                     when = _parse_page_date(nearby)
                     if when:
                         try:
-                            if date.fromisoformat(when) < today - timedelta(days=window_days):
+                            item_date = date.fromisoformat(when)
+                            if item_date < today - timedelta(days=window_days):
+                                continue
+                            # F6: skip future-dated nav anchors (e.g. scheduled-meeting
+                            # links showing a date 30+ days out).  A 30-day lookahead
+                            # is generous — real pre-announced release pages are rare
+                            # and the catalyst calendar handles upcoming events anyway.
+                            if item_date > today + timedelta(days=30):
                                 continue
                         except Exception:  # noqa: BLE001
                             pass
