@@ -49,6 +49,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-v2c | 4 |
 | metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
+| mlc | 1 |
 | momoedge | 8 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
@@ -88,7 +89,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 283 |
+| display | 284 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -97,7 +98,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 433 |
+| git | 434 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
@@ -512,6 +513,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | capability-manifest | `config/capability_manifest.yml` | other | on-demand | infrastructure | 1 | 0 |
 | capability-audit | `data/neuralweb/capability_audit.jsonl` | jsonl | on-demand | infrastructure | 0 | 0 |
+
+### mlc
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-stance-matrix | `site/mlcdata/stance_matrix.json` | json | daily-engine | display | 3 | 0 |
 
 ### momoedge
 
