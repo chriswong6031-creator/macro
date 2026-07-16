@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -85,11 +86,24 @@ def _calls(payload: dict) -> list[dict]:
     return rows
 
 
+def _nightly_lane() -> bool:
+    """COLLECT_LANE gate — house law: nightly is the sole advancer of data/ forward
+    ledgers. Same sentinel as engine.basket_turn_watch (daily.yml sets it on the
+    engine-lane step); US_LANE accepted as the legacy alias so tests keep working.
+    Added when build_index_leadership was wired into the nightly (dead-wire fix
+    2026-07-16) so provisional lanes (earlyclose / closing-bell) can never append."""
+    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return val.lower() == "nightly"
+
+
 def snapshot(payload: dict, member_map: dict | None = None,
              today: date | str | None = None, root: Path | None = None) -> int:
     """Append today's RUNNING + COILING calls with their FROZEN member baskets. Idempotent
     by (date, id). Never raises. `member_map` = {'tab:key': [tickers]}."""
     try:
+        if not _nightly_lane():
+            log.info("index_leadership track: COLLECT_LANE != nightly — snapshot append skipped")
+            return 0
         root = Path(root) if root else config.ROOT
         member_map = member_map or {}
         today_str = today.isoformat() if hasattr(today, "isoformat") else str(today or date.today())
