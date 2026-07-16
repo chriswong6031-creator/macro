@@ -11,7 +11,10 @@ Modes (--mode):
 
 Storage:
   Daily features : data/tape_flow/daily/<ROOT>.parquet  (1 row/day, tiny, git-committable)
-  Raw tape        : data/tape_flow/raw/_manifest.json   (manifest only; bytes on R2-plane)
+  Raw tape        : data/tape_flow/raw/_manifest.json   (byte-count manifest ONLY —
+                    raw tape bytes are aggregated then discarded; nothing is uploaded
+                    to R2 today. Raw-plane retention is tracked as WP-TAPE-TRUTH in
+                    research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md)
   State file      : data/tape_flow/_state.json          (resumability + round-robin cursor)
 
 Concurrency:
@@ -228,7 +231,13 @@ def _upsert_daily(root: str, row: dict) -> None:
 
 
 def _update_raw_manifest(root: str, trade_date: date, rows: int, bytes_approx: int) -> None:
-    """Record that a raw tape was written to R2 for this root+date."""
+    """Record row/byte counts for the tape processed for this root+date.
+
+    Manifest-only retention: the raw tape bytes themselves are discarded after
+    aggregation and are NOT uploaded to R2 — no raw-plane exists today. The
+    raw-plane implementation is tracked as WP-TAPE-TRUTH in
+    research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md.
+    """
     mp = _raw_manifest_path()
     try:
         manifest: dict = json.loads(mp.read_text()) if mp.exists() else {}
@@ -367,7 +376,9 @@ def _process_root_day(root: str, trade_date: date, mode: str,
     total_rows = (len(calls_df) if not calls_df.empty else 0) + \
                  (len(puts_df) if not puts_df.empty else 0)
 
-    # Raw tape retention: manifest only (bytes on R2-plane)
+    # Raw tape retention: byte-count manifest only — the raw bytes are discarded
+    # after aggregation (no R2 raw-plane today; tracked as WP-TAPE-TRUTH in
+    # research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md).
     if retain_raw and total_rows > 0:
         raw_calls = calls_df.memory_usage(deep=True).sum() if not calls_df.empty else 0
         raw_puts = puts_df.memory_usage(deep=True).sum() if not puts_df.empty else 0

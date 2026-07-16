@@ -26,8 +26,10 @@ DEFERRED (no implementation in v1):
   These are documented here so the next package stage has a clear gap list.
 
 SCHEDULING NOTE:
-  This script is NOT wired into any nightly schedule.  Scheduling follows once
-  the flow-ops lane settles and the PRISM tab is ready to consume the artifact.
+  Wired into a nightly launchd lane: com.macro.optionsmatrix runs
+  run_options_matrix.sh → `python -m scripts.build_options_matrix --publish`
+  on weekdays at 16:00 local (19:00 ET), gated on SPY EOD store freshness
+  (see ops/launchd/com.macro.optionsmatrix.plist).
 """
 from __future__ import annotations
 
