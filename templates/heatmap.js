@@ -280,6 +280,127 @@
   function sectorLabels(data) {
     var m = {}; (data.sectors || []).forEach(function (s) { m[s.key] = { en: s.en, zh: s.zh }; }); return m;
   }
+  // Finviz sub-industry (subsector) → Chinese. Sectors carry zh from the data;
+  // sub-industries did not (engine left them English by convention), so the map
+  // lives here in the renderer. Complete over the S&P universe; indZh() falls
+  // back to the English string for anything unmapped (never leaks a raw slug).
+  var INDUSTRY_ZH = {
+    'Advertising Agencies': '广告代理',
+    'Aerospace & Defense': '航空航天与国防',
+    'Agricultural Inputs': '农业投入品',
+    'Airlines': '航空公司',
+    'Apparel Manufacturing': '服装制造',
+    'Apparel Retail': '服装零售',
+    'Asset Management': '资产管理',
+    'Auto & Truck Dealerships': '汽车与卡车经销',
+    'Auto Manufacturers': '汽车制造',
+    'Auto Parts': '汽车零部件',
+    'Banks - Diversified': '综合性银行',
+    'Banks - Regional': '区域性银行',
+    'Beverages - Brewers': '啤酒酿造',
+    'Beverages - Non-Alcoholic': '非酒精饮料',
+    'Beverages - Wineries & Distilleries': '葡萄酒与烈酒',
+    'Biotechnology': '生物科技',
+    'Building Materials': '建筑材料',
+    'Building Products & Equipment': '建筑产品与设备',
+    'Capital Markets': '资本市场',
+    'Chemicals': '化工',
+    'Communication Equipment': '通信设备',
+    'Computer Hardware': '计算机硬件',
+    'Confectioners': '糖果食品',
+    'Conglomerates': '综合企业集团',
+    'Consulting Services': '咨询服务',
+    'Consumer Electronics': '消费电子',
+    'Copper': '铜',
+    'Credit Services': '信贷服务',
+    'Diagnostics & Research': '诊断与研究',
+    'Discount Stores': '折扣零售',
+    'Drug Manufacturers - General': '综合制药',
+    'Drug Manufacturers - Specialty & Generic': '专科与仿制药',
+    'Electrical Equipment & Parts': '电气设备与零部件',
+    'Electronic Components': '电子元件',
+    'Electronic Gaming & Multimedia': '电子游戏与多媒体',
+    'Engineering & Construction': '工程与建筑',
+    'Entertainment': '娱乐',
+    'Farm & Heavy Construction Machinery': '农业与重型工程机械',
+    'Farm Products': '农产品',
+    'Financial Data & Stock Exchanges': '金融数据与证券交易所',
+    'Food Distribution': '食品分销',
+    'Footwear & Accessories': '鞋类与配饰',
+    'Gold': '黄金',
+    'Grocery Stores': '食品杂货零售',
+    'Health Information Services': '健康信息服务',
+    'Healthcare Plans': '医疗保险',
+    'Home Improvement Retail': '家居装饰零售',
+    'Household & Personal Products': '家庭与个人用品',
+    'Industrial Distribution': '工业分销',
+    'Industrials': '工业',
+    'Information Technology Services': '信息技术服务',
+    'Insurance - Brokers': '保险经纪',
+    'Insurance - Diversified': '综合保险',
+    'Insurance - Life': '人寿保险',
+    'Insurance - Property & Casualty': '财产与意外保险',
+    'Insurance - Reinsurance': '再保险',
+    'Insurance - Specialty': '专业保险',
+    'Integrated Freight & Logistics': '综合货运与物流',
+    'Internet Content & Information': '互联网内容与信息',
+    'Internet Retail': '互联网零售',
+    'Leisure': '休闲用品',
+    'Lodging': '酒店住宿',
+    'Luxury Goods': '奢侈品',
+    'Medical Care Facilities': '医疗服务机构',
+    'Medical Devices': '医疗器械',
+    'Medical Distribution': '医药分销',
+    'Medical Instruments & Supplies': '医疗仪器与耗材',
+    'Oil & Gas E&P': '油气勘探与生产',
+    'Oil & Gas Equipment & Services': '油气设备与服务',
+    'Oil & Gas Integrated': '综合性油气',
+    'Oil & Gas Midstream': '油气中游',
+    'Oil & Gas Refining & Marketing': '油气炼制与销售',
+    'Packaged Foods': '包装食品',
+    'Packaging & Containers': '包装与容器',
+    'Personal Services': '个人服务',
+    'Pollution & Treatment Controls': '污染治理与控制',
+    'REIT - Healthcare Facilities': 'REIT-医疗设施',
+    'REIT - Hotel & Motel': 'REIT-酒店',
+    'REIT - Industrial': 'REIT-工业地产',
+    'REIT - Office': 'REIT-写字楼',
+    'REIT - Residential': 'REIT-住宅',
+    'REIT - Retail': 'REIT-零售物业',
+    'REIT - Specialty': 'REIT-专业地产',
+    'Railroads': '铁路运输',
+    'Real Estate Services': '房地产服务',
+    'Rental & Leasing Services': '租赁服务',
+    'Residential Construction': '住宅建筑',
+    'Resorts & Casinos': '度假村与博彩',
+    'Restaurants': '餐饮',
+    'Scientific & Technical Instruments': '科学与技术仪器',
+    'Security & Protection Services': '安防服务',
+    'Semiconductor Equipment & Materials': '半导体设备与材料',
+    'Semiconductors': '半导体',
+    'Software - Application': '应用软件',
+    'Software - Infrastructure': '基础软件',
+    'Solar': '太阳能',
+    'Specialty Business Services': '专业商业服务',
+    'Specialty Chemicals': '特种化工',
+    'Specialty Industrial Machinery': '专用工业机械',
+    'Specialty Retail': '专业零售',
+    'Staffing & Employment Services': '人力资源服务',
+    'Steel': '钢铁',
+    'Telecom Services': '电信服务',
+    'Tobacco': '烟草',
+    'Tools & Accessories': '工具与配件',
+    'Travel Services': '旅游服务',
+    'Trucking': '公路货运',
+    'Utilities - Diversified': '综合公用事业',
+    'Utilities - Independent Power Producers': '独立发电商',
+    'Utilities - Regulated Electric': '受监管电力',
+    'Utilities - Regulated Gas': '受监管燃气',
+    'Utilities - Regulated Water': '受监管供水',
+    'Utilities - Renewable': '可再生能源公用事业',
+    'Waste Management': '废物管理'
+  };
+  function indZh(n) { return (n && INDUSTRY_ZH[n]) || n; }
 
   /* ====================================================================== */
   /*  STOCK HOVER CARD — our conviction read, lazily fetched, degrades gracefully */
@@ -482,7 +603,7 @@
     var agg = sectorAgg(data, tiles, tf);
     var br = breadth(tiles, tf);
     var ttl = subName
-      ? L(esc(lab.en) + ' <span class="sub">— ' + esc(subName) + '</span>', esc(lab.zh) + ' <span class="sub">— ' + esc(subName) + '</span>')
+      ? L(esc(lab.en) + ' <span class="sub">— ' + esc(subName) + '</span>', esc(lab.zh) + ' <span class="sub">— ' + esc(indZh(subName)) + '</span>')
       : L(esc(lab.en), esc(lab.zh));
     var rows = tiles.slice().sort(function (a, b) { return (b.size || 0) - (a.size || 0); });
     var cap = 18, more = Math.max(0, rows.length - cap), body = '';
@@ -752,7 +873,7 @@
             + '" style="left:' + ix + 'px;top:' + iy + 'px;width:' + iw + 'px;height:' + ih + 'px">');
           if (shd) {
             html.push('<div class="hm-sub-hd" style="height:' + shd + 'px;line-height:' + shd + 'px">'
-              + '<span class="snm">' + esc(ind.name) + '</span></div>');
+              + '<span class="snm">' + L(esc(ind.name), esc(indZh(ind.name))) + '</span></div>');
           }
           var tileTop = shd;
           var tRects = squarify(ind.tiles.map(function (t) { return { value: (t.size || 0.0001), ref: t }; }),
@@ -1493,7 +1614,7 @@
       + '.hm-sec-hd .hm-sec-i{margin-left:auto;opacity:.4;font-size:11px;}'
       + '.hm-sec-hd:hover{background:color-mix(in srgb,var(--link) 22%,var(--panel2));} .hm-sec-hd:hover .hm-sec-i{opacity:.9;}'
       + '.hm-sub{position:absolute;overflow:hidden;border-radius:5px;}'
-      + '.hm-sub-hd{position:absolute;left:0;top:0;width:100%;padding:0 5px;font-size:9px;font-weight:700;color:color-mix(in srgb,var(--text) 66%,transparent);white-space:nowrap;z-index:3;text-transform:uppercase;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;cursor:help;background:color-mix(in srgb,#000000 24%,transparent);}'
+      + '.hm-sub-hd{position:absolute;left:0;top:0;width:100%;padding:0 5px;font-size:9px;font-weight:700;color:color-mix(in srgb,var(--text) 66%,transparent);white-space:nowrap;z-index:3;text-transform:uppercase;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;cursor:help;background:transparent;text-shadow:0 1px 2px rgba(0,0,0,.7);}'
       + '.hm-sub:hover>.hm-sub-hd{color:var(--text);background:color-mix(in srgb,var(--link) 30%,transparent);}'
       + '.hm-sub-hd .snm{pointer-events:none;}'
       + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;transition:filter .1s,box-shadow .1s;text-shadow:0 1px 2px rgba(0,0,0,.45);}'
