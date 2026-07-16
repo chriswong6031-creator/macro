@@ -134,11 +134,64 @@ def test_build_records_gates_dedups_and_stamps():
     assert r["source_tier"] == 2
 
 
-def test_scheduled_ref_window_plus_minus_one_day():
-    recs = ni.build_records(
+def test_scheduled_ref_reaction_window_and_channel():
+    sched = {"2026-06-20": "LPR"}
+    # same-day monetary article -> stamped
+    assert ni._scheduled_ref_for("2026-06-20", sched, "monetary") == "LPR@2026-06-20"
+    # day-AFTER reaction (release yesterday) -> stamped
+    assert ni._scheduled_ref_for("2026-06-21", sched, "monetary") == "LPR@2026-06-20"
+    # market-wrap reaction is calendar-explained flow too
+    assert ni._scheduled_ref_for("2026-06-20", sched, "markets") == "LPR@2026-06-20"
+    # day-BEFORE preview (release tomorrow) can't explain today's flow -> no stamp
+    assert ni._scheduled_ref_for("2026-06-19", sched, "monetary") == ""
+    # off-channel themes are the headline-shock flow -> never stamped (MN-06):
+    # here the stamp feeds importance_score at accrual (+0.30/+0.40 into the
+    # keep-FIRST PIT store), so the leak is baked in, not just context.
+    for theme in ("tech", "global_geo", "china_geo", "politics", "policy",
+                  "trade", "industrial_policy", "fiscal"):
+        assert ni._scheduled_ref_for("2026-06-20", sched, theme) == "", theme
+    # 2 days away / garbage dates -> no stamp
+    assert ni._scheduled_ref_for("2026-06-22", sched, "monetary") == ""
+    assert ni._scheduled_ref_for("bad-date", sched, "monetary") == ""
+    # own-channel stamps: CPI->inflation, CREDIT->credit, ACTIVITY->growth
+    assert ni._scheduled_ref_for("2026-07-09", {"2026-07-09": "CPI"}, "inflation") == "CPI@2026-07-09"
+    assert ni._scheduled_ref_for("2026-07-10", {"2026-07-10": "CREDIT"}, "credit") == "CREDIT@2026-07-10"
+    assert ni._scheduled_ref_for("2026-07-15", {"2026-07-15": "ACTIVITY"}, "growth") == "ACTIVITY@2026-07-15"
+    # but not cross-channel: an inflation article is not CREDIT reaction flow
+    assert ni._scheduled_ref_for("2026-07-10", {"2026-07-10": "CREDIT"}, "inflation") == ""
+
+
+def test_scheduled_ref_channel_map_covers_high_impact():
+    """Fail-closed contract: every _HIGH_IMPACT_CAL release type must have a
+    channel entry — an unmapped type stamps NOTHING (silently reverting to the
+    blanket stamp is the MN-06 bug), so the map must stay in lockstep with the
+    calendar gate."""
+    missing = ni._HIGH_IMPACT_CAL - set(ni._SCHEDULED_REF_THEMES)
+    assert not missing, f"_SCHEDULED_REF_THEMES missing high-impact types: {missing}"
+    # unmapped type -> fail closed, no stamp even on a matching-looking theme
+    assert ni._scheduled_ref_for("2026-06-20", {"2026-06-20": "TRADE"}, "monetary") == ""
+
+
+def test_build_records_day_after_reaction_stamped_day_before_not():
+    day_after = ni.build_records(
         [{"title": "央行公开市场操作", "summary": "", "source": "em", "time": "2026-06-21"}],
         {"2026-06-20": "LPR"}, "now")
-    assert recs[0]["scheduled_ref"] == "LPR@2026-06-20"   # ±1 day match
+    assert day_after[0]["scheduled_ref"] == "LPR@2026-06-20"   # reaction window
+    day_before = ni.build_records(
+        [{"title": "央行公开市场操作", "summary": "", "source": "em", "time": "2026-06-19"}],
+        {"2026-06-20": "LPR"}, "now")
+    assert day_before[0]["scheduled_ref"] == ""                # release tomorrow ≠ today's flow
+
+
+def test_build_records_off_channel_theme_not_stamped():
+    # MN-06 CN case: a tech headline inside the ACTIVITY window must not get the
+    # +0.30 scheduled_ref importance bump at accrual time.
+    stamped, unstamped = ni.build_records(
+        [{"title": "工业增加值数据公布 经济数据超预期", "summary": "", "source": "em", "time": "2026-07-15"},
+         {"title": "华为发布大模型新品 算力芯片受关注", "summary": "", "source": "em", "time": "2026-07-15"}],
+        {"2026-07-15": "ACTIVITY"}, "now")
+    assert stamped["theme"] == "growth" and stamped["scheduled_ref"] == "ACTIVITY@2026-07-15"
+    assert unstamped["theme"] == "tech" and unstamped["scheduled_ref"] == ""
 
 
 # ---- accrue: append-only, keep-FIRST --------------------------------------- #
