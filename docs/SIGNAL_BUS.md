@@ -518,7 +518,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| site-stance-matrix | `site/mlcdata/stance_matrix.json` | json | daily-engine | display | 3 | 0 |
+| site-stance-matrix | `site/mlcdata/stance_matrix.json` | json | daily-engine | display | 4 | 0 |
 
 ### momoedge
 

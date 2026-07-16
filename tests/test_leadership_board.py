@@ -954,3 +954,82 @@ def test_generals_lens_goog_googl_cross_form():
     html = env.from_string(RENDER_TMPL).render(d=payload)
     assert "carrying the index" in html
     assert "领涨主力" in html
+
+
+# ── W2b sector stance chip tests ─────────────────────────────────────────────
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_sector_rs_rows_carry_data_sec_when_ticker_present():
+    """data-sec attribute is emitted on .ldb-rs-row when sector_rs rows carry ticker."""
+    env = _env()
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    # FULL_PAYLOAD sector_rs rows all carry ticker (XLK, XLF, XLV, XLI, XLU)
+    assert 'data-sec="XLK"' in html
+    assert 'data-sec="XLF"' in html
+    assert 'data-sec="XLU"' in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_sector_rs_rows_no_data_sec_when_sector_rs_empty():
+    """data-sec attribute absent gracefully when sector_rs is empty."""
+    env = _env()
+    payload = dict(FULL_PAYLOAD, sector_rs=[])
+    html = env.from_string(RENDER_TMPL).render(d=payload)
+    assert 'data-sec=' not in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_scoped_script_and_fetch_string_present_when_payload_renders():
+    """The scoped IIFE script + stance_matrix.json fetch string present when payload renders."""
+    env = _env()
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    assert '<script>' in html
+    assert 'mlcdata/stance_matrix.json' in html
+    # IIFE pattern
+    assert '(function(){' in html
+    # Fail-silent catch
+    assert '.catch(function(){})' in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_scoped_script_absent_when_payload_is_none():
+    """Script block absent when payload is None (fail-open render produces no output)."""
+    env = _env()
+    # The macro renders nothing when d is falsy
+    html = env.from_string(RENDER_TMPL).render(d=None)
+    assert 'mlcdata/stance_matrix.json' not in html
+    assert 'ldb-sec-chip' not in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_chip_word_constants_match_w2b_exactly():
+    """Chip word constants in the script match W2b basket/allocation chips exactly."""
+    tmpl_path = TEMPLATE_DIR / "_leadership_board.html.j2"
+    src = tmpl_path.read_text(encoding="utf-8")
+    # EN words
+    assert "'split view'" in src
+    assert "'mixed reads'" in src
+    # ZH words — must appear as string literals in the script
+    assert "'严重分歧'" in src
+    assert "'观点分歧'" in src
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_payload_without_stance_data_renders_unchanged():
+    """A payload without any sectors field renders without crash (missing-key safe).
+
+    The script is static HTML — no server-side key access — so render is always
+    identical regardless of stance data availability. This is a no-crash assert.
+    """
+    env = _env()
+    # Payload lacking any stance-matrix-related key
+    minimal = {
+        "as_of": "2026-07-16",
+        "trend_state": "cooling",
+        "members": [],
+        "sector_rs": [],
+    }
+    html = env.from_string(RENDER_TMPL).render(d=minimal)
+    # Rendered without exception; script tag still present (static)
+    assert '<script>' in html
+    assert 'mlcdata/stance_matrix.json' in html
