@@ -1,322 +1,176 @@
 {
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
-  "as_of": "2026-07-14",
-  "generated_utc": "2026-07-16T04:55:43Z",
+  "as_of": "2026-07-15",
+  "generated_utc": "2026-07-16T06:16:07Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 13,
-    "n_eff": 6.18,
+    "n": 12,
+    "n_eff": 2.88,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 13 candidates \u2248 6.18 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 12 candidates \u2248 2.88 independent bets."
   },
   "same_thesis_groups": [
     {
       "members": [
-        "ANDE",
-        "BTU",
-        "DAR",
-        "FTI",
-        "GIII",
+        "AEO",
+        "CROX",
+        "FIVE",
+        "HWM",
+        "PII",
         "PTON",
-        "REX",
-        "STT"
+        "TLN",
+        "URBN",
+        "VFC"
       ],
-      "size": 8,
+      "size": 9,
       "basis": "membership-jaccard",
-      "label": "Energy"
+      "label": "Consumer Discretionary"
     }
   ],
-  "earnings_coverage_frac": 0.846,
+  "earnings_coverage_frac": 0.75,
   "by_ticker": {
-    "REX": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "FTI",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [
-            "sector:Energy"
-          ],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "BTU",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.17<0.2",
-          "shared_groups": [
-            "sector:Energy"
-          ],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "DAR",
-          "combined": 0.8857,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8857,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        }
-      ],
-      "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as FTI \u2014 Energy (similarity 100%).",
-      "why_zh": "\u4e0e FTI \u62bc\u6ce8\u76f8\u540c \u2014 Energy\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "FTI": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership-only:r2=0.14<0.2",
-      "nearest": [
-        {
-          "ticker": "REX",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [
-            "sector:Energy"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "BTU",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [
-            "sector:Energy"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "KO",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-23",
-        "same_week_peers": [
-          "DAR"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as REX \u2014 Energy (similarity 100%).",
-      "why_zh": "\u4e0e REX \u62bc\u6ce8\u76f8\u540c \u2014 Energy\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
     "BTU": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
+      "verdict": "new",
+      "max_similarity": 0.0,
       "basis": "membership-only:r2=0.17<0.2",
       "nearest": [
         {
-          "ticker": "REX",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.17<0.2",
-          "shared_groups": [
-            "sector:Energy"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "FTI",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [
-            "sector:Energy"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "KO",
+          "ticker": "TLN",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.17<0.2",
           "shared_groups": [],
-          "same_earnings_week": true
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "ADM",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "PTON",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-07-30",
         "same_week_peers": [
-          "KO"
+          "HWM",
+          "VFC"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as REX \u2014 Energy (similarity 100%).",
-      "why_zh": "\u4e0e REX \u62bc\u6ce8\u76f8\u540c \u2014 Energy\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer TLN at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 TLN\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
-    "KO": {
-      "verdict": "new",
-      "max_similarity": 0.3333,
-      "basis": "membership-only:r2=0.15<0.2",
-      "nearest": [
-        {
-          "ticker": "ANDE",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.15<0.2",
-          "shared_groups": [
-            "sector:Consumer Staples"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "DAR",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.15<0.2",
-          "shared_groups": [
-            "sector:Consumer Staples"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "REX",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.15<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-28",
-        "same_week_peers": [
-          "BTU"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer ANDE at 33% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 ANDE\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
-    },
-    "ANDE": {
+    "TLN": {
       "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership-only:r2=0.15<0.2",
+      "max_similarity": 0.7026,
+      "basis": "membership+high-tier-factor",
       "nearest": [
         {
-          "ticker": "DAR",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.15<0.2",
-          "shared_groups": [
-            "sector:Consumer Staples"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "KO",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.15<0.2",
-          "shared_groups": [
-            "sector:Consumer Staples"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "REX",
-          "combined": 0.0,
+          "ticker": "HWM",
+          "combined": 0.7026,
           "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.15<0.2",
+          "factor_cosine": 0.7026,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "FIVE",
+          "combined": 0.6707,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.6707,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "URBN",
+          "combined": 0.4944,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.4944,
+          "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
         }
       ],
       "earnings_leg": {
-        "next_date": "2026-08-03",
+        "next_date": "2026-08-06",
         "same_week_peers": [
-          "CF",
-          "NYT",
+          "ADM",
+          "CROX",
+          "PII",
           "PTON",
-          "SBUX",
           "WBD"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as DAR \u2014 Consumer Staples (similarity 100%).",
-      "why_zh": "\u4e0e DAR \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Staples\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+      "why_en": "Same bet as HWM \u2014 shared factor profile (similarity 70%).",
+      "why_zh": "\u4e0e HWM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 70%\uff09\u3002"
     },
-    "DAR": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership+high-tier-factor",
+    "ADM": {
+      "verdict": "new",
+      "max_similarity": 0.0,
+      "basis": "membership-only:r2=0.16<0.2",
       "nearest": [
         {
-          "ticker": "ANDE",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
+          "ticker": "BTU",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
           "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.15<0.2",
-          "shared_groups": [
-            "sector:Consumer Staples"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "GIII",
-          "combined": 0.8955,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8955,
-          "factor_basis": "high-tier-factors:4of4",
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
           "shared_groups": [],
           "same_earnings_week": false
         },
         {
-          "ticker": "REX",
-          "combined": 0.8857,
+          "ticker": "TLN",
+          "combined": 0.0,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.8857,
-          "factor_basis": "high-tier-factors:4of4",
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
           "shared_groups": [],
-          "same_earnings_week": false
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "PTON",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
         }
       ],
       "earnings_leg": {
-        "next_date": "2026-07-23",
+        "next_date": "2026-08-04",
         "same_week_peers": [
-          "FTI"
+          "CROX",
+          "PII",
+          "PTON",
+          "TLN",
+          "WBD"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as ANDE \u2014 Consumer Staples (similarity 100%).",
-      "why_zh": "\u4e0e ANDE \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Staples\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer BTU at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 BTU\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
     "PTON": {
       "verdict": "duplicate",
@@ -324,7 +178,7 @@
       "basis": "membership-only:r2=0.19<0.2",
       "nearest": [
         {
-          "ticker": "GIII",
+          "ticker": "VFC",
           "combined": 1.0,
           "membership_jaccard": 1.0,
           "factor_cosine": null,
@@ -335,284 +189,92 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "SBUX",
-          "combined": 0.5,
-          "membership_jaccard": 0.5,
+          "ticker": "AEO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.19<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "CROX",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.19<0.2",
           "shared_groups": [
             "sector:Consumer Discretionary"
           ],
           "same_earnings_week": true
-        },
-        {
-          "ticker": "REX",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.19<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-08-06",
         "same_week_peers": [
-          "ANDE",
-          "CF",
-          "NYT",
-          "SBUX",
+          "ADM",
+          "CROX",
+          "PII",
+          "TLN",
           "WBD"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as GIII \u2014 Consumer Discretionary (similarity 100%).",
-      "why_zh": "\u4e0e GIII \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "SBUX": {
-      "verdict": "partial",
-      "max_similarity": 0.5,
-      "basis": "membership-only:r2=0.14<0.2",
-      "nearest": [
-        {
-          "ticker": "PTON",
-          "combined": 0.5,
-          "membership_jaccard": 0.5,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.19<0.2",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "GIII",
-          "combined": 0.5,
-          "membership_jaccard": 0.5,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "REX",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-04",
-        "same_week_peers": [
-          "ANDE",
-          "CF",
-          "NYT",
-          "PTON",
-          "WBD"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Partial overlap with PTON \u2014 Consumer Discretionary (similarity 50%).",
-      "why_zh": "\u4e0e PTON \u90e8\u5206\u91cd\u53e0 \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 50%\uff09\u3002"
+      "why_en": "Same bet as VFC \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e VFC \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
     "WBD": {
-      "verdict": "partial",
-      "max_similarity": 0.5,
+      "verdict": "new",
+      "max_similarity": 0.0,
       "basis": "membership-only:r2=0.10<0.2",
       "nearest": [
         {
-          "ticker": "NYT",
-          "combined": 0.5,
-          "membership_jaccard": 0.5,
+          "ticker": "BTU",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "TLN",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.10<0.2",
-          "shared_groups": [
-            "sector:Communication Services"
-          ],
+          "shared_groups": [],
           "same_earnings_week": true
         },
         {
-          "ticker": "REX",
+          "ticker": "ADM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.10<0.2",
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
           "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "FTI",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
+          "same_earnings_week": true
         }
       ],
       "earnings_leg": {
         "next_date": "2026-08-06",
         "same_week_peers": [
-          "ANDE",
-          "CF",
-          "NYT",
+          "ADM",
+          "CROX",
+          "PII",
           "PTON",
-          "SBUX"
+          "TLN"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Partial overlap with NYT \u2014 Communication Services (similarity 50%).",
-      "why_zh": "\u4e0e NYT \u90e8\u5206\u91cd\u53e0 \u2014 Communication Services\uff08\u76f8\u4f3c\u5ea6 50%\uff09\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer BTU at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 BTU\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
-    "CF": {
-      "verdict": "partial",
-      "max_similarity": 0.6039,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "REX",
-          "combined": 0.6039,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.6039,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "DAR",
-          "combined": 0.4481,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.4481,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "GIII",
-          "combined": 0.0608,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.0608,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-05",
-        "same_week_peers": [
-          "ANDE",
-          "NYT",
-          "PTON",
-          "SBUX",
-          "WBD"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Partial overlap with REX \u2014 partially overlapping exposure (similarity 60%).",
-      "why_zh": "\u4e0e REX \u90e8\u5206\u91cd\u53e0 \u2014 \u90e8\u5206\u91cd\u53e0\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 60%\uff09\u3002"
-    },
-    "STT": {
-      "verdict": "duplicate",
-      "max_similarity": 0.9617,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "GIII",
-          "combined": 0.9617,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9617,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "DAR",
-          "combined": 0.8495,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8495,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "REX",
-          "combined": 0.5895,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.5895,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-16",
-        "same_week_peers": [],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as GIII \u2014 shared factor profile (similarity 96%).",
-      "why_zh": "\u4e0e GIII \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 96%\uff09\u3002"
-    },
-    "NYT": {
-      "verdict": "partial",
-      "max_similarity": 0.5,
-      "basis": "membership-only:r2=0.07<0.2",
-      "nearest": [
-        {
-          "ticker": "WBD",
-          "combined": 0.5,
-          "membership_jaccard": 0.5,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.10<0.2",
-          "shared_groups": [
-            "sector:Communication Services"
-          ],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "REX",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.07<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "FTI",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-05",
-        "same_week_peers": [
-          "ANDE",
-          "CF",
-          "PTON",
-          "SBUX",
-          "WBD"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Partial overlap with WBD \u2014 Communication Services (similarity 50%).",
-      "why_zh": "\u4e0e WBD \u90e8\u5206\u91cd\u53e0 \u2014 Communication Services\uff08\u76f8\u4f3c\u5ea6 50%\uff09\u3002"
-    },
-    "GIII": {
+    "VFC": {
       "verdict": "duplicate",
       "max_similarity": 1.0,
       "basis": "membership+high-tier-factor",
@@ -626,24 +288,124 @@
           "shared_groups": [
             "sector:Consumer Discretionary"
           ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "AEO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "CROX",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-07-29",
+        "same_week_peers": [
+          "BTU",
+          "HWM"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as PTON \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e PTON \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "HWM": {
+      "verdict": "duplicate",
+      "max_similarity": 0.945,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "FIVE",
+          "combined": 0.945,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.945,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "URBN",
+          "combined": 0.8686,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8686,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "VFC",
+          "combined": 0.8133,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8133,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": true
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-07-30",
+        "same_week_peers": [
+          "BTU",
+          "VFC"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as FIVE \u2014 shared factor profile (similarity 94%).",
+      "why_zh": "\u4e0e FIVE \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 94%\uff09\u3002"
+    },
+    "AEO": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.17<0.2",
+      "nearest": [
+        {
+          "ticker": "PTON",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.19<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
           "same_earnings_week": null
         },
         {
-          "ticker": "STT",
-          "combined": 0.9617,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9617,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
+          "ticker": "VFC",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
           "same_earnings_week": null
         },
         {
-          "ticker": "DAR",
-          "combined": 0.8955,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8955,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
+          "ticker": "CROX",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
           "same_earnings_week": null
         }
       ],
@@ -655,191 +417,219 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as PTON \u2014 Consumer Discretionary (similarity 100%).",
       "why_zh": "\u4e0e PTON \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "CROX": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.16<0.2",
+      "nearest": [
+        {
+          "ticker": "PTON",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.19<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "VFC",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "AEO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-06",
+        "same_week_peers": [
+          "ADM",
+          "PII",
+          "PTON",
+          "TLN",
+          "WBD"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as PTON \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e PTON \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "FIVE": {
+      "verdict": "duplicate",
+      "max_similarity": 0.945,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "HWM",
+          "combined": 0.945,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.945,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "URBN",
+          "combined": 0.9375,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9375,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "VFC",
+          "combined": 0.8814,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.8814,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as HWM \u2014 shared factor profile (similarity 94%).",
+      "why_zh": "\u4e0e HWM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 94%\uff09\u3002"
+    },
+    "URBN": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "PTON",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.19<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "VFC",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9599,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "AEO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as PTON \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e PTON \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "PII": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "PTON",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.19<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "VFC",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9748,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "AEO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-04",
+        "same_week_peers": [
+          "ADM",
+          "CROX",
+          "PTON",
+          "TLN",
+          "WBD"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as PTON \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e PTON \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     }
   },
   "pair_basis": {
-    "REX__FTI": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": [
-        "sector:Energy"
-      ]
-    },
-    "REX__BTU": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.17<0.2",
-      "shared_groups": [
-        "sector:Energy"
-      ]
-    },
-    "REX__KO": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "REX__ANDE": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "REX__DAR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8857,
-      "combined": 0.8857,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "REX__PTON": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": []
-    },
-    "REX__SBUX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "REX__WBD": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
-      "shared_groups": []
-    },
-    "REX__CF": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.6039,
-      "combined": 0.6039,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "REX__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.5895,
-      "combined": 0.5895,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "REX__NYT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.07<0.2",
-      "shared_groups": []
-    },
-    "REX__GIII": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.6135,
-      "combined": 0.6135,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "FTI__BTU": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": [
-        "sector:Energy"
-      ]
-    },
-    "FTI__KO": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "FTI__ANDE": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "FTI__DAR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "FTI__PTON": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "FTI__SBUX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "FTI__WBD": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "FTI__CF": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "FTI__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "FTI__NYT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "FTI__GIII": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "BTU__KO": {
+    "BTU__TLN": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__ANDE": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.17<0.2",
-      "shared_groups": []
-    },
-    "BTU__DAR": {
+    "BTU__ADM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -853,13 +643,6 @@
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__SBUX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.17<0.2",
-      "shared_groups": []
-    },
     "BTU__WBD": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -867,216 +650,187 @@
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__CF": {
+    "BTU__VFC": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__STT": {
+    "BTU__HWM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__NYT": {
+    "BTU__AEO": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__GIII": {
+    "BTU__CROX": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "KO__ANDE": {
-      "membership_jaccard": 0.3333,
-      "factor_cosine": null,
-      "combined": 0.3333,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": [
-        "sector:Consumer Staples"
-      ]
-    },
-    "KO__DAR": {
-      "membership_jaccard": 0.3333,
-      "factor_cosine": null,
-      "combined": 0.3333,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": [
-        "sector:Consumer Staples"
-      ]
-    },
-    "KO__PTON": {
+    "BTU__FIVE": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "KO__SBUX": {
+    "BTU__URBN": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "KO__WBD": {
+    "BTU__PII": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "KO__CF": {
+    "TLN__ADM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
       "shared_groups": []
     },
-    "KO__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "KO__NYT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "KO__GIII": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "ANDE__DAR": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": [
-        "sector:Consumer Staples"
-      ]
-    },
-    "ANDE__PTON": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "ANDE__SBUX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "ANDE__WBD": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "ANDE__CF": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "ANDE__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "ANDE__NYT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "ANDE__GIII": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.15<0.2",
-      "shared_groups": []
-    },
-    "DAR__PTON": {
+    "TLN__PTON": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": []
     },
-    "DAR__SBUX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "DAR__WBD": {
+    "TLN__WBD": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "DAR__CF": {
+    "TLN__VFC": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.4481,
-      "combined": 0.4481,
+      "factor_cosine": 0.2735,
+      "combined": 0.2735,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "DAR__STT": {
+    "TLN__HWM": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.8495,
-      "combined": 0.8495,
+      "factor_cosine": 0.7026,
+      "combined": 0.7026,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "DAR__NYT": {
+    "TLN__AEO": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "DAR__GIII": {
+    "TLN__CROX": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.8955,
-      "combined": 0.8955,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "TLN__FIVE": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.6707,
+      "combined": 0.6707,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "PTON__SBUX": {
-      "membership_jaccard": 0.5,
+    "TLN__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.4944,
+      "combined": 0.4944,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "TLN__PII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.2452,
+      "combined": 0.2452,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "ADM__PTON": {
+      "membership_jaccard": 0.0,
       "factor_cosine": null,
-      "combined": 0.5,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ADM__WBD": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ADM__VFC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ADM__HWM": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ADM__AEO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ADM__CROX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ADM__FIVE": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ADM__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ADM__PII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
     },
     "PTON__WBD": {
       "membership_jaccard": 0.0,
@@ -1085,28 +839,7 @@
       "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": []
     },
-    "PTON__CF": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": []
-    },
-    "PTON__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": []
-    },
-    "PTON__NYT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": []
-    },
-    "PTON__GIII": {
+    "PTON__VFC": {
       "membership_jaccard": 1.0,
       "factor_cosine": null,
       "combined": 1.0,
@@ -1115,114 +848,283 @@
         "sector:Consumer Discretionary"
       ]
     },
-    "SBUX__WBD": {
+    "PTON__HWM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": []
     },
-    "SBUX__CF": {
-      "membership_jaccard": 0.0,
+    "PTON__AEO": {
+      "membership_jaccard": 1.0,
       "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "SBUX__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "SBUX__NYT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "SBUX__GIII": {
-      "membership_jaccard": 0.5,
-      "factor_cosine": null,
-      "combined": 0.5,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": [
         "sector:Consumer Discretionary"
       ]
     },
-    "WBD__CF": {
-      "membership_jaccard": 0.0,
+    "PTON__CROX": {
+      "membership_jaccard": 1.0,
       "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
-      "shared_groups": []
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
     },
-    "WBD__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
-      "shared_groups": []
-    },
-    "WBD__NYT": {
+    "PTON__FIVE": {
       "membership_jaccard": 0.5,
       "factor_cosine": null,
       "combined": 0.5,
-      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": [
-        "sector:Communication Services"
+        "sector:Consumer Discretionary"
       ]
     },
-    "WBD__GIII": {
+    "PTON__URBN": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "PTON__PII": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "WBD__VFC": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "CF__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.0,
-      "combined": 0.0,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "CF__NYT": {
+    "WBD__HWM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "CF__GIII": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.0608,
-      "combined": 0.0608,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "STT__NYT": {
+    "WBD__AEO": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "STT__GIII": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.9617,
-      "combined": 0.9617,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "NYT__GIII": {
+    "WBD__CROX": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
+    },
+    "WBD__FIVE": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "WBD__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "WBD__PII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "VFC__HWM": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8133,
+      "combined": 0.8133,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "VFC__AEO": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "VFC__CROX": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "VFC__FIVE": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": 0.8814,
+      "combined": 0.8814,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "VFC__URBN": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9599,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "VFC__PII": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9748,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "HWM__AEO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": []
+    },
+    "HWM__CROX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "HWM__FIVE": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.945,
+      "combined": 0.945,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "HWM__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8686,
+      "combined": 0.8686,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "HWM__PII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7615,
+      "combined": 0.7615,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "AEO__CROX": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "AEO__FIVE": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": null,
+      "combined": 0.5,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "AEO__URBN": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "AEO__PII": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "CROX__FIVE": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": null,
+      "combined": 0.5,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "CROX__URBN": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "CROX__PII": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "FIVE__URBN": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": 0.9375,
+      "combined": 0.9375,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "FIVE__PII": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": 0.8157,
+      "combined": 0.8157,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "URBN__PII": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9574,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
     }
   },
   "verdicts": {
@@ -1233,7 +1135,7 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 6.4,
+    "entry_open": 3.6,
     "setting_up": 1.0
   },
   "source_passport": {
@@ -1245,7 +1147,7 @@
     "us_standouts_v2": {
       "path": "site/factordata/us_standouts_v2.json",
       "found": true,
-      "as_of": "2026-07-14"
+      "as_of": "2026-07-15"
     },
     "membership": {
       "path": "data/baskets/membership.json",
