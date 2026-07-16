@@ -41,10 +41,12 @@ DEPLOY NOTE: the per-user/global quota ledger is written to MACRO_API_STATE_DIR
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -100,9 +102,12 @@ def health() -> dict:
 
 # ── First-party analytics collector — POST /api/collect ─────────────────────────
 # Same-origin beacon sink for the macro static site (templates/theme.js loadMMAnalytics).
-# Anonymous by design — every visitor is measured. The visitor id (mm_aid, httpOnly,
-# Domain=.mastermind-x.com, shared with the Terminal at app.mastermind-x.com), the raw client IP,
-# and the user-agent are stamped HERE; geolocation is backfilled off the hot path by
+# Anonymous by default — every visitor is measured. Signed-in visitors are ADDITIONALLY
+# attributed to their VERIFIED Supabase user (user_id, a uuid FK to auth.users) by reading
+# the shared session cookie off the same-origin beacon (see _mm_supabase_access_token +
+# _mm_verify_uid_cached) — a client-claimed identity is never trusted. The visitor id (mm_aid,
+# httpOnly, Domain=.mastermind-x.com, shared with the Terminal at app.mastermind-x.com), the raw
+# client IP, and the user-agent are stamped HERE; geolocation is backfilled off the hot path by
 # scripts/geo_enrich.py. Rows go to the shared Supabase `analytics_events` table
 # (charting-app supabase/migrations/0004_analytics.sql) via PostgREST using the service-role key
 # (deny-all RLS — the anon key never touches it). The DB write runs as a BackgroundTask so the
@@ -118,13 +123,15 @@ _MM_EVENT_TYPES = {
 
 
 def _mm_client_ip(request: Request) -> str:
-    # Real VISITOR IP, not the CDN edge. mastermind-x.com is behind Tencent EdgeOne, which carries the
-    # client IP in EO-Connecting-IP; Caddy's trusted_proxies=private_ranges does NOT trust the public
-    # CDN, so X-Forwarded-For is the EdgeOne EDGE IP (e.g. "Tucumcari NM"), not the person. Prefer the
-    # CDN real-client header (EO- for EdgeOne, CF-/True-Client-IP for a Cloudflare-fronted path), then
-    # fall back to XFF/x-real-ip. These CDN headers pass through Caddy untouched.
+    # Real VISITOR IP, not the CDN edge. mastermind-x.com is behind Tencent EdgeOne. EdgeOne does NOT
+    # send a real-client-IP header by default, so X-Forwarded-For is the EdgeOne EDGE IP (e.g.
+    # "Tucumcari NM" / a Singapore PoP for China traffic), not the person. Once the operator adds the
+    # EdgeOne rule "Client IP Header" = EO-Client-IP (Network Optimization), the real IP arrives here.
+    # Precedence: the configured real-IP header first (EO-Client-IP), then the other CDN real-client
+    # headers, then XFF/x-real-ip. All of these pass through Caddy untouched. See app/deploy/SITE_GATE.md
+    # and the edgeone-real-ip-headers note.
     h = request.headers
-    for k in ("eo-connecting-ip", "cf-connecting-ip", "true-client-ip"):
+    for k in ("eo-client-ip", "eo-connecting-ip", "cf-connecting-ip", "true-client-ip"):
         v = (h.get(k) or "").strip()
         if v:
             return v[:64]
@@ -132,6 +139,101 @@ def _mm_client_ip(request: Request) -> str:
     if xff:
         return xff.split(",")[0].strip()[:64]
     return (h.get("x-real-ip") or "").strip()[:64] or "unknown"
+
+
+# ── Registered-visitor identity (attribute authenticated visitors to their user) ──
+# The beacon is same-origin to mastermind-x.com and sends cookies, so /api/collect
+# receives the SHARED Supabase session cookie (sb-<ref>-auth-token, written by
+# templates/theme.js COOKIE_STORAGE and scoped to .mastermind-x.com). We read the
+# access token from it, VERIFY it secretlessly against Supabase (never trust a
+# client-claimed identity — user_id is a uuid FK to auth.users), and stamp the
+# verified user UUID on the rows. Email stays out of the row (resolved at read time
+# by the admin via auth.users). Verification is cached by token and runs off the
+# beacon's hot path (inside the background insert task).
+
+
+def _sb_storage_key() -> str:
+    """The @supabase/ssr cookie key: sb-<project-ref>-auth-token (ref = SUPABASE_URL subdomain)."""
+    try:
+        ref = SUPABASE_URL.split("://", 1)[-1].split(".", 1)[0]
+    except Exception:  # noqa: BLE001
+        ref = ""
+    return f"sb-{ref}-auth-token"
+
+
+_SB_STORAGE_KEY = _sb_storage_key()
+
+
+def _mm_supabase_access_token(request: Request) -> str | None:
+    """Extract the Supabase access_token from the shared session cookie.
+
+    Value format (matches templates/theme.js): "base64-" + base64url(session JSON),
+    single cookie or chunked as <key>.0, <key>.1, … Returns the token or None. Never raises.
+    """
+    try:
+        ck = request.cookies
+        raw = ck.get(_SB_STORAGE_KEY)
+        if raw is None:
+            parts, i = [], 0
+            while i < 33:
+                c = ck.get(f"{_SB_STORAGE_KEY}.{i}")
+                if c is None:
+                    break
+                parts.append(c)
+                i += 1
+            if not parts:
+                return None
+            raw = "".join(parts)
+        if not raw.startswith("base64-"):
+            return None
+        b = raw[len("base64-"):].replace("-", "+").replace("_", "/")
+        b += "=" * (-len(b) % 4)
+        session = json.loads(base64.b64decode(b).decode("utf-8"))
+        tok = session.get("access_token")
+        return tok if isinstance(tok, str) and tok else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+_MM_UID_CACHE: dict = {}          # access_token -> (uid_or_None, expiry_monotonic)
+_MM_UID_CACHE_TTL = 600.0         # 10 min — many beacons per session reuse one token
+_MM_UID_CACHE_LOCK = threading.Lock()
+
+
+def _mm_verify_uid_cached(token: str) -> str | None:
+    """Verify the access token against Supabase and return the user's UUID (auth.users.id).
+
+    Secretless (GET /auth/v1/user with the public anon key, same idiom as require_user),
+    cached by token. Invalid/expired tokens cache as None so bad tokens aren't re-checked.
+    Never raises.
+    """
+    now = time.monotonic()
+    with _MM_UID_CACHE_LOCK:
+        hit = _MM_UID_CACHE.get(token)
+        if hit and hit[1] > now:
+            return hit[0]
+    uid = None
+    try:
+        req = urllib.request.Request(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers={"Authorization": f"Bearer {token}", "apikey": SUPABASE_ANON_KEY},
+        )
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read())
+        u = data.get("id")
+        if isinstance(u, str) and u:
+            try:
+                uuid.UUID(u)   # user_id is a uuid FK to auth.users — never stamp a non-uuid
+                uid = u
+            except (ValueError, TypeError):
+                uid = None
+    except Exception:  # noqa: BLE001 — invalid/expired token or upstream down; stay anonymous
+        uid = None
+    with _MM_UID_CACHE_LOCK:
+        if len(_MM_UID_CACHE) > 5000:   # coarse cap; never unbounded
+            _MM_UID_CACHE.clear()
+        _MM_UID_CACHE[token] = (uid, now + _MM_UID_CACHE_TTL)
+    return uid
 
 
 def _mm_clamp(v: Any, n: int):
@@ -149,10 +251,20 @@ def _mm_int(v: Any, lo: int, hi: int):
     return max(lo, min(hi, x))
 
 
-def _mm_analytics_insert(rows: list) -> None:
-    """Best-effort PostgREST insert into analytics_events. Never raises (runs as a background task)."""
+def _mm_analytics_insert(rows: list, access_token: str | None = None) -> None:
+    """Best-effort PostgREST insert into analytics_events. Never raises (runs as a background task).
+
+    When a Supabase access token is present, verify it (cached) and stamp the resulting
+    user UUID on every row so authenticated visitors are attributed to their account.
+    user_id is a uuid FK to auth.users, so only a VERIFIED id is ever written.
+    """
     if not rows or not SUPABASE_SERVICE_ROLE_KEY:
         return
+    if access_token:
+        uid = _mm_verify_uid_cached(access_token)
+        if uid:
+            for r in rows:
+                r["user_id"] = uid
     try:
         req = urllib.request.Request(
             f"{SUPABASE_URL}/rest/v1/analytics_events",
@@ -239,7 +351,11 @@ async def collect(request: Request, background: BackgroundTasks) -> Response:
             "meta": meta,
         })
 
-    background.add_task(_mm_analytics_insert, rows)
+    # Registered visitors: pull the shared Supabase session token off the cookie and
+    # attribute the batch to their verified user (done inside the background task so
+    # the beacon still returns immediately; anonymous visitors are unaffected).
+    access_token = _mm_supabase_access_token(request)
+    background.add_task(_mm_analytics_insert, rows, access_token)
 
     resp = Response(status_code=204, headers={"cache-control": "no-store"})
     if mint:

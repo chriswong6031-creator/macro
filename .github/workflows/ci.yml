@@ -22,6 +22,11 @@ on:
       - "scripts/check_hub_a11y.py"
       - "tests/test_check_hub_a11y.py"
       - "site/theme.js"
+      # analytics identity capture — registered-visitor email attribution (server reads the
+      # shared Supabase session cookie off the beacon) + read-side coalescing.
+      - "app/main.py"
+      - "admin/analytics_first_party.py"
+      - "tests/test_collect_identity.py"
       # title-i18n guard: bilingual/CJK text must never sit in a title= attribute.
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
@@ -2200,3 +2205,18 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: CCW-W6 Study S1 unit tests
         run: python -m pytest tests/test_ccw_study_s1.py -v
+
+  collect-identity:
+    # Registered-visitor identity capture (app/main.py /api/collect): Supabase session-cookie
+    # parsing (single + chunked base64url), secretless cached token verification (monkeypatched),
+    # and the EO-Client-IP real-IP precedence. Imports app.main, so fastapi is installed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest fastapi
+      - name: identity capture unit tests
+        run: python -m pytest tests/test_collect_identity.py -v
