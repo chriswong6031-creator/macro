@@ -1,7 +1,14 @@
 {
-  "ts": "2026-07-15T23:18:15+00:00",
-  "main_sha": "74316e3e74361c95583e6ab9ab5280788c639e69",
-  "red_required": [],
-  "green": true,
-  "consecutive_failures": 0
+  "ts": "2026-07-16T03:42:59+00:00",
+  "main_sha": "f338690c0983d6c9d498c84f157752b4c3fc7bba",
+  "red_required": [
+    {
+      "name": "grader-manifest",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/29469320410/job/87529132437"
+    }
+  ],
+  "green": false,
+  "consecutive_failures": 1
 }
