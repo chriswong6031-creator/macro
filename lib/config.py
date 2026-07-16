@@ -36,6 +36,10 @@ def data_dir() -> Path:
     return ROOT / load()["storage"]["data_dir"]
 
 
+def site_dir() -> Path:
+    return ROOT / load()["storage"]["site_dir"]
+
+
 def secret(name: str) -> str | None:
     """Secrets come from env (GitHub Actions secrets locally via shell env)."""
     v = os.environ.get(name, "").strip()

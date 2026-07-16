@@ -12119,6 +12119,35 @@ artifacts:
       (uncovered/stale-period names → null chip), coverage.analyst_* keys +
       young-data tag (finnhub store live since 2026-06-20).
 
+  site-stance-matrix:
+    path: site/mlcdata/stance_matrix.json
+    format: json
+    producer: scripts/build_stance_matrix.py
+    known_extra_writers: []
+    owner_program: mlc
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: mlc.stance_matrix.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/baskets.html.j2
+      - templates/baskets_desk.js
+      - templates/allocation.html.j2
+    external_consumers: []
+    notes: >
+      MLC-W2b. Per-basket stance matrix: sector/theme/confluence/allocation/m7c
+      verdicts each mapped to a signed tier (-2..+2). Spread and agreement
+      (aligned/mixed/split) derived from the tier spread. bilingual tip_en/tip_zh
+      receipts for Tier-2 hovers. Absent inputs yield null fields (fail-soft).
+      Display-only; de-escalation only; nothing here ranks, gates, sizes, or
+      escalates. CONST-ART2 authority: false.
+      authority.may_rank/gate/size/escalate=false.
+
   leader-radar-state-history:
     path: data/leader_radar/state_history.parquet
     format: parquet

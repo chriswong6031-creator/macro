@@ -472,6 +472,16 @@ lanes:
       # serial post-band
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: build_stance_matrix
+        module: scripts.build_stance_matrix
+        note: >
+          MLC-W2b stance-matrix builder. Per-basket coherence layer collecting
+          sector/theme/confluence/allocation/m7c verdicts mapped to signed tier
+          scale (-2..+2). Reads baskets.json, sector_central.json (built by
+          build_sector_central above), basket_confluence.json, allocation.json,
+          mag7_regime latest.json. Absent inputs yield null fields / row omission
+          (fail-soft, always exits 0). Display-only; CONST-ART2 authority: false.
+          outputs: [site/mlcdata/stance_matrix.json]
       - id: build_basket_turn_grading
         module: scripts.build_basket_turn_grading
         note: >
