@@ -1252,9 +1252,12 @@
   <h2>{{ t('Standout individual stocks', '个股精选') }} {{ help('Stocks showing stronger momentum than peers in their own market and sector. Not a forecast.', '相对本市场、本板块更强的个股。非预测。') }}</h2>
   {% set buys = (setups.buy if setups else []) %}
   {% if buys %}
-  <div class="cards">
+  {# shared progressive "See more" — theme.js initShowMore inserts the .sm-bar
+     (Show N more / Show all / Show fewer) after this grid, matching the US /
+     China / HK / Canada standout boards. 3 rows shown initially, per width. #}
+  <div class="cards" data-showmore-rows="3">
     {% for b in buys %}
-    <a class="card {{ 'hidden stmore' if loop.index > 12 }}" href="intl_stock.html#{{ b.ticker }}">
+    <a class="card" href="intl_stock.html#{{ b.ticker }}">
       <div class="hd"><span class="flg">{{ b.flag }}</span><span class="tk">{{ b.ticker }}</span>
         <span style="flex:1"></span>
         {% if b.dir %}<span class="lad {{ b.dir }}">{{ b.label or b.state }}</span>{% endif %}</div>
@@ -1276,7 +1279,6 @@
     </a>
     {% endfor %}
   </div>
-  {% if buys|length > 12 %}<button class="more-btn" data-more="stmore">{{ t('Show more', '显示更多') }} ({{ buys|length }})</button>{% endif %}
   <p class="caveat" style="margin-top:10px">{{ t('Each card is ranked against its own market. Click for details.', '每张卡片都相对自身市场排序。点击查看详情。') }}</p>
   {% else %}<p class="muted small">{{ t('Standouts unavailable — universe still building.', '精选不可用 — 个股库构建中。') }}</p>{% endif %}
 </div>
