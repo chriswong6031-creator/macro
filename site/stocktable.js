@@ -325,6 +325,15 @@
     var sortKey   = (typeof cfg.rankFn === 'function') ? '_rank' : null;
     var sortDir   = (typeof cfg.rankFn === 'function') ? 'desc'  : null;
 
+    /* ── pagination state (opt-in via cfg.pageSize; 0/undefined = render all) ──
+       Keeps very long boards short: render the first `pageSize` rows, reveal more
+       via a footer bar that mirrors the grid "See more" (.sm-bar). shown resets to
+       the first page whenever the filter/sort/column set changes, and persists while
+       the reader steps through pages (guarded by _keepPage). */
+    var pageSize = parseInt(cfg.pageSize, 10) || 0;
+    var shown    = pageSize > 0 ? pageSize : Infinity;
+    var _keepPage = false;
+
     /* ── build skeleton ───────────────────────────────────────────────── */
     container.innerHTML = '';
     container.style.position = 'relative';
@@ -362,6 +371,23 @@
     table.appendChild(tbody);
     tableWrap.appendChild(table);
     container.appendChild(tableWrap);
+
+    // ── pagination footer bar (only when cfg.pageSize is set) ──
+    var pageBar = null;
+    if (pageSize > 0) {
+      pageBar = document.createElement('div');
+      pageBar.className = 'sm-bar st-pagebar';   // reuse the grid See-more chrome (theme.css)
+      container.appendChild(pageBar);
+      pageBar.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-pg]'); if (!btn) return;
+        var act = btn.getAttribute('data-pg');
+        if (act === 'more')      shown = (shown === Infinity ? pageSize : shown) + pageSize;
+        else if (act === 'all')  shown = Infinity;
+        else { shown = pageSize; tableWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+        _keepPage = true;   // this change is a page step, not a filter/sort change
+        renderRows();
+      });
+    }
 
     // ── build filter toolbar (also wires all filter events) ──
     _buildFilterRow(allRows, payload);
@@ -589,10 +615,17 @@
       var rows = applyFilters(allRows);
       rows = sortRows(rows);
 
+      // Pagination: reset to the first page on any filter/sort/column change; the
+      // page-step buttons set _keepPage so stepping through doesn't snap back.
+      var total = rows.length;
+      if (pageSize > 0 && !_keepPage) shown = pageSize;
+      _keepPage = false;
+      var view = (pageSize > 0 && shown < total) ? rows.slice(0, shown) : rows;
+
       var cols = orderedCols();
       var frag = document.createDocumentFragment();
 
-      rows.forEach(function(row) {
+      view.forEach(function(row) {
         var tr = document.createElement('tr');
 
         // stage/zone accent class
@@ -650,12 +683,41 @@
       tbody.innerHTML = '';
       tbody.appendChild(frag);
 
+      _renderPageBar(total, view.length);
+
       var t1 = performance.now();
       // report perf to console (dev aid — removed in prod builds)
-      if (global.__stDebug) console.log('StockTable render', rows.length, 'rows in', (t1-t0).toFixed(1), 'ms');
+      if (global.__stDebug) console.log('StockTable render', view.length, '/', rows.length, 'rows in', (t1-t0).toFixed(1), 'ms');
 
-      // update count chips
+      // update count chips (always over the FULL filtered set, not the current page)
       _updateCountChips(allRows, rows);
+    }
+
+    /* Pagination footer — mirrors the grid See-more bar (.sm-bar chrome from
+       theme.css). Hidden when the whole filtered set fits in one page. */
+    function _renderPageBar(total, viewLen) {
+      if (!pageBar) return;
+      if (total <= pageSize) { pageBar.style.display = 'none'; return; }
+      pageBar.style.display = '';
+      var remaining = total - viewLen;
+      if (remaining > 0) {
+        var next = Math.min(pageSize, remaining);
+        pageBar.innerHTML =
+          '<span class="sm-count">' + bi('Showing <b>' + viewLen + '</b> of <b>' + total + '</b>',
+                                         '已显示 <b>' + viewLen + '</b> / <b>' + total + '</b>') + '</span>' +
+          '<div class="sm-btns">' +
+            '<button type="button" class="sm-btn" data-pg="more"><span class="sm-ic">▾</span>' +
+              bi('Show ' + next + ' more', '再显示 ' + next + ' 行') + '</button>' +
+            '<button type="button" class="sm-btn sm-ghost" data-pg="all">' +
+              bi('Show all ' + total, '全部显示 ' + total) + '</button>' +
+          '</div>';
+      } else {
+        pageBar.innerHTML =
+          '<span class="sm-count">' + bi('Showing all <b>' + total + '</b>',
+                                         '已显示全部 <b>' + total + '</b>') + '</span>' +
+          '<div class="sm-btns"><button type="button" class="sm-btn sm-collapse" data-pg="fewer">' +
+            '<span class="sm-ic">▾</span>' + bi('Show fewer', '收起') + '</button></div>';
+      }
     }
 
     /* ── filter row builder ──────────────────────────────────────────────── */

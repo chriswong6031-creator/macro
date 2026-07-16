@@ -2930,6 +2930,14 @@
     var _h = e.target.closest('span.help:not([data-tip-en])'); if (_h) upgradeOne(_h);  // JIT-upgrade client-rendered icons
     var t = e.target.closest('[data-tip-en]');
     if (t) {
+      // If the tap landed on an interactive control NESTED INSIDE the tip
+      // container (a button/link/field that is a descendant of t — e.g. the
+      // Grid/Table view toggle, whose wrapper carries the data-tip), let the
+      // control activate instead of hijacking the tap for the tooltip. When t
+      // IS the interactive element (or its ancestor), the tap-to-tip behaviour
+      // for tiny chips is preserved (ctrl === t, or ctrl contains t).
+      var ctrl = e.target.closest('button, a, input, select, textarea, label, [role="button"]');
+      if (ctrl && ctrl !== t && t.contains(ctrl)) { if (cur) hide(); return; }
       e.preventDefault(); e.stopPropagation();
       if (cur === t) { hide(); } else { show(t); }
     } else if (!(pop && pop.contains(e.target))) {
