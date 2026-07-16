@@ -59,9 +59,14 @@ name: closing-bell
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '5 20 * * 1-5'   # 20:05 UTC = 16:05 ET (EDT, UTC-4, Mar→Nov)
-  #   - cron: '5 21 * * 1-5'   # 21:05 UTC = 16:05 ET (EST, UTC-5, Nov→Mar)
+  schedule:
+    # DST pair — both fire year-round; the session-day guard below self-skips the
+    # wrong-season line (pre-close ET) and the already-rendered duplicate, so each
+    # trading day gets exactly one ~16:05-ET render. Measured wall-time 109 min
+    # (run 29465427989: spine 81m long pole, parallel band 18m) → site lands
+    # ~17:55 ET, superseding the retired earlyclose lane (fuller scope, same hour).
+    - cron: '5 20 * * 1-5'   # 20:05 UTC = 16:05 ET (EDT, Mar→Nov); 15:05 ET in winter → guard skips
+    - cron: '5 21 * * 1-5'   # 21:05 UTC = 16:05 ET (EST, Nov→Mar); 17:05 ET in summer → stamp-dedup skips
 
 permissions:
   contents: write
@@ -126,27 +131,43 @@ jobs:
         continue-on-error: true
         run: python -m scripts.check_price_store_freshness --heal
 
-      # ── (c) SESSION-DAY GUARD (holiday / weekend skip) ───────────────────────────────
+      # ── (c) SESSION-DAY GUARD (holiday / weekend / pre-close / duplicate skip) ────────
       # See FRESHNESS GATE ADAPTATION in the file header for why we check is_session()
-      # rather than expected_last_session() here.
-      # exit 0 = today is a NYSE session day → proceed.
-      # Any nonzero exit = holiday or weekend → skip the render entirely.
-      - name: session-day guard (holiday/weekend safety)
+      # rather than expected_last_session() here.  Three skip conditions, all green
+      # no-ops (this is a provisional lane — a skip is never an alarm):
+      #   exit 3 — holiday / weekend (not a NYSE session day)
+      #   exit 4 — pre-close fire: the 20:05-UTC cron lands at 15:05 ET in winter (EST);
+      #            never render mid-session — the 21:05-UTC line covers winter.
+      #   exit 5 — already rendered this session: in summer the 21:05-UTC line fires at
+      #            17:05 ET after the 16:05 render committed its stamp; dedup on
+      #            site/live/closingbell_stamp.json as_of (checkout is post-commit fresh).
+      - name: session-day guard (holiday/weekend/pre-close/duplicate safety)
         id: guard
         if: steps.mutex.outputs.skip != 'true'
         run: |
           if python3 -c "
-          import sys, datetime
+          import sys, datetime, json, pathlib
           sys.path.insert(0, '.')
           from lib.nyse_calendar import is_session
           import zoneinfo
-          et = datetime.datetime.now(zoneinfo.ZoneInfo('America/New_York')).date()
-          sys.exit(0 if is_session(et) else 3)
+          now = datetime.datetime.now(zoneinfo.ZoneInfo('America/New_York'))
+          et = now.date()
+          if not is_session(et):
+              sys.exit(3)
+          if now.strftime('%H%M') < '1602':
+              sys.exit(4)
+          try:
+              st = json.loads(pathlib.Path('site/live/closingbell_stamp.json').read_text())
+              if st.get('as_of') == et.isoformat():
+                  sys.exit(5)
+          except Exception:
+              pass
+          sys.exit(0)
           "; then
-            echo "today is a NYSE session day — proceeding with closingbell render"
+            echo "session day, post-close, not yet rendered — proceeding with closingbell render"
             echo "skip=false" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::today is not a NYSE session day (holiday/weekend) — skipping closingbell render"
+            echo "::notice::closingbell skip (holiday/weekend, pre-close DST cron, or already rendered this session)"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
