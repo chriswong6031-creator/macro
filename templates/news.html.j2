@@ -19,6 +19,9 @@
     {% set _ = ctx_heads.append(h) %}
   {% endif %}
 {% endfor %}
+{# ZH-mode honesty: kept US-source headlines whose title_zh translation is missing
+   (render-lane cache miss) fall back to the English original; disclose it. #}
+{% set n_zh_missing = heads|rejectattr('title_zh')|list|length %}
 
 {# macro_releases: from vm (loaded by build_site from site/news/macro_releases.json).
    Artifacts are sibling-wave JSON, so guard the pinned schema TYPES too: a valid-JSON
@@ -369,7 +372,7 @@
         </div>
         <div class="board-note">
           <span class="l-en">Kept headlines where a typed event was detected — sorted by novelty z-score (how unusual this event is for this ticker/theme), then recency. Theme is secondary context. No event = demoted to Context section below.</span>
-          <span class="l-zh">检测到类型化事件的保留头条，按新颖度z值（该事件对此标的/主题的异常程度）及时效性排序。主题为次要背景。无事件类型 = 降至下方背景区。</span>
+          <span class="l-zh">检测到类型化事件的保留头条，按新颖度z值（该事件对此标的/主题的异常程度）及时效性排序。主题为次要背景。无事件类型 = 降至下方背景区。{% if n_zh_missing > 0 %}部分标题来自英文信源，暂以原文显示。{% endif %}</span>
         </div>
         {% if ev_heads %}
           {% for h in ev_heads %}
@@ -590,7 +593,7 @@
         </summary>
         <div class="board-note">
           <span class="l-en">Kept headlines without a detected event class — macro-relevant background, not actionable deltas. Collapsed by default.</span>
-          <span class="l-zh">无检测到事件类型的保留头条 — 宏观相关背景，非可操作变化。默认折叠。</span>
+          <span class="l-zh">无检测到事件类型的保留头条 — 宏观相关背景，非可操作变化。默认折叠。{% if n_zh_missing > 0 %}部分标题来自英文信源，暂以原文显示。{% endif %}</span>
         </div>
         {% if ctx_heads %}
           {% for h in ctx_heads %}

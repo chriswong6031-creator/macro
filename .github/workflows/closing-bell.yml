@@ -257,6 +257,11 @@ jobs:
           LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
           RENDER_NO_DRIP: "1"
           CLOSINGBELL: "1"
+          # Sole exception to this step's "no LLM" rule: the build_news title_zh cache
+          # fill (engine/news_translate.py). INERT unless config news_translation.
+          # render_lanes is true (default off) — the RENDER_NO_DRIP=1 sentinel gates the
+          # call in code, so nothing here talks to an LLM until the operator opts in.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           run_py() {

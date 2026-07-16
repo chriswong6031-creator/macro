@@ -3917,6 +3917,13 @@ profile_translation:
 # =============================================================================
 news_translation:
   enabled: true
+  render_lanes: false             # opt-in: allow the API fill on the secret-free render lanes
+                                  # (render / engine-render / closing-bell; detected in code via
+                                  # their RENDER_NO_DRIP=1 sentinel). OFF = those lanes stay
+                                  # cache-only, so fresh intraday titles fall back to English in
+                                  # ZH mode until the nightly translates + commits them. Flip to
+                                  # true to close that window (few cents/day on deepseek-chat;
+                                  # the key is already wired inertly into those lanes' news steps).
   provider: deepseek
   model: deepseek-chat
   base_url: https://api.deepseek.com/anthropic
