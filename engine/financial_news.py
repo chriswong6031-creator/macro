@@ -360,6 +360,46 @@ def _finnhub_news(cfg: dict, now: datetime) -> tuple[list[dict], list[dict]]:
 
 
 # --------------------------------------------------------------------------- #
+# MN-08: government-agency acronym collisions. Quiver assigns tickers verbatim,
+# so an Immigration & Customs Enforcement headline arrives tagged ICE
+# (Intercontinental Exchange). For this acronym set only, drop the tag when the
+# title reads as the AGENCY — spelled-out name or strong enforcement vocabulary.
+# Bare ambiguity ("SEC filing") keeps the tag. Display-tier only.
+# --------------------------------------------------------------------------- #
+_AGENCY_NAMES: dict[str, tuple[str, ...]] = {
+    "ICE": ("immigration and customs enforcement", "customs enforcement"),
+    "DOJ": ("department of justice", "justice department"),
+    "SEC": ("securities and exchange commission",),
+    "FBI": ("federal bureau of investigation",),
+    "CIA": ("central intelligence agency",),
+    "DEA": ("drug enforcement administration", "drug enforcement agency"),
+    "IRS": ("internal revenue service",),
+    "EPA": ("environmental protection agency",),
+    "FTC": ("federal trade commission",),
+    "FCC": ("federal communications commission",),
+}
+# "AI agents" is common exchange/fintech copy — only bare "agents" is agency context.
+_AGENCY_CONTEXT = re.compile(
+    r"\b(enforcement|raid(?:s|ed|ing)?|(?<!AI )agents|immigration|immigrants?|"
+    r"deport(?:ation|ations|ed|ees)?|detain(?:s|ed|ee|ees|ment)?|"
+    r"indict(?:ment|ments|ed|s)?|arrest(?:s|ed|ing)?|subpoena(?:s|ed)?|"
+    r"prosecutors?|crackdowns?|asylum|migrants?|undocumented|attorney general)\b",
+    re.I)
+
+
+def _agency_not_ticker(ticker: str, title: str) -> bool:
+    """True when `ticker` collides with a government-agency acronym and `title`
+    carries agency context. Conservative: no context → keep the tag."""
+    names = _AGENCY_NAMES.get(ticker)
+    if not names:
+        return False
+    low = (title or "").lower().replace("&", "and")
+    if any(n in low for n in names):
+        return True
+    return bool(_AGENCY_CONTEXT.search(title or ""))
+
+
+# --------------------------------------------------------------------------- #
 # Quiver news tail — the /quivernews press-release/AI-summary feed collected by
 # collectors/quiver.py. Folded in here so there is ONE editorial-news surface
 # (it's just more headlines → the same quality pipeline ranks it below real wires).
@@ -382,6 +422,9 @@ def _quiver_news(cfg: dict, emap: dict, now: datetime) -> list[dict]:
             url = str(r.get("url") or "")
             tk = str(r.get("ticker") or "").upper().strip()
             tks = [tk] if tk and tk != "NAN" else sorted(nc.match_entities(title, emap))
+            # MN-08: match_entities can re-tag ICE/FBI/... too, so filter the
+            # final list, not just the Quiver-assigned tag.
+            tks = [t for t in tks if not _agency_not_ticker(t, title)]
             tval = r.get("time")
             iso = ""
             try:

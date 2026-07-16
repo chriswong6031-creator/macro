@@ -385,6 +385,68 @@ def test_normalise_tier0_gdelt_still_dropped():
     assert result is None, "gdelt provider must not override tier-0 domains"
 
 
+# --------------------------------------------------------------------------- #
+# MN-08 — agency-acronym collision guard (_agency_not_ticker + _quiver_news)
+# --------------------------------------------------------------------------- #
+def test_agency_guard_drops_on_context_vocab():
+    # generic enforcement vocabulary → agency, drop the tag
+    assert fn._agency_not_ticker(
+        "ICE", "ICE agents raid meatpacking plants in nationwide immigration crackdown")
+    assert fn._agency_not_ticker("IRS", "IRS arrests tax preparer over fraud scheme")
+    assert fn._agency_not_ticker("DOJ", "DOJ announces indictment of crypto founder")
+
+
+def test_agency_guard_drops_on_spelled_out_name():
+    assert fn._agency_not_ticker(
+        "ICE", "Immigration and Customs Enforcement expands workplace audits")
+    # "&" variant normalises to "and"
+    assert fn._agency_not_ticker(
+        "ICE", "Immigration & Customs Enforcement detains 200 workers")
+    assert fn._agency_not_ticker(
+        "SEC", "Securities and Exchange Commission unveils new disclosure rule")
+
+
+def test_agency_guard_keeps_genuine_finance_headlines():
+    # real Intercontinental Exchange news — no agency context, tag KEPT
+    assert not fn._agency_not_ticker(
+        "ICE", "ICE reports record Q2 earnings as exchange volumes surge")
+    # conservative: bare ambiguity like "SEC filing" keeps the tag
+    assert not fn._agency_not_ticker("SEC", "New SEC filing reveals Berkshire stake")
+    # "AI agents" is fintech copy, not agency context
+    assert not fn._agency_not_ticker(
+        "ICE", "ICE launches AI agents platform for fixed income traders")
+
+
+def test_agency_guard_ignores_non_colliding_tickers():
+    # guard is scoped to the acronym set — AAPL with agency vocab is untouched
+    assert not fn._agency_not_ticker("AAPL", "Apple faces DOJ antitrust indictment")
+
+
+def test_quiver_news_agency_headline_untagged(tmp_path, monkeypatch):
+    # end-to-end through _quiver_news: agency headline kept but ticker dropped;
+    # genuine exchange earnings headline keeps its ICE tag
+    import pandas as pd
+    from lib import config
+    qdir = tmp_path / "data" / "quiver"
+    qdir.mkdir(parents=True)
+    pd.DataFrame([
+        {"headline": "ICE agents raid meatpacking plants in immigration crackdown",
+         "url": "https://quiverquant.com/news/a1", "ticker": "ICE",
+         "time": "2026-06-19T11:00:00", "summary": ""},
+        {"headline": "ICE reports record Q2 earnings as exchange volumes surge",
+         "url": "https://quiverquant.com/news/a2", "ticker": "ICE",
+         "time": "2026-06-19T11:05:00", "summary": ""},
+    ]).to_parquet(qdir / "news.parquet")
+    monkeypatch.setattr(config, "ROOT", tmp_path)
+    emap = {"baskets": {}, "tickers": {}, "sectors": {}, "mag7": [], "aliases": {}}
+    out = fn._quiver_news({"include_quiver": True}, emap, _NOW)
+    by_title = {h["title"]: h for h in out}
+    agency = by_title["ICE agents raid meatpacking plants in immigration crackdown"]
+    finance = by_title["ICE reports record Q2 earnings as exchange volumes surge"]
+    assert agency["tickers"] == [], "agency headline must lose the ICE tag"
+    assert finance["tickers"] == ["ICE"], "exchange earnings headline keeps ICE"
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn_call in fns:
