@@ -929,10 +929,19 @@ def test_board_notes_one_sentence():
 
 
 def test_zh_mode_note_in_headlines_section():
-    """NWS-04: ZH-mode note for missing translations is present in the DOM."""
+    """NWS-04: the ZH-mode untranslated-titles note renders CONDITIONALLY —
+    #2661 fills title_zh on render lanes, so the note appears only when at
+    least one kept headline is missing title_zh (n_zh_missing > 0)."""
+    # Standard fixture: every headline carries title_zh → note absent.
     html = _render_full()
-    assert "标题来自英文信源" in html, "ZH-mode note for untranslated headlines must be in DOM"
-    assert "na-zh-note" in html, ".na-zh-note class must be present"
+    assert "部分标题来自英文信源" not in html, "note must NOT render when all titles are translated"
+    # Strip title_zh from one headline → note renders.
+    vm = _full_vm()
+    heads = vm["macro_news"]["headlines"]
+    assert heads, "fixture must carry headlines"
+    heads[0] = {k: v for k, v in heads[0].items() if k != "title_zh"}
+    html2 = _env().get_template("news.html.j2").render(**vm)
+    assert "部分标题来自英文信源" in html2, "note must render when a title lacks title_zh"
 
 
 def test_calibration_note_plain_no_wilson_slug():
