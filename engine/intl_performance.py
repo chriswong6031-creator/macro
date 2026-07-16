@@ -97,9 +97,77 @@ def _usd_map(closes: pd.DataFrame) -> dict[str, pd.Series]:
 
 
 def _bench_series() -> pd.Series | None:
+    """Load the benchmark series (no staleness check).  Use _bench_series_fresh
+    whenever a bench_note is also needed (e.g. performance_panel)."""
     bench = _pcfg().get("benchmark", "^GSPC")
     df = store.read("yahoo", bench)
     return df["close"].dropna() if (df is not None and "close" in df.columns) else None
+
+
+def _bench_series_fresh(
+    intl_closes: pd.DataFrame | None = None,
+) -> tuple[pd.Series | None, str | None]:
+    """ITR-R6 benchmark freshness fail-open.
+
+    Returns (series, bench_note).  bench_note is non-None when SPY was
+    substituted because ^GSPC is more than 5 business days stale relative to
+    the newest available international index close.
+
+    Staleness definition: the number of business days between the benchmark's
+    last date and the newest intl close exceeds 5.
+
+    The fallback loads SPY from data/yahoo/SPY.parquet (same store path as
+    other yahoo tickers).  If SPY is also unavailable, returns (None, None).
+    """
+    _STALE_THRESHOLD_BDAYS = 5
+    _SPY_TICKER = "SPY"
+
+    primary_ticker = _pcfg().get("benchmark", "^GSPC")
+    primary_df = store.read("yahoo", primary_ticker)
+    primary: pd.Series | None = None
+    if primary_df is not None and "close" in primary_df.columns:
+        primary = primary_df["close"].dropna()
+
+    # Determine the newest intl close date to compare against
+    if intl_closes is None:
+        try:
+            from engine import intl_inputs as _ii
+            intl_closes = _ii._intl_closes()
+        except Exception:  # noqa: BLE001
+            pass
+
+    newest_intl: pd.Timestamp | None = None
+    if intl_closes is not None and not intl_closes.empty:
+        per_col = intl_closes.apply(lambda s: s.dropna().index[-1] if s.dropna().any() else pd.NaT)
+        newest_intl = per_col.max()
+
+    if primary is not None and newest_intl is not None and not pd.isna(newest_intl):
+        bench_last = primary.index[-1]
+        stale_bdays = len(pd.bdate_range(bench_last, newest_intl)) - 1
+        if stale_bdays > _STALE_THRESHOLD_BDAYS:
+            # Attempt SPY substitution
+            spy_df = store.read("yahoo", _SPY_TICKER)
+            if spy_df is not None and "close" in spy_df.columns:
+                spy = spy_df["close"].dropna()
+                if not spy.empty:
+                    note = (
+                        f"US benchmark: SPY substituted "
+                        f"(^GSPC stale since {bench_last.date()})"
+                    )
+                    log.warning(
+                        "ITR-R6: benchmark %s last date %s is %d business days stale "
+                        "(threshold=%d); substituting SPY (last=%s)",
+                        primary_ticker, bench_last.date(), stale_bdays,
+                        _STALE_THRESHOLD_BDAYS, spy.index[-1].date(),
+                    )
+                    return spy, note
+            # SPY also unavailable — fall through to primary (stale but non-None)
+            log.warning(
+                "ITR-R6: benchmark %s stale (%d bdays) and SPY unavailable; "
+                "returning stale series", primary_ticker, stale_bdays,
+            )
+
+    return primary, None
 
 
 def _ret(s: pd.Series, n: int) -> float | None:
@@ -364,9 +432,19 @@ def global_read(records: list[dict], board: list[dict], rrg: dict | None,
                 return h, r["returns"][h]["usd"]
         return None, None
 
+    # plain-word quad map (Design Doctrine Law 2 — the raw quad label is
+    # Tier-2 vocabulary; engine-composed strings bypass template translation,
+    # so the plain-wording must happen HERE at composition)
+    _quad_plain = {
+        "Goldilocks": ("growth OK, inflation calm", "增长尚可、通胀温和"),
+        "Reflation": ("growth up, inflation up", "增长回升、通胀走高"),
+        "Stagflation": ("growth down, inflation up", "增长走弱、通胀走高"),
+        "Deflation": ("growth down, inflation down", "增长与通胀双弱"),
+    }
+    dom_en, dom_zh = _quad_plain.get(dom, (dom, dom))
     parts_en, parts_zh = [], []
-    parts_en.append(f"{len([r for r in records])} economies, dominant regime {dom}.")
-    parts_zh.append(f"{len([r for r in records])} 个经济体，主导周期 {dom}。")
+    parts_en.append(f"{len([r for r in records])} economies; most read {dom_en}.")
+    parts_zh.append(f"{len([r for r in records])} 个经济体，多数为{dom_zh}。")
     if best and worst and best is not worst:
         hb, vb = _h(best)
         hw, vw = _h(worst)
@@ -386,16 +464,26 @@ def global_read(records: list[dict], board: list[dict], rrg: dict | None,
 
 def performance_panel(closes: pd.DataFrame | None = None,
                       records: list[dict] | None = None) -> dict:
-    """Assemble the whole performance/rotation block for the build script."""
+    """Assemble the whole performance/rotation block for the build script.
+
+    The returned dict gains a 'bench_note' key (str | None) that is non-None
+    when SPY was substituted for a stale ^GSPC benchmark (ITR-R6).
+    The fresh benchmark is also stored under 'bench' for callers such as
+    build_intl that need to pass it to intl_rotation.rank().
+    """
     if closes is None:
         closes = intl_inputs._intl_closes()
     usd_map = _usd_map(closes)            # compute each market's USD index once
+    # ITR-R6: use the freshness-checked benchmark for all relative-strength reads
+    bench, bench_note = _bench_series_fresh(intl_closes=closes)
     board = usd_leaderboard(closes, usd_map=usd_map)
-    rrg = relative_to_us(closes, usd_map=usd_map)
-    corr = correlation_matrix(closes, usd_map=usd_map)
+    rrg = relative_to_us(closes, bench=bench, usd_map=usd_map)
+    corr = correlation_matrix(closes, bench=bench, usd_map=usd_map)
     risk = risk_appetite(closes, usd_map=usd_map)
     read = global_read(records or [], board, rrg, risk)
     return {"leaderboard": board, "rrg": rrg, "correlation": corr,
             "risk_appetite": risk, "global_read": read,
+            "bench": bench,
+            "bench_note": bench_note,
             "horizons": [{"key": k, "en": _HORIZON_LABEL[k][0], "zh": _HORIZON_LABEL[k][1]}
                          for k in _HORIZON_ORDER]}

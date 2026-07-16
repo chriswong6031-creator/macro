@@ -534,6 +534,11 @@ on:
       # need explicit paths so a test-only or script-only change still re-runs.
       - "scripts/backfill_edgar_quarterly.py"
       - "tests/test_edgar_quarterly_tags.py"
+      # ITR-W1: per-market turn state machine + fast rotation re-rank
+      - "engine/intl_market_state.py"
+      - "engine/intl_rotation.py"
+      - "tests/test_intl_market_state.py"
+      - "tests/test_intl_rotation.py"
       # IRD-W2 engines: EM stress, contagion/DY spillover, CB desk
       - "engine/intl_risk.py"
       - "engine/contagion.py"
@@ -1919,6 +1924,22 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2 plotly
       - name: IRD substrate + engines test suite
         run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py tests/test_ird_velocity.py tests/test_ird_wiring.py -q
+
+  itr-turn-rotation:
+    # ITR-W1 (research/INTL_TURN_ROTATION_REVAMP.md): per-market turn state
+    # machine (crash/breaking/topping/... incl. KOSPI replay goldens on the
+    # committed _KS11 store) + fast rotation re-rank + ITR-R6 benchmark
+    # freshness fallback. Store-reading tests skip gracefully when absent.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2
+      - name: ITR turn state machine + rotation test suite
+        run: python -m pytest tests/test_intl_market_state.py tests/test_intl_rotation.py -q
 
   altdata-brain-govern:
     # altdata-brain PR-B: de-escalation-only law enforcement + false Wilson de-dup

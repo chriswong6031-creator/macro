@@ -204,6 +204,52 @@
   .gridwrap .nch { display:block; width:74px; height:24px; }
   .panel.accent { background:linear-gradient(var(--panel),var(--panel)) padding-box, var(--acc-grad) border-box; border:1.5px solid transparent; }
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:860px){ .twocol { grid-template-columns:1fr; } }
+
+  /* ===== turn board (ITR) ===== */
+  .tb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-top:12px; }
+  .tb-tile { background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; position:relative; }
+  .tb-tile.tb-hot { border-color:color-mix(in srgb,var(--down) 50%,var(--line)); background:color-mix(in srgb,var(--down) 5%,var(--panel2)); }
+  .tb-tile.tb-warm { border-color:color-mix(in srgb,#d4a017 40%,var(--line)); background:color-mix(in srgb,#d4a017 4%,var(--panel2)); }
+  .tb-tile.tb-cool { border-color:var(--line); }
+  .tb-hd { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
+  .tb-hd .flg { font-size:18px; line-height:1; }
+  .tb-hd .tb-name { font-size:12.5px; font-weight:700; line-height:1.2; }
+  .tb-hd .tb-name small { display:block; font-size:10.5px; font-weight:500; color:var(--muted); }
+  .tb-state { display:inline-block; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; white-space:nowrap; margin-bottom:5px; }
+  .tb-state.ts-crash { background:color-mix(in srgb,var(--down) 20%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
+  .tb-state.ts-breaking { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 35%,transparent); }
+  .tb-state.ts-topping { background:color-mix(in srgb,#d4a017 18%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 40%,transparent); }
+  .tb-state.ts-parabolic { background:color-mix(in srgb,#d4a017 14%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 35%,transparent); }
+  .tb-state.ts-extended { background:color-mix(in srgb,#d4a017 10%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 28%,transparent); }
+  .tb-state.ts-uptrend { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 34%,transparent); }
+  .tb-state.ts-recovery { background:color-mix(in srgb,var(--up) 10%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 28%,transparent); }
+  .tb-state.ts-basing { background:color-mix(in srgb,var(--info) 10%,transparent); color:var(--info); border:1px solid color-mix(in srgb,var(--info) 28%,transparent); }
+  .tb-state.ts-downtrend { background:color-mix(in srgb,var(--down) 10%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 28%,transparent); }
+  .tb-state.ts-calm { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+  .tb-stance { font-size:11.5px; color:var(--text); line-height:1.35; margin-bottom:6px; font-weight:500; }
+  .tb-metrics { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
+  .tb-metrics .tm-v { font-weight:700; }
+  .tb-metrics .tm-v.pos { color:var(--up); }
+  .tb-metrics .tm-v.neg { color:var(--down); }
+  /* events strip */
+  .te-strip { display:flex; flex-direction:column; gap:4px; margin-top:10px; }
+  .te-row { display:flex; align-items:baseline; gap:7px; font-size:12px; padding:4px 0; border-bottom:1px solid var(--line); }
+  .te-row:last-child { border-bottom:none; }
+  .te-date { font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
+  .te-flag { font-size:14px; flex-shrink:0; }
+  .te-txt { color:var(--text); flex:1; }
+  /* compact state chip for table columns */
+  .ts-chip { display:inline-block; padding:1px 6px; border-radius:6px; font-size:10px; font-weight:700; white-space:nowrap; border:1px solid transparent; }
+  .ts-chip.ts-crash { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
+  .ts-chip.ts-breaking { background:color-mix(in srgb,var(--down) 12%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 30%,transparent); }
+  .ts-chip.ts-topping { background:color-mix(in srgb,#d4a017 14%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 35%,transparent); }
+  .ts-chip.ts-parabolic { background:color-mix(in srgb,#d4a017 10%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 28%,transparent); }
+  .ts-chip.ts-extended { background:color-mix(in srgb,#d4a017 8%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 24%,transparent); }
+  .ts-chip.ts-uptrend { background:color-mix(in srgb,var(--up) 12%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 28%,transparent); }
+  .ts-chip.ts-recovery { background:color-mix(in srgb,var(--up) 8%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 24%,transparent); }
+  .ts-chip.ts-basing { background:color-mix(in srgb,var(--info) 8%,transparent); color:var(--info); border-color:color-mix(in srgb,var(--info) 24%,transparent); }
+  .ts-chip.ts-downtrend { background:color-mix(in srgb,var(--down) 8%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 24%,transparent); }
+  .ts-chip.ts-calm { background:var(--panel2); color:var(--muted); }
 </style>
 </head>
 <body>
@@ -500,7 +546,7 @@
   <div class="row">
     <h1>🌍 <span class="l-en">International Stock Dashboard</span><span class="l-zh">国际股票看板</span></h1>
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-16 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-17 00:21 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-16 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-17 00:28 UTC</span>
   </div>
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout names from major non-US markets, ranked within their own market. Search any name above.</span><span class="l-zh">主要非美市场精选个股，按各自市场内部排序。可在上方搜索。</span>
     <a href="intl.html" style="color:var(--link);font-weight:600">← <span class="l-en">Macro comparison</span><span class="l-zh">宏观对比</span></a></p>
