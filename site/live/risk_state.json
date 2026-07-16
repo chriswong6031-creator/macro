@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-16 15:57:28 UTC",
+  "built": "2026-07-16 17:10:22 UTC",
   "session": {
     "region": "us",
     "open": true,
-    "local_time": "2026-07-16 11:57 EDT"
+    "local_time": "2026-07-16 13:10 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -18,15 +18,15 @@
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": -0.14
+      "chg_pct": -0.29
     },
     {
       "sym": "QQQ",
-      "chg_pct": -1.05
+      "chg_pct": -1.29
     },
     {
       "sym": "VIX",
-      "chg_pct": 1.85
+      "chg_pct": 2.87
     }
   ],
   "display": {
@@ -50,9 +50,9 @@
     "radar": {
       "state": "watch",
       "state_ungated": "watch",
-      "top_score": 57,
-      "label_en": "Bubble / blow-off unwind",
-      "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
+      "top_score": 59,
+      "label_en": "Growth scare / defensive rotation",
+      "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": {
         "met": false,
         "spy_below_200dma": false,
