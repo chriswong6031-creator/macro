@@ -24520,7 +24520,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 </div>
 
 <div class="sm-search">
-  <input type="text" id="dossier-input" placeholder="<span class="l-en">Search ticker…</span><span class="l-zh">搜索标的…</span>" autocomplete="off">
+  <input type="text" id="dossier-input" placeholder="Search ticker…" data-ph-zh="搜索标的…" autocomplete="off">
   <span id="dossier-hint" class="chip-fresh" style="display:none"></span>
 </div>
 <div id="dossier-card">
@@ -29052,6 +29052,15 @@ var card = document.getElementById('dossier-card');
 var grid = document.getElementById('dossier-grid');
 var _smCache = null;
 var _deskCache = null;
+
+/* lang-aware placeholder — theme.js dispatches 'langchange' on document */
+var _phEn = inp ? inp.placeholder : '';
+var _phZh = inp ? (inp.getAttribute('data-ph-zh') || _phEn) : '';
+function _applyPhLang(){
+  if(inp) inp.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? _phZh : _phEn;
+}
+_applyPhLang();
+document.addEventListener('langchange', _applyPhLang);
 
 function _tierClass(tier){ return 't-'+(tier||'amber'); }
 function _chip(tier,label){

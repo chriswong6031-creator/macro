@@ -178,7 +178,9 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
 {# ── Filter controls ── #}
 <div class="qa-filter">
   <label for="qa-sym-filter">{{ t('Search:', '搜索：') }}</label>
-  <input type="text" id="qa-sym-filter" placeholder="{{ t('symbol …', '代码…') }}" oninput="qaFilter()">
+  {# EN literal in placeholder + data-ph-zh, relabeled by JS — t() spans inside an
+     attribute terminate it at the first inner quote (see options_screener.html.j2) #}
+  <input type="text" id="qa-sym-filter" placeholder="symbol …" data-ph-zh="代码…" oninput="qaFilter()">
   <label for="qa-state-filter">{{ t('State:', '状态：') }}</label>
   <select id="qa-state-filter" onchange="qaFilter()">
     <option value="">{{ t('All states', '全部状态') }}</option>
@@ -376,6 +378,16 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
 <script src="theme.js"></script>
 <script>
 (function(){
+  // ── Lang-aware placeholder (theme.js dispatches 'langchange' on document) ──
+  var symInp = document.getElementById('qa-sym-filter');
+  var phEn = symInp ? symInp.placeholder : '';
+  var phZh = symInp ? (symInp.getAttribute('data-ph-zh') || phEn) : '';
+  function applyPhLang(){
+    if(symInp) symInp.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? phZh : phEn;
+  }
+  applyPhLang();
+  document.addEventListener('langchange', applyPhLang);
+
   // ── Filtering ──
   var rows = Array.from(document.querySelectorAll('#qa-tbody tr'));
   window.qaFilter = function(){
