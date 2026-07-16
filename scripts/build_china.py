@@ -909,7 +909,11 @@ def main() -> int:
             from scripts import build_china_library
             setups = build_china_library.main(alpha=alpha)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china stock library build failed (%s); skipping", e)
+            # exc_info: this fallback silently served a stale china_standouts.json for
+            # 3 sessions (07-13→07-16) because the one-line message gave no traceback
+            # to locate the crash. Full traceback or the outage is invisible in CI.
+            log.error("china stock library build failed (%s); skipping — will fall back "
+                      "to the persisted (possibly STALE) china_standouts.json", e, exc_info=True)
         vm["setups"] = setups
         # W8-R7: populate mtf_upturn_cn from in-memory setups result (written by library
         # during the call above).  Reading here — AFTER build_china_library.main() — ensures

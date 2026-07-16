@@ -899,6 +899,7 @@ jobs:
           tests/test_altdata_hygiene.py
           tests/test_china_news_engine.py
           tests/test_china_library_limited.py
+          tests/test_china_standouts_serialization.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
