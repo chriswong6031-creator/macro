@@ -99,6 +99,27 @@ def _analyze_universe(uni, liq):
     return recs
 
 
+def hk_beta_close_panel(cache: pd.DataFrame | None,
+                        deep: pd.DataFrame | None) -> pd.DataFrame | None:
+    """Union close panel for the per-name cross-section legs: breadth-cache rows WIN
+    where present (the canonical recent tape); the deep search panel extends each
+    name's history backward. Without the overlay, names newly added to the breadth
+    cache carry only their post-add cache history and silently fail the causal-beta
+    min_periods (126 sessions) — the 2026-06-18 constituent expansion 73→157 left
+    ~86 of 160 names beta-less (rolling dropna at the last row), which is exactly
+    why the scoreboard universe stuck at 74. Same rationale as universe()'s
+    prefer-deep read. None-safe; F5-b: tests call this."""
+    frames = []
+    for df in (cache, deep):
+        if df is not None and not df.empty:
+            frames.append(df.loc[:, ~df.columns.duplicated()].sort_index())
+    if not frames:
+        return None
+    if len(frames) == 1:
+        return frames[0]
+    return frames[0].combine_first(frames[1]).sort_index()
+
+
 def compute_hk_global_betas() -> dict | None:
     """Per-stock global-risk beta cross-section — the honest per-name HK read (HK has
     no residual-alpha edge; engine/hk_global_beta.py). Beta of each constituent to the
@@ -108,12 +129,18 @@ def compute_hk_global_betas() -> dict | None:
     dd = config.data_dir()
     cache = dd / "hk_breadth" / "_closes_cache.parquet"
     cons = dd / "hk_breadth" / "constituents.parquet"
+    deep = dd / "hk_search" / "closes_deep.parquet"
     if not (cache.exists() and cons.exists()):
         log.warning("hk global-beta: breadth cache missing — skipped")
         return None
     try:
-        closes = pd.read_parquet(cache).sort_index()
-        closes = closes.loc[:, ~closes.columns.duplicated()]
+        closes_cache = pd.read_parquet(cache).sort_index()
+        deep_closes = pd.read_parquet(deep) if deep.exists() else None
+        closes = hk_beta_close_panel(closes_cache, deep_closes)
+        if deep_closes is not None:
+            _n_cache = closes_cache.loc[:, ~closes_cache.columns.duplicated()].shape[1]
+            log.info("hk global-beta: close panel %d cols (cache %d + deep overlay)",
+                     closes.shape[1], _n_cache)
         meta = pd.read_parquet(cons)
     except Exception as e:  # noqa: BLE001 — corrupt committed parquet must not break the build
         log.warning("hk global-beta: cache unreadable (%s) — skipped", e)
@@ -144,13 +171,17 @@ def compute_hk_global_betas() -> dict | None:
 # ── HK-native signal feeds (the unique conviction system) ────────────────────
 def _closes_matrix() -> pd.DataFrame | None:
     """The curated-constituent daily close matrix (date × ticker) the per-name legs run
-    on — the same breadth cache the universe + global-beta engine use."""
+    on — the breadth cache with the deep search panel overlaid underneath
+    (hk_beta_close_panel), so names newly added to the cache still have the history
+    the 63d/252d legs (bnrs, extension, washout_2w, dispersion) need."""
     cache = config.data_dir() / "hk_breadth" / "_closes_cache.parquet"
+    deep = config.data_dir() / "hk_search" / "closes_deep.parquet"
     if not cache.exists():
         return None
     try:
-        df = pd.read_parquet(cache).sort_index()
-        return df.loc[:, ~df.columns.duplicated()]
+        df = pd.read_parquet(cache)
+        deep_df = pd.read_parquet(deep) if deep.exists() else None
+        return hk_beta_close_panel(df, deep_df)
     except Exception:  # noqa: BLE001
         return None
 

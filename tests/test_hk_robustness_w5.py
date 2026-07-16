@@ -10,6 +10,9 @@ Covers:
       (int(NaN) crashed the producer block nightly; 1D Velocity Desk dead wire).
   (5) Cascade inclusion gate: eligible=True -> included in buys regardless of atier;
       eligible=False but aligned=True -> NOT in buys (may appear in watch).
+  (6) Beta close-panel overlay: hk_beta_close_panel unions cache + deep history
+      (cache wins on overlap) so newly-added constituents clear the causal-beta
+      min_periods instead of being silently dropped (74-of-160 scoreboard bug).
 """
 from __future__ import annotations
 
@@ -387,3 +390,53 @@ class TestXbarSessionsNaNGuard:
         assert hk_xbar_sessions(2.0, 2) == 4
         assert hk_xbar_sessions(np.float64(3), 3) == 9
         assert hk_xbar_sessions(0, 2) == 0
+
+
+# ---------------------------------------------------------------------------
+# (6) Beta close-panel overlay — cache + deep union (74-of-160 scoreboard bug)
+# ---------------------------------------------------------------------------
+
+class TestBetaClosePanelOverlay:
+    """hk_beta_close_panel must extend a shallow cache column with deep history so
+    the causal beta's min_periods (126 sessions) resolves for newly-added
+    constituents; cache values win on overlapping dates (canonical recent tape)."""
+
+    def _frames(self):
+        deep_idx = pd.bdate_range("2024-01-02", periods=400)
+        cache_idx = deep_idx[-20:]  # newly-added name: only 20 cached sessions
+        deep = pd.DataFrame({"9999.HK": np.linspace(10, 30, 400)}, index=deep_idx)
+        cache = pd.DataFrame({"9999.HK": np.full(20, 99.0)}, index=cache_idx)
+        return cache, deep
+
+    def test_overlay_extends_history_past_minp(self):
+        from scripts.build_hk_library import hk_beta_close_panel
+        cache, deep = self._frames()
+        panel = hk_beta_close_panel(cache, deep)
+        assert panel["9999.HK"].notna().sum() == 400, (
+            "deep history must extend the shallow cache column")
+
+    def test_cache_wins_on_overlap(self):
+        from scripts.build_hk_library import hk_beta_close_panel
+        cache, deep = self._frames()
+        panel = hk_beta_close_panel(cache, deep)
+        overlap = cache.index
+        assert (panel.loc[overlap, "9999.HK"] == 99.0).all(), (
+            "cache values are the canonical recent tape and must win on overlap")
+        pre = panel.index.difference(overlap)
+        assert (panel.loc[pre, "9999.HK"] != 99.0).all(), "deep fills pre-cache history"
+
+    def test_none_safety(self):
+        from scripts.build_hk_library import hk_beta_close_panel
+        cache, deep = self._frames()
+        assert hk_beta_close_panel(None, None) is None
+        pd.testing.assert_frame_equal(hk_beta_close_panel(cache, None), cache)
+        pd.testing.assert_frame_equal(hk_beta_close_panel(None, deep), deep)
+
+    def test_union_columns(self):
+        """Names present only in one frame survive into the union panel."""
+        from scripts.build_hk_library import hk_beta_close_panel
+        idx = pd.bdate_range("2025-01-02", periods=30)
+        cache = pd.DataFrame({"0001.HK": np.ones(30)}, index=idx)
+        deep = pd.DataFrame({"0002.HK": np.ones(30) * 2}, index=idx)
+        panel = hk_beta_close_panel(cache, deep)
+        assert set(panel.columns) == {"0001.HK", "0002.HK"}
