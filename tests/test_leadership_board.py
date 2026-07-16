@@ -426,12 +426,15 @@ def _base_vm_with_lb() -> dict:
 
 
 def test_dashboard_macro_mode_with_leadership_board():
-    """dashboard.html.j2 macro mode renders without exception when leadership_board present."""
+    """dashboard.html.j2 macro mode must NOT render the board (#2604: operator
+    removed it from macro.html — `mode == 'stocks'` gate; us_stocks-only now).
+    This test asserted presence while the file wasn't CI-wired; flipped to the
+    current contract the same night the file entered ci.yml (#2605)."""
     env = _full_env()
     html = env.get_template("dashboard.html.j2").render(**_base_vm_with_lb(), mode="macro")
     assert len(html) > 50_000
-    assert "Leadership Board" in html
-    assert "领涨面板" in html
+    assert "Leadership Board" not in html
+    assert "领涨面板" not in html
 
 
 def test_dashboard_stocks_mode_with_leadership_board():

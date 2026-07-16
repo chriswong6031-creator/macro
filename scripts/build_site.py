@@ -1786,9 +1786,11 @@ def _leadership_board_view() -> dict | None:
         # Source: site/leaderradar/radar.json (schema leader_radar.v1), rebuilt by
         # build_leader_radar every engine run — rows[].state IS the hysteresis-
         # confirmed lifecycle state (the builder writes "state": confirmed_state).
-        # The prior source, data/leader_radar/state_history.parquet, sat frozen at
-        # its 2026-07-11 seed (nightly append env-gated off pre-#2598, then dtype-
-        # crashed) and this join had no freshness gate — silently-stale reads.
+        # The prior source (the leader_radar state-history parquet store) sat
+        # frozen at its 2026-07-11 seed (nightly append env-gated off pre-#2598,
+        # then dtype-crashed) and this join had no freshness gate — silently-
+        # stale reads. (Store named without its path literal on purpose: the
+        # synapse read-gate scans path literals and would flag a phantom read.)
         # Gate mirrors the earnings block below: absent / self-reported stale /
         # as_of older than 7 calendar days → empty map → every tile renders the
         # plain-word null ("no trend read") and the footnote discloses why
