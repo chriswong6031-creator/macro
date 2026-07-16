@@ -3071,6 +3071,9 @@ healthcheck:
       - {label: "china_breadth",          path: "data/china_breadth/breadth.parquet"}
       - {label: "hk_stocks 0700.HK",      path: "data/hk_stocks/0700.HK.parquet"}
       - {label: "us_stocks AAPL",         path: "data/stocks/AAPL.parquet"}
+      # Silent-freeze witness for the Leader Radar forward ledger — the exact store
+      # that froze 2026-07-11→16 (#2605) while every liveness probe stayed green.
+      - {label: "leader_radar state_history", path: "data/leader_radar/state_history.parquet"}
     # China Golden Week + Spring Festival 2026–27 (starter set; extend as needed).
     # US/HK single-day holidays fall within the 2-session tolerance so are optional.
     holidays:

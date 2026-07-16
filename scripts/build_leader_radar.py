@@ -41,7 +41,7 @@ import logging
 import os
 import sys
 import time
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -405,6 +405,10 @@ def _merge_history_frame(
     object") — which froze state_history.parquet at its 2026-07-11 seed while the
     failure drowned as a swallowed warning every night (caught 2026-07-16).
 
+    Column alignment: new columns (e.g. state_entry_date added in v2) that are
+    absent in the existing store are added with NA so concat doesn't crash on
+    a dtype mismatch. Old rows simply carry null for the new column — nullable.
+
     Dedup: today's existing rows are dropped before the append (rerun-idempotent).
     """
     new_df = pd.DataFrame(new_rows)
@@ -413,6 +417,14 @@ def _merge_history_frame(
         existing = existing.copy()
         existing["date"] = pd.to_datetime(existing["date"])
         existing = existing[existing["date"] != pd.Timestamp(today)]
+        # Add any new columns from new_df that are absent in existing (nullable)
+        for col in new_df.columns:
+            if col not in existing.columns:
+                existing[col] = pd.NA
+        # Add any existing columns absent from new_df (backward-compat; new rows get NA)
+        for col in existing.columns:
+            if col not in new_df.columns:
+                new_df[col] = pd.NA
         return pd.concat([existing, new_df], ignore_index=True)
     return new_df
 
@@ -1073,17 +1085,23 @@ def _extract_display_chips(sd: dict, revisions_df: pd.DataFrame, ticker: str) ->
 
 
 def _compute_top5_share(
-    universe: list[str],
+    ndx_slice: list[str],
     ohlcv_map: dict[str, pd.DataFrame],
     mktcap_map: dict[str, float | None],
-) -> tuple[float | None, int, str]:
-    """Compute top-5 names' share of total 21d universe return (weighted by mktcap).
+) -> tuple[float | None, int, int, str]:
+    """Compute top-5 names' share of NDX-slice 21d return (LR-R5: NDX-universe only).
 
-    Returns (top5_share, n_covered, weighting) where weighting is 'mktcap' when all
-    names have valid cap weights, else 'equal_fallback' (mixed or pure equal-weight).
+    Args:
+        ndx_slice: tickers in the NDX membership slice of the universe.
+        ohlcv_map: per-ticker OHLCV DataFrames.
+        mktcap_map: per-ticker market cap (USD billions or raw).
+
+    Returns (top5_share, mktcap_n_covered, mktcap_n_total, weighting).
+        weighting: 'cap' when all NDX names have valid caps; 'equal_all' when fewer
+        than 20 names have caps (pure equal-weight for ALL names, no mixed units).
     """
     returns_21d: dict[str, float] = {}
-    for ticker in universe:
+    for ticker in ndx_slice:
         ohlcv = ohlcv_map.get(ticker)
         if ohlcv is None or len(ohlcv) < 22:
             continue
@@ -1095,52 +1113,96 @@ def _compute_top5_share(
             returns_21d[ticker] = ret
 
     if not returns_21d:
-        return None, 0, "equal_fallback"
+        return None, 0, len(ndx_slice), "equal_all"
 
-    # Cap-weight if possible; track whether any name fell back to equal weight
-    cap_weighted: dict[str, float] = {}
-    n_covered = 0
-    n_fallback = 0
-    for t, r in returns_21d.items():
+    mktcap_n_total = len(returns_21d)
+
+    # Check cap coverage on the returnable set
+    covered: dict[str, float] = {}
+    for t in returns_21d:
         cap = mktcap_map.get(t)
         if cap is not None and np.isfinite(cap) and cap > 0:
-            cap_weighted[t] = r * cap
-            n_covered += 1
-        else:
-            cap_weighted[t] = r  # equal-weight fallback for uncovered names
-            n_fallback += 1
+            covered[t] = cap
+    mktcap_n_covered = len(covered)
 
-    if not cap_weighted:
-        return None, 0, "equal_fallback"
+    if mktcap_n_covered < 20:
+        # Pure equal-weight fallback (no mixed units)
+        weighting = "equal_all"
+        weighted: dict[str, float] = {t: r for t, r in returns_21d.items()}
+    else:
+        # Cap-weight only covered names; drop uncovered names entirely (no mixed units)
+        weighting = "cap"
+        weighted = {t: returns_21d[t] * covered[t] for t in covered}
 
-    weighting = "mktcap" if n_fallback == 0 else "equal_fallback"
+    if not weighted:
+        return None, mktcap_n_covered, mktcap_n_total, weighting
 
-    total_weighted = sum(abs(v) for v in cap_weighted.values())
+    total_weighted = sum(abs(v) for v in weighted.values())
     if total_weighted == 0:
-        return None, n_covered, weighting
+        return None, mktcap_n_covered, mktcap_n_total, weighting
 
-    # Sort by abs contribution, take top 5
-    sorted_contribs = sorted(cap_weighted.items(), key=lambda x: abs(x[1]), reverse=True)
+    sorted_contribs = sorted(weighted.items(), key=lambda x: abs(x[1]), reverse=True)
     top5_contrib = sum(abs(v) for _, v in sorted_contribs[:5])
-    return float(top5_contrib / total_weighted), n_covered, weighting
+    return float(top5_contrib / total_weighted), mktcap_n_covered, mktcap_n_total, weighting
 
 
-def _zweig_flag(breadth_df: pd.DataFrame) -> bool | None:
-    """Simple Zweig breadth thrust approximation from breadth.parquet."""
+def _zweig_flag(breadth_df: pd.DataFrame) -> tuple[bool | None, str | None, float | None]:
+    """Canonical Zweig breadth thrust (ZBT) from breadth.parquet.
+
+    A thrust COMPLETES on day T when the 10-day simple moving average of daily
+    adv/(adv+dec) satisfies MA(T) >= 0.615 AND there exists a day S in the window
+    [T-10, T) where MA(S) <= 0.40 with MA below 0.615 for all days (S, T).
+
+    Returns:
+        (flag, fire_date_iso, adv_share_10d)
+        flag: True iff a completion occurred in the trailing 10 sessions of breadth_df.
+               None on missing data/exception. False otherwise.
+        fire_date_iso: ISO date string of the completion date, or None.
+        adv_share_10d: current 10d MA value (rounded 3dp), or None.
+    """
     if breadth_df.empty or "adv" not in breadth_df.columns or "dec" not in breadth_df.columns:
-        return None
+        return None, None, None
     try:
-        recent = breadth_df.tail(10)
-        for _, row in recent.iterrows():
-            adv = row.get("adv")
-            dec = row.get("dec")
-            if adv is not None and dec is not None and not pd.isna(adv) and not pd.isna(dec):
-                total = float(adv) + float(dec)
-                if total > 0 and float(adv) / total >= 0.615:
-                    return True
-        return False
+        adv = breadth_df["adv"].astype(float)
+        dec = breadth_df["dec"].astype(float)
+        total = adv + dec
+        ratio = adv / total.where(total > 0)
+        ma10 = ratio.rolling(10, min_periods=10).mean()
+
+        # Current display value
+        adv_share_10d: float | None = None
+        valid_ma = ma10.dropna()
+        if not valid_ma.empty:
+            adv_share_10d = round(float(valid_ma.iloc[-1]), 3)
+
+        # Look for a completion in the trailing 10 sessions
+        last_10_idx = list(breadth_df.index[-10:])
+        fire_date: str | None = None
+
+        for ts in reversed(last_10_idx):
+            i = ma10.index.get_loc(ts) if ts in ma10.index else None
+            if i is None:
+                continue
+            val_t = ma10.iloc[i]
+            if pd.isna(val_t) or val_t < 0.615:
+                continue
+            # Check prior 10 positions (positions i-10 .. i-1)
+            start_i = max(0, i - 10)
+            window = ma10.iloc[start_i:i]
+            below_40 = window[window <= 0.40]
+            if below_40.empty:
+                continue
+            # last below-0.40 position index in the slice
+            last_40_pos = below_40.index[-1]
+            last_40_loc = window.index.get_loc(last_40_pos)
+            between = window.iloc[last_40_loc + 1:]
+            if (between < 0.615).all():
+                fire_date = pd.Timestamp(ts).date().isoformat()
+                break
+
+        return bool(fire_date is not None), fire_date, adv_share_10d
     except Exception:  # noqa: BLE001
-        return None
+        return None, None, None
 
 
 # ── Winner autopsy watch states ───────────────────────────────────────────────
@@ -1201,6 +1263,27 @@ def _build_watch_states(
         return {}
 
 
+# ── days_in_state helper ─────────────────────────────────────────────────────
+
+def _count_trailing_state(confirmed_history: list[tuple[date, str]]) -> int | None:
+    """Return the number of trailing history ROWS that share the most-recent confirmed state.
+
+    Honestly named `tracked_sessions` in the artifact — this is a row count, not
+    calendar days, since state_history only exists since 2026-07-11.
+    Returns None when confirmed_history is empty.
+    """
+    if not confirmed_history:
+        return None
+    cur = confirmed_history[-1][1]
+    count = 0
+    for _, s in reversed(confirmed_history):
+        if s == cur:
+            count += 1
+        else:
+            break
+    return count
+
+
 # ── Per-ticker assessment ─────────────────────────────────────────────────────
 
 def _build_ticker_assessment(
@@ -1225,6 +1308,8 @@ def _build_ticker_assessment(
     rr_80th_pctile: float | None = None,
     basket_corr_now: float | None = None,
     basket_corr_then: float | None = None,
+    session_calendar: "list[date] | None" = None,
+    today: "date | None" = None,
 ) -> tuple[Any, str, str] | None:
     """Build LifecycleInputs, classify, apply_hysteresis.
 
@@ -1247,17 +1332,8 @@ def _build_ticker_assessment(
     low = ohlcv["low"].dropna().sort_index() if "low" in ohlcv.columns else None
     volume = ohlcv["volume"].dropna().sort_index() if "volume" in ohlcv.columns else None
 
-    # days_in_state from confirmed history
-    days_in_state: int | None = None
-    if confirmed_history:
-        current_state = confirmed_history[-1][1]
-        count = 0
-        for _, s in reversed(confirmed_history):
-            if s == current_state:
-                count += 1
-            else:
-                break
-        days_in_state = count
+    # tracked_sessions / days_in_state from confirmed history
+    tracked_sessions = _count_trailing_state(confirmed_history)
 
     # analyst_buy_pct (LRV-R1e): buy-share LEVEL from finnhub recommendation-trends
     # (data/finnhub/recommendation.parquet via engine/analyst_revisions.consensus_pct =
@@ -1285,7 +1361,7 @@ def _build_ticker_assessment(
             if earnings_row.get("days_to_earnings") is not None else None
         ),
         state_history=confirmed_history,
-        days_in_state=days_in_state,
+        days_in_state=tracked_sessions,
         # LRV-W1 new wires (rr_25d + rr_80th_pctile → engine computes call_skew_rich)
         rs_rank_history=rs_rank_history,
         peer_median_rs_63d=peer_median_rs_63d,
@@ -1304,7 +1380,9 @@ def _build_ticker_assessment(
         confirmed_state = confirmed_history[-1][1] if confirmed_history else assessment.state
     else:
         confirmed_state = apply_hysteresis(
-            assessment.state, raw_history, confirmed_history
+            assessment.state, raw_history, confirmed_history,
+            session_calendar=session_calendar,
+            today=today,
         )
 
     return assessment, assessment.state, confirmed_state
@@ -1450,6 +1528,7 @@ def _build_regime(
     regime_raw: dict,
     breadth_df: pd.DataFrame,
     universe: list[str],
+    ndx_slice: list[str],
     ohlcv_map: dict[str, pd.DataFrame],
     mktcap_map: dict[str, float | None],
 ) -> dict:
@@ -1465,27 +1544,414 @@ def _build_regime(
     avg_corr: float | None = regime_raw.get("avg_corr")
 
     pct_above_200: float | None = None
-    zweig: bool | None = None
+    breadth_universe_n: int | None = None
+    zweig_flag: bool | None = None
+    zweig_fire_date: str | None = None
+    adv_share_10d: float | None = None
+
     if not breadth_df.empty:
         if "pct_above_200" in breadth_df.columns:
             last = breadth_df["pct_above_200"].dropna()
             if not last.empty:
                 pct_above_200 = float(last.iloc[-1])
-        zweig = _zweig_flag(breadth_df)
+        # breadth_universe_n: n_members from last row if column present
+        if "n_members" in breadth_df.columns:
+            nm_last = breadth_df["n_members"].dropna()
+            if not nm_last.empty:
+                breadth_universe_n = int(nm_last.iloc[-1])
+        zweig_flag, zweig_fire_date, adv_share_10d = _zweig_flag(breadth_df)
 
-    top5_share, n_covered, top5_weighting = _compute_top5_share(universe, ohlcv_map, mktcap_map)
+    # top5_share over NDX slice only (LR-R5)
+    top5_share, mktcap_n_covered, mktcap_n_total, top5_weighting = _compute_top5_share(
+        ndx_slice, ohlcv_map, mktcap_map,
+    )
 
     regime = leadership_regime(
         dispersion_pctile=dispersion_pctile,
         avg_corr=avg_corr,
         pct_above_200=pct_above_200,
         top5_share_21d=top5_share,
-        zweig_flag=zweig,
+        zweig_flag=zweig_flag,
     )
-    regime["mktcap_n_covered"] = n_covered
-    # m4: expose weighting method so equal-weight fallback is visible in the artifact
+    regime["mktcap_n_covered"] = mktcap_n_covered
+    regime["mktcap_n_total"] = mktcap_n_total
+    # 'cap' = all NDX names with valid caps used; 'equal_all' = pure equal-weight
     regime["top5_weighting"] = top5_weighting
+    # Zweig detail for display
+    regime["zweig_fire_date"] = zweig_fire_date
+    regime["adv_share_10d"] = adv_share_10d
+    # Disclosure fields (Item 3)
+    regime["breadth_universe_n"] = breadth_universe_n
+    regime["desk_universe_n"] = len(universe)
+    regime["regime_as_of"] = regime_raw.get("as_of")
     return regime
+
+
+# ── Freshness + degraded helpers (Items 2 & 4) ───────────────────────────────
+
+def _nyse_sessions_between(d1: date, d2: date) -> list[date]:
+    """Return sorted list of NYSE trading dates in [d1, d2] inclusive.
+
+    Falls back to [] on import failure or when d1 > d2 (nyse_calendar unavailable).
+    """
+    if d1 > d2:
+        return []
+    try:
+        from lib.nyse_calendar import is_session
+        result: list[date] = []
+        cur = d1
+        # Walk forward day by day; cap at 5000d to prevent runaway loops on multi-year spans
+        max_days = (d2 - d1).days + 1
+        if max_days > 5000:
+            max_days = 5000
+        for _ in range(max_days):
+            if cur > d2:
+                break
+            if is_session(cur):
+                result.append(cur)
+            cur += timedelta(days=1)
+        return result
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _build_freshness(
+    built_at: str,
+    price_through: date | None,
+    breadth_df: pd.DataFrame,
+    regime_raw: dict,
+    revisions_df: pd.DataFrame,
+    state_df: pd.DataFrame,
+) -> dict:
+    """Build the freshness block for the artifact (Item 2)."""
+    # breadth_through
+    breadth_through: str | None = None
+    if not breadth_df.empty:
+        last_idx = breadth_df.index[-1]
+        bt = last_idx.date() if hasattr(last_idx, "date") else pd.Timestamp(last_idx).date()
+        breadth_through = bt.isoformat()
+
+    # regime_as_of (from regime.json's own "as_of" key)
+    regime_as_of: str | None = None
+    raw_asof = regime_raw.get("as_of")
+    if raw_asof is not None:
+        try:
+            regime_as_of = str(raw_asof)[:10]  # date portion
+        except Exception:  # noqa: BLE001
+            pass
+
+    # revisions_asof
+    revisions_asof: str | None = None
+    if not revisions_df.empty:
+        # revisions/latest.parquet may have an 'asof' column
+        for col in ("asof", "as_of", "date"):
+            if col in revisions_df.columns:
+                try:
+                    max_asof = revisions_df[col].dropna().max()
+                    revisions_asof = pd.Timestamp(max_asof).date().isoformat()
+                    break
+                except Exception:  # noqa: BLE001
+                    pass
+
+    # state_history_through
+    state_history_through: str | None = None
+    if not state_df.empty and "date" in state_df.columns:
+        try:
+            max_d = pd.to_datetime(state_df["date"]).max()
+            state_history_through = max_d.date().isoformat()
+        except Exception:  # noqa: BLE001
+            pass
+
+    return {
+        "price_through": price_through.isoformat() if price_through else None,
+        "breadth_through": breadth_through,
+        "regime_as_of": regime_as_of,
+        "revisions_asof": revisions_asof,
+        "state_history_through": state_history_through,
+        "built_at": built_at,
+    }
+
+
+def _build_degraded(
+    price_through: date | None,
+    freshness: dict,
+    state_df: pd.DataFrame,
+) -> list[str]:
+    """Build the degraded list (Item 4).
+
+    Checks:
+      - state_history lags price_through by >2 NYSE sessions
+      - regime_as_of lags price_through by >0 sessions
+      - breadth lags price_through by >0 sessions
+    """
+    msgs: list[str] = []
+    if price_through is None:
+        return msgs
+
+    # state_history lag
+    sh_through_str = freshness.get("state_history_through")
+    if sh_through_str:
+        try:
+            sh_through = date.fromisoformat(sh_through_str)
+            if sh_through < price_through:
+                gap = _nyse_sessions_between(sh_through + timedelta(days=1), price_through)
+                n_lag = len(gap)
+                if n_lag > 2:
+                    msgs.append(f"state history {n_lag} sessions behind price data")
+        except Exception:  # noqa: BLE001
+            pass
+
+    # regime lag
+    regime_asof_str = freshness.get("regime_as_of")
+    if regime_asof_str:
+        try:
+            regime_asof = date.fromisoformat(regime_asof_str[:10])
+            if regime_asof < price_through:
+                gap = _nyse_sessions_between(regime_asof + timedelta(days=1), price_through)
+                n_lag = len(gap)
+                if n_lag > 0:
+                    msgs.append(f"regime inputs {n_lag} session{'s' if n_lag > 1 else ''} behind price data")
+        except Exception:  # noqa: BLE001
+            pass
+
+    # breadth lag
+    bt_str = freshness.get("breadth_through")
+    if bt_str:
+        try:
+            bt = date.fromisoformat(bt_str)
+            if bt < price_through:
+                gap = _nyse_sessions_between(bt + timedelta(days=1), price_through)
+                n_lag = len(gap)
+                if n_lag > 0:
+                    msgs.append(f"breadth {n_lag} session{'s' if n_lag > 1 else ''} behind price data")
+        except Exception:  # noqa: BLE001
+            pass
+
+    return msgs
+
+
+def _build_history_gaps(state_df: pd.DataFrame) -> tuple[str | None, list[str]]:
+    """Return (history_since_iso, history_gaps_iso_list) from state_history.
+
+    history_gaps: missing NYSE sessions between min and max date in state_history.
+    """
+    if state_df.empty or "date" not in state_df.columns:
+        return None, []
+    try:
+        dates = pd.to_datetime(state_df["date"]).dropna()
+        if dates.empty:
+            return None, []
+        min_d = dates.min().date()
+        max_d = dates.max().date()
+        history_since = min_d.isoformat()
+        present = set(d.date() if hasattr(d, "date") else d for d in dates.dt.date)
+        all_sessions = _nyse_sessions_between(min_d, max_d)
+        gaps = [d.isoformat() for d in all_sessions if d not in present]
+        return history_since, gaps
+    except Exception:  # noqa: BLE001
+        return None, []
+
+
+# ── changed_today / near_trigger / fire_history helpers (Item 7) ──────────────
+
+def _build_changed_today(
+    rows: list[dict],
+    state_df: pd.DataFrame,
+    today: date,
+    fire_precipice_set: set[str],
+    fire_onset_set: set[str],
+    universe_set: "set[str] | None" = None,
+) -> dict:
+    """Build changed_today artifact.
+
+    Compares tonight's confirmed states vs the store's last row for each ticker
+    (excluding today's row, which we just computed).
+
+    Args:
+        universe_set: the set of tickers resolved into the universe this run.
+            When provided, a ticker is only marked "exited" when it is in the
+            universe but absent from tonight's rows.  Tickers that dropped out
+            of the universe (e.g. due to per-ticker OHLCV exceptions) are skipped
+            silently — absence from rows does not imply a genuine state exit.
+            When None (legacy/test calls without universe context), any in-universe
+            ticker absent from tonight's rows is treated as exited (original behavior).
+    """
+    entered: list[dict] = []
+    exited: list[dict] = []
+    fired: list[dict] = []
+
+    # Build prev-state map from state_df excluding today
+    prev_states: dict[str, str] = {}
+    if not state_df.empty and "date" in state_df.columns and "ticker" in state_df.columns:
+        prev_df = state_df[pd.to_datetime(state_df["date"]).dt.date < today].copy()
+        if not prev_df.empty:
+            prev_df = prev_df.sort_values("date")
+            for ticker, grp in prev_df.groupby("ticker"):
+                last = grp.iloc[-1]
+                prev_states[str(ticker)] = str(last.get("confirmed_state", ""))
+
+    for row in rows:
+        ticker = row["ticker"]
+        tonight = row["state"]
+        prev = prev_states.get(ticker)
+        if prev is not None and prev != tonight:
+            entered.append({"ticker": ticker, "state": tonight, "prev_state": prev})
+        elif prev is None and tonight != "NONE":
+            # First time appearing — treat as entered
+            entered.append({"ticker": ticker, "state": tonight, "prev_state": None})
+
+    # exited: tickers in prev_states but NOT in tonight's rows.
+    # Gate on universe membership: tickers that failed per-ticker processing (continue
+    # at the exception handler) are absent from rows but still in the universe — they
+    # must not be claimed as exited (no claim for in-universe failures).  Tickers
+    # genuinely out-of-universe this run are also skipped.
+    tonight_tickers = {r["ticker"] for r in rows}
+    for ticker, prev in prev_states.items():
+        if ticker not in tonight_tickers and prev not in ("NONE", ""):
+            if universe_set is not None and ticker not in universe_set:
+                # Out of universe this run: skip (neither entered nor exited)
+                continue
+            exited.append({"ticker": ticker, "state": None, "prev_state": prev})
+
+    # fired
+    for ticker in fire_precipice_set:
+        fired.append({"ticker": ticker, "fire_type": "precipice"})
+    for ticker in fire_onset_set:
+        fired.append({"ticker": ticker, "fire_type": "onset"})
+
+    return {"entered": entered, "exited": exited, "fired": fired}
+
+
+def _build_near_trigger(rows: list[dict]) -> list[dict]:
+    """Build near_trigger: QA rows with k == n-1 or ≥1 chip true in CATALYST_WINDOW.
+
+    Sorted by k desc, ticker asc.
+
+    missing_chips is restricted to the state-specific chip set (reusing
+    get_state_chip_keys from the engine so the set is defined exactly once)
+    and to chips whose value is explicitly False — None (unavailable) chips
+    are excluded because they are not yet decided, not missing.
+    """
+    from engine.leader_lifecycle import (
+        STATE_QUIET_ACCUMULATION,
+        STATE_CATALYST_WINDOW,
+        get_state_chip_keys,
+    )
+
+    result: list[dict] = []
+    for row in rows:
+        state = row["state"]
+        if state not in (STATE_QUIET_ACCUMULATION, STATE_CATALYST_WINDOW):
+            continue
+        k = row.get("k_true") or 0
+        n = row.get("n_avail") or 0
+        if state == STATE_QUIET_ACCUMULATION and n > 0 and k == n - 1:
+            pass  # qualifies
+        elif state == STATE_CATALYST_WINDOW and k >= 1:
+            pass  # qualifies
+        else:
+            continue
+
+        chips = row.get("chips") or {}
+        # Restrict to the state-specific chip set; only explicitly False values
+        # are "missing" (None = unavailable, not a missing chip).
+        state_chip_keys = get_state_chip_keys(state, chips)
+        missing = [name for name in state_chip_keys if chips.get(name) is False]
+        result.append({
+            "ticker": row["ticker"],
+            "state": state,
+            "k_true": k,
+            "n_avail": n,
+            "missing_chips": missing,
+            "days_in_state": row.get("days_in_state"),
+            "tracked_sessions": row.get("tracked_sessions"),
+        })
+
+    result.sort(key=lambda r: (-r["k_true"], r["ticker"]))
+    return result
+
+
+def _build_fire_history(
+    fire_log_df: pd.DataFrame,
+    data_root: Path,
+) -> list[dict]:
+    """Return last 20 fire_log rows joined with grade data if available.
+
+    Reads data/pick_lab/grades.jsonl via engine.pick_lab.ledger (consume, never
+    re-implement).  Key: (engine_id, ticker, fire_date).  Primary horizon row
+    selected: horizon==21 (ruler = 21d_spy_excess per LR-R8).  Fields emitted:
+    ret_excess_spy (float|None), status ("matured"|"accruing").
+
+    Grade join uses fire_type -> engine_id mapping:
+        precipice -> plab_leader_precipice
+        onset     -> plab_leader_onset
+
+    When grades.jsonl is absent all rows carry status "accruing", ret null.
+    Strictly read-only on pick-lab stores.
+    """
+    if fire_log_df.empty:
+        return []
+
+    try:
+        # Normalize date column
+        fl = fire_log_df.copy()
+        fl["date"] = pd.to_datetime(fl["date"])
+        fl = fl.sort_values("date", ascending=False).head(20)
+    except Exception:  # noqa: BLE001
+        return []
+
+    # Map fire_type -> engine_id
+    _FIRE_TYPE_TO_ENGINE: dict[str, str] = {
+        "precipice": "plab_leader_precipice",
+        "onset": "plab_leader_onset",
+    }
+
+    # Load grades.jsonl via the ledger consumer (key: engine_id, ticker, fire_date, horizon)
+    # grade_lookup: (engine_id, ticker, fire_date_iso) -> best 21d grade row
+    grade_lookup: dict[tuple[str, str, str], dict] = {}
+    try:
+        from engine.pick_lab.ledger import load_grades
+        grades = load_grades()
+        for gr in grades:
+            eid = str(gr.get("engine_id", ""))
+            if eid not in ("plab_leader_precipice", "plab_leader_onset"):
+                continue
+            # Select the 21d horizon row as primary ruler
+            if str(gr.get("horizon", "")) != "21":
+                continue
+            k = (eid, str(gr.get("ticker", "")), str(gr.get("fire_date", "")))
+            grade_lookup[k] = gr
+    except Exception:  # noqa: BLE001
+        pass
+
+    result: list[dict] = []
+    for _, row in fl.iterrows():
+        ticker = str(row.get("ticker", ""))
+        fire_date_raw = row.get("date")
+        fire_date_str = (
+            pd.Timestamp(fire_date_raw).date().isoformat()
+            if fire_date_raw is not None else None
+        )
+        fire_type = str(row.get("fire_type", ""))
+        engine_id = _FIRE_TYPE_TO_ENGINE.get(fire_type, "")
+        k = (engine_id, ticker, fire_date_str or "")
+        gr = grade_lookup.get(k)
+        if gr is not None:
+            matured = bool(gr.get("matured"))
+            status = "matured" if matured else "accruing"
+            ret_excess_spy = gr.get("ret_excess_spy")
+            ret_excess_spy = float(ret_excess_spy) if ret_excess_spy is not None else None
+        else:
+            status = "accruing"
+            ret_excess_spy = None
+        result.append({
+            "date": fire_date_str,
+            "ticker": ticker,
+            "fire_type": fire_type,
+            "ret_excess_spy": ret_excess_spy,
+            "status": status,
+        })
+    return result
 
 
 # ── Main build ────────────────────────────────────────────────────────────────
@@ -1511,7 +1977,9 @@ def build(
         _write_noindex_stub(site_root)
         return {}
 
-    as_of = datetime.now(timezone.utc).isoformat()
+    # built_at = UTC wall clock (for dead-man sentinel); as_of = price data-through date
+    # (set after SPY is loaded below — placeholder until then)
+    built_at = datetime.now(timezone.utc).isoformat()
 
     # ── Universe ──────────────────────────────────────────────────────────────
     universe, basket_membership = _resolve_universe(data_root, cfg)
@@ -1524,11 +1992,16 @@ def build(
         log.warning("build_leader_radar: SPY absent — RS series and regime degraded")
         spy = pd.Series(dtype=float)
 
-    # ── Stale SLA ─────────────────────────────────────────────────────────────
+    # ── Stale SLA + as_of (price data-through date) ───────────────────────────
     latest_date: date | None = None
     if not spy.empty:
         last_ts = spy.index[-1]
         latest_date = last_ts.date() if hasattr(last_ts, "date") else pd.Timestamp(last_ts).date()
+    # as_of = price data-through date (ISO date string, [:10] safe for template)
+    as_of: str = latest_date.isoformat() if latest_date is not None else built_at[:10]
+    # today = price data-through date (for insider/analyst staleness checks); fallback
+    # to wall-clock date only when SPY is absent (cold-start).
+    today: date = latest_date if latest_date is not None else date.today()
     stale = _check_stale(latest_date)
     if stale:
         log.warning("build_leader_radar: stale (latest=%s) — state frozen", latest_date)
@@ -1613,7 +2086,9 @@ def build(
 
     # ── Regime ────────────────────────────────────────────────────────────────
     regime_raw = _load_regime_inputs(data_root)
-    regime = _build_regime(regime_raw, breadth_df, universe, ohlcv_map, mktcap_map)
+    # NDX slice: intersection of basket_membership["ndx"] with universe (has-ohlcv)
+    _ndx_slice = [t for t in basket_membership.get("ndx", []) if t in set(universe)]
+    regime = _build_regime(regime_raw, breadth_df, universe, _ndx_slice, ohlcv_map, mktcap_map)
 
     # ── RS series: full-history backfill on first run (nightly), read-only otherwise ──
     nightly_lane = _ledger_advance_enabled()
@@ -1639,9 +2114,10 @@ def build(
     t_lrv_w1 = time.monotonic()
 
     # Insider cluster: {ticker: True/False/None}
+    # Use price data-through date for staleness check (not runner-local wall clock)
     insider_map: dict[str, bool | None] = {}
     try:
-        insider_map = _load_insider_cluster(data_root, date.today())
+        insider_map = _load_insider_cluster(data_root, today)
     except Exception as e:  # noqa: BLE001
         log.warning("build_leader_radar: insider_cluster load failed: %s", e)
 
@@ -1653,9 +2129,10 @@ def build(
         log.warning("build_leader_radar: options_skew load failed: %s", e)
 
     # LRV-R1e — analyst buy-share: {ticker: {consensus_pct, n_analysts, ...}}
+    # Use price data-through date for staleness check (not runner-local wall clock)
     analyst_store: dict[str, dict] = {}
     try:
-        analyst_store = _load_analyst_buy_share(data_root, date.today())
+        analyst_store = _load_analyst_buy_share(data_root, today)
     except Exception as e:  # noqa: BLE001
         log.warning("build_leader_radar: analyst buy-share load failed: %s", e)
     analyst_covered = [t for t in universe if t in analyst_store]
@@ -1711,7 +2188,9 @@ def build(
     )
 
     # ── Per-ticker loop ───────────────────────────────────────────────────────
-    today = date.today()
+    # today derived from price data-through date (not date.today() which is TZ-skewed
+    # runner-local PT). Falls back to real today only when store is absent.
+    today: date = latest_date if latest_date is not None else date.today()
     assessments_map: dict[str, Any] = {}
     new_state_rows: list[dict] = []
     new_fire_rows: list[dict] = []
@@ -1722,6 +2201,20 @@ def build(
     # Load prior fire dates from fire_log (real per-ticker last fire date)
     fire_log_df = _load_fire_log(data_root)
     fire_dates: dict[str, date | None] = _last_fire_dates(fire_log_df)
+
+    # Build NYSE session calendar from state_df dates (Item 5 — hysteresis contiguity)
+    # This gives apply_hysteresis the calendar to check that streaks span real sessions.
+    _session_calendar: list[date] | None = None
+    if not state_df.empty and "date" in state_df.columns:
+        try:
+            _all_dates = sorted(
+                d.date() if hasattr(d, "date") else d
+                for d in pd.to_datetime(state_df["date"]).dropna()
+            )
+            if len(_all_dates) >= 2:
+                _session_calendar = _nyse_sessions_between(_all_dates[0], today)
+        except Exception as _e:  # noqa: BLE001
+            log.debug("build_leader_radar: session_calendar build failed: %s", _e)
 
     for ticker in universe:
         ohlcv = ohlcv_map.get(ticker)
@@ -1759,6 +2252,8 @@ def build(
                 rr_80th_pctile=_skew.get("rr_80th_pctile"),
                 basket_corr_now=_basket_corr[0] if _basket_corr else None,
                 basket_corr_then=_basket_corr[1] if _basket_corr else None,
+                session_calendar=_session_calendar,
+                today=today,
             )
             if result is None:
                 continue
@@ -1811,17 +2306,9 @@ def build(
             from engine.leader_lifecycle import tf_state_2d
             tf2d = tf_state_2d(close_series)
 
-            # days_in_state from confirmed
-            days_in_state: int | None = None
-            if confirmed_history:
-                cur = confirmed_history[-1][1]
-                count = 0
-                for _, s in reversed(confirmed_history):
-                    if s == cur:
-                        count += 1
-                    else:
-                        break
-                days_in_state = count
+            # tracked_sessions / days_in_state: row-count from confirmed history
+            tracked_sessions_outer = _count_trailing_state(confirmed_history)
+            days_in_state = tracked_sessions_outer  # template back-compat alias
 
             # Context fields
             pers = personality_store.get(ticker) or {}
@@ -1851,7 +2338,8 @@ def build(
                 "ticker": ticker,
                 "raw_state": raw_state,
                 "state": confirmed_state,
-                "days_in_state": days_in_state,
+                "days_in_state": days_in_state,       # template back-compat
+                "tracked_sessions": tracked_sessions_outer,  # honest row-count name
                 "chips": {
                     k: v for k, v in assessment.evidence.items()
                 },
@@ -1881,12 +2369,21 @@ def build(
                 "breakaway_watch_state": watch_states_map.get(ticker),
             })
 
+            # Compute state_entry_date: stamp tonight's date when confirmed state changes
+            # (or when there's no prior history for this ticker). Nullable for old rows.
+            _prev_confirmed: str | None = confirmed_history[-1][1] if confirmed_history else None
+            _state_entry_date: date | None = (
+                today if _prev_confirmed is None or _prev_confirmed != confirmed_state
+                else None
+            )
+
             # Accumulate new state row for state_history
             new_state_rows.append({
                 "date": today,
                 "ticker": ticker,
                 "raw_state": raw_state,
                 "confirmed_state": confirmed_state,
+                "state_entry_date": _state_entry_date,
             })
 
         except Exception as e:  # noqa: BLE001
@@ -2057,13 +2554,40 @@ def build(
             "extension_pctile_vs_200d": _ext_pctile,
         })
 
+    # ── Freshness + degraded (Items 2 & 4) ───────────────────────────────────
+    freshness = _build_freshness(
+        built_at=built_at,
+        price_through=latest_date,
+        breadth_df=breadth_df,
+        regime_raw=regime_raw,
+        revisions_df=revisions_df,
+        state_df=state_df,
+    )
+    degraded = _build_degraded(latest_date, freshness, state_df)
+
+    # ── history_since / history_gaps (Item 6) ────────────────────────────────
+    history_since, history_gaps = _build_history_gaps(state_df)
+
+    # ── changed_today / near_trigger / fire_history (Item 7) ─────────────────
+    changed_today = _build_changed_today(
+        rows, state_df, today, fire_precipice_set, fire_onset_set,
+        universe_set=set(universe),
+    )
+    near_trigger = _build_near_trigger(rows)
+    fire_history = _build_fire_history(fire_log_df, data_root)
+
     # ── Payload ───────────────────────────────────────────────────────────────
     elapsed = time.monotonic() - t0
     payload: dict[str, Any] = {
-        "schema": "leader_radar.v1",
-        "as_of": as_of,
+        "schema": "leader_radar.v2",
+        "as_of": as_of,           # price data-through date (ISO date); template [:10] is no-op
+        "built_at": built_at,     # UTC wall clock ISO timestamp
         "stale": stale,
+        "degraded": degraded,     # list of plain-string degradation messages (PR-B renders banner)
         "elapsed_s": round(elapsed, 2),
+        "freshness": freshness,
+        "history_since": history_since,
+        "history_gaps": history_gaps,
         "coverage": {
             "n_universe": len(universe),
             "revisions_uncovered": revisions_uncovered[:50],  # cap list
@@ -2087,6 +2611,10 @@ def build(
         # LRV-W1 artifacts
         "early_entry": early_entry_rows,
         "handoff_context": handoff_context,
+        # Item 7 artifacts
+        "changed_today": changed_today,
+        "near_trigger": near_trigger,
+        "fire_history": fire_history,
     }
 
     # ── Write artifact ────────────────────────────────────────────────────────

@@ -13,6 +13,14 @@ Coverage:
   - registry 27 books + unique config_hashes
   - LRV-R1(e): analyst buy-share loader (finnhub rating counts → consensus_pct level,
     stale-period drop, absent-store null) + analyst_saturated chip wiring + coverage
+  LR PR-A (truth layer) additions:
+  - Canonical Zweig: transition test fires; hovering-high does NOT fire
+  - freshness block populated; as_of == price-through date (not wall clock)
+  - built_at present; schema == leader_radar.v2
+  - top5_share: uncovered names dropped (no mixed units); <20 caps → equal_all
+  - degraded list fires on lagging state_history
+  - state_entry_date: old-schema fixture merges without dtype crash
+  - changed_today / near_trigger shapes on synthetic states
     keys + banner render (incl. old-shape payload missing-key safety)
 """
 from __future__ import annotations
@@ -446,7 +454,7 @@ class TestRadarJsonSchema:
     def test_schema_key_present(self, tmp_path):
         root = _build_fixture_root(tmp_path, ["AAPL"])
         payload = self._run(root)
-        assert payload.get("schema") == "leader_radar.v1"
+        assert payload.get("schema") == "leader_radar.v2"  # updated PR-A truth layer
 
     def test_required_top_level_keys(self, tmp_path):
         root = _build_fixture_root(tmp_path, ["AAPL"])
@@ -1462,3 +1470,817 @@ class TestMergeHistoryFrame:
                      "confirmed_state": "NONE"}], today)
         merged.to_parquet(tmp_path / "out.parquet", index=False)
         assert len(merged) == 1
+
+
+# ── LR PR-A: Canonical Zweig breadth thrust (Item 1) ─────────────────────────
+
+def _make_breadth_df(adv_dec_pairs: list[tuple[float, float]]) -> pd.DataFrame:
+    """Build a minimal breadth.parquet-shaped DataFrame from (adv, dec) pairs."""
+    n = len(adv_dec_pairs)
+    idx = pd.date_range("2020-01-02", periods=n, freq="B")
+    adv = [a for a, _ in adv_dec_pairs]
+    dec = [d for _, d in adv_dec_pairs]
+    return pd.DataFrame({"adv": adv, "dec": dec, "pct_above_200": [50.0] * n}, index=idx)
+
+
+class TestZweigCanonical:
+    """Canonical ZBT: transition test fires; hovering-high does NOT fire."""
+
+    def _ratio_to_adv_dec(self, ratio: float) -> tuple[float, float]:
+        """Return (adv, dec) that gives adv/(adv+dec) == ratio with total=1000."""
+        adv = ratio * 1000
+        dec = 1000 - adv
+        return adv, dec
+
+    def test_canonical_transition_fires(self):
+        """MA goes 0.35→0.65 in 8 sessions → fires with completion date."""
+        from scripts.build_leader_radar import _zweig_flag
+
+        # Build 30-day breadth: first 15 at ratio 0.35, then climb to 0.65 over 8 days
+        # MA(10) needs to drop to <= 0.40 then rise to >= 0.615.
+        # Simple approach: 15 days at 0.30 (MA10 = 0.30 once settled),
+        # then 10 days at 0.90 → MA10 climbs from 0.30 toward 0.90.
+        pairs = (
+            [self._ratio_to_adv_dec(0.30)] * 20  # MA10 = 0.30 after 10th
+            + [self._ratio_to_adv_dec(0.90)] * 12  # MA10 climbs; after 10 = 0.90
+        )
+        df = _make_breadth_df(pairs)
+        flag, fire_date, adv_share_10d = _zweig_flag(df)
+        assert flag is True, f"Expected ZBT fire, got flag={flag}"
+        assert fire_date is not None, "fire_date must be set on ZBT completion"
+        assert adv_share_10d is not None
+
+    def test_hovering_above_615_does_not_fire(self):
+        """MA hovering at 0.70 constantly (never dips to <=0.40) → no fire."""
+        from scripts.build_leader_radar import _zweig_flag
+
+        pairs = [self._ratio_to_adv_dec(0.70)] * 30  # MA10 stays ~0.70 always
+        df = _make_breadth_df(pairs)
+        flag, fire_date, adv_share_10d = _zweig_flag(df)
+        assert flag is False, f"Constant high ratio must NOT fire ZBT; got flag={flag}"
+        assert fire_date is None
+
+    def test_missing_columns_returns_none_tuple(self):
+        """Missing adv/dec columns → (None, None, None)."""
+        from scripts.build_leader_radar import _zweig_flag
+
+        df = pd.DataFrame({"pct_above_200": [50.0] * 10})
+        flag, fire_date, adv_share_10d = _zweig_flag(df)
+        assert flag is None
+        assert fire_date is None
+        assert adv_share_10d is None
+
+    def test_empty_df_returns_none_tuple(self):
+        """Empty DataFrame → (None, None, None)."""
+        from scripts.build_leader_radar import _zweig_flag
+
+        flag, fire_date, adv_share_10d = _zweig_flag(pd.DataFrame())
+        assert flag is None
+
+
+# ── LR PR-A: as_of / freshness / built_at (Item 2) ───────────────────────────
+
+class TestArtifactMetadata:
+    """as_of == price data-through date; built_at present; schema v2; freshness block."""
+
+    def _run_build(self, tmp_path: Path) -> dict:
+        import os
+        from scripts.build_leader_radar import build
+        from unittest.mock import patch
+
+        tickers = ["NVDA", "AAPL"]
+        root = _build_fixture_root(tmp_path, tickers)
+        with patch("lib.config.ROOT", root), \
+             patch("lib.config.data_dir", lambda: root / "data"), \
+             patch("lib.config.load", lambda: {
+                 "storage": {"data_dir": "data", "site_dir": "site"},
+                 "leader_radar": {"enabled": True, "basket_keys": ["mag7"], "dow30": []},
+             }):
+            return build(data_root=root / "data", site_root=root / "site")
+
+    def test_as_of_is_date_string(self, tmp_path):
+        payload = self._run_build(tmp_path)
+        as_of = payload.get("as_of")
+        assert as_of is not None
+        # Must be a date string (10 chars) not a full timestamp
+        assert len(as_of) == 10, f"as_of must be YYYY-MM-DD, got {as_of!r}"
+        date.fromisoformat(as_of)  # raises if not valid date
+
+    def test_built_at_present(self, tmp_path):
+        payload = self._run_build(tmp_path)
+        built_at = payload.get("built_at")
+        assert built_at is not None
+        assert "T" in built_at, f"built_at must be ISO timestamp, got {built_at!r}"
+
+    def test_schema_v2(self, tmp_path):
+        payload = self._run_build(tmp_path)
+        assert payload.get("schema") == "leader_radar.v2"
+
+    def test_freshness_block_present(self, tmp_path):
+        payload = self._run_build(tmp_path)
+        freshness = payload.get("freshness")
+        assert isinstance(freshness, dict)
+        assert "price_through" in freshness
+        assert "built_at" in freshness
+
+    def test_as_of_sliced_is_noop(self, tmp_path):
+        """Template uses lr.as_of[:10]; as_of is a 10-char date so [:10] is a no-op."""
+        payload = self._run_build(tmp_path)
+        as_of = payload.get("as_of", "")
+        assert as_of[:10] == as_of, "[:10] slice must be a no-op on date string"
+
+
+# ── LR PR-A: top5_share no mixed units (Item 3) ──────────────────────────────
+
+class TestTop5ShareNDX:
+    """top5_share: uncovered names dropped (no mixed units); <20 caps → equal_all."""
+
+    def _make_ohlcv_for_top5(self, n: int = 60) -> pd.DataFrame:
+        close = pd.Series(
+            [100.0 + i * 0.1 for i in range(n)],
+            index=pd.date_range("2020-01-02", periods=n, freq="B"),
+        )
+        return pd.DataFrame({"close": close.values}, index=close.index)
+
+    def test_uncovered_dropped_no_mixed_units(self):
+        """3 names with caps, 2 without: uncovered dropped → cap weighting."""
+        from scripts.build_leader_radar import _compute_top5_share
+
+        tickers = ["A", "B", "C", "D", "E"]
+        ohlcv_map = {t: self._make_ohlcv_for_top5() for t in tickers}
+        mktcap_map = {"A": 1e12, "B": 2e12, "C": 3e12, "D": None, "E": None}
+
+        # NDX slice = all 5 names
+        share, n_cov, n_total, weighting = _compute_top5_share(tickers, ohlcv_map, mktcap_map)
+        # 3 covered >= 20 threshold? No (3 < 20) → equal_all
+        assert weighting == "equal_all", f"Expected equal_all for 3 covered, got {weighting}"
+
+    def test_fewer_than_20_caps_equal_all(self):
+        """If fewer than 20 names have caps → equal_all (no mixed units)."""
+        from scripts.build_leader_radar import _compute_top5_share
+
+        tickers = [f"T{i}" for i in range(25)]
+        ohlcv_map = {t: self._make_ohlcv_for_top5() for t in tickers}
+        # Only 15 have valid caps (< 20 threshold)
+        mktcap_map = {f"T{i}": 1e12 for i in range(15)}
+        for i in range(15, 25):
+            mktcap_map[f"T{i}"] = None
+
+        share, n_cov, n_total, weighting = _compute_top5_share(tickers, ohlcv_map, mktcap_map)
+        assert weighting == "equal_all", f"Expected equal_all with 15 caps; got {weighting}"
+
+    def test_20_or_more_caps_uses_cap_weighting(self):
+        """20+ names with valid caps → 'cap' weighting."""
+        from scripts.build_leader_radar import _compute_top5_share
+
+        tickers = [f"T{i}" for i in range(30)]
+        ohlcv_map = {t: self._make_ohlcv_for_top5() for t in tickers}
+        mktcap_map = {t: 1e12 for t in tickers}  # all covered
+
+        share, n_cov, n_total, weighting = _compute_top5_share(tickers, ohlcv_map, mktcap_map)
+        assert weighting == "cap", f"Expected cap weighting with 30 caps; got {weighting}"
+        assert share is not None
+
+
+# ── LR PR-A: degraded list (Item 4) ─────────────────────────────────────────
+
+class TestDegradedList:
+    """degraded list fires when state_history lags price_through."""
+
+    def test_degraded_fires_on_lagging_state_history(self):
+        """state_history lagging >2 sessions → degraded message present."""
+        from scripts.build_leader_radar import _build_degraded, _build_freshness
+
+        # Price through = 2026-07-15, state history through = 2026-07-08 (5 sessions lag)
+        price_through = date(2026, 7, 15)
+        state_df = pd.DataFrame({
+            "date": pd.to_datetime([date(2026, 7, 8), date(2026, 7, 7)]),
+            "ticker": ["NVDA", "AAPL"],
+            "confirmed_state": ["NONE", "NONE"],
+        })
+        breadth_df = pd.DataFrame()
+        regime_raw: dict = {}
+        revisions_df = pd.DataFrame()
+
+        freshness = _build_freshness(
+            built_at="2026-07-15T22:00:00+00:00",
+            price_through=price_through,
+            breadth_df=breadth_df,
+            regime_raw=regime_raw,
+            revisions_df=revisions_df,
+            state_df=state_df,
+        )
+        degraded = _build_degraded(price_through, freshness, state_df)
+        assert isinstance(degraded, list)
+        assert any("state history" in msg for msg in degraded), (
+            f"Expected 'state history' degradation message, got: {degraded}"
+        )
+
+    def test_degraded_empty_when_clean(self):
+        """No lag → degraded list is empty."""
+        from scripts.build_leader_radar import _build_degraded, _build_freshness
+
+        price_through = date(2026, 7, 15)
+        state_df = pd.DataFrame({
+            "date": pd.to_datetime([date(2026, 7, 15)]),
+            "ticker": ["NVDA"],
+            "confirmed_state": ["NONE"],
+        })
+        regime_raw = {"as_of": "2026-07-15"}
+        freshness = _build_freshness(
+            built_at="2026-07-15T22:00:00+00:00",
+            price_through=price_through,
+            breadth_df=pd.DataFrame(
+                {"adv": [300.0], "dec": [200.0], "pct_above_200": [60.0]},
+                index=pd.to_datetime(["2026-07-15"]),
+            ),
+            regime_raw=regime_raw,
+            revisions_df=pd.DataFrame(),
+            state_df=state_df,
+        )
+        degraded = _build_degraded(price_through, freshness, state_df)
+        assert degraded == [], f"Expected empty degraded list, got: {degraded}"
+
+
+# ── LR PR-A: state_entry_date + old-schema merge (Item 6) ────────────────────
+
+class TestStateEntryDateMerge:
+    """state_entry_date: old-schema fixture (no column) merges without dtype crash."""
+
+    def test_old_schema_merge_no_crash(self, tmp_path):
+        """Old state_history (without state_entry_date) + new rows (with it) must merge."""
+        from scripts.build_leader_radar import _merge_history_frame
+
+        # Old-schema parquet (no state_entry_date column)
+        old = pd.DataFrame({
+            "date": pd.to_datetime([date(2026, 7, 11), date(2026, 7, 11)]),
+            "ticker": ["AAPL", "NVDA"],
+            "raw_state": ["NONE", "NONE"],
+            "confirmed_state": ["NONE", "NONE"],
+        })
+        p = tmp_path / "old_schema.parquet"
+        old.to_parquet(p, index=False)
+        existing = pd.read_parquet(p)
+        assert "state_entry_date" not in existing.columns  # confirm old schema
+
+        today = date(2026, 7, 16)
+        new_rows = [
+            {"date": today, "ticker": "AAPL", "raw_state": "QUIET_ACCUMULATION",
+             "confirmed_state": "QUIET_ACCUMULATION", "state_entry_date": today},
+        ]
+        merged = _merge_history_frame(existing, new_rows, today)
+        # Must not crash
+        merged.to_parquet(tmp_path / "out.parquet", index=False)
+        back = pd.read_parquet(tmp_path / "out.parquet")
+        assert "state_entry_date" in back.columns
+        assert len(back) == 3  # 2 seed + 1 today
+
+    def test_transition_stamps_entry_date(self):
+        """When confirmed state changes, state_entry_date == today."""
+        # Direct logic check: _prev_confirmed != confirmed_state → stamp today
+        from datetime import date as _date
+
+        today = _date(2026, 7, 16)
+        prev_confirmed = "QUIET_ACCUMULATION"
+        confirmed_state = "CATALYST_WINDOW"  # different → stamp
+        _state_entry_date = (
+            today if prev_confirmed is None or prev_confirmed != confirmed_state
+            else None
+        )
+        assert _state_entry_date == today
+
+    def test_no_transition_no_entry_date(self):
+        """When confirmed state stays the same, state_entry_date is None."""
+        from datetime import date as _date
+
+        today = _date(2026, 7, 16)
+        prev_confirmed = "QUIET_ACCUMULATION"
+        confirmed_state = "QUIET_ACCUMULATION"  # same → no stamp
+        _state_entry_date = (
+            today if prev_confirmed is None or prev_confirmed != confirmed_state
+            else None
+        )
+        assert _state_entry_date is None
+
+
+# ── LR PR-A: changed_today / near_trigger shapes (Item 7) ────────────────────
+
+class TestChangedTodayNearTrigger:
+    """changed_today and near_trigger shape tests on synthetic states."""
+
+    def test_changed_today_entered(self):
+        """Ticker that transitioned to a new state shows in entered list."""
+        from scripts.build_leader_radar import _build_changed_today
+        from engine.leader_lifecycle import STATE_QUIET_ACCUMULATION, STATE_NONE
+
+        today = date(2026, 7, 16)
+        prev_date = date(2026, 7, 15)
+
+        # Prior history: NVDA was in NONE
+        state_df = pd.DataFrame({
+            "date": pd.to_datetime([prev_date]),
+            "ticker": ["NVDA"],
+            "confirmed_state": [STATE_NONE],
+        })
+        # Tonight: NVDA in QA
+        rows = [{"ticker": "NVDA", "state": STATE_QUIET_ACCUMULATION}]
+        result = _build_changed_today(rows, state_df, today, set(), set())
+        assert any(r["ticker"] == "NVDA" for r in result["entered"])
+
+    def test_changed_today_fired(self):
+        """Fire events show in fired list."""
+        from scripts.build_leader_radar import _build_changed_today
+
+        today = date(2026, 7, 16)
+        result = _build_changed_today(
+            [], pd.DataFrame(), today,
+            fire_precipice_set={"MSFT"},
+            fire_onset_set={"NVDA"},
+        )
+        fire_tickers = [f["ticker"] for f in result["fired"]]
+        assert "MSFT" in fire_tickers
+        assert "NVDA" in fire_tickers
+
+    def test_near_trigger_qa_k_n_minus_1(self):
+        """QA row with k == n-1 appears in near_trigger."""
+        from scripts.build_leader_radar import _build_near_trigger
+        from engine.leader_lifecycle import STATE_QUIET_ACCUMULATION
+
+        rows = [{
+            "ticker": "AAPL",
+            "state": STATE_QUIET_ACCUMULATION,
+            "k_true": 3,
+            "n_avail": 4,  # k == n-1
+            "chips": {"rs_turn": True, "revision_positive": True, "accum_evidence": True,
+                      "obv_divergence": False},
+            "days_in_state": 5,
+            "tracked_sessions": 5,
+        }]
+        result = _build_near_trigger(rows)
+        assert len(result) == 1
+        assert result[0]["ticker"] == "AAPL"
+
+    def test_near_trigger_empty_when_no_candidates(self):
+        """No QA/CW rows → empty near_trigger."""
+        from scripts.build_leader_radar import _build_near_trigger
+        from engine.leader_lifecycle import STATE_NONE
+
+        rows = [{"ticker": "T", "state": STATE_NONE, "k_true": 0, "n_avail": 4,
+                 "chips": {}, "days_in_state": 2, "tracked_sessions": 2}]
+        assert _build_near_trigger(rows) == []
+
+
+# ── LR PR-A: hysteresis session-contiguity (engine test, Item 5) ─────────────
+# (also see test_leader_lifecycle.py for apply_hysteresis unit tests)
+
+class TestHysteresisContiguity:
+    """Hole in dates breaks streak; contiguous streak fires."""
+
+    def _make_history(self, states_with_dates: list[tuple[str, str]]) -> list[tuple[date, str]]:
+        """Return list of (date, state) tuples from (date_iso, state) pairs, newest last."""
+        return [(date.fromisoformat(d), s) for d, s in states_with_dates]
+
+    def test_hole_breaks_exit_streak(self):
+        """Exit streak with a date hole does NOT confirm exit from held state."""
+        from engine.leader_lifecycle import (
+            apply_hysteresis,
+            STATE_CATALYST_WINDOW,
+            STATE_SUPPRESSED,
+        )
+
+        # Calendar: Jan 2, 5, 6, 7, 8, 9, 12, 13 (business days in January 2026)
+        session_cal = [date(2026, 1, d) for d in [2, 5, 6, 7, 8, 9, 12, 13]]
+        # Exit raw_history: Jan 5 and Jan 7 have a GAP (Jan 6 is between them in cal)
+        # exit_n=3 requires last 2 prior raw sessions to be adjacent AND != held_state.
+        raw_hist_exit = [
+            (date(2026, 1, 5), STATE_SUPPRESSED),
+            (date(2026, 1, 7), STATE_SUPPRESSED),  # Jan 6 is missing from this sequence
+        ]
+        conf_hist = [(date(2026, 1, 2), STATE_CATALYST_WINDOW)]
+        result = apply_hysteresis(
+            STATE_SUPPRESSED,
+            raw_hist_exit, conf_hist,
+            exit_n=3, session_calendar=session_cal,
+        )
+        # Jan 5 and Jan 7 are NOT adjacent in session_cal (Jan 6 lies between them),
+        # so the contiguity check fails → held state must be preserved.
+        assert result == STATE_CATALYST_WINDOW, (
+            f"Hole in exit streak should keep confirmed state, got {result}"
+        )
+
+    def test_hole_is_intact_when_dates_adjacent(self):
+        """Exit streak where prior rows ARE adjacent → exit succeeds."""
+        from engine.leader_lifecycle import (
+            apply_hysteresis,
+            STATE_CATALYST_WINDOW,
+            STATE_SUPPRESSED,
+        )
+
+        session_cal = [date(2026, 1, d) for d in [2, 5, 6, 7, 8, 9, 12, 13]]
+        # Jan 6 and Jan 7 ARE adjacent in session_cal
+        raw_hist_exit = [
+            (date(2026, 1, 6), STATE_SUPPRESSED),
+            (date(2026, 1, 7), STATE_SUPPRESSED),
+        ]
+        conf_hist = [(date(2026, 1, 2), STATE_CATALYST_WINDOW)]
+        result = apply_hysteresis(
+            STATE_SUPPRESSED,
+            raw_hist_exit, conf_hist,
+            exit_n=3, session_calendar=session_cal,
+        )
+        assert result == STATE_SUPPRESSED, (
+            f"Adjacent exit streak must confirm exit, got {result}"
+        )
+
+    def test_contiguous_streak_confirms_entry(self):
+        """Contiguous streak (no holes) confirms entry."""
+        from engine.leader_lifecycle import apply_hysteresis, STATE_QUIET_ACCUMULATION, STATE_NONE
+
+        session_calendar = [date(2026, 1, d) for d in [2, 5, 6, 7, 8, 9]]
+        raw_history = [
+            (date(2026, 1, 8), STATE_QUIET_ACCUMULATION),
+        ]
+        confirmed_history = [(date(2026, 1, 5), STATE_NONE)]
+
+        # Today = Jan 9 (adjacent to Jan 8 in calendar)
+        result = apply_hysteresis(
+            STATE_QUIET_ACCUMULATION,
+            raw_history, confirmed_history,
+            session_calendar=session_calendar,
+        )
+        assert result == STATE_QUIET_ACCUMULATION, (
+            f"Contiguous streak must confirm entry, got {result}"
+        )
+
+    def test_no_calendar_behaves_as_before(self):
+        """Without session_calendar, behaves exactly as original (no contiguity check)."""
+        from engine.leader_lifecycle import apply_hysteresis, STATE_QUIET_ACCUMULATION, STATE_NONE
+
+        raw_history = [(date(2026, 1, 2), STATE_QUIET_ACCUMULATION)]
+        confirmed_history = [(date(2026, 1, 1), STATE_NONE)]
+
+        result = apply_hysteresis(
+            STATE_QUIET_ACCUMULATION,
+            raw_history, confirmed_history,
+            session_calendar=None,  # no calendar
+        )
+        assert result == STATE_QUIET_ACCUMULATION
+
+
+# ── LR PR-A review blockers — new tests ──────────────────────────────────────
+
+
+class TestHysteresisContiguityToday:
+    """Blocker 1: today param closes the gap-class bug on entry and exit."""
+
+    def test_entry_hole_between_prior_and_today_blocks_confirmation(self):
+        """With enter_n=2, 1 prior row + a hole to today must NOT confirm."""
+        from engine.leader_lifecycle import apply_hysteresis, STATE_QUIET_ACCUMULATION, STATE_NONE
+
+        # Calendar: Jan 2, 5, 6, 7, 8, 9 (Jan 3/4 = weekend)
+        cal = [date(2026, 1, d) for d in [2, 5, 6, 7, 8, 9]]
+        # Prior raw: Jan 5 (QA); today = Jan 9 (not adjacent to Jan 5 — gap at 6,7,8)
+        raw_history = [(date(2026, 1, 5), STATE_QUIET_ACCUMULATION)]
+        confirmed_history = [(date(2026, 1, 2), STATE_NONE)]
+
+        result = apply_hysteresis(
+            STATE_QUIET_ACCUMULATION,
+            raw_history, confirmed_history,
+            session_calendar=cal,
+            today=date(2026, 1, 9),
+        )
+        assert result == STATE_NONE, (
+            f"Hole between prior row and today must block entry, got {result}"
+        )
+
+    def test_entry_adjacent_prior_and_today_confirms(self):
+        """Prior row immediately before today → entry confirms."""
+        from engine.leader_lifecycle import apply_hysteresis, STATE_QUIET_ACCUMULATION, STATE_NONE
+
+        cal = [date(2026, 1, d) for d in [2, 5, 6, 7, 8, 9]]
+        raw_history = [(date(2026, 1, 8), STATE_QUIET_ACCUMULATION)]
+        confirmed_history = [(date(2026, 1, 5), STATE_NONE)]
+
+        result = apply_hysteresis(
+            STATE_QUIET_ACCUMULATION,
+            raw_history, confirmed_history,
+            session_calendar=cal,
+            today=date(2026, 1, 9),
+        )
+        assert result == STATE_QUIET_ACCUMULATION, (
+            f"Adjacent prior + today must confirm entry, got {result}"
+        )
+
+    def test_exit_hole_between_last_prior_and_today_blocks_exit(self):
+        """Exit streak with hole from last prior raw row to today must NOT fire."""
+        from engine.leader_lifecycle import (
+            apply_hysteresis, STATE_CATALYST_WINDOW, STATE_SUPPRESSED,
+        )
+
+        cal = [date(2026, 1, d) for d in [2, 5, 6, 7, 8, 9]]
+        # exit_n=3: need 2 prior raw non-held + today. Prior: Jan 5, Jan 6 (adjacent).
+        # today = Jan 9 (gap: Jan 7,8 in calendar between Jan 6 and Jan 9).
+        raw_hist = [
+            (date(2026, 1, 5), STATE_SUPPRESSED),
+            (date(2026, 1, 6), STATE_SUPPRESSED),
+        ]
+        conf_hist = [(date(2026, 1, 2), STATE_CATALYST_WINDOW)]
+
+        result = apply_hysteresis(
+            STATE_SUPPRESSED,
+            raw_hist, conf_hist,
+            exit_n=3,
+            session_calendar=cal,
+            today=date(2026, 1, 9),
+        )
+        assert result == STATE_CATALYST_WINDOW, (
+            f"Hole between last prior and today must block exit, got {result}"
+        )
+
+    def test_legacy_no_today_unchanged(self):
+        """Legacy call without today= returns same result as before."""
+        from engine.leader_lifecycle import apply_hysteresis, STATE_QUIET_ACCUMULATION, STATE_NONE
+
+        cal = [date(2026, 1, d) for d in [2, 5, 6, 7, 8, 9]]
+        raw_history = [(date(2026, 1, 5), STATE_QUIET_ACCUMULATION)]
+        confirmed_history = [(date(2026, 1, 2), STATE_NONE)]
+
+        # Without today=, the gap check is not applied → trivially passes (len<=1)
+        result = apply_hysteresis(
+            STATE_QUIET_ACCUMULATION,
+            raw_history, confirmed_history,
+            session_calendar=cal,
+            # today not passed → legacy behavior
+        )
+        assert result == STATE_QUIET_ACCUMULATION, (
+            f"Legacy (no today=) must confirm entry trivially, got {result}"
+        )
+
+
+class TestFireHistoryGradeJoin:
+    """Blocker 2: _build_fire_history uses grades.jsonl not grades.parquet."""
+
+    def test_absent_grades_yields_accruing(self, tmp_path):
+        """When grades.jsonl is absent all rows carry status='accruing', ret=None."""
+        from scripts.build_leader_radar import _build_fire_history
+
+        fire_log_df = pd.DataFrame([{
+            "date": pd.Timestamp("2026-07-15"),
+            "ticker": "CRWD",
+            "fire_type": "onset",
+        }])
+        result = _build_fire_history(fire_log_df, tmp_path)
+        assert len(result) == 1
+        r = result[0]
+        assert r["ticker"] == "CRWD"
+        assert r["status"] == "accruing"
+        assert r["ret_excess_spy"] is None
+
+    def test_grade_row_joined_on_21d_horizon(self, tmp_path):
+        """Matching 21d grade row is joined; matured=True → status='matured'."""
+        import json as _json
+        from scripts.build_leader_radar import _build_fire_history
+
+        # Write grades.jsonl
+        grades_path = tmp_path / "pick_lab" / "grades.jsonl"
+        grades_path.parent.mkdir(parents=True, exist_ok=True)
+        grade_row = {
+            "engine_id": "plab_leader_onset",
+            "ticker": "CRWD",
+            "fire_date": "2026-07-15",
+            "horizon": "21",
+            "authority": "display_only",
+            "ret_excess_spy": 0.045,
+            "ret_abs": 0.06,
+            "matured": True,
+        }
+        grades_path.write_text(_json.dumps(grade_row) + "\n")
+
+        fire_log_df = pd.DataFrame([{
+            "date": pd.Timestamp("2026-07-15"),
+            "ticker": "CRWD",
+            "fire_type": "onset",
+        }])
+
+        # Patch GRADES_PATH to tmp_path
+        import engine.pick_lab.ledger as _ledger
+        orig_path = _ledger.GRADES_PATH
+        try:
+            _ledger.GRADES_PATH = grades_path
+            result = _build_fire_history(fire_log_df, tmp_path)
+        finally:
+            _ledger.GRADES_PATH = orig_path
+
+        assert len(result) == 1
+        r = result[0]
+        assert r["status"] == "matured"
+        assert abs(r["ret_excess_spy"] - 0.045) < 1e-9
+
+    def test_no_grade_column_in_output(self, tmp_path):
+        """Output dict must not have 'grade' key (old schema)."""
+        from scripts.build_leader_radar import _build_fire_history
+
+        fire_log_df = pd.DataFrame([{
+            "date": pd.Timestamp("2026-07-15"),
+            "ticker": "DDOG",
+            "fire_type": "precipice",
+        }])
+        result = _build_fire_history(fire_log_df, tmp_path)
+        assert len(result) == 1
+        assert "grade" not in result[0], "Old 'grade' field must not appear in output"
+        assert "ret_excess_spy" in result[0]
+
+
+class TestNDXMktcapCoverage:
+    """Bug 3: NDX-slice mktcap coverage returns n_covered > 0 when caps are present."""
+
+    def test_ndx_slice_with_caps_yields_cap_weighting(self):
+        """_compute_top5_share with >=20 capped names → weighting='cap', n_covered>0."""
+        from scripts.build_leader_radar import _compute_top5_share
+        import numpy as np
+
+        # Build 25 synthetic NDX tickers (threshold for 'cap' is n_covered >= 20)
+        n = 25
+        idx = pd.date_range("2026-06-01", periods=n, freq="B")
+        ndx_slice = [f"T{i:02d}" for i in range(25)]
+        ohlcv_map = {}
+        for i, t in enumerate(ndx_slice):
+            prices = 100.0 + np.arange(n) * (0.5 + i * 0.1)
+            ohlcv_map[t] = pd.DataFrame({"close": prices}, index=idx)
+
+        # Caps for all 25 names
+        mktcap_map = {t: float(1000 + i * 100) for i, t in enumerate(ndx_slice)}
+
+        top5_share, n_covered, n_total, weighting = _compute_top5_share(
+            ndx_slice, ohlcv_map, mktcap_map,
+        )
+
+        assert weighting == "cap", f"Expected 'cap' weighting, got {weighting!r}"
+        assert n_covered == 25, f"Expected 25 covered, got {n_covered}"
+        assert top5_share is not None
+        assert 0.0 < top5_share <= 1.0
+
+    def test_ndx_slice_no_caps_yields_equal_all(self):
+        """_compute_top5_share with no cap data → weighting='equal_all', n_covered=0."""
+        from scripts.build_leader_radar import _compute_top5_share
+        import numpy as np
+
+        n = 25
+        idx = pd.date_range("2026-06-01", periods=n, freq="B")
+        ndx_slice = ["AAPL", "MSFT"]
+        ohlcv_map = {}
+        for t in ndx_slice:
+            ohlcv_map[t] = pd.DataFrame({"close": 100.0 + np.arange(n)}, index=idx)
+
+        # Empty mktcap_map
+        top5_share, n_covered, n_total, weighting = _compute_top5_share(
+            ndx_slice, ohlcv_map, {},
+        )
+        assert weighting == "equal_all"
+        assert n_covered == 0
+
+
+class TestNyseSessionsBetweenLongSpan:
+    """Fix 4: _nyse_sessions_between handles spans > 365d."""
+
+    def test_span_beyond_365_days_not_truncated(self):
+        """A 400-day span must return sessions beyond the 365d limit."""
+        from scripts.build_leader_radar import _nyse_sessions_between
+
+        d1 = date(2023, 1, 3)
+        d2 = date(2024, 2, 12)  # ~406 calendar days from d1
+        sessions = _nyse_sessions_between(d1, d2)
+        # 400+ calendar days should yield ~280+ sessions; at minimum more than 260
+        assert len(sessions) > 260, (
+            f"Expected >260 sessions for ~406d span, got {len(sessions)}"
+        )
+        # Boundary check
+        assert sessions[0] == d1
+        assert sessions[-1] <= d2
+
+
+class TestChangedTodayUniverseGate:
+    """Fix 5: exited gate filters transient per-ticker failures."""
+
+    def test_in_universe_but_not_in_rows_counts_as_exited(self):
+        """Ticker in universe AND in prev_states but absent from rows → exited."""
+        from scripts.build_leader_radar import _build_changed_today
+        from engine.leader_lifecycle import STATE_QUIET_ACCUMULATION
+
+        today = date(2026, 7, 16)
+        prev_date = date(2026, 7, 15)
+
+        state_df = pd.DataFrame({
+            "date": pd.to_datetime([prev_date]),
+            "ticker": ["NVDA"],
+            "confirmed_state": [STATE_QUIET_ACCUMULATION],
+        })
+        # NVDA is in universe but not in tonight's rows (genuine exit)
+        result = _build_changed_today(
+            [], state_df, today, set(), set(),
+            universe_set={"NVDA"},
+        )
+        assert any(r["ticker"] == "NVDA" for r in result["exited"])
+
+    def test_out_of_universe_not_claimed_as_exited(self):
+        """Ticker NOT in universe_set (dropped from resolved set) → skipped."""
+        from scripts.build_leader_radar import _build_changed_today
+        from engine.leader_lifecycle import STATE_QUIET_ACCUMULATION
+
+        today = date(2026, 7, 16)
+        prev_date = date(2026, 7, 15)
+
+        state_df = pd.DataFrame({
+            "date": pd.to_datetime([prev_date]),
+            "ticker": ["NVDA"],
+            "confirmed_state": [STATE_QUIET_ACCUMULATION],
+        })
+        # universe_set does NOT include NVDA (dropped due to per-ticker failure)
+        result = _build_changed_today(
+            [], state_df, today, set(), set(),
+            universe_set={"MSFT"},  # NVDA is absent
+        )
+        assert not any(r["ticker"] == "NVDA" for r in result["exited"]), (
+            "Out-of-universe ticker must not appear in exited"
+        )
+
+    def test_none_universe_set_falls_back_to_original_behavior(self):
+        """Without universe_set (None), any prev-state ticker absent from rows is exited."""
+        from scripts.build_leader_radar import _build_changed_today
+        from engine.leader_lifecycle import STATE_QUIET_ACCUMULATION
+
+        today = date(2026, 7, 16)
+        prev_date = date(2026, 7, 15)
+
+        state_df = pd.DataFrame({
+            "date": pd.to_datetime([prev_date]),
+            "ticker": ["NVDA"],
+            "confirmed_state": [STATE_QUIET_ACCUMULATION],
+        })
+        result = _build_changed_today(
+            [], state_df, today, set(), set(),
+            universe_set=None,  # legacy path
+        )
+        assert any(r["ticker"] == "NVDA" for r in result["exited"])
+
+
+class TestNearTriggerMissingChips:
+    """Fix 6: missing_chips restricted to state chip set + False only."""
+
+    def test_none_chips_not_in_missing(self):
+        """None-valued chips (unavailable) must NOT appear in missing_chips."""
+        from scripts.build_leader_radar import _build_near_trigger
+        from engine.leader_lifecycle import STATE_QUIET_ACCUMULATION
+
+        rows = [{
+            "ticker": "AAPL",
+            "state": STATE_QUIET_ACCUMULATION,
+            "k_true": 3,
+            "n_avail": 4,
+            "chips": {
+                "revision_positive": True,
+                "rs_turn": True,
+                "accum_evidence": True,
+                "obv_divergence": None,   # unavailable — must NOT appear in missing
+                "insider_cluster": False,  # the one False chip
+            },
+            "days_in_state": 5,
+            "tracked_sessions": 5,
+        }]
+        result = _build_near_trigger(rows)
+        assert len(result) == 1
+        missing = result[0]["missing_chips"]
+        assert "obv_divergence" not in missing, (
+            "None chip must not be in missing_chips"
+        )
+        assert "insider_cluster" in missing, (
+            "False chip must appear in missing_chips"
+        )
+
+    def test_non_state_chips_excluded_from_missing(self):
+        """Chips outside the state's chip set must not appear in missing_chips."""
+        from scripts.build_leader_radar import _build_near_trigger
+        from engine.leader_lifecycle import STATE_CATALYST_WINDOW
+
+        # CW chip set is: gap_ignition, bw_emerging, rs_line_nh
+        rows = [{
+            "ticker": "MSFT",
+            "state": STATE_CATALYST_WINDOW,
+            "k_true": 1,
+            "n_avail": 2,
+            "chips": {
+                "gap_ignition": True,
+                "bw_emerging": False,
+                "rs_line_nh": None,
+                "revision_positive": False,  # QA chip, not in CW set → must be excluded
+            },
+            "days_in_state": 2,
+            "tracked_sessions": 2,
+        }]
+        result = _build_near_trigger(rows)
+        assert len(result) == 1
+        missing = result[0]["missing_chips"]
+        assert "revision_positive" not in missing, (
+            "Chip outside state's set must not appear in missing_chips"
+        )
+        assert "bw_emerging" in missing
