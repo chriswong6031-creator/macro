@@ -450,6 +450,31 @@ def _gex_publish_decision(
         return True, gex_payload, False
 
 
+def _gex_history_relpath(root: str, gex_payload: dict) -> str | None:
+    """Relative path for the dated per-strike GEX snapshot, or None to skip.
+
+    WP-GEX-SNAPSHOTS (research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md §7):
+    gex/{ROOT}.json is overwritten in place every night, so per-strike
+    topology is lost as point-in-time data. Retaining the same payload under
+    a dated key gives the Exposure-by-Strike scrubber and S-TOPO-SIGMA a
+    point-in-time per-strike topology history to read from.
+
+    Key date = the payload's own as-of/session date (NEVER wall clock — a
+    delayed or manual re-run must land on the session it describes, not the
+    day it happened to run).
+
+    Returns None (skip the dated write) when:
+      - the payload has no by_strike rows (never write empty history), or
+      - the payload carries no asof date to key by.
+    """
+    if not gex_payload.get("by_strike"):
+        return None
+    asof = gex_payload.get("asof")
+    if not asof:
+        return None
+    return f"gex_history/{root}/{asof}.json"
+
+
 # --------------------------------------------------------------------------- #
 # CLI entry point
 # --------------------------------------------------------------------------- #
@@ -610,6 +635,28 @@ def main() -> None:
                 _upload_r2(s3, bucket, vol_path, f"{R2_PREFIX}vol/{root}.json")
                 if gex_publish:
                     _upload_r2(s3, bucket, gex_path, f"{R2_PREFIX}gex/{root}.json")
+
+            # ── WP-GEX-SNAPSHOTS: dated per-strike GEX snapshot ────────────────
+            # gex/{root}.json above stays overwrite-in-place (consumers depend
+            # on that key — UNCHANGED). Additionally retain the same payload
+            # under a DATED key so per-strike topology survives as
+            # point-in-time history for the Exposure-by-Strike scrubber +
+            # S-TOPO-SIGMA (research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md §7
+            # WP-GEX-SNAPSHOTS). Date = payload asof (session date), never
+            # wall clock. Empty payloads (no by_strike rows) are never
+            # written. INERT per root, like everything else in this loop.
+            try:
+                _hist_rel = _gex_history_relpath(root, gex_payload)
+                if _hist_rel:
+                    hist_path = out_dir / _hist_rel
+                    _write_json(hist_path, gex_payload)
+                    if s3 and bucket and gex_publish:
+                        _upload_r2(s3, bucket, hist_path, f"{R2_PREFIX}{_hist_rel}")
+            except Exception as _hist_err:  # noqa: BLE001
+                log.warning(
+                    "options_hub_builder: gex_history dated snapshot failed for %s — %s",
+                    root, _hist_err,
+                )
 
             roots_ok.append(root)
             log.info(
