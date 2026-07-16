@@ -13044,3 +13044,79 @@ artifacts:
       by future grader. Nightly-lane only (COLLECT_LANE=='nightly' guard mirrors
       engine/ownership_ledger.py:79-82). Interim TLT/IEF series never emit
       (display-only, R6 removability). Authority all-false. Non-fatal (CCW-R16).
+
+# ============================================================
+# SECTOR CENTRAL SITE PAYLOADS — load-bearing display artifacts
+# (US + China site JSONs; the calls ledgers are registered above
+#  as sector-central-calls / china-sector-central-calls)
+# ============================================================
+
+  site-sector-central:
+    path: site/sectordata/sector_central.json
+    format: json
+    producer: scripts/build_sector_central.py
+    known_extra_writers: []
+    owner_program: institutional-sector-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+      - scripts/build_stance_matrix.py
+      - engine/theme_scoring.py
+      - engine/group_context.py
+    external_consumers: []
+    notes: >
+      Sector Central US site payload: per-sector conviction verdicts
+      (conviction.label_en/zh + score + dir), momentum RS ranks
+      (momentum.rs_rank/lead), cycle position, forward trend gate, heat,
+      market regime block, grader scorecard. Composed by engine/sector_central.py;
+      build_sector_central.py is the runner that writes this JSON plus the
+      sector_central_data.js twin (window.SECTOR_CENTRAL, read client-side by
+      sector_central.html). Sole writer — build_site.py runs BEFORE the producer
+      in the nightly DAG, so all build_site-lane reads see the last-committed
+      copy (T-1 / RLT-R6 semantics). Declared readers: scripts/build_site.py
+      (RLT-R6 sector-stance chip join onto buy-board cards + MLC-W1
+      leadership-board sector-RS strip); engine/theme_scoring.py (MLC-W2b
+      sector-conflict demotion — T-1 read, de-escalation only, <=5d freshness
+      gate, fail-open); scripts/build_stance_matrix.py (MLC-W2b sector verdict
+      organ — T-1 read); engine/group_context.py (READER_CONTRACT leadership
+      backbone, weight 0.45). Display-only; de-escalation only; nothing here
+      ranks, gates, sizes, or escalates. CONST-ART2 authority: false.
+      authority.may_rank/gate/size/escalate=false.
+
+  site-china-sector-central:
+    path: site/chinasectordata/sector_central.json
+    format: json
+    producer: scripts/build_china_sector_central.py
+    known_extra_writers: []
+    owner_program: institutional-sector-intelligence
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Sector Central China site payload (CN twin of site-sector-central):
+      per-sector verdicts, market regime block, sleeve-size chip
+      (engine/risk_radar_intl.cn_sleeve_chip), grader scorecard. Composed by
+      engine/china_sector_central.py; build_china_sector_central.py is the
+      runner that writes this JSON plus the sector_central_china_data.js twin
+      (window.SECTOR_CENTRAL, read client-side by sector_central_china.html).
+      Sole writer. No Python readers today — registered for read-gate coverage
+      before consumers arrive (census 2026-07-16: zero engine/scripts/collectors
+      or template reads; CN act-now/stance surfaces read other stores).
+      Display-only; nothing here ranks, gates, sizes, or escalates.
+      CONST-ART2 authority: false. authority.may_rank/gate/size/escalate=false.

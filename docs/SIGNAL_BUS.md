@@ -33,7 +33,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
 | ihm | 2 |
-| institutional-sector-intelligence | 2 |
+| institutional-sector-intelligence | 4 |
 | intl-fix | 1 |
 | intraday-flow-tracker | 3 |
 | ird | 5 |
@@ -89,7 +89,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 284 |
+| display | 286 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -98,7 +98,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 434 |
+| git | 436 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
@@ -339,8 +339,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-sector-central | `site/sectordata/sector_central.json` | json | daily-engine | display | 4 | 0 |
 | china-sector-central-calls | `data/china_sector_central/calls.parquet` | parquet | asia-close | display | 2 | 0 |
 | sector-central-calls | `data/sector_central/calls.parquet` | parquet | daily-engine | display | 2 | 0 |
+| site-china-sector-central | `site/chinasectordata/sector_central.json` | json | asia-close | display | 0 | 0 |
 
 ### intl-fix
 
