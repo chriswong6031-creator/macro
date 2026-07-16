@@ -5,6 +5,8 @@ Covers:
       entry with leg='alignment' appears in the returned board data.
   (2) Southbound staleness in trading days: Friday->Monday gap = 1 td, not 3 cal days.
   (3) Freshness sentinel southbound check: flags stale southbound holdings store.
+  (4) Pick-lab producer stale-cross NaN guard: hk_xbar_sessions maps NaN/None -> None
+      (int(NaN) crashed the producer block nightly; 1D Velocity Desk dead wire).
 """
 from __future__ import annotations
 
@@ -283,3 +285,30 @@ class TestFreshnessSentinelSouthbound:
         )
         assert result["verdict"] == "ok", (
             f"All fresh stores should give ok verdict, got {result['verdict']}: {result}")
+
+
+# ---------------------------------------------------------------------------
+# (4) pick-lab producer stale-cross NaN guard (hk_xbar_sessions)
+# ---------------------------------------------------------------------------
+
+class TestXbarSessionsNaNGuard:
+    """Grid cells from _compute_grids are NaN — not None — when a name never crossed
+    inside the window, and NaN passes `is not None`: the bare int() cast crashed the
+    whole pick-lab producer block nightly (data/hk_pick_lab + 1D Velocity Desk never
+    shipped). hk_xbar_sessions is the F5-b production helper for that conversion."""
+
+    def test_nan_returns_none(self):
+        from scripts.build_hk_library import hk_xbar_sessions
+        assert hk_xbar_sessions(float("nan"), 2) is None
+        assert hk_xbar_sessions(np.nan, 3) is None
+        assert hk_xbar_sessions(np.float64("nan"), 2) is None
+
+    def test_none_returns_none(self):
+        from scripts.build_hk_library import hk_xbar_sessions
+        assert hk_xbar_sessions(None, 2) is None
+
+    def test_real_counts_scale_to_sessions(self):
+        from scripts.build_hk_library import hk_xbar_sessions
+        assert hk_xbar_sessions(2.0, 2) == 4
+        assert hk_xbar_sessions(np.float64(3), 3) == 9
+        assert hk_xbar_sessions(0, 2) == 0

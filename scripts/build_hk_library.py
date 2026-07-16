@@ -868,6 +868,18 @@ def _fund_priors_map() -> dict[str, float]:
     return {t: (v - mu) / sd for t, v in scores.items()}
 
 
+# Module-level helper for the pick-lab producer's stale-cross diagnostic (F5-b: tests call
+# the production logic). Grid cells from _compute_grids are NaN — not None — when a name
+# never crossed inside the window, and NaN passes `is not None`: a bare int() cast here
+# crashed the producer block nightly on the asia lane ("cannot convert float NaN to
+# integer"), so data/hk_pick_lab + the 1D Velocity Desk never shipped.
+def hk_xbar_sessions(bars, mult: int) -> int | None:
+    """N-bar cross age → approximate daily sessions (HKPL-R10a); NaN/None → None."""
+    if bars is None or pd.isna(bars):
+        return None
+    return int(bars) * mult
+
+
 # Module-level helpers for alignment gating (also used in tests/test_hk_robustness_w5.py).
 # These mirror the local _entry_ok / _atier closures inside compute_hk_standouts exactly;
 # having them at module level allows tests to call the PRODUCTION logic (F5-b fix).
@@ -1651,8 +1663,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             #   2B bar × 2 ≈ daily sessions;  3B bar × 3 ≈ daily sessions.
             _d2x_bars = _od.get("d2_macd_xup_bars")
             _d3x_bars = _osc_d3_map.get(_t)
-            _d2x_sess = int(_d2x_bars) * 2 if _d2x_bars is not None else None
-            _d3x_sess = int(_d3x_bars) * 3 if _d3x_bars is not None else None
+            _d2x_sess = hk_xbar_sessions(_d2x_bars, 2)
+            _d3x_sess = hk_xbar_sessions(_d3x_bars, 3)
             # Pick the older cross in session units; None = never crossed in window
             _sessions_since: int | None = None
             if _d2x_sess is not None and _d3x_sess is not None:
