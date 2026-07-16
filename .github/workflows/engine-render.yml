@@ -193,8 +193,9 @@ jobs:
       - name: re-render pages from the freshly recomputed engine output (resilient)
         # IDENTICAL to render.yml's render step — reads the engine output just recomputed above
         # (regime/latest.json + the MTF leaf, now in the working tree) and re-renders every page.
-        # Keep this builder set in sync with render.yml. NO API/LLM secrets — only the live-quotes
-        # worker URL (a repo VARIABLE) so live_config.js keeps browser live prices wired.
+        # Keep this builder set in sync with render.yml. NO API/LLM secrets (one flag-gated
+        # exception below) — only the live-quotes worker URL (a repo VARIABLE) so
+        # live_config.js keeps browser live prices wired.
         env:
           LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
           # render-only lane: commits site/ ONLY and discards every data/ write, so the
@@ -203,6 +204,11 @@ jobs:
           # the page renders from the committed caches. Skip them (~3-4 min off the spine, and
           # one less third-party hammer per push). The nightly `daily` leaves this unset.
           RENDER_NO_DRIP: "1"
+          # The flag-gated exception: build_news title_zh cache fill (engine/news_translate.py),
+          # so ZH mode isn't stuck with English titles on fresh intraday headlines. INERT unless
+          # config news_translation.render_lanes is true (default off) — the RENDER_NO_DRIP=1
+          # sentinel gates the call in code, so with the flag off this lane makes zero LLM calls.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           SCOPE="${{ github.event.inputs.scope }}"; SCOPE="${SCOPE:-all}"

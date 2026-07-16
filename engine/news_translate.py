@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 from pathlib import Path
 
 from lib import config
@@ -62,6 +63,22 @@ def _cfg() -> dict:
             "cache_dir": "data/news_translation/cache",
         }
     return cfg
+
+
+def _api_fill_allowed(cfg: dict) -> bool:
+    """Cache reads always happen; this gates only the network fill.
+
+    Render-family lanes (render / engine-render / closing-bell, identified by the
+    RENDER_NO_DRIP=1 sentinel they already set) are secret-free by design, so the
+    API fill there is opt-in via news_translation.render_lanes (default off) —
+    per-build LLM spend stays an operator decision. Nightly daily.yml and
+    asia-close leave the sentinel unset and are unaffected.
+    """
+    if not cfg.get("enabled"):
+        return False
+    if os.environ.get("RENDER_NO_DRIP") == "1" and not cfg.get("render_lanes"):
+        return False
+    return True
 
 
 def _cache_dir(cfg: dict) -> Path:
@@ -182,7 +199,7 @@ def translate_to_zh(texts: list[str], cfg: dict | None = None) -> list[str | Non
     if not texts:
         return []
     cached, missing = _read_cache(texts, cfg)
-    if not missing or not cfg.get("enabled"):
+    if not missing or not _api_fill_allowed(cfg):
         return cached
     client = _client(cfg)
     if client is None:
@@ -277,7 +294,7 @@ def translate_to_en(texts: list[str], cfg: dict | None = None) -> list[str | Non
     if not texts:
         return []
     cached, missing = _read_cache_en(texts, cfg)
-    if not missing or not cfg.get("enabled"):
+    if not missing or not _api_fill_allowed(cfg):
         return cached
     client = _client(cfg)
     if client is None:

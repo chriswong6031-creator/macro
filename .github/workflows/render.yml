@@ -183,8 +183,8 @@ jobs:
         # like the nightly — so one broken page can't 404 the whole deploy.
         env:
           # Only the live-quotes worker URL (a repo VARIABLE, baked into live_config.js so
-          # browser live prices stay wired) — NO API/LLM secrets, so the render is a pure
-          # function of the committed data on disk.
+          # browser live prices stay wired) — NO API/LLM secrets (one flag-gated exception
+          # below), so the render is a pure function of the committed data on disk.
           LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
           # This lane commits site/ ONLY and discards every data/ write, so build_stock_library's
           # per-build SEC/Wikipedia drip fetches (equity_profile / edgar_rpo / edgar_headcount)
@@ -192,6 +192,11 @@ jobs:
           # committed caches. Skipping them keeps the "no network calls" claim above honest and
           # trims ~3-4 min. The nightly `daily` (which commits data/) leaves this unset.
           RENDER_NO_DRIP: "1"
+          # The flag-gated exception: build_news title_zh cache fill (engine/news_translate.py),
+          # so ZH mode isn't stuck with English titles on fresh intraday headlines. INERT unless
+          # config news_translation.render_lanes is true (default off) — the RENDER_NO_DRIP=1
+          # sentinel gates the call in code, so with the flag off this lane makes zero LLM calls.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
