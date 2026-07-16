@@ -691,6 +691,11 @@
   body.page-china .cnx-live-pill.on .d{background:var(--up);box-shadow:0 0 5px var(--up)}
   body.page-china .cnx-gauge-row{display:flex;gap:18px;align-items:center;margin-top:10px}
   body.page-china .cnx-gauge-svg{flex:0 0 110px}
+  /* gauge fill colour follows the .ms-{color} class (which the live lane swaps) so it
+     never shows a red arc next to a green/yellow live verdict. (Fill fraction is baked.) */
+  body.page-china .ms-green .cnx-gauge-fill{stroke:var(--up)}
+  body.page-china .ms-yellow .cnx-gauge-fill{stroke:var(--warn)}
+  body.page-china .ms-red .cnx-gauge-fill{stroke:var(--down)}
   body.page-china .cnx-score-line{display:flex;align-items:baseline;gap:10px}
   body.page-china .cnx-big-score{font-size:52px;font-weight:750;line-height:1;color:var(--warn)}
   body.page-china .ms-green .cnx-big-score{color:var(--up)}
@@ -854,11 +859,14 @@
   body.page-china .cnx-fbar i{display:block;height:100%;border-radius:4px}
   body.page-china .cnx-fscore{text-align:right;font-weight:700}
   body.page-china .cnx-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
-  @media (max-width:980px){body.page-china .cnx-cols2{grid-template-columns:1fr}}
+  @media (max-width:980px){body.page-china .cnx-cols2{grid-template-columns:minmax(0,1fr)}}
   /* Plotly charts render at a fixed intrinsic width (~700px) that overflows the narrower
      dialog columns; minmax(0,1fr) above lets the column shrink, and this keeps the chart
      inside it. JS calls Plotly.Plots.resize() on dialog open so the SVG redraws to fit. */
   body.page-china .cnx-dlg-body :is(.js-plotly-plot,.plotly-graph-div,.plotly){max-width:100%!important}
+  /* wide tables (rotation, RRR history…) scroll within the dialog on narrow screens
+     instead of overflowing the panel. */
+  body.page-china .cnx-dlg-body .cnx-mt{display:block;max-width:100%;overflow-x:auto}
   body.page-china .cnx-dlg-body .chart-ph,body.page-china .cnx-dlg-body img,body.page-china .cnx-dlg-body svg{max-width:100%}
   body.page-china .cnx-chart-ph{height:100px;border:1px dashed rgba(255,255,255,.14);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);margin:8px 0}
   body.page-china .cnx-receipt{font-size:11px;color:var(--muted);border-top:1px solid rgba(255,255,255,.07);margin-top:14px;padding-top:10px}
@@ -1191,7 +1199,7 @@
         {% set _cy = 68 - (40 * (1 - ((_ang - 0.5) * (_ang - 0.5)) * 4)) %}
         <svg class="cnx-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
           <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
-          <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
+          <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
         </svg>
         <div>
           <div class="cnx-score-line"><span id="ms-score" class="cnx-big-score">{{ _ms_score }}</span><span id="ms-word" class="cnx-verdict">{{ t(_ms_label, _ms_label_zh) }} <span class="arr">▶</span></span></div>
@@ -1214,10 +1222,15 @@
           <span class="l-en">{{ _n_bull }} of {{ _n_total }} signals aligned</span><span class="l-zh">{{ _n_total }} 项中 {{ _n_bull }} 项一致</span>
           <span class="n">▾</span></button>
         {# risk button #}
-        {% set _rr_score = (_rr.score if _rr else none) %}
+        {% set _rr_score = (_rr.get('top_score') if (_rr and _rr.get('top_score') is not none and _rr.get('top_score') != '') else none) %}
+        {% set _rr_p21 = _rr.get('dd21') if _rr else none %}
+        {% set _rr_lift = _rr.get('dd_lift') if _rr else none %}
+        {% set _rr_do_en = (_rr.get('do_en') or '') if _rr else '' %}
+        {% set _rr_do_zh = (_rr.get('do_zh') or '') if _rr else '' %}
+        {% set _rr_sub_en = ('~%d%% chance of a ≥5%% pullback within a month'|format((_rr_p21*100)|round|int) ~ (' · %.1f× the usual odds'|format(_rr_lift) if _rr_lift else '')) if _rr_p21 is not none else (_rr_do_en or ms.posture_en or '') %}
+        {% set _rr_sub_zh = ('未来一个月内出现≥5%%回撤的概率约%d%%'|format((_rr_p21*100)|round|int) ~ (' · 约为平时的%.1f倍'|format(_rr_lift) if _rr_lift else '')) if _rr_p21 is not none else (_rr_do_zh or ms.posture_zh or '') %}
         <button class="cnx-hbtn" onclick="cnxTogglePop('cnx-pop-risk',event)" style="border-color:rgba(224,100,100,.5)">⚠
-          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> ·
-          <span class="n" style="color:var(--act)">{{ _rr_score if _rr_score is not none else '—' }}</span> ▾</button>
+          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span>{% if _rr_score is not none %} · <span class="n" style="color:var(--act)">{{ _rr_score }}</span>{% endif %} ▾</button>
 
         <!-- popover: factor breakdown -->
         <div class="cnx-pop" id="cnx-pop-signals">
@@ -1239,11 +1252,11 @@
           <div class="cnx-pop-h">{{ t('Pullback risk radar', '回撤风险雷达') }}</div>
           {% if _rr_score is not none %}
           <div class="cnx-pop-big"><span class="n">{{ _rr_score }}</span><span class="t">{{ t(_rr.label_en or '', _rr.label_zh or '') }}</span></div>
-          <div class="cnx-pop-sub">{{ t(_rr.posture_en or '', _rr.posture_zh or '') }}</div>
-          {% for leg in (_rr.legs or [])[:3] %}
+          <div class="cnx-pop-sub">{{ t(_rr_sub_en, _rr_sub_zh) }}</div>
+          {% for leg in (_rr.scares or [])[:3] %}
           <div class="cnx-pop-row">
-            <div class="pr-t"><span>{{ t(leg.label_en or leg.label, leg.label_zh or leg.label or '') }}</span><b>{{ leg.score }}</b></div>
-            <div class="cnx-pop-bar"><i style="width:{{ leg.score }}%;background:var(--act)"></i></div>
+            <div class="pr-t"><span>{{ t(leg.label_en or leg.scare, leg.label_zh or leg.scare or '') }}</span><b>{{ leg.score|round|int }}</b></div>
+            <div class="cnx-pop-bar"><i style="width:{{ leg.score|round|int }}%;background:var(--act)"></i></div>
           </div>
           {% endfor %}
           {% else %}
@@ -1374,13 +1387,13 @@
       <div class="cnx-ctitle">{{ t('Pullback Risk','回撤风险') }} <span class="cnx-alert-pill" style="background:rgba(224,100,100,.16);color:var(--act)">{{ t('HIGH','高') }}</span></div>
       {% if _rr_score is not none %}
       <div class="cnx-bignum" style="color:var(--act)">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)"> /100</span></div>
-      <div class="cnx-bigsub" style="color:var(--act)">{{ t(_rr.posture_en or '', _rr.posture_zh or '') }}</div>
+      <div class="cnx-bigsub" style="color:var(--act)">{{ t(_rr.label_en or '', _rr.label_zh or '') }}</div>
       {% endif %}
-      <div class="cnx-kv"><span class="k">{{ t('≥5% dip odds','≥5%回撤概率') }}</span><span class="v">{{ t('—','—') }}</span></div>
+      <div class="cnx-kv"><span class="k">{{ t('≥5% dip odds','≥5%回撤概率') }}</span><span class="v">{% if _rr_p21 is not none %}{{ (_rr_p21*100)|round|int }}%{% else %}{{ t('—','—') }}{% endif %}</span></div>
       <div class="cnx-kv"><span class="k">{{ t('Deep-crash gauge','深跌仪表') }}</span>
         {% set _rr_rec = (latest.conditions.recession.label if latest.conditions and latest.conditions.get('recession') and latest.conditions.recession else none) %}
         <span class="v"><span class="cnx-stword {{ 'ok' if _rr_rec == 'low' else 'warn' }}">{{ t('Calm','平静') if not _rr_rec or _rr_rec == 'low' else t('Elevated','偏高') }}</span></span></div>
-      <div class="cnx-foot">{{ t('High pullback risk — size down, watch alerts.','回撤风险高 — 缩仓，关注警报。') }}</div>
+      <div class="cnx-foot">{{ t(_rr_do_en or 'High pullback risk — size down, watch alerts.', _rr_do_zh or '回撤风险高 — 缩仓，关注警报。') }}</div>
     </div>
     {% else %}
     {# Top Stocks card — when radar is quiet #}
@@ -1417,7 +1430,9 @@
         {% set _nay = 96 - 70 * (1 - (2 * _fe_ang - 1) * (2 * _fe_ang - 1)) | abs %}
         {# needle y: map 0-1 angle to arc; simple linear approximation #}
         {% set _ny = (96 - 62 * (1 - (2*_fe_ang - 1)*(2*_fe_ang - 1)))|round(1) %}
-        <line x1="100" y1="96" x2="{{ _nax | round(1) }}" y2="{{ _ny }}" stroke="var(--text)" stroke-width="2.4"/>
+        {# only draw the needle when we have a real fear/euphoria score — otherwise a
+           default center needle contradicts the band word shown below (e.g. "Mania"). #}
+        {% if _fe_score is not none %}<line x1="100" y1="96" x2="{{ _nax | round(1) }}" y2="{{ _ny }}" stroke="var(--text)" stroke-width="2.4"/>{% endif %}
         <circle cx="100" cy="96" r="5" fill="var(--text)"/>
         <text x="16" y="106" font-size="9" fill="var(--muted)">{{ t('PANIC','恐慌') }}</text>
         <text x="158" y="106" font-size="9" fill="var(--muted)">{{ t('EUPHORIA','亢奋') }}</text>
@@ -1666,12 +1681,12 @@
               <span class="cnx-bignum" style="color:var(--act)">{{ _rr_score }}</span>
               <span class="cnx-alert-pill" style="background:rgba(224,100,100,.16);color:var(--act);margin:0">{{ t((_rr.label_en or '').upper(), (_rr.label_zh or '').upper()) }}</span>
             </div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:10px">{{ t(_rr.posture_en or '', _rr.posture_zh or '') }}</div>
-            {% for leg in (_rr.legs or [])[:4] %}
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px">{{ t(_rr_sub_en, _rr_sub_zh) }}</div>
+            {% for leg in (_rr.scares or [])[:4] %}
             <div class="cnx-frow" style="grid-template-columns:170px 1fr 40px">
-              <span>{{ t(leg.label_en or leg.label, leg.label_zh or leg.label or '') }}</span>
-              <span><div class="cnx-fbar"><i style="width:{{ leg.score }}%;background:var(--act)"></i></div></span>
-              <span class="cnx-fscore" style="color:var(--act)">{{ leg.score }}</span>
+              <span>{{ t(leg.label_en or leg.scare, leg.label_zh or leg.scare or '') }}</span>
+              <span><div class="cnx-fbar"><i style="width:{{ leg.score|round|int }}%;background:var(--act)"></i></div></span>
+              <span class="cnx-fscore" style="color:var(--act)">{{ leg.score|round|int }}</span>
             </div>
             {% endfor %}
             {% endif %}
@@ -3329,7 +3344,10 @@ window.__CHART_SWAP__ = {
        SVG redraws to the column width. */
     setTimeout(function(){
       if(window.Plotly&&Plotly.Plots){
-        el.querySelectorAll('.js-plotly-plot').forEach(function(g){try{Plotly.Plots.resize(g);}catch(e){}});
+        el.querySelectorAll('.js-plotly-plot').forEach(function(g){try{
+          var host=g.parentElement,w=host?host.clientWidth:0;
+          if(Plotly.relayout&&w>10){Plotly.relayout(g,{width:w});}else{Plotly.Plots.resize(g);}
+        }catch(e){}});
       }
     },380);
   }
@@ -3371,7 +3389,9 @@ window.__CHART_SWAP__ = {
     else if(el)el.scrollIntoView({behavior:'smooth'});
   }
   /* close dialog on Escape key */
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')cnxCloseDlg();});
+  /* Escape: if the fullscreen heatmap overlay is open, let ITS own handler close it
+     (don't also close the Markets dialog underneath). */
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document.querySelector('.hm-ov'))return;cnxCloseDlg();}});
   /* close popovers on outside click */
   document.addEventListener('click',function(){cnxClosePops();});
   /* expose on window for onclick= attrs */
