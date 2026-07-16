@@ -1,0 +1,531 @@
+name: closing-bell
+# Build A — full market-close render lane, NON-ledger-advancing.
+#
+# Fires shortly after the US equity close (16:00 ET) to produce a full provisional
+# EOD state with the complete US session picture: spine + baskets + cl_markets
+# (commodities/forex/bonds/crossasset/transmission/discovery/spr) + cl_gex
+# (GEX board, vol-regime, dark pool, options flow, flow desk, options skew/ivspread/
+# screener/entry, intraday_flow) + build_vector hub.
+#
+# EXCLUDES: cl_china, cl_hk, cl_special (EDGAR ~28m), us_pages / LLM brains,
+#   library rebuilds, scripts.collect, build_prophet, grade_us_board, ALL post-band
+#   ledger/scorer/NW/kernel steps — the nightly daily pipeline is the sole advancer
+#   of every data/ forward ledger.
+#
+# CONTRACT (mirrors earlyclose.yml FT-R5/FT-R8):
+#   • Commits site/ PLUS the two snapshot pointers data/regime/latest.json +
+#     data/market_state/latest.json.  Every other data/ write is discarded via
+#     git checkout -- . + narrow staging, exactly as intraday-fastpath.yml and
+#     earlyclose.yml do.
+#   • RENDER_NO_DRIP: "1" is set job-wide; COLLECT_LANE is deliberately UNSET
+#     (every engine ledger writer self-gates on it — unset means non-ledger lane).
+#   • CLOSINGBELL: "1" is a lane marker (like EARLYCLOSE=1 in earlyclose.yml —
+#     read by nothing today; used in the commit message and stamp artifact only).
+#   • REGIME_FORCE_RECOMPUTE is NOT set (earlyclose/daily leave it unset too;
+#     engine.run's own no-regress guard handles idempotency).
+#   • Output is stamped {as_of, provisional: true, lane: "closingbell"}.
+#
+# MUTEX: skip if optionshub job is still running (same RAM-freeze law as earlyclose).
+#
+# FRESHNESS GATE ADAPTATION (differs from earlyclose):
+#   earlyclose fires at 17:20 ET — after lib/nyse_calendar._CLOSE_PLUS_SETTLE (17:00 ET),
+#   so expected_last_session() resolves to TODAY and the standard --heal check works.
+#   closing-bell fires at 16:05 ET — BEFORE the settle buffer — so expected_last_session()
+#   returns the PRIOR session and the normal --heal gate would falsely call today "stale"
+#   and skip the entire render on valid trading days.  This lane therefore does NOT use
+#   expected_last_session().  Instead we gate only on NYSE holiday/weekend:
+#     python -c "import sys; sys.path.insert(0,'.'); from lib.nyse_calendar import is_session
+#                from datetime import date; sys.exit(0 if is_session(date.today()) else 3)"
+#   exit 0 = today is a session day → proceed; exit 3 = holiday/weekend → skip.
+#   The price store may not yet hold today's bar (it won't at 16:05 ET); that is
+#   expected — the engine recomputes from committed data (same as engine-render.yml).
+#   The --heal flag IS still run as a best-effort prefetch; it will populate today's
+#   bar if the Yahoo intraday bar is finalized by 16:05 ET.
+#
+# SCHEDULE NOTE (crons ship in a later PR after wall-time is measured):
+#   Intended future crons:
+#     '5 20 * * 1-5'   # 20:05 UTC = 16:05 ET (EDT, UTC-4, Mar→Nov)
+#     '5 21 * * 1-5'   # 21:05 UTC = 16:05 ET (EST, UTC-5, Nov→Mar)
+#   Both fire ~5 min after the 16:00 ET close; the session-day gate above is the
+#   sole holiday/weekend guard.  GitHub runs both cron lines on DST changeover days;
+#   the second run is a no-op via the "no rendered-site changes to commit" guard.
+#
+# FIRST-DISPATCH MEASUREMENT PLAN:
+#   Before enabling the schedule, manually dispatch via:
+#     `gh workflow run closing-bell.yml`
+#   and record the wall-time of the "regional + desk builders (parallel band)" step.
+#   Budget hypothesis: 35-55 min (cl_gex includes options-data builders; cl_markets
+#   is lightweight).  Adjust timeout-minutes if needed and update the ops ledger.
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '5 20 * * 1-5'   # 20:05 UTC = 16:05 ET (EDT, UTC-4, Mar→Nov)
+  #   - cron: '5 21 * * 1-5'   # 21:05 UTC = 16:05 ET (EST, UTC-5, Nov→Mar)
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  # Own group — never shares with pipeline-daily, pipeline-earlyclose, pipeline-render.
+  # cancel-in-progress: false so a running closing-bell always finishes.
+  group: pipeline-closingbell
+  cancel-in-progress: false
+
+jobs:
+  closingbell:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 120
+    env:
+      CLOSINGBELL: "1"
+      RENDER_NO_DRIP: "1"
+      # COLLECT_LANE deliberately UNSET — every engine ledger writer self-gates on it;
+      # unset means this is a non-ledger lane (nightly daily.yml is the sole advancer).
+      # REGIME_FORCE_RECOMPUTE deliberately UNSET — engine.run's no-regress guard handles
+      # idempotency; forcing a recompute here would race with an in-progress nightly.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+
+      # ── (a) MUTEX GUARD ──────────────────────────────────────────────────────────────────
+      # Skip the entire run if the 16:45 ET optionshub launchd job is still running.
+      # RAM contention law: the 192 GB Mac Studio freezes under concurrent heavy jobs.
+      # Copied verbatim from earlyclose.yml.
+      - name: mutex — skip if optionshub job is still running
+        id: mutex
+        run: |
+          if pgrep -f build_options_hub_nightly > /dev/null 2>&1; then
+            echo "::notice::build_options_hub_nightly is still running — skipping closingbell render to avoid RAM contention"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "optionshub not running — proceeding"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── python + deps (mirrors earlyclose.yml / engine-render.yml) ───────────────────
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        if: steps.mutex.outputs.skip != 'true'
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+        if: steps.mutex.outputs.skip != 'true'
+
+      # ── (b) PRICE-STORE FRESHNESS PREFETCH (best-effort --heal) ─────────────────────
+      # At 16:05 ET the daily bar may not yet be finalized; --heal is a best-effort
+      # keyless Yahoo re-pull.  Non-fatal continue-on-error: a feed delay degrades
+      # gracefully (engine uses the most recent committed bar).
+      - name: price-store freshness prefetch (--heal, keyless, best-effort)
+        if: steps.mutex.outputs.skip != 'true'
+        continue-on-error: true
+        run: python -m scripts.check_price_store_freshness --heal
+
+      # ── (c) SESSION-DAY GUARD (holiday / weekend skip) ───────────────────────────────
+      # See FRESHNESS GATE ADAPTATION in the file header for why we check is_session()
+      # rather than expected_last_session() here.
+      # exit 0 = today is a NYSE session day → proceed.
+      # Any nonzero exit = holiday or weekend → skip the render entirely.
+      - name: session-day guard (holiday/weekend safety)
+        id: guard
+        if: steps.mutex.outputs.skip != 'true'
+        run: |
+          if python3 -c "
+          import sys, datetime
+          sys.path.insert(0, '.')
+          from lib.nyse_calendar import is_session
+          import zoneinfo
+          et = datetime.datetime.now(zoneinfo.ZoneInfo('America/New_York')).date()
+          sys.exit(0 if is_session(et) else 3)
+          "; then
+            echo "today is a NYSE session day — proceeding with closingbell render"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::today is not a NYSE session day (holiday/weekend) — skipping closingbell render"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── restore caches (mirrors earlyclose.yml restore steps) ────────────────────────
+      - name: restore attention store from R2
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs attention || echo "::warning::attention restore failed (non-fatal — attention chip absent/stale this render)"
+      - name: restore breadth (S&P 500) close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-closingbell-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      - name: restore smallcap (S&P 600) close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/smallcap_breadth/_closes_cache.parquet
+          key: smallcap-closes-closingbell-${{ github.run_id }}
+          restore-keys: smallcap-closes-
+      - name: restore midcap (S&P 400) close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/midcap_breadth/_closes_cache.parquet
+          key: midcap-closes-closingbell-${{ github.run_id }}
+          restore-keys: midcap-closes-
+      - name: restore china breadth close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/china_breadth/_closes_cache.parquet
+          key: china-breadth-closes-closingbell-${{ github.run_id }}
+          restore-keys: china-breadth-closes-
+      - name: restore hk breadth close cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/hk_breadth/_closes_cache.parquet
+          key: hk-breadth-closes-closingbell-${{ github.run_id }}
+          restore-keys: hk-breadth-closes-
+      - name: restore intraday (4H) cache
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/intraday
+          key: intraday-closingbell-${{ github.run_id }}
+          restore-keys: intraday-
+
+      # ── (d) ENGINE RECOMPUTE ─────────────────────────────────────────────────────────
+      # Mirrors earlyclose.yml's "recompute signals + regime" step exactly.
+      - name: recompute signals + regime from committed data (no collect / no LLM / no network)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: |
+          set +e
+          run_py() {
+            local label="$1"; local mod="$2"; shift 2
+            echo "::group::$label"
+            python -m "$mod" "$@" > "$RUNNER_TEMP/e.log" 2>&1; local rc=$?
+            cat "$RUNNER_TEMP/e.log"
+            echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/e.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 "$RUNNER_TEMP/e.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+          run_py "MTF signal-quality leaf (build_signal_quality)" scripts.build_signal_quality
+          run_py "§7 signal contract gate (validate_signals)"     scripts.validate_signals
+          run_py "regime engine (engine.run)"                     engine.run
+          exit 0
+
+      # ── (e) SPINE CLUSTER + BASKETS CLUSTER + HUB ────────────────────────────────────
+      # scope=close: spine (same as earlyclose scope=fast spine) + baskets cluster
+      # (same as earlyclose scope=fast baskets) + cl_markets + cl_gex (parallel band,
+      # see next step) + build_vector hub.
+      # Verbatim copies of the same run_py invocations from earlyclose.yml + daily.yml.
+      # EXCLUDES: build_world_state, build_nw_mastermind_context (NW/LLM-adjacent).
+      - name: spine — build_site + supporting builders (no LLM, no EDGAR, no collect)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
+          RENDER_NO_DRIP: "1"
+          CLOSINGBELL: "1"
+        run: |
+          set +e
+          run_py() {
+            local label="$1"; local mod="$2"; shift 2
+            echo "::group::$label"
+            python -m "$mod" "$@" > "$RUNNER_TEMP/step.log" 2>&1; local rc=$?
+            cat "$RUNNER_TEMP/step.log"
+            echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 "$RUNNER_TEMP/step.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 "$RUNNER_TEMP/step.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+
+          # spine — verbatim from earlyclose.yml / engine-render.yml scope=macro
+          run_py "S&P allocation vector (build_spvector)"        scripts.build_spvector
+          run_py "alternative data desk (build_alt_data)"        scripts.build_alt_data
+          run_py "13F smart-money tracker (build_smart_money)"   scripts.build_smart_money
+          run_py "policy-lever card (build_policy_lever)"        scripts.build_policy_lever
+          run_py "macro dashboard + US stocks (build_site)"      scripts.build_site
+          run_py "buy board 2.0 shadow (build_stock_board_v2)"   scripts.build_stock_board_v2
+          run_py "reflexivity overlay (build_reflexivity_overlay)" scripts.build_reflexivity_overlay
+          run_py "congressional trades desk (build_congress)"    scripts.build_congress
+
+          # baskets cluster — verbatim from earlyclose.yml / engine-render.yml scope=baskets
+          run_py "thematic baskets (build_baskets)"     scripts.build_baskets
+          run_py "news suite (build_news)"              scripts.build_news
+          run_py "methodology page (build_methodology)" scripts.build_methodology
+          run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
+          run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
+          run_py "radar page (build_radar_page)"        scripts.build_radar_page
+
+          exit 0
+
+      # ── (f) PARALLEL BAND: cl_markets + cl_gex ───────────────────────────────────────
+      # Runs the two market/GEX clusters in parallel (both are independent of each other).
+      # brun() + barrier + ordered replay pattern copied verbatim from daily.yml.
+      # EXCLUDES: cl_china, cl_hk, cl_special (EDGAR), cl_misc (LLM-adjacent builders
+      #   and ledger steps), build_sector_central, build_basket_turn_grading, and all
+      #   post-band ledger/scorer/NW/kernel steps.
+      - name: regional + desk builders — cl_markets + cl_gex (parallel band)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+          MASSIVE_S3_ENDPOINT: ${{ secrets.MASSIVE_S3_ENDPOINT }}
+          MASSIVE_S3_ACCESS_KEY_ID: ${{ secrets.MASSIVE_S3_ACCESS_KEY_ID }}
+          MASSIVE_S3_SECRET_ACCESS_KEY: ${{ secrets.MASSIVE_S3_SECRET_ACCESS_KEY }}
+          MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
+          # COLLECT_LANE deliberately UNSET — ledger writers in cl_gex (e.g.
+          # stamp_options_state, flow ledger appends) self-gate on COLLECT_LANE==nightly.
+        run: |
+          set +e
+          ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
+          # brun <slug> <label> <module> [args…] — copied verbatim from daily.yml
+          brun() {
+            local slug="$1" label="$2" mod="$3"; shift 3
+            local t0 t1 rc
+            t0=$(date +%s)
+            { echo "$label"; python -m "$mod" "$@" 2>&1; } > "$ART/$slug.log"; rc=$?
+            t1=$(date +%s)
+            echo "$rc"          > "$ART/$slug.rc"
+            echo "$((t1 - t0))" > "$ART/$slug.sec"
+          }
+
+          # cl_markets — verbatim from daily.yml (commodities/forex/bonds/crossasset/
+          #   transmission/discovery/spr); internally ordered by data deps.
+          cl_markets() {
+            brun commodities  "build commodity vector (build_commodities)"         scripts.build_commodities
+            brun spr          "build strategic reserves (build_spr)"               scripts.build_spr
+            brun forex        "build forex vector (build_forex)"                   scripts.build_forex
+            brun bonds        "build bonds & bond-health (build_bonds)"            scripts.build_bonds
+            brun crossasset   "cross-asset vector (build_crossasset)"              scripts.build_crossasset
+            brun transmission "rate & inflation transmission (build_transmission)" scripts.build_transmission
+            brun discovery    "discovery leaderboard (build_discovery)"            scripts.build_discovery
+          }
+
+          # cl_gex — verbatim from daily.yml; internally ordered by data deps.
+          cl_gex() {
+            brun gex_board        "GEX magnets board (build_gex_board)"                          scripts.build_gex_board
+            brun vol_regime       "index vol-regime (build_vol_regime)"                          scripts.build_vol_regime
+            brun darkpool         "dark pool desk (build_darkpool_desk)"                         scripts.build_darkpool_desk
+            brun options_flow     "options flow desk (build_options_flow)"                       scripts.build_options_flow
+            brun flow_desk        "group flow heatmap & market tide (build_flow_desk)"           scripts.build_flow_desk
+            brun options_skew     "single-name IV skew (build_options_skew)"                     scripts.build_options_skew
+            brun options_ivspread "single-name IV spread (build_options_ivspread)"               scripts.build_options_ivspread
+            brun options_screener "US options screener page (build_options_screener)"            scripts.build_options_screener
+            brun options_entry    "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
+            brun intraday_flow    "intraday flow tracker nightly base (build_intraday_flow)"     scripts.build_intraday_flow --mode nightly
+          }
+
+          # Launch both clusters concurrently, then barrier
+          cl_markets & cl_gex &
+          wait
+
+          # Replay each builder's output GROUPED in a stable order (post-barrier)
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow"
+          echo "### ⏱ closing-bell parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
+          for slug in $ORDER; do
+            [ -f "$ART/$slug.log" ] || continue
+            label=$(head -n1 "$ART/$slug.log")
+            rc=$(cat "$ART/$slug.rc" 2>/dev/null || echo "?")
+            sec=$(cat "$ART/$slug.sec" 2>/dev/null || echo "?")
+            echo "::group::$label  [${sec}s, rc=$rc]"
+            tail -n +2 "$ART/$slug.log"
+            echo "::endgroup::"
+            echo "- ${label} — ${sec}s (rc=${rc})" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$rc" != "0" ] && [ "$rc" != "?" ]; then
+              echo "::error title=${label} failed (rc=${rc})::$(tail -n 2 "$ART/$slug.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ ${label} failed (rc=${rc})"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 40 "$ART/$slug.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          exit 0
+
+      # ── (g) HUB + FEEDS ─────────────────────────────────────────────────────────────
+      # build_vector: hub step, runs AFTER the parallel band barrier (reads cl_markets
+      #   latest.json outputs for commodity/forex/bonds + BTC).  Verbatim from daily.yml.
+      # build_feeds: assembles site/feeds/ from all available latest.json sources.
+      #   Run AFTER build_vector so the hub's outputs are included.  Non-fatal.
+      - name: build bitcoin vector + landing hub (build_vector)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: python -m scripts.build_vector
+
+      - name: assemble machine-consumable feeds (site/feeds -> R2)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: python -m scripts.build_feeds || echo "::warning::build_feeds failed (non-fatal)"
+
+      # ── guards (mirrors earlyclose.yml) ─────────────────────────────────────────────
+      - name: guard — inline JS must parse
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: python3 scripts/check_inline_js.py site
+      - name: guard — market-state board coherence
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: |
+          python3 scripts/check_ms_board_coherence.py && exit 0
+          python3 scripts/check_ms_board_coherence.py --heal-from HEAD || true
+          exit 1
+      - name: inject data-base shim
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+
+      # ── (h) PROVISIONAL STAMP ARTIFACT ──────────────────────────────────────────────
+      # Write site/live/closingbell_stamp.json: {as_of, provisional: true, lane: "closingbell"}.
+      - name: write provisional closingbell stamp (site/live/closingbell_stamp.json)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: |
+          python3 - <<'PYEOF'
+          import json, datetime, pathlib, sys
+          sys.path.insert(0, str(pathlib.Path(".").resolve()))
+          from lib.nyse_calendar import session_date
+          render_ts = datetime.datetime.now(datetime.timezone.utc)
+          stamp = {
+            "as_of": render_ts.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "session": session_date(render_ts).isoformat(),
+            "provisional": True,
+            "note": "provisional close render (full market scope); nightly is canonical",
+            "lane": "closingbell"
+          }
+          p = pathlib.Path("site/live/closingbell_stamp.json")
+          p.parent.mkdir(parents=True, exist_ok=True)
+          p.write_text(json.dumps(stamp, indent=2))
+          print(f"wrote {p}: {stamp}")
+          PYEOF
+
+      # ── (i) R2 PUBLISH — CONSERVATIVE SUBSET ────────────────────────────────────────
+      # HAZARD: publishing a dir this lane did NOT fully rebuild uploads stale checkout
+      # files over fresher R2 objects (ETag differs → upload wins → data corruption).
+      # Only dirs whose FULL content is regenerated by the steps above are included:
+      #
+      #   stockdata — regenerated by build_baskets (spine baskets cluster above).
+      #               earlyclose already publishes this dir; same justification here.
+      #               --no-manifest is MANDATORY: this lane holds a partial stockdata
+      #               tree; rebuilding the manifest would shrink the ~5000-name R2 list.
+      #
+      #   feeds     — assembled by build_feeds (step above) from whatever latest.json
+      #               sources are available. NOTE: build_feeds does NOT clear the dir —
+      #               it overwrites the feeds it can rebuild and leaves the rest. On this
+      #               self-hosted runner the leftovers are the PRIOR nightly's files,
+      #               which are byte-identical to their R2 copies (nightly is the only
+      #               other feeds publisher), so the content-hash skip makes re-uploading
+      #               them a no-op — no stale-clobber path. --no-manifest keeps the R2
+      #               manifest intact for files not regenerated today.
+      #
+      # EXCLUDED (not fully rebuilt by this lane):
+      #   ohlc, intlohlc, canadaohlc, subsectorohlc* — per-name OHLC; owned by
+      #     collect (nightly) + asia-close.  Not written by any step in this lane.
+      #   intraday — Polygon hourly bars; populated by the collect job, not this lane.
+      #   massive_stock_day, stock_personality, oddsmatrix, odds_ohlcv — nightly-only.
+      #   gex, flow — served via git Pages (not R2), so no R2 publish needed.
+      - name: publish stockdata + feeds to R2 (provisional EOD reaches the data plane)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          python -m scripts.publish_r2 --dirs stockdata --no-manifest \
+            || echo "::warning::closingbell R2 stockdata publish failed (non-fatal — data plane lands at nightly)"
+          python -m scripts.publish_r2 --dirs feeds --no-manifest \
+            || echo "::warning::closingbell R2 feeds publish failed (non-fatal)"
+
+      # ── (j) COMMIT — site/ ONLY, with fastpath-style data/ discard guard ─────────────
+      # Replicates earlyclose.yml's commit step VERBATIM-IN-SPIRIT (FT-R5/FT-R8):
+      #   1. stage site/ FIRST (closingbell_stamp.json is inside site/live/ — included)
+      #   2. THEN git checkout -- .  discards unstaged data/ writes (ledger appends, etc.)
+      #   3. git clean -fdq data/  removes untracked data/ files
+      #   4. rebase-push with --autostash + 5-retry loop with pre-sync collision sweep
+      # ORDER IS CRITICAL: stage BEFORE checkout, exactly as intraday-fastpath.yml and
+      # earlyclose.yml do.  Reversing the order would cause `git checkout -- .` to
+      # revert tracked site/ pages back to HEAD, committing only the stamp — wrong.
+      # The nightly daily pipeline remains the sole advancer of every data/ forward ledger.
+      - name: commit rendered site + provisional snapshot pointers (ledgers discarded)
+        if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Stage site/ FIRST (order mirrors earlyclose.yml / intraday-fastpath.yml).
+          git add site/
+          git add -f site/live/closingbell_stamp.json 2>/dev/null || true
+          git add -f site/stockbrief 2>/dev/null || true
+          # Provisional snapshot pointers (same two artifacts earlyclose commits):
+          # freshly recomputed regime + market-state latest.json ride to main so later
+          # render/engine-render lanes read TODAY's provisional close instead of regressing
+          # to the prior one.  Everything else under data/ is discarded.
+          # ONE FILE PER LINE: `git add a b` rejects ATOMICALLY when any pathspec is
+          # missing — a single masked line would silently drop BOTH pointers.
+          git add -f data/regime/latest.json 2>/dev/null || echo "::warning::regime latest.json not staged (missing?) — provisional pointer will not ride"
+          git add -f data/market_state/latest.json 2>/dev/null || echo "::warning::market_state latest.json not staged (missing?) — provisional pointer will not ride"
+          # THEN discard unstaged data/ writes (FT-R5) — same as earlyclose.yml.
+          git checkout -- . 2>/dev/null || true
+          git clean -fdq data/ 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
+          SESSION_DATE=$(python3 -c "import sys; sys.path.insert(0,'.'); from lib.nyse_calendar import session_date; print(session_date().isoformat())")
+          MSG="closingbell: full close render ${SESSION_DATE} (scope=close)"$'\n\n'"provisional close render (full market scope); nightly is canonical"$'\n'"CLOSINGBELL=1 lane - site/ + regime/market-state snapshot pointers (fastpath idiom); ledgers discarded per FT-R5"$'\n\n'"Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+          git commit -m "$MSG"
+          for i in 1 2 3 4 5; do
+            # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
+            # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
+            # refuses ("untracked working tree files would be overwritten") and --autostash can't
+            # clear it (it parks tracked modifications only), so every retry dies identically.
+            # Everything this step publishes is already committed above, so a path untracked HERE
+            # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
+            # Gitignored files and untracked paths origin/main doesn't track never enter the
+            # intersection (runner-local stores and caches are untouched).
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash -X theirs origin main; then
+              python -m scripts.check_template_site_sync --fix || true
+              python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
+                || echo "::warning::ms-board coherence heal incomplete"
+              if ! git diff --quiet -- site/; then
+                git add site/ && git commit -m "render-sync: post-rebase guards (closingbell)" \
+                  || echo "::warning::render-sync commit failed (non-fatal)"
+              fi
+              if git push; then echo "pushed closingbell rendered site on attempt $i"; exit 0; fi
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "closingbell push attempt $i failed (rebase/race); re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push closingbell rendered site after 5 attempts — nightly will re-land it"
+
+      # ── strip heavy per-ticker stores from the Pages artifact (served from R2) ───────
+      - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
+        if: always()
+        run: |
+          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday site/feeds site/oddsmatrix 2>/dev/null || true
+
+      # ── upload pages artifact ────────────────────────────────────────────────────────
+      - name: upload pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+
+  # Publish to GitHub Pages.
+  # Mirrors daily.yml's publish job: ubuntu-latest, needs: closingbell (the render job),
+  # if: always() so Pages always gets an artifact even if the commit-push step raced.
+  publish:
+    needs: closingbell
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
