@@ -229,42 +229,40 @@ def sector_state(members: list[dict], *, dominance_tau: float = DOMINANCE_TAU) -
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 4. Board assembly
+# 4. Board assembly — the per-group state machine, reused across granularities
 # ──────────────────────────────────────────────────────────────────────────────
 
-def build_board(residual: dict, closes: pd.DataFrame, *,
-                flow_witness: dict | None = None,
-                options_ctx: dict | None = None,
-                alpha_min: float = ALPHA_LEADER_MIN,
-                min_legs: int = MIN_TREND_LEGS,
-                dominance_tau: float = DOMINANCE_TAU,
-                as_of: str | None = None, stale: bool = False) -> dict | None:
-    """Assemble momentum_king.v1 from a residual_alpha result + a close panel.
+_STATE_ORDER = {"LEADER_CANDIDATE": 0, "CONTESTED": 1, "NO_CLEAR_LEADER": 2}
 
-    `residual` : the dict from residual_alpha.compute_residual_alpha() — must carry
-                 `by_sector` (per-sector leaders) with per-name alpha/entry/etc.
-    `closes`   : date-indexed close matrix (columns = tickers) for the onset overlay.
-    `flow_witness` / `options_ctx` : optional {ticker: {...}} display annotations
-                 (MK-P2). Absent → the field is simply omitted (never a false zero).
 
-    Onset/confluence is computed ONLY for each sector's residual leaders, not the
-    whole universe — cheap and sufficient (leadership lives at the top of the rank).
+def _assemble_groups(by_group: dict, closes: pd.DataFrame, *, label_key: str,
+                     flow_witness: dict, options_ctx: dict,
+                     alpha_min: float, min_legs: int, dominance_tau: float,
+                     meta: dict | None = None,
+                     onset_cache: dict | None = None) -> list[dict]:
+    """Run the per-group state machine over ANY grouping (sector / sub-industry /
+    theme). For each group: confluence_onset → classify_name per leader, then
+    sector_state over the classified members, emitting one row per group. The
+    machinery is identical regardless of granularity — only the emitted label field
+    name and an optional meta merge differ. `onset_cache` memoizes confluence_onset
+    by ticker so a name that appears in several families (its sector + a sub-industry
+    + a theme) is computed once and reads identically everywhere.
     """
-    if not residual or not isinstance(residual.get("by_sector"), dict):
-        log.warning("momentum_king.build_board: no residual by_sector")
-        return None
-
-    flow_witness = flow_witness or {}
-    options_ctx = options_ctx or {}
+    out = []
     have = set(closes.columns) if closes is not None else set()
-
-    sectors_out = []
-    for sec, blk in residual["by_sector"].items():
+    meta = meta or {}
+    for gid, blk in by_group.items():
         classified = []
         for rec in blk.get("leaders", []):
             t = rec.get("ticker")
-            onset = (confluence_onset(closes[t].dropna())
-                     if t in have else {"trend_legs": None})
+            if onset_cache is not None and t in onset_cache:
+                onset = onset_cache[t]
+            elif t in have:
+                onset = confluence_onset(closes[t].dropna())
+                if onset_cache is not None:
+                    onset_cache[t] = onset
+            else:
+                onset = {"trend_legs": None}
             m = classify_name(rec, onset, alpha_min=alpha_min, min_legs=min_legs)
             if t in flow_witness:
                 m["net_inflow_witness"] = {**flow_witness[t], "authority_tier": "display"}
@@ -273,38 +271,83 @@ def build_board(residual: dict, closes: pd.DataFrame, *,
             classified.append(m)
 
         st = sector_state(classified, dominance_tau=dominance_tau)
-        sectors_out.append({
-            "sector": sec,
-            "state": st["state"],
-            "leader": st["leader"],
-            "dominance_margin": st["dominance_margin"],
-            "n": int(blk.get("n", len(classified))),
-            "members": st["ranked"],
-        })
+        row = {label_key: gid, "state": st["state"], "leader": st["leader"],
+               "dominance_margin": st["dominance_margin"],
+               "n": int(blk.get("n", len(classified))), "members": st["ranked"]}
+        if gid in meta:
+            for k, v in meta[gid].items():
+                row.setdefault(k, v)   # merge display meta; never clobber state fields
+        out.append(row)
+    return out
 
-    # sort sectors: LEADER_CANDIDATE first, then by leader alpha
-    _order = {"LEADER_CANDIDATE": 0, "CONTESTED": 1, "NO_CLEAR_LEADER": 2}
 
-    def _sec_key(s):
-        lead = next((m for m in s["members"] if m.get("ticker") == s.get("leader")), None)
+def _rank_groups(rows: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Sort group rows (LEADER_CANDIDATE first, then leader alpha desc) and return
+    (sorted_rows, top_candidates) — the cross-group strip of only the crowned leaders."""
+    def _lead(s):
+        return next((m for m in s.get("members", []) if m.get("ticker") == s.get("leader")), None)
+
+    def _key(s):
+        lead = _lead(s)
         a = lead.get("alpha") if lead else None
-        return (_order.get(s["state"], 3), -(float(a) if a is not None else -1e9))
+        return (_STATE_ORDER.get(s["state"], 3), -(float(a) if a is not None else -1e9))
 
-    sectors_out.sort(key=_sec_key)
-
-    # cross-sector top candidates (LEADER_CANDIDATE leaders only, by alpha)
-    top_candidates = []
-    for s in sectors_out:
+    rows = sorted(rows, key=_key)
+    top = []
+    for s in rows:
         if s["state"] == "LEADER_CANDIDATE":
-            lead = next((m for m in s["members"] if m.get("ticker") == s["leader"]), None)
+            lead = _lead(s)
             if lead:
-                top_candidates.append({k: lead.get(k) for k in
-                                       ("ticker", "name", "sector", "alpha", "species",
-                                        "trend_legs", "fresh_cross", "ticks_since_cross")})
-    top_candidates.sort(key=lambda r: -(float(r["alpha"]) if r.get("alpha") is not None else -1e9))
+                top.append({k: lead.get(k) for k in
+                            ("ticker", "name", "sector", "alpha", "species",
+                             "trend_legs", "fresh_cross", "ticks_since_cross")})
+    top.sort(key=lambda r: -(float(r["alpha"]) if r.get("alpha") is not None else -1e9))
+    return rows, top
 
-    n_cand = sum(1 for s in sectors_out if s["state"] == "LEADER_CANDIDATE")
-    return {
+
+def build_board(residual: dict, closes: pd.DataFrame, *,
+                flow_witness: dict | None = None,
+                options_ctx: dict | None = None,
+                by_sub_industry: dict | None = None, sub_meta: dict | None = None,
+                by_theme: dict | None = None, theme_meta: dict | None = None,
+                alpha_min: float = ALPHA_LEADER_MIN,
+                min_legs: int = MIN_TREND_LEGS,
+                dominance_tau: float = DOMINANCE_TAU,
+                as_of: str | None = None, stale: bool = False) -> dict | None:
+    """Assemble momentum_king.v1 from a residual_alpha result + a close panel.
+
+    `residual` : compute_residual_alpha() output — must carry `by_sector` (the spine).
+    `closes`   : date-indexed close matrix (columns = tickers) for the onset overlay.
+    `by_sub_industry` / `by_theme` : OPTIONAL group dicts shaped exactly like
+                 `by_sector` ({group -> {'n','leaders':[...]}}), produced by the build
+                 script per sub-industry / per curated theme. Each runs the IDENTICAL
+                 state machine. Absent → that section is omitted (never a false empty).
+    `sub_meta` / `theme_meta` : {group -> {display fields}} merged onto each group row.
+    `flow_witness` / `options_ctx` : optional {ticker: {...}} display annotations.
+
+    Onset/confluence is computed only for each group's residual leaders and memoized
+    by ticker across families — cheap and internally consistent.
+    """
+    if not residual or not isinstance(residual.get("by_sector"), dict):
+        log.warning("momentum_king.build_board: no residual by_sector")
+        return None
+
+    onset_cache: dict = {}
+    common = dict(flow_witness=flow_witness or {}, options_ctx=options_ctx or {},
+                  alpha_min=alpha_min, min_legs=min_legs, dominance_tau=dominance_tau,
+                  onset_cache=onset_cache)
+
+    sectors_out = _assemble_groups(residual["by_sector"], closes, label_key="sector", **common)
+    sectors_out, top_candidates = _rank_groups(sectors_out)
+
+    coverage = {
+        "n_sectors": len(sectors_out),
+        "n_leader_candidates": sum(1 for s in sectors_out if s["state"] == "LEADER_CANDIDATE"),
+        "n_contested": sum(1 for s in sectors_out if s["state"] == "CONTESTED"),
+        "n_no_clear_leader": sum(1 for s in sectors_out if s["state"] == "NO_CLEAR_LEADER"),
+    }
+
+    out = {
         "schema": SCHEMA,
         "as_of": as_of or residual.get("as_of"),
         "stale": bool(stale),
@@ -312,10 +355,29 @@ def build_board(residual: dict, closes: pd.DataFrame, *,
         "params": {"alpha_leader_min": alpha_min, "min_trend_legs": min_legs,
                    "dominance_tau": dominance_tau, "fresh_within": FRESH_WITHIN,
                    "extended_atr": EXTENDED_ATR},
-        "coverage": {"n_sectors": len(sectors_out),
-                     "n_leader_candidates": n_cand,
-                     "n_contested": sum(1 for s in sectors_out if s["state"] == "CONTESTED"),
-                     "n_no_clear_leader": sum(1 for s in sectors_out if s["state"] == "NO_CLEAR_LEADER")},
+        "coverage": coverage,
         "top_candidates": top_candidates,
         "sectors": sectors_out,
     }
+
+    # ── Additive granularities — each independently absent-safe (omitted when the
+    #    loader returned nothing, never emitted as a false-empty section) ─────────
+    if by_sub_industry:
+        subs_out = _assemble_groups(by_sub_industry, closes, label_key="sub_industry",
+                                    meta=sub_meta or {}, **common)
+        subs_out, sub_top = _rank_groups(subs_out)
+        out["sub_industries"] = subs_out
+        out["sub_industry_top"] = sub_top
+        coverage["n_sub_industries"] = len(subs_out)
+        coverage["n_sub_leader_candidates"] = sum(1 for s in subs_out if s["state"] == "LEADER_CANDIDATE")
+
+    if by_theme:
+        themes_out = _assemble_groups(by_theme, closes, label_key="theme",
+                                      meta=theme_meta or {}, **common)
+        themes_out, theme_top = _rank_groups(themes_out)
+        out["themes"] = themes_out
+        out["theme_top"] = theme_top
+        coverage["n_themes"] = len(themes_out)
+        coverage["n_theme_leader_candidates"] = sum(1 for s in themes_out if s["state"] == "LEADER_CANDIDATE")
+
+    return out

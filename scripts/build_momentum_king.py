@@ -33,9 +33,11 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from jinja2 import Environment, FileSystemLoader
-from engine.equity_factors import _closes
+from engine.baskets import _membership
+from engine.equity_factors import _closes, _names_sectors
 from engine.momentum_king import build_board
 from engine.residual_alpha import compute_residual_alpha
+from engine.subsector_scan import _industry_map
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -52,6 +54,12 @@ _ETF_SET = frozenset({
     "XLK", "XLF", "XLE", "XLI", "XLU", "XLV", "XLY", "XLP", "XLB", "XLC", "XLRE",
     "SMH", "SOXX", "KRE", "XBI", "ARKK",
 })
+
+# ── Sub-industry / theme group thresholds (T2) — frozen alongside the sector seeds
+_THEME_MIN_MEMBERS = 5     # curated baskets are small & concentrated (Mag7 = 7)
+_SUB_MIN_MEMBERS = 6       # sub-industry peer sets — matches residual_alpha min_sector
+_GROUP_MIN_ROWS = 147      # default form(252)/skip(21) need ≥147 non-NaN residual rows
+_MAX_GROUPS = 60           # render-budget cap per family (one residual pass each)
 
 
 # ── Kill-switch stub ──────────────────────────────────────────────────────────
@@ -120,6 +128,107 @@ def _is_stale(closes: pd.DataFrame) -> bool:
         return False
 
 
+def _remap_names(blk: dict, ns_real: dict) -> None:
+    """A custom tkr_sector makes residual_alpha set each leader's `name` = its ticker.
+    Restore the real company name (leave `sector` as the group label — the state
+    machine is label-agnostic). Load-bearing: without this every theme/sub leader
+    would display its ticker as its name."""
+    for lst in ("leaders", "laggards"):
+        for rec in blk.get(lst, []):
+            nm = ns_real.get(rec.get("ticker"))
+            if nm:
+                rec["name"] = nm[0]
+
+
+def _group_residual(group_closes, label: str, min_members: int) -> dict | None:
+    """One within-group residual pass. market=None → residual_alpha loads SPY as the
+    MARKET leg; the group's own equal-weight peer is the SECTOR leg (within-group
+    neutralization — 'who leads THIS group'). NEVER pass the peer basket as market,
+    that would double-neutralize. Returns the by_sector block for `label`, or None."""
+    res = compute_residual_alpha(
+        closes=group_closes, market=None,
+        tkr_sector={t: label for t in group_closes.columns},
+        min_names=min_members, min_sector=min_members)
+    if not res or label not in res.get("by_sector", {}):
+        return None
+    return res["by_sector"][label]
+
+
+def _build_theme_groups(closes, ns_real, *, min_members=_THEME_MIN_MEMBERS,
+                        max_groups=_MAX_GROUPS, min_rows=_GROUP_MIN_ROWS):
+    """{basket_id -> by_sector-shaped block}, {basket_id -> meta}. Overlap by design →
+    one residual pass per basket. Absent-safe (empty on missing membership.json)."""
+    try:
+        mem = _membership()
+        if not mem or not isinstance(mem.get("baskets"), dict):
+            return {}, {}
+        cands = []
+        for bid, b in mem["baskets"].items():
+            present = [t for t in (m["ticker"] for m in b.get("members", []) if not m.get("removed"))
+                       if t in closes.columns and t not in _ETF_SET]
+            if len(present) >= min_members:
+                cands.append((bid, b, present))
+        cands.sort(key=lambda x: -len(x[2]))          # biggest baskets first (bound cost)
+        by_theme, meta, skipped = {}, {}, 0
+        for bid, b, present in cands[:max_groups]:
+            gc = closes[present]
+            if gc.shape[0] < min_rows:
+                skipped += 1
+                continue
+            blk = _group_residual(gc, bid, min_members)
+            if blk is None:
+                skipped += 1
+                continue
+            _remap_names(blk, ns_real)
+            by_theme[bid] = blk
+            # NB: 'theme_desc', not 'theme' — the row's label_key is already 'theme'
+            # (= basket id), so a meta 'theme' key would be dropped by setdefault.
+            meta[bid] = {"name": b.get("name", bid), "name_zh": b.get("name_zh", b.get("name", bid)),
+                         "category": b.get("category", "Other"), "theme_desc": b.get("theme", "")}
+        if skipped:
+            log.info("build_momentum_king: %d themes skipped (short history / thin)", skipped)
+        return by_theme, meta
+    except Exception as e:  # noqa: BLE001 — display-tier, never break the nightly
+        log.warning("build_momentum_king: theme groups failed: %s", e)
+        return {}, {}
+
+
+def _build_subindustry_groups(closes, ns_real, *, min_members=_SUB_MIN_MEMBERS,
+                              max_groups=_MAX_GROUPS, min_rows=_GROUP_MIN_ROWS):
+    """{sub_industry -> by_sector-shaped block}, {sub_industry -> meta}. Absent-safe."""
+    try:
+        imap = _industry_map()
+        if not imap:
+            return {}, {}
+        cands = []
+        for (sector, sub), tickers in imap.items():
+            if not sub or sub == "—":
+                continue
+            present = [t for t in tickers if t in closes.columns and t not in _ETF_SET]
+            if len(present) >= min_members:
+                cands.append((sub, sector, present))
+        cands.sort(key=lambda x: -len(x[2]))
+        by_sub, meta, skipped = {}, {}, 0
+        for sub, sector, present in cands[:max_groups]:
+            gc = closes[present]
+            if gc.shape[0] < min_rows:
+                skipped += 1
+                continue
+            blk = _group_residual(gc, sub, min_members)
+            if blk is None:
+                skipped += 1
+                continue
+            _remap_names(blk, ns_real)
+            by_sub[sub] = blk
+            meta[sub] = {"sub_industry": sub, "sector": sector}
+        if skipped:
+            log.info("build_momentum_king: %d sub-industries skipped (short history / thin)", skipped)
+        return by_sub, meta
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_momentum_king: sub-industry groups failed: %s", e)
+        return {}, {}
+
+
 def build() -> dict | None:
     if not _enabled():
         _write_noindex_stub()
@@ -145,10 +254,19 @@ def build() -> dict | None:
         log.warning("build_momentum_king: residual_alpha returned no result")
         return None
 
+    # Sub-industry + theme granularities (T2) — each an independent per-group
+    # residual pass (themes overlap, so one pass per basket). Both absent-safe
+    # (empty on missing data) and purely additive to the sector spine.
+    ns_real = _names_sectors("broad")
+    by_theme, theme_meta = _build_theme_groups(closes, ns_real)
+    by_sub, sub_meta = _build_subindustry_groups(closes, ns_real)
+
     board = build_board(
         residual, closes,
         as_of=residual.get("as_of"),
         stale=_is_stale(closes),
+        by_sub_industry=by_sub, sub_meta=sub_meta,
+        by_theme=by_theme, theme_meta=theme_meta,
     )
     if not board:
         log.warning("build_momentum_king: empty board")
@@ -162,8 +280,10 @@ def build() -> dict | None:
     out_path.write_text(json.dumps(board, separators=(",", ":"), default=_json_default))
     cov = board.get("coverage", {})
     log.info(
-        "build_momentum_king: wrote %s (%d sectors, %d leader-candidates, %d bytes, stale=%s)",
-        out_path, cov.get("n_sectors", 0), cov.get("n_leader_candidates", 0),
+        "build_momentum_king: wrote %s (%d sectors, %d sub-industries, %d themes, "
+        "%d leader-candidates, %d bytes, stale=%s)",
+        out_path, cov.get("n_sectors", 0), cov.get("n_sub_industries", 0),
+        cov.get("n_themes", 0), cov.get("n_leader_candidates", 0),
         out_path.stat().st_size, board.get("stale"),
     )
 

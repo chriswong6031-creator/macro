@@ -9,6 +9,9 @@ Coverage:
   - Output contains NO literal "None" or "NaN" or "nan" substring
   - FileSystemLoader is pointed at the real templates/ dir so
     {% include '_navlinks.html.j2' %} resolves without error
+  - Sub-industries and Themes panels render when data is present
+  - Sub-industries and Themes panels are absent when keys are missing (back-compat)
+  - Sector section still renders after macro refactor
 """
 from __future__ import annotations
 
@@ -73,6 +76,52 @@ def _sector(name: str, state: str, leader=None, dominance_margin=0.5, n=40, memb
     }
 
 
+def _sub_row(
+    sub_industry: str,
+    sector: str = "Information Technology",
+    state: str = "LEADER_CANDIDATE",
+    leader: str = "NVDA",
+    dominance_margin: float = 0.6,
+    n: int = 12,
+    members=None,
+) -> dict:
+    return {
+        "sub_industry": sub_industry,
+        "sector": sector,
+        "state": state,
+        "leader": leader,
+        "dominance_margin": dominance_margin,
+        "n": n,
+        "members": members or [],
+    }
+
+
+def _theme_row(
+    theme: str,
+    name: str,
+    name_zh: str = "",
+    category: str = "Technology",
+    theme_desc: str = "AI infrastructure play",
+    state: str = "LEADER_CANDIDATE",
+    leader: str = "NVDA",
+    dominance_margin: float = 0.7,
+    n: int = 15,
+    members=None,
+) -> dict:
+    return {
+        "theme": theme,
+        "name": name,
+        "name_zh": name_zh,
+        "category": category,
+        "theme_desc": theme_desc,
+        "state": state,
+        "leader": leader,
+        "dominance_margin": dominance_margin,
+        "n": n,
+        "members": members or [],
+    }
+
+
 def _mk_board(
     top_candidates=None,
     sectors=None,
@@ -82,8 +131,23 @@ def _mk_board(
     n_contested=2,
     n_no_clear_leader=8,
     n_sectors=11,
+    sub_industries=None,
+    themes=None,
+    n_sub_industries=None,
+    n_themes=None,
 ) -> dict:
-    return {
+    coverage = {
+        "n_sectors": n_sectors,
+        "n_leader_candidates": n_leader_candidates,
+        "n_contested": n_contested,
+        "n_no_clear_leader": n_no_clear_leader,
+    }
+    if n_sub_industries is not None:
+        coverage["n_sub_industries"] = n_sub_industries
+    if n_themes is not None:
+        coverage["n_themes"] = n_themes
+
+    board = {
         "schema": "momentum_king.v1",
         "as_of": as_of,
         "stale": stale,
@@ -96,15 +160,15 @@ def _mk_board(
             "fresh_within": 3,
             "extended_atr": 2.0,
         },
-        "coverage": {
-            "n_sectors": n_sectors,
-            "n_leader_candidates": n_leader_candidates,
-            "n_contested": n_contested,
-            "n_no_clear_leader": n_no_clear_leader,
-        },
+        "coverage": coverage,
         "top_candidates": top_candidates if top_candidates is not None else [],
         "sectors": sectors if sectors is not None else [],
     }
+    if sub_industries is not None:
+        board["sub_industries"] = sub_industries
+    if themes is not None:
+        board["themes"] = themes
+    return board
 
 
 def _render(mk: dict) -> str:
@@ -292,3 +356,208 @@ class TestHtmlStructure:
         html_no = _render(_mk_board(sectors=[_sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m_no])]))
         html_yes = _render(_mk_board(sectors=[_sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m_yes])]))
         assert html_yes.count("净流入") > html_no.count("净流入")
+
+
+class TestSectorMacroRefactor:
+    """Verify the sector section still renders correctly after macro extraction."""
+
+    def test_sector_still_renders_with_members(self):
+        m = _member("NVDA", alpha=1.8)
+        sec = _sector("Information Technology", "LEADER_CANDIDATE", leader="NVDA",
+                      dominance_margin=0.8, n=40, members=[m])
+        html = _render(_mk_board(sectors=[sec]))
+        # Section header present
+        assert "Sectors" in html or "板块" in html
+        # Card title for sector name
+        assert "Information Technology" in html
+        # Leader chip
+        assert "NVDA" in html
+        # State badge
+        assert "Leader Candidate" in html or "领袖候选" in html
+        # Dominance margin rendered
+        assert "0.80" in html
+        # Member ticker in the table
+        assert ">NVDA<" in html or "NVDA" in html
+
+    def test_sector_no_null_leak_after_refactor(self):
+        m_null = _member("ZZZZ", alpha=None, species=None, trend_legs=None,
+                         ticks_since_cross=None, rev_pctile=None)
+        sec = _sector("Utilities", "NO_CLEAR_LEADER", members=[m_null])
+        html = _render(_mk_board(sectors=[sec]))
+        _assert_no_null_leak(html)
+
+    def test_three_states_all_render(self):
+        secs = [
+            _sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[_member("NVDA")]),
+            _sector("Consumer", "CONTESTED", members=[_member("AAPL"), _member("MSFT", sector_rank=2)]),
+            _sector("Utilities", "NO_CLEAR_LEADER", members=[]),
+        ]
+        html = _render(_mk_board(sectors=secs))
+        assert "Leader Candidate" in html or "领袖候选" in html
+        assert "Contested" in html or "争议" in html
+        assert "No Clear Leader" in html or "无明显领袖" in html
+
+
+class TestSubIndustriesPanel:
+    """Sub-industries panel renders when present, is absent when not."""
+
+    def test_panel_renders_when_data_present(self):
+        m = _member("NVDA", alpha=1.5)
+        sub = _sub_row("Semiconductors", sector="Information Technology",
+                       state="LEADER_CANDIDATE", leader="NVDA", members=[m])
+        html = _render(_mk_board(sub_industries=[sub]))
+        assert "Sub-industries" in html or "子行业" in html
+        assert "Semiconductors" in html
+        # Parent sector chip should appear
+        assert "Information Technology" in html
+
+    def test_panel_absent_when_key_missing(self):
+        """Back-compat: board without sub_industries key must not render the panel."""
+        html = _render(_mk_board())  # sub_industries not passed → key absent
+        # The panel header "Sub-industries" / "子行业" must not appear as a panel h2
+        # We check for the panel-level <h2> wording; the topline span won't appear
+        # either since n_sub_industries is also absent.
+        assert "Sub-industries" not in html and "子行业" not in html
+
+    def test_panel_absent_when_empty_list(self):
+        """Explicit empty list: the guard {% if subs %} suppresses the panel."""
+        html = _render(_mk_board(sub_industries=[]))
+        assert "Sub-industries" not in html and "子行业" not in html
+
+    def test_null_member_in_sub_no_leak(self):
+        m_null = _member("ZZZZ", alpha=None, species=None, trend_legs=None,
+                         ticks_since_cross=None, rev_pctile=None)
+        sub = _sub_row("Specialty Retail", members=[m_null])
+        html = _render(_mk_board(sub_industries=[sub]))
+        _assert_no_null_leak(html)
+
+    def test_topline_count_shown(self):
+        html = _render(_mk_board(n_sub_industries=42))
+        assert "42" in html
+
+    def test_topline_count_absent_when_not_in_coverage(self):
+        """If n_sub_industries is not in coverage, the span should not appear."""
+        board = _mk_board()
+        # Ensure n_sub_industries is NOT in coverage
+        board["coverage"].pop("n_sub_industries", None)
+        html = _render(board)
+        # "子行业" panel header absent (no sub_industries key), topline span also absent
+        assert "子行业" not in html
+
+
+class TestThemesPanel:
+    """Themes panel renders when present, is absent when not."""
+
+    def test_panel_renders_when_data_present(self):
+        m = _member("NVDA", alpha=1.8)
+        theme = _theme_row(
+            theme="ai_infra",
+            name="AI Infrastructure",
+            name_zh="人工智能基础设施",
+            category="Technology",
+            theme_desc="Data center & accelerated compute",
+            state="LEADER_CANDIDATE",
+            leader="NVDA",
+            members=[m],
+        )
+        html = _render(_mk_board(themes=[theme]))
+        assert "Themes" in html or "主题" in html
+        # Bilingual label for theme name
+        assert "AI Infrastructure" in html
+        assert "人工智能基础设施" in html
+        # Category chip
+        assert "Technology" in html
+        # Theme desc
+        assert "Data center" in html
+
+    def test_panel_absent_when_key_missing(self):
+        """Back-compat: board without themes key must not render the themes panel."""
+        html = _render(_mk_board())
+        assert "Themes" not in html and "主题" not in html
+
+    def test_panel_absent_when_empty_list(self):
+        html = _render(_mk_board(themes=[]))
+        assert "Themes" not in html and "主题" not in html
+
+    def test_null_member_in_theme_no_leak(self):
+        m_null = _member("ZZZZ", alpha=None, species=None, trend_legs=None,
+                         ticks_since_cross=None, rev_pctile=None)
+        theme = _theme_row("ai_infra", "AI Infrastructure", members=[m_null])
+        html = _render(_mk_board(themes=[theme]))
+        _assert_no_null_leak(html)
+
+    def test_no_null_leak_with_null_name_zh(self):
+        """name_zh=None — should not leak a None cell."""
+        theme = _theme_row("ai_infra", "AI Infrastructure", name_zh=None)
+        html = _render(_mk_board(themes=[theme]))
+        _assert_no_null_leak(html)
+        assert "None" not in html
+
+    def test_topline_count_shown(self):
+        html = _render(_mk_board(n_themes=7))
+        assert "7" in html
+
+    def test_topline_count_absent_when_not_in_coverage(self):
+        board = _mk_board()
+        board["coverage"].pop("n_themes", None)
+        html = _render(board)
+        # No themes key → "主题" absent entirely
+        assert "主题" not in html
+
+
+class TestBothNewPanels:
+    """Integration: board with BOTH sub_industries and themes."""
+
+    def test_both_panels_render(self):
+        m = _member("NVDA", alpha=1.5)
+        sub = _sub_row("Semiconductors", members=[m])
+        theme = _theme_row("ai_infra", "AI Infrastructure", name_zh="人工智能基础设施", members=[m])
+        html = _render(_mk_board(sub_industries=[sub], themes=[theme]))
+        assert "Sub-industries" in html or "子行业" in html
+        assert "Themes" in html or "主题" in html
+
+    def test_both_panels_null_member_no_leak(self):
+        m_null = _member("ZZZZ", alpha=None, species=None, trend_legs=None,
+                         ticks_since_cross=None, rev_pctile=None)
+        sub = _sub_row("Semiconductors", members=[m_null])
+        theme = _theme_row("ai_infra", "AI Infrastructure", members=[m_null])
+        html = _render(_mk_board(sub_industries=[sub], themes=[theme]))
+        _assert_no_null_leak(html)
+
+    def test_back_compat_no_crash_no_panels(self):
+        """Old-style board with only sectors: no crash, no new panel text."""
+        m = _member("NVDA")
+        sec = _sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m])
+        html = _render(_mk_board(sectors=[sec]))
+        assert html  # renders
+        assert "Sub-industries" not in html and "子行业" not in html
+        assert "Themes" not in html and "主题" not in html
+        # Sectors section still present
+        assert "Sectors" in html or "板块" in html
+
+    def test_sector_section_present_alongside_new_panels(self):
+        m = _member("NVDA", alpha=1.8)
+        sec = _sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m])
+        sub = _sub_row("Semiconductors", members=[_member("NVDA")])
+        theme = _theme_row("ai_infra", "AI Infrastructure", members=[_member("NVDA")])
+        html = _render(_mk_board(sectors=[sec], sub_industries=[sub], themes=[theme]))
+        # All three panels present
+        assert "Sectors" in html or "板块" in html
+        assert "Sub-industries" in html or "子行业" in html
+        assert "Themes" in html or "主题" in html
+
+
+class TestPlaybookGranularityEntry:
+    """The new playbook accordion entry is always present."""
+
+    def test_granularity_entry_present(self):
+        html = _render(_mk_board())
+        assert "Three granularities" in html or "三种粒度" in html
+
+    def test_granularity_entry_mentions_overlap(self):
+        html = _render(_mk_board())
+        assert "overlap" in html or "重叠" in html
+
+    def test_granularity_entry_mentions_neutralization(self):
+        html = _render(_mk_board())
+        assert "neutralized" in html or "中性化" in html

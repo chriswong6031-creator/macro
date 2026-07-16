@@ -1,10 +1,205 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
+
+{# ── Reusable: member table ──────────────────────────────────────────────── #}
+{% macro member_table(rows) %}
+{% if rows %}
+<div class="tbl-wrap">
+<table class="ltbl">
+<thead>
+<tr>
+  <th>{{ t('Ticker', '代码') }}</th>
+  <th>{{ t('Alpha-Z', '阿尔法Z') }}</th>
+  <th>{{ t('Rank', '排名') }}</th>
+  <th>{{ t('Species', '类型') }}</th>
+  <th>{{ t('Trend Legs', '趋势腿') }}</th>
+  <th>{{ t('Entry', '入场') }}</th>
+  <th>{{ t('Rev Pctile', '修正分位') }}</th>
+  <th>{{ t('Ticks', '计时') }}</th>
+  <th>{{ t('Notes', '说明') }}</th>
+</tr>
+</thead>
+<tbody>
+{% for m in rows %}
+<tr{% if m.eligible is defined and m.eligible is not none and not m.eligible %} class="ineligible"{% endif %}>
+  <td>
+    <a href="us_stocks.html#{{ m.ticker }}" class="tk">{{ m.ticker }}</a>
+    {# Optional future witnesses — render ONLY if present #}
+    {% if m.net_inflow_witness is defined and m.net_inflow_witness %}
+      <span class="badge badge-green" style="margin-left:4px;">{{ t('Inflow', '净流入') }}</span>
+    {% endif %}
+    {% if m.options_context is defined and m.options_context %}
+      <span class="badge badge-muted" style="margin-left:4px;">{{ t('Options', '期权') }}</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if m.alpha is defined and m.alpha is not none %}
+      {{ '%.2f'|format(m.alpha) }}
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if m.sector_rank is defined and m.sector_rank is not none and m.sector_n is defined and m.sector_n is not none %}
+      <span class="k-chip {% if m.sector_rank == 1 %}k-hi{% endif %}">{{ m.sector_rank }}/{{ m.sector_n }}</span>
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if m.species is defined and m.species is not none %}
+      {% if m.species == 'FRESH_INITIATION' %}
+        <span class="badge badge-green">{{ t('Fresh', '新起') }}</span>
+      {% elif m.species == 'ESTABLISHED_CONTINUATION' %}
+        <span class="badge badge-muted">{{ t('Cont.', '延续') }}</span>
+      {% else %}
+        <span class="badge badge-muted xs">{{ m.species }}</span>
+      {% endif %}
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if m.trend_legs is defined and m.trend_legs is not none %}
+      <span class="k-chip {% if m.trend_legs >= 3 %}k-hi{% endif %}">{{ m.trend_legs }}/4</span>
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if m.residual_entry is defined and m.residual_entry is not none %}
+      {% if m.residual_entry == 'extended' %}
+        <span class="badge re-extended">{{ t('Extended', '超买') }}</span>
+      {% elif m.residual_entry == 'pullback' %}
+        <span class="badge re-pullback">{{ t('Pullback', '回调') }}</span>
+      {% elif m.residual_entry == 'intact' %}
+        <span class="badge re-intact">{{ t('Intact', '完好') }}</span>
+      {% elif m.residual_entry == 'laggard' %}
+        <span class="badge re-laggard">{{ t('Laggard', '滞后') }}</span>
+      {% elif m.residual_entry == 'neutral' %}
+        <span class="badge re-neutral">{{ t('Neutral', '中性') }}</span>
+      {% else %}
+        <span class="badge badge-muted">{{ m.residual_entry }}</span>
+      {% endif %}
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if m.rev_pctile is defined and m.rev_pctile is not none %}
+      {{ m.rev_pctile | int }}
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if m.ticks_since_cross is defined and m.ticks_since_cross is not none %}
+      {{ m.ticks_since_cross }}
+    {% else %}
+      <span class="muted">—</span>
+    {% endif %}
+  </td>
+  <td class="muted xs">
+    {# Gates (only for eligible members — show as terse chip row) #}
+    {% if m.eligible is defined and m.eligible is not none and m.eligible %}
+      {% set g = m.gates if m.gates is defined and m.gates is not none else {} %}
+      {% if g.alpha_leader is defined and not g.alpha_leader %}<span class="badge badge-muted" style="margin-right:2px;">α✗</span>{% endif %}
+      {% if g.confluence_bull is defined and not g.confluence_bull %}<span class="badge badge-muted" style="margin-right:2px;">bull✗</span>{% endif %}
+      {% if g.not_extended is defined and not g.not_extended %}<span class="badge badge-orange" style="margin-right:2px;">{{ t('Ext', '超买') }}</span>{% endif %}
+    {% elif m.eligible is defined and not m.eligible %}
+      {# Ineligible: show reasons if present #}
+      {% set reasons = m.reasons if m.reasons is defined and m.reasons is not none else [] %}
+      {% if reasons %}
+        {% for r in reasons %}<span class="muted xs">{{ r }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+      {% else %}
+        <span class="muted">{{ t('Not eligible', '不符合条件') }}</span>
+      {% endif %}
+    {% endif %}
+    {% if m.based is defined and m.based is not none and m.based %}<span class="badge badge-green" style="margin-left:2px;">{{ t('Based', '有基') }}</span>{% endif %}
+    {% if m.extended is defined and m.extended is not none and m.extended %}<span class="badge badge-orange" style="margin-left:2px;">{{ t('Ext', '超买') }}</span>{% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="muted xs" style="padding:10px 14px;">{{ t('No members in this group.', '该分组暂无成员。') }}</div>
+{% endif %}
+{% endmacro %}
+
+{# ── Reusable: group card (sector / sub-industry / theme) ────────────────── #}
+{% macro group_card(row, label_field) %}
+{% set row_members = row.members if row.members is defined and row.members is not none else [] %}
+<div class="sector-card">
+  <div class="sector-hd" onclick="this.classList.toggle('open')">
+    {# Primary label: for themes, prefer bilingual name toggle if name_zh exists #}
+    {% if label_field == 'name' and row.name_zh is defined and row.name_zh is not none %}
+      <span style="font-weight:700;font-size:13px;">{{ t(row[label_field], row.name_zh) }}</span>
+    {% else %}
+      <span style="font-weight:700;font-size:13px;">{{ row[label_field] if row[label_field] is defined and row[label_field] is not none else '—' }}</span>
+    {% endif %}
+
+    {# For sub-industries: show parent sector as a muted chip #}
+    {% if label_field == 'sub_industry' and row.sector is defined and row.sector is not none %}
+      <span class="badge badge-muted xs">{{ row.sector }}</span>
+    {% endif %}
+
+    {# For themes: show category and theme_desc chips if present #}
+    {% if label_field == 'name' %}
+      {% if row.category is defined and row.category is not none %}
+        <span class="badge badge-muted xs">{{ row.category }}</span>
+      {% endif %}
+      {% if row.theme_desc is defined and row.theme_desc is not none %}
+        <span class="xs muted" style="font-style:italic;">{{ row.theme_desc }}</span>
+      {% endif %}
+    {% endif %}
+
+    {# State badge #}
+    {% if row.state is defined and row.state is not none %}
+      {% if row.state == 'LEADER_CANDIDATE' %}
+        <span class="badge badge-green">{{ t('Leader Candidate', '领袖候选') }}</span>
+      {% elif row.state == 'CONTESTED' %}
+        <span class="badge badge-orange">{{ t('Contested', '争议') }}</span>
+      {% elif row.state == 'NO_CLEAR_LEADER' %}
+        <span class="badge badge-muted">{{ t('No Clear Leader', '无明显领袖') }}</span>
+      {% else %}
+        <span class="badge badge-muted">{{ row.state }}</span>
+      {% endif %}
+    {% else %}
+      <span class="badge badge-muted"><span class="muted">—</span></span>
+    {% endif %}
+
+    {# Leader chip #}
+    {% if row.leader is defined and row.leader is not none %}
+      <span class="xs muted">{{ t('Leader', '领袖') }}: <span class="tk">{{ row.leader }}</span></span>
+    {% endif %}
+
+    {# Dominance margin #}
+    {% if row.dominance_margin is defined and row.dominance_margin is not none %}
+      <span class="xs muted">{{ t('Margin', '差距') }}: {{ '%.2f'|format(row.dominance_margin) }}</span>
+    {% endif %}
+
+    {# n members #}
+    {% if row.n is defined and row.n is not none %}
+      <span class="xs muted">n={{ row.n }}</span>
+    {% endif %}
+
+    <span class="car">▸</span>
+  </div>
+  <div class="sector-body">
+    {{ member_table(row_members) }}
+  </div>
+</div>
+{% endmacro %}
+
 {% set mk = mk if mk else {} %}
 {% set cov = mk.coverage if mk.coverage is defined and mk.coverage is not none else {} %}
 {% set top_candidates = mk.top_candidates if mk.top_candidates is defined and mk.top_candidates is not none else [] %}
 {% set sectors = mk.sectors if mk.sectors is defined and mk.sectors is not none else [] %}
+{% set subs = mk.sub_industries if mk.sub_industries is defined and mk.sub_industries is not none else [] %}
+{% set themes = mk.themes if mk.themes is defined and mk.themes is not none else [] %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,6 +272,8 @@
 <div class="topline muted xs" style="margin-bottom:14px;">
   <span>{{ t('As of', '截至') }} {{ mk.as_of[:10] if mk.as_of is defined and mk.as_of is not none else '—' }}</span>
   {% if cov.n_sectors is defined and cov.n_sectors is not none %}<span>{{ t('Sectors', '板块') }}: {{ cov.n_sectors }}</span>{% endif %}
+  {% if cov.n_sub_industries is defined and cov.n_sub_industries is not none %}<span>{{ t('Sub-industries', '子行业') }}: {{ cov.n_sub_industries }}</span>{% endif %}
+  {% if cov.n_themes is defined and cov.n_themes is not none %}<span>{{ t('Themes', '主题') }}: {{ cov.n_themes }}</span>{% endif %}
   {% if cov.n_leader_candidates is defined and cov.n_leader_candidates is not none %}<span>{{ t('Leader candidates', '领袖候选') }}: {{ cov.n_leader_candidates }}</span>{% endif %}
   {% if cov.n_contested is defined and cov.n_contested is not none %}<span>{{ t('Contested', '争议') }}: {{ cov.n_contested }}</span>{% endif %}
   {% if cov.n_no_clear_leader is defined and cov.n_no_clear_leader is not none %}<span>{{ t('No clear leader', '无明显领袖') }}: {{ cov.n_no_clear_leader }}</span>{% endif %}
@@ -188,173 +385,39 @@
 </div>
 
 {% for sec in sectors %}
-{% set sec_members = sec.members if sec.members is defined and sec.members is not none else [] %}
-<div class="sector-card">
-  <div class="sector-hd" onclick="this.classList.toggle('open')">
-    <span style="font-weight:700;font-size:13px;">{{ sec.sector if sec.sector is defined and sec.sector is not none else '—' }}</span>
-
-    {# State badge #}
-    {% if sec.state is defined and sec.state is not none %}
-      {% if sec.state == 'LEADER_CANDIDATE' %}
-        <span class="badge badge-green">{{ t('Leader Candidate', '领袖候选') }}</span>
-      {% elif sec.state == 'CONTESTED' %}
-        <span class="badge badge-orange">{{ t('Contested', '争议') }}</span>
-      {% elif sec.state == 'NO_CLEAR_LEADER' %}
-        <span class="badge badge-muted">{{ t('No Clear Leader', '无明显领袖') }}</span>
-      {% else %}
-        <span class="badge badge-muted">{{ sec.state }}</span>
-      {% endif %}
-    {% else %}
-      <span class="badge badge-muted"><span class="muted">—</span></span>
-    {% endif %}
-
-    {# Leader chip #}
-    {% if sec.leader is defined and sec.leader is not none %}
-      <span class="xs muted">{{ t('Leader', '领袖') }}: <span class="tk">{{ sec.leader }}</span></span>
-    {% endif %}
-
-    {# Dominance margin #}
-    {% if sec.dominance_margin is defined and sec.dominance_margin is not none %}
-      <span class="xs muted">{{ t('Margin', '差距') }}: {{ '%.2f'|format(sec.dominance_margin) }}</span>
-    {% endif %}
-
-    {# n members #}
-    {% if sec.n is defined and sec.n is not none %}
-      <span class="xs muted">n={{ sec.n }}</span>
-    {% endif %}
-
-    <span class="car">▸</span>
-  </div>
-  <div class="sector-body">
-    {% if sec_members %}
-    <div class="tbl-wrap">
-    <table class="ltbl">
-    <thead>
-    <tr>
-      <th>{{ t('Ticker', '代码') }}</th>
-      <th>{{ t('Alpha-Z', '阿尔法Z') }}</th>
-      <th>{{ t('Rank', '排名') }}</th>
-      <th>{{ t('Species', '类型') }}</th>
-      <th>{{ t('Trend Legs', '趋势腿') }}</th>
-      <th>{{ t('Entry', '入场') }}</th>
-      <th>{{ t('Rev Pctile', '修正分位') }}</th>
-      <th>{{ t('Ticks', '计时') }}</th>
-      <th>{{ t('Notes', '说明') }}</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for m in sec_members %}
-    <tr{% if m.eligible is defined and m.eligible is not none and not m.eligible %} class="ineligible"{% endif %}>
-      <td>
-        <a href="us_stocks.html#{{ m.ticker }}" class="tk">{{ m.ticker }}</a>
-        {# Optional future witnesses — render ONLY if present #}
-        {% if m.net_inflow_witness is defined and m.net_inflow_witness %}
-          <span class="badge badge-green" style="margin-left:4px;">{{ t('Inflow', '净流入') }}</span>
-        {% endif %}
-        {% if m.options_context is defined and m.options_context %}
-          <span class="badge badge-muted" style="margin-left:4px;">{{ t('Options', '期权') }}</span>
-        {% endif %}
-      </td>
-      <td>
-        {% if m.alpha is defined and m.alpha is not none %}
-          {{ '%.2f'|format(m.alpha) }}
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-      </td>
-      <td>
-        {% if m.sector_rank is defined and m.sector_rank is not none and m.sector_n is defined and m.sector_n is not none %}
-          <span class="k-chip {% if m.sector_rank == 1 %}k-hi{% endif %}">{{ m.sector_rank }}/{{ m.sector_n }}</span>
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-      </td>
-      <td>
-        {% if m.species is defined and m.species is not none %}
-          {% if m.species == 'FRESH_INITIATION' %}
-            <span class="badge badge-green">{{ t('Fresh', '新起') }}</span>
-          {% elif m.species == 'ESTABLISHED_CONTINUATION' %}
-            <span class="badge badge-muted">{{ t('Cont.', '延续') }}</span>
-          {% else %}
-            <span class="badge badge-muted xs">{{ m.species }}</span>
-          {% endif %}
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-      </td>
-      <td>
-        {% if m.trend_legs is defined and m.trend_legs is not none %}
-          <span class="k-chip {% if m.trend_legs >= 3 %}k-hi{% endif %}">{{ m.trend_legs }}/4</span>
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-      </td>
-      <td>
-        {% if m.residual_entry is defined and m.residual_entry is not none %}
-          {% if m.residual_entry == 'extended' %}
-            <span class="badge re-extended">{{ t('Extended', '超买') }}</span>
-          {% elif m.residual_entry == 'pullback' %}
-            <span class="badge re-pullback">{{ t('Pullback', '回调') }}</span>
-          {% elif m.residual_entry == 'intact' %}
-            <span class="badge re-intact">{{ t('Intact', '完好') }}</span>
-          {% elif m.residual_entry == 'laggard' %}
-            <span class="badge re-laggard">{{ t('Laggard', '滞后') }}</span>
-          {% elif m.residual_entry == 'neutral' %}
-            <span class="badge re-neutral">{{ t('Neutral', '中性') }}</span>
-          {% else %}
-            <span class="badge badge-muted">{{ m.residual_entry }}</span>
-          {% endif %}
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-      </td>
-      <td>
-        {% if m.rev_pctile is defined and m.rev_pctile is not none %}
-          {{ m.rev_pctile | int }}
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-      </td>
-      <td>
-        {% if m.ticks_since_cross is defined and m.ticks_since_cross is not none %}
-          {{ m.ticks_since_cross }}
-        {% else %}
-          <span class="muted">—</span>
-        {% endif %}
-      </td>
-      <td class="muted xs">
-        {# Gates (only for eligible members — show as terse chip row) #}
-        {% if m.eligible is defined and m.eligible is not none and m.eligible %}
-          {% set g = m.gates if m.gates is defined and m.gates is not none else {} %}
-          {% if g.alpha_leader is defined and not g.alpha_leader %}<span class="badge badge-muted" style="margin-right:2px;">α✗</span>{% endif %}
-          {% if g.confluence_bull is defined and not g.confluence_bull %}<span class="badge badge-muted" style="margin-right:2px;">bull✗</span>{% endif %}
-          {% if g.not_extended is defined and not g.not_extended %}<span class="badge badge-orange" style="margin-right:2px;">{{ t('Ext', '超买') }}</span>{% endif %}
-        {% elif m.eligible is defined and not m.eligible %}
-          {# Ineligible: show reasons if present #}
-          {% set reasons = m.reasons if m.reasons is defined and m.reasons is not none else [] %}
-          {% if reasons %}
-            {% for r in reasons %}<span class="muted xs">{{ r }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
-          {% else %}
-            <span class="muted">{{ t('Not eligible', '不符合条件') }}</span>
-          {% endif %}
-        {% endif %}
-        {% if m.based is defined and m.based is not none and m.based %}<span class="badge badge-green" style="margin-left:2px;">{{ t('Based', '有基') }}</span>{% endif %}
-        {% if m.extended is defined and m.extended is not none and m.extended %}<span class="badge badge-orange" style="margin-left:2px;">{{ t('Ext', '超买') }}</span>{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-    </table>
-    </div>
-    {% else %}
-    <div class="muted xs" style="padding:10px 14px;">{{ t('No members in this sector.', '该板块暂无成员。') }}</div>
-    {% endif %}
-  </div>
-</div>
+{{ group_card(sec, 'sector') }}
 {% else %}
 <div class="muted sm">{{ t('No sector data available.', '暂无板块数据。') }}</div>
 {% endfor %}
 </div>
+
+{# ── Sub-industries ───────────────────────────────────────────────── #}
+{% if subs %}
+<div class="panel">
+<h2>{{ t('Sub-industries', '子行业') }}</h2>
+<div class="sm muted" style="margin-bottom:10px;">
+  {{ t('Within-sub-industry residual-alpha leadership — neutralized vs the sub-industry equal-weight peer set (who leads THIS group, not the whole sector).', '子行业内残差阿尔法领袖——相对子行业等权同业集合中性化（谁领导该子行业，而非整个板块）。') }}
+</div>
+
+{% for row in subs %}
+{{ group_card(row, 'sub_industry') }}
+{% endfor %}
+</div>
+{% endif %}
+
+{# ── Themes ───────────────────────────────────────────────────────── #}
+{% if themes %}
+<div class="panel">
+<h2>{{ t('Themes', '主题') }}</h2>
+<div class="sm muted" style="margin-bottom:10px;">
+  {{ t('Within-theme residual-alpha leadership over curated thematic baskets. Names overlap across baskets by design; each theme is neutralized vs its own equal-weight peer set.', '精选主题基准内的残差阿尔法领袖。标的在各基准间有意重叠；每个主题相对其自身等权同业集合中性化。') }}
+</div>
+
+{% for row in themes %}
+{{ group_card(row, 'name') }}
+{% endfor %}
+</div>
+{% endif %}
 
 {# ── Playbook accordion ───────────────────────────────────────────── #}
 <div class="panel">
@@ -393,6 +456,15 @@
 </div>
 <div class="pb-bd">
   <p>{{ t('The dominance threshold (alpha_leader_min), the minimum trend legs count (min_trend_legs), the dominance tau (dominance_tau), and the freshness window (fresh_within) are pre-registered configuration seeds. They were set before this page existed and have not been tuned to produce attractive-looking boards. Changing them post-hoc would be p-hacking. The board is a descriptive display surface — it has never been evaluated as a return predictor.', '主导阈值（alpha_leader_min）、最低趋势腿数（min_trend_legs）、主导tau（dominance_tau）和新鲜度窗口（fresh_within）均为预注册配置种子。它们在本页创建前即已设置，未经调整以产生好看的看板。事后修改将构成数据挖掘。本看板为描述性展示页面——从未作为收益预测指标进行评估。') }}</p>
+</div>
+</div>
+
+<div class="playbook">
+<div class="pb-hd" onclick="this.classList.toggle('open')">
+  {{ t('Three granularities · overlap · within-group neutralization', '三种粒度 · 重叠 · 组内中性化') }}<span class="car">▸</span>
+</div>
+<div class="pb-bd">
+  <p>{{ t('The same state machine runs over three distinct granularities: GICS sectors, GICS/Finviz sub-industries, and curated thematic baskets. Themes intentionally overlap — a single name may live in many baskets simultaneously — so each basket receives its own independent residual pass. Every group (sector, sub-industry, or theme) is neutralized vs its OWN equal-weight peer set: the signal measures who leads THAT specific group, not the broad market. Small groups (low n) are lower-confidence display context; they are not sizing inputs.', '同一状态机运行于三种粒度：GICS板块、GICS/Finviz子行业和精选主题基准。主题有意重叠——一个标的可同时存在于多个基准中——因此每个基准进行独立的残差计算。每个分组（板块、子行业或主题）均相对其自身等权同业集合中性化：信号衡量的是谁领导该特定分组，而非广泛市场。小规模分组（n值低）为置信度较低的展示背景，不作为仓位依据。') }}</p>
 </div>
 </div>
 </div>
