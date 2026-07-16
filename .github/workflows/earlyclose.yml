@@ -45,9 +45,15 @@ name: earlyclose
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "20 21 * * 1-5"   # 21:20 UTC = 17:20 ET (EDT, UTC-4, Mar→Nov)
-    - cron: "20 22 * * 1-5"   # 22:20 UTC = 17:20 ET (EST, UTC-5, Nov→Mar)
+  # RETIRED FROM SCHEDULE 2026-07-16 (two-build rollout, final step): closing-bell.yml
+  # (Build A, 16:05 ET, full-market scope incl. GEX/options + markets that this fast
+  # lane skipped) lands ~17:55 ET — a strict superset at the same delivery hour this
+  # lane used to hit (~18:00 ET), and daily.yml (Build B) now fires 18:30 ET. Three
+  # provisional writers racing the same session's snapshot pointers was the remaining
+  # hazard. workflow_dispatch kept for manual/backstop use; full revert = restore:
+  #   schedule:
+  #     - cron: "20 21 * * 1-5"   # 21:20 UTC = 17:20 ET (EDT, UTC-4, Mar→Nov)
+  #     - cron: "20 22 * * 1-5"   # 22:20 UTC = 17:20 ET (EST, UTC-5, Nov→Mar)
 
 permissions:
   contents: write
