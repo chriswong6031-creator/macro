@@ -3044,6 +3044,15 @@ live_flow:
   near_dte_cap_days: 90     # current-day fallback: cap per-expiration pulls to <=90 DTE (near-dated flow, where notable premium lives)
   # etf_anchors: []         # defaults to 22 anchors (see live_flow_poller._resolve_universe)
 
+# U-CHAIN intraday chain-snapshot lane (scripts/chain_snapshot_poller.py) —
+# 15-min full-chain greeks/OI sweeps for the active universe, persisted as
+# per-root per-day parquet (the Interval Map / Volatility Drift data plane).
+chain_snapshots:
+  cadence_min: 15           # minutes between sweep starts (RTH 09:35-16:00 ET)
+  top_names: 128            # single-name roots appended after the 22 ETF anchors (~150 roots)
+  max_concurrent: 1         # HARD — live_flow poller owns 2 of the terminal's 8 slots during RTH; this lane gets 1. NEVER raise without explicit Fable adjudication.
+  # etf_anchors: []         # defaults to 22 anchors (see chain_snapshot_poller._resolve_universe)
+
 # Committed-data-freeze tripwire — folded into the dead-man's-switch heartbeat
 # (scripts/healthcheck.py check_committed_data_freshness).  Each witness is a
 # cheap, always-liquid parquet file.  FAIL when > fail_after_sessions business

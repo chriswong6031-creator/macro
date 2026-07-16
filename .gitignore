@@ -289,6 +289,9 @@ data/research_factory/*
 data/live_flow_state/
 data/live_flow_out/
 
+# U-CHAIN chain-snapshot lane output (~0.4-1 GB/day forward; never committed)
+data/chain_snapshots/
+
 # W0.2 OHLC store (reproducible from collector + manifest; not committed)
 data/yahoo_ohlc/
 research/oracle_asymmetry/W2_member_trades.csv
