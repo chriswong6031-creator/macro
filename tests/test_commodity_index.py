@@ -21,6 +21,14 @@ from lib import config  # noqa: E402
 CFG = config.load()["commodities"]
 
 
+@pytest.fixture(autouse=True)
+def _isolate_signals_store(tmp_path, monkeypatch):
+    """build_index persists signals_index.parquet via config.data_dir() on every
+    call — unredirected it REWRITES (truncates) the real
+    data/commodity/signals_index.parquet with the synthetic fixture frame."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
+
+
 # --------------------------------------------------------------------------- #
 # helpers
 # --------------------------------------------------------------------------- #

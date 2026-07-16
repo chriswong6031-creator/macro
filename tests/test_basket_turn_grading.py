@@ -275,21 +275,21 @@ def test_register_cohort_claims_gate_absent(monkeypatch, tmp_path):
 
 def test_register_cohort_claims_keep_first(monkeypatch, tmp_path):
     """Running register_cohort_claims twice for the same cohort should
-    only register the claim once."""
+    only register the claim once.
+
+    Uses the real qledger against root=tmp_path — the previous
+    patch.dict(sys.modules) mock never took effect in a full-suite run
+    (`from engine import qledger` resolves the parent-package ATTRIBUTE, not
+    sys.modules), so the claim registered into the REAL data/qledger tree."""
     monkeypatch.setenv("COLLECT_LANE", "nightly")
 
     cohorts = [{"cohort_id": _TODAY, "cohort_date": _TODAY,
                 "basket_ids": ["ai_semiconductors"], "n_baskets": 1, "legs": {}}]
 
-    mock_qledger = MagicMock()
-    mock_qledger.make_claim.return_value = {"desk": "basket_turn.v1", "asof": _TODAY}
-    mock_qledger.register_batch.return_value = [{"status": "open", "claim_id": "abc"}]
-
-    with patch.dict("sys.modules", {"engine.qledger": mock_qledger}):
-        # First run
-        BTC.register_cohort_claims(cohorts, data_root=tmp_path)
-        # Second run — cohort log should prevent re-registration
-        result2 = BTC.register_cohort_claims(cohorts, data_root=tmp_path)
+    # First run
+    BTC.register_cohort_claims(cohorts, data_root=tmp_path, root=tmp_path)
+    # Second run — cohort log should prevent re-registration
+    result2 = BTC.register_cohort_claims(cohorts, data_root=tmp_path, root=tmp_path)
 
     assert result2 == [], "Second run should produce no new claims (keep-first)"
 
@@ -299,18 +299,16 @@ def test_register_cohort_claims_keep_first(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_register_cohort_claims_status_open(monkeypatch, tmp_path):
-    """Newly registered claims should have status 'open'."""
+    """Newly registered claims should have status 'open'.
+
+    Real qledger against root=tmp_path (see keep-first test above for why the
+    sys.modules mock was dropped)."""
     monkeypatch.setenv("COLLECT_LANE", "nightly")
 
     cohorts = [{"cohort_id": _TODAY, "cohort_date": _TODAY,
                 "basket_ids": ["ai_semiconductors"], "n_baskets": 1, "legs": {}}]
 
-    mock_qledger = MagicMock()
-    mock_qledger.make_claim.return_value = {"desk": "basket_turn.v1", "asof": _TODAY}
-    mock_qledger.register_batch.return_value = [{"status": "open", "claim_id": "abc123"}]
-
-    with patch.dict("sys.modules", {"engine.qledger": mock_qledger}):
-        registered = BTC.register_cohort_claims(cohorts, data_root=tmp_path)
+    registered = BTC.register_cohort_claims(cohorts, data_root=tmp_path, root=tmp_path)
 
     assert len(registered) == 1
     assert registered[0]["status"] == "open"

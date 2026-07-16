@@ -6,7 +6,24 @@ with transition-dedup + heartbeat.
 from __future__ import annotations
 import json
 
+import pytest
+
 from engine import foresight_cascade as fc
+from lib import config as _config
+
+
+@pytest.fixture(autouse=True)
+def _isolate_real_data_tree(tmp_path, monkeypatch):
+    """compute_foresight_cascade lazily recomputes any tier not passed in
+    (policy_reg, fda_scarcity, confirmers, ...) straight off the real data/
+    tree — engine.policy_calendar._append_ledger then appends a real
+    forward-ledger batch (COLLECT_LANE=nightly is armed session-wide in
+    conftest; a full 13-theme batch landed in the committed ledger this way).
+    Redirect lib.config so lazy recomputes see an empty store and degrade to
+    None. Tests that patch data_dir themselves simply override this."""
+    _config.load()  # warm the lru cache before ROOT is patched
+    monkeypatch.setattr(_config, "ROOT", tmp_path)
+    monkeypatch.setattr(_config, "data_dir", lambda: tmp_path / "data")
 
 
 def test_precipice_tight_plus_flat():

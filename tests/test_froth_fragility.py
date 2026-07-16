@@ -29,6 +29,16 @@ _LATEST = ROOT / "data" / "regime" / "latest.json"
 FROTH_KEYS = ("froth_fragility", "froth", "euphoria", "fragility", "ff_score", "leaddist")
 
 
+@pytest.fixture(autouse=True)
+def _isolate_parab_store(tmp_path, monkeypatch):
+    """snapshot() accrues the A4 parabolicity PIT store via _parab_path() as a
+    side effect — surgical redirect so the real
+    data/froth_fragility/parab_history.parquet is never advanced by tests.
+    (The deliberate real READS — regime/latest.json etc. — stay real.)"""
+    monkeypatch.setattr(ff, "_parab_path",
+                        lambda: tmp_path / "parab_history.parquet")
+
+
 def _real_latest() -> dict:
     if not _LATEST.exists():
         pytest.skip("data/regime/latest.json not present")
