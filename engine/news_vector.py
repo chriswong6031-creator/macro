@@ -15,8 +15,11 @@ WHAT IT DOES (deterministic, no AI in P0):
      sub-queries, each under GDELT's server-side query-length limit (_MAX_QUERY_LEN;
      the limit TIGHTENED ~2026-06-20 and rejected the old single query for 3 weeks),
      through engine.gdelt_client's shared cross-process per-IP pace gate.
-  2. GATE deterministically — reputable-source allowlist + a narrative-theme keyword
-     gate (reuses engine.macro_news.filter primitives where they overlap), dedup.
+  2. GATE deterministically — reputable-source allowlist + the shared low-value
+     junk filter (news_common.low_value_reason: pick-mill listicles / single-stock
+     advertorials / preview roundups — the MN-05 leak class; every drop logged with
+     its reason) + a narrative-theme keyword gate (reuses engine.macro_news.filter
+     primitives where they overlap), dedup.
   3. KEY each kept headline by a stable content hash (event_id) and ACCRUE it
      append-only with **keep-FIRST** semantics: the FIRST time we saw an event_id is
      recorded as first_seen_utc and is NEVER overwritten on re-ingest. This single
@@ -24,14 +27,20 @@ WHAT IT DOES (deterministic, no AI in P0):
      on republish); it is the deliberate INVERSE of the prediction-markets snapshot
      accrual (which keeps-LAST, because odds genuinely revise).
   4. STAMP each event with scheduled_ref — whether a HIGH-impact scheduled US macro
-     release (FOMC/CPI/NFP/GDP/PCE/PPI, via engine.event_calendar) falls on/near the
-     article date. This is the deterministic "is this move explainable by the
-     calendar, or is it a headline shock?" flag the surprise-decomposition needs.
+     release (FOMC/CPI/NFP/GDP/PCE/PPI, via engine.event_calendar) fell ON the
+     article date or the DAY BEFORE (the reaction window — a release tomorrow cannot
+     explain today's flow) AND the article's theme sits in that release's macro
+     channel (_SCHEDULED_REF_THEMES). This is the deterministic "is this move
+     explainable by the calendar, or is it a headline shock?" flag the surprise-
+     decomposition needs; a blanket same-window stamp would mark unrelated geo/tech
+     headlines as calendar-explained (the MN-06 leak). Forward-only: keep-FIRST
+     accrual never restamps already-accrued rows.
 
 DISCIPLINE (enforced, not aspirational):
   • LEAF — imports nothing from the mechanical core (conditions/regime/run/inputs/
     cycles/equity_alloc/*_signals/calibrate); only lib.config and the sibling LEAF
-    modules macro_news + event_calendar. Nothing in any scoring path imports this.
+    modules macro_news + event_calendar + news_common. Nothing in any scoring path
+    imports this.
   • Every public function returns plain data or None and NEVER raises into the build.
   • The LLM structured-extraction stage is STUBBED OFF in P0 (enabled:false AND
     llm_extract:false). When later enabled it must reuse engine.catalyst_tone's
@@ -43,6 +52,7 @@ import hashlib
 import json
 import logging
 import re
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -155,22 +165,42 @@ def source_tier(domain: str) -> int:
     return 1 if any(s in dom for s in _TIER1) else 2
 
 
+def _low_value_reason(title: str, domain: str) -> str | None:
+    """Reject-reason token for low-value junk (pick-mill listicles, single-stock
+    advertorials, preview roundups…), or None to keep. Delegates to
+    news_common.low_value_reason — the ONE shared pattern set (sibling LEAF).
+    Degrades OPEN (no filtering) if news_common is unavailable; never raises."""
+    try:
+        from engine import news_common as nc
+        return nc.low_value_reason(title, domain)
+    except Exception:  # noqa: BLE001 — degrade to the pre-filter behavior
+        return None
+
+
 def build_records(articles: list[dict], scheduled: dict[str, str],
                   allow: list[str], first_seen_utc: str) -> list[dict]:
     """Turn raw GDELT articles into deterministic event records. PURE (no network,
     no clock — `first_seen_utc` is injected so accrual/idempotency is testable).
 
     scheduled: {date_iso -> "TYPE"} of high-impact scheduled releases, used to stamp
-    scheduled_ref when an article's own date lands within ±1 day of one.
+    scheduled_ref when the article lands in a release's reaction window (same day or
+    the day after) AND its theme matches the release's macro channel.
     """
     allow = [s.lower() for s in (allow or [])]
     out: list[dict] = []
     seen: set[str] = set()
+    rejects: Counter[str] = Counter()
     for a in articles:
         dom = (a.get("domain") or "").lower()
         if allow and not any(s in dom for s in allow):
             continue                                          # source allowlist
         title = a.get("title", "")
+        lv = _low_value_reason(title, dom)
+        if lv is not None:
+            rejects[lv] += 1                                  # low-value junk gate (MN-05)
+            log.debug("news_vector: dropped low-value headline (%s) [%s]: %r",
+                      lv, dom, title)
+            continue
         theme = classify_theme(title)
         if theme is None:
             continue                                          # narrative relevance gate
@@ -188,22 +218,48 @@ def build_records(articles: list[dict], scheduled: dict[str, str],
             "domain": dom,
             "theme": theme,
             "source_tier": source_tier(dom),
-            "scheduled_ref": _scheduled_ref_for(seendate, scheduled),
+            "scheduled_ref": _scheduled_ref_for(seendate, scheduled, theme),
         })
+    if rejects:
+        log.info("news_vector: dropped %d low-value headlines (%s)",
+                 sum(rejects.values()),
+                 ", ".join(f"{k}={v}" for k, v in sorted(rejects.items())))
     return out
 
 
-def _scheduled_ref_for(seendate_iso: str, scheduled: dict[str, str]) -> str:
-    """'TYPE@YYYY-MM-DD' if a high-impact release falls within ±1 day of the article
-    date, else ''. PURE."""
+# Release TYPE -> the narrative themes an article can plausibly be ABOUT when it
+# reacts to that release: the release's own macro channel, plus the rate-path
+# (monetary) and market-reaction (markets) buckets. geopolitics/trade/ai_tech/…
+# never get stamped — those are the headline-shock themes the surprise-
+# decomposition needs UNstamped (the MN-06 leak stamped PPI on every same-window
+# article). Fail-closed: a release type missing here stamps nothing (test-enforced
+# to cover _HIGH_IMPACT).
+_SCHEDULED_REF_THEMES: dict[str, frozenset[str]] = {
+    "FOMC": frozenset({"monetary", "markets"}),
+    "CPI":  frozenset({"inflation", "monetary", "markets"}),
+    "PPI":  frozenset({"inflation", "monetary", "markets"}),
+    "PCE":  frozenset({"inflation", "monetary", "markets"}),
+    "NFP":  frozenset({"labor", "monetary", "markets"}),
+    "GDP":  frozenset({"growth", "monetary", "markets"}),
+}
+
+
+def _scheduled_ref_for(seendate_iso: str, scheduled: dict[str, str],
+                       theme: str = "") -> str:
+    """'TYPE@YYYY-MM-DD' when the article is plausibly the calendar-explained flow
+    of a high-impact release: the release fell ON the article date or the DAY
+    BEFORE (reaction window — a release tomorrow cannot explain today's flow), AND
+    the article's theme sits in that release's macro channel. Else ''. PURE.
+    Forward-only: already-accrued rows keep their historical stamps (keep-FIRST)."""
     try:
         d = date.fromisoformat((seendate_iso or "")[:10])
     except (ValueError, TypeError):
         return ""
-    for delta in (0, -1, 1):
+    for delta in (0, -1):
         key = (d + timedelta(days=delta)).isoformat()
-        if key in scheduled:
-            return f"{scheduled[key]}@{key}"
+        rtype = scheduled.get(key)
+        if rtype and theme in _SCHEDULED_REF_THEMES.get(rtype, frozenset()):
+            return f"{rtype}@{key}"
     return ""
 
 
