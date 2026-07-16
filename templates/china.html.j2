@@ -680,7 +680,9 @@
      theme's 12-column .grid must be a plain block here — otherwise .cnx-wrap is placed
      into a single content-sized grid column and the page renders at ~half width. */
   body.page-china .grid{display:block}
-  body.page-china .cnx-wrap{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:0}
+  /* width parity with US macro.html: the body padding rule above already centers
+     content at 1500px (same as page-macro) — no extra cap here. */
+  body.page-china .cnx-wrap{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:0}
   /* glass card */
   body.page-china .cnx-card{background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));border-radius:18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.55),0 1.5px 0 rgba(255,255,255,.07) inset;padding:18px 20px;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s;margin-bottom:14px}
   body.page-china .cnx-card[role="button"]{cursor:pointer}
@@ -692,6 +694,8 @@
      own stacking context at level 0; without this the popover — trapped in the hero's
      own backdrop-filter context — renders BEHIND the later cards. Stays below dialogs (60). */
   body.page-china .cnx-hero{display:grid;grid-template-columns:minmax(360px,2fr) minmax(400px,3fr);gap:0;padding:0;position:relative;z-index:30}
+  body.page-china .cnx-hero.cnx-hero-solo{grid-template-columns:1fr}
+  body.page-china .cnx-hero.cnx-hero-solo .cnx-hero-right{display:none}
   body.page-china .cnx-hero-left{padding:22px 26px;border-right:1px solid rgba(255,255,255,.12);position:relative}
   body.page-china .cnx-hero-right{padding:18px 24px 14px}
   body.page-china .cnx-regime-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:4px 12px;font-size:11.5px;background:rgba(208,69,69,.10)}
@@ -1239,7 +1243,7 @@
   <div class="cnx-wrap">
 
   <!-- =============== HERO =============== -->
-  <div class="cnx-card cnx-hero ms-front ms ms-{{ _ms_color }}" style="padding:0">
+  <div class="cnx-card cnx-hero{{ ' cnx-hero-solo' if not (ms_history and ms_history|length >= 2) else '' }} ms-front ms ms-{{ _ms_color }}" style="padding:0">
     <div class="cnx-hero-left">
       <span class="cnx-regime-pill"><span class="dot"></span>
         {{ t(latest.quad_name, latest.quad_name) }}<span style="opacity:.55"> · {{ t(latest.cycle_tag or 'mid', latest.cycle_tag or 'mid') }}</span></span>
@@ -1321,7 +1325,7 @@
       </div>
     </div>
     <div class="cnx-hero-right">
-      <div class="cnx-path-h"><span>{{ t('11-session path', '11交易日走势') }}</span><span>{{ t('score vs time', '评分随时间') }}</span></div>
+      <div class="cnx-path-h"><span>{{ t('11-session path', '11交易日走势') }}</span></div>
       {# Path SVG — dynamic from ms_history if available, else static placeholder #}
       {% if ms_history and ms_history | length >= 2 %}
       {% set _pts = ms_history %}
@@ -1400,8 +1404,7 @@
       {% if pb_obj %}
         {% set _pd = pb_obj.dial %}
         <div class="cnx-row"><span class="ic">{{ {'DEFENSIVE':'🛡','CAREFUL':'⚠','NEUTRAL':'◐','CONSTRUCTIVE':'✅','AGGRESSIVE':'🚀'}.get(_pd.posture,'◐') }}</span>
-          <div class="tx"><b>{{ t(_pd.posture, {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'}.get(_pd.posture,'')) }}</b>
-            <span class="sub">{{ t('Score','评分') }} {{ _ms_score }}/100 · {{ _ms_label }}</span></div></div>
+          <div class="tx"><b>{{ t(_pd.posture, {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'}.get(_pd.posture,'')) }}</b></div></div>
         {% for sign, r_en, r_zh in (_pd.reasons[:4] if _pd.reasons else []) %}
         <div class="cnx-row"><span class="ic">{{ '+' if sign == '+' else ('−' if sign == '-' else 'ℹ') }}</span>
           <div class="tx"><span class="sub">{{ t(r_en, r_zh) }}</span></div></div>
@@ -1496,7 +1499,7 @@
       {% elif I.turnover %}
       <div class="cnx-dial-word">{{ I.turnover.band | title }}</div>
       {% endif %}
-      <div class="cnx-dial-sub">{{ t('display only — not scored into regime','仅展示 — 不计入区制评分') }}</div>
+      <div class="cnx-dial-sub">{{ t('a heads-up, not a scored signal','仅供参考，不构成评分信号') }}</div>
       {% else %}
       <div style="font-size:12px;color:var(--muted)">{{ t('Data building…','数据积累中…') }}</div>
       {% endif %}
@@ -1511,16 +1514,18 @@
         {% for x in pb_obj.leaders[:3] %}<span class="cnx-chip hot">{{ td(x.name) }}</span>{% endfor %}
       </div>
       {% endif %}
-      {% if pb_obj and pb_obj.preferred %}
+      {% set _buy_chips = ((actions.buy_now if actions and actions.buy_now else []) + (actions.buy_soon if actions and actions.buy_soon else []))[:3] %}
+      {% if _buy_chips %}
       <div class="cnx-lbl">{{ t('Turning up — buy zone','回升中 — 买入区') }}</div>
       <div class="cnx-chips">
-        {% for x in pb_obj.preferred[:3] %}<span class="cnx-chip turn">{{ td(x.name) }}</span>{% endfor %}
+        {% for x in _buy_chips %}<span class="cnx-chip turn">{{ td(x.name) }}</span>{% endfor %}
       </div>
       {% endif %}
       <div class="cnx-lbl">{{ t('Sector heat','板块热度') }}</div>
       <div class="cnx-heat">
         {% for s in (sectors[:16] if sectors else []) %}
-        {% set _tone = 'c' if s.state in ('downtrend','avoid') else ('h2' if s.state in ('extended','take_profits') else ('h3' if s.state == 'constructive' else 'n')) %}
+        {# Tone keyed on s.dir which is always populated with the real uppercase-state-derived direction #}
+        {% set _tone = 'c' if s.dir == 'down' else ('h2' if s.dir == 'caution' else ('h3' if s.dir == 'up' else 'n')) %}
         <i class="{{ _tone }}"></i>
         {% endfor %}
       </div>
@@ -1675,6 +1680,25 @@
           <span class="cnx-fscore" style="color:{{ 'var(--up)' if c.tone == 'pos' else ('var(--down)' if c.tone == 'neg' else 'var(--warn)') }}">{{ c.score }}</span>
         </div>
         {% endfor %}
+        {# Signal stack strip — 'do they agree?' (vm.signal_stack) #}
+        {% if signal_stack and signal_stack.legs %}
+        <div class="cnx-sep"></div>
+        <div class="cnx-eyebrow">{{ t('Signals — do they agree?','各信号 — 是否一致？') }}</div>
+        {% for leg in signal_stack.legs %}
+        <div class="cnx-frow" style="grid-template-columns:160px 1fr">
+          <span>{{ t(leg.label_en, leg.label_zh) }}</span>
+          <span class="cnx-stword {{ 'ok' if leg.tone == 'up' else ('bad' if leg.tone == 'down' else 'warn') }}">{{ t(leg.state_en, leg.state_zh) }}</span>
+        </div>
+        {% endfor %}
+        <div style="margin-top:8px;font-size:11.5px">
+          <span class="cnx-stword {{ 'ok' if signal_stack.anchor_tone == 'up' else ('bad' if signal_stack.anchor_tone == 'down' else 'warn') }}">{{ signal_stack.agreement_pct }}% {{ t('agreement','一致度') }}</span>
+          · {{ t(signal_stack.quality_en, signal_stack.quality_zh) }}
+          · {{ t(signal_stack.final_en, signal_stack.final_zh) }}
+        </div>
+        {% if signal_stack.contradiction_en %}
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">{{ t(signal_stack.contradiction_en, signal_stack.contradiction_zh) }}</div>
+        {% endif %}
+        {% endif %}
         <div class="cnx-sep"></div>
         <div class="cnx-eyebrow">{{ t('The regime — and where it\'s headed','当前周期 — 及走向') }}</div>
         <div class="cnx-cols2">
@@ -1713,8 +1737,6 @@
         {% set _ph = (_cms.get('phase') or {}) %}
         <div class="cnx-sep"></div>
         <div class="cnx-eyebrow">{{ t('A-Share Phase','A股阶段') }}</div>
-        <div class="cnx-kv"><span class="k">{{ t('Phase','阶段') }}</span><span class="v">{{ _ph.get('phase') or '—' }}</span></div>
-        {% if _cms.get('falsifiers') %}<div style="font-size:11px;color:var(--muted);margin-top:6px">{{ t('Falsifiers','证伪条件') }}: {{ _cms.falsifiers | join(' · ') }}</div>{% endif %}
         {% endif %}
         <div class="cnx-receipt">{{ t('Context, not a forecast. China-native composite — options-fear and margin-froth legs stand in for VIX/HY.','仅作背景，非预测。中国本土综合指标——期权恐慌与两融拥挤腿代替VIX/HY。') }}</div>
       </div>
@@ -1801,19 +1823,19 @@
         <div class="cnx-cols2">
           <div>
             <div class="cnx-lbl" style="margin-top:0">{{ t('Leading sectors','领先板块') }}</div>
-            {% set _slead = [] %}{% for s in sectors %}{% if s.mom20 is not none %}{% set _ = _slead.append(s) %}{% endif %}{% endfor %}
-            {% for s in _slead | sort(attribute='mom20', reverse=true) %}{% if loop.index <= 4 %}
+            {# Leading = first 4 sectors in rotation order (sectors is rotation-ranked best-first).
+               The Python-side score_and_rank() already sorted the list; we just slice here.
+               Do NOT re-sort with |sort — that would contradict the Rotation table. #}
+            {% for s in sectors[:4] %}
             <div class="cnx-ledd"><span class="cnx-tt-up">▲ {{ td(s.name) }}</span><span class="rk">#{{ loop.index }}</span></div>
-            {% endif %}{% endfor %}
+            {% endfor %}
           </div>
           <div>
             <div class="cnx-lbl" style="margin-top:0">{{ t('Lagging sectors','落后板块') }}</div>
+            {# Lagging = last 4 sectors in rotation order — worst rotation rank first. #}
             {% if sectors %}
-            {% set _slag = _slead | sort(attribute='mom20') | list %}
-            {% for s in _slag %}
-            {% if loop.index <= 4 %}
-            <div class="cnx-ledd"><span class="cnx-tt-dn">▽ {{ td(s.name) }}</span><span class="rk">#{{ _slag | length - loop.index0 }}</span></div>
-            {% endif %}
+            {% for s in sectors[-4:] | reverse %}
+            <div class="cnx-ledd"><span class="cnx-tt-dn">▽ {{ td(s.name) }}</span><span class="rk">#{{ sectors | length - loop.index0 }}</span></div>
             {% endfor %}
             {% endif %}
           </div>
@@ -1896,6 +1918,9 @@
               <span class="cnx-bignum">¥{{ I.turnover.turnover_t }}{{ t('T','万亿') }}</span>
             </div>
             <div class="cnx-kv"><span class="k">{{ t('Band','区间') }}</span><span class="v">{{ t(I.turnover.band, {'apathy':'清淡','normal':'正常','active':'活跃','mania':'狂热'}.get(I.turnover.band,'')) }}</span></div>
+            {% if I.turnover.pctile is defined and I.turnover.pctile is not none %}
+            <div class="cnx-kv"><span class="k">{{ t('Turnover heat','成交热度') }}</span><span class="v {{ 'cnx-tt-up' if (I.turnover.pctile|int) >= 80 else '' }}">{{ t(I.turnover.pctile|string ~ t('th percentile','th百分位'), I.turnover.pctile|string ~ '第百分位') }}{{ t(' — near record froth',' — 接近历史极值') if (I.turnover.pctile|int) >= 95 else (t(' — elevated',' — 偏高') if (I.turnover.pctile|int) >= 80 else '') }}</span></div>
+            {% endif %}
             {% if I.flows and I.flows.limit %}
             <div class="cnx-kv"><span class="k">{{ t('Limit-up / down','涨停 / 跌停') }}</span><span class="v cnx-tt-up">{{ I.flows.limit.zt }}</span> / <span class="cnx-tt-dn">{{ I.flows.limit.dt }}</span></div>
             {% endif %}
@@ -1903,7 +1928,7 @@
             {% endif %}
           </div>
         </div>
-        <div class="cnx-receipt">{{ t('Display-only synthesis — never scored into the regime.','仅展示综合 — 从不计入区制评分。') }}</div>
+        <div class="cnx-receipt">{{ t('A heads-up, not a scored signal.','仅供参考，不构成评分信号。') }}</div>
       </div>
     </div>
   </div>
@@ -1916,32 +1941,43 @@
       <div class="cnx-dlg-body">
         {% if pb_obj %}
         <div class="cnx-eyebrow">{{ t('Act on now','现在行动') }}</div>
-        {% if pb_obj.preferred %}
+        {# BUY ZONE: action-board buy_now + buy_soon (not macro-quad preferred list) #}
+        {% set _dlg_buy = ((actions.buy_now if actions and actions.buy_now else []) + (actions.buy_soon if actions and actions.buy_soon else [])) %}
+        {% if _dlg_buy %}
         <div class="cnx-lbl" style="margin-top:2px">{{ t('Buy zone','买入区') }}</div>
-        <div class="cnx-chips">{% for x in pb_obj.preferred %}<span class="cnx-chip turn">{{ td(x.name) }}{% if x.rank %} · <span style="opacity:.6">#{{ x.rank }}</span>{% endif %}</span>{% endfor %}</div>
+        <div class="cnx-chips">{% for x in _dlg_buy %}{%- set _sc = (sectors_by_ticker.get(x.ticker) if sectors_by_ticker is defined else none) -%}<span class="cnx-chip turn">{{ td(x.name) }}{% if _sc and _sc.rank %} · <span style="opacity:.6">#{{ _sc.rank }}</span>{% endif %}</span>{% endfor %}</div>
         {% endif %}
+        {# AVOID: action-board avoid list #}
+        {% set _dlg_avoid = (actions.avoid if actions and actions.avoid else []) %}
+        {% if _dlg_avoid %}
+        <div class="cnx-lbl">{{ t('Avoid','回避') }}</div>
+        <div class="cnx-chips">{% for x in _dlg_avoid %}{%- set _sc = (sectors_by_ticker.get(x.ticker) if sectors_by_ticker is defined else none) -%}<span class="cnx-chip">{{ td(x.name) }}{% if _sc and _sc.rank %} · <span style="opacity:.6">#{{ _sc.rank }}</span>{% endif %}</span>{% endfor %}</div>
+        {% endif %}
+        {# Leaders — hot names already in uptrend, don't chase #}
         {% if pb_obj.leaders %}
         <div class="cnx-lbl">{{ t('Leaders — don\'t chase','领先 — 勿追') }}</div>
         <div class="cnx-chips">{% for x in pb_obj.leaders %}<span class="cnx-chip hot">{{ td(x.name) }}</span>{% endfor %}</div>
-        {% endif %}
-        {% if pb_obj.avoid %}
-        <div class="cnx-lbl">{{ t('Avoid','回避') }}</div>
-        <div class="cnx-chips">{% for x in pb_obj.avoid %}<span class="cnx-chip">{{ td(x.name) }}</span>{% endfor %}</div>
         {% endif %}
         {% endif %}
         <div class="cnx-sep"></div>
         <div class="cnx-eyebrow">{{ t('Rotation vs CSI 300','相对沪深300轮动') }}</div>
         {% if sectors %}
         <table class="cnx-mt">
-          <tr><th>{{ t('Sector','板块') }}</th><th class="r">{{ t('Rank','排名') }}</th><th class="r">20d</th><th class="r">60d</th><th class="r">{{ t('Trend','趋势') }}</th><th class="r">{{ t('Read','判断') }}</th></tr>
+          {# plain label (s.label), real state-driven color, OB chip driver field #}
+          <tr><th>{{ t('Sector','板块') }}</th><th class="r">{{ t('Rank','排名') }}</th><th class="r">5d</th><th class="r">20d</th><th class="r">60d</th><th class="r">{{ t('Trend','趋势') }}</th><th class="r">{{ t('Read','判断') }}</th></tr>
           {% for s in sectors[:10] %}
+          {# color on s.dir (up/down/caution) which is always populated and maps to real states #}
+          {% set _row_class = 'cnx-tt-dn' if s.dir == 'down' else ('cnx-tt-fl' if s.dir == 'caution' else ('cnx-tt-up' if s.dir == 'up' else '')) %}
           <tr>
             <td>{{ td(s.name) }}</td>
             <td class="r">{{ loop.index }}</td>
+            <td class="r {{ 'cnx-tt-up' if (s.mom5 or 0) > 0 else ('cnx-tt-dn' if (s.mom5 or 0) < 0 else '') }}">{{ '%+.1f'|format(s.mom5) if s.mom5 is not none else '—' }}%</td>
             <td class="r {{ 'cnx-tt-up' if (s.mom20 or 0) >= 0 else 'cnx-tt-dn' }}">{{ '%+.1f'|format(s.mom20) if s.mom20 is not none else '—' }}%</td>
             <td class="r {{ 'cnx-tt-up' if (s.mom60 or 0) >= 0 else 'cnx-tt-dn' }}">{{ '%+.1f'|format(s.mom60) if s.mom60 is not none else '—' }}%</td>
             <td class="r">{{ '▲' if s.dir == 'up' else ('▼' if s.dir == 'down' else '▶') }}</td>
-            <td class="r {{ 'cnx-tt-fl' if s.state in ('extended','take_profits') else ('cnx-tt-up' if s.state in ('turning_up','basing','constructive') else '') }}">{{ td(s.state) }}</td>
+            {# render s.label (plain display word), NOT s.state (raw internal key) #}
+            {# append OB chip when overbought score >= 0.5 #}
+            <td class="r {{ _row_class }}">{{ t(s.label or '', s.label_zh or (s.label or '')) }}{% if (s.ob or 0) >= 0.5 %} <span style="font-size:10px;opacity:.75;background:var(--warn);color:#000;padding:1px 4px;border-radius:3px;vertical-align:middle">{{ t('OB','超买') }}</span>{% endif %}</td>
           </tr>
           {% endfor %}
         </table>
@@ -1965,7 +2001,7 @@
             {% endif %}
           </div>
         </div>
-        <div class="cnx-receipt">{{ t('Sector timing from each group\'s position on its own price cycle.','板块时机来自各组在其自身价格周期中的位置。') }}</div>
+        <div class="cnx-receipt">{{ t('Ranked by the fast 5–10 day turn vs CSI 300, with the 20-day trend and overbought as guards.','按相对沪深300的5–10日快速转向排序，20日趋势与超买作为约束。') }}</div>
       </div>
     </div>
   </div>
@@ -2009,6 +2045,10 @@
             <div class="cnx-kv"><span class="k">{{ t('M1−M2 scissors','M1−M2剪刀差') }}</span><span class="v"><span class="cnx-stword {{ 'ok' if (I.credit.scissors or 0) >= 0 else 'bad' }}">{{ '%+.1f'|format(I.credit.scissors) if I.credit.scissors is defined else '—' }}pp</span></span></div>
             {% if I.credit.scissors_html %}<div class="chart">{{ I.credit.scissors_html | safe }}</div>{% endif %}
             {% if I.credit.tape %}<div class="cnx-kv"><span class="k">{{ t('Macro tape','宏观盘面') }}</span><span class="v">{% for tp in I.credit.tape %}<span class="{{ 'cnx-tt-up' if tp.val >= 0 else 'cnx-tt-dn' }}">{{ t(tp.en, tp.zh) }} {{ '%+.1f'|format(tp.val) }}%</span>{% if not loop.last %} · {% endif %}{% endfor %}</span></div>{% endif %}
+            {% endif %}
+            {# Leverage build from cn_participation_json #}
+            {% if cn_participation_json and cn_participation_json.margin_to_mcap is defined and cn_participation_json.margin_to_mcap is not none %}
+            <div class="cnx-kv"><span class="k">{{ t('Margin / market cap','融资余额 / 市值') }}</span><span class="v">{{ '%.2f'|format(cn_participation_json.margin_to_mcap) }}%{% if cn_participation_json.margin_chg_5d is defined and cn_participation_json.margin_chg_5d is not none %} · <span class="{{ 'cnx-tt-up' if cn_participation_json.margin_chg_5d > 0 else ('cnx-tt-dn' if cn_participation_json.margin_chg_5d < 0 else '') }}">5d {{ '%+.2f'|format(cn_participation_json.margin_chg_5d) }}%</span>{% endif %}</span></div>
             {% endif %}
           </div>
         </div>
@@ -2225,7 +2265,7 @@
         <div class="cnx-sep"></div>
         <div class="cnx-cols2">
           <div>
-            <div class="cnx-eyebrow">{{ t('Framework-preferred sectors','框架偏好板块') }}</div>
+            <div class="cnx-eyebrow">{{ t('Framework-preferred (macro quad)','框架偏好（宏观象限）') }}</div>
             {% for x in pb_obj.preferred %}<div class="cnx-kv"><span class="k">{{ td(x.name) }}</span><span class="v cnx-tt-up">{{ '#' ~ x.rank if x.rank else '' }}</span></div>{% else %}<p class="cnx-foot">—</p>{% endfor %}
           </div>
           <div>

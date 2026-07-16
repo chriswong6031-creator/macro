@@ -458,7 +458,7 @@ def _build_history(env, latest: dict, generated: str) -> None:
 def _sector_cards(latest: dict) -> list[dict]:
     """Merge the RS-rank table (from the regime run) with per-sector cycle analysis."""
     from engine.china_inputs import china_closes
-    from engine.cycles import analyze
+    from engine.cycles import analyze, STATE_DISPLAY as _STATE_DISPLAY_MAP
     names = config.load()["china"]["yahoo"]["sector_etfs"]
     closes = china_closes()
     rs_by = {r["ticker"]: r for r in latest.get("sector_rs", [])}
@@ -482,6 +482,7 @@ def _sector_cards(latest: dict) -> list[dict]:
             "mom60": rs.get("mom_60d_pct"), "above200": rs.get("above_200d_trend"),
             "pctile": rs.get("pctile_252d"),
             "state": lad.get("state"), "label": lad.get("label"),
+            "label_zh": _STATE_DISPLAY_MAP.get(lad.get("state") or "", {}).get("label_zh"),
             "action": lad.get("action"), "dir": lad.get("dir"),
             "entry": lad.get("entry"),     # cycle-entry call -> action board buckets
             "age_short": lad.get("age_short"), "age_short_zh": lad.get("age_short_zh"),
@@ -493,8 +494,21 @@ def _sector_cards(latest: dict) -> list[dict]:
             "mtf_json": json.dumps(a["mtf"]),
             "price": round(float(close.iloc[-1]), 3),
         })
-    # rank order (best RS first); unranked sectors fall to the end
-    cards.sort(key=lambda c: (c["rank"] is None, c["rank"] or 999))
+    # Apply rotation re-rank (replaces the simple 60d RS sort).
+    # score_and_rank:
+    #   - augments each card with rotation_rank, rotation_score, oscillator
+    #     readings and fast-RS momentum (mom5, mom10)
+    #   - preserves the old 60d RS rank as card["rank60"]
+    #   - overwrites card["rank"] with the rotation_rank so downstream
+    #     consumers (template, pb_sector) see the new unified order
+    #   - returns the list sorted by rotation_rank ascending (1 = best)
+    from engine.china_sector_rotation import score_and_rank
+    bench = config.load()["china"]["engine"]["rs_ranking"]["benchmark"]
+    try:
+        cards = score_and_rank(cards, closes, bench)
+    except Exception as e:  # noqa: BLE001 — rotation is display-only; degrade gracefully
+        log.warning("china_sector_rotation.score_and_rank failed (%s); falling back to 60d RS sort", e)
+        cards.sort(key=lambda c: (c["rank"] is None, c["rank"] or 999))
     return cards
 
 
