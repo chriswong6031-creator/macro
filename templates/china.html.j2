@@ -386,6 +386,10 @@
   .quad-badge { font-size: 22px; font-weight: 800; padding: 8px 18px; border-radius: 13px; color: #fff; }
   .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); color: #1a1a1a; }
   .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
+  /* US-parity header pills (mirror dashboard.html.j2 .badge) — small Regime/Posture
+     chips replacing the oversized 22px .quad-badge in the stock-dashboard header. */
+  .badge { display: inline-block; padding: 3px 12px; border-radius: 14px; font-weight: 600; font-size: 13px; }
+  .quad-Q1, .quad-Q3, .quad-Q4 { color: #fff; }
   .metric { display: flex; flex-direction: column; gap: 1px; }
   .metric .v { font-size: 18px; font-weight: 700; color: var(--text); }
   .metric .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
@@ -970,11 +974,16 @@
   {% if mode == 'stocks' %}
   <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
   <div class="panel span12" id="stocks-header">
-    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:12px 14px;flex-wrap:wrap">
       <h1 style="margin:0">🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}
         {{ help('A stock-picking watchlist for China A-shares: names that sold off hard and just started turning back up. Rank means how ready a setup looks to buy — research context, not advice.', 'A股选股观察表：大幅回调后刚开始回升的个股。排序表示形态离买点有多近——研究参考，非投资建议。') }}</h1>
-      <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
-      {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span class="chip c-muted">{{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{% endif %}
+      {# Regime + Posture header pills, aligned with the US stock dashboard (Regime: … / Posture: …) #}
+      <span style="display:inline-flex;align-items:center">
+        <span class="badge quad-{{ latest.quad }}">{{ t('Regime', '周期') }}: {{ td(latest.quad_name) }}</span>{{ help("The macro / economic regime (growth × inflation quadrant) the whole page is filtered by — it describes the ECONOMY, not today's tape, so it shifts slowly. Use it for which sectors & factors are favoured, not for market timing. For whether the market itself is turning over, use the China macro dashboard's risk read.", "整页据以过滤的宏观／经济周期（增长×通胀象限）— 它描述的是经济，而非今日盘面，因此变化缓慢。用于判断哪些板块与因子占优，而非择时。市场本身是否转向，请看中国宏观看板的风险读数。") }}
+      </span>
+      {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span style="display:inline-flex;align-items:center">
+        <span class="badge" style="background:var(--panel2);color:var(--text)">{{ t('Posture', '姿态') }}: {{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{{ help("How to TRADE the current regime — a defensive → aggressive stance dial (Defensive · Careful · Neutral · Constructive · Aggressive) set by the playbook. It sizes risk; it is not a buy/sell or stock-selection call. The full dial with its reasoning lives on the China macro dashboard.", "如何“交易”当前周期 — 一个防御→进取的姿态刻度（防御·谨慎·中性·建设性·进取），由策略手册设定。它用于调整风险敞口，并非买卖或选股建议。完整刻度及其推理见中国宏观看板。") }}
+      </span>{% endif %}
     </div>
     <p class="note" style="margin:8px 0 0;text-transform:none">
       <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a>
