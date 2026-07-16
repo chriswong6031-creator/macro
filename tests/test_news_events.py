@@ -464,6 +464,83 @@ def test_enrich_does_not_raise_on_bad_input():
 
 
 # =========================================================================== #
+# ECHO JOIN — exact item_id first, shingled-title fallback second
+# (same dead-join fix as macro_news._attach_qbus_readback: a headline never
+# ingested into qbus under its exact _id must still find its story cluster)
+# =========================================================================== #
+
+def _qbus_fixture_df():
+    """Two crawls of the SAME Fed story from two desks/sources, clustered into
+    one event_key — the minimal 'confirmed elsewhere' store. In-memory only."""
+    import pandas as pd
+    from engine import qbus
+    rows = [
+        {"desk": "news_vector", "source": "reuters.com",
+         "url": "https://reuters.com/markets/fed-holds-rates",
+         "title": "Fed holds interest rates steady",
+         "seendate": "2026-06-19T12:00:00+00:00",
+         "_crawled_at": "2026-06-19T12:05:00+00:00",
+         "entities": [], "themes": ["monetary"], "lang": "en"},
+        {"desk": "financial_news", "source": "cnbc.com",
+         "url": "https://cnbc.com/2026/06/19/fed-decision.html",
+         "title": "Fed holds interest rates steady in June",
+         "seendate": "2026-06-19T13:00:00+00:00",
+         "_crawled_at": "2026-06-19T13:02:00+00:00",
+         "entities": [], "themes": ["monetary"], "lang": "en"},
+    ]
+    clustered = qbus.assign_event_keys(rows, thresh=0.4, window_days=3)
+    assert clustered[0]["event_key"] == clustered[1]["event_key"]
+    return pd.DataFrame(clustered, columns=list(qbus.COLUMNS))
+
+
+def test_enrich_with_qbus_echo_via_exact_item_id_join():
+    from engine import qkernel
+    df = _qbus_fixture_df()
+    # same host + url + title as the stored news_vector crawl → _id joins exactly
+    h = {
+        "title": "Fed holds interest rates steady",
+        "theme": "monetary",
+        "tickers": [],
+        "seendate": "2026-06-19T12:00:00+00:00",
+        "_id": qkernel.item_id("reuters.com",
+                               "https://reuters.com/markets/fed-holds-rates",
+                               "Fed holds interest rates steady", "en"),
+    }
+    assert (df["item_id"] == h["_id"]).any()   # the join key really matches
+    out = enrich_with_qbus(h, qbus_df=df)
+    assert out["echo"] == {"n_sources": 2, "n_desks": 2}
+
+
+def test_enrich_with_qbus_echo_via_title_fallback():
+    df = _qbus_fixture_df()
+    # _id absent from the store (different host → different id basis); the
+    # shingled-title fallback must still find the story's cluster.
+    h = {
+        "title": "Fed holds interest rates steady",
+        "theme": "monetary",
+        "tickers": [],
+        "seendate": "2026-06-19T14:00:00+00:00",
+        "_id": "ft.com|not-in-store",
+    }
+    assert not (df["item_id"] == h["_id"]).any()
+    out = enrich_with_qbus(h, qbus_df=df)
+    assert out["echo"] == {"n_sources": 2, "n_desks": 2}
+
+
+def test_enrich_with_qbus_unrelated_title_no_echo():
+    df = _qbus_fixture_df()
+    h = {
+        "title": "Eurozone PMI slides to a nine-month low",
+        "theme": "growth",
+        "tickers": [],
+        "seendate": "2026-06-19T14:00:00+00:00",
+        "_id": "ft.com|not-in-store",
+    }
+    out = enrich_with_qbus(h, qbus_df=df)
+    assert out["echo"] is None
+
+
+# =========================================================================== #
 # KEEP / DROP IDENTITY
 # Enrichment must not change which items are kept or dropped.
 # Tested against financial_news.filter logic and macro_news.filter_headlines.

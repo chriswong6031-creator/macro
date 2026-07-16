@@ -692,19 +692,28 @@ def enrich_with_qbus(h: dict, qbus_df=None) -> dict:
             if subject:
                 novelty = qbus_mod.novelty_z(subject, asof, df=df)
 
-            # echo: join on item_id using the headline's _id
+            # echo: exact item_id join first (a story ingested under the wire
+            # desks' norm_title|host id basis matches directly) …
+            event_key = ""
             item_id = h.get("_id", "")
-            if item_id and df is not None and "item_id" in df.columns:
+            if item_id and "item_id" in df.columns:
                 sub = df[df["item_id"] == item_id]
                 if len(sub) > 0:
                     event_key = str(sub.iloc[0].get("event_key") or "")
-                    if event_key:
-                        raw_echo = qbus_mod.echo_stats(event_key, df=df, asof=asof)
-                        if raw_echo:
-                            echo = {
-                                "n_sources": raw_echo.get("n_sources"),
-                                "n_desks": raw_echo.get("n_desks"),
-                            }
+            if not event_key:
+                # … falling back to the shingled-title cluster match for
+                # headlines never ingested under that exact id (another desk's
+                # crawl of the same story carries a different host/title).
+                # `asof` above already keys off the headline's own seendate
+                # day when parseable.
+                event_key = qbus_mod.event_key_for_title(title, asof, df=df) or ""
+            if event_key:
+                raw_echo = qbus_mod.echo_stats(event_key, df=df, asof=asof)
+                if raw_echo:
+                    echo = {
+                        "n_sources": raw_echo.get("n_sources"),
+                        "n_desks": raw_echo.get("n_desks"),
+                    }
     except Exception as e:  # noqa: BLE001
         log.debug("qbus read-back failed (%s)", e)
 
