@@ -855,12 +855,20 @@ jobs:
           # writes site/flowleaders/leaders.json + renders site/flow_leaders.html.
           # Display-only; exit 0 always; never breaks the render.
           run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders
-          # Leader Radar — LR W2a. AFTER build_flow_leaders (independent stores), BEFORE
-          # build_pick_lab (plab_leader_precipice/plab_leader_onset consume radar.json).
+          # L3 dispersion regime lens — NW Rails W2 PR-4 (§5). Emits data/dispersion/regime.json
+          # from the breadth close caches (same panel as build_stock_library). Display-only;
+          # gross_mult_live clamped 1.0. Seconds; never fatal.
+          # ORDERING NOTE: moved BEFORE build_leader_radar (LR PR-A Item 8) so that
+          # regime.json is same-night data when build_leader_radar reads it.
+          # build_dispersion_regime reads only breadth close caches (no dependency on
+          # any intervening step between its original position and here).
+          run_py "L3 dispersion regime lens (build_dispersion_regime)" scripts.build_dispersion_regime
+          # Leader Radar — LR W2a. AFTER build_flow_leaders + build_dispersion_regime
+          # (plab_leader_precipice/plab_leader_onset consume radar.json).
           # Resolves universe (mag7+AI+Dow-30+NDX ∩ ohlcv); builds/appends
           # data/rs_series/<T>.parquet (full-history backfill on first run);
           # persists data/leader_radar/state_history.parquet + revisions_history.parquet;
-          # writes site/leaderradar/radar.json (schema leader_radar.v1).
+          # writes site/leaderradar/radar.json (schema leader_radar.v2).
           # Absent stores → honest nulls. Always exits 0; never breaks the render.
           run_py "leader radar (build_leader_radar)" scripts.build_leader_radar
           # Pick Lab nightly runner — AFTER build_stock_board_v2 (producer-core snapshot already
@@ -881,10 +889,6 @@ jobs:
           # (engine.run, above). Reactive early-ignition momentum screen; display/context only.
           # Reads only committed/cached data; returns 0 on error so it can never break the site.
           run_py "impulse tracker (build_impulse)" scripts.build_impulse
-          # L3 dispersion regime lens — NW Rails W2 PR-4 (§5). Emits data/dispersion/regime.json
-          # from the breadth close caches (same panel as build_stock_library). Display-only;
-          # gross_mult_live clamped 1.0. Seconds; never fatal.
-          run_py "L3 dispersion regime lens (build_dispersion_regime)" scripts.build_dispersion_regime
           # DT-NW-1: aggregate per-ticker dt_contra chip state into data/neuralweb/dt_contra_state.json.
           # AFTER build_site (which calls build_stock_library to write site/stockdata/*.json).
           # Display-only NW artifact; degrades gracefully if stockdata absent. Seconds; never fatal.

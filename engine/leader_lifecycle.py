@@ -842,6 +842,38 @@ def rs_line_gap_pct(rs: pd.Series, lookback: int = RS_LINE_GAP_HIGH_LOOKBACK) ->
 
 # ── K-true / n-avail per-state chip counter (LRV-R2) ─────────────────────────
 
+# Per-state chip sets — defined once here, shared by count_k_true_n_avail and
+# get_state_chip_keys so the near_trigger builder can restrict missing_chips
+# to the state-specific set (Fix 6).
+_QA_CHIPS: list[str] = ["revision_positive", "rs_turn", "accum_evidence", "obv_divergence",
+                         "insider_cluster"]
+_CW_CHIPS: list[str] = ["gap_ignition", "bw_emerging", "rs_line_nh"]
+_CROWDED_CHIPS: list[str] = ["extension_extreme", "monthly_rsi_80", "parabolic",
+                              "valuation_extreme", "analyst_saturated", "call_skew_rich",
+                              "basket_corr_rising"]
+_SUPPRESSED_CHIPS: list[str] = ["rs_slope_negative_3m", "drawdown_25pct",
+                                 "below_200dma_12m", "cheap_pctile_40"]
+
+
+def get_state_chip_keys(state: str, evidence: dict[str, bool | None]) -> list[str]:
+    """Return the chip key list for a given confirmed state.
+
+    For states with a fixed chip set (QA, CW, CROWDED, SUPPRESSED) returns that
+    set.  For all others returns the full evidence key list.  Used by callers
+    that need to restrict chip enumeration to the state-relevant set.
+    """
+    if state == STATE_QUIET_ACCUMULATION:
+        return list(_QA_CHIPS)
+    elif state == STATE_CATALYST_WINDOW:
+        return list(_CW_CHIPS)
+    elif state == STATE_CROWDED:
+        return list(_CROWDED_CHIPS)
+    elif state == STATE_SUPPRESSED:
+        return list(_SUPPRESSED_CHIPS)
+    else:
+        return list(evidence.keys())
+
+
 def count_k_true_n_avail(
     state: str,
     evidence: dict[str, bool | None],
@@ -869,26 +901,7 @@ def count_k_true_n_avail(
     Returns:
         (k_true, n_avail): counts of True chips and non-null chips in the state's chip set.
     """
-    _QA_CHIPS = ["revision_positive", "rs_turn", "accum_evidence", "obv_divergence",
-                 "insider_cluster"]
-    _CW_CHIPS = ["gap_ignition", "bw_emerging", "rs_line_nh"]
-    _CROWDED_CHIPS = ["extension_extreme", "monthly_rsi_80", "parabolic",
-                      "valuation_extreme", "analyst_saturated", "call_skew_rich",
-                      "basket_corr_rising"]
-    _SUPPRESSED_CHIPS = ["rs_slope_negative_3m", "drawdown_25pct",
-                         "below_200dma_12m", "cheap_pctile_40"]
-
-    if state == STATE_QUIET_ACCUMULATION:
-        chip_keys = _QA_CHIPS
-    elif state == STATE_CATALYST_WINDOW:
-        chip_keys = _CW_CHIPS
-    elif state == STATE_CROWDED:
-        chip_keys = _CROWDED_CHIPS
-    elif state == STATE_SUPPRESSED:
-        chip_keys = _SUPPRESSED_CHIPS
-    else:
-        # BREAKAWAY, LEADERSHIP, FAILED, NONE: count all computed chips
-        chip_keys = list(evidence.keys())
+    chip_keys = get_state_chip_keys(state, evidence)
 
     k_true = 0
     n_avail = 0
@@ -1348,12 +1361,45 @@ def classify(inp: LifecycleInputs) -> LifecycleAssessment:
 
 # ── Hysteresis (LR-R2) ────────────────────────────────────────────────────────
 
+def _are_consecutive_sessions(
+    dates: list[date],
+    session_calendar: list[date] | None,
+) -> bool:
+    """Return True when every consecutive pair of `dates` (oldest-to-newest) is
+    adjacent in `session_calendar`.
+
+    When `session_calendar` is None (legacy/test calls with no dates context),
+    always returns True so the caller behaves as before.
+
+    Args:
+        dates: chronologically ordered list of dates to check.
+        session_calendar: sorted list of all NYSE session dates that contains
+            the dates in `dates`. When None, contiguity check is bypassed.
+    """
+    if session_calendar is None or len(dates) <= 1:
+        return True
+    cal_set = {d: i for i, d in enumerate(session_calendar)}
+    for i in range(len(dates) - 1):
+        d_prev = dates[i]
+        d_next = dates[i + 1]
+        idx_prev = cal_set.get(d_prev)
+        idx_next = cal_set.get(d_next)
+        if idx_prev is None or idx_next is None:
+            # Date not in calendar — treat as non-consecutive (conservative)
+            return False
+        if idx_next != idx_prev + 1:
+            return False
+    return True
+
+
 def apply_hysteresis(
     raw_state_today: str,
     raw_state_history: list[tuple[date, str]],
     confirmed_state_history: list[tuple[date, str]],
     enter_n: int = HYSTERESIS_ENTER_N,
     exit_n: int = HYSTERESIS_EXIT_N,
+    session_calendar: list[date] | None = None,
+    today: date | None = None,
 ) -> str:
     """Apply 2-consecutive-to-enter / 3-consecutive-to-exit hysteresis.
 
@@ -1376,6 +1422,20 @@ def apply_hysteresis(
             Exit requires exit_n consecutive raw sessions not matching confirmed state.
         enter_n: consecutive raw sessions required to enter a new state (default 2)
         exit_n: consecutive raw sessions required to exit a confirmed state (default 3)
+        session_calendar: optional sorted list of NYSE session dates.  When provided,
+            a "streak" of N rows only counts if the rows' dates are actually adjacent
+            in this calendar — preventing a hole (e.g. the 07-12/13/14 outage) from
+            satisfying the contiguity requirement.  When None (legacy/test calls),
+            behaves exactly as before (no contiguity check).
+        today: optional date of the current session being evaluated.  When both
+            ``today`` and ``session_calendar`` are supplied, ``today`` is appended
+            to the streak dates before the contiguity check on BOTH entry and exit
+            branches.  This closes the gap-class bug where the guard checked only
+            inter-prior-row adjacency but never verified that today is adjacent to
+            the most-recent prior row (with HYSTERESIS_ENTER_N=2 the prior_raw list
+            has exactly 1 element, so the guard was trivially True regardless of the
+            date distance from that row to today).  When None (legacy/test calls),
+            behaves exactly as before.
 
     Returns:
         Post-hysteresis (confirmed) state string.
@@ -1417,19 +1477,31 @@ def apply_hysteresis(
     if held_state == STATE_NONE:
         # ── Entry check (from NONE / no prior state) ─────────────────────────
         # Entering raw_state_today requires it appeared in the last (enter_n - 1) raw sessions
-        prior_raw = [s for _, s in raw_state_history[-(enter_n - 1):]]
-        if len(prior_raw) >= enter_n - 1 and all(s == raw_state_today for s in prior_raw):
-            return raw_state_today
+        prior_raw = raw_state_history[-(enter_n - 1):]
+        if len(prior_raw) >= enter_n - 1 and all(s == raw_state_today for _, s in prior_raw):
+            # Contiguity check: dates (prior rows + today) must all be adjacent sessions.
+            # Appending today is essential: with enter_n=2 prior_raw has 1 element, so
+            # checking prior rows alone is trivially True — today must connect the streak.
+            streak_dates = [d for d, _ in prior_raw]
+            if today is not None and session_calendar is not None:
+                streak_dates = streak_dates + [today]
+            if _are_consecutive_sessions(streak_dates, session_calendar):
+                return raw_state_today
         # Entry threshold not met: stay in NONE
         return held_state
     else:
         # ── Exit check (from a real confirmed state) ──────────────────────────
         # Exit held_state when exit_n consecutive raw sessions were all NOT held_state.
         # (today + exit_n-1 prior raw sessions all != held_state)
-        if len(raw_state_history) >= exit_n - 1:
-            prior_raw_for_exit = [s for _, s in raw_state_history[-(exit_n - 1):]]
-            if all(s != held_state for s in prior_raw_for_exit):
-                return raw_state_today  # exit threshold met
+        prior_raw_for_exit = raw_state_history[-(exit_n - 1):]
+        if len(prior_raw_for_exit) >= exit_n - 1:
+            if all(s != held_state for _, s in prior_raw_for_exit):
+                # Contiguity check: prior rows + today must be fully adjacent.
+                streak_dates = [d for d, _ in prior_raw_for_exit]
+                if today is not None and session_calendar is not None:
+                    streak_dates = streak_dates + [today]
+                if _are_consecutive_sessions(streak_dates, session_calendar):
+                    return raw_state_today  # exit threshold met
         # Exit threshold not met: stay in held confirmed state
         return held_state
 
