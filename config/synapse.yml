@@ -12144,6 +12144,7 @@ artifacts:
       - templates/baskets.html.j2
       - templates/baskets_desk.js
       - templates/allocation.html.j2
+      - templates/_leadership_board.html.j2
     external_consumers: []
     notes: >
       MLC-W2b. Per-basket stance matrix: sector/theme/confluence/allocation/m7c
