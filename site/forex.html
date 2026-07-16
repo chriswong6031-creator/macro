@@ -277,7 +277,34 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
 .site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
 /* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
 .site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
-.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px}
+.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px;position:relative;min-width:0}
+/* global stock search field — the #286 repair restored the menu/brand/controls but
+   left the search field itself unstyled: the <input> fell back to a raw browser box
+   (inset border, square corners, ~150px wide) with the 🔎 glyph floating inline and
+   the suggestions list dropping into normal flow ("search bar looks css-broken").
+   Port theme.css's .nav-search recipe, scoped to .site-nav and themed via var
+   fallbacks that cover every palette this partial serves: theme.css pages
+   (--panel2/--line/--text/--muted/--link/--glass-*), the --card/--grid/--text/--muted
+   pages, and commodities' --panel2/--line/--tx/--mut/--blue. Loaded after each page's
+   own <style> (and after theme.css on the two pages that link it), so it wins. */
+.site-nav .nav-search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.65;pointer-events:none}
+.site-nav .nav-search input{width:100%;box-sizing:border-box;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--text,var(--tx));font:inherit;font-size:13px;outline:none;transition:border-color .18s,box-shadow .25s ease;animation:vpSearchGlow 3.8s ease-in-out infinite}
+@keyframes vpSearchGlow{
+  0%,100%{border-color:color-mix(in srgb,#416aec 30%,var(--line,var(--grid)));box-shadow:0 0 0 0 rgba(65,106,236,0),0 0 5px 0 rgba(65,106,236,.10)}
+  50%{border-color:#416aec;box-shadow:0 0 0 3px rgba(65,106,236,.22),0 0 16px 2px rgba(65,106,236,.38)}}
+.site-nav .nav-search input::placeholder{color:var(--muted,var(--mut))}
+.site-nav .nav-search input:focus{border-color:var(--blue,var(--link));animation:none;box-shadow:none}
+@media(prefers-reduced-motion:reduce){.site-nav .nav-search input{animation:none}}
+.site-nav .nav-sugg{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:80;background:var(--glass-bg,color-mix(in srgb,var(--card,var(--panel)) 92%,transparent));-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));border:1px solid var(--glass-brd,color-mix(in srgb,var(--ink) 12%,transparent));border-radius:13px;overflow:hidden;overflow-y:auto;max-height:60vh;box-shadow:var(--glass-shadow,0 20px 54px -24px rgba(20,32,64,.34),0 10px 24px -14px rgba(20,32,64,.20));display:none}
+html[data-theme="dark"] .site-nav .nav-sugg{box-shadow:var(--glass-shadow,0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55))}
+.site-nav .nav-sugg.show{display:block}
+.site-nav .nav-sugg .row{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer}
+.site-nav .nav-sugg .row:hover,.site-nav .nav-sugg .row.sel{background:color-mix(in srgb,var(--blue,var(--link)) 12%,var(--panel2,var(--card)))}
+.site-nav .nav-sugg .row .mkt{flex:none;width:20px;text-align:center;font-size:13px;line-height:1}
+.site-nav .nav-sugg .row b{min-width:58px;font-size:13px;color:var(--text,var(--tx));font-weight:600}
+.site-nav .nav-sugg .row small{flex:1;color:var(--muted,var(--mut));font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.site-nav .nav-sugg .row .stt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap}
+.site-nav .nav-sugg .empty{padding:11px 13px;color:var(--muted,var(--mut));font-size:12.5px}
 /* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
 .site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
 .site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
@@ -660,6 +687,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   
   <script src="live_config.js"></script>
   <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>

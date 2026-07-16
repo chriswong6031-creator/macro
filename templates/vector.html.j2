@@ -255,6 +255,13 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 <body>
 <nav class="site-nav" style="max-width:1180px;margin:18px auto 16px;padding:0 20px">
   {% include "_navlinks.html.j2" %}
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
