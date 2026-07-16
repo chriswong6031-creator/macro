@@ -447,3 +447,73 @@ class TestFailOpen:
         with patch("engine.alert_triage.push_ops_alert", _raise):
             result = M.run(root=tmp_path, _now=_NOW)
         assert result is False
+
+
+# ── 6. RUN-RECORD APPEND ─────────────────────────────────────────────────
+
+class TestAppendRunRecord:
+    """Guards the append path against the 'a'-mode read regression.
+
+    The original trailing-newline guard called read(1) on an 'a'-mode handle,
+    which raises io.UnsupportedOperation on EVERY invocation once the file
+    exists; the fail-open except swallowed it, freezing the ledger at one row
+    and leaving the streak detector permanently blind.  Only the first-write
+    path (empty file, read never reached) was covered by tests.
+    """
+
+    @staticmethod
+    def _read_rows(tmp_path: Path) -> list[dict]:
+        p = tmp_path / "data" / "neuralweb" / "nw_health_run_history.jsonl"
+        return [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
+
+    def test_first_write_creates_file(self, tmp_path):
+        """First append creates the file with a single well-formed row."""
+        M._append_run_record(tmp_path, run_date="2026-07-09", is_degraded=True,
+                             reasons=["overall_status=degraded"],
+                             produced_at="2026-07-09T08:10:00+00:00")
+        rows = self._read_rows(tmp_path)
+        assert [r["run_date"] for r in rows] == ["2026-07-09"]
+        assert rows[0]["degraded"] is True
+        assert rows[0]["reasons_count"] == 1
+
+    def test_append_to_existing_newline_terminated_file(self, tmp_path):
+        """Appending to an EXISTING newline-terminated file must add a row."""
+        _write_run_history(tmp_path, [("2026-07-08", True)])
+        M._append_run_record(tmp_path, run_date="2026-07-09", is_degraded=True,
+                             reasons=["overall_status=degraded"],
+                             produced_at="2026-07-09T08:10:00+00:00")
+        rows = self._read_rows(tmp_path)
+        assert [r["run_date"] for r in rows] == ["2026-07-08", "2026-07-09"], (
+            "APPEND REGRESSION: record must be appended to an existing file — "
+            "the 'a'-mode read bug silently dropped every append after the first"
+        )
+
+    def test_append_to_existing_file_without_trailing_newline(self, tmp_path):
+        """A missing trailing newline must be healed so records don't merge."""
+        p = tmp_path / "data" / "neuralweb"
+        p.mkdir(parents=True, exist_ok=True)
+        # No trailing newline
+        (p / "nw_health_run_history.jsonl").write_text(_run_record("2026-07-08", True))
+        M._append_run_record(tmp_path, run_date="2026-07-09", is_degraded=False,
+                             reasons=[], produced_at="2026-07-09T08:10:00+00:00")
+        rows = self._read_rows(tmp_path)
+        assert [r["run_date"] for r in rows] == ["2026-07-08", "2026-07-09"], (
+            "records merged onto one line — trailing-newline heal failed"
+        )
+
+    def test_consecutive_runs_accumulate_history(self, tmp_path):
+        """run() on consecutive nights must grow the ledger one row per night.
+
+        End-to-end form of the regression: night 1 created the file, nights
+        2+ hit the unreadable-handle path and the ledger froze at one row, so
+        the >=3-night streak could never be observed.
+        """
+        for day in ("2026-07-07", "2026-07-08", "2026-07-09"):
+            _write_health(tmp_path, _FROZEN_AS_OF, "degraded",
+                          produced_at=f"{day}T08:10:00+00:00")
+            with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+                M.run(root=tmp_path, _now=_NOW)
+        rows = self._read_rows(tmp_path)
+        assert [r["run_date"] for r in rows] == [
+            "2026-07-07", "2026-07-08", "2026-07-09",
+        ], "ledger must accumulate one row per nightly run"
