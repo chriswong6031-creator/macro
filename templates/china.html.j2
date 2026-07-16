@@ -1509,7 +1509,7 @@
     <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-sector')">
       <div class="cnx-ctitle">{{ t('Sector Temperature','板块温度') }}</div>
       {% if pb_obj and pb_obj.leaders %}
-      <div class="cnx-lbl">{{ t('Hot — don\'t chase','热门 — 勿追') }}</div>
+      <div class="cnx-lbl">{{ t('Hot','热门') }}</div>
       <div class="cnx-chips">
         {% for x in pb_obj.leaders[:3] %}<span class="cnx-chip hot">{{ td(x.name) }}</span>{% endfor %}
       </div>
@@ -1955,7 +1955,7 @@
         {% endif %}
         {# Leaders — hot names already in uptrend, don't chase #}
         {% if pb_obj.leaders %}
-        <div class="cnx-lbl">{{ t('Leaders — don\'t chase','领先 — 勿追') }}</div>
+        <div class="cnx-lbl">{{ t('Leaders','领先') }}</div>
         <div class="cnx-chips">{% for x in pb_obj.leaders %}<span class="cnx-chip hot">{{ td(x.name) }}</span>{% endfor %}</div>
         {% endif %}
         {% endif %}
