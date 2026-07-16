@@ -1907,6 +1907,11 @@ def _leadership_board_view() -> dict | None:
             "ew": m7.get("ew") or {},
             "members": members_out,
             "sector_rs": sector_rs,
+            # MLC-W2a panel-merge fields (threaded from m7 json, display-only)
+            "structure": m7.get("structure") or {},
+            "flow": m7.get("flow") or {},
+            "mags": m7.get("mags") or {},
+            "weights_basis": m7.get("weights_basis") or "polygon_mktcap",
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("leadership_board_view failed (%s)", e)

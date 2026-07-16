@@ -39,7 +39,7 @@
 {%- elif state == 'QUIET_ACCUMULATION' %}quietly building
 {%- elif state == 'CROWDED' %}crowded
 {%- elif state == 'SUPPRESSED' %}held back
-{%- elif state == 'FAILED' %}trend failed
+{%- elif state == 'FAILED' %}not ready
 {%- elif state == 'CATALYST_WINDOW' %}near a catalyst
 {%- elif state == 'NONE' or not state %}no trend read
 {%- else %}no trend read{% endif %}
@@ -51,7 +51,7 @@
 {%- elif state == 'QUIET_ACCUMULATION' %}悄然积累
 {%- elif state == 'CROWDED' %}拥挤过热
 {%- elif state == 'SUPPRESSED' %}走势受压
-{%- elif state == 'FAILED' %}趋势已败
+{%- elif state == 'FAILED' %}尚未就绪
 {%- elif state == 'CATALYST_WINDOW' %}临近催化剂窗口
 {%- elif state == 'NONE' or not state %}暂无趋势判断
 {%- else %}暂无趋势判断{% endif %}
@@ -151,6 +151,25 @@
 {%- else %}观望，不急{% endif %}
 {%- endmacro %}
 
+{# ── structure chip → plain Tier 1 (mirror _mag7_panel.html.j2 mapping exactly) ── #}
+{# Only 'recovering' and 'drawdown' chips show the "below year high" copy;
+   'at_highs' and absent chips render nothing. This is a display-only threshold. #}
+{% macro structure_word_en(struct) -%}
+{%- set chip = struct.chip if struct.chip else '' -%}
+{%- set dd   = struct.dd_from_252d_high if struct.dd_from_252d_high is defined else none -%}
+{%- if chip in ('recovering', 'drawdown') and dd is not none -%}
+{{ ((dd | abs) * 100) | round | int }}% below the year high
+{%- endif -%}
+{%- endmacro %}
+
+{% macro structure_word_zh(struct) -%}
+{%- set chip = struct.chip if struct.chip else '' -%}
+{%- set dd   = struct.dd_from_252d_high if struct.dd_from_252d_high is defined else none -%}
+{%- if chip in ('recovering', 'drawdown') and dd is not none -%}
+低于年内高点 {{ ((dd | abs) * 100) | round | int }}%
+{%- endif -%}
+{%- endmacro %}
+
 {# ── sector RS "lead" word → plain Tier 1 (never print raw "mid-pack") ──── #}
 {% macro rs_word_en(lead) -%}
 {%- if lead == 'leading' %}leading
@@ -226,6 +245,18 @@
 .ldb-rs-word.rs-mid     { background: var(--panel3); color: var(--ink-3); }
 .ldb-rs-word.rs-lagging { background: color-mix(in srgb, var(--down) 12%, transparent); color: var(--down); }
 .ldb-footnote { font-size: 10px; color: var(--ink-3); margin-top: 10px; }
+/* staleness stamp — moved from _mag7_panel.css.j2 (MLC-W2a panel merge) */
+.ldb-stale { margin-left: 6px; font-size: 10.5px; color: #d97706; white-space: nowrap; }
+/* structure chip (ported from .m7p-structure) */
+.ldb-structure { display: inline-flex; align-items: center; gap: 4px;
+  background: color-mix(in srgb, var(--warn) 10%, var(--panel3));
+  border: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+  border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600;
+  color: var(--warn); }
+/* flow chip (ported from .m7p-flow-chip / .m7p-flow-inner) */
+.ldb-flow-chip { display: inline-flex; align-items: center; }
+.ldb-flow-inner { font-size: 11px; color: var(--ink-2); cursor: help; }
+.ldb-flow-inner b { color: var(--ink-1); }
 </style>
 {%- set state  = d.trend_state if d.trend_state else 'cooling' -%}
 {%- set run    = d.run if d.run else {} -%}
@@ -235,6 +266,11 @@
 {%- set ew     = d.ew if d.ew else {} -%}
 {%- set members = d.members if d.members else [] -%}
 {%- set sector_rs = d.sector_rs if d.sector_rs else [] -%}
+{# MLC-W2a panel-merge: new fields threaded from _leadership_board_view() #}
+{%- set struct = d.structure if d.structure else {} -%}
+{%- set flow   = d.flow if d.flow else {} -%}
+{%- set mags   = d.mags if d.mags else {} -%}
+{%- set wb     = d.weights_basis if d.weights_basis else 'polygon_mktcap' -%}
 
 {# stripe class driven by cohort state #}
 {%- set stripe_cls = 'ldb-turning' if state in ('turning_up',) else
@@ -268,9 +304,13 @@
 {%- set join_names = gens.joining if gens.joining else [] -%}
 {%- macro name_en(sym) %}{{ cname_en(sym) }}{% endmacro -%}
 
-{# panel help tip (Tier 2) #}
-{%- set help_en = 'Megacap Leadership Board — 7 stocks, each shown individually. Lifecycle reads are descriptive trend reads (not scored signals — a heads-up). Sector momentum rank from 60d relative strength. A heads-up, not a buy signal; the Buy lanes below decide entries.' -%}
-{%- set help_zh = '七巨头领涨面板 — 7只个股独立展示。个股趋势为描述性趋势判断（参考，非评分信号）。板块动量排名来自60日相对强度。仅供参考，非买入信号；下方买入通道仍决定入场。' -%}
+{# panel help tip (Tier 2) — includes weights basis + MAGS ETF note (MLC-W2a) #}
+{%- set wb_label_en = 'Polygon market-cap weights' if wb == 'polygon_mktcap' else 'Equal weights (cap data unavailable)' -%}
+{%- set wb_label_zh = '市值加权（Polygon）' if wb == 'polygon_mktcap' else '等权（市值数据不可用）' -%}
+{%- set mags_note_en = ('MAGS ETF last priced ' ~ mags.asof ~ ' (' ~ ((mags.px)|string) ~ ')') if mags and mags.asof else 'MAGS ETF data unavailable' -%}
+{%- set mags_note_zh = ('MAGS ETF 最新价 ' ~ mags.asof ~ '（' ~ ((mags.px)|string) ~ '）') if mags and mags.asof else 'MAGS ETF 数据不可用' -%}
+{%- set help_en = 'Megacap Leadership Board — 7 stocks, each shown individually. Cap-weighted view: ' ~ wb_label_en ~ '. ' ~ mags_note_en ~ '. Lifecycle reads are descriptive trend reads (not scored signals — a heads-up). Sector momentum rank from 60d relative strength. A heads-up, not a buy signal; the Buy lanes below decide entries.' -%}
+{%- set help_zh = '七巨头领涨面板 — 7只个股独立展示。市值加权视图：' ~ wb_label_zh ~ '。' ~ mags_note_zh ~ '。个股趋势为描述性趋势判断（参考，非评分信号）。板块动量排名来自60日相对强度。仅供参考，非买入信号；下方买入通道仍决定入场。' -%}
 
 <div class="span12 ldb {{ stripe_cls }}">
 
@@ -294,18 +334,23 @@
     </span>
     {%- if d.as_of %}<span class="ldb-asof">{{ t('as of ' ~ d.as_of, '截至 ' ~ d.as_of) }}</span>
     {#- plain-word staleness disclosure (mirrors the Mag 7 panel stamp) #}
-    {%- if d.age_days and d.age_days >= 2 %}<span class="ldb-asof m7p-stale">{{ t('data ' ~ d.age_days ~ ' days old', '数据滞后' ~ d.age_days ~ '天') }}</span>{%- endif %}
+    {%- if d.age_days and d.age_days >= 2 %}<span class="ldb-asof ldb-stale">{{ t('data ' ~ d.age_days ~ ' days old', '数据滞后' ~ d.age_days ~ '天') }}</span>{%- endif %}
     {%- endif %}
   </div>
 
-  {# ── ROW 2: cohort strip (generals · cw vs ew · K7) ──────────────────── #}
+  {# ── ROW 2: cohort strip (generals · structure · cw vs ew · K7 · flow) ─── #}
   <div class="ldb-cohort">
     {%- if now_names %}
     {%- set gen_list_en = now_names | map('replace','AAPL','Apple') | map('replace','MSFT','Microsoft') | map('replace','NVDA','Nvidia') | map('replace','AMZN','Amazon') | map('replace','META','Meta') | map('replace','TSLA','Tesla') | map('replace','GOOGL','Alphabet') | map('replace','GOOG','Alphabet') | list %}
     {%- set gen_list_zh = now_names | map('replace','AAPL','苹果') | map('replace','MSFT','微软') | map('replace','NVDA','英伟达') | map('replace','AMZN','亚马逊') | map('replace','META','Meta') | map('replace','TSLA','特斯拉') | map('replace','GOOGL','谷歌') | map('replace','GOOG','谷歌') | list %}
     {%- set join_list_en = join_names | map('replace','AAPL','Apple') | map('replace','MSFT','Microsoft') | map('replace','NVDA','Nvidia') | map('replace','AMZN','Amazon') | map('replace','META','Meta') | map('replace','TSLA','Tesla') | map('replace','GOOGL','Alphabet') | map('replace','GOOG','Alphabet') | list %}
     {%- set join_list_zh = join_names | map('replace','AAPL','苹果') | map('replace','MSFT','微软') | map('replace','NVDA','英伟达') | map('replace','AMZN','亚马逊') | map('replace','META','Meta') | map('replace','TSLA','特斯拉') | map('replace','GOOGL','谷歌') | map('replace','GOOG','谷歌') | list %}
-    <div class="ldb-cohort-item">
+    {#- Tier-2 receipt: generals (10d cap-weighted contribution test) ≠ tiles (lifecycle
+        test). A name can lead while its tile shows a dark lifecycle read. Ported from
+        _mag7_panel.html.j2 generals data-tip (MLC-W2a, #2597 Tier-2 lens-split). #}
+    <div class="ldb-cohort-item"{{ tip(
+        "Leaders = biggest contributors to the last 10 days of the group move (size x move). Different test from the tiles: a tile's trend read comes from the lifecycle store — so a name can lead the 10-day push while its tile reads as held back or not ready.",
+        "领涨 = 近10日对组合行情贡献最大（市值×涨幅）。与个股磁贴是两套标准：磁贴趋势读数来自生命周期数据——个股可领涨10日行情而磁贴仍显示「走势受压」或「尚未就绪」。") }}>
       <span class="l-en"><b>Led by {{ gen_list_en | join(' + ') }}</b>{% if join_list_en %} · joining: {{ join_list_en | join(', ') }}{% endif %}</span>
       <span class="l-zh"><b>领涨：{{ gen_list_zh | join(' + ') }}</b>{% if join_list_zh %} · 加入：{{ join_list_zh | join('、') }}{% endif %}</span>
     </div>
@@ -314,6 +359,17 @@
     <div class="ldb-cohort-item">
       <span class="l-en">run: <b>{{ run_days }} days</b></span>
       <span class="l-zh">运行：<b>{{ run_days }}日</b></span>
+    </div>
+    {%- endif %}
+    {#- structure word: "N% below the year high" — only for recovering/drawdown chips (MLC-W2a) #}
+    {%- set sw_en = structure_word_en(struct) | trim %}
+    {%- set sw_zh = structure_word_zh(struct) | trim %}
+    {%- if sw_en %}
+    <div class="ldb-cohort-item">
+      <span class="ldb-structure">
+        <span class="l-en">{{ sw_en }}</span>
+        <span class="l-zh">{{ sw_zh }}</span>
+      </span>
     </div>
     {%- endif %}
     {%- if cw_r10 is not none or ew_r10 is not none %}
@@ -330,6 +386,40 @@
       <span class="l-zh"><b>{{ k7.trend }}/7</b> 处于上升趋势</span>
     </div>
     {%- endif %}
+    {#- Options flow chip — ported from _mag7_panel.html.j2 flow block (MLC-W2a).
+        Glance tier = tilt word only; numbers/coverage/asof demoted to hover tip.
+        Absent when flow artifact not yet present (fail-open). #}
+    {%- if flow and flow.pc_word %}
+    {%- set flow_word = flow.pc_word %}
+    {%- set flow_tilt = flow.match_sessions if flow.match_sessions is defined and flow.match_sessions != none else (flow.tilt_sessions if flow.tilt_sessions is defined and flow.tilt_sessions != none else 0) %}
+    {%- set flow_gross = flow.gross_mn if flow.gross_mn is defined and flow.gross_mn != none else none %}
+    {%- set flow_pc = flow.pc_ratio if flow.pc_ratio is defined and flow.pc_ratio != none else none %}
+    {%- set flow_zdt = flow.zerodte_share if flow.zerodte_share is defined and flow.zerodte_share != none else none %}
+    {%- set flow_cov = flow.coverage if flow.coverage else '' %}
+    {%- set flow_asof = flow.asof if flow.asof else '' %}
+    {%- if flow_word == 'call_tilted' %}
+      {%- set flow_label_en = 'call-tilted' %}
+      {%- set flow_label_zh = '看涨期权偏重' %}
+    {%- elif flow_word == 'put_tilted' %}
+      {%- set flow_label_en = 'put-tilted' %}
+      {%- set flow_label_zh = '看跌期权偏重' %}
+    {%- else %}
+      {%- set flow_label_en = 'balanced' %}
+      {%- set flow_label_zh = '多空均衡' %}
+    {%- endif %}
+    {%- set flow_gross_str = ('$' ~ (flow_gross | round | int) ~ 'M gross') if flow_gross is not none else '—' %}
+    {%- set flow_pc_str = ('P/C ' ~ (flow_pc | round(2))) if flow_pc is not none else '—' %}
+    {%- set flow_zdt_str = ((flow_zdt * 100) | round(1) ~ '% 0-DTE') if flow_zdt is not none else '—' %}
+    {%- set flow_cov_str = ('coverage ' ~ flow_cov) if flow_cov else '' %}
+    {%- set flow_tip_en %}Options tape: {{ flow_label_en }} {{ flow_tilt }} of last 5 sessions. {{ flow_gross_str }} · {{ flow_pc_str }} · {{ flow_zdt_str }}{% if flow_cov_str %} · {{ flow_cov_str }}{% endif %}. Buy-vs-sell direction is approximate — size and call/put mix are the solid reads.{% if flow_asof %} As of {{ flow_asof }}.{% endif %}{%- endset %}
+    {%- set flow_tip_zh %}期权带状指标：过去5个交易日中{{ flow_tilt }}日{{ flow_label_zh }}。{{ flow_gross_str }} · {{ flow_pc_str }} · {{ flow_zdt_str }}{% if flow_cov_str %} · {{ flow_cov_str }}{% endif %}。买卖方向仅供参考 — 规模与看涨/看跌期权比例是更可靠的读数。{% if flow_asof %} 截至 {{ flow_asof }}。{% endif %}{%- endset %}
+    <div class="ldb-cohort-item ldb-flow-chip">
+      <span class="ldb-flow-inner" data-tip-en="{{ flow_tip_en | e }}" data-tip-zh="{{ flow_tip_zh | e }}">
+        <span class="l-en">Options tape: <b>{{ flow_label_en }}</b> {{ flow_tilt }}/5 days ~</span>
+        <span class="l-zh">期权带：<b>{{ flow_label_zh }}</b> {{ flow_tilt }}/5日 ~</span>
+      </span>
+    </div>
+    {%- endif %}
   </div>
 
   {# ── ROW 3: seven megacap tiles ────────────────────────────────────────── #}
@@ -341,28 +431,76 @@
     {%- set earn = m.earnings if m.earnings else none %}
     {%- set above50  = m.above50 if m.above50 is defined else none %}
     {%- set above200 = m.above200 if m.above200 is defined else none %}
-    {%- set r5   = (m.r5 * 100)|round(1)  if m.r5 is defined and m.r5 != none else none %}
+    {%- set r5_raw = m.r5 if m.r5 is defined and m.r5 != none else none %}
+    {%- set r5   = (r5_raw * 100)|round(1)  if r5_raw is not none else none %}
     {%- set r10  = (m.r10 * 100)|round(1) if m.r10 is defined and m.r10 != none else none %}
     {%- set r20  = (m.r20 * 100)|round(1) if m.r20 is defined and m.r20 != none else none %}
     {%- set rs20 = (m.rs20 * 100)|round(1) if m.rs20 is defined and m.rs20 != none else none %}
-    {# hover receipt — Tier 2: raw numbers demoted here #}
-    {%- set tip_en %}{{ cname_en(sym) }} · {{ above50 | string | replace('True','above') | replace('False','below') | replace('None','—') }} 50dma · {{ above200 | string | replace('True','above') | replace('False','below') | replace('None','—') }} 200dma · 20d {{ ('+' if r20 and r20 > 0) ~ r20 ~ '%' if r20 is not none else '—' }} · vs market {{ ('+' if rs20 and rs20 > 0) ~ rs20 ~ '%' if rs20 is not none else '—' }}{%- endset %}
-    {%- set tip_zh %}{{ cname_zh(sym) }} · 50日均线{{ '上方' if above50 else '下方' if above50 is not none and above50 == false else '—' }} · 200日均线{{ '上方' if above200 else '下方' if above200 is not none and above200 == false else '—' }} · 20日 {{ ('+' if r20 and r20 > 0) ~ r20 ~ '%' if r20 is not none else '—' }} · 相对市场 {{ ('+' if rs20 and rs20 > 0) ~ rs20 ~ '%' if rs20 is not none else '—' }}{%- endset %}
+    {# generals.now / generals.joining lens (MLC-W2a tiles change):
+       - is_general: sym in generals.now → accent = ldb-tile-lead, state line overrides lifecycle plain-word;
+         lifecycle plain-word is appended to hover tip as "trend read: <word>"
+       - is_joining: sym in generals.joining → state line "joining the leaders";
+         lifecycle plain-word stays in hover tip too
+       Rule: generals override ONLY the state line and accent class, not the so-what stance for LEADERSHIP/BREAKAWAY.
+       For generals.now members whose lifecycle is NOT LEADERSHIP or BREAKAWAY, stance = "With the run — don't chase fresh". #}
+    {# GOOG≡GOOGL: the engine may emit either Alphabet class in generals lists while
+       the member row carries the other — an exact match would silently disable the
+       generals lens on that tile (review finding, W2a). #}
+    {%- set sym_alt = 'GOOGL' if sym == 'GOOG' else ('GOOG' if sym == 'GOOGL' else sym) %}
+    {%- set is_general = sym in now_names or sym_alt in now_names %}
+    {%- set is_joining = sym in join_names or sym_alt in join_names %}
+    {# tile accent class: generals.now → always ldb-tile-lead; joining → keep lifecycle accent #}
+    {%- set tile_cls = 'ldb-tile-lead' if is_general else lifecycle_cls(lc) %}
+    {# state line content: generals override #}
+    {%- set lc_plain_en = lifecycle_en(lc) | trim %}
+    {%- set lc_plain_zh = lifecycle_zh(lc) | trim %}
+    {# read-lag disclosure: SUPPRESSED or FAILED with r5_raw >= 0.03 (3% over 5 sessions,
+       pre-registered-arbitrary display threshold — flags fast rotation the nightly read may lag) #}
+    {%- set lag_flag = (lc in ('SUPPRESSED', 'FAILED')) and r5_raw is not none and r5_raw >= 0.03 %}
+    {# hover receipt — Tier 2: raw numbers demoted here + lifecycle plain-word for generals #}
+    {%- set tip_base_en %}{{ cname_en(sym) }} · {{ above50 | string | replace('True','above') | replace('False','below') | replace('None','—') }} 50dma · {{ above200 | string | replace('True','above') | replace('False','below') | replace('None','—') }} 200dma · 20d {{ ('+' if r20 and r20 > 0) ~ r20 ~ '%' if r20 is not none else '—' }} · vs market {{ ('+' if rs20 and rs20 > 0) ~ rs20 ~ '%' if rs20 is not none else '—' }}{%- endset %}
+    {%- set tip_base_zh %}{{ cname_zh(sym) }} · 50日均线{{ '上方' if above50 else '下方' if above50 is not none and above50 == false else '—' }} · 200日均线{{ '上方' if above200 else '下方' if above200 is not none and above200 == false else '—' }} · 20日 {{ ('+' if r20 and r20 > 0) ~ r20 ~ '%' if r20 is not none else '—' }} · 相对市场 {{ ('+' if rs20 and rs20 > 0) ~ rs20 ~ '%' if rs20 is not none else '—' }}{%- endset %}
+    {# append lifecycle plain-word for generals (state line was replaced, so move it to hover) #}
+    {%- set tip_lc_en = (' · trend read: ' ~ lc_plain_en) if is_general or is_joining else '' %}
+    {%- set tip_lc_zh = (' · 趋势判断：' ~ lc_plain_zh) if is_general or is_joining else '' %}
+    {# append read-lag note when flag fires #}
+    {%- set tip_lag_en = (' · 5d +' ~ r5 ~ '% — nightly read lags fast rotation') if lag_flag else '' %}
+    {%- set tip_lag_zh = (' · 5日 +' ~ r5 ~ '% — 夜间读数可能滞后于快速轮动') if lag_flag else '' %}
+    {%- set tip_en = tip_base_en ~ tip_lc_en ~ tip_lag_en %}
+    {%- set tip_zh = tip_base_zh ~ tip_lc_zh ~ tip_lag_zh %}
     {# sowhat CSS #}
     {%- set sw_cls = 'sw-in-favour' if lc in ('LEADERSHIP','BREAKAWAY') else 'sw-stand-aside' if lc in ('FAILED','SUPPRESSED') else 'sw-watch' %}
-    <div class="ldb-tile {{ lifecycle_cls(lc) }}"{{ tip(tip_en, tip_zh) }}>
+    <div class="ldb-tile {{ tile_cls }}"{{ tip(tip_en, tip_zh) }}>
       <span class="ldb-tile-sym">{{ sym }}</span>
       <span class="ldb-tile-name">
         <span class="l-en">{{ cname_en(sym) }}</span>
         <span class="l-zh">{{ cname_zh(sym) }}</span>
       </span>
       <span class="ldb-tile-state">
-        <span class="l-en">{{ lifecycle_en(lc) }}</span>
-        <span class="l-zh">{{ lifecycle_zh(lc) }}</span>
+        {%- if is_general %}
+        {# generals.now: state line = "carrying the index"; lifecycle moved to hover #}
+        <span class="l-en">carrying the index{%- if lag_flag %} · moved this week{%- endif %}</span>
+        <span class="l-zh">领涨主力{%- if lag_flag %} · 本周异动{%- endif %}</span>
+        {%- elif is_joining %}
+        {# generals.joining: state line = "joining the leaders"; lifecycle moved to hover #}
+        <span class="l-en">joining the leaders{%- if lag_flag %} · moved this week{%- endif %}</span>
+        <span class="l-zh">加入领涨{%- if lag_flag %} · 本周异动{%- endif %}</span>
+        {%- else %}
+        {# default: lifecycle plain-word + optional lag flag #}
+        <span class="l-en">{{ lc_plain_en }}{%- if lag_flag %} · moved this week{%- endif %}</span>
+        <span class="l-zh">{{ lc_plain_zh }}{%- if lag_flag %} · 本周异动{%- endif %}</span>
+        {%- endif %}
       </span>
       <span class="ldb-tile-sowhat {{ sw_cls }}">
+        {# generals.now stance: LEADERSHIP or BREAKAWAY → keep existing so-what;
+           others → stance-neutral disclosure (not a buy escalation) #}
+        {%- if is_general and lc not in ('LEADERSHIP', 'BREAKAWAY') %}
+        <span class="l-en">With the run — don't chase fresh</span>
+        <span class="l-zh">随势而行 — 勿追高</span>
+        {%- else %}
         <span class="l-en">{{ sowhat_en(lc, m) }}</span>
         <span class="l-zh">{{ sowhat_zh(lc, m) }}</span>
+        {%- endif %}
       </span>
       {%- if earn and earn.get('days_until') is not none and earn.get('days_until') <= 14 %}
       <span class="ldb-earn">

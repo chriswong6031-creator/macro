@@ -288,18 +288,19 @@ def test_structure_chip_only_for_recovering_drawdown():
 
 
 @pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
-def test_mode_guard_in_dashboard():
-    """{% if mode == 'stocks' and latest.mag7_regime %} guard works correctly:
-    renders when mode=stocks + payload present; absent otherwise."""
+def test_mode_guard_inline():
+    """The inline guard pattern (from the old dashboard.html.j2 mag7 render) still works
+    as a standalone test. The actual dashboard.html.j2 no longer calls mag7_panel
+    (MLC-W2a: it was replaced by the Leadership Board), but the macro itself is valid."""
     env = _env()
-    # Inline guard matching what dashboard.html.j2 uses
+    # Inline guard matching the old dashboard.html.j2 pattern (the macro is still valid)
     guard = (
         "{% from '_mag7_panel.html.j2' import mag7_panel %}"
         "{% if mode == 'stocks' and latest.mag7_regime %}{{ mag7_panel(latest.mag7_regime) }}{% endif %}"
     )
     latest_with = {"mag7_regime": FIXTURE}
     latest_without = {}
-    # stocks mode + payload present → renders
+    # stocks mode + payload present → renders (the macro still works in isolation)
     html_yes = env.from_string(guard).render(mode="stocks", latest=latest_with)
     assert "m7p" in html_yes
     # stocks mode + payload absent → empty
@@ -308,6 +309,61 @@ def test_mode_guard_in_dashboard():
     # macro mode + payload present → empty
     html_macro = env.from_string(guard).render(mode="macro", latest=latest_with)
     assert "m7p" not in html_macro
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_mag7_panel_absent_from_dashboard_stocks_mode():
+    """MLC-W2a: dashboard.html.j2 stocks mode must NOT render .m7p panel markup.
+    The Leadership Board absorbed the Mag 7 panel; the render call was removed."""
+    import re
+    from jinja2 import Environment, FileSystemLoader
+    ROOT = pathlib.Path(__file__).parent.parent
+    full_env = Environment(loader=FileSystemLoader(str(ROOT / "templates")))
+    full_env.filters["min"] = lambda seq: min(seq)
+    from engine import i18n
+    full_env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
+    # Minimal vm — stocks mode with mag7_regime payload set
+    vm = dict(
+        latest={
+            "date": "2026-07-14", "quad": "Q2", "quad_name": "Reflation",
+            "label": "Q2 — Reflation", "confidence": 0.72,
+            "fed_stance": None, "dislocation": None, "turning_point": None,
+            "risk_radar": None, "rate_inflation_transmission": None,
+            "cross_asset_confirm": None, "transition_state": "stable",
+            "liquidity_overlay": "neutral", "conditions": None,
+            "risk_state": None, "cycle_tag": "mid",
+            "mag7_regime": FIXTURE,
+        },
+        mtf=None, macro_catalysts=[], event_strip=[], event_risk=None,
+        prediction_markets=None, narrative_regime=None, ndi=None,
+        macro_news=None, macro_brief=None,
+        macro_news_disclaimer="", macro_news_disclaimer_zh="",
+        alerts=[], pb=None, month_name="July", commodities=[],
+        sector_timing={}, action_board={"hold": [], "avoid": [], "notable": [], "buy": []},
+        top_setups=[], us_standouts=None, us_board_outcomes=None,
+        market_gamma=None, components_confirming=[], components_contradicting=[],
+        flip_plain=None, internals=[], size_style=[], breadth_div=None,
+        breadth_panel=None, adv_breadth=None, sector_setups=None,
+        generated_utc="2026-07-14 06:00", chart_liquidity=None,
+        chart_credit_breadth=None, market_tiles=[], vix=None, chart_vix=None,
+        positioning=[], holdings_changes=[], holdings_threshold=5.0,
+        accumulation=[], flows_html="", health=[], factor_leadership=None,
+        nowcast_hist=None, stance=None, index_health=[], alloc_card=None,
+        risk_model=None, chart_risk_model=None, chart_curve=None,
+        chart_vix_term=None, cross_asset=None, fear_euphoria=None,
+        regime_snap=None, market_state=None, signal_stack=None, vol_shock=None,
+        froth_fragility=None, fear_greed=None, sector_heat=None,
+        dispersion_regime=None, policy_lever=None, flip_confirmation=None,
+        shock_state=None,
+        leadership_board=None,  # absent so board doesn't render
+    )
+    html = full_env.get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    # Strip <style> blocks so only element-level class names are checked
+    body = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL)
+    # .m7p panel element classes must be absent (render was removed)
+    assert "m7p-top" not in body
+    assert "m7p-badge" not in body
+    assert "m7p-ev" not in body
 
 
 # ── build_site loader tests (no network, no real data) ───────────────────────
