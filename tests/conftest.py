@@ -68,6 +68,24 @@ def _set_nightly_lane(monkeypatch):
     monkeypatch.setenv("COLLECT_LANE", "nightly")
 
 
+@pytest.fixture(autouse=True, scope="session")
+def _redirect_breadth_divergence_stamp(tmp_path_factory):
+    """compute_theme_intel() stamps elevated/high breadth-divergence textures
+    into data/breadth_divergence/forward_log.parquet as a call-time side
+    effect (engine/theme_scoring.py -> basket_breadth_divergence.log_stamp),
+    so ANY test that reaches theme intel through any depth of indirection
+    appends the repo's real forward ledger (three separate suites did:
+    test_theme_regionalize, test_flip_distance, test_theme_scoring).  Redirect
+    the default stamp target to a session tmp for every test; unit tests of
+    log_stamp itself pass an explicit path= and are unaffected."""
+    from engine import basket_breadth_divergence as bd
+    target = tmp_path_factory.mktemp("bd_stamp") / "forward_log.parquet"
+    mp = pytest.MonkeyPatch()
+    mp.setattr(bd, "_log_path", lambda: target)
+    yield
+    mp.undo()
+
+
 # ---------------------------------------------------------------------------
 # data/ write tripwire
 # ---------------------------------------------------------------------------
