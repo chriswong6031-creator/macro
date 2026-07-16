@@ -209,6 +209,11 @@
       <span class="xs muted" title="{{ t('leaders in a multi-timeframe confluence uptrend — broad vs lone-spike; display-only, does not change state', '处于多周期汇聚上行的领头标的——广度 vs 单标的孤涨；仅供展示，不改变状态') }}">{{ t('breadth', '广度') }} {{ row.breadth.n_confluence_bull }}/{{ row.breadth.n_shown }}</span>
     {% endif %}
 
+    {# Leadership persistence (display-only): how many consecutive sessions this leader has held #}
+    {% if row.persistence is defined and row.persistence is not none and row.persistence.tenure %}
+      <span class="xs muted" title="{{ t('consecutive sessions this leader has held the group — durable run vs one-day blip; display-only', '该领袖连续领跑该组的场次——持久趋势 vs 单日昙花；仅供展示') }}">{{ t('led', '领') }} {{ row.persistence.tenure }}{{ t('d', '日') }}{% if row.persistence.handoff %} · {{ t('handoff', '交接') }}{% endif %}</span>
+    {% endif %}
+
     <span class="car">▸</span>
   </div>
   <div class="sector-body">

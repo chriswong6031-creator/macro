@@ -38,7 +38,7 @@ sys.path.insert(0, str(ROOT))
 from jinja2 import Environment, FileSystemLoader
 from engine.baskets import _membership
 from engine.equity_factors import _closes, _names_sectors
-from engine.momentum_king import build_board
+from engine.momentum_king import build_board, compute_persistence
 from engine.residual_alpha import compute_residual_alpha
 from engine.subsector_scan import _industry_map
 from lib import config
@@ -67,6 +67,11 @@ _MAX_GROUPS = 60           # render-budget cap per family (one residual pass eac
 # ── MK-P2 subordinate-witness sources (EOD-safe, committed nightly artifacts) ──
 _FLOW_LEADERS_JSON = ROOT / "site" / "flowleaders" / "leaders.json"   # net-inflow (flow_leaders.v1)
 _OPTIONS_CTX_JSON = ROOT / "site" / "flow" / "mastermind.json"        # options tide (options_flow.context.v1)
+
+# ── MK persistence ledger (site-tier, append-only — no data/ write) ───────────
+_HISTORY_JSONL = ROOT / "site" / "momentumking" / "history.jsonl"
+_HISTORY_MAX = 160         # ~7 trading months of sessions retained
+_FAMILIES = (("sectors", "sector"), ("sub_industries", "sub_industry"), ("themes", "theme"))
 
 
 # ── Kill-switch stub ──────────────────────────────────────────────────────────
@@ -344,6 +349,48 @@ def _build_options_context(leader_tickers: set) -> dict:
     return out
 
 
+def _attach_persistence(board: dict) -> None:
+    """Read the site-tier session ledger, compute per-group leadership tenure / handoffs
+    (engine.compute_persistence), attach row['persistence'] to each crowned group, then
+    append THIS session (idempotent on as_of — a re-run replaces, never double-counts).
+    Absent-safe: any I/O failure leaves the board unchanged (persistence simply absent)."""
+    try:
+        as_of = board.get("as_of")
+        # this session's crowned leaders across all three families
+        current: dict = {}
+        for fam, key in _FAMILIES:
+            for row in board.get(fam) or []:
+                if row.get("state") == "LEADER_CANDIDATE" and row.get("leader"):
+                    current[fam + ":" + str(row.get(key))] = row["leader"]
+        # prior ledger, dropping any row with the current as_of (idempotency)
+        history = []
+        if _HISTORY_JSONL.exists():
+            for line in _HISTORY_JSONL.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    r = json.loads(line)
+                except Exception:  # noqa: BLE001
+                    continue
+                if r.get("as_of") != as_of:
+                    history.append(r)
+        persistence = compute_persistence(history, current)
+        for fam, key in _FAMILIES:
+            for row in board.get(fam) or []:
+                gid = fam + ":" + str(row.get(key))
+                if gid in persistence:
+                    row["persistence"] = persistence[gid]
+        # append this session + cap retention, write back
+        history.append({"as_of": as_of, "entries": current})
+        history = history[-_HISTORY_MAX:]
+        _HISTORY_JSONL.parent.mkdir(parents=True, exist_ok=True)
+        _HISTORY_JSONL.write_text(
+            "\n".join(json.dumps(r, separators=(",", ":"), default=_json_default) for r in history) + "\n")
+    except Exception as e:  # noqa: BLE001 — display-tier, never break the nightly
+        log.warning("build_momentum_king: persistence failed: %s", e)
+
+
 def build() -> dict | None:
     if not _enabled():
         _write_noindex_stub()
@@ -396,6 +443,9 @@ def build() -> dict | None:
         return None
 
     board["built_utc"] = datetime.now(timezone.utc).isoformat()
+
+    # MK persistence — leadership tenure / handoffs from the site-tier session ledger.
+    _attach_persistence(board)
 
     out_dir = ROOT / "site" / "momentumking"
     out_dir.mkdir(parents=True, exist_ok=True)

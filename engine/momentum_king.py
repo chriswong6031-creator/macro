@@ -315,6 +315,36 @@ def _rank_groups(rows: list[dict]) -> tuple[list[dict], list[dict]]:
     return rows, top
 
 
+def compute_persistence(history: list, current: dict) -> dict:
+    """Leadership persistence from a prior-session ledger. Pure + display-only.
+
+    history : prior session rows oldest→newest, each {'as_of': str, 'entries': {gid: leader}}.
+    current : {gid: leader} for THIS session's LEADER_CANDIDATE groups (gid = 'family:group').
+    Returns {gid: {tenure, first_seen, handoff, authority_tier}} where tenure = consecutive
+    sessions (incl. now) the SAME leader has held the group; handoff = the immediately-prior
+    session had a different non-null leader; first_seen = as_of of the earliest consecutive
+    session. Cold-start (no matching history) → tenure 1, first_seen None, handoff False.
+    Distinguishes a durable, established run from a one-session blip — a display witness only.
+    """
+    out = {}
+    hist = list(history or [])
+    for gid, leader in (current or {}).items():
+        if not leader:
+            continue
+        tenure = 1
+        first_seen = None
+        for row in reversed(hist):
+            if ((row.get("entries") or {}).get(gid)) == leader:
+                tenure += 1
+                first_seen = row.get("as_of")
+            else:
+                break
+        prev = (hist[-1].get("entries") or {}).get(gid) if hist else None
+        out[gid] = {"tenure": tenure, "first_seen": first_seen,
+                    "handoff": bool(prev and prev != leader), "authority_tier": "display"}
+    return out
+
+
 def build_board(residual: dict, closes: pd.DataFrame, *,
                 flow_witness: dict | None = None,
                 options_ctx: dict | None = None,
