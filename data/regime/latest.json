@@ -427,7 +427,7 @@
       "skew_pctile": 0.566468253968254,
       "stock_bond_corr": 0.5688528067596014,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.7556668792526249,
+      "roro": 0.7554541214658496,
       "roro_state": "risk-on",
       "vol_target_scalar": 1.0577528087092227,
       "news_sentiment": 0.12348560243844986,
@@ -8688,7 +8688,7 @@
       "Dollar"
     ],
     "absorption_ratio": 0.421,
-    "absorption_pctile_5y": 0.88,
+    "absorption_pctile_5y": 0.89,
     "absorption_floor": 0.167,
     "mean_abs_corr": 0.282,
     "pc1_loadings": {
@@ -9155,7 +9155,7 @@
   },
   "fed_path": {
     "asof": "2026-07-16",
-    "built": "2026-07-16T21:55:47.956291+00:00",
+    "built": "2026-07-16T21:15:43.998643+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -18644,7 +18644,7 @@
       "phase": null
     },
     "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-    "_timing_s": 2.85,
+    "_timing_s": 2.66,
     "forward_log": {
       "market": "us",
       "n_graded": 0,
@@ -18819,7 +18819,7 @@
       }
     ],
     "flow": null,
-    "_timing_s": 0.12
+    "_timing_s": 0.11
   },
   "index_momentum": {
     "organ": "index_momentum.v1",
@@ -20452,10 +20452,10 @@
       ]
     },
     "n_roster": 13,
-    "_timing_s": 2.33
+    "_timing_s": 2.02
   },
   "vol_shock": {
-    "score": 44.2,
+    "score": 44.4,
     "score_int": 44,
     "band": "elevated",
     "band_zh": "\u5347\u9ad8",
@@ -23247,7 +23247,7 @@
   },
   "freshness": {
     "asof": "2026-07-16",
-    "built_at": "2026-07-16T21:55:59Z",
+    "built_at": "2026-07-16T21:15:54Z",
     "age_days": 0,
     "age_sessions": 0,
     "max_age_sessions": 1,
