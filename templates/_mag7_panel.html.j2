@@ -208,6 +208,11 @@
     </span>
     {%- if d.as_of %}
     <span class="m7p-asof">{{ t('as of ' ~ d.as_of, '截至 ' ~ d.as_of) }}</span>
+    {#- plain-word staleness disclosure: >=2 calendar days behind = say so (2026-07-15
+        incident: a 2-session-old panel read as current and understated tape breadth) #}
+    {%- if d.age_days and d.age_days >= 2 %}
+    <span class="m7p-asof m7p-stale">{{ t('data ' ~ d.age_days ~ ' days old', '数据滞后' ~ d.age_days ~ '天') }}</span>
+    {%- endif %}
     {%- endif %}
   </div>
 
@@ -238,7 +243,12 @@
   {%- set now_short_zh = now_names | map('replace', 'AAPL', '苹果') | map('replace', 'MSFT', '微软') | map('replace', 'NVDA', '英伟达') | map('replace', 'AMZN', '亚马逊') | map('replace', 'META', 'Meta') | map('replace', 'TSLA', '特斯拉') | map('replace', 'GOOGL', '谷歌') | map('replace', 'GOOG', '谷歌') | list %}
   {%- set join_short = join_names | map('replace', 'AAPL', 'Apple') | map('replace', 'MSFT', 'Microsoft') | map('replace', 'NVDA', 'Nvidia') | map('replace', 'AMZN', 'Amazon') | map('replace', 'META', 'Meta') | map('replace', 'TSLA', 'Tesla') | map('replace', 'GOOGL', 'Alphabet') | map('replace', 'GOOG', 'Alphabet') | list %}
   {%- set join_short_zh = join_names | map('replace', 'AAPL', '苹果') | map('replace', 'MSFT', '微软') | map('replace', 'NVDA', '英伟达') | map('replace', 'AMZN', '亚马逊') | map('replace', 'META', 'Meta') | map('replace', 'TSLA', '特斯拉') | map('replace', 'GOOGL', '谷歌') | map('replace', 'GOOG', '谷歌') | list %}
-  <div class="m7p-generals">
+  {#- Tier-2 receipt: leaders and dots are DIFFERENT tests (10d contribution vs
+      50dma + 20d-vs-market), so a name can lead while its dot stays grey (NVDA,
+      2026-07-15). Disclose the split on hover instead of silently juxtaposing. #}
+  <div class="m7p-generals"{{ tip(
+      "Leaders = biggest contributors to the last 10 days of the group move (size x move). Different test from the dots: a dot turns green only when the stock is above its 50-day line AND ahead of the market over 20 days - so a name can lead the 10-day push while its dot stays amber or grey.",
+      "领涨 = 近10日对组合行情贡献最大（市值×涨幅）。与圆点是两套标准：圆点转绿需站上50日线且20日跑赢大盘——个股可领涨10日行情而圆点仍为黄色或灰色。") }}>
     <span class="l-en">
       <b>Led by {{ now_short | join(' + ') }}</b>
       {%- if join_short %} — <span class="m7p-joining">{{ join_short | join(', ') }} joining.</span>{% endif %}

@@ -40,6 +40,12 @@
          border: 1px solid color-mix(in srgb, var(--m7-col) 40%, var(--line)); }
   .m7p .m7p-asof { margin-left: auto; font-size: 10.5px; color: var(--muted);
          font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* plain-word staleness stamp — shared by the Mag 7 panel and the ldb panel
+     (unique m7p- prefix keeps it collision-safe outside the .m7p scope; the doubled
+     .ldb-asof.m7p-stale selector out-specificities the ldb template's later-rendered
+     .ldb-asof color rule) */
+  .m7p-stale, .ldb-asof.m7p-stale { margin-left: 6px; font-size: 10.5px;
+         color: #d97706; white-space: nowrap; }
 
   /* row 2 — evidence: dots · generals · structure · legs · flow */
   .m7p .m7p-ev { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }

@@ -1878,6 +1878,7 @@ def _leadership_board_view() -> dict | None:
 
         return {
             "as_of": m7.get("as_of"),
+            "age_days": _asof_age_days(m7.get("as_of")),
             "trend_state": m7.get("trend_state"),
             "run": m7.get("run") or {},
             "generals": m7.get("generals") or {},
@@ -1889,6 +1890,19 @@ def _leadership_board_view() -> dict | None:
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("leadership_board_view failed (%s)", e)
+        return None
+
+
+def _asof_age_days(asof: str | None) -> int | None:
+    """Calendar days between an ISO as_of date and today (UTC). None on any parse
+    problem. Drives the plain-word staleness stamp on the Mag 7 / Leadership panels
+    (design doctrine: stale state is DISCLOSED on the glance tier, never rendered
+    as current — the 2026-07-15 incident showed a 2-session-old panel with no stamp)."""
+    try:
+        if not asof:
+            return None
+        return (datetime.now(timezone.utc).date() - datetime.fromisoformat(str(asof)).date()).days
+    except Exception:  # noqa: BLE001 — display-only, never fatal
         return None
 
 
@@ -1904,6 +1918,7 @@ def _mag7_regime_view() -> dict | None:
         d = json.loads(p.read_text(encoding="utf-8"))
         if not d.get("trend_state"):
             return None  # degraded artifact — don't show the panel
+        d["age_days"] = _asof_age_days(d.get("as_of"))
         return d
     except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
         log.warning("mag7_regime_view failed (%s)", e)

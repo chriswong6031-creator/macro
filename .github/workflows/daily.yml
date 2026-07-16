@@ -814,6 +814,16 @@ jobs:
           # Non-fatal: main() always returns 0; a missing artifact degrades gracefully on the page.
           run_py "policy-lever card (build_policy_lever)" scripts.build_policy_lever
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
+          # Index Leadership rotation board — DEAD-WIRE FIX 2026-07-16: this builder had NO
+          # workflow caller since its 2026-07-01 hand-run, so site/marketdata/index_leadership.json
+          # (subsectors.html client fetch + group_context's 0.10-weight rotation source + the
+          # tolerant readers in build_stock_board_v2 below) froze 15 days stale. Runs AFTER
+          # build_site (inputs: subsector_confluence*.json + subsectorohlc sidecars +
+          # regime_timeline.json are written by build_site's render pass) and BEFORE
+          # build_stock_board_v2 (consumer). Reads committed artifacts only — no APIs, no keys.
+          # COLLECT_LANE=nightly arms its snapshots.jsonl forward-ledger append (the writer
+          # self-gates per house law; provisional lanes leave the env unset and no-op).
+          COLLECT_LANE=nightly run_py "index leadership rotation board (build_index_leadership)" scripts.build_index_leadership
           # Buy Board 2.0 — SHADOW (W6-US, us_standouts_v2). AFTER build_site: it REUSES the
           # freshly-written factordata/us_standouts.json + setups.json (no recompute, ~0.4s) and
           # the rotation artifacts (sector_central / subsector_confluence / index_leadership /

@@ -292,7 +292,10 @@
       <span class="l-en">{{ cohort_stance_en(state) }}</span>
       <span class="l-zh">{{ cohort_stance_zh(state) }}</span>
     </span>
-    {%- if d.as_of %}<span class="ldb-asof">{{ t('as of ' ~ d.as_of, '截至 ' ~ d.as_of) }}</span>{%- endif %}
+    {%- if d.as_of %}<span class="ldb-asof">{{ t('as of ' ~ d.as_of, '截至 ' ~ d.as_of) }}</span>
+    {#- plain-word staleness disclosure (mirrors the Mag 7 panel stamp) #}
+    {%- if d.age_days and d.age_days >= 2 %}<span class="ldb-asof m7p-stale">{{ t('data ' ~ d.age_days ~ ' days old', '数据滞后' ~ d.age_days ~ '天') }}</span>{%- endif %}
+    {%- endif %}
   </div>
 
   {# ── ROW 2: cohort strip (generals · cw vs ew · K7) ──────────────────── #}
