@@ -46,6 +46,15 @@ FULL_PAYLOAD: dict = {
     "k7": {"trend": 2, "rs": 5},
     "cw": {"r2": 0.001, "r5": 0.010, "r10": 0.077, "r20": 0.026, "rel20": 0.008},
     "ew": {"r10": 0.083, "r20": 0.035},
+    # MLC-W2a panel-merge fields (threaded from mag7_regime latest.json)
+    "structure": {"dd_from_252d_high": -0.082, "chip": "recovering"},
+    "flow": {
+        "pc_word": "call_tilted", "match_sessions": 3, "gross_mn": 450.0,
+        "pc_ratio": 0.72, "zerodte_share": 0.31, "coverage": "AAPL+META+NVDA",
+        "asof": "2026-07-14",
+    },
+    "mags": {"px": 65.10, "asof": "2026-07-14", "since_run": 0.057},
+    "weights_basis": "polygon_mktcap",
     "members": [
         {"sym": "AAPL", "w": 0.19, "r5": 0.02, "r10": 0.05, "r20": 0.08,
          "rs20": 0.04, "above50": True, "above200": True, "contrib10": 0.3,
@@ -155,7 +164,7 @@ def test_lifecycle_states_plain_word_on_tier1():
     assert "leading the market" in html # LEADERSHIP
     assert "crowded" in html            # CROWDED
     assert "held back" in html          # SUPPRESSED
-    assert "trend failed" in html       # FAILED
+    assert "not ready" in html          # FAILED (MLC-W2a: changed from "trend failed")
     assert "no trend read" in html      # NONE
 
 
@@ -438,16 +447,20 @@ def test_dashboard_macro_mode_with_leadership_board():
 
 
 def test_dashboard_stocks_mode_with_leadership_board():
-    """dashboard.html.j2 stocks mode must NOT render the board either — operator
-    removed it from us_stocks.html too (follow-up to #2604; the panel is now gone
-    from every page). The `_leadership_board.html.j2` partial and the
-    _leadership_board_view engine remain (dormant) and are still covered by the
-    partial/view unit tests above."""
+    """dashboard.html.j2 stocks mode MUST render the Leadership Board (MLC-W2a:
+    board absorbed the Mag 7 panel and now renders in stocks mode, replacing it).
+    The board must be present when leadership_board payload is set."""
     env = _full_env()
     html = env.get_template("dashboard.html.j2").render(**_base_vm_with_lb(), mode="stocks")
     assert len(html) > 50_000
-    assert "Leadership Board" not in html
-    assert "领涨面板" not in html
+    assert "Leadership Board" in html
+    assert "领涨面板" in html
+    # Mag 7 panel element markup must be absent (render removed in MLC-W2a)
+    import re as _re
+    body = _re.sub(r'<style[^>]*>.*?</style>', '', html, flags=_re.DOTALL)
+    assert "m7p-top" not in body
+    assert "m7p-badge" not in body
+    assert "m7p-ev" not in body
 
 
 def test_dashboard_macro_mode_null_leadership_board():
@@ -461,7 +474,8 @@ def test_dashboard_macro_mode_null_leadership_board():
 
 
 def test_dashboard_stocks_mode_null_leadership_board():
-    """dashboard.html.j2 renders cleanly when leadership_board is None (panel absent)."""
+    """dashboard.html.j2 renders cleanly when leadership_board is None (panel absent,
+    fail-open — the `{% if leadership_board %}` guard prevents render)."""
     env = _full_env()
     vm = _base_vm_with_lb()
     vm["leadership_board"] = None
@@ -696,3 +710,247 @@ def test_footnote_no_disclosure_when_fresh_or_missing_key():
     # missing key entirely (pre-fix payload) must render safely without the line
     html2 = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
     assert "Per-stock trend reads unavailable" not in html2
+
+
+# ── MLC-W2a new tests ─────────────────────────────────────────────────────────
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_generals_now_tile_carrying_the_index():
+    """generals.now members show 'carrying the index' / '领涨主力' as state line.
+    Lifecycle plain-word is moved to hover tip, NOT on the tile face."""
+    env = _env()
+    # AAPL, META, NVDA are in generals.now in FULL_PAYLOAD
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    assert "carrying the index" in html
+    assert "领涨主力" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_generals_now_tile_accent_is_lead():
+    """generals.now tiles use ldb-tile-lead accent class regardless of lifecycle."""
+    env = _env()
+    # AAPL is in generals.now with lifecycle QUIET_ACCUMULATION (would otherwise be neutral)
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    # The tile for AAPL should have ldb-tile-lead class
+    # We verify this by checking that ldb-tile-lead appears (from generals.now members)
+    assert "ldb-tile-lead" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_generals_now_sowhat_leadership_or_breakaway():
+    """generals.now + lifecycle LEADERSHIP/BREAKAWAY: keep the existing sowhat."""
+    env = _env()
+    # NVDA is in generals.now with lifecycle LEADERSHIP → sowhat should be "In favour"
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    assert "In favour" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_generals_now_sowhat_non_leadership():
+    """generals.now + lifecycle NOT LEADERSHIP/BREAKAWAY: sowhat = 'With the run — don't chase fresh'."""
+    env = _env()
+    # AAPL is generals.now but lifecycle QUIET_ACCUMULATION → stance-neutral disclosure
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    assert "With the run" in html
+    assert "随势而行" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_generals_joining_tile():
+    """generals.joining members show 'joining the leaders' / '加入领涨' as state line."""
+    env = _env()
+    # MSFT is in generals.joining in FULL_PAYLOAD
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    assert "joining the leaders" in html
+    assert "加入领涨" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_failed_renders_not_ready():
+    """FAILED lifecycle must show 'not ready' / '尚未就绪' (MLC-W2a operator feedback).
+    'trend failed' must NOT appear (old copy, banned)."""
+    env = _env()
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    # GOOGL has lifecycle FAILED in fixture
+    assert "not ready" in html
+    assert "尚未就绪" in html
+    assert "trend failed" not in html
+    assert "趋势已败" not in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_read_lag_flag_appears_for_suppressed_with_high_r5():
+    """SUPPRESSED + r5 >= 0.03 → '· moved this week' appended to state line + hover tip."""
+    env = _env()
+    payload = dict(FULL_PAYLOAD)
+    # Override TSLA (SUPPRESSED) to have r5=0.04
+    members = [dict(m) for m in payload["members"]]
+    for m in members:
+        if m["sym"] == "TSLA":
+            m["r5"] = 0.04
+    payload["members"] = members
+    html = env.from_string(RENDER_TMPL).render(d=payload)
+    assert "moved this week" in html
+    assert "本周异动" in html
+    # hover tip should mention 5d return and lag explanation
+    # (check data-tip-en content)
+    assert "nightly read lags fast rotation" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_read_lag_flag_absent_for_suppressed_with_low_r5():
+    """SUPPRESSED + r5 < 0.03 → NO lag flag (threshold not met)."""
+    env = _env()
+    payload = dict(FULL_PAYLOAD)
+    members = [dict(m) for m in payload["members"]]
+    for m in members:
+        if m["sym"] == "TSLA":
+            m["r5"] = 0.01  # below 3% threshold
+    payload["members"] = members
+    html = env.from_string(RENDER_TMPL).render(d=payload)
+    assert "moved this week" not in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_read_lag_flag_absent_for_quiet_accumulation():
+    """QUIET_ACCUMULATION + high r5 → NO lag flag (only fires for SUPPRESSED/FAILED)."""
+    env = _env()
+    payload = dict(FULL_PAYLOAD)
+    members = [dict(m) for m in payload["members"]]
+    for m in members:
+        if m["sym"] == "AAPL":
+            m["r5"] = 0.05  # high r5, but lifecycle is QUIET_ACCUMULATION not SUPPRESSED/FAILED
+    payload["members"] = members
+    html = env.from_string(RENDER_TMPL).render(d=payload)
+    # AAPL is generals.now so its state line says "carrying the index" — check no lag on that tile
+    # We verify no lag flag appears for QUIET_ACCUMULATION state at all
+    # (TSLA is SUPPRESSED but has r5=-0.04 in FULL_PAYLOAD, below threshold)
+    # The lag flag word should not appear for AAPL's tile
+    assert "moved this week" not in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_read_lag_flag_for_failed_with_high_r5():
+    """FAILED + r5 >= 0.03 → lag flag fires."""
+    env = _env()
+    payload = dict(FULL_PAYLOAD)
+    members = [dict(m) for m in payload["members"]]
+    for m in members:
+        if m["sym"] == "GOOGL":  # GOOGL has lifecycle FAILED
+            m["r5"] = 0.04
+    payload["members"] = members
+    html = env.from_string(RENDER_TMPL).render(d=payload)
+    assert "moved this week" in html
+    assert "本周异动" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_structure_word_renders_in_cohort_strip():
+    """Structure chip 'N% below the year high' renders when chip=recovering/drawdown."""
+    env = _env()
+    # FULL_PAYLOAD has structure = {"dd_from_252d_high": -0.082, "chip": "recovering"}
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    assert "below the year high" in html
+    assert "低于年内高点" in html
+    # The value: abs(-0.082)*100 = 8.2 → rounds to 8
+    assert "8%" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_structure_word_absent_for_at_highs():
+    """Structure chip does NOT render when chip=at_highs."""
+    env = _env()
+    payload = dict(FULL_PAYLOAD, structure={"dd_from_252d_high": 0.0, "chip": "at_highs"})
+    html = env.from_string(RENDER_TMPL).render(d=payload)
+    assert "below the year high" not in html
+    assert "低于年内高点" not in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_flow_chip_renders():
+    """Options flow chip renders with glance-tier tilt word when flow.pc_word is present."""
+    env = _env()
+    # FULL_PAYLOAD has flow = {"pc_word": "call_tilted", ...}
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    assert "Options tape" in html
+    assert "call-tilted" in html
+    assert "看涨期权偏重" in html
+    # Hover tip contains gross/pc/zerodte (demoted to Tier 2)
+    assert "P/C" in html
+    assert "0-DTE" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_flow_chip_absent_when_missing():
+    """Flow chip absent when flow is missing or has no pc_word."""
+    env = _env()
+    payload = dict(FULL_PAYLOAD, flow={})
+    html = env.from_string(RENDER_TMPL).render(d=payload)
+    assert "Options tape:" not in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_view_threads_structure_flow_mags_weights_basis(tmp_path, monkeypatch):
+    """_leadership_board_view threads structure/flow/mags/weights_basis from m7 json."""
+    import types
+    (tmp_path / "mag7_regime").mkdir()
+    m7 = {
+        "as_of": "2026-07-14",
+        "trend_state": "running_broad",
+        "members": [],
+        "run": {}, "generals": {}, "k7": {}, "cw": {}, "ew": {},
+        "structure": {"dd_from_252d_high": -0.05, "chip": "recovering"},
+        "flow": {"pc_word": "call_tilted", "match_sessions": 3},
+        "mags": {"px": 64.5, "asof": "2026-07-14"},
+        "weights_basis": "polygon_mktcap",
+    }
+    (tmp_path / "mag7_regime" / "latest.json").write_text(json.dumps(m7))
+    (tmp_path / "site").mkdir(exist_ok=True)
+    (tmp_path / "site" / "sectordata").mkdir(parents=True, exist_ok=True)
+    fake_config = types.ModuleType("config")
+    fake_config.data_dir = lambda: tmp_path
+    fake_config.load = lambda: {"paths": {"site": str(tmp_path / "site")}}
+    import scripts.build_site as bs
+    monkeypatch.setattr(bs, "config", fake_config)
+    result = bs._leadership_board_view()
+    assert result is not None
+    assert result["structure"] == {"dd_from_252d_high": -0.05, "chip": "recovering"}
+    assert result["flow"]["pc_word"] == "call_tilted"
+    assert result["mags"]["px"] == 64.5
+    assert result["weights_basis"] == "polygon_mktcap"
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_generals_lens_tip_in_cohort_strip():
+    """Generals cohort item has the Tier-2 lens-split hover tip."""
+    env = _env()
+    html = env.from_string(RENDER_TMPL).render(d=FULL_PAYLOAD)
+    # The hover tip explains the leaders vs tiles split
+    assert "biggest contributors to the last 10 days" in html
+    assert "两套标准" in html
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_dashboard_stocks_mode_board_present_mag7_absent():
+    """stocks mode: leadership board renders; .m7p panel markup absent (absorbed)."""
+    env = _full_env()
+    html = env.get_template("dashboard.html.j2").render(**_base_vm_with_lb(), mode="stocks")
+    assert "carrying the index" in html or "Leadership Board" in html  # board present
+    # The .m7p panel class must not appear (mag7_panel render removed)
+    import re
+    body = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL)
+    assert 'm7p-top' not in body  # element-level .m7p- classes gone
+    assert 'm7p-badge' not in body
+
+
+@pytest.mark.skipif(not _JINJA_OK, reason="jinja2 not installed")
+def test_generals_lens_goog_googl_cross_form():
+    """GOOG member row + GOOGL in generals.now must still get the generals lens
+    (exact-match would silently disable it on Alphabet's tile — W2a review)."""
+    env = _env()
+    payload = dict(FULL_PAYLOAD)
+    payload["generals"] = {"now": ["GOOGL"], "joining": [], "coverage": 0.5}
+    payload["members"] = [{"sym": "GOOG", "lifecycle": "NONE", "earnings": None}]
+    html = env.from_string(RENDER_TMPL).render(d=payload)
+    assert "carrying the index" in html
+    assert "领涨主力" in html
