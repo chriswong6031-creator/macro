@@ -226,7 +226,7 @@ def test_ats_loader_skips_heartbeat_parquet(tmp_path, monkeypatch):
     pd.DataFrame({"new_rows": [0]},
                  index=[pd.Timestamp("2026-06-01")]).to_parquet(ats / "finra_ats__ingest.parquet")
     monkeypatch.setattr(bdd, "ATS_DIR", ats)
-    df = bdd._load_ats()
+    df = bdd._load_ats_two()[0]
     assert df is not None and set(df["ticker"]) == {"AAPL", "NVDA"}
 
 
@@ -267,7 +267,7 @@ def test_oe_share_computed_correctly():
             index=pd.DatetimeIndex([pd.Timestamp("2024-06-03")]),
         )
     }
-    stats = _compute_ticker_stats(panel, yahoo_vol)
+    stats, _, _ = _compute_ticker_stats(panel, yahoo_vol, None, None)
     aapl = next(r for r in stats if r["ticker"] == "AAPL")
     # FINRA total_vol on 2024-06-03 = 2_200_000; yahoo = 8_800_000 → share = 0.25
     assert aapl["oe_share"] == pytest.approx(0.25, abs=1e-4)
@@ -281,7 +281,7 @@ def test_oe_share_none_when_yahoo_missing():
         (pd.Timestamp("2024-06-03"), "ZZZZ", 120, 5, 240, 0.5),
     ]
     panel = _make_panel(rows)
-    stats = _compute_ticker_stats(panel, {})   # no yahoo data
+    stats, _, _ = _compute_ticker_stats(panel, {}, None, None)   # no yahoo data
     row = next(r for r in stats if r["ticker"] == "ZZZZ")
     assert row["oe_share"] is None
 
@@ -293,7 +293,7 @@ def test_short_ratio_trend_direction():
         + [(pd.Timestamp(f"2024-05-{i:02d}"), "AAA", 300, 15, 1000, 0.30) for i in range(11, 16)]
     )
     panel = _make_panel(rows)
-    stats = _compute_ticker_stats(panel, {})
+    stats, _, _ = _compute_ticker_stats(panel, {}, None, None)
     row = next(r for r in stats if r["ticker"] == "AAA")
     assert row["trend_pp"] > 0, "Increasing short flow should yield positive trend_pp"
 
@@ -305,7 +305,7 @@ def test_thin_ticker_excluded():
         (pd.Timestamp("2024-06-02"), "THIN", 110, 5, 220, 0.5),
     ]
     panel = _make_panel(rows)
-    stats = _compute_ticker_stats(panel, {})
+    stats, _, _ = _compute_ticker_stats(panel, {}, None, None)
     assert not any(r["ticker"] == "THIN" for r in stats)
 
 
