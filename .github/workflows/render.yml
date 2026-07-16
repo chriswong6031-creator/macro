@@ -153,7 +153,7 @@ jobs:
           echo "$FILES" | sed 's/^/  changed: /'
           region_of() {
             case "$1" in
-              templates/china.html.j2|scripts/build_china.py) echo china;;
+              templates/china.html.j2|templates/china_news.html.j2|scripts/build_china.py) echo china;;
               templates/hk.html.j2|scripts/build_hk.py) echo hk;;
               templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;

@@ -1445,6 +1445,9 @@ def panel(asof: date | str | None = None) -> dict | None:
             "built": datetime.now(timezone.utc).isoformat(),
             "tone": tone, "news": news, "brief": brief,
             "theme_label": THEME_LABEL,
+            # bilingual chip labels for the news page — raw channel/tier slugs
+            # never render on glance surfaces (doctrine Law 2)
+            "channel_label": CHANNEL_LABEL, "tier_label": TIER_LABEL,
             "disclaimer": DISCLAIMER_TEXT, "disclaimer_zh": DISCLAIMER_TEXT_ZH,
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
