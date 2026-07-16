@@ -2,14 +2,14 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-15",
-  "generated_utc": "2026-07-16T06:23:21Z",
+  "generated_utc": "2026-07-16T20:30:39Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 12,
-    "n_eff": 2.88,
+    "n": 13,
+    "n_eff": 3.21,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 12 candidates \u2248 2.88 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 13 candidates \u2248 3.21 independent bets."
   },
   "same_thesis_groups": [
     {
@@ -18,18 +18,19 @@
         "CROX",
         "FIVE",
         "HWM",
+        "NNN",
         "PII",
         "PTON",
         "TLN",
         "URBN",
         "VFC"
       ],
-      "size": 9,
+      "size": 10,
       "basis": "membership-jaccard",
       "label": "Consumer Discretionary"
     }
   ],
-  "earnings_coverage_frac": 0.75,
+  "earnings_coverage_frac": 0.769,
   "by_ticker": {
     "BTU": {
       "verdict": "new",
@@ -46,16 +47,16 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "ADM",
+          "ticker": "HWM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.17<0.2",
           "shared_groups": [],
-          "same_earnings_week": false
+          "same_earnings_week": true
         },
         {
-          "ticker": "PTON",
+          "ticker": "ADM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -114,6 +115,7 @@
         "same_week_peers": [
           "ADM",
           "CROX",
+          "NNN",
           "PII",
           "PTON",
           "WBD"
@@ -123,6 +125,51 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as HWM \u2014 shared factor profile (similarity 70%).",
       "why_zh": "\u4e0e HWM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 70%\uff09\u3002"
+    },
+    "HWM": {
+      "verdict": "duplicate",
+      "max_similarity": 0.945,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "FIVE",
+          "combined": 0.945,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.945,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "URBN",
+          "combined": 0.8686,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8686,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "VFC",
+          "combined": 0.8133,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8133,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": true
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-07-30",
+        "same_week_peers": [
+          "BTU",
+          "VFC"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as FIVE \u2014 shared factor profile (similarity 94%).",
+      "why_zh": "\u4e0e FIVE \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 94%\uff09\u3002"
     },
     "ADM": {
       "verdict": "new",
@@ -148,23 +195,73 @@
           "same_earnings_week": true
         },
         {
-          "ticker": "PTON",
+          "ticker": "HWM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.16<0.2",
           "shared_groups": [],
-          "same_earnings_week": true
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-08-04",
         "same_week_peers": [
           "CROX",
+          "NNN",
           "PII",
           "PTON",
           "TLN",
           "WBD"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Distinct bet \u2014 nearest peer BTU at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 BTU\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+    },
+    "WBD": {
+      "verdict": "new",
+      "max_similarity": 0.0,
+      "basis": "membership-only:r2=0.10<0.2",
+      "nearest": [
+        {
+          "ticker": "BTU",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.17<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "TLN",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.10<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "HWM",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.10<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-06",
+        "same_week_peers": [
+          "ADM",
+          "CROX",
+          "NNN",
+          "PII",
+          "PTON",
+          "TLN"
         ],
         "has_data": true
       },
@@ -216,6 +313,7 @@
         "same_week_peers": [
           "ADM",
           "CROX",
+          "NNN",
           "PII",
           "TLN",
           "WBD"
@@ -225,54 +323,6 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as VFC \u2014 Consumer Discretionary (similarity 100%).",
       "why_zh": "\u4e0e VFC \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "WBD": {
-      "verdict": "new",
-      "max_similarity": 0.0,
-      "basis": "membership-only:r2=0.10<0.2",
-      "nearest": [
-        {
-          "ticker": "BTU",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.17<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "TLN",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.10<0.2",
-          "shared_groups": [],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "ADM",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.16<0.2",
-          "shared_groups": [],
-          "same_earnings_week": true
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-06",
-        "same_week_peers": [
-          "ADM",
-          "CROX",
-          "PII",
-          "PTON",
-          "TLN"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer BTU at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 BTU\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
     "VFC": {
       "verdict": "duplicate",
@@ -325,50 +375,51 @@
       "why_en": "Same bet as PTON \u2014 Consumer Discretionary (similarity 100%).",
       "why_zh": "\u4e0e PTON \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
-    "HWM": {
+    "FIVE": {
       "verdict": "duplicate",
       "max_similarity": 0.945,
       "basis": "membership+high-tier-factor",
       "nearest": [
         {
-          "ticker": "FIVE",
+          "ticker": "HWM",
           "combined": 0.945,
           "membership_jaccard": 0.0,
           "factor_cosine": 0.945,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
-          "same_earnings_week": false
+          "same_earnings_week": null
         },
         {
           "ticker": "URBN",
-          "combined": 0.8686,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8686,
+          "combined": 0.9375,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.9375,
           "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
         },
         {
           "ticker": "VFC",
-          "combined": 0.8133,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8133,
+          "combined": 0.8814,
+          "membership_jaccard": 0.5,
+          "factor_cosine": 0.8814,
           "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": true
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
         }
       ],
       "earnings_leg": {
-        "next_date": "2026-07-30",
-        "same_week_peers": [
-          "BTU",
-          "VFC"
-        ],
-        "has_data": true
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as FIVE \u2014 shared factor profile (similarity 94%).",
-      "why_zh": "\u4e0e FIVE \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 94%\uff09\u3002"
+      "why_en": "Same bet as HWM \u2014 shared factor profile (similarity 94%).",
+      "why_zh": "\u4e0e HWM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 94%\uff09\u3002"
     },
     "AEO": {
       "verdict": "duplicate",
@@ -461,6 +512,7 @@
         "next_date": "2026-08-06",
         "same_week_peers": [
           "ADM",
+          "NNN",
           "PII",
           "PTON",
           "TLN",
@@ -472,51 +524,54 @@
       "why_en": "Same bet as PTON \u2014 Consumer Discretionary (similarity 100%).",
       "why_zh": "\u4e0e PTON \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
-    "FIVE": {
+    "NNN": {
       "verdict": "duplicate",
-      "max_similarity": 0.945,
+      "max_similarity": 0.8472,
       "basis": "membership+high-tier-factor",
       "nearest": [
         {
-          "ticker": "HWM",
-          "combined": 0.945,
+          "ticker": "PII",
+          "combined": 0.8472,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.945,
+          "factor_cosine": 0.8472,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "URBN",
-          "combined": 0.9375,
-          "membership_jaccard": 0.5,
-          "factor_cosine": 0.9375,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "VFC",
-          "combined": 0.8814,
-          "membership_jaccard": 0.5,
-          "factor_cosine": 0.8814,
+          "combined": 0.7561,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7561,
           "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": null
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "URBN",
+          "combined": 0.6617,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.6617,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
+        "next_date": "2026-08-04",
+        "same_week_peers": [
+          "ADM",
+          "CROX",
+          "PII",
+          "PTON",
+          "TLN",
+          "WBD"
+        ],
+        "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as HWM \u2014 shared factor profile (similarity 94%).",
-      "why_zh": "\u4e0e HWM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 94%\uff09\u3002"
+      "why_en": "Same bet as PII \u2014 shared factor profile (similarity 85%).",
+      "why_zh": "\u4e0e PII \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 85%\uff09\u3002"
     },
     "URBN": {
       "verdict": "duplicate",
@@ -610,6 +665,7 @@
         "same_week_peers": [
           "ADM",
           "CROX",
+          "NNN",
           "PTON",
           "TLN",
           "WBD"
@@ -629,14 +685,14 @@
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__ADM": {
+    "BTU__HWM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__PTON": {
+    "BTU__ADM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -650,6 +706,13 @@
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
+    "BTU__PTON": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": []
+    },
     "BTU__VFC": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -657,7 +720,7 @@
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__HWM": {
+    "BTU__FIVE": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -678,7 +741,7 @@
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
-    "BTU__FIVE": {
+    "BTU__NNN": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -699,18 +762,18 @@
       "factor_basis": "beta-read-thin:r2=0.17<0.2",
       "shared_groups": []
     },
+    "TLN__HWM": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7026,
+      "combined": 0.7026,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "TLN__ADM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.16<0.2",
-      "shared_groups": []
-    },
-    "TLN__PTON": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": []
     },
     "TLN__WBD": {
@@ -720,6 +783,13 @@
       "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
+    "TLN__PTON": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": []
+    },
     "TLN__VFC": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.2735,
@@ -727,10 +797,10 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "TLN__HWM": {
+    "TLN__FIVE": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.7026,
-      "combined": 0.7026,
+      "factor_cosine": 0.6707,
+      "combined": 0.6707,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -748,10 +818,10 @@
       "factor_basis": "beta-read-thin:r2=0.16<0.2",
       "shared_groups": []
     },
-    "TLN__FIVE": {
+    "TLN__NNN": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.6707,
-      "combined": 0.6707,
+      "factor_cosine": 0.0,
+      "combined": 0.0,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -769,14 +839,84 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "ADM__PTON": {
+    "HWM__ADM": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.16<0.2",
       "shared_groups": []
     },
+    "HWM__WBD": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "HWM__PTON": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": []
+    },
+    "HWM__VFC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8133,
+      "combined": 0.8133,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "HWM__FIVE": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.945,
+      "combined": 0.945,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "HWM__AEO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": []
+    },
+    "HWM__CROX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "HWM__NNN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.4034,
+      "combined": 0.4034,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "HWM__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8686,
+      "combined": 0.8686,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "HWM__PII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7615,
+      "combined": 0.7615,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "ADM__WBD": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ADM__PTON": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -790,7 +930,7 @@
       "factor_basis": "beta-read-thin:r2=0.16<0.2",
       "shared_groups": []
     },
-    "ADM__HWM": {
+    "ADM__FIVE": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -811,7 +951,7 @@
       "factor_basis": "beta-read-thin:r2=0.16<0.2",
       "shared_groups": []
     },
-    "ADM__FIVE": {
+    "ADM__NNN": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -832,73 +972,12 @@
       "factor_basis": "beta-read-thin:r2=0.16<0.2",
       "shared_groups": []
     },
-    "PTON__WBD": {
+    "WBD__PTON": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
-    },
-    "PTON__VFC": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "PTON__HWM": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": []
-    },
-    "PTON__AEO": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "PTON__CROX": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "PTON__FIVE": {
-      "membership_jaccard": 0.5,
-      "factor_cosine": null,
-      "combined": 0.5,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "PTON__URBN": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "PTON__PII": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
     },
     "WBD__VFC": {
       "membership_jaccard": 0.0,
@@ -907,7 +986,7 @@
       "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "WBD__HWM": {
+    "WBD__FIVE": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -928,7 +1007,7 @@
       "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "WBD__FIVE": {
+    "WBD__NNN": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -949,12 +1028,75 @@
       "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "VFC__HWM": {
+    "PTON__VFC": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "PTON__FIVE": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": null,
+      "combined": 0.5,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "PTON__AEO": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "PTON__CROX": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "PTON__NNN": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.8133,
-      "combined": 0.8133,
-      "factor_basis": "high-tier-factors:4of4",
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": []
+    },
+    "PTON__URBN": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "PTON__PII": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "VFC__FIVE": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": 0.8814,
+      "combined": 0.8814,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
     },
     "VFC__AEO": {
       "membership_jaccard": 1.0,
@@ -974,14 +1116,12 @@
         "sector:Consumer Discretionary"
       ]
     },
-    "VFC__FIVE": {
-      "membership_jaccard": 0.5,
-      "factor_cosine": 0.8814,
-      "combined": 0.8814,
+    "VFC__NNN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7561,
+      "combined": 0.7561,
       "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
+      "shared_groups": []
     },
     "VFC__URBN": {
       "membership_jaccard": 1.0,
@@ -1001,51 +1141,7 @@
         "sector:Consumer Discretionary"
       ]
     },
-    "HWM__AEO": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.17<0.2",
-      "shared_groups": []
-    },
-    "HWM__CROX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.16<0.2",
-      "shared_groups": []
-    },
-    "HWM__FIVE": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.945,
-      "combined": 0.945,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "HWM__URBN": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8686,
-      "combined": 0.8686,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "HWM__PII": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.7615,
-      "combined": 0.7615,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "AEO__CROX": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.17<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "AEO__FIVE": {
+    "FIVE__AEO": {
       "membership_jaccard": 0.5,
       "factor_cosine": null,
       "combined": 0.5,
@@ -1054,25 +1150,7 @@
         "sector:Consumer Discretionary"
       ]
     },
-    "AEO__URBN": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.17<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "AEO__PII": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.17<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "CROX__FIVE": {
+    "FIVE__CROX": {
       "membership_jaccard": 0.5,
       "factor_cosine": null,
       "combined": 0.5,
@@ -1081,23 +1159,12 @@
         "sector:Consumer Discretionary"
       ]
     },
-    "CROX__URBN": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.16<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "CROX__PII": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.16<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
+    "FIVE__NNN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.3963,
+      "combined": 0.3963,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
     },
     "FIVE__URBN": {
       "membership_jaccard": 0.5,
@@ -1117,6 +1184,79 @@
         "sector:Consumer Discretionary"
       ]
     },
+    "AEO__CROX": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "AEO__NNN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": []
+    },
+    "AEO__URBN": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "AEO__PII": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.17<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "CROX__NNN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "CROX__URBN": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "CROX__PII": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "NNN__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.6617,
+      "combined": 0.6617,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "NNN__PII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8472,
+      "combined": 0.8472,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "URBN__PII": {
       "membership_jaccard": 1.0,
       "factor_cosine": 0.9574,
@@ -1135,7 +1275,7 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 3.6,
+    "entry_open": 4.0,
     "setting_up": 1.0
   },
   "source_passport": {
