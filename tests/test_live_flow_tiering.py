@@ -24,6 +24,13 @@ Tests:
   21. daily_summary_enabled: False by default (MUST_FIX-2 gate coverage)
   22. daily_summary_enabled: True when LIVE_FLOW_DAILY_SUMMARY=1
   23. daily_summary_enabled: False for other env values
+  24. select_prunable_day_states: keeps newest N sessions, selects older
+  25. select_prunable_day_states: current session never selected
+  26. select_prunable_day_states: fewer files than window → nothing selected
+  27. select_prunable_day_states: non-matching / invalid-date names never selected
+  28. select_prunable_day_states: crash-residue .tmp.json follows same date rule
+  29. select_prunable_day_states: keep_days clamped to >= 1
+  30. prune_day_states: deletes only out-of-window files on disk (INERT wrapper)
 """
 from __future__ import annotations
 
@@ -360,3 +367,120 @@ class TestDailySummaryEnabled:
         for val in ("0", "yes", "true", ""):
             monkeypatch.setenv(lf.DAILY_SUMMARY_ENV, val)
             assert lf._daily_summary_enabled() is False, f"expected False for {val!r}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 24–30. Day-state retention sweep
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestDayStatePruneSelection:
+    """Pure selection logic for the local day_state retention sweep."""
+
+    _FILES = [
+        "day_state_2026-07-06.json",
+        "day_state_2026-07-07.json",
+        "day_state_2026-07-08.json",
+        "day_state_2026-07-09.json",
+        "day_state_2026-07-10.json",
+        "day_state_2026-07-13.json",
+        "day_state_2026-07-14.json",
+        "day_state_2026-07-15.json",
+        "day_state_2026-07-16.json",
+    ]
+
+    def test_keeps_newest_n_selects_older(self):
+        """With keep_days=5, the 4 oldest of 9 sessions are selected."""
+        lf = _import_poller()
+        doomed = lf._select_prunable_day_states(self._FILES, "2026-07-16", keep_days=5)
+        assert doomed == [
+            "day_state_2026-07-06.json",
+            "day_state_2026-07-07.json",
+            "day_state_2026-07-08.json",
+            "day_state_2026-07-09.json",
+        ]
+
+    def test_current_session_never_selected(self):
+        """The current session's file survives even when outside the window."""
+        lf = _import_poller()
+        # Session date is the OLDEST file — a 1-day window would otherwise doom it.
+        doomed = lf._select_prunable_day_states(self._FILES, "2026-07-06", keep_days=1)
+        assert "day_state_2026-07-06.json" not in doomed
+        assert "day_state_2026-07-16.json" not in doomed  # newest = the 1 kept
+        assert len(doomed) == len(self._FILES) - 2
+
+    def test_fewer_files_than_window(self):
+        """Nothing is selected when the file count is within the window."""
+        lf = _import_poller()
+        doomed = lf._select_prunable_day_states(self._FILES[:3], "2026-07-16", keep_days=5)
+        assert doomed == []
+
+    def test_non_matching_names_never_selected(self):
+        """Non-day_state names and invalid dates are ignored — never selected,
+        and they don't consume keep slots."""
+        lf = _import_poller()
+        files = self._FILES + [
+            "day_state_garbage.json",
+            "day_state_2026-99-99.json",   # matches pattern, invalid date
+            "baselines.json",
+            "day_state_2026-07-16.json.bak",
+        ]
+        doomed = lf._select_prunable_day_states(files, "2026-07-16", keep_days=5)
+        assert doomed == [
+            "day_state_2026-07-06.json",
+            "day_state_2026-07-07.json",
+            "day_state_2026-07-08.json",
+            "day_state_2026-07-09.json",
+        ]
+
+    def test_tmp_residue_same_date_rule(self):
+        """Crash-residue .tmp.json files prune by the same embedded date."""
+        lf = _import_poller()
+        files = self._FILES + [
+            "day_state_2026-07-06.tmp.json",   # old residue → pruned
+            "day_state_2026-07-16.tmp.json",   # current session → kept
+        ]
+        doomed = lf._select_prunable_day_states(files, "2026-07-16", keep_days=5)
+        assert "day_state_2026-07-06.tmp.json" in doomed
+        assert "day_state_2026-07-16.tmp.json" not in doomed
+
+    def test_keep_days_clamped_to_one(self):
+        """keep_days <= 0 behaves as 1 — never selects everything."""
+        lf = _import_poller()
+        for bad in (0, -3):
+            doomed = lf._select_prunable_day_states(self._FILES, "2026-07-16", keep_days=bad)
+            assert "day_state_2026-07-16.json" not in doomed
+            assert len(doomed) == len(self._FILES) - 1
+
+
+class TestPruneDayStates:
+    """I/O wrapper: deletes only out-of-window files, INERT on errors."""
+
+    def test_deletes_only_out_of_window(self, tmp_path, monkeypatch):
+        lf = _import_poller()
+        monkeypatch.setattr(lf.config, "data_dir", lambda: tmp_path)
+        sdir = tmp_path / "live_flow_state"
+        sdir.mkdir()
+        dates = ["2026-07-08", "2026-07-09", "2026-07-10",
+                 "2026-07-13", "2026-07-14", "2026-07-15", "2026-07-16"]
+        for d in dates:
+            (sdir / f"day_state_{d}.json").write_text("{}")
+        (sdir / "baselines.json").write_text("{}")
+
+        lf._prune_day_states("2026-07-16", {"state_retention_days": 5})
+
+        survivors = sorted(p.name for p in sdir.iterdir())
+        assert survivors == [
+            "baselines.json",
+            "day_state_2026-07-10.json",
+            "day_state_2026-07-13.json",
+            "day_state_2026-07-14.json",
+            "day_state_2026-07-15.json",
+            "day_state_2026-07-16.json",
+        ]
+
+    def test_inert_on_bad_config(self, tmp_path, monkeypatch):
+        """A junk config value must not raise (INERT law)."""
+        lf = _import_poller()
+        monkeypatch.setattr(lf.config, "data_dir", lambda: tmp_path)
+        (tmp_path / "live_flow_state").mkdir()
+        lf._prune_day_states("2026-07-16", {"state_retention_days": "not-a-number"})
