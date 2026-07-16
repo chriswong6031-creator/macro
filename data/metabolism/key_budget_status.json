@@ -1,6 +1,6 @@
 {
   "schema": "metab_budget_status.v1",
-  "ts": "2026-07-16T20:29:38+00:00",
+  "ts": "2026-07-16T21:37:38+00:00",
   "per_key": {
     "claude_code_oauth_1": {
       "pct_5h": null,
@@ -34,7 +34,23 @@
       "reset_5h": null,
       "reset_weekly": null
     },
+    "claude_code_oauth_5": {
+      "pct_5h": null,
+      "src_5h": null,
+      "pct_weekly": null,
+      "src_weekly": null,
+      "reset_5h": null,
+      "reset_weekly": null
+    },
     "claude_code_oauth_6": {
+      "pct_5h": null,
+      "src_5h": null,
+      "pct_weekly": null,
+      "src_weekly": null,
+      "reset_5h": null,
+      "reset_weekly": null
+    },
+    "claude_code_oauth_7": {
       "pct_5h": null,
       "src_5h": null,
       "pct_weekly": null,
@@ -58,7 +74,9 @@
         "claude_code_oauth_2",
         "claude_code_oauth_3",
         "claude_code_oauth_4",
+        "claude_code_oauth_5",
         "claude_code_oauth_6",
+        "claude_code_oauth_7",
         "legacy"
       ],
       "all_done": false,
@@ -71,7 +89,9 @@
         "claude_code_oauth_2",
         "claude_code_oauth_3",
         "claude_code_oauth_4",
+        "claude_code_oauth_5",
         "claude_code_oauth_6",
+        "claude_code_oauth_7",
         "legacy"
       ],
       "all_done": false,
@@ -84,7 +104,9 @@
         "claude_code_oauth_2",
         "claude_code_oauth_3",
         "claude_code_oauth_4",
+        "claude_code_oauth_5",
         "claude_code_oauth_6",
+        "claude_code_oauth_7",
         "legacy"
       ],
       "all_done": false,
