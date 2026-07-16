@@ -159,9 +159,11 @@ concurrently, add them to the count:
 
 Heavy stores (`data/thetadata_eod/`) ship on Cloudflare R2, not git, per A4/A8.
 
-**When to publish:** after the universe pass marks `_manifest.json` complete.
-**How:** `scripts/r2_publish.py --prefix thetadata_eod/` (or the bulk publish script
-used for other stores — follow the pattern in `data/massive_r2_publish.log`).
+**When to publish:** SCHEDULED since 2026-07-16 — the `com.macro.thetadata-r2sync`
+launchd agent runs the sync nightly at 22:00 PT (after the refresh pass settles).
+**How:** `python -m scripts.publish_r2 --dirs thetadata_eod` (md5/ETag delta-skip;
+`_DATA_DIR_MIN_FILES` guard refuses partial checkouts). Install + verify + restore:
+`ops/THETADATA_R2_SYNC_RUNBOOK.md`.
 **Audit tripwire:** P0.7 registers `thetadata_eod` in `run_status.json`; a missing
 or stale manifest entry blocks the gate harness (R8).
 
