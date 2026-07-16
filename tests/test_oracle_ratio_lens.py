@@ -330,16 +330,21 @@ class TestBuilderExit0:
 
         monkeypatch.delenv("COLLECT_LANE", raising=False)
 
+        # Reload BEFORE patching: reload re-executes the module and would wipe
+        # any patch on its attributes (a wiped _out_dir patch is exactly how
+        # this test used to clobber the real site/oracledata/ratio_lens.json).
+        # hard_exit is bound at import, so patch it as a module attr after.
+        from scripts import build_oracle_ratio_lens
+        import importlib
+        importlib.reload(build_oracle_ratio_lens)
+
         # Patch config.data_dir() to tmp_path and out dir
         with mock.patch("lib.config.data_dir", return_value=tmp_path):
             with mock.patch("scripts.build_oracle_ratio_lens._out_dir",
                             return_value=out_dir):
-                with mock.patch("lib.procutil.hard_exit") as mock_exit:
+                with mock.patch("scripts.build_oracle_ratio_lens.hard_exit") as mock_exit:
                     mock_exit.side_effect = SystemExit(0)
                     try:
-                        from scripts import build_oracle_ratio_lens
-                        import importlib
-                        importlib.reload(build_oracle_ratio_lens)
                         build_oracle_ratio_lens.main()
                     except SystemExit as e:
                         assert e.code == 0, f"Expected exit 0, got {e.code}"

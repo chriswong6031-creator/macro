@@ -39,8 +39,14 @@ def test_theme_alerts_region_roundtrip(tmp_path, monkeypatch):
     assert fired and theme_alerts.load_events("us") == []   # us feed untouched
 
 
-def test_compute_theme_intel_all_regions_when_present():
+def test_compute_theme_intel_all_regions_when_present(tmp_path, monkeypatch):
     from engine.theme_scoring import compute_theme_intel
+    from engine import basket_breadth_divergence as bd
+
+    # compute_theme_intel stamps elevated/high breadth-divergence textures into
+    # the forward accountability log as a side effect — redirect the stamp to
+    # tmp so real caches are read but data/breadth_divergence/ is never written.
+    monkeypatch.setattr(bd, "_log_path", lambda: tmp_path / "forward_log.parquet")
     for region in ("us", "china", "hk", "canada"):
         ti = compute_theme_intel(region)
         if ti is None:            # caches absent in a CI shard

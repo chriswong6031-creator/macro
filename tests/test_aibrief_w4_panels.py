@@ -13,6 +13,7 @@ Acceptance criteria per masterplan ADB-W4:
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 from datetime import date, datetime
 from pathlib import Path
@@ -418,17 +419,35 @@ class TestCortexPanel:
 
 # ── Integration: build_aibrief runs green ───────────────────────────────────────
 
-class TestBuildMain:
-    def test_build_returns_zero(self):
-        """build_aibrief.main() must return 0 even with real production artifacts."""
-        result = build_main()
-        assert result == 0
+@pytest.fixture(scope="module")
+def built_page(tmp_path_factory):
+    """Run build_aibrief.main() once with CWD in a tmp dir.
 
-    def test_rendered_html_has_all_four_panels(self):
-        """Site/aibrief.html must contain all four panel indicators after a real build."""
-        site_html = Path(config.ROOT) / "site" / "aibrief.html"
+    storage.site_dir is a relative path, so the rendered page lands under
+    tmp — never in the repo's real site/ tree (MM_DATA_GUARD).  Inputs are
+    unaffected: main() reads data via the absolute config.ROOT.
+    """
+    tmp = tmp_path_factory.mktemp("aibrief_build")
+    old_cwd = os.getcwd()
+    os.chdir(tmp)
+    try:
+        rc = build_main()
+    finally:
+        os.chdir(old_cwd)
+    return rc, tmp / "site" / "aibrief.html"
+
+
+class TestBuildMain:
+    def test_build_returns_zero(self, built_page):
+        """build_aibrief.main() must return 0 even with real production artifacts."""
+        rc, _ = built_page
+        assert rc == 0
+
+    def test_rendered_html_has_all_four_panels(self, built_page):
+        """The freshly built aibrief.html must contain all four panel indicators."""
+        _, site_html = built_page
         if not site_html.exists():
-            pytest.skip("site/aibrief.html not built yet")
+            pytest.skip("aibrief.html not produced by build")
         content = site_html.read_text()
         assert "Right now" in content or "当前状态" in content  # Panel A
         assert "What" in content  # Panel B
