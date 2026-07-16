@@ -2340,360 +2340,6 @@
   
   
   
-<style>
-/* ── .ldb Leadership Board ──────────────────────────────────────────── */
-.ldb { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
-  padding: 16px 18px 14px; margin-bottom: 12px; position: relative; overflow: hidden; }
-.ldb::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  pointer-events: none; border-radius: 10px 10px 0 0; }
-.ldb.ldb-turning::before { background: linear-gradient(90deg, var(--up), color-mix(in srgb, var(--up) 30%, transparent)); }
-.ldb.ldb-running::before { background: linear-gradient(90deg, #4c8bf5, color-mix(in srgb, #4c8bf5 30%, transparent)); }
-.ldb.ldb-cooling::before { background: linear-gradient(90deg, var(--warn), color-mix(in srgb, var(--warn) 30%, transparent)); }
-.ldb.ldb-down::before  { background: linear-gradient(90deg, var(--down), color-mix(in srgb, var(--down) 30%, transparent)); }
-.ldb-top { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.ldb-h2  { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--ink-2); margin: 0; }
-.ldb-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
-  background: var(--panel3); color: var(--ink-1); white-space: nowrap; }
-.ldb-run  { font-size: 12px; color: var(--ink-2); }
-.ldb-stance { font-size: 12px; font-weight: 600; color: var(--ink-1); margin-left: auto; }
-.ldb-asof { font-size: 10px; color: var(--ink-3); white-space: nowrap; }
-.ldb-help { display: inline-flex; align-items: center; justify-content: center;
-  width: 16px; height: 16px; border-radius: 50%; font-size: 10px; font-weight: 700;
-  background: var(--panel3); color: var(--ink-3); cursor: default; flex-shrink: 0; }
-.ldb-cohort { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 12px;
-  padding-bottom: 10px; border-bottom: 1px solid var(--line); font-size: 12px; }
-.ldb-cohort-item { color: var(--ink-2); }
-.ldb-cohort-item b { color: var(--ink-1); }
-.ldb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; margin-bottom: 12px; }
-.ldb-tile { background: var(--panel3); border: 1px solid var(--line); border-radius: 8px;
-  padding: 10px 11px 8px; position: relative; overflow: hidden; }
-.ldb-tile::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-.ldb-tile.ldb-tile-lead::before    { background: var(--up); }
-.ldb-tile.ldb-tile-crowded::before { background: var(--warn); }
-.ldb-tile.ldb-tile-weak::before    { background: var(--down); }
-.ldb-tile.ldb-tile-neutral::before { background: var(--line); }
-.ldb-tile-sym  { font-size: 10px; font-weight: 700; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--ink-3); display: block; margin-bottom: 1px; }
-.ldb-tile-name { font-size: 12px; font-weight: 600; color: var(--ink-1); display: block; margin-bottom: 4px; }
-.ldb-tile-state { font-size: 11px; color: var(--ink-2); display: block; margin-bottom: 3px; }
-.ldb-tile-sowhat { font-size: 11px; font-weight: 600; color: var(--ink-1); display: block; }
-.ldb-tile-sowhat.sw-in-favour  { color: var(--up); }
-.ldb-tile-sowhat.sw-stand-aside { color: var(--down); }
-.ldb-tile-sowhat.sw-watch      { color: var(--ink-2); }
-.ldb-earn { display: inline-block; font-size: 10px; font-weight: 700;
-  background: color-mix(in srgb, var(--warn) 18%, transparent);
-  color: var(--warn); border-radius: 3px; padding: 1px 5px; margin-top: 4px; }
-.ldb-rs { padding-top: 10px; border-top: 1px solid var(--line); }
-.ldb-rs-h { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--ink-3); margin-bottom: 6px; }
-.ldb-rs-rows { display: flex; flex-wrap: wrap; gap: 4px 8px; }
-.ldb-rs-row  { display: flex; align-items: center; gap: 5px; font-size: 11px; }
-.ldb-rs-rank { font-family: var(--num, monospace); font-size: 10px; font-weight: 700;
-  color: var(--ink-3); min-width: 18px; text-align: right; }
-.ldb-rs-name { color: var(--ink-1); }
-.ldb-rs-word { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; white-space: nowrap; }
-.ldb-rs-word.rs-leading { background: color-mix(in srgb, var(--up) 15%, transparent); color: var(--up); }
-.ldb-rs-word.rs-mid     { background: var(--panel3); color: var(--ink-3); }
-.ldb-rs-word.rs-lagging { background: color-mix(in srgb, var(--down) 12%, transparent); color: var(--down); }
-.ldb-footnote { font-size: 10px; color: var(--ink-3); margin-top: 10px; }
-</style><div class="span12 ldb ldb-turning">
-
-  
-  <div class="ldb-top">
-    <h2 class="ldb-h2"><span class="l-en">Leadership Board</span><span class="l-zh">领涨面板</span></h2>
-    <span class="ldb-badge">
-      <span class="l-en">Mag 7 — Turning up</span>
-      <span class="l-zh">七巨头 — 拐头向上</span>
-    </span>
-    <span class="ldb-help"
- data-tip-en="Megacap Leadership Board — 7 stocks, each shown individually. Lifecycle reads are descriptive trend reads (not scored signals — a heads-up). Sector momentum rank from 60d relative strength. A heads-up, not a buy signal; the Buy lanes below decide entries." data-tip-zh="七巨头领涨面板 — 7只个股独立展示。个股趋势为描述性趋势判断（参考，非评分信号）。板块动量排名来自60日相对强度。仅供参考，非买入信号；下方买入通道仍决定入场。">?</span>
-    <span class="ldb-run">
-      <span class="l-en">day 8 · Mag 7 +2% since Jul 01 vs S&P 0%</span>
-      <span class="l-zh">第8日 · 七巨头 7月1日 起 +2%，标普 0%</span>
-    </span>
-    <span class="ldb-stance">
-      <span class="l-en">Get ready</span>
-      <span class="l-zh">准备就绪</span>
-    </span><span class="ldb-asof"><span class="l-en">as of 2026-07-13</span><span class="l-zh">截至 2026-07-13</span></span><span class="ldb-asof m7p-stale"><span class="l-en">data 3 days old</span><span class="l-zh">数据滞后3天</span></span>
-  </div>
-
-  
-  <div class="ldb-cohort">
-    <div class="ldb-cohort-item">
-      <span class="l-en"><b>Led by Apple + Meta + Nvidia</b> · joining: Microsoft, Amazon</span>
-      <span class="l-zh"><b>领涨：苹果 + Meta + 英伟达</b> · 加入：微软、亚马逊</span>
-    </div>
-    <div class="ldb-cohort-item">
-      <span class="l-en">run: <b>8 days</b></span>
-      <span class="l-zh">运行：<b>8日</b></span>
-    </div>
-    <div class="ldb-cohort-item" data-tip-en="10d: cap-weight +7.7% vs equal-weight +8.3%" data-tip-zh="10日：市值加权 +7.7% vs 等权 +8.3%">
-      <span class="l-en"><b>equal-weight leading</b> ~</span>
-      <span class="l-zh"><b>等权领先</b> ~</span>
-    </div>
-    <div class="ldb-cohort-item"
-      data-tip-en="2 of 7 in an uptrend · 5 of 7 leading vs market"
-      data-tip-zh="2/7 处于上升趋势 · 5/7 相对市场领先">
-      <span class="l-en"><b>2/7</b> trending up</span>
-      <span class="l-zh"><b>2/7</b> 处于上升趋势</span>
-    </div>
-  </div>
-
-  
-  <div class="ldb-tiles">
-    
-    
-    <div class="ldb-tile ldb-tile-neutral"
- data-tip-en="Apple · above 50dma · above 200dma · 20d +7.3% · vs market +5.5%" data-tip-zh="苹果 · 50日均线上方 · 200日均线上方 · 20日 +7.3% · 相对市场 +5.5%">
-      <span class="ldb-tile-sym">AAPL</span>
-      <span class="ldb-tile-name">
-        <span class="l-en">Apple</span>
-        <span class="l-zh">苹果</span>
-      </span>
-      <span class="ldb-tile-state">
-        <span class="l-en">quietly building</span>
-        <span class="l-zh">悄然积累</span>
-      </span>
-      <span class="ldb-tile-sowhat sw-watch">
-        <span class="l-en">Watch — building quietly</span>
-        <span class="l-zh">观望 — 悄然布局中</span>
-      </span>
-    </div>
-    
-    
-    <div class="ldb-tile ldb-tile-weak"
- data-tip-en="Microsoft · below 50dma · below 200dma · 20d +0.2% · vs market -1.6%" data-tip-zh="微软 · 50日均线下方 · 200日均线下方 · 20日 +0.2% · 相对市场 -1.6%">
-      <span class="ldb-tile-sym">MSFT</span>
-      <span class="ldb-tile-name">
-        <span class="l-en">Microsoft</span>
-        <span class="l-zh">微软</span>
-      </span>
-      <span class="ldb-tile-state">
-        <span class="l-en">held back</span>
-        <span class="l-zh">走势受压</span>
-      </span>
-      <span class="ldb-tile-sowhat sw-stand-aside">
-        <span class="l-en">Stand aside</span>
-        <span class="l-zh">观望为主</span>
-      </span>
-    </div>
-    
-    
-    <div class="ldb-tile ldb-tile-neutral"
- data-tip-en="Nvidia · below 50dma · above 200dma · 20d -0.7% · vs market -2.5%" data-tip-zh="英伟达 · 50日均线下方 · 200日均线上方 · 20日 -0.7% · 相对市场 -2.5%">
-      <span class="ldb-tile-sym">NVDA</span>
-      <span class="ldb-tile-name">
-        <span class="l-en">Nvidia</span>
-        <span class="l-zh">英伟达</span>
-      </span>
-      <span class="ldb-tile-state">
-        <span class="l-en">no trend read</span>
-        <span class="l-zh">暂无趋势判断</span>
-      </span>
-      <span class="ldb-tile-sowhat sw-watch">
-        <span class="l-en">Watch — no trend read</span>
-        <span class="l-zh">观望 — 暂无趋势</span>
-      </span>
-    </div>
-    
-    
-    <div class="ldb-tile ldb-tile-neutral"
- data-tip-en="Amazon · below 50dma · above 200dma · 20d +2.4% · vs market +0.6%" data-tip-zh="亚马逊 · 50日均线下方 · 200日均线上方 · 20日 +2.4% · 相对市场 +0.6%">
-      <span class="ldb-tile-sym">AMZN</span>
-      <span class="ldb-tile-name">
-        <span class="l-en">Amazon</span>
-        <span class="l-zh">亚马逊</span>
-      </span>
-      <span class="ldb-tile-state">
-        <span class="l-en">quietly building</span>
-        <span class="l-zh">悄然积累</span>
-      </span>
-      <span class="ldb-tile-sowhat sw-watch">
-        <span class="l-en">Watch — building quietly</span>
-        <span class="l-zh">观望 — 悄然布局中</span>
-      </span>
-    </div>
-    
-    
-    <div class="ldb-tile ldb-tile-weak"
- data-tip-en="Alphabet · below 50dma · above 200dma · 20d -1.5% · vs market -3.3%" data-tip-zh="谷歌 · 50日均线下方 · 200日均线上方 · 20日 -1.5% · 相对市场 -3.3%">
-      <span class="ldb-tile-sym">GOOGL</span>
-      <span class="ldb-tile-name">
-        <span class="l-en">Alphabet</span>
-        <span class="l-zh">谷歌</span>
-      </span>
-      <span class="ldb-tile-state">
-        <span class="l-en">trend failed</span>
-        <span class="l-zh">趋势已败</span>
-      </span>
-      <span class="ldb-tile-sowhat sw-stand-aside">
-        <span class="l-en">Stand aside</span>
-        <span class="l-zh">观望为主</span>
-      </span>
-    </div>
-    
-    
-    <div class="ldb-tile ldb-tile-neutral"
- data-tip-en="Meta · above 50dma · above 200dma · 20d +15.6% · vs market +13.8%" data-tip-zh="Meta · 50日均线上方 · 200日均线上方 · 20日 +15.6% · 相对市场 +13.8%">
-      <span class="ldb-tile-sym">META</span>
-      <span class="ldb-tile-name">
-        <span class="l-en">Meta</span>
-        <span class="l-zh">Meta</span>
-      </span>
-      <span class="ldb-tile-state">
-        <span class="l-en">no trend read</span>
-        <span class="l-zh">暂无趋势判断</span>
-      </span>
-      <span class="ldb-tile-sowhat sw-watch">
-        <span class="l-en">Watch — no trend read</span>
-        <span class="l-zh">观望 — 暂无趋势</span>
-      </span>
-    </div>
-    
-    
-    <div class="ldb-tile ldb-tile-weak"
- data-tip-en="Tesla · below 50dma · below 200dma · 20d -1.1% · vs market -2.9%" data-tip-zh="特斯拉 · 50日均线下方 · 200日均线下方 · 20日 -1.1% · 相对市场 -2.9%">
-      <span class="ldb-tile-sym">TSLA</span>
-      <span class="ldb-tile-name">
-        <span class="l-en">Tesla</span>
-        <span class="l-zh">特斯拉</span>
-      </span>
-      <span class="ldb-tile-state">
-        <span class="l-en">trend failed</span>
-        <span class="l-zh">趋势已败</span>
-      </span>
-      <span class="ldb-tile-sowhat sw-stand-aside">
-        <span class="l-en">Stand aside</span>
-        <span class="l-zh">观望为主</span>
-      </span>
-    </div>
-  </div>
-
-  
-  <div class="ldb-rs">
-    <div class="ldb-rs-h"><span class="l-en">Sector momentum rank</span><span class="l-zh">板块动量排名</span></div>
-    <div class="ldb-rs-rows">
-      <div class="ldb-rs-row" data-tip-en="RS #1 — Technology: leading · conviction: Reduce" data-tip-zh="RS #1 — 科技: 领先 · 评级：减配">
-        <span class="ldb-rs-name">
-          <span class="l-en">Technology</span>
-          <span class="l-zh">科技</span>
-        </span>
-        <span class="ldb-rs-word rs-leading">
-          <span class="l-en">leading</span>
-          <span class="l-zh">领先</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #2 — Financials: leading · conviction: Cautious" data-tip-zh="RS #2 — 金融: 领先 · 评级：谨慎">
-        <span class="ldb-rs-name">
-          <span class="l-en">Financials</span>
-          <span class="l-zh">金融</span>
-        </span>
-        <span class="ldb-rs-word rs-leading">
-          <span class="l-en">leading</span>
-          <span class="l-zh">领先</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #3 — Health Care: leading · conviction: Reduce" data-tip-zh="RS #3 — 医疗保健: 领先 · 评级：减配">
-        <span class="ldb-rs-name">
-          <span class="l-en">Health Care</span>
-          <span class="l-zh">医疗保健</span>
-        </span>
-        <span class="ldb-rs-word rs-leading">
-          <span class="l-en">leading</span>
-          <span class="l-zh">领先</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #4 — Industrials: mid-pack · conviction: Neutral" data-tip-zh="RS #4 — 工业: 中游 · 评级：中性">
-        <span class="ldb-rs-name">
-          <span class="l-en">Industrials</span>
-          <span class="l-zh">工业</span>
-        </span>
-        <span class="ldb-rs-word rs-mid">
-          <span class="l-en">mid-pack</span>
-          <span class="l-zh">中游</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #5 — Real Estate: mid-pack · conviction: Reduce" data-tip-zh="RS #5 — 房地产: 中游 · 评级：减配">
-        <span class="ldb-rs-name">
-          <span class="l-en">Real Estate</span>
-          <span class="l-zh">房地产</span>
-        </span>
-        <span class="ldb-rs-word rs-mid">
-          <span class="l-en">mid-pack</span>
-          <span class="l-zh">中游</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #6 — Consumer Discretionary: mid-pack · conviction: Neutral" data-tip-zh="RS #6 — 非必需消费: 中游 · 评级：中性">
-        <span class="ldb-rs-name">
-          <span class="l-en">Consumer Discretionary</span>
-          <span class="l-zh">非必需消费</span>
-        </span>
-        <span class="ldb-rs-word rs-mid">
-          <span class="l-en">mid-pack</span>
-          <span class="l-zh">中游</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #7 — Consumer Staples: mid-pack · conviction: Neutral" data-tip-zh="RS #7 — 必需消费: 中游 · 评级：中性">
-        <span class="ldb-rs-name">
-          <span class="l-en">Consumer Staples</span>
-          <span class="l-zh">必需消费</span>
-        </span>
-        <span class="ldb-rs-word rs-mid">
-          <span class="l-en">mid-pack</span>
-          <span class="l-zh">中游</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #8 — Energy: lagging · conviction: Constructive" data-tip-zh="RS #8 — 能源: 落后 · 评级：建设性">
-        <span class="ldb-rs-name">
-          <span class="l-en">Energy</span>
-          <span class="l-zh">能源</span>
-        </span>
-        <span class="ldb-rs-word rs-lagging">
-          <span class="l-en">lagging</span>
-          <span class="l-zh">落后</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #9 — Communication Services: lagging · conviction: Neutral" data-tip-zh="RS #9 — 通讯服务: 落后 · 评级：中性">
-        <span class="ldb-rs-name">
-          <span class="l-en">Communication Services</span>
-          <span class="l-zh">通讯服务</span>
-        </span>
-        <span class="ldb-rs-word rs-lagging">
-          <span class="l-en">lagging</span>
-          <span class="l-zh">落后</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #10 — Materials: lagging · conviction: Cautious" data-tip-zh="RS #10 — 原材料: 落后 · 评级：谨慎">
-        <span class="ldb-rs-name">
-          <span class="l-en">Materials</span>
-          <span class="l-zh">原材料</span>
-        </span>
-        <span class="ldb-rs-word rs-lagging">
-          <span class="l-en">lagging</span>
-          <span class="l-zh">落后</span>
-        </span>
-      </div>
-      <div class="ldb-rs-row" data-tip-en="RS #11 — Utilities: lagging · conviction: Accumulate" data-tip-zh="RS #11 — 公用事业: 落后 · 评级：积极配置">
-        <span class="ldb-rs-name">
-          <span class="l-en">Utilities</span>
-          <span class="l-zh">公用事业</span>
-        </span>
-        <span class="ldb-rs-word rs-lagging">
-          <span class="l-en">lagging</span>
-          <span class="l-zh">落后</span>
-        </span>
-      </div>
-    </div>
-  </div>
-
-  
-  <div class="ldb-footnote">
-    <span class="l-en">Trend reads are a heads-up, not a buy signal — entries still decided by the lanes below.</span>
-    <span class="l-zh">趋势判断仅供参考，非买入信号 — 入场时机仍由下方通道决定。</span>
-  </div>
-
-</div>
 
   
   <!-- ======================= HEADER ======================= -->
@@ -9773,11 +9419,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">XLF</span>
         
+        <span class="mx5-ai-ticker-pill">KRE</span>
+        
         <span class="mx5-ai-ticker-pill">GLD</span>
         
-        <span class="mx5-ai-ticker-pill">USO</span>
-        
-        <span class="mx5-ai-ticker-pill">MS</span>
+        <span class="mx5-ai-ticker-pill">GS</span>
         
       </div>
       
@@ -9785,14 +9431,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">credit &amp; rates</span><br>
-          6 high-impact signals across channels
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 High-Impact Items</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
+          9 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">信贷与利率</span><br>
-          6 条高影响信号
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 条高影响信息</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
+          9 条高影响信号
         </span>
         
       </div>
@@ -11575,6 +11221,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item" open>
             <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">Earnings Snapshot: ASML beats across Q2 top and bottom lines, hikes full-year guidance and capacity target boosts</span><span class="l-zh">财报速览：ASML第二季度营收及利润均超预期，上调全年指引及产能目标</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4613821-earnings-snapshot-asml-beats-across-q2-top-and-bottom-lines-hikes-full-year-guidance-and-capacity-target-boosts?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
               <span class="nb-htitle"><span class="l-en">We&#39;re raising our price target on Goldman Sachs after a blowout quarter, upbeat outlook</span><span class="l-zh">高盛季度业绩强劲、展望乐观，我们上调其目标价</span></span>
             </summary>
@@ -11586,33 +11243,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Oil stockpiles running dangerously low as Hormuz shuts again, traders warn</span><span class="l-zh">Oil stockpiles running dangerously low as Hormuz shuts again, traders warn</span></span>
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">Bank earnings, Warsh heads to the Hill, Chipotle&#39;s Mexico push and more in Morning Squawk</span><span class="l-zh">银行财报、Warsh赴国会听证、Chipotle进军墨西哥等——Morning Squawk摘要</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614322-oil-stockpiles-close-to-running-on-empty-as-hormuz-shuts-again-traders-warn?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nb-htitle"><span class="l-en">SpaceX stock sinks below $135 IPO price for the first time</span><span class="l-zh">SpaceX stock sinks below $135 IPO price for the first time</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/15/spacex-spcx-stock-ipo-price.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-              <span class="nb-htitle"><span class="l-en">Inflation cools, Morgan Stanley earnings, IBM&#39;s bad day and more in Morning Squawk</span><span class="l-zh">Inflation cools, Morgan Stanley earnings, IBM&#39;s bad day and more in Morning Squawk</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/15/5-things-to-know-before-the-stock-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/14/5-things-to-know-before-the-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11620,10 +11255,32 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">As bank earnings approach, a market anomaly emerges</span><span class="l-zh">银行财报季临近，市场出现反常现象</span></span>
+              <span class="nb-htitle"><span class="l-en">IBM stock craters 25%, the worst day on record, after company issues second-quarter earnings warning</span><span class="l-zh">IBM股价暴跌25%，创单日最大跌幅，公司发布第二季度盈利预警</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/10/as-bank-earnings-approach-a-market-anomaly-emerges.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/14/ibm-warns-second-quarter-earnings-fell-short-of-expectations.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
+              <span class="nb-htitle"><span class="l-en">Asian shares mostly climb on cool U.S. CPI, defying weak China GDP and Iran conflict risks</span><span class="l-zh">美国CPI降温推动亚洲股市多数上涨，未受中国GDP疲软及伊朗冲突风险影响</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4613813-asian-shares-mostly-climb-on-cool-us-cpi-defying-weak-china-gdp-and-iran-conflict-risks?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nb-htitle"><span class="l-en">Wells Fargo intends to hike Q3 common stock dividend by 11% to $0.50</span><span class="l-zh">富国银行计划将第三季度普通股股息提高11%至0.50美元</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4613833-wells-fargo-intends-to-hike-q3-common-stock-dividend-by-11-to-050?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11652,44 +11309,22 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Eos Energy surges after winning Golden Dome contract from Pentagon</span><span class="l-zh">Eos Energy surges after winning Golden Dome contract from Pentagon</span></span>
+              <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+              <span class="nb-htitle"><span class="l-en">Rio Tinto Q2 iron ore sales rise 7%; lowers copper cost guidance</span><span class="l-zh">力拓第二季度铁矿石销量增长7%；下调铜成本指引</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614316-eos-energy-surges-after-winning-golden-dome-contract-from-pentagon?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4613831-rio-tinto-q2-iron-ore-sales-rise-7-lowers-copper-cost-guidance?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nb-htitle"><span class="l-en">States sue to stop Paramount-Warner Bros blockbuster merger</span><span class="l-zh">多州起诉阻止派拉蒙与华纳兄弟的巨额合并交易</span></span>
+              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nb-htitle"><span class="l-en">Oil Tanker Stock With Big Dividend Near Buy Point Amid Hormuz Crisis</span><span class="l-zh">霍尔木兹危机下，高股息油轮股逼近买点</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.npr.org/2026/07/13/nx-s1-5879286/paramount-warner-bros-discovery-lawsuit" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">J.B. Hunt outlines 1,000 to 1,200 new gross truck sales target as intermodal posts 578,000-load record</span><span class="l-zh">J.B. Hunt outlines 1,000 to 1,200 new gross truck sales target as intermodal posts 578,000-load record</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614323-j-b-hunt-outlines-1000-to-1200-new-gross-truck-sales-target-as-intermodal-posts-578000-load?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Trump calls out General Dynamics on submarines amid push on defense contractors</span><span class="l-zh">Trump calls out General Dynamics on submarines amid push on defense contractors</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614320-trump-calls-out-general-dynamics-on-submarines-amid-push-on-defense-contractors?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.investors.com/research/ibd-stock-of-the-day/oil-tanker-stock-with-big-dividend-near-buy-point-amid-hormuz-crisis/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -14405,9 +14040,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-16 03:25 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-16 04:42 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-16 03:25 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-16 04:42 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
