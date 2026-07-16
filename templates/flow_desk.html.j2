@@ -32,6 +32,9 @@
   .help:hover .tip { display:block; }
   .tabnum { font-variant-numeric:tabular-nums; }
   .lag-tag { display:inline-block; font-size:10px; background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--muted); vertical-align:middle; margin-left:6px; }
+  .topline .asof { margin-left:auto; color:var(--muted); font-size:12px; }
+  .topline .asof b { font-weight:600; color:var(--text); }
+  .topline .asof.is-stale b { color:var(--down); font-weight:700; }
   .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--orange,#f97316); margin-left:4px; }
 
   /* ── Market Tide ───────────────────────────────────────────────── */
@@ -150,6 +153,7 @@
   <div class="topline">
     <h1>🌊 {{ t('Group Flow Heatmap &amp; Market Tide', '资金潮汐与板块流量图') }}</h1>
     <span class="lag-tag">{{ t('EOD · direction approx', 'EOD · 方向近似') }}</span>
+    <span class="asof tabnum" id="fd-asof" data-asof="{{ fd.asof or '' }}">{{ t('data as of', '数据截至') }} <b>{{ fd.asof or '—' }}</b> · {{ t('updated', '更新') }} {{ fd.built or '—' }}</span>
   </div>
   <p class="muted sm note">{{ t(
     "EOD options-flow rollup across 353 names — gross premium magnitude is reliable; net premium direction is SOFT (minute tick-rule signing, not NBBO). Z-scores vs own history (min 20 obs — raw shown below threshold). Tape-flow breadth where ThetaData signed columns are present (auto-upgrades as accrual grows). ETF creation/redemption is a proxy (delta(SO)×NAV), labeled accordingly. No score or rank path; display-tier only.",
@@ -449,6 +453,12 @@
 </p>
 
 <script>
+(function(){
+  // staleness flag: EOD data older than ~5 days (covers weekend + holiday) turns the header date red
+  var el = document.getElementById('fd-asof');
+  var d = el ? el.getAttribute('data-asof') : '';
+  if (el && d && (Date.now() - new Date(d + 'T21:00:00Z').getTime()) / 864e5 > 5) el.classList.add('is-stale');
+})();
 (function(){
   // ── Data injected from Python ────────────────────────────────────
   var SPARK = {{ fd.market_tide.spark | tojson if fd and fd.market_tide and fd.market_tide.spark else '[]' }};
