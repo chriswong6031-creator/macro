@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_snapshot.v1",
-  "generated_at": "2026-07-14T22:25:00Z",
+  "generated_at": "2026-07-16T01:06:40Z",
   "default_book": "flagship",
   "live_url": "http://localhost:8000",
   "books": [
@@ -11,19 +11,19 @@
       "kind": "gated",
       "manager": "engine",
       "benchmark": "SPY",
-      "as_of": "2026-07-13",
-      "market_status": "open",
-      "gross": 0.3682,
-      "cash": 0.6318,
+      "as_of": "2026-07-14",
+      "market_status": "closed",
+      "gross": 0.3465,
+      "cash": 0.6535,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
         "liquidity_overlay": "expanding"
       },
       "sleeves": {
-        "leadership": 0.2141,
-        "conviction": 0.1541,
-        "cash": 0.6318
+        "leadership": 0.2125,
+        "conviction": 0.134,
+        "cash": 0.6535
       },
       "positions": [
         {
@@ -31,57 +31,15 @@
           "theme_id": "SMH",
           "sleeve": "leadership",
           "stage": 2,
-          "weight": 0.071,
-          "verdict": "hold",
-          "rs_pctile": 92.9,
-          "entry_price": 608.895,
-          "lead_capped": {
-            "reason": "overextension",
-            "from": 0.1078,
-            "to": 0.08
-          },
-          "opened_at": "2026-07-13T11:21:24.902915+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "SMH is the mechanical leadership sleeve holding — the 92.9th percentile sector ETF by 252-day relative-strength, trend-confirmed above its 200-day moving average. Size is equal-weight within the leadership budget (7.1%).",
-            "why_now": "SMH ranks in the 92.9th percentile for 12-month RS and clears the 200-day trend gate, making it the doctrine's 'present in the leader mechanically' expression — holding the sector without chasing the single name underneath.",
-            "bull": [
-              "RS rank: 92.9th percentile",
-              "Above 200-day trend (trend filter passed)"
-            ],
-            "bear": [
-              "Leadership rotation: held ONLY while RS stays top-decile (currently 92.9th percentile) — exits mechanically if RS drops below the 70th percentile; no discretion.",
-              "Breadth / narrowing risk: sector ETF performance can be driven by a handful of mega-cap names; if underlying breadth narrows the ETF masks single-name concentration risk.",
-              "Extension vs 200-day MA unknown (no stockdata for this ETF) — assume normal mean-reversion risk applies; monitor pct_vs_200dma.",
-              "Mechanical sleeve: no single-name conviction here; macro de-risk (regime quad flip or liquidity-overlay) trims the leadership budget first — exits are systematic, not qualitative."
-            ],
-            "vetoes": [],
-            "divergences": [],
-            "what_would_prove_wrong": "SMH breaks below its 200-day moving average for 3+ consecutive sessions, or drops below the 70th RS percentile relative to the sector universe.",
-            "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 7.1% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
-            "confluence": null,
-            "prob_correct": null
-          }
-        },
-        {
-          "ticker": "XLK",
-          "theme_id": "XLK",
-          "sleeve": "leadership",
-          "stage": 2,
-          "weight": 0.0478,
+          "weight": 0.0597,
           "verdict": "hold",
           "rs_pctile": 90.5,
-          "entry_price": 183.71,
-          "lead_capped": {
-            "reason": "late_cycle",
-            "from": 0.1078,
-            "to": 0.0539
-          },
-          "opened_at": "2026-07-14T06:21:00.676699+00:00",
-          "held_days": 0,
+          "entry_price": 611.03,
+          "opened_at": "2026-07-13T11:21:24.902915+00:00",
+          "held_days": 1,
           "thesis_full": {
-            "summary": "XLK is the mechanical leadership sleeve holding — the 90.5th percentile sector ETF by 252-day relative-strength, trend-confirmed above its 200-day moving average. Size is equal-weight within the leadership budget (4.8%).",
-            "why_now": "XLK ranks in the 90.5th percentile for 12-month RS and clears the 200-day trend gate, making it the doctrine's 'present in the leader mechanically' expression — holding the sector without chasing the single name underneath.",
+            "summary": "SMH is the mechanical leadership sleeve holding — the 90.5th percentile sector ETF by 252-day relative-strength, trend-confirmed above its 200-day moving average. Size is equal-weight within the leadership budget (6.0%).",
+            "why_now": "SMH ranks in the 90.5th percentile for 12-month RS and clears the 200-day trend gate, making it the doctrine's 'present in the leader mechanically' expression — holding the sector without chasing the single name underneath.",
             "bull": [
               "RS rank: 90.5th percentile",
               "Above 200-day trend (trend filter passed)"
@@ -94,26 +52,94 @@
             ],
             "vetoes": [],
             "divergences": [],
-            "what_would_prove_wrong": "XLK breaks below its 200-day moving average for 3+ consecutive sessions, or drops below the 70th RS percentile relative to the sector universe.",
-            "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 4.8% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
+            "what_would_prove_wrong": "SMH breaks below its 200-day moving average for 3+ consecutive sessions, or drops below the 70th RS percentile relative to the sector universe.",
+            "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 6.0% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
             "confluence": null,
             "prob_correct": null
           }
+        },
+        {
+          "ticker": "XLK",
+          "theme_id": "XLK",
+          "sleeve": "leadership",
+          "stage": 2,
+          "weight": 0.0597,
+          "verdict": "hold",
+          "rs_pctile": 88.9,
+          "entry_price": 185.78,
+          "opened_at": "2026-07-14T06:21:00.676699+00:00",
+          "held_days": 0,
+          "thesis_full": {
+            "summary": "XLK is the mechanical leadership sleeve holding — the 88.9th percentile sector ETF by 252-day relative-strength, trend-confirmed above its 200-day moving average. Size is equal-weight within the leadership budget (6.0%).",
+            "why_now": "XLK ranks in the 88.9th percentile for 12-month RS and clears the 200-day trend gate, making it the doctrine's 'present in the leader mechanically' expression — holding the sector without chasing the single name underneath.",
+            "bull": [
+              "RS rank: 88.9th percentile",
+              "Above 200-day trend (trend filter passed)"
+            ],
+            "bear": [
+              "Leadership rotation: held ONLY while RS stays top-decile (currently 88.9th percentile) — exits mechanically if RS drops below the 70th percentile; no discretion.",
+              "Breadth / narrowing risk: sector ETF performance can be driven by a handful of mega-cap names; if underlying breadth narrows the ETF masks single-name concentration risk.",
+              "Extension vs 200-day MA unknown (no stockdata for this ETF) — assume normal mean-reversion risk applies; monitor pct_vs_200dma.",
+              "Mechanical sleeve: no single-name conviction here; macro de-risk (regime quad flip or liquidity-overlay) trims the leadership budget first — exits are systematic, not qualitative."
+            ],
+            "vetoes": [],
+            "divergences": [],
+            "what_would_prove_wrong": "XLK breaks below its 200-day moving average for 3+ consecutive sessions, or drops below the 70th RS percentile relative to the sector universe.",
+            "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 6.0% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
+            "confluence": null,
+            "prob_correct": null
+          },
+          "pending": true,
+          "status": "pending_open",
+          "est_price": 181.28,
+          "fill_after": "2026-07-15"
         },
         {
           "ticker": "MTUM",
           "theme_id": "MTUM",
           "sleeve": "leadership",
           "stage": 2,
-          "weight": 0.0668,
+          "weight": 0.0558,
           "verdict": "hold",
-          "rs_pctile": 92.1,
-          "entry_price": 323.67,
+          "rs_pctile": 91.7,
+          "entry_price": 321.77,
           "opened_at": "2026-07-14T06:21:00.676699+00:00",
           "held_days": 0,
           "thesis_full": {
-            "summary": "MTUM is the mechanical leadership sleeve holding — the 92.1th percentile sector ETF by 252-day relative-strength, trend-confirmed above its 200-day moving average. Size is equal-weight within the leadership budget (6.7%).",
-            "why_now": "MTUM ranks in the 92.1th percentile for 12-month RS and clears the 200-day trend gate, making it the doctrine's 'present in the leader mechanically' expression — holding the sector without chasing the single name underneath.",
+            "summary": "MTUM is the mechanical leadership sleeve holding — the 91.7th percentile sector ETF by 252-day relative-strength, trend-confirmed above its 200-day moving average. Size is equal-weight within the leadership budget (5.6%).",
+            "why_now": "MTUM ranks in the 91.7th percentile for 12-month RS and clears the 200-day trend gate, making it the doctrine's 'present in the leader mechanically' expression — holding the sector without chasing the single name underneath.",
+            "bull": [
+              "RS rank: 91.7th percentile",
+              "Above 200-day trend (trend filter passed)"
+            ],
+            "bear": [
+              "Leadership rotation: held ONLY while RS stays top-decile (currently 91.7th percentile) — exits mechanically if RS drops below the 70th percentile; no discretion.",
+              "Breadth / narrowing risk: sector ETF performance can be driven by a handful of mega-cap names; if underlying breadth narrows the ETF masks single-name concentration risk.",
+              "Extension vs 200-day MA unknown (no stockdata for this ETF) — assume normal mean-reversion risk applies; monitor pct_vs_200dma.",
+              "Mechanical sleeve: no single-name conviction here; macro de-risk (regime quad flip or liquidity-overlay) trims the leadership budget first — exits are systematic, not qualitative."
+            ],
+            "vetoes": [],
+            "divergences": [],
+            "what_would_prove_wrong": "MTUM breaks below its 200-day moving average for 3+ consecutive sessions, or drops below the 70th RS percentile relative to the sector universe.",
+            "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 5.6% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
+            "confluence": null,
+            "prob_correct": null
+          }
+        },
+        {
+          "ticker": "IWM",
+          "theme_id": "IWM",
+          "sleeve": "leadership",
+          "stage": 2,
+          "weight": 0.0373,
+          "verdict": "hold",
+          "rs_pctile": 92.1,
+          "entry_price": 295.99,
+          "opened_at": "2026-07-14T06:21:00.676699+00:00",
+          "held_days": 0,
+          "thesis_full": {
+            "summary": "IWM is the mechanical leadership sleeve holding — the 92.1th percentile sector ETF by 252-day relative-strength, trend-confirmed above its 200-day moving average. Size is equal-weight within the leadership budget (3.7%).",
+            "why_now": "IWM ranks in the 92.1th percentile for 12-month RS and clears the 200-day trend gate, making it the doctrine's 'present in the leader mechanically' expression — holding the sector without chasing the single name underneath.",
             "bull": [
               "RS rank: 92.1th percentile",
               "Above 200-day trend (trend filter passed)"
@@ -126,40 +152,8 @@
             ],
             "vetoes": [],
             "divergences": [],
-            "what_would_prove_wrong": "MTUM breaks below its 200-day moving average for 3+ consecutive sessions, or drops below the 70th RS percentile relative to the sector universe.",
-            "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 6.7% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
-            "confluence": null,
-            "prob_correct": null
-          }
-        },
-        {
-          "ticker": "IWM",
-          "theme_id": "IWM",
-          "sleeve": "leadership",
-          "stage": 2,
-          "weight": 0.0285,
-          "verdict": "hold",
-          "rs_pctile": 93.3,
-          "entry_price": 295.49,
-          "opened_at": "2026-07-14T06:21:00.676699+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "IWM is the mechanical leadership sleeve holding — the 93.3th percentile sector ETF by 252-day relative-strength, trend-confirmed above its 200-day moving average. Size is equal-weight within the leadership budget (2.9%).",
-            "why_now": "IWM ranks in the 93.3th percentile for 12-month RS and clears the 200-day trend gate, making it the doctrine's 'present in the leader mechanically' expression — holding the sector without chasing the single name underneath.",
-            "bull": [
-              "RS rank: 93.3th percentile",
-              "Above 200-day trend (trend filter passed)"
-            ],
-            "bear": [
-              "Leadership rotation: held ONLY while RS stays top-decile (currently 93.3th percentile) — exits mechanically if RS drops below the 70th percentile; no discretion.",
-              "Breadth / narrowing risk: sector ETF performance can be driven by a handful of mega-cap names; if underlying breadth narrows the ETF masks single-name concentration risk.",
-              "Extension vs 200-day MA unknown (no stockdata for this ETF) — assume normal mean-reversion risk applies; monitor pct_vs_200dma.",
-              "Mechanical sleeve: no single-name conviction here; macro de-risk (regime quad flip or liquidity-overlay) trims the leadership budget first — exits are systematic, not qualitative."
-            ],
-            "vetoes": [],
-            "divergences": [],
             "what_would_prove_wrong": "IWM breaks below its 200-day moving average for 3+ consecutive sessions, or drops below the 70th RS percentile relative to the sector universe.",
-            "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 2.9% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
+            "sizing_rationale": "Leadership sleeve: equal-weighted across the trend-gated top RS sectors. Weight = 3.7% (sleeve budget ÷ number of qualifying leaders). No confluence gate required; the trend filter is the only gate.",
             "confluence": null,
             "prob_correct": null
           }
@@ -169,18 +163,18 @@
           "theme_id": "theme:mag7",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0204,
+          "weight": 0.034,
           "verdict": "add",
-          "thesis_id": "2026-07-13-AAPL-conv",
+          "thesis_id": "2026-07-14-AAPL-conv",
           "time_stop_by": "2026-10-08",
-          "confluence": 0.6,
-          "entry_price": 313.76,
+          "confluence": 0.333,
+          "entry_price": 315.32,
           "research": {
             "paper_id": "2026-07-13-AAPL",
             "mode": "engine",
-            "engine_score": 80,
+            "engine_score": 67,
             "research_score": 73,
-            "combined": 76,
+            "combined": 70,
             "viability": "compelling",
             "confirmed": true,
             "summary": "AAPL — research desk 73/100, 'compelling'. At $315.32 the multi-sided read is favorable and the entry is reasonable.",
@@ -195,46 +189,51 @@
           "opened_at": "2026-07-14T06:21:00.676699+00:00",
           "held_days": 0,
           "thesis_full": {
-            "summary": "AAPL clears the multi-sided conviction gate: 4/5 lenses are bullish (confluence +0.60), size_authority = up. No hard vetoes. Sized at 2.0% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 5 scored lenses were evaluated today; 4 sided bullish, 1 bearish, giving a positive +0.60 net confluence. Size authority is 'up' — no veto blocked sizing.",
+            "summary": "AAPL clears the multi-sided conviction gate: 4/6 lenses are bullish (confluence +0.33), size_authority = up. No hard vetoes. Sized at 3.4% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 6 scored lenses were evaluated today; 4 sided bullish, 2 bearish, giving a positive +0.33 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
               "Quality score strong (quality_z=0.77, accounting=clean).",
               "Trend: price confirmed (uptrend intact) (bull).",
-              "Sector Rs: Information Technology (XLK) RS rank 2, 90th pctile, above 200d trend (bull).",
-              "Options: gamma regime 'long', expected daily move 171.0% — dealer positioning supportive.",
-              "Options Flow: $99M net prem · 179 new (bull).",
+              "Sector Rs: Information Technology (XLK) RS rank 2, 89th pctile, above 200d trend (bull).",
+              "Options: gamma regime 'long', expected daily move 175.0% — dealer positioning supportive.",
+              "Options Flow: $-96M net prem · 184 new (bull).",
               "Macro risk score low (0.15)"
             ],
             "bear": [
               "Valuation stretched: value_z=-0.62, P/E cheaper than only 49% of history.",
               "Downside risk: tail drawdown -29.0%",
+              "Fed Path lens bearish.",
               "Cross-asset environment: 'concentrated' — concentration / fragility risk."
             ],
             "vetoes": [],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if AAPL underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. AAPL receives 2.0% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
-            "confluence": 0.6,
-            "prob_correct": 0.7
-          }
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. AAPL receives 3.4% (confluence +0.33 (4/6 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
+            "confluence": 0.333,
+            "prob_correct": 0.68
+          },
+          "pending": true,
+          "status": "pending_open",
+          "est_price": 317.31,
+          "fill_after": "2026-07-15"
         },
         {
           "ticker": "ANET",
           "theme_id": "theme:ai_infra",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0119,
+          "weight": 0.0213,
           "verdict": "add",
-          "thesis_id": "2026-07-13-ANET-conv",
+          "thesis_id": "2026-07-14-ANET-conv",
           "time_stop_by": "2026-10-08",
-          "confluence": 0.714,
-          "entry_price": 183.9,
+          "confluence": 0.5,
+          "entry_price": 186.96,
           "research": {
             "paper_id": "2026-07-13-ANET",
             "mode": "engine",
-            "engine_score": 86,
+            "engine_score": 75,
             "research_score": 82,
-            "combined": 84,
+            "combined": 78,
             "viability": "compelling",
             "confirmed": true,
             "summary": "ANET — research desk 82/100, 'compelling'. At $186.96 the multi-sided read is favorable and the entry is reasonable.",
@@ -249,364 +248,103 @@
           "opened_at": "2026-07-14T06:21:00.676699+00:00",
           "held_days": 0,
           "thesis_full": {
-            "summary": "ANET clears the multi-sided conviction gate: 6/7 lenses are bullish (confluence +0.71), size_authority = up. No hard vetoes. Sized at 1.2% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 7 scored lenses were evaluated today; 6 sided bullish, 1 bearish, giving a positive +0.71 net confluence. Size authority is 'up' — no veto blocked sizing.",
+            "summary": "ANET clears the multi-sided conviction gate: 6/8 lenses are bullish (confluence +0.50), size_authority = up. No hard vetoes. Sized at 2.1% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 8 scored lenses were evaluated today; 6 sided bullish, 2 bearish, giving a positive +0.50 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
               "Growth trajectory positive: revenue CAGR 31.2%, EPS CAGR -19.2%.",
               "Return asymmetry: upside/downside ratio 1.87 (median MFE 1899.0%).",
               "Trend: price confirmed (uptrend intact) (bull).",
-              "Sector Rs: Information Technology (XLK) RS rank 2, 90th pctile, above 200d trend (bull).",
+              "Sector Rs: Information Technology (XLK) RS rank 2, 89th pctile, above 200d trend (bull).",
               "Active ETF flows: accumulating (0.7pp conviction).",
-              "Options: gamma regime 'long', expected daily move 468.0% — dealer positioning supportive.",
-              "Options Flow: $-6M net prem · 93 new (bull).",
+              "Options: gamma regime 'long', expected daily move 479.0% — dealer positioning supportive.",
+              "Options Flow: $-9M net prem · 46 new (bull).",
               "Macro risk score low (0.15)"
             ],
             "bear": [
               "Valuation stretched: value_z=-0.85, P/E cheaper than only 0% of history.",
-              "Narrative: theme 'ai_infra' rank 4/46, score +1.33, 5d rel -3.6% (bear)",
+              "Narrative: theme 'ai_infra' rank 4/46, score +1.27, 5d rel -2.0% (bear)",
+              "Fed Path lens bearish.",
               "Cross-asset environment: 'concentrated' — concentration / fragility risk."
             ],
             "vetoes": [],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if ANET underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. ANET receives 1.2% (confluence +0.71 (6/7 lenses bullish = +0.71 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
-            "confluence": 0.714,
-            "prob_correct": 0.7
-          }
-        },
-        {
-          "ticker": "IBM",
-          "theme_id": "theme:ai_software",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.0054,
-          "verdict": "add",
-          "thesis_id": "2026-07-13-IBM-conv",
-          "time_stop_by": "2026-10-08",
-          "confluence": 0.5,
-          "entry_price": 226.365,
-          "research": {
-            "paper_id": "2026-07-13-IBM",
-            "mode": "engine",
-            "engine_score": 75,
-            "research_score": 68,
-            "combined": 72,
-            "viability": "fair",
-            "confirmed": true,
-            "summary": "IBM — research desk 68/100, 'fair'. At $287.56 the read is balanced — a measured, confluence-weighted entry only.",
-            "price_at_review": 287.56
-          },
-          "retained": false,
-          "size_stage": "initial",
-          "entry_levels": {
-            "ticker": "IBM",
-            "price": 287.56
-          },
-          "opened_at": "2026-07-14T06:21:00.676699+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "IBM clears the multi-sided conviction gate: 3/4 lenses are bullish (confluence +0.50), size_authority = up. No hard vetoes. Sized at 0.5% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 4 scored lenses were evaluated today; 3 sided bullish, 1 bearish, giving a positive +0.50 net confluence. Size authority is 'up' — no veto blocked sizing.",
-            "bull": [
-              "Valuation supportive: value_z=-0.36, trailing P/E cheaper than 69% of history, forward P/E 21.4x.",
-              "Sector Rs: Information Technology (XLK) RS rank 2, 90th pctile, above 200d trend (bull).",
-              "Options: gamma regime 'long', expected daily move 318.0% — dealer positioning supportive.",
-              "Options Flow: $-8M net prem · 41 new (bull).",
-              "Macro risk score low (0.15)"
-            ],
-            "bear": [
-              "Growth decelerating or negative: revenue CAGR -1.7%, EPS CAGR 12.4%.",
-              "Narrative: theme 'ai_software' rank 21/46, score -0.26, 5d rel +1.2% (bear)",
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [],
-            "divergences": [],
-            "what_would_prove_wrong": "FALSE if IBM underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. IBM receives 0.5% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. ANET receives 2.1% (confluence +0.50 (6/8 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
             "confluence": 0.5,
             "prob_correct": 0.7
           }
         },
         {
-          "ticker": "JNJ",
-          "theme_id": "theme:defensives",
+          "ticker": "XLE",
+          "theme_id": "name:XLE",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0066,
+          "weight": 0.0216,
           "verdict": "add",
-          "thesis_id": "2026-07-13-JNJ-conv",
-          "time_stop_by": "2026-10-02",
+          "thesis_id": "2026-07-14-XLE-conv",
+          "time_stop_by": "2026-10-09",
           "confluence": 0.333,
-          "entry_price": 256.98,
+          "entry_price": 55.08,
           "research": {
-            "paper_id": "2026-07-07-JNJ",
+            "paper_id": "2026-07-14-XLE",
             "mode": "engine",
             "engine_score": 67,
-            "research_score": 65,
-            "combined": 66,
+            "research_score": 63,
+            "combined": 65,
             "viability": "fair",
             "confirmed": true,
-            "summary": "JNJ — research desk 65/100, 'fair'. At $263.04 the read is balanced — a measured, confluence-weighted entry only.",
-            "price_at_review": 263.04
+            "summary": "XLE — research desk 63/100, 'fair'. At $55.08 the read is balanced — a measured, confluence-weighted entry only.",
+            "price_at_review": 55.08
           },
           "retained": false,
           "size_stage": "initial",
           "entry_levels": {
-            "ticker": "JNJ",
-            "price": 256.98
+            "ticker": "XLE",
+            "price": 55.08
           },
-          "opened_at": "2026-07-07T12:02:24.371706+00:00",
-          "held_days": 6,
+          "opened_at": "2026-07-15T06:20:45.296018+00:00",
+          "held_days": 0,
           "thesis_full": {
-            "summary": "JNJ clears the multi-sided conviction gate: 4/6 lenses are bullish (confluence +0.33), size_authority = up. No hard vetoes. Sized at 0.7% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 6 scored lenses were evaluated today; 4 sided bullish, 2 bearish, giving a positive +0.33 net confluence. Size authority is 'up' — no veto blocked sizing.",
+            "summary": "XLE clears the multi-sided conviction gate: 2/3 lenses are bullish (confluence +0.33), size_authority = up. No hard vetoes. Sized at 2.2% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 3 scored lenses were evaluated today; 2 sided bullish, 1 bearish, giving a positive +0.33 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
-              "Valuation supportive: value_z=-0.41, trailing P/E cheaper than 66% of history, forward P/E 20.2x.",
-              "Trend: price confirmed (uptrend intact) (bull).",
-              "Options: gamma regime 'long', expected daily move 163.0% — dealer positioning supportive.",
-              "Options Flow: $-14M net prem · 22 new (bull).",
+              "Options: gamma regime 'long', expected daily move 160.0% — dealer positioning supportive.",
+              "Options Flow: $3M net prem · 65 new (bull).",
               "Macro risk score low (0.15)"
             ],
             "bear": [
-              "Rate Inflation lens bearish.",
-              "Narrative: theme 'defensives' rank 38/46, score -0.53, 5d rel -2.2% (bear)",
+              "Fed Path lens bearish.",
               "Cross-asset environment: 'concentrated' — concentration / fragility risk."
             ],
             "vetoes": [],
             "divergences": [],
-            "what_would_prove_wrong": "FALSE if JNJ underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. JNJ receives 0.7% (confluence +0.33 (4/6 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
+            "what_would_prove_wrong": "FALSE if XLE underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLE receives 2.2% (confluence +0.33 (2/3 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-09.",
             "confluence": 0.333,
             "prob_correct": 0.68
-          }
-        },
-        {
-          "ticker": "NET",
-          "theme_id": "theme:ai_software",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.0069,
-          "verdict": "add",
-          "thesis_id": "2026-07-13-NET-conv",
-          "time_stop_by": "2026-10-08",
-          "confluence": 0.5,
-          "entry_price": 268.0,
-          "research": {
-            "paper_id": "2026-07-13-NET",
-            "mode": "engine",
-            "engine_score": 75,
-            "research_score": 72,
-            "combined": 74,
-            "viability": "compelling",
-            "confirmed": true,
-            "summary": "NET — research desk 72/100, 'compelling'. At $268.40 the multi-sided read is favorable and the entry is reasonable.",
-            "price_at_review": 268.4
           },
-          "retained": false,
-          "size_stage": "full",
-          "entry_levels": {
-            "ticker": "NET",
-            "price": 268.4
-          },
-          "opened_at": "2026-07-14T06:21:00.676699+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "NET clears the multi-sided conviction gate: 6/8 lenses are bullish (confluence +0.50), size_authority = up. No hard vetoes. Sized at 0.7% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 8 scored lenses were evaluated today; 6 sided bullish, 2 bearish, giving a positive +0.50 net confluence. Size authority is 'up' — no veto blocked sizing. Key pattern: political/insider/contract flow converging on a name the tape hasn't recognized yet — early alt-data edge (context, not a size driver).",
-            "bull": [
-              "Return asymmetry: upside/downside ratio 1.88 (median MFE 2203.0%).",
-              "Trend: price confirmed (uptrend intact) (bull).",
-              "Sector Rs: Information Technology (XLK) RS rank 2, 90th pctile, above 200d trend (bull).",
-              "Options: gamma regime 'long', expected daily move 460.0% — dealer positioning supportive.",
-              "Altdata Flow: 2-channel convergence: github_momentum, trump · Trump-linked (bull).",
-              "Options Flow: $-5M net prem · 52 new (bull).",
-              "Macro risk score low (0.15)"
-            ],
-            "bear": [
-              "Downside risk: tail drawdown -35.1%",
-              "Narrative: theme 'ai_software' rank 21/46, score -0.26, 5d rel +1.2% (bear)",
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [],
-            "divergences": [
-              "political/insider/contract flow converging on a name the tape hasn't recognized yet — early alt-data edge (context, not a size driver)"
-            ],
-            "what_would_prove_wrong": "FALSE if NET underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. NET receives 0.7% (confluence +0.50 (6/8 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
-            "confluence": 0.5,
-            "prob_correct": 0.7
-          }
-        },
-        {
-          "ticker": "QNT",
-          "theme_id": "theme:quantum_computing",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.0114,
-          "verdict": "add",
-          "thesis_id": "2026-07-13-QNT-conv",
-          "time_stop_by": "2026-10-08",
-          "confluence": 0.5,
-          "entry_price": 65.0,
-          "research": {
-            "paper_id": "2026-07-13-QNT",
-            "mode": "engine",
-            "engine_score": 75,
-            "research_score": 68,
-            "combined": 72,
-            "viability": "fair",
-            "confirmed": true,
-            "summary": "QNT — research desk 68/100, 'fair'. At $70.45 the read is balanced — a measured, confluence-weighted entry only.",
-            "price_at_review": 70.45
-          },
-          "retained": false,
-          "size_stage": "initial",
-          "entry_levels": {
-            "ticker": "QNT",
-            "price": 70.45
-          },
-          "opened_at": "2026-07-14T06:21:00.676699+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "QNT clears the multi-sided conviction gate: 3/4 lenses are bullish (confluence +0.50), size_authority = up. No hard vetoes. Sized at 1.1% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 4 scored lenses were evaluated today; 3 sided bullish, 1 bearish, giving a positive +0.50 net confluence. Size authority is 'up' — no veto blocked sizing.",
-            "bull": [
-              "Sector Rs: Information Technology (XLK) RS rank 2, 90th pctile, above 200d trend (bull).",
-              "Options: gamma regime 'long', expected daily move 676.0% — dealer positioning supportive.",
-              "Options Flow: $-0M net prem · 1 new (bull).",
-              "Macro risk score low (0.15)"
-            ],
-            "bear": [
-              "Narrative: theme 'quantum_computing' rank 11/46, score +0.26, 5d rel -4.8% (bear)",
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [],
-            "divergences": [],
-            "what_would_prove_wrong": "FALSE if QNT underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. QNT receives 1.1% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
-            "confluence": 0.5,
-            "prob_correct": 0.7
-          }
-        },
-        {
-          "ticker": "USMV",
-          "theme_id": "name:USMV",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.0232,
-          "verdict": "hold",
-          "thesis_id": "2026-07-13-USMV-conv",
-          "time_stop_by": "2026-10-06",
-          "confluence": 1.0,
-          "entry_price": 97.76,
-          "research": {
-            "paper_id": "2026-07-10-USMV",
-            "mode": "engine",
-            "engine_score": 100,
-            "research_score": 94,
-            "combined": 97,
-            "viability": "compelling",
-            "confirmed": true,
-            "summary": "USMV — research desk 94/100, 'compelling'. At $97.60 the multi-sided read is favorable and the entry is reasonable.",
-            "price_at_review": 97.6
-          },
-          "retained": true,
-          "size_stage": "initial",
-          "entry_levels": {
-            "ticker": "USMV",
-            "price": 97.76
-          },
-          "opened_at": "2026-07-09T23:07:58.841877+00:00",
-          "held_days": 4,
-          "thesis_full": {
-            "summary": "USMV clears the multi-sided conviction gate: 1/1 lenses are bullish (confluence +1.00), size_authority = insufficient_data. No hard vetoes. Sized at 2.3% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 1 scored lenses were evaluated today; 1 sided bullish, 0 bearish, giving a positive +1.00 net confluence. Size authority is 'insufficient_data' — no veto blocked sizing.",
-            "bull": [
-              "Trend: price confirmed (uptrend intact) (bull).",
-              "Macro risk score low (0.15)"
-            ],
-            "bear": [
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [],
-            "divergences": [],
-            "what_would_prove_wrong": "FALSE if USMV underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. USMV receives 2.3% (confluence +1.00 (1/1 lenses bullish = +1.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-06.",
-            "confluence": 1.0,
-            "prob_correct": 0.7
-          }
-        },
-        {
-          "ticker": "WST",
-          "theme_id": "theme:obesity_glp1",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.0256,
-          "verdict": "add",
-          "thesis_id": "2026-07-13-WST-conv",
-          "time_stop_by": "2026-10-06",
-          "confluence": 0.6,
-          "entry_price": 353.71,
-          "research": {
-            "paper_id": "2026-07-09-WST",
-            "mode": "engine",
-            "engine_score": 80,
-            "research_score": 84,
-            "combined": 82,
-            "viability": "compelling",
-            "confirmed": true,
-            "summary": "WST — research desk 84/100, 'compelling'. At $353.68 the multi-sided read is favorable and the entry is reasonable.",
-            "price_at_review": 353.68
-          },
-          "retained": false,
-          "size_stage": "full",
-          "entry_levels": {
-            "ticker": "WST",
-            "price": 353.71
-          },
-          "opened_at": "2026-07-09T23:07:58.841877+00:00",
-          "held_days": 4,
-          "thesis_full": {
-            "summary": "WST clears the multi-sided conviction gate: 4/5 lenses are bullish (confluence +0.60), size_authority = up. No hard vetoes. Sized at 2.6% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 5 scored lenses were evaluated today; 4 sided bullish, 1 bearish, giving a positive +0.60 net confluence. Size authority is 'up' — no veto blocked sizing.",
-            "bull": [
-              "Quality score strong (quality_z=0.33, accounting=clean).",
-              "Return asymmetry: upside/downside ratio 3.62 (median MFE 1703.0%).",
-              "Options: gamma regime 'long', expected daily move 263.0% — dealer positioning supportive.",
-              "Options Flow: $0M net prem (bull).",
-              "Narrative / theme membership: obesity_glp1 basket in theme universe.",
-              "Macro risk score low (0.15)"
-            ],
-            "bear": [
-              "Valuation stretched: value_z=-0.63, P/E cheaper than only 21% of history.",
-              "Rate Inflation lens bearish.",
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [],
-            "divergences": [],
-            "what_would_prove_wrong": "FALSE if WST underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. WST receives 2.6% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-06.",
-            "confluence": 0.6,
-            "prob_correct": 0.7
-          }
+          "pending": true,
+          "status": "pending_open",
+          "est_price": 56.74,
+          "fill_after": "2026-07-15"
         },
         {
           "ticker": "XLU",
           "theme_id": "name:XLU",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0213,
+          "weight": 0.0285,
           "verdict": "add",
-          "thesis_id": "2026-07-13-XLU-conv",
+          "thesis_id": "2026-07-14-XLU-conv",
           "time_stop_by": "2026-10-05",
-          "confluence": 1.0,
+          "confluence": 0.333,
           "entry_price": 45.41,
           "research": {
             "paper_id": "2026-07-10-XLU",
             "mode": "engine",
-            "engine_score": 100,
+            "engine_score": 67,
             "research_score": 94,
-            "combined": 97,
+            "combined": 80,
             "viability": "compelling",
             "confirmed": true,
             "summary": "XLU — research desk 94/100, 'compelling'. At $45.13 the multi-sided read is favorable and the entry is reasonable.",
@@ -619,43 +357,48 @@
             "price": 45.41
           },
           "opened_at": "2026-07-08T22:58:09.554187+00:00",
-          "held_days": 5,
+          "held_days": 6,
           "thesis_full": {
-            "summary": "XLU clears the multi-sided conviction gate: 2/2 lenses are bullish (confluence +1.00), size_authority = up. No hard vetoes. Sized at 2.1% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 2 scored lenses were evaluated today; 2 sided bullish, 0 bearish, giving a positive +1.00 net confluence. Size authority is 'up' — no veto blocked sizing.",
+            "summary": "XLU clears the multi-sided conviction gate: 2/3 lenses are bullish (confluence +0.33), size_authority = up. No hard vetoes. Sized at 2.9% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 3 scored lenses were evaluated today; 2 sided bullish, 1 bearish, giving a positive +0.33 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
               "Trend: price confirmed (uptrend intact) (bull).",
-              "Options Flow: $-0M net prem · 12 new (bull).",
+              "Options Flow: $0M net prem · 20 new (bull).",
               "Macro risk score low (0.15)"
             ],
             "bear": [
+              "Fed Path lens bearish.",
               "Cross-asset environment: 'concentrated' — concentration / fragility risk."
             ],
             "vetoes": [],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if XLU underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLU receives 2.1% (confluence +1.00 (2/2 lenses bullish = +1.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-05.",
-            "confluence": 1.0,
-            "prob_correct": 0.7
-          }
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLU receives 2.9% (confluence +0.33 (2/3 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-05.",
+            "confluence": 0.333,
+            "prob_correct": 0.68
+          },
+          "pending": true,
+          "status": "pending_open",
+          "est_price": 45.72,
+          "fill_after": "2026-07-15"
         },
         {
           "ticker": "XLV",
           "theme_id": "name:XLV",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0214,
+          "weight": 0.0286,
           "verdict": "hold",
-          "thesis_id": "2026-07-13-XLV-conv",
+          "thesis_id": "2026-07-14-XLV-conv",
           "time_stop_by": "2026-10-02",
-          "confluence": 1.0,
+          "confluence": 0.333,
           "entry_price": 160.84,
           "research": {
             "paper_id": "2026-07-10-XLV",
             "mode": "engine",
-            "engine_score": 100,
+            "engine_score": 67,
             "research_score": 94,
-            "combined": 97,
+            "combined": 80,
             "viability": "compelling",
             "confirmed": true,
             "summary": "XLV — research desk 94/100, 'compelling'. At $162.17 the multi-sided read is favorable and the entry is reasonable.",
@@ -668,44 +411,45 @@
             "price": 160.84
           },
           "opened_at": "2026-07-08T06:42:37.773862+00:00",
-          "held_days": 5,
+          "held_days": 6,
           "thesis_full": {
-            "summary": "XLV clears the multi-sided conviction gate: 2/2 lenses are bullish (confluence +1.00), size_authority = hold. No hard vetoes. Sized at 2.1% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 2 scored lenses were evaluated today; 2 sided bullish, 0 bearish, giving a positive +1.00 net confluence. Size authority is 'hold' — no veto blocked sizing.",
+            "summary": "XLV clears the multi-sided conviction gate: 2/3 lenses are bullish (confluence +0.33), size_authority = hold. No hard vetoes. Sized at 2.9% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 3 scored lenses were evaluated today; 2 sided bullish, 1 bearish, giving a positive +0.33 net confluence. Size authority is 'hold' — no veto blocked sizing.",
             "bull": [
               "Trend: price confirmed (uptrend intact) (bull).",
-              "Options Flow: $2M net prem · 25 new (bull).",
+              "Options Flow: $1M net prem · 15 new (bull).",
               "Macro risk score low (0.15)"
             ],
             "bear": [
+              "Fed Path lens bearish.",
               "Cross-asset environment: 'concentrated' — concentration / fragility risk."
             ],
             "vetoes": [],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if XLV underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLV receives 2.1% (confluence +1.00 (2/2 lenses bullish = +1.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
-            "confluence": 1.0,
-            "prob_correct": 0.7
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLV receives 2.9% (confluence +0.33 (2/3 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
+            "confluence": 0.333,
+            "prob_correct": 0.68
           }
         }
       ],
       "decisions": [
         {
-          "id": "2026-07-13-AAPL-conv",
+          "id": "2026-07-14-AAPL-conv",
           "subject": "AAPL",
           "lean": "add",
           "conviction": "medium",
-          "prob_correct": 0.7,
+          "prob_correct": 0.68,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.60 (bull 4/bear 1); all sides confirm and no hard veto — sized 2%.",
-          "state_asof": "2026-07-13",
+          "thesis": "Multi-sided confluence +0.33 (bull 4/bear 2); all sides confirm and no hard veto — sized 3%.",
+          "state_asof": "2026-07-14",
           "entry_levels": {
             "ticker": "AAPL",
             "price": 315.32
           },
           "evidence": [
             "size_authority=up",
-            "confluence=+0.60"
+            "confluence=+0.33"
           ],
           "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
           "sleeve": "conviction",
@@ -713,7 +457,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-08",
+          "time_stop_by": "2026-10-09",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -727,25 +471,25 @@
             },
             "text": "FALSE if AAPL underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-11",
-          "raw_prob_correct": 0.7
+          "check_by": "2026-08-12",
+          "raw_prob_correct": 0.68
         },
         {
-          "id": "2026-07-13-ANET-conv",
+          "id": "2026-07-14-ANET-conv",
           "subject": "ANET",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.7,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.71 (bull 6/bear 1); all sides confirm and no hard veto — sized 1%.",
-          "state_asof": "2026-07-13",
+          "thesis": "Multi-sided confluence +0.50 (bull 6/bear 2); all sides confirm and no hard veto — sized 3%.",
+          "state_asof": "2026-07-14",
           "entry_levels": {
             "ticker": "ANET",
             "price": 186.96
           },
           "evidence": [
             "size_authority=up",
-            "confluence=+0.71"
+            "confluence=+0.50"
           ],
           "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
           "sleeve": "conviction",
@@ -753,7 +497,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-08",
+          "time_stop_by": "2026-10-09",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -767,61 +511,21 @@
             },
             "text": "FALSE if ANET underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-11",
+          "check_by": "2026-08-12",
           "raw_prob_correct": 0.7
         },
         {
-          "id": "2026-07-13-IBM-conv",
-          "subject": "IBM",
-          "lean": "add",
-          "conviction": "medium",
-          "prob_correct": 0.7,
-          "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.50 (bull 3/bear 1); all sides confirm and no hard veto — sized 1%.",
-          "state_asof": "2026-07-13",
-          "entry_levels": {
-            "ticker": "IBM",
-            "price": 287.56
-          },
-          "evidence": [
-            "size_authority=up",
-            "confluence=+0.50"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-08",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "rel_return",
-              "subject_ticker": "IBM",
-              "vs": "SPY",
-              "op": "<",
-              "threshold": -0.05,
-              "horizon_d": 21
-            },
-            "text": "FALSE if IBM underperforms SPY by >=5% over 21 business days"
-          },
-          "check_by": "2026-08-11",
-          "raw_prob_correct": 0.7
-        },
-        {
-          "id": "2026-07-13-JNJ-conv",
-          "subject": "JNJ",
+          "id": "2026-07-14-XLE-conv",
+          "subject": "XLE",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.68,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.33 (bull 4/bear 2); all sides confirm and no hard veto — sized 1%.",
-          "state_asof": "2026-07-13",
+          "thesis": "Multi-sided confluence +0.33 (bull 2/bear 1); all sides confirm and no hard veto — sized 2%.",
+          "state_asof": "2026-07-14",
           "entry_levels": {
-            "ticker": "JNJ",
-            "price": 256.98
+            "ticker": "XLE",
+            "price": 55.08
           },
           "evidence": [
             "size_authority=up",
@@ -833,199 +537,39 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-08",
+          "time_stop_by": "2026-10-09",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
             "check": {
               "kind": "rel_return",
-              "subject_ticker": "JNJ",
+              "subject_ticker": "XLE",
               "vs": "SPY",
               "op": "<",
               "threshold": -0.05,
               "horizon_d": 21
             },
-            "text": "FALSE if JNJ underperforms SPY by >=5% over 21 business days"
+            "text": "FALSE if XLE underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-11",
+          "check_by": "2026-08-12",
           "raw_prob_correct": 0.68
         },
         {
-          "id": "2026-07-13-NET-conv",
-          "subject": "NET",
-          "lean": "add",
-          "conviction": "medium",
-          "prob_correct": 0.7,
-          "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.50 (bull 6/bear 2); all sides confirm and no hard veto — sized 1%.",
-          "state_asof": "2026-07-13",
-          "entry_levels": {
-            "ticker": "NET",
-            "price": 268.4
-          },
-          "evidence": [
-            "size_authority=up",
-            "confluence=+0.50",
-            "divergence:political_flow_early"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-08",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "rel_return",
-              "subject_ticker": "NET",
-              "vs": "SPY",
-              "op": "<",
-              "threshold": -0.05,
-              "horizon_d": 21
-            },
-            "text": "FALSE if NET underperforms SPY by >=5% over 21 business days"
-          },
-          "check_by": "2026-08-11",
-          "raw_prob_correct": 0.7
-        },
-        {
-          "id": "2026-07-13-QNT-conv",
-          "subject": "QNT",
-          "lean": "add",
-          "conviction": "medium",
-          "prob_correct": 0.7,
-          "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.50 (bull 3/bear 1); all sides confirm and no hard veto — sized 1%.",
-          "state_asof": "2026-07-13",
-          "entry_levels": {
-            "ticker": "QNT",
-            "price": 70.45
-          },
-          "evidence": [
-            "size_authority=up",
-            "confluence=+0.50"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-08",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "rel_return",
-              "subject_ticker": "QNT",
-              "vs": "SPY",
-              "op": "<",
-              "threshold": -0.05,
-              "horizon_d": 21
-            },
-            "text": "FALSE if QNT underperforms SPY by >=5% over 21 business days"
-          },
-          "check_by": "2026-08-11",
-          "raw_prob_correct": 0.7
-        },
-        {
-          "id": "2026-07-13-USMV-conv",
-          "subject": "USMV",
-          "lean": "hold",
-          "conviction": "medium",
-          "prob_correct": 0.7,
-          "horizon_d": 21,
-          "thesis": "Hysteresis HOLD — confluence +1.00 is above the exit floor (+0.25) but the entry gate was NOT re-cleared (bull 1/bear 0); carried, not freshly confirmed. Monitor for exit.",
-          "state_asof": "2026-07-13",
-          "entry_levels": {
-            "ticker": "USMV",
-            "price": 97.76
-          },
-          "evidence": [
-            "retained=hysteresis_hold",
-            "confluence=+1.00"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-08",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "none",
-              "subject_ticker": "USMV",
-              "vs": "SPY",
-              "horizon_d": 21,
-              "note": "non-directional lean (watch/hold) — not falsifiable as a position"
-            },
-            "text": "USMV: 'hold' is non-directional — tracked as a watch, not falsifiable as a trade"
-          },
-          "check_by": "2026-08-11",
-          "raw_prob_correct": 0.7
-        },
-        {
-          "id": "2026-07-13-WST-conv",
-          "subject": "WST",
-          "lean": "add",
-          "conviction": "medium",
-          "prob_correct": 0.7,
-          "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.60 (bull 4/bear 1); all sides confirm and no hard veto — sized 3%.",
-          "state_asof": "2026-07-13",
-          "entry_levels": {
-            "ticker": "WST",
-            "price": 353.71
-          },
-          "evidence": [
-            "size_authority=up",
-            "confluence=+0.60"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-08",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "rel_return",
-              "subject_ticker": "WST",
-              "vs": "SPY",
-              "op": "<",
-              "threshold": -0.05,
-              "horizon_d": 21
-            },
-            "text": "FALSE if WST underperforms SPY by >=5% over 21 business days"
-          },
-          "check_by": "2026-08-11",
-          "raw_prob_correct": 0.7
-        },
-        {
-          "id": "2026-07-13-XLU-conv",
+          "id": "2026-07-14-XLU-conv",
           "subject": "XLU",
           "lean": "add",
           "conviction": "medium",
-          "prob_correct": 0.7,
+          "prob_correct": 0.68,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +1.00 (bull 2/bear 0); all sides confirm and no hard veto — sized 5%.",
-          "state_asof": "2026-07-13",
+          "thesis": "Multi-sided confluence +0.33 (bull 2/bear 1); all sides confirm and no hard veto — sized 5%.",
+          "state_asof": "2026-07-14",
           "entry_levels": {
             "ticker": "XLU",
             "price": 45.41
           },
           "evidence": [
             "size_authority=up",
-            "confluence=+1.00"
+            "confluence=+0.33"
           ],
           "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
           "sleeve": "conviction",
@@ -1033,7 +577,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-08",
+          "time_stop_by": "2026-10-09",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -1047,25 +591,25 @@
             },
             "text": "FALSE if XLU underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-11",
-          "raw_prob_correct": 0.7
+          "check_by": "2026-08-12",
+          "raw_prob_correct": 0.68
         },
         {
-          "id": "2026-07-13-XLV-conv",
+          "id": "2026-07-14-XLV-conv",
           "subject": "XLV",
           "lean": "hold",
           "conviction": "medium",
-          "prob_correct": 0.7,
+          "prob_correct": 0.68,
           "horizon_d": 21,
-          "thesis": "Hysteresis HOLD — confluence +1.00 is above the exit floor (+0.25) but the entry gate was NOT re-cleared (bull 2/bear 0); carried, not freshly confirmed. Monitor for exit.",
-          "state_asof": "2026-07-13",
+          "thesis": "Hysteresis HOLD — confluence +0.33 is above the exit floor (+0.25) but the entry gate was NOT re-cleared (bull 2/bear 1); carried, not freshly confirmed. Monitor for exit.",
+          "state_asof": "2026-07-14",
           "entry_levels": {
             "ticker": "XLV",
             "price": 160.84
           },
           "evidence": [
             "retained=hysteresis_hold",
-            "confluence=+1.00"
+            "confluence=+0.33"
           ],
           "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
           "sleeve": "conviction",
@@ -1073,7 +617,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-08",
+          "time_stop_by": "2026-10-09",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -1086,23 +630,168 @@
             },
             "text": "XLV: 'hold' is non-directional — tracked as a watch, not falsifiable as a trade"
           },
-          "check_by": "2026-08-11",
-          "raw_prob_correct": 0.7
+          "check_by": "2026-08-12",
+          "raw_prob_correct": 0.68
         }
       ],
-      "pending_orders": [],
+      "pending_orders": [
+        {
+          "id": "2026-07-14-JNJ-sell",
+          "ticker": "JNJ",
+          "side": "sell",
+          "shares": 24.886822,
+          "est_price": 257.77,
+          "est_value": 6415.08,
+          "weight": 0.0,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-SMH-sell",
+          "ticker": "SMH",
+          "side": "sell",
+          "shares": 18.426141,
+          "est_price": 585.62,
+          "est_value": 10790.72,
+          "weight": 0.0597,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-WST-sell",
+          "ticker": "WST",
+          "side": "sell",
+          "shares": 70.132204,
+          "est_price": 359.7,
+          "est_value": 25226.55,
+          "weight": 0.0,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-USMV-sell",
+          "ticker": "USMV",
+          "side": "sell",
+          "shares": 237.0,
+          "est_price": 97.82,
+          "est_value": 23183.34,
+          "weight": 0.0,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-MTUM-sell",
+          "ticker": "MTUM",
+          "side": "sell",
+          "shares": 36.261815,
+          "est_price": 319.76,
+          "est_value": 11595.08,
+          "weight": 0.0558,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-IBM-sell",
+          "ticker": "IBM",
+          "side": "sell",
+          "shares": 17.0,
+          "est_price": 290.23,
+          "est_value": 4933.91,
+          "weight": 0.0,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-NET-sell",
+          "ticker": "NET",
+          "side": "sell",
+          "shares": 24.0,
+          "est_price": 281.75,
+          "est_value": 6762.0,
+          "weight": 0.0,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-QNT-sell",
+          "ticker": "QNT",
+          "side": "sell",
+          "shares": 172.0,
+          "est_price": 66.63,
+          "est_value": 11460.36,
+          "weight": 0.0,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-XLK-buy",
+          "ticker": "XLK",
+          "side": "buy",
+          "shares": 63.0,
+          "est_price": 181.28,
+          "est_value": 11420.64,
+          "weight": 0.0597,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-AAPL-buy",
+          "ticker": "AAPL",
+          "side": "buy",
+          "shares": 41.0,
+          "est_price": 317.31,
+          "est_value": 13009.71,
+          "weight": 0.034,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-XLE-buy",
+          "ticker": "XLE",
+          "side": "buy",
+          "shares": 368.0,
+          "est_price": 56.74,
+          "est_value": 20880.32,
+          "weight": 0.0216,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        },
+        {
+          "id": "2026-07-14-XLU-buy",
+          "ticker": "XLU",
+          "side": "buy",
+          "shares": 278.0,
+          "est_price": 45.72,
+          "est_value": 12710.16,
+          "weight": 0.0285,
+          "placed_asof": "2026-07-14",
+          "fill_after": "2026-07-15",
+          "status": "pending"
+        }
+      ],
       "research_held": [
         {
           "ticker": "SCHW",
           "reason": "research desk does not recommend at this price",
-          "paper_id": "2026-07-13-SCHW",
+          "paper_id": "2026-07-14-SCHW",
           "mode": "engine",
-          "engine_score": 71,
-          "research_score": 59,
-          "combined": 65,
+          "engine_score": 67,
+          "research_score": 55,
+          "combined": 61,
           "viability": "rich",
           "confirmed": false,
-          "summary": "SCHW — research desk 59/100, 'rich'. At $103.12 the name looks richly valued / extended — wait for a better entry.",
+          "summary": "SCHW — research desk 55/100, 'rich'. At $103.12 the name looks richly valued / extended — wait for a better entry.",
           "price_at_review": 103.12
         }
       ],
@@ -1116,42 +805,42 @@
       },
       "rejected": [
         {
-          "ticker": "ALM",
+          "ticker": "CRML",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
+          ],
+          "bear": [
+            "Asymmetry lens bearish",
+            "Risk Drawdown lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -74% off 52w high, RSI 33, down -25% in recent sessions (falling knife)",
+            "Sector Rs: Materials (XLB) RS rank 17, 30th pctile, below 200d trend"
+          ],
+          "confluence": -1.0
+        },
+        {
+          "ticker": "RSP",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
+          ],
+          "bear": [
+            "Fed Path lens bearish",
+            "Cross Asset lens bearish"
+          ],
+          "confluence": -1.0
+        },
+        {
+          "ticker": "SMH",
           "reason": "Vetoed: cycle_blocked",
           "vetoes": [
             "cycle_blocked"
           ],
           "bear": [
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 50dma, MACD negative, -29% off 52w high",
-            "Sector Rs: Materials (XLB) RS rank 16, 30th pctile, below 200d trend",
-            "Options lens bearish"
-          ],
-          "confluence": -1.0
-        },
-        {
-          "ticker": "NB",
-          "reason": "Vetoed: cycle_blocked",
-          "vetoes": [
-            "cycle_blocked"
-          ],
-          "bear": [
-            "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -60% off 52w high",
-            "Sector Rs: Materials (XLB) RS rank 16, 30th pctile, below 200d trend",
-            "Narrative: theme 'critical_minerals' rank 9/46, score +0.50, 5d rel -8.0%"
-          ],
-          "confluence": -1.0
-        },
-        {
-          "ticker": "POOL",
-          "reason": "Lagging sector/commodity — leadership gate (fighting the tape)",
-          "vetoes": [],
-          "bear": [
-            "Sector Rs: Consumer Discretionary (XLY) RS rank 13, 3th pctile, below 200d trend",
+            "Extension: grade=None, +41.1% vs 200dma",
             "Options lens bearish",
-            "Rate Inflation lens bearish",
-            "Narrative: theme 'industrial_distribution' rank 36/46, score -0.50, 5d rel -2.9%"
+            "Options Flow: $35M net prem · 269 new · net new PUT positioning (defensive / hedging)"
           ],
           "confluence": -1.0
         },
@@ -1164,10 +853,24 @@
           "bear": [
             "Risk Drawdown lens bearish",
             "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -37% off 52w high",
-            "Narrative: theme 'uranium_miners' rank 44/46, score -0.81, 5d rel -3.7%",
-            "Cross Asset lens bearish"
+            "Narrative: theme 'uranium_miners' rank 45/46, score -0.86, 5d rel -7.8%",
+            "Fed Path lens bearish"
           ],
           "confluence": -1.0
+        },
+        {
+          "ticker": "LAC",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
+          ],
+          "bear": [
+            "Risk Drawdown lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -67% off 52w high, RSI 26, down -18% in recent sessions (falling knife)",
+            "Sector Rs: Materials (XLB) RS rank 17, 30th pctile, below 200d trend",
+            "Options lens bearish"
+          ],
+          "confluence": -0.714
         },
         {
           "ticker": "MP",
@@ -1179,65 +882,51 @@
             "Valuation stretched (value_z=-0.99)",
             "Risk Drawdown lens bearish",
             "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -47% off 52w high",
-            "Sector Rs: Materials (XLB) RS rank 16, 30th pctile, below 200d trend"
+            "Sector Rs: Materials (XLB) RS rank 17, 30th pctile, below 200d trend"
           ],
           "confluence": -0.714
         },
         {
-          "ticker": "ALB",
+          "ticker": "USAR",
           "reason": "Vetoed: cycle_blocked",
           "vetoes": [
             "cycle_blocked"
           ],
           "bear": [
-            "Valuation stretched (value_z=-0.78)",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -42% off 52w high, RSI 28",
-            "Sector Rs: Materials (XLB) RS rank 16, 30th pctile, below 200d trend",
+            "Asymmetry lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -52% off 52w high, RSI 39, down -16% in recent sessions (falling knife)",
+            "Sector Rs: Materials (XLB) RS rank 17, 30th pctile, below 200d trend",
             "Options lens bearish"
           ],
-          "confluence": -0.667
+          "confluence": -0.714
         },
         {
-          "ticker": "IRDM",
+          "ticker": "UUUU",
           "reason": "Vetoed: cycle_blocked",
           "vetoes": [
             "cycle_blocked"
           ],
           "bear": [
-            "Valuation stretched (value_z=-0.50)",
+            "Asymmetry lens bearish",
             "Risk Drawdown lens bearish",
-            "Extension: grade=None, +78.8% vs 200dma",
-            "Sector Rs: Communication Services (XLC) RS rank 18, 6th pctile, below 200d trend"
-          ],
-          "confluence": -0.667
-        },
-        {
-          "ticker": "LAC",
-          "reason": "Vetoed: cycle_blocked",
-          "vetoes": [
-            "cycle_blocked"
-          ],
-          "bear": [
-            "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -67% off 52w high, RSI 26",
-            "Sector Rs: Materials (XLB) RS rank 16, 30th pctile, below 200d trend",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -51% off 52w high, RSI 38",
             "Options lens bearish"
           ],
-          "confluence": -0.667
+          "confluence": -0.714
         },
         {
-          "ticker": "CAG",
-          "reason": "Vetoed: altman_distress",
+          "ticker": "ALM",
+          "reason": "Vetoed: cycle_blocked",
           "vetoes": [
-            "altman_distress"
+            "cycle_blocked"
           ],
           "bear": [
-            "Solvency: Altman zone=distress",
-            "Sector Rs: Consumer Staples (XLP) RS rank 11, 7th pctile, below 200d trend",
-            "Rate Inflation lens bearish",
-            "Narrative: theme 'us_sector_staples' rank 35/46, score -0.49, 5d rel -1.4%"
+            "Risk Drawdown lens bearish",
+            "Trend: downtrend — below 50dma, MACD negative, -29% off 52w high",
+            "Sector Rs: Materials (XLB) RS rank 17, 30th pctile, below 200d trend",
+            "Narrative: theme 'critical_minerals' rank 10/46, score +0.37, 5d rel -10.4%"
           ],
-          "confluence": -0.6
+          "confluence": -0.667
         },
         {
           "ticker": "FBIN",
@@ -1249,73 +938,9 @@
             "Growth lens bearish",
             "Asymmetry lens bearish",
             "Risk Drawdown lens bearish",
-            "Rate Inflation lens bearish"
+            "Options lens bearish"
           ],
-          "confluence": -0.6
-        },
-        {
-          "ticker": "GEV",
-          "reason": "Vetoed: cycle_blocked",
-          "vetoes": [
-            "cycle_blocked"
-          ],
-          "bear": [
-            "Valuation stretched (value_z=-0.67)",
-            "Quality / accounting flag: warn",
-            "Extension: grade=None, +35.5% vs 200dma",
-            "Options Flow: $-4M net prem · 74 new · net new PUT positioning (defensive / hedging)"
-          ],
-          "confluence": -0.6
-        },
-        {
-          "ticker": "PINS",
-          "reason": "Downtrend — price rolling over (no falling knives)",
-          "vetoes": [],
-          "bear": [
-            "Asymmetry lens bearish",
-            "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), -42% off 52w high",
-            "Sector Rs: Communication Services (XLC) RS rank 18, 6th pctile, below 200d trend"
-          ],
-          "confluence": -0.6
-        },
-        {
-          "ticker": "UROY",
-          "reason": "Downtrend — price rolling over (no falling knives)",
-          "vetoes": [],
-          "bear": [
-            "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, -50% off 52w high, RSI 39",
-            "Options lens bearish",
-            "Narrative: theme 'uranium_miners' rank 44/46, score -0.81, 5d rel -3.7%"
-          ],
-          "confluence": -0.6
-        },
-        {
-          "ticker": "EU",
-          "reason": "Downtrend — price rolling over (no falling knives)",
-          "vetoes": [],
-          "bear": [
-            "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, -68% off 52w high",
-            "Narrative: theme 'uranium_miners' rank 44/46, score -0.81, 5d rel -3.7%",
-            "Cross Asset lens bearish"
-          ],
-          "confluence": -0.5
-        },
-        {
-          "ticker": "SMH",
-          "reason": "Vetoed: cycle_blocked",
-          "vetoes": [
-            "cycle_blocked"
-          ],
-          "bear": [
-            "Risk Drawdown lens bearish",
-            "Extension: grade=None, +41.1% vs 200dma",
-            "Options lens bearish",
-            "Cross Asset lens bearish"
-          ],
-          "confluence": -0.5
+          "confluence": -0.667
         },
         {
           "ticker": "TEM",
@@ -1324,34 +949,100 @@
           "bear": [
             "Risk Drawdown lens bearish",
             "Trend: downtrend — below 200dma (trend broken), -44% off 52w high",
-            "Narrative: theme 'ai_agents' rank 33/46, score -0.47, 5d rel +0.1%",
-            "Cross Asset lens bearish"
+            "Sector Rs: Health Care (XLV) RS rank 6, 32th pctile, below 200d trend",
+            "Narrative: theme 'ai_agents' rank 29/46, score -0.36, 5d rel -3.0%"
           ],
-          "confluence": -0.5
+          "confluence": -0.667
+        },
+        {
+          "ticker": "CAG",
+          "reason": "Vetoed: altman_distress",
+          "vetoes": [
+            "altman_distress"
+          ],
+          "bear": [
+            "Solvency: Altman zone=distress",
+            "Sector Rs: Consumer Staples (XLP) RS rank 11, 6th pctile, below 200d trend",
+            "Rate Inflation lens bearish",
+            "Narrative: theme 'us_sector_staples' rank 34/46, score -0.49, 5d rel +1.4%"
+          ],
+          "confluence": -0.6
+        },
+        {
+          "ticker": "CMG",
+          "reason": "Lagging sector/commodity — leadership gate (fighting the tape)",
+          "vetoes": [],
+          "bear": [
+            "Valuation stretched (value_z=-0.40)",
+            "Asymmetry lens bearish",
+            "Risk Drawdown lens bearish",
+            "Sector Rs: Consumer Discretionary (XLY) RS rank 16, 0th pctile, below 200d trend"
+          ],
+          "confluence": -0.6
+        },
+        {
+          "ticker": "FOUR",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
+          ],
+          "bear": [
+            "Asymmetry lens bearish",
+            "Risk Drawdown lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), -52% off 52w high",
+            "Sector Rs: Financials (XLF) RS rank 5, 29th pctile, below 200d trend"
+          ],
+          "confluence": -0.6
+        },
+        {
+          "ticker": "GPCR",
+          "reason": "Lagging sector/commodity — leadership gate (fighting the tape)",
+          "vetoes": [],
+          "bear": [
+            "Risk Drawdown lens bearish",
+            "Sector Rs: Health Care (XLV) RS rank 6, 32th pctile, below 200d trend",
+            "Narrative: theme 'obesity_glp1' rank 13/46, score +0.11, 5d rel -1.7%",
+            "Fed Path lens bearish"
+          ],
+          "confluence": -0.6
+        },
+        {
+          "ticker": "XYL",
+          "reason": "Downtrend — price rolling over (no falling knives)",
+          "vetoes": [],
+          "bear": [
+            "Valuation stretched (value_z=-0.39)",
+            "Quality / accounting flag: warn",
+            "Trend: downtrend — below 200dma (trend broken), -20% off 52w high",
+            "Narrative: theme 'us_sector_industrials' rank 23/46, score -0.24, 5d rel -1.6%"
+          ],
+          "confluence": -0.6
         },
         {
           "ticker": "AXON",
-          "reason": "Weak asymmetry — upside/downside cone 0.99 (not asymmetric)",
+          "reason": "Falling knife — sharp recent multi-day decline (await stabilization)",
           "vetoes": [],
           "bear": [
             "Valuation stretched (value_z=-0.84)",
             "Risk Drawdown lens bearish",
-            "Narrative: theme 'us_sector_industrials' rank 22/46, score -0.30, 5d rel -1.7%",
-            "Cross Asset lens bearish"
+            "Narrative: theme 'us_sector_industrials' rank 23/46, score -0.24, 5d rel -1.6%",
+            "Fed Path lens bearish"
           ],
-          "confluence": -0.333
+          "confluence": -0.5
         },
         {
-          "ticker": "CTVA",
-          "reason": "Lagging sector/commodity — leadership gate (fighting the tape)",
-          "vetoes": [],
-          "bear": [
-            "Valuation stretched (value_z=-0.46)",
-            "Sector Rs: Materials (XLB) RS rank 16, 30th pctile, below 200d trend",
-            "Rate Inflation lens bearish",
-            "Narrative: theme 'us_sector_materials' rank 32/46, score -0.45, 5d rel -2.2%"
+          "ticker": "BRO",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
           ],
-          "confluence": -0.333
+          "bear": [
+            "Valuation stretched (value_z=-0.33)",
+            "Asymmetry lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), -37% off 52w high",
+            "Sector Rs: Financials (XLF) RS rank 5, 29th pctile, below 200d trend"
+          ],
+          "confluence": -0.5
         },
         {
           "ticker": "GPC",
@@ -1361,26 +1052,26 @@
           ],
           "bear": [
             "Valuation stretched (value_z=0.12)",
-            "Sector Rs: Consumer Discretionary (XLY) RS rank 13, 3th pctile, below 200d trend",
-            "Narrative: theme 'us_sector_discretionary' rank 37/46, score -0.51, 5d rel -1.7%",
-            "Cross Asset lens bearish"
+            "Sector Rs: Consumer Discretionary (XLY) RS rank 16, 0th pctile, below 200d trend",
+            "Narrative: theme 'us_sector_discretionary' rank 37/46, score -0.55, 5d rel -0.6%",
+            "Fed Path lens bearish"
           ],
-          "confluence": -0.333
+          "confluence": -0.5
         },
         {
-          "ticker": "KVYO",
+          "ticker": "KNSL",
           "reason": "Downtrend — price rolling over (no falling knives)",
           "vetoes": [],
           "bear": [
             "Asymmetry lens bearish",
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), -53% off 52w high",
-            "Narrative: theme 'non_ai_software' rank 28/46, score -0.39, 5d rel +3.8%"
+            "Trend: downtrend — below 200dma (trend broken), -30% off 52w high",
+            "Sector Rs: Financials (XLF) RS rank 5, 29th pctile, below 200d trend"
           ],
-          "confluence": -0.333
+          "confluence": -0.5
         }
       ],
-      "rejected_count": 132,
+      "rejected_count": 143,
       "disclaimer": "Paper-only / display-only. Accountability, not alpha. Not investment advice.",
       "zh": {
         "disclaimer": "仅纸面/仅展示；从不自动执行。"
@@ -1388,13 +1079,13 @@
       "performance": {
         "inception_date": "2026-06-19",
         "starting_nav": 1000000.0,
-        "current_nav": 965996.82,
-        "cash": 606079.01,
-        "invested": 359917.81,
-        "total_return_pct": -3.4003,
-        "vs_spy_pct": -4.7681,
+        "current_nav": 966948.45,
+        "cash": 606175.21,
+        "invested": 360773.24,
+        "total_return_pct": -3.3052,
+        "vs_spy_pct": -4.4132,
         "benchmark": "SPY",
-        "day_change_pct": -0.1182,
+        "day_change_pct": -0.0198,
         "max_drawdown_pct": -4.3535,
         "realized_since": "2026-06-19",
         "series": [
@@ -1955,18 +1646,18 @@
       "kind": "heavyweight",
       "manager": "brain",
       "benchmark": "SPY",
-      "as_of": "2026-07-13",
+      "as_of": "2026-07-14",
       "market_status": {
         "open": false,
-        "asof_et": "2026-07-13T19:25:21.672966-04:00",
+        "asof_et": "2026-07-14T19:25:12.083929-04:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-14T09:30:00-04:00",
-        "next_open_day": "2026-07-14",
-        "prev_trading_day": "2026-07-10"
+        "next_open": "2026-07-15T09:30:00-04:00",
+        "next_open_day": "2026-07-15",
+        "prev_trading_day": "2026-07-13"
       },
-      "gross": 0.0692,
-      "cash": 0.9308,
+      "gross": 0.0689,
+      "cash": 0.9311,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -1977,33 +1668,33 @@
         {
           "ticker": "XLF",
           "sleeve": "heavy",
-          "weight": 0.0502,
+          "weight": 0.0504,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-09T23:28:06.860552+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 55.6418,
-          "current_price": 56.07,
-          "market_value": 50070.51,
-          "unrealized_pnl": 382.34,
-          "unrealized_pct": 0.77,
+          "current_price": 56.18,
+          "market_value": 50168.74,
+          "unrealized_pnl": 480.57,
+          "unrealized_pct": 0.97,
           "thesis_full": null
         },
         {
           "ticker": "LLY",
           "sleeve": "heavy",
-          "weight": 0.019,
+          "weight": 0.0185,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-09T23:28:06.860552+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 1216.95,
-          "current_price": 1181.87,
-          "market_value": 18909.92,
-          "unrealized_pnl": -561.28,
-          "unrealized_pct": -2.88,
+          "current_price": 1152.54,
+          "market_value": 18440.64,
+          "unrealized_pnl": -1030.56,
+          "unrealized_pct": -5.29,
           "thesis_full": null
         }
       ],
@@ -2020,13 +1711,13 @@
       "performance": {
         "inception_date": "2026-07-03",
         "starting_nav": 1000000.0,
-        "current_nav": 996438.04,
-        "cash": 927457.61,
-        "invested": 68980.43,
-        "total_return_pct": -0.3562,
-        "vs_spy_pct": -0.9456,
+        "current_nav": 996214.21,
+        "cash": 927604.83,
+        "invested": 68609.38,
+        "total_return_pct": -0.3786,
+        "vs_spy_pct": -1.3252,
         "benchmark": "SPY",
-        "day_change_pct": 0.0363,
+        "day_change_pct": -0.0225,
         "max_drawdown_pct": -100.0,
         "realized_since": "2026-07-03",
         "series": [
@@ -2587,18 +2278,18 @@
       "kind": "autonomous",
       "manager": "brain",
       "benchmark": "SPY",
-      "as_of": "2026-07-13",
+      "as_of": "2026-07-14",
       "market_status": {
         "open": false,
-        "asof_et": "2026-07-13T19:10:05.853844-04:00",
+        "asof_et": "2026-07-14T19:10:05.472542-04:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-14T09:30:00-04:00",
-        "next_open_day": "2026-07-14",
-        "prev_trading_day": "2026-07-10"
+        "next_open": "2026-07-15T09:30:00-04:00",
+        "next_open_day": "2026-07-15",
+        "prev_trading_day": "2026-07-13"
       },
-      "gross": 0.3334,
-      "cash": 0.6666,
+      "gross": 0.3336,
+      "cash": 0.6664,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -2609,113 +2300,113 @@
         {
           "ticker": "HWM",
           "sleeve": "brain",
-          "weight": 0.0644,
+          "weight": 0.0657,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 22,
+          "held_days": 23,
           "cost_basis": 276.1437,
-          "current_price": 271.28,
-          "market_value": 62684.08,
-          "unrealized_pnl": -1123.84,
-          "unrealized_pct": -1.76,
+          "current_price": 276.78,
+          "market_value": 63954.95,
+          "unrealized_pnl": 147.03,
+          "unrealized_pct": 0.23,
           "thesis_full": null
         },
         {
           "ticker": "MCY",
           "sleeve": "brain",
-          "weight": 0.0642,
+          "weight": 0.0627,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 22,
+          "held_days": 23,
           "cost_basis": 105.1111,
-          "current_price": 110.36,
-          "market_value": 62515.4,
-          "unrealized_pnl": 2973.36,
-          "unrealized_pct": 4.99,
+          "current_price": 107.78,
+          "market_value": 61053.92,
+          "unrealized_pnl": 1511.87,
+          "unrealized_pct": 2.54,
           "thesis_full": null
         },
         {
           "ticker": "URI",
           "sleeve": "brain",
-          "weight": 0.0565,
+          "weight": 0.0555,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 22,
+          "held_days": 23,
           "cost_basis": 1089.166,
-          "current_price": 1085.34,
-          "market_value": 55046.93,
-          "unrealized_pnl": -194.05,
-          "unrealized_pct": -0.35,
+          "current_price": 1065.83,
+          "market_value": 54057.41,
+          "unrealized_pnl": -1183.57,
+          "unrealized_pct": -2.14,
           "thesis_full": null
         },
         {
           "ticker": "APH",
           "sleeve": "brain",
-          "weight": 0.0499,
+          "weight": 0.0507,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 22,
+          "held_days": 23,
           "cost_basis": 165.768,
-          "current_price": 155.99,
-          "market_value": 48610.69,
-          "unrealized_pnl": -3047.07,
-          "unrealized_pct": -5.9,
+          "current_price": 158.37,
+          "market_value": 49352.36,
+          "unrealized_pnl": -2305.41,
+          "unrealized_pct": -4.46,
           "thesis_full": null
         },
         {
           "ticker": "ANET",
           "sleeve": "brain",
-          "weight": 0.043,
+          "weight": 0.0433,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 22,
+          "held_days": 23,
           "cost_basis": 169.424,
-          "current_price": 181.15,
-          "market_value": 41865.29,
-          "unrealized_pnl": 2709.99,
-          "unrealized_pct": 6.92,
+          "current_price": 182.57,
+          "market_value": 42193.47,
+          "unrealized_pnl": 3038.16,
+          "unrealized_pct": 7.76,
           "thesis_full": null
         },
         {
           "ticker": "XLE",
           "sleeve": "brain",
-          "weight": 0.0405,
+          "weight": 0.0406,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-08T15:00:07.424551+00:00",
-          "held_days": 5,
+          "held_days": 6,
           "cost_basis": 55.455,
-          "current_price": 56.74,
-          "market_value": 39434.3,
-          "unrealized_pnl": 893.08,
-          "unrealized_pct": 2.32,
+          "current_price": 56.95,
+          "market_value": 39580.25,
+          "unrealized_pnl": 1039.03,
+          "unrealized_pct": 2.7,
           "thesis_full": null
         },
         {
           "ticker": "EME",
           "sleeve": "brain",
-          "weight": 0.0149,
+          "weight": 0.0151,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 22,
+          "held_days": 23,
           "cost_basis": 839.0062,
-          "current_price": 764.9,
-          "market_value": 14507.84,
-          "unrealized_pnl": -1405.57,
-          "unrealized_pct": -8.83,
+          "current_price": 774.74,
+          "market_value": 14694.47,
+          "unrealized_pnl": -1218.94,
+          "unrealized_pct": -7.66,
           "thesis_full": null
         }
       ],
@@ -2732,13 +2423,13 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 973499.95,
-        "cash": 648835.41,
-        "invested": 324664.54,
-        "total_return_pct": -2.65,
-        "vs_spy_pct": -2.9754,
+        "current_nav": 973825.24,
+        "cash": 648938.4,
+        "invested": 324886.84,
+        "total_return_pct": -2.6175,
+        "vs_spy_pct": -3.2991,
         "benchmark": "SPY",
-        "day_change_pct": -0.2046,
+        "day_change_pct": 0.0334,
         "max_drawdown_pct": -3.9925,
         "realized_since": "2026-06-21",
         "series": [
@@ -3299,18 +2990,18 @@
       "kind": "etf_brain",
       "manager": "brain",
       "benchmark": "SPY",
-      "as_of": "2026-07-13",
+      "as_of": "2026-07-14",
       "market_status": {
         "open": false,
-        "asof_et": "2026-07-13T19:15:11.774847-04:00",
+        "asof_et": "2026-07-14T19:15:10.612174-04:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-14T09:30:00-04:00",
-        "next_open_day": "2026-07-14",
-        "prev_trading_day": "2026-07-10"
+        "next_open": "2026-07-15T09:30:00-04:00",
+        "next_open_day": "2026-07-15",
+        "prev_trading_day": "2026-07-13"
       },
-      "gross": 0.3652,
-      "cash": 0.6348,
+      "gross": 0.3659,
+      "cash": 0.6341,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -3322,12 +3013,12 @@
           "ticker": "SGOV",
           "sleeve": "brain",
           "group": "cash",
-          "weight": 0.1001,
+          "weight": 0.1,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 20,
+          "held_days": 21,
           "cost_basis": 100.6186,
           "current_price": 100.52,
           "market_value": 97471.45,
@@ -3339,34 +3030,34 @@
           "ticker": "SPY",
           "sleeve": "brain",
           "group": "core_index",
-          "weight": 0.0628,
+          "weight": 0.063,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 20,
+          "held_days": 21,
           "cost_basis": 743.1258,
-          "current_price": 749.17,
-          "market_value": 61201.71,
-          "unrealized_pnl": 493.77,
-          "unrealized_pct": 0.81,
+          "current_price": 751.83,
+          "market_value": 61419.02,
+          "unrealized_pnl": 711.07,
+          "unrealized_pct": 1.17,
           "thesis_full": null
         },
         {
           "ticker": "RSP",
           "sleeve": "brain",
           "group": "core_index",
-          "weight": 0.0627,
+          "weight": 0.0624,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-02T15:00:04.450824+00:00",
-          "held_days": 11,
+          "held_days": 12,
           "cost_basis": 214.478,
-          "current_price": 214.23,
-          "market_value": 61055.55,
-          "unrealized_pnl": -70.68,
-          "unrealized_pct": -0.12,
+          "current_price": 213.45,
+          "market_value": 60833.25,
+          "unrealized_pnl": -292.98,
+          "unrealized_pct": -0.48,
           "thesis_full": null
         },
         {
@@ -3378,16 +3069,33 @@
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 20,
+          "held_days": 21,
           "cost_basis": 182.5034,
-          "current_price": 180.37,
-          "market_value": 43870.39,
-          "unrealized_pnl": -518.9,
-          "unrealized_pct": -1.17,
+          "current_price": 180.45,
+          "market_value": 43889.84,
+          "unrealized_pnl": -499.44,
+          "unrealized_pct": -1.13,
           "thesis_full": null
         },
         {
           "ticker": "IWM",
+          "sleeve": "brain",
+          "group": "core_index",
+          "weight": 0.0352,
+          "verdict": "hold",
+          "conviction": null,
+          "rationale": null,
+          "opened_at": "2026-06-23T01:19:49.774519+00:00",
+          "held_days": 21,
+          "cost_basis": 298.2754,
+          "current_price": 294.51,
+          "market_value": 34290.84,
+          "unrealized_pnl": -438.42,
+          "unrealized_pct": -1.26,
+          "thesis_full": null
+        },
+        {
+          "ticker": "QQQ",
           "sleeve": "brain",
           "group": "core_index",
           "weight": 0.0351,
@@ -3395,46 +3103,29 @@
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 20,
-          "cost_basis": 298.2754,
-          "current_price": 293.48,
-          "market_value": 34170.92,
-          "unrealized_pnl": -558.34,
-          "unrealized_pct": -1.61,
-          "thesis_full": null
-        },
-        {
-          "ticker": "QQQ",
-          "sleeve": "brain",
-          "group": "core_index",
-          "weight": 0.0347,
-          "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
-          "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 20,
+          "held_days": 21,
           "cost_basis": 727.2235,
-          "current_price": 711.74,
-          "market_value": 33830.84,
-          "unrealized_pnl": -735.97,
-          "unrealized_pct": -2.13,
+          "current_price": 719.69,
+          "market_value": 34208.72,
+          "unrealized_pnl": -358.09,
+          "unrealized_pct": -1.04,
           "thesis_full": null
         },
         {
           "ticker": "MTUM",
           "sleeve": "brain",
           "group": "factors",
-          "weight": 0.0248,
+          "weight": 0.0252,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
-          "held_days": 20,
+          "held_days": 21,
           "cost_basis": 332.2109,
-          "current_price": 314.63,
-          "market_value": 24169.56,
-          "unrealized_pnl": -1350.55,
-          "unrealized_pct": -5.29,
+          "current_price": 319.76,
+          "market_value": 24563.64,
+          "unrealized_pnl": -956.47,
+          "unrealized_pct": -3.75,
           "thesis_full": null
         }
       ],
@@ -3451,13 +3142,13 @@
       "performance": {
         "inception_date": "2026-06-22",
         "starting_nav": 1000000.0,
-        "current_nav": 974118.65,
-        "cash": 618348.25,
-        "invested": 355770.4,
-        "total_return_pct": -2.5881,
-        "vs_spy_pct": -3.2303,
+        "current_nav": 975123.16,
+        "cash": 618446.4,
+        "invested": 356676.76,
+        "total_return_pct": -2.4877,
+        "vs_spy_pct": -3.4872,
         "benchmark": "SPY",
-        "day_change_pct": -0.2654,
+        "day_change_pct": 0.1031,
         "max_drawdown_pct": -2.6748,
         "realized_since": "2026-06-22",
         "series": [
@@ -4018,20 +3709,20 @@
       "kind": "china_brain",
       "manager": "brain",
       "benchmark": "FXI",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "market_status": {
         "open": false,
         "venue": "A-share (Shanghai/Shenzhen)",
-        "asof": "2026-07-14T16:00:05.943774+08:00",
-        "asof_cst": "2026-07-14T16:00:05.943774+08:00",
+        "asof": "2026-07-15T16:00:06.918774+08:00",
+        "asof_cst": "2026-07-15T16:00:06.918774+08:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-15T09:30:00+08:00",
-        "next_open_day": "2026-07-15",
-        "prev_trading_day": "2026-07-13"
+        "next_open": "2026-07-16T09:30:00+08:00",
+        "next_open_day": "2026-07-16",
+        "prev_trading_day": "2026-07-14"
       },
-      "gross": 0.5465,
-      "cash": 0.4535,
+      "gross": 0.5484,
+      "cash": 0.4516,
       "regime": {
         "quad": "Q3",
         "quad_name": "Stagflation",
@@ -4044,17 +3735,17 @@
           "name": "振德医疗",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.1209,
+          "weight": 0.1148,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-23T01:36:10.615687+00:00",
-          "held_days": 21,
+          "held_days": 22,
           "cost_basis": 86.6706,
-          "current_price": 88.91,
-          "market_value": 120241.53,
-          "unrealized_pnl": 3028.56,
-          "unrealized_pct": 2.58,
+          "current_price": 84.8,
+          "market_value": 114683.18,
+          "unrealized_pnl": -2529.79,
+          "unrealized_pct": -2.16,
           "thesis_full": null
         },
         {
@@ -4062,17 +3753,17 @@
           "name": "京新药业",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.1065,
+          "weight": 0.1102,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-01T01:35:03.767703+00:00",
-          "held_days": 13,
+          "held_days": 14,
           "cost_basis": 13.0961,
-          "current_price": 14.73,
-          "market_value": 105967.62,
-          "unrealized_pnl": 11754.06,
-          "unrealized_pct": 12.48,
+          "current_price": 15.31,
+          "market_value": 110140.14,
+          "unrealized_pnl": 15926.58,
+          "unrealized_pct": 16.9,
           "thesis_full": null
         },
         {
@@ -4080,12 +3771,12 @@
           "name": "妙可蓝多",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.0942,
+          "weight": 0.0938,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-10T01:35:00.479578+00:00",
-          "held_days": 4,
+          "held_days": 5,
           "cost_basis": 19.543,
           "current_price": 20.52,
           "market_value": 93735.36,
@@ -4098,17 +3789,17 @@
           "name": "三七互娱",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.0745,
+          "weight": 0.0774,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-06T01:35:06.122811+00:00",
-          "held_days": 8,
+          "held_days": 9,
           "cost_basis": 19.41,
-          "current_price": 18.09,
-          "market_value": 74060.46,
-          "unrealized_pnl": -5404.08,
-          "unrealized_pct": -6.8,
+          "current_price": 18.88,
+          "market_value": 77294.72,
+          "unrealized_pnl": -2169.82,
+          "unrealized_pct": -2.73,
           "thesis_full": null
         },
         {
@@ -4116,17 +3807,17 @@
           "name": "海正药业",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.0659,
+          "weight": 0.0679,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-06T01:35:06.122811+00:00",
-          "held_days": 8,
+          "held_days": 9,
           "cost_basis": 10.53,
-          "current_price": 11.59,
-          "market_value": 65599.4,
-          "unrealized_pnl": 5999.6,
-          "unrealized_pct": 10.07,
+          "current_price": 11.98,
+          "market_value": 67806.8,
+          "unrealized_pnl": 8207.0,
+          "unrealized_pct": 13.77,
           "thesis_full": null
         },
         {
@@ -4139,12 +3830,12 @@
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-13T01:35:06.139313+00:00",
-          "held_days": 1,
+          "held_days": 2,
           "cost_basis": 16.11,
-          "current_price": 15.43,
-          "market_value": 47107.79,
-          "unrealized_pnl": -2076.04,
-          "unrealized_pct": -4.22,
+          "current_price": 15.51,
+          "market_value": 47352.03,
+          "unrealized_pnl": -1831.8,
+          "unrealized_pct": -3.72,
           "thesis_full": null
         },
         {
@@ -4152,12 +3843,12 @@
           "name": "药石科技",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.0371,
+          "weight": 0.0369,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-01T01:35:03.767703+00:00",
-          "held_days": 13,
+          "held_days": 14,
           "cost_basis": 36.7084,
           "current_price": 41.0,
           "market_value": 36877.98,
@@ -4179,13 +3870,13 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 994724.14,
-        "cash": 451134.01,
-        "invested": 543590.13,
-        "total_return_pct": -0.5276,
-        "vs_spy_pct": -0.9453,
+        "current_nav": 999095.82,
+        "cash": 451205.62,
+        "invested": 547890.2,
+        "total_return_pct": -0.0904,
+        "vs_spy_pct": -0.5082,
         "benchmark": "FXI",
-        "day_change_pct": 1.2006,
+        "day_change_pct": 0.4323,
         "max_drawdown_pct": -3.6612,
         "realized_since": "2026-06-21",
         "series": [
@@ -4746,20 +4437,20 @@
       "kind": "hk_brain",
       "manager": "brain",
       "benchmark": "FXI",
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "market_status": {
         "open": false,
         "venue": "HKEX (Hong Kong)",
-        "asof": "2026-07-14T17:00:04.533291+08:00",
-        "asof_cst": "2026-07-14T17:00:04.533291+08:00",
+        "asof": "2026-07-15T17:00:07.683769+08:00",
+        "asof_cst": "2026-07-15T17:00:07.683769+08:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-15T09:30:00+08:00",
-        "next_open_day": "2026-07-15",
-        "prev_trading_day": "2026-07-13"
+        "next_open": "2026-07-16T09:30:00+08:00",
+        "next_open_day": "2026-07-16",
+        "prev_trading_day": "2026-07-14"
       },
-      "gross": 0.7358,
-      "cash": 0.2642,
+      "gross": 0.7374,
+      "cash": 0.2626,
       "regime": {
         "quad": "Q3",
         "quad_name": "Stagflation",
@@ -4772,17 +4463,17 @@
           "name": "Tencent",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1452,
+          "weight": 0.1499,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 21,
+          "held_days": 22,
           "cost_basis": 448.3611,
-          "current_price": 456.2,
-          "market_value": 142532.29,
-          "unrealized_pnl": 2449.15,
-          "unrealized_pct": 1.75,
+          "current_price": 474.0,
+          "market_value": 148093.6,
+          "unrealized_pnl": 8010.47,
+          "unrealized_pct": 5.72,
           "thesis_full": null
         },
         {
@@ -4790,17 +4481,17 @@
           "name": "China Life",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1389,
+          "weight": 0.135,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 21,
+          "held_days": 22,
           "cost_basis": 27.9125,
-          "current_price": 28.62,
-          "market_value": 136342.23,
-          "unrealized_pnl": 3370.67,
-          "unrealized_pct": 2.53,
+          "current_price": 28.0,
+          "market_value": 133388.62,
+          "unrealized_pnl": 417.06,
+          "unrealized_pct": 0.31,
           "thesis_full": null
         },
         {
@@ -4808,17 +4499,17 @@
           "name": "China Mobile",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0805,
+          "weight": 0.0799,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-09T01:42:56.199873+00:00",
-          "held_days": 5,
+          "held_days": 6,
           "cost_basis": 78.4876,
-          "current_price": 79.1,
-          "market_value": 79020.9,
-          "unrealized_pnl": 611.8,
-          "unrealized_pct": 0.78,
+          "current_price": 79.0,
+          "market_value": 78921.0,
+          "unrealized_pnl": 511.9,
+          "unrealized_pct": 0.65,
           "thesis_full": null
         },
         {
@@ -4826,17 +4517,17 @@
           "name": "ICBC",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0717,
+          "weight": 0.0709,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 21,
+          "held_days": 22,
           "cost_basis": 6.7841,
-          "current_price": 6.82,
-          "market_value": 70347.1,
-          "unrealized_pnl": 370.49,
-          "unrealized_pct": 0.53,
+          "current_price": 6.79,
+          "market_value": 70037.66,
+          "unrealized_pnl": 61.04,
+          "unrealized_pct": 0.09,
           "thesis_full": null
         },
         {
@@ -4844,17 +4535,17 @@
           "name": "China Construction Bank",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0702,
+          "weight": 0.0697,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-13T01:35:11.426685+00:00",
-          "held_days": 1,
+          "held_days": 2,
           "cost_basis": 8.13,
-          "current_price": 8.18,
-          "market_value": 68949.22,
-          "unrealized_pnl": 421.45,
-          "unrealized_pct": 0.62,
+          "current_price": 8.17,
+          "market_value": 68864.93,
+          "unrealized_pnl": 337.16,
+          "unrealized_pct": 0.49,
           "thesis_full": null
         },
         {
@@ -4862,17 +4553,17 @@
           "name": "Alibaba",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0614,
+          "weight": 0.0624,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-10T01:44:17.779308+00:00",
-          "held_days": 4,
+          "held_days": 5,
           "cost_basis": 108.0,
-          "current_price": 110.8,
-          "market_value": 60275.2,
-          "unrealized_pnl": 1523.2,
-          "unrealized_pct": 2.59,
+          "current_price": 113.4,
+          "market_value": 61689.6,
+          "unrealized_pnl": 2937.6,
+          "unrealized_pct": 5.0,
           "thesis_full": null
         },
         {
@@ -4880,17 +4571,17 @@
           "name": "CSPC Pharmaceutical",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0565,
+          "weight": 0.0583,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-01T01:35:06.770648+00:00",
-          "held_days": 13,
+          "held_days": 14,
           "cost_basis": 6.97,
-          "current_price": 8.11,
-          "market_value": 55423.74,
-          "unrealized_pnl": 7790.76,
-          "unrealized_pct": 16.36,
+          "current_price": 8.43,
+          "market_value": 57610.62,
+          "unrealized_pnl": 9977.64,
+          "unrealized_pct": 20.95,
           "thesis_full": null
         },
         {
@@ -4898,17 +4589,17 @@
           "name": "Ping An Insurance",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0504,
+          "weight": 0.0508,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-13T01:35:11.426685+00:00",
-          "held_days": 1,
+          "held_days": 2,
           "cost_basis": 53.05,
-          "current_price": 53.7,
-          "market_value": 49511.4,
-          "unrealized_pnl": 599.3,
-          "unrealized_pct": 1.23,
+          "current_price": 54.4,
+          "market_value": 50156.8,
+          "unrealized_pnl": 1244.7,
+          "unrealized_pct": 2.54,
           "thesis_full": null
         },
         {
@@ -4916,17 +4607,17 @@
           "name": "Bank of China",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.031,
+          "weight": 0.0306,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 21,
+          "held_days": 22,
           "cost_basis": 5.23,
-          "current_price": 5.07,
-          "market_value": 30392.6,
-          "unrealized_pnl": -959.13,
-          "unrealized_pct": -3.06,
+          "current_price": 5.04,
+          "market_value": 30212.76,
+          "unrealized_pnl": -1138.97,
+          "unrealized_pct": -3.63,
           "thesis_full": null
         },
         {
@@ -4934,17 +4625,17 @@
           "name": "Power Assets",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.03,
+          "weight": 0.0299,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-03T01:35:00.962739+00:00",
-          "held_days": 11,
+          "held_days": 12,
           "cost_basis": 56.55,
-          "current_price": 57.85,
-          "market_value": 29445.65,
-          "unrealized_pnl": 661.7,
-          "unrealized_pct": 2.3,
+          "current_price": 58.1,
+          "market_value": 29572.9,
+          "unrealized_pnl": 788.95,
+          "unrealized_pct": 2.74,
           "thesis_full": null
         }
       ],
@@ -4961,13 +4652,13 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 981695.14,
-        "cash": 259454.81,
-        "invested": 722240.33,
-        "total_return_pct": -1.8305,
-        "vs_spy_pct": -2.2509,
+        "current_nav": 988044.49,
+        "cash": 259495.99,
+        "invested": 728548.5,
+        "total_return_pct": -1.1956,
+        "vs_spy_pct": -1.616,
         "benchmark": "FXI",
-        "day_change_pct": 0.4256,
+        "day_change_pct": 0.6426,
         "max_drawdown_pct": -5.9056,
         "realized_since": "2026-06-21",
         "series": [
@@ -5528,7 +5219,7 @@
       "kind": "self_directed",
       "manager": "you",
       "benchmark": "SPY",
-      "as_of": "2026-07-13",
+      "as_of": "2026-07-14",
       "market_status": null,
       "gross": null,
       "cash": null,
@@ -5538,26 +5229,26 @@
         {
           "ticker": "XLU",
           "shares": 11093.854005,
-          "market_value": 508098.51,
-          "weight": 0.492655
+          "market_value": 506434.44,
+          "weight": 0.495348
         },
         {
           "ticker": "XLV",
           "shares": 1971.349717,
-          "market_value": 318018.14,
-          "weight": 0.308352
+          "market_value": 312057.56,
+          "weight": 0.305226
         },
         {
           "ticker": "XLF",
           "shares": 1855.976244,
-          "market_value": 104120.27,
-          "weight": 0.100956
+          "market_value": 104140.5,
+          "weight": 0.101861
         },
         {
           "ticker": "XLP",
           "shares": 1194.457716,
-          "market_value": 101110.85,
-          "weight": 0.098038
+          "market_value": 99749.16,
+          "weight": 0.097565
         }
       ],
       "decisions": [],

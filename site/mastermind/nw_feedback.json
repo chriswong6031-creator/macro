@@ -1,20 +1,20 @@
 {
   "schema": "mastermind_nw_feedback.v3",
-  "generated_at": "2026-07-14T22:25:00Z",
+  "generated_at": "2026-07-16T01:06:40Z",
   "window_days": 14,
   "thesis_counts": {
-    "open": 30,
-    "closed_or_rebuilt": 37,
+    "open": 24,
+    "closed_or_rebuilt": 43,
     "total": 67
   },
   "run_counts": {
     "hk_daily": {
-      "ok": 7,
+      "ok": 8,
       "error": 0,
       "other": 0
     },
     "china_daily": {
-      "ok": 7,
+      "ok": 8,
       "error": 0,
       "other": 0
     },
@@ -24,17 +24,17 @@
       "other": 0
     },
     "macro_refresh": {
-      "ok": 68,
+      "ok": 73,
       "error": 0,
       "other": 0
     },
     "watch_us_overnight": {
-      "ok": 18,
+      "ok": 21,
       "error": 0,
       "other": 0
     },
     "publish_macro_snapshot": {
-      "ok": 13,
+      "ok": 14,
       "error": 0,
       "other": 0
     },
@@ -44,47 +44,47 @@
       "other": 0
     },
     "watch_asia_overnight": {
-      "ok": 20,
+      "ok": 21,
       "error": 0,
       "other": 0
     },
     "daily_mark": {
-      "ok": 6,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
     "daily_loop": {
-      "ok": 6,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
     "autonomous_daily": {
-      "ok": 6,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
     "etf_daily": {
-      "ok": 6,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
     "heavyweight_daily": {
-      "ok": 6,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
     "loop_maintenance": {
-      "ok": 6,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
     "experiment_maturity": {
-      "ok": 6,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
     "settle_brain_asia": {
-      "ok": 6,
+      "ok": 7,
       "error": 0,
       "other": 0
     },
@@ -114,12 +114,12 @@
       "other": 0
     },
     "vps_state_sync": {
-      "ok": 224,
+      "ok": 277,
       "error": 12,
       "other": 0
     },
     "prewarm_marks": {
-      "ok": 1077,
+      "ok": 1347,
       "error": 0,
       "other": 0
     }
@@ -130,18 +130,18 @@
       "gate_failures": {
         "by_severity": {
           "ADVISORY_ONLY": 5,
-          "FREEZE": 17
+          "FREEZE": 18
         },
         "by_guard": {
           "dashboard_write": 5,
-          "stale_anchor": 9,
+          "stale_anchor": 10,
           "peer_expectation": 8
         },
-        "total": 22
+        "total": 23
       },
-      "rejected_decision_count": 132,
+      "rejected_decision_count": 143,
       "lock_conflict_count": 0,
-      "stale_freeze_count": 17
+      "stale_freeze_count": 18
     },
     {
       "book_id": "heavyweight",
@@ -263,11 +263,11 @@
   },
   "context_audit": {
     "state": "ok",
-    "n_present": 15,
+    "n_present": 17,
     "n_stale": 1,
     "n_absent": 0,
-    "n_runs_total": 16,
-    "context_seen_rate": 0.938
+    "n_runs_total": 18,
+    "context_seen_rate": 0.944
   },
   "metric_families": {
     "live": [
@@ -314,17 +314,17 @@
       }
     ],
     "coverage": {
-      "open_theses_n": 30,
+      "open_theses_n": 24,
       "resolved_recent_n": 0,
-      "with_context_row_n": 5,
+      "with_context_row_n": 4,
       "coverage_rate": 0.167
     },
     "context_quality": {
-      "window_runs": 16,
-      "n_present": 15,
+      "window_runs": 17,
+      "n_present": 16,
       "n_stale": 1,
       "n_absent": 0,
-      "seen_rate": 0.938
+      "seen_rate": 0.941
     },
     "attribution": {
       "state": "building",
@@ -338,7 +338,7 @@
       "code": "bottom_state_vocabulary_drift",
       "kind": "contract_drift",
       "severity": "high",
-      "detail": "policy states never observed: BOTTOMING/CONFIRMED (observed vocabulary has 5 values over 250 rows) — candidacy priors above WATCH can never fire",
+      "detail": "policy states never observed: BOTTOMING/CONFIRMED (observed vocabulary has 4 values over 250 rows) — candidacy priors above WATCH can never fire",
       "first_seen": "2026-07-14",
       "builds_seen": 1
     },
@@ -354,7 +354,7 @@
       "code": "coverage_below_half",
       "kind": "coverage_gap",
       "severity": "medium",
-      "detail": "only 5 of our decided subjects have a candidate_context row (rate 0.167; fires <0.5, clears at >=0.55)",
+      "detail": "only 4 of our decided subjects have a candidate_context row (rate 0.167; fires <0.5, clears at >=0.55)",
       "first_seen": "2026-07-14",
       "builds_seen": 1
     },
