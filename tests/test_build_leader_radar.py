@@ -1397,3 +1397,68 @@ class TestAnalystBannerRender:
         }))
         assert "Analyst rating data:" not in html
         assert "crowding signal that reads it stays blank" not in html
+
+
+# ── _merge_history_frame (frozen-store dtype fix, 2026-07-16) ─────────────────
+# state_history.parquet froze at its 2026-07-11 seed: the store side read back
+# as object (datetime.date) and got to_datetime'd, the new side stayed raw
+# datetime.date — the concat produced a mixed object column pyarrow refuses to
+# write. These tests replay that exact parquet round-trip.
+
+class TestMergeHistoryFrame:
+    def _seed_store(self, tmp_path):
+        """Write + read back a seed parquet exactly like the real store."""
+        import pandas as pd
+        seed = pd.DataFrame({
+            "date": [date(2026, 7, 11), date(2026, 7, 11)],
+            "ticker": ["AAPL", "NVDA"],
+            "raw_state": ["QUIET_ACCUMULATION", "NONE"],
+            "confirmed_state": ["QUIET_ACCUMULATION", "NONE"],
+        })
+        p = tmp_path / "seed.parquet"
+        seed.to_parquet(p, index=False)
+        return pd.read_parquet(p)  # date column returns as object(datetime.date)
+
+    def test_merge_then_write_does_not_raise(self, tmp_path):
+        """The exact nightly failure: seed round-trip + today's date-object rows
+        must concat into a writable frame (was: ArrowInvalid, store frozen)."""
+        import pandas as pd
+        from scripts.build_leader_radar import _merge_history_frame
+        existing = self._seed_store(tmp_path)
+        today = date(2026, 7, 16)
+        new_rows = [
+            {"date": today, "ticker": "AAPL", "raw_state": "QUIET_ACCUMULATION",
+             "confirmed_state": "QUIET_ACCUMULATION"},
+            {"date": today, "ticker": "NVDA", "raw_state": "NONE",
+             "confirmed_state": "NONE"},
+        ]
+        merged = _merge_history_frame(existing, new_rows, today)
+        # the write that used to fail silently every night:
+        merged.to_parquet(tmp_path / "out.parquet", index=False)
+        back = pd.read_parquet(tmp_path / "out.parquet")
+        assert len(back) == 4
+        assert set(pd.to_datetime(back["date"]).dt.date) == {date(2026, 7, 11), today}
+
+    def test_merge_same_day_rerun_is_idempotent(self, tmp_path):
+        """Re-running the same day replaces that day's rows (no duplicates)."""
+        import pandas as pd
+        from scripts.build_leader_radar import _merge_history_frame
+        existing = self._seed_store(tmp_path)
+        today = date(2026, 7, 16)
+        rows = [{"date": today, "ticker": "AAPL", "raw_state": "NONE",
+                 "confirmed_state": "NONE"}]
+        once = _merge_history_frame(existing, rows, today)
+        twice = _merge_history_frame(once, rows, today)
+        assert len(twice) == len(once) == 3  # 2 seed + 1 today, never 4
+
+    def test_merge_into_empty_store(self, tmp_path):
+        """First-run path: empty store → new rows only, still writable."""
+        import pandas as pd
+        from scripts.build_leader_radar import _merge_history_frame
+        empty = pd.DataFrame(columns=["date", "ticker", "raw_state", "confirmed_state"])
+        today = date(2026, 7, 16)
+        merged = _merge_history_frame(
+            empty, [{"date": today, "ticker": "AAPL", "raw_state": "NONE",
+                     "confirmed_state": "NONE"}], today)
+        merged.to_parquet(tmp_path / "out.parquet", index=False)
+        assert len(merged) == 1

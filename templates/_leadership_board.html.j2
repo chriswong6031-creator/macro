@@ -4,7 +4,7 @@
 
    Consumes (all display-only; MLC-R2):
      • data/mag7_regime/latest.json   — M7C cohort state (M7C owns the math)
-     • data/leader_radar/state_history.parquet — LRV per-name lifecycle states
+     • site/leaderradar/radar.json    — LRV per-name lifecycle states (rows[].state)
      • data/earnings/earnings.parquet — earnings-date chip (disclosure; MLC-R10)
      • site/sectordata/sector_central.json — sector RS ranks (engine/sectors.py owns)
 
@@ -402,9 +402,12 @@
   {%- endif %}
 
   {# ── FOOTNOTE ──────────────────────────────────────────────────────────── #}
+  {# lifecycle_stale: radar feed absent/stale → tiles fell back to "no trend read";
+     disclose WHY (plain-word null disclosure, DESIGN_DOCTRINE). Truthiness guard —
+     missing key on older payloads is falsy, never crashes (Jinja gotcha). #}
   <div class="ldb-footnote">
-    <span class="l-en">Trend reads are a heads-up, not a buy signal — entries still decided by the lanes below.</span>
-    <span class="l-zh">趋势判断仅供参考，非买入信号 — 入场时机仍由下方通道决定。</span>
+    <span class="l-en">Trend reads are a heads-up, not a buy signal — entries still decided by the lanes below.{% if d.lifecycle_stale %} Per-stock trend reads unavailable — data feed stale.{% endif %}</span>
+    <span class="l-zh">趋势判断仅供参考，非买入信号 — 入场时机仍由下方通道决定。{% if d.lifecycle_stale %}个股趋势读数暂不可用 — 数据滞后。{% endif %}</span>
   </div>
 
 </div>

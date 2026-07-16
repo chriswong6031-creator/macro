@@ -391,6 +391,32 @@ def _write_state_history(df: pd.DataFrame, data_root: Path) -> None:
     df.to_parquet(p, index=False)
 
 
+def _merge_history_frame(
+    existing: pd.DataFrame,
+    new_rows: list[dict],
+    today: date,
+) -> pd.DataFrame:
+    """Concat today's rows onto an existing (date, ...) history frame.
+
+    dtype-normalizes BOTH date columns to datetime64 before concat. Without this,
+    the store side (parquet date32 → object of datetime.date, to_datetime'd) and
+    the new side (raw datetime.date objects) concat into a MIXED object column
+    that pyarrow refuses to write ("Conversion failed for column date with type
+    object") — which froze state_history.parquet at its 2026-07-11 seed while the
+    failure drowned as a swallowed warning every night (caught 2026-07-16).
+
+    Dedup: today's existing rows are dropped before the append (rerun-idempotent).
+    """
+    new_df = pd.DataFrame(new_rows)
+    new_df["date"] = pd.to_datetime(new_df["date"])
+    if not existing.empty and "date" in existing.columns:
+        existing = existing.copy()
+        existing["date"] = pd.to_datetime(existing["date"])
+        existing = existing[existing["date"] != pd.Timestamp(today)]
+        return pd.concat([existing, new_df], ignore_index=True)
+    return new_df
+
+
 def _ticker_state_history(
     ticker: str,
     state_df: pd.DataFrame,
@@ -1872,32 +1898,16 @@ def build(
         # state_history
         if new_state_rows:
             try:
-                new_df = pd.DataFrame(new_state_rows)
-                # Dedup: remove today's existing rows for these tickers, then append
-                if not state_df.empty and "date" in state_df.columns:
-                    state_df["date"] = pd.to_datetime(state_df["date"])
-                    today_ts = pd.Timestamp(today)
-                    existing_not_today = state_df[state_df["date"] != today_ts]
-                    updated = pd.concat([existing_not_today, new_df], ignore_index=True)
-                else:
-                    updated = new_df
+                updated = _merge_history_frame(state_df, new_state_rows, today)
                 _write_state_history(updated, data_root)
                 log.info("build_leader_radar: state_history: %d total rows", len(updated))
             except Exception as e:  # noqa: BLE001
                 log.warning("build_leader_radar: state_history write failed: %s", e)
 
-        # fire_log
+        # fire_log (same merge — the mixed-dtype crash would hit its first APPEND)
         if new_fire_rows:
             try:
-                new_fire_df = pd.DataFrame(new_fire_rows)
-                # Dedup: remove today's existing fire rows, then append
-                if not fire_log_df.empty and "date" in fire_log_df.columns:
-                    fire_log_df["date"] = pd.to_datetime(fire_log_df["date"])
-                    today_ts = pd.Timestamp(today)
-                    existing_fire_not_today = fire_log_df[fire_log_df["date"] != today_ts]
-                    updated_fire = pd.concat([existing_fire_not_today, new_fire_df], ignore_index=True)
-                else:
-                    updated_fire = new_fire_df
+                updated_fire = _merge_history_frame(fire_log_df, new_fire_rows, today)
                 _write_fire_log(updated_fire, data_root)
                 log.info("build_leader_radar: fire_log: %d total rows", len(updated_fire))
             except Exception as e:  # noqa: BLE001
