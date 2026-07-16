@@ -911,8 +911,12 @@
      hardcoded dark surface. All scoped to [data-theme="light"] so dark mode is
      untouched; colored chips (.hot/.turn) are excluded so their tints survive. */
   [data-theme="light"] body.page-china{--mx5-glass-bg:rgba(255,255,255,.82);--mx5-glass-border:rgba(0,0,0,.06);--mx5-pop-bg:rgba(255,255,255,.97)}
-  [data-theme="light"] body.page-china .cnx-card[role="button"]:hover{background:rgba(0,0,0,.035);border-color:rgba(0,0,0,.14);box-shadow:0 6px 24px rgba(0,0,0,.10)}
-  [data-theme="light"] body.page-china .cnx-pop{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1);box-shadow:0 12px 40px rgba(0,0,0,.16)}
+  /* base card + hover shadows are hardcoded dark (rgba(0,0,0,.55)/.25); light mode
+     uses the EXACT body.page-macro.mx4-grid light tokens so the two dashboards
+     match (soft ambient shadow, not the heavy dark one). */
+  [data-theme="light"] body.page-china .cnx-card{box-shadow:0 4px 24px rgba(0,0,0,.09),0 1px 0 rgba(255,255,255,.95) inset}
+  [data-theme="light"] body.page-china .cnx-card[role="button"]:hover{background:rgba(255,255,255,.92);border-color:rgba(0,0,0,.14);box-shadow:0 6px 24px rgba(0,0,0,.12)}
+  [data-theme="light"] body.page-china .cnx-pop{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1);box-shadow:0 8px 32px rgba(0,0,0,.13)}
   [data-theme="light"] body.page-china .cnx-dlg-panel{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1)}
   [data-theme="light"] body.page-china .cnx-dlg-backdrop{background:rgba(20,24,30,.34)}
   [data-theme="light"] body.page-china .cnx-dlg-head{border-bottom-color:rgba(0,0,0,.09)}
