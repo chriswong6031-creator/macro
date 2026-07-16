@@ -238,6 +238,7 @@ _STATE_ORDER = {"LEADER_CANDIDATE": 0, "CONTESTED": 1, "NO_CLEAR_LEADER": 2}
 def _assemble_groups(by_group: dict, closes: pd.DataFrame, *, label_key: str,
                      flow_witness: dict, options_ctx: dict,
                      alpha_min: float, min_legs: int, dominance_tau: float,
+                     fresh_within: int = FRESH_WITHIN, extended_atr: float = EXTENDED_ATR,
                      meta: dict | None = None,
                      onset_cache: dict | None = None) -> list[dict]:
     """Run the per-group state machine over ANY grouping (sector / sub-industry /
@@ -258,7 +259,8 @@ def _assemble_groups(by_group: dict, closes: pd.DataFrame, *, label_key: str,
             if onset_cache is not None and t in onset_cache:
                 onset = onset_cache[t]
             elif t in have:
-                onset = confluence_onset(closes[t].dropna())
+                onset = confluence_onset(closes[t].dropna(),
+                                         fresh_within=fresh_within, extended_atr=extended_atr)
                 if onset_cache is not None:
                     onset_cache[t] = onset
             else:
@@ -353,6 +355,8 @@ def build_board(residual: dict, closes: pd.DataFrame, *,
                 alpha_min: float = ALPHA_LEADER_MIN,
                 min_legs: int = MIN_TREND_LEGS,
                 dominance_tau: float = DOMINANCE_TAU,
+                fresh_within: int = FRESH_WITHIN,
+                extended_atr: float = EXTENDED_ATR,
                 as_of: str | None = None, stale: bool = False) -> dict | None:
     """Assemble momentum_king.v1 from a residual_alpha result + a close panel.
 
@@ -375,6 +379,7 @@ def build_board(residual: dict, closes: pd.DataFrame, *,
     onset_cache: dict = {}
     common = dict(flow_witness=flow_witness or {}, options_ctx=options_ctx or {},
                   alpha_min=alpha_min, min_legs=min_legs, dominance_tau=dominance_tau,
+                  fresh_within=fresh_within, extended_atr=extended_atr,
                   onset_cache=onset_cache)
 
     sectors_out = _assemble_groups(residual["by_sector"], closes, label_key="sector", **common)
@@ -393,8 +398,8 @@ def build_board(residual: dict, closes: pd.DataFrame, *,
         "stale": bool(stale),
         "note": NOTE,
         "params": {"alpha_leader_min": alpha_min, "min_trend_legs": min_legs,
-                   "dominance_tau": dominance_tau, "fresh_within": FRESH_WITHIN,
-                   "extended_atr": EXTENDED_ATR},
+                   "dominance_tau": dominance_tau, "fresh_within": fresh_within,
+                   "extended_atr": extended_atr},
         "coverage": coverage,
         "top_candidates": top_candidates,
         "sectors": sectors_out,

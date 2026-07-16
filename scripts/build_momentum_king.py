@@ -38,7 +38,15 @@ sys.path.insert(0, str(ROOT))
 from jinja2 import Environment, FileSystemLoader
 from engine.baskets import _membership
 from engine.equity_factors import _closes, _names_sectors
-from engine.momentum_king import build_board, compute_persistence
+from engine.momentum_king import (
+    ALPHA_LEADER_MIN,
+    DOMINANCE_TAU,
+    EXTENDED_ATR,
+    FRESH_WITHIN,
+    MIN_TREND_LEGS,
+    build_board,
+    compute_persistence,
+)
 from engine.residual_alpha import compute_residual_alpha
 from engine.subsector_scan import _industry_map
 from lib import config
@@ -131,13 +139,38 @@ def _render_html(board: dict) -> None:
         log.warning("build_momentum_king: HTML render failed: %s", e)
 
 
-def _is_stale(closes: pd.DataFrame) -> bool:
+def _is_stale(closes: pd.DataFrame, max_lag: int = _STALE_MAX_LAG_DAYS) -> bool:
     try:
         last = pd.Timestamp(closes.index.max()).normalize()
         now = pd.Timestamp(datetime.now(timezone.utc).date())
-        return (now - last).days > _STALE_MAX_LAG_DAYS
+        return (now - last).days > max_lag
     except Exception:  # noqa: BLE001
         return False
+
+
+def _mk_config() -> dict:
+    """Momentum-King tunables. Defaults are the FROZEN pre-registration seeds (matching
+    the engine + build constants); an OPTIONAL `momentum_king:` config block overrides
+    them (same load path the kill-switch already reads). The block is absent by default,
+    so out of the box the behaviour is exactly the frozen seed set. Overriding is a
+    pre-registration AMENDMENT, not a per-sample tune — and the params block echoed into
+    board.json is the passport of what actually ran."""
+    try:
+        cfg = config.load().get("momentum_king", {}) or {}
+    except Exception:  # noqa: BLE001
+        cfg = {}
+    return {
+        "alpha_leader_min": float(cfg.get("alpha_leader_min", ALPHA_LEADER_MIN)),
+        "min_trend_legs": int(cfg.get("min_trend_legs", MIN_TREND_LEGS)),
+        "dominance_tau": float(cfg.get("dominance_tau", DOMINANCE_TAU)),
+        "fresh_within": int(cfg.get("fresh_within", FRESH_WITHIN)),
+        "extended_atr": float(cfg.get("extended_atr", EXTENDED_ATR)),
+        "theme_min_members": int(cfg.get("theme_min_members", _THEME_MIN_MEMBERS)),
+        "sub_min_members": int(cfg.get("sub_min_members", _SUB_MIN_MEMBERS)),
+        "group_min_rows": int(cfg.get("group_min_rows", _GROUP_MIN_ROWS)),
+        "max_groups": int(cfg.get("max_groups", _MAX_GROUPS)),
+        "stale_max_lag_days": int(cfg.get("stale_max_lag_days", _STALE_MAX_LAG_DAYS)),
+    }
 
 
 def _remap_names(blk: dict, ns_real: dict) -> None:
@@ -419,9 +452,14 @@ def build() -> dict | None:
     # Sub-industry + theme granularities (T2) — each an independent per-group
     # residual pass (themes overlap, so one pass per basket). Both absent-safe
     # (empty on missing data) and purely additive to the sector spine.
+    cfg = _mk_config()
     ns_real = _names_sectors("broad")
-    by_theme, theme_meta = _build_theme_groups(closes, ns_real)
-    by_sub, sub_meta = _build_subindustry_groups(closes, ns_real)
+    by_theme, theme_meta = _build_theme_groups(
+        closes, ns_real, min_members=cfg["theme_min_members"],
+        max_groups=cfg["max_groups"], min_rows=cfg["group_min_rows"])
+    by_sub, sub_meta = _build_subindustry_groups(
+        closes, ns_real, min_members=cfg["sub_min_members"],
+        max_groups=cfg["max_groups"], min_rows=cfg["group_min_rows"])
 
     # MK-P2 subordinate witnesses — net-inflow (flow_leaders.v1) + options net-flow
     # tide (options_flow.context.v1), scoped to the leader tickers actually rendered.
@@ -433,10 +471,13 @@ def build() -> dict | None:
     board = build_board(
         residual, closes,
         as_of=residual.get("as_of"),
-        stale=_is_stale(closes),
+        stale=_is_stale(closes, cfg["stale_max_lag_days"]),
         by_sub_industry=by_sub, sub_meta=sub_meta,
         by_theme=by_theme, theme_meta=theme_meta,
         flow_witness=flow_witness, options_ctx=options_ctx,
+        alpha_min=cfg["alpha_leader_min"], min_legs=cfg["min_trend_legs"],
+        dominance_tau=cfg["dominance_tau"], fresh_within=cfg["fresh_within"],
+        extended_atr=cfg["extended_atr"],
     )
     if not board:
         log.warning("build_momentum_king: empty board")
