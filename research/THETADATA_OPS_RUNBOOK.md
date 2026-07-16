@@ -32,8 +32,13 @@ pgrep -fl "ThetaTerminalv3\|theta"
 If it is not running, start it:
 
 ```bash
-cd /Users/chriswong/theta && java -jar ThetaTerminalv3.jar \
-    --api-key "$THETA_API_KEY" &
+# Preferred: the repo launcher (handles Java 21, key-via-env, health hints)
+bash "/Users/chriswong/Documents/Cluade/Macro Dashboard/scripts/run_theta_terminal.sh"
+
+# Manual equivalent — key via environment, NEVER as --api-key argv
+# (argv is plaintext-readable by any local process via `ps`):
+cd /Users/chriswong/theta && \
+    THETADATA_API_KEY="$THETA_API_KEY" java -jar ThetaTerminalv3.jar &
 # Allow 30–60 seconds for the terminal to become reachable
 # THETA_API_KEY must be set in the operator's shell profile or fetched from
 # the local secret store (e.g. `export THETA_API_KEY=$(op read "op://Private/ThetaData/api_key")`).

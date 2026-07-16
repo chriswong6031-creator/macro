@@ -7,9 +7,13 @@
 # v2 (ThetaTerminal.jar, port 25510) is DEAD — all /v2/* paths return HTTP 410 Gone.
 # This script launches v3 (ThetaTerminalv3.jar, port 25503) only.
 #
-# Credentials (never echoed):
-#   - Primary: THETA_API_KEY environment variable (v3 uses --api-key flag, not user/pass)
+# Credentials (never echoed, never in argv):
+#   - Primary: THETA_API_KEY environment variable
 #   - Fallback: .env file at the repo root (KEY=VALUE format, one per line)
+#   The key is handed to the terminal as the THETADATA_API_KEY environment variable
+#   (supported natively by Terminal v3; lookup order there is CLI arg > env > jar-dir
+#   .env).  NEVER pass it as the --api-key launch argument: argv is readable in
+#   plaintext by every local process via `ps` (found live 2026-07-16).
 #
 # Jar location: ~/theta/ThetaTerminalv3.jar
 #   If absent, instructions are printed.
@@ -48,7 +52,7 @@ _load_env() {
 
 _load_env
 
-# THETA_API_KEY is read but never printed — only passed as --api-key flag to the JVM
+# THETA_API_KEY is read but never printed — exported to the JVM as THETADATA_API_KEY
 THETA_KEY="${THETA_API_KEY:-}"
 
 if [[ -z "$THETA_KEY" ]]; then
@@ -132,12 +136,13 @@ echo "Launching ThetaData Terminal v3..."
 echo "  Jar:  $JAR_PATH"
 echo "  Log:  $LOG_PATH"
 echo "  JAVA_HOME: ${JAVA_HOME:-not set}"
-echo "  (API key not echoed)"
+echo "  (API key passed via environment, not argv — never echoed)"
 echo ""
 
 # Launch headless; nohup so it survives the shell exit.
-# NEVER echo the API key — it is passed directly as --api-key flag.
-nohup java -jar "$JAR_PATH" --api-key "$THETA_KEY" \
+# The key goes to the JVM as the THETADATA_API_KEY env var (shell prefix
+# assignment — scoped to this one child process, never appears in argv).
+THETADATA_API_KEY="$THETA_KEY" nohup java -jar "$JAR_PATH" \
     > "$LOG_PATH" 2>&1 &
 THETA_PID=$!
 

@@ -151,7 +151,8 @@ the websocket infrastructure is real (ws :25520 `/v1/events` connects; STREAM_BU
 OPTION TRADE subscribe accepted with no entitlement rejection; account is Options
 PROFESSIONAL; terminal config carries a 1M-message stream buffer) but **zero trades flow
 today: the terminal's upstream FPSS login fails `INVALID_CREDENTIALS` in an endless retry
-loop** — an OPERATOR-side credential/enablement fix (terminal is launched `--api-key`;
+loop** — an OPERATOR-side credential/enablement fix (terminal is launched with the
+`THETADATA_API_KEY` env var — was `--api-key` argv until the 2026-07-16 plaintext-argv fix;
 FPSS wants a credential it doesn't have; fix in run_theta_terminal.sh / account portal),
 not a tier problem. Note: the probe's subscribe left the retry loop running (~2 log lines
 per 2.4s until restart) — restart the terminal AFTER the close (the live poller depends on
