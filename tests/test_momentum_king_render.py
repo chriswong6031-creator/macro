@@ -190,6 +190,14 @@ def _assert_no_null_leak(html: str) -> None:
     assert m is None, f"null value leaked into a rendered cell: {m.group(0)!r}"
 
 
+# Panel descriptor prose — unique to each MK panel, so it distinguishes a rendered
+# panel from the nav bar, which links to OTHER desks named "Sub-industries"/"Themes"
+# ("Subsector Rotation 子行业轮动", "Thematic Baskets 主题", "State of Themes"). A bare
+# word check would collide with those; the descriptor sentence only exists in-panel.
+_SUB_DESC = "Within-sub-industry residual-alpha leadership"
+_THEME_DESC = "Within-theme residual-alpha leadership over curated thematic baskets"
+
+
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
 
@@ -406,7 +414,7 @@ class TestSubIndustriesPanel:
         sub = _sub_row("Semiconductors", sector="Information Technology",
                        state="LEADER_CANDIDATE", leader="NVDA", members=[m])
         html = _render(_mk_board(sub_industries=[sub]))
-        assert "Sub-industries" in html or "子行业" in html
+        assert _SUB_DESC in html
         assert "Semiconductors" in html
         # Parent sector chip should appear
         assert "Information Technology" in html
@@ -417,12 +425,12 @@ class TestSubIndustriesPanel:
         # The panel header "Sub-industries" / "子行业" must not appear as a panel h2
         # We check for the panel-level <h2> wording; the topline span won't appear
         # either since n_sub_industries is also absent.
-        assert "Sub-industries" not in html and "子行业" not in html
+        assert _SUB_DESC not in html
 
     def test_panel_absent_when_empty_list(self):
         """Explicit empty list: the guard {% if subs %} suppresses the panel."""
         html = _render(_mk_board(sub_industries=[]))
-        assert "Sub-industries" not in html and "子行业" not in html
+        assert _SUB_DESC not in html
 
     def test_null_member_in_sub_no_leak(self):
         m_null = _member("ZZZZ", alpha=None, species=None, trend_legs=None,
@@ -441,8 +449,8 @@ class TestSubIndustriesPanel:
         # Ensure n_sub_industries is NOT in coverage
         board["coverage"].pop("n_sub_industries", None)
         html = _render(board)
-        # "子行业" panel header absent (no sub_industries key), topline span also absent
-        assert "子行业" not in html
+        # section absent entirely when the count isn't in coverage (descriptor gone)
+        assert _SUB_DESC not in html
 
 
 class TestThemesPanel:
@@ -461,7 +469,7 @@ class TestThemesPanel:
             members=[m],
         )
         html = _render(_mk_board(themes=[theme]))
-        assert "Themes" in html or "主题" in html
+        assert _THEME_DESC in html
         # Bilingual label for theme name
         assert "AI Infrastructure" in html
         assert "人工智能基础设施" in html
@@ -473,11 +481,11 @@ class TestThemesPanel:
     def test_panel_absent_when_key_missing(self):
         """Back-compat: board without themes key must not render the themes panel."""
         html = _render(_mk_board())
-        assert "Themes" not in html and "主题" not in html
+        assert _THEME_DESC not in html
 
     def test_panel_absent_when_empty_list(self):
         html = _render(_mk_board(themes=[]))
-        assert "Themes" not in html and "主题" not in html
+        assert _THEME_DESC not in html
 
     def test_null_member_in_theme_no_leak(self):
         m_null = _member("ZZZZ", alpha=None, species=None, trend_legs=None,
@@ -501,8 +509,8 @@ class TestThemesPanel:
         board = _mk_board()
         board["coverage"].pop("n_themes", None)
         html = _render(board)
-        # No themes key → "主题" absent entirely
-        assert "主题" not in html
+        # section absent entirely when the count isn't in coverage (descriptor gone)
+        assert _THEME_DESC not in html
 
 
 class TestBothNewPanels:
@@ -513,8 +521,8 @@ class TestBothNewPanels:
         sub = _sub_row("Semiconductors", members=[m])
         theme = _theme_row("ai_infra", "AI Infrastructure", name_zh="人工智能基础设施", members=[m])
         html = _render(_mk_board(sub_industries=[sub], themes=[theme]))
-        assert "Sub-industries" in html or "子行业" in html
-        assert "Themes" in html or "主题" in html
+        assert _SUB_DESC in html
+        assert _THEME_DESC in html
 
     def test_both_panels_null_member_no_leak(self):
         m_null = _member("ZZZZ", alpha=None, species=None, trend_legs=None,
@@ -530,8 +538,8 @@ class TestBothNewPanels:
         sec = _sector("IT", "LEADER_CANDIDATE", leader="NVDA", members=[m])
         html = _render(_mk_board(sectors=[sec]))
         assert html  # renders
-        assert "Sub-industries" not in html and "子行业" not in html
-        assert "Themes" not in html and "主题" not in html
+        assert _SUB_DESC not in html
+        assert _THEME_DESC not in html
         # Sectors section still present
         assert "Sectors" in html or "板块" in html
 
@@ -543,8 +551,8 @@ class TestBothNewPanels:
         html = _render(_mk_board(sectors=[sec], sub_industries=[sub], themes=[theme]))
         # All three panels present
         assert "Sectors" in html or "板块" in html
-        assert "Sub-industries" in html or "子行业" in html
-        assert "Themes" in html or "主题" in html
+        assert _SUB_DESC in html
+        assert _THEME_DESC in html
 
 
 class TestPlaybookGranularityEntry:
