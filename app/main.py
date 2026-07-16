@@ -550,6 +550,57 @@ def flow_ticker(root: str) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Site-access gate — /api/gate/check and /api/gate/status
+# ---------------------------------------------------------------------------
+try:
+    from app import gate as _gate_mod  # noqa: PLC0415
+except ImportError:
+    _gate_mod = None  # type: ignore[assignment]
+
+
+@app.get("/api/gate/check")
+def gate_check(request: Request) -> Response:
+    """Unauthenticated.  Called by Caddy on the origin for every inbound request.
+
+    Returns:
+      204  No Content  — ALLOW (visitor passes).
+      403  text/html   — BLOCK (coming-soon page returned).
+
+    Always sets Cache-Control: no-store and X-Gate: <verdict>.
+    """
+    if _gate_mod is None:
+        # gate module unavailable — fail-open
+        return Response(status_code=204, headers={"Cache-Control": "no-store", "X-Gate": "allow"})
+
+    ip = _mm_client_ip(request)
+    # Pass headers as a plain dict (gate.decide accepts dict-like)
+    raw_headers: dict = dict(request.headers)
+    verdict = _gate_mod.decide(ip, raw_headers)
+
+    if verdict == "allow":
+        return Response(
+            status_code=204,
+            headers={"Cache-Control": "no-store", "X-Gate": "allow"},
+        )
+
+    page_html = _gate_mod.coming_soon_page()
+    return Response(
+        content=page_html,
+        status_code=403,
+        media_type="text/html; charset=utf-8",
+        headers={"Cache-Control": "no-store", "X-Gate": verdict},
+    )
+
+
+@app.get("/api/gate/status")
+def gate_status() -> dict:
+    """Unauthenticated.  Returns gate state + country-detection health for the admin panel."""
+    if _gate_mod is None:
+        return {"ok": False, "error": "gate module unavailable"}
+    return _gate_mod.status()
+
+
+# ---------------------------------------------------------------------------
 # Options Hub analytics router (lane B — app/hub.py)
 # Wrapped in try/except so this file stays green if hub.py lands later.
 # ---------------------------------------------------------------------------

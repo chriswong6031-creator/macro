@@ -140,11 +140,12 @@ const ICONS = {
   codex:         NAV_ICO('<path d="M12 3l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/>'),
   orchestrator:  NAV_ICO('<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v2.6M12 17.9v2.6M3.5 12h2.6M17.9 12h2.6"/>'),
   mastermind_ai: NAV_ICO('<rect x="5" y="7" width="14" height="12" rx="2.5"/><circle cx="9.5" cy="12.5" r="1.2"/><circle cx="14.5" cy="12.5" r="1.2"/><path d="M12 7V4M12 4h.01M9 16h6"/>'),
+  site_gate:     NAV_ICO('<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"]] },
+  { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
 ];
@@ -549,6 +550,327 @@ RENDER.experiments = async () => {
   });
 };
 
+/* ---- SITE ACCESS GATE ----------------------------------------------------- */
+/* Admin panel for the IP/country blocklist gate (app/gate.py).
+   The gate is OFF by default (enabled=false => allow everyone, fail-open).
+   Operator can block IPs/CIDRs and countries; own IP is always in allow_ips. */
+
+// ISO-3166-1 alpha-2 — one static array; names via Intl.DisplayNames (no hardcoded CJK).
+const SG_COUNTRY_CODES = [
+  "AF","AX","AL","DZ","AS","AD","AO","AI","AQ","AG","AR","AM","AW","AU","AT","AZ",
+  "BS","BH","BD","BB","BY","BE","BZ","BJ","BM","BT","BO","BQ","BA","BW","BV","BR",
+  "IO","BN","BG","BF","BI","CV","KH","CM","CA","KY","CF","TD","CL","CN","CX","CC",
+  "CO","KM","CG","CD","CK","CR","CI","HR","CU","CW","CY","CZ","DK","DJ","DM","DO",
+  "EC","EG","SV","GQ","ER","EE","SZ","ET","FK","FO","FJ","FI","FR","GF","PF","TF",
+  "GA","GM","GE","DE","GH","GI","GR","GL","GD","GP","GU","GT","GG","GN","GW","GY",
+  "HT","HM","VA","HN","HK","HU","IS","IN","ID","IR","IQ","IE","IM","IL","IT","JM",
+  "JP","JE","JO","KZ","KE","KI","KP","KR","KW","KG","LA","LV","LB","LS","LR","LY",
+  "LI","LT","LU","MO","MG","MW","MY","MV","ML","MT","MH","MQ","MR","MU","YT","MX",
+  "FM","MD","MC","MN","ME","MS","MA","MZ","MM","NA","NR","NP","NL","NC","NZ","NI",
+  "NE","NG","NU","NF","MK","MP","NO","OM","PK","PW","PS","PA","PG","PY","PE","PH",
+  "PN","PL","PT","PR","QA","RE","RO","RU","RW","BL","SH","KN","LC","MF","PM","VC",
+  "WS","SM","ST","SA","SN","RS","SC","SL","SG","SX","SK","SI","SB","SO","ZA","GS",
+  "SS","ES","LK","SD","SR","SJ","SE","CH","SY","TW","TJ","TZ","TH","TL","TG","TK",
+  "TO","TT","TN","TR","TM","TC","TV","UG","UA","AE","GB","US","UM","UY","UZ","VU",
+  "VE","VN","VG","VI","WF","EH","YE","ZM","ZW"
+];
+
+/* Pure-JS IPv4 CIDR membership check. Returns true if ip (dotted-decimal) is
+   inside the CIDR entry. Falls back to string equality for IPv6 / anything else.
+   Never uses eval or new Function. */
+function ipInList(ip, entries) {
+  if (!entries || !entries.length) return false;
+  function ip4ToUint32(s) {
+    const p = s.split(".").map(Number);
+    if (p.length !== 4 || p.some(x => isNaN(x) || x < 0 || x > 255)) return null;
+    return ((p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]) >>> 0;
+  }
+  const ipU32 = ip4ToUint32(ip);
+  for (const entry of entries) {
+    if (entry === ip) return true;
+    if (ipU32 !== null && entry.includes("/")) {
+      try {
+        const [base, bits] = entry.split("/");
+        const prefix = parseInt(bits, 10);
+        if (isNaN(prefix) || prefix < 0 || prefix > 32) continue;
+        const baseU32 = ip4ToUint32(base);
+        if (baseU32 === null) continue;
+        const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
+        if ((ipU32 & mask) === (baseU32 & mask)) return true;
+      } catch (_) { /* ignore malformed */ }
+    }
+  }
+  return false;
+}
+
+RENDER.site_gate = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub">Loading gate status…</div>`;
+
+  let d;
+  try { d = await api("/api/site_gate"); } catch (e) {
+    v.innerHTML = card("Site Access", `<div class="sub">Load error: ${esc(String(e))}</div>`);
+    return;
+  }
+  if (!d.ok) {
+    v.innerHTML = card("Site Access Gate", `<div class="sub s-bad">${esc(d.error || "unavailable")}</div>`);
+    return;
+  }
+
+  const rules      = d.rules       || {};
+  const gs         = d.gate_status || {};
+  const cd         = gs.country_detection || {};
+  const yourIP     = d.your_ip  || "—";
+  const siteUrl    = d.site_url || "https://mastermind-x.com";
+  const blockedIps = rules.blocked_ips       || [];
+  const blockedCC  = rules.blocked_countries || [];
+  const allowIps   = rules.allow_ips         || [];
+
+  // ── Country detection badge ──────────────────────────────────────────────
+  let cdBadge = "";
+  if (!gs.ok) {
+    cdBadge = `<span class="statpill s-mut">gate status unavailable — macro-api not reachable</span>`;
+  } else {
+    const src = cd.source || "unavailable";
+    if (src.startsWith("header:")) {
+      const hdr = src.slice(7);
+      cdBadge = `<span class="statpill s-ok">Country detection active (via ${esc(hdr)})</span>`;
+    } else if (src === "geoip") {
+      cdBadge = `<span class="statpill s-ok">Active (GeoIP database)</span>`;
+    } else {
+      cdBadge = `<span class="statpill s-warn">Not detecting yet — add the EdgeOne country header (see setup)</span>`;
+    }
+  }
+  const geoDbBadge = cd.geoip_db
+    ? `<span class="statpill s-ok" style="font-size:11px">GeoIP db: present</span>`
+    : `<span class="statpill s-mut" style="font-size:11px">GeoIP db: absent</span>`;
+  const lastSeen = cd.last_seen_country
+    ? `<span class="sub" style="margin-left:8px">last seen: <b>${esc(cd.last_seen_country)}</b></span>` : "";
+
+  // ── Self-lockout check (real CIDR for IPv4, string-eq fallback for IPv6) ─
+  const selfLocked = ipInList(yourIP, blockedIps);
+  const selfWarn = selfLocked
+    ? `<div class="sg-warn">⚠ Your current IP is in the block list. You'd still reach this admin console (it's never gated), but you would be blocked from the public site — it stays in the allow-list to protect you.</div>`
+    : "";
+
+  // ── Build country grid ───────────────────────────────────────────────────
+  let dnEn, dnZh;
+  try { dnEn = new Intl.DisplayNames(["en"], { type: "region" }); } catch (_) { dnEn = null; }
+  try { dnZh = new Intl.DisplayNames(["zh"], { type: "region" }); } catch (_) { dnZh = null; }
+  function sgCountryNames(code) {
+    const en = dnEn ? (dnEn.of(code) || code) : code;
+    let zh = code;
+    try { zh = dnZh ? (dnZh.of(code) || code) : code; } catch (_) {}
+    return { en, zh };
+  }
+
+  const blockedCCSet = new Set(blockedCC);
+  const countryItems = SG_COUNTRY_CODES.map(cc => {
+    const { en, zh } = sgCountryNames(cc);
+    const on = blockedCCSet.has(cc);
+    return `<button class="sg-cc-btn${on ? " sg-cc-on" : ""}" data-cc="${esc(cc)}" title="${esc(en)} / ${esc(zh)}">
+      <span class="sg-cc-code">${esc(cc)}</span>
+      <span class="sg-cc-en">${esc(en)}</span>
+      ${en !== zh ? `<span class="sg-cc-zh">${esc(zh)}</span>` : ""}
+    </button>`;
+  }).join("");
+
+  // ── Allow-IP chips ───────────────────────────────────────────────────────
+  let currentAllowIps = [...allowIps];
+  function allowChipHtml(ip) {
+    return `<span class="sg-ip-chip" data-aip="${esc(ip)}">${esc(ip)}<button class="sg-ip-rm" data-aip="${esc(ip)}" title="Remove">✕</button></span>`;
+  }
+
+  // ── Blocked-IP chips ─────────────────────────────────────────────────────
+  let currentBlockedIps = [...blockedIps];
+  function blockedChipHtml(ip) {
+    return `<span class="sg-ip-chip" data-bip="${esc(ip)}">${esc(ip)}<button class="sg-ip-rm" data-bip="${esc(ip)}" title="Remove">✕</button></span>`;
+  }
+
+  v.innerHTML = `
+    <div class="grid">
+      ${card("Master switch", `
+        <div class="sg-toggle-row">
+          <label class="switch"><input type="checkbox" id="sgEnabled"${rules.enabled ? " checked" : ""}><span class="slider"></span></label>
+          <div>
+            <b id="sgEnabledLabel">${rules.enabled ? "On — visitors matching a rule below see the coming-soon page." : "Off — everyone can access the site."}</b>
+            <div class="sub" style="margin-top:4px">Off = fail-open. Disabling never exposes admin; it only bypasses the public-site gate.</div>
+          </div>
+        </div>
+      `)}
+      ${card("Country detection", `
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+          ${cdBadge}${lastSeen}${geoDbBadge}
+        </div>
+        <div class="sub">Source resolved on the last /api/gate/check call. Configure via EdgeOne: add <b>EO-Client-IPCountry</b> header.</div>
+      `)}
+      ${card("Your IP", `
+        <div class="big mono" style="font-size:16px">${esc(yourIP)}</div>
+        ${selfWarn}
+        <div class="sub" style="margin-top:6px">Your IP is auto-added to the allow-list on every save so you can never lock yourself out.</div>
+      `)}
+    </div>
+
+    <div class="section">IP Blocklist <span class="cnt" id="sgBlockCount">${blockedIps.length}</span></div>
+    <div class="card">
+      <div class="sg-ip-add" style="margin-bottom:8px">
+        <input id="sgBlockIPInput" class="inp" style="flex:1;font-family:var(--mono);font-size:13px" placeholder="1.2.3.4 or 203.0.113.0/24 (IPv4 CIDR or IPv6)">
+        <button class="btn" id="sgBlockIPAdd">Add</button>
+      </div>
+      <div id="sgBlockIPList" style="display:flex;flex-wrap:wrap;gap:6px">
+        ${blockedIps.map(ip => blockedChipHtml(ip)).join("")}
+        ${blockedIps.length === 0 ? `<span class="sub muted">No IPs blocked</span>` : ""}
+      </div>
+    </div>
+
+    <div class="section">Allow-list (bypass) <span class="cnt" id="sgAllowCount">${allowIps.length}</span></div>
+    <div class="card">
+      <div class="sub" style="margin-bottom:8px">Always allowed (bypass every block). Your current IP is auto-added. Remove stale entries here.</div>
+      <div id="sgAllowIPList" style="display:flex;flex-wrap:wrap;gap:6px">
+        ${allowIps.map(ip => allowChipHtml(ip)).join("")}
+        ${allowIps.length === 0 ? `<span class="sub muted">None</span>` : ""}
+      </div>
+    </div>
+
+    <div class="section">Country Blocklist <span class="cnt" id="sgCCCount">${blockedCCSet.size}</span></div>
+    <div class="card">
+      <div class="sub" style="margin-bottom:8px">Click to toggle. Names via browser Intl.DisplayNames — no hardcoded CJK.</div>
+      <input id="sgCCFilter" class="inp" style="width:100%;margin-bottom:10px;font-size:13px" placeholder="Filter countries…">
+      <div id="sgCCGrid" class="sg-cc-grid">${countryItems}</div>
+    </div>
+
+    <div style="margin-top:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="sgSave">Save</button>
+      <a class="btn" href="${esc(siteUrl)}/coming-soon.html" target="_blank" rel="noopener">Preview coming-soon page</a>
+      <span class="sub" id="sgSaveStatus"></span>
+    </div>
+    ${rules.updated_at ? `<div class="sub" style="margin-top:8px">Last saved: <b>${esc(rules.updated_at)}</b></div>` : ""}
+  `;
+
+  // ── Enable toggle label ──────────────────────────────────────────────────
+  const enabledCb = $("#sgEnabled");
+  const enabledLbl = $("#sgEnabledLabel");
+  enabledCb.addEventListener("change", () => {
+    enabledLbl.textContent = enabledCb.checked
+      ? "On — visitors matching a rule below see the coming-soon page."
+      : "Off — everyone can access the site.";
+  });
+
+  // ── Blocked IP management ────────────────────────────────────────────────
+  function refreshBlockCount() {
+    const el = $("#sgBlockCount");
+    if (el) el.textContent = currentBlockedIps.length;
+  }
+  function rebuildBlockedList() {
+    const el = $("#sgBlockIPList");
+    if (!el) return;
+    if (currentBlockedIps.length === 0) {
+      el.innerHTML = `<span class="sub muted">No IPs blocked</span>`;
+    } else {
+      el.innerHTML = currentBlockedIps.map(ip => blockedChipHtml(ip)).join("");
+      el.querySelectorAll(".sg-ip-rm[data-bip]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          currentBlockedIps = currentBlockedIps.filter(x => x !== btn.dataset.bip);
+          rebuildBlockedList(); refreshBlockCount();
+        });
+      });
+    }
+    refreshBlockCount();
+  }
+  // wire initial remove buttons
+  v.querySelectorAll(".sg-ip-rm[data-bip]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentBlockedIps = currentBlockedIps.filter(x => x !== btn.dataset.bip);
+      rebuildBlockedList(); refreshBlockCount();
+    });
+  });
+  const blockIPInput = $("#sgBlockIPInput");
+  $("#sgBlockIPAdd").addEventListener("click", () => {
+    const val = (blockIPInput.value || "").trim();
+    if (!val || currentBlockedIps.includes(val)) { blockIPInput.value = ""; return; }
+    currentBlockedIps.push(val);
+    blockIPInput.value = "";
+    rebuildBlockedList();
+  });
+  blockIPInput.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("#sgBlockIPAdd").click(); } });
+
+  // ── Allow-IP management ──────────────────────────────────────────────────
+  function refreshAllowCount() {
+    const el = $("#sgAllowCount");
+    if (el) el.textContent = currentAllowIps.length;
+  }
+  function rebuildAllowList() {
+    const el = $("#sgAllowIPList");
+    if (!el) return;
+    if (currentAllowIps.length === 0) {
+      el.innerHTML = `<span class="sub muted">None</span>`;
+    } else {
+      el.innerHTML = currentAllowIps.map(ip => allowChipHtml(ip)).join("");
+      el.querySelectorAll(".sg-ip-rm[data-aip]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          currentAllowIps = currentAllowIps.filter(x => x !== btn.dataset.aip);
+          rebuildAllowList(); refreshAllowCount();
+        });
+      });
+    }
+    refreshAllowCount();
+  }
+  v.querySelectorAll(".sg-ip-rm[data-aip]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentAllowIps = currentAllowIps.filter(x => x !== btn.dataset.aip);
+      rebuildAllowList(); refreshAllowCount();
+    });
+  });
+
+  // ── Country toggle ───────────────────────────────────────────────────────
+  v.querySelectorAll(".sg-cc-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const cc = btn.dataset.cc;
+      if (blockedCCSet.has(cc)) { blockedCCSet.delete(cc); btn.classList.remove("sg-cc-on"); }
+      else                       { blockedCCSet.add(cc);    btn.classList.add("sg-cc-on"); }
+      const el = $("#sgCCCount"); if (el) el.textContent = blockedCCSet.size;
+    });
+  });
+
+  // Country filter
+  $("#sgCCFilter").addEventListener("input", function() {
+    const q = this.value.toLowerCase();
+    v.querySelectorAll(".sg-cc-btn").forEach(btn => {
+      const match = !q || btn.textContent.toLowerCase().includes(q) || btn.dataset.cc.toLowerCase().includes(q);
+      btn.style.display = match ? "" : "none";
+    });
+  });
+
+  // ── Save ─────────────────────────────────────────────────────────────────
+  const saveBtn = $("#sgSave");
+  const saveStatus = $("#sgSaveStatus");
+  saveBtn.addEventListener("click", async () => {
+    saveBtn.disabled = true;
+    if (saveStatus) saveStatus.textContent = "Saving…";
+
+    const r = await post("/api/site_gate/save", {
+      enabled:            enabledCb.checked,
+      blocked_ips:        [...currentBlockedIps],
+      blocked_countries:  [...blockedCCSet],
+      allow_ips:          [...currentAllowIps],
+    });
+
+    saveBtn.disabled = false;
+    if (r.ok) {
+      if (saveStatus) saveStatus.textContent = "";
+      const warnSuffix = r.warnings && r.warnings.length
+        ? ` (${r.warnings.length} warning${r.warnings.length > 1 ? "s" : ""})`
+        : "";
+      toast("Gate rules saved" + warnSuffix);
+      if (r.warnings && r.warnings.length) r.warnings.forEach(w => toast(w, true));
+      await RENDER.site_gate();
+    } else {
+      if (saveStatus) saveStatus.textContent = r.error || "save failed";
+      toast(r.error || "save failed", true);
+    }
+  });
+};
+
 /* ---- BTC OVERRIDE (owner view — Override-Registry W3, D2/D3) ------------- */
 /* The full honesty payload the subscriber "Proprietary cycle timer" scrub hides.
    OWNER-ONLY (D2). Both-sides framing, numbers only, NO action affordances (D3). */
@@ -903,6 +1225,7 @@ async function renderVisitorDetail(id) {
     <div class="section">Recent events</div>
     <div class="an-timeline">${recent.map(ev => `<div class="an-trow"><span class="an-tt mono">${esc(ev.t || "")}</span><span class="an-ty">${esc(ev.type)}</span><span class="an-td">${ev.ticker ? `<b class="mono">${esc(ev.ticker)}</b>` : `<span class="mono">${esc(ev.path || "")}</span>`}</span></div>`).join("") || "<div class='muted sub'>none</div>"}</div>`;
 }
+
 
 /* ---- USERS (Supabase) --------------------------------------------------- */
 RENDER.users = async () => {
@@ -3818,6 +4141,7 @@ RENDER.codex = async () => {
     });
   });
 };
+
 
 /* ---- boot --------------------------------------------------------------- */
 /* Wrap any table in the content area so wide tables scroll horizontally

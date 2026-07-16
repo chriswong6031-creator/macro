@@ -10,6 +10,8 @@ WorkingDirectory=/opt/macro
 # --deployed flag below, and the app refuses to start without ADMIN_PASSWORD
 # (settings.startup_check), so a missing file fails CLOSED, never open.
 EnvironmentFile=-/etc/macro-admin.env
+# ── Site Access Gate env (optional; admin reads/writes the same store) ────────
+# SITE_GATE_STATE=/var/lib/macro-api/site_gate.json  # blocklist store (must match macro-api.service)
 # Bind loopback only; Caddy reverse-proxies admin.mastermind-x.com → here.
 ExecStart=/opt/macro/.venv/bin/python -m admin --deployed --host 127.0.0.1 --port 8787
 Restart=always

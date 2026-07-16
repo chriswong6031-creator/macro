@@ -80,3 +80,23 @@ bash "$APP_DIR/app/deploy/firewall-cloudflare.sh" || log "firewall step skipped 
 log "DONE — Caddy serving https://$DOMAIN from $APP_DIR/site.served (atomic mirror of $APP_DIR/site)"
 log "HEAD: $(git -C "$APP_DIR" rev-parse --short HEAD)"
 systemctl --no-pager status caddy | head -4 || true
+
+# ── Site Access Gate runtime dir ─────────────────────────────────────────────
+# The gate store lives at SITE_GATE_STATE (default /var/lib/macro-api/site_gate.json).
+# /var/lib/macro-api is already used for the per-user quota ledger; ensure it exists
+# with the correct permissions.  The store file itself is created on the first save
+# via the admin panel (/api/site_gate/save); an absent file is treated as
+# {enabled:false} → allow everyone (fail-open).
+mkdir -p /var/lib/macro-api
+chmod 700 /var/lib/macro-api
+log "Runtime dir /var/lib/macro-api is present (SITE_GATE_STATE default lives here)."
+
+# Optional: download the MaxMind GeoLite2-Country database for origin-side
+# country detection (CDN header detection works without it).  Skipped when
+# MAXMIND_LICENSE_KEY is absent.
+if [ -n "${MAXMIND_LICENSE_KEY:-}" ]; then
+    bash "$APP_DIR/app/deploy/geoip-setup.sh" || log "geoip-setup skipped (non-fatal)"
+else
+    log "MAXMIND_LICENSE_KEY not set — GeoIP country detection unavailable (CDN header still works)."
+    log "See app/deploy/geoip-setup.sh for setup instructions."
+fi

@@ -584,6 +584,13 @@ on:
       - "engine/corp_credit.py"
       - "tests/test_corp_credit.py"
       - "scripts/fetch_ishares_validation_sample.py"
+      # Site Access Gate: gate logic engine, admin backend, test suites.
+      # Any change to app/gate.py, admin/site_gate.py, or either test file must
+      # re-prove the fail-open + self-lockout + IP/CIDR + country contracts.
+      - "app/gate.py"
+      - "admin/site_gate.py"
+      - "tests/test_site_gate.py"
+      - "tests/test_admin_site_gate.py"
   workflow_dispatch:
 
 permissions:
@@ -2200,3 +2207,29 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: CCW-W6 Study S1 unit tests
         run: python -m pytest tests/test_ccw_study_s1.py -v
+
+  site-gate:
+    # Site Access Gate: IP/country blocklist enforced at the origin.
+    # Covers: fail-open contract (disabled default, missing/corrupt file allows all),
+    # IP/CIDR matching (v4+v6, exact+CIDR, malformed ignored), allow_ips precedence
+    # (self-lockout guard), country header resolution, country=None => allow,
+    # admin save_rules validation (bad IP/CIDR/country rejected, atomic write,
+    # self-lockout auto-adds caller IP, warns if caller is also in blocked set).
+    # maxminddb is NOT installed (absent library must not crash the module).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        # pyyaml (+ pandas/numpy/pyarrow) are required to import admin.server for the
+        # admin HTTP-level tests (test_admin_site_gate imports the real Handler, and
+        # admin.config_store imports yaml at module load). maxminddb is deliberately
+        # OMITTED so this run ALSO proves app/gate.py imports and runs cleanly without
+        # the optional GeoIP library.
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: gate logic unit tests (app/gate.py, no maxminddb)
+        run: python -m pytest tests/test_site_gate.py -v
+      - name: admin site-gate unit + HTTP tests (admin/site_gate.py)
+        run: python -m pytest tests/test_admin_site_gate.py -v

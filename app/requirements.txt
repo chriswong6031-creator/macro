@@ -12,3 +12,6 @@ pydantic>=2.0,<3.0
 # is present in /etc/macro-api.env.  The endpoints fall back to memo-quote mode
 # when the key is absent.
 anthropic>=0.28,<1.0
+# Optional GeoIP country lookup for the site-access gate.
+# The gate imports maxminddb lazily; startup succeeds if the library is absent.
+maxminddb>=1.4
