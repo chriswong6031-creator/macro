@@ -131,6 +131,8 @@ LEX: dict[str, str] = {
     "Utilities": "公用事业",
     "Health Care": "医疗保健",
     "Consumer Discretionary": "可选消费",
+    "Communication Services": "通信服务",
+    "Information Technology": "信息技术",
     "Semiconductors": "半导体",
     "Small Caps": "小盘股",
     "Equal-Weight S&P": "等权标普",
