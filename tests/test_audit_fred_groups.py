@@ -18,10 +18,16 @@ from scripts.audit_fred_groups import audit_groups, MIN_PRESENT_PCT, STALE_DAYS
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_parquet(path: Path) -> None:
-    """Write a minimal parquet stub so the file exists with a current mtime."""
+def _make_parquet(path: Path, last_obs: date | None = None, periods: int = 5) -> None:
+    """Write a parquet whose newest OBSERVATION date is `last_obs` (default today).
+
+    Freshness is judged from the data's own newest index date — never file
+    mtime, which is checkout time on CI (#2690 class) — so fixtures must carry
+    content-fresh dates, not just a current mtime."""
     import pandas as pd
-    df = pd.DataFrame({"val": [1.0]}, index=pd.to_datetime(["2026-01-01"]))
+    end = pd.Timestamp(last_obs or date.today())
+    idx = pd.date_range(end=end, periods=periods, freq="D")
+    df = pd.DataFrame({"val": [1.0] * periods}, index=idx)
     df.to_parquet(path)
 
 
@@ -90,24 +96,21 @@ def test_exactly_50pct_not_dark(tmp_path):
 
 
 def test_stale_parquet_counts_as_absent(tmp_path):
-    """A parquet older than stale_days counts as missing even if it exists."""
+    """A parquet whose newest OBSERVATION is older than stale_days counts as
+    missing even though the file exists with a fresh (checkout-time) mtime —
+    the #2690 frozen-series case this audit exists to catch."""
     fred_dir = tmp_path / "fred"
     fred_dir.mkdir()
     stale_file = fred_dir / "OLD.parquet"
-    _make_parquet(stale_file)
-    # Back-date the mtime beyond the stale window
-    old_ts = (date.today() - timedelta(days=STALE_DAYS + 10)).timetuple()
-    import time
-    import os
-    old_epoch = time.mktime(old_ts)
-    os.utime(stale_file, (old_epoch, old_epoch))
+    # Frozen content; the file's mtime is 'now' (as after a CI checkout).
+    _make_parquet(stale_file, last_obs=date.today() - timedelta(days=STALE_DAYS + 20))
 
     cfg = _minimal_cfg({"grp": {"OLD": "old_col", "NEW": "new_col"}})
     # NEW parquet is absent too — so 0/2 = 0%, dark
     doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), out_dir=tmp_path / "q_out")
 
     g = doc["groups"][0]
-    assert "OLD" in g["missing"]   # stale → treated as missing
+    assert "OLD" in g["missing"]   # frozen content → treated as missing
     assert g["n_present"] == 0
     assert g["dark"] is True
 

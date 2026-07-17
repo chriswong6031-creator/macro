@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from engine.catalyst_tone import _extract_json   # shared tolerant JSON parser (leaf util)
@@ -346,10 +346,16 @@ def run(persist: bool = True, root=None, force: bool = False, call=None) -> dict
     base = Path(root) if root is not None else config.ROOT
     site = base / "site" / "riskdata" / "risk_brain.json"
     if not force and int(cfg.get("interval_days", 1)) > 1 and site.exists():
+        # Interval gate keys off the note's embedded as_of date — never file
+        # mtime (the note is committed; a CI checkout rewrites it with
+        # mtime = checkout time, so it would always read 0d old and the brain
+        # would never regenerate — #2690 class). Missing/unparsable as_of, or
+        # an as_of in the future, ⇒ regenerate.
         try:
-            age = (datetime.now(timezone.utc) - datetime.fromtimestamp(site.stat().st_mtime, timezone.utc)).days
-            if age < int(cfg["interval_days"]):
-                return _read_json(site)
+            prior = _read_json(site)
+            age = (date.today() - date.fromisoformat(str(prior.get("as_of"))[:10])).days
+            if 0 <= age < int(cfg["interval_days"]):
+                return prior
         except Exception:  # noqa: BLE001
             pass
     evidence = gather_evidence(root=root)

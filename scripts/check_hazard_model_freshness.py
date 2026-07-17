@@ -8,7 +8,8 @@ This is the diff-and-alert half of the W4.2 ops contract — the heavy monthly r
 Checks (all warn-only unless --strict):
   1. A price-basis panel + a matching model_<epoch>.json exist and the epochs agree.
   2. The panel is a PRICE epoch (price_*), never a stale TR epoch (substrate contract).
-  3. The model is not more than --max-stale-days old (default 100) vs the panel mtime.
+  3. The model is not more than --max-stale-days old (default 100) vs its embedded
+     built_at stamp (never file mtime — checkout rewrites mtime on CI, #2690 class).
   4. The model ledger is well-formed (6 cells, each with a verdict).
 
 Exit code is 0 in warn mode (fail-open) even on findings; --strict makes findings exit 1.
@@ -51,21 +52,35 @@ def check(hazard_dir: Path, max_stale_days: int) -> list[str]:
         findings.append(f"no model for current epoch {epoch}: expected {model.name}.")
         return findings
 
-    # Staleness: model mtime vs now
-    age_days = (datetime.now(timezone.utc)
-                - datetime.fromtimestamp(model.stat().st_mtime, tz=timezone.utc)).days
-    if age_days > max_stale_days:
-        findings.append(
-            f"hazard model {model.name} is {age_days}d old (> {max_stale_days}d) — "
-            f"downstream should degrade to the KM prior; schedule a refit."
-        )
-
     # Ledger well-formedness
     try:
         m = json.loads(model.read_text())
     except Exception as e:  # noqa: BLE001
         findings.append(f"model {model.name} is not valid JSON: {e}")
         return findings
+
+    # Staleness: the model's embedded built_at stamp vs now — never file mtime
+    # (the model JSON is committed; a CI checkout rewrites it with
+    # mtime = checkout time, leaving this tripwire permanently green for a
+    # frozen model — #2690 class). Missing/unparsable built_at ⇒ stale finding.
+    age_days: int | None = None
+    try:
+        built_at = datetime.fromisoformat(str(m["built_at"]).replace("Z", "+00:00"))
+        if built_at.tzinfo is None:
+            built_at = built_at.replace(tzinfo=timezone.utc)
+        age_days = (datetime.now(timezone.utc) - built_at).days
+    except Exception:  # noqa: BLE001
+        pass
+    if age_days is None:
+        findings.append(
+            f"hazard model {model.name} has no readable built_at stamp — treating as "
+            f"stale; downstream should degrade to the KM prior; schedule a refit."
+        )
+    elif age_days > max_stale_days:
+        findings.append(
+            f"hazard model {model.name} is {age_days}d old (> {max_stale_days}d) — "
+            f"downstream should degrade to the KM prior; schedule a refit."
+        )
 
     if not str(m.get("turn_def_version", "")).startswith("price_"):
         findings.append(
@@ -80,7 +95,8 @@ def check(hazard_dir: Path, max_stale_days: int) -> list[str]:
     else:
         n_pass = sum(1 for d in ("up", "down") for h in ("1m", "3m", "6m")
                      if led[d][h].get("verdict") == "PASS")
-        print(f"hazard model OK: epoch {epoch}, {age_days}d old, {n_pass}/6 cells PASS.")
+        age_str = f"{age_days}d" if age_days is not None else "unknown-age"
+        print(f"hazard model OK: epoch {epoch}, {age_str} old, {n_pass}/6 cells PASS.")
 
     return findings
 
