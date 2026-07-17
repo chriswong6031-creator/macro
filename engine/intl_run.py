@@ -16,6 +16,20 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
+_RADAR_KEYS = {"JP": "jp", "KR": "kr", "TW": "tw", "IN": "in", "AU": "au", "GB": "gb", "EZ": "ez"}
+
+
+def _ledger_lane_armed() -> bool:
+    """True only on the nightly collect lane (COLLECT_LANE=nightly, legacy alias
+    US_LANE). House law: nightly is the SOLE advancer of data/ forward ledgers —
+    sentinel intraday (CBF_INTRADAY=1) and the engine-render/render re-render lanes
+    run build_intl too; on those lanes the radar snapshot still renders but the
+    forward log / tuner must not advance (a mid-session append is PIT-inconsistent
+    and, being idempotent-by-asof, would permanently displace the nightly row)."""
+    import os
+    lane = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return lane.lower() == "nightly"
+
 
 def _macro_present(snap: dict) -> int:
     return sum(1 for k in ("yield_10y", "cpi_yoy", "gdp_yoy", "unemployment")
@@ -80,6 +94,32 @@ def run() -> dict:
         records.append(rec)
         if hist is not None:
             hist.to_parquet(p / f"{cc}_history.parquet")
+        # Leading-risk radar (engine/risk_radar_intl.py): calibrated forward-drawdown
+        # radar per market — US rate shocks + FX depreciation + extension percentile
+        # (melt-up/KOSPI class). Display-only until this market's own forward log
+        # matures (can_force); append is idempotent by as-of (nightly is the sole
+        # advancer; re-render lanes dedupe). Never fatal.
+        try:
+            from engine import risk_radar_intl as _rri
+            _prof = _rri.PROFILES.get(_RADAR_KEYS.get(cc, ""))
+            if _prof is not None:
+                rec["risk_radar"] = _rri.snapshot(_prof)
+                try:
+                    from engine import risk_radar_intl_audit as _rra
+                    if _ledger_lane_armed():
+                        from engine import risk_radar_intl_tune as _rrt
+                        rec["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(rec["risk_radar"], _prof)
+                        rec["risk_radar"]["can_force"] = bool(rec["risk_radar"]["forward_log"].get("can_force"))
+                        _rrt.tune(_prof)
+                    else:
+                        # Read-only fast-path: snapshot still renders; ledger/tuner do not advance.
+                        sc = _rra.scorecard(_prof.key, log_governance=False)
+                        rec["risk_radar"]["forward_log"] = sc
+                        rec["risk_radar"]["can_force"] = bool(sc.get("can_force"))
+                except Exception as _e:  # noqa: BLE001
+                    log.warning("intl %s risk-radar audit/tune failed (%s); snapshot only", cc, _e)
+        except Exception as _e:  # noqa: BLE001
+            log.warning("intl %s risk-radar failed (%s); skipping", cc, _e)
 
     if not records:
         raise RuntimeError("intl engine produced no country records")

@@ -133,6 +133,10 @@ on:
       # VSB W6: corr_floor_break + ai_breadth_divergence Tier-B legs + corr alert
       - "tests/test_vsb_radar_alert.py"
       - "engine/risk_radar.py"
+      # intl 7-market radar profiles (KR/JP/TW/IN/AU/GB/EZ) + frozen cn/hk/ca guard
+      - "tests/test_risk_radar_intl_profiles.py"
+      - "engine/risk_radar_intl.py"
+      - "engine/intl_run.py"
       - "engine/alerts.py"
       - "templates/_risk_radar_card.html.j2"
       - "templates/_risk_radar_card.css.j2"
@@ -885,6 +889,7 @@ jobs:
           tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
           tests/test_risk_radar_scorecard.py
           tests/test_vsb_radar_alert.py
+          tests/test_risk_radar_intl_profiles.py
           tests/test_risk_state_live_copy_sync.py
           tests/test_build_china_risk_state.py
           tests/test_canon.py tests/test_whitehouse_w5.py
