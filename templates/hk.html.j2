@@ -767,14 +767,27 @@
   /* Mechanic #2: 1500px wrap with US-width body padding */
   @media(min-width:1100px){body.page-hk{padding:26px max(40px,calc((100vw - 1500px)/2))}}
   body.page-hk .hkx-wrap{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:0}
-  body.page-hk .hkx-aurora{position:fixed;inset:0;pointer-events:none;z-index:0}
-  body.page-hk .hkx-aurora::before{content:"";position:absolute;top:-220px;left:12%;width:820px;height:560px;border-radius:50%;background:radial-gradient(ellipse,rgba(224,100,100,.07) 0%,transparent 70%)}
-  body.page-hk .hkx-aurora::after{content:"";position:absolute;top:120px;right:4%;width:700px;height:520px;border-radius:50%;background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%)}
+  body.page-hk .hkx-aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  body.page-hk .hkx-aurora::before{content:"";position:absolute;top:-220px;left:12%;width:820px;height:560px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(69,184,115,.12) 0%,transparent 70%)}
+  body.page-hk .hkx-aurora::after{content:"";position:absolute;bottom:-100px;right:-100px;width:700px;height:600px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(99,102,241,.10) 0%,transparent 70%)}
+  body.page-hk .hkx-aurora .au-a3{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);width:600px;height:500px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(69,184,115,.07) 0%,transparent 70%)}
+  /* State-adaptive aurora tints — baked from market_state.color server-side */
+  body.page-hk .hkx-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(245,158,11,.10) 0%,transparent 70%)}
+  body.page-hk .hkx-aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%)}
+  body.page-hk .hkx-aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%)}
+  body.page-hk .hkx-aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%)}
+  /* Light-mode aurora: much fainter */
+  [data-theme="light"] body.page-hk .hkx-aurora::before{background:radial-gradient(ellipse,rgba(69,184,115,.05) 0%,transparent 70%)}
+  [data-theme="light"] body.page-hk .hkx-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%)}
+  [data-theme="light"] body.page-hk .hkx-aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%)}
+  [data-theme="light"] body.page-hk .hkx-aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%)}
+  [data-theme="light"] body.page-hk .hkx-aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%)}
+  @media(prefers-reduced-motion:reduce){body.page-hk .hkx-aurora{animation:none}}
   /* Glass card base */
   body.page-hk .hkx-card{background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));border-radius:18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.55),0 1.5px 0 rgba(255,255,255,.07) inset;padding:18px 20px;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s;margin-bottom:14px}
   body.page-hk .hkx-card[role="button"]{cursor:pointer}
   body.page-hk .hkx-card[role="button"]:hover{background:rgba(22,29,38,.62);border-color:rgba(255,255,255,.16);box-shadow:0 6px 24px rgba(0,0,0,.25);transform:translateY(-1px)}
-  body.page-hk .hkx-ctitle{font-size:11.5px;font-weight:650;letter-spacing:.8px;text-transform:uppercase;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  body.page-hk .hkx-ctitle{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
   body.page-hk .hkx-ctitle .zh{font-weight:500;opacity:.5;text-transform:none;letter-spacing:0}
   body.page-hk .hkx-ctitle .q{margin-left:6px;width:14px;height:14px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:9px;display:inline-flex;align-items:center;justify-content:center;font-weight:700}
   /* Mechanic #3: hero z-index 30 for popover stacking context */
@@ -797,8 +810,10 @@
   body.page-hk .ms-red .hkx-regime-pill .dot{background:var(--q3)}
   body.page-hk .hkx-live-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.8px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:999px;margin-left:8px;opacity:.45}
   body.page-hk .hkx-live-pill .d{width:6px;height:6px;border-radius:50%;background:var(--muted)}
-  body.page-hk .hkx-gauge-row{display:flex;gap:18px;align-items:center;margin-top:10px}
-  body.page-hk .hkx-gauge-svg{flex:0 0 110px;width:110px;height:72px;overflow:visible}
+  body.page-hk .hkx-gauge-row{display:flex;gap:20px;align-items:center;margin-top:10px;margin-bottom:16px}
+  /* Gauge scaled to 192×120 per US spec (viewBox unchanged so needle math intact) */
+  body.page-hk .hkx-gauge-svg{flex:0 0 192px;width:192px;height:120px;overflow:visible;display:block}
+  @media(max-width:560px){body.page-hk .hkx-gauge-svg{width:90px;height:58px;flex:0 0 90px}}
   /* Mechanic #4: gauge arc color per state */
   body.page-hk .hkx-gauge-fill{stroke:var(--warn)}
   body.page-hk .ms-green .hkx-gauge-fill{stroke:var(--up)}
@@ -814,11 +829,14 @@
   body.page-hk .ms-red .hkx-needle-hub{stroke:var(--down)}
   body.page-hk .ms-red .hkx-needle-core,body.page-hk .ms-red .hkx-needle-tip{fill:var(--down)}
   body.page-hk .ms-red .hkx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
-  body.page-hk .hkx-score-line{display:flex;align-items:baseline;gap:10px}
-  body.page-hk .hkx-big-score{font-size:52px;font-weight:750;line-height:1;color:var(--warn)}
-  body.page-hk .ms-green .hkx-big-score{color:var(--up)}
-  body.page-hk .ms-red .hkx-big-score{color:var(--down)}
-  body.page-hk .hkx-verdict{font-size:22px;font-weight:700}
+  body.page-hk .hkx-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  /* Big score — US parity: 68px/800 with state glow */
+  body.page-hk .hkx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
+  body.page-hk .ms-green .hkx-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
+  body.page-hk .ms-red .hkx-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  @media(max-width:560px){body.page-hk .hkx-big-score{font-size:34px}}
+  body.page-hk .hkx-verdict{font-size:19px;font-weight:700;white-space:nowrap}
+  @media(max-width:560px){body.page-hk .hkx-verdict{font-size:13px}}
   body.page-hk .hkx-verdict .arr{color:var(--warn)}
   body.page-hk .ms-green .hkx-verdict .arr{color:var(--up)}
   body.page-hk .ms-red .hkx-verdict .arr{color:var(--down)}
@@ -833,7 +851,7 @@
   body.page-hk .ms-green .hkx-sub-line .hkx-sub-y{display:none}
   body.page-hk .ms-red .hkx-sub-line .hkx-sub-r{display:inline}
   body.page-hk .ms-red .hkx-sub-line .hkx-sub-y{display:none}
-  body.page-hk .hkx-thesis{font-size:13px;color:var(--text);max-width:42ch;margin:12px 0 10px}
+  body.page-hk .hkx-thesis{font-size:13px;font-weight:450;line-height:1.55;color:var(--text);max-width:52ch;margin:12px 0 10px}
   body.page-hk .hkx-flip{font-size:11.5px;color:var(--muted);background:rgba(224,160,48,.08);border:1px solid rgba(224,160,48,.25);border-radius:10px;padding:7px 10px;max-width:46ch}
   body.page-hk .ms-green .hkx-flip{background:rgba(69,184,115,.08);border-color:rgba(69,184,115,.25)}
   body.page-hk .hkx-hero-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;position:relative}
@@ -869,7 +887,8 @@
   body.page-hk .hkx-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 16px}
   @media(max-width:1100px){body.page-hk .hkx-tiles{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:560px){body.page-hk .hkx-tiles{grid-template-columns:1fr}}
-  body.page-hk .hkx-tile{padding:13px 15px}
+  body.page-hk .hkx-tile{padding:13px 15px;border-top:2px solid transparent;transition:border-color .2s}
+  body.page-hk .hkx-tile:hover{border-top-color:var(--up)}
   body.page-hk .hkx-tile .sym{font-size:11px;font-weight:700;letter-spacing:.6px}
   body.page-hk .hkx-tile .nm{font-size:9.5px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-top:1px}
   body.page-hk .hkx-tile .px{font-size:19px;font-weight:700;margin-top:7px}
@@ -887,11 +906,11 @@
   @media(max-width:1000px){body.page-hk .hkx-hero{grid-template-columns:1fr}}
   @media(max-width:1000px){body.page-hk .hkx-hero-left{border-right:none;border-bottom:1px solid rgba(255,255,255,.12)}}
   /* Card internals */
-  body.page-hk .hkx-row{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px}
+  body.page-hk .hkx-row{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}
   body.page-hk .hkx-row:last-child{border-bottom:none}
   body.page-hk .hkx-row .ic{flex:0 0 20px;text-align:center;font-size:12px;padding-top:1px}
   body.page-hk .hkx-row .sub{display:block;font-size:10.5px;color:var(--muted);margin-top:1px}
-  body.page-hk .hkx-kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px}
+  body.page-hk .hkx-kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}
   body.page-hk .hkx-kv:last-of-type{border-bottom:none}
   body.page-hk .hkx-kv .k{color:var(--muted)}
   body.page-hk .hkx-kv .v{font-weight:650;text-align:right}
@@ -909,9 +928,15 @@
   body.page-hk .hkx-bigsub{font-size:12px;font-weight:650;margin-top:3px}
   body.page-hk .hkx-alert-pill{margin-left:auto;font-size:10px;font-weight:700;background:rgba(224,160,48,.16);color:var(--warn);border-radius:999px;padding:2px 9px;letter-spacing:.5px}
   body.page-hk .hkx-heat{display:flex;gap:4px;margin-top:6px}
-  body.page-hk .hkx-heat i{flex:1;height:12px;border-radius:3px;background:var(--up);opacity:.85}
-  body.page-hk .hkx-heat i.h2{opacity:.55} body.page-hk .hkx-heat i.h3{opacity:.3}
-  body.page-hk .hkx-heat i.c{background:var(--down)} body.page-hk .hkx-heat i.c2{background:var(--down);opacity:.45} body.page-hk .hkx-heat i.n{background:rgba(255,255,255,.12)}
+  body.page-hk .hkx-heat i{flex:1;height:12px;border-radius:3px}
+  /* h=hot (green), h2=warm, h3=mild, c=cold (red), c2=cool, n=neutral */
+  body.page-hk .hkx-heat i{background:var(--muted);opacity:.25}
+  body.page-hk .hkx-heat i.h{background:var(--up);opacity:1}
+  body.page-hk .hkx-heat i.h2{background:color-mix(in srgb,var(--up) 65%,transparent);opacity:1}
+  body.page-hk .hkx-heat i.h3{background:color-mix(in srgb,var(--up) 35%,transparent);opacity:1}
+  body.page-hk .hkx-heat i.c{background:var(--down);opacity:1}
+  body.page-hk .hkx-heat i.c2{background:color-mix(in srgb,var(--down) 50%,transparent);opacity:1}
+  body.page-hk .hkx-heat i.n{background:rgba(255,255,255,.12);opacity:1}
   body.page-hk .hkx-stk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-hk .hkx-stk:last-of-type{border-bottom:none}
   body.page-hk .hkx-tkr-btn{display:inline-block;background:rgba(91,155,240,.10);border:1px solid rgba(91,155,240,.35);color:#a9c8f5;border-radius:8px;padding:3px 10px;font-weight:700;font-size:12px;cursor:pointer;text-decoration:none}
@@ -957,6 +982,27 @@
   @media(max-width:980px){body.page-hk .hkx-cols2{grid-template-columns:1fr}}
   /* Mechanic #6: 2-col dialog with minmax(0,1fr) */
   body.page-hk .hkx-hm-wrap{border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.02);padding:12px}
+  /* Cross-asset strip (market_tiles row) */
+  body.page-hk .hkx-cas-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:0 0 16px}
+  @media(max-width:1100px){body.page-hk .hkx-cas-strip{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:560px){body.page-hk .hkx-cas-strip{grid-template-columns:repeat(2,1fr)}}
+  body.page-hk .hkx-cat{padding:10px 12px;border-radius:12px}
+  body.page-hk .hkx-cat .cat-tag{font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  body.page-hk .hkx-cat .cat-val{font-size:14px;font-weight:700;line-height:1.1}
+  body.page-hk .hkx-cat .cat-chg{font-size:10.5px;font-weight:650;margin-top:2px}
+  body.page-hk .hkx-cat .cat-tone{font-size:9.5px;font-weight:700;letter-spacing:.5px;border-radius:4px;padding:1px 7px;margin-top:3px;display:inline-block}
+  body.page-hk .hkx-cat .cat-tone.bull{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
+  body.page-hk .hkx-cat .cat-tone.bear{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down)}
+  body.page-hk .hkx-cat .cat-tone.warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn)}
+  body.page-hk .hkx-cat .cat-tone.neu{background:rgba(255,255,255,.06);color:var(--muted)}
+  /* PEG-warn accent on the USD/HKD tile */
+  body.page-hk .hkx-cat.peg-warn{border-color:rgba(224,160,48,.4)!important}
+  /* Data health dialog */
+  body.page-hk .hkx-dh-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12px}
+  body.page-hk .hkx-dh-row:last-child{border-bottom:none}
+  body.page-hk .hkx-dh-dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
+  /* Valuation section in dlg-flows */
+  body.page-hk .hkx-val-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0}
   body.page-hk .hkx-freshbar{background:rgba(224,160,48,.10);border:1px solid rgba(224,160,48,.3);border-radius:12px;padding:8px 14px;font-size:12px;color:var(--warn);margin-bottom:14px}
   body.page-hk .hkx-nchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(255,255,255,.06);color:var(--muted)}
   /* Dial (VHSI gauge) */
@@ -1074,8 +1120,8 @@
   {% set _score_dash = (_score / 100 * 157)|int %}
   {% set _mscolor = ms.color|default('yellow') %}
   {% endif %}
-  {# MX5 HERO #}
-  <div class="hkx-aurora"></div>
+  {# MX5 HERO — aurora class baked from market state color #}
+  <div class="hkx-aurora{{ ' au-yellow' if (ms is defined and ms and ms.color == 'yellow') else (' au-red' if (ms is defined and ms and ms.color == 'red') else '') }}" aria-hidden="true"><div class="au-a3"></div></div>
   <div class="hkx-wrap ms-front ms ms-{{ ms.color if ms is defined and ms else 'yellow' }}" id="ms-front">
 
   {# HERO card #}
@@ -1116,8 +1162,8 @@
         </svg>
         <div>
           <div class="hkx-score-line">
-            <span class="hkx-big-score" id="ms-score"
-                  style="color:{{ 'var(--up)' if (ms is defined and ms and ms.color == 'green') else ('var(--warn)' if (ms is defined and ms and ms.color == 'yellow') else 'var(--down)') }}">{{ ms.score if ms is defined and ms else '—' }}</span>
+            {# Color is CLASS-driven via .ms-* on the ancestor — no inline style #}
+            <span class="hkx-big-score" id="ms-score">{{ ms.score if ms is defined and ms else '—' }}</span>
             <span class="hkx-verdict" id="ms-word">{{ t(ms.label_en, ms.label_zh) if ms is defined and ms else '—' }}</span>
           </div>
           <div style="position:relative;height:5px;border-radius:3px;margin-top:7px;width:150px;background:linear-gradient(90deg,var(--down) 0%,var(--down) 42%,var(--warn) 42%,var(--warn) 60%,var(--up) 60%)">
@@ -1173,36 +1219,35 @@
           <span class="hkx-pop-link" onclick="hkxClosePops();hkxOpenDlg('hkx-dlg-risk')">{{ t('See the full risk read ↓','查看完整风险 ↓') }}</span>
         </div>
       </div>
-      <div class="hkx-hero-vitals">
-        {% if gv and gv.peg %}
-        <div class="hkx-vchip{% if gv.peg.level > 7.83 %} hkx-vchip-warn{% endif %}">{{ t('HK$', '港元') }} <b>{{ '%.4f'|format(gv.peg.level) }}</b>{% if gv.peg.level > 7.83 %} — {{ t('near weak edge','接近弱方') }}{% endif %}</div>
-        {% endif %}
-        {% if gv %}
-        <div class="hkx-vchip{% if gv.state == 'Risk-off' %} hkx-vchip-warn{% endif %}">{{ t('World mood', '全球情绪') }} <b>{{ td(gv.state) }}</b></div>
-        {% endif %}
-      </div>
+      {# vchips REMOVED from hero — now in cross-asset strip below index tiles #}
     </div>
     <div class="hkx-hero-right">
       <div class="hkx-path-h"><span>{{ t('Last sessions','近期走势') }}</span><span id="ms-date">{{ latest.date if latest else '' }}</span></div>
       {% if ms_history and ms_history|length >= 2 %}
-      {# render score history path #}
-      {% set _hw = 560 %}{% set _hh = 200 %}
+      {# render score history path — SVG text nodes must NOT contain <span> (HTML not valid inside SVG).
+         Use paired <text class="l-en">/<text class="l-zh"> dual-node pattern (CSS hides inactive lang). #}
+      {% set _hw = 560 %}
       {% set _n = ms_history|length %}
+      {% set _scol = 'var(--up)' if (ms is defined and ms and ms.color == 'green') else ('var(--warn)' if (ms is defined and ms and ms.color == 'yellow') else 'var(--down)') %}
       <svg class="hkx-path-svg" viewBox="0 0 {{ _hw }} 240" aria-hidden="true">
         <rect x="20" y="20" width="{{ _hw - 40 }}" height="50" fill="rgba(69,184,115,.06)"/>
         <rect x="20" y="130" width="{{ _hw - 40 }}" height="50" fill="rgba(224,100,100,.06)"/>
         <line x1="20" y1="105" x2="{{ _hw - 20 }}" y2="105" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
-        <text x="{{ _hw - 22 }}" y="34" font-size="9" fill="var(--up)" text-anchor="end">{{ t('Calm / buy','平稳/买') }}</text>
-        <text x="{{ _hw - 22 }}" y="102" font-size="9" fill="var(--warn)" text-anchor="end">{{ t('Mixed','混合') }}</text>
-        <text x="{{ _hw - 22 }}" y="182" font-size="9" fill="var(--down)" text-anchor="end">{{ t('Nervous / sell','紧张/卖') }}</text>
+        {# Zone labels — dual SVG text nodes; l-en/l-zh CSS toggle hides inactive lang #}
+        <text class="l-en" x="{{ _hw - 22 }}" y="34" font-size="9" fill="var(--up)" text-anchor="end">Calm / buy</text>
+        <text class="l-zh" x="{{ _hw - 22 }}" y="34" font-size="9" fill="var(--up)" text-anchor="end">平稳/买</text>
+        <text class="l-en" x="{{ _hw - 22 }}" y="102" font-size="9" fill="var(--warn)" text-anchor="end">Mixed</text>
+        <text class="l-zh" x="{{ _hw - 22 }}" y="102" font-size="9" fill="var(--warn)" text-anchor="end">混合</text>
+        <text class="l-en" x="{{ _hw - 22 }}" y="182" font-size="9" fill="var(--down)" text-anchor="end">Nervous / sell</text>
+        <text class="l-zh" x="{{ _hw - 22 }}" y="182" font-size="9" fill="var(--down)" text-anchor="end">紧张/卖</text>
         {% set _pts = [] %}
         {% for h in ms_history %}
           {% set _x = (loop.index0 / (_n - 1) * (_hw - 40) + 20)|int %}
           {% set _y = ((1 - h.score / 100) * 180 + 20)|int %}
           {% if _pts.append(_x|string + ' ' + _y|string) %}{% endif %}
         {% endfor %}
-        <path d="M{{ _pts|join(' L') }}" fill="none" stroke="{{ 'var(--up)' if (ms is defined and ms and ms.color == 'green') else ('var(--warn)' if (ms is defined and ms and ms.color == 'yellow') else 'var(--down)') }}" stroke-width="2.2" stroke-linejoin="round"/>
-        <circle cx="{{ _pts[-1].split(' ')[0] }}" cy="{{ _pts[-1].split(' ')[1] }}" r="4.5" fill="{{ 'var(--up)' if (ms is defined and ms and ms.color == 'green') else ('var(--warn)' if (ms is defined and ms and ms.color == 'yellow') else 'var(--down)') }}"/>
+        <path d="M{{ _pts|join(' L') }}" fill="none" stroke="{{ _scol }}" stroke-width="2.2" stroke-linejoin="round"/>
+        <circle cx="{{ _pts[-1].split(' ')[0] }}" cy="{{ _pts[-1].split(' ')[1] }}" r="4.5" fill="{{ _scol }}"/>
         <text x="30" y="230" font-size="9" fill="var(--muted)">{{ ms_history[0].date if ms_history[0].date is defined else '' }}</text>
         <text x="{{ _hw - 22 }}" y="230" font-size="9" fill="var(--muted)" text-anchor="end">{{ ms_history[-1].date if ms_history[-1].date is defined else '' }}</text>
       </svg>
@@ -1213,7 +1258,7 @@
   </div>{# /.hkx-hero #}
 
   {# TILES — 4 index tiles #}
-  <div class="hkx-secbar"><b>{{ t('HONG KONG DASHBOARD','香港仪表盘') }} <span style="opacity:.5;font-weight:500">香港仪表盘</span></b><span>{{ latest.date if latest else '—' }}</span></div>
+  <div class="hkx-secbar"><b>{{ t('HONG KONG DASHBOARD','香港仪表盘') }}</b><span>{{ latest.date if latest else '—' }}</span></div>
   <div class="hkx-tiles">
     {% if index_health %}
     {% for ih in index_health[:4] %}
@@ -1234,10 +1279,61 @@
     {% endif %}
   </div>
 
+  {# CROSS-ASSET STRIP — relocated vchips + market_tiles (6 tiles) #}
+  {# USD/HKD tile carries the peg story; world mood as leading state chip #}
+  {% if market_tiles or (gv and gv.peg) or gv %}
+  <div class="hkx-cas-strip">
+    {% if market_tiles %}
+    {% for tile in market_tiles %}
+    {# USD/HKD tile gets peg-warn accent when near weak edge — matched by tag=='peg', not index #}
+    {% set _peg_warn = (tile.tag is defined and tile.tag == 'peg' and gv and gv.peg and gv.peg.level is defined and gv.peg.level > 7.83) %}
+    <div class="hkx-card hkx-cat{{ ' peg-warn warn' if _peg_warn else '' }}" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-policy')">
+      <div class="cat-tag">{{ tile.tag if tile.tag is defined else tile.label }}</div>
+      {# tone is pos/neg/neu from market_tiles builder #}
+      {% set _tone_cls = 'hkx-tt-up' if tile.tone in ('pos','bull') else ('hkx-tt-dn' if tile.tone in ('neg','bear') else '') %}
+      <div class="cat-val {{ _tone_cls }}">{{ tile.level if tile.level is defined else '—' }}</div>
+      {% if tile.chg is not none and tile.chg is defined and tile.chg is number %}
+      <div class="cat-chg {{ 'hkx-tt-up' if (tile.chg >= 0) else 'hkx-tt-dn' }}">{{ ('%+.2f'|format(tile.chg)) }}</div>
+      {% elif tile.chg is defined and tile.chg %}
+      <div class="cat-chg {{ _tone_cls }}">{{ tile.chg }}</div>
+      {% endif %}
+      {% if tile.tone is defined and tile.tone %}
+      {# tone pill shows stance word, not instrument name; matched to tone enum #}
+      <span class="cat-tone {{ 'bull' if tile.tone in ('pos','bull') else ('bear' if tile.tone in ('neg','bear') else 'neu') }}">{{ t('Up','涨') if tile.tone in ('pos','bull') else (t('Down','跌') if tile.tone in ('neg','bear') else t('Flat','平')) }}</span>
+      {% endif %}
+      {% if _peg_warn %}<div style="font-size:9px;color:var(--warn);margin-top:2px">{{ t('near weak edge','接近弱方') }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    {# Fallback: just show peg + world mood vchips as mini tiles #}
+    {% if gv and gv.peg %}
+    <div class="hkx-card hkx-cat{{ ' peg-warn' if gv.peg.level > 7.83 else '' }}" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-policy')">
+      <div class="cat-tag">{{ t('USD/HKD','美元/港元') }}</div>
+      <div class="cat-val {{ 'hkx-tt-dn' if gv.peg.level > 7.83 else '' }}">{{ '%.4f'|format(gv.peg.level) }}</div>
+      {% if gv.peg.level > 7.83 %}<div style="font-size:9px;color:var(--warn);margin-top:2px">{{ t('near weak edge','接近弱方') }}</div>{% endif %}
+    </div>
+    {% endif %}
+    {% if gv %}
+    <div class="hkx-card hkx-cat">
+      <div class="cat-tag">{{ t('World Mood','全球情绪') }}</div>
+      <div class="cat-val">{{ td(gv.state) }}</div>
+      <span class="cat-tone {{ 'bull' if gv.state == 'Risk-on' else ('bear' if gv.state == 'Risk-off' else 'warn') }}">{{ td(gv.state) }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+
   {# ROW 1: What To Do + Coming Up #}
   <div class="hkx-rack2">
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-playbook')">
       <div class="hkx-ctitle">{{ t('What To Do','操作建议') }}</div>
+      {# Stance line — command_panel verdict or ms label; Law 1: every panel answers "so what do I do" #}
+      {% if command_panel and command_panel.verdict and command_panel.verdict.label_en is defined %}
+      <div style="font-size:12.5px;font-weight:650;color:var(--text);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)">{{ t(command_panel.verdict.label_en, command_panel.verdict.label_zh or command_panel.verdict.label_en) }}</div>
+      {% elif ms is defined and ms %}
+      <div style="font-size:12.5px;font-weight:650;color:var(--text);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)">{{ t(ms.headline_en, ms.headline_zh or ms.headline_en) }}</div>
+      {% endif %}
       {% if signal_stack and signal_stack.legs %}
       {% for leg in signal_stack.legs[:5] %}
       <div class="hkx-row">
@@ -1317,18 +1413,36 @@
 
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-sentiment')">
       <div class="hkx-ctitle">{{ t('Mood & Fear','市场情绪') }}</div>
+      {# Stance line — high pctile = fearful = be careful; low = greedy = watch for euphoria #}
+      {% if vhsi and vhsi.pctile is not none %}
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+        {% if vhsi.pctile >= 75 %}{{ t('Fear elevated — worth watching carefully','恐慌偏高 — 值得谨慎观察') }}
+        {% elif vhsi.pctile <= 25 %}{{ t('Greed elevated — not a chase signal','贪婪偏高 — 非追涨信号') }}
+        {% else %}{{ t('Fear normal — watch, don\'t chase','恐慌正常 — 观察，勿追') }}{% endif %}
+      </div>
+      {% endif %}
       {% if vhsi %}
-      {% set _vhsi_angle = (vhsi.pctile / 100 * 180 - 90)|int %}
-      <svg class="hkx-dial" viewBox="0 0 200 108">
+      {# Correct semicircle needle: angle from left (fear=0%) to right (greed=100%).
+         pctile 0→angle=180°, 100→angle=0°; measured from positive x-axis.
+         angle_rad = π * (1 - pctile/100)
+         nx = 100 + 80 * cos(angle_rad) — but cos(π)=-1 so at 0% nx=100-80=20 (left).
+         ny = 96 - 80 * sin(angle_rad) — sin(π)=0 so at 0% ny=96 (flat, pointing left).
+         Pre-compute using python-compatible trig: Jinja has no math module,
+         so use the rotate() transform on the needle instead. #}
+      {% set _vhsi_rot = ((vhsi.pctile / 100 * 180) - 90)|round(1) %}
+      <svg class="hkx-dial" viewBox="0 0 200 112">
         <defs><linearGradient id="hkdg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--down)"/><stop offset=".5" stop-color="var(--warn)"/><stop offset="1" stop-color="var(--up)"/></linearGradient></defs>
         <path d="M18 96 A82 82 0 0 1 182 96" fill="none" stroke="url(#hkdg)" stroke-width="11" stroke-linecap="round" opacity=".8"/>
-        {# needle angle: pctile 0=left(-90deg), 100=right(+90deg) #}
-        {% set _nx = (100 + 80 * ((vhsi.pctile / 100 * 2 - 1) * 0.866))|int %}
-        {% set _ny = (96 - 80 * (1 - (vhsi.pctile / 100 * 2 - 1) * (vhsi.pctile / 100 * 2 - 1)) ** 0.5)|int %}
-        <line x1="100" y1="96" x2="{{ _nx }}" y2="{{ _ny }}" stroke="var(--text)" stroke-width="2.4"/>
+        {# Needle: rotate around centre (100,96); 0%=-90°(left), 50%=0°(up), 100%=+90°(right) #}
+        <g transform="rotate({{ _vhsi_rot }} 100 96)">
+          <line x1="100" y1="96" x2="100" y2="24" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round"/>
+        </g>
         <circle cx="100" cy="96" r="5" fill="var(--text)"/>
-        <text x="16" y="106" font-size="9" fill="var(--muted)">{{ t('FEAR','恐慌') }}</text>
-        <text x="150" y="106" font-size="9" fill="var(--muted)">{{ t('GREED','贪婪') }}</text>
+        {# Zone labels — dual SVG text nodes (no spans in SVG) #}
+        <text class="l-en" x="16" y="110" font-size="9" fill="var(--muted)">FEAR</text>
+        <text class="l-zh" x="16" y="110" font-size="9" fill="var(--muted)">恐慌</text>
+        <text class="l-en" x="148" y="110" font-size="9" fill="var(--muted)">GREED</text>
+        <text class="l-zh" x="148" y="110" font-size="9" fill="var(--muted)">贪婪</text>
       </svg>
       <div class="hkx-dial-word">{{ vhsi.level }} · {{ t('VHSI','恒指波动') }}</div>
       <div class="hkx-dial-sub">{{ vhsi.pctile }}{{ t('th pctile','百分位') }}</div>
@@ -1339,6 +1453,14 @@
 
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-sector')">
       <div class="hkx-ctitle">{{ t('Which Sectors Are Hot','板块温度') }}</div>
+      {# Stance line — breadth-based #}
+      {% if breadth and breadth.pct_above_50 is not none %}
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+        {% if breadth.pct_above_50 >= 60 %}{{ t('Broad — most stocks participating','广泛 — 多数个股参与') }}
+        {% elif breadth.pct_above_50 >= 40 %}{{ t('Mixed — rotation only, watch breadth','混合 — 仅轮动，观察广度') }}
+        {% else %}{{ t('Narrow — stay selective','偏窄 — 保持精选') }}{% endif %}
+      </div>
+      {% endif %}
       {% if sectors %}
       {# hot = top 3 by mom20 desc #}
       {% set _hot_secs = sectors|selectattr('mom20','defined')|selectattr('mom20','ne',none)|list|sort(attribute='mom20',reverse=true)|list %}
@@ -1354,7 +1476,7 @@
       <div class="hkx-lbl">{{ t('Sector heat · green = leading · red = lagging','板块温度 · 绿=领涨 · 红=滞涨') }}</div>
       <div class="hkx-heat">
         {% for s in sectors[:12] %}
-        <i class="{{ 'c' if (s.mom20 is not none and s.mom20 < -1) else ('c2' if (s.mom20 is not none and s.mom20 < 0) else ('n' if (s.mom20 is none) else ('h3' if s.mom20 < 1 else ('h2' if s.mom20 < 3 else '')))) }}"></i>
+        <i class="{{ 'c' if (s.mom20 is not none and s.mom20 < -1) else ('c2' if (s.mom20 is not none and s.mom20 < 0) else ('n' if (s.mom20 is none) else ('h3' if s.mom20 < 1 else ('h2' if s.mom20 < 3 else 'h')))) }}"></i>
         {% endfor %}
       </div>
       {% else %}
@@ -1367,6 +1489,14 @@
   <div class="hkx-rack3">
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-policy')">
       <div class="hkx-ctitle">{{ t('Currency & Interest Rates','货币与利率') }}</div>
+      {# Stance line: peg state drives the read #}
+      {% if gv and gv.peg %}
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+        {% if gv.peg.level > 7.83 %}{{ t('Peg near weak edge — HKMA may defend','联汇接近弱方 — 金管局或介入') }}
+        {% elif gv.peg.level < 7.77 %}{{ t('Peg near strong edge — watch','联汇接近强方 — 注意') }}
+        {% else %}{{ t('Peg stable — watch rates for direction','联汇平稳 — 关注利率方向') }}{% endif %}
+      </div>
+      {% endif %}
       {% if gv and gv.peg %}
       <div class="hkx-kv"><span class="hkx-k">{{ t('HK dollar','港元') }}</span><span class="hkx-v"><span class="hkx-stword {{ 'bad' if gv.peg.level > 7.83 else 'ok' }}">{{ '%.4f'|format(gv.peg.level) }}</span>{% if gv.peg.level > 7.83 %} — {{ t('near its weak edge','接近弱方') }}{% endif %}</span></div>
       {# peg band bar #}
@@ -1403,7 +1533,7 @@
       {% if adr_bridge and adr_bridge.composite %}
       {% set _adr = adr_bridge.composite %}
       <div class="hkx-kv"><span class="hkx-k">{{ t('US overnight read','美股隔夜读数') }}</span><span class="hkx-v"><span class="hkx-stword {{ 'ok' if (_adr.bellwether_implied_open_pct is not none and _adr.bellwether_implied_open_pct > 0.2) else ('bad' if (_adr.bellwether_implied_open_pct is not none and _adr.bellwether_implied_open_pct < -0.2) else 'warn') }}">{{ ('%.1f'|format(_adr.bellwether_implied_open_pct) + '%') if _adr.bellwether_implied_open_pct is not none else '—' }}</span>{{ t(' implied open',' 隐含开盘') }}</span></div>
-      {% if _adr.gap_context %}<div style="font-size:11px;color:var(--muted);margin-bottom:8px">{{ t(_adr.gap_context, _adr.gap_context) }}</div>{% endif %}
+      {% if _adr.gap_context %}<div style="font-size:11px;color:var(--muted);margin-bottom:8px">{{ _adr.gap_context }}</div>{% endif %}
       {% else %}
       <div class="hkx-kv"><span class="hkx-k">{{ t('US overnight read','美股隔夜读数') }}</span><span class="hkx-v">—</span></div>
       {% endif %}
@@ -1431,8 +1561,8 @@
       <div class="hkx-row">
         <span class="hkx-ic">{{ '💰' if f.buyback_flag else ('⚠' if f.dilution_flag else '📈') }}</span>
         <div class="hkx-tx">
-          <b>{{ t(f.title_en, f.title_en) }}</b>
-          <span class="hkx-sub">{{ f.ticker }} · {{ t(f.category, f.category) }}</span>
+          <b>{{ f.title_en }}</b>
+          <span class="hkx-sub">{{ f.ticker }} · {{ f.category }}</span>
         </div>
       </div>
       {% endfor %}
@@ -1444,6 +1574,8 @@
 
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-property')">
       <div class="hkx-ctitle">{{ t('HK Home Prices','香港楼市') }}</div>
+      {# Stance: property moves slowly, matters for sentiment #}
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">{{ t('Slow signal — context for local confidence','慢速信号 — 本地信心背景') }}</div>
       {% if property and property.regime and property.regime.label_en %}
       <div class="hkx-bignum" style="font-size:22px;color:var(--warn)">{{ t(property.regime.label_en, property.regime.label_zh or property.regime.label_en) }}</div>
       <div class="hkx-bigsub" style="color:var(--muted)">{{ t('off the lows · prices firming a little','企稳回升') if property.ccl and property.ccl.chg_13w is not none and property.ccl.chg_13w > 0 else '' }}</div>
@@ -1491,15 +1623,13 @@
       <div class="hkx-row"><span class="hkx-ic">✅</span><div class="hkx-tx"><b>{{ t('No alerts today.','今日无警报。') }}</b></div></div>
       {% endif %}
     </div>
-    <div class="hkx-card hkx-dh" style="align-self:start">
-      <span class="hkx-dh-d" style="color:{{ 'var(--up)' if freshness and freshness.verdict == 'ok' else 'var(--warn)' }}">&#9679;</span>
-      <b>{{ t('Data health','数据状态') }}</b> ·
-      {% if freshness %}
-      {{ t(freshness.verdict, freshness.verdict) }}
-      {% else %}
-      {{ t('OK','正常') }}
-      {% endif %}
-      <span style="margin-left:auto;opacity:.6">&#x25BE;</span>
+    <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-health')" style="align-self:start;cursor:pointer">
+      <div class="hkx-ctitle">{{ t('Data Health','数据状态') }}</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+        <span style="width:8px;height:8px;border-radius:50%;background:{{ 'var(--up)' if freshness and freshness.verdict == 'ok' else 'var(--warn)' }};flex:0 0 8px;display:inline-block"></span>
+        <b>{{ t('OK','正常') if (freshness and freshness.verdict == 'ok') else t('Check data','请检查数据') }}</b>
+        <span style="margin-left:auto;opacity:.6;font-size:10px">{{ t('tap for details','点击查看详情') }} ↓</span>
+      </div>
     </div>
   </div>
 
@@ -1547,7 +1677,7 @@
         <div class="hkx-sep"></div>
         <div class="hkx-eyebrow">{{ t('The trend across timeframes','多周期走势') }}</div>
         <table class="hkx-mt">
-          <tr><th>{{ t('Index','指数') }}</th><th class="r">{{ t('Price','价格') }}</th><th class="r">{{ t('Chg','涨跌') }}</th><th class="r">{{ t('DD','回撤') }}</th><th class="r">{{ t('RSI','RSI') }}</th></tr>
+          <tr><th>{{ t('Index','指数') }}</th><th class="r">{{ t('Price','价格') }}</th><th class="r">{{ t('Chg','涨跌') }}</th><th class="r">{{ t('DD','回撤') }}</th><th class="r">RSI</th></tr>
           {% for ih in index_health %}
           <tr><td>{{ t(ih.label, ih.label_zh if ih.label_zh is defined else ih.label) }}</td>
           <td class="r">{{ ih.price if ih.price is not none else '—' }}</td>
@@ -1595,8 +1725,25 @@
             {% if funding and funding.base_rate %}
             <div class="hkx-kv"><span class="hkx-k">{{ t('Base rate','基准利率') }}</span><span class="hkx-v">{{ funding.base_rate }}%</span></div>
             {% endif %}
+            {% if funding and funding.twi is not none %}
+            <div class="hkx-kv"><span class="hkx-k">{{ t('Trade-weighted HKD','贸易加权港元') }}</span><span class="hkx-v">{{ '%.1f'|format(funding.twi) }}</span></div>
+            {% endif %}
           </div>
         </div>
+        {# Aggregate Balance chart — system liquidity trend #}
+        {% if funding and funding.chart_html %}
+        <div class="hkx-sep"></div>
+        <div class="hkx-eyebrow">{{ t('Aggregate Balance — system liquidity','综合结余 — 系统流动性') }}</div>
+        <div style="max-width:100%;overflow:hidden">{{ funding.chart_html | safe }}</div>
+        {% endif %}
+        {# Catalyst strip: upcoming HK rate-sensitive events #}
+        {% if catalyst_strip %}
+        <div class="hkx-sep"></div>
+        <div class="hkx-eyebrow">{{ t('Key dates ahead','关键日期') }}</div>
+        {% for cat in catalyst_strip[:4] %}
+        <div class="hkx-kv"><span class="hkx-k">{{ t(cat.name_en, cat.name_zh) if cat.name_en is defined else '—' }}</span><span class="hkx-v">{{ cat.date if cat.date is defined else '—' }}</span></div>
+        {% endfor %}
+        {% endif %}
         <div class="hkx-receipt">{{ t('When the two engines pull apart, the currency & interest-rate side usually wins on short-term timing.','当两台引擎分歧时，货币与利率面通常在短期节奏上占主导。') }}</div>
       </div>
     </div>
@@ -1629,11 +1776,60 @@
             {% if ah_official and ah_official.premium_pct is not none %}
             <div class="hkx-kv"><span class="hkx-k">{{ t('A/H premium','A/H溢价') }}</span><span class="hkx-v">{{ '%.1f'|format(ah_official.premium_pct) }}%</span></div>
             <div class="hkx-kv"><span class="hkx-k">{{ t('Percentile','历史分位') }}</span><span class="hkx-v">{{ ah_official.pctile }}{{ t('th','百分位') }}</span></div>
+            {% if ah_official.chart_html %}
+            <div style="max-width:100%;overflow:hidden;margin-top:8px">{{ ah_official.chart_html | safe }}</div>
+            {% endif %}
             {% else %}
             <p style="font-size:12px;color:var(--muted)">—</p>
             {% endif %}
+            {# Valuation (PE/PB) #}
+            {% if valuation and (valuation.pe is defined or valuation.pb is defined) %}
+            <div class="hkx-sep" style="margin:10px 0"></div>
+            <div class="hkx-eyebrow">{{ t('Valuation','估值') }}</div>
+            <div class="hkx-val-pair">
+              {% if valuation.pe is defined and valuation.pe %}
+              <div>
+                <div class="hkx-kv"><span class="hkx-k">{{ t('P/E','市盈率') }}</span><span class="hkx-v">{{ '%.1f'|format(valuation.pe.level) if valuation.pe.level is not none else '—' }}</span></div>
+                <div class="hkx-kv"><span class="hkx-k">{{ t('Pctile','历史分位') }}</span><span class="hkx-v">{{ (valuation.pe.pctile ~ t('th','百分位')) if valuation.pe.pctile is not none else '—' }}</span></div>
+              </div>
+              {% endif %}
+              {% if valuation.pb is defined and valuation.pb %}
+              <div>
+                <div class="hkx-kv"><span class="hkx-k">{{ t('P/B','市净率') }}</span><span class="hkx-v">{{ '%.2f'|format(valuation.pb.level) if valuation.pb.level is not none else '—' }}</span></div>
+                <div class="hkx-kv"><span class="hkx-k">{{ t('Pctile','历史分位') }}</span><span class="hkx-v">{{ (valuation.pb.pctile ~ t('th','百分位')) if valuation.pb.pctile is not none else '—' }}</span></div>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
           </div>
         </div>
+        {# Southbound flow chart #}
+        {% if internals and internals.southbound and internals.southbound.chart_html %}
+        <div class="hkx-sep"></div>
+        <div class="hkx-eyebrow">{{ t('Cumulative southbound flow','南向资金累计走势') }}</div>
+        <div style="max-width:100%;overflow:hidden">{{ internals.southbound.chart_html | safe }}</div>
+        {% endif %}
+        {# Per-channel SH/SZ split #}
+        {% if sb_channels and (sb_channels.sh is defined or sb_channels.sz is defined) %}
+        <div class="hkx-sep"></div>
+        <div class="hkx-eyebrow">{{ t('Shanghai vs Shenzhen connect','沪股通 vs 深股通') }}</div>
+        <div class="hkx-cols2">
+          {% if sb_channels.sh %}
+          <div>
+            <div class="hkx-eyebrow" style="margin-top:0">{{ t(sb_channels.sh.label_en, sb_channels.sh.label_zh) if sb_channels.sh.label_en is defined else t('Shanghai','沪') }}</div>
+            <div class="hkx-kv"><span class="hkx-k">{{ t('Today','今日') }}</span><span class="hkx-v {{ 'hkx-up' if (sb_channels.sh.net is not none and sb_channels.sh.net >= 0) else 'hkx-dn' }}">{{ ('¥%.0fM'|format(sb_channels.sh.net / 1)) if sb_channels.sh.net is not none else '—' }}</span></div>
+            <div class="hkx-kv"><span class="hkx-k">{{ t('20d','20日') }}</span><span class="hkx-v">{{ ('¥%.0fbn'|format(sb_channels.sh.sum_20d / 1000)) if (sb_channels.sh.sum_20d is defined and sb_channels.sh.sum_20d is not none) else '—' }}</span></div>
+          </div>
+          {% endif %}
+          {% if sb_channels.sz %}
+          <div>
+            <div class="hkx-eyebrow" style="margin-top:0">{{ t(sb_channels.sz.label_en, sb_channels.sz.label_zh) if sb_channels.sz.label_en is defined else t('Shenzhen','深') }}</div>
+            <div class="hkx-kv"><span class="hkx-k">{{ t('Today','今日') }}</span><span class="hkx-v {{ 'hkx-up' if (sb_channels.sz.net is not none and sb_channels.sz.net >= 0) else 'hkx-dn' }}">{{ ('¥%.0fM'|format(sb_channels.sz.net / 1)) if sb_channels.sz.net is not none else '—' }}</span></div>
+            <div class="hkx-kv"><span class="hkx-k">{{ t('20d','20日') }}</span><span class="hkx-v">{{ ('¥%.0fbn'|format(sb_channels.sz.sum_20d / 1000)) if (sb_channels.sz.sum_20d is defined and sb_channels.sz.sum_20d is not none) else '—' }}</span></div>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
         <div class="hkx-receipt">{{ t('Steady mainland buying is the clearest sign of mainland confidence in HK — a cushion, not a stand-alone buy signal.','稳定的南向资金是内地对港股信心最直接的体现 — 是托底，而非单独买入信号。') }}</div>
       </div>
     </div>
@@ -1655,7 +1851,21 @@
               <span class="hkx-bignum" style="font-size:22px;color:{{ 'var(--up)' if (_adr.bellwether_implied_open_pct is not none and _adr.bellwether_implied_open_pct > 0.2) else ('var(--down)' if (_adr.bellwether_implied_open_pct is not none and _adr.bellwether_implied_open_pct < -0.2) else 'var(--warn)') }}">{{ (('%+.1f'|format(_adr.bellwether_implied_open_pct)) + '%') if _adr.bellwether_implied_open_pct is not none else '—' }}</span>
             </div>
             <div class="hkx-kv"><span class="hkx-k">{{ t('Implied HK open','隐含港股开盘') }}</span><span class="hkx-v">{{ (('%+.1f'|format(_adr.bellwether_implied_open_pct)) + '%') if _adr.bellwether_implied_open_pct is not none else '—' }}</span></div>
-            {% if _adr.gap_context %}<div style="font-size:11px;color:var(--muted);margin-top:6px">{{ t(_adr.gap_context, _adr.gap_context) }}</div>{% endif %}
+            {% if _adr.gap_context %}<div style="font-size:11px;color:var(--muted);margin-top:6px">{{ _adr.gap_context }}</div>{% endif %}
+            {% endif %}
+            {# Per-name ADR moves #}
+            {% if adr_bridge and adr_bridge.names is defined and adr_bridge.names %}
+            <div class="hkx-sep" style="margin:10px 0"></div>
+            <div class="hkx-eyebrow">{{ t('Individual ADR moves','个股ADR走势') }}</div>
+            <table class="hkx-mt">
+              <tr><th>{{ t('Name','名称') }}</th><th class="r">{{ t('Implied open','隐含开盘') }}</th></tr>
+              {% for adr in adr_bridge.names[:6] %}
+              <tr>
+                <td>{{ t(adr.hk_name_en, adr.hk_name_zh) if (adr.hk_name_en is defined and adr.hk_name_zh is defined) else (adr.hk_name_en if adr.hk_name_en is defined else adr.hk_ticker) }}</td>
+                <td class="r {{ 'hkx-up' if (adr.implied_open_gap_pct is defined and adr.implied_open_gap_pct is not none and adr.implied_open_gap_pct >= 0) else 'hkx-dn' }}">{{ ('%+.1f'|format(adr.implied_open_gap_pct) + '%') if (adr.implied_open_gap_pct is defined and adr.implied_open_gap_pct is not none) else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </table>
             {% endif %}
             <div style="font-size:11px;color:var(--muted);margin-top:6px">{{ t('A heads-up, not a forecast — the feed can lag and gaps often fill.','提前预警，不是预测 — 数据可能滞后，且缺口通常会填补。') }}</div>
           </div>
@@ -1664,7 +1874,7 @@
             <div class="hkx-plain" style="margin-top:0">{{ t('Hong Kong has popular <b>leveraged bets</b> on big stocks. When lots pile up at one price level, a move through it can trigger forced buying or selling — speeding up the move.','香港有流行的<b>杠杆产品</b>押注大盘股。当大量仓位集中在某价位时，一旦突破可能触发强制买卖，加速行情。') | safe }}</div>
             {% if cbbc_map and cbbc_map.bellwethers %}
             {% for cb in cbbc_map.bellwethers[:2] %}
-            <div class="hkx-kv"><span class="hkx-k">{{ t(cb.name_en, cb.name_en) if cb.name_en is defined else '—' }}</span><span class="hkx-v"><span class="hkx-stword {{ 'bad' if cb.leverage_state == 'bearish' else ('ok' if cb.leverage_state == 'bullish' else 'warn') }}">{{ t('Bearish','偏空') if cb.leverage_state == 'bearish' else (t('Bullish','偏多') if cb.leverage_state == 'bullish' else t('Balanced','均衡')) }}</span></span></div>
+            <div class="hkx-kv"><span class="hkx-k">{{ cb.name_en if cb.name_en is defined else '—' }}</span><span class="hkx-v"><span class="hkx-stword {{ 'bad' if cb.leverage_state == 'bearish' else ('ok' if cb.leverage_state == 'bullish' else 'warn') }}">{{ t('Bearish','偏空') if cb.leverage_state == 'bearish' else (t('Bullish','偏多') if cb.leverage_state == 'bullish' else t('Balanced','均衡')) }}</span></span></div>
             {% if cb.bull_outstanding is not none and cb.bear_outstanding is not none %}
             {% set _tot = cb.bull_outstanding + cb.bear_outstanding %}
             <div class="hkx-bbar"><span class="hkx-bull" style="width:{{ (cb.bull_outstanding / _tot * 100)|int }}%"></span><span class="hkx-bear" style="width:{{ (cb.bear_outstanding / _tot * 100)|int }}%"></span></div>
@@ -1692,13 +1902,24 @@
           {% for f in filing_bus.tape[:6] %}
           <tr>
             <td>{{ f.ticker }}</td>
-            <td>{{ t(f.title_en, f.title_en) }}</td>
+            <td>{{ f.title_en }}</td>
             <td class="{{ 'hkx-up' if f.buyback_flag else ('hkx-dn' if f.dilution_flag else '') }}">{{ t('supports price','支撑股价') if f.buyback_flag else (t('dilution — can weigh','稀释 — 可能承压') if f.dilution_flag else t('watch','观察')) }}</td>
           </tr>
           {% endfor %}
         </table>
         {% else %}
         <p style="font-size:12px;color:var(--muted)">{{ t('No major filings today.','今日暂无重要公告。') }}</p>
+        {% endif %}
+        {# GDELT narrative entities — which names are getting news attention #}
+        {% if hk_narrative and hk_narrative.entities and hk_narrative.entities|length > 0 %}
+        <div class="hkx-sep"></div>
+        <div class="hkx-eyebrow">{{ t('Names getting unusual attention','获得异常关注的个股') }}</div>
+        <div class="hkx-chips">
+          {% for ent in hk_narrative.entities[:8] %}
+          <span class="hkx-chip">{{ ent.name if ent.name is defined else ent }}</span>
+          {% endfor %}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">{{ t('News attention score — not a signal, just context.','新闻关注度 — 非信号，仅为背景。') }}</div>
         {% endif %}
         <div class="hkx-receipt">{{ t('Official filings from the Hong Kong exchange. Buyback = company buying its own shares (supports price). Placement = new shares sold (dilution).','来自港交所的正式公告。回购 = 公司买回自家股份（支撑股价）。配股 = 新发股份（稀释）。') }}</div>
       </div>
@@ -1779,6 +2000,9 @@
         <div class="hkx-eyebrow">{{ t('HK Fear gauge (VHSI)','港股恐慌指数（VHSI）') }}</div>
         <div class="hkx-kv"><span class="hkx-k">{{ t('Level','水平') }}</span><span class="hkx-v">{{ vhsi.level }}</span></div>
         <div class="hkx-kv"><span class="hkx-k">{{ t('Percentile vs history','历史分位') }}</span><span class="hkx-v">{{ vhsi.pctile }}{{ t('th','百分位') }}</span></div>
+        {% if vhsi.chg20 is defined and vhsi.chg20 is not none %}
+        <div class="hkx-kv"><span class="hkx-k">{{ t('20-day change in fear','20日恐慌变化') }}</span><span class="hkx-v {{ 'hkx-dn' if vhsi.chg20 > 0 else 'hkx-up' }}">{{ ('%+.1f'|format(vhsi.chg20)) }}</span></div>
+        {% endif %}
         {% endif %}
         {% if signal_stack %}
         <div class="hkx-sep"></div>
@@ -1845,7 +2069,7 @@
           <tr>
             <td>{{ t(s.name.en if s.name is mapping else s.name, s.name.zh if s.name is mapping else s.name) }}</td>
             <td class="r {{ 'hkx-up' if (s.mom20 is not none and s.mom20 >= 0) else 'hkx-dn' }}">{{ ('%+.1f'|format(s.mom20) + '%') if s.mom20 is not none else '—' }}</td>
-            <td class="r"><span class="hkx-stword {{ 'ok' if s.dir == 'up' else ('bad' if s.dir == 'down' else 'warn') }}">{{ t(s.label or s.dir, s.label or s.dir) }}</span></td>
+            <td class="r"><span class="hkx-stword {{ 'ok' if s.dir == 'up' else ('bad' if s.dir == 'down' else 'warn') }}">{{ td(s.label or s.dir) if (s.label or s.dir) else '—' }}</span></td>
           </tr>
           {% endfor %}
         </table>
@@ -1869,6 +2093,11 @@
         {% endif %}
         {% if property.regime and property.regime.label_en %}
         <div class="hkx-kv"><span class="hkx-k">{{ t('Regime','状态') }}</span><span class="hkx-v">{{ t(property.regime.label_en, property.regime.label_zh or property.regime.label_en) }}</span></div>
+        {% endif %}
+        {% if property.chart_html %}
+        <div class="hkx-sep"></div>
+        <div class="hkx-eyebrow">{{ t('CCL price history','中原指数走势') }}</div>
+        <div style="max-width:100%;overflow:hidden">{{ property.chart_html | safe }}</div>
         {% endif %}
         {% else %}
         <p style="font-size:12px;color:var(--muted)">—</p>
@@ -1962,6 +2191,20 @@
         {% else %}
         <p style="font-size:12px;color:var(--muted)">{{ t('No major events in the next 2 weeks.','未来2周暂无重要事件。') }}</p>
         {% endif %}
+        {# Catalyst strip (MSCI/FTSE/Stock Connect reviews) #}
+        {% if catalyst_strip and catalyst_strip|length > 0 %}
+        <div class="hkx-sep"></div>
+        <div class="hkx-eyebrow">{{ t('Index & connect reviews','指数与互联互通审议') }}</div>
+        <table class="hkx-mt">
+          <tr><th>{{ t('Catalyst','催化剂') }}</th><th class="r">{{ t('Date','日期') }}</th></tr>
+          {% for cat in catalyst_strip %}
+          <tr>
+            <td>{{ t(cat.name_en, cat.name_zh) if cat.name_en is defined else '—' }}</td>
+            <td class="r">{{ cat.date if cat.date is defined else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+        {% endif %}
         <div class="hkx-receipt">{{ t('Economic releases: HK inflation & jobs · US Fed decisions · China rates & growth.','经济数据：香港通胀与就业 · 美联储决议 · 中国利率与增长。') }}</div>
       </div>
     </div>
@@ -1987,6 +2230,52 @@
         <p style="font-size:12px;color:var(--muted)">{{ t('No alerts today. Quiet is normal.','今日无警报，安静是正常的。') }}</p>
         {% endif %}
         <div class="hkx-receipt">{{ t('Each alert: what happened, what it means, and a link to the panel it came from.','每条警报：发生了什么，意味着什么，以及来源面板的链接。') }}</div>
+      </div>
+    </div>
+  </div>
+
+  {# dlg-health: Data Health #}
+  <div class="hkx-dlg" id="hkx-dlg-health">
+    <div class="hkx-dlg-backdrop" onclick="hkxCloseDlg()"></div>
+    <div class="hkx-dlg-panel">
+      <div class="hkx-dlg-head"><span class="hkx-dlg-title">{{ t('Data Health — what\'s fresh','数据状态 — 新鲜度') }}</span><button class="hkx-dlg-close" onclick="hkxCloseDlg()">×</button></div>
+      <div class="hkx-dlg-body">
+        <div class="hkx-plain">{{ t('Each data feed has a freshness check. Stale feeds are noted here — values still display, but treat them with caution until the next nightly update.','每个数据来源都有新鲜度检查。过期数据在此标注 — 数值仍会显示，但在下次夜间更新前请谨慎对待。') }}</div>
+        <div class="hkx-eyebrow">{{ t('Overall status','整体状态') }}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <span style="width:10px;height:10px;border-radius:50%;background:{{ 'var(--up)' if freshness and freshness.verdict == 'ok' else 'var(--warn)' }};flex:0 0 10px;display:inline-block"></span>
+          <b>{{ t('OK — all feeds current','正常 — 所有数据源最新') if (freshness and freshness.verdict == 'ok') else t('Degraded — some feeds behind','降级 — 部分数据来源落后') }}</b>
+        </div>
+        {# Per-store freshness rows from freshness.stores if available #}
+        {% if freshness %}
+        {% if freshness.banner_message and freshness.verdict != 'ok' %}
+        <div class="hkx-kv"><span class="hkx-k">{{ t('Detail','详情') }}</span><span class="hkx-v" style="color:var(--warn)"><span class="l-en">{{ freshness.banner_message.en }}</span><span class="l-zh">{{ freshness.banner_message.zh }}</span></span></div>
+        {% endif %}
+        {% if freshness.expected_session %}
+        <div class="hkx-kv"><span class="hkx-k">{{ t('Expected session','预期交易日') }}</span><span class="hkx-v">{{ freshness.expected_session }}</span></div>
+        {% endif %}
+        {% endif %}
+        {# Regime state asof #}
+        {% if ms is defined and ms %}
+        <div class="hkx-sep" style="margin:10px 0"></div>
+        <div class="hkx-eyebrow">{{ t('Key timestamps','关键时间戳') }}</div>
+        {% endif %}
+        {% if latest and latest.date %}
+        <div class="hkx-kv"><span class="hkx-k">{{ t('Regime as-of','周期截至') }}</span><span class="hkx-v">{{ latest.date }}</span></div>
+        {% endif %}
+        {% if adr_bridge and adr_bridge.freshness_verdict is defined %}
+        {%- set _fv = adr_bridge.freshness_verdict -%}
+        <div class="hkx-kv"><span class="hkx-k">{{ t('ADR bridge','ADR桥接') }}</span><span class="hkx-v {{ 'hkx-up' if _fv == 'ok' else 'hkx-dn' }}">{{ t('Current','正常') if _fv == 'ok' else (t('Fresh','新鲜') if _fv == 'fresh' else t('Behind','落后')) }}</span></div>
+        {% endif %}
+        {% if filing_bus and filing_bus.freshness is defined %}
+        {%- set _ff = filing_bus.freshness -%}
+        <div class="hkx-kv"><span class="hkx-k">{{ t('Company filings','公司公告') }}</span><span class="hkx-v {{ 'hkx-up' if _ff == 'ok' else 'hkx-dn' }}">{{ t('Current','正常') if _ff == 'ok' else (t('Fresh','新鲜') if _ff == 'fresh' else t('Behind','落后')) }}</span></div>
+        {% endif %}
+        {% if hk_narrative and hk_narrative.freshness is defined %}
+        {%- set _nf = hk_narrative.freshness -%}
+        <div class="hkx-kv"><span class="hkx-k">{{ t('News feed','新闻数据') }}</span><span class="hkx-v {{ 'hkx-up' if _nf == 'ok' else 'hkx-dn' }}">{{ t('Current','正常') if _nf == 'ok' else (t('Fresh','新鲜') if _nf == 'fresh' else t('Behind','落后')) }}</span></div>
+        {% endif %}
+        <div class="hkx-receipt">{{ t('Nightly engine updates all stores once per day. Intraday checks show live index prices only; fundamentals update after market close.','夜间引擎每天更新一次所有数据。盘中检查仅显示实时指数价格；基本面数据在收市后更新。') }}</div>
       </div>
     </div>
   </div>
