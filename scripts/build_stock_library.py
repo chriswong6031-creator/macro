@@ -886,19 +886,25 @@ def _count_trading_sessions_between(start_date: "date", end_date: "date") -> int
 
 def _expire_pending_buys(buy_rows: list[dict], watch_rows: list[dict],
                          board_asof: "str | None") -> tuple[list[dict], list[dict], int]:
-    """CSP-W5 pending-buy expiry: move stale unconfirmed pending rows from buy to watch.
+    """CSP-W5 pending-buy expiry: demote stale unconfirmed pending rows to the watch lane.
 
     Rule: a buy-lane row whose signal has tier='anticipation', sub='pending',
     and whose buy fired > 3 trading sessions before board_asof AND is still
-    unconfirmed (quality still 'pending') is demoted to the watch shelf with
+    unconfirmed (quality still 'pending') is demoted to the watch lane with
     a bilingual reason string.
 
-    Demotion-only: adds nothing to the buy side.  Never touches confirmed (take)
-    signals.  Deterministic: always produces the same result for the same inputs.
+    Critically, demoted rows stay in the returned buy list (with lane='watch' and
+    pending_expired=True) so the template's board loop renders them under the Watch
+    sub-heading.  They are NOT moved into the separate wide["watch"] data-plane list,
+    which the standout board template never iterates.  The watch_rows argument is
+    passed through unchanged.
+
+    Demotion-only: adds nothing to the buy side from watch.  Never touches confirmed
+    (take) signals.  Deterministic: always produces the same result for the same inputs.
 
     Returns:
-        (new_buy_rows, new_watch_rows, n_expired)
-        where n_expired is the count of rows moved from buy to watch.
+        (new_buy_rows, watch_rows_unchanged, n_expired)
+        where n_expired is the count of rows demoted to lane='watch'.
 
     Fail-soft: if board_asof is None or unparseable, no rows are expired (the rule
     requires a known current date to count sessions).
@@ -913,7 +919,7 @@ def _expire_pending_buys(buy_rows: list[dict], watch_rows: list[dict],
     _EXPIRY_SESSIONS = 3  # > 3 trading sessions = expired
 
     new_buy: list[dict] = []
-    expired: list[dict] = []
+    n_expired = 0
     for _r in buy_rows:
         _sig = _r.get("signal") or {}
         # Only target anticipation/pending rows that are still unconfirmed
@@ -936,7 +942,9 @@ def _expire_pending_buys(buy_rows: list[dict], watch_rows: list[dict],
 
         _sessions = _count_trading_sessions_between(_fire_date, _asof)
         if _sessions > _EXPIRY_SESSIONS:
-            # Demote: mark the row with the expiry reason and move it to watch
+            # Demote: mark the row and keep it in buy with lane='watch' so the
+            # template board loop (which only iterates _su.buy / wide["buy"]) renders
+            # it under the Watch sub-heading via the _lane_order partition.
             _r = dict(_r)  # shallow copy — don't mutate the original list item
             _r["pending_expired"] = True
             _r["pending_expiry_reason"] = (
@@ -946,21 +954,20 @@ def _expire_pending_buys(buy_rows: list[dict], watch_rows: list[dict],
             _r["pending_expiry_reason_zh"] = (
                 f"确认超时 — 信号于 {_fire_date_str} 触发，此后无确认数据"
             )
-            _r["lane"] = "watch"    # re-tag lane so the watch grid shows it correctly
-            expired.append(_r)
+            _r["lane"] = "watch"    # re-tag lane so the Watch sub-heading captures it
+            new_buy.append(_r)      # stays in buy — the board renders from buy only
+            n_expired += 1
         else:
             new_buy.append(_r)
 
-    new_watch = expired + watch_rows  # expired rows go to the top of watch
-    n_expired = len(expired)
     if n_expired:
         log.info(
-            "CSP-W5 pending expiry: %d row(s) moved buy→watch "
+            "CSP-W5 pending expiry: %d row(s) demoted to lane=watch in buy list "
             "(pending > %d sessions unconfirmed): %s",
             n_expired, _EXPIRY_SESSIONS,
-            [_r.get("ticker") for _r in expired],
+            [_r.get("ticker") for _r in new_buy if _r.get("pending_expired")],
         )
-    return new_buy, new_watch, n_expired
+    return new_buy, watch_rows, n_expired
 
 
 def _basket_membership_map() -> dict[str, list[dict]]:
@@ -4083,11 +4090,14 @@ def main() -> int:
             log.warning("CSP-W5 staleness: failed (%s) — block absent from artifact", _stale_e)
 
         try:
-            _buy_after, _watch_after, _n_expired = _expire_pending_buys(
+            _buy_after, _watch_passthrough, _n_expired = _expire_pending_buys(
                 wide.get("buy", []), wide.get("watch", []), wide.get("as_of"))
             if _n_expired:
+                # Demoted rows stay in wide["buy"] with lane='watch'; the board loop
+                # renders them under the Watch sub-heading via the _lane_order partition.
+                # wide["watch"] is a separate data-plane the standout board template never
+                # iterates, so we intentionally do NOT assign it here.
                 wide["buy"] = _buy_after
-                wide["watch"] = _watch_after
                 wide["pending_expired_count"] = _n_expired
         except Exception as _exp_e:  # noqa: BLE001
             log.warning("CSP-W5 pending expiry: failed (%s) — no rows demoted", _exp_e)

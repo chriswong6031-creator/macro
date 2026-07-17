@@ -228,21 +228,30 @@ class TestExpirePendingBuys:
         assert n == 0
         assert len(buy_out) == 1
 
-    def test_expired_pending_moves_to_watch(self):
-        """A pending buy > 3 sessions old is moved to watch with expiry reason."""
+    def test_expired_pending_demoted_to_watch_lane_in_buy(self):
+        """A pending buy > 3 sessions old is demoted to lane='watch' but stays in buy_out.
+
+        The standout board template only renders rows from wide["buy"] / _su.buy.
+        Moving expired rows to the separate wide["watch"] data-plane would silently
+        drop them from the board.  Instead they stay in buy with lane='watch' so the
+        template's _lane_order partition renders them under the Watch sub-heading and
+        the pending_expired note fires.
+        """
         row = _make_pending_row("OLD", "2026-07-09")  # 6 sessions ago
         buy_in = [row]
         watch_in = []
         buy_out, watch_out, n = _expire_pending_buys(buy_in, watch_in, self._ASOF)
         assert n == 1
-        assert len(buy_out) == 0
-        assert len(watch_out) == 1
-        expired_row = watch_out[0]
+        # Demoted row stays in buy_out with lane='watch'
+        assert len(buy_out) == 1
+        expired_row = buy_out[0]
         assert expired_row["ticker"] == "OLD"
         assert expired_row["pending_expired"] is True
         assert "2026-07-09" in expired_row["pending_expiry_reason"]
         assert "2026-07-09" in expired_row["pending_expiry_reason_zh"]
         assert expired_row["lane"] == "watch"
+        # watch_out is the unchanged watch_rows passthrough (empty in this case)
+        assert len(watch_out) == 0
 
     def test_confirmed_take_never_expires(self):
         """A confirmed take signal (quality='take') is never expired, regardless of age."""
@@ -254,30 +263,49 @@ class TestExpirePendingBuys:
         assert len(buy_out) == 1
         assert buy_out[0]["ticker"] == "TAKE"
 
-    def test_expired_rows_go_to_front_of_watch(self):
-        """Expired pending rows are prepended to watch (ahead of existing watch rows)."""
+    def test_expired_row_in_buy_watch_rows_passed_through(self):
+        """Expired pending rows stay in buy_out (lane='watch'); watch_rows pass through unchanged.
+
+        The wide["watch"] data-plane is a separate list the board template never iterates,
+        so expired rows must NOT be moved there.  watch_rows are passed through unchanged.
+        """
         expired_row = _make_pending_row("OLD", "2026-07-09")
         existing_watch = [{"ticker": "WATCH1", "lane": "watch", "signal": {}}]
         buy_in = [expired_row]
         buy_out, watch_out, n = _expire_pending_buys(buy_in, existing_watch, self._ASOF)
         assert n == 1
-        assert watch_out[0]["ticker"] == "OLD"
-        assert watch_out[1]["ticker"] == "WATCH1"
+        # Expired row is in buy_out with lane='watch'
+        assert buy_out[0]["ticker"] == "OLD"
+        assert buy_out[0]["lane"] == "watch"
+        assert buy_out[0]["pending_expired"] is True
+        # watch_rows are passed through unchanged (not prepended to)
+        assert len(watch_out) == 1
+        assert watch_out[0]["ticker"] == "WATCH1"
 
     def test_mixed_buy_rows(self):
-        """Fresh + old pending + confirmed: only old pending moves to watch."""
+        """Fresh + old pending + confirmed: only old pending is demoted to lane='watch'.
+
+        All three rows stay in buy_out; the demoted row has lane='watch' and
+        pending_expired=True so the template renders it under the Watch sub-heading.
+        """
         rows = [
-            _make_pending_row("FRESH", "2026-07-17"),   # 0 sessions — stays
-            _make_pending_row("OLD", "2026-07-09"),      # 6 sessions — expires
+            _make_pending_row("FRESH", "2026-07-17"),   # 0 sessions — stays as-is
+            _make_pending_row("OLD", "2026-07-09"),      # 6 sessions — demoted to watch lane
             _make_take_row("TAKE", "2026-07-01"),        # confirmed — never expires
         ]
         buy_out, watch_out, n = _expire_pending_buys(rows, [], self._ASOF)
         assert n == 1
         buy_tickers = [r["ticker"] for r in buy_out]
+        # All three rows remain in buy_out
         assert "FRESH" in buy_tickers
         assert "TAKE" in buy_tickers
-        assert "OLD" not in buy_tickers
-        assert watch_out[0]["ticker"] == "OLD"
+        assert "OLD" in buy_tickers
+        # The demoted row is tagged correctly
+        old_row = next(r for r in buy_out if r["ticker"] == "OLD")
+        assert old_row["lane"] == "watch"
+        assert old_row["pending_expired"] is True
+        # watch_out is the unchanged passthrough (empty in this case)
+        assert len(watch_out) == 0
 
     def test_none_asof_does_nothing(self):
         """None board_asof: no rows are expired (fail-soft)."""
