@@ -16,7 +16,7 @@
 {% if r.amount_low is not none and r.amount_high is not none and r.amount_low != r.amount_high %}{{ money(r.amount_low) }}–{{ money(r.amount_high) }}{% else %}{{ money(r.amount_mid) }}{% endif %}
 {%- endmacro %}
 
-{% block title %}{{ t('Congressional Trades', '国会交易') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+{% block title %}Congressional Trades — Macro Dashboard{% endblock %}
 
 {% block base_css %}
   .cg-hero { margin:26px auto 10px; max-width:1060px; }

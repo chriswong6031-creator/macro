@@ -12,7 +12,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% if mode == 'stocks' %}{{ t('China A-Share Stock Dashboard', '中国A股个股看板') }}{% else %}{{ t('China A-Share Regime', '中国A股周期') }}{% endif %} — {{ latest.date }}</title>
+<title>{% if mode == 'stocks' %}China A-Share Stock Dashboard{% else %}China A-Share Regime{% endif %} — {{ latest.date }}</title>
 {% if mode == 'stocks' %}{% set seo_title = 'China A-Share Stock Dashboard — Washout · Base · Fresh Turn | Mastermind' %}{% set seo_desc = 'China A-share washout-to-base entry board: names forming a durable low, with fresh 3D/2D confluence turns (T1–T4 cascade). Ranked by buy-readiness, updated daily.' %}{% set seo_path = 'china_stocks.html' %}{% else %}{% set seo_title = 'China A-Share Market Dashboard — Regime, Sectors and Flows | Mastermind' %}{% set seo_desc = 'Track the China A-share market regime — sector rotation, capital-flow velocity, drawdown risk and cycle position on the mainland market.' %}{% set seo_path = 'china.html' %}{% endif %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
