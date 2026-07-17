@@ -1,7 +1,9 @@
 """Tests for scripts/build_polygon_universe.py.
 
 Covers:
-  * is_fresh() logic (mtime-based staleness)
+  * is_fresh() logic (asof-column staleness; mtime is NEVER consulted — CI
+    checkouts reset mtime, which froze the committed cache at its first fill)
+  * checkpoint expiry (same-day resume only; prior-day / legacy formats discarded)
   * build_gics_map() via patched _load_sp500_gics / _load_basket_gics
   * fetch_mcaps() — mocked _fetch_mcap; rate-limit bypass; checkpoint resume
   * build() end-to-end with patched internals (no real API, no real data files)
@@ -13,9 +15,8 @@ The real reference.parquet smoke tests run only when the file exists locally.
 from __future__ import annotations
 
 import json
-import os
-import sys
 import time
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -25,32 +26,106 @@ import scripts.build_polygon_universe as m
 
 
 # ---------------------------------------------------------------------------
-# is_fresh
+# is_fresh — asof-column based, mtime-blind
 # ---------------------------------------------------------------------------
+
+def _write_ref(path: Path, asof_values: list[str]) -> None:
+    df = pd.DataFrame(
+        {"gics_sector": ["Financials"] * len(asof_values),
+         "market_cap_usd": [1.0] * len(asof_values),
+         "asof": asof_values},
+        index=pd.Index([f"T{i}" for i in range(len(asof_values))], name="ticker"),
+    )
+    df.to_parquet(path)
+
 
 class TestIsFresh:
     def test_missing_returns_false(self, tmp_path):
         assert m.is_fresh(tmp_path / "nonexistent.parquet") is False
 
-    def test_fresh_file_returns_true(self, tmp_path):
+    def test_today_asof_is_fresh(self, tmp_path):
         p = tmp_path / "ref.parquet"
-        p.write_bytes(b"x")
-        assert m.is_fresh(p, stale_days=7) is True
+        _write_ref(p, [date.today().isoformat()])
+        assert m.is_fresh(p, stale_days=1) is True
 
-    def test_stale_file_returns_false(self, tmp_path):
+    def test_yesterday_asof_is_stale_nightly(self, tmp_path):
+        """stale_days=1 (nightly policy): yesterday's asof must trigger a rebuild."""
         p = tmp_path / "ref.parquet"
-        p.write_bytes(b"x")
-        old_mtime = time.time() - 8 * 86400
-        os.utime(p, (old_mtime, old_mtime))
+        _write_ref(p, [(date.today() - timedelta(days=1)).isoformat()])
+        assert m.is_fresh(p, stale_days=1) is False
+
+    def test_old_asof_with_fresh_mtime_is_stale(self, tmp_path):
+        """Regression lock for the frozen-cache bug: a file just written to disk
+        (mtime = now, as after any CI checkout) whose asof column is old must
+        read as STALE. mtime must never rescue an old cache."""
+        p = tmp_path / "ref.parquet"
+        _write_ref(p, ["2026-07-09"])
+        assert time.time() - p.stat().st_mtime < 60, "pre-condition: mtime is fresh"
         assert m.is_fresh(p, stale_days=7) is False
 
     def test_exact_boundary_stale(self, tmp_path):
-        """A file exactly stale_days old is treated as stale (< not <=)."""
+        """An asof exactly stale_days old is stale (< not <=)."""
         p = tmp_path / "ref.parquet"
-        p.write_bytes(b"x")
-        exact = time.time() - 7 * 86400
-        os.utime(p, (exact, exact))
+        _write_ref(p, [(date.today() - timedelta(days=7)).isoformat()])
         assert m.is_fresh(p, stale_days=7) is False
+
+    def test_within_window_is_fresh(self, tmp_path):
+        p = tmp_path / "ref.parquet"
+        _write_ref(p, [(date.today() - timedelta(days=3)).isoformat()])
+        assert m.is_fresh(p, stale_days=7) is True
+
+    def test_newest_asof_wins(self, tmp_path):
+        """Mixed asof values: freshness is judged from the NEWEST row."""
+        p = tmp_path / "ref.parquet"
+        _write_ref(p, ["2026-01-01", date.today().isoformat()])
+        assert m.is_fresh(p, stale_days=1) is True
+
+    def test_unreadable_file_is_stale(self, tmp_path):
+        p = tmp_path / "ref.parquet"
+        p.write_bytes(b"not a parquet")
+        assert m.is_fresh(p, stale_days=7) is False
+
+    def test_missing_asof_column_is_stale(self, tmp_path):
+        p = tmp_path / "ref.parquet"
+        pd.DataFrame({"gics_sector": ["X"]},
+                     index=pd.Index(["T0"], name="ticker")).to_parquet(p)
+        assert m.is_fresh(p, stale_days=7) is False
+
+
+# ---------------------------------------------------------------------------
+# checkpoint expiry — same-day resume only
+# ---------------------------------------------------------------------------
+
+class TestCheckpointExpiry:
+    @pytest.fixture(autouse=True)
+    def _redirect(self, monkeypatch, tmp_path):
+        self.ckpt = tmp_path / "ckpt.json"
+        monkeypatch.setattr(m, "_checkpoint_path", lambda: self.ckpt)
+
+    def test_same_day_roundtrip(self):
+        m._save_checkpoint({"AAPL": 4.6e12, "ZZZZ": None})
+        loaded = m._load_checkpoint()
+        assert loaded["AAPL"] == pytest.approx(4.6e12)
+        assert loaded["ZZZZ"] is None   # confirmed-missing survives resume
+
+    def test_prior_day_checkpoint_discarded(self):
+        """Caps must never carry across days — that froze market caps at their
+        first-fetch values (the July-2026 frozen-cache bug)."""
+        yesterday = (date.today() - timedelta(days=1)).isoformat()
+        self.ckpt.write_text(json.dumps({"asof": yesterday, "caps": {"AAPL": 1e12}}))
+        assert m._load_checkpoint() == {}
+
+    def test_legacy_flat_format_discarded(self):
+        """Pre-fix flat {ticker: cap} checkpoints have no asof — discard."""
+        self.ckpt.write_text(json.dumps({"AAPL": 1e12, "NVDA": 2e12}))
+        assert m._load_checkpoint() == {}
+
+    def test_corrupt_checkpoint_discarded(self):
+        self.ckpt.write_text("{{{not json")
+        assert m._load_checkpoint() == {}
+
+    def test_missing_checkpoint_empty(self):
+        assert m._load_checkpoint() == {}
 
 
 # ---------------------------------------------------------------------------
@@ -183,10 +258,10 @@ class TestBuild:
         assert df.loc["ALPH", "market_cap_usd"] == pytest.approx(2.5e12)
 
     def test_fresh_cache_skips_rebuild(self, tmp_path, monkeypatch):
-        """When cache is fresh and force=False, build() returns early without patched helpers."""
-        # Write a stub fresh parquet
+        """When cache is fresh (asof = today) and force=False, build() returns early."""
         stub = pd.DataFrame(
-            {"gics_sector": ["Stub"], "market_cap_usd": [1.0], "asof": ["2025-01-01"]},
+            {"gics_sector": ["Stub"], "market_cap_usd": [1.0],
+             "asof": [date.today().isoformat()]},
             index=pd.Index(["STUB"], name="ticker")
         )
         out_path = tmp_path / "reference.parquet"

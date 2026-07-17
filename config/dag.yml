@@ -508,6 +508,12 @@ lanes:
                     data/qledger/claims.jsonl (via register_batch)]
       - id: build_polygon_universe
         module: scripts.build_polygon_universe
+        note: >
+          GICS sector + USD market cap reference cache (display-tier, no money-path).
+          Nightly refresh judged from the parquet's asof column, never file mtime
+          (CI checkouts reset mtime — froze the cache at its 2026-07-09 first fill).
+          Checkpoint json is same-day resume state only, gitignored.
+          outputs: [data/polygon_universe/reference.parquet]
       - id: mirror_flow_idx
         module: scripts.mirror_flow_idx
       - id: build_flow_signals

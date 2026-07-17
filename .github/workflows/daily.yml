@@ -1163,9 +1163,13 @@ jobs:
         # Builds data/polygon_universe/reference.parquet — ticker → GICS sector + USD market cap.
         # Consumed by the charting-app's ingest/build_universe.py when it rebuilds the
         # heatmap manifest (~8.7k rows); enriches US names with real sector + cap sizing.
-        # Cache is weekly (exits immediately if fresh); checkpoint survives interruption.
+        # Refreshes NIGHTLY, judged from the parquet's asof column (never mtime — CI
+        # checkouts reset mtime, which froze the cache at its 2026-07-09 first fill).
+        # ~2 min of rate-limited fetches for ~500 names; same-day re-runs exit
+        # immediately. Checkpoint is same-day resume state only (gitignored).
         # Non-fatal: a failed run leaves the previous cache in place (charting-app degrades
-        # gracefully to OTHER/no-mcap for names not in cache).
+        # gracefully to OTHER/no-mcap for names not in cache). Output committed via
+        # 'git add data/' in 'commit engine outputs' below.
         continue-on-error: true
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
