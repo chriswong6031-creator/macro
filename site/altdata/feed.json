@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-16T23:59:12.672770+00:00",
-  "as_of": "2026-07-16",
+  "generated_utc": "2026-07-17T00:19:42.242119+00:00",
+  "as_of": "2026-07-17",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6477,7 +6477,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 19,
+        "count": 18,
         "items": "8.01"
       },
       {
@@ -6511,11 +6511,6 @@
         "items": "7.01"
       },
       {
-        "ticker": "SPCX",
-        "count": 4,
-        "items": "5.02, 7.01, 8.01"
-      },
-      {
         "ticker": "ASPI",
         "count": 3,
         "items": "1.01, 7.01, 8.01"
@@ -6524,11 +6519,6 @@
         "ticker": "AVAV",
         "count": 3,
         "items": "5.02, 7.01"
-      },
-      {
-        "ticker": "AXP",
-        "count": 3,
-        "items": "7.01, 8.01"
       },
       {
         "ticker": "BLD",
@@ -6576,6 +6566,11 @@
         "items": "1.01, 2.03, 5.02, 8.01"
       },
       {
+        "ticker": "SPCX",
+        "count": 3,
+        "items": "7.01, 8.01"
+      },
+      {
         "ticker": "UUUU",
         "count": 3,
         "items": "1.01, 2.03, 7.01, 8.01"
@@ -6599,6 +6594,11 @@
         "ticker": "ALGN",
         "count": 2,
         "items": "5.02, 7.01"
+      },
+      {
+        "ticker": "ALGT",
+        "count": 2,
+        "items": "1.01, 2.03, 8.01"
       }
     ],
     "special_situations": [
@@ -44737,7 +44737,7 @@
       },
       {
         "ticker": "NVO",
-        "phase3_starts": 11,
+        "phase3_starts": 10,
         "halts": 1,
         "hot": true,
         "sample": "AMAZE 13: A Research Study Investigating How Well the Medicine Zenagamtide Helps People in Asia With Excess Body Weight Lose Weight"
@@ -44745,7 +44745,7 @@
       {
         "ticker": "PFE",
         "phase3_starts": 10,
-        "halts": 2,
+        "halts": 1,
         "hot": true,
         "sample": "Study to Learn About Safety, Tolerability, and Immune Response of a Catch-up Pneumococcal Vaccine in Children and Adolescents"
       },
@@ -44818,13 +44818,6 @@
         "halts": 1,
         "hot": true,
         "sample": "Study of Lenacapavir, Teropavimab, and Zinlirvimab in Virologically Suppressed Adults With HIV-1 on Stable Oral Treatment Regimens"
-      },
-      {
-        "ticker": "BIIB",
-        "phase3_starts": 1,
-        "halts": 0,
-        "hot": true,
-        "sample": "A Study to Learn About the Safety of Diroximel Fumarate (DRF) and Dimethyl Fumarate (DMF) and Their Effects on Relapses in Pediatric Participants With Relapsing"
       },
       {
         "ticker": "SNY",
@@ -44946,6 +44939,13 @@
     ],
     "lobbying": [
       {
+        "ticker": "AMAT",
+        "spend_usd": 780000.0,
+        "filings": 3,
+        "spike_x": null,
+        "top_issue": "Taxation/Internal Revenue Code"
+      },
+      {
         "ticker": "MSI",
         "spend_usd": 570000.0,
         "filings": 3,
@@ -45030,25 +45030,18 @@
         "top_issue": "Energy/Nuclear"
       },
       {
+        "ticker": "ENTG",
+        "spend_usd": 130000.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Computer Industry"
+      },
+      {
         "ticker": "ALHC",
         "spend_usd": 115000.0,
         "filings": 2,
         "spike_x": null,
         "top_issue": "Medicare/Medicaid"
-      },
-      {
-        "ticker": "ABAT",
-        "spend_usd": 110000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Energy/Nuclear"
-      },
-      {
-        "ticker": "WYNN",
-        "spend_usd": 110000.0,
-        "filings": 2,
-        "spike_x": null,
-        "top_issue": "Taxation/Internal Revenue Code"
       }
     ],
     "offexchange": [
@@ -48471,17 +48464,6 @@
         "why": "clinical_phase3_start: 23 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: TRUQAP \u00b7 special_situation: Other"
       },
       {
-        "ticker": "BIIB",
-        "score": 3,
-        "weighted_score": 1.45,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion",
-          "special_situation"
-        ],
-        "why": "clinical_phase3_start: 1 new Phase-3 \u00b7 fda_label_expansion: SPINRAZA \u00b7 special_situation: Acquisitions"
-      },
-      {
         "ticker": "ACN",
         "score": 2,
         "weighted_score": 1.45,
@@ -48603,6 +48585,16 @@
         "why": "trump: EQT CORPORATION \u00b7 unusual_options: 6.36\u00d7 vol/OI, put-skew"
       },
       {
+        "ticker": "BIIB",
+        "score": 2,
+        "weighted_score": 1.1,
+        "channel_list": [
+          "fda_label_expansion",
+          "special_situation"
+        ],
+        "why": "fda_label_expansion: SPINRAZA \u00b7 special_situation: Acquisitions"
+      },
+      {
         "ticker": "ALGN",
         "score": 2,
         "weighted_score": 1.1,
@@ -48640,7 +48632,7 @@
           "clinical_phase3_start",
           "fda_label_expansion"
         ],
-        "why": "clinical_phase3_start: 10 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: IBRANCE"
+        "why": "clinical_phase3_start: 10 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE"
       }
     ]
   }

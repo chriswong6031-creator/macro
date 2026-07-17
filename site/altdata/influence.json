@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-16T23:59:22.641556+00:00",
+  "generated_utc": "2026-07-17T00:19:51.399462+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -1287,31 +1287,6 @@
       }
     },
     {
-      "ticker": "AXP",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 1.05,
-      "alt_channels": [
-        "affiliation",
-        "material_8k"
-      ],
-      "top_holder": {
-        "owner": "BERKSHIRE HATHAWAY INC",
-        "title": "Institution",
-        "shares": 151610700
-      }
-    },
-    {
       "ticker": "KO",
       "actors": [
         {
@@ -1568,6 +1543,30 @@
         "affiliation"
       ],
       "top_holder": null
+    },
+    {
+      "ticker": "AXP",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": {
+        "owner": "BERKSHIRE HATHAWAY INC",
+        "title": "Institution",
+        "shares": 151610700
+      }
     },
     {
       "ticker": "BAC",
