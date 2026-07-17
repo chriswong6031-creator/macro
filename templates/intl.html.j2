@@ -209,6 +209,52 @@
   .gridwrap .nch { display:block; width:74px; height:24px; }
   .panel.accent { background:linear-gradient(var(--panel),var(--panel)) padding-box, var(--acc-grad) border-box; border:1.5px solid transparent; }
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:860px){ .twocol { grid-template-columns:1fr; } }
+
+  /* ===== turn board (ITR) ===== */
+  .tb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-top:12px; }
+  .tb-tile { background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; position:relative; }
+  .tb-tile.tb-hot { border-color:color-mix(in srgb,var(--down) 50%,var(--line)); background:color-mix(in srgb,var(--down) 5%,var(--panel2)); }
+  .tb-tile.tb-warm { border-color:color-mix(in srgb,#d4a017 40%,var(--line)); background:color-mix(in srgb,#d4a017 4%,var(--panel2)); }
+  .tb-tile.tb-cool { border-color:var(--line); }
+  .tb-hd { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
+  .tb-hd .flg { font-size:18px; line-height:1; }
+  .tb-hd .tb-name { font-size:12.5px; font-weight:700; line-height:1.2; }
+  .tb-hd .tb-name small { display:block; font-size:10.5px; font-weight:500; color:var(--muted); }
+  .tb-state { display:inline-block; padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; white-space:nowrap; margin-bottom:5px; }
+  .tb-state.ts-crash { background:color-mix(in srgb,var(--down) 20%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
+  .tb-state.ts-breaking { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 35%,transparent); }
+  .tb-state.ts-topping { background:color-mix(in srgb,#d4a017 18%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 40%,transparent); }
+  .tb-state.ts-parabolic { background:color-mix(in srgb,#d4a017 14%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 35%,transparent); }
+  .tb-state.ts-extended { background:color-mix(in srgb,#d4a017 10%,transparent); color:#d4a017; border:1px solid color-mix(in srgb,#d4a017 28%,transparent); }
+  .tb-state.ts-uptrend { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 34%,transparent); }
+  .tb-state.ts-recovery { background:color-mix(in srgb,var(--up) 10%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 28%,transparent); }
+  .tb-state.ts-basing { background:color-mix(in srgb,var(--info) 10%,transparent); color:var(--info); border:1px solid color-mix(in srgb,var(--info) 28%,transparent); }
+  .tb-state.ts-downtrend { background:color-mix(in srgb,var(--down) 10%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 28%,transparent); }
+  .tb-state.ts-calm { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+  .tb-stance { font-size:11.5px; color:var(--text); line-height:1.35; margin-bottom:6px; font-weight:500; }
+  .tb-metrics { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
+  .tb-metrics .tm-v { font-weight:700; }
+  .tb-metrics .tm-v.pos { color:var(--up); }
+  .tb-metrics .tm-v.neg { color:var(--down); }
+  /* events strip */
+  .te-strip { display:flex; flex-direction:column; gap:4px; margin-top:10px; }
+  .te-row { display:flex; align-items:baseline; gap:7px; font-size:12px; padding:4px 0; border-bottom:1px solid var(--line); }
+  .te-row:last-child { border-bottom:none; }
+  .te-date { font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
+  .te-flag { font-size:14px; flex-shrink:0; }
+  .te-txt { color:var(--text); flex:1; }
+  /* compact state chip for table columns */
+  .ts-chip { display:inline-block; padding:1px 6px; border-radius:6px; font-size:10px; font-weight:700; white-space:nowrap; border:1px solid transparent; }
+  .ts-chip.ts-crash { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
+  .ts-chip.ts-breaking { background:color-mix(in srgb,var(--down) 12%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 30%,transparent); }
+  .ts-chip.ts-topping { background:color-mix(in srgb,#d4a017 14%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 35%,transparent); }
+  .ts-chip.ts-parabolic { background:color-mix(in srgb,#d4a017 10%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 28%,transparent); }
+  .ts-chip.ts-extended { background:color-mix(in srgb,#d4a017 8%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 24%,transparent); }
+  .ts-chip.ts-uptrend { background:color-mix(in srgb,var(--up) 12%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 28%,transparent); }
+  .ts-chip.ts-recovery { background:color-mix(in srgb,var(--up) 8%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 24%,transparent); }
+  .ts-chip.ts-basing { background:color-mix(in srgb,var(--info) 8%,transparent); color:var(--info); border-color:color-mix(in srgb,var(--info) 24%,transparent); }
+  .ts-chip.ts-downtrend { background:color-mix(in srgb,var(--down) 8%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 24%,transparent); }
+  .ts-chip.ts-calm { background:var(--panel2); color:var(--muted); }
 </style>
 </head>
 <body>
@@ -254,14 +300,115 @@
 {% set CR = perf.correlation if perf else None %}
 {% set LB = perf.leaderboard if perf else [] %}
 
-<!-- ===== Flagship stage hero ===== -->
+{# ---- quad plain-word translation dict (Tier-2 receipts keep internal names) ---- #}
+{% set QUAD_PLAIN_EN = {
+  'Goldilocks': 'growth OK, inflation calm',
+  'Reflation': 'growth up, inflation up',
+  'Stagflation': 'growth down, inflation up',
+  'Growth-scare': 'growth down, inflation down',
+  'Deflation': 'growth down, inflation down'
+} %}
+{% set QUAD_PLAIN_ZH = {
+  'Goldilocks': '增长尚可、通胀温和',
+  'Reflation': '增长回升、通胀走高',
+  'Stagflation': '增长走弱、通胀走高',
+  'Growth-scare': '增长与通胀双弱',
+  'Deflation': '增长与通胀双弱'
+} %}
+
+{# ---- hot state set for guard logic ---- #}
+{% set HOT_STATES = ['crash', 'breaking', 'topping'] %}
+
+<!-- ===== NEW HERO: World markets — turns & rotation board ===== -->
+{% if turn_board %}
+<div class="panel accent">
+  <div class="sec-h">
+    <h2>{{ t('World markets — turns & rotation', '全球市场 — 拐点与轮动') }}
+      {{ help('State machine per market: crash/breaking/topping (memory-aware, not snapshot); extended/parabolic; uptrend/downtrend/recovery. Urgency-sorted — hottest markets first. Stance line = what to do. Display-only, not a forecast.', '每个市场的状态机：崩跌/破位/拐顶（有记忆，非快照）；偏高/抛物线；上行趋势/下行趋势/修复。按紧迫度排序——最热市场在前。立场行 = 操作建议。仅展示，非预测。') }}
+    </h2>
+    <span style="flex:1"></span>
+    <span class="muted small">{{ t('as of', '截至') }} {{ latest.date }}</span>
+  </div>
+  <div class="tb-grid">
+  {% for tile in turn_board %}
+    {# determine tile heat class #}
+    {% set _ts = tile.state %}
+    {% if _ts in ['crash', 'breaking'] %}{% set _tile_cls = 'tb-hot' %}
+    {% elif _ts in ['topping', 'parabolic', 'extended'] %}{% set _tile_cls = 'tb-warm' %}
+    {% else %}{% set _tile_cls = 'tb-cool' %}
+    {% endif %}
+    {# build Tier-2 receipt text (internal names allowed here per doctrine) #}
+    {% set _t2_en = 'State: ' ~ (tile.state_en or tile.state) ~ ' (since ' ~ (tile.since or '—') ~ '). ' %}
+    {% set _t2_en = _t2_en ~ 'Extension: ' ~ ('%.0f'|format(tile.ext_pctile) ~ ' pctile' if tile.ext_pctile is not none else '—') ~ '. ' %}
+    {% set _t2_en = _t2_en ~ 'RSI divergence: ' ~ ('yes' if tile.rsi_divergence else 'no') ~ '. ' %}
+    {% set _t2_en = _t2_en ~ 'MACD: ' ~ (tile.macd_state or '—') ~ '. ' %}
+    {% set _t2_en = _t2_en ~ 'Peak date: ' ~ (tile.peak_date or '—') %}
+    {% set _t2_zh = '状态：' ~ (tile.state_zh or tile.state) ~ '（自' ~ (tile.since or '—') ~ '）。' %}
+    {% set _t2_zh = _t2_zh ~ '超涨分位：' ~ ('%.0f'|format(tile.ext_pctile) ~ '分位' if tile.ext_pctile is not none else '—') ~ '。' %}
+    {% set _t2_zh = _t2_zh ~ 'RSI背离：' ~ ('是' if tile.rsi_divergence else '否') ~ '。' %}
+    {% set _t2_zh = _t2_zh ~ 'MACD：' ~ (tile.macd_state or '—') ~ '。' %}
+    {% set _t2_zh = _t2_zh ~ '峰值日期：' ~ (tile.peak_date or '—') %}
+    <div class="tb-tile {{ _tile_cls }}" data-tip-en="{{ _t2_en }}" data-tip-zh="{{ _t2_zh }}">
+      <div class="tb-hd">
+        <span class="flg">{{ tile.flag }}</span>
+        <div class="tb-name">
+          <span class="l-en">{{ tile.name }}</span><span class="l-zh">{{ tile.name_zh }}</span>
+          <small>{{ tile.cc }}</small>
+        </div>
+      </div>
+      <div>
+        <span class="tb-state ts-{{ _ts }}">
+          <span class="l-en">{{ tile.state_en }}</span><span class="l-zh">{{ tile.state_zh }}</span>
+        </span>
+      </div>
+      <div class="tb-stance">
+        <span class="l-en">{{ tile.stance_en }}</span><span class="l-zh">{{ tile.stance_zh }}</span>
+      </div>
+      <div class="tb-metrics">
+        <span>{{ t('20d', '20日') }} <span class="tm-v {{ 'pos' if tile.mom20_pct is not none and tile.mom20_pct >= 0 else 'neg' if tile.mom20_pct is not none }}">{% if tile.mom20_pct is not none %}{{ '%+.1f'|format(tile.mom20_pct) }}%{% else %}—{% endif %}</span></span>
+        <span>{{ t('off-high', '距高') }} <span class="tm-v {{ 'neg' if tile.dd_pct is not none and tile.dd_pct < -2 }}">{% if tile.dd_pct is not none %}{{ '%.1f'|format(tile.dd_pct) }}%{% else %}—{% endif %}</span></span>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+
+<!-- ===== What changed strip ===== -->
+{% if turn_events %}
+<div class="panel">
+  <div class="sec-h"><h2>{{ t('What changed', '近期变化') }}</h2></div>
+  <div class="te-strip">
+  {% for ev in turn_events[:6] %}
+    <div class="te-row">
+      <span class="te-date">{{ ev.date }}</span>
+      <span class="te-flag">{{ ev.flag }}</span>
+      <span class="te-txt">
+        <b><span class="l-en">{{ ev.name }}</span><span class="l-zh">{{ ev.name_zh }}</span></b>
+        — <span class="l-en">{{ ev.en }}</span><span class="l-zh">{{ ev.zh }}</span>
+      </span>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endif %}{# end turn_board guard #}
+
+<!-- ===== Flagship stage hero (demoted context strip) ===== -->
 <div class="stage">
   <span class="stage-flag">🌍 {{ t('Global Macro Compass', '全球宏观罗盘') }}</span>
   <div class="stage-h1">{{ t('International Economies', '国际经济体') }}</div>
   {% if GR %}<p class="stage-read">{{ t(GR.en, GR.zh) }}</p>{% endif %}
   <div class="kpis">
     <div class="kpi"><div class="k">{{ t('Dominant regime', '主导周期') }}</div>
-      <div class="v">{{ td(S.dominant_quad) }}</div><div class="s">{{ S.n }} {{ t('economies', '经济体') }}</div></div>
+      <div class="v" style="font-size:15px">
+        <span class="l-en">{{ QUAD_PLAIN_EN.get(S.dominant_quad, S.dominant_quad) }}</span>
+        <span class="l-zh">{{ QUAD_PLAIN_ZH.get(S.dominant_quad, S.dominant_quad) }}</span>
+      </div>
+      <div class="s">
+        {{ S.n }} {{ t('economies', '经济体') }}
+        {{ help('Internal quad label: ' ~ S.dominant_quad ~ '. Hysteresis-smoothed regime score. May lag fast market turns by 4–6 weeks.', '内部四象限标签：' ~ S.dominant_quad ~ '。含滞后平滑的周期评分。在市场快速转向时可能滞后4–6周。') }}
+      </div>
+    </div>
     {% if RK %}<div class="kpi"><div class="k">{{ t('Risk appetite', '风险偏好') }}</div>
       <div class="v {{ RK.tone }}">{{ RK.score|int }} <span class="s" style="font-size:12px;font-weight:600">/100</span></div>
       <div class="dial" style="--p:{{ '%.2f'|format(RK.score/100) }}"></div>
@@ -269,10 +416,23 @@
     {% if RG %}<div class="kpi"><div class="k">{{ t('US vs World', '美国 vs 全球') }}</div>
       <div class="v" style="font-size:15px;line-height:1.2">{{ t(RG.tilt_en, RG.tilt_zh) }}</div>
       <div class="s">{{ RG.n_leading }}/{{ RG.n }} {{ t('ex-US markets gaining', '非美市场占优') }}</div></div>{% endif %}
+    {# USD leader KPI — annotate if the leader is in a hot state #}
     {% if LB %}{% set bestr = LB[0] %}{% set bh = (bestr.returns.get('12m') or bestr.returns.get('6m') or bestr.returns.get('3m') or bestr.returns.get('ytd') or bestr.returns.get('1m')) %}
-    {% if bh %}<div class="kpi"><div class="k">{{ t('USD leader', '美元领涨') }}</div>
-      <div class="v up">{{ bestr.flag }} {{ bestr.cc }}</div>
-      <div class="s">{{ '%+.0f'|format(bh.usd) }}% {{ t('in USD', '美元计') }}</div></div>{% endif %}{% endif %}
+    {% if bh %}
+    {% set _leader_turn = bestr.get('turn') if bestr is mapping else None %}
+    {% set _leader_state = _leader_turn.state if _leader_turn else None %}
+    <div class="kpi"><div class="k">{{ t('USD leader', '美元领涨') }}</div>
+      <div class="v" style="font-size:15px;line-height:1.2">{{ bestr.flag }} {{ bestr.cc }}</div>
+      {% if _leader_state and _leader_state in HOT_STATES %}
+      <div class="s neg" style="margin-top:2px">
+        <span class="l-en">{{ bestr.cc }} leads on 12m but is {{ {'crash':'crashing','breaking':'breaking down','topping':'showing turn risk'}.get(_leader_state, _leader_state) }} now</span>
+        <span class="l-zh">{{ bestr.cc }} 12个月涨幅居前，但目前{{ {'crash':'崩跌中','breaking':'正在破位','topping':'处于拐顶'}.get(_leader_state, _leader_state) }}</span>
+      </div>
+      {% else %}
+      <div class="s">{{ '%+.0f'|format(bh.usd) }}% {{ t('in USD', '美元计') }}</div>
+      {% endif %}
+    </div>
+    {% endif %}{% endif %}
     <div class="kpi"><div class="k">{{ t('Recession-watch', '衰退观察') }}</div>
       <div class="v {{ 'warn' if S.recession_watch else '' }}">{{ S.recession_watch }}</div>
       <div class="s">{{ t('of', '共') }} {{ S.n }} · {{ t('drawdown-watch', '回撤观察') }} {{ S.drawdown_watch }}</div></div>
@@ -286,10 +446,14 @@
 <!-- ===== USD performance leaderboard (centerpiece) ===== -->
 {% if LB %}
 <div class="panel accent">
-  <div class="sec-h"><h2>{{ t('Performance in US dollars', '以美元计的表现') }} {{ help('Shows each market in USD, split into local stock return and currency effect. Price return only.', '以美元看各市场表现，并拆成股市涨跌与汇率影响。仅价格回报。') }}</h2>
+  <div class="sec-h"><h2>{{ t('Performance in US dollars', '以美元计的表现') }} {{ help('Shows each market in USD, split into local stock return and currency effect. Price return only. Default sort: rotation rank (fast 20d momentum, state-gated). 12m sort still available via buttons.', '以美元看各市场表现，并拆成股市涨跌与汇率影响。仅价格回报。默认排序：轮动排名（20日快速动能，受状态约束）。12月排序仍可通过按钮切换。') }}</h2>
     <span class="sub">{{ t('local equity + currency = USD return', '本币股票 + 货币 = 美元收益') }}</span>
+    {% if bench_note is defined and bench_note %}<span class="muted small" style="margin-left:4px">{{ bench_note }}</span>{% endif %}
     <span style="flex:1"></span>
-    <div class="seg" id="lb-seg">{% for h in perf.horizons %}<button type="button" data-h="{{ h.key }}"{% if h.key == '12m' %} class="on"{% endif %}>{{ t(h.en, h.zh) }}</button>{% endfor %}</div>
+    <div class="seg" id="lb-seg">
+      {% if rotation_ranks %}<button type="button" data-h="__rank__" class="on">{{ t('Rotation rank', '轮动排名') }}</button>{% endif %}
+      {% for h in perf.horizons %}<button type="button" data-h="{{ h.key }}"{% if not rotation_ranks and h.key == '12m' %} class="on"{% endif %}>{{ t(h.en, h.zh) }}</button>{% endfor %}
+    </div>
   </div>
   <div class="lb" id="lb-board"></div>
   <div class="lb-legend">
@@ -352,6 +516,7 @@
       <th class="l eco">{{ t('Economy', '经济体') }}</th>
       <th class="l">{{ t('1Y · USD', '1年 · 美元') }}</th>
       <th class="l">{{ t('Regime', '周期') }}</th>
+      <th class="l">{{ t('State', '状态') }}</th>
       <th class="grp">{{ t('Recession', '衰退') }}</th>
       <th class="grp">{{ t('Policy', '政策利率') }}</th>
       <th>{{ t('10y', '10年') }}</th>
@@ -362,17 +527,25 @@
       <th>{{ t('Unemp', '失业') }}</th>
       <th class="grp">{{ t('FX 3m', '汇率3月') }}</th>
       <th>{{ t('Off high', '距高点') }}</th>
-      <th>{{ t('DD risk', '回撤风险') }}</th>
-      <th class="l">{{ t('Equity stretch', '股市拉伸') }}</th>
+      <th>{{ t('Drawdown', '回撤') }} {{ help('Realized damage from the 252-day high — how much has already been lost, not a forward risk estimate.', '距252日高点的已实现回撤——衡量已损失多少，而非前瞻风险预估。') }}</th>
+      <th class="l">{{ t('Market state', '市场状态') }}</th>
     </tr></thead>
     <tbody>
     {% for r in records %}
       {% set m = r.macro %} {% set e = r.equity %} {% set af = r.macro_asof %}
       {% set sb = (LB | selectattr('cc', 'equalto', r.cc) | list) %}
+      {% set _rt = r.get('turn') if r is mapping else None %}
       <tr>
-        <td class="l eco"><span class="flg">{{ r.flag }}</span>{{ t(r.name, r.name_zh) }}{% if r.data_limited %} <span class="chip caut" title="thin keyless macro">{{ t('data-limited', '数据有限') }}</span>{% endif %}</td>
+        <td class="l eco"><span class="flg">{{ r.flag }}</span>{{ t(r.name, r.name_zh) }}{% if r.data_limited %} <span class="chip caut">{{ t('data-limited', '数据有限') }}</span>{% endif %}</td>
         <td class="l">{% if sb and sb[0].spark_svg %}{{ sb[0].spark_svg|safe }}{% else %}<span class="muted">—</span>{% endif %}</td>
         <td class="l"><span class="quad q-{{ r.quad }}">{{ td(r.quad_name) }}</span> <span class="muted small">{{ num(r.confidence,'',2) }}</span></td>
+        <td class="l">
+          {% if _rt %}
+            <span class="ts-chip ts-{{ _rt.state }}">
+              <span class="l-en">{{ _rt.state_en }}</span><span class="l-zh">{{ _rt.state_zh }}</span>
+            </span>
+          {% else %}<span class="muted small">—</span>{% endif %}
+        </td>
         <td class="grp"><span class="gbar"><span class="gfill g-{{ r.recession_band }}" style="width:{{ r.recession_score or 0 }}%"></span></span>{{ num(r.recession_score,'',0) }}</td>
         <td class="grp">{{ num(m.policy_rate,'%',2) }}</td>
         <td>{{ num(m.yield_10y,'%',2) }}</td>
@@ -384,13 +557,22 @@
         <td class="grp {{ 'neg' if m.fx_strength_3m is not none and m.fx_strength_3m < 0 else 'pos' if m.fx_strength_3m }}">{{ num(m.fx_strength_3m,'%',1) }}</td>
         <td class="{{ 'neg' if e.off_52w_high is not none and e.off_52w_high < -5 }}">{{ num(e.off_52w_high,'%',1) }}</td>
         <td><span class="gbar"><span class="gfill g-{{ e.drawdown_band }}" style="width:{{ e.drawdown_risk or 0 }}%"></span></span>{{ num(e.drawdown_risk,'',0) }}</td>
-        <td class="l">{% if e.ext_grade == 'parabolic' %}<span class="chip warn">{{ t('parabolic', '抛物') }}</span>{% elif e.ext_grade == 'stretched' %}<span class="chip caut">{{ t('stretched', '拉伸') }}</span>{% elif e.bubble_flag %}<span class="chip caut">{{ t('hot', '过热') }}</span>{% else %}<span class="muted small">{{ t('normal', '正常') }}</span>{% endif %}</td>
+        <td class="l">
+          {% if _rt %}
+            <span class="ts-chip ts-{{ _rt.state }}">
+              <span class="l-en">{{ _rt.state_en }}</span><span class="l-zh">{{ _rt.state_zh }}</span>
+            </span>
+          {% elif e.ext_grade == 'parabolic' %}<span class="chip warn">{{ t('parabolic', '抛物') }}</span>
+          {% elif e.ext_grade == 'stretched' %}<span class="chip caut">{{ t('stretched', '拉伸') }}</span>
+          {% elif e.bubble_flag %}<span class="chip caut">{{ t('hot', '过热') }}</span>
+          {% else %}<span class="muted small">{{ t('normal', '正常') }}</span>{% endif %}
+        </td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
-  <p class="caveat" style="margin-top:9px">{{ t('Descriptive only. Equity stretch uses each market’s own history.', '仅描述。股市拉伸按各市场自身历史衡量。') }}</p>
+  <p class="caveat" style="margin-top:9px">{{ t("Descriptive only. Equity stretch uses each market's own history.", '仅描述。股市拉伸按各市场自身历史衡量。') }}</p>
 </div>
 
 <!-- ===== Rates & curve desk ===== -->
@@ -419,6 +601,18 @@
         <span class="rk">{{ t('Real 10y', '实际10年') }}</span><span class="rv {{ 'neg' if r.real_yield is not none and r.real_yield < 0 }}">{{ num(r.real_yield,'',2) }}</span>
         <span class="rk">{{ t('Carry vs US', '对美套息') }}</span><span class="rv {{ 'pos' if r.carry_vs_us is not none and r.carry_vs_us > 0 else 'neg' if r.carry_vs_us is not none and r.carry_vs_us < 0 }}">{% if r.carry_vs_us is not none %}{{ '%+.2f'|format(r.carry_vs_us) }}{% else %}—{% endif %}</span>
         <span class="rk">{{ t('10y · 3m drift', '10年 · 3月漂移') }}</span><span class="rv {{ 'neg' if r.y10_chg3m is not none and r.y10_chg3m > 0 else 'pos' if r.y10_chg3m is not none and r.y10_chg3m < 0 }}">{% if r.y10_chg3m is not none %}{{ '%+.2f'|format(r.y10_chg3m) }}{% else %}—{% endif %}</span>
+        {# vel_20d: 20-day yield velocity — arrow + value, Tier-2 z-score tip #}
+        {% if r.vel_20d_bp is defined and r.vel_20d_bp is not none %}
+        {% set _vdir = '↑' if r.vel_20d_bp > 0 else '↓' if r.vel_20d_bp < 0 else '→' %}
+        {% set _vcls = 'neg' if r.vel_20d_bp > 0 else 'pos' if r.vel_20d_bp < 0 else '' %}
+        {% set _vz_tip_en = '20-day yield velocity: ' ~ ('%+.1f'|format(r.vel_20d_bp)) ~ ' bp. Z-score vs 3y: ' ~ ('%+.2f'|format(r.vel_20d_z) if r.vel_20d_z is defined and r.vel_20d_z is not none else '—') ~ '. Rising yields = bond price headwind.' %}
+        {% set _vz_tip_zh = '20日利率变化速度：' ~ ('%+.1f'|format(r.vel_20d_bp)) ~ ' bp。相对3年Z分数：' ~ ('%+.2f'|format(r.vel_20d_z) if r.vel_20d_z is defined and r.vel_20d_z is not none else '—') ~ '。利率上升 = 债券价格逆风。' %}
+        <span class="rk">{{ t('10y vel 20d', '10年20日速度') }}</span>
+        <span class="rv {{ _vcls }}" data-tip-en="{{ _vz_tip_en }}" data-tip-zh="{{ _vz_tip_zh }}">
+          {{ _vdir }} {{ '%+.0f'|format(r.vel_20d_bp) }}bp
+          {% if r.vel_20d_z is defined and r.vel_20d_z is not none %}<span class="muted small">(z{{ '%+.1f'|format(r.vel_20d_z) }})</span>{% endif %}
+        </span>
+        {% endif %}
       </div>
       {% if r.spark_svg %}<div style="margin-top:8px;opacity:.85">{{ r.spark_svg|safe }}</div>{% endif %}
       {% else %}
@@ -1203,6 +1397,19 @@
 <div class="panel">
   <h2>{{ t('Where each economy ranks', '各经济体排名') }}</h2>
   <div class="ranks">
+    {# ---- mom20 momentum ranking (prepended, guarded) ---- #}
+    {% if rotation_ranks is defined and rotation_ranks %}
+    <div>
+      <h3>{{ t('20d momentum — rotation rank', '20日动能 — 轮动排名') }}</h3>
+      {% for rr in rotation_ranks %}
+        <div class="rb"><span class="flg">{{ rr.flag if rr.flag is defined else '' }}</span><span style="width:54px" class="muted">{{ rr.cc }}</span>
+          <span class="bar"><span class="bf" style="width:{{ '%.0f'|format([[rr.score, 0]|max, 3]|min / 3 * 100) }}%;background:{{ 'var(--down)' if rr.gov is defined and rr.gov < 1 else 'var(--link)' }}"></span></span>
+          <span class="v">#{{ rr.rank }}</span>
+          {% if rr.note_en is defined and rr.note_en %}<span class="muted small" style="margin-left:4px"><span class="l-en">{{ rr.note_en }}</span><span class="l-zh">{{ rr.note_zh if rr.note_zh is defined else rr.note_en }}</span></span>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
     {% for key in ['recession_score','drawdown_risk','real_yield','yield_10y'] %}
       {% set rk = rankings.get(key) %}
       {% if rk %}
@@ -1295,40 +1502,115 @@ document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
 </script>
 
 {% if mode != 'stocks' and perf and perf.leaderboard %}
-<script>window.INTL_PERF = {{ perf | tojson }};</script>
+{# perf carries a server-side pd.Series under 'bench' (not JSON-serializable) — strip it before tojson #}
+{% set _perf_json = {} %}
+{% for _pk, _pv in perf.items() if _pk != 'bench' %}{% set _ = _perf_json.__setitem__(_pk, _pv) %}{% endfor %}
+<script>window.INTL_PERF = {{ _perf_json | tojson }};</script>
+{% if rotation_ranks is defined and rotation_ranks %}
+<script>window.INTL_RANKS = {{ rotation_ranks | tojson }};</script>
+{% endif %}
 <script>
 (function(){
   var P = window.INTL_PERF; if (!P || !P.leaderboard) return;
   var board = document.getElementById('lb-board'); if (!board) return;
-  function fmt(x){ return (x >= 0 ? '+' : '') + x.toFixed(1) + '%'; }
-  function render(h){
-    var rows = P.leaderboard.filter(function(b){ return b.returns[h]; });
-    rows.sort(function(a, b){ return b.returns[h].usd - a.returns[h].usd; });
-    var maxabs = 1;
-    rows.forEach(function(r){ var x = r.returns[h]; maxabs = Math.max(maxabs, Math.abs(x.usd), Math.abs(x.local)); });
-    function px(v){ return 50 + (v / maxabs) * 48; }   // % on the axis, 0 at centre (50%)
-    board.innerHTML = rows.map(function(r){
-      var x = r.returns[h], usd = x.usd, loc = x.local, fxc = x.fx;
-      var x0 = px(0), xl = px(loc), xu = px(usd);
-      var eqL = Math.min(x0, xl), eqW = Math.abs(xl - x0);
-      var fxL = Math.min(xl, xu), fxW = Math.abs(xu - xl);
-      var fxCls = fxc >= 0 ? 'fx-pos' : 'fx-neg';
-      return '<div class="lb-row">'
-        + '<div class="eco"><span class="flg">' + r.flag + '</span><span>'
-          + '<span class="l-en">' + r.name + '</span><span class="l-zh">' + (r.name_zh || r.name) + '</span>'
-          + '<small>' + r.index_name + '</small></span></div>'
-        + '<div class="lb-spark">' + (r.spark_svg || '') + '</div>'
-        + '<div class="lb-bar"><div class="axis"></div>'
-          + '<div class="lb-seg equity" style="left:' + eqL + '%;width:' + eqW + '%"></div>'
-          + '<div class="lb-seg ' + fxCls + '" style="left:' + fxL + '%;width:' + fxW + '%"></div>'
-          + '<div class="lb-usd" style="left:' + xu + '%"></div></div>'
-        + '<div class="lb-vals"><span class="big ' + (usd >= 0 ? 'pos' : 'neg') + '">' + fmt(usd) + '</span>'
-          + '<small><span class="l-en">eq </span><span class="l-zh">股 </span>' + fmt(loc)
-          + ' · <span class="l-en">fx </span><span class="l-zh">汇 </span>' + fmt(fxc) + '</small></div>'
-        + '</div>';
-    }).join('');
+  // Build cc -> rotation rank lookup
+  var rankLookup = {};
+  if (window.INTL_RANKS) {
+    window.INTL_RANKS.forEach(function(rr){ rankLookup[rr.cc] = rr; });
   }
-  render('12m');
+  // Build cc -> turn state lookup (from leaderboard entries that carry turn)
+  var turnLookup = {};
+  P.leaderboard.forEach(function(r){ if (r.turn) { turnLookup[r.cc] = r.turn; } });
+
+  function fmt(x){ return (x >= 0 ? '+' : '') + x.toFixed(1) + '%'; }
+  function stateChip(cc){
+    var t = turnLookup[cc]; if (!t) return '';
+    return '<span class="ts-chip ts-' + t.state + '" style="margin-left:4px">'
+      + '<span class="l-en">' + (t.state_en || t.state) + '</span>'
+      + '<span class="l-zh">' + (t.state_zh || t.state) + '</span></span>';
+  }
+
+  function render(h){
+    var rows;
+    if (h === '__rank__') {
+      // Rotation-rank order: sorted by rank ascending; fall back to all leaderboard rows
+      rows = P.leaderboard.slice();
+      rows.sort(function(a, b){
+        var ra = rankLookup[a.cc], rb = rankLookup[b.cc];
+        if (ra && rb) return ra.rank - rb.rank;
+        if (ra) return -1; if (rb) return 1;
+        return 0;
+      });
+      // For display, use 12m returns if available (bars still show returns)
+      var maxabs = 1;
+      rows.forEach(function(r){
+        var x = r.returns && r.returns['12m'];
+        if (x) maxabs = Math.max(maxabs, Math.abs(x.usd || 0), Math.abs(x.local || 0));
+      });
+      function px2(v){ return 50 + (v / maxabs) * 48; }
+      board.innerHTML = rows.map(function(r){
+        var rr = rankLookup[r.cc];
+        var x = r.returns && r.returns['12m'];
+        var usd = x ? x.usd : null, loc = x ? x.local : null, fxc = x ? x.fx : null;
+        var barHtml = '';
+        if (x) {
+          var x0 = px2(0), xl = px2(loc), xu = px2(usd);
+          var eqL = Math.min(x0, xl), eqW = Math.abs(xl - x0);
+          var fxL = Math.min(xl, xu), fxW = Math.abs(xu - xl);
+          var fxCls = fxc >= 0 ? 'fx-pos' : 'fx-neg';
+          barHtml = '<div class="lb-bar"><div class="axis"></div>'
+            + '<div class="lb-seg equity" style="left:' + eqL + '%;width:' + eqW + '%"></div>'
+            + '<div class="lb-seg ' + fxCls + '" style="left:' + fxL + '%;width:' + fxW + '%"></div>'
+            + '<div class="lb-usd" style="left:' + xu + '%"></div></div>';
+        } else {
+          barHtml = '<div class="lb-bar"><div class="axis"></div></div>';
+        }
+        var rankLabel = rr ? '#' + rr.rank : '';
+        var noteHtml = rr && rr.note_en ? '<small class="muted" style="display:block"><span class="l-en">' + rr.note_en + '</span><span class="l-zh">' + (rr.note_zh || rr.note_en) + '</span></small>' : '';
+        return '<div class="lb-row">'
+          + '<div class="eco"><span class="flg">' + r.flag + '</span><span>'
+            + '<span class="l-en">' + r.name + '</span><span class="l-zh">' + (r.name_zh || r.name) + '</span>'
+            + '<small>' + r.index_name + '</small></span>'
+            + stateChip(r.cc) + '</div>'
+          + '<div class="lb-spark">' + (r.spark_svg || '') + '</div>'
+          + barHtml
+          + '<div class="lb-vals"><span class="big">' + rankLabel + '</span>'
+            + (x ? '<small><span class="l-en">12m USD </span><span class="l-zh">12月美元 </span>' + fmt(usd) + '</small>' : '')
+            + noteHtml + '</div>'
+          + '</div>';
+      }).join('');
+    } else {
+      rows = P.leaderboard.filter(function(b){ return b.returns[h]; });
+      rows.sort(function(a, b){ return b.returns[h].usd - a.returns[h].usd; });
+      var maxabs = 1;
+      rows.forEach(function(r){ var x = r.returns[h]; maxabs = Math.max(maxabs, Math.abs(x.usd), Math.abs(x.local)); });
+      function px(v){ return 50 + (v / maxabs) * 48; }
+      board.innerHTML = rows.map(function(r){
+        var x = r.returns[h], usd = x.usd, loc = x.local, fxc = x.fx;
+        var x0 = px(0), xl = px(loc), xu = px(usd);
+        var eqL = Math.min(x0, xl), eqW = Math.abs(xl - x0);
+        var fxL = Math.min(xl, xu), fxW = Math.abs(xu - xl);
+        var fxCls = fxc >= 0 ? 'fx-pos' : 'fx-neg';
+        return '<div class="lb-row">'
+          + '<div class="eco"><span class="flg">' + r.flag + '</span><span>'
+            + '<span class="l-en">' + r.name + '</span><span class="l-zh">' + (r.name_zh || r.name) + '</span>'
+            + '<small>' + r.index_name + '</small></span>'
+            + stateChip(r.cc) + '</div>'
+          + '<div class="lb-spark">' + (r.spark_svg || '') + '</div>'
+          + '<div class="lb-bar"><div class="axis"></div>'
+            + '<div class="lb-seg equity" style="left:' + eqL + '%;width:' + eqW + '%"></div>'
+            + '<div class="lb-seg ' + fxCls + '" style="left:' + fxL + '%;width:' + fxW + '%"></div>'
+            + '<div class="lb-usd" style="left:' + xu + '%"></div></div>'
+          + '<div class="lb-vals"><span class="big ' + (usd >= 0 ? 'pos' : 'neg') + '">' + fmt(usd) + '</span>'
+            + '<small><span class="l-en">eq </span><span class="l-zh">股 </span>' + fmt(loc)
+            + ' · <span class="l-en">fx </span><span class="l-zh">汇 </span>' + fmt(fxc) + '</small></div>'
+          + '</div>';
+      }).join('');
+    }
+  }
+  // Default: rotation rank if available, else 12m
+  var defaultH = window.INTL_RANKS ? '__rank__' : '12m';
+  render(defaultH);
   var seg = document.getElementById('lb-seg');
   if (seg) seg.querySelectorAll('button').forEach(function(btn){
     btn.addEventListener('click', function(){
