@@ -74,8 +74,16 @@ fi
 
 # admin console: restart ONLY when its own code changed, so the deployed panel at
 # admin.mastermind-x.com tracks main automatically (config/secrets live in the
-# untouched /etc/macro-admin.env, so a restart never loses them).
-if echo "$CHANGED" | grep -qE '^admin/'; then
+# untouched /etc/macro-admin.env, so a restart never loses them). "Its own code"
+# includes the engine/lib modules the panels lazily import — cached in sys.modules
+# after the first request, so without a restart an engine-side fix (e.g. a
+# key_pool.py change to the Raw Key Usage join) never reaches the running panel;
+# data files are read from disk per request and need no restart. Keep this list in
+# sync when adding a lazy engine/lib import to an admin/ panel:
+#   ai_cost/orchestrator_chat → lib/ai_costs; metabolism_panel → key_pool, throttle;
+#   server manual-run gate → budget_gate; orchestrator_chat → ask_brain;
+#   neural_web → support_map, orchestrator_log.
+if echo "$CHANGED" | grep -qE '^(admin/.*|lib/ai_costs\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log)\.py|engine/metabolism/(throttle|budget_gate)\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 
