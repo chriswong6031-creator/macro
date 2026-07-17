@@ -243,6 +243,19 @@ def build(offline: bool = False) -> dict:
         })
     nightly_blk = _verdict_block(nightly_ms)
 
+    # Incident auditability: the act-level cap prints "An act-level alert is firing —
+    # capped at Mixed pending review" without recording WHICH alert fired. Stamp the
+    # firing act-level alert identities into overrides[].source so a capped read can
+    # be traced from risk_state.json alone (2026-07-16 adjudication).
+    act_alerts = [{"rule": a.get("rule"), "message": a.get("message")}
+                  for a in (latest.get("alerts") or [])
+                  if isinstance(a, dict) and a.get("severity") == "act"]
+    for blk in (live_blk, nightly_blk):
+        if blk.get("overrides"):
+            blk["overrides"] = [dict(o, source=act_alerts)
+                                if isinstance(o, dict) and o.get("kind") == "alert" else o
+                                for o in blk["overrides"]]
+
     # per-leg freshness ledger (honest as-of)
     legs = []
     for c in (live_ms or {}).get("components", []):
