@@ -496,6 +496,17 @@ entries:
   - id: BL-G022
     match:
       any_of:
+        - 'hard.{0,30}gating.{0,30}nightly'
+    reason: >
+      FORBIDDEN — reverts the ratified `if: always()` resilience law
+      (partial output beats shipping nothing; salvage-push covers the
+      push-race). Staleness is handled by disclosure (CSP-W5) +
+      heartbeat detec
+    source: 'CSP-R1, `CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
+
+  - id: BL-G023
+    match:
+      any_of:
         - 'cross.{0,30}organ.{0,30}flip'
     reason: >
       KILLED — double-counts the cascade meter's intl leg, log-birth FP
@@ -503,7 +514,7 @@ entries:
       93 governs any authority path)
     source: 'RSR-R6a, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
 
-  - id: BL-G023
+  - id: BL-G024
     match:
       any_of:
         - 'defensive.{0,30}lean.{0,30}floor'
@@ -514,7 +525,28 @@ entries:
       prereg
     source: 'RSR-R6b, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
 
-  - id: BL-G024
+  - id: BL-G025
+    match:
+      any_of:
+        - 'tick.{0,30}asymmetric.{0,30}escalation'
+    reason: >
+      KILLED — a single noisy print flips the authoritative band
+      (whipsaw → operator mutes). Lawful form is the pending-escalation
+      badge: band keeps the 2-tick debounce, in-progress escalation
+      surfaced the
+    source: 'CSP-R2, `CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
+
+  - id: BL-G026
+    match:
+      any_of:
+        - 'news.{0,30}intel.{0,30}thematic'
+    reason: >
+      KILLED — NAR-R4-adjacent surface with near-zero marginal value;
+      engine-originated contagion key (CSP-W1) + glance chip (CSP-W4)
+      supersede
+    source: 'CSP-R3, `CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
+
+  - id: BL-G027
     match:
       any_of:
         - 'insider.{0,30}interaction'
@@ -522,7 +554,7 @@ entries:
       KILLED
     source: 'Codex buy-decision docket adjudication (#1781)'
 
-  - id: BL-G025
+  - id: BL-G028
     match:
       any_of:
         - 'washout.{0,30}turn.{0,30}operator'
@@ -530,7 +562,7 @@ entries:
       KILLED — operator seed dies in test
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
 
-  - id: BL-G026
+  - id: BL-G029
     match:
       any_of:
         - 'signed.{0,30}charm.{0,30}charm'
@@ -538,7 +570,7 @@ entries:
       KILLED — vol/size confound, trail-RV IC .5–.6
     source: 'OPEX vanna/charm adjudication (2026-07-06)'
 
-  - id: BL-G027
+  - id: BL-G030
     match:
       any_of:
         - 'options.{0,30}delta.{0,30}family'
@@ -546,7 +578,7 @@ entries:
       DEAD
     source: 'Options→NW entry-intelligence W-E1 gauntlet'
 
-  - id: BL-G028
+  - id: BL-G031
     match:
       any_of:
         - 'skew.{0,30}deceleration'
@@ -554,7 +586,7 @@ entries:
       UNSUPPORTED
     source: 'Options→NW entry-intelligence W-E1 gauntlet'
 
-  - id: BL-G029
+  - id: BL-G032
     match:
       any_of:
         - 'dannytrades.{0,30}directional.{0,30}chip'
@@ -563,7 +595,7 @@ entries:
       pre-2010-only
     source: 'DT-R15/DT-R16; DANNYTRADES adjudication + DT-W2 (#1751)'
 
-  - id: BL-G030
+  - id: BL-G033
     match:
       any_of:
         - 'entry.{0,30}time.{0,30}thesis'
@@ -571,7 +603,7 @@ entries:
       REFUTED 3-for-3 — T2 ceded to long-hold LT-3a
     source: 'Nontech-bottom program (RUL-18..29)'
 
-  - id: BL-G031
+  - id: BL-G034
     match:
       any_of:
         - 'election.{0,30}midterm.{0,30}cycle'
@@ -579,7 +611,7 @@ entries:
       REFUTED — survives only as US-only Risk-Radar modulator
     source: 'Election-cycle modulator study'
 
-  - id: BL-G032
+  - id: BL-G035
     match:
       any_of:
         - 'gating.{0,30}share.{0,30}reversal'
@@ -587,7 +619,7 @@ entries:
       FALSIFIED — hurts vs flat
     source: 'China subsector-gate study (#791 era)'
 
-  - id: BL-G033
+  - id: BL-G036
     match:
       any_of:
         - 'label.{0,30}faltering'
@@ -595,7 +627,7 @@ entries:
       NO-GO
     source: 'Phase-0 verdicts (#1031)'
 
-  - id: BL-G034
+  - id: BL-G037
     match:
       any_of:
         - 'avwap.{0,30}from.{0,30}base'
@@ -604,7 +636,7 @@ entries:
       as display-tier confluence input
     source: 'EI-PM0 run (2026-07-10, r4)'
 
-  - id: BL-G035
+  - id: BL-G038
     match:
       any_of:
         - 'unfilled.{0,30}overhead.{0,30}constructed'
@@ -613,7 +645,7 @@ entries:
       MORE, BH 0.0031); inverse reading needs a new PREREG
     source: 'EI-PM0 run (2026-07-10, r4)'
 
-  - id: BL-G036
+  - id: BL-G039
     match:
       any_of:
         - 'overhead.{0,30}supply.{0,30}fraction'
@@ -621,7 +653,7 @@ entries:
       REDUNDANT — \
     source: 'ρ\'
 
-  - id: BL-G037
+  - id: BL-G040
     match:
       any_of:
         - 'codex.{0,30}rotation.{0,30}time'
@@ -629,7 +661,7 @@ entries:
       REJECT-REDUNDANT / INVALID — complex already screened dead
     source: '`ORACLE_ROTATION_TM_CODEX_ADJUDICATION` (#1750)'
 
-  - id: BL-G038
+  - id: BL-G041
     match:
       any_of:
         - 'thesis.{0,30}lobe'
@@ -637,7 +669,7 @@ entries:
       KILL — duplicate of long-hold program
     source: 'NW next-lobes adjudication (#1666/#1669/#1671)'
 
-  - id: BL-G039
+  - id: BL-G042
     match:
       any_of:
         - 'species'
@@ -645,7 +677,7 @@ entries:
       PARKED — sign-reversed in Phase-0b
     source: 'Next3-upgrades program (#1710 era)'
 
-  - id: BL-G040
+  - id: BL-G043
     match:
       any_of:
         - 'econ'
@@ -653,7 +685,7 @@ entries:
       ALL-NULL — avoid lens ≠ board fires
     source: 'Next3-upgrades program'
 
-  - id: BL-G041
+  - id: BL-G044
     match:
       any_of:
         - 'fresh.{0,30}edge.{0,30}board'
@@ -662,7 +694,7 @@ entries:
       edge
     source: 'Act-Now board ruling (#1513)'
 
-  - id: BL-G042
+  - id: BL-G045
     match:
       any_of:
         - 'codex.{0,30}decay.{0,30}orthogonality'
@@ -670,7 +702,7 @@ entries:
       NOISE ARTIFACT — null law
     source: 'RUL-ORTH-8, R-ORTH program (#1739)'
 
-  - id: BL-G043
+  - id: BL-G046
     match:
       any_of:
         - 'staleness.{0,30}alpha'
@@ -678,7 +710,7 @@ entries:
       HONEST NULL
     source: 'NW quant synthesis (#1455–1465)'
 
-  - id: BL-G044
+  - id: BL-G047
     match:
       any_of:
         - 'measured.{0,30}signal.{0,30}half'
@@ -686,7 +718,7 @@ entries:
       ALL-NULL
     source: 'Signal Commons W3/W5 (2026-07-05)'
 
-  - id: BL-G045
+  - id: BL-G048
     match:
       any_of:
         - 'construction.{0,30}divergence.{0,30}healthcare'
@@ -694,7 +726,7 @@ entries:
       LOCKED DESCRIPTIVE — null held
     source: 'Healthcare member-dispersion adjudication'
 
-  - id: BL-G046
+  - id: BL-G049
     match:
       any_of:
         - 'cpi\-020'
@@ -702,7 +734,7 @@ entries:
       RETIRED — re-test FAIL
     source: 'CPI lattice batch 2 (#1754)'
 
-  - id: BL-G047
+  - id: BL-G050
     match:
       any_of:
         - 'index.{0,30}transfer.{0,30}down'
@@ -710,7 +742,7 @@ entries:
       KILLED by sign-stability leg (0/4 PASS)
     source: 'CPI IX-1 §17 (#1779)'
 
-  - id: BL-G048
+  - id: BL-G051
     match:
       any_of:
         - 'buyback.{0,30}floor.{0,30}washout'
@@ -718,7 +750,7 @@ entries:
       FALSIFIED
     source: 'S11 phase-0 (#1782)'
 
-  - id: BL-G049
+  - id: BL-G052
     match:
       any_of:
         - 'margin.{0,30}inflection.{0,30}reclaim'
@@ -729,7 +761,7 @@ entries:
       revival needs a NE
     source: 'S10 phase-0 adjudication (#2396), research/species/W5_S10_REPORT.md §12'
 
-  - id: BL-G050
+  - id: BL-G053
     match:
       any_of:
         - 'fused.{0,30}point.{0,30}sponsorship'
@@ -738,7 +770,7 @@ entries:
       by per-axis AND-gate
     source: 'WA-R1, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G051
+  - id: BL-G054
     match:
       any_of:
         - 'ownership.{0,30}positive.{0,30}breakaway'
@@ -747,7 +779,7 @@ entries:
       survives as context/crowding-hazard only
     source: 'WA-R2, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G052
+  - id: BL-G055
     match:
       any_of:
         - 'supply.{0,30}absorption.{0,30}family'
@@ -758,7 +790,7 @@ entries:
       momentum) stands
     source: 'D4-01b Stage 0, `reports/d4-cn-supply-absorption-d401b-stage0.md`; Day-4 adjudication §D4-01 reassessment'
 
-  - id: BL-G053
+  - id: BL-G056
     match:
       any_of:
         - 'hindenburg.{0,30}omen.{0,30}titanic'
@@ -767,7 +799,7 @@ entries:
       N~20–30 clusters/40y; ~40% 1y WR (≤ random)
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
 
-  - id: BL-G054
+  - id: BL-G057
     match:
       any_of:
         - 'distribution.{0,30}count.{0,30}radar'
@@ -776,7 +808,7 @@ entries:
       owns distribution physics
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
 
-  - id: BL-G055
+  - id: BL-G058
     match:
       any_of:
         - 'mcclellan.{0,30}thrust.{0,30}oversold'
@@ -787,7 +819,7 @@ entries:
       chip
     source: 'RRX-R4/R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
 
-  - id: BL-G056
+  - id: BL-G059
     match:
       any_of:
         - 'absolute.{0,30}spike.{0,30}fade'
@@ -796,7 +828,7 @@ entries:
       episodes in >50 bucket
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
 
-  - id: BL-G057
+  - id: BL-G060
     match:
       any_of:
         - 'lumber.{0,30}gold.{0,30}ratio'
@@ -805,7 +837,7 @@ entries:
       contaminated; use copper/gold
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
 
-  - id: BL-G058
+  - id: BL-G061
     match:
       any_of:
         - 'theory.{0,30}transports.{0,30}confirmation'
@@ -814,7 +846,7 @@ entries:
       rotation physics covered by validated XLY/XLP + XLU legs
     source: 'RRX-R10, `RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md` §6'
 
-  - id: BL-G059
+  - id: BL-G062
     match:
       any_of:
         - 'revision.{0,30}direction.{0,30}model'
@@ -824,7 +856,7 @@ entries:
       exploitable structure
     source: 'MRI-R38, `MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md` §12.3'
 
-  - id: BL-G060
+  - id: BL-G063
     match:
       any_of:
         - 'ticker.{0,30}cluster.{0,30}bootstrap'
@@ -832,7 +864,7 @@ entries:
       FORBIDDEN estimator — anti-conservative, effective N = months
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
 
-  - id: BL-G061
+  - id: BL-G064
     match:
       any_of:
         - 'factor.{0,30}apparatus.{0,30}applied'
@@ -841,7 +873,7 @@ entries:
       absolute)
     source: 'Oracle reversion metric reframe (#1458)'
 
-  - id: BL-G062
+  - id: BL-G065
     match:
       any_of:
         - 'pooled.{0,30}inference.{0,30}across'
@@ -849,7 +881,7 @@ entries:
       FORBIDDEN without era split
     source: 'DT-R16 era-split law (#1751)'
 
-  - id: BL-G063
+  - id: BL-G066
     match:
       any_of:
         - 'closing.{0,30}factor.{0,30}family'
@@ -857,7 +889,7 @@ entries:
       INCOMPLETE — diagnose mechanism + pre-registered pairlets first
     source: 'Factor-kill interaction feedback law'
 
-  - id: BL-G064
+  - id: BL-G067
     match:
       any_of:
         - 'estimator.{0,30}shortcuts'
@@ -865,7 +897,7 @@ entries:
       Constrained per R1-M estimator law
     source: 'Nontech-bottom program'
 
-  - id: BL-G065
+  - id: BL-G068
     match:
       any_of:
         - 'ontology.{0,30}acceptance'
@@ -873,7 +905,7 @@ entries:
       HOLD — peak gate IQR 48.8 > 25
     source: 'Open PR #1639 (do not accidentally revive)'
 
-  - id: BL-G066
+  - id: BL-G069
     match:
       any_of:
         - 'theta.{0,30}tape'
@@ -881,7 +913,7 @@ entries:
       SUSPENDED
     source: 'Final3-lobes program (2026-07-06)'
 
-  - id: BL-G067
+  - id: BL-G070
     match:
       any_of:
         - 'disp.{0,30}gate'
@@ -889,7 +921,7 @@ entries:
       DEFER ×2-replicated
     source: 'Final3-lobes program (#1696)'
 
-  - id: BL-G068
+  - id: BL-G071
     match:
       any_of:
         - 'price.{0,30}memory.{0,30}trials'
@@ -898,7 +930,7 @@ entries:
       60% floor at execution)
     source: 'PM0 prereg (#1761) + EI-PM0 run (2026-07-10)'
 
-  - id: BL-G069
+  - id: BL-G072
     match:
       any_of:
         - 'g1'
@@ -906,7 +938,7 @@ entries:
       DEFERRED
     source: 'Long-hold thesis program (#1507/#1588)'
 
-  - id: BL-G070
+  - id: BL-G073
     match:
       any_of:
         - 'options'
@@ -914,7 +946,7 @@ entries:
       PARKED until preconditions (1)+(2)
     source: 'Options→NW masterplan'
 
-  - id: BL-G071
+  - id: BL-G074
     match:
       any_of:
         - 'codeowners.{0,30}branch.{0,30}protection'
@@ -922,7 +954,7 @@ entries:
       DEFERRED to RF codegen lane scope
     source: 'ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md`'
 
-  - id: BL-G072
+  - id: BL-G075
     match:
       any_of:
         - 'ticker.{0,30}multi.{0,30}label'
@@ -931,7 +963,7 @@ entries:
       revenue-geography ingestion + own adjudication
     source: 'TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
 
-  - id: BL-G073
+  - id: BL-G076
     match:
       any_of:
         - 'public.{0,30}breakaway.{0,30}desk'
@@ -940,7 +972,7 @@ entries:
       its own wave
     source: '`WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8'
 
-  - id: BL-G074
+  - id: BL-G077
     match:
       any_of:
         - 'winner.{0,30}autopsy.{0,30}short'
@@ -949,7 +981,7 @@ entries:
       settlement date)
     source: 'WA-R (docket adjudication), aligns NEXTL-U19'
 
-  - id: BL-G075
+  - id: BL-G078
     match:
       any_of:
         - 'full.{0,30}graph.{0,30}causal'
@@ -959,7 +991,7 @@ entries:
       clock
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G076
+  - id: BL-G079
     match:
       any_of:
         - 'dedicated.{0,30}machine.{0,30}registration'
