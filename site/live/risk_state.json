@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-17 18:04:45 UTC",
+  "built": "2026-07-17 19:38:05 UTC",
   "session": {
     "region": "us",
     "open": true,
-    "local_time": "2026-07-17 14:04 EDT"
+    "local_time": "2026-07-17 15:38 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -18,15 +18,15 @@
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": -0.7
+      "chg_pct": -1.07
     },
     {
       "sym": "QQQ",
-      "chg_pct": -0.82
+      "chg_pct": -1.56
     },
     {
       "sym": "VIX",
-      "chg_pct": 7.77
+      "chg_pct": 12.61
     }
   ],
   "display": {
@@ -41,7 +41,7 @@
   "live": {
     "verdict": "MIXED",
     "score": 50,
-    "raw_score": 76,
+    "raw_score": 75,
     "color": "yellow",
     "label_en": "Mixed",
     "label_zh": "\u6df7\u5408",
@@ -50,7 +50,7 @@
     "radar": {
       "state": "caution",
       "state_ungated": "caution",
-      "top_score": 66,
+      "top_score": 69,
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": {
@@ -124,7 +124,7 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 82,
+      "score": 78,
       "basis": "live",
       "asof": "live"
     },
