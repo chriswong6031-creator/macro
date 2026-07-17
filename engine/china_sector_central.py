@@ -254,14 +254,27 @@ def market_context() -> dict:
 def _rolling_over(now: dict) -> bool:
     """Fast-rollover detector (parity with engine.sector_central._rolling_over). The slow 5-phase
     label lags a sharp multi-week rollover, so a name down hard off a recent high can still read
-    'Trending'. When the oscillator slope is clearly DOWN, the daily timing ladder is in decline,
-    AND the canonical (detrended) position is stretched, the name is topping/rolling regardless of
-    a still-positive weekly MACD. Keys only off fields the cycle record already carries."""
+    'Trending'. Keys only off fields the cycle record already carries (osc_slope / pos / pos_v2 /
+    timing_state / signal / divergence) — no new data.
+
+    Two arms (2026-07 rollover-lag audit, ported from the US detector — the original single
+    arm never fired post-roll):
+      • decline arm: oscillator falling + stretched + daily ladder still IN decline.
+      • post-roll arm: oscillator in COLLAPSE (≤ −10) off an elevated position with a SELL
+        turn signal / divergence / decline ladder. The original arm demanded pos ≥ 68 AND a
+        DECLINE-family ladder — but a name that already fell has pos < 68 and its ladder has
+        moved on to bottom-hunting (TURN SIGNALED), so the override never fired on a real
+        rollover. No whipsaw on wiggles: every arm still needs a clearly falling oscillator
+        plus stretch plus a confirming fast signal."""
     slope = now.get("osc_slope") or 0.0
     pv2 = now.get("pos_v2")
-    hi = (pv2 if pv2 is not None else (now.get("pos") or 0)) >= 68.0
+    pos_eff = pv2 if pv2 is not None else (now.get("pos") or 0)
     timing = (now.get("timing_state") or "").upper()
-    return bool(slope < -3.0 and hi and timing in ("DECLINE", "ROLLING OVER"))
+    hard_dn = timing in ("DECLINE", "ROLLING OVER")
+    if slope < -3.0 and pos_eff >= 68.0 and hard_dn:
+        return True
+    confirm = bool(now.get("signal") == "SELL" or now.get("divergence") or hard_dn)
+    return bool(slope <= -10.0 and pos_eff >= 50.0 and confirm)
 
 
 def _state_score(now: dict) -> tuple[float, dict]:
