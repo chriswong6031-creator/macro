@@ -13,7 +13,6 @@ Usage: python -m scripts.build_stock_library
 """
 from __future__ import annotations
 
-import bisect
 import json
 import math
 import logging
@@ -34,7 +33,7 @@ from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import (  # noqa: E402
-    ALIGN_MIN_KEEP, US_ALPHA_WEIGHT, entry_open_first, rank_setups, setup_score,
+    US_ALPHA_WEIGHT, entry_open_first, rank_setups, setup_score,
     sue_confirmer)
 from engine import stock_score  # noqa: E402
 from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score, edge-blended
@@ -691,6 +690,73 @@ def _board_alpha_sort_key(ticker: str, row_by_t: dict, profile: dict | None = No
     if alpha is None and profile is not None:
         alpha = profile.get("composite_z")
     return (-(alpha or 0.0), ticker)
+
+
+def _atier(p: dict | None) -> str | None:
+    """Board-level alignment tier off a conviction profile. Under the cascade
+    inclusion gate this is per-card CONTEXT only (align_tier badge + lane
+    derivation) — never an inclusion predicate."""
+    a = (p or {}).get("alignment") or {}
+    return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+
+
+def _cascade_elig(scored: list[tuple], sig_verdict: dict) -> list[tuple]:
+    """CONFLUENCE CASCADE INCLUSION GATE for the wide standout board (owner
+    directive 2026-07-16, parity with CN build_china_library.py:1433 and HK
+    owner-ratified 2026-07-16): a name is buy-shelf eligible iff its signal_gate
+    T1->T4 cascade verdict is `eligible` (freshness- and not-topped-guarded
+    inside signal_gate.gate). Returns [(ticker, profile, align_tier), ...]
+    preserving `scored` order (composite desc, ticker) — the board ORDERING is
+    applied by the caller via signal_gate.blend_sorted."""
+    return [(t, p, _atier(p)) for t, p in scored
+            if (sig_verdict.get(t) or {}).get("eligible")]
+
+
+# ── P2.4 Board Contract v2 lane taxonomy ─────────────────────────────────────
+# Spec: research/entry_intel/P2_4_BOARD_CONTRACT_V2_DESIGN.md
+# Vocabulary sets — verified 2026-07-05 against live us_standouts.json.
+# Live board: align_tier in {"aligned", "near", None}.
+# Replay/conviction layer: alignment.tier in {"PRIME", "ARMED", ...}.
+# Both vocabularies are handled explicitly; unknown values log a warning.
+_PRIME_EQUIV = {"PRIME", "aligned"}         # bottoming-type tiers
+_ARMED_EQUIV = {"ARMED"}                    # continuation-type (requires rising weekly)
+_NEAR_EQUIV = {"APPROACHING", "near", "bear_recovering", "turning"}  # near-aligned
+
+
+def _lane_for(align_tier_val, weekly_phase_val):
+    """Derive the v2 lane label from align_tier + weekly_phase.
+
+    Handles both the live production vocabulary (aligned/near/None) and
+    the replay/conviction vocabulary (PRIME/ARMED/APPROACHING).
+    Logs a warning on any unknown tier and defaults to 'bottoming'.
+
+    Under the cascade inclusion gate, align_tier may be None for healthy
+    uptrending leaders that are cascade-eligible but never bottoming-aligned
+    (they bypassed the alignment screen). A rising-weekly cascade-eligible
+    name is a continuation entry, not bottoming — so tier=None with
+    weekly_phase='rising' → 'continuation'. Non-rising None → 'bottoming'
+    (conservative; JS already maps both lanes).
+    """
+    tier = None if align_tier_val in (None, "None", "") else align_tier_val
+    if tier in _PRIME_EQUIV:
+        return "bottoming"
+    if tier in _ARMED_EQUIV and weekly_phase_val == "rising":
+        return "continuation"
+    if tier in _NEAR_EQUIV and weekly_phase_val == "rising":
+        return "continuation"  # near/APPROACHING with rising phase → continuation
+    if tier in _ARMED_EQUIV or tier in _NEAR_EQUIV:
+        return "bottoming"     # non-rising ARMED or near → bottoming group
+    if tier is None:
+        # Cascade-eligible with no alignment tier: rising weekly → continuation
+        # (uptrending leader); all other → bottoming (conservative default).
+        return "continuation" if weekly_phase_val == "rising" else "bottoming"
+    # UNKNOWN vocabulary: log loudly, default gracefully
+    log.warning(
+        "P2.4 _lane_for: UNKNOWN align_tier value %r (weekly_phase=%r) — "
+        "defaulting to 'bottoming'. Update _PRIME_EQUIV/_ARMED_EQUIV/_NEAR_EQUIV "
+        "if the builder vocabulary has changed.", align_tier_val, weekly_phase_val
+    )
+    return "bottoming"
 
 
 def _enforce_blocked_buy_invariant(buy_rows: list[dict]) -> int:
@@ -2738,137 +2804,61 @@ def main() -> int:
         # ticker tiebreaker: identical composite_z must never leave board order to
         # dict insertion order (reproducibility — same inputs, same board)
         scored.sort(key=lambda kv: (-(kv[1]["composite_z"]), kv[0]))
-        # ENTRY-QUALITY GATE (China's discipline, T4-validated: poor-entry top-momentum names
-        # realize -0.7pp/mo and a -58% vs -41% worst drawdown) AND the new BOTTOMING-ALIGNMENT
-        # gate. A name is BUYABLE only if its cycle/extension does NOT block (downtrend /
-        # parabolic / over-extended chase) AND its entry is constructive (entry_z > 0) AND its
-        # weekly/3-day/daily are ALIGNED to the upside (engine.cycles.mtf_alignment: weekly
-        # not-falling + 3-day nearing a bullish cross + daily just-crossed/about-to) — so a
-        # mid-weekly-bear falling knife with a strong event EDGE can no longer top the board.
-        # NEAR-aligned names backfill (tagged) only when too few are fully aligned; the buy
-        # list is ranked by alignment score first, then the Conviction composite. Strong-but-
-        # unaligned names (wrong tape / weekly still falling) drop to the WATCH strip.
-        def _entry_ok(p):
-            if p.get("cycle_blocked"):
-                return False
-            ez = ((p.get("axes") or {}).get("entry") or {}).get("z")
-            return ez is None or ez > 0
+        # CONFLUENCE CASCADE INCLUSION GATE (owner directive, 2026-07-16 — mirroring CN
+        # build_china_library.py:1433 and HK owner-ratified 2026-07-16): a name is
+        # BUYABLE iff its signal_gate T1->T4 cascade verdict is `eligible` (freshness-
+        # and not-topped-guarded inside signal_gate.gate). This REPLACES the prior
+        # bottoming-alignment screen as the PRIMARY inclusion gate, exactly as the
+        # signal_gate charter (engine/signal_gate.py docstring) prescribes for ALL
+        # country standout grids. Cascade-eligible names include healthy uptrending
+        # leaders (T1/T2 take) and forming continuations (T3/T4) — the old aligned/near
+        # conjunction structurally excluded them (2026-07-15 live board: 30 aligned of
+        # 1464, only 7 of 28 buys cascade-eligible; cascade-eligible pool was 82).
+        # The bottoming-alignment data is RETAINED as per-card CONTEXT: _atier(p) is
+        # still the third tuple element; it drives the align_tier badge and lane
+        # derivation below, exactly as in CN. It is NOT an inclusion predicate anymore.
+        # Parity with CN/HK: if sig_verdict is empty the builder logs a loud warning —
+        # no fallback gate (breakage is a data-pipeline issue, not a gate-design
+        # issue; the signal_sanity coverage floor catches a broken/empty board).
+        if not sig_verdict:
+            log.warning(
+                "us_standouts wide board: sig_verdict is EMPTY — "
+                "cascade gate will admit zero names (data-pipeline issue).")
 
-        def _atier(p):
-            a = p.get("alignment") or {}
-            return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+        elig = _cascade_elig(scored, sig_verdict)
 
-        def _asort(tp):
-            t, p, _tier = tp
-            a = p.get("alignment") or {}
-            return (-(a.get("score") or 0.0), -(p.get("composite_z") or 0.0), t)
+        # BOARD ORDERING: the owner's WEIGHTED cascade blend (signal_gate.blend_sorted,
+        # US defaults) — conviction percentile scaled by the cascade weight, plus the
+        # wave-2-validated COILED cohort-washout bonus (framework ledger 2026-07-01;
+        # lifts a coiled name ~half a tier, star ~0.8). Strict tier-first was explicitly
+        # rejected by the owner (blend_sorted docstring) — a strong-conviction T2/T3
+        # must outrank a weak master. This pre-cap order decides which names survive
+        # the per-sector soft cap below; the terminal DISPLAY sort within the trend
+        # lane stays W8 alpha-desc (_board_alpha_sort_key, forward ledger #1062).
+        buyable = signal_gate.blend_sorted(
+            elig,
+            base_of=lambda x: x[1].get("composite_z") or 0.0,
+            verdict_of=lambda x: sig_verdict.get(x[0]),
+            bonus_of=lambda x: ((coiled_by.get(x[0]) or {}).get("bonus") or 0.0),
+        )
 
-        elig = [(t, p, _atier(p)) for t, p in scored if _entry_ok(p) and _atier(p)]
-        aligned = sorted([x for x in elig if x[2] == "aligned"], key=_asort)
-        near = sorted([x for x in elig if x[2] == "near"], key=_asort)
-        buyable = (aligned if len(aligned) >= ALIGN_MIN_KEEP
-                   else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])
-
-        # ── W8-C Lane R admission ─────────────────────────────────────────────
-        # Evidence: W8-C wave8_ctlane: CT-BOUNCE fires == aligned fires on
-        # stop5/clean15 (deltas -0.2/-0.6pp, stable halves) → the _ALIGN_BAD_STATES
-        # hard-block on COUNTERTREND BOUNCE is unjustified; Lane R is licensed as
-        # EQUAL CITIZENS (no claimed edge, safety passed). Names already on the
-        # trend lane (aligned or near) keep lane='trend'. Names rejected ONLY
-        # because their ladder.state is in _ALIGN_BAD_STATES (not for knife or
-        # weekly-falling — those remain excluded) are reconsidered for lane='recovery'
-        # iff is_buyable AND not extended. Cap: at most 12 recovery rows.
-        from engine.cycles import _ALIGN_BAD_STATES as _ABS, _ALIGN_KNIFE_BLOCK as _AKB
-        from engine.china_signals import extension_read as _ext_read
-        _RECOVERY_CAP = 12
-        _buy_tickers_trend = {t for t, _, _ in buyable}
-
-        def _is_ctlane_candidate(t, p):
-            """True iff rejected ONLY due to _ALIGN_BAD_STATES (not knife/weekly-falling).
-
-            The masterplan explicitly requires knife and weekly-falling exclusions to
-            remain hard blocks in Lane R — only the _ALIGN_BAD_STATES state veto is
-            relaxed. We check both extra exclusion conditions from the alignment dict
-            (a["knife"] and a["weekly"]) so a name that is simultaneously a knife AND
-            COUNTERTREND BOUNCE is NOT admitted.
-            """
-            if t in _buy_tickers_trend:
-                return False          # already on trend lane
-            if not _entry_ok(p):
-                return False          # cycle_blocked or bad entry_z
-            a = p.get("alignment") or {}
-            if a.get("aligned") or a.get("near"):
-                return False          # actually passed alignment; shouldn't reach here
-            # Hard-block: knife (deep below 200dma, falling) remains excluded
-            if (a.get("knife") or 0.0) >= _AKB:
-                return False          # falling knife — excluded even in Lane R
-            # Hard-block: weekly still falling — confirmation not possible yet
-            if a.get("weekly") == "falling":
-                return False
-            # Check whether the remaining reason it failed alignment is _ALIGN_BAD_STATES
-            lad = p.get("ladder") or {}
-            state = lad.get("state")
-            if state not in _ABS:
-                return False          # excluded for some other reason not covered above
-            return True
-
-        _recovery_cands = []
-        for t, p in scored:
-            if not _is_ctlane_candidate(t, p):
-                continue
-            if not signal_gate.is_buyable(sig_verdict.get(t)):
-                continue
-            # extension_read: pass ticker='' for US (board_type falls back to main 10%)
-            row_r = row_by_t.get(t)
-            if row_r is None:
-                continue
-            # Use _ext_closes (the whole-universe close DataFrame built above) for the
-            # extension check — it is always available here, same basis as ext_map.
-            _close_r = (_ext_closes[t].dropna() if
-                        ("_ext_closes" in dir() and t in _ext_closes.columns)
-                        else None)
-            # Graceful: if no close series available, skip extension check (exclude conservatively)
-            if _close_r is None or len(_close_r) < 21:
-                continue
-            _ext_r = _ext_read(_close_r, row_r.get("tech"), ticker="")
-            if _ext_r.get("extended"):
-                continue              # already extended — not a constructive recovery entry
-            _recovery_cands.append((t, p))
-
-        # Order recovery candidates by alpha desc (W8 verdict: no rank power; alpha is
-        # the only validated sort leg; forward ledger will stratify by lane).
-        # Alpha comes from the board row — the profile has no "alpha" key, so the
-        # previous profile read always fell through to composite_z here (see
-        # _board_alpha_sort_key; composite_z remains the fallback when the row
-        # carries no alpha).
-        _recovery_cands.sort(
-            key=lambda tp: _board_alpha_sort_key(tp[0], row_by_t, tp[1]))
-        _recovery_cands = _recovery_cands[:_RECOVERY_CAP]
-        _recovery_tickers = {t for t, _ in _recovery_cands}
-
-        log.info("W8-C Lane R: %d recovery candidates admitted (cap=%d)",
-                 len(_recovery_cands), _RECOVERY_CAP)
-        # COMBINE re-rank: keep main's aligned-above-near inclusion, but order WITHIN each
-        # alignment tier by the owner's confluence weighted blend (conviction percentile +
-        # 0.5 * cascade weight) so the strongest confluence entries (T1>T2>T3>T4) rise. Names
-        # with no confluence verdict keep their conviction rank (weight 0 = no boost, not buried).
-        # The wave-2-validated COILED cohort-washout bonus lifts a coiled name ~half a tier,
-        # star (with bullish divergence) ~0.8 tier; framework ledger 2026-07-01.
-        _czs = sorted((p.get("composite_z") or 0.0) for _t, p, _ti in buyable)
-        _bn = len(_czs) or 1
-
-        def _combine_key(x):
-            t, p, tier = x
-            w = (sig_verdict.get(t) or {}).get("weight") or 0.0
-            pct = bisect.bisect_right(_czs, p.get("composite_z") or 0.0) / _bn
-            return (0 if tier == "aligned" else 1,
-                    -(pct + 0.5 * w + ((coiled_by.get(t) or {}).get("bonus") or 0.0)), t)
-        buyable = sorted(buyable, key=_combine_key)
+        # ── W8-C Lane R (cascade-gate supersedes) ────────────────────────────
+        # Under the cascade inclusion gate, is_buyable (T1/T2/T3) is a strict
+        # subset of eligible (T1/T2/T3/T4). Every name that would have qualified
+        # for Lane R via is_buyable is already admitted on the trend lane above.
+        # The W8-C scan is structurally empty: recovery candidates live on the
+        # trend lane already. Retain the variable names so all downstream
+        # references (buy_ids union, earnings-blackout recovery pass) compile.
+        _recovery_cands: list[tuple] = []
+        _recovery_tickers: set[str] = set()
+        log.info("W8-C Lane R: cascade gate supersedes — recovery scan skipped "
+                 "(is_buyable is a strict subset of cascade-eligible; "
+                 "%d eligible on trend lane)", len(buyable))
 
         # W6-US fix 6: soft per-sector cap + dual-class dedup on the wide board.
         # The same PER_SECTOR=5 cap that guards action_board.notable in build_site.py
-        # is now applied here so bottoming-alignment can't select all of one sector
-        # (live: 10 Industrials + 9 Utilities = 19/34 = 56% of buys).
+        # is now applied here so the cascade gate can't over-concentrate in one sector
+        # (live pre-migration: 10 Industrials + 9 Utilities = 19/34 = 56% of buys).
         # Soft: names that exceed the cap overflow into the watch strip instead of
         # being discarded — the board is transparent about them.
         # Dual-class dedup: names sharing a normalised company name (GOOG+GOOGL) keep
@@ -3029,42 +3019,10 @@ def main() -> int:
         # Spec: research/entry_intel/P2_4_BOARD_CONTRACT_V2_DESIGN.md
         # Step A: populate weekly_phase on every cand row from
         #         profiles[t]["alignment"]["weekly"] BEFORE _tag() is called.
-        # Step B: _lane_for() derives the lane from align_tier + weekly_phase,
-        #         handling both live vocab (aligned/near) and replay vocab
-        #         (PRIME/ARMED/APPROACHING) with an UNKNOWN guard.
-        # Vocabulary sets — verified 2026-07-05 against live us_standouts.json.
-        # Live board: align_tier in {"aligned", "near", None}.
-        # Replay/conviction layer: alignment.tier in {"PRIME", "ARMED", ...}.
-        # Both vocabularies are handled explicitly; unknown values log a warning.
-        _PRIME_EQUIV   = {"PRIME", "aligned"}         # bottoming-type tiers
-        _ARMED_EQUIV   = {"ARMED"}                    # continuation-type (requires rising weekly)
-        _NEAR_EQUIV    = {"APPROACHING", "near", "bear_recovering", "turning"}  # near-aligned
-
-        def _lane_for(align_tier_val, weekly_phase_val):
-            """Derive the v2 lane label from align_tier + weekly_phase.
-
-            Handles both the live production vocabulary (aligned/near/None) and
-            the replay/conviction vocabulary (PRIME/ARMED/APPROACHING).
-            Logs a warning on any unknown tier and defaults to 'bottoming'.
-            """
-            tier = None if align_tier_val in (None, "None", "") else align_tier_val
-            if tier in _PRIME_EQUIV:
-                return "bottoming"
-            if tier in _ARMED_EQUIV and weekly_phase_val == "rising":
-                return "continuation"
-            if tier in _NEAR_EQUIV and weekly_phase_val == "rising":
-                return "continuation"  # near/APPROACHING with rising phase → continuation
-            if tier in _ARMED_EQUIV or tier in _NEAR_EQUIV:
-                return "bottoming"     # non-rising ARMED or near → bottoming group
-            if tier is None:
-                return "bottoming"     # null align_tier → structural default
-            # UNKNOWN vocabulary: log loudly, default gracefully
-            log.warning(
-                "P2.4 _lane_for: UNKNOWN align_tier value %r (weekly_phase=%r) — "
-                "defaulting to 'bottoming'. Update _PRIME_EQUIV/_ARMED_EQUIV/_NEAR_EQUIV "
-                "if the builder vocabulary has changed.", align_tier_val, weekly_phase_val
-            )
-            return "bottoming"
+        # Step B: _lane_for() (module level, unit-tested in
+        #         tests/test_us_standouts_cascade_gate.py) derives the lane from
+        #         align_tier + weekly_phase, handling both live vocab (aligned/near)
+        #         and replay vocab (PRIME/ARMED/APPROACHING) with an UNKNOWN guard.
 
         # Step A: capture weekly_phase + above_trend from profiles onto cand rows.
         # weekly_phase comes from profiles[t]["alignment"]["weekly"] (the _tf_phase()
@@ -3187,7 +3145,7 @@ def main() -> int:
                 r["lane"] = "watch"
             return r
 
-        wide = {"as_of": alpha_asof, "rank_by": "bottoming-alignment", "gate_go": gate_go,
+        wide = {"as_of": alpha_asof, "rank_by": "confluence", "gate_go": gate_go,
                 "buy": _all_buy_rows,
                 "watch": [_tag_watch(t) for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
@@ -3205,7 +3163,7 @@ def main() -> int:
         for _lane_s, _rows_s in _spurious_sec.items():
             log.warning("sector-integrity guard: dropped %d %s row(s) with spurious "
                         "sector label: %s", len(_rows_s), _lane_s, _rows_s)
-        eligible = len(aligned)
+        eligible = len(elig)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)

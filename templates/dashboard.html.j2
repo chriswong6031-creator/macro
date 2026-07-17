@@ -10895,11 +10895,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="nb-grid-section">
       <div class="nbgrid" data-showmore-rows="3">
       {% if _su %}
-      {# BOTTOMING-ALIGNED board: shows only names whose weekly/3-day/daily cycles are
-         aligned to the upside (engine.cycles.mtf_alignment), ranked by
-         bottoming-alignment score then conviction composite (entry-open names first).
-         Order is set by the JSON producer (build_stock_library.py rank_by="bottoming-alignment"
-         + entry_open_first); the template renders as-is — no re-sort here. #}
+      {# CONFLUENCE-GATED board (2026-07-16): shows names whose signal_gate T1->T4
+         cascade verdict is eligible (parity with CN/HK), ordered by the weighted
+         cascade blend then alpha-desc within lane (W8). Bottoming-alignment survives
+         as per-card context (align_tier badge + lane derivation). Order is set by the
+         JSON producer (build_stock_library.py rank_by="confluence"); the template
+         renders as-is — no re-sort here. #}
       {% set _board = _su.buy %}
       {# --- TRUE STABLE LANE PARTITION (P2.4 §4.2).
            Canonical group order: bottoming, continuation, trend, recovery, watch (skip empty).
