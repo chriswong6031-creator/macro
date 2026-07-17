@@ -40,7 +40,8 @@ Drop order for macro_slice (lowest priority first):
    4. cross_asset_flows
    3. liquidity_plumbing
    2. contradictions
-   1b. global_regimes
+   1c. global_regimes
+   1b. contagion  (CSP-W1; absent = drops cleanly)
    1a. market_core
 
 Drop order for china_slice (lowest priority first):
@@ -632,6 +633,75 @@ def _block_cortex(memo: dict | None) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# CSP-W1: contagion block (reads world_state.contagion_regime)
+# ---------------------------------------------------------------------------
+
+def _block_contagion(ws: dict | None) -> dict | None:
+    """Block contagion: contagion_regime from world_state (CSP-W1).
+
+    Budget: ~0.6 KB.  Returns None when the block is entirely null/degraded
+    so it drops cleanly from the macro_slice.
+
+    Deterministic numeric text only — engine-computed fields re-projected to
+    the AI context plane.  No LLM-originated content.
+
+    Honesty tail per #2752 chip idiom: "accruing — unproven; does not change
+    the score" is appended whenever the block is present and non-trivial.
+    """
+    if ws is None:
+        return None
+    cr = ws.get("contagion_regime")
+    if not cr or not isinstance(cr, dict):
+        return None
+
+    state = cr.get("state")
+    leadership_state = cr.get("leadership_state")
+    us_spillover = cr.get("us_spillover")
+    n_alert = cr.get("n_alert")
+    d3_alert = cr.get("d3_alert")
+    n_mature = cr.get("n_mature")
+    origin_complex = cr.get("origin_complex")
+    intl_markets = cr.get("intl_markets_in_alert") or []
+    degraded = cr.get("degraded") or []
+    asof = cr.get("asof")
+
+    # Drop when fully null/degraded (pre-#2752 lanes where all sources absent)
+    if state is None and leadership_state is None and us_spillover is None and not intl_markets:
+        return None
+
+    # Compact per-market list (market + mature flag)
+    markets_compact = [
+        {"market": m.get("market"), "mature": m.get("mature")}
+        for m in intl_markets
+        if isinstance(m, dict)
+    ]
+
+    block: dict = {
+        "display_only": True,
+        "is_context_only": True,
+        "_tape_family": "contagion",
+        "_lead_lag": "coincident",
+        "as_of": asof,
+        "stale": _is_stale(asof, "world_state"),
+        "state": state,
+        "origin_complex": origin_complex,
+        "leadership_state": leadership_state,
+        "us_spillover": us_spillover,
+        "n_alert": n_alert,
+        "d3_alert": d3_alert,
+        "n_mature": n_mature,
+        "intl_markets_in_alert": markets_compact,
+        "honesty_note": (
+            "accruing — unproven; does not change the score"
+        ),
+    }
+    if degraded:
+        block["degraded"] = degraded[:3]  # cap for budget
+
+    return block
+
+
+# ---------------------------------------------------------------------------
 # macro_slice
 # ---------------------------------------------------------------------------
 
@@ -649,6 +719,7 @@ _MACRO_DROP_ORDER = [
     "liquidity_plumbing",# 4
     "contradictions",    # 2
     "global_regimes",    # 5
+    "contagion",         # 1c — CSP-W1 context block
     "market_core",       # 1 — last resort
 ]
 
@@ -720,6 +791,10 @@ def _build_macro_slice(root: Path) -> dict:
     result["evidence_clock"]    = _block_evidence_clock(ec_data)
     result["causal_lab"]        = _block_causal_lab(cl_data)
     result["cortex"]            = _block_cortex(memo)
+    # CSP-W1 contagion block — None when fully null/degraded, drops cleanly
+    _contagion = _block_contagion(ws)
+    if _contagion is not None:
+        result["contagion"]     = _contagion
 
     # Enforce budget
     _enforce_budget(result, _MACRO_CAP, _MACRO_DROP_ORDER)

@@ -12618,6 +12618,92 @@ artifacts:
       inversion_board (IRD-R13). Display-only context artifact.
       authority.may_rank/gate/size/escalate=false.
 
+  # --- RSR-W2: Leadership Crack organ (display-only, forward-ledgered) ---
+  rsr-leadership-crack-latest:
+    path: data/leadership_crack/latest.json
+    format: json
+    producer: engine/leadership_crack.py
+    known_extra_writers: []
+    owner_program: rsr
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: leadership_crack.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      RSR-W2: Leadership Crack organ snapshot. Fields: schema, asof, state
+      (INTACT/CRACKING/BROKEN), z_vel, med_dd, carnage_share_ema, share10,
+      share30, n_fresh, n_total, worst_members, index_dd, dislocation,
+      state_since. Display-only; forward-ledgered; is_context_only.
+      authority.may_rank/gate/size/escalate=false.
+      CSP-W1 re-projects this into world_state.contagion_regime.
+
+  # --- RSR-W3: Deterioration Cascade organ (display-only, forward-ledgered) ---
+  rsr-deterioration-cascade-latest:
+    path: data/deterioration_cascade/latest.json
+    format: json
+    producer: engine/deterioration_cascade.py
+    known_extra_writers: []
+    owner_program: rsr
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: deterioration_cascade.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      RSR-W3: Deterioration Cascade organ snapshot. Fields: schema, asof, state
+      (QUIET/SLIPPING/SPREADING/CASCADE), n_alert, n_escalating, d3_alert,
+      n_mature, alerts (list of markets in alert), immature (list of markets
+      with < 5 log rows = pre-gauntlet). Display-only; forward-ledgered;
+      is_context_only. Maturity guard mirrors the per-market 5-row threshold.
+      authority.may_rank/gate/size/escalate=false.
+      CSP-W1 re-projects this into world_state.contagion_regime.
+
+  # --- Risk Radar Intl per-market forward logs (CSP-W1 context source) ---
+  risk-radar-intl-forward-logs:
+    path: data/risk_radar_intl/
+    format: jsonl
+    producer: engine/risk_radar_intl_audit.py
+    known_extra_writers: []
+    owner_program: rri
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/risk_radar_scorecard.py
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      Per-market risk radar intl forward outcome logs: data/risk_radar_intl/<market>_forward_log.jsonl
+      for markets au, ca, cn, ez, gb, hk, in, jp, kr, tw. Appended by
+      engine/risk_radar_intl_audit.py; idempotent by as-of. Each row: asof,
+      market, state, alert, dominant_scare, top_score, scares, drawdown_prob,
+      traj_phase, logged_at, graded. Consumed by engine/risk_radar_scorecard.py
+      for cross-market hit-rate distillation, and by engine/neuralweb/world_state.py
+      (CSP-W1) for the contagion_regime lobe maturity-annotated alert list.
+      Display-only context; authority.may_rank/gate/size/escalate=false.
+      Maturity guard: a market is mature when >= 5 rows with asof < latest row.
+
   # --- CBF-W2: Cross-Border Flow Regime organ ---
   cbf-flow-regime-latest:
     path: data/flow_regime/latest.json
