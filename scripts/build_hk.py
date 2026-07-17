@@ -811,11 +811,20 @@ def main() -> int:
             latest["risk_radar"] = _rri.snapshot(_rri.HK_PROFILE)
             # forward-grade self-audit + bounded auto-tune (vs realized HSI path); hard-forces the
             # verdict only once HK's own log validates (can_force). Display-only until then.
+            # Ledger/tuner advance ONLY on the nightly lane (house law: nightly is the sole
+            # advancer); re-render lanes take the read-only scorecard fast-path.
             try:
-                from engine import risk_radar_intl_audit as _rra, risk_radar_intl_tune as _rrt
-                latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.HK_PROFILE)
-                latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
-                _rrt.tune(_rri.HK_PROFILE)
+                from engine import risk_radar_intl_audit as _rra
+                if _rra.ledger_lane_armed():
+                    from engine import risk_radar_intl_tune as _rrt
+                    latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.HK_PROFILE)
+                    latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
+                    _rrt.tune(_rri.HK_PROFILE)
+                else:
+                    # Read-only fast-path: snapshot still renders; ledger/tuner do not advance.
+                    _sc = _rra.scorecard(_rri.HK_PROFILE.key, log_governance=False)
+                    latest["risk_radar"]["forward_log"] = _sc
+                    latest["risk_radar"]["can_force"] = bool(_sc.get("can_force"))
             except Exception as _e:  # noqa: BLE001
                 log.warning("hk risk-radar audit/tune failed (%s); skipping", _e)
             # Write the scorecard immediately after the HK ledger is updated so the

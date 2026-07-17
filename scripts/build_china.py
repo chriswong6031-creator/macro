@@ -873,11 +873,20 @@ def main() -> int:
             # forward-grade self-audit + bounded auto-tune: log+grade today's call against the
             # realized SHCOMP path, attach the scorecard, and let the radar hard-force the verdict
             # ONLY once its own log validates (can_force). Display-only until then. Never fatal.
+            # Ledger/tuner advance ONLY on the nightly lane (house law: nightly is the sole
+            # advancer); re-render lanes take the read-only scorecard fast-path.
             try:
-                from engine import risk_radar_intl_audit as _rra, risk_radar_intl_tune as _rrt
-                latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.CN_PROFILE)
-                latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
-                _rrt.tune(_rri.CN_PROFILE)
+                from engine import risk_radar_intl_audit as _rra
+                if _rra.ledger_lane_armed():
+                    from engine import risk_radar_intl_tune as _rrt
+                    latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.CN_PROFILE)
+                    latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
+                    _rrt.tune(_rri.CN_PROFILE)
+                else:
+                    # Read-only fast-path: snapshot still renders; ledger/tuner do not advance.
+                    _sc = _rra.scorecard(_rri.CN_PROFILE.key, log_governance=False)
+                    latest["risk_radar"]["forward_log"] = _sc
+                    latest["risk_radar"]["can_force"] = bool(_sc.get("can_force"))
             except Exception as _e:  # noqa: BLE001
                 log.warning("china risk-radar audit/tune failed (%s); skipping", _e)
             # Write the scorecard immediately after the CN ledger is updated so the

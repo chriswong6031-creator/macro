@@ -25,10 +25,11 @@ def _ledger_lane_armed() -> bool:
     sentinel intraday (CBF_INTRADAY=1) and the engine-render/render re-render lanes
     run build_intl too; on those lanes the radar snapshot still renders but the
     forward log / tuner must not advance (a mid-session append is PIT-inconsistent
-    and, being idempotent-by-asof, would permanently displace the nightly row)."""
-    import os
-    lane = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return lane.lower() == "nightly"
+    and, being idempotent-by-asof, would permanently displace the nightly row).
+    Canonical implementation lives with the ledger writer it guards
+    (engine.risk_radar_intl_audit.ledger_lane_armed); CN/HK/CA builds share it."""
+    from engine.risk_radar_intl_audit import ledger_lane_armed
+    return ledger_lane_armed()
 
 
 def _macro_present(snap: dict) -> int:
