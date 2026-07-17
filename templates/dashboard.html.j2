@@ -2407,6 +2407,9 @@ body.page-macro .mx2-hero-ctx{
 }
 body.page-macro .mx2-hero-ctx strong{color:var(--text)}
 body.page-macro .mx2-hero-ctx .mx2-alerts-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* Leadership context line — muted context, not an alert; hidden when sector_bias absent */
+body.page-macro .mx2-leadership-ctx{font-size:11px;color:var(--muted);line-height:1.55;padding:5px 8px;background:color-mix(in srgb,var(--muted) 7%,var(--panel));border:1px solid color-mix(in srgb,var(--muted) 14%,transparent);border-radius:6px;margin-top:2px}
+body.page-macro .mx2-leadership-ctx strong{color:var(--ink-2);font-weight:600}
 /* Grid view: hide driver-ctx text block (Zone 2 covers it); keep alerts+catalyst pill row */
 body.page-macro.mx4-grid .mx2-hero-ctx>div:first-child{display:none;}
 /* In grid view, ctx card becomes a slim row with just alerts */
@@ -4827,6 +4830,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <strong class="l-zh">周期：</strong><span class="l-zh">{{ td(latest.quad_name) }} · {{ td(latest.transition_state) }}</span>
             {% endif %}
           </div>
+          {# Leadership-context chip — display-only; hidden when sector_bias is absent.
+             Data path: MS.radar.cycle.sector_bias (favor/avoid lists, each has .en + .zh).
+             Rendered as a muted context line, NOT an alert color — this is context, not a call. #}
+          {% if MS.radar and MS.radar.cycle and MS.radar.cycle.sector_bias %}
+          {% set _sb = MS.radar.cycle.sector_bias %}
+          {% set _sb_favor_en = _sb.favor | map(attribute='en') | join(' / ') if _sb.favor else '' %}
+          {% set _sb_avoid_en = _sb.avoid | map(attribute='en') | join(' / ') if _sb.avoid else '' %}
+          {% set _sb_favor_zh = _sb.favor | map(attribute='zh') | join('／') if _sb.favor else '' %}
+          {% set _sb_avoid_zh = _sb.avoid | map(attribute='zh') | join('／') if _sb.avoid else '' %}
+          <div class="mx2-leadership-ctx">
+            <span class="l-en">Under the surface: <strong>{{ _sb_favor_en }}</strong> have held while <strong>{{ _sb_avoid_en }}</strong> faded — a rotation read, not a high-beta cue.</span>
+            <span class="l-zh">表面之下：<strong>{{ _sb_favor_zh }}</strong>相对坚挺，<strong>{{ _sb_avoid_zh }}</strong>走弱 — 这是轮动观察，并非追高贝塔的信号。</span>
+          </div>
+          {% endif %}
           {# Fired-alerts pill — preserved structure for risk_state_live.js #}
           <div class="mx2-alerts-row">
             <div class="ms-alerts-wrap">

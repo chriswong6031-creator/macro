@@ -31,6 +31,12 @@
   .sp-td-chip,.sp-td-mode{display:inline-block;font-size:9.5px;font-weight:600;padding:0px 5px;border-radius:5px;cursor:help;white-space:nowrap}
   .sp-td-chip{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
   .sp-td-mode{background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 28%,transparent)}
+  /* within-theme member context chip (basket_member_context.py band — display-only cohort read) */
+  .mc-chip{display:inline-block;font-size:9.5px;font-weight:600;padding:0px 5px;border-radius:5px;white-space:nowrap;cursor:help}
+  .mc-chip.pos{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
+  .mc-chip.warn{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  .mc-chip.neg{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent)}
+  .mc-chip.neu{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:10px; }
   .hero { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
   .hero .lhs { flex:1; min-width:280px; }
@@ -113,8 +119,8 @@
   .ftr-leg-row { display:grid; grid-template-columns:96px 1fr 56px 52px; align-items:center; gap:9px; }
   .ftr-leg-lbl { font-size:11px; color:var(--muted); font-weight:500; }
   .ftr-leg-wt  { font-size:9.5px; color:var(--muted); }
-  .ftr-leg-bar { height:8px; background:rgba(40,48,66,.9); border-radius:4px; overflow:hidden; position:relative; }
-  .ftr-leg-bar-ctr { position:absolute; left:50%; top:0; bottom:0; width:1px; background:rgba(139,147,167,.28); }
+  .ftr-leg-bar { height:8px; background:color-mix(in srgb, var(--text) 14%, var(--panel2)); border-radius:4px; overflow:hidden; position:relative; }
+  .ftr-leg-bar-ctr { position:absolute; left:50%; top:0; bottom:0; width:1px; background:color-mix(in srgb, var(--muted) 30%, transparent); }
   .ftr-leg-fill { position:absolute; top:0; bottom:0; border-radius:3px; }
   .ftr-leg-fill.pos { left:50%; background:var(--up); }
   .ftr-leg-fill.neg { right:50%; background:var(--down); }
@@ -657,6 +663,20 @@ function render(){
     }
     return out ? `<div style="margin-top:2px;display:flex;flex-wrap:wrap;gap:2px">${out}</div>` : '';
   }
+  // Within-theme member context chip (basket_member_context.py — display-only cohort read).
+  // Shows where a member sits WITHIN its basket: leader vs chase vs laggard.
+  // This is purely cohort context; it never scores or ranks.
+  function memberCtxChip(m) {
+    const ctx = m.member_ctx;
+    if (!ctx || !ctx.band || ctx.band === 'na') return '';
+    const en = ctx.band_en || ctx.band;
+    const zh = ctx.band_zh || en;
+    const tone = ctx.tone || 'neu';
+    // Build a plain-word tooltip so users understand what this measures
+    const tipEn = 'Within theme: where this member sits in its basket right now — based on its extension relative to basket peers and 20-day relative strength. Context only.';
+    const tipZh = '主题内位置：该成分股在篮子内的当前位置 — 基于相对同侪的延展度与20日相对强度。仅供参考。';
+    return `<div style="margin-top:2px"><span class="mc-chip ${esc(tone)}" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">${L(esc(en), esc(zh))}</span></div>`;
+  }
   // W2a: per-member nb-chg span so live.js can paint live price changes on the holdings table.
   // data-mkt="us" assumed for US basket detail pages (CN/HK detail pages use their own builders).
   const rows=sortMembers(mem).map(m=>{const c=m.conviction;
@@ -664,7 +684,7 @@ function render(){
     // Hidden live-chg span: live.js writes the changePct here; aria-hidden to avoid screen reader noise.
     const liveSym=m.symbol?`<span class="nb-chg" data-sym="${esc(m.symbol)}" data-mkt="us" aria-hidden="true" style="display:none"></span>`:'';
     return `<tr>
-      <td class="hold-stock">${stk(m.symbol)}${star}${tierBadge(c)}${liveSym} <span class="hold-company">${esc(m.name||'')}</span>${personalityChip(c)}</td>
+      <td class="hold-stock">${stk(m.symbol)}${star}${tierBadge(c)}${liveSym} <span class="hold-company">${esc(m.name||'')}</span>${personalityChip(c)}${memberCtxChip(m)}</td>
       <td class="num hold-potential">${convCell(c)}</td>
       <td class="hold-verdict">${c&&c.verdict?`<span class="v-full">${L(esc(c.verdict),esc(c.verdict_zh||c.verdict))}</span><span class="v-short">${shortVerdict(c)}</span>`:'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
       <td class="hold-entry">${entryCell(c)}</td>
@@ -677,6 +697,7 @@ function render(){
     <thead><tr><th>${L('Stock','个股')}</th><th class="num hold-potential" data-s="recommend" title="Default sort surfaces fresh T1–T4 confluence names first, then blends verdict quality, Potential, entry timing, and cycle blocks.">${L('Potential','潜力')}</th><th>${L('Verdict','结论')}</th><th class="hold-entry">${L('Entry now','入场时机')}</th><th class="num hold-20d" data-s="r20">20d</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
     <div class="disc">${L('Potential ranks buy readiness: room to run, turning up now, and enough quality to survive. The default order blends Potential with the Verdict and entry timing, while pushing cycle-blocked names down. Names with a fresh T1–T4 confluence cross (MACD-2D × StochRSI-3D — the same gate the standout board ranks by) carry a tier badge and are surfaced to the top, strongest tier first (T3* is provisional and may repaint). ⚠ means the cycle blocks a buy.','潜力衡量买入就绪度：仍有空间、当前转强、且质量足以支撑。默认排序会把潜力、结论与入场时机结合，并把周期阻断的个股下调。出现新的 T1–T4 共振交叉（2日MACD × 3日StochRSI，与精选榜相同的门槛）的个股会带有层级标签并被置顶，层级越强越靠前（T3* 为暂定、可能重绘）。⚠ 表示周期阻止买入。')}</div>
+    <div class="disc" style="margin-top:4px">${L('Conviction score = earnings/flow edge, not trend leadership — a rotation leader can score low here.','信念评分＝盈利/资金面优势，非趋势领涨度 — 轮动领涨股在此可能低分。')}</div>
   </div>`;
 
   // ---- changelog + flags ----

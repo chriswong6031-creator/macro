@@ -35,7 +35,12 @@ def test_theme_alerts_region_roundtrip(tmp_path, monkeypatch):
     assert not (tmp_path / "themes" / "state.json").exists()
     intel2 = {"as_of": "2026-06-20", "themes": [
         {"id": "cn_semis", "label": "emerging", "reco": "enter", "rank": 1, "name": "Semis", "name_zh": "半导体", "score": 60}]}
-    fired = theme_alerts.rebuild(intel2, "china")
+    # theme_emerging is debounced: first sighting is buffered
+    assert theme_alerts.rebuild(intel2, "china") == []
+    # confirming build on the next session date fires the event
+    intel3 = {"as_of": "2026-06-21", "themes": [
+        {"id": "cn_semis", "label": "emerging", "reco": "enter", "rank": 1, "name": "Semis", "name_zh": "半导体", "score": 61}]}
+    fired = theme_alerts.rebuild(intel3, "china")
     assert fired and theme_alerts.load_events("us") == []   # us feed untouched
 
 
