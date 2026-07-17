@@ -21,6 +21,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import sector_central as sc
+from engine import us_sector_rotation as usr
 
 
 # ---------------------------------------------------------------------------
@@ -106,13 +107,15 @@ def test_attach_rotation_ordinal_reflects_rank_sort_not_input_order():
 # ---------------------------------------------------------------------------
 
 def test_attach_rotation_state_plain_covers_all_known_states():
-    """Every known state_used value must translate to a plain-word phrase (not the raw enum)."""
-    known_states = [
-        "FRESH BUY", "TURN SIGNALED", "RALLY ON",
-        "TOP WATCH", "ROLLING OVER", "BOTTOM WATCH",
-        "COUNTERTREND BOUNCE", "DECLINE",
-    ]
-    for state in known_states:
+    """Every state defined in us_sector_rotation._STATE_GOVS must be translated in both
+    plain-word maps. Deriving from _STATE_GOVS (the authoritative enum producer) ensures
+    any future added state immediately fails this test instead of leaking at tier 1."""
+    # Authoritative source: the mapping that governs rotation-score governors.
+    authoritative_states = list(usr._STATE_GOVS.keys())
+    assert len(authoritative_states) >= 9, (
+        "Expected at least 9 states in _STATE_GOVS (including CONFIRMING TURN)"
+    )
+    for state in authoritative_states:
         plain_en = sc._STATE_PLAIN_EN.get(state)
         plain_zh = sc._STATE_PLAIN_ZH.get(state)
         assert plain_en, f"_STATE_PLAIN_EN missing translation for: {state!r}"
@@ -140,14 +143,32 @@ def test_attach_rotation_embeds_state_plain_on_each_record():
     assert rot["state"] == "FRESH BUY"
 
 
-def test_attach_rotation_unknown_state_falls_back_to_state_itself():
-    """An unrecognised state_used value falls back to the raw string (graceful, not blank)."""
+def test_attach_rotation_unknown_state_guard_rail():
+    """Guard-rail: an unrecognised state_used value must NOT render as a raw ALL-CAPS enum
+    at tier 1. The raw state is preserved in rot['state'] for hover receipt only.
+
+    All currently known states are covered by test_attach_rotation_state_plain_covers_all_known_states.
+    This guard catches any truly unknown state (programming error or new enum added without
+    updating the plain-word maps) — the fallback must be an empty string, never the raw enum.
+    """
+    # Use a plausible-looking unknown state (what a new enum might look like)
+    unknown_state = "NEW_UNKNOWN_STATE"
     recs = [_sector_rec("XLK")]
-    rot_raw = {"instruments": [_rot_inst("XLK", rank=1, state="NEW_UNKNOWN_STATE")]}
+    rot_raw = {"instruments": [_rot_inst("XLK", rank=1, state=unknown_state)]}
     result = sc._attach_rotation(recs, rot_raw, kind="sector")
     rot = result[0]["rotation"]
-    # Fallback: _STATE_PLAIN_EN.get(state, state) → the raw string
-    assert rot["state_plain_en"] == "NEW_UNKNOWN_STATE"
+
+    # The raw state is stored for hover/receipt (correct)
+    assert rot["state"] == unknown_state
+
+    # Tier-1 guard: state_plain_en must NOT be a raw ALL-CAPS-words enum.
+    # Implementation: unknown states fall back to "" (empty), never the raw enum string.
+    plain_en = rot["state_plain_en"]
+    is_raw_allcaps_enum = bool(re.fullmatch(r"[A-Z][A-Z0-9_ ]+", plain_en))
+    assert not is_raw_allcaps_enum, (
+        f"state_plain_en {plain_en!r} looks like a raw ALL-CAPS enum leaked to tier 1 "
+        f"for unknown state {unknown_state!r}. Add it to _STATE_PLAIN_EN/_STATE_PLAIN_ZH."
+    )
 
 
 # ---------------------------------------------------------------------------

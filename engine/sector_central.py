@@ -601,6 +601,7 @@ _CONV_PLAIN_ZH: dict[str, str] = {
 _STATE_PLAIN_EN: dict[str, str] = {
     "FRESH BUY":           "money moving in",
     "TURN SIGNALED":       "watching for entry",
+    "CONFIRMING TURN":     "turn in progress",
     "RALLY ON":            "trend running",
     "TOP WATCH":           "extended — watch",
     "ROLLING OVER":        "rolling over",
@@ -611,6 +612,7 @@ _STATE_PLAIN_EN: dict[str, str] = {
 _STATE_PLAIN_ZH: dict[str, str] = {
     "FRESH BUY":           "资金流入",
     "TURN SIGNALED":       "关注入场",
+    "CONFIRMING TURN":     "拐点进行中",
     "RALLY ON":            "趋势延伸",
     "TOP WATCH":           "偏高位 — 观察",
     "ROLLING OVER":        "趋势转弱",
@@ -775,8 +777,8 @@ def _attach_rotation(records: list[dict], rotation_raw: dict, kind: str) -> list
             "n_matched":   n_total,          # total matched in this kind universe (11 for sectors)
             "score":       rscore,
             "state":       state,            # internal enum — hover/receipt only, never tier-1
-            "state_plain_en": _STATE_PLAIN_EN.get(state or "", state or ""),
-            "state_plain_zh": _STATE_PLAIN_ZH.get(state or "", state or ""),
+            "state_plain_en": _STATE_PLAIN_EN.get((state or "").upper(), ""),
+            "state_plain_zh": _STATE_PLAIN_ZH.get((state or "").upper(), ""),
             "components":  components,
             "stale":       stale,
         }
