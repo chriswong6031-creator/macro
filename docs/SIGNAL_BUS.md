@@ -93,7 +93,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 295 |
+| display | 298 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -102,7 +102,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 441 |
+| git | 444 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
