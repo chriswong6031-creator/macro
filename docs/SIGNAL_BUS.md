@@ -10,6 +10,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | owner_program | count |
 |---|---|
+| XSR | 1 |
 | active-build-map | 1 |
 | btc-vector | 5 |
 | causal-hypothesis-factory | 9 |
@@ -89,7 +90,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 286 |
+| display | 287 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -98,11 +99,17 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 436 |
+| git | 437 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
 ## Artifacts by owner_program
+
+### XSR
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| us-sector-rotation-latest | `data/us_sector_rotation/latest.json` | json | daily-engine | display | 2 | 0 |
 
 ### active-build-map
 
