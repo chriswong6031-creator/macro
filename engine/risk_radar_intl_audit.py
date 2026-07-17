@@ -231,6 +231,17 @@ def _load_previous_can_force(market: str, root=None) -> bool | None:
                         return bool(fwd["can_force"])
                 except Exception:  # noqa: BLE001
                     pass
+        # 7-market intl payload: data/intl/latest.json records[*].risk_radar.forward_log
+        p = Path(base) / "intl" / "latest.json"
+        if p.exists():
+            try:
+                obj = json.loads(p.read_text())
+                for rec in (obj.get("records") or []):
+                    fwd = ((rec.get("risk_radar") or {}).get("forward_log") or {})
+                    if fwd.get("market") == market and "can_force" in fwd:
+                        return bool(fwd["can_force"])
+            except Exception:  # noqa: BLE001
+                pass
     except Exception:  # noqa: BLE001
         pass
     return None
