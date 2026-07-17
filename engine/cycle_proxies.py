@@ -79,12 +79,15 @@ _REGISTRY_JSON = Path("data/cycle_ontology/proxy_registry.json")
 _HEALTH_JSON = Path("data/cycle_ontology/registry_health.json")
 _FITNESS_JSON = Path("data/cycle_ontology/proxy_fitness.json")
 
-# staleness gate: a `measured` band whose tape is older than this many CALENDAR days
-# fails the build (daily tapes) — monthly tapes get a longer leash.  A monthly macro
-# series is stamped at PERIOD-END and released with a ~1-month lag (INDPRO for May prints
-# in mid-June), so at any build the freshest stamp is legitimately ~1 full period + the
-# release lag behind wall-clock.  75d ≈ two period-ends of headroom keeps the gate honest
-# without false-alarming on the inherent publication lag.
+# staleness limits: a `measured` band whose tape is older than this many CALENDAR days
+# is reported STALE (per-band degrade — the band renders from its last data with a
+# visible stale mark; it never aborts the page, house law).  Monthly tapes get a longer
+# leash: a monthly macro series is stamped at PERIOD-START and released with a lag, so
+# the freshest stamp is legitimately ~2 full periods + the release day behind wall-clock.
+# A band whose release calendar outruns these defaults declares `stale_limit_days` on
+# its registry row (e.g. business/INDPRO: obs dated the 1st, G.17 lands mid-second-month
+# after → worst-case healthy age 31+30+~17 ≈ 78d, so the old 75d default tripped for
+# 1-2 days EVERY month the release landed after the 15th).
 _STALE_MAX_D = 7
 _STALE_MAX_M = 75
 
@@ -182,11 +185,13 @@ def load_series(band: dict) -> pd.Series:
 #   position_gauge  bool  (False for proxy bands — timing only, never plotted position)
 #   fitness    {"kind": "dram"|"u3o8", "match_rate_min":..., "offset_max_months":...}
 #              present ONLY on proxy bands; the earned-artifact gate (§1.5).
-def _measured(band, series, *, freq="D", basis, invert=False, kernel=None, note=""):
+def _measured(band, series, *, freq="D", basis, invert=False, kernel=None, note="",
+              stale_limit_days=None):
     return {"band": band, "tier": "measured", "series": series, "freq": freq,
             "basis": basis, "invert": invert,
             "kernel": kernel or {"zz_scaled": True},
-            "proxy": False, "position_gauge": True, "fitness": None, "note": note}
+            "proxy": False, "position_gauge": True, "fitness": None, "note": note,
+            "stale_limit_days": stale_limit_days}
 
 
 def _proxy(band, series, *, freq="D", basis, kernel=None, fitness, note=""):
@@ -248,6 +253,9 @@ REGISTRY: dict[str, dict] = {
     # ── 1 MEASURED-monthly ──────────────────────────────────────────────────────────
     "business": {"name": "Business (Kitchin)", "bands": [
         _measured("intermediate", "fred:INDPRO", freq="M", basis="fred_level",
+                  stale_limit_days=85,   # G.17 calendar: obs dated the 1st, release lands
+                                         # ~15th-17th of the SECOND month after → worst-case
+                                         # healthy age ≈ 78d; 85 = headroom for a late G.17
                   kernel={"zz_abs": 1.5, "zz_standardize": True,
                           "trend_span": 60, "stoch_win": 60},
                   note="DEVIATION: D3 specced a leading-index COMPOSITE via business_cycle.py; "
@@ -322,11 +330,19 @@ def measured_bands() -> list[tuple[str, dict]]:
 
 # ── build-time health report ─────────────────────────────────────────────────────────
 def registry_report(*, strict: bool = True) -> dict:
-    """Per measured band: {found, ref, rows, first, last, stale_days, ok}.  Raises when
-    strict and a measured band's tape is stale beyond its freq threshold, or a
-    futures_cont band trips the NP-3 equity guard, or a ref does not resolve."""
+    """Per measured band: {found, ref, rows, first, last, stale_days, stale_limit, ok}.
+
+    Two failure classes, deliberately separate (house law: one bad tape degrades its own
+    band, never the page):
+      STRUCTURAL — a ref that does not resolve / an empty tape / the NP-3 equity guard.
+                   Collected in report['errors']; raises when strict.
+      STALE      — a tape whose last stamp exceeds the band's freshness limit (the
+                   band's `stale_limit_days` override when declared, else _STALE_MAX_M /
+                   _STALE_MAX_D by freq).  Marked per-band (ok=False) + collected in
+                   report['stale']; NEVER raises — callers render the band from its
+                   last data with a visible stale mark."""
     today = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()
-    report: dict = {"as_of": str(today.date()), "bands": {}, "errors": []}
+    report: dict = {"as_of": str(today.date()), "bands": {}, "errors": [], "stale": []}
     for cid, band in measured_bands():
         key = f"{cid}.{band['band']}"
         entry: dict = {"cycle": cid, "band": band["band"], "proxy": band["proxy"],
@@ -335,19 +351,24 @@ def registry_report(*, strict: bool = True) -> dict:
             s = load_series(band)
             last = s.index.max()
             stale = int((today - last.normalize()).days)
-            limit = _STALE_MAX_M if band["freq"] == "M" else _STALE_MAX_D
+            _sld = band.get("stale_limit_days")
+            limit = _sld if _sld is not None else (
+                _STALE_MAX_M if band["freq"] == "M" else _STALE_MAX_D)
             entry.update({"found": True, "ref": s.attrs.get("ref"), "rows": int(len(s)),
                           "first": str(s.index.min().date()), "last": str(last.date()),
                           "stale_days": stale, "stale_limit": limit,
                           "ok": bool(stale <= limit)})
-            if strict and stale > limit:
-                report["errors"].append(f"{key}: tape stale {stale}d > {limit}d ({s.attrs.get('ref')})")
+            if stale > limit:
+                msg = f"{key}: tape stale {stale}d > {limit}d ({s.attrs.get('ref')})"
+                report["stale"].append(msg)
+                log.warning("registry_report: %s — band degrades, page renders", msg)
         except ProxyMissing as e:
             entry.update({"found": False, "ok": False, "error": str(e)})
             report["errors"].append(f"{key}: {e}")
         report["bands"][key] = entry
     if strict and report["errors"]:
-        raise ProxyMissing("registry_report FAILED:\n  " + "\n  ".join(report["errors"]))
+        raise ProxyMissing("registry_report FAILED (structural):\n  "
+                           + "\n  ".join(report["errors"]))
     return report
 
 
@@ -476,7 +497,8 @@ def _serialisable_registry() -> dict:
 
 def export(root: Path | None = None) -> dict:
     """Write proxy_registry.json (+ registry_health.json) under data/cycle_ontology/.
-    Returns the health report (raises if a measured band is stale/missing)."""
+    Returns the health report (raises only on STRUCTURAL failures — a missing /
+    unresolvable tape; stale bands are recorded in the report, never fatal)."""
     root = root or Path(".")
     reg = _serialisable_registry()
     (root / _REGISTRY_JSON).parent.mkdir(parents=True, exist_ok=True)
