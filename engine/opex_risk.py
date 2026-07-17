@@ -123,11 +123,68 @@ def _percentile_rank(series: pd.Series, value: float) -> float | None:
     return float(100.0 * (s < value).mean())
 
 
+# ── Schema detection / root filtering ─────────────────────────────────────────
+
+# Default target roots for the index_etf class (SPX complex preferred; SPY fallback).
+# These are the roots we trust as the canonical "own root-class history" per the
+# masterplan §3 docstring ("percentile vs OWN root-class history").
+_INDEX_ETF_TARGETS = ("SPX", "SPXW", "SPY")
+
+
+def _filter_and_sort(
+    df: pd.DataFrame,
+    target_roots: tuple[str, ...] = _INDEX_ETF_TARGETS,
+) -> pd.DataFrame | None:
+    """Return the rows for `target_roots`, sorted by date, or None when unavailable.
+
+    Handles BOTH schemas:
+      - Production schema (build_options_surface.py): multi-root long frame,
+        RangeIndex, string `root` column, string `date` column, written index=False.
+      - Legacy / test DatetimeIndex schema: single-root, DatetimeIndex, no `root` col.
+
+    For the production schema the function filters to `target_roots` and picks the
+    root with the most recent date (SPX runs to 2026; SPY store ended 2022-12-30 so
+    SPX wins automatically).  Percentile math is then computed against that root's
+    own history only, which is what the docstring specifies.
+    """
+    if df is None or df.empty:
+        return None
+
+    has_root_col = "root" in df.columns
+    has_date_col = "date" in df.columns
+
+    if has_root_col and has_date_col:
+        # Production schema: multi-root, RangeIndex, string date column.
+        # Filter to target roots, pick the one with the most recent date.
+        sub = df[df["root"].isin(target_roots)].copy()
+        if sub.empty:
+            # Fall back to whatever roots exist
+            sub = df.copy()
+        # Sort by date (string ISO sorts correctly)
+        sub = sub.sort_values("date").reset_index(drop=True)
+        # Pick the best root: highest max date wins
+        best_root = (
+            sub.groupby("root")["date"].max().sort_values(ascending=False).index[0]
+        )
+        return sub[sub["root"] == best_root].reset_index(drop=True)
+    else:
+        # Legacy / test schema: DatetimeIndex, single root.
+        return df.sort_index().reset_index(drop=True)
+
+
 # ── concentration_hot ─────────────────────────────────────────────────────────
 
-def _concentration_hot(df: pd.DataFrame | None) -> bool | None:
+def _concentration_hot(
+    df: pd.DataFrame | None,
+    target_roots: tuple[str, ...] = _INDEX_ETF_TARGETS,
+) -> bool | None:
     """front7_abs_charm_share OR front7_abs_gex_share percentile vs own
-    root-class history >= P80.  Returns None when surface data absent."""
+    root-class history >= P80.  Returns None when surface data absent.
+
+    Handles the production multi-root parquet schema (build_options_surface.py:
+    RangeIndex, string `date` column) by filtering to `target_roots` and computing
+    the percentile against that root's own history — not the mixed multi-root pool.
+    """
     if df is None:
         return None
     # Need at least 20 rows of history
@@ -136,13 +193,17 @@ def _concentration_hot(df: pd.DataFrame | None) -> bool | None:
     for col in (charm_col, gex_col):
         if col not in df.columns:
             return None
-    latest = df.sort_index().iloc[-1]
-    charm_latest = latest.get(charm_col) if charm_col in latest.index else None
-    gex_latest = latest.get(gex_col) if gex_col in latest.index else None
+    # Filter to target root and sort by date (handles both schemas)
+    root_df = _filter_and_sort(df, target_roots)
+    if root_df is None or root_df.empty:
+        return None
+    latest = root_df.iloc[-1]
+    charm_latest = latest.get(charm_col) if charm_col in root_df.columns else None
+    gex_latest = latest.get(gex_col) if gex_col in root_df.columns else None
     if charm_latest is None and gex_latest is None:
         return None
-    # Percentile rank of latest vs full history (excluding latest row for cleanliness)
-    hist = df.iloc[:-1]
+    # Percentile rank of latest vs own root history (excluding latest row)
+    hist = root_df.iloc[:-1]
     any_computed = False
     hot = False
     if charm_latest is not None and charm_col in hist.columns:
@@ -163,10 +224,18 @@ def _concentration_hot(df: pd.DataFrame | None) -> bool | None:
 
 # ── dealer_load_extreme ───────────────────────────────────────────────────────
 
-def _dealer_load_extreme(df: pd.DataFrame | None) -> bool | None:
+def _dealer_load_extreme(
+    df: pd.DataFrame | None,
+    target_roots: tuple[str, ...] = _INDEX_ETF_TARGETS,
+) -> bool | None:
     """|net_vex| OR |net_cex| percentile >= P90 (magnitude, sign-agnostic).
     CALENDAR-AGNOSTIC: fires whenever dealer books are extreme, OPEX or not.
-    Returns None when surface data absent."""
+    Returns None when surface data absent.
+
+    Handles the production multi-root parquet schema (build_options_surface.py:
+    RangeIndex, string `date` column) by filtering to `target_roots` and computing
+    the percentile against that root's own history — not the mixed multi-root pool.
+    """
     if df is None:
         return None
     vex_col, cex_col = "net_vex", "net_cex"
@@ -174,8 +243,12 @@ def _dealer_load_extreme(df: pd.DataFrame | None) -> bool | None:
     has_cex = cex_col in df.columns
     if not has_vex and not has_cex:
         return None
-    latest = df.sort_index().iloc[-1]
-    hist = df.iloc[:-1]
+    # Filter to target root and sort by date (handles both schemas)
+    root_df = _filter_and_sort(df, target_roots)
+    if root_df is None or root_df.empty:
+        return None
+    latest = root_df.iloc[-1]
+    hist = root_df.iloc[:-1]
     any_computed = False
     extreme = False
     if has_vex:
@@ -220,13 +293,20 @@ def _gamma_regime_context(gex_summary_path: Path | None = None) -> dict | None:
         return None
 
 
-def _gamma_regime_from_surface(df: pd.DataFrame | None) -> dict | None:
-    """Extract gamma_regime context from the surface parquet (net_gex_bn sign)."""
+def _gamma_regime_from_surface(
+    df: pd.DataFrame | None,
+    target_roots: tuple[str, ...] = _INDEX_ETF_TARGETS,
+) -> dict | None:
+    """Extract gamma_regime context from the surface parquet (net_gex_bn sign).
+    Uses _filter_and_sort to correctly handle the production multi-root schema."""
     if df is None:
         return None
     if "net_gex_bn" not in df.columns:
         return None
-    latest = df.sort_index().iloc[-1]
+    root_df = _filter_and_sort(df, target_roots)
+    if root_df is None or root_df.empty:
+        return None
+    latest = root_df.iloc[-1]
     net_gex = latest.get("net_gex_bn")
     if net_gex is None or (isinstance(net_gex, float) and np.isnan(net_gex)):
         return None

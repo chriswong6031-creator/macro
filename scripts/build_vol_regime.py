@@ -30,7 +30,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from engine import opex, opex_risk, options_desk, vol_regime
+from engine import opex, opex_risk, options_desk, options_entry_state, vol_regime
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -76,10 +76,18 @@ def build() -> dict | None:
         opex_snap = opex.snapshot(spy) if spy is not None else None
     except Exception as e:  # noqa: BLE001 — additive context, never fatal
         log.warning("vol_regime: opex snapshot failed: %s", e)
-    # RIC W3: OPEX window risk read (display-only; null-safe; never fatal)
+    # RIC W3: OPEX window risk read (display-only; null-safe; never fatal).
+    # Build options_entry_state first so pin_proximity / vanna_relief_active /
+    # vanna_drag are computed from live data (otherwise they are structurally None
+    # and the level can never exceed 'quiet').
+    entry_state = None
+    try:
+        entry_state = options_entry_state.build_state()
+    except Exception as e:  # noqa: BLE001
+        log.warning("vol_regime: options_entry_state.build_state failed: %s", e)
     opex_risk_snap = None
     try:
-        opex_risk_snap = opex_risk.snapshot(spy_close=spy)
+        opex_risk_snap = opex_risk.snapshot(spy_close=spy, options_entry_state=entry_state)
     except Exception as e:  # noqa: BLE001
         log.warning("vol_regime: opex_risk snapshot failed: %s", e)
     return {"schema": "vol_regime.v1", "asof": snap.get("asof"),

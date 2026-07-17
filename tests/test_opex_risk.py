@@ -31,27 +31,67 @@ from engine.event_calendar import enrich_opex_events
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
-def _make_surface(n: int = 60, seed: int = 42) -> pd.DataFrame:
-    """Synthetic surface parquet: n rows of daily aggregates."""
+def _make_surface(n: int = 60, seed: int = 42, root: str = "SPX") -> pd.DataFrame:
+    """Synthetic surface parquet matching the PRODUCTION schema from build_options_surface.py.
+
+    Production writer (build_options_surface.py:139-141):
+        df = df.sort_values(["root", "date"]).reset_index(drop=True)
+        df.to_parquet(p, index=False)
+
+    So the schema is: multi-root long frame, RangeIndex, string `root` column,
+    string `date` column, NO DatetimeIndex.  This matches the real parquet and
+    ensures the _filter_and_sort() path is exercised in tests (the prior fixture
+    had a DatetimeIndex and no `root` column, masking the production schema bug).
+
+    By default builds a single-root frame for `root`.  Use _make_multi_surface()
+    for multi-root fixtures.
+    """
     rng = np.random.default_rng(seed)
-    dates = pd.date_range("2024-01-01", periods=n, freq="B")
+    dates = pd.bdate_range("2024-01-01", periods=n)
+    date_strs = [d.strftime("%Y-%m-%d") for d in dates]
     df = pd.DataFrame({
+        "root": root,
+        "date": date_strs,
         "front7_abs_charm_share": rng.uniform(0.05, 0.40, n),
         "front7_abs_gex_share":   rng.uniform(0.10, 0.50, n),
         "net_vex":                rng.normal(0, 2e9, n),
         "net_cex":                rng.normal(0, 1.5e9, n),
         "net_gex_bn":             rng.normal(5, 3, n),   # mostly long
         "total_abs_gamma_notional": rng.uniform(1e9, 5e9, n),
-    }, index=dates)
+    })
+    # RangeIndex matches the production writer's reset_index(drop=True)
+    df = df.reset_index(drop=True)
     return df
 
 
+def _make_multi_surface(n: int = 60, seed: int = 42) -> pd.DataFrame:
+    """Multi-root surface matching production: DIA/IWM/QQQ/SPX/SPXW/SPY stacked.
+
+    SPX/SPXW rows run to today; SPY rows end 2022 (as in the real store) —
+    this validates that _filter_and_sort picks SPX over SPY when both are available.
+    """
+    roots_long  = ["SPX", "SPXW", "QQQ"]   # recent dates
+    roots_stale = ["SPY", "DIA", "IWM"]     # older dates (simulate SPY store end 2022)
+    frames = []
+    for i, r in enumerate(roots_long):
+        frames.append(_make_surface(n, seed=seed + i, root=r))
+    for i, r in enumerate(roots_stale):
+        df = _make_surface(n, seed=seed + 100 + i, root=r)
+        # Wind back dates so they end in 2022 (stale)
+        df["date"] = [f"2022-{(j % 12) + 1:02d}-{(j % 20) + 1:02d}" for j in range(n)]
+        frames.append(df)
+    combined = pd.concat(frames, ignore_index=True)
+    combined = combined.sort_values(["root", "date"]).reset_index(drop=True)
+    return combined
+
+
 def _write_surface(tmp: Path, root_class: str, df: pd.DataFrame) -> None:
-    """Write surface parquet to the path that opex_risk._surface_path() expects."""
+    """Write surface parquet to the path that opex_risk._surface_path() expects.
+    Writes with index=False to match build_options_surface.py exactly."""
     d = tmp / "options_surface"
     d.mkdir(parents=True, exist_ok=True)
     p = d / f"{root_class}.parquet"
-    df.to_parquet(p)
+    df.to_parquet(p, index=False)
 
 
 # ── A. Percentile-edge math ───────────────────────────────────────────────────
@@ -84,6 +124,21 @@ class TestConcentrationHot:
         # _percentile_rank needs >=20; history has 9 rows (exclude latest)
         assert opex_risk._concentration_hot(df) is None
 
+    def test_multi_root_uses_best_root_not_stale_spy(self):
+        """Production schema: SPX rows run to 2024, SPY rows end 2022.
+        _filter_and_sort must pick SPX and compute percentile against SPX history only,
+        NOT use the stale SPY row as 'latest' and mix all roots as 'hist'."""
+        multi = _make_multi_surface(60)
+        # Force SPX's last row to above P80 of its own history
+        spx_rows = multi[multi["root"] == "SPX"].copy()
+        last_spx_idx = spx_rows.index[-1]
+        thresh = float(spx_rows["front7_abs_charm_share"].iloc[:-1].quantile(0.99)) + 0.01
+        multi.loc[last_spx_idx, "front7_abs_charm_share"] = thresh
+        multi.loc[last_spx_idx, "front7_abs_gex_share"] = 0.0
+        result = opex_risk._concentration_hot(multi)
+        # SPX is the best root (most recent dates); its latest row is above P80 → True
+        assert result is True
+
 
 class TestDealerLoadExtreme:
     def test_below_p90_returns_false(self):
@@ -112,6 +167,17 @@ class TestDealerLoadExtreme:
         max_abs = float(df["net_vex"].abs().iloc[:-1].quantile(0.99)) * 2
         df.iloc[-1, df.columns.get_loc("net_vex")] = -max_abs
         result = opex_risk._dealer_load_extreme(df)
+        assert result is True
+
+    def test_multi_root_picks_best_root_not_stale_spy(self):
+        """Production schema: SPX rows are recent, SPY rows ended 2022.
+        SPX's latest must be chosen; percentile computed against SPX history only."""
+        multi = _make_multi_surface(60)
+        spx_rows = multi[multi["root"] == "SPX"].copy()
+        last_spx_idx = spx_rows.index[-1]
+        max_abs = float(spx_rows["net_vex"].abs().iloc[:-1].quantile(0.99)) * 2
+        multi.loc[last_spx_idx, "net_vex"] = max_abs
+        result = opex_risk._dealer_load_extreme(multi)
         assert result is True
 
 
