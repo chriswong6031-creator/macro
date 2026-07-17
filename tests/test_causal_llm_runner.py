@@ -104,10 +104,12 @@ def _make_mock_anthropic_response(text: str) -> MagicMock:
     content_block.text = text
     resp = MagicMock()
     resp.content = [content_block]
-    usage = MagicMock()
-    usage.input_tokens = 100
-    usage.output_tokens = 50
-    resp.usage = usage
+    # resp.usage MUST stay None. A populated usage object makes
+    # engine.llm_auth.make_call's _capture_usage() call lib.ai_costs.record_usage(),
+    # which appends to the REAL data/ai_costs/usage.jsonl (root=None → repo root) and
+    # trips MM_DATA_GUARD in CI (causal-factory job, exit 1). No test here asserts on
+    # token counts; usage-capture itself is covered by the llm_auth tests.
+    resp.usage = None
     return resp
 
 
