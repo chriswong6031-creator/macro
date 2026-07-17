@@ -312,19 +312,38 @@ def _remove_gitignore_shard_line(dry_run: bool = False) -> bool:
 # ---------------------------------------------------------------------------
 
 def _monthly_topup(archive_dir: Path, dry_run: bool = False) -> None:
-    """Append new archive days to cctv_tone_history.parquet (mtime-gated, monthly)."""
+    """Append new archive days to cctv_tone_history.parquet (content-gated, monthly).
+
+    The gate reads the parquet's own newest index date — never file mtime.
+    The tone history IS versioned once FINALIZED (see the .gitignore note), and
+    on CI runners a checkout rewrites committed files with mtime = checkout
+    time, so an mtime gate would read perpetually fresh and never top up
+    (#2690 class). Unreadable/undated parquet ⇒ treated stale (rebuild — the
+    rebuild is an idempotent re-derive from shards, so failing stale is safe).
+    """
     if not TONE_HISTORY_PATH.exists():
         log.debug("monthly_topup: tone_history does not exist — skipping")
         return
 
-    mtime = TONE_HISTORY_PATH.stat().st_mtime
-    age_days = (time.time() - mtime) / 86400
-    if age_days < MONTHLY_TOPUP_MIN_AGE_DAYS:
-        log.debug("monthly_topup: tone_history is %.1f days old — skipping (< %d d)",
+    age_days: float | None = None
+    try:
+        import pandas as pd  # noqa: PLC0415 — heavy; only on the top-up path
+        idx = pd.to_datetime(
+            pd.read_parquet(TONE_HISTORY_PATH, columns=[]).index, errors="coerce"
+        ).dropna()
+        if len(idx):
+            age_days = (pd.Timestamp.now() - idx.max()) / pd.Timedelta(days=1)
+    except Exception as e:  # noqa: BLE001
+        log.warning("monthly_topup: cannot read tone_history content date (%s) — "
+                    "treating as stale", e)
+
+    if age_days is not None and age_days < MONTHLY_TOPUP_MIN_AGE_DAYS:
+        log.debug("monthly_topup: tone_history content is %.1f days old — skipping (< %d d)",
                   age_days, MONTHLY_TOPUP_MIN_AGE_DAYS)
         return
 
-    log.info("monthly_topup: tone_history is %.1f days old — rebuilding from shards", age_days)
+    log.info("monthly_topup: tone_history content is %s days old — rebuilding from shards",
+             f"{age_days:.1f}" if age_days is not None else "unknown")
     if dry_run:
         log.info("[dry-run] would run rebuild_cctv_tone_history.rebuild()")
         return

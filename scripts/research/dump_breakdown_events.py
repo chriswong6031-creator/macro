@@ -932,13 +932,20 @@ def build_sector_panel(
         sector_top_decile_126[ts_str] = sec_decile
         sector_median_21[ts_str]      = sec_med
 
-    # as_of from ticker_sectors parquet modification time
+    # as_of from the ticker_sectors build stamp (content truth — file mtime is
+    # checkout time on CI, #2690 class); mtime stays only as a legacy fallback
+    # for stores predating the sidecar.
     try:
-        import os
-        mtime = os.path.getmtime(str(TICKER_SECTORS_PATH))
-        as_of = str(pd.Timestamp.fromtimestamp(mtime).date())
+        as_of = str(json.loads(
+            (TICKER_SECTORS_PATH.parent / "ticker_sectors_meta.json").read_text()
+        )["built_asof"])
     except Exception:
-        as_of = str(pd.Timestamp.now("UTC").date())
+        try:
+            import os
+            mtime = os.path.getmtime(str(TICKER_SECTORS_PATH))
+            as_of = str(pd.Timestamp.fromtimestamp(mtime).date())
+        except Exception:
+            as_of = str(pd.Timestamp.now("UTC").date())
 
     return {
         "sector_top_decile_126": sector_top_decile_126,
