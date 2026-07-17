@@ -17,6 +17,7 @@ Ticker map (conservative — only well-tracked local-currency or ETF proxies):
   hk      yahoo/EWH        iShares MSCI Hong Kong ETF (USD proxy)
   canada  yahoo/EWC        iShares MSCI Canada ETF (USD proxy)
   korea   intl/_KS11       KOSPI (KRW points)
+  australia intl/_AXJO     S&P/ASX 200 (AUD points)
 
 China (CSI 300 / 000300.SS) is not available as a clean local series in the
 current on-disk store; it is intentionally skipped so the curated hand-value
@@ -51,6 +52,7 @@ _TICKER_MAP: dict[str, tuple[str, str]] = {
     "hk":     ("yahoo", "EWH"),     # USD ETF proxy — level in USD, not HSI points
     "canada": ("yahoo", "EWC"),     # USD ETF proxy — level in USD, not TSX points
     "korea":  ("intl",  "_KS11"),   # KOSPI local-currency points
+    "australia": ("intl", "_AXJO"), # S&P/ASX 200 local-currency points
 }
 
 _STALE_THRESHOLD_DAYS = 14   # skip a series whose last print is older than this

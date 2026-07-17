@@ -48,6 +48,7 @@ MARKET_TO_ENGINE: dict[str, str | None] = {
     "india":   "inda",
     "taiwan":  "ewt",
     "korea":   "ewy",
+    "australia": "ewa",
     "europe":  None,   # VGK not in country_cycles yet
 }
 
@@ -62,6 +63,7 @@ MARKET_TO_CC_ANCHOR: dict[str, str | None] = {
     "india":   "inda",
     "taiwan":  "ewt",
     "korea":   "ewy",
+    "australia": "ewa",
     "europe":  None,
 }
 

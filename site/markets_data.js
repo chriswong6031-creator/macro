@@ -1,5 +1,5 @@
 /* markets_data.js — Global Market Cycles Dashboard · REAL web-sourced dataset
-   10 national equity-market bull/bear cycles. Each turn carries its real closing
+   11 national equity-market bull/bear cycles. Each turn carries its real closing
    LEVEL (v) and drawdown (draw); `now` carries the live level / % off ATH / returns;
    `valuation` carries P/E, CAPE, yield. Researched + adversarially verified via web
    (workflow market-cycles-REAL), as of ~2026-06-25. */
@@ -938,6 +938,193 @@
       "https://www.ceicdata.com/en/indicator/japan/pe-ratio",
       "https://indexes.nikkei.co.jp/en/nkave/factsheet?idx=nk225hdy",
       "https://www.gurufocus.com/economic_indicators/4422/nikkei-225"
+    ]
+  },
+  {
+    "id": "australia",
+    "name": "Australia / ASX 200",
+    "short": "Australia",
+    "group": "Asia-Pacific",
+    "accent": "#22c55e",
+    "proxy": "S&P/ASX 200 · banks + miners ~50%",
+    "archetype": "The ASX 200 is a two-engine index: an oligopoly banking bloc (financials ~30% of weight, CBA the largest stock) leveraged to housing credit, and China-facing resource majors (BHP, Rio Tinto, Fortescue, plus a deep gold-miner bench) that price the global commodity cycle. Underneath sits one of the world's largest compulsory pension pools — superannuation contributions provide a structural domestic bid that cushions drawdowns — and a dividend/franking-credit culture that anchors the index to yield rather than growth. With technology under ~5% of weight it sits out global tech manias and busts alike: it lost only ~23% across the whole 2001-03 dot-com bear but -54% in the GFC when its leveraged banks were the epicentre, and it lags AI-driven melt-ups like Japan/Taiwan 2025-26. Cycle drivers: the China/iron-ore terms-of-trade lever, the RBA-vs-Fed rate differential via AUD, and household leverage that makes the banks acutely rate-sensitive.",
+    "period": {
+      "central": 4,
+      "low": 2,
+      "high": 7
+    },
+    "turns": [
+      {
+        "t": "2001-06",
+        "k": "peak",
+        "v": 3490,
+        "e": "Tech-light dot-com era high",
+        "draw": null
+      },
+      {
+        "t": "2001-09",
+        "k": "trough",
+        "v": 2925,
+        "e": "9/11 shock low",
+        "draw": -16.2
+      },
+      {
+        "t": "2002-03",
+        "k": "peak",
+        "v": 3498,
+        "e": "Pre-Iraq-war twin peak",
+        "draw": 19.6
+      },
+      {
+        "t": "2003-03",
+        "k": "trough",
+        "v": 2700,
+        "e": "Global bear bottom / Iraq war",
+        "draw": -22.8
+      },
+      {
+        "t": "2007-11",
+        "k": "peak",
+        "v": 6829,
+        "e": "China resources-boom / pre-GFC peak",
+        "draw": 152.9
+      },
+      {
+        "t": "2009-03",
+        "k": "trough",
+        "v": 3146,
+        "e": "Global financial crisis low",
+        "draw": -53.9
+      },
+      {
+        "t": "2010-04",
+        "k": "peak",
+        "v": 5002,
+        "e": "Post-GFC recovery high",
+        "draw": 59.0
+      },
+      {
+        "t": "2011-09",
+        "k": "trough",
+        "v": 3864,
+        "e": "Euro crisis / China-slowdown low",
+        "draw": -22.8
+      },
+      {
+        "t": "2015-04",
+        "k": "peak",
+        "v": 5983,
+        "e": "Yield-chase bank-rally peak",
+        "draw": 54.8
+      },
+      {
+        "t": "2016-02",
+        "k": "trough",
+        "v": 4765,
+        "e": "China deval / commodity collapse",
+        "draw": -20.3
+      },
+      {
+        "t": "2020-02",
+        "k": "peak",
+        "v": 7163,
+        "e": "Pre-COVID record high",
+        "draw": 50.3
+      },
+      {
+        "t": "2020-03",
+        "k": "trough",
+        "v": 4546,
+        "e": "COVID-19 crash",
+        "draw": -36.5
+      },
+      {
+        "t": "2021-08",
+        "k": "peak",
+        "v": 7629,
+        "e": "Reopening / iron-ore boom peak",
+        "draw": 67.8
+      },
+      {
+        "t": "2022-06",
+        "k": "trough",
+        "v": 6433,
+        "e": "RBA-Fed inflation-tightening trough",
+        "draw": -15.7
+      },
+      {
+        "t": "2025-02",
+        "k": "peak",
+        "v": 8556,
+        "e": "Rate-cut-cycle record high",
+        "draw": 33.0
+      },
+      {
+        "t": "2025-04",
+        "k": "trough",
+        "v": 7343,
+        "e": "Tariff crash trough",
+        "draw": -14.2
+      },
+      {
+        "t": "2026-02",
+        "k": "peak",
+        "v": 9199,
+        "e": "Record close — earnings + resources run",
+        "draw": 25.3
+      }
+    ],
+    "now": {
+      "level": 8827.2,
+      "asOf": "2026-07-16",
+      "ath": 9198.6,
+      "athDate": "2026-02",
+      "pctFromATH": -4.0,
+      "ytd": 1.3,
+      "ret1y": 3.1,
+      "pos": 80,
+      "phase": "Downturn",
+      "phaseLabel": "Rolling over below February record",
+      "confidence": "medium",
+      "read": "The ASX 200 closed at 8,827 on July 16, 2026 — 4.0% below its all-time closing high of 9,199 set February 27 and nearly flat for the year (+1.3% YTD, +3.1% over 12 months). In a year when Japan and Taiwan melted up and Korea crashed, Australia went sideways. The February record — an unusually strong earnings season, a ~38% twelve-month resources run on China-stimulus hopes, and the tail of the FY25 bank re-rate that made CBA the ASX's largest stock — gave way to a 9.1% slide to 8,366 by March 23 after the RBA delivered the first of three surprise 2026 rate hikes (3.60% to 4.35% by May, the highest cash rate since 2011). Since then the index has oscillated in a roughly 8,600-9,000 band and sits ~0.5% above its 200-day average: war-driven oil above US$110 keeps trimmed-mean inflation re-accelerating (3.6% in May, RBA sees a 3.9% peak), banks flipped from FY25's best sector (+24.3%) to negative in FY26 (CBA -11%, still ~26x trailing versus its 16.9x decade median), iron ore faded from ~US$111 to ~US$100 on China's property slump, and the gold miners — the year's standouts as bullion peaked at US$5,417/oz in January — have cooled with gold back near US$4,072. Breadth is thin: at the February record only ~12.5% of constituents were within 10% of their own highs. This page prices Australia through the US-dollar EWA cycle, so the engine reads phase = Downturn with the position oscillator near 80 and a cautious, high-risk-bounce stance: the USD ETF marked its peak in April 2026 — two months after the local-currency record — and momentum has rolled over since. The −4% is a plateau in A$ terms that, seen through the currency, is an early rollover for a dollar holder — stretched but not washed out."
+    },
+    "valuation": {
+      "trailingPE": null,
+      "forwardPE": 16.7,
+      "cape": 23.2,
+      "divYield": 3.3,
+      "pb": null,
+      "note": "fwd P/E ~16.7x vs ~14.9x long-run average (a ~12% premium) resting on +12% consensus FY26/27 EPS growth; CAPE 23.2 (Apr '26) is ~12% below its own 10-yr median, so long-cycle earnings say fair-ish, not bubble; no fresh index-level trailing P/E print is published; fwd dividend yield ~3.3% vs ~4.5% decade norm; the stretched pocket is CBA at ~26x trailing, 55% above its decade median"
+    },
+    "proj": {
+      "nextTurn": "trough",
+      "central": "2026-11",
+      "low": "2026-08",
+      "high": "2027-06",
+      "tilt": "mixed",
+      "drivers": [
+        "RBA hawkish hold at 4.35% — the August CPI print decides whether a fourth 2026 hike reprices the rate-sensitive banks again",
+        "China property slump vs stimulus: iron ore near US$100/t is the single biggest earnings lever for the resource majors",
+        "Structural superannuation inflows and a below-median CAPE cushion the downside while the Fed and the Middle East set global risk appetite"
+      ],
+      "falsifier": "A decisive close above the February record of 9,199 that holds — on an RBA peak-rate signal or a credible China stimulus surprise — would invalidate the range-bound-into-a-trough path and mark a fresh expansion leg; conversely a sustained break below the March low (~8,366) would accelerate the trough well before the central date."
+    },
+    "regimeNote": "Mid-2026 Australia is the developed world's odd one out: while the Fed under Warsh merely flipped hawkish, the RBA has already delivered three 2026 hikes to 4.35% (highest since 2011) against re-accelerating trimmed-mean inflation, war-driven oil and a fading iron-ore price — yet a data-centre capex boom (machinery investment +16.3% in Q1, the largest rise in 30 years), structural super inflows and a below-median CAPE keep the index range-bound rather than in retreat.",
+    "sources": [
+      "https://tradingeconomics.com/australia/interest-rate",
+      "https://www.commbank.com.au/articles/newsroom/2026/06/reserve-bank-june-2026-rates-decision.html",
+      "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/latest-release",
+      "https://www.abs.gov.au/media-centre/media-releases/australian-economy-grew-03-march-quarter",
+      "https://www.abs.gov.au/media-centre/media-releases/unemployment-rate-rises-43",
+      "https://www.gurufocus.com/term/pettm/ASX:CBA",
+      "https://www.gurufocus.com/term/ShillerPE/ASXFY/Shiller-PE-Ratio/ASX",
+      "https://australianstockreport.com.au/news-insights/asx-200-hits-record-9-200-can-the-rally-continue-in-2026",
+      "https://www.fool.com.au/2026/07/07/asx-financials-went-from-the-best-sector-in-fy25-to-negative-growth-in-fy26-heres-what-changed/",
+      "https://www.mitrade.com/au/insights/indices/indices-basic/asx-200-forecast-2026",
+      "https://www.indexbox.io/blog/iron-ore-price-rebounds-to-10273-per-ton-on-supply-risk-and-chinese-imports/",
+      "https://tradingeconomics.com/australia/currency",
+      "https://www.livewiremarkets.com/wires/the-asx-200-just-set-a-new-record-high-but-is-the-rally-as-strong-as-it-looks",
+      "https://en.wikipedia.org/wiki/S%26P/ASX_200"
     ]
   },
   {
