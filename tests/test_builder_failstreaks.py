@@ -10,6 +10,12 @@ Guards:
 7. Off-lane (not 'nightly') does NOT write the ledger but still escalates.
 8. Corrupt ledger JSON → fail-open, treated as empty; exit code 0.
 9. push_ops_alert is monkeypatched; called once when breached, not called when clear.
+10. Lane→ledger binding: each write lane advances exactly one ledger; a mismatched
+    path degrades to report-only; unmapped lanes are always report-only.
+11. Multi art-dir merge: later dir wins on duplicate slug; union-empty guard fires
+    when all dirs are empty; partial-band decay documents the accepted trade-off.
+12. Per-lane alert type_: asia lane emits type_=fail_streak_asia; default nightly
+    emits type_=fail_streak; the ops-lane file stays shared (builder_failstreak).
 """
 from __future__ import annotations
 
@@ -33,13 +39,14 @@ _D3 = datetime(2026, 7, 18, 8, 0, 0, tzinfo=timezone.utc)  # third day
 # ── fixtures ──────────────────────────────────────────────────────────────
 
 
-def _make_art(tmp_path: Path, builders: dict[str, int], labels: dict[str, str] | None = None) -> Path:
+def _make_art(tmp_path: Path, builders: dict[str, int], labels: dict[str, str] | None = None, *, dirname: str = "band") -> Path:
     """Create a band art dir with <slug>.rc and <slug>.log for each slug.
 
     builders = {slug: rc_int}
     labels   = {slug: label_string}  (optional; defaults to slug)
+    dirname  = subdirectory name under tmp_path (default: "band")
     """
-    art = tmp_path / "band"
+    art = tmp_path / dirname
     art.mkdir(parents=True, exist_ok=True)
     labels = labels or {}
     for slug, rc in builders.items():
@@ -91,7 +98,7 @@ class TestFirstFailure:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -113,7 +120,7 @@ class TestFirstFailure:
 
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -146,7 +153,7 @@ class TestSecondConsecutiveNight:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=threshold,
@@ -182,7 +189,7 @@ class TestSecondConsecutiveNight:
         })
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -239,7 +246,7 @@ class TestSuccessReset:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -273,7 +280,7 @@ class TestSameDayRerun:
         })
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -304,7 +311,7 @@ class TestGapReset:
         })
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -334,7 +341,7 @@ class TestGapReset:
         })
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -369,7 +376,7 @@ class TestPrune:
         })
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -398,7 +405,7 @@ class TestPrune:
         })
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -432,7 +439,7 @@ class TestOffLane:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane=lane,
                 threshold=2,
@@ -484,7 +491,7 @@ class TestCorruptLedger:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -553,7 +560,7 @@ class TestOpsAlertDispatch:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -577,7 +584,7 @@ class TestOpsAlertDispatch:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -670,7 +677,7 @@ class TestUnparseableRc:
 
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -693,7 +700,7 @@ class TestUnparseableRc:
 
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -719,7 +726,7 @@ class TestLabelFallback:
 
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -744,7 +751,7 @@ class TestLabelFallback:
 
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -779,7 +786,7 @@ class TestLabelFallback:
 
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -825,7 +832,7 @@ class TestAbsentSlugDecay:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -861,7 +868,7 @@ class TestAbsentSlugDecay:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -908,7 +915,7 @@ class TestEmptyArtDirLedgerPreserved:
 
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -956,7 +963,7 @@ class TestEmptyArtDirLedgerPreserved:
         dispatch = _Dispatch()
         with patch("engine.alert_triage.push_ops_alert", dispatch):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="nightly",
                 threshold=2,
@@ -992,7 +999,7 @@ class TestOffLaneAbsentSlugRetained:
 
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="closingbell",  # off-lane
                 threshold=2,
@@ -1033,7 +1040,7 @@ class TestOffLaneAbsentSlugRetained:
 
         with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
             breached = M.process_band(
-                art_dir=art,
+                art_dirs=[art],
                 ledger_path=ledger_path,
                 lane="closingbell",  # off-lane
                 threshold=2,
@@ -1052,3 +1059,374 @@ class TestOffLaneAbsentSlugRetained:
             "off-lane: existing ledger streak must still drive breach detection "
             "even for absent slugs"
         )
+
+
+# ── 16. Multi art-dir merge ───────────────────────────────────────────────
+
+class TestMultiArtDir:
+    def test_disjoint_slugs_both_created(self, tmp_path):
+        """Two dirs with disjoint slugs on nightly: both entries created at streak=1."""
+        art1 = _make_art(tmp_path, {"hk": 1}, dirname="band")
+        art2 = _make_art(tmp_path, {"market_state": 1}, dirname="band2")
+        ledger_path = _seed_ledger(tmp_path)
+
+        with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+            M.process_band(
+                art_dirs=[art1, art2],
+                ledger_path=ledger_path,
+                lane="nightly",
+                threshold=2,
+                max_gap_days=4,
+                prune_days=30,
+                root=tmp_path,
+                _now=_D1,
+            )
+
+        data = json.loads(ledger_path.read_text())
+        assert data["builders"]["hk"]["streak"] == 1
+        assert data["builders"]["market_state"]["streak"] == 1
+
+    def test_duplicate_slug_later_dir_wins_rc0(self, tmp_path):
+        """Duplicate slug: dir1 has rc=1, dir2 has rc=0 → entry absent (recovery wins)."""
+        art1 = _make_art(tmp_path, {"cycle": 1}, dirname="band")
+        art2 = _make_art(tmp_path, {"cycle": 0}, dirname="band2")
+        ledger_path = _seed_ledger(tmp_path)
+
+        with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+            M.process_band(
+                art_dirs=[art1, art2],
+                ledger_path=ledger_path,
+                lane="nightly",
+                threshold=2,
+                max_gap_days=4,
+                prune_days=30,
+                root=tmp_path,
+                _now=_D1,
+            )
+
+        data = json.loads(ledger_path.read_text())
+        assert "cycle" not in data["builders"], "later dir wins: rc=0 means no entry"
+
+    def test_duplicate_slug_later_dir_wins_rc1(self, tmp_path):
+        """Duplicate slug: dir1 has rc=0, dir2 has rc=1 → entry created at streak=1."""
+        art1 = _make_art(tmp_path, {"cycle": 0}, dirname="band")
+        art2 = _make_art(tmp_path, {"cycle": 1}, dirname="band2")
+        ledger_path = _seed_ledger(tmp_path)
+
+        with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+            M.process_band(
+                art_dirs=[art1, art2],
+                ledger_path=ledger_path,
+                lane="nightly",
+                threshold=2,
+                max_gap_days=4,
+                prune_days=30,
+                root=tmp_path,
+                _now=_D1,
+            )
+
+        data = json.loads(ledger_path.read_text())
+        assert data["builders"]["cycle"]["streak"] == 1, "later dir wins: rc=1 means entry created"
+
+    def test_union_empty_guard_both_dirs_empty(self, tmp_path):
+        """Two empty dirs + existing streak=3 entry → ledger byte-identical, breached empty."""
+        art1 = tmp_path / "band"
+        art1.mkdir()
+        art2 = tmp_path / "band2"
+        art2.mkdir()
+
+        original_content = json.dumps({
+            "schema": "builder_failstreaks.v1",
+            "updated_utc": None,
+            "builders": {
+                "cycle": {
+                    "streak": 3,
+                    "first_fail_utc": "2026-07-14",
+                    "last_fail_utc": "2026-07-16",
+                    "last_run_utc": "2026-07-16",
+                    "last_rc": 1,
+                    "label": "cycle label",
+                }
+            },
+        })
+        p = tmp_path / "data" / "ci"
+        p.mkdir(parents=True, exist_ok=True)
+        ledger_path = p / "builder_failstreaks.json"
+        ledger_path.write_text(original_content)
+
+        mtime_before = ledger_path.stat().st_mtime
+        content_before = ledger_path.read_text()
+
+        with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+            breached = M.process_band(
+                art_dirs=[art1, art2],
+                ledger_path=ledger_path,
+                lane="nightly",
+                threshold=2,
+                max_gap_days=4,
+                prune_days=30,
+                root=tmp_path,
+                _now=_D2,
+            )
+
+        mtime_after = ledger_path.stat().st_mtime
+        content_after = ledger_path.read_text()
+
+        assert mtime_after == mtime_before, "ledger must NOT be written when rc set is empty"
+        assert content_after == content_before, "ledger content must be byte-identical"
+        assert breached == [], "no escalation from ledger-only state when both dirs empty"
+
+    def test_partial_band_decay(self, tmp_path):
+        """Accepted trade-off: dir1 EMPTY (band A died), dir2 has one ok slug.
+        Union is non-empty so decay runs; 'hk' (absent from union) is decayed out."""
+        art1 = tmp_path / "band"
+        art1.mkdir()  # band A died — no rc files
+        art2 = _make_art(tmp_path, {"market_state": 0}, dirname="band2")
+
+        ledger_path = _make_ledger(tmp_path, {
+            "hk": {
+                "streak": 2,
+                "first_fail_utc": "2026-07-15",
+                "last_fail_utc": "2026-07-16",
+                "last_run_utc": "2026-07-16",
+                "last_rc": 1,
+                "label": "hk builder",
+            }
+        })
+
+        with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+            M.process_band(
+                art_dirs=[art1, art2],
+                ledger_path=ledger_path,
+                lane="nightly",
+                threshold=2,
+                max_gap_days=4,
+                prune_days=30,
+                root=tmp_path,
+                _now=_D2,
+            )
+
+        data = json.loads(ledger_path.read_text())
+        assert "hk" not in data["builders"], (
+            "partial-band decay: hk absent from non-empty union is decayed out of ledger"
+        )
+
+
+# ── 17. Lane→ledger binding ───────────────────────────────────────────────
+
+class TestLaneLedgerBinding:
+    def _make_asia_ledger(self, tmp_path: Path) -> Path:
+        p = tmp_path / "data" / "ci"
+        p.mkdir(parents=True, exist_ok=True)
+        ledger_path = p / "builder_failstreaks_asia.json"
+        ledger_path.write_text(json.dumps({
+            "schema": "builder_failstreaks.v1",
+            "updated_utc": None,
+            "builders": {},
+        }))
+        return ledger_path
+
+    def test_asia_lane_owns_asia_ledger_writes(self, tmp_path):
+        """lane=asia + ledger at asia path → ledger IS written."""
+        art = _make_art(tmp_path, {"hk": 1})
+        ledger_path = self._make_asia_ledger(tmp_path)
+
+        with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+            M.process_band(
+                art_dirs=[art],
+                ledger_path=ledger_path,
+                lane="asia",
+                threshold=2,
+                max_gap_days=4,
+                prune_days=30,
+                root=tmp_path,
+                _now=_D1,
+            )
+
+        data = json.loads(ledger_path.read_text())
+        assert data["builders"]["hk"]["streak"] == 1, "asia lane must write the asia ledger"
+        assert data["updated_utc"] is not None, "updated_utc must be set after write"
+
+    def test_asia_lane_with_nightly_ledger_no_write(self, tmp_path):
+        """lane=asia + ledger at NIGHTLY path → no write; breached still computed."""
+        # Seed a streak=1 entry in the nightly ledger
+        ledger_path = _make_ledger(tmp_path, {
+            "cycle": {
+                "streak": 1,
+                "first_fail_utc": "2026-07-16",
+                "last_fail_utc": "2026-07-16",
+                "last_run_utc": "2026-07-16",
+                "last_rc": 1,
+                "label": "cycle label",
+            }
+        })
+        art = _make_art(tmp_path, {"cycle": 1})
+        mtime_before = ledger_path.stat().st_mtime
+
+        with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+            breached = M.process_band(
+                art_dirs=[art],
+                ledger_path=ledger_path,
+                lane="asia",
+                threshold=2,
+                max_gap_days=4,
+                prune_days=30,
+                root=tmp_path,
+                _now=_D2,
+            )
+
+        mtime_after = ledger_path.stat().st_mtime
+        assert mtime_after == mtime_before, "asia lane must NOT write the nightly ledger"
+        assert len(breached) == 1, "breached must still be computed in report-only mode"
+
+    def test_nightly_lane_with_asia_ledger_no_write(self, tmp_path):
+        """lane=nightly + ledger at ASIA path → no write."""
+        ledger_path = self._make_asia_ledger(tmp_path)
+        art = _make_art(tmp_path, {"cycle": 1})
+        mtime_before = ledger_path.stat().st_mtime
+
+        with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+            M.process_band(
+                art_dirs=[art],
+                ledger_path=ledger_path,
+                lane="nightly",
+                threshold=2,
+                max_gap_days=4,
+                prune_days=30,
+                root=tmp_path,
+                _now=_D1,
+            )
+
+        mtime_after = ledger_path.stat().st_mtime
+        assert mtime_after == mtime_before, "nightly lane must NOT write the asia ledger"
+
+    def test_closingbell_lane_with_asia_ledger_no_write(self, tmp_path):
+        """lane=closingbell + ledger at asia path → no write."""
+        ledger_path = self._make_asia_ledger(tmp_path)
+        art = _make_art(tmp_path, {"cycle": 1})
+        mtime_before = ledger_path.stat().st_mtime
+
+        with patch("engine.alert_triage.push_ops_alert", _Dispatch()):
+            M.process_band(
+                art_dirs=[art],
+                ledger_path=ledger_path,
+                lane="closingbell",
+                threshold=2,
+                max_gap_days=4,
+                prune_days=30,
+                root=tmp_path,
+                _now=_D1,
+            )
+
+        mtime_after = ledger_path.stat().st_mtime
+        assert mtime_after == mtime_before, "closingbell lane must never write any ledger"
+
+
+# ── 18. Per-lane alert type_ ──────────────────────────────────────────────
+
+class TestAlertLaneType:
+    def _make_breached(self) -> list[dict]:
+        """Hand-construct a minimal breached list."""
+        return [{
+            "slug": "hk",
+            "streak": 2,
+            "first_fail_utc": "2026-07-16",
+            "last_fail_utc": "2026-07-17",
+            "last_rc": 1,
+            "label": "hk builder label",
+        }]
+
+    def test_asia_lane_type_is_fail_streak_asia(self, tmp_path):
+        """_dispatch_ops_alert with lane='asia' → type_=fail_streak_asia."""
+        dispatch = _Dispatch()
+        with patch("engine.alert_triage.push_ops_alert", dispatch):
+            M._dispatch_ops_alert(self._make_breached(), tmp_path, lane="asia")
+
+        assert len(dispatch.calls) == 1
+        assert dispatch.calls[0]["type_"] == "fail_streak_asia"
+        assert dispatch.calls[0]["source"] == "builder_failstreak"
+        assert dispatch.calls[0]["lane"] == "builder_failstreak"
+        assert "asia" in dispatch.calls[0]["message"]
+
+    def test_default_lane_type_is_fail_streak(self, tmp_path):
+        """_dispatch_ops_alert with default lane → type_=fail_streak, nightly header."""
+        dispatch = _Dispatch()
+        with patch("engine.alert_triage.push_ops_alert", dispatch):
+            M._dispatch_ops_alert(self._make_breached(), tmp_path)
+
+        assert len(dispatch.calls) == 1
+        assert dispatch.calls[0]["type_"] == "fail_streak"
+        assert dispatch.calls[0]["message"].startswith("Nightly builder fail-streaks")
+
+    def test_nightly_lane_type_is_fail_streak(self, tmp_path):
+        """_dispatch_ops_alert with lane='nightly' → type_=fail_streak (same as default)."""
+        dispatch = _Dispatch()
+        with patch("engine.alert_triage.push_ops_alert", dispatch):
+            M._dispatch_ops_alert(self._make_breached(), tmp_path, lane="nightly")
+
+        assert dispatch.calls[0]["type_"] == "fail_streak"
+
+
+# ── 19. Annotation ledger_ref ─────────────────────────────────────────────
+
+class TestAnnotationLedgerRef:
+    def test_annotation_uses_asia_ledger_ref(self, capsys):
+        """_emit_annotation with ledger_ref pointing to asia file → that path in output."""
+        M._emit_annotation(
+            slug="hk",
+            streak=2,
+            first_fail_utc="2026-07-16",
+            label="hk builder",
+            last_rc=1,
+            ledger_ref="data/ci/builder_failstreaks_asia.json",
+        )
+        out = capsys.readouterr().out
+        assert "data/ci/builder_failstreaks_asia.json" in out
+
+    def test_annotation_default_ledger_ref(self, capsys):
+        """_emit_annotation with no ledger_ref → references data/ci/builder_failstreaks.json."""
+        M._emit_annotation(
+            slug="cycle",
+            streak=2,
+            first_fail_utc="2026-07-16",
+            label="cycle label",
+            last_rc=1,
+        )
+        out = capsys.readouterr().out
+        assert "data/ci/builder_failstreaks.json" in out
+
+
+# ── 20. main() asia end-to-end ────────────────────────────────────────────
+
+class TestMainAsiaEndToEnd:
+    def test_two_art_dirs_both_entries_created(self, tmp_path):
+        """main() with two --art-dir args on lane=asia writes both entries to asia ledger."""
+        d1 = _make_art(tmp_path, {"hk": 1}, dirname="band")
+        d2 = _make_art(tmp_path, {"market_state": 1}, dirname="band2")
+
+        # Create the asia ledger under the tmp root
+        asia_ledger_dir = tmp_path / "data" / "ci"
+        asia_ledger_dir.mkdir(parents=True, exist_ok=True)
+        asia_ledger_path = asia_ledger_dir / "builder_failstreaks_asia.json"
+        asia_ledger_path.write_text(json.dumps({
+            "schema": "builder_failstreaks.v1",
+            "updated_utc": None,
+            "builders": {},
+        }))
+
+        dispatch = _Dispatch()
+        with patch("engine.alert_triage.push_ops_alert", dispatch):
+            result = M.main([
+                "--art-dir", str(d1),
+                "--art-dir", str(d2),
+                "--ledger", "data/ci/builder_failstreaks_asia.json",
+                "--lane", "asia",
+                "--root", str(tmp_path),
+            ])
+
+        assert result == 0
+        data = json.loads(asia_ledger_path.read_text())
+        assert "hk" in data["builders"], "hk entry must be created"
+        assert "market_state" in data["builders"], "market_state entry must be created"
+        assert data["builders"]["hk"]["streak"] == 1
+        assert data["builders"]["market_state"]["streak"] == 1

@@ -1175,8 +1175,11 @@ jobs:
         # ::error:: per frozen page + step-summary section + one W6b ops alert
         # (engine/alert_triage.push_ops_alert, dispatch-always — same spine as the
         # nw_health streak escalation, PR #2621 precedent). --lane nightly gates the
-        # ledger WRITE (nightly = sole advancer); future closing-bell/asia-close ports
-        # must pass their own lane and stay report-only. rc==0 resets a streak; a >4-day
+        # ledger WRITE (nightly = sole advancer of THIS ledger); asia-close.yml runs the
+        # ported step as its own write lane on its own ledger (--lane asia ->
+        # data/ci/builder_failstreaks_asia.json — it is the sole nightly for the CN/HK
+        # pages); any other port (closing-bell) stays report-only — the script binds
+        # each write lane to exactly one ledger path. rc==0 resets a streak; a >4-day
         # gap (nightly itself dead) starts a fresh streak. Resilient: always exits 0 —
         # never blocks the deploy, never changes brun()'s never-abort semantics.
         env:

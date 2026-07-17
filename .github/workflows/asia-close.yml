@@ -508,6 +508,27 @@ jobs:
             fi
           done
           exit 0
+      - name: builder fail-streak escalation (consecutive-run freeze detector — CN/HK)
+        # Port of daily.yml's #2738 step. asia-close is the SOLE nightly for the CN/HK
+        # pages, so this lane legitimately advances its OWN forward ledger
+        # (data/ci/builder_failstreaks_asia.json — committed by 'git add data/' in
+        # 'commit engine outputs' below). It must NEVER share daily.yml's ledger: the
+        # script binds each write lane to exactly one ledger path and degrades to
+        # report-only on any mismatch (sole-advancer law). Covers BOTH bands' scratch
+        # dirs (band A "$RUNNER_TEMP/band" + band B "$RUNNER_TEMP/band2"; slug sets are
+        # disjoint — on a collision the later --art-dir wins). The lane is passed
+        # EXPLICITLY as a CLI flag: this workflow sets NO job-wide COLLECT_LANE (arming
+        # one would un-gate other ledger writers — see the baskets_hk inline-arm
+        # comment above); never infer lanes from env here. Alert dedup:
+        # push_ops_alert dedups on (source, type_) across lanes, so this lane emits
+        # type_=fail_streak_asia — distinct from daily.yml's fail_streak — on the
+        # shared builder_failstreak ops lane. Always exits 0 — never blocks the
+        # deploy; brun() semantics untouched.
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m scripts.check_builder_failstreaks --art-dir "$RUNNER_TEMP/band" --art-dir "$RUNNER_TEMP/band2" --ledger data/ci/builder_failstreaks_asia.json --lane asia || echo "::warning::builder fail-streak check failed (non-fatal)"
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
         # FAILURE-PATH safety net (asia-lane runtime diet, 2026-07-11): build_china
         # already runs build_china_library.main() IN-PROCESS (~17-30+ min — the single
