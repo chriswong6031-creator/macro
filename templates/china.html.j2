@@ -693,9 +693,27 @@
   .anv2-go { font-size:10px; opacity:.55; margin-left:3px; }
 {%- if mode != 'stocks' %}
   /* ===== MX5 CHINA GLANCE REDESIGN (body.page-china scope) ===== */
-  body.page-china .aurora{position:fixed;inset:0;pointer-events:none;z-index:0}
-  body.page-china .aurora::before{content:"";position:absolute;top:-220px;left:12%;width:820px;height:560px;border-radius:50%;background:radial-gradient(ellipse,rgba(245,158,11,.10) 0%,transparent 70%)}
-  body.page-china .aurora::after{content:"";position:absolute;top:120px;right:4%;width:700px;height:520px;border-radius:50%;background:radial-gradient(ellipse,rgba(99,102,241,.05) 0%,transparent 70%)}
+  body.page-china .aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  /* Base aurora: green blobs (risk-on default) */
+  body.page-china .aurora::before{content:"";position:absolute;top:-220px;left:12%;width:820px;height:560px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(34,217,122,.12) 0%,transparent 70%)}
+  body.page-china .aurora::after{content:"";position:absolute;bottom:-100px;right:-100px;width:700px;height:600px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(99,102,241,.10) 0%,transparent 70%)}
+  /* Aurora inner blob (au-a3) — default green */
+  body.page-china .aurora .au-a3{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);width:600px;height:500px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(34,217,122,.07) 0%,transparent 70%)}
+  /* State tint: yellow (Mixed) */
+  body.page-china .aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(245,158,11,.10) 0%,transparent 70%)}
+  body.page-china .aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%)}
+  /* State tint: red (Risk-off) */
+  body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%)}
+  body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%)}
+  /* Light-mode variants — much fainter */
+  [data-theme="light"] body.page-china .aurora::before{background:radial-gradient(ellipse,rgba(34,217,122,.05) 0%,transparent 70%)}
+  [data-theme="light"] body.page-china .aurora .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.03) 0%,transparent 70%)}
+  [data-theme="light"] body.page-china .aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%)}
+  [data-theme="light"] body.page-china .aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%)}
+  [data-theme="light"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%)}
+  [data-theme="light"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%)}
+  /* Reduced-motion: no animations */
+  @media(prefers-reduced-motion:reduce){body.page-china .aurora,body.page-china .aurora::before,body.page-china .aurora::after,body.page-china .aurora .au-a3{animation:none}}
   /* The redesigned macro page lays out with its own .cnx-tiles/.rack grids, so the
      theme's 12-column .grid must be a plain block here — otherwise .cnx-wrap is placed
      into a single content-sized grid column and the page renders at ~half width. */
@@ -728,8 +746,11 @@
   body.page-china .cnx-live-pill .d{width:6px;height:6px;border-radius:50%;background:var(--muted)}
   body.page-china .cnx-live-pill.on{opacity:1;color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
   body.page-china .cnx-live-pill.on .d{background:var(--up);box-shadow:0 0 5px var(--up)}
-  body.page-china .cnx-gauge-row{display:flex;gap:18px;align-items:center;margin-top:10px}
-  body.page-china .cnx-gauge-svg{flex:0 0 110px;width:110px;height:72px;overflow:visible}
+  body.page-china .cnx-gauge-row{display:flex;gap:20px;align-items:center;margin-top:10px;margin-bottom:16px}
+  /* Gauge scaled up to US parity: 192×120px CSS box, viewBox 0 0 120 78 UNCHANGED
+     (JS needle math: rotate(score*1.8-90 60 68) depends on viewBox coords staying as-is) */
+  body.page-china .cnx-gauge-svg{flex:0 0 192px;width:192px;height:120px;overflow:visible;display:block}
+  @media(max-width:560px){body.page-china .cnx-gauge-svg{width:90px;height:58px;flex:0 0 90px}}
   /* gauge fill colour follows the .ms-{color} class (which the live lane swaps) so it
      never shows a red arc next to a green/yellow live verdict. (Fill fraction is baked.) */
   body.page-china .ms-green .cnx-gauge-fill{stroke:var(--up)}
@@ -746,11 +767,15 @@
   body.page-china .ms-red .cnx-needle-hub{stroke:var(--down)}
   body.page-china .ms-red .cnx-needle-core,body.page-china .ms-red .cnx-needle-tip{fill:var(--down)}
   body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
-  body.page-china .cnx-score-line{display:flex;align-items:baseline;gap:10px}
-  body.page-china .cnx-big-score{font-size:52px;font-weight:750;line-height:1;color:var(--warn)}
-  body.page-china .ms-green .cnx-big-score{color:var(--up)}
-  body.page-china .ms-red .cnx-big-score{color:var(--down)}
-  body.page-china .cnx-verdict{font-size:22px;font-weight:700}
+  body.page-china .cnx-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  /* Big score: US parity — 68px/800, tabular-nums, state-keyed glow */
+  body.page-china .cnx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
+  body.page-china .ms-green .cnx-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
+  body.page-china .ms-red .cnx-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  @media(max-width:560px){body.page-china .cnx-big-score{font-size:34px}}
+  /* Verdict word: 19px/700 to match US spec */
+  body.page-china .cnx-verdict{font-size:19px;font-weight:700;white-space:nowrap}
+  @media(max-width:560px){body.page-china .cnx-verdict{font-size:13px}}
   body.page-china .cnx-verdict .arr{color:var(--warn)}
   body.page-china .ms-green .cnx-verdict .arr{color:var(--up)}
   body.page-china .ms-red .cnx-verdict .arr{color:var(--down)}
@@ -990,7 +1015,7 @@
 </style>
 </head>
 <body class="{{ 'page-china-stocks' if mode == 'stocks' else 'page-china mx4-grid' }}">
-{%- if mode != 'stocks' %}<div class="aurora"></div>
+{%- if mode != 'stocks' %}{%- set _aur_color = (market_state.color if market_state else 'yellow') %}<div class="aurora{{ ' au-red' if _aur_color == 'red' else (' au-yellow' if _aur_color == 'yellow' else '') }}" aria-hidden="true"><div class="au-a3"></div></div>
 {%- endif %}
 
 <nav class="site-nav">
@@ -1372,9 +1397,12 @@
         <rect x="20" y="22" width="520" height="56" fill="rgba(69,184,115,.06)"/>
         <rect x="20" y="134" width="520" height="56" fill="rgba(224,100,100,.06)"/>
         <line x1="20" y1="106" x2="540" y2="106" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
-        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end">{{ t('Risk-on','风险偏好') }}</text>
-        <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end">{{ t('Mixed','混合') }}</text>
-        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end">{{ t('Risk-off','避险') }}</text>
+        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-en">Risk-on</text>
+        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-zh">风险偏好</text>
+        <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-en">Mixed</text>
+        <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-zh">混合</text>
+        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-en">Risk-off</text>
+        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-zh">避险</text>
         <text x="14" y="26" font-size="9" fill="var(--muted)" text-anchor="end">100</text>
         <text x="14" y="109" font-size="9" fill="var(--muted)" text-anchor="end">50</text>
         <text x="14" y="192" font-size="9" fill="var(--muted)" text-anchor="end">0</text>
@@ -1532,8 +1560,8 @@
         </g>
         {% endif %}
         <circle cx="100" cy="96" r="5" fill="var(--text)"/>
-        <text x="16" y="106" font-size="9" fill="var(--muted)">{{ t('PANIC','恐慌') }}</text>
-        <text x="158" y="106" font-size="9" fill="var(--muted)">{{ t('EUPHORIA','亢奋') }}</text>
+        <text x="16" y="106" font-size="9" fill="var(--muted)" class="l-en">PANIC</text><text x="16" y="106" font-size="9" fill="var(--muted)" class="l-zh">恐慌</text>
+        <text x="158" y="106" font-size="9" fill="var(--muted)" class="l-en">EUPHORIA</text><text x="158" y="106" font-size="9" fill="var(--muted)" class="l-zh">亢奋</text>
       </svg>
       {% if _fe_score is not none %}
       <div class="cnx-dial-word">{{ _fe_score }} · {{ t(_fe_label, _fe_label) }}</div>

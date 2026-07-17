@@ -113,6 +113,16 @@
       front.classList.add("ms-" + col);
     }
 
+    /* Aurora backdrop: swap state tint class to match live verdict.
+       Default (no au-* class) = green blobs; au-yellow = Mixed; au-red = Risk-off.
+       Mirrors the baked server-side class and the same logic in risk_state_live.js. */
+    var aur = document.querySelector(".aurora");
+    if (aur && col) {
+      aur.classList.remove("au-yellow", "au-red");
+      if (col === "yellow") aur.classList.add("au-yellow");
+      else if (col === "red") aur.classList.add("au-red");
+    }
+
     /* #ms-date — honest freshness wording.
        realtime:false (delayed_min > 0) keeps the "delayed / 延迟" label; the green
        "live" pill stays off. Only lights "live" + pill when realtime:true AND live_active. */
