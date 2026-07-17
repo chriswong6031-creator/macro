@@ -21,6 +21,8 @@ import pytest
 
 from engine import risk_radar_scorecard as sc
 
+_ALL_MARKETS = ("us", *sc._INTL_MARKETS)
+
 
 # ---------------------------------------------------------------------------
 # Fixture helpers
@@ -101,7 +103,9 @@ def test_build_empty_root(tmp_path):
     result = sc.build(root=tmp_path)
     assert result["schema"] == "risk_radar_scorecard.v1"
     assert "markets" in result
-    assert set(result["markets"]) == {"us", "cn", "hk", "ca"}
+    assert set(result["markets"]) == {
+        "us", "cn", "hk", "ca", "kr", "jp", "tw", "in", "au", "gb", "ez",
+    }
 
 
 def test_build_never_raises_with_nothing(tmp_path):
@@ -233,12 +237,12 @@ def test_malformed_line_skipped(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_missing_intl_ledger_fail_soft(tmp_path):
-    # Only write US ledger; leave CN/HK/CA absent
+    # Only write US ledger; leave every intl ledger absent
     rows = [_row("elevated", "credit", 10, "true_positive")]
     _write_jsonl(tmp_path / "data" / "risk_radar" / "forward_log.jsonl", rows)
     result = sc.build(root=tmp_path)
-    # Should not raise; cn/hk/ca should each have a fail-soft structure
-    for market in ("cn", "hk", "ca"):
+    # Should not raise; each intl market should have a fail-soft structure
+    for market in sc._INTL_MARKETS:
         m = result["markets"][market]
         assert "monitoring" in m
         assert m["monitoring"]["log_fresh"] is False
@@ -321,6 +325,21 @@ def test_intl_cn_market(tmp_path):
     assert cn["windows"]["full"]["alerts"]["n"] == 5
 
 
+def test_intl_kr_market(tmp_path):
+    # One of the 7 markets added by the intl radar expansion (#2684);
+    # 'fx' is the KR profile's FX-depreciation leg.
+    rows = [_row("elevated", "fx", 50 + i, "true_positive") for i in range(5)]
+    for r in rows:
+        r["market"] = "kr"
+    _write_jsonl(tmp_path / "data" / "risk_radar_intl" / "kr_forward_log.jsonl", rows)
+    result = sc.build(root=tmp_path)
+    kr = result["markets"]["kr"]
+    assert kr["monitoring"]["graded_n"] == 5
+    assert kr["windows"]["full"]["alerts"]["n"] == 5
+    assert kr["windows"]["full"]["alerts"]["hit_rate"] == pytest.approx(1.0)
+    assert kr["windows"]["full"]["by_scare"]["fx"]["n"] == 5
+
+
 # ---------------------------------------------------------------------------
 # Atomic write — both paths get valid JSON
 # ---------------------------------------------------------------------------
@@ -383,7 +402,7 @@ def test_schema_keys_present(tmp_path):
     assert "schema" in result
     assert "generated_at" in result
     assert "markets" in result
-    for market in ("us", "cn", "hk", "ca"):
+    for market in _ALL_MARKETS:
         m = result["markets"][market]
         assert "monitoring" in m, f"{market} missing monitoring"
         assert "windows" in m, f"{market} missing windows"
