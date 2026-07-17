@@ -72,8 +72,9 @@ from engine.greeks import bs_greeks
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Root-class mapping (frozen: audit date 2026-07-17, 19 passing roots)
-# XLC excluded — greeks/oi absent for 2017 (launched 2018-06-18)
+# Root-class mapping (frozen: audit date 2026-07-17, 20 passing roots)
+# XLC passes via LATE_START_ALLOWED — complete from its 2018-06-18 listing
+# (same accommodation as SPXW late start / QQQ early start)
 # ---------------------------------------------------------------------------
 ROOT_CLASS_MAP: dict[str, str] = {
     # index_etf
@@ -85,6 +86,7 @@ ROOT_CLASS_MAP: dict[str, str] = {
     "DIA":  "index_etf",
     # sector_etf
     "XLB":  "sector_etf",
+    "XLC":  "sector_etf",
     "XLE":  "sector_etf",
     "XLF":  "sector_etf",
     "XLI":  "sector_etf",

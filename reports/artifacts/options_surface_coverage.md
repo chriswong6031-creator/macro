@@ -1,6 +1,6 @@
 # Options Surface Coverage Audit — W2 SURFACE
 
-**Generated:** 2026-07-17T10:25:47Z  
+**Generated:** 2026-07-17T10:59:09Z  
 **Store:** `/Users/chriswong/theta-ops-wt/data/thetadata_eod`  
 **Coverage floor:** greeks + oi present 2017→2026 (inclusive)  
 **Roster size:** 20 candidates
@@ -16,7 +16,7 @@
 | IWM | PASS | 2017-01-03 | 2026-07-15 | G:2017–2026 OI:2012–2026 |
 | DIA | PASS | 2017-01-03 | 2026-07-15 | G:2017–2026 OI:2012–2026 |
 | XLB | PASS | 2017-01-03 | 2026-07-15 | G:2017–2026 OI:2012–2026 |
-| XLC | FAIL — missing greeks+oi for years: [2017, 2017] | 2018-06-22 | 2026-07-15 | G:2018–2026 OI:2018–2026 |
+| XLC | PASS (greeks start 2018 — later start accepted for XLC) | 2018-06-22 | 2026-07-15 | G:2018–2026 OI:2018–2026 |
 | XLE | PASS | 2017-01-03 | 2026-07-15 | G:2017–2026 OI:2012–2026 |
 | XLF | PASS | 2017-01-03 | 2026-07-15 | G:2017–2026 OI:2012–2026 |
 | XLI | PASS | 2017-01-03 | 2026-07-15 | G:2017–2026 OI:2012–2026 |
@@ -172,7 +172,7 @@
 | 2025 | 244858 | 240420 |
 | 2026 | 125484 | 123196 |
 
-### XLC — FAIL — missing greeks+oi for years: [2017, 2017]
+### XLC — PASS (greeks start 2018 — later start accepted for XLC)
 
 | Year | Greeks rows | OI rows |
 |------|------------|---------|
@@ -425,8 +425,8 @@
 
 ## Frozen Roster
 
-Passing roots (19): SPX, SPXW, SPY, QQQ, IWM, DIA, XLB, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY, SMH, XBI, KRE
+Passing roots (20): SPX, SPXW, SPY, QQQ, IWM, DIA, XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY, SMH, XBI, KRE
 
-Failing roots (1): XLC
+Failing roots (0): none
 
 The builder constant `SURFACE_ROSTER` in `scripts/build_options_surface.py` is initialized from the passing set above.  Audit date: `2026-07-17`.

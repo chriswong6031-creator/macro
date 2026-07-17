@@ -289,9 +289,10 @@ def test_all_roster_roots_have_class():
     assert not missing, f"Roster roots without class: {missing}"
 
 
-def test_surface_roster_frozen_19():
-    """Roster should be exactly 19 roots (XLC excluded, audit 2026-07-17)."""
-    assert len(SURFACE_ROSTER) == 19
+def test_surface_roster_frozen_20():
+    """Roster is exactly 20 roots (audit 2026-07-17; XLC included from its 2018-06 listing)."""
+    assert len(SURFACE_ROSTER) == 20
+    assert "XLC" in SURFACE_ROSTER
 
 
 # ---------------------------------------------------------------------------

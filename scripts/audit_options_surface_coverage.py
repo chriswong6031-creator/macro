@@ -45,7 +45,7 @@ CURRENT_YEAR = date.today().year
 EARLY_OK_ROOTS: set[str] = {"QQQ"}
 
 # Roots allowed to start AFTER MIN_YEAR (start year is reported honestly).
-LATE_START_ALLOWED: set[str] = {"SPXW"}
+LATE_START_ALLOWED: set[str] = {"SPXW", "XLC"}  # XLC launched 2018-06-18; complete from listing
 
 # ── ops-wt store fallback path (same constant as engine/thetadata_store.py) ─
 _OPS_WT_STORE = Path("/Users/chriswong/theta-ops-wt/data/thetadata_eod")

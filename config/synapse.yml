@@ -4741,8 +4741,8 @@ artifacts:
       OI shift(1) enforced (OPRA timing law: oi[t] = EOD t-1 positions).
       Written by theta-ops launchd lane (com.macro.thetadata-surface) ONLY —
       never from daily.yml. Single-writer. Display-only (no score path, no arithmetic weight).
-      Roster frozen at coverage audit 2026-07-17 (19/20 roots pass; XLC excluded
-      — greeks absent for 2017, ETF launched 2018-06-18).
+      Roster frozen at coverage audit 2026-07-17 (20/20 roots pass; XLC included
+      from its 2018-06-18 listing via the late-start accommodation).
 
   options-surface-sector-etf:
     path: data/options_surface/sector_etf.parquet
