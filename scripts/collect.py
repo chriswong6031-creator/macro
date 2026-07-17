@@ -684,6 +684,13 @@ def main() -> int:
         try:
             from scripts.fetch_basket_ohlcv import main as fetch_basket_ohlcv
             log.info("=== refreshing thematic-basket + index-subsector OHLCV (volume) ===")
+            # BOTH universes every night. The finviz-only call used to be the sole nightly
+            # refresh, so membership-only names (off NDX/Russell) froze at their last manual
+            # fetch — 522 deep-store tickers ended 2026-06-29 and every basket holding one
+            # rode the ffill through the July rollover (sector-central audit). Membership
+            # mode ([] = data/baskets/membership.json) first; each call merges onto prior
+            # parquets and is never fatal.
+            fetch_basket_ohlcv([])
             fetch_basket_ohlcv(["--finviz", "idx_ndx,idx_rut"])
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("basket OHLCV step failed: %s", e)

@@ -130,7 +130,8 @@ html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
 
 /* leadership rail */
 .sc-lead { display: flex; flex-direction: column; gap: 5px; }
-.sc-lead-row { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 9px; font-size: 12px; }
+.sc-lead-row { display: grid; grid-template-columns: 18px 1fr auto auto; align-items: center; gap: 9px; font-size: 12px; }
+.sc-lead-sub { font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sc-lead-rk { font-size: 11px; font-weight: 800; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 .sc-lead-nm { display: inline-flex; align-items: center; gap: 7px; color: var(--text); font-weight: 600; cursor: pointer; }
 .sc-lead-nm .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--muted)); flex: none; }
