@@ -180,19 +180,26 @@ def _process_root_year(
 ) -> list[dict]:
     """Build surface rows for all trading dates in (root, year).
 
-    OI TIMING LAW: loads OI parquet for the same year (OPRA publishes t-1 OI on
-    date t per the timing law; the stored parquet already represents t-1 positions).
-    No additional per-row shift is needed — the timing law is enforced at the
-    per-date join in compute_surface_row.
+    OI TIMING LAW (doi_series convention — RIC-R4/R5):
+        OPRA publishes the OI parquet for date t representing EOD t−1 positions.
+        doi_series() applies an additional shift(1) so that its day-t signal uses
+        the OI parquet row dated t−1 (= EOD t−2 positions).  This builder enforces
+        the SAME convention: for each signal date_str, we load the OI row for the
+        most recent date STRICTLY before date_str.
+
+        To handle the year boundary (first trading day of the year), we also load
+        the prior year's OI parquet so that the Dec-31 row is reachable.
     """
     dates = _get_trading_dates(store, root, year)
     if not dates:
         log.warning("build_options_surface: no trading dates for %s/%d", root, year)
         return []
 
-    # Load full year parquets once (cache for the year loop)
+    # Load full year parquets once (cache for the year loop).
+    # Also load the prior year's OI to cover the year-boundary case.
     greeks_all = _load_parquets("greeks", root, [year], store=store)
-    oi_all     = _load_parquets("oi",     root, [year], store=store)
+    oi_years   = [year - 1, year]  # prior year needed for first-day-of-year shift
+    oi_all     = _load_parquets("oi",     root, oi_years, store=store)
 
     if greeks_all.empty or oi_all.empty:
         log.warning("build_options_surface: empty greeks or oi for %s/%d", root, year)
@@ -204,14 +211,23 @@ def _process_root_year(
     rows: list[dict] = []
     for date_str in dates:
         greeks_day = greeks_all[greeks_all["date"] == date_str]
-        oi_day     = oi_all[oi_all["date"] == date_str]
-
-        if greeks_day.empty or oi_day.empty:
+        if greeks_day.empty:
             continue
+
+        # doi_series shift(1): use OI from the most recent date BEFORE date_str
+        oi_before = oi_all[oi_all["date"] < date_str]
+        if oi_before.empty:
+            log.debug(
+                "build_options_surface: no prior-day OI for %s %s — skip",
+                root, date_str,
+            )
+            continue
+        prev_date = oi_before["date"].max()
+        oi_prev   = oi_before[oi_before["date"] == prev_date]
 
         row = compute_surface_row(
             greeks_day=greeks_day,
-            oi_prev=oi_day,   # OPRA: same-date OI file IS the t-1 OI (timing law)
+            oi_prev=oi_prev,
             root=root,
             date_str=date_str,
         )
@@ -301,13 +317,17 @@ def run_nightly(store: Path, target_date: str | None = None) -> None:
     year = pd.Timestamp(target_date).year
 
     n_total = 0
+    ts = pd.Timestamp(target_date)
+    # Load prior year's OI too, to cover year-boundary shift (e.g. Jan-2 needs Dec-31 OI)
+    oi_years = [year - 1, year]
+
     for root in SURFACE_ROSTER:
         root_class = ROOT_CLASS_MAP.get(root)
         if not root_class:
             continue
 
         greeks_all = _load_parquets("greeks", root, [year], store=store)
-        oi_all_r   = _load_parquets("oi",     root, [year], store=store)
+        oi_all_r   = _load_parquets("oi",     root, oi_years, store=store)
 
         if greeks_all.empty or oi_all_r.empty:
             log.warning("build_options_surface: nightly %s/%s — no data", root, target_date)
@@ -317,15 +337,23 @@ def run_nightly(store: Path, target_date: str | None = None) -> None:
         oi_all_r   = _normalise_date(oi_all_r)
 
         greeks_day = greeks_all[greeks_all["date"] == target_date]
-        oi_day     = oi_all_r[oi_all_r["date"] == target_date]
-
-        if greeks_day.empty or oi_day.empty:
-            log.warning("build_options_surface: nightly %s/%s — date not in store", root, target_date)
+        if greeks_day.empty:
+            log.warning("build_options_surface: nightly %s/%s — greeks date not in store", root, target_date)
             continue
+
+        # doi_series shift(1): load OI from the most recent date BEFORE target_date
+        oi_before = oi_all_r[oi_all_r["date"] < target_date]
+        if oi_before.empty:
+            log.warning(
+                "build_options_surface: nightly %s/%s — no prior-day OI available", root, target_date
+            )
+            continue
+        prev_date = oi_before["date"].max()
+        oi_prev   = oi_before[oi_before["date"] == prev_date]
 
         row = compute_surface_row(
             greeks_day=greeks_day,
-            oi_prev=oi_day,
+            oi_prev=oi_prev,
             root=root,
             date_str=target_date,
         )

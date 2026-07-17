@@ -18,10 +18,13 @@ DEALER-SIGN PASSPORT (printed here as required by the masterplan + gex_engine au
 
 OI TIMING LAW (OPRA / LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE §8 ¶1):
     OPRA publishes OI once per day at ~06:30 ET representing EOD of the PREVIOUS
-    trading day. So oi[t] represents positions as of EOD t−1. For any day-t signal
-    the correct OI input is oi[t−1] (i.e. an additional shift(1) applied to the
-    series already stored). This module enforces shift(1) within each contract
-    before computing per-root aggregates, exactly as doi_series() does.
+    trading day. So oi[t] represents positions as of EOD t−1. doi_series() in
+    thetadata_store.py applies an additional shift(1) so that its day-t signal
+    uses EOD t−2 positions (the OI parquet row dated t−1). aggregate_root_date()
+    enforces the SAME convention: it loads the OI parquet row for the most recent
+    date BEFORE date_str (i.e. oi dated t−1 = EOD t−2), matching doi_series exactly.
+    compute_surface_row() itself is convention-agnostic — the caller is responsible
+    for passing the correctly time-shifted oi_prev frame.
 
 |·|-MAGNITUDE LAW:
     front7_abs_charm_share and front7_abs_gex_share use |·| (absolute value)
@@ -296,18 +299,28 @@ def aggregate_root_date(
     """High-level entry point: load greeks+oi for (root, date), apply OI[t−1] shift,
     and return compute_surface_row output.
 
-    OI[t−1] IMPLEMENTATION: we load the OI parquet for the SAME date (since OPRA
-    publishes that file on date t representing EOD t−1 positions). This is the exact
-    same approach as doi_series() in thetadata_store.py — the parquet already IS
-    the t−1 OI as published by OPRA at 06:30 ET on date t. No additional shift needed
-    at the per-contract level; the caller must pass the OI parquet for date t (not t+1).
+    OI TIMING (doi_series convention):
+        OPRA publishes the OI parquet for date t at ~06:30 ET, representing EOD t−1
+        positions.  doi_series() applies an additional shift(1) so that its day-t
+        signal uses the OI parquet row dated t−1 (= EOD t−2 positions).  This
+        function enforces the SAME convention: it loads the OI parquet for the most
+        recent available date STRICTLY BEFORE date_str.
 
-    The docstring clarifies: the OI file for date t IS the oi[t-1] data by OPRA convention.
+        Concretely, for a signal dated "2023-06-15":
+          • greeks  → date == "2023-06-15"  (close-of-t quotes)
+          • oi_prev → date == "2023-06-14"  (most recent OI parquet < date_str,
+                       which OPRA published 2023-06-14 morning = EOD 2023-06-13)
+        This is one session fresher than available at start-of-session on 2023-06-15,
+        but matches the frozen doi_series shift(1) law (RIC-R4/R5).
+
+        The OI cross-year boundary (e.g. date_str = Jan-2 of year Y) is handled by
+        also loading year Y−1 parquets so the previous trading day is reachable.
     """
     from engine.thetadata_store import _load_parquets, _normalise_date  # noqa: PLC0415
 
     store_path = Path(store_path)
-    year = pd.Timestamp(date_str).year
+    ts = pd.Timestamp(date_str)
+    year = ts.year
 
     # Load greeks for the quote date
     greeks_all = _load_parquets("greeks", root, [year], store=store_path)
@@ -318,19 +331,29 @@ def aggregate_root_date(
     if greeks_day.empty:
         return None
 
-    # Load OI for the quote date (OPRA publishes t-1 OI on date t — this IS the
-    # OI[t-1] per the OPRA timing law; no additional shift needed at the row level)
-    oi_all = _load_parquets("oi", root, [year], store=store_path)
+    # Load OI — need the row for the PREVIOUS trading day (doi_series shift(1) law).
+    # Load the current year; also load the prior year if date_str is early-January
+    # so the Dec-31 row is reachable.
+    oi_years = [year] if ts.month > 1 else [year - 1, year]
+    oi_all = _load_parquets("oi", root, oi_years, store=store_path)
     if oi_all.empty:
         return None
     oi_all = _normalise_date(oi_all)
-    oi_day = oi_all[oi_all["date"] == date_str]
-    if oi_day.empty:
+
+    # Select the most recent OI date STRICTLY before date_str (the shift(1) step)
+    oi_before = oi_all[oi_all["date"] < date_str]
+    if oi_before.empty:
+        log.warning(
+            "options_surface: no prior-day OI available for %s %s — skipping",
+            root, date_str,
+        )
         return None
+    prev_date = oi_before["date"].max()
+    oi_prev = oi_before[oi_before["date"] == prev_date]
 
     return compute_surface_row(
         greeks_day=greeks_day,
-        oi_prev=oi_day,
+        oi_prev=oi_prev,
         root=root,
         date_str=date_str,
     )
