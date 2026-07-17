@@ -910,6 +910,30 @@ def _run_nightly(cfg: dict, data_root: Path, site_root: Path, tpl_root: Path) ->
         except Exception as e:  # noqa: BLE001
             log.warning("build_intraday_flow nightly: %s failed (skipped): %s", ticker, e)
 
+    # RIC W3: OPEX window context pass-through (no new polling; reads site artifact).
+    # Display-only; never blocks or raises. Injected into the payload so the
+    # intraday flow template/consumer can show the current window level as context.
+    _opex_window_ctx: dict | None = None
+    try:
+        _vr_p = site_root / "vol" / "regime.json"
+        if _vr_p.exists():
+            _vr = json.loads(_vr_p.read_text())
+            _or = _vr.get("opex_risk") or {}
+            if _or.get("schema") == "opex_risk.v1":
+                _opex_window_ctx = {
+                    "schema": "opex_risk.v1",
+                    "level": _or.get("level"),
+                    "level_zh": _or.get("level_zh"),
+                    "n_hot": _or.get("n_hot"),
+                    "n_applicable": _or.get("n_applicable"),
+                    "glance_en": _or.get("glance_en"),
+                    "glance_zh": _or.get("glance_zh"),
+                    "window_phase": _or.get("window_phase") or {},
+                    "doctrine": _or.get("doctrine"),
+                }
+    except Exception as _e:  # noqa: BLE001
+        log.debug("build_intraday_flow: opex_window_ctx read failed (non-fatal): %s", _e)
+
     payload: dict[str, Any] = {
         "schema": "intraday_flow_base.v1",
         "built_utc": as_of,
@@ -923,6 +947,7 @@ def _run_nightly(cfg: dict, data_root: Path, site_root: Path, tpl_root: Path) ->
             "~net call premium direction is SOFT — "
             "approximate (minute tick-rule signing, RUL-F3.12)"
         ),
+        "opex_window_context": _opex_window_ctx,   # RIC W3: display context, never scored
         "leaders": leaders,
     }
 

@@ -40,6 +40,36 @@ charters:
       sensors are the template for future loop-manageable lobes. Sensors are ACCRUING
       until 2026-10-15 — proposals must carry check_by >= maturity_date for any sensor
       tagged accruing:true (accrual-honesty gate). tier is read-mirrored from synapse.yml.
+  opex-windows-forward-log:
+    lobe_id: opex-windows-forward-log
+    tier: shadow
+    lifecycle_state: active
+    information_domain: options_mechanics
+    fitness_sensors:
+    - id: vol_lift_in_window
+      store: data/metabolism/fitness/opex_windows.json
+      maturity_date: '2026-09-30'
+      accruing: true
+      description: >-
+        Fraction of elevated/heavy OPEX windows where forward_5d_rv or
+        forward_10d_rv exceeds the trailing_rv baseline (vol amplification).
+    - id: range_compression_in_window
+      store: data/metabolism/fitness/opex_windows.json
+      maturity_date: '2026-09-30'
+      accruing: true
+      description: >-
+        Fraction of windows where range_compression ratio is < 0.80 into
+        expiry (evidence of pin/compression behavior).
+    owner_program: rates-inflation-command
+    notes: >-
+      RIC W3 OPEX window forward ledger lobe. Tracks vol/path outcomes per
+      monthly OPEX window (stamped at T-5 before expiration). Grading rulers
+      are VOL/PATH objects only — no directional return targets (RO-3/F-21).
+      Accruing from 2026-07; first graded windows available ~2026-09.
+      maturity_date 2026-09-30 (initial review: >=2 graded windows required).
+      Display-only doctrine applies (RIC-R2/R3); not loop-manageable until
+      sensor maturity. tier is shadow (forward ledger accruing, not yet display).
+
   attention-deterministic:
     lobe_id: attention-deterministic
     tier: display

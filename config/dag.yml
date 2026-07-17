@@ -2434,12 +2434,24 @@ modules:
       - data/stocks/SPY.parquet
       - data/vol_regime/gate.json
       - data/vol_regime/basket_overlay_gate.json
+      - data/options_surface/index_etf.parquet
+      - data/options_surface/sector_etf.parquet
     writes:
       - site/vol/regime.json
       - site/vol/mastermind.json
+      - data/opex_windows/forward_log.jsonl
     impure: false
     needs_secrets: false
     event_driven: false
+    note: >
+      RIC W3: build_vol_regime now calls engine/opex_risk.snapshot() to embed the
+      OPEX window risk read (n_hot/n_applicable, level chips, glance copy) into
+      regime.json['opex_risk']. Also calls opex_risk.log_window() to stamp the
+      forward ledger (data/opex_windows/forward_log.jsonl) at T-5 before expiration
+      (nightly lane only; COLLECT_LANE gate enforced inside log_window()).
+      Step cost: reads options_surface parquets (small, ~single-digit MB committed);
+      opex_risk.snapshot() is a cheap read-only join on committed data — no network,
+      no heavy compute. Measured added cost on main: <2s (deterministic composer).
 
   - module: scripts.build_gex_board
     reads:
