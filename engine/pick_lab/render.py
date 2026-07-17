@@ -157,11 +157,23 @@ def _build_accountability_vm(scoreboard: dict | None) -> dict:
         return {"present": False}
 
 
+def _enrich_all_fires(fires_list: list[dict]) -> list[dict]:
+    """Add display fields to a list of full-history fire dicts."""
+    result = []
+    for f in fires_list:
+        row = dict(f)
+        row["ret21_excess_fmt"] = _fmt_pct(row.get("ret21_excess"), signed=True)
+        row["matured_label"] = "matured" if row.get("matured") else "open"
+        result.append(row)
+    return result
+
+
 def build_vm(
     pick_lab_dict: dict | None,
     longhold_dict: dict | None,
     t0_dict: dict | None = None,
     audit_scoreboard: dict | None = None,
+    fires_dict: dict | None = None,
 ) -> dict:
     """Build the Jinja2 view-model for us_stocks_lab.html.
 
@@ -170,6 +182,8 @@ def build_vm(
 
     t0_dict: optional t0_indicator.v1 artifact (site/factordata/t0_indicator.json).
     audit_scoreboard: optional us_audit_scoreboard.v1 artifact (SA-W5 Accountability section).
+    fires_dict: optional pick_lab_fires.v1 artifact (site/labdata/pick_lab_fires.json).
+                Absent → all_fires: [] on every book (template hides the section).
     Authority: display_only throughout.
     """
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -197,11 +211,17 @@ def build_vm(
     if pick_lab_dict:
         books_raw = pick_lab_dict.get("books") or {}
 
+    # ---- full-history fires (pick_lab_fires.json, graceful absent) ----
+    fires_by_book: dict[str, list[dict]] = {}
+    if fires_dict:
+        fires_by_book = fires_dict.get("fires_by_book") or {}
+
     velocity_books: list[dict] = []
     for eid in velocity_book_ids:
         b_data = books_raw.get(eid) or {}
         picks_today = [_enrich_pick(p) for p in (b_data.get("picks_today") or [])]
         recent_fires = [_enrich_fire(f) for f in (b_data.get("recent_fires") or [])]
+        all_fires_raw = fires_by_book.get(eid) or []
         # find scoreboard meta for this book
         sb_meta = next((r for r in scoreboard if r.get("engine_id") == eid), {})
         velocity_books.append({
@@ -211,6 +231,7 @@ def build_vm(
             "family": sb_meta.get("family", "A"),
             "picks_today": picks_today,
             "recent_fires": recent_fires,
+            "all_fires": _enrich_all_fires(all_fires_raw),
             "sb": sb_meta,
         })
 
@@ -231,6 +252,7 @@ def build_vm(
             b_data = books_raw.get(eid) or {}
             picks_today = [_enrich_pick(p) for p in (b_data.get("picks_today") or [])]
             recent_fires = [_enrich_fire(f) for f in (b_data.get("recent_fires") or [])]
+            all_fires_raw = fires_by_book.get(eid) or []
             all_books.append({
                 "engine_id": eid,
                 "name_en": row.get("name_en", eid),
@@ -238,6 +260,7 @@ def build_vm(
                 "family": row.get("family", ""),
                 "picks_today": picks_today,
                 "recent_fires": recent_fires,
+                "all_fires": _enrich_all_fires(all_fires_raw),
                 "sb": row,
             })
 
@@ -260,12 +283,14 @@ def build_vm(
         b_data = lh_books_raw.get(eid) or {}
         picks_today = [_enrich_pick(p) for p in (b_data.get("picks_today") or [])]
         recent_fires = [_enrich_fire(f) for f in (b_data.get("recent_fires") or [])]
+        all_fires_raw = fires_by_book.get(eid) or []
         lh_books.append({
             "engine_id": eid,
             "name_en": en,
             "name_zh": zh,
             "picks_today": picks_today,
             "recent_fires": recent_fires,
+            "all_fires": _enrich_all_fires(all_fires_raw),
         })
 
     # ---- as_of / method_note ----
@@ -367,6 +392,7 @@ def build_and_render(site: Path | None = None) -> None:
 
     pick_lab_dict = _load("pick_lab.json")
     longhold_dict = _load("pick_lab_longhold.json")
+    fires_dict = _load("pick_lab_fires.json")
 
     # Load T0 beta-screen artifact (separate path: site/factordata/)
     t0_dict: dict | None = None
@@ -378,7 +404,7 @@ def build_and_render(site: Path | None = None) -> None:
         except Exception as exc:  # noqa: BLE001
             log.warning("pick_lab render: could not load t0_indicator.json (%s)", exc)
 
-    vm = build_vm(pick_lab_dict, longhold_dict, t0_dict=t0_dict)
+    vm = build_vm(pick_lab_dict, longhold_dict, t0_dict=t0_dict, fires_dict=fires_dict)
     try:
         render_page(vm, site)
     except Exception as exc:  # noqa: BLE001
