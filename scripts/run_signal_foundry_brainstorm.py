@@ -161,13 +161,14 @@ def _build_scheduled_providers(cfg: dict) -> list[dict]:
     """For scheduled trigger: ONLY the CLAUDE_CODE_OAUTH_TOKEN (oauth) provider.
 
     SF-R5 mirror of CHF-R8: ANTHROPIC_API_KEY and deepseek are explicitly
-    excluded from the scheduled path.
+    excluded from the scheduled path.  Pool keys are oauth class — compliant.
     """
     from engine import llm_auth  # noqa: PLC0415
 
     model = cfg.get("models", {}).get("generator", "claude-sonnet-4-6")
+    cfg_aug = {**cfg, "oauth_pool_lane": "signal-foundry", "usage_lane": "signal-foundry"}
     try:
-        providers = llm_auth.build_providers(cfg, opus_model=model)
+        providers = llm_auth.build_providers(cfg_aug, opus_model=model)
     except Exception as exc:  # noqa: BLE001
         log.warning("run_signal_foundry_brainstorm: provider build failed (%s)", exc)
         return []
@@ -178,7 +179,8 @@ def _build_operator_providers(cfg: dict, model_override: str | None = None) -> l
     """For operator trigger: full waterfall (oauth → anthropic → deepseek)."""
     from engine import llm_auth  # noqa: PLC0415
     model = model_override or cfg.get("models", {}).get("generator", "claude-sonnet-4-6")
-    return llm_auth.build_providers(cfg, opus_model=model)
+    cfg_aug = {**cfg, "oauth_pool_lane": "signal-foundry", "usage_lane": "signal-foundry"}
+    return llm_auth.build_providers(cfg_aug, opus_model=model)
 
 
 def _build_providers_for_model(
@@ -263,7 +265,7 @@ def _llm_call(
 
     token_counts: dict = {}
 
-    def _call_fn(client, model: str) -> tuple[str | None, str | None]:
+    def _call_fn(client, model: str) -> tuple:
         resp = client.messages.create(
             model=model,
             max_tokens=max_tokens,
@@ -278,7 +280,7 @@ def _llm_call(
         if usage is not None:
             token_counts["input_tokens"] = getattr(usage, "input_tokens", None)
             token_counts["output_tokens"] = getattr(usage, "output_tokens", None)
-        return text, None
+        return text, None, resp
 
     text, reason, provider = llm_auth.make_call(providers, _call_fn, context=context)
     return text, reason, provider, token_counts

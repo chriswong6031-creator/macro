@@ -1,7 +1,7 @@
 """scripts/key_pool_probe.py — operator diagnostics: is each OAuth key ALIVE?
 
 Makes ONE minimal real API call (max_tokens=1) per PRESENT key env among
-CLAUDE_CODE_OAUTH_TOKEN_1/_2/_3 and the legacy CLAUDE_CODE_OAUTH_TOKEN, and
+CLAUDE_CODE_OAUTH_TOKEN_1/_2/_3/_4/_5/_6/_7 and the legacy CLAUDE_CODE_OAUTH_TOKEN, and
 prints a per-key verdict:
 
     CLAUDE_CODE_OAUTH_TOKEN_1: OK
@@ -37,6 +37,10 @@ _PROBE_ENVS = [
     "CLAUDE_CODE_OAUTH_TOKEN_1",
     "CLAUDE_CODE_OAUTH_TOKEN_2",
     "CLAUDE_CODE_OAUTH_TOKEN_3",
+    "CLAUDE_CODE_OAUTH_TOKEN_4",
+    "CLAUDE_CODE_OAUTH_TOKEN_5",
+    "CLAUDE_CODE_OAUTH_TOKEN_6",
+    "CLAUDE_CODE_OAUTH_TOKEN_7",
     "CLAUDE_CODE_OAUTH_TOKEN",   # legacy single key (waterfall fallback)
 ]
 

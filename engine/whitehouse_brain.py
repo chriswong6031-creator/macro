@@ -51,6 +51,8 @@ _DEFAULTS = {
     "opus_model": "claude-opus-4-8",
     "deepseek_model": "deepseek-v4-pro",
     "provider_order": ["oauth", "anthropic", "deepseek"],
+    "oauth_pool_lane": "whitehouse",               # pool key expansion for this lane
+    "usage_lane": "whitehouse",                    # ai_costs attribution
     "max_tokens": 4000,
     "min_importance": 60,        # importance floor below which the banner is suppressed
     "max_banner_days": 7,        # hard ceiling on banner lifespan
@@ -315,11 +317,11 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
         )
         sr = getattr(resp, "stop_reason", None)
         if sr == "refusal":
-            return None, "stop_refusal"
+            return None, "stop_refusal", resp
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
         if not text:
-            return None, "empty_reply"
-        return text, ("truncated" if sr == "max_tokens" else None)
+            return None, "empty_reply", resp
+        return text, ("truncated" if sr == "max_tokens" else None), resp
 
     try:
         text, reason, provider_used = llm_auth.make_call(

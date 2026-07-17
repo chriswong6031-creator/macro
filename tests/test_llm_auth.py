@@ -15,6 +15,21 @@ def setup_function(_fn):
     llm_auth.clear_dead()
 
 
+@pytest.fixture(autouse=True)
+def _patch_ai_costs_no_write(monkeypatch):
+    """Prevent lib.ai_costs.record_usage from writing to the real data tree.
+
+    _capture_usage (called on every successful make_call) lazily imports and
+    calls lib.ai_costs.record_usage.  Without this patch, every make_call test
+    would create data/ai_costs/usage.jsonl and trip the MM_DATA_GUARD.
+    Tests that need to inspect the recorded rows replace this no-op with their
+    own monkeypatch.setattr(_ac, "record_usage", ...) call AFTER this fixture
+    runs (function-scope fixtures compose in order).
+    """
+    import lib.ai_costs as _ac
+    monkeypatch.setattr(_ac, "record_usage", lambda **kw: True)
+
+
 # ---------------------------------------------------------------------------
 # _is_auth_error detection
 # ---------------------------------------------------------------------------
@@ -524,6 +539,8 @@ def _fake_anthropic_module():
 
 
 def test_build_providers_pool_expansion(monkeypatch):
+    """When pool keys are present and a legacy key also exists, legacy is SUPPRESSED
+    (V11 legacy deprecation: pool non-empty → legacy not added)."""
     import sys
     from engine import llm_auth
 
@@ -538,9 +555,35 @@ def test_build_providers_pool_expansion(monkeypatch):
     cfg = {"provider_order": ["oauth"], "oauth_pool_lane": "metabolism-propose"}
     provs = llm_auth.build_providers(cfg)
 
-    assert [p["env_var"] for p in provs] == ["POOL_ENV_1", "CLAUDE_CODE_OAUTH_TOKEN"]
+    # Pool key is present → legacy is suppressed (not added to the list)
+    assert [p["env_var"] for p in provs] == ["POOL_ENV_1"]
     assert provs[0].get("cap_id") == "claude_code_oauth_1"
-    assert "cap_id" not in provs[1]
+
+
+def test_build_providers_pool_expansion_no_pool_keys_uses_legacy(monkeypatch):
+    """When oauth_pool_lane is set but zero pool keys resolve, legacy is used as
+    last resort (with a deprecation warning)."""
+    import sys
+    from engine import llm_auth
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
+    # No pool candidates available
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane: [])
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok0")
+    # Stub is_enabled so legacy is enabled
+    try:
+        import engine.neuralweb.key_pool as _kp
+        monkeypatch.setattr(_kp, "is_enabled", lambda key_id: True)
+    except Exception:
+        pass
+
+    cfg = {"provider_order": ["oauth"], "oauth_pool_lane": "metabolism-propose"}
+    provs = llm_auth.build_providers(cfg)
+
+    # No pool keys → legacy is the last resort
+    assert len(provs) == 1
+    assert provs[0]["env_var"] == "CLAUDE_CODE_OAUTH_TOKEN"
+    assert "cap_id" not in provs[0]
 
 
 def test_build_providers_without_pool_lane_is_legacy(monkeypatch):
@@ -615,3 +658,254 @@ def test_pick_key_exclude(monkeypatch, tmp_path):
                     exclude={"claude_code_oauth_1"}) == "claude_code_oauth_2"
     assert pick_key(root=tmp_path,
                     exclude={"claude_code_oauth_1", "claude_code_oauth_2"}) is None
+
+
+# ---------------------------------------------------------------------------
+# Usage capture — _capture_usage + make_call 3-tuple resp integration
+# ---------------------------------------------------------------------------
+
+class _FakeUsage:
+    """Minimal stand-in for the SDK Usage object."""
+    def __init__(self, *, input_tokens=10, output_tokens=5,
+                 cache_read_input_tokens=0, cache_creation_input_tokens=0):
+        self.input_tokens = input_tokens
+        self.output_tokens = output_tokens
+        self.cache_read_input_tokens = cache_read_input_tokens
+        self.cache_creation_input_tokens = cache_creation_input_tokens
+
+
+class _FakeResp:
+    """Minimal stand-in for an SDK response with usage."""
+    def __init__(self, usage=None):
+        self.usage = usage
+
+
+def test_capture_usage_oauth_lane_calls_ai_costs(monkeypatch, tmp_path):
+    """_capture_usage forwards correct provider/lane/key_id to ai_costs.record_usage."""
+    import lib.ai_costs as _ac  # ensure the real module is loaded so we can patch it
+
+    recorded = []
+
+    def fake_record_usage(*, lane, provider, model, key_id, input_tokens, output_tokens,
+                          cache_read_tokens, cache_creation_tokens, cost_basis,
+                          cycle_id, stage, note=None, est_cost_usd=None, root=None):
+        recorded.append({
+            "lane": lane, "provider": provider, "key_id": key_id,
+            "input_tokens": input_tokens, "output_tokens": output_tokens,
+            "cost_basis": cost_basis,
+        })
+        return True
+
+    monkeypatch.setattr(_ac, "record_usage", fake_record_usage)
+
+    from engine.llm_auth import _capture_usage
+
+    p = {
+        "name": "oauth",
+        "usage_lane": "cortex",
+        "cap_id": "claude_code_oauth_1",
+        "model": "claude-opus-4-8",
+    }
+    usage = _FakeUsage(input_tokens=100, output_tokens=50)
+    _capture_usage(p, usage, "cortex_test")
+
+    assert len(recorded) == 1
+    r = recorded[0]
+    assert r["lane"] == "cortex"
+    assert r["provider"] == "claude_oauth"
+    assert r["cost_basis"] == "subscription"
+    assert r["key_id"] == "claude_code_oauth_1"
+    assert r["input_tokens"] == 100
+    assert r["output_tokens"] == 50
+
+
+def test_capture_usage_anthropic_lane(monkeypatch):
+    """anthropic provider maps to claude_api / metered."""
+    import lib.ai_costs as _ac
+
+    recorded = []
+
+    def fake_record_usage(*, lane, provider, cost_basis, **kw):
+        recorded.append({"provider": provider, "cost_basis": cost_basis})
+        return True
+
+    monkeypatch.setattr(_ac, "record_usage", fake_record_usage)
+
+    from engine.llm_auth import _capture_usage
+
+    p = {"name": "anthropic", "usage_lane": "risk-brain", "model": "claude-opus-4-8"}
+    _capture_usage(p, _FakeUsage(), "test")
+
+    assert recorded[0]["provider"] == "claude_api"
+    assert recorded[0]["cost_basis"] == "metered"
+
+
+def test_capture_usage_never_raises_on_ai_costs_exception(monkeypatch):
+    """_capture_usage must not propagate exceptions from ai_costs (NEVER-RAISE rule)."""
+    import lib.ai_costs as _ac
+
+    def boom(*a, **kw):
+        raise RuntimeError("ai_costs exploded")
+
+    monkeypatch.setattr(_ac, "record_usage", boom)
+
+    from engine.llm_auth import _capture_usage
+    # Must not raise
+    _capture_usage({"name": "oauth", "usage_lane": "x"}, _FakeUsage(), "test")
+
+
+def test_capture_usage_none_usage_obj_does_not_raise(monkeypatch):
+    """If resp.usage is None (2-tuple legacy path), _capture_usage must not raise
+    AND must write NO ledger row (FIX 1a: suppress zero-token rows)."""
+    import lib.ai_costs as _ac
+
+    recorded = []
+
+    def fake_record_usage(*, input_tokens, output_tokens, **kw):
+        recorded.append((input_tokens, output_tokens))
+        return True
+
+    monkeypatch.setattr(_ac, "record_usage", fake_record_usage)
+
+    from engine.llm_auth import _capture_usage
+    _capture_usage({"name": "oauth", "usage_lane": "x"}, None, "ctx")
+
+    # FIX 1a: no usage object → NO ledger row (not even a zero-token row)
+    assert recorded == []
+
+
+def test_make_call_3tuple_captures_usage_and_real_est_tokens(monkeypatch):
+    """make_call with a 3-tuple call_fn records usage and passes real est_tokens to
+    record_session (not 0).
+    """
+    import lib.ai_costs as _ac
+    from engine import llm_auth
+
+    # Patch ai_costs so capture_usage doesn't need the real ledger
+    recorded_usage = []
+
+    def fake_record_usage(**kw):
+        recorded_usage.append(kw)
+        return True
+
+    monkeypatch.setattr(_ac, "record_usage", fake_record_usage)
+
+    # Patch record_session to track est_tokens
+    recorded_sessions = []
+    monkeypatch.setattr("engine.neuralweb.key_pool.record_session",
+                        lambda cap_id, **kw: recorded_sessions.append(kw) or True)
+
+    fake_resp = _FakeResp(usage=_FakeUsage(input_tokens=120, output_tokens=80))
+
+    def call_fn(client, model):
+        return "the text", None, fake_resp
+
+    providers = [
+        {"name": "oauth", "env_var": "CLAUDE_CODE_OAUTH_TOKEN",
+         "cred": "tok", "client": _make_fake_client("oauth"),
+         "model": "claude-opus-4-8",
+         "cap_id": "claude_code_oauth_1",
+         "usage_lane": "test-lane"},
+    ]
+
+    text, reason, used = llm_auth.make_call(providers, call_fn, context="test")
+
+    assert text == "the text"
+    assert reason is None
+    assert used == "oauth"
+
+    # Usage must have been recorded with real token counts
+    assert len(recorded_usage) == 1
+    assert recorded_usage[0]["input_tokens"] == 120
+    assert recorded_usage[0]["output_tokens"] == 80
+    assert recorded_usage[0]["lane"] == "test-lane"
+
+    # record_session est_tokens must be real (120 + 80 = 200), NOT 0
+    assert len(recorded_sessions) == 1
+    assert recorded_sessions[0].get("est_tokens") == 200
+
+
+def test_make_call_2tuple_zero_est_tokens(monkeypatch):
+    """Legacy 2-tuple call_fn: est_tokens stays 0 (backward-compatible)."""
+    import lib.ai_costs as _ac
+    from engine import llm_auth
+
+    monkeypatch.setattr(_ac, "record_usage", lambda **kw: True)
+
+    recorded_sessions = []
+    monkeypatch.setattr("engine.neuralweb.key_pool.record_session",
+                        lambda cap_id, **kw: recorded_sessions.append(kw) or True)
+
+    def call_fn(client, model):
+        return "reply", None
+
+    providers = [
+        {"name": "oauth", "env_var": "E1", "cred": "x",
+         "client": _make_fake_client("oauth"),
+         "model": "m", "cap_id": "claude_code_oauth_1",
+         "usage_lane": "test"},
+    ]
+
+    llm_auth.make_call(providers, call_fn, context="t")
+    # With 2-tuple, est_tokens defaults to 0
+    assert recorded_sessions[0].get("est_tokens") == 0
+
+
+def test_make_call_usage_fallover_ordering_unchanged(monkeypatch):
+    """401 fallback still works even when usage capture is active (NEVER-RAISE)."""
+    import lib.ai_costs as _ac
+    from engine import llm_auth
+
+    monkeypatch.setattr(_ac, "record_usage", lambda **kw: True)
+
+    monkeypatch.setattr("engine.neuralweb.key_pool.mark_cooling",
+                        lambda cap_id, **kw: None)
+    monkeypatch.setattr("engine.neuralweb.key_pool.record_session",
+                        lambda cap_id, **kw: True)
+
+    c1, c2 = _make_fake_client("oauth"), _make_fake_client("deepseek")
+    calls = []
+
+    fake_resp = _FakeResp(usage=_FakeUsage(input_tokens=10, output_tokens=5))
+
+    def call_fn(client, model):
+        calls.append(client._name)
+        if client._name == "oauth":
+            raise Exception("401 authentication_error: Invalid bearer token")
+        return "ds reply", None, fake_resp
+
+    providers = [
+        {"name": "oauth", "env_var": "E1", "cred": "x", "client": c1,
+         "model": "m", "cap_id": "claude_code_oauth_1", "usage_lane": "test"},
+        {"name": "deepseek", "env_var": "E2", "cred": "y", "client": c2,
+         "model": "m2", "usage_lane": "test"},
+    ]
+
+    text, reason, used = llm_auth.make_call(providers, call_fn, context="t")
+    assert text == "ds reply"
+    assert used == "deepseek"
+    assert calls == ["oauth", "deepseek"]
+
+
+def test_build_providers_injects_usage_lane(monkeypatch):
+    """build_providers propagates usage_lane from cfg to every built provider."""
+    import sys
+    from engine import llm_auth
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok0")
+    # _oauth_pool_candidates is called with oauth_pool_lane from cfg; disable it
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane: [])
+
+    cfg = {
+        "provider_order": ["oauth"],
+        "usage_lane": "my-lane",
+        "usage_cycle_id": "cycle-42",
+        "usage_stage": "build",
+    }
+
+    provs = llm_auth.build_providers(cfg)
+    assert len(provs) == 1
+    assert provs[0]["usage_lane"] == "my-lane"
+    assert provs[0]["usage_cycle_id"] == "cycle-42"
+    assert provs[0]["usage_stage"] == "build"

@@ -103,6 +103,7 @@ def _request_llm_summary(raw_lessons: str, root: Path) -> str | None:
             "provider_order": ["oauth", "anthropic"],
             "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
             "oauth_pool_lane": "metabolism-dream",
+            "usage_lane": "metabolism-dream",
             "api_key_env": "ANTHROPIC_API_KEY",
             "opus_model": "claude-opus-4-8",
             "max_tokens": 800,
@@ -125,13 +126,13 @@ def _request_llm_summary(raw_lessons: str, root: Path) -> str | None:
             + raw_lessons[:4000]
         )
 
-        def _do_call(client: Any, model: str) -> tuple[str | None, str | None]:
+        def _do_call(client: Any, model: str) -> tuple:
             resp = client.messages.create(
                 model=model, max_tokens=800, system=system,
                 messages=[{"role": "user", "content": user}],  # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
             )
             text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-            return (text.strip() or None), None
+            return (text.strip() or None), None, resp
 
         text, _, _ = llm_auth.make_call(providers, _do_call, context="metabolism_dream_resummary")
         return text

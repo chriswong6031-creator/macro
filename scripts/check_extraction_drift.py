@@ -132,19 +132,30 @@ _EXTRACT_SYSTEM = (
 )
 
 
-def _call_model(body: str, model: str, client) -> dict | None:
-    """Call the extraction model for one anchor body. Returns parsed dict or None."""
-    try:
+def _call_model(body: str, model: str, providers: list) -> dict | None:
+    """Call the extraction model for one anchor body via llm_auth waterfall.
+
+    Returns parsed dict or None.  providers is a list of provider descriptors
+    from llm_auth.build_providers (pool-aware failover + usage capture).
+    """
+    from engine import llm_auth  # noqa: PLC0415
+
+    def _call_fn(client, m: str):
         resp = client.messages.create(
-            model=model,
+            model=m,
             max_tokens=400,
             system=_EXTRACT_SYSTEM,
             messages=[{"role": "user", "content": f"TEXT:\n{body[:2000]}"}],
         )
         if getattr(resp, "stop_reason", "") == "refusal":
-            log.warning("extraction_drift: model refused one record")
-            return None
+            return None, "stop_refusal", resp
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+        return text, None, resp
+
+    try:
+        text, _, _ = llm_auth.make_call(providers, _call_fn, context="extraction_drift")
+        if not text:
+            return None
         # tolerant JSON extraction (handle fences)
         m = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
         body_text = (m.group(1) if m else text).strip()
@@ -155,26 +166,28 @@ def _call_model(body: str, model: str, client) -> dict | None:
         return None
 
 
-def _get_client_and_model(cfg: dict) -> tuple | None:
-    """Return (client, model_id) for the configured extraction model, or None."""
+def _get_providers_and_model(cfg: dict) -> tuple | None:
+    """Return (providers, model_id) for the extraction model, or None.
+
+    Uses llm_auth.build_providers for pool-aware failover and usage capture.
+    """
     model_id = cfg.get("qual_extraction", {}).get("model_id") or cfg.get(
         "altdata_brain", {}).get("model_id", "claude-haiku-4-5")
     try:
-        import anthropic
-        # Prefer OAuth token, fallback to API key
-        tok = config.secret("CLAUDE_CODE_OAUTH_TOKEN")
-        key = config.secret("ANTHROPIC_API_KEY")
-        if tok:
-            client = anthropic.Anthropic(
-                api_key=None, auth_token=tok,
-                default_headers={"anthropic-beta": "oauth-2025-04-20"})
-        elif key:
-            client = anthropic.Anthropic(api_key=key)
-        else:
+        from engine import llm_auth  # noqa: PLC0415
+        llm_cfg = {
+            "provider_order": ["oauth", "anthropic"],
+            "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+            "api_key_env": "ANTHROPIC_API_KEY",
+            "oauth_pool_lane": "extraction-drift",
+            "usage_lane": "extraction-drift",
+        }
+        providers = llm_auth.build_providers(llm_cfg, opus_model=model_id)
+        if not providers:
             return None
-        return client, model_id
+        return providers, model_id
     except Exception as e:  # noqa: BLE001
-        log.warning("extraction_drift: client init failed (%s)", e)
+        log.warning("extraction_drift: provider init failed (%s)", e)
         return None
 
 # ---------------------------------------------------------------------------
@@ -270,18 +283,18 @@ def dry_run(anchors: list[dict]) -> dict:
 def full_check(anchors: list[dict]) -> dict:
     """Run all 50 anchors through the current extraction model."""
     cfg = config.load()
-    result = _get_client_and_model(cfg)
+    result = _get_providers_and_model(cfg)
     if result is None:
-        log.error("extraction_drift: no LLM client available — set ANTHROPIC_API_KEY or "
+        log.error("extraction_drift: no LLM provider available — set ANTHROPIC_API_KEY or "
                   "CLAUDE_CODE_OAUTH_TOKEN to run the drift gate.")
         return {"error": "no_client", "gate_pass": False}
 
-    client, model_id = result
+    providers, model_id = result
     log.info("extraction_drift: full check — %d anchors, model=%s", len(anchors), model_id)
 
     predictions = []
     for i, anchor in enumerate(anchors):
-        pred = _call_model(anchor["body"], model_id, client)
+        pred = _call_model(anchor["body"], model_id, providers)
         predictions.append(pred)
         if (i + 1) % 10 == 0:
             log.info("  %d/%d anchors scored", i + 1, len(anchors))
@@ -298,14 +311,14 @@ def light_check(anchors: list[dict], n: int = 10, seed: Optional[int] = None) ->
     rng = random.Random(seed)
     sample = rng.sample(anchors, min(n, len(anchors)))
     cfg = config.load()
-    result = _get_client_and_model(cfg)
+    result = _get_providers_and_model(cfg)
     if result is None:
         return {"error": "no_client", "gate_pass": None, "mode": "light"}
 
-    client, model_id = result
+    providers, model_id = result
     log.info("extraction_drift: light check — %d anchors, model=%s", len(sample), model_id)
 
-    predictions = [_call_model(a["body"], model_id, client) for a in sample]
+    predictions = [_call_model(a["body"], model_id, providers) for a in sample]
     scores = _score_predictions(sample, predictions)
     scores["mode"] = "light"
     scores["model_id"] = model_id
