@@ -673,3 +673,60 @@ def test_ledger_lane_gate(monkeypatch):
     assert _ledger_lane_armed() is False, (
         "_ledger_lane_armed() must be False after clearing both env vars"
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TEST 11: ledger lane gate — canonical helper + CN/HK/CA build ports
+# ═══════════════════════════════════════════════════════════════════════════
+
+def test_ledger_lane_gate_canonical(monkeypatch):
+    """engine.risk_radar_intl_audit.ledger_lane_armed() is the canonical gate;
+    engine.intl_run._ledger_lane_armed delegates to it — same env matrix as TEST 10."""
+    from engine.intl_run import _ledger_lane_armed
+    from engine.risk_radar_intl_audit import ledger_lane_armed
+
+    cases = [
+        ({}, False),                                     # both absent
+        ({"COLLECT_LANE": "nightly"}, True),             # nightly collect lane
+        ({"COLLECT_LANE": "intraday"}, False),           # intraday lane
+        ({"US_LANE": "nightly"}, True),                  # legacy alias
+        ({"COLLECT_LANE": "", "US_LANE": "nightly"}, True),  # empty falls through to alias
+    ]
+    for env, expected in cases:
+        monkeypatch.delenv("COLLECT_LANE", raising=False)
+        monkeypatch.delenv("US_LANE", raising=False)
+        for k, v in env.items():
+            monkeypatch.setenv(k, v)
+        assert ledger_lane_armed() is expected, f"ledger_lane_armed() with {env} != {expected}"
+        assert _ledger_lane_armed() is expected, (
+            f"intl_run._ledger_lane_armed must delegate to the canonical gate (env {env})"
+        )
+
+
+def test_cn_hk_ca_build_appenders_lane_gated():
+    """House law: nightly is the SOLE advancer of data/ forward ledgers. The CN/HK/CA
+    build scripts must gate snapshot_and_grade + tune behind ledger_lane_armed() and
+    fall back to the read-only scorecard(log_governance=False) idiom off-lane —
+    the same port PR #2684 made for the 7 new intl markets in engine/intl_run.py."""
+    root = Path(__file__).resolve().parent.parent
+    for builder in ("scripts/build_china.py", "scripts/build_hk.py", "scripts/build_canada.py"):
+        src = (root / builder).read_text(encoding="utf-8")
+        gate = src.find("if _rra.ledger_lane_armed():")
+        assert gate != -1, f"{builder}: radar ledger append is not lane-gated"
+        graded = src.find("snapshot_and_grade")
+        assert graded != -1, f"{builder}: snapshot_and_grade call missing"
+        assert gate < graded, (
+            f"{builder}: snapshot_and_grade must sit INSIDE the ledger_lane_armed() branch"
+        )
+        tuned = src.find(".tune(")
+        assert tuned != -1 and gate < tuned, (
+            f"{builder}: tune() must sit INSIDE the ledger_lane_armed() branch "
+            "(tune appends a tune_log row on every call)"
+        )
+        assert "log_governance=False" in src, (
+            f"{builder}: off-lane path must use the read-only "
+            "scorecard(log_governance=False) idiom so forward_log/can_force still render"
+        )
+        assert src.find("log_governance=False") > gate, (
+            f"{builder}: the read-only scorecard fallback belongs to the off-lane branch"
+        )
