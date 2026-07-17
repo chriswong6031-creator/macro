@@ -289,6 +289,10 @@ def _apply_rate_limits_to_state(state: dict, rl: dict) -> None:
     stored with ``fetched_at`` stamped to the current UTC time so the
     staleness session-cap check (can_run gate step 3) always has a reference
     point.  The caller's dict is never mutated.
+
+    FIX 2 — wrong-account tripwire: if plan_type changes between snapshots,
+    log a warning so the operator knows a runner box may be logged into the
+    wrong ChatGPT account.  Stores the new plan_type in state["plan_type"].
     """
     # Stamp fetched_at if absent so the >24h staleness check has a reference.
     if not rl.get("fetched_at"):
@@ -300,6 +304,20 @@ def _apply_rate_limits_to_state(state: dict, rl: dict) -> None:
     secondary = rl.get("secondary")
     if primary is not None or secondary is not None:
         state["degraded"] = False
+
+    # FIX 2: plan_type change detection (wrong-account tripwire)
+    new_plan_type = rl.get("plan_type")
+    if new_plan_type:
+        old_plan_type = state.get("plan_type")
+        if old_plan_type and old_plan_type != new_plan_type:
+            log.warning(
+                "codex_lane.budget: plan_type changed %s -> %s"
+                " — check that every codex-labeled runner box is logged"
+                " into the SAME ChatGPT account",
+                old_plan_type,
+                new_plan_type,
+            )
+        state["plan_type"] = new_plan_type
 
 
 # ---------------------------------------------------------------------------
@@ -376,6 +394,11 @@ def note_rate_limits(rl: dict | None, root: str | Path | None = None) -> None:
     - Otherwise updates state["rate_limits"] and state["updated_at"],
       clears the degraded flag when primary or secondary is non-null.
 
+    FIX 1 — CRX-R4 self-heal: after applying the snapshot, if state still
+    has a future paused_until AND the fresh snapshot shows that every present
+    window (primary/secondary, skipping None) is below budget_pct, the pause
+    was written by a stale/wrong-account signal — clear it and log.
+
     NEVER raises.
     """
     if rl is None:
@@ -384,6 +407,29 @@ def note_rate_limits(rl: dict | None, root: str | Path | None = None) -> None:
         resolved_root = _resolve_root(root)
         state = load_state(resolved_root)
         _apply_rate_limits_to_state(state, rl)
+
+        # FIX 1: self-heal stale paused_until when fresh snapshot is healthy
+        paused_until_str = state.get("paused_until") or ""
+        if paused_until_str:
+            paused_dt = _parse_iso(paused_until_str)
+            if paused_dt is not None and paused_dt > _now_utc():
+                cfg = load_cfg(resolved_root)
+                budget_pct: float = float(cfg.get("budget_pct", 85))
+                primary = (rl.get("primary") or {})
+                secondary = (rl.get("secondary") or {})
+                p_pct = primary.get("used_percent")
+                s_pct = secondary.get("used_percent")
+                # Require at least one window to be present (skip None windows)
+                present_pcts = [v for v in (p_pct, s_pct) if v is not None]
+                if present_pcts and all(float(v) < budget_pct for v in present_pcts):
+                    state["paused_until"] = None
+                    log.info(
+                        "codex_lane.budget: fresh snapshot below budget (%.1f%%)"
+                        " — clearing stale paused_until %s",
+                        budget_pct,
+                        paused_until_str,
+                    )
+
         _save_state(state, resolved_root)
     except Exception as exc:  # noqa: BLE001
         log.warning("codex_lane.budget: note_rate_limits error: %s", exc)

@@ -1070,6 +1070,158 @@ class TestNoteRateLimits(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# CRX-R4 self-heal: note_rate_limits clears stale paused_until
+# ---------------------------------------------------------------------------
+
+class TestNoteRateLimitsSelfHeal(unittest.TestCase):
+    """FIX 1 — note_rate_limits clears a future paused_until when the fresh
+    snapshot reports all present windows below budget_pct."""
+
+    def setUp(self):
+        import tempfile
+        self._tmpdir = tempfile.mkdtemp()
+        Path(self._tmpdir, "data", "codex_lane").mkdir(parents=True)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
+    def _load_state(self) -> dict:
+        p = Path(self._tmpdir, "data", "codex_lane", "usage_state.json")
+        return json.loads(p.read_text())
+
+    def _write_state(self, state: dict):
+        p = Path(self._tmpdir, "data", "codex_lane", "usage_state.json")
+        p.write_text(json.dumps(state))
+
+    def _state_with_future_pause(self, extra: dict | None = None) -> dict:
+        base = {
+            "schema": "codex_lane.usage_state.v1",
+            "degraded": False,
+            "paused_until": _to_iso(_now() + timedelta(days=30)),
+            "sessions": [],
+            "rate_limits": None,
+        }
+        if extra:
+            base.update(extra)
+        return base
+
+    def test_fresh_snapshot_below_budget_clears_paused_until(self):
+        """paused_until in future + all windows < budget_pct → cleared, can_run True."""
+        self._write_state(self._state_with_future_pause())
+        rl = {
+            "primary": {"used_percent": 9.0, "resets_at": None},
+            "secondary": None,
+            "plan_type": "pro",
+            "fetched_at": _to_iso(_now()),
+        }
+        note_rate_limits(rl, root=self._tmpdir)
+        state = self._load_state()
+        self.assertIsNone(state["paused_until"])
+        ok, reason = can_run(root=self._tmpdir)
+        self.assertTrue(ok)
+        self.assertEqual(reason, "ok")
+
+    def test_fresh_snapshot_at_or_above_budget_preserves_paused_until(self):
+        """paused_until in future + primary used_percent >= budget_pct → preserved."""
+        self._write_state(self._state_with_future_pause())
+        rl = {
+            "primary": {"used_percent": 85.0, "resets_at": None},  # == budget_pct default
+            "secondary": None,
+            "plan_type": "pro",
+            "fetched_at": _to_iso(_now()),
+        }
+        note_rate_limits(rl, root=self._tmpdir)
+        state = self._load_state()
+        self.assertIsNotNone(state["paused_until"])
+        ok, reason = can_run(root=self._tmpdir)
+        self.assertFalse(ok)
+        self.assertTrue(reason.startswith("paused_until:"))
+
+    def test_no_windows_present_preserves_paused_until(self):
+        """Snapshot with primary=None and secondary=None provides no evidence → paused_until kept."""
+        self._write_state(self._state_with_future_pause())
+        rl = {
+            "primary": None,
+            "secondary": None,
+            "plan_type": "pro",
+            "fetched_at": _to_iso(_now()),
+        }
+        note_rate_limits(rl, root=self._tmpdir)
+        state = self._load_state()
+        self.assertIsNotNone(state["paused_until"])
+
+
+# ---------------------------------------------------------------------------
+# FIX 2 — plan_type change tripwire
+# ---------------------------------------------------------------------------
+
+class TestPlanTypeChangeTripwire(unittest.TestCase):
+    """FIX 2 — _apply_rate_limits_to_state warns on plan_type change."""
+
+    def setUp(self):
+        import tempfile
+        self._tmpdir = tempfile.mkdtemp()
+        Path(self._tmpdir, "data", "codex_lane").mkdir(parents=True)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
+    def _load_state(self) -> dict:
+        p = Path(self._tmpdir, "data", "codex_lane", "usage_state.json")
+        return json.loads(p.read_text())
+
+    def _write_state(self, state: dict):
+        p = Path(self._tmpdir, "data", "codex_lane", "usage_state.json")
+        p.write_text(json.dumps(state))
+
+    def _base_rl(self, plan_type: str) -> dict:
+        return {
+            "primary": {"used_percent": 10.0, "resets_at": None},
+            "secondary": None,
+            "plan_type": plan_type,
+            "fetched_at": _to_iso(_now()),
+        }
+
+    def test_plan_type_change_logs_warning_and_updates_state(self):
+        """Stored plan_type='free', incoming='pro' → warning logged and state updated."""
+        self._write_state({
+            "schema": "codex_lane.usage_state.v1",
+            "degraded": False,
+            "paused_until": None,
+            "sessions": [],
+            "rate_limits": None,
+            "plan_type": "free",
+        })
+        with self.assertLogs("engine.codex_lane.budget", level="WARNING") as cm:
+            note_rate_limits(self._base_rl("pro"), root=self._tmpdir)
+        # At least one warning about plan_type
+        self.assertTrue(
+            any("plan_type" in msg for msg in cm.output),
+            f"Expected plan_type warning in logs; got: {cm.output}",
+        )
+        state = self._load_state()
+        self.assertEqual(state.get("plan_type"), "pro")
+
+    def test_same_plan_type_does_not_warn(self):
+        """Same plan_type='pro' on both sides → no warning."""
+        self._write_state({
+            "schema": "codex_lane.usage_state.v1",
+            "degraded": False,
+            "paused_until": None,
+            "sessions": [],
+            "rate_limits": None,
+            "plan_type": "pro",
+        })
+        import logging
+        with self.assertNoLogs("engine.codex_lane.budget", level="WARNING"):
+            note_rate_limits(self._base_rl("pro"), root=self._tmpdir)
+        state = self._load_state()
+        self.assertEqual(state.get("plan_type"), "pro")
+
+
+# ---------------------------------------------------------------------------
 # FIX 6 — _compute_pause_until secondary window -> 7d fallback
 # ---------------------------------------------------------------------------
 
