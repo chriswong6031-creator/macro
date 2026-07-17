@@ -263,12 +263,18 @@ def act_now_stocks(members: list, theme: dict) -> dict:
     risk_reco = reco in ("avoid", "trim")
     constructive = label in ("emerging", "dominant")
     downtrend = (in_bull is False) and not constructive
+    # Members the ranker can NEVER surface — no conviction read (not in the per-stock
+    # library, or a thin record without a score). Carried on every payload so the detail
+    # page prints the gap explicitly: an all-uncovered basket must read as a coverage
+    # gap, not a misleading "no clean entry".
+    uncovered = [m.get("symbol") for m in members or []
+                 if (m.get("conviction") or {}).get("score") is None]
     if risk_label or risk_reco or downtrend:
         why = label if risk_label else reco if risk_reco else "downtrend"
         why_en = "in a downtrend" if why == "downtrend" else str(why)
         why_zh = {"deteriorating": "走弱", "fading": "退潮", "avoid": "建议回避",
                   "trim": "建议减持", "downtrend": "处于下行趋势"}.get(why, str(why))
-        return {"status": "theme_out_of_favour", "buys": [],
+        return {"status": "theme_out_of_favour", "buys": [], "uncovered": uncovered,
                 "note_en": "Theme is out of favour (" + why_en + ") — no stock buys recommended here right now.",
                 "note_zh": "主题暂不被青睐（" + why_zh + "）— 当前不建议买入该主题个股。"}
     buys = []
@@ -299,10 +305,10 @@ def act_now_stocks(members: list, theme: dict) -> dict:
                          "rationale": m.get("rationale")})
     buys.sort(key=lambda x: (-(x.get("act_level") or 0), -(x.get("entry_pct") or 0), -(x.get("score") or 0)))
     if not buys:
-        return {"status": "no_clean_entries", "buys": [],
+        return {"status": "no_clean_entries", "buys": [], "uncovered": uncovered,
                 "note_en": "Theme is in favour, but no member has a clean entry right now — most are extended or mid-trend. Wait for a pullback.",
                 "note_zh": "主题尚可，但当前无成分股具备干净入场点 — 多数已延展或处于趋势中段。等待回调。"}
-    return {"status": "ok", "buys": buys[:12]}
+    return {"status": "ok", "buys": buys[:12], "uncovered": uncovered}
 
 
 _BREADTH_DIR = {"us": "breadth", "china": "china_breadth",
