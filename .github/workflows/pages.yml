@@ -62,9 +62,12 @@ jobs:
         run: python3 scripts/check_board_contradictions.py site/factordata/us_standouts.json
       # Guard: no translated text in title= attributes (template source). The dual-span
       # l-en/l-zh mechanism cannot operate inside attributes — bilingual tooltips must
-      # use data-tip-en/data-tip-zh + the theme.js popover instead.
-      - name: guard — no translated text in title attributes
-        run: python3 scripts/check_title_i18n.py templates
+      # use data-tip-en/data-tip-zh + the theme.js popover instead. Also (#2705):
+      # <title> is RCDATA — a t()/td() in a template <title>/{% block title %}, or a
+      # '<span' in a rendered page title, ships literal markup as the browser-tab
+      # text, so the sweep covers the rendered site/ pages too.
+      - name: guard — no translated text in title attributes or markup in <title> RCDATA
+        run: python3 scripts/check_title_i18n.py templates site
       # Guard: refuse to deploy if any committed template/engine/script/site file still
       # carries literal git conflict markers ('<<<<<<<' / '=======' / '>>>>>>>'). A merge
       # once shipped marker lines inside templates/dashboard.html.j2 and every page
