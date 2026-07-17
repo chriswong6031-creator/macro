@@ -78,6 +78,7 @@ SCAN_IF_PRESENT = [
     "data/metabolism/key_ledger.jsonl",   # V2-B: key usage belief-state (NEVER a token value)
     "data/metabolism/journal/*.json",     # V2-B: freeze/stage journals (committed; symmetry w/ ledger)
                                           #   (base64 rule path-stripped here — see _PATH_TELEMETRY_GLOBS)
+    "data/ai_costs/usage.jsonl",          # FIX 4: AI usage ledger (written by _capture_usage; NEVER a token value)
 ]
 
 # The ONLY env keys the broker may legitimately READ (non-secret attribution
@@ -425,6 +426,37 @@ def selftest() -> int:
         else:
             failures.append(
                 "Planted fake token in key_ledger.jsonl NOT caught — SCAN_IF_PRESENT may not cover it"
+            )
+
+    # Test 5b: planted fake token in usage.jsonl (SCAN_IF_PRESENT) is caught
+    with tempfile.TemporaryDirectory(prefix="capability_redline_usage_selftest_") as tmpdir_u:
+        tmp_u = Path(tmpdir_u)
+        (tmp_u / "config").mkdir()
+        (tmp_u / "engine" / "neuralweb").mkdir(parents=True)
+        (tmp_u / "engine" / "metabolism").mkdir(parents=True)
+        (tmp_u / "scripts").mkdir(parents=True)
+        (tmp_u / "data" / "ai_costs").mkdir(parents=True)
+        # Stub all SCAN_PATHS as clean
+        for rel in SCAN_PATHS:
+            pu = tmp_u / rel
+            pu.parent.mkdir(parents=True, exist_ok=True)
+            pu.write_text("# clean stub — names only\n")
+        # Plant a fake token in usage.jsonl (SCAN_IF_PRESENT)
+        fake_tok_u = "a" * 5 + "1" + "b" * 34  # 40-char hex-like
+        import json as _json
+        usage_row = _json.dumps({"schema": "ai_costs.usage.v1", "lane": "test",
+                                 "bad_field": fake_tok_u})
+        (tmp_u / "data" / "ai_costs" / "usage.jsonl").write_text(usage_row + "\n")
+        try:
+            found_u = scan(root=tmp_u)
+        except RuntimeError:
+            found_u = []
+        usage_found = any(f["kind"] == "high_entropy_hex40" for f in found_u)
+        if usage_found:
+            print("  [PASS] planted fake token in usage.jsonl is caught by SCAN_IF_PRESENT")
+        else:
+            failures.append(
+                "Planted fake token in usage.jsonl NOT caught — SCAN_IF_PRESENT may not cover it"
             )
 
     # Test 6: journal path-telemetry exemption — the base64 rule ignores

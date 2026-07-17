@@ -297,22 +297,43 @@ def _cache_path(series_id: str) -> Path:
 
 
 def _cache_fresh(path: Path, ttl_h: float = _CACHE_TTL_H) -> bool:
+    """Freshness from the blob's embedded `asof` stamp, NEVER file mtime — on
+    CI runners a checkout rewrites files with mtime = checkout time, so the
+    committed cache looked freshly written on the night right after every real
+    update and the refresh skipped exactly when a new release had just landed
+    (#2690 class). Legacy bare-list blobs (no stamp) read as stale — one
+    refetch upgrades them in place."""
     if not path.exists():
         return False
-    age_h = (datetime.now(timezone.utc).timestamp() - path.stat().st_mtime) / 3600.0
-    return age_h < ttl_h
+    try:
+        blob = json.loads(path.read_text())
+        asof = blob.get("asof") if isinstance(blob, dict) else None
+        if not asof:
+            return False
+        asof_dt = datetime.fromisoformat(str(asof))
+        if asof_dt.tzinfo is None:
+            asof_dt = asof_dt.replace(tzinfo=timezone.utc)
+        age_h = (datetime.now(timezone.utc) - asof_dt).total_seconds() / 3600.0
+        return age_h < ttl_h
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def _cache_read(path: Path) -> list[dict] | None:
     try:
-        return json.loads(path.read_text())
+        blob = json.loads(path.read_text())
+        if isinstance(blob, dict):
+            return blob.get("records")
+        return blob   # legacy bare-list format (pre-asof-stamp)
     except Exception:  # noqa: BLE001
         return None
 
 
 def _cache_write(path: Path, records: list[dict]) -> None:
     try:
-        path.write_text(json.dumps(records, default=str))
+        path.write_text(json.dumps(
+            {"asof": datetime.now(timezone.utc).isoformat(), "records": records},
+            default=str))
     except Exception as e:  # noqa: BLE001
         log.debug("macro_surprise cache write failed (%s)", e)
 
@@ -336,23 +357,23 @@ def _fetch_fred_series(series_id: str) -> list[dict] | None:
         r = requests.get(url, headers={"User-Agent": FREDGRAPH_UA}, timeout=30)
         if r.status_code != 200:
             log.warning("macro_surprise: FRED %s → HTTP %d", series_id, r.status_code)
-            return None
+            return _cache_read(cache)   # no-regress: stale cache beats nothing
         import pandas as pd
         df = pd.read_csv(io.StringIO(r.text))
         if df.shape[1] != 2:
             log.warning("macro_surprise: FRED %s unexpected shape %s", series_id, df.shape)
-            return None
+            return _cache_read(cache)
         df.columns = ["date", "value"]
         df["value"] = pd.to_numeric(df["value"], errors="coerce")
         df = df.dropna(subset=["value"])
         if df.empty:
-            return None
+            return _cache_read(cache)
         records = df.to_dict("records")
         _cache_write(cache, records)
         return records
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("macro_surprise: FRED fetch %s failed (%s)", series_id, e)
-        return None
+        return _cache_read(cache)   # None when no cache exists
 
 
 # --------------------------------------------------------------------------- #
@@ -660,12 +681,21 @@ def _plain_english(display_name: str, period: str, actual: float,
 # reference date, so a 10-day flat window structurally misses them ~25 of 30
 # days.  Weekly series (ICSA) are available within a few days; quarterly GDP
 # only publishes once per quarter.
+#
+# Windows are period-start dated (FRED observation date = start of reference
+# period, not release date).  Measured reality on 2026-07-16: CPI/PPI/PCE/
+# retail latest FRED obs ~76d old; inventories 106d; GDP 196d; claims 12d.
+# Old windows (weekly=10, monthly=45, quarterly=95) dropped 8 of 10 series.
+# New windows cover one full release cycle plus FRED lag:
+#   weekly=14d   (7d release cadence + ~3d FRED lag + 4d buffer)
+#   monthly=80d  (≈ June print with ~6-week FRED lag + a few days buffer)
+#   quarterly=210d (≈ one quarter + ~6-week initial lag + revision cycle)
 _LOOKBACK_BY_CADENCE: dict[str, int] = {
-    "weekly":    10,
-    "monthly":   45,
-    "quarterly": 95,
+    "weekly":    14,
+    "monthly":   80,
+    "quarterly": 210,
 }
-_LOOKBACK_DEFAULT: int = 45
+_LOOKBACK_DEFAULT: int = 80
 
 
 def lookback_days_for(entry: dict) -> int:
@@ -689,15 +719,42 @@ def _within_lookback(latest_date: str, asof: datetime, lookback_days: int) -> bo
 # --------------------------------------------------------------------------- #
 # Public API
 # --------------------------------------------------------------------------- #
+def _load_prior_cards(prior_artifact_path: "Path | str | None") -> dict[str, dict]:
+    """Read the prior macro_releases.json and return a dict keyed by release key.
+    Returns {} on any read/parse error — never raises.  Pure display-tier helper."""
+    if prior_artifact_path is None:
+        return {}
+    try:
+        from pathlib import Path as _Path
+        p = _Path(prior_artifact_path)
+        if not p.exists():
+            return {}
+        raw = json.loads(p.read_text())
+        cards = raw.get("cards") or []
+        return {c["release"]: c for c in cards if c.get("release")}
+    except Exception as e:  # noqa: BLE001
+        log.debug("macro_surprise: could not read prior artifact (%s)", e)
+        return {}
+
+
 def build_release_cards(asof: datetime | None = None,
-                        lookback_days: int = 10) -> dict:
+                        lookback_days: int = 10,
+                        prior_artifact_path: "Path | str | None" = None) -> dict:
     """Build macro-surprise cards for recent releases.
 
     The `lookback_days` parameter is now a FLOOR override only (kept for
     backward-compat); per-series windows are determined by cadence via
-    ``lookback_days_for(entry)`` (weekly=10d, monthly=45d, quarterly=95d).
-    A June CPI print therefore remains visible into early-mid July rather
-    than disappearing after 10 days.
+    ``lookback_days_for(entry)`` (weekly=14d, monthly=80d, quarterly=210d).
+    A June CPI print therefore remains visible well into August rather than
+    disappearing after 45 days.
+
+    ``prior_artifact_path``: optional path to the previously-written
+    macro_releases.json.  When a fresh FRED fetch returns an older observation
+    than what was shown in the prior artifact (e.g. a flaky/rate-limited
+    response), the prior card is kept verbatim and marked
+    ``last_good_fallback=True``.  This prevents a transient fetch regression
+    from silently shrinking the board.  Display-tier guard only — never touches
+    scores or allocations.
 
     Returns:
       {
@@ -725,6 +782,9 @@ def build_release_cards(asof: datetime | None = None,
         "n_cards": 0,
         "skipped": [],
     }
+
+    # Load prior artifact for last-good fallback (display-tier only).
+    prior_cards: dict[str, dict] = _load_prior_cards(prior_artifact_path)
 
     # Kill-criterion check: only run surprise math if ≥6 series verify
     fetched_entries: list[tuple[dict, list[dict]]] = []
@@ -755,26 +815,91 @@ def build_release_cards(asof: datetime | None = None,
             result["n_fetched"], len(RELEASE_REGISTRY),
         )
         result["kill_criterion_triggered"] = True
+        # Even under kill-criterion: rescue any prior cards that are still within
+        # their lookback window so the board doesn't go blank on a bad FRED run.
+        rescued: list[dict] = []
+        for key, prior_card in prior_cards.items():
+            prior_date = prior_card.get("latest_date", "")
+            entry = next((e for e in RELEASE_REGISTRY if e["key"] == key), None)
+            if entry is None:
+                continue
+            series_window = max(lookback_days, lookback_days_for(entry))
+            if _within_lookback(prior_date, asof, series_window):
+                rescued_card = dict(prior_card)
+                rescued_card["last_good_fallback"] = True
+                rescued.append(rescued_card)
+        if rescued:
+            log.warning(
+                "macro_surprise: rescued %d prior cards under kill-criterion",
+                len(rescued),
+            )
+            result["cards"] = rescued
+            result["n_cards"] = len(rescued)
+            result["last_good_rescued"] = len(rescued)
         return result
 
     # Build cards — use tiered per-series lookback (cadence-keyed)
     cards: list[dict] = []
     for entry, records in fetched_entries:
+        key = entry["key"]
         try:
             surprise = _surprise_for_series(records, entry, asof)
             if surprise is None:
                 continue
-            # Per-series window: weekly=10d, monthly=45d, quarterly=95d.
+            # Per-series window: weekly=14d, monthly=80d, quarterly=210d.
             # The `lookback_days` param is honoured as a minimum floor so callers
             # can pass a smaller value for testing; in production pass the default.
             series_window = max(lookback_days, lookback_days_for(entry))
-            if not _within_lookback(surprise["latest_date"], asof, series_window):
+
+            # Last-good fallback: if the freshly-fetched latest_date is OLDER
+            # than what the prior artifact showed for this series, a transient
+            # FRED regression is silently shrinking the board.  Keep the prior
+            # card (marked last_good_fallback=True) instead of dropping the card.
+            fresh_date = surprise.get("latest_date", "")
+            prior_card = prior_cards.get(key)
+            if prior_card:
+                prior_date = prior_card.get("latest_date", "")
+                if prior_date and fresh_date and fresh_date < prior_date:
+                    log.warning(
+                        "macro_surprise: %s fresh latest_date %s < prior %s — "
+                        "keeping prior card (last_good_fallback)",
+                        key, fresh_date, prior_date,
+                    )
+                    fallback = dict(prior_card)
+                    fallback["last_good_fallback"] = True
+                    # Still apply lookback filter to the prior date
+                    if _within_lookback(prior_date, asof, series_window):
+                        fallback["lookback_days"] = series_window
+                        cards.append(fallback)
+                    continue  # do not emit the stale fresh card
+
+            if not _within_lookback(fresh_date, asof, series_window):
                 continue
             # Expose the effective window so the board can display it accurately.
             surprise["lookback_days"] = series_window
             cards.append(surprise)
         except Exception as e:  # noqa: BLE001 — degrade, never raise
-            log.warning("macro_surprise: card build failed for %s (%s)", entry["key"], e)
+            log.warning("macro_surprise: card build failed for %s (%s)", key, e)
+
+    # Completeness rescue: a series whose fetch failed outright (or whose surprise
+    # math returned None) never reaches the loop above, so the fresh_date<prior_date
+    # branch cannot fire.  Invariant: a card present in the prior artifact and still
+    # within its lookback window never vanishes unless replaced by fresher data.
+    _have = {c.get("release") for c in cards}
+    for key, prior_card in prior_cards.items():
+        if key in _have:
+            continue
+        entry = next((e for e in RELEASE_REGISTRY if e["key"] == key), None)
+        if entry is None:
+            continue
+        series_window = max(lookback_days, lookback_days_for(entry))
+        if _within_lookback(prior_card.get("latest_date", ""), asof, series_window):
+            log.warning("macro_surprise: %s missing from fresh fetch — keeping prior "
+                        "card (last_good_fallback)", key)
+            fallback = dict(prior_card)
+            fallback["last_good_fallback"] = True
+            fallback["lookback_days"] = series_window
+            cards.append(fallback)
 
     result["cards"] = cards
     result["n_cards"] = len(cards)

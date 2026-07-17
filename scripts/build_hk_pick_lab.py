@@ -637,28 +637,77 @@ def _fire_all_hk_books(
 # ------------------------------------------------------------------ grade pass (HKPL-R4 halt law) ---
 
 
+def _build_hk_close_panel(
+    hsi_closes: Optional[pd.Series],
+    closes_by_ticker: dict[str, pd.Series],
+) -> pd.DataFrame:
+    """Build a close panel indexed on the ^HSI benchmark calendar.
+
+    ^HSI calendar is authoritative for HK; each fired ticker is a column.
+    Tickers halted on a session have NaN — null-honest per grade.py spec §4
+    (ticker absent from panel → ungradeable at that horizon).
+    HK stores carry only close+volume (no high/low), so high_panel/low_panel
+    are not built here; grade_fires() is called with high_panel=None.
+
+    Returns DataFrame[DatetimeIndex x ticker] or empty DataFrame.
+    """
+    if hsi_closes is not None and not hsi_closes.empty:
+        date_index: pd.DatetimeIndex = pd.DatetimeIndex(hsi_closes.index).sort_values()
+    else:
+        all_dates: set[pd.Timestamp] = set()
+        for s in closes_by_ticker.values():
+            all_dates.update(s.index)
+        date_index = pd.DatetimeIndex(sorted(all_dates))
+
+    if len(date_index) == 0:
+        return pd.DataFrame(index=pd.DatetimeIndex([]))
+
+    cols: dict[str, pd.Series] = {}
+    for ticker, series in closes_by_ticker.items():
+        cols[ticker] = series.reindex(date_index)
+    if hsi_closes is not None:
+        cols[_HSI_TICKER] = hsi_closes.reindex(date_index)
+
+    return pd.DataFrame(cols, index=date_index)
+
+
 def _hk_grade_pass(
     fires: list[dict],
     grades_existing: list[dict],
     asof: str,
     hsi_closes: Optional[pd.Series],
 ) -> int:
-    """Grade matured HK fires per HKPL-R4 halt law.
+    """Grade matured HK fires via the shared grade_fires() engine (HKPL-R4).
 
-    fill_basis = "close" (next HK session close).
-    Halt law: if exec session has no print, fill at first traded session within
-    5 sessions; if none found, fire is halt_voided (counter incremented on
-    the fire row in-place).
-    A name halted >5 consecutive inside a grade window grades to last trade
-    with halted=true — never silent ffill.
-    Primary ruler: ^HSI excess. Absolute return also recorded.
+    Routes all HK fires through engine.pick_lab.grade.grade_fires() with a panel
+    indexed on the ^HSI benchmark calendar so horizon windows are comparable
+    across all tickers in the same book.
+
+    Halt law (HKPL-R4):
+    (a) If the exec session has no print: fill at the first traded session within
+        5 sessions (fill_basis='close_halt_delayed', halted=True).  If no print
+        within 5 sessions: fire is VOIDED (halt_voided counter, never graded).
+    (b) A name halted through a grade-window target session grades to last trade
+        with halted=True — never silent ffill.
+
+    Pre-processing: resolve_exec_session(fill_window=5) pre-scans fires before
+    the grade pass.  'void' fires are excluded and halt_voided counter incremented.
+    'deferred' fires are left in for grade_fires to skip-retry later.
+    grade_fires is called with exec_fill_window=5 and halt_grade_to_last_trade=True.
+
+    Post-processing: rows whose exec_date != natural exec session get
+    fill_basis='close_halt_delayed' and halted=True; normal rows get
+    fill_basis='close' and halted as set by grade_fires (default False).
+
+    HK stores carry close+volume only (no high/low) → high_panel=None.
+    Sector-relative excess is null (CN/HK have no GICS ETF map; ret_rel_sector=null).
     Returns count of new grade rows written.
     """
     if not _IS_ASIA_LANE:
         log.info("hk_pick_lab: CN_LANE!='asia' — grade pass is a no-op (HKPL-R8)")
         return 0
 
-    from engine.pick_lab.grade import ENTRY_HORIZONS
+    from engine.pick_lab.grade import grade_fires, resolve_exec_session, _next_session
     from engine.pick_lab.ledger import GRADE_KEY, append_grades
     from engine.pick_lab.profile import HK_PROFILE
 
@@ -666,7 +715,7 @@ def _hk_grade_pass(
         tuple(g.get(f) for f in GRADE_KEY) for g in grades_existing
     }
 
-    # Fired tickers — load close series only for them (never full-universe scan)
+    # Load close series for fired tickers only (never full-universe scan)
     fired_tickers = {f.get("ticker", "") for f in fires if f.get("ticker")}
     closes_by_ticker: dict[str, pd.Series] = {}
     for ticker in fired_tickers:
@@ -674,217 +723,115 @@ def _hk_grade_pass(
         if series is not None:
             closes_by_ticker[ticker] = series
 
-    # Build a unified trading date index from all available HK close series + ^HSI
-    all_dates: set[pd.Timestamp] = set()
-    for s in closes_by_ticker.values():
-        all_dates.update(s.index)
-    if hsi_closes is not None:
-        all_dates.update(hsi_closes.index)
-    date_index = pd.DatetimeIndex(sorted(all_dates))
-
-    graded_at = datetime.now(tz=timezone.utc).isoformat()
-    new_grades: list[dict] = []
-
-    # Load and merge persisted halt outcomes so cumulative counter is honest
+    # Load persisted halt outcomes and apply to fire rows in-place
     halt_outcomes = _load_halt_outcomes()
     _apply_halt_outcomes(fires, halt_outcomes)
 
+    # Build close panel on ^HSI calendar; HK stores have no high/low
+    close_panel = _build_hk_close_panel(hsi_closes, closes_by_ticker)
+
+    # Build date index for resolve_exec_session (use panel or benchmark)
+    if not close_panel.empty:
+        date_index = pd.DatetimeIndex(close_panel.index).sort_values()
+    elif hsi_closes is not None and not hsi_closes.empty:
+        date_index = pd.DatetimeIndex(hsi_closes.index).sort_values()
+    else:
+        all_dates_set: set[pd.Timestamp] = set()
+        for s in closes_by_ticker.values():
+            all_dates_set.update(s.index)
+        date_index = pd.DatetimeIndex(sorted(all_dates_set))
+
+    # Pre-scan: resolve exec session for each fire that hasn't been halt_voided yet.
+    # 'void' → exclude from grading, increment halt_voided counter.
+    # 'deferred' → leave in (grade_fires will silently skip-retry).
+    # Also record natural_exec_date per fire key for post-processing stamp.
+    _FILL_WINDOW = 5
+    natural_exec_by_key: dict[tuple, str] = {}  # (engine_id, ticker, fire_date) → natural_exec_date str
+
     for fire in fires:
-        engine_id = fire.get("engine_id", "")
+        if fire.get("halt_voided"):
+            continue  # already marked from a previous night's sidecar
+
         ticker = str(fire.get("ticker", ""))
         fire_date_raw = fire.get("fire_date")
-
         try:
             fire_date = pd.Timestamp(fire_date_raw)
         except Exception:
             continue
 
-        # Exec date = next trading session after fire_date (HKPL-R4)
-        future = date_index[date_index > fire_date]
-        if len(future) == 0:
-            continue
-        exec_date = future[0]
+        # Natural exec is always the first session after fire_date
+        natural_exec = _next_session(fire_date, date_index)
+        if natural_exec is not None:
+            fkey = (fire.get("engine_id", ""), ticker, str(fire_date.date()))
+            natural_exec_by_key[fkey] = str(natural_exec.date())
 
-        # Halt law (HKPL-R4): find fill price at exec or within 5 sessions
-        ticker_series = closes_by_ticker.get(ticker)
-        exec_price: Optional[float] = None
-        fill_basis: str = "unavailable"
-        halted: bool = False
-        halt_voided: bool = False
-
-        if ticker_series is not None and not ticker_series.empty:
-            if exec_date in ticker_series.index:
-                v = ticker_series[exec_date]
-                try:
-                    exec_price = float(v) if not pd.isna(v) else None
-                    if exec_price is not None:
-                        fill_basis = "close"
-                except (TypeError, ValueError):
-                    exec_price = None
-
-            if exec_price is None:
-                # Halt law: search forward up to _HALT_FILL_WINDOW sessions
-                exec_pos_arr = date_index.searchsorted(exec_date, side="left")
-                exec_pos = int(exec_pos_arr)
-                found_fill = False
-                for offset in range(1, _HALT_FILL_WINDOW + 1):
-                    pos = exec_pos + offset
-                    if pos >= len(date_index):
-                        break
-                    cand_date = date_index[pos]
-                    if cand_date in ticker_series.index:
-                        v = ticker_series[cand_date]
-                        try:
-                            cand_price = float(v) if not pd.isna(v) else None
-                        except (TypeError, ValueError):
-                            cand_price = None
-                        if cand_price is not None:
-                            exec_price = cand_price
-                            exec_date = cand_date
-                            fill_basis = "close_halt_delayed"
-                            halted = True
-                            found_fill = True
-                            break
-                if not found_fill:
-                    halt_voided = True
-                    # Update fire row in-place (so scoreboard can count halt_voided)
-                    fire["halt_voided"] = True
-                    # Persist to sidecar so cumulative counter is honest across nights
-                    _hv_key = f"{engine_id}\x1c{ticker}\x1c{str(fire_date.date())}"
-                    halt_outcomes[_hv_key] = True
-                    log.debug(
-                        "hk_pick_lab: grade — %s/%s halt-voided (no print within %d sessions)",
-                        engine_id, ticker, _HALT_FILL_WINDOW,
-                    )
-                    continue
-
-        if exec_price is None:
-            log.debug("hk_pick_lab: grade — %s/%s no exec_price at %s; skip", engine_id, ticker, exec_date)
+        # Use the panel to resolve exec (covers halt fill window)
+        if close_panel.empty:
+            # No panel — can't resolve exec for any fire
             continue
 
-        # Update fire row exec stamps
-        fire["exec_date"] = str(exec_date.date())
-        fire["halted"] = halted
-        fire["halt_voided"] = halt_voided
+        res = resolve_exec_session(ticker, fire_date, date_index, close_panel, _FILL_WINDOW)
+        if res[0] == "void":
+            fire["halt_voided"] = True
+            _hv_key = f"{fire.get('engine_id','')}\x1c{ticker}\x1c{str(fire_date.date())}"
+            halt_outcomes[_hv_key] = True
+            log.debug(
+                "hk_pick_lab: grade — %s/%s halt-voided (no print within %d sessions)",
+                fire.get("engine_id", ""), ticker, _FILL_WINDOW,
+            )
+        # 'deferred' and 'resolved' are left in fires list for grade_fires to handle
 
-        # Use ticker's own trading calendar for horizon counting
-        ticker_index = ticker_series.index if ticker_series is not None else date_index
-
-        for h in ENTRY_HORIZONS:
-            grade_key = (engine_id, ticker, str(fire_date.date()), h)
-            if grade_key in already_graded:
-                continue
-
-            exec_pos_arr = ticker_index.searchsorted(exec_date, side="left")
-            exec_pos = int(exec_pos_arr)
-            target_pos = exec_pos + h
-            if target_pos >= len(ticker_index):
-                continue  # not yet elapsed
-
-            target_date = ticker_index[target_pos]
-
-            # Check if the name was halted >5 consecutive sessions in the grade window
-            # (HKPL-R4: grades to last trade with halted=true — never silent ffill)
-            max_consec_halt = 0
-            cur_consec = 0
-            for wp in range(exec_pos, target_pos + 1):  # +1 so grade session is included (HKPL-R4)
-                if wp >= len(ticker_index):
-                    break
-                d = ticker_index[wp]
-                if d not in ticker_series.index or pd.isna(ticker_series[d]):
-                    cur_consec += 1
-                    max_consec_halt = max(max_consec_halt, cur_consec)
-                else:
-                    cur_consec = 0
-
-            close_h: Optional[float] = None
-            graded_halted = False
-            if target_date in ticker_series.index:
-                v = ticker_series[target_date]
-                try:
-                    close_h = float(v) if not pd.isna(v) else None
-                except (TypeError, ValueError):
-                    pass
-
-            if close_h is None:
-                # Find last traded close if halted >5 consecutive
-                if max_consec_halt > 5:
-                    # Grade to last available trade in window
-                    for bp in range(target_pos, exec_pos, -1):
-                        if bp >= len(ticker_index):
-                            continue
-                        bd = ticker_index[bp]
-                        if bd in ticker_series.index and not pd.isna(ticker_series[bd]):
-                            try:
-                                close_h = float(ticker_series[bd])
-                                graded_halted = True
-                                target_date = bd
-                                break
-                            except (TypeError, ValueError):
-                                pass
-                if close_h is None:
-                    continue  # skip — elapsed but price unavailable
-
-            ret_abs = (close_h - exec_price) / exec_price
-
-            # ^HSI excess
-            ret_excess: Optional[float] = None
-            if hsi_closes is not None:
-                try:
-                    if exec_date in hsi_closes.index and target_date in hsi_closes.index:
-                        hsi_exec = float(hsi_closes[exec_date])
-                        hsi_h = float(hsi_closes[target_date])
-                        if hsi_exec and hsi_h:
-                            ret_excess = ret_abs - (hsi_h - hsi_exec) / hsi_exec
-                except Exception:
-                    pass
-
-            # MFE/MAE over mfe_mae_sessions (25) from exec (HKPL-R3 descriptive window)
-            # Computed when exec+25 has fully elapsed; null otherwise (honest null).
-            mfe: Optional[float] = None
-            mae: Optional[float] = None
-            _mfe_window = HK_PROFILE.mfe_mae_sessions  # 25
-            _mfe_end_pos = exec_pos + _mfe_window
-            if ticker_series is not None and _mfe_end_pos < len(ticker_index):
-                try:
-                    _window_dates = ticker_index[exec_pos + 1: _mfe_end_pos + 1]
-                    _closes_w = ticker_series.reindex(_window_dates).dropna()
-                    if not _closes_w.empty and exec_price:
-                        _rets_w = (_closes_w - exec_price) / exec_price
-                        mfe = round(float(_rets_w.max()), 6)
-                        mae = round(float(_rets_w.min()), 6)
-                except Exception:
-                    pass
-
-            row: dict = {
-                "engine_id": engine_id,
-                "ticker": ticker,
-                "fire_date": str(fire_date.date()),
-                "horizon": h,
-                "exec_date": str(exec_date.date()),
-                "exec_price": round(exec_price, 4),
-                "fill_basis": fill_basis,
-                "halted": graded_halted,
-                "ret_abs": round(ret_abs, 6),
-                "ret_excess_spy": round(ret_excess, 6) if ret_excess is not None else None,
-                "mfe": mfe,
-                "mae": mae,
-                "benchmark_ticker": _HSI_TICKER,
-                "matured": True,
-                "graded_at": graded_at,
-                "authority": "display_only",
-            }
-            new_grades.append(row)
-            already_graded.add(grade_key)
-
-    # Persist halt outcomes sidecar so cumulative counter survives across nights (HKPL-R4)
     try:
         _save_halt_outcomes(halt_outcomes)
     except Exception as _ho_exc:
         log.warning("hk_pick_lab: halt outcomes sidecar write failed (%s) — non-fatal", _ho_exc)
 
-    if new_grades:
-        written = append_grades(new_grades, hold_thesis=False, profile=HK_PROFILE)
+    if close_panel.empty:
+        log.info("hk_pick_lab: close panel empty — no grades this run")
+        return 0
+
+    spy_closes = hsi_closes if hsi_closes is not None else pd.Series(dtype=float)
+
+    # Exclude halt_voided fires from the grade pass
+    gradeable_fires = [f for f in fires if not f.get("halt_voided")]
+
+    new_grade_rows, n_ung = grade_fires(
+        gradeable_fires,
+        close_panel,
+        spy_closes,
+        sector_closes=None,       # HK has no GICS ETF map; ret_rel_sector stays null
+        hold_thesis=False,
+        already_graded=already_graded,
+        high_panel=None,          # HK stores carry close+volume only (no high/low)
+        low_panel=None,
+        exec_fill_window=_FILL_WINDOW,
+        halt_grade_to_last_trade=True,
+    )
+
+    if n_ung:
+        log.info("hk_pick_lab: %d fires ungradeable (ticker absent/halted in panel)", n_ung)
+
+    # Post-process: stamp HK-specific schema fields grade.py does not emit.
+    # Rows whose exec_date != natural exec session were delayed by a halt:
+    #   fill_basis='close_halt_delayed', halted=True (override grade.py's halted flag).
+    # Normal rows: fill_basis='close', halted as grade.py set (default False).
+    for row in new_grade_rows:
+        if row.get("kind") == "path":
+            row["benchmark_ticker"] = _HSI_TICKER
+            continue
+        fkey = (row.get("engine_id", ""), row.get("ticker", ""), row.get("fire_date", ""))
+        natural_exec_str = natural_exec_by_key.get(fkey)
+        row_exec_str = row.get("exec_date", "")
+        if natural_exec_str and row_exec_str and row_exec_str != natural_exec_str:
+            row["fill_basis"] = "close_halt_delayed"
+            row["halted"] = True
+        else:
+            row["fill_basis"] = "close"
+            # halted already set by grade_fires (halt_grade_to_last_trade=True)
+        row["benchmark_ticker"] = _HSI_TICKER
+
+    if new_grade_rows:
+        written = append_grades(new_grade_rows, hold_thesis=False, profile=HK_PROFILE)
         log.info("hk_pick_lab: wrote %d new grade rows", written)
         return written
 
@@ -960,6 +907,8 @@ def _build_recent_fires_with_grades(
 
     grade_map: dict[tuple, dict] = {}
     for g in grades:
+        if g.get("kind") == "path":
+            continue  # path rows carry path metrics, not ret — skip
         if g.get("engine_id") != engine_id:
             continue
         k = (g.get("ticker"), g.get("fire_date"))

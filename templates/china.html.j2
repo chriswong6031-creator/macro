@@ -12,7 +12,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% if mode == 'stocks' %}{{ t('China A-Share Stock Dashboard', '中国A股个股看板') }}{% else %}{{ t('China A-Share Regime', '中国A股周期') }}{% endif %} — {{ latest.date }}</title>
+<title>{% if mode == 'stocks' %}China A-Share Stock Dashboard{% else %}China A-Share Regime{% endif %} — {{ latest.date }}</title>
 {% if mode == 'stocks' %}{% set seo_title = 'China A-Share Stock Dashboard — Washout · Base · Fresh Turn | Mastermind' %}{% set seo_desc = 'China A-share washout-to-base entry board: names forming a durable low, with fresh 3D/2D confluence turns (T1–T4 cascade). Ranked by buy-readiness, updated daily.' %}{% set seo_path = 'china_stocks.html' %}{% else %}{% set seo_title = 'China A-Share Market Dashboard — Regime, Sectors and Flows | Mastermind' %}{% set seo_desc = 'Track the China A-share market regime — sector rotation, capital-flow velocity, drawdown risk and cycle position on the mainland market.' %}{% set seo_path = 'china.html' %}{% endif %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
@@ -578,6 +578,25 @@
   .st-chip-knife { background:color-mix(in srgb,var(--down) 12%,transparent);
     color:var(--down); border:1px solid color-mix(in srgb,var(--down) 25%,transparent); }
 
+  /* ── W-FCT: stage facet bar (grid view) — browse one shelf at a time ────
+     stgf- prefix on purpose: .stf-* belongs to the stocktable.js filter chrome
+     (it already ships a .stf-bar) — do not reuse that prefix here. */
+  .stgf-bar { margin:2px 0 12px; }
+  .stgf-n { display:inline-block; margin-left:6px; font-size:10px; font-weight:800;
+    padding:1px 7px; border-radius:999px; vertical-align:1px;
+    background:color-mix(in srgb,var(--muted) 14%,transparent); color:var(--muted); }
+  .sb-seg button[aria-selected="true"] .stgf-n {
+    background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  /* facet visibility — tagged groups not matching the active facet hide;
+     facet "all" matches no rule so everything stays visible */
+  #standouts[data-stfacet="entry"] .nb-grid-section [data-stf]:not([data-stf~="entry"]),
+  #standouts[data-stfacet="rip"]   .nb-grid-section [data-stf]:not([data-stf~="rip"]),
+  #standouts[data-stfacet="early"] .nb-grid-section [data-stf]:not([data-stf~="early"]),
+  #standouts[data-stfacet="ran"]   .nb-grid-section [data-stf]:not([data-stf~="ran"]) { display:none; }
+  /* the ripening shelf is shared by two facets — split its zones */
+  #standouts[data-stfacet="rip"] .rip-zone:not(.rz-ready) { display:none; }
+  #standouts[data-stfacet="early"] .rip-zone.rz-ready { display:none; }
+
   /* filter row */
   /* filter-row + column-chooser chrome (.stf-*) is injected by stocktable.js since v3 */
 
@@ -710,12 +729,23 @@
   body.page-china .cnx-live-pill.on{opacity:1;color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
   body.page-china .cnx-live-pill.on .d{background:var(--up);box-shadow:0 0 5px var(--up)}
   body.page-china .cnx-gauge-row{display:flex;gap:18px;align-items:center;margin-top:10px}
-  body.page-china .cnx-gauge-svg{flex:0 0 110px}
+  body.page-china .cnx-gauge-svg{flex:0 0 110px;width:110px;height:72px;overflow:visible}
   /* gauge fill colour follows the .ms-{color} class (which the live lane swaps) so it
      never shows a red arc next to a green/yellow live verdict. (Fill fraction is baked.) */
   body.page-china .ms-green .cnx-gauge-fill{stroke:var(--up)}
   body.page-china .ms-yellow .cnx-gauge-fill{stroke:var(--warn)}
   body.page-china .ms-red .cnx-gauge-fill{stroke:var(--down)}
+  /* needle accents follow the same .ms-* class as the arc (US idiom: hub ring +
+     core + glowing tip dot in the verdict colour; stem is theme-text) */
+  body.page-china .cnx-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
+  body.page-china .cnx-needle-core,body.page-china .cnx-needle-tip{fill:var(--warn)}
+  body.page-china .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--warn))}
+  body.page-china .ms-green .cnx-needle-hub{stroke:var(--up)}
+  body.page-china .ms-green .cnx-needle-core,body.page-china .ms-green .cnx-needle-tip{fill:var(--up)}
+  body.page-china .ms-green .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--up))}
+  body.page-china .ms-red .cnx-needle-hub{stroke:var(--down)}
+  body.page-china .ms-red .cnx-needle-core,body.page-china .ms-red .cnx-needle-tip{fill:var(--down)}
+  body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
   body.page-china .cnx-score-line{display:flex;align-items:baseline;gap:10px}
   body.page-china .cnx-big-score{font-size:52px;font-weight:750;line-height:1;color:var(--warn)}
   body.page-china .ms-green .cnx-big-score{color:var(--up)}
@@ -1247,18 +1277,25 @@
   <div class="cnx-card cnx-hero{{ ' cnx-hero-solo' if not (ms_history and ms_history|length >= 2) else '' }} ms-front ms ms-{{ _ms_color }}" style="padding:0">
     <div class="cnx-hero-left">
       <span class="cnx-regime-pill"><span class="dot"></span>
-        {{ t(latest.quad_name, latest.quad_name) }}<span style="opacity:.55"> · {{ t(latest.cycle_tag or 'mid', latest.cycle_tag or 'mid') }}</span></span>
+        {{ td(latest.quad_name) }}<span style="opacity:.55"> · {{ td(latest.cycle_tag or 'mid') }}</span></span>
       <span id="ms-live-pill" class="cnx-live-pill"><span class="d"></span>
         <span class="l-en">LIVE</span><span class="l-zh">实时</span>
         <span id="ms-date" style="margin-left:4px">{{ latest.date }}</span></span>
       <div class="cnx-gauge-row">
-        {# semi-circle gauge SVG — needle angle based on score 0-100 #}
-        {% set _ang = (_ms_score / 100) %}
-        {% set _cx = 12 + (_ang * 96) %}
-        {% set _cy = 68 - (40 * (1 - ((_ang - 0.5) * (_ang - 0.5)) * 4)) %}
+        {# semi-circle gauge — arc centre (60,68) r=50; needle rotates around the
+           centre: score 0→-90° (left) … 100→+90° (right), US mx5 idiom #}
+        {% set _needle_deg = ((_ms_score * 1.8) - 90) | round(1) %}
         <svg class="cnx-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
           <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
           <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
+          {# needle (US idiom): stem + hub + accent tip dot; colours are CLASS-driven
+             via .ms-* so they always match the verdict, both themes #}
+          <g class="cnx-gauge-needle" transform="rotate({{ _needle_deg }} 60 68)">
+            <line x1="60" y1="68" x2="60" y2="31" stroke="var(--text)" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+            <circle class="cnx-needle-hub" cx="60" cy="68" r="5"/>
+            <circle class="cnx-needle-core" cx="60" cy="68" r="1.8"/>
+            <circle class="cnx-needle-tip" cx="60" cy="30" r="2.6"/>
+          </g>
         </svg>
         <div>
           <div class="cnx-score-line"><span id="ms-score" class="cnx-big-score">{{ _ms_score }}</span><span id="ms-word" class="cnx-verdict">{{ t(_ms_label, _ms_label_zh) }} <span class="arr">▶</span></span></div>
@@ -1482,15 +1519,18 @@
           <stop offset="0" stop-color="var(--down)"/><stop offset=".5" stop-color="var(--warn)"/><stop offset="1" stop-color="var(--up)"/>
         </linearGradient></defs>
         <path d="M18 96 A82 82 0 0 1 182 96" fill="none" stroke="url(#cnx-dg)" stroke-width="11" stroke-linecap="round" opacity=".8"/>
-        {# needle based on fe_score 0-100 or 50 default #}
-        {% set _fe_ang = ((_fe_score or 50) / 100) %}
-        {% set _nax = 100 + 70 * (2 * _fe_ang - 1) * 0.866 %}
-        {% set _nay = 96 - 70 * (1 - (2 * _fe_ang - 1) * (2 * _fe_ang - 1)) | abs %}
-        {# needle y: map 0-1 angle to arc; simple linear approximation #}
-        {% set _ny = (96 - 62 * (1 - (2*_fe_ang - 1)*(2*_fe_ang - 1)))|round(1) %}
-        {# only draw the needle when we have a real fear/euphoria score — otherwise a
-           default center needle contradicts the band word shown below (e.g. "Mania"). #}
-        {% if _fe_score is not none %}<line x1="100" y1="96" x2="{{ _nax | round(1) }}" y2="{{ _ny }}" stroke="var(--text)" stroke-width="2.4"/>{% endif %}
+        {# needle position: the fear/euphoria score when scored; else the turnover-heat
+           percentile — the SAME series the fallback band word ("Mania") below comes
+           from, so the needle can never contradict the word. Hidden only when
+           neither exists. Exact rotation around the arc centre (100,96), 0→-90°. #}
+        {% set _to_pct = (I.turnover.pctile | float) if (I.turnover and I.turnover.get('pctile') is not none) else none %}
+        {% set _fe_pos = _fe_score if _fe_score is not none else _to_pct %}
+        {% if _fe_pos is not none %}
+        <g transform="rotate({{ (((_fe_pos | float) * 1.8) - 90) | round(1) }} 100 96)">
+          <line x1="100" y1="96" x2="100" y2="32" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>
+          <circle cx="100" cy="31" r="3.2" fill="var(--text)"/>
+        </g>
+        {% endif %}
         <circle cx="100" cy="96" r="5" fill="var(--text)"/>
         <text x="16" y="106" font-size="9" fill="var(--muted)">{{ t('PANIC','恐慌') }}</text>
         <text x="158" y="106" font-size="9" fill="var(--muted)">{{ t('EUPHORIA','亢奋') }}</text>
@@ -2361,9 +2401,9 @@
       'cap_bucket':       _nr.get('cap_bucket'),
       'days_since_signal': _nr.get('days_since_signal'),
       'washout_2w':       _nr.get('washout_2w'),
-      'macd_hist_d':      none,
-      'macd_d2':          none,
-      'macd_d3':          none,
+      'macd_hist_d':      _nr.get('macd_hist_d'),
+      'macd_d2':          _nr.get('macd_d2'),
+      'macd_d3':          _nr.get('macd_d3'),
       'imminence':        none,
       'w2_stoch':         none,
       'w2_stoch_arrow':   none,
@@ -2397,8 +2437,8 @@
       'days_since_signal': _rr.get('days_since_signal'),
       'washout_2w':       true,
       'macd_hist_d':      _rr.get('macd_hist_d'),
-      'macd_d2':          none,
-      'macd_d3':          none,
+      'macd_d2':          _rr.get('macd_d2'),
+      'macd_d3':          _rr.get('macd_d3'),
       'imminence':        _rr.get('imminence'),
       'w2_stoch':         _rr.get('w2_stoch'),
       'w2_stoch_arrow':   _rr.get('w2_stoch_arrow'),
@@ -2432,8 +2472,8 @@
       'days_since_signal': _fr.get('days_since_signal'),
       'washout_2w':       true,
       'macd_hist_d':      _fr.get('macd_hist_d'),
-      'macd_d2':          none,
-      'macd_d3':          none,
+      'macd_d2':          _fr.get('macd_d2'),
+      'macd_d3':          _fr.get('macd_d3'),
       'imminence':        _fr.get('imminence'),
       'w2_stoch':         _fr.get('w2_stoch'),
       'w2_stoch_arrow':   _fr.get('w2_stoch_arrow'),
@@ -2465,9 +2505,9 @@
       'cap_bucket':       _ranr.get('cap_bucket'),
       'days_since_signal': _ranr.get('days_since_signal'),
       'washout_2w':       false,
-      'macd_hist_d':      none,
-      'macd_d2':          none,
-      'macd_d3':          none,
+      'macd_hist_d':      _ranr.get('macd_hist_d'),
+      'macd_d2':          _ranr.get('macd_d2'),
+      'macd_d3':          _ranr.get('macd_d3'),
       'imminence':        none,
       'w2_stoch':         none,
       'w2_stoch_arrow':   none,
@@ -2488,7 +2528,25 @@
     "cap_composition": {{ (setups.get('cap_composition') or {}) | tojson }}
   }
   </script>
-  <div class="panel span12" id="standouts">
+  {# ── W-FCT: shelf partitions hoisted above the panel so the facet bar can render
+     counts and the default facet server-side. Same guards as the shelves below. #}
+  {% set _entry_rows = setups.buy | selectattr('stage', 'equalto', 'ENTRY') | list %}
+  {% set _ran_late_rows = setups.buy | selectattr('stage', 'equalto', 'RAN_LATE') | list %}
+  {# Backward compat: pre-W1 artifact where 'stage' is absent → whole board is the entry shelf. #}
+  {% if (_entry_rows | length == 0) and (_ran_late_rows | length == 0) and (setups.buy | length > 0) %}
+    {% set _entry_rows = setups.buy %}
+  {% endif %}
+  {% set _rip = setups.get('ripening') or [] %}
+  {% set _rip_ready  = (_rip | selectattr('zone','equalto','READY')  | list) if _rip else [] %}
+  {% set _rip_basing = (_rip | selectattr('zone','equalto','BASING') | list) if _rip else [] %}
+  {% set _rip_fall   = setups.get('ripening_falling') or [] %}
+  {% set _ran = setups.get('ran') or [] %}
+  {% set _n_entry = _entry_rows | length %}
+  {% set _n_rip = _rip_ready | length %}
+  {% set _n_early = (_rip_basing | length) + (_rip_fall | length) %}
+  {% set _n_ran = (_ran_late_rows | length) + (_ran | length) %}
+  {% set _stf_default = 'entry' if _n_entry else 'all' %}
+  <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}">
     <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
       {{ help("How to read this board. Each card is an A-share name that sold off hard, settled, and just turned back up (the system grades that washout → base → fresh-turn sequence, T1–T4). Score 0–100 = buy-readiness: how ready it looks to buy, not a win-rate or a guarantee. Rank puts the cleanest setups first. Two gauges show setup quality and entry timing (buy now vs wait for a pullback). It is a research shortlist, not a buy list — and its track record is still accruing.", "如何看这个榜单。每张卡片都是一只大幅回调、企稳后刚刚回升的A股（系统按 洗盘→筑底→新转向 顺序分级，T1–T4）。评分0–100＝买入就绪度：该股离买点有多近，并非胜率或保证。排序把形态最干净的排在前面。两个量表显示形态质量与入场时机（现在买还是等回调）。这是研究备选清单，而非买入清单——其成绩仍在累积。") }}
       {# W8-E: grid/table view toggle #}
@@ -2514,16 +2572,22 @@
 
     {# ── W8-E: grid section (hidden in table mode by CSS .nb-grid-section) ── #}
     <div class="nb-grid-section">
+    {# ── W-FCT: stage facet bar — filter the shelves instead of scrolling them.
+       Lives inside .nb-grid-section so table mode hides it (the table has its own
+       stage filter). Chips render only for non-empty shelves; Entry is the default
+       (falls back to All when the entry shelf is empty today). #}
+    <div class="sb-seg stgf-bar" id="st-facet-bar" role="tablist" aria-label="stage filter">
+      <button role="tab" data-facet="entry" aria-selected="{{ 'true' if _stf_default == 'entry' else 'false' }}" data-tip-en="Fresh turns that look buyable now — the main board." data-tip-zh="刚完成转向、当前最接近买点的主榜单。">🎯 {{ t('Entry', '入场') }}<span class="stgf-n">{{ _n_entry }}</span></button>
+      {% if _n_rip %}<button role="tab" data-facet="rip" aria-selected="false" data-tip-en="The turn is forming — nearest to entry, but not buyable yet." data-tip-zh="转向形成中——最接近入场，但尚不可买。">🌱 {{ t('Ripening', '蓄势中') }}<span class="stgf-n">{{ _n_rip }}</span></button>{% endif %}
+      {% if _n_early %}<button role="tab" data-facet="early" aria-selected="false" data-tip-en="Still basing or still falling — no turn yet. Watch, don't touch." data-tip-zh="仍在筑底或下跌——尚未转向。只看不动。">⏳ {{ t('Too early', '为时尚早') }}<span class="stgf-n">{{ _n_early }}</span></button>{% endif %}
+      {% if _n_ran %}<button role="tab" data-facet="ran" aria-selected="false" data-tip-en="Signal fired and the entry window passed — shown for honesty. Do not chase." data-tip-zh="信号已触发、入场窗口已过——出于诚实展示，不要追涨。">🏁 {{ t('Already ran', '信号已过') }}<span class="stgf-n">{{ _n_ran }}</span></button>{% endif %}
+      <button role="tab" data-facet="all" aria-selected="{{ 'true' if _stf_default == 'all' else 'false' }}">{{ t('All', '全部') }}<span class="stgf-n">{{ _n_entry + _n_rip + _n_early + _n_ran }}</span></button>
+    </div>
     {# ── W1-C: ENTRY SHELF ────────────────────────────────────────────────────
        Only ENTRY cards may use BUY-family language. Stage badge is the loudest element.
-       Preserves existing blend_sorted order unchanged (F3 discipline). #}
-    {% set _entry_rows = setups.buy | selectattr('stage', 'equalto', 'ENTRY') | list %}
-    {% set _ran_late_rows = setups.buy | selectattr('stage', 'equalto', 'RAN_LATE') | list %}
-    {# Backward compat: if no rows were partitioned (pre-W1 artifact where 'stage' key absent or all None),
-       fall back to showing all buy rows on the ENTRY shelf so the board degrades gracefully. #}
-    {% if (_entry_rows | length == 0) and (_ran_late_rows | length == 0) and (setups.buy | length > 0) %}
-      {% set _entry_rows = setups.buy %}
-    {% endif %}
+       Preserves existing blend_sorted order unchanged (F3 discipline).
+       Row partition (_entry_rows / _ran_late_rows sets) hoisted above the panel div — W-FCT. #}
+    <div class="stgf-grp" data-stf="entry">
     <div class="nbgrid" data-showmore-rows="3">
     {% for n in _entry_rows %}
       {% set _d = n.dir or 'caution' %}
@@ -2614,12 +2678,14 @@
       </a>
     {% endfor %}
     </div>
+    </div>{# /stgf-entry #}
 
     {# ── W1-C: RAN / LATE SHELF (buy rows — rule 2) ──────────────────────────
        These are gate-eligible names whose entry_signal says hold/extended/topping.
        Signal is live but entry timing has passed. No BUY-family language.
        Score is muted (opacity:0.45 via nb-stage-ran-card). #}
     {% if _ran_late_rows %}
+    <div class="stgf-grp" data-stf="ran">
     <div class="nb-shelf-hdr" style="margin-top:16px">
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal live — entry passed; wait for pullback. Shown for honesty, not action — do not chase.</span><span class="l-zh">信号有效但入场时机已过；等待回调。出于诚实展示 — 不要追涨。</span></span>
@@ -2697,20 +2763,17 @@
       </a>
     {% endfor %}
     </div>
+    </div>{# /stgf-ran #}
     {% endif %}
 
     {# ── W8-R1: RIPENING SHELF (three-zone lifecycle: READY / BASING / FALLING sink) ─
        Full scorecards for READY + BASING; collapsed knife-sink for FALLING.
-       NOT entry signals. No BUY-family language anywhere. #}
-    {% set _rip = setups.get('ripening') or [] %}
-    {# ── W8-R1: RIPENING three-zone shelf (READY / BASING / FALLING sink) ────────────
-       Full scorecards for READY + BASING; collapsed knife-sink for FALLING.
-       NOT an entry signal. No BUY-family words. W8-R1/R2. #}
-    {% set _rip_ready  = (_rip | selectattr('zone','equalto','READY')  | list) if _rip else [] %}
-    {% set _rip_basing = (_rip | selectattr('zone','equalto','BASING') | list) if _rip else [] %}
-    {% set _rip_fall   = setups.get('ripening_falling') or [] %}
+       NOT entry signals. No BUY-family language anywhere.
+       Zone partition (_rip / _rip_ready / _rip_basing / _rip_fall sets) hoisted
+       above the panel div — W-FCT. Tagged for BOTH facets: READY carries the
+       "rip" facet, BASING + FALLING carry "early"; CSS splits the zones. #}
     {% if _rip or _rip_fall %}
-    <div class="rip-shelf" style="margin-top:16px">
+    <div class="rip-shelf" data-stf="rip early" style="margin-top:16px">
       {# ── Shelf header ──────────────────────────────────────────────── #}
       <div class="rip-shelf-hdr">
         <span class="rip-shelf-title"><span class="l-en">RIPENING SHELF</span><span class="l-zh">筑底观察区</span></span>
@@ -2948,9 +3011,10 @@
 
     {# ── W1-C: RAN array (non-buy universe, rule 3) ───────────────────────────
        Names whose 3D/2D cross fired within 15 sessions but are now gate-ineligible.
-       Shown for honesty — do not chase. No BUY-family language. #}
-    {% set _ran = setups.get('ran') or [] %}
+       Shown for honesty — do not chase. No BUY-family language.
+       (_ran set hoisted above the panel div — W-FCT.) #}
     {% if _ran %}
+    <div class="stgf-grp" data-stf="ran">
     <div class="nb-shelf-hdr" style="margin-top:16px">
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal fired and aged out — shown for honesty, not action. Do not chase.</span><span class="l-zh">信号已触发并过期 — 出于诚实展示，不可追涨。</span></span>
@@ -2977,6 +3041,7 @@
     </div>
     {% endfor %}
     </div>
+    </div>{# /stgf-ran2 #}
     {% endif %}
 
     {% if setups.laggards %}
@@ -3223,7 +3288,10 @@
     {% if _rd_picks %}
     <div class="nbgrid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px" data-showmore-rows="2">
       {% for n in _rd_picks %}
-      <div class="nbcard nb-up" style="cursor:default">
+      {# W-FCT: whole card links to the stock's chart (china_lookup anchor —
+         theme.js reroutes these to the Terminal app), same idiom as the
+         standout ENTRY cards above. #}
+      <a class="nbcard nb-up" href="china_lookup.html#{{ n.get('ticker','') }}">
         <div class="nb-id">
           <div class="nb-tkrow">
             <span class="nb-tk">{{ n.get('ticker','') }}</span>
@@ -3254,7 +3322,7 @@
           {% set _ncp = n.get('cycle_phase') %}
           {% if _ncp %}<span class="chip c-muted" style="font-size:10px">{{ _ncp }}</span>{% endif %}
         </div>
-      </div>
+      </a>
       {% endfor %}
     </div>
     {% else %}
@@ -3269,6 +3337,9 @@
   {# Data: mtf_upturn_cn (mtf_upturn_cn.v1 artifact, built by build_china_library). #}
   {% if mode == 'stocks' and mtf_upturn_cn %}
   {% set _mtf_cn = mtf_upturn_cn %}
+  {# W-FCT: ticker → "EN / ZH" name map (built by build_china.py from the committed
+     china_search members store). Guarded — old pickled VMs may not carry the key. #}
+  {% set _mtf_names = (cn_name_by_ticker if cn_name_by_ticker is defined else none) or {} %}
   {% set _mtf_members = _mtf_cn.get('members', {}) %}
   {% set _mtf_confirmed = _mtf_cn.get('cohort', {}).get('confirmed', []) %}
   {% set _mtf_watch = _mtf_cn.get('cohort', {}).get('watch', []) %}
@@ -3323,7 +3394,7 @@
       {% set _state = _td.get('state', 'NONE') %}
       {% set _legs = _td.get('legs', {}) %}
       <tr>
-        <td class="l"><b>{{ _sym }}</b></td>
+        <td class="l"><a href="china_lookup.html#{{ _sym }}" style="color:var(--text)"><b>{{ _sym }}</b>{% set _mtf_nm = _mtf_names.get(_sym) %}{% if _mtf_nm %}<span style="display:block;font-size:9.5px;font-weight:400;color:var(--muted);white-space:normal;max-width:200px;line-height:1.3">{{ nm(_mtf_nm) }}</span>{% endif %}</a></td>
         <td>
           <span class="dash-mtf-badge {{ 'confirmed' if _state == 'UPTURN_CONFIRMED' else 'watch' if _state == 'UPTURN_WATCH' else 'none' }}">
             <span class="l-en">{{ 'CONFIRMED' if _state == 'UPTURN_CONFIRMED' else 'WATCH' if _state == 'UPTURN_WATCH' else '—' }}</span>
@@ -3351,7 +3422,7 @@
       {% set _state = _td.get('state', 'NONE') %}
       {% set _legs = _td.get('legs', {}) %}
       <tr>
-        <td class="l"><b>{{ _sym }}</b></td>
+        <td class="l"><a href="china_lookup.html#{{ _sym }}" style="color:var(--text)"><b>{{ _sym }}</b>{% set _mtf_nm = _mtf_names.get(_sym) %}{% if _mtf_nm %}<span style="display:block;font-size:9.5px;font-weight:400;color:var(--muted);white-space:normal;max-width:200px;line-height:1.3">{{ nm(_mtf_nm) }}</span>{% endif %}</a></td>
         <td>
           <span class="dash-mtf-badge {{ 'confirmed' if _state == 'UPTURN_CONFIRMED' else 'watch' if _state == 'UPTURN_WATCH' else 'none' }}">
             <span class="l-en">{{ 'CONFIRMED' if _state == 'UPTURN_CONFIRMED' else 'WATCH' if _state == 'UPTURN_WATCH' else '—' }}</span>
@@ -3698,6 +3769,21 @@ window.__CHART_SWAP__ = {
 
   /* restore persisted view */
   applyView(currentView);
+})();
+</script>
+<script>
+/* W-FCT: standout stage facet bar — grid view only; no-op when the bar is absent. */
+(function(){
+  var box = document.getElementById('standouts');
+  var bar = document.getElementById('st-facet-bar');
+  if (!box || !bar) return;
+  bar.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-facet]');
+    if (!btn) return;
+    box.setAttribute('data-stfacet', btn.getAttribute('data-facet'));
+    var bs = bar.querySelectorAll('button[data-facet]');
+    for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-selected', bs[i] === btn ? 'true' : 'false');
+  });
 })();
 </script>
 <script>

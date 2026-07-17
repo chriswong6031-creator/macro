@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
-import time
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -48,16 +48,21 @@ _SPINE_MIN_SECTORS = 4    # Shenwan L1 has ~10+ sectors; <4 = definitely truncat
 _SPINE_STALE_DAYS  = 3    # calendar days before flagging the spine asOf as stale
 
 # ── regime-leg staleness guard (W0.4) ────────────────────────────────────────
-# Maximum acceptable age (calendar days) for each de-risk leg's input data.
+# Maximum acceptable age (calendar days) for each de-risk leg's input data,
+# judged from the DATA's own newest content date (availability_date / date
+# index), never file mtime — mtime lies on CI checkouts (#2690 class), which
+# made this watchdog blind to exactly the frozen-upstream case it exists for.
 # Thresholds reflect the natural release cadence of each series:
 #   credit: monthly TSF is released ~day 16 of the following month (up to 47d gap
 #           is normal).  Flag at 60d — almost 2 calendar months without an update
 #           would indicate a stale collector rather than a normal release lag.
-#   vol:    CSI 300 daily close — stale after 7 calendar days (≈5 trading days).
-#   margin: daily margin balance — stale after 7 calendar days (≈5 trading days).
+#   vol:    CSI 300 daily close — content lags T+1 plus weekends; a CN Golden
+#           Week closure (≈8 calendar days) plus T+1 and an adjacent weekend
+#           can reach ~11d while perfectly healthy. Flag at 12d.
+#   margin: daily margin balance, published T+1 — same holiday allowance, 12d.
 # A stale leg silently pins the gate at an extreme. The staleness check surfaces
 # this so an operator can diagnose a frozen upstream collector.
-_LEG_STALE_DAYS: dict[str, int] = {"credit": 60, "vol": 7, "margin": 7}
+_LEG_STALE_DAYS: dict[str, int] = {"credit": 60, "vol": 12, "margin": 12}
 
 # ── tier-cap threshold (W0.4) ────────────────────────────────────────────────
 # When gate_factor < this value the top conviction tier (Accumulate, score ≥ 72)
@@ -90,30 +95,53 @@ _LEAD_ZH = {"leading": "领先", "lagging": "落后", "mid-pack": "中游"}
 # =========================================================================== #
 # market context — the validated regime GATE + display flow/froth context
 # =========================================================================== #
+def _newest_content_date(path: Path, column: str | None) -> date | None:
+    """Newest data date inside the parquet — `column` if given, else the index.
+    Returns None when the file/stamp is unreadable (logged; caller keeps None
+    = unknown, matching the missing-file semantics)."""
+    try:
+        df = pd.read_parquet(path, columns=[column] if column else [])
+        vals = df[column] if column else pd.Series(df.index)
+        ts = pd.to_datetime(vals, errors="coerce").dropna()
+        if ts.empty:
+            return None
+        return ts.max().date()
+    except Exception as e:  # noqa: BLE001
+        log.warning("central: cannot read content date from %s (%s)", path, e)
+        return None
+
+
 def _regime_leg_staleness(legs: list[dict] | None) -> dict[str, int | None]:
     """Return the calendar-day age of each de-risk leg's input data, keyed by leg name.
 
-    The age is read from the mtime of the source parquet file for each leg.  None means
-    the file could not be found (collector never ran or path changed).  Used by
-    _regime_anchor() to populate leg_stale and any_stale in the returned market context,
-    so the template can surface a warning banner when a frozen upstream silently pins the
-    gate. (W0.4)
+    The age is the distance from today to the DATA's own newest content date
+    (tsf availability_date / margin & close date index) — NEVER file mtime.
+    On CI runners a checkout rewrites files with mtime = checkout time, so a
+    frozen upstream always looked freshly written and this watchdog was blind
+    to exactly the silent-freeze case it exists for (#2690 class). None means
+    the file could not be found or its stamp was unreadable (collector never
+    ran or schema changed).  Used by _regime_anchor() to populate leg_stale
+    and any_stale in the returned market context, so the template can surface
+    a warning banner when a frozen upstream silently pins the gate. (W0.4)
     """
     data_dir = config.data_dir()
     # Source files for each leg — matches china_strategies._margin_derisk / _credit_derisk /
     # _vol_derisk.  Vol reads CSI-300 close from data/china/510300.SS.parquet (via the shared
     # china store, NOT the yahoo store — china_masterminds._cnclose uses store.read("china", ...)).
-    _leg_paths: dict[str, Path] = {
-        "credit": data_dir / "china_credit" / "tsf.parquet",
-        "margin": data_dir / "china_margin" / "balance.parquet",
-        "vol": data_dir / "china" / "510300.SS.parquet",
+    # Stamp column: tsf carries an explicit PIT availability_date; margin/vol are
+    # date-indexed (DIM_DATE / Date).
+    _leg_sources: dict[str, tuple[Path, str | None]] = {
+        "credit": (data_dir / "china_credit" / "tsf.parquet", "availability_date"),
+        "margin": (data_dir / "china_margin" / "balance.parquet", None),
+        "vol": (data_dir / "china" / "510300.SS.parquet", None),
     }
     ages: dict[str, int | None] = {}
-    now = time.time()
-    for key, path in _leg_paths.items():
+    today = date.today()
+    for key, (path, column) in _leg_sources.items():
         try:
             if path.exists():
-                ages[key] = int((now - path.stat().st_mtime) / 86400)
+                newest = _newest_content_date(path, column)
+                ages[key] = (today - newest).days if newest is not None else None
             else:
                 ages[key] = None
         except Exception:  # noqa: BLE001
@@ -254,14 +282,27 @@ def market_context() -> dict:
 def _rolling_over(now: dict) -> bool:
     """Fast-rollover detector (parity with engine.sector_central._rolling_over). The slow 5-phase
     label lags a sharp multi-week rollover, so a name down hard off a recent high can still read
-    'Trending'. When the oscillator slope is clearly DOWN, the daily timing ladder is in decline,
-    AND the canonical (detrended) position is stretched, the name is topping/rolling regardless of
-    a still-positive weekly MACD. Keys only off fields the cycle record already carries."""
+    'Trending'. Keys only off fields the cycle record already carries (osc_slope / pos / pos_v2 /
+    timing_state / signal / divergence) — no new data.
+
+    Two arms (2026-07 rollover-lag audit, ported from the US detector — the original single
+    arm never fired post-roll):
+      • decline arm: oscillator falling + stretched + daily ladder still IN decline.
+      • post-roll arm: oscillator in COLLAPSE (≤ −10) off an elevated position with a SELL
+        turn signal / divergence / decline ladder. The original arm demanded pos ≥ 68 AND a
+        DECLINE-family ladder — but a name that already fell has pos < 68 and its ladder has
+        moved on to bottom-hunting (TURN SIGNALED), so the override never fired on a real
+        rollover. No whipsaw on wiggles: every arm still needs a clearly falling oscillator
+        plus stretch plus a confirming fast signal."""
     slope = now.get("osc_slope") or 0.0
     pv2 = now.get("pos_v2")
-    hi = (pv2 if pv2 is not None else (now.get("pos") or 0)) >= 68.0
+    pos_eff = pv2 if pv2 is not None else (now.get("pos") or 0)
     timing = (now.get("timing_state") or "").upper()
-    return bool(slope < -3.0 and hi and timing in ("DECLINE", "ROLLING OVER"))
+    hard_dn = timing in ("DECLINE", "ROLLING OVER")
+    if slope < -3.0 and pos_eff >= 68.0 and hard_dn:
+        return True
+    confirm = bool(now.get("signal") == "SELL" or now.get("divergence") or hard_dn)
+    return bool(slope <= -10.0 and pos_eff >= 50.0 and confirm)
 
 
 def _state_score(now: dict) -> tuple[float, dict]:

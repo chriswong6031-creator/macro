@@ -6,6 +6,7 @@ const h = (html) => { const t = document.createElement("template"); t.innerHTML 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmtAge = (hrs) => hrs == null ? "—" : hrs < 1 ? `${Math.round(hrs * 60)}m` : hrs < 48 ? `${hrs.toFixed(0)}h` : `${(hrs / 24).toFixed(0)}d`;
 const fmtUSD = (n) => n == null ? "—" : "$" + Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+const fmtTokens = (n) => n == null ? "—" : Number(n) >= 1e6 ? `${(Number(n)/1e6).toFixed(2)}M` : Number(n) >= 1000 ? `${(Number(n)/1000).toFixed(1)}k` : String(Math.round(Number(n)));
 const fmtBytes = (b) => { if (b == null) return "—"; const u = ["B", "KB", "MB", "GB", "TB"]; let i = 0, n = Number(b); while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; } return n.toFixed(n < 10 && i > 0 ? 1 : 0) + " " + u[i]; };
 const fmtNum = (n) => n == null ? "—" : Number(n).toLocaleString();
 const getCookie = (name) => { const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)")); return m ? decodeURIComponent(m[1]) : null; };
@@ -1113,22 +1114,178 @@ RENDER.health = async () => {
 
 /* ---- AI COST ------------------------------------------------------------ */
 RENDER.cost = async () => {
-  const v = $("#view"); const d = await api("/api/cost");
+  const v = $("#view");
+  v.innerHTML = `<div class="sub muted">Loading AI cost data…</div>`;
+  const d = await api("/api/cost");
   if (d.error) { v.innerHTML = card("Error", `<div class="sub" style="color:var(--bad)">${esc(d.error)}</div>`); return; }
   const r = d.realized || {};
-  v.innerHTML = `
+  const m = d.measured || {};
+  const ms = m.summary || null;
+
+  // ── (a) Measured usage summary cards ────────────────────────────────────
+  const oauthNote = `<div class="sub muted" style="font-size:11px;margin-top:3px">subscription keys — API-equivalent value, not billed</div>`;
+  const hasOAuth = ms && ms.by_provider && ms.by_provider["claude_oauth"] && (ms.by_provider["claude_oauth"].calls > 0);
+
+  let measuredHtml = "";
+  if (ms) {
+    const tod = ms.today || {};
+    const d7  = ms.d7  || {};
+    const d30  = ms.d30  || {};
+    measuredHtml = `
+      <div class="section">Measured usage</div>
+      <div class="grid">
+        ${card("Today", `<div class="big">${fmtUSD(tod.usd || 0)}</div><div class="sub">${(tod.calls||0)} calls · ${fmtTokens(tod.input_tokens||0)} in / ${fmtTokens(tod.output_tokens||0)} out</div>${hasOAuth ? oauthNote : ""}`)}
+        ${card("Last 7 days", `<div class="big">${fmtUSD(d7.usd || 0)}</div><div class="sub">${(d7.calls||0)} calls · ${fmtTokens(d7.input_tokens||0)} in / ${fmtTokens(d7.output_tokens||0)} out</div>${hasOAuth ? oauthNote : ""}`)}
+        ${card("Last 30 days", `<div class="big">${fmtUSD(d30.usd || 0)}</div><div class="sub">${(d30.calls||0)} calls · ${fmtTokens(d30.input_tokens||0)} in / ${fmtTokens(d30.output_tokens||0)} out</div>${hasOAuth ? oauthNote : ""}`)}
+      </div>`;
+  } else {
+    measuredHtml = `<div class="section">Measured usage</div><div class="card sub muted">No usage ledger yet — data/ai_costs/usage.jsonl will be written as lanes record calls.</div>`;
+  }
+
+  // ── (b) By consumer / By key tables ─────────────────────────────────────
+  let consumerHtml = "";
+  if (ms && ms.by_lane && Object.keys(ms.by_lane).length) {
+    consumerHtml += `<div class="section">By consumer (30d)</div>
+      <table><thead><tr><th>Lane</th><th class="r">Calls</th><th class="r">Tokens in</th><th class="r">Tokens out</th><th class="r">Est USD</th></tr></thead><tbody>
+      ${Object.entries(ms.by_lane).map(([lane, lb]) => `<tr>
+        <td class="mono">${esc(lane)}</td>
+        <td class="r">${(lb.calls||0)}</td>
+        <td class="r">${fmtTokens(lb.input_tokens||0)}</td>
+        <td class="r">${fmtTokens(lb.output_tokens||0)}</td>
+        <td class="r">${fmtUSD(lb.usd||0)}</td>
+      </tr>`).join("")}
+      </tbody></table>`;
+  }
+  if (ms && ms.by_key && Object.keys(ms.by_key).length) {
+    consumerHtml += `<div class="section">By key (30d)</div>
+      <table><thead><tr><th>Key / env var</th><th class="r">Calls</th><th class="r">Tokens in</th><th class="r">Tokens out</th><th class="r">Est USD</th></tr></thead><tbody>
+      ${Object.entries(ms.by_key).map(([kid, kb]) => `<tr>
+        <td class="mono">${esc(kid||"—")}</td>
+        <td class="r">${(kb.calls||0)}</td>
+        <td class="r">${fmtTokens(kb.input_tokens||0)}</td>
+        <td class="r">${fmtTokens(kb.output_tokens||0)}</td>
+        <td class="r">${fmtUSD(kb.usd||0)}</td>
+      </tr>`).join("")}
+      </tbody></table>`;
+  }
+
+  // ── (c) Metabolism runs with achievements ────────────────────────────────
+  const cycleRows = (m.recent_cycles || []);
+  let cyclesHtml = "";
+  if (cycleRows.length) {
+    cyclesHtml = `<div class="section">Metabolism runs (cost per cycle)</div>
+      <table><thead><tr><th>Cycle</th><th>What it did</th><th class="r">Tokens in</th><th class="r">Tokens out</th><th class="r">Est USD</th></tr></thead><tbody>
+      ${cycleRows.map(cy => `<tr>
+        <td class="mono sub">${esc((cy.cycle_id||"").slice(0,32))}</td>
+        <td class="sub">${esc(cy.achievement || "—")}</td>
+        <td class="r">${fmtTokens(cy.input_tokens||0)}</td>
+        <td class="r">${fmtTokens(cy.output_tokens||0)}</td>
+        <td class="r">${cy.est_cost_usd != null ? fmtUSD(cy.est_cost_usd) : "—"}</td>
+      </tr>`).join("")}
+      </tbody></table>`;
+  }
+
+  // ── (d) Mastermind portfolio bot ──────────────────────────────────────────
+  const mm = m.mastermind || null;
+  let mmHtml = `<div class="section">Mastermind portfolio bot</div>`;
+  if (!mm) {
+    mmHtml += `<div class="card sub muted">No bot cost data yet — data/mastermind/cost_summary.json is written by the bot process.</div>`;
+  } else {
+    const t30 = mm.totals_30d || {};
+    mmHtml += `<div class="grid">
+      ${card("Bot 30d total", `<div class="big">${fmtUSD(t30.usd||0)}</div><div class="sub">${fmtTokens((t30.input_tokens||0)+(t30.output_tokens||0))} tokens</div>`)}
+    </div>`;
+    const byBook = t30.by_book || {};
+    if (Object.keys(byBook).length) {
+      mmHtml += `<table><thead><tr><th>Book</th><th class="r">Calls</th><th class="r">Tokens</th><th class="r">Est USD</th></tr></thead><tbody>
+        ${Object.entries(byBook).map(([book, bb]) => `<tr>
+          <td class="mono">${esc(book)}</td>
+          <td class="r">${(bb.calls||0)}</td>
+          <td class="r">${fmtTokens((bb.input_tokens||0)+(bb.output_tokens||0))}</td>
+          <td class="r">${fmtUSD(bb.usd||0)}</td>
+        </tr>`).join("")}
+        </tbody></table>`;
+    }
+    if (mm.as_of) mmHtml += `<div class="sub muted" style="margin-top:6px">as of ${esc(mm.as_of)}</div>`;
+  }
+
+  // ── (e) Raw Key Usage table (moved from Metabolism tab) ──────────────────
+  const rawKeySection = `<div class="section">Raw Key Usage (rate-limit headers)</div>
+    <div class="card" id="costKeysCard"><div class="sub muted">Loading…</div></div>`;
+
+  // ���─ (f) Legacy DeepSeek estimator ────────────────────────────────────────
+  const legacyHtml = `
+    <div class="section">DeepSeek cost estimates (estimate only)</div>
+    <div class="card sub muted" style="margin-bottom:8px">Estimate only — based on call counts × assumed token sizes, not measured token usage.</div>
     <div class="grid">
-      ${card("Est. monthly", `<div class="big">${fmtUSD(d.monthly_usd)}</div><div class="sub">~${d.assumptions.build_days_per_month} build-days/mo</div>`)}
+      ${card("Est. monthly", `<div class="big">${fmtUSD(d.monthly_usd)}</div><div class="sub">~${(d.assumptions||{}).build_days_per_month||21} build-days/mo</div>`)}
       ${card("Per build", `<div class="big">${fmtUSD(d.per_build_usd)}</div><div class="sub">${fmtUSD(d.effective_daily_usd)}/day effective</div>`)}
       ${card("Actually generated", `<div class="big">${r.stockbrief_files || 0}</div><div class="sub">stock briefs · ${r.ai_desk_theses_logged || 0} analyst calls</div>`)}
     </div>
     ${!d.deepseek_key ? `<div class="card sub" style="margin-top:12px;color:var(--warn)">No AI key set — actual spend is $0.</div>` : ""}
-    <div class="section">What's using AI</div>
+    <div class="section">What's using AI (DeepSeek)</div>
     <table><thead><tr><th>Feature</th><th>On</th><th>Model</th><th class="r">Calls/build</th><th class="r">$/build</th><th>How often</th></tr></thead><tbody>
       ${(d.components || []).map(c => `<tr><td><b>${esc(c.name)}</b><div class="sub">${esc(c.note)}</div></td>
         <td>${c.enabled ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td>
         <td class="mono">${esc(c.model)}</td><td class="r">${c.calls_per_build}</td><td class="r">${fmtUSD(c.cost_per_build)}</td><td class="sub">every ${c.interval_days}d</td></tr>`).join("")}
     </tbody></table>`;
+
+  v.innerHTML = measuredHtml + consumerHtml + cyclesHtml + mmHtml + rawKeySection + legacyHtml;
+
+  // Async raw key usage loader (same endpoint as Metabolism tab)
+  (async () => {
+    const keysCard = $("#costKeysCard");
+    if (!keysCard) return;
+    let ku;
+    try {
+      ku = await api("/api/metabolism/keys");
+    } catch (e) {
+      const kc = $("#costKeysCard");
+      if (kc) kc.innerHTML = `<div class="sub muted">Could not load key usage: ${esc(String(e))}</div>`;
+      return;
+    }
+    const kc = $("#costKeysCard");
+    if (!kc) return;
+    if (ku && ku.error) {
+      kc.innerHTML = `<div class="sub muted">${esc(ku.error)}</div>`;
+      return;
+    }
+    const rows = Array.isArray(ku) ? ku : [];
+    if (!rows.length) {
+      kc.innerHTML = `<div class="sub muted">No key usage data available.</div>`;
+      return;
+    }
+    const fmtTok = (n) => n == null ? "—" : Number(n) >= 1000 ? `${(Number(n)/1000).toFixed(1)}k` : String(n);
+    kc.innerHTML = `<table><thead><tr>
+      <th>Key ID</th><th>Enabled</th><th>Cooling</th><th>Reset hint</th>
+      <th class="r">5h est tokens</th><th class="r">5h sessions</th>
+      <th class="r">7d est tokens</th><th class="r">7d sessions</th>
+      <th>Last outcome</th><th>Reported rate-limit headers</th>
+    </tr></thead><tbody>
+    ${rows.map(k => {
+      const coolLabel = k.cooling ? (k.cool_kind ? `<span class="statpill s-warn">${esc(k.cool_kind)}</span>` : `<span class="statpill s-warn">cooling</span>`) : `<span class="statpill s-ok">ok</span>`;
+      const enabledLabel = k.enabled ? `<span class="statpill s-ok">on</span>` : `<span class="statpill s-bad">off</span>`;
+      const presentLabel = k.present ? "" : ` <span class="statpill s-mut">absent</span>`;
+      const headers = k.ratelimit_headers && typeof k.ratelimit_headers === "object"
+        ? Object.entries(k.ratelimit_headers).map(([h, hv]) => `<div class="sub mono">${esc(h)}: <b>${esc(String(hv))}</b> <span class="muted">(reported)</span></div>`).join("")
+        : `<span class="muted sub">—</span>`;
+      const displayKeyId = k.key_id === "legacy" ? "legacy (deprecated)" : (k.key_id || "—");
+      return `<tr>
+        <td class="mono">${esc(displayKeyId)}${presentLabel}</td>
+        <td>${enabledLabel}</td>
+        <td>${coolLabel}</td>
+        <td class="sub mono">${esc(k.reset_hint || "—")}</td>
+        <td class="r">${fmtTok(k.window_5h_est_tokens)} <span class="muted sub">est.</span></td>
+        <td class="r">${k.window_5h_sessions != null ? k.window_5h_sessions : "—"}</td>
+        <td class="r">${fmtTok(k.weekly_est_tokens)} <span class="muted sub">est.</span></td>
+        <td class="r">${k.weekly_sessions != null ? k.weekly_sessions : "—"}</td>
+        <td>${k.last_outcome ? `<span class="statpill ${k.last_outcome === "ok" ? "s-ok" : "s-bad"}">${esc(k.last_outcome)}</span>` : `<span class="muted sub">—</span>`}</td>
+        <td style="max-width:320px">${headers}</td>
+      </tr>`;
+    }).join("")}
+    </tbody></table>
+    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = Anthropic response header value</div>`;
+  })();
 };
 
 /* ---- CONTENT ------------------------------------------------------------ */
@@ -3202,8 +3359,7 @@ RENDER.metabolism = async () => {
     <div class="card">${orgHtml}</div>
     <div class="section">Key Pool</div>
     <div class="card">${keysHtml}</div>
-    <div class="section">Raw Key Usage (rate-limit headers)</div>
-    <div class="card" id="metKeysCard"><div class="sub muted">Loading…</div></div>
+    <div class="card sub muted" style="margin-top:4px">Raw key usage moved to the AI Cost tab.</div>
     <div class="section">Recent Metabolism Runs <span class="cnt">${(d.runs || []).length}</span></div>
     <div class="card">${runsHtml}</div>
     <div class="section">What the Loop Did</div>
@@ -3312,60 +3468,6 @@ RENDER.metabolism = async () => {
 
   // Live-loop strip poll (20s interval while on metabolism tab)
   startLoopPoll("metabolism", "loopStripWrap", false);
-
-  // Async Key Usage loader (V10)
-  (async () => {
-    const keysCard = $("#metKeysCard");
-    if (!keysCard) return;
-    let ku;
-    try {
-      ku = await api("/api/metabolism/keys");
-    } catch (e) {
-      const kc = $("#metKeysCard");
-      if (kc) kc.innerHTML = `<div class="sub muted">Could not load key usage: ${esc(String(e))}</div>`;
-      return;
-    }
-    const kc = $("#metKeysCard");
-    if (!kc) return;
-    if (ku && ku.error) {
-      kc.innerHTML = `<div class="sub muted">${esc(ku.error)}</div>`;
-      return;
-    }
-    const rows = Array.isArray(ku) ? ku : [];
-    if (!rows.length) {
-      kc.innerHTML = `<div class="sub muted">No key usage data available.</div>`;
-      return;
-    }
-    const fmtTokens = (n) => n == null ? "—" : Number(n) >= 1000 ? `${(Number(n)/1000).toFixed(1)}k` : String(n);
-    kc.innerHTML = `<table><thead><tr>
-      <th>Key ID</th><th>Enabled</th><th>Cooling</th><th>Reset hint</th>
-      <th class="r">5h est tokens</th><th class="r">5h sessions</th>
-      <th class="r">7d est tokens</th><th class="r">7d sessions</th>
-      <th>Last outcome</th><th>Reported rate-limit headers</th>
-    </tr></thead><tbody>
-    ${rows.map(k => {
-      const coolLabel = k.cooling ? (k.cool_kind ? `<span class="statpill s-warn">${esc(k.cool_kind)}</span>` : `<span class="statpill s-warn">cooling</span>`) : `<span class="statpill s-ok">ok</span>`;
-      const enabledLabel = k.enabled ? `<span class="statpill s-ok">on</span>` : `<span class="statpill s-bad">off</span>`;
-      const presentLabel = k.present ? "" : ` <span class="statpill s-mut">absent</span>`;
-      const headers = k.ratelimit_headers && typeof k.ratelimit_headers === "object"
-        ? Object.entries(k.ratelimit_headers).map(([h, hv]) => `<div class="sub mono">${esc(h)}: <b>${esc(String(hv))}</b> <span class="muted">(reported)</span></div>`).join("")
-        : `<span class="muted sub">—</span>`;
-      return `<tr>
-        <td class="mono">${esc(k.key_id || "—")}${presentLabel}</td>
-        <td>${enabledLabel}</td>
-        <td>${coolLabel}</td>
-        <td class="sub mono">${esc(k.reset_hint || "—")}</td>
-        <td class="r">${fmtTokens(k.window_5h_est_tokens)} <span class="muted sub">est.</span></td>
-        <td class="r">${k.window_5h_sessions != null ? k.window_5h_sessions : "—"}</td>
-        <td class="r">${fmtTokens(k.weekly_est_tokens)} <span class="muted sub">est.</span></td>
-        <td class="r">${k.weekly_sessions != null ? k.weekly_sessions : "—"}</td>
-        <td>${k.last_outcome ? `<span class="statpill ${k.last_outcome === "ok" ? "s-ok" : "s-bad"}">${esc(k.last_outcome)}</span>` : `<span class="muted sub">—</span>`}</td>
-        <td style="max-width:320px">${headers}</td>
-      </tr>`;
-    }).join("")}
-    </tbody></table>
-    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = Anthropic response header value</div>`;
-  })();
 
   const btn = $("#metToggleBtn");
   if (btn) {

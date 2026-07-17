@@ -1,6 +1,6 @@
 {
  "schema": "signal_golden_vectors/v1",
- "as_of": "2026-07-15",
+ "as_of": "2026-07-16",
  "oracle": "engine.canon.confluence_signals",
  "math": {
   "rsiLen": 14,

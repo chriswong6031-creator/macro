@@ -451,3 +451,315 @@ def test_macro_synthesis_top_channels_carry_bilingual_labels():
     # unmapped slugs de-underscore instead of leaking raw
     en, zh = mn._slug_label("some_new_channel", mn.CHANNEL_LABEL)
     assert en == "some new channel" and zh == "some new channel"
+
+
+# --------------------------------------------------------------------------- #
+# W2 qbus read-back — echo must actually attach to macro headlines
+# (audit W2-PARTIAL: the item_id join never matched because macro headlines
+# carried no _id; now _id shares the wire desks' basis + a title fallback)
+# --------------------------------------------------------------------------- #
+def _qbus_fixture_df():
+    """Two crawls of the SAME Fed story from two desks/sources, clustered into
+    one event_key — the minimal 'confirmed elsewhere' store."""
+    import pandas as pd
+    from engine import qbus
+    rows = [
+        {"desk": "news_vector", "source": "reuters.com",
+         "url": "https://reuters.com/markets/fed-holds-rates",
+         "title": "Fed holds interest rates steady",
+         "seendate": "2026-06-19T12:00:00+00:00",
+         "_crawled_at": "2026-06-19T12:05:00+00:00",
+         "entities": [], "themes": ["monetary"], "lang": "en"},
+        {"desk": "financial_news", "source": "cnbc.com",
+         "url": "https://cnbc.com/2026/06/19/fed-decision.html",
+         "title": "Fed holds interest rates steady in June",
+         "seendate": "2026-06-19T13:00:00+00:00",
+         "_crawled_at": "2026-06-19T13:02:00+00:00",
+         "entities": [], "themes": ["monetary"], "lang": "en"},
+    ]
+    clustered = qbus.assign_event_keys(rows, thresh=0.4, window_days=3)
+    assert clustered[0]["event_key"] == clustered[1]["event_key"]
+    return pd.DataFrame(clustered, columns=list(qbus.COLUMNS))
+
+
+def test_enrich_headline_populates_wire_desk_id():
+    from engine import qkernel
+    h = mn.enrich_headline({"title": "Fed holds interest rates steady",
+                            "url": "https://reuters.com/markets/fed-holds-rates",
+                            "domain": "reuters.com", "theme": "monetary",
+                            "seendate": "2026-06-19T12:00:00+00:00"})
+    assert h["_id"] == qkernel.item_id("reuters.com",
+                                       "https://reuters.com/markets/fed-holds-rates",
+                                       "Fed holds interest rates steady", "en")
+
+
+def test_macro_headline_gets_echo_via_exact_item_id_join():
+    df = _qbus_fixture_df()
+    # same title + same host as the stored news_vector crawl → _id joins exactly
+    h = mn.enrich_headline({"title": "Fed holds interest rates steady",
+                            "url": "https://reuters.com/markets/fed-holds-rates",
+                            "domain": "reuters.com", "theme": "monetary",
+                            "seendate": "2026-06-19T12:00:00+00:00"})
+    assert (df["item_id"] == h["_id"]).any()   # the join key really matches
+    mn._attach_qbus_readback([h], date(2026, 6, 19), df)
+    assert h.get("echo") == {"n_sources": 2, "n_desks": 2}
+
+
+def test_macro_headline_gets_echo_via_title_fallback():
+    df = _qbus_fixture_df()
+    # different host (FT) → item_id can NOT match any stored row; the shingled
+    # title fallback must still find the story's cluster.
+    h = mn.enrich_headline({"title": "Fed holds interest rates steady",
+                            "url": "https://www.ft.com/content/fed-holds",
+                            "domain": "ft.com", "theme": "monetary",
+                            "seendate": "2026-06-19T14:00:00+00:00"})
+    assert not (df["item_id"] == h["_id"]).any()
+    mn._attach_qbus_readback([h], date(2026, 6, 19), df)
+    assert h.get("echo") == {"n_sources": 2, "n_desks": 2}
+
+
+def test_macro_headline_unrelated_title_gets_no_echo():
+    df = _qbus_fixture_df()
+    h = mn.enrich_headline({"title": "Eurozone PMI slides to a nine-month low",
+                            "url": "https://www.ft.com/content/pmi",
+                            "domain": "ft.com", "theme": "growth",
+                            "seendate": "2026-06-19T14:00:00+00:00"})
+    mn._attach_qbus_readback([h], date(2026, 6, 19), df)
+    assert "echo" not in h
+
+# --------------------------------------------------------------------------- #
+# F1: staleness decay — 29-day-old official item must rank below fresh 65
+# --------------------------------------------------------------------------- #
+def test_staleness_penalty_past_168h():
+    """_freshness_points returns a negative penalty past 7 days, so a month-old
+    official statement (base importance 68) sinks below a fresh item at 65."""
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    # 29 days ago → extra_weeks = (696-168)//168 = 3 → penalty = -6
+    iso_29d = (now - timedelta(days=29)).isoformat()
+    fp_old = mn._freshness_points(iso_29d)
+    assert fp_old < 0, f"expected negative penalty for 29d-old item, got {fp_old}"
+    # A fresh item (< 1h old)
+    iso_fresh = (now - timedelta(minutes=30)).isoformat()
+    fp_fresh = mn._freshness_points(iso_fresh)
+    assert fp_fresh > 0
+    # The exact live ordering: FOMC-style (base 68) vs fresh 65-scorer
+    old_intel = 68 + fp_old
+    fresh_65_intel = 65 + fp_fresh
+    assert old_intel < fresh_65_intel, (
+        f"29d official intel {old_intel} should be < fresh-65 intel {fresh_65_intel}")
+
+
+def test_staleness_penalty_is_floored_at_minus_12():
+    """penalty never drops below -12 regardless of age."""
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    # 2 years old → extra_weeks >> 6 → floor at -12
+    iso_very_old = (now - timedelta(days=730)).isoformat()
+    fp = mn._freshness_points(iso_very_old)
+    assert fp == -12, f"expected floor -12 for 2y-old item, got {fp}"
+
+
+def test_staleness_bonus_curve_unchanged():
+    """The 0-168h bonus curve must be unchanged: 7/5/3/1 for <=8/24/72/168h.
+    Uses offsets relative to 'now' so the test is time-independent."""
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    def _iso(h_ago: float) -> str:
+        return (now - timedelta(hours=h_ago)).isoformat()
+    assert mn._freshness_points(_iso(2)) == 7     # 2h ago -> <=8h bucket
+    assert mn._freshness_points(_iso(12)) == 5    # 12h ago -> <=24h bucket
+    assert mn._freshness_points(_iso(48)) == 3    # 48h ago -> <=72h bucket
+    assert mn._freshness_points(_iso(100)) == 1   # 100h ago -> <=168h bucket
+
+
+# --------------------------------------------------------------------------- #
+# F2/MN-03: official same-event dedup
+# --------------------------------------------------------------------------- #
+def test_official_same_event_dedup_collapses_fomc_pair():
+    """The 2026-06-17 FOMC pair (statement + projections) from federalreserve.gov
+    on the same seendate must collapse to a single item in filter_headlines."""
+    arts = [
+        {
+            "title": "Federal Reserve issues FOMC statement",
+            "domain": "federalreserve.gov",
+            "source": "official",
+            "source_name": "Federal Reserve - Monetary Policy",
+            "source_tier": "official",
+            "seendate": "2026-06-17T18:00:00",
+            "url": "https://federalreserve.gov/a",
+        },
+        {
+            "title": "Federal Reserve Board and Federal Open Market Committee release economic projections",
+            "domain": "federalreserve.gov",
+            "source": "official",
+            "source_name": "Federal Reserve - Monetary Policy",
+            "source_tier": "official",
+            "seendate": "2026-06-17T18:00:00",
+            "url": "https://federalreserve.gov/b",
+        },
+    ]
+    kept = mn.filter_headlines(arts, {"max_show": 10, "min_importance_score": 0})
+    assert len(kept) == 1, (
+        f"expected 1 item after official same-event dedup, got {len(kept)}: "
+        + str([h["title"] for h in kept]))
+
+
+def test_official_dedup_different_domains_not_collapsed():
+    """Items from different official domains on the same date must NOT collapse."""
+    arts = [
+        {
+            "title": "Federal Reserve issues FOMC statement",
+            "domain": "federalreserve.gov",
+            "source": "official",
+            "source_name": "Federal Reserve",
+            "source_tier": "official",
+            "seendate": "2026-06-17T18:00:00",
+            "url": "https://federalreserve.gov/a",
+        },
+        {
+            "title": "BLS reports CPI rose 0.3% in May",
+            "domain": "bls.gov",
+            "source": "official",
+            "source_name": "BLS - CPI",
+            "source_tier": "official",
+            "seendate": "2026-06-17T08:00:00",
+            "url": "https://bls.gov/b",
+        },
+    ]
+    kept = mn.filter_headlines(arts, {"max_show": 10, "min_importance_score": 0})
+    assert len(kept) == 2, (
+        f"items from different official domains must not collapse, got {len(kept)}")
+
+
+def test_official_dedup_non_official_items_unaffected():
+    """Non-official items sharing the same domain and date are NOT collapsed."""
+    arts = [
+        {
+            "title": "Fed raises rates by 25bp in June meeting",
+            "domain": "reuters.com",
+            "source": "news_rss",
+            "source_tier": "tier1",
+            "seendate": "2026-06-17T18:00:00",
+            "url": "https://reuters.com/a",
+        },
+        {
+            "title": "Federal Open Market Committee signals rate pause into Q3",
+            "domain": "reuters.com",
+            "source": "news_rss",
+            "source_tier": "tier1",
+            "seendate": "2026-06-17T19:00:00",
+            "url": "https://reuters.com/b",
+        },
+    ]
+    kept = mn.filter_headlines(arts, {"max_show": 10, "min_importance_score": 0})
+    # Both are tier1 (non-official); dedup is title-prefix only; both should survive
+    assert len(kept) == 2, (
+        f"non-official items from same domain on same date must not be collapsed, "
+        f"got {len(kept)}")
+
+
+# --------------------------------------------------------------------------- #
+# F5/MN-07: Fed enforcement de-boost
+# --------------------------------------------------------------------------- #
+def test_fed_enforcement_action_is_deboosted():
+    """'Federal Reserve Board issues enforcement action with TS Banking Group'
+    must score below a genuine macro story — the regulatory_plumbing_noise check
+    now covers federalreserve.gov enforcement items, not just SEC."""
+    arts = [
+        {
+            "title": "Federal Reserve Board issues enforcement action with TS Banking Group",
+            "domain": "federalreserve.gov",
+            "source": "official",
+            "source_name": "Federal Reserve - All Press",
+            "source_tier": "official",
+            "seendate": "2026-07-16T12:00:00+00:00",
+            "url": "https://federalreserve.gov/enforce/x",
+        },
+        {
+            "title": "Federal Reserve holds rates steady, signals caution on inflation",
+            "domain": "federalreserve.gov",
+            "source": "official",
+            "source_name": "Federal Reserve - Monetary Policy",
+            "source_tier": "official",
+            "seendate": "2026-07-16T14:00:00+00:00",
+            "url": "https://federalreserve.gov/fomc/x",
+        },
+    ]
+    kept = mn.filter_headlines(arts, {"max_show": 10, "min_importance_score": 0})
+    # The monetary policy release must rank above the enforcement action
+    if len(kept) >= 2:
+        titles = [h["title"] for h in kept]
+        enforce_idx = next(i for i, t in enumerate(titles) if "enforcement" in t.lower())
+        fomc_idx = next(i for i, t in enumerate(titles) if "holds rates" in t.lower())
+        assert enforce_idx > fomc_idx, (
+            f"enforcement action ranked above FOMC release: {titles}")
+    # With MN-03 dedup both collapse to 1 (same domain, same date, same theme=monetary).
+    # The surviving item should NOT be the enforcement action.
+    assert len(kept) >= 1
+    assert "enforcement" not in kept[0]["title"].lower(), (
+        f"enforcement action should not win after de-boost: {kept[0]['title']}")
+
+
+# --------------------------------------------------------------------------- #
+# F6: future-date guard in _fetch_official_pages
+# --------------------------------------------------------------------------- #
+def test_official_pages_drops_future_dated_nav_anchors(monkeypatch):
+    """Items dated > today + 30d must be dropped — they are scheduled-meeting
+    nav links, not real releases."""
+    import requests
+    html = (
+        "<html><body><ul>"
+        "<li><a href='/news/1'>Treasury Sanctions Network</a> 06/20/2026</li>"
+        "<li><a href='/future/1'>FOMC Meeting Schedule</a> 08/17/2026</li>"
+        "</ul></body></html>"
+    )
+
+    class _Resp:
+        status_code = 200
+        text = html
+
+    monkeypatch.setattr(requests, "get", lambda *a, **k: _Resp())
+    items, _ = mn._fetch_official_pages({
+        "official_pages": [{"name": "Treasury - Press Releases",
+                            "url": "https://home.treasury.gov/news/press-releases",
+                            "theme": "fiscal", "tier": "official"}],
+        "official_window_days": 3650,
+    }, date(2026, 7, 16))
+    titles = [i["title"] for i in items]
+    assert any("Treasury Sanctions" in t for t in titles), "dated release should be kept"
+    # 08/17/2026 is > 2026-07-16 + 30d → should be dropped
+    assert not any("FOMC Meeting Schedule" in t for t in titles), (
+        "future-dated nav anchor should be dropped")
+
+
+# --------------------------------------------------------------------------- #
+# W0: rejected rows carry 'feed' field
+# --------------------------------------------------------------------------- #
+def test_filter_headlines_rejected_rows_carry_feed_field():
+    """Rejected items appended to the _rejected list must include a 'feed' key."""
+    arts = [{
+        "title": "Analyst Report: AAPL",
+        "domain": "yahoo.com",
+        "source": "yahoo_finance",
+        "source_tier": "quality",
+        "seendate": "2026-07-16T12:00:00+00:00",
+        "url": "https://yahoo.com/x",
+    }]
+    rejected: list[dict] = []
+    mn.filter_headlines(arts, {"max_show": 5, "min_importance_score": 0},
+                        _rejected=rejected)
+    assert len(rejected) == 1, "analyst_report_stub should be rejected"
+    assert "feed" in rejected[0], f"rejected row missing 'feed' key: {rejected[0]}"
+    assert rejected[0]["feed"] == "yahoo_finance"
+
+
+# --------------------------------------------------------------------------- #
+# F5 unit: _regulatory_plumbing_noise helper
+# --------------------------------------------------------------------------- #
+def test_regulatory_plumbing_noise_sec_still_fires():
+    """Original SEC enforcement detection must still work after rename/widening."""
+    assert mn._regulatory_plumbing_noise(
+        "SEC announces administrative proceeding", "SEC - Press Releases", "sec.gov")
+    assert not mn._regulatory_plumbing_noise(
+        "Federal Reserve cuts rates by 25bp", "", "federalreserve.gov")

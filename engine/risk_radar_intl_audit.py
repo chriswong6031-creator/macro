@@ -58,6 +58,19 @@ MIN_ALERTS_FORCE = 8       # and this many loud calls among them
 # At n_alerts=8 the old gate false-granted ~44% under the null; Wilson reduces this to ~5.8%.
 
 
+def ledger_lane_armed() -> bool:
+    """True only on the nightly collect lane (COLLECT_LANE=nightly, legacy alias
+    US_LANE). House law: nightly is the SOLE advancer of data/ forward ledgers —
+    the engine-render/render re-render lanes and closing-bell run the CN/HK/CA/intl
+    builds too; on those lanes the radar snapshot still renders but snapshot_and_grade
+    and the tuner must not advance (a mid-session append is PIT-inconsistent and,
+    being idempotent-by-asof, would permanently displace the nightly row). Canonical
+    home for the gate; engine/intl_run._ledger_lane_armed delegates here."""
+    import os
+    lane = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return lane.lower() == "nightly"
+
+
 def _path(market: str, root=None) -> Path:
     base = config.data_dir() if root is None else (Path(root) / "data")
     p = base / "risk_radar_intl" / f"{market}_forward_log.jsonl"
@@ -231,6 +244,17 @@ def _load_previous_can_force(market: str, root=None) -> bool | None:
                         return bool(fwd["can_force"])
                 except Exception:  # noqa: BLE001
                     pass
+        # 7-market intl payload: data/intl/latest.json records[*].risk_radar.forward_log
+        p = Path(base) / "intl" / "latest.json"
+        if p.exists():
+            try:
+                obj = json.loads(p.read_text())
+                for rec in (obj.get("records") or []):
+                    fwd = ((rec.get("risk_radar") or {}).get("forward_log") or {})
+                    if fwd.get("market") == market and "can_force" in fwd:
+                        return bool(fwd["can_force"])
+            except Exception:  # noqa: BLE001
+                pass
     except Exception:  # noqa: BLE001
         pass
     return None

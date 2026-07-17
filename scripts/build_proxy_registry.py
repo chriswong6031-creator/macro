@@ -3,14 +3,17 @@ the record_series kernel over every MEASURED band (D3-W3.1 §1/§4).
 
 Artifacts written (consumed by the D3-W3 page work — no page changes this wave):
   data/cycle_ontology/proxy_registry.json   the registry (bands:[] schema)
-  data/cycle_ontology/registry_health.json  per-band tape health (build FAILS on stale)
+  data/cycle_ontology/registry_health.json  per-band tape health (stale = recorded,
+                                            never fatal; a MISSING tape fails the build)
   data/cycle_ontology/proxy_fitness.json     MU/CCJ turn-timing fitness verdicts (A6/A17)
   data/cycle_ontology/samples/*.json         3 representative kernel outputs (the D3-W3
                                              enabler proof: daily ETF, monthly FRED, inverted spread)
 
 Usage: python -m scripts.build_proxy_registry
-Exit 0 on success; non-zero (raises) if a measured band's tape is stale/missing or a
-kernel smoke-run errors.  Additive — never mutates the three engine pages' JSON.
+Exit 0 on success; non-zero (raises) if a measured band's tape is MISSING (structural)
+or a kernel smoke-run errors.  A stale tape is recorded in the health report (ok=False
++ report['stale']) and never fails the export — house law: it degrades its own band
+on cycle.html, not the artifact chain.  Additive — never mutates the three engine pages' JSON.
 """
 from __future__ import annotations
 
@@ -99,7 +102,7 @@ def write_samples(root: Path) -> list[str]:
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     root = Path(".")
-    health = cp.export(root)                 # writes registry + health (raises if stale)
+    health = cp.export(root)                 # writes registry + health (raises only if MISSING)
     fitness = cp.run_fitness(root)           # writes proxy_fitness.json
     smoke = smoke_run()                       # the D3-W3 enabler proof
     samples = write_samples(root)

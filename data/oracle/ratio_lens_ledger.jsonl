@@ -51,3 +51,5 @@
 {"date": "2026-07-16", "pair_id": "software_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.023383, "leg_den_ret_1w": -0.03441, "state": "NO_ANCHOR", "kind": "basket"}
 {"date": "2026-07-16", "pair_id": "mag7_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.045003, "leg_den_ret_1w": -0.03441, "state": "NO_ANCHOR", "kind": "basket"}
 {"date": "2026-07-16", "pair_id": "power_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.026884, "leg_den_ret_1w": 0.051066, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-07-16", "pair_id": "igv_vs_qqq", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.001919, "leg_den_ret_1w": -0.024266, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-16", "pair_id": "qqq_vs_rsp", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.024266, "leg_den_ret_1w": 0.00728, "state": "NO_ANCHOR", "kind": "etf"}

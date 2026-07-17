@@ -1,26 +1,74 @@
 {
-  "as_of": "2026-07-16",
-  "item_count": 4,
+  "as_of": "2026-07-17",
+  "item_count": 10,
   "counts_by_severity": {
-    "P2": 2,
+    "P2": 8,
     "P3": 2
   },
   "items": [
     {
+      "kind": "contradiction_tension",
+      "severity": "P2",
+      "summary_en": "Tension: cross_asset_confirm-diverge",
+      "summary_zh": "矛盾张力：cross_asset_confirm-diverge",
+      "evidence_path": "site/neuralwebdata/confluence_graph.json",
+      "as_of": "2026-07-17"
+    },
+    {
       "kind": "lobe_sla_breach",
       "severity": "P2",
-      "summary_en": "Lobe 'confluence-strength' overdue: 344h old vs 30h SLA (11.5×)",
-      "summary_zh": "脉叶 'confluence-strength' 过期：344小时，SLA 30小时（11.5倍）",
+      "summary_en": "Lobe 'site-us-standouts' overdue: 52h old vs 30h SLA (1.7×)",
+      "summary_zh": "脉叶 'site-us-standouts' 过期：52小时，SLA 30小时（1.7倍）",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-16"
+      "as_of": "2026-07-17"
+    },
+    {
+      "kind": "lobe_sla_breach",
+      "severity": "P2",
+      "summary_en": "Lobe 'confluence-strength' overdue: 364h old vs 30h SLA (12.1×)",
+      "summary_zh": "脉叶 'confluence-strength' 过期：364小时，SLA 30小时（12.1倍）",
+      "evidence_path": "site/neuralwebdata/health.json",
+      "as_of": "2026-07-17"
+    },
+    {
+      "kind": "lobe_sla_breach",
+      "severity": "P2",
+      "summary_en": "Lobe 'bottom-sensors-json' overdue: 52h old vs 30h SLA (1.7×)",
+      "summary_zh": "脉叶 'bottom-sensors-json' 过期：52小时，SLA 30小时（1.7倍）",
+      "evidence_path": "site/neuralwebdata/health.json",
+      "as_of": "2026-07-17"
+    },
+    {
+      "kind": "lobe_sla_breach",
+      "severity": "P2",
+      "summary_en": "Lobe 'neuralweb-mastermind-context' overdue: 52h old vs 30h SLA (1.7×)",
+      "summary_zh": "脉叶 'neuralweb-mastermind-context' 过期：52小时，SLA 30小时（1.7倍）",
+      "evidence_path": "site/neuralwebdata/health.json",
+      "as_of": "2026-07-17"
+    },
+    {
+      "kind": "lobe_sla_breach",
+      "severity": "P2",
+      "summary_en": "Lobe 'site-neuralweb-mastermind-context' overdue: 52h old vs 30h SLA (1.7×)",
+      "summary_zh": "脉叶 'site-neuralweb-mastermind-context' 过期：52小时，SLA 30小时（1.7倍）",
+      "evidence_path": "site/neuralwebdata/health.json",
+      "as_of": "2026-07-17"
+    },
+    {
+      "kind": "lobe_sla_breach",
+      "severity": "P2",
+      "summary_en": "Lobe 'liquidity-plumbing' overdue: 52h old vs 30h SLA (1.7×)",
+      "summary_zh": "脉叶 'liquidity-plumbing' 过期：52小时，SLA 30小时（1.7倍）",
+      "evidence_path": "site/neuralwebdata/health.json",
+      "as_of": "2026-07-17"
     },
     {
       "kind": "regime_indeterminate",
       "severity": "P2",
-      "summary_en": "Regime indeterminate: Q1 confidence 18% (below 25% threshold)",
-      "summary_zh": "周期不明确：Q1 置信度 18%（低于25%阈值）",
+      "summary_en": "Regime indeterminate: Q1 confidence 15% (below 25% threshold)",
+      "summary_zh": "周期不明确：Q1 置信度 15%（低于25%阈值）",
       "evidence_path": "data/neuralweb/world_state.json",
-      "as_of": "2026-07-16"
+      "as_of": "2026-07-17"
     },
     {
       "kind": "cortex_degraded",
@@ -28,7 +76,7 @@
       "summary_en": "Cortex deliberation unavailable: model_unavailable",
       "summary_zh": "皮层审议当前不可用：model_unavailable",
       "evidence_path": "site/neuralwebdata/health.json",
-      "as_of": "2026-07-16"
+      "as_of": "2026-07-17"
     },
     {
       "kind": "evidence_clock_overdue",
@@ -36,7 +84,7 @@
       "summary_en": "6 evidence clock(s) overdue; top: qledger:placebo",
       "summary_zh": "6 个证据时钟逾期；最高优先级：qledger:placebo",
       "evidence_path": "data/neuralweb/evidence_clock.json",
-      "as_of": "2026-07-16"
+      "as_of": "2026-07-17"
     }
   ],
   "caveats": [
@@ -47,7 +95,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_attention_deterministic.py",
-  "produced_at": "2026-07-16T07:54:14Z",
-  "inputs_hash": "sha256:9dced0757472821f3a360ead129a1ca7905a87815e937c883a4b713a8d0ebf34",
+  "produced_at": "2026-07-17T04:04:38Z",
+  "inputs_hash": "sha256:1cf5a1f2b61e6cce452f38eab3b0ceb4e4e84d5393757433be991b7eab75a0e6",
   "tier": "display"
 }

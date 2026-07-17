@@ -1,0 +1,33 @@
+**Narrative‑Emergence Scout | Desk Note**  
+2026‑07‑15 | Canada TSX  
+*Confidence: speculative watch hypothesis; no position size allowed; falsifiable & conditional.*
+
+---
+
+### The prevailing structure
+- **Dominant theme**: Big Banks (score +1.75, crowded, durability 0.74 mixed). Pipelines & Insurers also crowded and score-positive. The market is **not** a one‑narrative regime (absorption 0.36, 11 of 16 themes eligible).
+- **Crowding flag**: Banks, Pipelines, Insurers all at crowding‑z > 1.5. Per guardrails, this is a **sizing caution**, not a fade signal.
+- **Rotation breadth is high**, but the leader margin (Banks over Pipelines) is >1.1 – no confirmed handoff yet.
+
+### One early‑phase hypothesis (forming)
+**Theme: Base Metals & Copper** (scorable proxy XBM.TO)  
+- Current rank 4, score +0.275, the **only** positive‑scoring theme that is not crowded (crowding z 0.35).  
+- **Why it might be worth watching**: Positive momentum in a non‑crowded pocket, with a macro backdrop that includes industrial policy and resource security chatter (macro narrative `industrial_policy`).  
+- **Critical weaknesses**: Durability bar is only 0.46 (below the system’s typical staying‑power threshold), and breadth is an extremely narrow 0.11. This is a “micro‑leadership” – not a broad rotation yet. Emergence usually reads late, so this is already somewhat visible, but could still be in an early‑forming stage if breadth begins to expand.
+
+**Falsifiable conditional – kill criterion**  
+*Hypothesis stays alive ONLY IF, by 2026‑08‑15 (one month):*  
+1. The theme’s detector **score remains positive** (≥0.0).  
+2. **Breadth expands above 0.3** (i.e., more names participate).  
+3. **Durability bar rises above 0.55** (trend health improves).  
+
+If any of these fail → hypothesis discarded as a false start. If all three persist, the theme upgrades to a serious “forming leadership” watch, but still not a buy or a rotation call.  
+
+**Do not act** – this is a pure observation with no basket‑level edge. If XBM.TO sees an attention spike or sudden inflow, that historically marks a top, making the hypothesis even more fragile.
+
+### Fading watch – deliberately not called
+No candidate is selected. The dominant Banks theme is crowded but the discipline forbids fading on crowding alone. The guardrails are iron: “Do NOT fade the dominant theme on a crowding flag — cap it, do not fade it.”
+
+---
+
+*This note is fallible. The only validated edge in this system is absolute‑trend drawdown control, not forward narrative calls. I will review the hypothesis on 2026‑08‑15.*

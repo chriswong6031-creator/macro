@@ -44,11 +44,38 @@ def _fred_dir(data_dir: Path) -> Path:
 
 
 def _is_fresh(path: Path, asof: date, stale_days: int) -> bool:
-    """True when the parquet exists AND its modification time is within stale_days of asof."""
+    """True when the parquet exists AND its newest OBSERVATION date is recent.
+
+    Freshness is judged from the data's own newest index date — never file
+    mtime. On CI runners a checkout rewrites files with mtime = checkout time,
+    so a frozen series always looked freshly collected and this audit was
+    blind to exactly the configured-but-dark class it exists to catch (the
+    polygon-universe frozen-cache class, #2690; same blindness as the ^GSPC
+    never-collected incident, #2659).
+
+    Slow-cadence series get their natural release lag: the threshold is
+    stale_days + 2× the series' own median observation spacing (daily
+    ≈ stale_days, monthly ≈ +60d, quarterly ≈ +180d). Unreadable or undated
+    parquets ⇒ stale.
+    """
     if not path.exists():
         return False
-    mtime = date.fromtimestamp(path.stat().st_mtime)
-    return (asof - mtime).days <= stale_days
+    try:
+        import pandas as pd  # noqa: PLC0415 — heavy; audit-only path
+        idx = pd.to_datetime(pd.read_parquet(path, columns=[]).index,
+                             errors="coerce").dropna()
+        if len(idx) == 0:
+            return False
+        last = idx.max().date()
+        cadence_days = 0.0
+        if len(idx) >= 3:
+            deltas = idx.sort_values().to_series().diff().dropna()
+            cadence_days = float(deltas.tail(6).median().days)
+        return (asof - last).days <= stale_days + 2 * cadence_days
+    except Exception as e:  # noqa: BLE001
+        log.warning("[fred_groups] cannot read content date from %s (%s) — treating stale",
+                    path.name, e)
+        return False
 
 
 def audit_groups(

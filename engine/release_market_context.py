@@ -94,7 +94,7 @@ or None when:
 from __future__ import annotations
 
 import logging
-import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -115,18 +115,38 @@ _KALSHI_TTL_DAYS = 5              # Kalshi / market-implied ≤5d old else null
 _MARKET_IMPLIED_TTL_DAYS = 5      # same rule for Polymarket snapshots
 
 
-def _check_parquet_staleness(path: Path, ttl_days: float) -> str | None:
-    """Return a stale reason string if path is older than ttl_days, else None.
+def _check_parquet_staleness(path: Path, ttl_days: float, stamp_col: str) -> str | None:
+    """Return a stale reason string if the parquet's newest `stamp_col` date is
+    older than ttl_days, else None.
 
-    Checks file mtime; returns None if file is fresh or does not exist
-    (caller handles absent file via empty result, not staleness).
+    Judged from the embedded stamp column (asof_date / snapshot_date), NEVER
+    file mtime — on CI runners a checkout rewrites files with mtime = checkout
+    time, so a dead collector's committed parquet always looked fresh by mtime
+    and this guard was blind to exactly the frozen-source case MRI-R33 exists
+    for (#2690 class). An unreadable/empty/missing stamp column reads as stale
+    (the guard fires and the field nulls with a reason — the safe direction).
+    Returns None if the file does not exist (caller handles absent file via
+    empty result, not staleness).
     """
     if not path.exists():
         return None  # absence handled by caller (returns None result)
-    age_days = (time.time() - path.stat().st_mtime) / 86400.0
+    try:
+        s = pd.read_parquet(path, columns=[stamp_col])[stamp_col]
+        newest = pd.to_datetime(s, errors="coerce").dropna().max()
+    except Exception as e:  # noqa: BLE001
+        return (
+            f"stale: cannot read {stamp_col} from {path.name} ({e}) "
+            f"(MRI-R33 STALE-ENRICH)"
+        )
+    if pd.isna(newest):
+        return (
+            f"stale: no readable {stamp_col} in {path.name} "
+            f"(MRI-R33 STALE-ENRICH)"
+        )
+    age_days = (datetime.now(timezone.utc).date() - newest.date()).days
     if age_days > ttl_days:
         return (
-            f"stale: file last updated {age_days:.1f}d ago "
+            f"stale: newest {stamp_col} {newest.date()} is {age_days:.1f}d old "
             f"(TTL={ttl_days}d, MRI-R33 STALE-ENRICH)"
         )
     return None
@@ -302,7 +322,7 @@ def get_kalshi_implied(
         if kalshi_type is None or period is None or not kalshi_path.exists():
             return None
         # MRI-R33: TTL staleness gate — null with reason if > 5 days old
-        stale_reason = _check_parquet_staleness(kalshi_path, _KALSHI_TTL_DAYS)
+        stale_reason = _check_parquet_staleness(kalshi_path, _KALSHI_TTL_DAYS, "asof_date")
         if stale_reason:
             log.warning("get_kalshi_implied: %s", stale_reason)
             return {"source": "kalshi", "implied_median": None, "stale_reason": stale_reason}
@@ -361,7 +381,8 @@ def get_market_implied_benchmark(
             return None
 
         # MRI-R33: TTL staleness gate — null with reason if > 5 days old
-        stale_reason = _check_parquet_staleness(snapshots_path, _MARKET_IMPLIED_TTL_DAYS)
+        stale_reason = _check_parquet_staleness(snapshots_path, _MARKET_IMPLIED_TTL_DAYS,
+                                                "snapshot_date")
         if stale_reason:
             log.warning("get_market_implied_benchmark: %s", stale_reason)
             return {"source": "market_implied", "implied": None, "stale_reason": stale_reason}

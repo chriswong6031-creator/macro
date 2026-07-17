@@ -119,8 +119,28 @@ def _has_structured_sensors(sensors: Any) -> bool:
 
 # ── Per-sensor store probing ──────────────────────────────────────────────────
 
+def _store_content_asof(store_path: Path, last_line: str | None) -> str | None:
+    """Content as-of date for a sensor store: the last JSONL row's timestamp,
+    or a JSON store's top-level as_of/asof/produced_at. None when no stamp is
+    readable (caller falls back to mtime)."""
+    try:
+        doc = None
+        if last_line is not None:
+            doc = json.loads(last_line)
+        elif store_path.suffix.lower() == ".json":
+            doc = json.loads(store_path.read_text(encoding="utf-8", errors="replace"))
+        if isinstance(doc, dict):
+            stamp = (doc.get("ts") or doc.get("as_of") or doc.get("asof")
+                     or doc.get("produced_at"))
+            if stamp:
+                return str(stamp)[:10]
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
 def _probe_store(sensor: dict, root: Path) -> dict[str, Any]:
-    """Probe a sensor's store file for presence, mtime, and row count.
+    """Probe a sensor's store file for presence, content as-of, and row count.
 
     Returns a partial sensor card dict (no 'value' — callers add that).
     NEVER raises.
@@ -150,20 +170,20 @@ def _probe_store(sensor: dict, root: Path) -> dict[str, Any]:
             store_path = root / store_path_rel
             if store_path.exists():
                 store_present = True
-                try:
-                    mtime = store_path.stat().st_mtime
-                    store_asof = datetime.fromtimestamp(mtime, tz=timezone.utc).strftime("%Y-%m-%d")
-                except Exception:  # noqa: BLE001
-                    pass
 
-                # Count rows: JSONL → line count; JSON → 1 (presence)
+                # Count rows: JSONL → line count; JSON → 1 (presence).
+                # store_asof prefers a content stamp (last JSONL row's ts /
+                # JSON as_of) over mtime — committed stores get
+                # mtime = checkout time on CI/fresh worktrees (#2690 class);
+                # mtime stays as the fallback for stamp-less stores.
+                last_line: str | None = None
                 try:
                     suffix = store_path.suffix.lower()
                     if suffix == ".jsonl":
                         content = store_path.read_text(encoding="utf-8", errors="replace")
-                        rows_accrued = sum(
-                            1 for ln in content.splitlines() if ln.strip()
-                        )
+                        lines = [ln for ln in content.splitlines() if ln.strip()]
+                        rows_accrued = len(lines)
+                        last_line = lines[-1] if lines else None
                     elif suffix == ".json":
                         rows_accrued = 1
                     else:
@@ -171,6 +191,15 @@ def _probe_store(sensor: dict, root: Path) -> dict[str, Any]:
                         rows_accrued = None
                 except Exception:  # noqa: BLE001
                     rows_accrued = None
+
+                store_asof = _store_content_asof(store_path, last_line)
+                if store_asof is None:
+                    try:
+                        mtime = store_path.stat().st_mtime
+                        store_asof = datetime.fromtimestamp(
+                            mtime, tz=timezone.utc).strftime("%Y-%m-%d")
+                    except Exception:  # noqa: BLE001
+                        pass
             else:
                 store_present = False
                 note = f"store absent: {store_path_rel}"

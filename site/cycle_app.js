@@ -471,6 +471,23 @@
       '<span class="cyc-tier-h">' + esc(hint) + '</span></span>';
   }
 
+  /* stale-tape chip: the engine flagged this band's series as past its freshness limit
+     (band.stale from cycle_engine.js).  The card still renders — from the last data —
+     and says so in plain words (doctrine: null disclosed, never a silent freeze).
+     title attr stays plain EN per house rule; visible text is dual via L(). */
+  function staleBadge(band) {
+    var st = band.stale;
+    if (!st) return "";
+    var lastTxt = st.last || band.series_last || "";
+    var titleEn = "Data delayed — series last updated " + lastTxt + " (" + st.days +
+      "d old, freshness limit " + st.limit + "d). Card shows the last available data.";
+    return '<span class="cyc-tier tier-stale" title="' + esc(titleEn) + '">' +
+      L("DATA DELAYED", "数据延迟") +
+      '<span class="cyc-tier-h">' + esc(L("showing last data, through " + fmtMon(lastTxt),
+                                          "展示截至" + fmtMon(lastTxt) + "的最新数据")) +
+      '</span></span>';
+  }
+
   function measuredCard(grid, card) {
     var m = MODELS[card.id];
     var band = measuredBand(card);
@@ -503,7 +520,7 @@
       '<div class="cc-top">' +
         '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + zc(card.id, "name", card.name) + '</div>' +
         '<div class="cc-px">' + esc(measuredBasisLine(band)) + '</div></div></div>' +
-        '<div class="cc-badges">' + tierBadge(band, card) +
+        '<div class="cc-badges">' + tierBadge(band, card) + staleBadge(band) +
           '<div class="cc-phase" style="--ph:' + (ph.hue || "var(--muted)") + '">' + phaseChip(band.now.phase) + '</div>' +
         '</div>' +
       '</div>' +
@@ -790,7 +807,8 @@
         '<button class="cyc-back">' + L("← All cycles", "← 全部周期") + '</button>' +
         '<div class="cyc-fhead" style="--c:' + card.accent + '">' +
           '<div class="cyc-ftitle">' + zc(card.id, "name", card.name) +
-            ' ' + focusTierBadge(measured ? mb : fb, card) + (card.dual ? ' ' + dualHint() : '') + '</div>' +
+            ' ' + focusTierBadge(measured ? mb : fb, card) + (measured ? staleBadge(mb) : '') +
+            (card.dual ? ' ' + dualHint() : '') + '</div>' +
           '<div class="cyc-fsub">' + esc(zc(card.id, "proxy", op.proxy || card.name)) + '</div>' +
           (measured
             ? '<div class="cyc-fchips">' +
@@ -989,6 +1007,11 @@
     return '<div class="cyc-grp cyc-grp-3">' + hzHeadline + '<div class="cyc-facts">' +
       factRow(L("Series", "序列"), esc((band.ref || "").split(":").pop()) + ' <span class="fv-sub">' + esc(measuredBasisLine(band).split(" · ").slice(1).join(" · ")) + '</span>') +
       factRow(L("History", "历史区间"), (band.series_first || "?") + " → " + (band.series_last || "?")) +
+      (band.stale ? factRow(L("Freshness", "数据新鲜度"),
+        L("delayed — last point " + (band.stale.last || band.series_last || "?") + ", " +
+            band.stale.days + " days old (limit " + band.stale.limit + "d); showing the last available data",
+          "延迟 — 最新数据点 " + (band.stale.last || band.series_last || "?") + "，已 " +
+            band.stale.days + " 天（上限 " + band.stale.limit + " 天）；展示最近可用数据")) : "") +
       factRow(L("Confirmed turns", "已确认拐点"), (band.n_turns_all != null ? band.n_turns_all : "—") + (provisional ? L(" · +1 provisional", " · +1 待确认") : "")) +
       factRow(L("Last turn", "上次拐点"), (function () {
         var lt = null; (band.turns || []).forEach(function (t) { if (!t.provisional) lt = t; });

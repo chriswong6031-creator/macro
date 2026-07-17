@@ -62,6 +62,22 @@ def _filter(rows: list[dict], engine_id: str) -> list[dict]:
     return [r for r in rows if r.get("engine_id") == engine_id]
 
 
+def _filter_path(grades: list[dict], horizon: int) -> list[dict]:
+    """Return path rows (kind='path') at the given window horizon."""
+    return [
+        g for g in grades
+        if g.get("kind") == "path" and g.get("horizon") == horizon
+    ]
+
+
+def _filter_ret(grades: list[dict]) -> list[dict]:
+    """Return return rows (kind='ret' or kind absent — legacy)."""
+    return [
+        g for g in grades
+        if g.get("kind") in ("ret", None)
+    ]
+
+
 def _wr(rets: list[float]) -> Optional[float]:
     """Win rate (fraction > 0); None if empty."""
     if not rets:
@@ -118,9 +134,12 @@ def _nav_ladder(
     # This is the "1/21-overlap portfolio" described in spec §4: equal-weight
     # 21d-cohort ladder; daily book return = mean over active cohorts.
 
+    # Only ret rows carry ret_excess_spy; exclude path rows explicitly.
+    ret_grades = _filter_ret(grades)
+
     # Group grades by (ticker, fire_date) → ret_excess_spy at horizon=21
     grade_map: dict[tuple, float] = {}
-    for g in grades:
+    for g in ret_grades:
         if g.get("horizon") != horizon:
             continue
         ex = g.get("ret_excess_spy")
@@ -135,7 +154,7 @@ def _nav_ladder(
     # Build cohort list: (exec_date, ret_excess_spy)
     cohorts: list[tuple[pd.Timestamp, float]] = []
     exec_date_map: dict[tuple, pd.Timestamp] = {}
-    for g in grades:
+    for g in ret_grades:
         if g.get("horizon") != horizon:
             continue
         k = (g["ticker"], g["fire_date"])
@@ -207,8 +226,13 @@ def _horizon_stats(
     horizon: int,
     is_avoid: bool = False,
 ) -> dict:
-    """Compute per-horizon stats from grade rows at a given horizon."""
-    h_grades = [g for g in grades if g.get("horizon") == horizon]
+    """Compute per-horizon stats from return rows (kind='ret') at a given horizon."""
+    # Only ret rows carry ret_abs/ret_excess_spy; path rows at the same horizon
+    # carry different fields and must not pollute the return stats.
+    h_grades = [
+        g for g in grades
+        if g.get("horizon") == horizon and g.get("kind") in ("ret", None)
+    ]
 
     rets_abs = [g["ret_abs"] for g in h_grades if g.get("ret_abs") is not None]
     rets_exc = [g["ret_excess_spy"] for g in h_grades if g.get("ret_excess_spy") is not None]
@@ -245,6 +269,94 @@ def _horizon_stats(
         )
 
     return result
+
+
+# ------------------------------------------------------------------ path stats --
+
+
+def _path_stats(grades: list[dict], window: int) -> dict:
+    """Compute path-row-based stats for a given window (25 or 63).
+
+    Path rows carry mfe/mae/t_mfe/t_mae/mae_before_mfe/sessions_underwater.
+    All stats are null-honest when path rows are absent or not yet mature.
+
+    Returns fields prefixed with path{window}_*.
+    """
+    p_rows = _filter_path(grades, window)
+    pfx = f"path{window}"
+
+    mfes = [g["mfe"] for g in p_rows if g.get("mfe") is not None]
+    maes = [g["mae"] for g in p_rows if g.get("mae") is not None]
+    abs_maes = [abs(v) for v in maes]
+    t_mfes = [g["t_mfe"] for g in p_rows if g.get("t_mfe") is not None]
+    t_maes = [g["t_mae"] for g in p_rows if g.get("t_mae") is not None]
+    mae_firsts = [g["mae_before_mfe"] for g in p_rows if g.get("mae_before_mfe") is not None]
+    underwaters = [g["sessions_underwater"] for g in p_rows if g.get("sessions_underwater") is not None]
+
+    med_mfe = _med(mfes)
+    med_abs_mae = _med(abs_maes)
+
+    # Asymmetry from path rows: median_MFE / median_|MAE|
+    asym = None
+    if med_mfe is not None and med_abs_mae:
+        asym = round(med_mfe / med_abs_mae, 4)
+
+    pct_mae_first = (
+        float(np.mean(mae_firsts)) if mae_firsts else None
+    )
+
+    return {
+        f"{pfx}_n": len(p_rows),
+        f"{pfx}_med_mfe": round(med_mfe, 6) if med_mfe is not None else None,
+        f"{pfx}_med_abs_mae": round(med_abs_mae, 6) if med_abs_mae is not None else None,
+        f"{pfx}_asym": asym,
+        f"{pfx}_med_t_mfe": round(float(np.median(t_mfes)), 2) if t_mfes else None,
+        f"{pfx}_med_t_mae": round(float(np.median(t_maes)), 2) if t_maes else None,
+        f"{pfx}_pct_mae_first": round(pct_mae_first, 4) if pct_mae_first is not None else None,
+        f"{pfx}_med_underwater": round(float(np.median(underwaters)), 2) if underwaters else None,
+    }
+
+
+def _capture_ratio(
+    fires: list[dict],
+    grades: list[dict],
+    entry_horizon: int,
+    path_window: int = 25,
+) -> Optional[float]:
+    """Compute median capture ratio for fires at a given entry horizon.
+
+    Capture ratio = ret_abs_h / mfe_path25 for fires where mfe > 0.
+    Joins return rows at entry_horizon with the fire's path-25 row by
+    (ticker, fire_date).
+
+    Returns None when insufficient matched pairs exist.
+    """
+    # Build path-25 map: (ticker, fire_date) → mfe
+    path_mfe: dict[tuple, float] = {}
+    for g in grades:
+        if g.get("kind") == "path" and g.get("horizon") == path_window:
+            mfe = g.get("mfe")
+            if mfe is not None and mfe > 0:
+                path_mfe[(g["ticker"], g["fire_date"])] = float(mfe)
+
+    if not path_mfe:
+        return None
+
+    # Build return map: (ticker, fire_date) → ret_abs at entry_horizon
+    ret_map: dict[tuple, float] = {}
+    for g in grades:
+        if g.get("kind") in ("ret", None) and g.get("horizon") == entry_horizon:
+            ret_abs = g.get("ret_abs")
+            if ret_abs is not None:
+                ret_map[(g["ticker"], g["fire_date"])] = float(ret_abs)
+
+    ratios = []
+    for key, ret_abs in ret_map.items():
+        mfe = path_mfe.get(key)
+        if mfe is not None:
+            ratios.append(ret_abs / mfe)
+
+    return float(np.median(ratios)) if ratios else None
 
 
 # ------------------------------------------------------------------ scoreboard ---
@@ -317,12 +429,16 @@ def scoreboard(
     n_distinct_dates = _distinct_fire_dates(fire_dates)
     months = _months_span(fire_dates)
 
-    # n_open: fires at the primary horizon (21d for entry; 126d for LH) not yet graded
+    # n_open: fires at the primary horizon (21d for entry; 126d for LH) not yet graded.
+    # Only count ret rows (kind='ret' or legacy None) — path rows at the same horizon
+    # are a different kind and don't indicate the return has matured.
     primary_h = 21 if not is_lh else 126
     graded_keys = {
         (g["ticker"], g["fire_date"])
         for g in my_grades
-        if g.get("horizon") == primary_h and g.get("matured")
+        if g.get("horizon") == primary_h
+        and g.get("matured")
+        and g.get("kind") in ("ret", None)
     }
     n_open = sum(
         1 for f in my_fires
@@ -374,6 +490,14 @@ def scoreboard(
     for h in horizons:
         stats = _horizon_stats(my_grades, h, is_avoid=is_avoid)
         result.update(stats)
+
+    # Path-row stats (path25_* and path63_*) — read from kind='path' rows
+    for w in (25, 63):
+        result.update(_path_stats(my_grades, w))
+
+    # Per-horizon capture ratio (ret_abs_h / path25_mfe, median over fires where mfe>0)
+    for h in horizons:
+        result[f"h{h}_capture"] = _capture_ratio(my_fires, my_grades, h, path_window=25)
 
     # NAV ladder (only entry, using h=21 as primary)
     nav, max_dd = _nav_ladder(my_fires, my_grades, horizon=NAV_HOLD_SESSIONS)

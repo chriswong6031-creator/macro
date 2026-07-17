@@ -40,6 +40,54 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lib import config  # noqa: E402
 from engine import news_common as nc  # noqa: E402
 
+# --------------------------------------------------------------------------- #
+# NEVER-DARKEN GUARD — prevents a keyless re-render from overwriting a healthy
+# keyed-build artifact with a darker (fewer-providers / fewer-tickers) feed.
+#
+# "Darker" is defined as:
+#   (a) existing artifact is strictly healthier in provider coverage (more providers
+#       true in the boolean dict), OR
+#   (b) existing artifact covers materially more tickers (>3× as many tickers_covered).
+# "Fresh enough" = existing artifact's fetched_at is within 36 h of now.
+# When the guard fires the existing JSON is stamped with refresh_skipped_reason
+# and returned as-is, so the caller sees the kept feed but the state is honest.
+# --------------------------------------------------------------------------- #
+_NEVER_DARKEN_STALE_H = 36.0   # existing artifact older than this may be replaced
+_TICKER_DARKEN_RATIO = 3.0     # new / old < 1/ratio => "materially fewer"
+
+
+def _should_keep_existing(existing: dict, candidate: dict) -> bool:
+    """Return True when the existing artifact is fresher than 36 h AND strictly
+    healthier than the candidate feed (more provider coverage or materially more
+    tickers covered). PURE — no I/O."""
+    try:
+        import dateutil.parser  # stdlib-free: always present via pandas transitive dep
+        fetched_str = existing.get("fetched_at") or ""
+        if not fetched_str:
+            return False
+        fetched = dateutil.parser.parse(fetched_str)
+        age_h = (datetime.now(timezone.utc) - fetched).total_seconds() / 3600.0
+        if age_h > _NEVER_DARKEN_STALE_H:
+            return False            # existing is stale — allow replacement
+    except Exception:  # noqa: BLE001
+        return False
+
+    ex_providers = existing.get("providers") or {}
+    ca_providers = candidate.get("providers") or {}
+    ex_ok = sum(1 for v in ex_providers.values() if v)
+    ca_ok = sum(1 for v in ca_providers.values() if v)
+
+    ex_tickers = (existing.get("counts") or {}).get("tickers_covered", 0) or 0
+    ca_tickers = (candidate.get("counts") or {}).get("tickers_covered", 0) or 0
+
+    # Condition (a): fewer providers live in the candidate
+    if ca_ok < ex_ok:
+        return True
+    # Condition (b): candidate covers materially fewer tickers (>3× gap)
+    if ex_tickers > 0 and ca_tickers < ex_tickers / _TICKER_DARKEN_RATIO:
+        return True
+    return False
+
 log = logging.getLogger(__name__)
 
 
@@ -200,10 +248,33 @@ def build(write: bool = True) -> dict:
             log.warning("news artifact %s failed (%s)", name, e)
 
     if fin:
-        _write("financial.json", fin)
+        # NEVER-DARKEN GUARD: read the on-disk artifact before overwriting. A keyless
+        # re-render (engine-render.yml) must not replace a healthy keyed-build output
+        # with a darker feed. If the existing artifact is fresh (<36 h) AND strictly
+        # healthier (more providers live OR materially more tickers covered), keep it
+        # and stamp refresh_skipped_reason so the JSON state remains honest.
+        _fin_out_path = outdir / "financial.json"
+        _fin_to_write = fin
+        try:
+            if _fin_out_path.exists():
+                _existing = json.loads(_fin_out_path.read_text())
+                if _should_keep_existing(_existing, fin):
+                    _skip_reason = (
+                        f"existing feed healthier (providers={_existing.get('providers')} "
+                        f"tickers_covered={(_existing.get('counts') or {}).get('tickers_covered')})"
+                        f" vs candidate (providers={fin.get('providers')} "
+                        f"tickers_covered={( fin.get('counts') or {}).get('tickers_covered')})"
+                    )
+                    log.warning("never-darken guard: keeping existing financial.json — %s",
+                                _skip_reason)
+                    _existing["refresh_skipped_reason"] = _skip_reason
+                    _fin_to_write = _existing
+        except Exception as _guard_exc:  # noqa: BLE001 — guard must never block the build
+            log.warning("never-darken guard read failed (%s) — writing candidate", _guard_exc)
+        _write("financial.json", _fin_to_write)
         try:
             from engine import financial_news as fnews
-            bt = fnews.mastermind_by_ticker(fin)
+            bt = fnews.mastermind_by_ticker(_fin_to_write)
             _write("by_ticker.json", {"schema": "news_flow.v1", "is_context_only": True,
                                       "asof": vm["built_date"], "tickers": bt})
             log.info("news by_ticker: %d tickers", len(bt))
@@ -217,10 +288,17 @@ def build(write: bool = True) -> dict:
         _write("narrative.json", narrative)
 
     # ---- macro surprise cards -----------------------------------------------
+    # Pass the prior artifact path so build_release_cards can apply the last-good
+    # fallback: if a fresh FRED fetch returns an older observation than what was in
+    # the previous run's artifact, the prior card is kept (marked last_good_fallback)
+    # rather than silently dropping it from the board.
     macro_releases = None
+    _prior_releases_path = outdir / "macro_releases.json"
     try:
         from engine import macro_surprise as ms
-        macro_releases = ms.build_release_cards()
+        macro_releases = ms.build_release_cards(
+            prior_artifact_path=_prior_releases_path if _prior_releases_path.exists() else None,
+        )
         if macro_releases:
             n_cards = macro_releases.get("n_cards", 0)
             n_fetched = macro_releases.get("n_fetched", 0)
@@ -266,7 +344,19 @@ def build(write: bool = True) -> dict:
         if macro and macro.get("headlines"):
             kept_all.extend(macro["headlines"])
         if fin:
-            kept_all.extend(fin.get("market", []))
+            # W4-FIN-MARKET CHECK: financial.json['market'] should always be a list of
+            # dicts, but guard defensively in case a stale / malformed artifact was kept
+            # by the never-darken guard or a disk corruption.
+            _fin_market = fin.get("market", [])
+            if not isinstance(_fin_market, list):
+                log.warning("fin['market'] unexpected shape %s — skipping extend",
+                            type(_fin_market).__name__)
+                _fin_market = []
+            for _mh in _fin_market:
+                if isinstance(_mh, dict):
+                    kept_all.append(_mh)
+                else:
+                    log.warning("fin['market'] item is not a dict: %r (skipping)", _mh)
             for t in nc.MAG7:
                 kept_all.extend(fin.get("mag7", {}).get(t, {}).get("headlines", []))
             for etf in nc.SECTOR_ETFS:

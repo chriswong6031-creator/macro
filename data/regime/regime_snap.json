@@ -1,24 +1,22 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.82,
+  "roro": 0.74,
   "cap_recent": false,
   "fear_built": 0.228,
-  "roro_velocity": 0.367,
-  "vel_pctile": 0.942,
-  "legs_up": 3,
+  "roro_velocity": 0.154,
+  "vel_pctile": 0.766,
+  "legs_up": 1,
   "legs_total": 7,
   "flipped_legs": [
-    "vix",
-    "vix_term",
     "dxy"
   ],
-  "days_since_last_snap": 23,
+  "days_since_last_snap": 24,
   "fear_rebuilding": true,
-  "vix_term": 0.829,
-  "status": "building",
+  "vix_term": 0.858,
+  "status": "dormant",
   "gates": {
-    "velocity": true,
+    "velocity": false,
     "legs": false,
     "fear": false,
     "washout": false
@@ -26,37 +24,10 @@
   "min_legs": 4,
   "flipped_legs_named": [
     {
-      "key": "vix",
-      "en": "VIX",
-      "zh": "\u6ce2\u52a8\u7387 VIX"
-    },
-    {
-      "key": "vix_term",
-      "en": "VIX term structure",
-      "zh": "VIX \u671f\u9650\u7ed3\u6784"
-    },
-    {
       "key": "dxy",
       "en": "Dollar (20d %\u0394)",
       "zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09"
     }
   ],
-  "magnitude_band": null,
-  "veto": {
-    "schema": "regime_snap_veto.v1",
-    "is_context_only": true,
-    "lean": "fragile",
-    "confidence": "medium",
-    "checks": {
-      "catalyst": "No structural or verbal catalyst; move driven by transient crypto liquidity surge and mixed earnings beats, not a signed deal, policy shift, or hard data surprise.",
-      "premium": "Fear built only 0.228, indicating minimal risk premium to unwind; relief quickly exhausts the thin buffer.",
-      "washout": "cap_recent false, fear_rebuilding true, no capitulation present; bounce is from a shallow dip, not a fear washout.",
-      "follow_through": "Cross-asset flips (VIX, VIX term, DXY) likely fades next session as crypto-led impulse lacks broad macro conviction and fear rebuilding signals fragile sentiment."
-    },
-    "read": "This snap lacks a durable catalyst and emerges from low fear with no true washout, making it a likely dead-cat bounce. Crypto liquidity and scattered earnings beats do not anchor a structural relief, so follow-through is doubtful.",
-    "model": "deepseek-v4-pro",
-    "generated_at": "2026-07-16T05:57:51.341621+00:00",
-    "degraded_reason": null,
-    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
-  }
+  "magnitude_band": null
 }

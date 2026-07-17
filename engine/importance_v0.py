@@ -85,6 +85,10 @@ W_CROWDING = 0.11       # (e) trailing-7d volume-z PENALTY (subtracted)
 # dropped: the task's opt-out rule says the surprise feature only counts when
 # TOPIC-GATED, but china_news_intel.is_surprise is a pure date-collision test and
 # qbus rows carry no scheduled_ref, so the feature is both invalid and underivable.
+# 2026-07-16: china_news_intel's scheduled_ref stamp is now channel-gated at
+# accrual (MN-06 CN port), so FORWARD rows are topic-gated — but the exclusion
+# still stands on the second leg (qbus rows carry no scheduled_ref) and pre-fix
+# accrued rows keep their blanket stamps. Un-excluding needs its own adjudication.
 _SURPRISE_EXCLUDED = True
 _SURPRISE_NOMINAL_WEIGHT = 0.10   # folded into the four live terms above
 

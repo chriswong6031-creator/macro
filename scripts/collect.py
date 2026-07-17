@@ -549,43 +549,41 @@ def main() -> int:
         log.info("collect timing total %.0fs · slowest: %s", sum(timings.values()),
                  ", ".join(f"{k} {v:.0f}s" for k, v in slow[:12]))
 
-    # ALFRED point-in-time vintages — most series refresh weekly (revisions accrue
-    # over months); MRI-R32d: tracked release series refresh NIGHTLY so the
-    # release-capture engine always has fresh vintages for scoring.
+    # ALFRED point-in-time vintages — the whole store refreshes NIGHTLY (MRI-R32d:
+    # the release-capture engine always has fresh vintages for scoring; one
+    # fetch_vintages() call covers every series, so nightly-vs-weekly no longer
+    # differs in cost).
     # Additive: a separate store the live engine doesn't read (feeds PIT backtests).
     # Runs only when FRED is in scope; failure never aborts collection. Fail-open
     # when FRED_API_KEY is absent.
-    _NIGHTLY_VINTAGE_SERIES = frozenset([
-        "CPIAUCSL", "CPILFESL", "PAYEMS", "ICSA", "IC4WSA", "CCSA",
-        "PCEPI", "PCEPILFE", "PPIFIS", "PPIFES",
-    ])
     if "fred" in registry:
         try:
+            import json as _vjson
+            from datetime import date as _vdate
             from collectors.fred import FredAdapter, _vintage_path
             vp = _vintage_path()
-            # MRI-R32d: check per-series staleness — nightly for tracked release
-            # series, weekly (7d) for all others. Refresh if ANY tracked-release
-            # series would be stale, OR if the weekly gate fires for the rest, OR
-            # if full_history is requested.
-            def _series_stale(series_id: str) -> bool:
-                """Return True if this series' vintage file needs a refresh."""
-                sp = vp.parent / f"{series_id}_vintages.parquet" if vp.parent.exists() else vp
-                if not sp.exists():
-                    sp = vp  # fall back to the umbrella path
-                if not sp.exists():
-                    return True
-                age_days = (time.time() - sp.stat().st_mtime) / 86400.0
-                ttl = 1 if series_id in _NIGHTLY_VINTAGE_SERIES else 7
-                return age_days >= ttl
-
-            needs_nightly = any(_series_stale(s) for s in _NIGHTLY_VINTAGE_SERIES)
-            umbrella_stale = not vp.exists() or (time.time() - vp.stat().st_mtime) / 86400.0 >= 7
-            if needs_nightly or umbrella_stale or args.full_history:
-                log.info(
-                    "=== refreshing FRED ALFRED vintages (nightly=%s weekly=%s) ===",
-                    needs_nightly, umbrella_stale,
-                )
+            vstamp = vp.parent / "_fetched.json"
+            # MRI-R32d: the tracked-release families (CPI/PCE/PPI/PAYEMS/claims)
+            # need every-vintage capture, so the whole store refreshes NIGHTLY
+            # (same-day re-runs no-op); one fetch_vintages() call refreshes every
+            # series, so the old per-series nightly(1d)/weekly(7d) mtime split
+            # collapses into this single gate. Freshness is judged from the
+            # sidecar stamp's embedded asof date, NEVER file mtime — the
+            # committed umbrella parquet gets mtime = checkout time on CI
+            # runners, which silently ate vintage nights (07-01→07-15 commit
+            # gap despite three WEEKLY claims series on a nightly TTL; the
+            # #2690 frozen-cache class). Missing/unreadable stamp ⇒ stale.
+            _vage = None
+            try:
+                _vasof = _vjson.loads(vstamp.read_text()).get("asof")
+                _vage = (_vdate.today() - _vdate.fromisoformat(str(_vasof))).days
+            except Exception:  # noqa: BLE001 — stamp-less ⇒ stale
+                pass
+            if _vage is None or _vage >= 1 or not vp.exists() or args.full_history:
+                log.info("=== refreshing FRED ALFRED vintages (last fetch %s) ===",
+                         "unknown" if _vage is None else f"{_vage}d ago")
                 FredAdapter().fetch_vintages()
+                vstamp.write_text(_vjson.dumps({"asof": _vdate.today().isoformat()}))
             else:
                 log.info("FRED vintages fresh — skip")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
@@ -684,9 +682,26 @@ def main() -> int:
         try:
             from scripts.fetch_basket_ohlcv import main as fetch_basket_ohlcv
             log.info("=== refreshing thematic-basket + index-subsector OHLCV (volume) ===")
+            # BOTH universes every night. The finviz-only call used to be the sole nightly
+            # refresh, so membership-only names (off NDX/Russell) froze at their last manual
+            # fetch — 522 deep-store tickers ended 2026-06-29 and every basket holding one
+            # rode the ffill through the July rollover (sector-central audit). Membership
+            # mode ([] = data/baskets/membership.json) first; each call merges onto prior
+            # parquets and is never fatal.
+            fetch_basket_ohlcv([])
             fetch_basket_ohlcv(["--finviz", "idx_ndx,idx_rut"])
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("basket OHLCV step failed: %s", e)
+
+        # Per-member freshness tripwire over the deep OHLCV store, INDEPENDENT of how
+        # the fetch call above is parameterized (the #776 lesson: the whole-store as_of
+        # check in build_baskets can't see a frozen member subset, and a tripwire tied
+        # to the fetch's own universe goes silent with it). Warn-only, never fatal.
+        try:
+            from scripts.fetch_basket_ohlcv import check_membership_staleness
+            check_membership_staleness()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("basket OHLCV staleness census failed: %s", e)
 
         # Re-author the Nasdaq/Russell subsector + amalgamation memberships from the fresh Finviz
         # classification + the refreshed OHLCV (the correlation-validated bulk-outs need prices).
@@ -771,6 +786,20 @@ def main() -> int:
             check_cor_vol_freshness()
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             log.warning("cor/vol freshness tripwire crashed (non-fatal): %s", e)
+
+    # ^GSPC incident (frozen 2026-06-12→07-16): same store-level tripwire for the
+    # pinned engine-critical yahoo names (collectors.yahoo.ENGINE_CRITICAL_SERIES).
+    # A series no adapter fetches — never in a config ticker group, dropped from
+    # one, or seeded once by a one-shot script — never appears in any frames dict,
+    # so detect_stale_series can never see it; only a store-vs-exchange-calendar
+    # read catches the class. Runs AFTER write_status so its stale_series entries
+    # survive the merge. Warn-only.
+    if "yahoo" in registry:
+        try:
+            from collectors.yahoo import check_yahoo_freshness
+            check_yahoo_freshness()
+        except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
+            log.warning("yahoo freshness tripwire crashed (non-fatal): %s", e)
 
     ok = sum(1 for r in results if r.status in ("ok", "stale"))
     log.info("collection done: %d/%d sources usable", ok, len(results))

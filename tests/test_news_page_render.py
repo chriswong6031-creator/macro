@@ -16,6 +16,8 @@ from pathlib import Path
 import jinja2
 import pytest
 
+from engine.macro_news import CHANNEL_LABEL, TIER_LABEL
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -60,11 +62,15 @@ def _headline(theme: str = "monetary", with_event: bool = True, title: str = "Fe
         base["event"] = {
             "event_type": "earnings_result",
             "direction": "bearish",
+            # Real keys emitted by engine/news_events.py extract_numbers()
+            # (NEWS-DD-09 fix: template now reads percentages+usd_all, not pcts+dollars_b/m)
             "numbers": {
-                "pcts": [5.25, 5.5],
-                "dollars_b": [],
-                "dollars_m": [],
-                "eps": [],
+                "usd": None,
+                "usd_all": [1500000000.0, 800000000.0],
+                "percentages": [5.25, 5.5],
+                "eps": 2.34,
+                "guidance_range": None,
+                "count": None,
             },
         }
     else:
@@ -150,6 +156,9 @@ def _full_vm() -> dict:
             "n_official": 2,
             "n_news_rss": 1,
             "n_gdelt": 1,
+            # bilingual chip labels — the real engine dicts, exactly like the payload
+            "channel_label": CHANNEL_LABEL,
+            "tier_label": TIER_LABEL,
         },
         macro_news_disclaimer="Context only — not a signal.",
         macro_news_disclaimer_zh="仅作背景，非信号。",
@@ -208,6 +217,30 @@ def _full_vm() -> dict:
                 ],
             },
         },
+        # NWS-05: financial_news fixture (market + mag7 + providers)
+        financial_news={
+            "schema": "financial_news.v1",
+            "is_context_only": True,
+            "fetched_at": "2026-07-04T06:00:00Z",
+            "providers": {"polygon": False, "gdelt": True},
+            "market": [
+                {
+                    "title": "Netflix plunges on subscriber miss",
+                    "url": "https://example.com/nflx",
+                    "domain": "reuters.com",
+                    "source": "Reuters",
+                    "seendate": "2026-07-04T10:00:00Z",
+                    "tickers": ["NFLX"],
+                    "event": None,
+                    "centrality": "incidental",
+                    "novelty_z": 3.1,
+                }
+            ],
+            "mag7": {
+                "AAPL": {"name": "Apple", "headlines": [{"title": "Apple AI deal"}]},
+                "MSFT": {"name": "Microsoft", "headlines": []},
+            },
+        },
     )
 
 
@@ -226,6 +259,8 @@ def _empty_vm() -> dict:
         macro_releases=None,
         news_rejected=None,
         news_calibration=None,
+        # NWS-05: financial_news absent
+        financial_news=None,
     )
 
 
@@ -302,9 +337,16 @@ def test_full_vm_release_card_renders():
 
 
 def test_full_vm_reject_log_groups_by_reason():
-    """Reject log groups items by reason — at least one reason label visible."""
+    """Reject log groups items by reason — at least one translated label visible.
+    NEWS-DD-07: reason slugs are now translated via REJL dict; 'stock_pick_roundup'
+    becomes 'Stock pick list' in EN, '选股清单' in ZH.
+    """
     html = _render_full()
-    assert "stock pick roundup" in html.lower() or "stock_pick_roundup" in html
+    # translated label (NEWS-DD-07) — raw slug must not appear
+    assert "Stock pick list" in html or "选股清单" in html, (
+        "Translated reject reason label must appear"
+    )
+    assert "stock_pick_roundup" not in html, "Raw slug must not appear in translated output"
 
 
 def test_full_vm_calibration_shows_insufficient():
@@ -346,6 +388,39 @@ def test_full_vm_no_translated_title_attrs():
         # Chinese chars: any CJK unified ideograph
         assert not any('一' <= c <= '鿿' for c in t_val), \
             f"Translated text found in title= attribute: {t_val!r}"
+
+
+# --------------------------------------------------------------------------- #
+# Tests — channel-chip i18n (doctrine Law 2: no raw slugs on glance surfaces)
+# --------------------------------------------------------------------------- #
+
+def test_context_channel_pills_are_bilingual_not_raw_slugs():
+    """Channel chips map through the engine's CHANNEL_LABEL payload dict as
+    l-en/l-zh toggle pairs — the raw slug never renders as chip text."""
+    html = _render_full()
+    # 'rates' is in CHANNEL_LABEL → ('rates', '利率') toggle pair
+    assert '<span class="l-en">rates</span><span class="l-zh">利率</span>' in html
+    # raw slug never renders as visible text ('monetary_policy' is not a
+    # CHANNEL_LABEL key — it must de-underscore, not pass through)
+    assert ">monetary_policy<" not in html
+
+
+def test_context_channel_pills_degrade_without_label_dict():
+    """Payloads cached before the engine shipped channel_label de-underscore,
+    never raw-slug."""
+    vm = _full_vm()
+    vm["macro_news"].pop("channel_label")
+    html = _env().get_template("news.html.j2").render(**vm)
+    assert ">monetary_policy<" not in html
+    assert "monetary policy" in html
+
+
+def test_importance_reasons_never_render():
+    """Internal scorer strings stay machine-only in the payload — no surface
+    on the news page may print them."""
+    html = _render_full()
+    assert "tier1_source" not in html
+    assert "macro_theme" not in html
 
 
 # --------------------------------------------------------------------------- #
@@ -559,10 +634,11 @@ def test_delta_board_sort_none_novelty_z_goes_last():
 # --------------------------------------------------------------------------- #
 
 # The real build_site.py vm carries ONLY macro_news among the W3 keys; the other
-# three side-artifacts (macro_releases / news_rejected / news_calibration) are
-# loaded into separate locals and passed as explicit keywords, so they are NOT vm
+# side-artifacts (macro_releases / news_rejected / news_calibration / financial_news)
+# are loaded into separate locals and passed as explicit keywords, so they are NOT vm
 # members.  Reproduce that exact shape rather than the fixture's all-in-one bundle.
-_BUILD_SITE_VM_ONLY_MACRO_NEWS = ("macro_releases", "news_rejected", "news_calibration")
+_BUILD_SITE_VM_ONLY_MACRO_NEWS = ("macro_releases", "news_rejected", "news_calibration",
+                                  "financial_news")
 
 
 def _build_site_splatted_vm() -> dict:
@@ -593,6 +669,7 @@ def test_build_site_render_call_shape_no_duplicate_kwarg():
         macro_releases=None,
         news_rejected=None,
         news_calibration=None,
+        financial_news=None,
     )
     assert len(html) > 500
     assert "nxDeltaBoard" in html
@@ -613,6 +690,7 @@ def test_naive_duplicate_macro_news_kwarg_raises_typeerror():
             macro_releases=None,
             news_rejected=None,
             news_calibration=None,
+            financial_news=None,
         )
 
 
@@ -654,7 +732,7 @@ _BAD_ARTIFACT_CASES = [
 def test_schema_violating_artifact_degrades_not_raises(case_id, overrides):
     """A valid-JSON, type-violating artifact must degrade to the empty/placeholder
     branch of its board — never raise out of the render."""
-    vm = _empty_vm()
+    vm = _empty_vm()  # already includes financial_news=None
     vm.update(overrides)
     html = _env().get_template("news.html.j2").render(**vm)
     assert len(html) > 500
@@ -675,3 +753,202 @@ def test_string_cards_release_board_shows_empty_state():
     vm["macro_releases"] = {"cards": "x"}
     html = _env().get_template("news.html.j2").render(**vm)
     assert "No releases parsed in the window" in html
+
+
+# --------------------------------------------------------------------------- #
+# Tests — design-doctrine fixes (NEWS-DD-01 through NWS-08)
+# --------------------------------------------------------------------------- #
+
+def test_stance_lines_present_per_board():
+    """NEWS-DD-01: every board must have a plain-word stance line (board-stance class)."""
+    html = _render_full()
+    # Delta Board, Release Board, Theme Pulse (inline), Context, Calibration, Wires
+    # board-stance appears at least 3 times (Delta, Release, Calibration + Wires + Context)
+    assert html.count("board-stance") >= 4, (
+        f"Expected >=4 board-stance elements, got {html.count('board-stance')}"
+    )
+    assert "Background read" in html or "background read" in html.lower()
+    assert "Data check" in html or "data check" in html.lower()
+    assert "Still gathering" in html or "still gathering" in html.lower()
+
+
+def test_no_raw_z_equals_in_visible_text():
+    """NEWS-DD-03: raw 'z=+x.x' must not appear in visible text (only in data-tip attrs)."""
+    import re
+    html = _render_full()
+    # Strip data-tip attribute values before checking
+    stripped = re.sub(r'data-tip-[a-z]+="[^"]*"', "", html)
+    raw_z = re.findall(r"z=[\+\-]\d", stripped)
+    assert not raw_z, f"Raw z= found outside data-tip: {raw_z}"
+
+
+def test_novelty_plain_word_labels():
+    """NEWS-DD-03: Unusual/Notable/Routine labels instead of raw z values."""
+    html = _render_full()
+    # fixture uses novelty_z=1.8 (> 1.5) -> should render 'Unusual'
+    assert "Unusual" in html, "High novelty should render 'Unusual'"
+
+
+def test_nums_keys_percentages_and_usd_all():
+    """NEWS-DD-09: template reads 'percentages' and 'usd_all' (real engine keys)."""
+    html = _render_full()
+    # fixture sets percentages=[5.25, 5.5] and usd_all=[1500000000, 800000000], eps=2.34
+    assert "5.2%" in html or "5.3%" in html, "percentages key must render"
+    assert "$1.5B" in html, "usd_all B-scale must render"
+    assert "EPS $2.34" in html, "eps scalar must render"
+
+
+def test_old_nums_keys_not_used():
+    """NEWS-DD-09 regression: 'pcts'/'dollars_b'/'dollars_m' keys produce nothing when absent."""
+    env = _env()
+    tmpl = env.get_template("news.html.j2")
+    # Headline with ONLY old keys (no 'percentages'/'usd_all') — should produce no num pills
+    head_old_keys = {
+        "title": "Old shape test",
+        "theme": "monetary",
+        "source_tier": "tier1",
+        "seendate": "2026-07-04T10:00:00Z",
+        "novelty_z": 0.5,
+        "event": {
+            "event_type": "earnings_result",
+            "direction": "bullish",
+            "numbers": {
+                "pcts": [5.0, 6.0],
+                "dollars_b": [3.5],
+                "dollars_m": [200.0],
+                "eps": [],
+            },
+        },
+    }
+    vm = dict(
+        _empty_vm(),
+        macro_news={"headlines": [head_old_keys], "synthesis": None,
+                    "fetched_at": "2026-07-04T06:00:00Z", "n_raw": 1, "n_kept": 1},
+    )
+    html = tmpl.render(**vm)
+    # Old keys don't exist in engine output, template ignores them; no pills rendered
+    import re
+    pills = re.findall(r'class="ev-num-pill"[^>]*>([^<]+)<', html)
+    assert not pills, f"Old keys must not produce pills; got: {pills}"
+
+
+def test_wires_board_renders_from_financial_json():
+    """NWS-05: financial_news fixture causes the wires board to render items and mag7 chips."""
+    env = _env()
+    tmpl = env.get_template("news.html.j2")
+    vm = dict(
+        _empty_vm(),
+        financial_news={
+            "market": [
+                {
+                    "title": "Netflix plunges on subscriber miss",
+                    "url": "https://example.com/nflx",
+                    "domain": "reuters.com",
+                    "source": "Reuters",
+                    "seendate": "2026-07-04T10:00:00Z",
+                    "tickers": ["NFLX"],
+                    "event": None,
+                    "centrality": "incidental",
+                    "novelty_z": 3.1,
+                }
+            ],
+            "mag7": {
+                "AAPL": {"name": "Apple", "headlines": [{"title": "dummy"}]},
+                "MSFT": {"name": "Microsoft", "headlines": []},
+            },
+            "providers": {"polygon": False, "gdelt": True},
+        },
+    )
+    html = tmpl.render(**vm)
+    assert "nxWiresBoard" in html, "wires board section must be present"
+    assert "Netflix plunges" in html, "market wire item title must render"
+    assert "NFLX" in html, "ticker chip must render"
+    assert "AAPL" in html, "mag7 chip with headlines must appear"
+    # MSFT has 0 headlines — should not get a chip
+    assert "MSFT" not in html or html.count("MSFT") == 0
+
+
+def test_wires_board_empty_state():
+    """NWS-05: wires board shows plain empty state when financial_news is None."""
+    html = _render_empty()
+    assert "nxWiresBoard" in html
+    assert "No market wire items" in html
+
+
+def test_wires_board_degraded_provider():
+    """NWS-05: when polygon=False, degraded coverage message appears."""
+    env = _env()
+    tmpl = env.get_template("news.html.j2")
+    vm = dict(
+        _empty_vm(),
+        financial_news={
+            "market": [],
+            "mag7": {},
+            "providers": {"polygon": False},
+        },
+    )
+    html = tmpl.render(**vm)
+    assert "degraded" in html.lower(), "degraded provider message must appear"
+
+
+def test_wires_board_none_financial_news_no_crash():
+    """NWS-05: financial_news=None must render without crash."""
+    html = _render_empty()
+    assert len(html) > 500
+    assert "nxWiresBoard" in html
+
+
+def test_reject_reason_slugs_translated():
+    """NEWS-DD-07: reject reason slugs are translated to plain labels, not raw slugs."""
+    html = _render_full()
+    # 'stock_pick_roundup' should become 'Stock pick list', not show raw slug
+    assert "stock pick roundup" not in html.lower() or "Stock pick list" in html, (
+        "reject reason slug must be translated"
+    )
+    assert "Stock pick list" in html, "REJL dict must translate stock_pick_roundup"
+
+
+def test_context_board_renamed():
+    """NEWS-DD-09: 'Context Headlines' renamed to 'Other macro headlines'."""
+    html = _render_full()
+    assert "Other macro headlines" in html, "board must use new name"
+    assert "other macro headlines" in html.lower()
+
+
+def test_board_notes_one_sentence():
+    """NEWS-DD-08: board notes are short (< 200 chars each, no multi-sentence walls)."""
+    import re
+    html = _render_full()
+    notes = re.findall(r'class="board-note"[^>]*>(.*?)</div>', html, re.DOTALL)
+    for note in notes:
+        # Strip HTML tags for length check
+        plain = re.sub(r'<[^>]+>', '', note).strip()
+        # Allow for bilingual duplication; each language half should be ≤ 180 chars
+        # (We check the stripped combined is < 400 chars as a sanity bound)
+        assert len(plain) < 500, f"Board note too long ({len(plain)} chars): {plain[:100]}..."
+
+
+def test_zh_mode_note_in_headlines_section():
+    """NWS-04: the ZH-mode untranslated-titles note renders CONDITIONALLY —
+    #2661 fills title_zh on render lanes, so the note appears only when at
+    least one kept headline is missing title_zh (n_zh_missing > 0)."""
+    # Standard fixture: every headline carries title_zh → note absent.
+    html = _render_full()
+    assert "部分标题来自英文信源" not in html, "note must NOT render when all titles are translated"
+    # Strip title_zh from one headline → note renders.
+    vm = _full_vm()
+    heads = vm["macro_news"]["headlines"]
+    assert heads, "fixture must carry headlines"
+    heads[0] = {k: v for k, v in heads[0].items() if k != "title_zh"}
+    html2 = _env().get_template("news.html.j2").render(**vm)
+    assert "部分标题来自英文信源" in html2, "note must render when a title lacks title_zh"
+
+
+def test_calibration_note_plain_no_wilson_slug():
+    """NEWS-DD-04: calibration board Tier-1 note must not expose wilson_low_5d slug."""
+    html = _render_full()
+    assert "wilson_low_5d" not in html, "wilson_low_5d must not appear in rendered HTML"
+    assert "wilson_high_5d" not in html, "wilson_high_5d must not appear in rendered HTML"
+    assert "earned-authority gate" not in html, "earned-authority gate must not appear in Tier-1"
+    # Mechanics must be in data-tip (Tier 2)
+    assert "Wilson" in html, "Wilson details must still exist (in data-tip Tier-2)"

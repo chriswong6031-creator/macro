@@ -12,7 +12,8 @@ Test categories:
   4. REVISION CONTEXT: shape + NO lean field; model_status block present.
   5. CHAMPION VALUES UNCHANGED: champion projection bytes byte-identical to pre-W11G.
   6. IDEMPOTENCE: two producer runs add zero duplicate rows.
-  7. CAPTURE HEALTH: work_stoppages_mtime and print_integrity_mtime keys present.
+  7. CAPTURE HEALTH: work_stoppages_asof and print_integrity_asof keys present
+     (content stamps — never file mtime, #2690 class).
 
 All tests use synthetic data / monkeypatching. No real parquet files required.
 """
@@ -711,8 +712,9 @@ class TestIdempotence:
 class TestCaptureHealth:
     """capture_health includes new W11-G staleness keys."""
 
-    def test_capture_health_has_work_stoppages_mtime(self, tmp_path: Path, monkeypatch):
-        """capture_health['enricher_staleness']['work_stoppages_mtime'] is present."""
+    def test_capture_health_has_work_stoppages_asof(self, tmp_path: Path, monkeypatch):
+        """capture_health['enricher_staleness']['work_stoppages_asof'] is the
+        newest record's content date — never file mtime (#2690 class)."""
         import scripts.build_release_forecast as producer
 
         root = _minimal_root(tmp_path)
@@ -725,14 +727,15 @@ class TestCaptureHealth:
 
         health = producer._compute_capture_health(date(2026, 7, 9), root, [])
         staleness = health.get("enricher_staleness", {})
-        assert "work_stoppages_mtime" in staleness, (
-            f"work_stoppages_mtime missing from enricher_staleness: {staleness}"
+        assert "work_stoppages_asof" in staleness, (
+            f"work_stoppages_asof missing from enricher_staleness: {staleness}"
         )
-        # The mtime should be non-None since we created the file
-        assert staleness["work_stoppages_mtime"] is not None
+        # Content date, not the just-written file's mtime
+        assert staleness["work_stoppages_asof"] == "2026-06-01"
 
-    def test_capture_health_has_print_integrity_mtime(self, tmp_path: Path, monkeypatch):
-        """capture_health['enricher_staleness']['print_integrity_mtime'] is present."""
+    def test_capture_health_has_print_integrity_asof(self, tmp_path: Path, monkeypatch):
+        """capture_health['enricher_staleness']['print_integrity_asof'] is the
+        newest period_key content stamp — never file mtime (#2690 class)."""
         import scripts.build_release_forecast as producer
 
         root = _minimal_root(tmp_path)
@@ -745,13 +748,14 @@ class TestCaptureHealth:
 
         health = producer._compute_capture_health(date(2026, 7, 9), root, [])
         staleness = health.get("enricher_staleness", {})
-        assert "print_integrity_mtime" in staleness, (
-            f"print_integrity_mtime missing from enricher_staleness: {staleness}"
+        assert "print_integrity_asof" in staleness, (
+            f"print_integrity_asof missing from enricher_staleness: {staleness}"
         )
-        assert staleness["print_integrity_mtime"] is not None
+        # period_key '2023' parses date-like → newest content stamp 2023-01-01
+        assert staleness["print_integrity_asof"] == "2023-01-01"
 
     def test_capture_health_null_when_files_absent(self, tmp_path: Path, monkeypatch):
-        """When work_stoppages / print_integrity files absent, mtime keys are None."""
+        """When work_stoppages / print_integrity files absent, asof keys are None."""
         import scripts.build_release_forecast as producer
 
         root = _minimal_root(tmp_path)
@@ -761,7 +765,7 @@ class TestCaptureHealth:
         health = producer._compute_capture_health(date(2026, 7, 9), root, [])
         staleness = health.get("enricher_staleness", {})
         # These keys should be present but None when files are absent
-        assert "work_stoppages_mtime" in staleness
-        assert staleness.get("work_stoppages_mtime") is None
-        assert "print_integrity_mtime" in staleness
-        assert staleness.get("print_integrity_mtime") is None
+        assert "work_stoppages_asof" in staleness
+        assert staleness.get("work_stoppages_asof") is None
+        assert "print_integrity_asof" in staleness
+        assert staleness.get("print_integrity_asof") is None

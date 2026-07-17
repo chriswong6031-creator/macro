@@ -53,6 +53,7 @@ _LLM_CFG: dict[str, Any] = {
     "provider_order": ["oauth", "anthropic"],
     "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
     "oauth_pool_lane": "metabolism-audit",
+    "usage_lane": "metabolism-audit",
     "api_key_env": "ANTHROPIC_API_KEY",
     "opus_model": "claude-opus-4-8",
     "max_tokens": 4000,
@@ -357,7 +358,7 @@ def _call_llm_auditor(
         user_content = _build_user_prompt(proposal, diff_text, immutable_paths)
         max_tokens = int(_LLM_CFG.get("max_tokens", 4000))
 
-        def _do_call(client: Any, model: str) -> tuple[str | None, str | None]:
+        def _do_call(client: Any, model: str) -> tuple:
             resp = client.messages.create(
                 model=model,
                 max_tokens=max_tokens,
@@ -366,11 +367,11 @@ def _call_llm_auditor(
                 # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
             )
             if getattr(resp, "stop_reason", None) == "refusal":
-                return None, "stop_refusal"
+                return None, "stop_refusal", resp
             text_out = "".join(
                 b.text for b in resp.content if getattr(b, "type", "") == "text"
             )
-            return (text_out or None), None
+            return (text_out or None), None, resp
 
         text, reason, _provider = llm_auth.make_call(
             providers, _do_call, context="metabolism_audit"

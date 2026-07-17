@@ -134,6 +134,30 @@ def test_act_now_no_clean_entries():
     members = [{"symbol": "X", "conviction": {"score": 40, "verdict": "Neutral — no edge", "cycle_blocked": False, "entry_pct": 0.5}}]
     r = bs.act_now_stocks(members, {"label": "dominant", "reco": "hold", "textures": {"bull_age": {"in_bull": True}}})
     assert r["status"] == "no_clean_entries" and r["buys"] == []
+    assert r["uncovered"] == []
+
+
+def test_act_now_uncovered_disclosed_on_every_path():
+    # REGRESSION (hk_banks audit 2026-07-16): members without a conviction read (no stockdata
+    # record, or a thin record without a score) were silently dropped from the ranking. Every
+    # payload now carries the `uncovered` list so the page prints the gap explicitly.
+    members = [
+        {"symbol": "AAA", "conviction": {"score": 83, "verdict": "Buy", "cycle_blocked": False,
+                                         "entry_pct": 0.7, "entry": {"status": "buy_now", "act_level": 3}}},
+        {"symbol": "BBB", "conviction": None},                                    # no record at all
+        {"symbol": "CCC", "conviction": {"score": None, "signal": {"tier": "T2"}}},  # thin: no score
+    ]
+    ok = bs.act_now_stocks(members, {"label": "dominant", "reco": "hold",
+                                     "textures": {"bull_age": {"in_bull": True}}})
+    assert ok["status"] == "ok" and ok["uncovered"] == ["BBB", "CCC"]
+    out = bs.act_now_stocks(members, {"label": "fading", "reco": "avoid",
+                                      "textures": {"bull_age": {"in_bull": True}}})
+    assert out["status"] == "theme_out_of_favour" and out["uncovered"] == ["BBB", "CCC"]
+    # an ALL-uncovered basket (hk_industrials was 9/9) reads as a coverage gap, not a verdict
+    bare = bs.act_now_stocks([{"symbol": "ZZZ", "conviction": None}],
+                             {"label": "dominant", "reco": "hold",
+                              "textures": {"bull_age": {"in_bull": True}}})
+    assert bare["status"] == "no_clean_entries" and bare["uncovered"] == ["ZZZ"]
 
 
 def test_market_concentration_graceful(monkeypatch, tmp_path):

@@ -1,5 +1,6 @@
 {% extends "report_base.html.j2" %}
-{% block title %}{{ t('Ownership Intelligence Desk — 13F Smart-Money Context', '持仓情报台 — 13F 聪明钱背景参考') }}{% endblock %}
+{# <title> is RCDATA — t()'s bilingual spans render as literal text there; plain EN like every other tab title #}
+{% block title %}Ownership Intelligence Desk — 13F Smart-Money Context{% endblock %}
 
 {% block base_css %}
 /* ---- core tokens ---- */
@@ -26,10 +27,13 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .axis-short { color:#b07fd8; border-color:#b07fd855; }
 
 /* ---- freshness chips ---- */
-.chip-fresh { display:inline-flex; align-items:center; gap:5px; padding:2px 9px;
+/* inline-block (not inline-flex): long labels must wrap as flowing text, not stack as flex columns */
+.chip-fresh { display:inline-block; padding:2px 9px;
               border-radius:100px; font:600 10.5px/1.6 var(--numf); letter-spacing:.03em;
-              white-space:nowrap; border:1px solid var(--line); color:var(--muted); background:var(--panel2); }
-.chip-fresh .fdot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+              border:1px solid var(--line); color:var(--muted); background:var(--panel2);
+              max-width:100%; }
+.chip-fresh .fdot { width:7px; height:7px; border-radius:50%; display:inline-block;
+                    vertical-align:middle; margin:-1px 5px 0 0; }
 .t-green { color:var(--up); } .t-green .fdot { background:var(--up); }
 .t-amber { color:#e0a030; } .t-amber .fdot { background:#e0a030; }
 .t-red { color:var(--down); } .t-red .fdot { background:var(--down); }
@@ -54,6 +58,8 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .sm-deck { background:var(--panel); border:1px solid var(--line); border-radius:16px;
            padding:20px 22px; display:grid; grid-template-columns:1.2fr 1fr 1.4fr; gap:22px;
            margin-bottom:10px; }
+.sm-deck > * { min-width:0; } /* grid children must be shrinkable or long chips blow the deck out of the card */
+.sm-deck > .axis-rail { grid-column:1/-1; margin-top:0; }
 @media(max-width:960px){ .sm-deck { grid-template-columns:1fr; } }
 .sm-deck .deck-eyebrow { font:600 11px/1 var(--numf); letter-spacing:.14em;
                           text-transform:uppercase; color:var(--muted); }
@@ -71,7 +77,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .sm-gridbox .gbk { font:600 9.5px/1 var(--numf); letter-spacing:.1em;
                     text-transform:uppercase; color:var(--muted); margin-bottom:7px;
                     display:flex; justify-content:space-between; }
-.dots-grid { display:grid; grid-template-columns:repeat(18,14px); gap:5px; }
+.dots-grid { display:grid; grid-template-columns:repeat(18,minmax(0,14px)); gap:5px; }
 .dots-grid i { width:10px; height:10px; border-radius:50%; border:1.5px solid var(--muted);
                display:block; }
 .dots-grid i.df { background:var(--up); border-color:var(--up); }
@@ -204,6 +210,10 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
         line-height:1.55; color:var(--muted); }
 .sm-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
 @media(max-width:820px){ .sm-2col { grid-template-columns:1fr; } }
+/* two-up boards hold wide nowrap tables: columns must shrink (min-width:0) and
+   scroll independently instead of blowing the pair out of the card */
+.sm-2col > *, .ii-grid > *, .rot-grid > * { min-width:0; overflow-x:auto; }
+.dossier-grid > *, .sm-vs > *, .ledgrid > * { min-width:0; }
 
 /* ---- v3: sticky section rail ---- */
 .sm-rail { position:sticky; top:0; z-index:30; display:flex; gap:6px; flex-wrap:wrap;
@@ -338,17 +348,11 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 {# ======================================================================== #}
 <div class="sm-deck">
 
-  {# Left: title + eyebrow + axis rail #}
+  {# Left: title + eyebrow #}
   <div>
     <div class="deck-eyebrow">{{ t('Institutional 13F · Context Only · Never a Buy List', '机构 13F · 仅供背景参考 · 非买入清单') }}</div>
     <h1>{{ t('Ownership Intelligence Desk', '持仓情报台') }}</h1>
     <div class="deck-sub">{{ t('Who owns what, who just moved, and how stale each lens is. Five independent axes — read separately, never blended.', '谁持有什么、谁刚刚移仓，以及每个数据源的时效。五条独立视角——分开解读，切勿混合。') }}</div>
-    <div class="axis-rail">
-      {% for ax in d_fresh.get('axes') or [] %}
-        {% set tc = 't-' ~ (ax.tier or 'amber') %}
-        <span class="chip-fresh {{ tc }}"><span class="fdot"></span>{{ ax.label }} · {{ t('as of','截至') }} {{ ax.asof }} — {{ ax.lag_note }}</span>
-      {% endfor %}
-    </div>
   </div>
 
   {# Centre: filing clock #}
@@ -391,12 +395,21 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     ) }}</div>
   </div>
 
+  {# Full-width row 2: per-axis freshness chips (long labels — never fit a 1/3 column) #}
+  <div class="axis-rail">
+    {% for ax in d_fresh.get('axes') or [] %}
+      {% set tc = 't-' ~ (ax.tier or 'amber') %}
+      <span class="chip-fresh {{ tc }}"><span class="fdot"></span>{{ ax.label }} · {{ t('as of','截至') }} {{ ax.asof }} — {{ ax.lag_note }}</span>
+    {% endfor %}
+  </div>
+
 </div>{# /sm-deck #}
 
 {# ---- v3: sticky section rail — pure CSS anchors, no JS ---- #}
 {% set _has_ii = (desk.get('insider_intel') or {}) | length > 0 %}
 {% set _has_flow = (desk.get('flow') or {}) | length > 0 %}
-<nav class="sm-rail" aria-label="{{ t('sections','章节') }}">
+{# aria-label is an attribute — t()'s <span> markup breaks the quote and leaks text; plain EN only #}
+<nav class="sm-rail" aria-label="Sections">
   <a href="#sec-wire">{{ t('Wire','播报') }}</a>
   {% if _has_ii %}<a href="#sec-insider">{{ t('Insider','内部人') }}</a>{% endif %}
   <a href="#sec-managers">{{ t('Managers','经理台') }}</a>
@@ -1364,7 +1377,9 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 </div>
 
 <div class="sm-search">
-  <input type="text" id="dossier-input" placeholder="{{ t('Search ticker…','搜索标的…') }}" autocomplete="off">
+  {# EN literal in placeholder + data-ph-zh, relabeled by JS — t() spans inside an
+     attribute terminate it at the first inner quote (see options_screener.html.j2) #}
+  <input type="text" id="dossier-input" placeholder="Search ticker…" data-ph-zh="搜索标的…" autocomplete="off">
   <span id="dossier-hint" class="chip-fresh" style="display:none"></span>
 </div>
 <div id="dossier-card">
@@ -1407,6 +1422,15 @@ var card = document.getElementById('dossier-card');
 var grid = document.getElementById('dossier-grid');
 var _smCache = null;
 var _deskCache = null;
+
+/* lang-aware placeholder — theme.js dispatches 'langchange' on document */
+var _phEn = inp ? inp.placeholder : '';
+var _phZh = inp ? (inp.getAttribute('data-ph-zh') || _phEn) : '';
+function _applyPhLang(){
+  if(inp) inp.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? _phZh : _phEn;
+}
+_applyPhLang();
+document.addEventListener('langchange', _applyPhLang);
 
 function _tierClass(tier){ return 't-'+(tier||'amber'); }
 function _chip(tier,label){

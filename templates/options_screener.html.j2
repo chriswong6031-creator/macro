@@ -36,14 +36,57 @@
     border-radius:10px; padding:10px 14px; margin-bottom:14px; }
   .honest-box strong { color:var(--text); }
 
-  /* ---- controls row ---- */
+  /* ---- filter panel ---- */
+  .filter-panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+  .filter-toggle-btn { display:none; background:none; border:1px solid var(--line); border-radius:8px;
+    padding:6px 14px; font:inherit; font-size:13px; color:var(--text); cursor:pointer; margin-bottom:10px; }
+  @media (max-width:899px) {
+    .filter-toggle-btn { display:inline-flex; align-items:center; gap:6px; }
+    .filter-body { display:none; }
+    .filter-body.open { display:block; }
+  }
+  @media (min-width:900px) {
+    .filter-body { display:block !important; }
+  }
+  .filter-row { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-bottom:10px; }
+  .filter-row:last-child { margin-bottom:0; }
+  .filter-row input[type=text], .filter-row select {
+    padding:7px 10px; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); color:var(--text); font:inherit; font-size:13px; cursor:pointer; }
+  .filter-row input[type=text] { flex:1 1 180px; max-width:280px; cursor:text; }
+  .filter-row input[type=text]:focus, .filter-row select:focus { outline:none; border-color:var(--info); }
+  .filter-label { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px; white-space:nowrap; }
+  .filter-pair { display:flex; align-items:center; gap:4px; }
+  .filter-pair input[type=number] { width:72px; padding:6px 8px; border:1px solid var(--line); border-radius:8px;
+    background:var(--panel2); color:var(--text); font:inherit; font-size:12px; }
+  .filter-pair input[type=number]:focus { outline:none; border-color:var(--info); }
+  .filter-pair .sep { font-size:11px; color:var(--muted); }
+  .filter-badge { display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px;
+    background:var(--info); color:#fff; margin-left:6px; vertical-align:middle; }
+  .filter-clear-btn { background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px;
+    font:inherit; font-size:12px; color:var(--muted); cursor:pointer; }
+  .filter-clear-btn:hover { border-color:var(--text); color:var(--text); }
+
+  /* ---- preset chips ---- */
+  .preset-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .preset-chip { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600;
+    padding:4px 11px; border-radius:20px; border:1px solid var(--line); background:var(--panel2);
+    color:var(--muted); cursor:pointer; white-space:nowrap; transition:border-color .15s, color .15s; }
+  .preset-chip:hover { border-color:var(--info); color:var(--text); }
+  .preset-chip.active { border-color:var(--info); color:var(--info); background:color-mix(in srgb,var(--info) 10%, transparent); }
+
+  /* ---- view + sort controls ---- */
   .ctrl-row { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin-bottom:10px; }
-  .ctrl-row input[type=text] { padding:7px 11px; border:1px solid var(--line); border-radius:9px;
-    background:var(--panel2); color:var(--text); font:inherit; font-size:13px; flex:1 1 200px; max-width:320px; }
-  .ctrl-row input:focus { outline:none; border-color:var(--info); }
   .ctrl-row select { padding:7px 10px; border:1px solid var(--line); border-radius:9px;
     background:var(--panel2); color:var(--text); font:inherit; font-size:13px; cursor:pointer; }
   .ctrl-row label { font-size:12px; color:var(--muted); }
+  .view-chips { display:flex; gap:6px; }
+  .view-chip { font-size:12px; font-weight:600; padding:5px 13px; border-radius:20px;
+    border:1px solid var(--line); background:var(--panel2); color:var(--muted); cursor:pointer; }
+  .view-chip.active { border-color:var(--info); color:var(--info); background:color-mix(in srgb,var(--info) 10%, transparent); }
+  .export-btn { background:none; border:1px solid var(--line); border-radius:8px; padding:6px 13px;
+    font:inherit; font-size:12px; color:var(--muted); cursor:pointer; margin-left:auto; }
+  .export-btn:hover { border-color:var(--text); color:var(--text); }
 
   /* ---- screener table ---- */
   .tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
@@ -51,7 +94,7 @@
   table.sc-tbl thead th { text-align:right; color:var(--muted); font-weight:500; padding:7px 10px 5px;
     border-bottom:2px solid var(--line); white-space:nowrap; position:sticky; top:0; background:var(--panel); z-index:2; }
   table.sc-tbl thead th:first-child,
-  table.sc-tbl thead th:nth-child(2) { text-align:left; }
+  table.sc-tbl thead th.left { text-align:left; }
   table.sc-tbl thead th.sortable { cursor:pointer; user-select:none; }
   table.sc-tbl thead th.sortable:hover { color:var(--text); }
   table.sc-tbl thead th.sorted { color:var(--text); }
@@ -60,10 +103,29 @@
   table.sc-tbl tbody td { padding:6px 10px; border-bottom:1px solid var(--line); text-align:right;
     font-variant-numeric:tabular-nums; }
   table.sc-tbl tbody td:first-child,
-  table.sc-tbl tbody td:nth-child(2) { text-align:left; }
+  table.sc-tbl tbody td.left { text-align:left; }
   table.sc-tbl tbody tr:hover td { background:var(--panel2); }
   table.sc-tbl tbody .tk { font-weight:700; font-size:13px; }
   table.sc-tbl tbody .na { color:var(--muted); }
+
+  /* ---- sticky first column ---- */
+  table.sc-tbl thead th:first-child,
+  table.sc-tbl tbody td:first-child { position:sticky; left:0; z-index:1; background:var(--panel); }
+  table.sc-tbl tbody tr:hover td:first-child { background:var(--panel2); }
+
+  /* ---- column view visibility ---- */
+  /* overview cols */
+  .col-flow     { display:none; }
+  .col-pos      { display:none; }
+  .col-ov       { display:table-cell; }
+  /* flow view */
+  body.view-flow   .col-ov   { display:none; }
+  body.view-flow   .col-flow { display:table-cell; }
+  /* positioning view */
+  body.view-pos    .col-ov   { display:none; }
+  body.view-pos    .col-pos  { display:table-cell; }
+  /* always-on columns */
+  .col-always   { display:table-cell !important; }
 
   /* ---- young badge ---- */
   .young-badge { font-size:10px; font-weight:600; padding:1px 5px; border-radius:5px;
@@ -75,6 +137,11 @@
   .tone-call { color:var(--up);   background:color-mix(in srgb,var(--up) 12%, transparent);   border:1px solid var(--up); }
   .tone-put  { color:var(--down); background:color-mix(in srgb,var(--down) 12%, transparent); border:1px solid var(--down); }
   .tone-neu  { color:var(--muted); border:1px solid var(--line); background:transparent; }
+
+  /* ---- gamma regime chip ---- */
+  .grec { font-size:11px; font-weight:600; padding:2px 7px; border-radius:12px; white-space:nowrap; }
+  .grec-long  { color:var(--up);   background:color-mix(in srgb,var(--up) 10%, transparent);   border:1px solid var(--up); }
+  .grec-short { color:var(--down); background:color-mix(in srgb,var(--down) 10%, transparent); border:1px solid var(--down); }
 
   /* ---- coverage stamp ---- */
   .cov-stamp { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.6; }
@@ -88,16 +155,15 @@
     border-radius:8px; z-index:60; font-size:11.5px; line-height:1.45; color:var(--text); font-weight:400;
     box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; text-align:left; white-space:normal;
     max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
-  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
   .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { display:block; }
 
   /* ---- responsive hide ---- */
   @media (max-width:900px) {
-    .sc-hide-sm { display:none; }
+    .sc-hide-sm { display:none !important; }
   }
   @media (max-width:640px) {
-    .sc-hide-xs { display:none; }
+    .sc-hide-xs { display:none !important; }
   }
 </style>
 </head>
@@ -107,7 +173,7 @@
 {% include "_site_nav.html.j2" ignore missing %}
 
 <div class="toprow">
-  <h1>📊 {{ t('Options Screener', '期权筛选台') }}</h1>
+  <h1>{{ t('Options Screener', '期权筛选台') }}</h1>
   {{ chip('EOD · display-only', 'EOD · 仅供展示') }}
   {{ chip(coverage.n_names|string ~ ' names', coverage.n_names|string ~ ' 个标的') }}
   {% if coverage.tape_flow_present %}
@@ -117,7 +183,7 @@
 </div>
 
 <div class="honest-box">
-  <strong>{{ t('Coverage &amp; data provenance', '覆盖范围与数据说明') }}</strong> ·
+  <strong>{{ t('Coverage & data provenance', '覆盖范围与数据说明') }}</strong> ·
   {{ t(
     'IV · GEX · walls · max-pain: Polygon.io options chain snapshots, ' ~ coverage.n_names|string ~ ' underlyings, daily since 2026-06-15 (accruing). '
     ~ 'IV-rank = percentile within available history — labelled "young (n=Xd)" when fewer than '
@@ -126,6 +192,10 @@
     ~ 'Options flow (volume · premium · P/C ratio): ' ~ coverage.n_names|string ~ ' names, last trading session. '
     ~ 'Net-premium tone is a labeled heuristic only — magnitude is reliable, direction is SOFT (signing incomplete). '
     ~ 'Implied-move proxy = IV30 × √(30÷365) × 100%. '
+    ~ 'Skew (put-skew pp): ' ~ coverage.n_skew|string ~ ' names from ~30-day tenor snapshots; skew = OTM-put IV minus ATM-call IV in percentage points. '
+    ~ 'IV-spread (vs peers): ' ~ coverage.n_ivspread|string ~ ' names; spread relative to same-day cross-sectional median (positive = wider than peers). '
+    ~ 'Skew and IV-spread are display-only context — the chain panel is still too narrow and short to treat either as a forward predictor. '
+    ~ 'Rel. volume: ' ~ coverage.n_relvol|string ~ ' names; today\'s option volume vs own 20-session average. '
     ~ 'Nothing here feeds any score or rank path.',
 
     'IV · GEX · 墙位 · 最大痛点：Polygon.io 期权链快照，'
@@ -136,73 +206,359 @@
     ~ '期权流量（成交量 · 权利金 · 认沽/认购比）：' ~ coverage.n_names|string ~ ' 个标的，最近交易日数据。'
     ~ '净权利金方向为启发式标签——量级可靠，方向为软性参考（签名机制尚未完整）。'
     ~ '隐含波动幅度 = IV30 × √(30÷365) × 100%。'
+    ~ '偏斜（认沽溢价pp）：' ~ coverage.n_skew|string ~ ' 个标的，约30日到期期权快照；偏斜 = 虚值认沽IV减平值认购IV（百分点）。'
+    ~ 'IV价差（相对同业）：' ~ coverage.n_ivspread|string ~ ' 个标的；相对同日截面中位数的价差（正值=高于同业）。'
+    ~ '偏斜与IV价差仅为展示性参考——期权链数据仍偏窄偏短，请勿作为前瞻指标使用。'
+    ~ '相对成交量：' ~ coverage.n_relvol|string ~ ' 个标的；当日期权成交量相对自身20日均值。'
     ~ '本页所有数据均不进入任何评分或排名流程。'
   ) }}
 </div>
 
+<!-- ===== FILTER PANEL ===== -->
+<div class="filter-panel">
+  <button class="filter-toggle-btn" id="os-filter-toggle" type="button">
+    <span class="l-en">Filters</span><span class="l-zh">筛选</span>
+    <span id="os-filter-badge" class="filter-badge" style="display:none"></span>
+  </button>
+  <div class="filter-body" id="os-filter-body">
+
+    <!-- Row 1: text + sector + gex tier + gamma regime + net-prem tone -->
+    <div class="filter-row">
+      <input id="os-search" type="text"
+        placeholder="Filter ticker or sector…"
+        data-ph-zh="按代码或行业筛选…"
+        autocomplete="off" spellcheck="false">
+
+      <label class="filter-label">
+        {{ t('Sector', '行业') }}
+        <select id="os-sector">
+          <option value="" data-en="All sectors" data-zh="全部行业">All sectors</option>
+        </select>
+      </label>
+
+      <label class="filter-label">
+        {{ t('GEX tier', 'GEX层级') }}
+        <select id="os-tier">
+          <option value="" data-en="All" data-zh="全部">All</option>
+          <option value="full">full</option>
+          <option value="lite">lite</option>
+        </select>
+      </label>
+
+      <label class="filter-label">
+        {{ t('Gamma regime', 'Gamma态势') }}
+        <span class="help">?<span class="tip">{{ t(
+          'Long gamma: dealers hold net long gamma and lean against moves — they sell rallies and buy dips. Short gamma: dealers hold net short gamma and chase moves — they buy rallies and sell dips.',
+          '多Gamma：做市商净持有多Gamma，倾向于对冲价格变动——逢涨卖出、逢跌买入。空Gamma：做市商净持有空Gamma，倾向于追随价格变动——逢涨买入、逢跌卖出。'
+        ) }}</span></span>
+        <select id="os-regime">
+          <option value="" data-en="All" data-zh="全部">All</option>
+          <option value="long" data-en="Long" data-zh="多Gamma">Long</option>
+          <option value="short" data-en="Short" data-zh="空Gamma">Short</option>
+        </select>
+      </label>
+
+      <label class="filter-label">
+        {{ t('Net-prem tone', '净权利金方向') }}
+        <select id="os-tone">
+          <option value="" data-en="All" data-zh="全部">All</option>
+          <option value="call-leaning" data-en="Call-leaning" data-zh="偏认购">Call-leaning</option>
+          <option value="put-leaning" data-en="Put-leaning" data-zh="偏认沽">Put-leaning</option>
+          <option value="neutral" data-en="Neutral" data-zh="中性">Neutral</option>
+        </select>
+      </label>
+
+      <button class="filter-clear-btn" id="os-clear-btn" type="button">{{ t('Clear all', '清除全部') }}</button>
+    </div>
+
+    <!-- Row 2: numeric ranges -->
+    <div class="filter-row">
+      <span class="filter-label">
+        IV30 %
+        <span class="filter-pair">
+          <input type="number" id="f-iv30-min" placeholder="min" step="0.1">
+          <span class="sep">–</span>
+          <input type="number" id="f-iv30-max" placeholder="max" step="0.1">
+        </span>
+      </span>
+
+      <span class="filter-label">
+        {{ t('IV Rank', 'IV分位') }}
+        <span class="filter-pair">
+          <input type="number" id="f-ivrank-min" placeholder="min" min="0" max="100">
+          <span class="sep">–</span>
+          <input type="number" id="f-ivrank-max" placeholder="max" min="0" max="100">
+        </span>
+      </span>
+
+      <span class="filter-label">
+        {{ t('Impl. move %', '隐含波幅%') }}
+        <span class="filter-pair">
+          <input type="number" id="f-impl-min" placeholder="min" step="0.1">
+          <span class="sep">–</span>
+          <input type="number" id="f-impl-max" placeholder="max" step="0.1">
+        </span>
+      </span>
+
+      <span class="filter-label">
+        {{ t('P/C ratio', 'P/C比') }}
+        <span class="filter-pair">
+          <input type="number" id="f-pc-min" placeholder="min" step="0.01">
+          <span class="sep">–</span>
+          <input type="number" id="f-pc-max" placeholder="max" step="0.01">
+        </span>
+      </span>
+
+      <span class="filter-label">
+        {{ t('Volume', '成交量') }}
+        <span class="filter-pair">
+          <input type="number" id="f-vol-min" placeholder="min" min="0">
+          <span class="sep">–</span>
+          <input type="number" id="f-vol-max" placeholder="max" min="0">
+        </span>
+      </span>
+    </div>
+
+    <!-- Row 3: more numeric ranges -->
+    <div class="filter-row">
+      <span class="filter-label">
+        {{ t('Gross prem $M', '总权利金$M') }}
+        <span class="filter-pair">
+          <input type="number" id="f-prem-min" placeholder="min" step="0.1">
+          <span class="sep">–</span>
+          <input type="number" id="f-prem-max" placeholder="max" step="0.1">
+        </span>
+      </span>
+
+      <span class="filter-label">
+        {{ t('0DTE share %', '0DTE占比%') }}
+        <span class="filter-pair">
+          <input type="number" id="f-dte-min" placeholder="min" min="0" max="100">
+          <span class="sep">–</span>
+          <input type="number" id="f-dte-max" placeholder="max" min="0" max="100">
+        </span>
+      </span>
+
+      <span class="filter-label">
+        {{ t('Rel vol ×', '相对成交量×') }}
+        <span class="help">?<span class="tip">{{ t(
+          "Today's option volume vs the name's own 20-day average. 2× = double normal activity.",
+          "当日期权成交量相对自身20日均值。2× = 为正常水平的两倍。"
+        ) }}</span></span>
+        <span class="filter-pair">
+          <input type="number" id="f-relvol-min" placeholder="min" step="0.1">
+          <span class="sep">–</span>
+          <input type="number" id="f-relvol-max" placeholder="max" step="0.1">
+        </span>
+      </span>
+
+      <span class="filter-label">
+        {{ t('Put-skew pp', '认沽溢价pp') }}
+        <span class="help">?<span class="tip">{{ t(
+          'How much more expensive downside puts are vs at-the-money calls, in IV percentage points — higher = richer crash protection priced in.',
+          '虚值认沽期权相对平值认购期权的IV溢价（百分点）——越高代表市场为下行风险定价越贵。'
+        ) }}</span></span>
+        <span class="filter-pair">
+          <input type="number" id="f-skew-min" placeholder="min" step="0.1">
+          <span class="sep">–</span>
+          <input type="number" id="f-skew-max" placeholder="max" step="0.1">
+        </span>
+      </span>
+
+      <span class="filter-label">
+        {{ t('|Flip dist| % max', '|翻转距离|%上限') }}
+        <span class="help">?<span class="tip">{{ t(
+          'How far spot sits from the strike where dealer gamma flips sign — absolute value. ≤1% = very close to flip point.',
+          '现价距Gamma符号翻转点的距离（绝对值）。≤1%代表非常接近翻转点。'
+        ) }}</span></span>
+        <span class="filter-pair"><input type="number" id="f-flip-max" placeholder="max" step="0.1" min="0"></span>
+      </span>
+
+      <span class="filter-label">
+        {{ t('IV-spread pp', 'IV价差pp') }}
+        <span class="help">?<span class="tip">{{ t(
+          'IV-spread vs same-day peer group median. Positive = wider IV spread than peers. From ~30-day options.',
+          '相对同日同业中位数的IV价差。正值 = IV价差高于同业。基于约30日期权。'
+        ) }}</span></span>
+        <span class="filter-pair">
+          <input type="number" id="f-ivsp-min" placeholder="min" step="0.1">
+          <span class="sep">–</span>
+          <input type="number" id="f-ivsp-max" placeholder="max" step="0.1">
+        </span>
+      </span>
+    </div>
+
+  </div><!-- /filter-body -->
+</div><!-- /filter-panel -->
+
+<!-- ===== PRESET CHIPS ===== -->
+<div class="preset-row" id="os-presets">
+  <button class="preset-chip" data-preset="premium" type="button">
+    <span class="l-en">Premium leaders</span><span class="l-zh">权利金领先</span>
+  </button>
+  <button class="preset-chip" data-preset="volsurge" type="button">
+    <span class="l-en">Volume surge</span><span class="l-zh">成交量飙升</span>
+  </button>
+  <button class="preset-chip" data-preset="highrank" type="button">
+    <span class="l-en">High IV rank</span><span class="l-zh">高IV分位</span>
+  </button>
+  <button class="preset-chip" data-preset="zerodte" type="button">
+    <span class="l-en">0DTE heavy</span><span class="l-zh">0DTE密集</span>
+  </button>
+  <button class="preset-chip" data-preset="putskew" type="button">
+    <span class="l-en">Put-skew rich</span><span class="l-zh">认沽溢价高</span>
+  </button>
+  <button class="preset-chip" data-preset="nearflip" type="button">
+    <span class="l-en">Near gamma flip</span><span class="l-zh">接近Gamma翻转</span>
+  </button>
+  <button class="preset-chip" data-preset="putheavy" type="button">
+    <span class="l-en">Put-heavy OI</span><span class="l-zh">认沽OI偏重</span>
+  </button>
+</div>
+
+<!-- ===== MAIN PANEL ===== -->
 <div class="panel">
   <div class="ctrl-row">
-    <input id="os-search" type="text"
-      placeholder="{{ t('Filter ticker or sector…', '按代码或行业筛选…') }}"
-      autocomplete="off" spellcheck="false">
-    <label>
-      {{ t('Sector', '行业') }}
-      <select id="os-sector">
-        <option value="">{{ t('All sectors', '全部行业') }}</option>
-      </select>
-    </label>
-    <label>
+    <div class="view-chips" id="os-views">
+      <button class="view-chip active" data-view="overview" type="button">
+        <span class="l-en">Overview</span><span class="l-zh">总览</span>
+      </button>
+      <button class="view-chip" data-view="flow" type="button">
+        <span class="l-en">Flow</span><span class="l-zh">流量</span>
+      </button>
+      <button class="view-chip" data-view="pos" type="button">
+        <span class="l-en">Positioning</span><span class="l-zh">仓位</span>
+      </button>
+    </div>
+
+    <label class="filter-label">
       {{ t('Sort', '排序') }}
       <select id="os-sort">
-        <option value="gross_premium_mn">{{ t('Premium (gross)', '总权利金') }}</option>
-        <option value="volume">{{ t('Options volume', '期权成交量') }}</option>
-        <option value="iv30">{{ t('IV30 (high→low)', 'IV30（高→低）') }}</option>
-        <option value="iv_rank">{{ t('IV Rank', 'IV分位') }}</option>
-        <option value="pc_oi">{{ t('P/C OI ratio', '认沽/认购OI比') }}</option>
-        <option value="implied_move_30d">{{ t('Implied move', '隐含波幅') }}</option>
+        <option value="gross_premium_mn" data-en="Premium (gross)" data-zh="总权利金">Premium (gross)</option>
+        <option value="volume" data-en="Volume" data-zh="成交量">Volume</option>
+        <option value="rel_volume" data-en="Rel volume" data-zh="相对成交量">Rel volume</option>
+        <option value="iv30">IV30</option>
+        <option value="iv_rank" data-en="IV Rank" data-zh="IV分位">IV Rank</option>
+        <option value="implied_move_30d" data-en="Impl. move" data-zh="隐含波幅">Impl. move</option>
+        <option value="pc_oi">P/C OI</option>
+        <option value="skew_pp" data-en="Put-skew pp" data-zh="认沽溢价">Put-skew pp</option>
+        <option value="net_gex_bn">Net GEX</option>
+        <option value="dist_to_flip_pct" data-en="Flip dist %" data-zh="翻转距离%">Flip dist %</option>
       </select>
     </label>
+
     <span class="muted sm" id="os-count"></span>
+
+    <button class="export-btn" id="os-export" type="button">
+      <span class="l-en">Export CSV</span><span class="l-zh">导出CSV</span>
+    </button>
   </div>
 
   <div class="tbl-wrap">
     <table class="sc-tbl" id="os-table">
       <thead>
         <tr>
-          <th class="sortable" data-col="ticker">{{ t('Ticker','代码') }}<span class="sarrow">↕</span></th>
-          <th class="sortable sc-hide-sm" data-col="sector">{{ t('Sector','行业') }}<span class="sarrow">↕</span></th>
-          <th class="sortable" data-col="iv30">
+          <!-- Always visible -->
+          <th class="sortable col-always left" data-col="ticker">{{ t('Ticker','代码') }}<span class="sarrow">↕</span></th>
+          <th class="sortable col-always left sc-hide-sm" data-col="sector">{{ t('Sector','行业') }}<span class="sarrow">↕</span></th>
+
+          <!-- Overview columns -->
+          <th class="sortable col-ov" data-col="spot">{{ t('Spot','现价') }}<span class="sarrow">↕</span></th>
+          <th class="sortable col-ov" data-col="iv30">
             IV30<span class="help">?<span class="tip">{{ t('30-day implied volatility from the options chain (annualised %).',
               '期权链30日隐含波动率（年化%）。') }}</span></span><span class="sarrow">↕</span>
           </th>
-          <th class="sortable" data-col="iv_rank">
+          <th class="sortable col-ov" data-col="iv_rank">
             {{ t('IV Rank','IV分位') }}<span class="help">?<span class="tip">{{ t(
               'Percentile of current IV30 within available history. "young (n=Xd)" = fewer than '
               ~ coverage.young_threshold|string ~ ' days of history — treat with caution.',
               '当前IV30在可用历史内的百分位。"young (n=Xd)"表示历史不足'
               ~ coverage.young_threshold|string ~ '日，需谨慎参考。') }}</span></span><span class="sarrow">↕</span>
           </th>
-          <th class="sortable sc-hide-xs" data-col="implied_move_30d">
+          <th class="sortable col-ov sc-hide-xs" data-col="implied_move_30d">
             {{ t('Impl. Move','隐含波幅') }}<span class="help">?<span class="tip">{{ t(
               'IV30 × √(30÷365) × 100% — expected ±move over 30 calendar days (1-sigma).',
               'IV30 × √(30÷365) × 100%，30日历日内的预期±波动幅度（1倍标准差）。') }}</span></span><span class="sarrow">↕</span>
           </th>
-          <th class="sortable" data-col="pc_oi">
+          <th class="sortable col-ov" data-col="pc_oi">
             {{ t('P/C OI','认沽/认购OI') }}<span class="help">?<span class="tip">{{ t(
               'Put/Call open-interest ratio. >1 = more puts outstanding.',
               '认沽/认购未平仓合约比率。>1表示认沽仓位更多。') }}</span></span><span class="sarrow">↕</span>
           </th>
-          <th class="sortable" data-col="volume">{{ t('Opt. Volume','期权成交量') }}<span class="sarrow">↕</span></th>
-          <th class="sortable" data-col="gross_premium_mn">
-            {{ t('Gross Prem. ($M)','总权利金（百万$）') }}<span class="sarrow">↕</span>
+          <th class="sortable col-ov" data-col="volume">{{ t('Volume','期权成交量') }}<span class="sarrow">↕</span></th>
+          <th class="sortable col-ov" data-col="gross_premium_mn">
+            {{ t('Gross Prem $M','总权利金$M') }}<span class="sarrow">↕</span>
           </th>
-          <th class="sc-hide-sm" data-col="max_pain">{{ t('Max Pain','最大痛点') }}</th>
-          <th class="sc-hide-sm" data-col="gex_tier">{{ t('GEX Tier','GEX层级') }}</th>
-          <th class="sortable sc-hide-xs" data-col="net_prem_tone">
-            {{ t('Net Prem. Tone','净权利金方向') }}<span class="help">?<span class="tip">{{ t(
+          <th class="col-ov sc-hide-sm" data-col="net_prem_tone">
+            {{ t('Tone','方向') }}<span class="help">?<span class="tip">{{ t(
               'Labeled heuristic only — direction is SOFT (signing incomplete). Magnitude is reliable.',
-              '仅为启发式标签——方向为软性参考（签名机制尚未完整），量级可靠。') }}</span></span><span class="sarrow">↕</span>
+              '仅为启发式标签——方向为软性参考（签名机制尚未完整），量级可靠。') }}</span></span>
           </th>
+
+          <!-- Flow columns -->
+          <th class="sortable col-flow" data-col="volume">{{ t('Volume','期权成交量') }}<span class="sarrow">↕</span></th>
+          <th class="sortable col-flow" data-col="rel_volume">
+            {{ t('Rel vol ×','相对成交量×') }}<span class="help">?<span class="tip">{{ t(
+              "Today's option volume vs the name's own 20-day average. Null when fewer than 5 prior sessions.",
+              '当日期权成交量相对自身20日均值。不足5个历史交易日时显示为空。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable col-flow" data-col="gross_premium_mn">{{ t('Gross prem $M','总权利金$M') }}<span class="sarrow">↕</span></th>
+          <th class="sortable col-flow" data-col="net_prem_mn">{{ t('Net prem $M','净权利金$M') }}<span class="sarrow">↕</span></th>
+          <th class="sortable col-flow sc-hide-sm" data-col="zerodte_share">
+            {{ t('0DTE %','0DTE占比%') }}<span class="help">?<span class="tip">{{ t(
+              'Share of volume expiring today (0 days to expiry). High reading = elevated short-term speculation.',
+              '当日到期（0DTE）合约占总成交量比例。数值高代表短线投机活跃。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable col-flow sc-hide-sm" data-col="net_doi">
+            {{ t('ΔOI','OI变化') }}<span class="help">?<span class="tip">{{ t(
+              'Net change in open interest — new contracts minus expired/closed.',
+              '未平仓合约净变化——新建合约减去到期/平仓合约。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="col-flow sc-hide-xs">{{ t('Tone','方向') }}</th>
+
+          <!-- Positioning columns -->
+          <th class="col-pos" data-col="spot">{{ t('Spot','现价') }}</th>
+          <th class="col-pos" data-col="gamma_regime">
+            {{ t('Gamma','Gamma') }}<span class="help">?<span class="tip">{{ t(
+              'Long gamma: dealers lean against moves (stabilising). Short gamma: dealers chase moves (amplifying).',
+              '多Gamma：做市商对冲价格变动（有稳定效果）。空Gamma：做市商追随价格变动（有放大效果）。') }}</span></span>
+          </th>
+          <th class="sortable col-pos" data-col="net_gex_bn">
+            {{ t('Net GEX $bn','净GEX十亿$') }}<span class="help">?<span class="tip">{{ t(
+              'Net dealer gamma exposure in $billions. Positive = long gamma (dealers absorb moves).',
+              '做市商净Gamma敞口（十亿美元）。正值 = 净多Gamma（做市商吸收波动）。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable col-pos sc-hide-sm" data-col="dist_to_flip_pct">
+            {{ t('Flip dist %','翻转距离%') }}<span class="help">?<span class="tip">{{ t(
+              'How far spot sits from the gamma flip strike as a % of spot — where dealer gamma changes sign.',
+              '现价距Gamma翻转点的距离（占现价的%）——即做市商Gamma符号改变的价位。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable col-pos sc-hide-sm" data-col="wall_up_dist_pct">
+            {{ t('Wall↑ dist %','上墙距离%') }}<span class="help">?<span class="tip">{{ t(
+              'How far the upper gamma wall (magnet) is above spot, as % of spot.',
+              '上方Gamma墙（磁力位）高于现价的距离（占现价的%）。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable col-pos sc-hide-sm" data-col="wall_down_dist_pct">
+            {{ t('Wall↓ dist %','下墙距离%') }}<span class="help">?<span class="tip">{{ t(
+              'How far the lower gamma wall (magnet) is below spot, as % of spot.',
+              '下方Gamma墙（磁力位）低于现价的距离（占现价的%）。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="col-pos sc-hide-xs">
+            {{ t('Max pain','最大痛点') }}<span class="help">?<span class="tip">{{ t(
+              'Strike where total options value at expiry is minimised — gravitational pull near expiry.',
+              '到期时期权总价值最小的行权价——临近到期有引力效应。') }}</span></span>
+          </th>
+          <th class="sortable col-pos sc-hide-xs" data-col="skew_pp">
+            {{ t('Skew pp','认沽溢价pp') }}<span class="help">?<span class="tip">{{ t(
+              'How much more expensive downside puts are vs at-the-money calls, in IV percentage points — higher = richer crash protection priced in.',
+              '虚值认沽期权相对平值认购期权的IV溢价（百分点）——越高代表市场为下行风险定价越贵。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable col-pos sc-hide-xs" data-col="ivspread_pp">
+            {{ t('IV−spread pp','IV价差pp') }}<span class="help">?<span class="tip">{{ t(
+              'IV-spread vs same-day peer median in percentage points. Positive = wider than peers — elevated uncertainty or event premium relative to the group.',
+              '相对同日同业中位数的IV价差（百分点）。正值 = 高于同业——该标的不确定性或事件溢价相对偏高。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="col-pos sc-hide-sm">{{ t('Tier','层级') }}</th>
         </tr>
       </thead>
       <tbody id="os-body"></tbody>
@@ -214,13 +570,17 @@
       coverage.n_names|string ~ ' names · ' ~ coverage.n_young|string ~ ' with young IV-rank (< '
       ~ coverage.young_threshold|string ~ 'd history) · '
       ~ coverage.n_mature|string ~ ' mature · median history '
-      ~ coverage.median_depth_days|string ~ ' calendar days',
+      ~ coverage.median_depth_days|string ~ ' calendar days · skew '
+      ~ coverage.n_skew|string ~ ' · IV-spread ' ~ coverage.n_ivspread|string
+      ~ ' · rel-vol ' ~ coverage.n_relvol|string,
 
       coverage.n_names|string ~ ' 个标的 · '
       ~ coverage.n_young|string ~ ' 个IV分位偏年轻（历史不足'
       ~ coverage.young_threshold|string ~ '日） · '
       ~ coverage.n_mature|string ~ ' 个历史充足 · 历史中位数 '
-      ~ coverage.median_depth_days|string ~ ' 个日历日'
+      ~ coverage.median_depth_days|string ~ ' 个日历日 · 偏斜 '
+      ~ coverage.n_skew|string ~ ' · IV价差 ' ~ coverage.n_ivspread|string
+      ~ ' · 相对成交量 ' ~ coverage.n_relvol|string
     ) }}
   </div>
 </div>
@@ -228,8 +588,38 @@
 <script type="application/json" id="os-rows">{{ rows_json | safe }}</script>
 <script>
 (function(){
+  'use strict';
   var ROWS = JSON.parse(document.getElementById('os-rows').textContent);
   var sortCol = 'gross_premium_mn', sortDir = 'desc';
+  var activePreset = null;
+  var currentView = 'overview';
+
+  // ---- lang-aware placeholder + <option> relabel (theme.js dispatches 'langchange' on document) ----
+  // <option>/placeholder can't hold l-en/l-zh spans — single-lang render + relabel on change.
+  (function(){
+    var inp = document.getElementById('os-search');
+    var phZh = inp ? (inp.getAttribute('data-ph-zh') || inp.placeholder) : '';
+    function applyLang(){
+      var zh = document.documentElement.getAttribute('data-lang') === 'zh';
+      if(inp) inp.placeholder = zh ? phZh : 'Filter ticker or sector…';
+      document.querySelectorAll('option[data-zh]').forEach(function(o){
+        o.textContent = zh ? o.getAttribute('data-zh') : (o.getAttribute('data-en') || o.textContent);
+      });
+    }
+    applyLang();
+    document.addEventListener('langchange', applyLang);
+  })();
+
+  // ---- mobile filter toggle ----
+  var filterToggle = document.getElementById('os-filter-toggle');
+  var filterBody   = document.getElementById('os-filter-body');
+  if(filterToggle && filterBody){
+    filterToggle.addEventListener('click', function(){
+      filterBody.classList.toggle('open');
+    });
+    // open by default on mobile if screen ≥900 (CSS handles it; just ensure closed initially on small screens)
+    if(window.innerWidth >= 900) filterBody.classList.add('open');
+  }
 
   // ---- sector dropdown ----
   var sectors = {};
@@ -241,109 +631,257 @@
     secSel.appendChild(o);
   });
 
-  function fmtIV(v){ return v == null ? '<span class="na">—</span>' : v.toFixed(1) + '%'; }
-  function fmtRank(r, n, young){
-    if(r == null) return '<span class="na">—</span>';
-    var txt = r.toFixed(0) + 'th';
-    if(young) txt += ' <span class="young-badge" title="fewer than ' + n + ' days of history — treat with caution">young&nbsp;n=' + n + 'd</span>';
+  // ---- formatters ----
+  function na(){ return '<span class="na">—</span>'; }
+  function fmtIV(v){ return v==null ? na() : v.toFixed(1)+'%'; }
+  function fmtRank(r,n,young){
+    if(r==null) return na();
+    var txt = r.toFixed(0)+'th';
+    if(young) txt += ' <span class="young-badge">young&nbsp;n='+n+'d</span>';
     return txt;
   }
-  function fmtMove(v){ return v == null ? '<span class="na">—</span>' : '±' + v.toFixed(1) + '%'; }
-  function fmtPC(v){ return v == null ? '<span class="na">—</span>' : v.toFixed(2) + 'x'; }
+  function fmtMove(v){ return v==null ? na() : '±'+v.toFixed(1)+'%'; }
+  function fmtPC(v){ return v==null ? na() : v.toFixed(2)+'x'; }
   function fmtVol(v){
-    if(v == null) return '<span class="na">—</span>';
-    if(v >= 1e6) return (v/1e6).toFixed(1) + 'M';
-    if(v >= 1e3) return (v/1e3).toFixed(0) + 'K';
+    if(v==null) return na();
+    if(v>=1e6) return (v/1e6).toFixed(1)+'M';
+    if(v>=1e3) return (v/1e3).toFixed(0)+'K';
     return v.toString();
   }
-  function fmtPrem(v){ return v == null ? '<span class="na">—</span>' : '$' + v.toFixed(1) + 'M'; }
-  function fmtPrice(v){ return v == null ? '<span class="na">—</span>' : '$' + v.toFixed(2); }
+  function fmtPrem(v){ return v==null ? na() : '$'+v.toFixed(1)+'M'; }
+  function fmtNetPrem(v){ return v==null ? na() : (v>=0?'+':'')+v.toFixed(1)+'M'; }
+  function fmtPrice(v){ return v==null ? na() : '$'+v.toFixed(2); }
+  function fmtPct(v,d){ return v==null ? na() : (v>=0?'+':'')+v.toFixed(d||1)+'%'; }
+  function fmtPctAbs(v){ return v==null ? na() : Math.abs(v).toFixed(1)+'%'; }
+  function fmtPp(v){ return v==null ? na() : (v>=0?'+':'')+v.toFixed(1); }
+  function fmtGbn(v){ return v==null ? na() : (v>=0?'+':'')+v.toFixed(2)+'bn'; }
+  function fmtRelVol(v){ return v==null ? na() : v.toFixed(2)+'×'; }
+  function fmtDoi(v){ return v==null ? na() : (v>=0?'+':'')+v.toLocaleString(); }
+  function fmtZerodte(v){ return v==null ? na() : v.toFixed(1)+'%'; }
   function fmtTier(v){
-    if(!v) return '<span class="na">—</span>';
-    var cls = v === 'full' ? '' : (v === 'lite' ? 'muted' : 'muted');
-    return '<span class="' + cls + '">' + v + '</span>';
+    if(!v) return na();
+    if(v==='full') return v;
+    return '<span class="muted">'+v+'</span>';
   }
   function fmtTone(v){
-    if(!v) return '<span class="na">—</span>';
-    if(v === 'call-leaning') return '<span class="tone tone-call l-en">call-leaning</span><span class="tone tone-call l-zh">偏认购</span>';
-    if(v === 'put-leaning')  return '<span class="tone tone-put  l-en">put-leaning</span><span class="tone tone-put  l-zh">偏认沽</span>';
+    if(!v) return na();
+    if(v==='call-leaning') return '<span class="tone tone-call l-en">call-leaning</span><span class="tone tone-call l-zh">偏认购</span>';
+    if(v==='put-leaning')  return '<span class="tone tone-put l-en">put-leaning</span><span class="tone tone-put l-zh">偏认沽</span>';
     return '<span class="tone tone-neu l-en">neutral</span><span class="tone tone-neu l-zh">中性</span>';
   }
+  function fmtGammaRegime(v){
+    if(!v) return na();
+    if(v==='long')  return '<span class="grec grec-long l-en">Long</span><span class="grec grec-long l-zh">多</span>';
+    if(v==='short') return '<span class="grec grec-short l-en">Short</span><span class="grec grec-short l-zh">空</span>';
+    return '<span class="muted">'+v+'</span>';
+  }
 
-  function render(){
-    var search = (document.getElementById('os-search').value || '').trim().toUpperCase();
+  // ---- preset threshold (75th percentile of skew_pp) ----
+  var skewVals = ROWS.map(function(r){return r.skew_pp;}).filter(function(v){return v!=null;}).sort(function(a,b){return a-b;});
+  var skew75 = skewVals.length ? skewVals[Math.floor(skewVals.length*0.75)] : 0;
+
+  // ---- read all filter inputs → filter function ----
+  function getNumFilter(id){ var v=document.getElementById(id); return v?parseFloat(v.value):NaN; }
+  function filterRows(){
+    var search = (document.getElementById('os-search').value||'').trim().toUpperCase();
     var sector = secSel.value;
-    var filtered = ROWS.filter(function(r){
-      if(search && r.ticker.indexOf(search) === -1 && (r.sector||'').toUpperCase().indexOf(search) === -1) return false;
-      if(sector && r.sector !== sector) return false;
+    var tier   = document.getElementById('os-tier').value;
+    var regime = document.getElementById('os-regime').value;
+    var tone   = document.getElementById('os-tone').value;
+    var iv30min = getNumFilter('f-iv30-min'), iv30max = getNumFilter('f-iv30-max');
+    var ivrMin  = getNumFilter('f-ivrank-min'), ivrMax  = getNumFilter('f-ivrank-max');
+    var implMin = getNumFilter('f-impl-min'),   implMax = getNumFilter('f-impl-max');
+    var pcMin   = getNumFilter('f-pc-min'),     pcMax   = getNumFilter('f-pc-max');
+    var volMin  = getNumFilter('f-vol-min'),    volMax  = getNumFilter('f-vol-max');
+    var premMin = getNumFilter('f-prem-min'),   premMax = getNumFilter('f-prem-max');
+    var dteMin  = getNumFilter('f-dte-min'),    dteMax  = getNumFilter('f-dte-max');
+    var rvMin   = getNumFilter('f-relvol-min'), rvMax   = getNumFilter('f-relvol-max');
+    var skMin   = getNumFilter('f-skew-min'),   skMax   = getNumFilter('f-skew-max');
+    var flipMax = getNumFilter('f-flip-max');
+    var ivspMin = getNumFilter('f-ivsp-min'),   ivspMax = getNumFilter('f-ivsp-max');
+
+    return ROWS.filter(function(r){
+      if(search && r.ticker.indexOf(search)===-1 && (r.sector||'').toUpperCase().indexOf(search)===-1) return false;
+      if(sector && r.sector!==sector) return false;
+      if(tier && r.gex_tier!==tier) return false;
+      if(regime && (r.gamma_regime||'')!==regime) return false;
+      if(tone && (r.net_prem_tone||'')!==tone) return false;
+      if(!isNaN(iv30min) && (r.iv30==null||r.iv30<iv30min)) return false;
+      if(!isNaN(iv30max) && (r.iv30==null||r.iv30>iv30max)) return false;
+      if(!isNaN(ivrMin) && (r.iv_rank==null||r.iv_rank<ivrMin)) return false;
+      if(!isNaN(ivrMax) && (r.iv_rank==null||r.iv_rank>ivrMax)) return false;
+      if(!isNaN(implMin) && (r.implied_move_30d==null||r.implied_move_30d<implMin)) return false;
+      if(!isNaN(implMax) && (r.implied_move_30d==null||r.implied_move_30d>implMax)) return false;
+      if(!isNaN(pcMin) && (r.pc_oi==null||r.pc_oi<pcMin)) return false;
+      if(!isNaN(pcMax) && (r.pc_oi==null||r.pc_oi>pcMax)) return false;
+      if(!isNaN(volMin) && (r.volume==null||r.volume<volMin)) return false;
+      if(!isNaN(volMax) && (r.volume==null||r.volume>volMax)) return false;
+      if(!isNaN(premMin) && (r.gross_premium_mn==null||r.gross_premium_mn<premMin)) return false;
+      if(!isNaN(premMax) && (r.gross_premium_mn==null||r.gross_premium_mn>premMax)) return false;
+      if(!isNaN(dteMin) && (r.zerodte_share==null||r.zerodte_share<dteMin)) return false;
+      if(!isNaN(dteMax) && (r.zerodte_share==null||r.zerodte_share>dteMax)) return false;
+      if(!isNaN(rvMin) && (r.rel_volume==null||r.rel_volume<rvMin)) return false;
+      if(!isNaN(rvMax) && (r.rel_volume==null||r.rel_volume>rvMax)) return false;
+      if(!isNaN(skMin) && (r.skew_pp==null||r.skew_pp<skMin)) return false;
+      if(!isNaN(skMax) && (r.skew_pp==null||r.skew_pp>skMax)) return false;
+      if(!isNaN(flipMax)){
+        var ad = r.dist_to_flip_pct==null ? null : Math.abs(r.dist_to_flip_pct);
+        if(ad==null||ad>flipMax) return false;
+      }
+      if(!isNaN(ivspMin) && (r.ivspread_pp==null||r.ivspread_pp<ivspMin)) return false;
+      if(!isNaN(ivspMax) && (r.ivspread_pp==null||r.ivspread_pp>ivspMax)) return false;
       return true;
     });
+  }
 
-    // sort
-    var col = sortCol, dir = sortDir;
-    var toneOrder = {'call-leaning':1,'neutral':0,'put-leaning':-1,'':null};
-    filtered.sort(function(a, b){
-      var av = a[col], bv = b[col];
-      // nulls last
-      if(av == null && bv == null) return 0;
-      if(av == null) return 1;
-      if(bv == null) return -1;
-      // tone is string
-      if(col === 'net_prem_tone'){
-        var ao = toneOrder[av] != null ? toneOrder[av] : 0;
-        var bo = toneOrder[bv] != null ? toneOrder[bv] : 0;
-        return dir === 'desc' ? bo - ao : ao - bo;
+  // ---- count active numeric/select filters (for badge) ----
+  function countActiveFilters(){
+    var n=0;
+    var ids=['f-iv30-min','f-iv30-max','f-ivrank-min','f-ivrank-max','f-impl-min','f-impl-max',
+             'f-pc-min','f-pc-max','f-vol-min','f-vol-max','f-prem-min','f-prem-max',
+             'f-dte-min','f-dte-max','f-relvol-min','f-relvol-max','f-skew-min','f-skew-max',
+             'f-flip-max','f-ivsp-min','f-ivsp-max'];
+    ids.forEach(function(id){var el=document.getElementById(id);if(el&&el.value.trim())n++;});
+    if(document.getElementById('os-tier').value) n++;
+    if(document.getElementById('os-regime').value) n++;
+    if(document.getElementById('os-tone').value) n++;
+    if((document.getElementById('os-search').value||'').trim()) n++;
+    if(secSel.value) n++;
+    return n;
+  }
+  function updateBadge(){
+    var n=countActiveFilters();
+    var badge=document.getElementById('os-filter-badge');
+    if(badge){ badge.style.display=n?'':'none'; badge.textContent=n; }
+  }
+
+  // ---- sort ----
+  var toneOrder = {'call-leaning':1,'neutral':0,'put-leaning':-1,'':null};
+  function sortFiltered(arr){
+    var col=sortCol, dir=sortDir;
+    return arr.slice().sort(function(a,b){
+      var av=a[col], bv=b[col];
+      if(av==null&&bv==null) return 0;
+      if(av==null) return 1;
+      if(bv==null) return -1;
+      if(col==='net_prem_tone'){
+        var ao=toneOrder[av]!=null?toneOrder[av]:0;
+        var bo=toneOrder[bv]!=null?toneOrder[bv]:0;
+        return dir==='desc'?bo-ao:ao-bo;
       }
-      if(col === 'ticker' || col === 'sector'){
-        return dir === 'desc' ? bv.localeCompare(av) : av.localeCompare(bv);
+      if(col==='ticker'||col==='sector'){
+        return dir==='desc'?bv.localeCompare(av):av.localeCompare(bv);
       }
-      return dir === 'desc' ? bv - av : av - bv;
+      return dir==='desc'?bv-av:av-bv;
     });
+  }
+
+  // ---- render ----
+  function render(){
+    var filtered = sortFiltered(filterRows());
 
     var tbody = document.getElementById('os-body');
     var html = '';
     filtered.forEach(function(r){
       html += '<tr>';
-      html += '<td class="tk">' + r.ticker + '</td>';
-      html += '<td class="sc-hide-sm muted xs">' + (r.sector || '—') + '</td>';
-      html += '<td>' + fmtIV(r.iv30) + '</td>';
-      html += '<td>' + fmtRank(r.iv_rank, r.iv_rank_n, r.iv_rank_young) + '</td>';
-      html += '<td class="sc-hide-xs">' + fmtMove(r.implied_move_30d) + '</td>';
-      html += '<td>' + fmtPC(r.pc_oi) + '</td>';
-      html += '<td>' + fmtVol(r.volume) + '</td>';
-      html += '<td>' + fmtPrem(r.gross_premium_mn) + '</td>';
-      html += '<td class="sc-hide-sm">' + fmtPrice(r.max_pain) + '</td>';
-      html += '<td class="sc-hide-sm">' + fmtTier(r.gex_tier) + '</td>';
-      html += '<td class="sc-hide-xs">' + fmtTone(r.net_prem_tone) + '</td>';
+      html += '<td class="tk col-always">' + r.ticker + '</td>';
+      html += '<td class="col-always muted xs sc-hide-sm left">' + (r.sector||'—') + '</td>';
+
+      // Overview
+      html += '<td class="col-ov">' + fmtPrice(r.spot) + '</td>';
+      html += '<td class="col-ov">' + fmtIV(r.iv30) + '</td>';
+      html += '<td class="col-ov">' + fmtRank(r.iv_rank, r.iv_rank_n, r.iv_rank_young) + '</td>';
+      html += '<td class="col-ov sc-hide-xs">' + fmtMove(r.implied_move_30d) + '</td>';
+      html += '<td class="col-ov">' + fmtPC(r.pc_oi) + '</td>';
+      html += '<td class="col-ov">' + fmtVol(r.volume) + '</td>';
+      html += '<td class="col-ov">' + fmtPrem(r.gross_premium_mn) + '</td>';
+      html += '<td class="col-ov sc-hide-sm">' + fmtTone(r.net_prem_tone) + '</td>';
+
+      // Flow
+      html += '<td class="col-flow">' + fmtVol(r.volume) + '</td>';
+      html += '<td class="col-flow">' + fmtRelVol(r.rel_volume) + '</td>';
+      html += '<td class="col-flow">' + fmtPrem(r.gross_premium_mn) + '</td>';
+      html += '<td class="col-flow">' + fmtNetPrem(r.net_prem_mn) + '</td>';
+      html += '<td class="col-flow sc-hide-sm">' + fmtZerodte(r.zerodte_share) + '</td>';
+      html += '<td class="col-flow sc-hide-sm">' + fmtDoi(r.net_doi) + '</td>';
+      html += '<td class="col-flow sc-hide-xs">' + fmtTone(r.net_prem_tone) + '</td>';
+
+      // Positioning
+      html += '<td class="col-pos">' + fmtPrice(r.spot) + '</td>';
+      html += '<td class="col-pos">' + fmtGammaRegime(r.gamma_regime) + '</td>';
+      html += '<td class="col-pos">' + fmtGbn(r.net_gex_bn) + '</td>';
+      html += '<td class="col-pos sc-hide-sm">' + fmtPct(r.dist_to_flip_pct,2) + '</td>';
+      html += '<td class="col-pos sc-hide-sm">' + fmtPct(r.wall_up_dist_pct,2) + '</td>';
+      html += '<td class="col-pos sc-hide-sm">' + fmtPct(r.wall_down_dist_pct,2) + '</td>';
+      html += '<td class="col-pos sc-hide-xs">' + fmtPrice(r.max_pain);
+      if(r.pain_dist_pct!=null) html += ' <span class="muted xs">(' + (r.pain_dist_pct>=0?'+':'') + r.pain_dist_pct.toFixed(1) + '%)</span>';
+      html += '</td>';
+      html += '<td class="col-pos sc-hide-xs">' + fmtPp(r.skew_pp) + '</td>';
+      html += '<td class="col-pos sc-hide-xs">' + fmtPp(r.ivspread_pp) + '</td>';
+      html += '<td class="col-pos sc-hide-sm">' + fmtTier(r.gex_tier) + '</td>';
       html += '</tr>';
     });
-    tbody.innerHTML = html || '<tr><td colspan="11" class="muted" style="text-align:center;padding:24px">{{ t("No rows match the current filter.", "当前筛选条件下无数据。") }}</td></tr>';
+
+    var colspanCount = 20; // enough to cover all columns
+    tbody.innerHTML = html || '<tr><td colspan="'+colspanCount+'" class="muted" style="text-align:center;padding:24px">'
+      + '<span class="l-en">No rows match the current filter.</span>'
+      + '<span class="l-zh">当前筛选条件下无数据。</span>'
+      + '</td></tr>';
+
     var ct = document.getElementById('os-count');
-    if(ct) ct.textContent = filtered.length + ' / ' + ROWS.length + '{{ t(" names", " 个标的") }}';
+    if(ct) ct.textContent = filtered.length + ' / ' + ROWS.length;
+
+    updateBadge();
   }
+
+  // ---- view switching ----
+  document.querySelectorAll('.view-chip').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.view-chip').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var view = btn.getAttribute('data-view');
+      currentView = view;
+      document.body.className = document.body.className.replace(/\bview-\S+/g,'').trim();
+      if(view!=='overview') document.body.classList.add('view-'+view);
+      render();
+    });
+  });
 
   // ---- sort on header click ----
   document.querySelectorAll('table.sc-tbl thead th.sortable').forEach(function(th){
     th.addEventListener('click', function(){
       var col = th.getAttribute('data-col');
       if(!col) return;
-      if(sortCol === col){
-        sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+      if(sortCol===col){
+        sortDir = sortDir==='desc'?'asc':'desc';
       } else {
         sortCol = col;
         sortDir = 'desc';
       }
-      document.querySelectorAll('table.sc-tbl thead th').forEach(function(h){
-        h.classList.remove('sorted');
-        var arr = h.querySelector('.sarrow');
-        if(arr) arr.textContent = '↕';
-      });
-      th.classList.add('sorted');
-      var arr = th.querySelector('.sarrow');
-      if(arr) arr.textContent = sortDir === 'desc' ? '↓' : '↑';
+      if(activePreset === 'premium'){ activePreset = null; clearPresetHighlight(); }
+      syncSortUI(col, sortDir);
+      var sortSel = document.getElementById('os-sort');
+      if(sortSel){
+        for(var i=0;i<sortSel.options.length;i++){
+          if(sortSel.options[i].value===col){ sortSel.selectedIndex=i; break; }
+        }
+      }
       render();
     });
   });
+
+  function syncSortUI(col, dir){
+    document.querySelectorAll('table.sc-tbl thead th').forEach(function(h){
+      h.classList.remove('sorted');
+      var arr=h.querySelector('.sarrow');
+      if(arr) arr.textContent='↕';
+    });
+    document.querySelectorAll('table.sc-tbl thead th[data-col="'+col+'"]').forEach(function(h){
+      h.classList.add('sorted');
+      var arr=h.querySelector('.sarrow');
+      if(arr) arr.textContent=dir==='desc'?'↓':'↑';
+    });
+  }
 
   // ---- sort-select sync ----
   var sortSel = document.getElementById('os-sort');
@@ -351,30 +889,123 @@
     sortSel.addEventListener('change', function(){
       sortCol = this.value;
       sortDir = 'desc';
-      document.querySelectorAll('table.sc-tbl thead th').forEach(function(h){
-        h.classList.remove('sorted');
-        var arr = h.querySelector('.sarrow');
-        if(arr) arr.textContent = '↕';
-      });
-      var matching = document.querySelector('table.sc-tbl thead th[data-col="' + sortCol + '"]');
-      if(matching){
-        matching.classList.add('sorted');
-        var arr = matching.querySelector('.sarrow');
-        if(arr) arr.textContent = '↓';
-      }
+      // 'premium' is a sort-only preset — a manual re-sort invalidates it
+      if(activePreset === 'premium'){ activePreset = null; clearPresetHighlight(); }
+      syncSortUI(sortCol, sortDir);
       render();
     });
   }
 
-  document.getElementById('os-search').addEventListener('input', render);
-  secSel.addEventListener('change', render);
+  // ---- filter inputs: wire all to render ----
+  var filterInputIds = ['os-search','os-sector','os-tier','os-regime','os-tone',
+    'f-iv30-min','f-iv30-max','f-ivrank-min','f-ivrank-max','f-impl-min','f-impl-max',
+    'f-pc-min','f-pc-max','f-vol-min','f-vol-max','f-prem-min','f-prem-max',
+    'f-dte-min','f-dte-max','f-relvol-min','f-relvol-max','f-skew-min','f-skew-max',
+    'f-flip-max','f-ivsp-min','f-ivsp-max'];
+  filterInputIds.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.addEventListener(el.tagName==='SELECT'?'change':'input', function(){ activePreset=null; clearPresetHighlight(); render(); });
+  });
 
-  // initial sort marker
-  var initTh = document.querySelector('table.sc-tbl thead th[data-col="' + sortCol + '"]');
-  if(initTh){ initTh.classList.add('sorted'); var arr = initTh.querySelector('.sarrow'); if(arr) arr.textContent = '↓'; }
+  // ---- clear all filters ----
+  // resetFilterInputs only blanks the inputs — it must NOT touch activePreset or the
+  // chip highlight, because applyPreset() calls it right after the click handler set those.
+  function resetFilterInputs(){
+    document.getElementById('os-search').value='';
+    secSel.value='';
+    document.getElementById('os-tier').value='';
+    document.getElementById('os-regime').value='';
+    document.getElementById('os-tone').value='';
+    ['f-iv30-min','f-iv30-max','f-ivrank-min','f-ivrank-max','f-impl-min','f-impl-max',
+     'f-pc-min','f-pc-max','f-vol-min','f-vol-max','f-prem-min','f-prem-max',
+     'f-dte-min','f-dte-max','f-relvol-min','f-relvol-max','f-skew-min','f-skew-max',
+     'f-flip-max','f-ivsp-min','f-ivsp-max'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) el.value='';
+    });
+  }
+  function clearAllFilters(){
+    resetFilterInputs();
+    activePreset=null;
+    clearPresetHighlight();
+    render();
+  }
+  document.getElementById('os-clear-btn').addEventListener('click', clearAllFilters);
+
+  // ---- preset chips ----
+  function clearPresetHighlight(){
+    document.querySelectorAll('.preset-chip').forEach(function(b){ b.classList.remove('active'); });
+  }
+  function applyPreset(key){
+    resetFilterInputs(); // blank inputs only — preserves the just-set activePreset/highlight
+    // Now apply preset values without triggering the clear from input listeners
+    if(key==='premium'){
+      sortCol='gross_premium_mn'; sortDir='desc';
+      syncSortUI(sortCol,sortDir);
+      if(sortSel) for(var i=0;i<sortSel.options.length;i++){if(sortSel.options[i].value==='gross_premium_mn'){sortSel.selectedIndex=i;break;}}
+    } else if(key==='volsurge'){
+      document.getElementById('f-relvol-min').value='2';
+    } else if(key==='highrank'){
+      document.getElementById('f-ivrank-min').value='80';
+    } else if(key==='zerodte'){
+      document.getElementById('f-dte-min').value='60';
+    } else if(key==='putskew'){
+      document.getElementById('f-skew-min').value=skew75.toFixed(1);
+    } else if(key==='nearflip'){
+      document.getElementById('f-flip-max').value='1';
+    } else if(key==='putheavy'){
+      document.getElementById('f-pc-min').value='1.5';
+    }
+    render();
+  }
+  document.querySelectorAll('.preset-chip').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key=btn.getAttribute('data-preset');
+      if(activePreset===key){
+        // second click = clear
+        activePreset=null;
+        clearPresetHighlight();
+        clearAllFilters();
+      } else {
+        clearPresetHighlight();
+        btn.classList.add('active');
+        activePreset=key;
+        applyPreset(key);
+      }
+    });
+  });
+
+  // ---- CSV export ----
+  document.getElementById('os-export').addEventListener('click', function(){
+    var filtered = sortFiltered(filterRows());
+    if(!filtered.length) return;
+    var keys = Object.keys(filtered[0]);
+    var lines = [keys.join(',')];
+    filtered.forEach(function(r){
+      lines.push(keys.map(function(k){
+        var v=r[k];
+        if(v==null) return '';
+        var s=String(v);
+        if(s.indexOf(',')>-1||s.indexOf('"')>-1||s.indexOf('\n')>-1) s='"'+s.replace(/"/g,'""')+'"';
+        return s;
+      }).join(','));
+    });
+    var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;
+    var d=new Date().toISOString().slice(0,10);
+    a.download='options_screener_'+d+'.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ---- initial sort marker ----
+  syncSortUI(sortCol, sortDir);
 
   render();
 })();
 </script>
+<script src="theme.js"></script>
 </body>
 </html>

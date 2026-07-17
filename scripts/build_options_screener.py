@@ -10,13 +10,21 @@ Data inputs (all read-only):
       max_pain, magnet_up, magnet_down, gamma_flip, tier — daily since 2026-06-15)
   - data/options_flow/summary_<TICKER>.parquet  (353 names; volume, premium_mn,
       net_premium_mn, pc_ratio, zerodte_share — magnitude reliable, direction SOFT)
+  - data/options_skew/snapshots.parquet         (~400 names; skew = otm_put_iv − atm_call_iv,
+      tenor ~30d, latest date per underlying)
+  - data/options_ivspread/snapshots.parquet     (~370 names; ivspread_rel = spread vs
+      cross-sectional peer median; latest date per underlying)
   - data/tape_flow/daily/                       (accruing; read if present)
 
 Columns assembled:
   ticker, sector (basket category or "ETF/Index"), iv30, iv_rank (pct of available
   history — young-labelled while <252d), pc_oi (put/call OI ratio), volume,
   gross_premium_mn, implied_move_30d_pct (IV30 × sqrt(30/365) × 100),
-  max_pain, gex_tier, net_prem_tone (~-soft chip: labeled heuristic only)
+  max_pain, gex_tier, net_prem_tone (~-soft chip: labeled heuristic only),
+  gamma_regime, dist_to_flip_pct, net_gex_bn,
+  pain_dist_pct, wall_up_dist_pct, wall_down_dist_pct,
+  iv30_chg_5d, rel_volume, net_doi,
+  skew_pp, skew_tenor_d, ivspread_pp
 
 Feature flag: config.yml key `options_screener.enabled` (default true).  If false,
 this script returns 0 immediately, emitting a noindex stub — same darkpool precedent.
@@ -51,6 +59,8 @@ log = logging.getLogger("build_options_screener")
 GEX_DIR       = config.data_dir() / "polygon_gex"
 FLOW_DIR      = config.data_dir() / "options_flow"
 TAPE_FLOW_DIR = config.data_dir() / "tape_flow" / "daily"
+SKEW_PATH     = config.data_dir() / "options_skew" / "snapshots.parquet"
+IVSPREAD_PATH = config.data_dir() / "options_ivspread" / "snapshots.parquet"
 
 # IV-rank is labelled "young" when fewer than this many calendar days of history
 YOUNG_THRESHOLD_DAYS = 252
@@ -96,6 +106,84 @@ def _build_sector_map() -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
+# Snapshot lookup tables (loaded once)
+# ---------------------------------------------------------------------------
+
+def _load_skew_lookup() -> dict[str, dict]:
+    """Return {TICKER: {skew_pp, skew_tenor_d}} from latest date per underlying."""
+    if not SKEW_PATH.exists():
+        return {}
+    try:
+        df = pd.read_parquet(SKEW_PATH)
+        if df.empty:
+            return {}
+        # latest date per underlying
+        df = df.sort_values("date")
+        # whole-row take: groupby.last() is per-column last-VALID and can mix dates
+        latest = df.sort_values("date").drop_duplicates("underlying", keep="last")
+        out: dict[str, dict] = {}
+        for _, row in latest.iterrows():
+            underlying = str(row["underlying"]).upper()
+            skew_val = row.get("skew")
+            tenor_val = row.get("tenor_days")
+            skew_pp = None
+            if skew_val is not None:
+                try:
+                    f = float(skew_val)
+                    if not (math.isnan(f) or math.isinf(f)):
+                        skew_pp = round(f * 100, 1)
+                except (TypeError, ValueError):
+                    pass
+            tenor_d = None
+            if tenor_val is not None:
+                try:
+                    f = float(tenor_val)
+                    if not (math.isnan(f) or math.isinf(f)):
+                        tenor_d = int(f)
+                except (TypeError, ValueError):
+                    pass
+            out[underlying] = {"skew_pp": skew_pp, "skew_tenor_d": tenor_d}
+        return out
+    except Exception as e:  # noqa: BLE001
+        log.warning("skew lookup failed: %s", e)
+        return {}
+
+
+def _load_ivspread_lookup() -> dict[str, float | None]:
+    """Return {TICKER: ivspread_pp} from latest date per underlying.
+
+    ivspread_rel = each name's IV-spread minus the cross-sectional peer median.
+    ivspread_pp = ivspread_rel * 100, rounded to 1 decimal.
+    """
+    if not IVSPREAD_PATH.exists():
+        return {}
+    try:
+        df = pd.read_parquet(IVSPREAD_PATH)
+        if df.empty:
+            return {}
+        df = df.sort_values("date")
+        # whole-row take: groupby.last() is per-column last-VALID and can mix dates
+        latest = df.sort_values("date").drop_duplicates("underlying", keep="last")
+        out: dict[str, float | None] = {}
+        for _, row in latest.iterrows():
+            underlying = str(row["underlying"]).upper()
+            val = row.get("ivspread_rel")
+            ivspread_pp = None
+            if val is not None:
+                try:
+                    f = float(val)
+                    if not (math.isnan(f) or math.isinf(f)):
+                        ivspread_pp = round(f * 100, 1)
+                except (TypeError, ValueError):
+                    pass
+            out[underlying] = ivspread_pp
+        return out
+    except Exception as e:  # noqa: BLE001
+        log.warning("ivspread lookup failed: %s", e)
+        return {}
+
+
+# ---------------------------------------------------------------------------
 # Per-ticker GEX summary loader
 # ---------------------------------------------------------------------------
 
@@ -136,24 +224,66 @@ def _compute_iv_rank(df: pd.DataFrame) -> tuple[float | None, int, bool]:
     return round(rank, 1), n, is_young
 
 
+def _compute_iv30_chg_5d(df: pd.DataFrame) -> float | None:
+    """Return 5-day IV-change in IV points ×100 (latest − 5-rows-earlier), or None.
+
+    Requires ≥6 rows of iv30 data.
+    """
+    if df is None or df.empty or "iv30" not in df.columns:
+        return None
+    iv_series = df["iv30"].dropna()
+    if len(iv_series) < 6:
+        return None
+    try:
+        latest = float(iv_series.iloc[-1])
+        five_back = float(iv_series.iloc[-6])
+        chg = (latest - five_back) * 100
+        return round(chg, 1)
+    except (TypeError, ValueError, IndexError):
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Per-ticker flow summary loader
 # ---------------------------------------------------------------------------
 
-def _load_flow_summary(ticker: str) -> dict[str, Any]:
-    """Return the latest row from options_flow summary as a dict, or {}."""
+def _load_flow_summary(ticker: str) -> tuple[dict[str, Any], pd.DataFrame | None]:
+    """Return (latest_row_dict, full_df) from options_flow summary, or ({}, None)."""
     p = FLOW_DIR / f"summary_{ticker}.parquet"
     if not p.exists():
-        return {}
+        return {}, None
     try:
         df = pd.read_parquet(p)
         if df.empty:
-            return {}
+            return {}, None
         row = df.iloc[-1]
-        return row.to_dict()
+        return row.to_dict(), df
     except Exception as e:  # noqa: BLE001
         log.debug("flow summary read failed %s: %s", ticker, e)
-        return {}
+        return {}, None
+
+
+def _compute_rel_volume(flow_df: pd.DataFrame | None) -> float | None:
+    """Return rel_volume = latest volume / mean(prior 20 sessions volume).
+
+    Requires ≥5 prior sessions (excluding latest). Returns None otherwise.
+    """
+    if flow_df is None or flow_df.empty or "volume" not in flow_df.columns:
+        return None
+    vol_series = flow_df["volume"].dropna()
+    if len(vol_series) < 6:  # need latest + ≥5 prior
+        return None
+    try:
+        latest = float(vol_series.iloc[-1])
+        prior = vol_series.iloc[-21:-1]  # up to 20 prior sessions
+        if len(prior) < 5:
+            return None
+        mean_prior = float(prior.mean())
+        if mean_prior <= 0:
+            return None
+        return round(latest / mean_prior, 2)
+    except (TypeError, ValueError, IndexError):
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -224,6 +354,8 @@ def _net_prem_tone(net_prem: float | None, tape_tone: str | None) -> str:
 
 def build_screener_rows(
     sector_map: dict[str, str],
+    skew_lookup: dict[str, dict],
+    ivspread_lookup: dict[str, float | None],
 ) -> tuple[list[dict], dict[str, Any]]:
     """Load all available tickers and build the screener row list.
 
@@ -242,6 +374,9 @@ def build_screener_rows(
     rows = []
     n_young = 0
     depth_days_list = []
+    n_skew = 0
+    n_ivspread = 0
+    n_relvol = 0
 
     for ticker in tickers:
         gex_df = _load_gex_summary(ticker)
@@ -270,16 +405,57 @@ def build_screener_rows(
         gamma_flip = _safe_float(latest.get("gamma_flip"), 2)
         tier = str(latest.get("tier") or "")
 
+        # New GEX fields
+        gamma_regime = str(latest.get("gamma_regime") or "") or None
+        dist_to_flip_pct = _safe_float(latest.get("dist_to_flip_pct"), 2)
+        net_gex_bn = _safe_float(latest.get("net_gex_bn"), 3)
+
+        # Computed distances (null-safe)
+        pain_dist_pct = None
+        if spot is not None and max_pain is not None and max_pain != 0:
+            pain_dist_pct = round((spot - max_pain) / max_pain * 100, 2)
+
+        wall_up_dist_pct = None
+        if wall_up is not None and spot is not None and spot != 0:
+            wall_up_dist_pct = round((wall_up - spot) / spot * 100, 2)
+
+        wall_down_dist_pct = None
+        if wall_down is not None and spot is not None and spot != 0:
+            wall_down_dist_pct = round((spot - wall_down) / spot * 100, 2)
+
+        # IV30 5-day change
+        iv30_chg_5d = _compute_iv30_chg_5d(gex_df)
+
         # GEX store put/call OI ratio
         pc_oi_gex = _safe_float(latest.get("put_call_oi_ratio"), 3)
 
         # Options flow store
-        flow = _load_flow_summary(ticker) if ticker in flow_tickers else {}
+        if ticker in flow_tickers:
+            flow, flow_df = _load_flow_summary(ticker)
+        else:
+            flow, flow_df = {}, None
+
         volume = int(flow["volume"]) if flow.get("volume") and not math.isnan(float(flow["volume"])) else None
         premium_mn = _safe_float(flow.get("premium_mn"), 2)
         net_prem_mn = _safe_float(flow.get("net_premium_mn"), 2)
         pc_ratio_flow = _safe_float(flow.get("pc_ratio"), 3)
         zerodte = _safe_float(flow.get("zerodte_share"), 3)
+
+        # net_doi (latest, absent-safe int)
+        net_doi_raw = flow.get("net_doi")
+        net_doi = None
+        if net_doi_raw is not None:
+            try:
+                f = float(net_doi_raw)
+                if not (math.isnan(f) or math.isinf(f)):
+                    net_doi = int(f)
+            except (TypeError, ValueError):
+                pass
+
+        # rel_volume
+        rel_volume = _compute_rel_volume(flow_df)
+        if rel_volume is not None:
+            n_relvol += 1
 
         # Use flow pc_ratio when available; fall back to gex store
         pc_oi = pc_ratio_flow if pc_ratio_flow is not None else pc_oi_gex
@@ -289,6 +465,18 @@ def build_screener_rows(
         tone = _net_prem_tone(net_prem_mn, tape_tone)
 
         sector = sector_map.get(ticker, "ETF / Index")
+
+        # Skew join
+        skew_data = skew_lookup.get(ticker, {})
+        skew_pp = skew_data.get("skew_pp")
+        skew_tenor_d = skew_data.get("skew_tenor_d")
+        if skew_pp is not None:
+            n_skew += 1
+
+        # IV-spread join
+        ivspread_pp = ivspread_lookup.get(ticker)
+        if ivspread_pp is not None:
+            n_ivspread += 1
 
         rows.append({
             "ticker": ticker,
@@ -311,6 +499,19 @@ def build_screener_rows(
             "gamma_flip": gamma_flip,
             "gex_tier": tier,
             "net_prem_tone": tone,
+            # New fields
+            "gamma_regime": gamma_regime,
+            "dist_to_flip_pct": dist_to_flip_pct,
+            "net_gex_bn": net_gex_bn,
+            "pain_dist_pct": pain_dist_pct,
+            "wall_up_dist_pct": wall_up_dist_pct,
+            "wall_down_dist_pct": wall_down_dist_pct,
+            "iv30_chg_5d": iv30_chg_5d,
+            "rel_volume": rel_volume,
+            "net_doi": net_doi,
+            "skew_pp": skew_pp,
+            "skew_tenor_d": skew_tenor_d,
+            "ivspread_pp": ivspread_pp,
         })
 
     # Sort: by gross_premium_mn desc (most active first), then ticker
@@ -326,6 +527,9 @@ def build_screener_rows(
         "median_depth_days": med_depth,
         "young_threshold": YOUNG_THRESHOLD_DAYS,
         "tape_flow_present": TAPE_FLOW_DIR.exists(),
+        "n_skew": n_skew,
+        "n_ivspread": n_ivspread,
+        "n_relvol": n_relvol,
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     }
     return rows, coverage
@@ -366,10 +570,16 @@ def main() -> int:
         return 0
 
     sector_map = _build_sector_map()
-    rows, coverage = build_screener_rows(sector_map)
+    skew_lookup = _load_skew_lookup()
+    ivspread_lookup = _load_ivspread_lookup()
+    log.info("loaded skew lookup: %d names, ivspread lookup: %d names", len(skew_lookup), len(ivspread_lookup))
+
+    rows, coverage = build_screener_rows(sector_map, skew_lookup, ivspread_lookup)
     log.info(
-        "assembled %d rows (%d young IV-rank, median %dd history)",
+        "assembled %d rows (%d young IV-rank, median %dd history, "
+        "skew=%d ivspread=%d relvol=%d)",
         len(rows), coverage["n_young"], coverage["median_depth_days"],
+        coverage["n_skew"], coverage["n_ivspread"], coverage["n_relvol"],
     )
 
     # Render

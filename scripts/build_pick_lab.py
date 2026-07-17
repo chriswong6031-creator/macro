@@ -63,6 +63,15 @@ _SECTOR_ETF_TICKERS = list(_ETF_TO_SECTOR.keys())
 # Labdata output directory
 _LABDATA_DIR = Path("site") / "labdata"
 
+# ETF closes store path (SPY + 11 GICS ETFs; maintained incrementally)
+_ETF_CLOSES_PATH = Path("data") / "pick_lab" / "etf_closes.parquet"
+
+# Earliest start date for initial ETF history fetch
+_ETF_HISTORY_START = "2023-06-01"
+
+# Sessions to refresh on incremental runs (covers weekends + late data)
+_ETF_REFRESH_TAIL = 10
+
 # Recent fires to show per book in the UI (last N fires with grades attached)
 _RECENT_FIRES_PER_BOOK = 30
 
@@ -78,6 +87,126 @@ def _load_regime() -> dict:
     except Exception as exc:  # noqa: BLE001
         log.debug("pick_lab: regime/latest.json unreadable (%s)", exc)
         return {}
+
+
+def _build_etf_closes(breadth_panel: Optional[pd.DataFrame]) -> None:
+    """Fetch/refresh SPY + sector ETF closes and persist to _ETF_CLOSES_PATH.
+
+    Incremental: on subsequent runs fetches the last _ETF_REFRESH_TAIL sessions
+    plus any new dates, then appends (keep-first on date index).  On the first
+    run, fetches since _ETF_HISTORY_START.
+
+    Clips rows to dates <= max date of breadth_panel so a partially-formed
+    same-day row cannot enter grading (the close panel is only complete after
+    market close and the breadth cache is the authoritative session calendar).
+
+    Never-fatal: any yfinance failure leaves the existing parquet intact.
+    """
+    tickers = ["SPY"] + _SECTOR_ETF_TICKERS
+    path = config.data_dir() / "pick_lab" / "etf_closes.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load existing store (may be absent on first run)
+    existing: Optional[pd.DataFrame] = None
+    if path.exists():
+        try:
+            existing = pd.read_parquet(path)
+            if not isinstance(existing.index, pd.DatetimeIndex):
+                existing.index = pd.DatetimeIndex(existing.index)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("pick_lab etf_closes: existing store unreadable (%s) — full refetch", exc)
+            existing = None
+
+    # Determine fetch start date
+    if existing is not None and not existing.empty:
+        last_date = existing.index.max()
+        # Refresh tail to catch late data / corporate actions
+        tail_start = last_date - pd.Timedelta(days=_ETF_REFRESH_TAIL * 2)
+        fetch_start = str(tail_start.date())
+    else:
+        fetch_start = _ETF_HISTORY_START
+
+    try:
+        import yfinance as yf  # optional dep; fail gracefully if absent
+        raw = yf.download(
+            tickers,
+            start=fetch_start,
+            auto_adjust=True,
+            progress=False,
+        )
+        if raw.empty:
+            log.info("pick_lab etf_closes: yfinance returned empty frame — skipped")
+            return
+
+        # Extract Close level (multi-index when >1 ticker, flat when =1)
+        if isinstance(raw.columns, pd.MultiIndex):
+            closes = raw["Close"]
+        else:
+            closes = raw[["Close"]]
+            closes.columns = tickers[:1]
+
+        closes = closes.sort_index()
+        if not isinstance(closes.index, pd.DatetimeIndex):
+            closes.index = pd.DatetimeIndex(closes.index)
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("pick_lab etf_closes: yfinance fetch failed (%s) — using existing store", exc)
+        return
+
+    # Clip to max date of breadth panel when available, or to yesterday when the
+    # breadth panel is absent (prevents a partial same-day yfinance row from
+    # entering the committed store on fresh clones without the gitignored cache).
+    if breadth_panel is not None and not breadth_panel.empty:
+        max_close_date = breadth_panel.index.max()
+    else:
+        max_close_date = (pd.Timestamp.now("UTC").normalize() - pd.Timedelta(days=1)).tz_localize(None)
+    closes = closes[closes.index <= max_close_date]
+
+    if closes.empty:
+        log.info("pick_lab etf_closes: no new rows after clip — skipped")
+        return
+
+    # Merge with existing (keep-first on date index = keep existing on overlap)
+    if existing is not None and not existing.empty:
+        # For refresh tail overlap: prefer newly fetched data (more complete)
+        # so concatenate new first, then existing; keep_first keeps the NEW data
+        combined = pd.concat([closes, existing])
+        combined = combined.loc[~combined.index.duplicated(keep="first")]
+        combined = combined.sort_index()
+    else:
+        combined = closes
+
+    # Ensure all expected tickers are present as columns (fill missing with NaN)
+    for t in tickers:
+        if t not in combined.columns:
+            combined[t] = float("nan")
+
+    # Deduplicate columns (yfinance can emit duplicates on reconnect)
+    combined = combined.loc[:, ~combined.columns.duplicated()]
+
+    try:
+        combined.to_parquet(path)
+        log.info(
+            "pick_lab etf_closes: wrote %s (%d rows x %d tickers)",
+            path, len(combined), combined.shape[1],
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("pick_lab etf_closes: write failed (%s)", exc)
+
+
+def _load_etf_closes() -> Optional[pd.DataFrame]:
+    """Load the committed ETF closes store; return None on absence/error."""
+    path = config.data_dir() / "pick_lab" / "etf_closes.parquet"
+    if not path.exists():
+        return None
+    try:
+        df = pd.read_parquet(path)
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df.index = pd.DatetimeIndex(df.index)
+        return df.sort_index()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("pick_lab etf_closes: load failed (%s)", exc)
+        return None
 
 
 def _load_close_panel() -> Optional[pd.DataFrame]:
@@ -103,7 +232,18 @@ def _load_close_panel() -> Optional[pd.DataFrame]:
             frame = frame.join(d[new], how="outer")
     if frame is None:
         return None
-    return frame.sort_index()
+    frame = frame.sort_index()
+
+    # Outer-join the ETF closes store (SPY + 11 GICS ETFs) so ret_excess_spy
+    # and ret_rel_sector are non-null on every grade row going forward.
+    etf = _load_etf_closes()
+    if etf is not None and not etf.empty:
+        new_cols = [c for c in etf.columns if c not in frame.columns]
+        if new_cols:
+            frame = frame.join(etf[new_cols], how="outer")
+            frame = frame.sort_index()
+
+    return frame
 
 
 def _build_sector_phase_map(regime: dict) -> dict[str, dict]:
@@ -345,6 +485,9 @@ def _grade_pass(
     grades_entry: list[dict],
     fires_lh: list[dict],
     grades_lh: list[dict],
+    *,
+    high_panel: Optional[pd.DataFrame] = None,
+    low_panel: Optional[pd.DataFrame] = None,
 ) -> tuple[int, int]:
     """Run the maturation pass; return (new_entry_grades, new_lh_grades) counts."""
     if close_panel is None or close_panel.empty:
@@ -380,6 +523,8 @@ def _grade_pass(
             spy_closes,
             hold_thesis=False,
             already_graded=already_entry,
+            high_panel=high_panel,
+            low_panel=low_panel,
         )
         if new_grades:
             n_new_entry = append_grades(new_grades, hold_thesis=False)
@@ -397,6 +542,8 @@ def _grade_pass(
             spy_closes,
             hold_thesis=True,
             already_graded=already_lh,
+            high_panel=high_panel,
+            low_panel=low_panel,
         )
         if new_lh_grades:
             n_new_lh = append_grades(new_lh_grades, hold_thesis=True)
@@ -425,6 +572,37 @@ def _build_picks_today(fires_entry: list[dict], asof: str) -> dict[str, list[dic
     return result
 
 
+def _build_grade_map(grades: list[dict], engine_id: str) -> dict[tuple, dict]:
+    """Build {(ticker, fire_date): grade_dict} for engine_id, preferring h=21/126."""
+    grade_map: dict[tuple, dict] = {}
+    for g in grades:
+        if g.get("kind") == "path":
+            continue  # path rows carry path metrics, not ret — skip
+        if g.get("engine_id") != engine_id:
+            continue
+        k = (g.get("ticker"), g.get("fire_date"))
+        h = g.get("horizon")
+        if k not in grade_map or h in (21, 126):
+            grade_map[k] = g
+    return grade_map
+
+
+def _attach_grade(fire_row: dict, grade_map: dict[tuple, dict]) -> dict:
+    """Return a copy of fire_row with ret21_excess/ret21_abs/matured attached."""
+    k = (fire_row.get("ticker"), fire_row.get("fire_date"))
+    g = grade_map.get(k)
+    row = dict(fire_row)
+    if g:
+        row["ret21_excess"] = g.get("ret_excess_spy")
+        row["ret21_abs"] = g.get("ret_abs")
+        row["matured"] = bool(g.get("matured"))
+    else:
+        row["ret21_excess"] = None
+        row["ret21_abs"] = None
+        row["matured"] = False
+    return row
+
+
 def _build_recent_fires_with_grades(
     fires: list[dict],
     grades: list[dict],
@@ -438,32 +616,69 @@ def _build_recent_fires_with_grades(
         reverse=True,
     )[:n]
 
-    # Build grade lookup: (ticker, fire_date) → grade at h=21 (or h=126 for LH)
-    grade_map: dict[tuple, dict] = {}
-    for g in grades:
-        if g.get("engine_id") != engine_id:
-            continue
-        k = (g.get("ticker"), g.get("fire_date"))
-        h = g.get("horizon")
-        # prefer h=21 for entry, h=126 for LH
-        if k not in grade_map or h in (21, 126):
-            grade_map[k] = g
+    grade_map = _build_grade_map(grades, engine_id)
 
     result = []
     for f in my_fires:
-        k = (f.get("ticker"), f.get("fire_date"))
-        g = grade_map.get(k)
-        row = dict(f)
-        if g:
-            row["ret21_excess"] = g.get("ret_excess_spy")
-            row["ret21_abs"] = g.get("ret_abs")
-            row["matured"] = bool(g.get("matured"))
-        else:
-            row["ret21_excess"] = None
-            row["ret21_abs"] = None
-            row["matured"] = False
-        result.append(row)
+        result.append(_attach_grade(f, grade_map))
     return result
+
+
+def _build_fires_export(
+    fires_entry: list[dict],
+    fires_lh: list[dict],
+    grades_entry: list[dict],
+    grades_lh: list[dict],
+    asof: str,
+) -> dict:
+    """Build the dict written to site/labdata/pick_lab_fires.json.
+
+    Groups ALL fires (no cap) by engine_id from both entry and LH ledgers.
+    Attaches grade columns using the same grade-map logic as _build_recent_fires_with_grades.
+    Keeps only the compact field set (no 'why', 'features', 'config_hash', etc.)
+    to bound payload size.
+    """
+    # Combined fires and grades across both ledgers
+    all_fires = fires_entry + fires_lh
+    all_grades = grades_entry + grades_lh
+
+    # Collect all engine_ids present
+    engine_ids: list[str] = []
+    seen: set[str] = set()
+    for f in all_fires:
+        eid = f.get("engine_id", "")
+        if eid and eid not in seen:
+            engine_ids.append(eid)
+            seen.add(eid)
+
+    fires_by_book: dict[str, list[dict]] = {}
+    for eid in engine_ids:
+        grade_map = _build_grade_map(all_grades, eid)
+        my_fires = sorted(
+            [f for f in all_fires if f.get("engine_id") == eid],
+            key=lambda x: (x.get("fire_date", ""), x.get("ticker", "")),
+            reverse=True,
+        )
+        rows = []
+        for f in my_fires:
+            enriched = _attach_grade(f, grade_map)
+            rows.append({
+                "ticker": enriched.get("ticker"),
+                "fire_date": enriched.get("fire_date"),
+                "sector": enriched.get("sector"),
+                "rank": enriched.get("rank"),
+                "close_at_fire": enriched.get("close_at_fire"),
+                "ret21_excess": enriched.get("ret21_excess"),
+                "ret21_abs": enriched.get("ret21_abs"),
+                "matured": enriched.get("matured", False),
+            })
+        fires_by_book[eid] = rows
+
+    return {
+        "as_of": asof,
+        "fires_by_book": fires_by_book,
+        "authority": "display_only",
+    }
 
 
 def _build_entry_lanes(snap: pd.DataFrame, fires_entry: list[dict], asof: str) -> dict:
@@ -722,6 +937,55 @@ def _build() -> None:
             exc,
         )
 
+    # Refresh ETF closes store before loading the close panel (so the panel
+    # includes SPY + sector ETFs on the first call after the store is built).
+    # Load the raw breadth panel first (needed for the clip date).
+    raw_breadth: Optional[pd.DataFrame] = None
+    try:
+        p = config.data_dir() / "breadth" / "_closes_cache.parquet"
+        if p.exists():
+            raw_breadth = pd.read_parquet(p)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("pick_lab: breadth panel pre-load for etf clip failed (%s)", exc)
+
+    try:
+        _build_etf_closes(raw_breadth)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("pick_lab: etf closes refresh failed (%s) — proceeding", exc)
+
+    # Load high/low caches for intraday MFE/MAE (path rows).
+    # Each tier uses _high_cache.parquet / _low_cache.parquet (verified on disk).
+    high_panel: Optional[pd.DataFrame] = None
+    low_panel: Optional[pd.DataFrame] = None
+    for tier in _CLOSE_CACHE_TIERS:
+        for attr, fname in (("high_panel", "_high_cache.parquet"), ("low_panel", "_low_cache.parquet")):
+            p = config.data_dir() / tier / fname
+            if not p.exists():
+                continue
+            try:
+                d = pd.read_parquet(p)
+            except Exception as exc:  # noqa: BLE001
+                log.debug("pick_lab: %s unreadable (%s) — skipped", p, exc)
+                continue
+            d = d.loc[:, ~d.columns.duplicated()]
+            if attr == "high_panel":
+                if high_panel is None:
+                    high_panel = d
+                else:
+                    new_cols = [c for c in d.columns if c not in high_panel.columns]
+                    high_panel = high_panel.join(d[new_cols], how="outer")
+            else:
+                if low_panel is None:
+                    low_panel = d
+                else:
+                    new_cols = [c for c in d.columns if c not in low_panel.columns]
+                    low_panel = low_panel.join(d[new_cols], how="outer")
+
+    if high_panel is not None:
+        high_panel = high_panel.sort_index()
+    if low_panel is not None:
+        low_panel = low_panel.sort_index()
+
     # Build a trading-date index for lockout calculations.
     # Primary source: the close panel (most accurate, includes market anomalies).
     # Fallback: NYSE calendar — keeps PL-R4 no-refire-while-open active even when
@@ -784,7 +1048,11 @@ def _build() -> None:
     grades_entry = load_grades(hold_thesis=False)
     grades_lh = load_grades(hold_thesis=True)
 
-    _grade_pass(close_panel, fires_entry, grades_entry, fires_lh, grades_lh)
+    _grade_pass(
+        close_panel, fires_entry, grades_entry, fires_lh, grades_lh,
+        high_panel=high_panel,
+        low_panel=low_panel,
+    )
 
     # Reload grades after appending
     grades_entry = load_grades(hold_thesis=False)
@@ -823,6 +1091,12 @@ def _build() -> None:
     _write_site_artifact(labdata / "pick_lab.json", entry_payload)
     _write_site_artifact(labdata / "pick_lab_longhold.json", lh_payload)
 
+    # Write full-history fires export (pick_lab_fires.json)
+    fires_payload = _build_fires_export(
+        fires_entry, fires_lh, grades_entry, grades_lh, asof
+    )
+    _write_site_artifact(labdata / "pick_lab_fires.json", fires_payload)
+
     # (f) Render the page
     try:
         from engine.pick_lab.render import build_vm, render_page, _load_audit_scoreboard
@@ -839,7 +1113,11 @@ def _build() -> None:
         # the default audit_scoreboard=None → {"present": False} and render_page's
         # "not in vm" guard never fires (key IS present, just {"present": False}).
         audit_sb = _load_audit_scoreboard(site)
-        vm = build_vm(entry_payload, lh_payload, t0_dict=t0_dict, audit_scoreboard=audit_sb)
+        vm = build_vm(
+            entry_payload, lh_payload,
+            t0_dict=t0_dict, audit_scoreboard=audit_sb,
+            fires_dict=fires_payload,
+        )
         render_page(vm, site)
     except Exception as exc:  # noqa: BLE001
         log.warning("pick_lab: page render failed (%s) — data artifacts are good", exc)

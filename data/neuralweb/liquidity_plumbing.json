@@ -26,7 +26,7 @@
     "assets_bn": 6735.609,
     "assets_chg_20d_bn": 10.212,
     "reserve_balances_bn": 3098.911,
-    "walcl_stale_days": 5,
+    "walcl_stale_days": 6,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
     "asof": "2026-07-15"
@@ -63,17 +63,17 @@
   },
   "quality": {
     "label": "stress-expansion",
-    "fed_share": 0.12,
+    "fed_share": 0.04,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
       "hy_oas_pct": 2.72,
-      "hy_oas_z": 0.53,
+      "hy_oas_z": 0.37,
       "nfci": -0.538,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 5
+    "walcl_stale_days": 6
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
@@ -390,7 +390,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-07-16T07:52:37Z",
-  "inputs_hash": "sha256:5983d30b714970366405329404294751a510b9094a08286e199a26057579a4ce",
+  "produced_at": "2026-07-17T04:01:24Z",
+  "inputs_hash": "sha256:a514c053f59ea715986e5711fdcdbf8489a9c2f076fc261873bd1c40b1c1e75b",
   "tier": "shadow"
 }

@@ -31,15 +31,13 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from engine.catalyst_tone import _extract_json   # shared tolerant JSON parser (leaf util)
 from lib import config
 
 log = logging.getLogger(__name__)
-
-OAUTH_BETA = "oauth-2025-04-20"   # REQUIRED on /v1/messages when authing with an OAuth token
 
 _DEFAULTS = {
     "enabled": False,                       # MASTER SWITCH — pipeline runs it only when true
@@ -51,6 +49,8 @@ _DEFAULTS = {
     "max_gross_tilt": 0.5,                  # cap on the subtract-only gross reduction the directive can imply
     "horizon_d": 21,                        # trading-day horizon for the falsifiable drawdown check
     "dd_threshold_pct": 5.0,                # the SPY drawdown the elevated-state thesis is graded on
+    "oauth_pool_lane": "risk-brain",        # pool key expansion for this lane
+    "usage_lane": "risk-brain",             # ai_costs attribution
 }
 
 DISCLAIMER = (
@@ -108,43 +108,39 @@ def enabled() -> bool:
     return bool(_cfg().get("enabled", False))
 
 
-def _client(cfg: dict):
-    try:
-        import anthropic
-    except ImportError:
-        return None
-    token = config.secret(cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN"))
-    if token:
-        try:  # OAuth → Authorization: Bearer (auth_token=) + beta header, NEVER x-api-key
-            return anthropic.Anthropic(auth_token=token,
-                                       default_headers={"anthropic-beta": OAUTH_BETA})
-        except Exception:  # noqa: BLE001
-            return None
-    key = config.secret(cfg.get("api_key_env", "ANTHROPIC_API_KEY"))
-    if key:
-        try:
-            return anthropic.Anthropic(api_key=key)
-        except Exception:  # noqa: BLE001
-            return None
-    return None
-
-
 def _make_call(cfg: dict):
-    client = _client(cfg)
-    if client is None:
+    """Return a call(model, system, user) -> (text, degraded) callable, or None.
+
+    Refactored to use llm_auth.build_providers for pool-aware failover and
+    usage capture.  The external call signature is unchanged.
+    """
+    try:
+        from engine import llm_auth  # noqa: PLC0415
+        providers = llm_auth.build_providers(cfg, opus_model=cfg.get("model", "claude-opus-4-8"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("risk_brain: provider build failed (%s)", e)
+        return None
+    if not providers:
         return None
     max_tokens = int(cfg.get("max_tokens", 5000))
 
     def call(model: str, system: str, user: str):
-        try:
+        def _call_fn(client, m: str):
             resp = client.messages.create(
-                model=model, max_tokens=max_tokens,
+                model=m, max_tokens=max_tokens,
                 system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
                 messages=[{"role": "user", "content": user}])
             if getattr(resp, "stop_reason", None) == "refusal":
-                return None, "refusal"
+                return None, "refusal", resp
             text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-            return (text, None) if text else (None, "empty_reply")
+            return (text, None, resp) if text else (None, "empty_reply", resp)
+
+        # Override model on providers to use the requested model
+        model_providers = [{**p, "model": model} for p in providers]
+        try:
+            text, reason, _ = llm_auth.make_call(
+                model_providers, _call_fn, context="risk_brain")
+            return text, reason
         except Exception as e:  # noqa: BLE001 — degrade, never raise
             log.warning("risk_brain call failed (%s): %s", model, e)
             return None, "llm_error"
@@ -350,10 +346,16 @@ def run(persist: bool = True, root=None, force: bool = False, call=None) -> dict
     base = Path(root) if root is not None else config.ROOT
     site = base / "site" / "riskdata" / "risk_brain.json"
     if not force and int(cfg.get("interval_days", 1)) > 1 and site.exists():
+        # Interval gate keys off the note's embedded as_of date — never file
+        # mtime (the note is committed; a CI checkout rewrites it with
+        # mtime = checkout time, so it would always read 0d old and the brain
+        # would never regenerate — #2690 class). Missing/unparsable as_of, or
+        # an as_of in the future, ⇒ regenerate.
         try:
-            age = (datetime.now(timezone.utc) - datetime.fromtimestamp(site.stat().st_mtime, timezone.utc)).days
-            if age < int(cfg["interval_days"]):
-                return _read_json(site)
+            prior = _read_json(site)
+            age = (date.today() - date.fromisoformat(str(prior.get("as_of"))[:10])).days
+            if 0 <= age < int(cfg["interval_days"]):
+                return prior
         except Exception:  # noqa: BLE001
             pass
     evidence = gather_evidence(root=root)

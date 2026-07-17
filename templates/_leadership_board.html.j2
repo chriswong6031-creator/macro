@@ -257,6 +257,10 @@
 .ldb-flow-chip { display: inline-flex; align-items: center; }
 .ldb-flow-inner { font-size: 11px; color: var(--ink-2); cursor: help; }
 .ldb-flow-inner b { color: var(--ink-1); }
+/* sector stance chip (W2b — mixed/split analyst reads on sector RS rows) */
+.ldb-sec-chip { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  font-weight: 600; white-space: nowrap;
+  background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
 </style>
 {%- set state  = d.trend_state if d.trend_state else 'cooling' -%}
 {%- set run    = d.run if d.run else {} -%}
@@ -524,7 +528,7 @@
       {%- set cv_zh  = sec.conviction_zh if sec.conviction_zh else '' %}
       {%- set stip_en %}RS #{{ sec.rs_rank }} — {{ sec.name }}: {{ rs_word_en(sec.lead) }}{{ ' · conviction: ' ~ cv_en if cv_en else '' }}{%- endset %}
       {%- set stip_zh %}RS #{{ sec.rs_rank }} — {{ sec.name_zh }}: {{ rs_word_zh(sec.lead) }}{{ ' · 评级：' ~ cv_zh if cv_zh else '' }}{%- endset %}
-      <div class="ldb-rs-row" data-tip-en="{{ stip_en | e }}" data-tip-zh="{{ stip_zh | e }}">
+      <div class="ldb-rs-row" data-sec="{{ sec.ticker | e }}" data-tip-en="{{ stip_en | e }}" data-tip-zh="{{ stip_zh | e }}">
         <span class="ldb-rs-name">
           <span class="l-en">{{ sec.name }}</span>
           <span class="l-zh">{{ sec.name_zh if sec.name_zh else sec.name }}</span>
@@ -549,5 +553,42 @@
   </div>
 
 </div>
+{#- MLC-W2b: inject mixed-reads/split-view chips on sector RS rows whose analyst reads diverge.
+    Fetches stance_matrix.json once; matches rows by ticker via data-sec attribute.
+    Chip text ≤2 words per language per DESIGN_DOCTRINE word budget law. #}
+<script>
+(function(){
+  /* setAttribute stores the raw value — HTML-escaping here would double-escape
+     and render literal &amp; inside the hover tip */
+  fetch('mlcdata/stance_matrix.json').then(function(r){ return r.ok?r.json():null; }).then(function(data){
+    if(!data||!data.sectors) return;
+    var byTicker={};
+    data.sectors.forEach(function(s){ if(s&&s.ticker) byTicker[s.ticker]=s; });
+    document.querySelectorAll('.ldb-rs-row[data-sec]').forEach(function(row){
+      var ticker=row.getAttribute('data-sec');
+      var sec=byTicker[ticker];
+      if(!sec||!sec.agreement) return;
+      var ag=sec.agreement;
+      if(ag!=='mixed'&&ag!=='split') return;
+      if(row.querySelector('.ldb-sec-chip')) return;
+      var chipEn=ag==='split'?'split view':'mixed reads';
+      var chipZh=ag==='split'?'严重分歧':'观点分歧';
+      var chip=document.createElement('span');
+      chip.className='ldb-sec-chip';
+      chip.setAttribute('data-tip-en',String(sec.tip_en||''));
+      chip.setAttribute('data-tip-zh',String(sec.tip_zh||''));
+      var spanEn=document.createElement('span');
+      spanEn.className='l-en';
+      spanEn.textContent=chipEn;
+      var spanZh=document.createElement('span');
+      spanZh.className='l-zh';
+      spanZh.textContent=chipZh;
+      chip.appendChild(spanEn);
+      chip.appendChild(spanZh);
+      row.appendChild(chip);
+    });
+  }).catch(function(){});
+})();
+</script>
 {%- endif %}
 {%- endmacro %}

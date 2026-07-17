@@ -375,10 +375,40 @@ def falsifier_tripped_emitter(root: Path | None = None, cycle_id: str | None = N
         return []
 
 
+def artifact_age_hours(p: Path, now_ts: float) -> float | None:
+    """Age of a registry artifact in hours — from an embedded content stamp
+    when the file is JSON with one, file mtime otherwise.
+
+    Committed artifacts get mtime = checkout time on CI/fresh worktrees
+    (#2690 class), which left the SLA emitters blind there; a content stamp
+    is the truth. Only stamps carrying a time-of-day are used — date-only
+    as_of values are coarser than hour SLAs and would false-breach healthy
+    artifacts — so date-only-stamped and non-JSON artifacts keep the mtime
+    path (honest on the persistent ops worktree). Unreadable ⇒ None (skip).
+    """
+    try:
+        if p.suffix.lower() == ".json":
+            try:
+                doc = json.loads(p.read_text(encoding="utf-8"))
+                stamp = (doc.get("produced_at") or doc.get("generated_utc")
+                         or doc.get("as_of") or doc.get("asof")) if isinstance(doc, dict) else None
+                if stamp and ("T" in str(stamp) or " " in str(stamp).strip()):
+                    dt = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    return (now_ts - dt.timestamp()) / 3600.0
+            except Exception:  # noqa: BLE001
+                pass  # unreadable/stamp-less JSON → fall through to mtime
+        return (now_ts - p.stat().st_mtime) / 3600.0
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def freshness_sla_emitter(root: Path | None = None, cycle_id: str | None = None) -> list[dict]:
     """Emit insight rows for artifacts past their freshness_sla_hours.
 
     Reads config/synapse.yml and checks age vs SLA for metabolism-owned artifacts.
+    Age comes from artifact_age_hours (content stamp first, mtime fallback).
     NEVER-RAISE: returns [] on any error.
     """
     try:
@@ -415,9 +445,8 @@ def freshness_sla_emitter(root: Path | None = None, cycle_id: str | None = None)
             if not p.exists():
                 continue
             try:
-                mtime = p.stat().st_mtime
-                age_h = (now - mtime) / 3600.0
-                if age_h > float(sla_h):
+                age_h = artifact_age_hours(p, now)
+                if age_h is not None and age_h > float(sla_h):
                     row = build_row(
                         emitter="freshness_sla_emitter",
                         kind="freshness_sla_breach",
@@ -432,7 +461,7 @@ def freshness_sla_emitter(root: Path | None = None, cycle_id: str | None = None)
                     )
                     rows.append(row)
             except Exception as exc:  # noqa: BLE001
-                log.warning("freshness_sla_emitter: stat failed for %s — %s", p, exc)
+                log.warning("freshness_sla_emitter: age check failed for %s — %s", p, exc)
                 continue
         return rows
     except Exception as exc:  # noqa: BLE001

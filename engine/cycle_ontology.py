@@ -33,7 +33,7 @@ import pandas as pd
 # ─────────────────────────────────────────────────────────────────────────────
 # Version — bumped on any algo or param change
 # ─────────────────────────────────────────────────────────────────────────────
-ONTOLOGY_VERSION = "1.0.0"
+ONTOLOGY_VERSION = "1.1.0"   # 1.1.0: #2697 rollover-lag port — decel-aware classify_phase
 DETECTOR_VERSION = 2          # ZigZag detector version (v2 adds confirmed_at + NP-6 fix)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -475,6 +475,20 @@ def classify_phase(
     committed after `confirm_persist` consecutive stamps agree (causal).
     Ships OFF (confirm_persist=0) in v1 for behavioral continuity per D1 §2.1.
 
+    2026-07 rollover-lag port (#2697 → phase_v2, sector-central audit): the weekly
+    histogram can hold positive for WEEKS after a real top (XLK read Peak through a
+    −20 oscillator collapse; XLV — healthy leader, 3D up, slope +31 — also read
+    Peak), so, mirroring sector_cycles._classify_phase:
+    (a) a weekly histogram decelerating toward its cross (macd_approaching_dn,
+        ETA ≤ ~6 bars) votes down like a fresh cross/curl,
+    (b) direction TIES break to the FASTER 3D clock, not the stale weekly sign
+        (the monthly kernel passes t3={} and keeps the weekly-sign tiebreak), and
+    (c) stretched-and-rising is "Peak" only with CONFIRMED deceleration — a leader
+        in full thrust (3D up, weekly not fading, oscillator rising) stays Expansion.
+    A "Peak" phase therefore now certifies deceleration evidence, not merely a
+    high-and-rising position.  Hysteresis/pending machinery is unchanged — only
+    the candidate semantics moved.
+
     Parameters
     ----------
     pos_now       : float   Current canonical position (0–100).
@@ -499,14 +513,30 @@ def classify_phase(
         votes += 1
     elif osc_slope < -3:
         votes -= 1
-    if w.get("macd_cross_dn") or w.get("macd_curl_dn"):
+    # fresh weekly roll-over / turn-up nudges the call early; "approaching" = the
+    # histogram 3-bars-decelerating with the zero-cross ≤ ~6 bars out — the pre-cross
+    # window the one-shot cross/curl flags miss (#2697 port)
+    if w.get("macd_cross_dn") or w.get("macd_curl_dn") or w.get("macd_approaching_dn"):
         votes -= 1
-    if w.get("macd_cross_up") or w.get("macd_curl_up"):
+    if w.get("macd_cross_up") or w.get("macd_curl_up") or w.get("macd_approaching_up"):
         votes += 1
-    rising = votes > 0 or (votes == 0 and bool(w.get("macd_pos")))
+    if votes:
+        rising = votes > 0
+    else:
+        # tie → the faster clock decides (the monthly kernel passes t3={} and keeps
+        # the legacy weekly-sign tiebreak)
+        rising = bool(t3.get("macd_pos")) if t3 else bool(w.get("macd_pos"))
 
     if pos_now >= ZONE_EHI:
-        candidate = "Peak" if rising else "Downturn"
+        if rising:
+            # stretched + rising: Peak needs CONFIRMED deceleration (weekly fading
+            # toward its cross / 3D negative / oscillator slope down). curl_dn alone
+            # is a 1-bar downtick — it nudges the vote above but can't flip the label.
+            decel = bool(w.get("macd_cross_dn") or w.get("macd_approaching_dn")
+                         or (t3 and not t3.get("macd_pos")) or osc_slope < -3)
+            candidate = "Peak" if decel else "Expansion"
+        else:
+            candidate = "Downturn"
     elif pos_now <= ZONE_ELO:
         candidate = "Recovery" if rising else "Trough"
     elif rising:
@@ -874,13 +904,15 @@ def resolve_state(
 
     trend_up: the name is in a CONFIRMED uptrend (above its long-term trend AND
     momentum still rising). A "Peak" phase is high-position AND rising by
-    construction (classify_phase routes high+falling to Downturn), so the
-    ("Peak", buy-ladder) cells otherwise fire "Countertrend Only / Topping" on
-    every stretched-but-still-rising name — a read that contradicts the trend it
-    is riding. When trend_up, those cells soften to a "don't-chase / extended"
-    HOLD instead. A stretched bounce in a DOWNtrend (trend_up False) keeps the
-    countertrend read; a genuinely rolling-over name classifies as Downturn and
-    is unaffected.
+    construction (classify_phase routes high+falling to Downturn); since the
+    #2697 port it ALSO certifies confirmed deceleration (a full-thrust leader
+    reads Expansion), so ("Peak", buy-ladder) hits are rarer and better-earned.
+    But a decelerating Peak can still sit above its long-term trend with the
+    oscillator net-rising — a late-stage continuation, not a reversal — so when
+    trend_up, those cells still soften from "Countertrend Only / Topping" to a
+    "don't-chase / extended" HOLD. A stretched bounce in a DOWNtrend (trend_up
+    False) keeps the countertrend read; a genuinely rolling-over name classifies
+    as Downturn and is unaffected.
 
     Returns
     -------
@@ -934,8 +966,9 @@ def resolve_state(
 
     # ── 3b. trend_up softening of the Peak buy-signal cells ────────────────
     # ("Peak", BOTTOM WATCH / TURN SIGNALED / FRESH BUY) => COUNTERTREND ONLY + "topping" note.
-    # But a "Peak" is high-position AND still rising (high+falling => Downturn), so a fresh daily
-    # buy signal on a name that is ALSO above its long-term trend is trend-CONTINUATION, not
+    # A "Peak" is high-position, still rising AND (since the #2697 port) showing confirmed
+    # deceleration — but decel evidence (weekly fading / 3D negative) on a name that is ALSO
+    # above its long-term trend with the oscillator net-rising is late-stage CONTINUATION, not
     # countertrend — the hard "topping / countertrend only" read overclaims a reversal. Soften to
     # a "don't-chase / extended" HOLD (no divergence, no topping note). Downtrend bounces
     # (trend_up False) and rolling-over names (phase == Downturn) are untouched.

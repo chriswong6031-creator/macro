@@ -79,6 +79,7 @@ SCHEMA_SUMMARY = "operator_exposure_summary.v1"
 _KNOWN_LANE_SURFACES: dict[str, str] = {
     "continuation": "board_buy",
     "bottoming": "board_buy",
+    "recovery": "board_buy",
     "watch": "board_watch",
 }
 

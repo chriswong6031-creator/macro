@@ -45,6 +45,9 @@ from lib import config, store
 log = logging.getLogger(__name__)
 
 _PCT_WIN = 504                       # ~2y trailing causal percentile window (matches US radar)
+_EXT_PCT_WIN = 2520                  # ~10y causal window for the raw-extension percentile (long-history, NOT the self-defeating 252d z)
+_EXT_PARABOLIC = 0.98                # extension percentile at/above which the regime counts as parabolic
+_GATE_MEMORY = 60                    # sessions the parabolic gate stays open after the last parabolic reading
 _STATE_ORDER = ["calm", "watch", "caution", "elevated", "risk-off"]
 # scare-meter colour bands on the 0-100 per-scare score (mean of leg percentiles * 100)
 _SCARE_BANDS = {"watch": 55.0, "caution": 68.0, "elevated": 78.0, "risk_off": 88.0}
@@ -88,7 +91,7 @@ _RATE_SUBS = {
 def _sub_legs(idx: pd.DatetimeIndex, profile: "RadarProfile") -> dict:
     """{sub_code: causal percentile SERIES on idx} for every sub-leg the profile uses."""
     out: dict[str, pd.Series] = {}
-    # US-rate shocks (21d change percentile) — shared by all three markets
+    # US-rate shocks (21d change percentile) — shared by all markets
     for code, (g, n, c) in _RATE_SUBS.items():
         s = _read(g, n, c)
         if s is not None:
@@ -108,6 +111,17 @@ def _sub_legs(idx: pd.DatetimeIndex, profile: "RadarProfile") -> dict:
             c10 = cgb["cgb_10y"].dropna(); c10.index = pd.to_datetime(c10.index)
             diff = u10.reindex(idx).ffill() - c10.sort_index().reindex(idx).ffill()
             out["us_cn_diff"] = _pct(diff.diff(21))           # widening gap = outflow pressure
+    elif profile.fx_pair is not None:
+        # per-market FX-depreciation leg: local-currency weakness = outflow pressure.
+        # fx_risk_sign orients the pair so RISING series = depreciation risk; DXY 63d ROC
+        # fills the pre-pair era (same stitch the CN leg uses for pre-2013 CNH).
+        pair = _read(*profile.fx_pair)
+        fx = pair.reindex(idx).ffill().pct_change(21) * profile.fx_risk_sign if pair is not None else None
+        dxy = _read("yahoo", "DX-Y.NYB")
+        if dxy is not None:
+            d = dxy.reindex(idx).ffill().pct_change(63)
+            fx = d if fx is None else fx.combine_first(d)
+        out[profile.fx_code or "fx_depreciation"] = _pct(fx)
     else:
         dxy = _read("yahoo", "DX-Y.NYB")
         if dxy is not None:
@@ -119,13 +133,28 @@ def _sub_legs(idx: pd.DatetimeIndex, profile: "RadarProfile") -> dict:
             b = br["pct_above_200"].dropna(); b.index = pd.to_datetime(b.index)
             if len(b) >= 500:
                 out[profile.breadth_code] = _pct(-b.sort_index().reindex(idx).ffill())
+    # raw-extension percentile legs (melt-up detector): px/200dma-1 ranked in a LONG causal
+    # window — the 2026 KOSPI class. A trailing-1y z would deflate exactly at the top
+    # (the parabola inflates its own baseline); the ~10y percentile does not.
+    for g, names, code in profile.ext_sources:
+        members = []
+        for n in (names if isinstance(names, tuple) else (names,)):
+            s = _read(g, n)
+            if s is None or len(s) < 300:
+                continue
+            px = s.reindex(idx).ffill()
+            ma = px.rolling(200, min_periods=120).mean()
+            p = pct_rank_window((px / ma - 1.0).dropna(), _EXT_PCT_WIN)
+            members.append(p)
+        if members:
+            out[code] = pd.concat(members, axis=1).mean(axis=1) if len(members) > 1 else members[0]
     return {k: v for k, v in out.items() if v is not None}
 
 
 # --- profile -----------------------------------------------------------------
 @dataclass(frozen=True)
 class RadarProfile:
-    key: str                          # 'cn' | 'hk' | 'ca'
+    key: str                          # 'cn' | 'hk' | 'ca' | 'kr' | 'jp' | 'tw' | 'in' | 'au' | 'gb' | 'ez'
     bench: tuple                      # (store group, name) — the index drawdowns are measured on
     breadth_group: str | None         # store group for the breadth frame (None = no breadth leg)
     breadth_code: str                 # sub-leg display code for the breadth leg
@@ -136,6 +165,13 @@ class RadarProfile:
     prob_base: dict                   # {h5,h10,h21} unconditional base rates
     caveat_en: str
     caveat_zh: str
+    # --- 7-market extension fields (2026-07-16). Defaults preserve CN/HK/CA behavior exactly. ---
+    fx_pair: tuple | None = None      # (store group, name) of the market's FX pair, e.g. ("intl", "USDKRW=X")
+    fx_risk_sign: int = 1             # +1: pair RISES = local ccy depreciates (USD/local quote); -1: pair FALLS = depreciates (local/USD quote)
+    fx_code: str = ""                 # sub-leg display code, e.g. "krw_depreciation"
+    ext_sources: tuple = ()           # ((group, name_or_name_tuple, sub_code), ...) — raw-extension percentile legs; a tuple of names = basket (mean of member percentiles)
+    gate_mode: str = "below_200dma"   # "below_200dma" (legacy) | "below_or_recent_parabolic" (melt-up markets); INTL-50: no macro gate harms Korea
+    disclaimer: str | None = None     # per-profile override; None = module _DISCLAIMER (legacy)
 
 
 def _band(score, bands: dict) -> str:
@@ -190,19 +226,78 @@ def _probs(cal: dict, state: str) -> dict:
     return out
 
 
-def _trajectory(comp, B, cal, window: int = 30) -> dict | None:
+def _gate_series(B: pd.Series, sub: dict, profile: "RadarProfile") -> pd.Series:
+    """True where the context gate is OPEN (loud tiers allowed). Causal. Legacy mode:
+    index below its 200dma ("all boats" confirmation). Melt-up mode additionally opens
+    while the extension percentile has printed parabolic (>= _EXT_PARABOLIC) within the
+    last _GATE_MEMORY sessions — at a parabolic top the index is far ABOVE its 200dma,
+    so the legacy gate would structurally silence the radar exactly when it matters
+    (KOSPI 2026-06; INTL-50 ruling: no macro gate, only price/extension context gate)."""
+    ma = B.rolling(200, min_periods=120).mean()
+    gate = (B < ma).fillna(False)
+    if profile.gate_mode == "below_or_recent_parabolic" and profile.ext_sources:
+        e = sub.get(profile.ext_sources[0][2])
+        if e is not None:
+            recent_para = e.rolling(_GATE_MEMORY, min_periods=1).max() >= _EXT_PARABOLIC
+            gate = gate | recent_para.reindex(B.index).fillna(False)
+    return gate
+
+
+def composite_series(profile: "RadarProfile", root=None):
+    """(B, sub, comp, gate) — bench closes, sub-leg percentile dict, blended composite
+    trailing percentile (0-1), and the boolean context-gate series. None when no data.
+    THE single construction compute() and scripts/calibrate_risk_radar_intl.py share."""
+    B = _read(*profile.bench)
+    if B is None or len(B) < 300:
+        return None, None, None, None
+    idx = B.index
+    sub = _sub_legs(idx, profile)
+    if not sub:
+        return None, None, None, None
+
+    # composite-leg latest percentiles + series (the calibrated structure)
+    comp_series_parts: dict[str, tuple] = {}
+    for comp_key, sub_codes, w in profile.comp_legs:
+        members = [sub[c] for c in sub_codes if c in sub]
+        if not members:
+            continue
+        ser = pd.concat(members, axis=1).mean(axis=1)
+        comp_series_parts[comp_key] = (ser, w)
+
+    # blended composite → trailing percentile → 0-1 risk score
+    num = den = None
+    for ser, w in comp_series_parts.values():
+        col = ser.fillna(0.5) * w
+        av = ser.notna().astype(float) * w
+        num = col if num is None else num + col
+        den = av if den is None else den + av
+    if num is None:
+        return None, None, None, None
+
+    comp = pct_rank_window((num / den.replace(0, np.nan)).dropna(), _PCT_WIN)
+    gate = _gate_series(B, sub, profile)
+    return B, sub, comp, gate
+
+
+def _trajectory(comp, B, cal, window: int = 30, gate: pd.Series | None = None) -> dict | None:
     """Recent PATH of this market's composite radar — has it peaked + started rolling over, and how
     fast are the pullback odds dropping? Powers the de-escalation panel (engine/risk_radar_recovery).
     Reuses the SHARED classifier (engine/risk_radar._trajectory_from_series) so the phase logic is
-    identical to the US radar. Leak-free (comp is a causal trailing percentile). Never raises."""
+    identical to the US radar. Leak-free (comp is a causal trailing percentile). Never raises.
+
+    gate: when given, use it in place of the internally-computed below series. For legacy profiles
+    the passed gate equals the internally-computed below → identical output."""
     try:
         from engine.risk_radar import _trajectory_from_series
         intensity = (comp.dropna() * 100.0)
         if len(intensity) < 10:
             return None
         bands = cal["bands"]
-        ma = B.rolling(200, min_periods=120).mean()
-        below = (B < ma).reindex(intensity.index).fillna(False)   # context gate: index < 200dma
+        if gate is not None:
+            below = gate.reindex(intensity.index).fillna(False)
+        else:
+            ma = B.rolling(200, min_periods=120).mean()
+            below = (B < ma).reindex(intensity.index).fillna(False)   # context gate: index < 200dma
         win = intensity.tail(window)
         states, odds = [], []
         for d, v in win.items():
@@ -220,49 +315,37 @@ def _trajectory(comp, B, cal, window: int = 30) -> dict | None:
 def compute(profile: "RadarProfile", root=None) -> dict:
     """Live calibrated radar snapshot for `profile`. Reads the store; never raises a useful
     payload away. Returns the (risk_radar_intl.v1) dict the market-state radar mapping consumes."""
+    effective_disclaimer = profile.disclaimer or _DISCLAIMER
     null = {"schema": "risk_radar_intl.v1", "state": None, "market": profile.key,
-            "degraded_reason": "no_data", "disclaimer": _DISCLAIMER}
-    B = _read(*profile.bench)
-    if B is None or len(B) < 300:
+            "degraded_reason": "no_data", "disclaimer": effective_disclaimer}
+    B, sub, comp, gate = composite_series(profile, root)
+    if B is None:
         return null
-    idx = B.index
-    sub = _sub_legs(idx, profile)
-    if not sub:
+    if sub is None or comp is None or gate is None:
         return null
     cal = _calib(profile, root)          # baked surface + the tuner's overlay, if any
 
-    # composite-leg latest percentiles + series (the calibrated structure)
+    # composite-leg latest percentiles (for scares)
     comp_last: dict[str, float] = {}
-    comp_series: dict[str, tuple] = {}
     for comp_key, sub_codes, w in profile.comp_legs:
         members = [sub[c] for c in sub_codes if c in sub]
         if not members:
             continue
         ser = pd.concat(members, axis=1).mean(axis=1)
-        comp_series[comp_key] = (ser, w)
         comp_last[comp_key] = _last(ser)
 
-    # blended composite → trailing percentile → 0-100 risk score
-    num = den = None
-    for ser, w in comp_series.values():
-        col = ser.fillna(0.5) * w
-        av = ser.notna().astype(float) * w
-        num = col if num is None else num + col
-        den = av if den is None else den + av
-    if num is None:
-        return null
-    comp = pct_rank_window((num / den.replace(0, np.nan)).dropna(), _PCT_WIN)
     top = _last(comp)
     top100 = round(top * 100) if top is not None else None
 
-    # context gate — the LOUD tiers (elevated+) require the broad index to be BELOW its
-    # 200-day line (the "all boats" breakdown). Below the gate, cap at caution: the early
-    # tiers still show, but the loud banner waits for the broad tape to confirm.
+    # context gate — gate_open uses the shared gate series (legacy profiles: gate == below)
+    gate_open = bool(gate.iloc[-1]) if len(gate) else False
+    # also compute the raw price-vs-200dma bool (always present in the payload)
     ma = B.rolling(200, min_periods=120).mean()
-    below = bool(B.iloc[-1] < ma.iloc[-1]) if ma.dropna().size else False
+    below_actual = bool(B.iloc[-1] < ma.iloc[-1]) if ma.dropna().size else False
+
     state_ungated = _band(top * 100 if top is not None else None, cal["bands"])
     state = state_ungated
-    if not below and _STATE_ORDER.index(state) > _STATE_ORDER.index("caution"):
+    if not gate_open and _STATE_ORDER.index(state) > _STATE_ORDER.index("caution"):
         state = "caution"
 
     # per-scare meters (display) + plain-English firing legs
@@ -290,9 +373,23 @@ def compute(profile: "RadarProfile", root=None) -> dict:
         dom_en = dominant["label_en"] if dominant else "calm"
         dom_zh = dominant["label_zh"] if dominant else "平静"
 
+    # context_gate payload: keep exact existing keys for ALL profiles; add recent_parabolic
+    # only for new-mode profiles (gate_mode != "below_200dma") so cn/hk/ca payloads are byte-identical
+    context_gate: dict = {"met": gate_open, "below_200dma": below_actual}
+    if profile.gate_mode != "below_200dma" and profile.ext_sources:
+        # memory semantics, same as _gate_series: parabolic printed within the last
+        # _GATE_MEMORY sessions — a mid-crash receipt must still say "was parabolic"
+        # (the memoryless latest-value read is the F1 self-erasing-flag failure)
+        ext_s = sub.get(profile.ext_sources[0][2])
+        recent = False
+        if ext_s is not None:
+            tail = ext_s.dropna().tail(_GATE_MEMORY)
+            recent = bool(len(tail) and (tail >= _EXT_PARABOLIC).any())
+        context_gate["recent_parabolic"] = recent
+
     return {
         "schema": "risk_radar_intl.v1",
-        "asof": str(pd.Timestamp(idx[-1]).date()),
+        "asof": str(pd.Timestamp(B.index[-1]).date()),
         "market": profile.key,
         "state": state,
         "state_ungated": state_ungated,
@@ -303,13 +400,13 @@ def compute(profile: "RadarProfile", root=None) -> dict:
         "scares": scares,
         "drawdown_prob": _probs(cal, state),
         # de-escalation PATH (peaked? rolling over? how fast?) — reuses the composite series above.
-        "trajectory": _trajectory(comp, B, cal),
+        "trajectory": _trajectory(comp, B, cal, gate=gate),
         "gross_factor": _GROSS.get(state, 1.0),
         "conjunction": bool(nhot >= 2),
-        "context_gate": {"met": below, "below_200dma": below},
+        "context_gate": context_gate,
         "caveat_en": profile.caveat_en,
         "caveat_zh": profile.caveat_zh,
-        "disclaimer": _DISCLAIMER,
+        "disclaimer": effective_disclaimer,
     }
 
 
@@ -319,9 +416,10 @@ def snapshot(profile: "RadarProfile", root=None) -> dict:
         return compute(profile, root)
     except Exception as e:  # noqa: BLE001
         log.error("risk_radar_intl(%s) failed: %s", getattr(profile, "key", "?"), e)
+        effective_disclaimer = getattr(profile, "disclaimer", None) or _DISCLAIMER
         return {"schema": "risk_radar_intl.v1", "state": None,
                 "market": getattr(profile, "key", None), "degraded_reason": "compute_error",
-                "disclaimer": _DISCLAIMER}
+                "disclaimer": effective_disclaimer}
 
 
 def cn_sleeve_chip(root=None) -> dict:
@@ -479,4 +577,403 @@ CA_PROFILE = RadarProfile(
                "仅在近年、且较弱地领先其回撤。用于定仓的背景，而非预测。"),
 )
 
-PROFILES = {"cn": CN_PROFILE, "hk": HK_PROFILE, "ca": CA_PROFILE}
+# ─── 7-market extension profiles (2026-07-16) ────────────────────────────────
+# Shared disclaimer for all 7 new profiles.
+_INTL_7_DISCLAIMER = (
+    "Leading-risk radar under accrual — external-driver legs (US rate shocks, FX depreciation, "
+    "USD strength) ported from the China/HK/Canada radar research, plus a long-history extension "
+    "percentile for melt-up regimes (2026 KOSPI class). The edge is unproven on this market until "
+    "its own forward log matures; odds are measured from the market's own history; de-risk = "
+    "sizing, not selection."
+)
+
+KR_PROFILE = RadarProfile(
+    key="kr",
+    bench=("intl", "^KS11"),
+    breadth_group=None, breadth_code="kr_breadth",
+    comp_legs=(
+        ("rateshock", ("us_rate_2y", "us_real_rate", "us_rate_10y"), 1.0),
+        ("fx",        ("krw_depreciation",),                          0.6),
+        ("extension", ("ext_idx", "ext_etf"),                         1.0),
+    ),
+    scares=(
+        ("rate_shock", "A", "US rate shock", "美债利率冲击",
+         ("rateshock",), ("us_rate_2y", "us_real_rate", "us_rate_10y")),
+        ("capital_flow", "A", "Won depreciation / outflows", "韩元贬值／资金外流",
+         ("fx",), ("krw_depreciation",)),
+        ("extension", "A", "Parabolic extension / exhaustion", "抛物线伸展／透支",
+         ("extension",), ("ext_idx", "ext_etf")),
+    ),
+    bands=_BANDS,
+    # prob surfaces: base rates measured from this market's own close history by
+    # scripts/calibrate_risk_radar_intl.py (2026-07-16, window 1998-02-02..2026-07-16, n_days=7013; n counts overlapping forward windows, not independent samples).
+    # prob_cal is seeded FLAT AT BASE: the in-sample per-state read of this ported
+    # construction showed no (or overlap-fragile) loud-tier lift — printed by the
+    # harness as a descriptive artifact, never baked. The live forward log + bounded
+    # tuner (risk_radar_intl_tune, do-no-harm Brier) own the surface from n_graded>=25.
+    prob_base={"h5": 0.092, "h10": 0.179, "h21": 0.289},
+    prob_cal={
+        "h5":  {"calm": 0.092, "watch": 0.092, "caution": 0.092, "elevated": 0.092, "risk-off": 0.092},
+        "h10": {"calm": 0.179, "watch": 0.179, "caution": 0.179, "elevated": 0.179, "risk-off": 0.179},
+        "h21": {"calm": 0.289, "watch": 0.289, "caution": 0.289, "elevated": 0.289, "risk-off": 0.289},
+    },
+    caveat_en=(
+        "Ported construction, own-history odds: the external-driver legs (US rate shocks, won "
+        "depreciation, USD strength) are ported from the China/HK/Canada radar research — their "
+        "lead on KOSPI drawdowns is assumed from that work, not separately tested here; the "
+        "extension leg tracks melt-up regimes (the 2026 KOSPI class). Odds are measured from "
+        "KOSPI's own ~29y history; display-only while the forward log accrues. Context, sized "
+        "— not a forecast."
+    ),
+    caveat_zh=(
+        "构建为移植、赔率取自自身历史：外部驱动腿（美债利率冲击、韩元贬值、美元走强）移植自中国／香港／加拿大雷达研究，"
+        "其对KOSPI回撤的领先性沿用该研究结论、未在本市场单独检验；伸展腿用于捕捉抛物线式过热行情（2026年KOSPI一类）。"
+        "赔率测自KOSPI自身约29年历史；前向日志累积期间仅作展示。用于定仓的背景，而非预测。"
+    ),
+    fx_pair=("intl", "USDKRW=X"),
+    fx_risk_sign=1,
+    fx_code="krw_depreciation",
+    ext_sources=(
+        ("intl", "^KS11", "ext_idx"),
+        ("intl_etf", "EWY", "ext_etf"),
+    ),
+    gate_mode="below_or_recent_parabolic",
+    disclaimer=_INTL_7_DISCLAIMER,
+)
+
+JP_PROFILE = RadarProfile(
+    key="jp",
+    bench=("intl", "^N225"),
+    breadth_group=None, breadth_code="jp_breadth",
+    comp_legs=(
+        ("rateshock", ("us_rate_2y", "us_real_rate", "us_rate_10y"), 1.0),
+        ("fx",        ("jpy_depreciation",),                          0.6),
+        ("extension", ("ext_idx", "ext_etf"),                         1.0),
+    ),
+    scares=(
+        ("rate_shock", "A", "US rate shock", "美债利率冲击",
+         ("rateshock",), ("us_rate_2y", "us_real_rate", "us_rate_10y")),
+        ("capital_flow", "A", "Yen depreciation / outflows", "日元贬值／资金外流",
+         ("fx",), ("jpy_depreciation",)),
+        ("extension", "A", "Parabolic extension / exhaustion", "抛物线伸展／透支",
+         ("extension",), ("ext_idx", "ext_etf")),
+    ),
+    bands=_BANDS,
+    # prob surfaces: base rates measured from this market's own close history by
+    # scripts/calibrate_risk_radar_intl.py (2026-07-16, window 1997-07-24..2026-07-16, n_days=7100; n counts overlapping forward windows, not independent samples).
+    # prob_cal is seeded FLAT AT BASE: the in-sample per-state read of this ported
+    # construction showed no (or overlap-fragile) loud-tier lift — printed by the
+    # harness as a descriptive artifact, never baked. The live forward log + bounded
+    # tuner (risk_radar_intl_tune, do-no-harm Brier) own the surface from n_graded>=25.
+    prob_base={"h5": 0.073, "h10": 0.170, "h21": 0.307},
+    prob_cal={
+        "h5":  {"calm": 0.073, "watch": 0.073, "caution": 0.073, "elevated": 0.073, "risk-off": 0.073},
+        "h10": {"calm": 0.170, "watch": 0.170, "caution": 0.170, "elevated": 0.170, "risk-off": 0.170},
+        "h21": {"calm": 0.307, "watch": 0.307, "caution": 0.307, "elevated": 0.307, "risk-off": 0.307},
+    },
+    caveat_en=(
+        "Ported construction, own-history odds: the external-driver legs (US rate shocks, yen "
+        "depreciation, USD strength) are ported from the China/HK/Canada radar research — their "
+        "lead on Nikkei 225 drawdowns is assumed from that work, not separately tested here; the "
+        "extension leg tracks melt-up regimes. Odds are measured from Nikkei 225's own ~30y "
+        "(capped) history; display-only while the forward log accrues. Context, sized — not a forecast."
+    ),
+    caveat_zh=(
+        "构建为移植、赔率取自自身历史：外部驱动腿（美债利率冲击、日元贬值、美元走强）移植自中国／香港／加拿大雷达研究，"
+        "其对日经225回撤的领先性沿用该研究结论、未在本市场单独检验；伸展腿用于捕捉抛物线式过热行情。"
+        "赔率测自日经225自身约30年（上限截取）历史；前向日志累积期间仅作展示。用于定仓的背景，而非预测。"
+    ),
+    fx_pair=("intl", "USDJPY=X"),
+    fx_risk_sign=1,
+    fx_code="jpy_depreciation",
+    ext_sources=(
+        ("intl", "^N225", "ext_idx"),
+        ("intl_etf", "EWJ", "ext_etf"),
+    ),
+    gate_mode="below_or_recent_parabolic",
+    disclaimer=_INTL_7_DISCLAIMER,
+)
+
+TW_PROFILE = RadarProfile(
+    key="tw",
+    bench=("intl", "^TWII"),
+    breadth_group=None, breadth_code="tw_breadth",
+    comp_legs=(
+        ("rateshock", ("us_rate_2y", "us_real_rate", "us_rate_10y"), 1.0),
+        ("fx",        ("twd_depreciation",),                          0.6),
+        ("extension", ("ext_idx", "ext_etf"),                         1.0),
+    ),
+    scares=(
+        ("rate_shock", "A", "US rate shock", "美债利率冲击",
+         ("rateshock",), ("us_rate_2y", "us_real_rate", "us_rate_10y")),
+        ("capital_flow", "A", "TWD depreciation / outflows", "新台币贬值／资金外流",
+         ("fx",), ("twd_depreciation",)),
+        ("extension", "A", "Parabolic extension / exhaustion", "抛物线伸展／透支",
+         ("extension",), ("ext_idx", "ext_etf")),
+    ),
+    bands=_BANDS,
+    # prob surfaces: base rates measured from this market's own close history by
+    # scripts/calibrate_risk_radar_intl.py (2026-07-16, window 1998-08-13..2026-07-16, n_days=6843; n counts overlapping forward windows, not independent samples).
+    # prob_cal is seeded FLAT AT BASE: the in-sample per-state read of this ported
+    # construction showed no (or overlap-fragile) loud-tier lift — printed by the
+    # harness as a descriptive artifact, never baked. The live forward log + bounded
+    # tuner (risk_radar_intl_tune, do-no-harm Brier) own the surface from n_graded>=25.
+    prob_base={"h5": 0.070, "h10": 0.154, "h21": 0.272},
+    prob_cal={
+        "h5":  {"calm": 0.070, "watch": 0.070, "caution": 0.070, "elevated": 0.070, "risk-off": 0.070},
+        "h10": {"calm": 0.154, "watch": 0.154, "caution": 0.154, "elevated": 0.154, "risk-off": 0.154},
+        "h21": {"calm": 0.272, "watch": 0.272, "caution": 0.272, "elevated": 0.272, "risk-off": 0.272},
+    },
+    caveat_en=(
+        "Ported construction, own-history odds: the external-driver legs (US rate shocks, TWD "
+        "depreciation, USD strength) are ported from the China/HK/Canada radar research — their "
+        "lead on TAIEX drawdowns is assumed from that work, not separately tested here; the "
+        "extension leg tracks melt-up regimes. Odds are measured from TAIEX's own ~29y history; "
+        "display-only while the forward log accrues. Context, sized — not a forecast."
+    ),
+    caveat_zh=(
+        "构建为移植、赔率取自自身历史：外部驱动腿（美债利率冲击、新台币贬值、美元走强）移植自中国／香港／加拿大雷达研究，"
+        "其对台湾加权指数回撤的领先性沿用该研究结论、未在本市场单独检验；伸展腿用于捕捉抛物线式过热行情。"
+        "赔率测自台湾加权指数自身约29年历史；前向日志累积期间仅作展示。用于定仓的背景，而非预测。"
+    ),
+    fx_pair=("intl", "USDTWD=X"),
+    fx_risk_sign=1,
+    fx_code="twd_depreciation",
+    ext_sources=(
+        ("intl", "^TWII", "ext_idx"),
+        ("intl_etf", "EWT", "ext_etf"),
+    ),
+    gate_mode="below_or_recent_parabolic",
+    disclaimer=_INTL_7_DISCLAIMER,
+)
+
+IN_PROFILE = RadarProfile(
+    key="in",
+    bench=("intl", "^NSEI"),
+    breadth_group=None, breadth_code="in_breadth",
+    comp_legs=(
+        ("rateshock", ("us_rate_2y", "us_real_rate", "us_rate_10y"), 1.0),
+        ("fx",        ("inr_depreciation",),                          0.6),
+        ("extension", ("ext_idx", "ext_etf"),                         1.0),
+    ),
+    scares=(
+        ("rate_shock", "A", "US rate shock", "美债利率冲击",
+         ("rateshock",), ("us_rate_2y", "us_real_rate", "us_rate_10y")),
+        ("capital_flow", "A", "Rupee depreciation / outflows", "卢比贬值／资金外流",
+         ("fx",), ("inr_depreciation",)),
+        ("extension", "A", "Parabolic extension / exhaustion", "抛物线伸展／透支",
+         ("extension",), ("ext_idx", "ext_etf")),
+    ),
+    bands=_BANDS,
+    # prob surfaces: base rates measured from this market's own close history by
+    # scripts/calibrate_risk_radar_intl.py (2026-07-16, window 2008-10-22..2026-07-16, n_days=4346; n counts overlapping forward windows, not independent samples).
+    # prob_cal is seeded FLAT AT BASE: the in-sample per-state read of this ported
+    # construction showed no (or overlap-fragile) loud-tier lift — printed by the
+    # harness as a descriptive artifact, never baked. The live forward log + bounded
+    # tuner (risk_radar_intl_tune, do-no-harm Brier) own the surface from n_graded>=25.
+    prob_base={"h5": 0.032, "h10": 0.089, "h21": 0.185},
+    prob_cal={
+        "h5":  {"calm": 0.032, "watch": 0.032, "caution": 0.032, "elevated": 0.032, "risk-off": 0.032},
+        "h10": {"calm": 0.089, "watch": 0.089, "caution": 0.089, "elevated": 0.089, "risk-off": 0.089},
+        "h21": {"calm": 0.185, "watch": 0.185, "caution": 0.185, "elevated": 0.185, "risk-off": 0.185},
+    },
+    caveat_en=(
+        "Ported construction, own-history odds: the external-driver legs (US rate shocks, rupee "
+        "depreciation, USD strength) are ported from the China/HK/Canada radar research — their "
+        "lead on Nifty 50 drawdowns is assumed from that work, not separately tested here; the "
+        "extension leg tracks melt-up regimes. Odds are measured from Nifty 50 index's own "
+        "~19y — the shortest history here; display-only while the forward log accrues. Context, "
+        "sized — not a forecast."
+    ),
+    caveat_zh=(
+        "构建为移植、赔率取自自身历史：外部驱动腿（美债利率冲击、卢比贬值、美元走强）移植自中国／香港／加拿大雷达研究，"
+        "其对Nifty 50指数回撤的领先性沿用该研究结论、未在本市场单独检验；伸展腿用于捕捉抛物线式过热行情。"
+        "赔率测自Nifty 50指数自身约19年（本组中最短）历史；前向日志累积期间仅作展示。用于定仓的背景，而非预测。"
+    ),
+    fx_pair=("intl", "USDINR=X"),
+    fx_risk_sign=1,
+    fx_code="inr_depreciation",
+    ext_sources=(
+        ("intl", "^NSEI", "ext_idx"),
+        ("intl_etf", "INDA", "ext_etf"),
+    ),
+    gate_mode="below_or_recent_parabolic",
+    disclaimer=_INTL_7_DISCLAIMER,
+)
+
+AU_PROFILE = RadarProfile(
+    key="au",
+    bench=("intl", "^AXJO"),
+    breadth_group=None, breadth_code="au_breadth",
+    comp_legs=(
+        ("rateshock", ("us_rate_2y", "us_real_rate", "us_rate_10y"), 1.0),
+        ("fx",        ("aud_depreciation",),                          0.6),
+        ("extension", ("ext_idx", "ext_etf"),                         1.0),
+    ),
+    scares=(
+        ("rate_shock", "A", "US rate shock", "美债利率冲击",
+         ("rateshock",), ("us_rate_2y", "us_real_rate", "us_rate_10y")),
+        ("capital_flow", "A", "AUD depreciation / outflows", "澳元贬值／资金外流",
+         ("fx",), ("aud_depreciation",)),
+        ("extension", "A", "Parabolic extension / exhaustion", "抛物线伸展／透支",
+         ("extension",), ("ext_idx", "ext_etf")),
+    ),
+    bands=_BANDS,
+    # prob surfaces: base rates measured from this market's own close history by
+    # scripts/calibrate_risk_radar_intl.py (2026-07-16, window 1997-07-24..2026-07-16, n_days=7325; n counts overlapping forward windows, not independent samples).
+    # prob_cal is seeded FLAT AT BASE: the in-sample per-state read of this ported
+    # construction showed no (or overlap-fragile) loud-tier lift — printed by the
+    # harness as a descriptive artifact, never baked. The live forward log + bounded
+    # tuner (risk_radar_intl_tune, do-no-harm Brier) own the surface from n_graded>=25.
+    prob_base={"h5": 0.024, "h10": 0.064, "h21": 0.154},
+    prob_cal={
+        "h5":  {"calm": 0.024, "watch": 0.024, "caution": 0.024, "elevated": 0.024, "risk-off": 0.024},
+        "h10": {"calm": 0.064, "watch": 0.064, "caution": 0.064, "elevated": 0.064, "risk-off": 0.064},
+        "h21": {"calm": 0.154, "watch": 0.154, "caution": 0.154, "elevated": 0.154, "risk-off": 0.154},
+    },
+    caveat_en=(
+        "Ported construction, own-history odds: the external-driver legs (US rate shocks, AUD "
+        "depreciation, USD strength) are ported from the China/HK/Canada radar research — their "
+        "lead on ASX 200 drawdowns is assumed from that work, not separately tested here; the "
+        "extension leg tracks melt-up regimes. Odds are measured from ASX 200 index's own "
+        "~30y (capped) history; display-only while the forward log accrues. Context, sized "
+        "— not a forecast."
+    ),
+    caveat_zh=(
+        "构建为移植、赔率取自自身历史：外部驱动腿（美债利率冲击、澳元贬值、美元走强）移植自中国／香港／加拿大雷达研究，"
+        "其对ASX 200指数回撤的领先性沿用该研究结论、未在本市场单独检验；伸展腿用于捕捉抛物线式过热行情。"
+        "赔率测自ASX 200指数自身约30年（上限截取）历史；前向日志累积期间仅作展示。用于定仓的背景，而非预测。"
+    ),
+    fx_pair=("intl", "AUDUSD=X"),
+    fx_risk_sign=-1,
+    fx_code="aud_depreciation",
+    ext_sources=(
+        ("intl", "^AXJO", "ext_idx"),
+        ("intl_etf", "EWA", "ext_etf"),
+    ),
+    gate_mode="below_or_recent_parabolic",
+    disclaimer=_INTL_7_DISCLAIMER,
+)
+
+GB_PROFILE = RadarProfile(
+    key="gb",
+    bench=("intl", "^FTSE"),
+    breadth_group=None, breadth_code="gb_breadth",
+    comp_legs=(
+        ("rateshock", ("us_rate_2y", "us_real_rate", "us_rate_10y"), 1.0),
+        ("fx",        ("gbp_depreciation",),                          0.6),
+        ("extension", ("ext_idx", "ext_etf"),                         1.0),
+    ),
+    scares=(
+        ("rate_shock", "A", "US rate shock", "美债利率冲击",
+         ("rateshock",), ("us_rate_2y", "us_real_rate", "us_rate_10y")),
+        ("capital_flow", "A", "Sterling depreciation / outflows", "英镑贬值／资金外流",
+         ("fx",), ("gbp_depreciation",)),
+        ("extension", "A", "Parabolic extension / exhaustion", "抛物线伸展／透支",
+         ("extension",), ("ext_idx", "ext_etf")),
+    ),
+    bands=_BANDS,
+    # prob surfaces: base rates measured from this market's own close history by
+    # scripts/calibrate_risk_radar_intl.py (2026-07-16, window 1997-07-23..2026-07-15, n_days=7319; n counts overlapping forward windows, not independent samples).
+    # prob_cal is seeded FLAT AT BASE: the in-sample per-state read of this ported
+    # construction showed no (or overlap-fragile) loud-tier lift — printed by the
+    # harness as a descriptive artifact, never baked. The live forward log + bounded
+    # tuner (risk_radar_intl_tune, do-no-harm Brier) own the surface from n_graded>=25.
+    prob_base={"h5": 0.037, "h10": 0.087, "h21": 0.186},
+    prob_cal={
+        "h5":  {"calm": 0.037, "watch": 0.037, "caution": 0.037, "elevated": 0.037, "risk-off": 0.037},
+        "h10": {"calm": 0.087, "watch": 0.087, "caution": 0.087, "elevated": 0.087, "risk-off": 0.087},
+        "h21": {"calm": 0.186, "watch": 0.186, "caution": 0.186, "elevated": 0.186, "risk-off": 0.186},
+    },
+    caveat_en=(
+        "Ported construction, own-history odds: the external-driver legs (US rate shocks, sterling "
+        "depreciation, USD strength) are ported from the China/HK/Canada radar research — their "
+        "lead on FTSE 100 drawdowns is assumed from that work, not separately tested here; the "
+        "extension leg tracks melt-up regimes. Odds are measured from FTSE 100 index's own "
+        "~30y (capped) history; display-only while the forward log accrues. Context, sized "
+        "— not a forecast."
+    ),
+    caveat_zh=(
+        "构建为移植、赔率取自自身历史：外部驱动腿（美债利率冲击、英镑贬值、美元走强）移植自中国／香港／加拿大雷达研究，"
+        "其对富时100指数回撤的领先性沿用该研究结论、未在本市场单独检验；伸展腿用于捕捉抛物线式过热行情。"
+        "赔率测自富时100指数自身约30年（上限截取）历史；前向日志累积期间仅作展示。用于定仓的背景，而非预测。"
+    ),
+    fx_pair=("intl", "GBPUSD=X"),
+    fx_risk_sign=-1,
+    fx_code="gbp_depreciation",
+    ext_sources=(
+        ("intl", "^FTSE", "ext_idx"),
+        ("intl_etf", "EWU", "ext_etf"),
+    ),
+    gate_mode="below_or_recent_parabolic",
+    disclaimer=_INTL_7_DISCLAIMER,
+)
+
+EZ_PROFILE = RadarProfile(
+    key="ez",
+    bench=("intl", "^STOXX"),
+    breadth_group=None, breadth_code="ez_breadth",
+    comp_legs=(
+        ("rateshock", ("us_rate_2y", "us_real_rate", "us_rate_10y"), 1.0),
+        ("fx",        ("eur_depreciation",),                          0.6),
+        ("extension", ("ext_idx", "ext_etf"),                         1.0),
+    ),
+    scares=(
+        ("rate_shock", "A", "US rate shock", "美债利率冲击",
+         ("rateshock",), ("us_rate_2y", "us_real_rate", "us_rate_10y")),
+        ("capital_flow", "A", "Euro depreciation / outflows", "欧元贬值／资金外流",
+         ("fx",), ("eur_depreciation",)),
+        ("extension", "A", "Parabolic extension / exhaustion", "抛物线伸展／透支",
+         ("extension",), ("ext_idx", "ext_etf")),
+    ),
+    bands=_BANDS,
+    # prob surfaces: base rates measured from this market's own close history by
+    # scripts/calibrate_risk_radar_intl.py (2026-07-16, window 2005-05-18..2026-07-15, n_days=5314; n counts overlapping forward windows, not independent samples).
+    # prob_cal is seeded FLAT AT BASE: the in-sample per-state read of this ported
+    # construction showed no (or overlap-fragile) loud-tier lift — printed by the
+    # harness as a descriptive artifact, never baked. The live forward log + bounded
+    # tuner (risk_radar_intl_tune, do-no-harm Brier) own the surface from n_graded>=25.
+    prob_base={"h5": 0.043, "h10": 0.102, "h21": 0.200},
+    prob_cal={
+        "h5":  {"calm": 0.043, "watch": 0.043, "caution": 0.043, "elevated": 0.043, "risk-off": 0.043},
+        "h10": {"calm": 0.102, "watch": 0.102, "caution": 0.102, "elevated": 0.102, "risk-off": 0.102},
+        "h21": {"calm": 0.200, "watch": 0.200, "caution": 0.200, "elevated": 0.200, "risk-off": 0.200},
+    },
+    caveat_en=(
+        "Ported construction, own-history odds: the external-driver legs (US rate shocks, euro "
+        "depreciation, USD strength) are ported from the China/HK/Canada radar research — their "
+        "lead on STOXX Europe 600 drawdowns is assumed from that work, not separately tested here; "
+        "the extension leg tracks melt-up regimes across a basket of country ETFs (EWG/EWQ/EWI/EWP "
+        "— no single deep-history eurozone ETF is available). Odds are measured from the STOXX "
+        "Europe 600 index's own ~22y history; display-only while the forward log accrues. Context, "
+        "sized — not a forecast."
+    ),
+    caveat_zh=(
+        "构建为移植、赔率取自自身历史：外部驱动腿（美债利率冲击、欧元贬值、美元走强）移植自中国／香港／加拿大雷达研究，"
+        "其对斯托克欧洲600指数回撤的领先性沿用该研究结论、未在本市场单独检验；伸展腿通过国家ETF篮子（EWG／EWQ／EWI／EWP）"
+        "捕捉欧元区整体过热行情（无单一长历史欧元区ETF可用）。赔率测自斯托克欧洲600指数自身约22年历史；"
+        "前向日志累积期间仅作展示。用于定仓的背景，而非预测。"
+    ),
+    fx_pair=("intl", "EURUSD=X"),
+    fx_risk_sign=-1,
+    fx_code="eur_depreciation",
+    ext_sources=(
+        ("intl", "^STOXX", "ext_idx"),
+        ("intl_etf", ("EWG", "EWQ", "EWI", "EWP"), "ext_etf"),
+    ),
+    gate_mode="below_or_recent_parabolic",
+    disclaimer=_INTL_7_DISCLAIMER,
+)
+
+PROFILES = {
+    "cn": CN_PROFILE,
+    "hk": HK_PROFILE,
+    "ca": CA_PROFILE,
+    "kr": KR_PROFILE,
+    "jp": JP_PROFILE,
+    "tw": TW_PROFILE,
+    "in": IN_PROFILE,
+    "au": AU_PROFILE,
+    "gb": GB_PROFILE,
+    "ez": EZ_PROFILE,
+}

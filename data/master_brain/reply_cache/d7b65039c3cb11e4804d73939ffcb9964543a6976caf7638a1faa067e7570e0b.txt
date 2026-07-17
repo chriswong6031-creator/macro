@@ -1,0 +1,33 @@
+{
+  "regime_context": "The flow detector is display-only with no forward edge. The dominant cluster (Consumer Discretionary, Real Estate, Financials, Health Care) is broad but low-cohesion; Health Care leads RS while Information Technology is cooling with negative flow. VIX is not elevated (16.7), fear is rebuilding but no relief signal, and the regime snap is dormant.",
+  "theses": [
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Flow is cooling with the most negative flow score (-1.55) and non-cohering despite high RS, indicating dispersion-driven noise rather than durable strength; sector is drifting away from the broad cluster with negative-alpha leadership.",
+      "evidence": [
+        "flow detector cooling stage, flow_score -1.55, cohesion 0.216 non-cohering, negative alpha in top leaders (NABL, BILL)",
+        "structural analyst moderate underweight citing cooling flow and waning participation",
+        "skeptic moderate underweight citing low cohesion and negative-alpha leadership"
+      ],
+      "dissent": "A macro catalyst could trigger a broad, high-cohesion rotation that includes Information Technology, reversing the fading trend and causing the sector to re-lead.",
+      "falsifier_text": "If Information Technology's RS percentile remains above 0.85 and its cohesion gate becomes cohering within 15 trading days, the underweight call is invalid."
+    },
+    {
+      "subject": "Consumer Discretionary",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Part of the dominant flow cluster but RS in the lowest quartile (0.23) and cohesion gate non-cohering, providing no structural edge for participation; avoid as a low-conviction sector weight.",
+      "evidence": [
+        "flow detector cluster membership, RS_pctile 0.23, cohesion 0.228 non-cohering",
+        "structural analyst avoid call citing lack of structural edge"
+      ],
+      "dissent": "The broad cluster rotation could broaden further, lifting Consumer Discretionary despite low RS, making an avoid call a missed opportunity in a catch-up rally.",
+      "falsifier_text": "If Consumer Discretionary's RS percentile rises above 0.4 and its cohesion gate becomes cohering within 15 trading days, the avoid lean is disproven."
+    }
+  ],
+  "confidence": "low"
+}

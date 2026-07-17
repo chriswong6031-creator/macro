@@ -3,7 +3,6 @@
   "crash": false,
   "eligible": [
     "cn_ai_compute",
-    "cn_brokers",
     "cn_coal",
     "cn_consumer_elec",
     "cn_pharma_cxo",
@@ -13,8 +12,8 @@
   ],
   "held": [
     "cn_ai_compute",
-    "cn_robotics",
     "cn_pharma_cxo",
+    "cn_robotics",
     "cn_rare_earth"
   ],
   "leader": "cn_ai_compute",

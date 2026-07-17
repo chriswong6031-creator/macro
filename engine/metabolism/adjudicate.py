@@ -80,6 +80,10 @@ AUTHORITY_BLOCK: dict[str, Any] = {
 }
 
 # Same provider waterfall config as propose / whitehouse_brain.
+# NOTE: usage_lane is intentionally ABSENT here — scripts/metabolism_adjudicate.py
+# records usage explicitly via lib.ai_costs.record_usage so that only ONE row
+# lands per call.  Adding usage_lane would cause _capture_usage to write a
+# second (duplicate) row on the same call.
 _LLM_CFG: dict[str, Any] = {
     "provider_order": ["oauth", "anthropic", "deepseek"],
     "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
@@ -775,13 +779,16 @@ def _invoke_role_llm(
     docket: dict[str, Any],
     case_law: dict[str, str],
     cfg: dict[str, Any] | None = None,
-) -> tuple[dict[str, dict[str, Any]] | None, str | None]:
-    """Call the role LLM.  Returns (judgments_by_pid | None, degraded_reason).
+) -> tuple[dict[str, dict[str, Any]] | None, str | None, dict[str, Any]]:
+    """Call the role LLM.  Returns (judgments_by_pid | None, degraded_reason, usage_info).
 
+    usage_info carries {input_tokens, output_tokens, cache_read_tokens,
+    cache_creation_tokens, model} when the SDK exposes them; empty dict otherwise.
     None judgments = the role could not run (no provider / error) → callers must
     fail closed.  NEVER raises.  Tests patch this to inject judgments.
     """
     conf = {**_LLM_CFG, **(cfg or {})}
+    _usage: list[dict[str, Any]] = []  # mutable side-channel for resp.usage
     try:
         from engine import llm_auth  # type: ignore[import]
         providers = llm_auth.build_providers(
@@ -789,7 +796,7 @@ def _invoke_role_llm(
             deepseek_model=conf.get("deepseek_model"),
         )
         if not providers:
-            return None, "no_provider"
+            return None, "no_provider", {}
 
         system = _ORCH_SYSTEM if role == ROLE_ORCH else _ADV_SYSTEM
         user = _build_role_user(role, docket, case_law)
@@ -800,6 +807,21 @@ def _invoke_role_llm(
                 model=model, max_tokens=max_tokens, system=system,
                 messages=[{"role": "user", "content": user}],  # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
             )
+            # Capture usage from the SDK response object (non-fatal if absent)
+            try:
+                u = getattr(resp, "usage", None)
+                if u is not None:
+                    _usage.append({
+                        "input_tokens": int(getattr(u, "input_tokens", 0) or 0),
+                        "output_tokens": int(getattr(u, "output_tokens", 0) or 0),
+                        "cache_read_tokens": int(
+                            getattr(u, "cache_read_input_tokens", 0) or 0),
+                        "cache_creation_tokens": int(
+                            getattr(u, "cache_creation_input_tokens", 0) or 0),
+                        "model": model,
+                    })
+            except Exception:  # noqa: BLE001
+                pass
             if getattr(resp, "stop_reason", None) == "refusal":
                 return None, "stop_refusal"
             text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
@@ -807,13 +829,14 @@ def _invoke_role_llm(
 
         text, reason, _provider = llm_auth.make_call(
             providers, _do_call, context=f"metabolism_adjudicate_{role}")
+        usage_info = _usage[0] if _usage else {}
         parsed = _parse_judgments(text or "")
         if parsed is None:
-            return None, reason or "empty_or_unparseable_reply"
-        return parsed, reason
+            return None, reason or "empty_or_unparseable_reply", usage_info
+        return parsed, reason, usage_info
     except Exception as exc:  # noqa: BLE001
         log.warning("adjudicate: role LLM (%s) failed: %s", role, exc)
-        return None, "llm_error"
+        return None, "llm_error", {}
 
 
 def _parse_judgments(text: str) -> dict[str, dict[str, Any]] | None:
@@ -939,6 +962,7 @@ def adjudicate_role(
     cfg: dict[str, Any] | None = None,
     injected: dict[str, dict[str, Any]] | None = None,
     dry_run: bool = False,
+    _usage_out: "list | None" = None,
 ) -> list[dict[str, Any]]:
     """Run one adjudication role (orchestrator | adversary) over the docket.
 
@@ -958,11 +982,12 @@ def adjudicate_role(
     # (one ledger read per role, not one per proposal).
     existing = _events_for_target(root, _cycle_prefix(cycle_id))
 
+    llm_usage_info: dict[str, Any] = {}
     if injected is not None:
         judgments: dict[str, dict[str, Any]] | None = injected
         degraded: str | None = None
     else:
-        judgments, degraded = _invoke_role_llm(role, docket, case_law, cfg)
+        judgments, degraded, llm_usage_info = _invoke_role_llm(role, docket, case_law, cfg)
 
     results: list[dict[str, Any]] = []
     for prop in proposals:
@@ -1112,6 +1137,13 @@ def adjudicate_role(
 
     log.info("adjudicate[%s]: cycle=%s ruled %d proposal(s) (degraded=%s)",
              role, cycle_id, len(results), degraded)
+    # Expose usage_info via optional out-parameter so callers that need real token
+    # counts can collect them without a return-type change (backward compatible).
+    if _usage_out is not None:
+        try:
+            _usage_out.append(llm_usage_info)
+        except Exception:  # noqa: BLE001
+            pass
     return results
 
 

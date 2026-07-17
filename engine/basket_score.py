@@ -173,6 +173,91 @@ def clean_entry(lvl: pd.Series, fp: dict | None, breadth_d: dict | None,
             "reasons": reasons[:4], "directional": False}
 
 
+def _macd_hist_fade_leg(s: pd.Series) -> tuple[bool, int, float, float, float | None]:
+    """MLC-W4: MACD(12,26,9) histogram-fade-off-peak leg (pre-registered-arbitrary; MLC-W4;
+    frozen — no tuning on observed cases).
+
+    Returns (fired, n_fade_sessions, hist_peak_value, hist_current_value, sma10_slope_pct)
+    where:
+      fired              — True when ALL three conditions hold (see below).
+      n_fade_sessions    — number of consecutive sessions the histogram has declined since peak.
+      hist_peak_value    — histogram value at the local peak.
+      hist_current_value — histogram value at the last session.
+      sma10_slope_pct    — slope of the 10-session SMA over the last 5 sessions, as a fraction
+                           (e.g. -0.003 = -0.3% per session); None when insufficient history.
+
+    Minimum history: 40 sessions (26 for EMA26 warmup + 9 for signal + a few sessions of peak
+    look-back); absent-leg path returns (False, 0, nan, nan, None) — silent null.
+
+    Three conditions (all three must hold for the leg to fire):
+      C1 — local peak within last 21 sessions (pre-registered-arbitrary; MLC-W4; frozen).
+      C2 — histogram has faded for >= 3 consecutive sessions since that peak
+           (pre-registered-arbitrary; MLC-W4; frozen).
+      C3 — 10-session SMA slope (last 5 sessions) is negative
+           (pre-registered-arbitrary; MLC-W4; frozen).
+
+    Standard price MACD(12,26,9): EMA12 − EMA26, signal = EMA9(line), hist = line − signal.
+    Inline computation with pandas ewm — avoids import coupling to mtf_upturn._price_macd_hist
+    (which has identical arithmetic; mirrored here for module independence).
+    """
+    _MIN_HIST = 40  # pre-registered-arbitrary (MLC-W4; frozen — no tuning on observed cases)
+    _PEAK_WINDOW = 21  # sessions to look back for a local peak (pre-registered-arbitrary; MLC-W4)
+    _MIN_FADE = 3   # minimum consecutive fade sessions (pre-registered-arbitrary; MLC-W4; frozen)
+    _SLOPE_WINDOW = 10  # SMA length for slope computation (pre-registered-arbitrary; MLC-W4)
+    _SLOPE_LOOKBACK = 5  # sessions over which slope is measured (pre-registered-arbitrary; MLC-W4)
+    _nan = float("nan")
+
+    if len(s) < _MIN_HIST:
+        return False, 0, _nan, _nan, None
+
+    ema12 = s.ewm(span=12, min_periods=12).mean()
+    ema26 = s.ewm(span=26, min_periods=26).mean()
+    line = ema12 - ema26
+    sig = line.ewm(span=9, min_periods=9).mean()
+    hist = (line - sig).dropna()
+
+    if len(hist) < _PEAK_WINDOW + _MIN_FADE:
+        return False, 0, _nan, _nan, None
+
+    h = hist.to_numpy()
+    n = len(h)
+    cur = float(h[-1])
+
+    # C1: find the maximum in the last _PEAK_WINDOW sessions (inclusive of today)
+    window = h[max(0, n - _PEAK_WINDOW):]
+    peak_idx_in_window = int(np.argmax(window))
+    peak_val = float(window[peak_idx_in_window])
+    # absolute index of the peak in h
+    peak_abs = max(0, n - _PEAK_WINDOW) + peak_idx_in_window
+    sessions_since_peak = (n - 1) - peak_abs   # 0 means today IS the peak
+
+    # C2: count consecutive sessions of decline from the peak to today
+    n_fade = 0
+    for k in range(peak_abs + 1, n):
+        if h[k] < h[k - 1]:
+            n_fade += 1
+        else:
+            n_fade = 0  # reset on any non-decline — must be consecutive
+
+    # C3: 10d SMA slope (last 5 sessions)
+    sma10 = pd.Series(h).rolling(_SLOPE_WINDOW, min_periods=_SLOPE_WINDOW).mean().to_numpy()
+    slope: float | None = None
+    if n >= _SLOPE_WINDOW + _SLOPE_LOOKBACK:
+        sma_end = sma10[-1]
+        sma_start = sma10[-_SLOPE_LOOKBACK - 1]
+        if np.isfinite(sma_end) and np.isfinite(sma_start) and sma_start != 0:
+            slope = float((sma_end - sma_start) / abs(sma_start))
+
+    # Pre-registered-arbitrary (MLC-W4; frozen): only positive-momentum peaks — fade-from-below
+    # is a different (untested) construction (an accelerating downtrend, not "cooling off a high").
+    c0 = peak_val > 0
+    c1 = sessions_since_peak >= 0 and sessions_since_peak <= _PEAK_WINDOW
+    c2 = n_fade >= _MIN_FADE
+    c3 = slope is not None and slope < 0.0
+    fired = bool(c0 and c1 and c2 and c3)
+    return fired, n_fade, peak_val, cur, slope
+
+
 def rollover_risk(lvl: pd.Series, fp: dict | None, fp5: dict | None,
                   breadth_d: dict | None, perf: dict | None) -> dict:
     """Distribution / roll-over risk — was extended, momentum now decelerating off the high,
@@ -205,9 +290,28 @@ def rollover_risk(lvl: pd.Series, fp: dict | None, fp5: dict | None,
     d5 = (perf or {}).get("5d", {}).get("rel")
     if d5 is not None and d5 < -0.01 and rs_p is not None and rs_p > 0.7:
         r += W[4]; reasons.append("rolling off the high")
+
+    # MLC-W4: histogram-fade-off-peak leg (additive; outside _rollover_weights() calibration
+    # until recalibrated — weight 0.20 chosen for consistency with sibling breadth legs;
+    # pre-registered-arbitrary; MLC-W4; frozen — no tuning on observed cases).
+    _HIST_FADE_WEIGHT = 0.20  # pre-registered-arbitrary (MLC-W4; frozen — no tuning on observed cases)
+    hist_fired, n_fade, peak_val, cur_val, slope = _macd_hist_fade_leg(s)
+    if hist_fired:
+        # n_fade is the consecutive tail decline count (not sessions-since-peak).
+        # Slope is an internal C3 condition only — excluded from reason string because
+        # the ÷|sma_start| ratio blows up near zero (retro printed −2153%).
+        # Max attainable r rises 1.10→1.30 with unchanged 0.6/0.35 band thresholds —
+        # INTENDED (the leg exists so non-extended rollers can reach the "high" band).
+        reasons.append(
+            f"momentum fading (hist {round(peak_val, 3)}→{round(cur_val, 3)}, {n_fade} straight declines)"
+        )
+        r += _HIST_FADE_WEIGHT
+
     band, band_zh = ("high", "高") if r >= 0.6 else ("elevated", "升高") if r >= 0.35 else ("low", "低")
     return {"risk": round(min(r, 1.0), 3), "band": band, "band_zh": band_zh,
-            "reasons": reasons[:4], "directional": False}
+            "reasons": reasons[:5], "directional": False,
+            "hist_fade": hist_fired,           # MLC-W4: boolean marker consumed by cooling demotion
+            "hist_fade_n": int(n_fade) if hist_fired else None}  # MLC-W4: consecutive decline count
 
 
 def theme_textures(lvl: pd.Series, fp: dict | None, fp5: dict | None,
@@ -263,12 +367,18 @@ def act_now_stocks(members: list, theme: dict) -> dict:
     risk_reco = reco in ("avoid", "trim")
     constructive = label in ("emerging", "dominant")
     downtrend = (in_bull is False) and not constructive
+    # Members the ranker can NEVER surface — no conviction read (not in the per-stock
+    # library, or a thin record without a score). Carried on every payload so the detail
+    # page prints the gap explicitly: an all-uncovered basket must read as a coverage
+    # gap, not a misleading "no clean entry".
+    uncovered = [m.get("symbol") for m in members or []
+                 if (m.get("conviction") or {}).get("score") is None]
     if risk_label or risk_reco or downtrend:
         why = label if risk_label else reco if risk_reco else "downtrend"
         why_en = "in a downtrend" if why == "downtrend" else str(why)
         why_zh = {"deteriorating": "走弱", "fading": "退潮", "avoid": "建议回避",
                   "trim": "建议减持", "downtrend": "处于下行趋势"}.get(why, str(why))
-        return {"status": "theme_out_of_favour", "buys": [],
+        return {"status": "theme_out_of_favour", "buys": [], "uncovered": uncovered,
                 "note_en": "Theme is out of favour (" + why_en + ") — no stock buys recommended here right now.",
                 "note_zh": "主题暂不被青睐（" + why_zh + "）— 当前不建议买入该主题个股。"}
     buys = []
@@ -299,10 +409,10 @@ def act_now_stocks(members: list, theme: dict) -> dict:
                          "rationale": m.get("rationale")})
     buys.sort(key=lambda x: (-(x.get("act_level") or 0), -(x.get("entry_pct") or 0), -(x.get("score") or 0)))
     if not buys:
-        return {"status": "no_clean_entries", "buys": [],
+        return {"status": "no_clean_entries", "buys": [], "uncovered": uncovered,
                 "note_en": "Theme is in favour, but no member has a clean entry right now — most are extended or mid-trend. Wait for a pullback.",
                 "note_zh": "主题尚可，但当前无成分股具备干净入场点 — 多数已延展或处于趋势中段。等待回调。"}
-    return {"status": "ok", "buys": buys[:12]}
+    return {"status": "ok", "buys": buys[:12], "uncovered": uncovered}
 
 
 _BREADTH_DIR = {"us": "breadth", "china": "china_breadth",

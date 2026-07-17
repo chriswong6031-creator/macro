@@ -422,37 +422,12 @@ fred:
       # MRI-W11 Track S data adoptions (context series; no champion spec change — chartered for future use):
       TRMMEANCPIM158SFRBCLE: trimmed_mean_cpi  # Cleveland Fed 16% trimmed-mean CPI (monthly, % change SA) — alternative core inflation measure
       JTSQUR: jolts_quits_rate              # JOLTS quits rate (monthly, %) — voluntary separation signal; leading labor-market health indicator
-  retries: 3
-  backoff_base_s: 5
-  batch_size: 80
-  # All EOD adjusted closes, one parquet per ticker under data/yahoo/.
-  tickers:
-    sectors: [XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
-    extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH,   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
-             SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN,  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
-             MAGS,                # Roundhill Magnificent Seven ETF — mega-cap leadership concentration tracker (hk_context_chips em_dm_rs / HKRV-W4)
-             "^KS11"]             # KOSPI composite (Korea) — EM-Asia bellwether; hk_context_chips complement
-    style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
-    factors: [MTUM, QUAL, USMV, SPHB, SPLV]
-    ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)
-    credit: [HYG, LQD]
-    bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
-    intl_etfs: [FXI,                   # China large-cap (US-hours) — factor-exposure China proxy + holding
-                KWEB,                  # KraneShares CSI China Internet (2013->) — offshore internet cohort; onshore/offshore divergence axis
-                MCHI,                  # iShares MSCI China (2011->) — broad China offshore benchmark
-                ASHR,                  # Xtrackers CSI 300 China A-Shares (2013->) — onshore A-share price discovery; divergence axis anchor
-                CQQQ,                  # Invesco China Technology (2009->) — tech-heavy offshore; pre-KWEB era coverage
-                GXC]                   # SPDR S&P China (2007->) — longest-history offshore; broadest sector coverage
-    country_etfs: [EWG, EWU, EWQ, EWL, EWP, EWI, EWN, EWD,   # World Market Cycles (intl_cycles.html) — USD single-country iShares MSCI ETFs, most back to 1996
-                   EWJ, EWA, EWH, EWS, EWC,
-                   INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
-                   EFA, EEM, VGK, VPL, AAXJ, ILF, VXUS]       # + regional/bloc aggregates: Dev ex-US, EM, Europe, Pacific, Asia-xJP, LatAm, All-World ex-US
-    vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX=vol-of-vol. ^COR1M/^COR3M REMOVED (VSB W1): yfinance serves no real history (1-row zero stubs, silently dropped by yahoo._extract) — implied correlation + DSPX/VIX1D/VIXEQ now come from collectors/cboe_indices.CboeCorVolAdapter (data/cboe/cor1m|cor3m|dspx|vix1d|vixeq; 2006->)
-    fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
-    fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
-    rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
-    crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
-    crypto_fut: ["BTC=F"]                 # CME (regulated) Bitcoin front-month future -> institutional carry / basis (D-vec-CME; daily 2021->)
+  # NOTE (2026-07-16): a header-less copy of the OLD yahoo ticker block (retries/
+  # backoff_base_s/batch_size + a stale tickers: map) used to sit right here — a
+  # remnant of the 2026-06-29 "KeyError: 'yahoo'" incident, absorbed into fred: when
+  # the yahoo: header was lost. Its duplicate retries/backoff_base_s keys silently
+  # SHADOWED the section-top values above (YAML last-key-wins). Deleted; the live
+  # yahoo block is the top-level `yahoo:` key near the end of this file.
 
 treasury:
   base_url: https://api.fiscaldata.treasury.gov/services/api/fiscal_service
@@ -3044,6 +3019,15 @@ live_flow:
   near_dte_cap_days: 90     # current-day fallback: cap per-expiration pulls to <=90 DTE (near-dated flow, where notable premium lives)
   # etf_anchors: []         # defaults to 22 anchors (see live_flow_poller._resolve_universe)
 
+# U-CHAIN intraday chain-snapshot lane (scripts/chain_snapshot_poller.py) —
+# 15-min full-chain greeks/OI sweeps for the active universe, persisted as
+# per-root per-day parquet (the Interval Map / Volatility Drift data plane).
+chain_snapshots:
+  cadence_min: 15           # minutes between sweep starts (RTH 09:35-16:00 ET)
+  top_names: 128            # single-name roots appended after the 22 ETF anchors (~150 roots)
+  max_concurrent: 1         # HARD — live_flow poller owns 2 of the terminal's 8 slots during RTH; this lane gets 1. NEVER raise without explicit Fable adjudication.
+  # etf_anchors: []         # defaults to 22 anchors (see chain_snapshot_poller._resolve_universe)
+
 # Committed-data-freeze tripwire — folded into the dead-man's-switch heartbeat
 # (scripts/healthcheck.py check_committed_data_freshness).  Each witness is a
 # cheap, always-liquid parquet file.  FAIL when > fail_after_sessions business
@@ -3062,6 +3046,9 @@ healthcheck:
       - {label: "china_breadth",          path: "data/china_breadth/breadth.parquet"}
       - {label: "hk_stocks 0700.HK",      path: "data/hk_stocks/0700.HK.parquet"}
       - {label: "us_stocks AAPL",         path: "data/stocks/AAPL.parquet"}
+      # Silent-freeze witness for the Leader Radar forward ledger — the exact store
+      # that froze 2026-07-11→16 (#2605) while every liveness probe stayed green.
+      - {label: "leader_radar state_history", path: "data/leader_radar/state_history.parquet"}
     # China Golden Week + Spring Festival 2026–27 (starter set; extend as needed).
     # US/HK single-day holidays fall within the 2-session tolerance so are optional.
     holidays:
@@ -3688,7 +3675,7 @@ macro_news:
   lang: eng
   window_days: 4                  # fetch the last N days of macro news
   max_records: 200                # candidates pulled from GDELT before filtering
-  max_show: 18                    # headlines shown after filtering
+  max_show: 36                    # headlines shown after filtering (accordion handles any length)
   min_importance_score: 34        # drops official/wire plumbing that is not macro-relevant
   min_request_interval_s: 6       # GDELT pacing
   gdelt_attempts: 2
@@ -3699,6 +3686,9 @@ macro_news:
   news_window_days: 5
   official_window_days: 45
   cache_dir: data/macro/news_cache
+  # cache_ttl_hours: within-day re-fetch suppression ONLY — suppresses a second
+  # network hit when the build re-runs on the same calendar day.  It does NOT
+  # govern content freshness; use official_window_days / news_window_days for that.
   cache_ttl_hours: 12
   catalysts_horizon_days: 14
   # reputable macro/financial source allowlist (substring match on article domain).
@@ -3917,6 +3907,13 @@ profile_translation:
 # =============================================================================
 news_translation:
   enabled: true
+  render_lanes: false             # opt-in: allow the API fill on the secret-free render lanes
+                                  # (render / engine-render / closing-bell; detected in code via
+                                  # their RENDER_NO_DRIP=1 sentinel). OFF = those lanes stay
+                                  # cache-only, so fresh intraday titles fall back to English in
+                                  # ZH mode until the nightly translates + commits them. Flip to
+                                  # true to close that window (few cents/day on deepseek-chat;
+                                  # the key is already wired inertly into those lanes' news steps).
   provider: deepseek
   model: deepseek-chat
   base_url: https://api.deepseek.com/anthropic
@@ -6216,7 +6213,8 @@ yahoo:
     extras: [SMH, IWM, RSP, SPY, QQQ, "^DJI", "^RUT", IJH,   # ^RUT = true Russell 2000 index level; IJH = S&P MidCap 400 (mid-cap leg of the size spectrum)
              SOXX, IGV, XBI, IBB, GDX, GDXJ, KRE, KBE, ITB, XHB, XME, XOP, OIH, XRT, TAN,  # deep-history thematic ETFs (directional model — narrow purer-driver exposures)
              MAGS,                # Roundhill Magnificent Seven ETF — mega-cap leadership concentration tracker (hk_context_chips em_dm_rs / HKRV-W4)
-             "^KS11"]             # KOSPI composite (Korea) — EM-Asia bellwether; hk_context_chips complement
+             "^KS11",             # KOSPI composite (Korea) — EM-Asia bellwether; hk_context_chips complement
+             "^GSPC"]             # S&P 500 price index — intl_performance US-vs-world benchmark + cycle_proxies/equity_alloc/intl_claims/lab/live_overlay/signal_lab. Store was seeded once by scripts/spvector_baseline.py (2026-06-14) and froze at 2026-06-12 because the ticker was never in ANY group here; freshness now guarded by collectors.yahoo.check_yahoo_freshness
     style: [IWF, IWD]             # Russell 1000 Growth / Value — style-rotation read (growth vs value leadership)
     factors: [MTUM, QUAL, USMV, SPHB, SPLV]
     ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)

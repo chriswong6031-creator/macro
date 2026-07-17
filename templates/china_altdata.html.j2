@@ -9,7 +9,7 @@
 {% if v is none %}<span class="mut">·</span>{% else %}<span class="{{ 'r-pos' if v>0 else ('r-neg' if v<0 else 'mut') }}">{{ '%+.2f'|format(v) }}</span>{% endif %}
 {%- endmacro %}
 
-{% block title %}{{ t('Alternative Data', '另类数据') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+{% block title %}Alternative Data — Macro Dashboard{% endblock %}
 
 {% block base_css %}
   .ad-hero { max-width:1060px; margin:18px auto 0; }

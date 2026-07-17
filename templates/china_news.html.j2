@@ -10,6 +10,13 @@
 {% set SYN_TICKERS = (SYN.top_tickers if SYN.top_tickers else []) %}
 {% set SYN_SOURCES = (SYN.source_mix if SYN.source_mix else []) %}
 {% set feature = heads[0] if heads else none %}
+{# Glance-surface chips never show raw slugs or internal scorer strings: channels
+   and source tiers map through the engine's bilingual label dicts, and
+   importance_reasons stay machine-only in the payload (doctrine Law 2). #}
+{% set CHL = CN.channel_label or {} %}
+{% set THL = CN.theme_label or {} %}
+{% set TIERL = CN.tier_label or {} %}
+{% set IMP_ZH = {'high': '高', 'medium': '中', 'low': '低'} %}
 
 {% block title %}China News Feed - Macro Dashboard{% endblock %}
 
@@ -106,15 +113,15 @@
           {% if feature %}
           {% set tl = CN.theme_label.get(feature.theme, [feature.theme, feature.theme]) %}
           <span class="chip theme th-{{ feature.theme }}">{{ t(tl[0], tl[1]) }}</span>
-          <span class="chip"><b>{{ feature.source_name or 'source' }}</b>{% if feature.source_tier %} · {{ feature.source_tier }}{% endif %}</span>
-          <span class="chip imp-{{ feature.importance }}"><b>{{ feature.importance_score }}</b>/100 {{ feature.importance }}</span>
+          <span class="chip"><b>{{ feature.source_name or 'source' }}</b></span>
+          <span class="chip imp-{{ feature.importance }}"><b>{{ feature.importance_score }}</b>/100 {{ t(feature.importance, IMP_ZH.get(feature.importance, feature.importance)) }}</span>
           <a class="read" href="{{ feature.url }}" target="_blank" rel="noopener">{{ t('Read source', '阅读来源') }}</a>
           {% else %}
           <span class="chip">{{ t('Status', '状态') }}: {{ news.degraded_reason or t('waiting for headlines', '等待头条') }}</span>
           {% endif %}
         </div>
         {% if feature and (feature.channels or feature.tickers) %}
-        <div class="intel">{% for c in feature.channels[:5] %}<span class="chip">{{ c }}</span>{% endfor %}{% for tk in feature.tickers[:7] %}<span class="chip tk">{{ tk }}</span>{% endfor %}</div>
+        <div class="intel">{% for c in feature.channels[:5] %}{% set cl = CHL.get(c) or THL.get(c) or [c|replace('_',' '), c|replace('_',' ')] %}<span class="chip">{{ t(cl[0], cl[1]) }}</span>{% endfor %}{% for tk in feature.tickers[:7] %}<span class="chip tk">{{ tk }}</span>{% endfor %}</div>
         {% endif %}
       </div>
     </article>
@@ -136,7 +143,7 @@
         <div class="num">{{ heads|length }}</div>
       </div>
       <div class="tile">
-        <div><div class="k">{{ t('Intelligence Mix', '情报结构') }}</div><div class="v">{{ SYN.high_impact_count or 0 }} {{ t('high impact', '高影响') }}</div><div class="s">{% if SYN.dominant_channel %}{{ SYN.dominant_channel }}{% elif SYN.dominant_theme %}{{ SYN.dominant_theme }}{% else %}{{ t('awaiting signal', '等待信号') }}{% endif %}</div></div>
+        <div><div class="k">{{ t('Intelligence Mix', '情报结构') }}</div><div class="v">{{ SYN.high_impact_count or 0 }} {{ t('high impact', '高影响') }}</div><div class="s">{% if SYN.dominant_channel or SYN.dominant_theme %}{% set dc = SYN.dominant_channel or SYN.dominant_theme %}{% set dl = CHL.get(dc) or THL.get(dc) or [dc|replace('_',' '), dc|replace('_',' ')] %}{{ t(dl[0], dl[1]) }}{% else %}{{ t('awaiting signal', '等待信号') }}{% endif %}</div></div>
         <div class="num">{% if SYN.avg_importance %}{{ SYN.avg_importance|round|int }}{% else %}-{% endif %}</div>
       </div>
     </aside>
@@ -156,19 +163,20 @@
       {% if heads %}
       <div class="feed" id="feed">
         {% for h in heads[1:] %}
+        {% set chsearch = [] %}{% for c in h.channels[:5] %}{% set cl = CHL.get(c) or THL.get(c) %}{% if cl %}{% set _ = chsearch.append(cl[0] ~ ' ' ~ cl[1]) %}{% endif %}{% endfor %}
         <a class="card" href="{{ h.url or '#' }}" target="_blank" rel="noopener"
-           data-theme="{{ h.theme }}" data-importance="{{ h.importance }}" data-search="{{ (h.title ~ ' ' ~ (h.title_en or '') ~ ' ' ~ (h.title_zh or '') ~ ' ' ~ h.summary ~ ' ' ~ (h.summary_en or '') ~ ' ' ~ (h.summary_zh or '') ~ ' ' ~ h.source_name ~ ' ' ~ h.channels|join(' ') ~ ' ' ~ h.tickers|join(' '))|lower }}">
+           data-theme="{{ h.theme }}" data-importance="{{ h.importance }}" data-search="{{ (h.title ~ ' ' ~ (h.title_en or '') ~ ' ' ~ (h.title_zh or '') ~ ' ' ~ h.summary ~ ' ' ~ (h.summary_en or '') ~ ' ' ~ (h.summary_zh or '') ~ ' ' ~ h.source_name ~ ' ' ~ h.channels|join(' ') ~ ' ' ~ chsearch|join(' ') ~ ' ' ~ h.tickers|join(' '))|lower }}">
           <div class="rank"><b>#{{ loop.index + 1 }}</b><span>{{ t('story', '条目') }}</span></div>
           <div class="body">
             <div class="top">
               {% set tl = CN.theme_label.get(h.theme, [h.theme, h.theme]) %}
               <span class="chip theme th-{{ h.theme }}">{{ t(tl[0], tl[1]) }}</span>
-              <span class="chip"><b>{{ h.source_name or 'source' }}</b>{% if h.source_tier %} · {{ h.source_tier }}{% endif %}</span>
+              <span class="chip"><b>{{ h.source_name or 'source' }}</b></span>
               <span class="chip imp-{{ h.importance }}"><b>{{ h.importance_score }}</b>/100</span>
             </div>
             <h2 class="title"><span class="l-en">{{ h.title_en or h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></h2>
             {% if h.summary %}<p class="summary"><span class="l-en">{{ h.summary_en or h.summary }}</span><span class="l-zh">{{ h.summary_zh or h.summary }}</span></p>{% endif %}
-            <div class="intel">{% for c in h.channels[:5] %}<span class="chip">{{ c }}</span>{% endfor %}{% for tk in h.tickers[:7] %}<span class="chip tk">{{ tk }}</span>{% endfor %}{% for r in h.importance_reasons[:2] %}<span class="chip">{{ r }}</span>{% endfor %}</div>
+            <div class="intel">{% for c in h.channels[:5] %}{% set cl = CHL.get(c) or THL.get(c) or [c|replace('_',' '), c|replace('_',' ')] %}<span class="chip">{{ t(cl[0], cl[1]) }}</span>{% endfor %}{% for tk in h.tickers[:7] %}<span class="chip tk">{{ tk }}</span>{% endfor %}</div>
           </div>
         </a>
         {% else %}
@@ -188,7 +196,7 @@
         {% if SYN.read %}<div class="line"><div class="date">{{ t('Read', '读数') }}</div><div class="main">{{ t(SYN.read, SYN.get('read_zh') or SYN.read) }}</div></div>{% endif %}
         <div class="line"><div class="date">{{ t('Channels', '通道') }}</div><div class="main">{% for c in SYN_CHANNELS[:5] %}<span class="tag">{{ t(c.get('label_en') or c.name|replace('_',' '), c.get('label_zh') or c.get('label_en') or c.name|replace('_',' ')) }}</span>{% else %}{{ t('No channel cluster yet', '暂无通道聚类') }}{% endfor %}</div></div>
         <div class="line"><div class="date">{{ t('Tickers', '标的') }}</div><div class="main">{% for tk in SYN_TICKERS[:7] %}<span class="tag">{{ tk.ticker }}</span>{% else %}{{ t('No proxy tags yet', '暂无代理标的') }}{% endfor %}</div></div>
-        <div class="line"><div class="date">{{ t('Sources', '来源') }}</div><div class="main">{% for s in SYN_SOURCES[:4] %}<span class="tag">{{ s.tier }} {{ s.count }}</span>{% else %}{{ t('No source mix yet', '暂无来源结构') }}{% endfor %}</div></div>
+        <div class="line"><div class="date">{{ t('Sources', '来源') }}</div><div class="main">{% for s in SYN_SOURCES[:4] %}{% set sl = TIERL.get(s.tier) or [s.tier|replace('_',' '), s.tier|replace('_',' ')] %}<span class="tag">{{ t(sl[0], sl[1]) }} {{ s.count }}</span>{% else %}{{ t('No source mix yet', '暂无来源结构') }}{% endfor %}</div></div>
       </section>
 
       <section class="rail-card">

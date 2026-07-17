@@ -70,6 +70,7 @@ warnings.filterwarnings("ignore")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import country_cycles as cc  # noqa: E402
+from engine import cycle_ontology as onto  # noqa: E402
 from engine import sector_cycles as sc   # noqa: E402
 from engine.inputs import yahoo_closes   # noqa: E402
 
@@ -91,13 +92,16 @@ CHINA_ZZ_PCT = None  # use engine default (csc.CN_ZZ_PCT) — resolved at import
 def _engine_fingerprint() -> str:
     """SHA-256[:12] of the key phase/turn function sources.
 
-    Changes when _record_core, _detect_swings, or _classify_phase logic changes —
-    signalling that a backfill re-run is needed. Stable across identical source trees.
+    Changes when _record_core, _detect_swings, _classify_phase, or the ontology
+    classify_phase (stamps phase_v2 — was an undetected drift axis until the
+    #2697 port touched it) logic changes — signalling that a backfill re-run is
+    needed. Stable across identical source trees.
     """
     sources = "".join([
         inspect.getsource(sc._record_core),
         inspect.getsource(sc._detect_swings),
         inspect.getsource(sc._classify_phase),
+        inspect.getsource(onto.classify_phase),
     ])
     return hashlib.sha256(sources.encode()).hexdigest()[:12]
 

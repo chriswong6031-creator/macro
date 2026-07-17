@@ -50,8 +50,6 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-OAUTH_BETA = "oauth-2025-04-20"
-
 # Pre-committed A6 lane-(ii) gate description — recorded in every governance event so the
 # ledger carries the gate that was in force at the time of the proposal/apply/reject.
 _A6_GATE_SPEC = (
@@ -74,7 +72,9 @@ _DEFAULTS = {
     "interval_days": 7,            # retune weekly (needs matured outcomes to learn from)
     "max_tokens": 4000,
     "min_graded": 30,              # don't retune until enough calls have been graded
-    "band_max_delta": 12.0,       # bands may move at most this far from the baked default
+    "band_max_delta": 12.0,        # bands may move at most this far from the baked default
+    "oauth_pool_lane": "risk-radar-review",  # pool key expansion for this lane
+    "usage_lane": "risk-radar-review",       # ai_costs attribution
 }
 
 # clamp rails for the CODE guard
@@ -111,40 +111,39 @@ def _cfg() -> dict:
         return dict(_DEFAULTS)
 
 
-def _client(cfg):
-    try:
-        import anthropic
-    except ImportError:
-        return None
-    token = config.secret(cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN"))
-    if token:
-        try:
-            return anthropic.Anthropic(auth_token=token, default_headers={"anthropic-beta": OAUTH_BETA})
-        except Exception:  # noqa: BLE001
-            return None
-    key = config.secret(cfg.get("api_key_env", "ANTHROPIC_API_KEY"))
-    if key:
-        try:
-            return anthropic.Anthropic(api_key=key)
-        except Exception:  # noqa: BLE001
-            return None
-    return None
-
-
 def _make_call(cfg):
-    client = _client(cfg)
-    if client is None:
+    """Return a call(system, user) -> text | None callable, or None.
+
+    Refactored to use llm_auth.build_providers for pool-aware failover and
+    usage capture.  The external call signature is unchanged.
+    """
+    try:
+        from engine import llm_auth  # noqa: PLC0415
+        providers = llm_auth.build_providers(cfg, opus_model=cfg.get("model", "claude-opus-4-8"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("risk_radar_review: provider build failed (%s)", e)
         return None
+    if not providers:
+        return None
+    max_tokens = int(cfg.get("max_tokens", 4000))
+    model = cfg.get("model", "claude-opus-4-8")
 
     def call(system, user):
-        try:
+        def _call_fn(client, m: str):
             resp = client.messages.create(
-                model=cfg.get("model", "claude-opus-4-8"), max_tokens=int(cfg.get("max_tokens", 4000)),
+                model=m, max_tokens=max_tokens,
                 system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
                 messages=[{"role": "user", "content": user}])
             if getattr(resp, "stop_reason", None) == "refusal":
-                return None
-            return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text") or None
+                return None, "refusal", resp
+            text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+            return text or None, None, resp
+
+        model_providers = [{**p, "model": model} for p in providers]
+        try:
+            text, _, _ = llm_auth.make_call(model_providers, _call_fn,
+                                             context="risk_radar_review")
+            return text or None
         except Exception as e:  # noqa: BLE001
             log.warning("risk_radar_review call failed: %s", e)
             return None

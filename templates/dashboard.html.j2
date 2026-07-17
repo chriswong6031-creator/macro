@@ -2407,6 +2407,23 @@ body.page-macro .mx2-hero-ctx{
 }
 body.page-macro .mx2-hero-ctx strong{color:var(--text)}
 body.page-macro .mx2-hero-ctx .mx2-alerts-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* Leadership context line — muted context, not an alert; hidden when sector_bias absent */
+body.page-macro .mx2-leadership-ctx{font-size:11px;color:var(--muted);line-height:1.55;padding:5px 8px;background:color-mix(in srgb,var(--muted) 7%,var(--panel));border:1px solid color-mix(in srgb,var(--muted) 14%,transparent);border-radius:6px;margin-top:2px}
+body.page-macro .mx2-leadership-ctx strong{color:var(--ink-2);font-weight:600}
+/* "What would flip this call" strip — calibrated regime keys only (flip margin /
+   odds drift / conviction); shared by ledger hero and grid scorecard. Theme-var
+   colors so it holds in light mode too. */
+body.page-macro .mxfs{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--panel2) 55%,transparent);display:flex;flex-direction:column;gap:6px}
+body.page-macro .mxfs-hd{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+body.page-macro .mxfs-badge{margin-left:auto;font-size:9.5px;font-weight:600;letter-spacing:.03em;text-transform:none;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px;white-space:nowrap}
+body.page-macro .mxfs-row{display:flex;gap:10px;align-items:baseline;font-size:12px;line-height:1.5;color:var(--text)}
+body.page-macro .mxfs-k{flex:none;width:118px;font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
+body.page-macro .mxfs-v{min-width:0}
+body.page-macro .mxfs-v b{font-weight:700;color:var(--text)}
+@media(max-width:640px){body.page-macro .mxfs-row{flex-direction:column;gap:1px}body.page-macro .mxfs-k{width:auto}
+/* the longer honest-stance pill text ("… — not all-clear") must wrap on narrow
+   phones instead of bleeding past the card edge (pill is nowrap on desktop) */
+body.page-macro.mx4-grid .mx5-regime-pill{white-space:normal}}
 /* Grid view: hide driver-ctx text block (Zone 2 covers it); keep alerts+catalyst pill row */
 body.page-macro.mx4-grid .mx2-hero-ctx>div:first-child{display:none;}
 /* In grid view, ctx card becomes a slim row with just alerts */
@@ -4748,6 +4765,87 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {# Pre-compute _band_weakest for verdict band Zone 2/3 (same logic as _weakest below) #}
     {% set _band_weakest = MS.components | sort(attribute='score') | first if (MS and MS.components is defined and MS.components) else none %}
     {% endif %}
+    {# ── "What would flip this call" context strip (design-doctrine ruling 2026-07-16).
+       Renders ONLY already-calibrated engine keys from data/regime/latest.json:
+       flip_condition (weakest supporting component + margin), quad_vector.
+       transition_momentum (which quad the model's odds are drifting toward/away
+       from), and the top-level label confidence. Conditional framing throughout —
+       context, never a forecast; no LLM-originated content. Numbers-with-precision
+       (z / threshold / rates) live in the ? help tip (Tier 2); the visible rows
+       carry plain words. Emitted in BOTH hero variants (ledger .mx2-hero and grid
+       .mx5-sc-left); every key is guarded so an older latest.json skips rows. #}
+    {% macro regime_flip_strip(latest) %}
+    {% set _fc = latest.get('flip_condition') or {} %}
+    {% set _qv = latest.get('quad_vector') or {} %}
+    {% set _tm = (_qv.get('transition_momentum') or {}) if not _qv.get('degraded') else {} %}
+    {% set _conf = latest.get('confidence') %}
+    {% if _fc.get('component') or _tm.get('gaining') or _conf is not none %}
+    {# component slug → short plain name (mirrors scripts/build_site.py COMPONENT_SHORT/_ZH) #}
+    {% set _fs_short = {
+      'copper_gold':['copper vs gold','铜对黄金'],'xly_xlp':['the shopper-confidence trade','消费信心交易'],
+      'us2y_direction':['the 2-year yield','2年期收益率'],'iwm_spy':['small caps','小盘股'],
+      'cyclical_defensive':['cyclical vs defensive sectors','周期性板块'],'breadth_direction':['market breadth','市场广度'],
+      'payrolls_trend':['payrolls','非农就业'],'indpro_trend':['industrial production','工业生产'],
+      'breakeven_10y_direction':['10-yr inflation expectations','10年期通胀预期'],
+      'breakeven_5y5y_direction':['long-run inflation expectations','长期通胀预期'],
+      'energy_rs':['the energy sector','能源板块'],'oil_trend':['oil','原油'],
+      'inflation_beta_basket':['the inflation-winners basket','通胀受益篮子'],
+      'tips_nominal_momentum':['the TIPS spread','TIPS 利差']
+    } %}
+    {% set _fs_quad = {'Q1':['Goldilocks','理想增长'],'Q2':['Reflation','再通胀'],'Q3':['Stagflation','滞胀'],'Q4':['Growth-scare/Deflation','增长恐慌／通缩']} %}
+    <div class="mxfs">
+      <div class="mxfs-hd">
+        {{ t('What would flip this call','什么会改变这一判断') }}
+        {{ help('Drawn only from today\'s regime-engine readings, shown as-is. Closest to flipping: the weakest component still supporting the call — slope z ' ~ (_fc.get('z') | round(2) if _fc.get('z') is not none else '—') ~ ' vs its ±' ~ (_fc.get('threshold') | round(2) if _fc.get('threshold') is not none else '—') ~ ' cutoff, margin ' ~ (_fc.get('margin') | round(2) if _fc.get('margin') is not none else '—') ~ '. Odds drift: how the model\'s regime probabilities moved over the last ' ~ (_tm.get('window_sessions') or '—') ~ ' sessions. Conviction: 0–1 = probability behind the label × how much the inputs agree. Conditional context only — nothing here predicts a flip.',
+                 '仅取自今日周期引擎的读数，原样展示。最接近翻转：仍在支撑当前判断中最弱的分量 — 斜率 z ' ~ (_fc.get('z') | round(2) if _fc.get('z') is not none else '—') ~ '，阈值 ±' ~ (_fc.get('threshold') | round(2) if _fc.get('threshold') is not none else '—') ~ '（边际 ' ~ (_fc.get('margin') | round(2) if _fc.get('margin') is not none else '—') ~ '）。概率漂移：模型周期概率近 ' ~ (_tm.get('window_sessions') or '—') ~ ' 个交易日的变化。把握度：0–1 = 标签背后的概率 × 输入一致度。仅为条件性参考 — 并非预测翻转。') }}
+        <span class="mxfs-badge">{{ t('Context — not a forecast','情景参考 — 非预测') }}</span>
+      </div>
+      {% if _fc.get('component') %}
+      {% set _fcl = _fs_short.get(_fc.component, [(_fc.component | replace('_',' ')), (_fc.component | replace('_',' '))]) %}
+      {% set _fax_en = 'growth' if _fc.get('axis') == 'growth' else 'inflation' %}
+      {% set _fax_zh = '增长' if _fc.get('axis') == 'growth' else '通胀' %}
+      {% set _m = _fc.get('margin') %}
+      {% set _m_en = ('razor-thin' if _m < 0.15 else ('narrow' if _m < 0.5 else 'comfortable')) if _m is not none else '' %}
+      {% set _m_zh = ('极薄' if _m < 0.15 else ('偏窄' if _m < 0.5 else '充裕')) if _m is not none else '' %}
+      <div class="mxfs-row">
+        <span class="mxfs-k">{{ t('Closest to flipping','最接近翻转') }}</span>
+        <span class="mxfs-v">
+          <span class="l-en"><b>{{ _fcl[0] }}</b> ({{ _fax_en }} side) — if it fades, that reading flips{% if _m_en %} · margin today: <b>{{ _m_en }}</b>{% endif %}</span>
+          <span class="l-zh"><b>{{ _fcl[1] }}</b>（{{ _fax_zh }}侧）— 若其走弱，该读数将翻转{% if _m_zh %} · 当前边际：<b>{{ _m_zh }}</b>{% endif %}</span>
+        </span>
+      </div>
+      {% endif %}
+      {% if _tm.get('gaining') and _tm.get('window_sessions') %}
+      {% set _tg = _fs_quad.get(_tm.gaining, [_tm.gaining, _tm.gaining]) %}
+      {% set _tl = _fs_quad.get(_tm.get('losing'), [_tm.get('losing',''), _tm.get('losing','')]) %}
+      <div class="mxfs-row">
+        <span class="mxfs-k">{{ t('Odds drift','概率漂移') }}</span>
+        <span class="mxfs-v">
+          {% if _tm.gaining == latest.get('quad') %}
+          <span class="l-en">firming behind <b>{{ _tg[0] }}</b> over the past {{ _tm.window_sessions }} sessions</span>
+          <span class="l-zh">近 {{ _tm.window_sessions }} 个交易日正向<b>{{ _tg[1] }}</b>巩固</span>
+          {% else %}
+          <span class="l-en">edging toward <b>{{ _tg[0] }}</b>, away from <b>{{ _tl[0] }}</b>, over the past {{ _tm.window_sessions }} sessions</span>
+          <span class="l-zh">近 {{ _tm.window_sessions }} 个交易日正移向<b>{{ _tg[1] }}</b>、离开<b>{{ _tl[1] }}</b></span>
+          {% endif %}
+        </span>
+      </div>
+      {% endif %}
+      {% if _conf is not none and _conf is number %}
+      {% set _c_en = 'low' if _conf < 0.33 else ('moderate' if _conf < 0.66 else 'high') %}
+      {% set _c_zh = '偏低' if _conf < 0.33 else ('中等' if _conf < 0.66 else '较高') %}
+      <div class="mxfs-row">
+        <span class="mxfs-k">{{ t('Call conviction','判断把握度') }}</span>
+        <span class="mxfs-v">
+          <span class="l-en"><b>{{ _c_en }}</b> ({{ _conf | round(2) }} / 1) — {% if _c_en == 'low' %}held loosely; modest new evidence could change it{% elif _c_en == 'moderate' %}reasonably supported, still being tested{% else %}well supported by today's inputs{% endif %}</span>
+          <span class="l-zh"><b>{{ _c_zh }}</b>（{{ _conf | round(2) }} / 1）— {% if _c_en == 'low' %}标签持有度较松，新证据不多即可能改变{% elif _c_en == 'moderate' %}支撑尚可，仍在检验{% else %}得到今日输入的充分支撑{% endif %}</span>
+        </span>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endmacro %}
+
     {# ── V2 HERO — row-ledger hero (replaces ms-oneline + ms-front board) ── #}
     {% if market_state %}
 
@@ -4770,11 +4868,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="hero-sub mx2-hero-sub">
           {# COPY-09: TRANSITIONING → plain-word 'shifting' in EN; ZH uses LEX entry 转换中.
              COPY-07: date removed from visible hero-sub (topbar is the canonical page stamp).
-             #regime-asof id KEPT for risk_state_live.js but hidden with display:none. #}
+             #regime-asof id KEPT for risk_state_live.js but hidden with display:none.
+             Design-doctrine glance ruling (2026-07-16): a friendly quad name next to a bare
+             state word reads as all-clear; TRANSITIONING/WEAKENING must carry the honest
+             stance in plain words and point at the risk read beside it. #}
           {% set _ts = latest.transition_state if (latest.transition_state is defined and latest.transition_state) else '' %}
-          {% set _ts_en = {'TRANSITIONING':'shifting','STABLE':'stable','WEAKENING':'weakening','NEW_REGIME':'new regime'}.get(_ts, _ts|lower) %}
+          {% set _ts_en = {'TRANSITIONING':'shifting — backdrop fading, not all-clear; see the risk read →','STABLE':'stable','WEAKENING':'weakening — early cracks, not all-clear; see the risk read →','NEW_REGIME':'new regime'}.get(_ts, _ts|lower) %}
+          {% set _ts_zh = {'TRANSITIONING':'转换中 — 背景趋弱，并非全面利好；参见风险解读 →','STABLE':'稳定','WEAKENING':'走弱 — 初现裂痕，并非全面利好；参见风险解读 →','NEW_REGIME':'新周期'}.get(_ts, tr(_ts)) %}
           <span class="l-en">{{ td(latest.quad_name) }} &nbsp;·&nbsp; {{ _ts_en }}</span>
-          <span class="l-zh">{{ td(latest.quad_name) }} &nbsp;·&nbsp; {{ tr(_ts) }}</span>
+          <span class="l-zh">{{ td(latest.quad_name) }} &nbsp;·&nbsp; {{ _ts_zh }}</span>
           <span id="regime-asof" style="display:none">{{ latest.date }}</span>
         </div>
 
@@ -4823,10 +4925,25 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <strong class="l-zh">{{ t(MS.radar.label_en, MS.radar.label_zh) }}:</strong>
             <span class="l-zh"> {{ MS.radar.do_zh }}</span>
             {% else %}
-            <strong class="l-en">Regime:</strong> <span class="l-en">{{ td(latest.quad_name) }} · {{ td(latest.transition_state) }}</span>
-            <strong class="l-zh">周期：</strong><span class="l-zh">{{ td(latest.quad_name) }} · {{ td(latest.transition_state) }}</span>
+            {# _ts_en/_ts_zh set in the hero-sub above — plain words, never the raw enum #}
+            <strong class="l-en">Regime:</strong> <span class="l-en">{{ td(latest.quad_name) }} · {{ _ts_en }}</span>
+            <strong class="l-zh">周期：</strong><span class="l-zh">{{ td(latest.quad_name) }} · {{ _ts_zh }}</span>
             {% endif %}
           </div>
+          {# Leadership-context chip — display-only; hidden when sector_bias is absent.
+             Data path: MS.radar.cycle.sector_bias (favor/avoid lists, each has .en + .zh).
+             Rendered as a muted context line, NOT an alert color — this is context, not a call. #}
+          {% if MS.radar and MS.radar.cycle and MS.radar.cycle.sector_bias %}
+          {% set _sb = MS.radar.cycle.sector_bias %}
+          {% set _sb_favor_en = _sb.favor | map(attribute='en') | join(' / ') if _sb.favor else '' %}
+          {% set _sb_avoid_en = _sb.avoid | map(attribute='en') | join(' / ') if _sb.avoid else '' %}
+          {% set _sb_favor_zh = _sb.favor | map(attribute='zh') | join('／') if _sb.favor else '' %}
+          {% set _sb_avoid_zh = _sb.avoid | map(attribute='zh') | join('／') if _sb.avoid else '' %}
+          <div class="mx2-leadership-ctx">
+            <span class="l-en">Under the surface: <strong>{{ _sb_favor_en }}</strong> have held while <strong>{{ _sb_avoid_en }}</strong> faded — a rotation read, not a high-beta cue.</span>
+            <span class="l-zh">表面之下：<strong>{{ _sb_favor_zh }}</strong>相对坚挺，<strong>{{ _sb_avoid_zh }}</strong>走弱 — 这是轮动观察，并非追高贝塔的信号。</span>
+          </div>
+          {% endif %}
           {# Fired-alerts pill — preserved structure for risk_state_live.js #}
           <div class="mx2-alerts-row">
             <div class="ms-alerts-wrap">
@@ -4881,6 +4998,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
         </div>
       </div>{# /mx2-hero-row #}
+      {{ regime_flip_strip(latest) }}
       </section>{# /ms-verdict — wraps thesis + score + tick for check_ms_board_coherence.py #}
     </div>{# /mx2-hero / ms-front #}
 
@@ -4901,10 +5019,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% set _mx5_sc_cls = 'mx5-score-green' if MS.color == 'green' else ('mx5-score-yellow' if MS.color == 'yellow' else 'mx5-score-red') %}
     {% set _mx5_sc_col = '#22d97a' if MS.color == 'green' else ('#f59e0b' if MS.color == 'yellow' else '#ef4444') %}
     {% set _mx5_sc_glow = 'rgba(34,217,122,.7)' if MS.color == 'green' else ('rgba(245,158,11,.7)' if MS.color == 'yellow' else 'rgba(239,68,68,.7)') %}
-    {# Regime pill: quad_name + transition_state #}
+    {# Regime pill: quad_name + transition_state.
+       Design-doctrine glance ruling (2026-07-16): "Goldilocks · Shifting" read as
+       all-clear at a glance; the not-clear states carry their honest stance inline. #}
     {% set _mx5_ts = latest.transition_state if (latest.transition_state is defined and latest.transition_state) else '' %}
-    {% set _mx5_ts_en = {'TRANSITIONING':'Shifting','STABLE':'Stable','WEAKENING':'Weakening','NEW_REGIME':'New Regime'}.get(_mx5_ts, _mx5_ts | title) %}
-    {% set _mx5_ts_zh = {'TRANSITIONING':'转换中','STABLE':'稳定','WEAKENING':'走弱','NEW_REGIME':'新周期'}.get(_mx5_ts, _mx5_ts) %}
+    {% set _mx5_ts_en = {'TRANSITIONING':'Shifting — not all-clear','STABLE':'Stable','WEAKENING':'Weakening — not all-clear','NEW_REGIME':'New Regime'}.get(_mx5_ts, _mx5_ts | title) %}
+    {% set _mx5_ts_zh = {'TRANSITIONING':'转换中 — 非全面利好','STABLE':'稳定','WEAKENING':'走弱 — 非全面利好','NEW_REGIME':'新周期'}.get(_mx5_ts, tr(_mx5_ts)) %}
     {# Risk button: warn style whenever the radar is NOT quiet (engine states include
        'watch' — the current bubble/blow-off state — which IS "there is risk" per the
        operator ruling) or the top scare scores >=50 #}
@@ -5012,6 +5132,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if MS.flip_zh %}<span class="l-zh">{{ MS.flip_zh }}</span>{% endif %}
       </div>
       {% endif %}
+
+      {# Regime flip-context strip — grid view is the default glance surface #}
+      {{ regime_flip_strip(latest) }}
 
       {# Popover trigger buttons #}
       <div class="mx5-btn-row">
@@ -8057,8 +8180,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% set _abTheme = _abSyn.get('dominant_theme','') %}
     {% set _abHiCnt = _abSyn.get('high_impact_count') %}
     {# v5 face — AI BRIEF (ticker pills + structured bilingual lines + required not-a-signal note) #}
-    {% set _abDomCh_clean = _aibf_ch.get(_abCh, _abCh | replace('_',' ')) if _abCh else '' %}
-    {% set _abDomCh_clean_zh = _aibf_ch_zh.get(_abCh, _abCh) if _abCh else '' %}
+    {# prefer the engine's bilingual CHANNEL_LABEL payload dict (doctrine Law 2 — no raw
+       slugs on glance surfaces); inline dicts remain the fallback for older payloads,
+       de-underscored in BOTH languages (the old zh fallback leaked the raw slug). #}
+    {% set _abChl = ((macro_news.channel_label or {}) if macro_news else {}).get(_abCh) %}
+    {% set _abDomCh_clean = (_abChl[0] if _abChl else _aibf_ch.get(_abCh, _abCh | replace('_',' '))) if _abCh else '' %}
+    {% set _abDomCh_clean_zh = (_abChl[1] if _abChl else _aibf_ch_zh.get(_abCh, _abCh | replace('_',' '))) if _abCh else '' %}
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-aibrief')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-aibrief');}">
       <div class="mx5-card-title"><span class="l-en">AI Brief</span><span class="l-zh">AI简报</span></div>
       {# Top ticker pills (VIS-02: wraps freely, no fixed-width clip) #}
@@ -9016,9 +9143,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _dlg_syn = macro_news.synthesis %}
         {% set _dlg_ch_zh = {'monetary':'美联储与利率','inflation':'通胀','labor':'就业','growth':'增长','credit':'信贷','fiscal':'财政','fiscal_trade':'财政与贸易','earnings':'业绩','guidance':'指引','analyst':'分析师','deals':'并购','capital_return':'回购','stocks':'个股','macro':'宏观','rates':'利率','stock_wire':'个股快讯'} %}
         {% set _dlg_ch_en = {'capital_return':'buybacks','fiscal_trade':'fiscal & trade','stock_wire':'stock wire','monetary':'Fed & rates'} %}
+        {# prefer the engine's bilingual CHANNEL_LABEL payload dict (doctrine Law 2 — no raw
+           slugs on glance surfaces); inline dicts remain the fallback for older payloads. #}
+        {% set _dc = _dlg_syn.get('dominant_channel') %}
+        {% set _dcl = (macro_news.channel_label or {}).get(_dc) if _dc else none %}
         <div class="isle-aibrief-body">
-          <span class="l-en">{{ _dlg_syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _dlg_syn.get('high_impact_count', 0) != 1 }} today{% if _dlg_syn.get('dominant_channel') %} · dominant: <strong>{{ _dlg_ch_en.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel|replace('_',' ')) }}</strong>{% endif %}</span>
-          <span class="l-zh">今日 {{ _dlg_syn.get('high_impact_count', 0) }} 条高影响信息{% if _dlg_syn.get('dominant_channel') %} · 主导：<strong>{{ _dlg_ch_zh.get(_dlg_syn.dominant_channel, _dlg_syn.dominant_channel) }}</strong>{% endif %}</span>
+          <span class="l-en">{{ _dlg_syn.get('high_impact_count', 0) }} high-impact item{{ 's' if _dlg_syn.get('high_impact_count', 0) != 1 }} today{% if _dc %} · dominant: <strong>{{ _dcl[0] if _dcl else _dlg_ch_en.get(_dc, _dc|replace('_',' ')) }}</strong>{% endif %}</span>
+          <span class="l-zh">今日 {{ _dlg_syn.get('high_impact_count', 0) }} 条高影响信息{% if _dc %} · 主导：<strong>{{ _dcl[1] if _dcl else _dlg_ch_zh.get(_dc, _dc|replace('_',' ')) }}</strong>{% endif %}</span>
         </div>
         {% else %}
         <div class="isle-aibrief-body">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</div>
@@ -9726,9 +9857,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% endif %}
       </div>
 
-      {# COL 3 — Flip Confirmation summary (full #flip-confirmation section remains in ms-front above) #}
+      {# COL 3 — Flip Confirmation summary (full #flip-confirmation section remains in ms-front above).
+         Doctrine Law 2: z-score / n= / internal workstream tags demoted to the ? help tip;
+         the visible rows carry plain words only. #}
       <div class="mx-pcol">
-        <div class="mx-pcol-label">{{ t('Flip Confirmation','翻转确认') }}</div>
+        <div class="mx-pcol-label">{{ t('Flip Confirmation','翻转确认') }} {{ help('Tracks sharp defensive/offensive rotation flips and whether they stick. Flip strength is a z-score — how unusual the move was vs its own recent history (±2 ≈ rare). The fade rate counts how many past flips reversed within days. Display context only — not a trade signal.','跟踪防御／进攻方向的急剧翻转及其是否持续。翻转强度为 z 分数 — 相对自身近期历史的罕见程度（±2 ≈ 罕见）。消退率统计历史翻转中数日内回撤的比例。仅供展示参考 — 非交易信号。') }}</div>
         {% if flip_confirmation and flip_confirmation.last_event %}
         {% set _FC3 = flip_confirmation %}
         {% set _FEV3 = _FC3.last_event %}
@@ -9744,7 +9877,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="mx-delta-chip mx-delta-mu">{{ t('defensive','防御') if _FEV3.direction == 'defensive' else t('offense','进攻') }}</span>
         </div>
         <div class="mx-pcol-row">
-          <span class="mx-pcol-key">{{ t('z-score','z 分数') }}</span>
+          <span class="mx-pcol-key">{{ t('Flip strength','翻转强度') }}</span>
           <span class="mx-delta-chip mx-delta-wn">{{ _FEV3.z }}</span>
         </div>
         <div class="mx-pcol-row">
@@ -9754,11 +9887,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if _FC3.base_rates %}
         {% set _BR3 = _FC3.base_rates %}
         <div class="mx-pcol-row">
-          <span class="mx-pcol-key">{{ t('Fade rate','消退率') }} (n={{ _BR3.n_events }})</span>
+          <span class="mx-pcol-key">{{ t('Fade rate','消退率') }}</span>
           <span class="mx-delta-chip mx-delta-dn">{{ _BR3.faded }}/{{ _BR3.n_events }} {{ t('faded','消退') }}</span>
         </div>
         {% endif %}
-        <div class="mx-pcol-sub">{{ t('as of','截至') }} {{ _FC3.asof }} · {{ t('Display-only (W2-F)','仅供展示 (W2-F)') }}</div>
+        <div class="mx-pcol-sub">{{ t('as of','截至') }} {{ _FC3.asof }} · {{ t('Context only — not a signal','仅供参考 — 非信号') }}</div>
         {% else %}
         <div class="mx-pcol-sub">{{ t('No flip data yet','暂无翻转数据') }}</div>
         {% endif %}
@@ -10407,102 +10540,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
 
 
-  {% if False %}{# INT-07/09dt: legacy news & catalysts board RETIRED — the sx-news-v2
-     island owns news for macro mode and stocks mode never rendered this panel.
-     False-gated (not deleted) to keep inner Jinja balanced; remove on next cleanup. #}
-  {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
-  <style id="nb-css">
-  body.page-macro #now-board .nb-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 14px;font-size:11px}
-  body.page-macro #now-board .nb-strip-h{font-family:var(--num);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-right:4px}
-  body.page-macro #now-board .nb-ev{display:inline-flex;align-items:center;gap:5px;border:var(--rule) solid var(--hair);border-radius:7px;padding:3px 8px;background:var(--tile);color:var(--ink-2)}
-  body.page-macro #now-board .nb-ev b{color:var(--ink-1);font-family:var(--num);font-size:10px}
-  body.page-macro #now-board .nb-relief{display:flex;align-items:center;gap:8px;border-radius:9px;padding:9px 12px;margin:0 0 12px;font-size:12.5px;font-weight:600;border:var(--rule) solid color-mix(in srgb,var(--rc,var(--ink-3)) 40%,var(--hair));background:color-mix(in srgb,var(--rc,var(--ink-3)) 10%,var(--tile));color:var(--ink-1)}
-  body.page-macro #now-board .nb-relief.firing{--rc:var(--up)}
-  body.page-macro #now-board .nb-relief.building{--rc:var(--warn)}
-  body.page-macro #now-board .nb-acc{display:grid;gap:0;border:var(--rule) solid var(--hair);border-radius:11px;overflow:hidden;background:var(--tile)}
-  body.page-macro #now-board .nb-item{border-bottom:var(--rule) solid var(--hair)}
-  body.page-macro #now-board .nb-item:last-child{border-bottom:0}
-  body.page-macro #now-board .nb-item[open]{background:color-mix(in srgb,var(--link) 5%,transparent)}
-  body.page-macro #now-board .nb-sum{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:11px 14px}
-  body.page-macro #now-board .nb-sum::-webkit-details-marker{display:none}
-  body.page-macro #now-board .nb-sum:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}
-  body.page-macro #now-board .nb-theme{font-family:var(--num);font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap;color:var(--ink-2);border:var(--rule) solid var(--hair);background:var(--panel)}
-  body.page-macro #now-board .nb-htitle{font-size:13.5px;font-weight:650;color:var(--ink-1);line-height:1.3;min-width:0}
-  body.page-macro #now-board .nb-item[open] .nb-htitle{color:var(--link)}
-  body.page-macro #now-board .nb-meta{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink-3);font-size:11px;font-family:var(--num)}
-  body.page-macro #now-board .nb-chev{transition:transform .2s}
-  body.page-macro #now-board .nb-item[open] .nb-chev{transform:rotate(180deg)}
-  body.page-macro #now-board .nb-body{padding:0 14px 13px;display:grid;gap:9px}
-  body.page-macro #now-board .nb-sumtext{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin:0}
-  body.page-macro #now-board .nb-sumtext b{color:var(--ink-1);font-weight:700}
-  body.page-macro #now-board .nb-tags{display:flex;flex-wrap:wrap;gap:5px}
-  body.page-macro #now-board .nb-pill{font-size:10px;border:var(--rule) solid var(--hair);border-radius:6px;padding:2px 7px;color:var(--ink-3);background:var(--panel)}
-  body.page-macro #now-board .nb-pill.tk{color:var(--link);border-color:color-mix(in srgb,var(--link) 38%,var(--hair))}
-  body.page-macro #now-board .nb-read{color:var(--link);font-size:12px;font-weight:700}
-  body.page-macro #now-board .nb-foot{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:12px;font-size:11.5px;color:var(--ink-3)}
-  body.page-macro #now-board .nb-cat b{color:var(--ink-2);font-family:var(--num);font-size:10.5px}
-  html[data-lang="zh"] body.page-macro #now-board .nb-strip-h{letter-spacing:0}
-  </style>
-  <div class="panel span6" id="{{ 'now-board' if mode == 'stocks' else 'now-board-legacy' }}">
-    <div class="mx-panel-hdr">
-      <span class="mx-panel-eyebrow">{{ t('News & Catalysts','新闻与日程') }}</span>
-      <a href="news.html" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
-    </div>
-    <h2 style="margin-top:0">{{ t('Market news & catalysts','市场新闻与日程') }}
-      {{ help("Reputable, macro-relevant headlines — filtered, theme-tagged and ranked by impact. Press a story to open a condensed read. Plus the US high-impact event window and any active relief-radar snap. All CONTEXT — never scored; the mechanical model never reads it.", "可靠、与宏观相关的头条 — 经筛选、标注主题并按影响排序。点按展开精简解读。另含美国高影响事件窗口与正在触发的反弹雷达。全部为背景 — 从不评分，机械模型从不读取。") }}
-    </h2>
-
-    <div class="nb-strip">
-      <span class="nb-strip-h">{{ t('Next 14d','未来14天') }}</span>
-      {% for s in event_strip[:8] %}<span class="nb-ev" title="{{ s.label }}{% if s.time_et %} · {{ s.time_et }} ET{% endif %}"><b>{{ s.type }}</b> {{ s.dow }} {{ s.md }}</span>
-      {% else %}<span class="muted">{{ t('Clear — no top-tier US prints in the window.','空窗 — 窗口内无一线美国数据。') }}</span>{% endfor %}
-    </div>
-
-    {% if regime_snap and regime_snap.status in ('firing','building') %}
-    {% set RS = regime_snap %}
-    <div class="nb-relief {{ RS.status }}">⚡ <b>{{ t('Relief radar','反弹雷达') }}:</b>
-      {% if RS.status == 'firing' %}{{ t('a risk-on snap is FIRING','风险偏好急转 触发中') }}{% else %}{{ t('a snap is building — watch','急转酝酿 — 留意') }}{% endif %}
-      <span class="muted" style="font-weight:400">· {{ RS.legs_up }}/{{ RS.legs_total }} {{ t('legs risk-on','项转向') }} · {{ t('velocity','速度') }} {{ ((RS.vel_pctile*100)|round|int) if RS.vel_pctile is not none else '—' }}%ile · {{ t('coincident, not a buy signal','同步信号，非买入') }}</span>
-    </div>
-    {% endif %}
-
-    {% if macro_news and macro_news.headlines %}
-    <div class="nb-acc">
-      {% for h in macro_news.headlines[:6] %}
-      {% set tl = TL.get(h.theme, [h.theme, h.theme]) %}
-      <details class="nb-item"{% if loop.first %} open{% endif %}>
-        <summary class="nb-sum">
-          <span class="nb-theme">{{ t(tl[0], tl[1]) }}</span>
-          <span class="nb-htitle"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>
-          <span class="nb-meta">{% if h.importance in ['high','critical'] %}<span class="mx-ni-impact high">{{ t('HIGH','高') }}</span>{% elif h.importance == 'medium' %}<span class="mx-ni-impact med">{{ t('MED','中') }}</span>{% endif %}{% if h.pub_date %}<span class="mx-ni-date">{{ h.pub_date[:10] }}</span>{% endif %} {{ h.source_name or h.domain }}{% if h.importance_score %} · {{ h.importance_score }}{% endif %} <span class="nb-chev">▾</span></span>
-        </summary>
-        <div class="nb-body">
-          <p class="nb-sumtext">
-            <span class="l-en">A <b>{{ h.importance }}</b>-impact <b>{{ tl[0] }}</b> headline{% if h.tickers %} in focus on {{ h.tickers[:3]|join(', ') }}{% endif %}{% if h.channels %}, touching {{ (h.channels[:3]|map('replace','_',' ')|list)|join(', ') }}{% endif %}.{% if h.importance_reasons %} Flagged: {{ h.importance_reasons[:2]|join('; ') }}.{% endif %} — {{ h.source_name or h.domain }}</span>
-            <span class="l-zh">一条<b>{{ h.importance }}</b>影响级的<b>{{ tl[1] }}</b>新闻{% if h.tickers %}，聚焦 {{ h.tickers[:3]|join('、') }}{% endif %}{% if h.channels %}，涉及 {{ (h.channels[:3]|map('replace','_',' ')|list)|join('、') }}{% endif %}。{% if h.importance_reasons %} 入选：{{ h.importance_reasons[:2]|join('；') }}。{% endif %} — {{ h.source_name or h.domain }}</span>
-          </p>
-          {% if h.channels or h.tickers %}
-          <div class="nb-tags">
-            {% for c in h.channels[:4] %}<span class="nb-pill">{{ c|replace('_',' ') }}</span>{% endfor %}
-            {% for tk in h.tickers[:5] %}<span class="nb-pill tk">{{ tk }}</span>{% endfor %}
-          </div>
-          {% endif %}
-          <a class="nb-read" href="{{ h.url }}" target="_blank" rel="noopener">{{ t('Read source','阅读原文') }} →</a>
-        </div>
-      </details>
-      {% endfor %}
-    </div>
-    <div class="nb-foot">
-      <a href="news.html" style="color:var(--link);font-weight:700">{{ t('Open the full news feed','打开完整新闻流') }} →</a>
-      {% if macro_news.n_kept %}<span>{{ macro_news.n_kept }} {{ t('stories kept','保留条目') }}{% if macro_news.n_raw %} · {{ macro_news.n_raw }} {{ t('scanned','已扫描') }}{% endif %}</span>{% endif %}
-      {% if macro_catalysts %}<span class="nb-cat" style="margin-left:auto">{{ t('Next catalyst','下个催化') }}: <b>{{ macro_catalysts[0].date }}</b> {{ macro_catalysts[0].type }} <span class="l-en">{{ macro_catalysts[0].label }}</span><span class="l-zh">{{ macro_catalysts[0].get('label_zh') or macro_catalysts[0].label }}</span></span>{% endif %}
-    </div>
-    {% else %}
-    <p class="muted sm">{{ t('No macro headlines right now — the fetch is off or the tape is quiet. Catalysts above remain live.','暂无宏观头条 — 抓取关闭或行情平静。上方日程仍保持更新。') }}</p>
-    {% endif %}
-  </div>
-  {% endif %}{# /mode != stocks — news & catalysts board #}
-  {% endif %}{# /INT-07dt False-gate — retired legacy news board #}
+  {# INT-07/09dt: the legacy news & catalysts board (macro_news accordion) was
+     False-gated here and has been deleted — the sx-news-v2 island + dlg-news
+     dialog own US news for macro mode; stocks mode never rendered it. #}
+  {% endif %}{# /mode != 'stocks' #}
 
   <!-- Fear ↔ Euphoria synthesis merged into the #sentiment-regime scorecard near the top of the board -->
 
@@ -10962,11 +11003,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="nb-grid-section">
       <div class="nbgrid" data-showmore-rows="3">
       {% if _su %}
-      {# BOTTOMING-ALIGNED board: shows only names whose weekly/3-day/daily cycles are
-         aligned to the upside (engine.cycles.mtf_alignment), ranked by
-         bottoming-alignment score then conviction composite (entry-open names first).
-         Order is set by the JSON producer (build_stock_library.py rank_by="bottoming-alignment"
-         + entry_open_first); the template renders as-is — no re-sort here. #}
+      {# CONFLUENCE-GATED board (2026-07-16): shows names whose signal_gate T1->T4
+         cascade verdict is eligible (parity with CN/HK), ordered by the weighted
+         cascade blend then alpha-desc within lane (W8). Bottoming-alignment survives
+         as per-card context (align_tier badge + lane derivation). Order is set by the
+         JSON producer (build_stock_library.py rank_by="confluence"); the template
+         renders as-is — no re-sort here. #}
       {% set _board = _su.buy %}
       {# --- TRUE STABLE LANE PARTITION (P2.4 §4.2).
            Canonical group order: bottoming, continuation, trend, recovery, watch (skip empty).

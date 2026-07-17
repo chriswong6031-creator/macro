@@ -27,8 +27,11 @@ from scripts.build_stance_matrix import (
     _RECO_TIER,
     _CONFLUENCE_TIER,
     _M7C_TIER,
+    _RS_LEAD_TIER,
     _agreement,
     _build_tip,
+    _build_sector_tip,
+    _round_half_away_from_zero,
     _freshness_ok,
     build,
 )
@@ -511,6 +514,302 @@ class TestFreshnessGating:
 
 
 # ---------------------------------------------------------------------------
+# MLC-W2b-2: sector-grain tests
+# ---------------------------------------------------------------------------
+
+class TestRSLeadTierMapping:
+    """_RS_LEAD_TIER: exactly three values, pre-registered ±1 range."""
+
+    def test_leading(self):
+        assert _RS_LEAD_TIER["leading"] == +1
+
+    def test_mid_pack(self):
+        assert _RS_LEAD_TIER["mid-pack"] == 0
+
+    def test_lagging(self):
+        assert _RS_LEAD_TIER["lagging"] == -1
+
+    def test_covers_exactly_three_values(self):
+        assert set(_RS_LEAD_TIER.keys()) == {"leading", "mid-pack", "lagging"}
+
+
+class TestRoundHalfAwayFromZero:
+    """_round_half_away_from_zero: halves go away from zero, not banker's rounding."""
+
+    def test_positive_half(self):
+        assert _round_half_away_from_zero(0.5) == 1
+
+    def test_negative_half(self):
+        assert _round_half_away_from_zero(-0.5) == -1
+
+    def test_zero(self):
+        assert _round_half_away_from_zero(0.0) == 0
+
+    def test_positive_int(self):
+        assert _round_half_away_from_zero(2.0) == 2
+
+    def test_negative_int(self):
+        assert _round_half_away_from_zero(-2.0) == -2
+
+    def test_positive_below_half(self):
+        assert _round_half_away_from_zero(0.4) == 0
+
+    def test_negative_below_half(self):
+        assert _round_half_away_from_zero(-0.4) == 0
+
+
+class TestSectorRowsPresent:
+    """Sector-grain rows emitted with all three verdicts when sector_central is fresh."""
+
+    def test_sectors_key_present_in_payload(self, tmp_path):
+        """payload must always carry a 'sectors' key."""
+        _write_baskets(tmp_path, [])
+        payload = build(root=tmp_path)
+        assert "sectors" in payload
+
+    def test_sector_row_has_all_three_verdicts(self, tmp_path):
+        """When all inputs present, each sector row carries conviction, rs, baskets verdicts."""
+        _write_baskets(tmp_path, [{"id": "ai_infra", "name": "AI Infra", "reco": "enter"}])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Accumulate", "label_zh": "积极配置",
+             "name": "Technology", "name_zh": "科技", "lead": "leading"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        assert "XLK" in secs
+        xlk = secs["XLK"]
+        assert "conviction" in xlk["verdicts"]
+        assert "rs" in xlk["verdicts"]
+        # baskets verdict: ai_infra→SMH→fallback XLK → reco "enter" (tier +2) present
+        assert "baskets" in xlk["verdicts"]
+
+    def test_sector_conviction_tier(self, tmp_path):
+        """Conviction verdict reuses the same _SECTOR_TIER map as basket-side."""
+        _write_baskets(tmp_path, [])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Reduce", "name": "Technology", "name_zh": "科技", "lead": "mid-pack"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        assert secs["XLK"]["verdicts"]["conviction"]["tier"] == -2
+        assert secs["XLK"]["verdicts"]["conviction"]["raw"] == "Reduce"
+
+    def test_rs_lead_map_exactness_leading(self, tmp_path):
+        """lead='leading' → rs tier +1."""
+        _write_baskets(tmp_path, [])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Neutral", "name": "Technology", "name_zh": "科技", "lead": "leading"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        assert secs["XLK"]["verdicts"]["rs"]["tier"] == +1
+
+    def test_rs_lead_map_exactness_mid_pack(self, tmp_path):
+        """lead='mid-pack' → rs tier 0."""
+        _write_baskets(tmp_path, [])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Neutral", "name": "Technology", "name_zh": "科技", "lead": "mid-pack"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        assert secs["XLK"]["verdicts"]["rs"]["tier"] == 0
+
+    def test_rs_lead_map_exactness_lagging(self, tmp_path):
+        """lead='lagging' → rs tier -1."""
+        _write_baskets(tmp_path, [])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Neutral", "name": "Technology", "name_zh": "科技", "lead": "lagging"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        assert secs["XLK"]["verdicts"]["rs"]["tier"] == -1
+
+
+class TestSectorBasketMedian:
+    """Baskets verdict: median of member theme tiers, rounding, absent when no members."""
+
+    def test_baskets_median_odd_count(self, tmp_path):
+        """Three baskets in same sector: median of [2, 0, -1] = 0."""
+        # ai_infra→SMH→XLK (enter=+2), ai_software→XLK (hold=0), mag7→XLK (accumulate=+1)
+        # We need baskets all mapping to XLK
+        _write_baskets(tmp_path, [
+            {"id": "ai_infra", "name": "AI Infra", "reco": "enter"},       # SMH→XLK, tier +2
+            {"id": "ai_software", "name": "AI Software", "reco": "hold"},   # XLK, tier 0
+            {"id": "defensives", "name": "Defensives", "reco": "trim"},     # XLP, tier -1
+        ])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Neutral", "name": "Technology", "name_zh": "科技", "lead": "mid-pack"},
+            {"ticker": "XLP", "label_en": "Neutral", "name": "Staples", "name_zh": "必需消费", "lead": "lagging"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        # XLK members: ai_infra (+2, via SMH->XLK), ai_software (+0)
+        # median([+2, 0]) = 1.0 → rounds to 1
+        xlk = secs["XLK"]
+        assert "baskets" in xlk["verdicts"]
+        assert xlk["verdicts"]["baskets"]["n_members"] == 2
+        assert xlk["verdicts"]["baskets"]["tier"] == 1  # median(+2, 0) = 1.0 → 1
+
+    def test_baskets_median_even_count_half_rounds_away(self, tmp_path):
+        """Even count (2 members) with half median rounds away from zero.
+        Tiers [+2, +1] → median=1.5 → rounds to 2 (away from zero)."""
+        # ai_infra(enter=+2) + ai_software(accumulate=+1) both→XLK
+        _write_baskets(tmp_path, [
+            {"id": "ai_infra", "name": "AI Infra", "reco": "enter"},        # SMH→XLK, tier +2
+            {"id": "ai_software", "name": "AI Software", "reco": "accumulate"},  # XLK, tier +1
+        ])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Neutral", "name": "Technology", "name_zh": "科技", "lead": "mid-pack"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        xlk = secs["XLK"]
+        assert xlk["verdicts"]["baskets"]["tier"] == 2  # median(+2, +1) = 1.5 → 2
+
+    def test_baskets_absent_when_no_member_has_theme_verdict(self, tmp_path):
+        """No basket maps to the sector with a theme verdict → baskets verdict absent."""
+        # Only XLI sector; no basket in proxy map points to XLI
+        _write_baskets(tmp_path, [{"id": "ai_infra", "name": "AI Infra", "reco": "enter"}])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLI", "label_en": "Neutral", "name": "Industrials", "name_zh": "工业",
+             "lead": "mid-pack"},
+            # NOTE: defense and reshoring→XLI but they are not in baskets list
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        if "XLI" in secs:
+            assert "baskets" not in secs["XLI"]["verdicts"]
+
+    def test_smh_proxied_baskets_count_toward_xlk(self, tmp_path):
+        """SMH-proxied baskets (ai_infra, ai_semiconductors) count toward XLK member set."""
+        _write_baskets(tmp_path, [
+            {"id": "ai_infra", "name": "AI Infra", "reco": "enter"},           # SMH→XLK
+            {"id": "ai_semiconductors", "name": "AI Semis", "reco": "hold"},   # SMH→XLK
+        ])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Accumulate", "name": "Technology", "name_zh": "科技",
+             "lead": "leading"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        xlk = secs["XLK"]
+        assert "baskets" in xlk["verdicts"]
+        # ai_infra (enter=+2) + ai_semiconductors (hold=0) → n_members=2
+        assert xlk["verdicts"]["baskets"]["n_members"] == 2
+
+
+class TestSectorAgreementGrading:
+    """Sector row agreement: same _agreement() function as basket rows."""
+
+    def test_sector_agreement_asymmetric_range(self, tmp_path):
+        """conviction=-2 (Reduce), rs=+1 (leading) → spread=3 → split.
+        Verifies the asymmetric ±1 RS range: Reduce (-2) + leading (+1) = spread 3."""
+        _write_baskets(tmp_path, [])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Reduce", "name": "Technology", "name_zh": "科技",
+             "lead": "leading"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        xlk = secs["XLK"]
+        # conviction tier = -2, rs tier = +1, no baskets → spread = 3 → split
+        assert xlk["verdicts"]["conviction"]["tier"] == -2
+        assert xlk["verdicts"]["rs"]["tier"] == +1
+        assert xlk["spread"] == 3
+        assert xlk["agreement"] == "split"
+
+    def test_sector_agreement_aligned(self, tmp_path):
+        """conviction=Accumulate (+2), rs=leading (+1) → spread=1 → aligned."""
+        _write_baskets(tmp_path, [])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Accumulate", "name": "Technology", "name_zh": "科技",
+             "lead": "leading"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        xlk = secs["XLK"]
+        assert xlk["agreement"] == "aligned"
+
+
+class TestSectorFreshnessGating:
+    """Sector section respects the SAME freshness gate as the basket-side sector organ."""
+
+    def test_sector_rows_absent_when_sector_central_stale(self, tmp_path):
+        """Stale sector_central (6d old) → sectors[] is empty list."""
+        from datetime import timedelta
+        _write_baskets(tmp_path, [{"id": "ai_infra", "name": "AI Infra", "reco": "enter"}])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Accumulate", "name": "Technology", "name_zh": "科技",
+             "lead": "leading"},
+        ], as_of=(date.today() - timedelta(days=6)).isoformat())
+        payload = build(root=tmp_path)
+        assert payload.get("sectors") == []
+
+    def test_sector_rows_absent_when_sector_central_missing(self, tmp_path):
+        """Missing sector_central.json → sectors[] is empty list (no crash)."""
+        _write_baskets(tmp_path, [{"id": "ai_infra", "name": "AI Infra", "reco": "enter"}])
+        _write_alloc(tmp_path, [])
+        # No _write_sector_central call
+        payload = build(root=tmp_path)
+        assert payload.get("sectors") == []
+
+
+class TestSectorBilingualReceipts:
+    """Sector tip_en/tip_zh present when verdicts fire."""
+
+    def test_tip_en_and_zh_present(self, tmp_path):
+        _write_baskets(tmp_path, [])
+        _write_alloc(tmp_path, [])
+        _write_sector_central_full(tmp_path, [
+            {"ticker": "XLK", "label_en": "Accumulate", "name": "Technology", "name_zh": "科技",
+             "lead": "leading"},
+        ])
+        payload = build(root=tmp_path)
+        secs = {s["ticker"]: s for s in payload.get("sectors") or []}
+        xlk = secs["XLK"]
+        assert xlk["tip_en"] != ""
+        assert xlk["tip_zh"] != ""
+
+    def test_tip_contains_conviction_and_rs(self):
+        """_build_sector_tip includes Conviction and RS labels in EN and ZH."""
+        en, zh = _build_sector_tip("Reduce", "leading", None, 0)
+        assert "Conviction" in en
+        assert "Reduce" in en
+        assert "RS" in en
+        assert "leading" in en
+        assert "评级" in zh
+        assert "减配" in zh
+        assert "动量" in zh
+        assert "领先" in zh
+
+    def test_tip_contains_baskets_when_present(self):
+        """_build_sector_tip includes Baskets receipt when baskets_tier is given."""
+        en, zh = _build_sector_tip("Neutral", "mid-pack", 1, 3)
+        assert "Baskets" in en
+        assert "median of 3" in en
+        assert "篮子" in zh
+        assert "3个中位数" in zh
+
+    def test_tip_empty_when_no_verdicts(self):
+        """No verdicts → empty receipt strings."""
+        en, zh = _build_sector_tip(None, None, None, 0)
+        assert en == ""
+        assert zh == ""
+
+
+# ---------------------------------------------------------------------------
 # Helpers — fixture writers
 # ---------------------------------------------------------------------------
 
@@ -547,6 +846,36 @@ def _write_sector_central(root: Path, sectors: list[dict], as_of: str | None = N
             "conviction": {
                 "label_en": s["label_en"],
                 "label_zh": s.get("label_zh", s["label_en"]),
+            },
+        }
+        for s in sectors
+    ]
+    (d / "sector_central.json").write_text(
+        json.dumps({"as_of": as_of or date.today().isoformat(), "sectors": payload_sectors}),
+        encoding="utf-8",
+    )
+
+
+def _write_sector_central_full(root: Path, sectors: list[dict], as_of: str | None = None) -> None:
+    """MLC-W2b-2: full sector_central fixture including momentum.lead, name, name_zh.
+
+    sectors: list of {ticker, label_en, label_zh?, name?, name_zh?, lead?}
+    lead: "leading" / "mid-pack" / "lagging" (for momentum.lead)
+    """
+    d = _site(root) / "sectordata"
+    d.mkdir(parents=True, exist_ok=True)
+    payload_sectors = [
+        {
+            "ticker": s["ticker"],
+            "name": s.get("name", s["ticker"]),
+            "name_zh": s.get("name_zh", ""),
+            "conviction": {
+                "label_en": s["label_en"],
+                "label_zh": s.get("label_zh", s["label_en"]),
+            },
+            "momentum": {
+                "lead": s.get("lead", "mid-pack"),
+                "rs_rank": s.get("rs_rank", 1),
             },
         }
         for s in sectors

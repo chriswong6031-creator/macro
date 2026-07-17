@@ -48,7 +48,7 @@ def _minimal_standouts(tmp_path: Path) -> Path:
     (tmp_path / "site" / "factordata").mkdir(parents=True, exist_ok=True)
     obj = {
         "as_of": "2026-07-05",
-        "rank_by": "bottoming-alignment",
+        "rank_by": "confluence",
         "gate_go": False,
         "buy": [{"ticker": "FIXTURE_BUY", "score": 80}],
         "watch": [{"ticker": "FIXTURE_WATCH", "score": 60}],
@@ -1261,10 +1261,13 @@ def _minimal_rr_scorecard(
     include_cn: bool = True,
     include_hk: bool = False,
     include_ca: bool = False,
+    extra_markets: tuple = (),
 ) -> Path:
     """Write a minimal site/riskdata/scorecard.json fixture.
 
     Mirrors the frozen cross-builder contract (schema risk_radar_scorecard.v1).
+    extra_markets adds market keys beyond the lobe's us/cn/hk/ca whitelist
+    (the artifact's key set is additive-only — e.g. kr/jp/tw/in/au/gb/ez).
     """
     (tmp_path / "site" / "riskdata").mkdir(parents=True, exist_ok=True)
 
@@ -1324,6 +1327,8 @@ def _minimal_rr_scorecard(
         markets["hk"] = _market(8, 4, 2, 3, 2)
     if include_ca:
         markets["ca"] = _market(6, 3, 2, 2, 1)
+    for mkt in extra_markets:
+        markets[mkt] = _market(5, 3, 2, 2, 1)
 
     obj = {
         "schema": "risk_radar_scorecard.v1",
@@ -1408,6 +1413,25 @@ class TestRiskRadarReliabilityLobe:
         assert "markets" in rr, "lobe missing 'markets' key"
         assert isinstance(rr["markets"], dict), "'markets' must be a dict"
         assert "us" in rr["markets"], "'us' market missing from lobe"
+
+    def test_unknown_market_keys_tolerated(self, tmp_path):
+        """markets{} is additive-only under risk_radar_scorecard.v1: extra intl
+        keys (kr/jp/tw/in/au/gb/ez) must be ignored — the lobe still emits
+        exactly its us/cn/hk/ca whitelist and distils us correctly."""
+        _build_minimal_tree(tmp_path)
+        _minimal_rr_scorecard(
+            tmp_path,
+            include_hk=True,
+            include_ca=True,
+            extra_markets=("kr", "jp", "tw", "in", "au", "gb", "ez"),
+        )
+        payload = build_context(root=tmp_path, now=_NOW)
+        rr = payload["lobes"].get("risk_radar_reliability", {})
+        assert set(rr.get("markets", {})) == {"us", "cn", "hk", "ca"}, (
+            "lobe must emit exactly its whitelist, ignoring unknown market keys"
+        )
+        us = rr["markets"]["us"]
+        assert us.get("monitoring", {}).get("graded_n") == 30
 
     def test_us_alert_hit_rate_correct(self, tmp_path):
         """US y1 alert hit_rate must match fixture (8/12)."""

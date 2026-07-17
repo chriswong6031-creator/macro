@@ -38,6 +38,8 @@ from engine.pick_lab.book import (
     _nav_ladder,
     _months_span,
     _distinct_fire_dates,
+    _path_stats,
+    _capture_ratio,
     FLOOR_N_FIRES,
     FLOOR_MONTHS_SPAN,
     FLOOR_DISTINCT_FIRE_DATES,
@@ -192,9 +194,11 @@ class TestGradeExecDate:
 
         fire = _fire(fire_date=fire_date)
         grades, _ = grade_fires([fire], panel, spy)
-        if grades:
-            assert grades[0]["exec_date"] == expected_exec_date
-            assert abs(grades[0]["exec_price"] - expected_exec_price) < 1e-4
+        # Filter ret rows only (path rows also present now)
+        ret_grades = [g for g in grades if g.get("kind") in ("ret", None)]
+        assert len(ret_grades) > 0, "Expected at least one ret grade row"
+        assert ret_grades[0]["exec_date"] == expected_exec_date
+        assert abs(ret_grades[0]["exec_price"] - expected_exec_price) < 1e-4
 
     def test_exec_on_last_session_no_grade(self):
         """fire_date = last session → no next session → no grade."""
@@ -224,10 +228,10 @@ class TestGradeReturns:
 
         fire = _fire(fire_date=str(dates[0].date()))
         grades, _ = grade_fires([fire], panel, spy)
-        h5 = [g for g in grades if g.get("horizon") == 5]
-        if h5:
-            expected = (110.0 - 100.0) / 100.0
-            assert abs(h5[0]["ret_abs"] - expected) < 1e-5
+        h5 = [g for g in grades if g.get("horizon") == 5 and g.get("kind") in ("ret", None)]
+        assert len(h5) > 0, "Expected h5 ret grade — panel has 100 sessions"
+        expected = (110.0 - 100.0) / 100.0
+        assert abs(h5[0]["ret_abs"] - expected) < 1e-5
 
     def test_ret_excess_spy_flat_spy(self):
         """When SPY is flat, ret_excess_spy == ret_abs."""
@@ -241,11 +245,11 @@ class TestGradeReturns:
 
         fire = _fire(fire_date=str(dates[0].date()))
         grades, _ = grade_fires([fire], panel, spy)
-        h5 = [g for g in grades if g.get("horizon") == 5]
-        if h5:
-            # flat SPY → excess ≈ abs
-            assert h5[0]["ret_excess_spy"] is not None
-            assert abs(h5[0]["ret_excess_spy"] - h5[0]["ret_abs"]) < 1e-4
+        h5 = [g for g in grades if g.get("horizon") == 5 and g.get("kind") in ("ret", None)]
+        assert len(h5) > 0, "Expected h5 ret grade — panel has 100 sessions"
+        # flat SPY → excess ≈ abs
+        assert h5[0]["ret_excess_spy"] is not None
+        assert abs(h5[0]["ret_excess_spy"] - h5[0]["ret_abs"]) < 1e-4
 
     def test_ret_rel_sector_null_when_etf_missing(self):
         """Sector ETF absent from panel → ret_rel_sector is null (honest null)."""
@@ -257,7 +261,9 @@ class TestGradeReturns:
 
         fire = _fire(fire_date=str(dates[0].date()), sector="Information Technology")
         grades, _ = grade_fires([fire], panel, spy)
-        for g in grades:
+        ret_grades = [g for g in grades if g.get("kind") in ("ret", None)]
+        assert len(ret_grades) > 0
+        for g in ret_grades:
             assert g["ret_rel_sector"] is None
 
     def test_ret_rel_sector_computed_when_etf_present(self):
@@ -273,7 +279,9 @@ class TestGradeReturns:
 
         fire = _fire(fire_date=str(dates[0].date()), sector="Information Technology")
         grades, _ = grade_fires([fire], panel, spy)
-        for g in grades:
+        ret_grades = [g for g in grades if g.get("kind") in ("ret", None)]
+        assert len(ret_grades) > 0
+        for g in ret_grades:
             # Both flat → excess vs sector ≈ 0
             assert g["ret_rel_sector"] is not None
             assert abs(g["ret_rel_sector"]) < 1e-4
@@ -332,10 +340,14 @@ class TestGradeAlreadyGraded:
         spy = pd.Series(np.full(n, 450.0), index=dates)
 
         fire = _fire(fire_date=str(dates[0].date()))
-        # Pre-populate already_graded with all horizons for this fire
+        fd = str(dates[0].date())
+        # Pre-populate already_graded with all ret horizons AND path windows
         already = {
-            ("plab_1d_pure", "AAPL", str(dates[0].date()), h)
+            ("plab_1d_pure", "AAPL", fd, h, "ret")
             for h in ENTRY_HORIZONS
+        } | {
+            ("plab_1d_pure", "AAPL", fd, w, "path")
+            for w in (25, 63)
         }
         grades, _ = grade_fires([fire], panel, spy, already_graded=already)
         assert len(grades) == 0
@@ -843,3 +855,491 @@ class TestControlsNotDuplicated:
         )
         assert sb["lift_vs_universe_base"] is not None
         assert abs(sb["lift_vs_universe_base"] - 0.04) < 1e-5
+
+
+# ================================================================ NEW TESTS ====
+# TASK 3 additions
+
+
+class TestPathRowEmission:
+    """(a) Path rows emitted at correct windows; absent when window not elapsed."""
+
+    def _make_panel_with_path(
+        self,
+        n_sessions: int = 90,
+        start: str = "2024-01-02",
+        ticker: str = "AAPL",
+        base: float = 100.0,
+    ) -> pd.DataFrame:
+        """Panel where price rises then falls, giving known MFE/MAE positions.
+
+        Price path (after exec day=0):
+          sessions 1-10: rise 1% per session
+          sessions 11-25: fall 0.5% per session
+          sessions 26+:  flat
+
+        exec_price = base (session 1 in date index, fire on session 0).
+        MFE = peak at session 10: (1.01^10 - 1) ≈ 0.1046
+        MAE = trough at session 25: below 1.0 because fall dominates later
+        t_mfe = 10, t_mae = 25 (within 25-session window)
+        mae_before_mfe = False (t_mae=25 > t_mfe=10)
+        """
+        dates = pd.bdate_range(start=start, periods=n_sessions)
+        prices = np.empty(n_sessions)
+        prices[0] = base
+        for i in range(1, n_sessions):
+            if i <= 10:
+                prices[i] = prices[i - 1] * 1.01
+            elif i <= 25:
+                prices[i] = prices[i - 1] * 0.995
+            else:
+                prices[i] = prices[i - 1]
+        return pd.DataFrame({ticker: prices, "SPY": np.full(n_sessions, 450.0)}, index=dates)
+
+    def test_path25_present_when_window_elapsed(self):
+        """path-25 row is emitted when exec+25 sessions have elapsed."""
+        panel = self._make_panel_with_path(n_sessions=90)
+        dates = panel.index
+        spy = panel["SPY"]
+        # Fire on session 0; exec on session 1; exec+25 = session 26 < 90 → elapsed
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], panel, spy)
+        path25 = [g for g in grades if g.get("kind") == "path" and g.get("horizon") == 25]
+        assert len(path25) == 1, f"Expected 1 path-25 row, got {len(path25)}"
+
+    def test_path63_absent_when_window_not_elapsed(self):
+        """path-63 row absent when only 90 sessions total (exec+63 = session 64 < 90 but fire on 0 so exec on 1: 1+63=64 < 90 → elapsed; use short panel)."""
+        # Use panel of only 50 sessions so exec+63 is not elapsed
+        panel = self._make_panel_with_path(n_sessions=50)
+        dates = panel.index
+        spy = panel["SPY"]
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], panel, spy)
+        path63 = [g for g in grades if g.get("kind") == "path" and g.get("horizon") == 63]
+        assert len(path63) == 0, "path-63 should be absent when panel < exec+63 sessions"
+
+    def test_path25_correct_mfe_mae_t(self):
+        """path-25 t_mfe/t_mae/mae_before_mfe/sessions_underwater correct on hand-computable path."""
+        panel = self._make_panel_with_path(n_sessions=90)
+        dates = panel.index
+        spy = panel["SPY"]
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], panel, spy)
+        p25 = [g for g in grades if g.get("kind") == "path" and g.get("horizon") == 25]
+        assert len(p25) == 1
+        row = p25[0]
+        # Peak at session 10 (1-based within window [exec+1..exec+25])
+        # exec = dates[1], window = dates[2..26] relative to exec+1..exec+25
+        # In our panel: session 10 relative to fire_date=dates[0], exec=dates[1]
+        # t_mfe = 1-based index within [exec+1..exec+25] where peak occurs
+        # Price rises for sessions 1-10 (exec+1 to exec+10), so t_mfe=10
+        # Compute expected values directly from the panel to avoid brittle hard-coded numbers.
+        panel_local = self._make_panel_with_path(n_sessions=90)
+        dates_local = panel_local.index
+        exec_price_local = float(panel_local.loc[dates_local[1], "AAPL"])
+        window_local = panel_local.loc[dates_local[2:27], "AAPL"]
+        rets_local = (window_local.values - exec_price_local) / exec_price_local
+        expected_t_mfe = int(rets_local.argmax()) + 1
+        expected_t_mae = int(rets_local.argmin()) + 1
+        expected_mae_before_mfe = bool(expected_t_mae < expected_t_mfe)
+        expected_mfe = float(rets_local.max())
+        expected_mae = float(rets_local.min())
+
+        assert row["t_mfe"] == expected_t_mfe, f"Expected t_mfe={expected_t_mfe}, got {row['t_mfe']}"
+        assert row["t_mae"] == expected_t_mae, f"Expected t_mae={expected_t_mae}, got {row['t_mae']}"
+        assert row["mae_before_mfe"] is expected_mae_before_mfe
+        assert isinstance(row["sessions_underwater"], int)
+        assert 0 <= row["sessions_underwater"] <= 25
+        assert abs(row["mfe"] - expected_mfe) < 1e-5
+        assert abs(row["mae"] - expected_mae) < 1e-5
+
+    def test_path_rows_carry_required_fields(self):
+        """Every path row has all required fields."""
+        panel = self._make_panel_with_path(n_sessions=90)
+        dates = panel.index
+        spy = panel["SPY"]
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], panel, spy)
+        required = {
+            "engine_id", "ticker", "fire_date", "horizon", "kind",
+            "exec_date", "exec_price", "mfe", "mae", "t_mfe", "t_mae",
+            "mae_before_mfe", "sessions_underwater", "matured", "graded_at", "authority",
+        }
+        for g in grades:
+            if g.get("kind") == "path":
+                missing = required - set(g.keys())
+                assert not missing, f"Path row missing fields: {missing}"
+                assert g["authority"] == "display_only"
+                assert g["matured"] is True
+
+
+class TestIntradayPathMetrics:
+    """(b) mfe_hl/mae_hl use high/low panels; absent → _hl fields null."""
+
+    def _make_panels(self, n: int = 90, base: float = 100.0, spread: float = 2.0):
+        """Panels where high = close + spread, low = close - spread."""
+        dates = pd.bdate_range("2024-01-02", periods=n)
+        closes = np.full(n, base)
+        # Make close trend up slightly so mfe > 0
+        closes = base * (1.001 ** np.arange(n))
+        highs = closes + spread
+        lows = closes - spread
+        close_panel = pd.DataFrame({"AAPL": closes, "SPY": np.full(n, 450.0)}, index=dates)
+        high_panel = pd.DataFrame({"AAPL": highs}, index=dates)
+        low_panel = pd.DataFrame({"AAPL": lows}, index=dates)
+        return close_panel, high_panel, low_panel, dates
+
+    def test_mfe_hl_geq_close_mfe(self):
+        """High panel mfe_hl >= close mfe (intraday high always >= close)."""
+        close_panel, high_panel, low_panel, dates = self._make_panels()
+        spy = close_panel["SPY"]
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], close_panel, spy, high_panel=high_panel, low_panel=low_panel)
+        path25 = [g for g in grades if g.get("kind") == "path" and g.get("horizon") == 25]
+        assert len(path25) == 1
+        row = path25[0]
+        assert row["mfe_hl"] is not None, "mfe_hl should be populated when high_panel supplied"
+        assert row["mfe_hl"] >= row["mfe"], f"mfe_hl {row['mfe_hl']} should >= close mfe {row['mfe']}"
+
+    def test_mae_hl_leq_close_mae(self):
+        """Low panel mae_hl <= close mae (intraday low always <= close)."""
+        close_panel, high_panel, low_panel, dates = self._make_panels()
+        spy = close_panel["SPY"]
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], close_panel, spy, high_panel=high_panel, low_panel=low_panel)
+        path25 = [g for g in grades if g.get("kind") == "path" and g.get("horizon") == 25]
+        assert len(path25) == 1
+        row = path25[0]
+        assert row["mae_hl"] is not None, "mae_hl should be populated when low_panel supplied"
+        assert row["mae_hl"] <= row["mae"], f"mae_hl {row['mae_hl']} should <= close mae {row['mae']}"
+
+    def test_hl_null_when_panels_absent(self):
+        """Without high/low panels: mfe_hl and mae_hl are null."""
+        close_panel, _, _, dates = self._make_panels()
+        spy = close_panel["SPY"]
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], close_panel, spy)  # no high/low panels
+        path25 = [g for g in grades if g.get("kind") == "path" and g.get("horizon") == 25]
+        assert len(path25) == 1
+        assert path25[0]["mfe_hl"] is None, "mfe_hl should be null without high_panel"
+        assert path25[0]["mae_hl"] is None, "mae_hl should be null without low_panel"
+
+    def test_close_mfe_mae_still_populated_without_hl(self):
+        """Even without high/low panels: close-based mfe/mae are populated."""
+        close_panel, _, _, dates = self._make_panels()
+        spy = close_panel["SPY"]
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], close_panel, spy)
+        path25 = [g for g in grades if g.get("kind") == "path" and g.get("horizon") == 25]
+        assert len(path25) == 1
+        assert path25[0]["mfe"] is not None
+        assert path25[0]["mae"] is not None
+
+
+class TestCaptureRatio:
+    """(c) Capture ratio: hand-computable case."""
+
+    def test_capture_ratio_hand_computed(self):
+        """Capture ratio = ret_abs_h21 / path25_mfe; median over fires with mfe > 0."""
+        # Set up: 3 fires, each with ret_abs=0.05 at h21 and path25_mfe=0.10
+        # → capture = 0.05/0.10 = 0.5 for each; median = 0.5
+        my_grades = []
+        for i in range(3):
+            fd = f"2024-01-{10+i:02d}"
+            my_grades.append({
+                "engine_id": "plab_1d_pure",
+                "ticker": f"T{i:02d}",
+                "fire_date": fd,
+                "horizon": 21,
+                "kind": "ret",
+                "ret_abs": 0.05,
+                "ret_excess_spy": 0.02,
+                "mfe": None,
+                "mae": None,
+                "authority": "display_only",
+            })
+            my_grades.append({
+                "engine_id": "plab_1d_pure",
+                "ticker": f"T{i:02d}",
+                "fire_date": fd,
+                "horizon": 25,
+                "kind": "path",
+                "mfe": 0.10,
+                "mae": -0.03,
+                "t_mfe": 10,
+                "t_mae": 20,
+                "mfe_hl": 0.11,
+                "mae_hl": -0.04,
+                "mae_before_mfe": False,
+                "sessions_underwater": 5,
+                "matured": True,
+                "graded_at": "2024-02-15T00:00:00+00:00",
+                "authority": "display_only",
+            })
+        ratio = _capture_ratio([], my_grades, entry_horizon=21, path_window=25)
+        assert ratio is not None
+        assert abs(ratio - 0.5) < 1e-5, f"Expected capture 0.5, got {ratio}"
+
+    def test_capture_ratio_null_when_no_path_rows(self):
+        """No path rows → capture ratio is None."""
+        grades = [_grade(ticker="T01", fire_date="2024-01-10")]
+        ratio = _capture_ratio([], grades, entry_horizon=21, path_window=25)
+        assert ratio is None
+
+    def test_scoreboard_h21_capture_field_present(self):
+        """Scoreboard always has h{N}_capture fields (even when null)."""
+        fires = [_fire(ticker="T01", fire_date="2024-01-10")]
+        grades = [_grade(ticker="T01", fire_date="2024-01-10")]
+        sb = scoreboard("plab_1d_pure", fires, grades)
+        for h in (5, 10, 21, 63):
+            assert f"h{h}_capture" in sb, f"Missing h{h}_capture in scoreboard"
+
+
+class TestKindAwareDedup:
+    """(d) kind-aware dedup: ret row and path row at same horizon both survive."""
+
+    def test_ret_and_path_at_same_horizon_both_kept(self):
+        """A ret row and path row for the same fire/horizon have different kind
+        and must both be emitted (not deduped against each other).
+        """
+        # Use a 90-session panel so both h=5 (ret) and path-25 can be emitted
+        n = 90
+        dates = pd.bdate_range("2024-01-02", periods=n)
+        panel = pd.DataFrame({"AAPL": np.full(n, 100.0), "SPY": np.full(n, 450.0)}, index=dates)
+        spy = panel["SPY"]
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], panel, spy)
+
+        # Should have both ret rows (for h=5,10,21,63 or as many as elapsed)
+        # and path rows (path-25 since n=90 > exec+25=27)
+        ret_rows = [g for g in grades if g.get("kind") in ("ret", None)]
+        path_rows = [g for g in grades if g.get("kind") == "path"]
+        assert len(ret_rows) > 0, "Expected ret rows"
+        assert len(path_rows) > 0, "Expected path rows"
+
+        # Specifically, a ret row at h=25 does not exist (25 not in ENTRY_HORIZONS)
+        # but a path row at h=25 should exist
+        h25_ret = [g for g in grades if g.get("horizon") == 25 and g.get("kind") in ("ret", None)]
+        h25_path = [g for g in grades if g.get("horizon") == 25 and g.get("kind") == "path"]
+        assert len(h25_ret) == 0, "h=25 is not an entry ret horizon"
+        assert len(h25_path) == 1, "h=25 path row should be present"
+
+    def test_already_graded_path_key_prevents_duplicate(self):
+        """already_graded containing a path key prevents re-emission of that path row."""
+        n = 90
+        dates = pd.bdate_range("2024-01-02", periods=n)
+        panel = pd.DataFrame({"AAPL": np.full(n, 100.0), "SPY": np.full(n, 450.0)}, index=dates)
+        spy = panel["SPY"]
+        fire = _fire(fire_date=str(dates[0].date()), ticker="AAPL")
+        fire_date_str = str(dates[0].date())
+
+        # Pre-populate path-25 key
+        already = {("plab_1d_pure", "AAPL", fire_date_str, 25, "path")}
+        grades, _ = grade_fires([fire], panel, spy, already_graded=already)
+        h25_path = [g for g in grades if g.get("horizon") == 25 and g.get("kind") == "path"]
+        assert len(h25_path) == 0, "path-25 should be skipped when in already_graded"
+
+    def test_ret_and_path_63_both_persist_in_ledger(self):
+        """Ledger keeps a ret row and path row at horizon=63 as separate rows."""
+        from engine.pick_lab.ledger import keep_first, GRADE_KEY
+        rows = [
+            {
+                "engine_id": "plab_1d_pure",
+                "ticker": "AAPL",
+                "fire_date": "2024-01-10",
+                "horizon": 63,
+                "kind": "ret",
+                "authority": "display_only",
+            },
+            {
+                "engine_id": "plab_1d_pure",
+                "ticker": "AAPL",
+                "fire_date": "2024-01-10",
+                "horizon": 63,
+                "kind": "path",
+                "authority": "display_only",
+            },
+        ]
+        deduped = keep_first(rows, GRADE_KEY)
+        assert len(deduped) == 2, (
+            f"Both ret and path rows at same fire/horizon should survive; got {len(deduped)}"
+        )
+
+
+class TestRealCalendarFixture:
+    """(e) Real-calendar fixture: gapped calendar, year boundary, exec/horizon counting."""
+
+    def _make_gapped_panel(
+        self,
+        ticker: str = "AAPL",
+        base: float = 100.0,
+    ) -> pd.DataFrame:
+        """Build a panel that:
+        - Starts 2024-12-20 (Friday before Christmas week)
+        - Has a gap over Christmas holiday (Dec 25-26 skipped)
+        - Crosses the Dec-31 → Jan-2 year boundary
+        - Contains a mid-window gap (e.g., Dec 25 missing from bdate_range)
+
+        bdate_range already skips weekends.  Christmas 2024 falls on Wednesday;
+        to simulate a holiday gap we manually exclude Dec 25.
+        """
+        # Build a raw business-day range then remove the holiday
+        raw = pd.bdate_range("2024-12-20", "2025-02-28")
+        # Remove Christmas Day (Dec 25, 2024) — it's a Wednesday (business day)
+        holiday = pd.Timestamp("2024-12-25")
+        dates = raw[raw != holiday]
+        prices = base * (1.001 ** np.arange(len(dates)))
+        spy_prices = np.full(len(dates), 450.0)
+        return pd.DataFrame({ticker: prices, "SPY": spy_prices}, index=dates)
+
+    def test_exec_date_skips_holiday_gap(self):
+        """exec_date is the first session after fire_date, even when fire_date is
+        immediately before a gap (Christmas).
+        """
+        panel = self._make_gapped_panel()
+        dates = panel.index
+        spy = panel["SPY"]
+
+        # Fire on Dec 24 (day before gap); exec should be Dec 26 (Wed after Christmas)
+        fire_date = pd.Timestamp("2024-12-24")
+        assert fire_date in dates, "Dec 24 must be in the panel"
+
+        fire = _fire(fire_date=str(fire_date.date()), ticker="AAPL")
+        grades, _ = grade_fires([fire], panel, spy)
+        ret_grades = [g for g in grades if g.get("kind") in ("ret", None)]
+        assert len(ret_grades) > 0, "Expected at least one ret grade after the gap"
+
+        exec_date_str = ret_grades[0]["exec_date"]
+        exec_date = pd.Timestamp(exec_date_str)
+        # exec should be the session after Dec 24 — Dec 26 (Christmas Day skipped)
+        assert exec_date > fire_date
+        assert exec_date.month == 12 and exec_date.day == 26, (
+            f"Expected exec on Dec 26, got {exec_date_str}"
+        )
+
+    def test_horizon_counting_skips_gap(self):
+        """Session counting is index-position-based (not calendar-day-based),
+        so holiday gaps are naturally skipped.
+        """
+        panel = self._make_gapped_panel()
+        dates = panel.index
+        spy = panel["SPY"]
+
+        # Fire on first date; exec on second
+        fire_date = str(dates[0].date())
+        fire = _fire(fire_date=fire_date, ticker="AAPL")
+        grades, _ = grade_fires([fire], panel, spy)
+        ret_grades = [g for g in grades if g.get("kind") in ("ret", None)]
+        assert len(ret_grades) > 0
+
+        # Verify exec_date is the immediately next session (not a calendar day later)
+        exec_date = pd.Timestamp(ret_grades[0]["exec_date"])
+        expected_exec = dates[1]
+        assert exec_date == expected_exec, (
+            f"exec_date {exec_date} should be next session {expected_exec}"
+        )
+
+    def test_year_boundary_no_error(self):
+        """Panel crossing Dec-31 → Jan-2 year boundary grades without error."""
+        panel = self._make_gapped_panel()
+        dates = panel.index
+        spy = panel["SPY"]
+
+        # Fire near year end so the h=5 horizon crosses into January
+        dec_dates = dates[dates.month == 12]
+        assert len(dec_dates) >= 5, "Need at least 5 December sessions"
+
+        fire_date = str(dec_dates[-5].date())  # 5 sessions before end of December
+        fire = _fire(fire_date=fire_date, ticker="AAPL")
+        grades, n_ung = grade_fires([fire], panel, spy)
+        # Should grade without error; h=5 target lands in January
+        assert n_ung == 0, "AAPL is in panel — should not be ungradeable"
+        h5 = [g for g in grades if g.get("horizon") == 5 and g.get("kind") in ("ret", None)]
+        assert len(h5) == 1, "h=5 should be graded when panel extends into January"
+        h5_date = pd.Timestamp(h5[0].get("exec_date"))  # exec in Dec
+        # The h=5 return target should be in January (crosses year boundary)
+        # We can't easily assert target date here without reconstructing the index;
+        # but we can assert exec_price is finite
+        assert h5[0]["exec_price"] > 0
+
+
+class TestPathStatsInScoreboard:
+    """path25_* and path63_* fields appear in entry scoreboard."""
+
+    def _path_grade(
+        self, engine_id="plab_1d_pure", ticker="AAPL", fire_date="2024-01-10",
+        horizon=25, mfe=0.10, mae=-0.03, t_mfe=8, t_mae=22,
+        mae_before_mfe=False, sessions_underwater=5,
+    ) -> dict:
+        return {
+            "engine_id": engine_id,
+            "ticker": ticker,
+            "fire_date": fire_date,
+            "horizon": horizon,
+            "kind": "path",
+            "exec_date": "2024-01-11",
+            "exec_price": 100.0,
+            "mfe": mfe,
+            "mae": mae,
+            "t_mfe": t_mfe,
+            "t_mae": t_mae,
+            "mfe_hl": mfe + 0.01,
+            "mae_hl": mae - 0.01,
+            "mae_before_mfe": mae_before_mfe,
+            "sessions_underwater": sessions_underwater,
+            "matured": True,
+            "graded_at": "2024-02-15T00:00:00+00:00",
+            "authority": "display_only",
+        }
+
+    def test_path25_fields_in_scoreboard(self):
+        """Scoreboard includes path25_* fields computed from path rows."""
+        fires = [_fire(ticker="T01", fire_date="2024-01-10")]
+        grades = [
+            _grade(ticker="T01", fire_date="2024-01-10"),
+            self._path_grade(ticker="T01", fire_date="2024-01-10", horizon=25),
+        ]
+        sb = scoreboard("plab_1d_pure", fires, grades)
+        assert "path25_n" in sb
+        assert sb["path25_n"] == 1
+        assert sb["path25_med_mfe"] is not None
+        assert sb["path25_med_abs_mae"] is not None
+        assert "path25_asym" in sb
+        assert "path25_med_t_mfe" in sb
+        assert "path25_med_t_mae" in sb
+        assert "path25_pct_mae_first" in sb
+        assert "path25_med_underwater" in sb
+
+    def test_path63_fields_in_scoreboard(self):
+        """Scoreboard includes path63_* fields."""
+        fires = [_fire(ticker="T01", fire_date="2024-01-10")]
+        grades = [
+            _grade(ticker="T01", fire_date="2024-01-10"),
+            self._path_grade(ticker="T01", fire_date="2024-01-10", horizon=63),
+        ]
+        sb = scoreboard("plab_1d_pure", fires, grades)
+        assert "path63_n" in sb
+        assert "path63_med_mfe" in sb
+
+    def test_existing_h21_fields_unchanged(self):
+        """Existing h{N}_* return stats still present and unchanged."""
+        fires = [_fire(ticker="T01", fire_date="2024-01-10")]
+        grades = [_grade(ticker="T01", fire_date="2024-01-10", ret_excess_spy=0.05)]
+        sb = scoreboard("plab_1d_pure", fires, grades)
+        # Core return-based fields still present
+        for h in (5, 10, 21, 63):
+            assert f"h{h}_n" in sb
+            assert f"h{h}_wr_abs" in sb
+            assert f"h{h}_med_exc" in sb
+
+    def test_path_rows_excluded_from_h21_wr(self):
+        """Path rows at horizon=25 do not pollute h21 return stats."""
+        fires = [_fire(ticker="T01", fire_date="2024-01-10")]
+        # Only a path row, no ret row → h21_wr_abs should be None (no ret grades)
+        grades = [
+            self._path_grade(ticker="T01", fire_date="2024-01-10", horizon=25),
+        ]
+        sb = scoreboard("plab_1d_pure", fires, grades)
+        # h21 stats should be null (no ret rows at h=21)
+        assert sb["h21_wr_abs"] is None, "h21_wr_abs should be None with no ret rows"
+        assert sb["h21_n"] == 0

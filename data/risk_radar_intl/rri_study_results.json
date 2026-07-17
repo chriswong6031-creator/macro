@@ -1,0 +1,2642 @@
+{
+ "schema": "rri_stage_a.v1",
+ "family": "rri_2026h2",
+ "prereg": "research/RRI_CRASH_ANTIFIRE_PROGRAM.md (+S1..S3) \u2014 PR #2725, ratified 2026-07-17",
+ "perms": 2000,
+ "seed": 20260717,
+ "data_asof": {
+  "kr": "2026-07-16",
+  "jp": "2026-07-16",
+  "tw": "2026-07-16",
+  "in": "2026-07-16",
+  "au": "2026-07-16",
+  "gb": "2026-07-15",
+  "ez": "2026-07-15"
+ },
+ "spearman_vel_ext": {
+  "kr": -0.2973910583785342,
+  "jp": -0.29920449311470043,
+  "tw": -0.3085043646032164,
+  "in": -0.3031437865876064,
+  "au": -0.28591781464335747,
+  "gb": -0.2666176966507028,
+  "ez": -0.23460091092089053
+ },
+ "episodes_rb": {
+  "kr": 167,
+  "jp": 294,
+  "tw": 144,
+  "in": 81,
+  "au": 109,
+  "gb": 160,
+  "ez": 82
+ },
+ "cells": {
+  "s1_any88": {
+   "cell": "s1_any88",
+   "full": {
+    "observed": {
+     "clusters": 354,
+     "hits": 151,
+     "rate": 0.42655,
+     "per_market": {
+      "kr": {
+       "clusters": 45,
+       "hits": 22
+      },
+      "jp": {
+       "clusters": 84,
+       "hits": 44
+      },
+      "tw": {
+       "clusters": 42,
+       "hits": 22
+      },
+      "in": {
+       "clusters": 30,
+       "hits": 13
+      },
+      "au": {
+       "clusters": 54,
+       "hits": 15
+      },
+      "gb": {
+       "clusters": 65,
+       "hits": 22
+      },
+      "ez": {
+       "clusters": 34,
+       "hits": 13
+      }
+     }
+    },
+    "null_mean": 0.40939,
+    "p": 0.233,
+    "ratio": 1.04193,
+    "wilson_lb": 0.38403,
+    "wilson_ub": 0.47019,
+    "per_market_ratio": {
+     "kr": 0.88437,
+     "jp": 1.16247,
+     "tw": 1.04348,
+     "in": 1.18554,
+     "au": 0.92092,
+     "gb": 1.01897,
+     "ez": 1.06058
+    }
+   },
+   "pre2016": {
+    "observed": {
+     "clusters": 239,
+     "hits": 113,
+     "rate": 0.4728,
+     "per_market": {
+      "kr": {
+       "clusters": 25,
+       "hits": 12
+      },
+      "jp": {
+       "clusters": 72,
+       "hits": 40
+      },
+      "tw": {
+       "clusters": 26,
+       "hits": 16
+      },
+      "in": {
+       "clusters": 13,
+       "hits": 6
+      },
+      "au": {
+       "clusters": 37,
+       "hits": 12
+      },
+      "gb": {
+       "clusters": 46,
+       "hits": 17
+      },
+      "ez": {
+       "clusters": 20,
+       "hits": 10
+      }
+     }
+    },
+    "null_mean": 0.44257,
+    "p": 0.1675,
+    "ratio": 1.06831,
+    "wilson_lb": 0.42028,
+    "wilson_ub": 0.52593,
+    "per_market_ratio": {
+     "kr": 0.82109,
+     "jp": 1.23955,
+     "tw": 1.08766,
+     "in": 0.93332,
+     "au": 0.92697,
+     "gb": 1.05015,
+     "ez": 1.16391
+    }
+   },
+   "post2016": {
+    "observed": {
+     "clusters": 117,
+     "hits": 40,
+     "rate": 0.34188,
+     "per_market": {
+      "kr": {
+       "clusters": 20,
+       "hits": 10
+      },
+      "jp": {
+       "clusters": 12,
+       "hits": 4
+      },
+      "tw": {
+       "clusters": 17,
+       "hits": 7
+      },
+      "in": {
+       "clusters": 17,
+       "hits": 7
+      },
+      "au": {
+       "clusters": 17,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 20,
+       "hits": 6
+      },
+      "ez": {
+       "clusters": 14,
+       "hits": 3
+      }
+     }
+    },
+    "null_mean": 0.34481,
+    "p": 0.54,
+    "ratio": 0.9915,
+    "wilson_lb": 0.27405,
+    "wilson_ub": 0.41686,
+    "per_market_ratio": {
+     "kr": 1.03169,
+     "jp": 0.70634,
+     "tw": 1.05977,
+     "in": 1.41252,
+     "au": 0.8348,
+     "gb": 1.08433,
+     "ez": 0.70375
+    }
+   },
+   "half1": {
+    "observed": {
+     "clusters": 162,
+     "hits": 80,
+     "rate": 0.49383,
+     "per_market": {
+      "kr": {
+       "clusters": 16,
+       "hits": 10
+      },
+      "jp": {
+       "clusters": 43,
+       "hits": 23
+      },
+      "tw": {
+       "clusters": 21,
+       "hits": 14
+      },
+      "in": {
+       "clusters": 15,
+       "hits": 7
+      },
+      "au": {
+       "clusters": 24,
+       "hits": 8
+      },
+      "gb": {
+       "clusters": 23,
+       "hits": 8
+      },
+      "ez": {
+       "clusters": 20,
+       "hits": 10
+      }
+     }
+    },
+    "null_mean": 0.43851,
+    "p": 0.06,
+    "ratio": 1.12614,
+    "wilson_lb": 0.42984,
+    "wilson_ub": 0.55801,
+    "per_market_ratio": {
+     "kr": 0.90941,
+     "jp": 1.46049,
+     "tw": 1.07242,
+     "in": 1.12573,
+     "au": 0.95857,
+     "gb": 0.99684,
+     "ez": 1.15845
+    }
+   },
+   "half2": {
+    "observed": {
+     "clusters": 192,
+     "hits": 71,
+     "rate": 0.36979,
+     "per_market": {
+      "kr": {
+       "clusters": 29,
+       "hits": 12
+      },
+      "jp": {
+       "clusters": 41,
+       "hits": 21
+      },
+      "tw": {
+       "clusters": 21,
+       "hits": 8
+      },
+      "in": {
+       "clusters": 15,
+       "hits": 6
+      },
+      "au": {
+       "clusters": 30,
+       "hits": 7
+      },
+      "gb": {
+       "clusters": 42,
+       "hits": 14
+      },
+      "ez": {
+       "clusters": 14,
+       "hits": 3
+      }
+     }
+    },
+    "null_mean": 0.38136,
+    "p": 0.662,
+    "ratio": 0.96966,
+    "wilson_lb": 0.31466,
+    "wilson_ub": 0.42854,
+    "per_market_ratio": {
+     "kr": 0.97988,
+     "jp": 0.93771,
+     "tw": 1.00473,
+     "in": 1.27721,
+     "au": 0.88828,
+     "gb": 1.01892,
+     "ez": 0.69623
+    }
+   },
+   "fp_budget": {
+    "pooled_pp": 10.07,
+    "per_market_pp": {
+     "kr": 15.36,
+     "jp": 8.76,
+     "tw": 12.43,
+     "in": 8.04,
+     "au": 6.76,
+     "gb": 9.82,
+     "ez": 9.44
+    },
+    "pass": true,
+    "caps": {
+     "pooled": 12.0,
+     "per_market": 16.0
+    }
+   },
+   "gates": {
+    "n_floor": true,
+    "lift": false,
+    "p_floor": false,
+    "kill": false,
+    "era": "fail",
+    "split": "fail",
+    "breadth": true,
+    "budget": true,
+    "bh": false
+   },
+   "s1_episode_receipt": {
+    "capture": {
+     "incumbent": 149,
+     "floored": 554,
+     "floored_only": 405,
+     "incumbent_only": 0
+    },
+    "latency_median_diff": 0.0
+   },
+   "bh_rank": 6,
+   "verdict": "NO-GO"
+  },
+  "s1_exfx88": {
+   "cell": "s1_exfx88",
+   "full": {
+    "observed": {
+     "clusters": 293,
+     "hits": 132,
+     "rate": 0.45051,
+     "per_market": {
+      "kr": {
+       "clusters": 42,
+       "hits": 21
+      },
+      "jp": {
+       "clusters": 67,
+       "hits": 40
+      },
+      "tw": {
+       "clusters": 37,
+       "hits": 16
+      },
+      "in": {
+       "clusters": 27,
+       "hits": 13
+      },
+      "au": {
+       "clusters": 40,
+       "hits": 14
+      },
+      "gb": {
+       "clusters": 53,
+       "hits": 16
+      },
+      "ez": {
+       "clusters": 27,
+       "hits": 12
+      }
+     }
+    },
+    "null_mean": 0.41792,
+    "p": 0.1305,
+    "ratio": 1.07799,
+    "wilson_lb": 0.40337,
+    "wilson_ub": 0.49856,
+    "per_market_ratio": {
+     "kr": 0.9421,
+     "jp": 1.27281,
+     "tw": 0.85084,
+     "in": 1.28383,
+     "au": 1.13187,
+     "gb": 0.91809,
+     "ez": 1.19967
+    }
+   },
+   "pre2016": {
+    "observed": {
+     "clusters": 181,
+     "hits": 95,
+     "rate": 0.52486,
+     "per_market": {
+      "kr": {
+       "clusters": 22,
+       "hits": 12
+      },
+      "jp": {
+       "clusters": 54,
+       "hits": 35
+      },
+      "tw": {
+       "clusters": 20,
+       "hits": 9
+      },
+      "in": {
+       "clusters": 12,
+       "hits": 6
+      },
+      "au": {
+       "clusters": 25,
+       "hits": 11
+      },
+      "gb": {
+       "clusters": 33,
+       "hits": 13
+      },
+      "ez": {
+       "clusters": 15,
+       "hits": 9
+      }
+     }
+    },
+    "null_mean": 0.46704,
+    "p": 0.061,
+    "ratio": 1.12379,
+    "wilson_lb": 0.46389,
+    "wilson_ub": 0.58511,
+    "per_market_ratio": {
+     "kr": 0.94094,
+     "jp": 1.35554,
+     "tw": 0.77458,
+     "in": 1.00411,
+     "au": 1.15732,
+     "gb": 1.09609,
+     "ez": 1.28887
+    }
+   },
+   "post2016": {
+    "observed": {
+     "clusters": 114,
+     "hits": 38,
+     "rate": 0.33333,
+     "per_market": {
+      "kr": {
+       "clusters": 20,
+       "hits": 9
+      },
+      "jp": {
+       "clusters": 13,
+       "hits": 5
+      },
+      "tw": {
+       "clusters": 18,
+       "hits": 7
+      },
+      "in": {
+       "clusters": 15,
+       "hits": 7
+      },
+      "au": {
+       "clusters": 15,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 21,
+       "hits": 4
+      },
+      "ez": {
+       "clusters": 12,
+       "hits": 3
+      }
+     }
+    },
+    "null_mean": 0.32307,
+    "p": 0.403,
+    "ratio": 1.03175,
+    "wilson_lb": 0.26531,
+    "wilson_ub": 0.40908,
+    "per_market_ratio": {
+     "kr": 1.01745,
+     "jp": 0.87313,
+     "tw": 1.08177,
+     "in": 1.64914,
+     "au": 1.02658,
+     "gb": 0.7819,
+     "ez": 0.86128
+    }
+   },
+   "half1": {
+    "observed": {
+     "clusters": 114,
+     "hits": 64,
+     "rate": 0.5614,
+     "per_market": {
+      "kr": {
+       "clusters": 15,
+       "hits": 10
+      },
+      "jp": {
+       "clusters": 28,
+       "hits": 18
+      },
+      "tw": {
+       "clusters": 16,
+       "hits": 8
+      },
+      "in": {
+       "clusters": 13,
+       "hits": 7
+      },
+      "au": {
+       "clusters": 14,
+       "hits": 7
+      },
+      "gb": {
+       "clusters": 13,
+       "hits": 5
+      },
+      "ez": {
+       "clusters": 15,
+       "hits": 9
+      }
+     }
+    },
+    "null_mean": 0.48274,
+    "p": 0.0475,
+    "ratio": 1.16294,
+    "wilson_lb": 0.48441,
+    "wilson_ub": 0.63555,
+    "per_market_ratio": {
+     "kr": 0.98674,
+     "jp": 1.56591,
+     "tw": 0.76715,
+     "in": 1.24764,
+     "au": 1.27314,
+     "gb": 1.00126,
+     "ez": 1.31083
+    }
+   },
+   "half2": {
+    "observed": {
+     "clusters": 179,
+     "hits": 68,
+     "rate": 0.37989,
+     "per_market": {
+      "kr": {
+       "clusters": 27,
+       "hits": 11
+      },
+      "jp": {
+       "clusters": 39,
+       "hits": 22
+      },
+      "tw": {
+       "clusters": 21,
+       "hits": 8
+      },
+      "in": {
+       "clusters": 14,
+       "hits": 6
+      },
+      "au": {
+       "clusters": 26,
+       "hits": 7
+      },
+      "gb": {
+       "clusters": 40,
+       "hits": 11
+      },
+      "ez": {
+       "clusters": 12,
+       "hits": 3
+      }
+     }
+    },
+    "null_mean": 0.36858,
+    "p": 0.3665,
+    "ratio": 1.03069,
+    "wilson_lb": 0.32242,
+    "wilson_ub": 0.44093,
+    "per_market_ratio": {
+     "kr": 1.02074,
+     "jp": 1.06232,
+     "tw": 1.06202,
+     "in": 1.39256,
+     "au": 1.0475,
+     "gb": 0.88614,
+     "ez": 0.84271
+    }
+   },
+   "fp_budget": {
+    "pooled_pp": 7.97,
+    "per_market_pp": {
+     "kr": 11.85,
+     "jp": 6.88,
+     "tw": 11.49,
+     "in": 6.7,
+     "au": 4.78,
+     "gb": 8.32,
+     "ez": 5.93
+    },
+    "pass": true,
+    "caps": {
+     "pooled": 12.0,
+     "per_market": 16.0
+    }
+   },
+   "gates": {
+    "n_floor": true,
+    "lift": false,
+    "p_floor": false,
+    "kill": false,
+    "era": "pass",
+    "split": "pass",
+    "breadth": false,
+    "budget": true,
+    "bh": false
+   },
+   "s1_episode_receipt": {
+    "capture": {
+     "incumbent": 149,
+     "floored": 474,
+     "floored_only": 325,
+     "incumbent_only": 0
+    },
+    "latency_median_diff": 0.0
+   },
+   "bh_rank": 4,
+   "verdict": "NO-GO"
+  },
+  "s1_any95": {
+   "cell": "s1_any95",
+   "full": {
+    "observed": {
+     "clusters": 243,
+     "hits": 109,
+     "rate": 0.44856,
+     "per_market": {
+      "kr": {
+       "clusters": 30,
+       "hits": 13
+      },
+      "jp": {
+       "clusters": 57,
+       "hits": 31
+      },
+      "tw": {
+       "clusters": 35,
+       "hits": 19
+      },
+      "in": {
+       "clusters": 24,
+       "hits": 11
+      },
+      "au": {
+       "clusters": 38,
+       "hits": 11
+      },
+      "gb": {
+       "clusters": 39,
+       "hits": 15
+      },
+      "ez": {
+       "clusters": 20,
+       "hits": 9
+      }
+     }
+    },
+    "null_mean": 0.38173,
+    "p": 0.011,
+    "ratio": 1.17508,
+    "wilson_lb": 0.39693,
+    "wilson_ub": 0.50132,
+    "per_market_ratio": {
+     "kr": 0.86609,
+     "jp": 1.26182,
+     "tw": 1.16589,
+     "in": 1.44002,
+     "au": 1.07009,
+     "gb": 1.2344,
+     "ez": 1.32072
+    }
+   },
+   "pre2016": {
+    "observed": {
+     "clusters": 157,
+     "hits": 72,
+     "rate": 0.4586,
+     "per_market": {
+      "kr": {
+       "clusters": 15,
+       "hits": 6
+      },
+      "jp": {
+       "clusters": 45,
+       "hits": 26
+      },
+      "tw": {
+       "clusters": 22,
+       "hits": 12
+      },
+      "in": {
+       "clusters": 10,
+       "hits": 4
+      },
+      "au": {
+       "clusters": 25,
+       "hits": 8
+      },
+      "gb": {
+       "clusters": 28,
+       "hits": 10
+      },
+      "ez": {
+       "clusters": 12,
+       "hits": 6
+      }
+     }
+    },
+    "null_mean": 0.40859,
+    "p": 0.1185,
+    "ratio": 1.12239,
+    "wilson_lb": 0.39444,
+    "wilson_ub": 0.52416,
+    "per_market_ratio": {
+     "kr": 0.78118,
+     "jp": 1.32504,
+     "tw": 1.06893,
+     "in": 0.94718,
+     "au": 1.01839,
+     "gb": 1.12515,
+     "ez": 1.29205
+    }
+   },
+   "post2016": {
+    "observed": {
+     "clusters": 87,
+     "hits": 37,
+     "rate": 0.42529,
+     "per_market": {
+      "kr": {
+       "clusters": 15,
+       "hits": 7
+      },
+      "jp": {
+       "clusters": 12,
+       "hits": 5
+      },
+      "tw": {
+       "clusters": 14,
+       "hits": 7
+      },
+      "in": {
+       "clusters": 14,
+       "hits": 7
+      },
+      "au": {
+       "clusters": 13,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 11,
+       "hits": 5
+      },
+      "ez": {
+       "clusters": 8,
+       "hits": 3
+      }
+     }
+    },
+    "null_mean": 0.32317,
+    "p": 0.011,
+    "ratio": 1.316,
+    "wilson_lb": 0.34165,
+    "wilson_ub": 0.51344,
+    "per_market_ratio": {
+     "kr": 1.06593,
+     "jp": 1.01196,
+     "tw": 1.35871,
+     "in": 2.01716,
+     "au": 1.20862,
+     "gb": 1.64219,
+     "ez": 1.22867
+    }
+   },
+   "half1": {
+    "observed": {
+     "clusters": 107,
+     "hits": 54,
+     "rate": 0.50467,
+     "per_market": {
+      "kr": {
+       "clusters": 11,
+       "hits": 6
+      },
+      "jp": {
+       "clusters": 25,
+       "hits": 14
+      },
+      "tw": {
+       "clusters": 17,
+       "hits": 11
+      },
+      "in": {
+       "clusters": 12,
+       "hits": 5
+      },
+      "au": {
+       "clusters": 16,
+       "hits": 7
+      },
+      "gb": {
+       "clusters": 14,
+       "hits": 5
+      },
+      "ez": {
+       "clusters": 12,
+       "hits": 6
+      }
+     }
+    },
+    "null_mean": 0.41487,
+    "p": 0.0265,
+    "ratio": 1.21645,
+    "wilson_lb": 0.42603,
+    "wilson_ub": 0.58308,
+    "per_market_ratio": {
+     "kr": 0.91689,
+     "jp": 1.43815,
+     "tw": 1.10945,
+     "in": 1.22246,
+     "au": 1.2914,
+     "gb": 1.21458,
+     "ez": 1.31482
+    }
+   },
+   "half2": {
+    "observed": {
+     "clusters": 136,
+     "hits": 55,
+     "rate": 0.40441,
+     "per_market": {
+      "kr": {
+       "clusters": 19,
+       "hits": 7
+      },
+      "jp": {
+       "clusters": 32,
+       "hits": 17
+      },
+      "tw": {
+       "clusters": 18,
+       "hits": 8
+      },
+      "in": {
+       "clusters": 12,
+       "hits": 6
+      },
+      "au": {
+       "clusters": 22,
+       "hits": 4
+      },
+      "gb": {
+       "clusters": 25,
+       "hits": 10
+      },
+      "ez": {
+       "clusters": 8,
+       "hits": 3
+      }
+     }
+    },
+    "null_mean": 0.35086,
+    "p": 0.086,
+    "ratio": 1.15262,
+    "wilson_lb": 0.3377,
+    "wilson_ub": 0.47485,
+    "per_market_ratio": {
+     "kr": 0.93703,
+     "jp": 1.12373,
+     "tw": 1.25926,
+     "in": 1.72857,
+     "au": 0.82156,
+     "gb": 1.2587,
+     "ez": 1.20611
+    }
+   },
+   "fp_budget": {
+    "pooled_pp": 5.97,
+    "per_market_pp": {
+     "kr": 9.8,
+     "jp": 5.2,
+     "tw": 9.26,
+     "in": 3.65,
+     "au": 4.31,
+     "gb": 5.31,
+     "ez": 4.38
+    },
+    "pass": true,
+    "caps": {
+     "pooled": 12.0,
+     "per_market": 16.0
+    }
+   },
+   "gates": {
+    "n_floor": true,
+    "lift": false,
+    "p_floor": true,
+    "kill": false,
+    "era": "pass",
+    "split": "pass",
+    "breadth": true,
+    "budget": true,
+    "bh": true
+   },
+   "s1_episode_receipt": {
+    "capture": {
+     "incumbent": 149,
+     "floored": 394,
+     "floored_only": 245,
+     "incumbent_only": 0
+    },
+    "latency_median_diff": 0.0
+   },
+   "bh_rank": 1,
+   "verdict": "ACCRUE"
+  },
+  "s1_exfx95": {
+   "cell": "s1_exfx95",
+   "full": {
+    "observed": {
+     "clusters": 212,
+     "hits": 89,
+     "rate": 0.41981,
+     "per_market": {
+      "kr": {
+       "clusters": 31,
+       "hits": 11
+      },
+      "jp": {
+       "clusters": 48,
+       "hits": 27
+      },
+      "tw": {
+       "clusters": 29,
+       "hits": 14
+      },
+      "in": {
+       "clusters": 23,
+       "hits": 10
+      },
+      "au": {
+       "clusters": 30,
+       "hits": 8
+      },
+      "gb": {
+       "clusters": 31,
+       "hits": 12
+      },
+      "ez": {
+       "clusters": 20,
+       "hits": 7
+      }
+     }
+    },
+    "null_mean": 0.38238,
+    "p": 0.1305,
+    "ratio": 1.09789,
+    "wilson_lb": 0.36541,
+    "wilson_ub": 0.47624,
+    "per_market_ratio": {
+     "kr": 0.75426,
+     "jp": 1.30175,
+     "tw": 0.9897,
+     "in": 1.4378,
+     "au": 0.99004,
+     "gb": 1.18528,
+     "ez": 1.08836
+    }
+   },
+   "pre2016": {
+    "observed": {
+     "clusters": 129,
+     "hits": 60,
+     "rate": 0.46512,
+     "per_market": {
+      "kr": {
+       "clusters": 15,
+       "hits": 5
+      },
+      "jp": {
+       "clusters": 38,
+       "hits": 24
+      },
+      "tw": {
+       "clusters": 16,
+       "hits": 7
+      },
+      "in": {
+       "clusters": 10,
+       "hits": 4
+      },
+      "au": {
+       "clusters": 19,
+       "hits": 6
+      },
+      "gb": {
+       "clusters": 20,
+       "hits": 8
+      },
+      "ez": {
+       "clusters": 11,
+       "hits": 6
+      }
+     }
+    },
+    "null_mean": 0.41883,
+    "p": 0.149,
+    "ratio": 1.11051,
+    "wilson_lb": 0.39433,
+    "wilson_ub": 0.53733,
+    "per_market_ratio": {
+     "kr": 0.6867,
+     "jp": 1.42405,
+     "tw": 0.80492,
+     "in": 0.99361,
+     "au": 0.98826,
+     "gb": 1.18262,
+     "ez": 1.38572
+    }
+   },
+   "post2016": {
+    "observed": {
+     "clusters": 84,
+     "hits": 29,
+     "rate": 0.34524,
+     "per_market": {
+      "kr": {
+       "clusters": 16,
+       "hits": 6
+      },
+      "jp": {
+       "clusters": 10,
+       "hits": 3
+      },
+      "tw": {
+       "clusters": 14,
+       "hits": 7
+      },
+      "in": {
+       "clusters": 13,
+       "hits": 6
+      },
+      "au": {
+       "clusters": 11,
+       "hits": 2
+      },
+      "gb": {
+       "clusters": 11,
+       "hits": 4
+      },
+      "ez": {
+       "clusters": 9,
+       "hits": 1
+      }
+     }
+    },
+    "null_mean": 0.30195,
+    "p": 0.1845,
+    "ratio": 1.14337,
+    "wilson_lb": 0.26594,
+    "wilson_ub": 0.4342,
+    "per_market_ratio": {
+     "kr": 0.94985,
+     "jp": 0.76464,
+     "tw": 1.39464,
+     "in": 2.01337,
+     "au": 0.98548,
+     "gb": 1.3871,
+     "ez": 0.45501
+    }
+   },
+   "half1": {
+    "observed": {
+     "clusters": 85,
+     "hits": 44,
+     "rate": 0.51765,
+     "per_market": {
+      "kr": {
+       "clusters": 11,
+       "hits": 5
+      },
+      "jp": {
+       "clusters": 20,
+       "hits": 13
+      },
+      "tw": {
+       "clusters": 12,
+       "hits": 6
+      },
+      "in": {
+       "clusters": 11,
+       "hits": 5
+      },
+      "au": {
+       "clusters": 11,
+       "hits": 5
+      },
+      "gb": {
+       "clusters": 9,
+       "hits": 4
+      },
+      "ez": {
+       "clusters": 11,
+       "hits": 6
+      }
+     }
+    },
+    "null_mean": 0.43487,
+    "p": 0.0595,
+    "ratio": 1.19034,
+    "wilson_lb": 0.42933,
+    "wilson_ub": 0.60488,
+    "per_market_ratio": {
+     "kr": 0.79945,
+     "jp": 1.56047,
+     "tw": 0.80811,
+     "in": 1.29374,
+     "au": 1.23329,
+     "gb": 1.41922,
+     "ez": 1.42454
+    }
+   },
+   "half2": {
+    "observed": {
+     "clusters": 127,
+     "hits": 45,
+     "rate": 0.35433,
+     "per_market": {
+      "kr": {
+       "clusters": 20,
+       "hits": 6
+      },
+      "jp": {
+       "clusters": 28,
+       "hits": 14
+      },
+      "tw": {
+       "clusters": 17,
+       "hits": 8
+      },
+      "in": {
+       "clusters": 12,
+       "hits": 5
+      },
+      "au": {
+       "clusters": 19,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 22,
+       "hits": 8
+      },
+      "ez": {
+       "clusters": 9,
+       "hits": 1
+      }
+     }
+    },
+    "null_mean": 0.33287,
+    "p": 0.313,
+    "ratio": 1.06448,
+    "wilson_lb": 0.28822,
+    "wilson_ub": 0.42652,
+    "per_market_ratio": {
+     "kr": 0.8547,
+     "jp": 1.09402,
+     "tw": 1.33114,
+     "in": 1.65508,
+     "au": 0.73831,
+     "gb": 1.11823,
+     "ez": 0.45173
+    }
+   },
+   "fp_budget": {
+    "pooled_pp": 4.88,
+    "per_market_pp": {
+     "kr": 7.76,
+     "jp": 3.73,
+     "tw": 8.89,
+     "in": 3.09,
+     "au": 3.28,
+     "gb": 4.79,
+     "ez": 2.79
+    },
+    "pass": true,
+    "caps": {
+     "pooled": 12.0,
+     "per_market": 16.0
+    }
+   },
+   "gates": {
+    "n_floor": true,
+    "lift": false,
+    "p_floor": false,
+    "kill": false,
+    "era": "pass",
+    "split": "pass",
+    "breadth": false,
+    "budget": true,
+    "bh": false
+   },
+   "s1_episode_receipt": {
+    "capture": {
+     "incumbent": 149,
+     "floored": 352,
+     "floored_only": 203,
+     "incumbent_only": 0
+    },
+    "latency_median_diff": 0.0
+   },
+   "bh_rank": 5,
+   "verdict": "NO-GO"
+  },
+  "s2_gate_conditional": {
+   "cell": "s2_gate_conditional",
+   "full": {
+    "observed": {
+     "clusters": 90,
+     "hits": 30,
+     "rate": 0.33333,
+     "per_market": {
+      "kr": {
+       "clusters": 11,
+       "hits": 3
+      },
+      "jp": {
+       "clusters": 20,
+       "hits": 9
+      },
+      "tw": {
+       "clusters": 11,
+       "hits": 3
+      },
+      "in": {
+       "clusters": 4,
+       "hits": 2
+      },
+      "au": {
+       "clusters": 15,
+       "hits": 7
+      },
+      "gb": {
+       "clusters": 19,
+       "hits": 3
+      },
+      "ez": {
+       "clusters": 10,
+       "hits": 3
+      }
+     }
+    },
+    "null_mean": 0.32829,
+    "p": 0.492,
+    "ratio": 1.01537,
+    "wilson_lb": 0.25751,
+    "wilson_ub": 0.41888,
+    "per_market_ratio": {
+     "kr": 0.73033,
+     "jp": 1.1419,
+     "tw": 0.72633,
+     "in": 2.20629,
+     "au": 1.65488,
+     "gb": 0.59566,
+     "ez": 0.92147
+    }
+   },
+   "pre2016": {
+    "observed": {
+     "clusters": 52,
+     "hits": 19,
+     "rate": 0.36538,
+     "per_market": {
+      "kr": {
+       "clusters": 6,
+       "hits": 2
+      },
+      "jp": {
+       "clusters": 18,
+       "hits": 9
+      },
+      "tw": {
+       "clusters": 4,
+       "hits": 1
+      },
+      "in": {
+       "clusters": 2,
+       "hits": 1
+      },
+      "au": {
+       "clusters": 10,
+       "hits": 4
+      },
+      "gb": {
+       "clusters": 8,
+       "hits": 1
+      },
+      "ez": {
+       "clusters": 4,
+       "hits": 1
+      }
+     }
+    },
+    "null_mean": 0.36512,
+    "p": 0.5475,
+    "ratio": 1.00074,
+    "wilson_lb": 0.26474,
+    "wilson_ub": 0.47935,
+    "per_market_ratio": {
+     "kr": 0.89723,
+     "jp": 1.25546,
+     "tw": 0.56309,
+     "in": 1.58144,
+     "au": 1.26006,
+     "gb": 0.44526,
+     "ez": 0.5697
+    }
+   },
+   "post2016": {
+    "observed": {
+     "clusters": 38,
+     "hits": 11,
+     "rate": 0.28947,
+     "per_market": {
+      "kr": {
+       "clusters": 5,
+       "hits": 1
+      },
+      "jp": {
+       "clusters": 2,
+       "hits": 0
+      },
+      "tw": {
+       "clusters": 7,
+       "hits": 2
+      },
+      "in": {
+       "clusters": 2,
+       "hits": 1
+      },
+      "au": {
+       "clusters": 5,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 11,
+       "hits": 2
+      },
+      "ez": {
+       "clusters": 6,
+       "hits": 2
+      }
+     }
+    },
+    "null_mean": 0.24282,
+    "p": 0.2755,
+    "ratio": 1.19213,
+    "wilson_lb": 0.1857,
+    "wilson_ub": 0.42123,
+    "per_market_ratio": {
+     "kr": 0.56641,
+     "jp": 0.0,
+     "tw": 1.12728,
+     "in": 3.125,
+     "au": 2.90019,
+     "gb": 0.86845,
+     "ez": 1.35495
+    }
+   },
+   "half1": {
+    "observed": {
+     "clusters": 33,
+     "hits": 13,
+     "rate": 0.39394,
+     "per_market": {
+      "kr": {
+       "clusters": 2,
+       "hits": 1
+      },
+      "jp": {
+       "clusters": 9,
+       "hits": 4
+      },
+      "tw": {
+       "clusters": 3,
+       "hits": 1
+      },
+      "in": {
+       "clusters": 2,
+       "hits": 1
+      },
+      "au": {
+       "clusters": 9,
+       "hits": 4
+      },
+      "gb": {
+       "clusters": 4,
+       "hits": 1
+      },
+      "ez": {
+       "clusters": 4,
+       "hits": 1
+      }
+     }
+    },
+    "null_mean": 0.3429,
+    "p": 0.3035,
+    "ratio": 1.14885,
+    "wilson_lb": 0.26722,
+    "wilson_ub": 0.53673,
+    "per_market_ratio": {
+     "kr": 1.13186,
+     "jp": 1.42334,
+     "tw": 0.60006,
+     "in": 1.83318,
+     "au": 1.44415,
+     "gb": 1.06191,
+     "ez": 0.58914
+    }
+   },
+   "half2": {
+    "observed": {
+     "clusters": 57,
+     "hits": 17,
+     "rate": 0.29825,
+     "per_market": {
+      "kr": {
+       "clusters": 9,
+       "hits": 2
+      },
+      "jp": {
+       "clusters": 11,
+       "hits": 5
+      },
+      "tw": {
+       "clusters": 8,
+       "hits": 2
+      },
+      "in": {
+       "clusters": 2,
+       "hits": 1
+      },
+      "au": {
+       "clusters": 6,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 15,
+       "hits": 2
+      },
+      "ez": {
+       "clusters": 6,
+       "hits": 2
+      }
+     }
+    },
+    "null_mean": 0.29426,
+    "p": 0.5105,
+    "ratio": 1.01353,
+    "wilson_lb": 0.20957,
+    "wilson_ub": 0.40521,
+    "per_market_ratio": {
+     "kr": 0.83873,
+     "jp": 0.98875,
+     "tw": 1.0386,
+     "in": 2.75862,
+     "au": 2.04728,
+     "gb": 0.48533,
+     "ez": 1.36585
+    }
+   },
+   "fp_budget": {
+    "pooled_pp": 1.18,
+    "per_market_pp": {
+     "kr": 1.18,
+     "jp": 0.2,
+     "tw": 1.69,
+     "in": 0.16,
+     "au": 0.95,
+     "gb": 2.38,
+     "ez": 1.67
+    },
+    "pass": true,
+    "caps": {
+     "pooled": 4.0,
+     "per_market": 6.0
+    }
+   },
+   "gates": {
+    "n_floor": true,
+    "lift": false,
+    "p_floor": false,
+    "kill": false,
+    "era": "pass",
+    "split": "pass",
+    "breadth": false,
+    "budget": true,
+    "extra_lost_le_gained": false,
+    "extra_capture": true,
+    "extra_deescalation": true,
+    "bh": false
+   },
+   "do_no_harm": {
+    "lost": {
+     "clusters": 63,
+     "hits": 23,
+     "rate": 0.36508,
+     "per_market": {
+      "kr": {
+       "clusters": 7,
+       "hits": 3
+      },
+      "jp": {
+       "clusters": 16,
+       "hits": 7
+      },
+      "tw": {
+       "clusters": 5,
+       "hits": 2
+      },
+      "in": {
+       "clusters": 2,
+       "hits": 0
+      },
+      "au": {
+       "clusters": 10,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 15,
+       "hits": 3
+      },
+      "ez": {
+       "clusters": 8,
+       "hits": 5
+      }
+     }
+    },
+    "lost_rate": 0.3651,
+    "gained_rate": 0.3333,
+    "episode_capture": {
+     "incumbent": 149,
+     "variant": 178
+    },
+    "deescalation_median": {
+     "incumbent": 0.0,
+     "variant": 0.0
+    }
+   },
+   "bh_rank": 7,
+   "verdict": "NO-GO"
+  },
+  "s2_always": {
+   "cell": "s2_always",
+   "full": {
+    "observed": {
+     "clusters": 74,
+     "hits": 24,
+     "rate": 0.32432,
+     "per_market": {
+      "kr": {
+       "clusters": 6,
+       "hits": 1
+      },
+      "jp": {
+       "clusters": 18,
+       "hits": 8
+      },
+      "tw": {
+       "clusters": 9,
+       "hits": 3
+      },
+      "in": {
+       "clusters": 2,
+       "hits": 0
+      },
+      "au": {
+       "clusters": 14,
+       "hits": 7
+      },
+      "gb": {
+       "clusters": 16,
+       "hits": 2
+      },
+      "ez": {
+       "clusters": 9,
+       "hits": 3
+      }
+     }
+    },
+    "null_mean": 0.32038,
+    "p": 0.52,
+    "ratio": 1.01231,
+    "wilson_lb": 0.24238,
+    "wilson_ub": 0.41866,
+    "per_market_ratio": {
+     "kr": 0.43612,
+     "jp": 1.12825,
+     "tw": 0.91504,
+     "in": 0.0,
+     "au": 1.86291,
+     "gb": 0.48856,
+     "ez": 1.11
+    }
+   },
+   "pre2016": {
+    "observed": {
+     "clusters": 42,
+     "hits": 15,
+     "rate": 0.35714,
+     "per_market": {
+      "kr": {
+       "clusters": 2,
+       "hits": 0
+      },
+      "jp": {
+       "clusters": 16,
+       "hits": 8
+      },
+      "tw": {
+       "clusters": 3,
+       "hits": 1
+      },
+      "in": {
+       "clusters": 1,
+       "hits": 0
+      },
+      "au": {
+       "clusters": 9,
+       "hits": 4
+      },
+      "gb": {
+       "clusters": 7,
+       "hits": 1
+      },
+      "ez": {
+       "clusters": 4,
+       "hits": 1
+      }
+     }
+    },
+    "null_mean": 0.36482,
+    "p": 0.606,
+    "ratio": 0.97895,
+    "wilson_lb": 0.24759,
+    "wilson_ub": 0.48399,
+    "per_market_ratio": {
+     "kr": 0.0,
+     "jp": 1.23527,
+     "tw": 0.7428,
+     "in": 0.0,
+     "au": 1.44933,
+     "gb": 0.51148,
+     "ez": 0.58907
+    }
+   },
+   "post2016": {
+    "observed": {
+     "clusters": 32,
+     "hits": 9,
+     "rate": 0.28125,
+     "per_market": {
+      "kr": {
+       "clusters": 4,
+       "hits": 1
+      },
+      "jp": {
+       "clusters": 2,
+       "hits": 0
+      },
+      "tw": {
+       "clusters": 6,
+       "hits": 2
+      },
+      "in": {
+       "clusters": 1,
+       "hits": 0
+      },
+      "au": {
+       "clusters": 5,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 9,
+       "hits": 1
+      },
+      "ez": {
+       "clusters": 5,
+       "hits": 2
+      }
+     }
+    },
+    "null_mean": 0.22089,
+    "p": 0.236,
+    "ratio": 1.27328,
+    "wilson_lb": 0.17161,
+    "wilson_ub": 0.425,
+    "per_market_ratio": {
+     "kr": 0.78015,
+     "jp": 0.0,
+     "tw": 1.43649,
+     "in": 0.0,
+     "au": 3.23625,
+     "gb": 0.58497,
+     "ez": 1.8862
+    }
+   },
+   "half1": {
+    "observed": {
+     "clusters": 28,
+     "hits": 10,
+     "rate": 0.35714,
+     "per_market": {
+      "kr": {
+       "clusters": 0,
+       "hits": 0
+      },
+      "jp": {
+       "clusters": 8,
+       "hits": 3
+      },
+      "tw": {
+       "clusters": 3,
+       "hits": 1
+      },
+      "in": {
+       "clusters": 1,
+       "hits": 0
+      },
+      "au": {
+       "clusters": 8,
+       "hits": 4
+      },
+      "gb": {
+       "clusters": 4,
+       "hits": 1
+      },
+      "ez": {
+       "clusters": 4,
+       "hits": 1
+      }
+     }
+    },
+    "null_mean": 0.33529,
+    "p": 0.4695,
+    "ratio": 1.06518,
+    "wilson_lb": 0.22693,
+    "wilson_ub": 0.51253,
+    "per_market_ratio": {
+     "kr": null,
+     "jp": 1.19295,
+     "tw": 0.6592,
+     "in": 0.0,
+     "au": 1.62466,
+     "gb": 1.0846,
+     "ez": 0.59404
+    }
+   },
+   "half2": {
+    "observed": {
+     "clusters": 46,
+     "hits": 14,
+     "rate": 0.30435,
+     "per_market": {
+      "kr": {
+       "clusters": 6,
+       "hits": 1
+      },
+      "jp": {
+       "clusters": 10,
+       "hits": 5
+      },
+      "tw": {
+       "clusters": 6,
+       "hits": 2
+      },
+      "in": {
+       "clusters": 1,
+       "hits": 0
+      },
+      "au": {
+       "clusters": 6,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 12,
+       "hits": 1
+      },
+      "ez": {
+       "clusters": 5,
+       "hits": 2
+      }
+     }
+    },
+    "null_mean": 0.28857,
+    "p": 0.4705,
+    "ratio": 1.05468,
+    "wilson_lb": 0.20622,
+    "wilson_ub": 0.42422,
+    "per_market_ratio": {
+     "kr": 0.60925,
+     "jp": 1.08466,
+     "tw": 1.46766,
+     "in": 0.0,
+     "au": 2.23893,
+     "gb": 0.32254,
+     "ez": 1.95376
+    }
+   },
+   "fp_budget": {
+    "pooled_pp": 0.73,
+    "per_market_pp": {
+     "kr": 0.9,
+     "jp": 0.2,
+     "tw": 0.95,
+     "in": 0.08,
+     "au": 0.67,
+     "gb": 1.54,
+     "ez": 0.72
+    },
+    "pass": true,
+    "caps": {
+     "pooled": 4.0,
+     "per_market": 6.0
+    }
+   },
+   "gates": {
+    "n_floor": true,
+    "lift": false,
+    "p_floor": false,
+    "kill": false,
+    "era": "fail",
+    "split": "pass",
+    "breadth": false,
+    "budget": true,
+    "extra_lost_le_gained": false,
+    "extra_capture": true,
+    "extra_deescalation": true,
+    "bh": false
+   },
+   "do_no_harm": {
+    "lost": {
+     "clusters": 125,
+     "hits": 47,
+     "rate": 0.376,
+     "per_market": {
+      "kr": {
+       "clusters": 19,
+       "hits": 6
+      },
+      "jp": {
+       "clusters": 30,
+       "hits": 16
+      },
+      "tw": {
+       "clusters": 13,
+       "hits": 5
+      },
+      "in": {
+       "clusters": 7,
+       "hits": 4
+      },
+      "au": {
+       "clusters": 16,
+       "hits": 4
+      },
+      "gb": {
+       "clusters": 24,
+       "hits": 6
+      },
+      "ez": {
+       "clusters": 16,
+       "hits": 6
+      }
+     }
+    },
+    "lost_rate": 0.376,
+    "gained_rate": 0.3243,
+    "episode_capture": {
+     "incumbent": 149,
+     "variant": 150
+    },
+    "deescalation_median": {
+     "incumbent": 0.0,
+     "variant": 0.0
+    }
+   },
+   "bh_rank": 8,
+   "verdict": "NO-GO"
+  },
+  "s3_ret10": {
+   "cell": "s3_ret10",
+   "full": {
+    "observed": {
+     "clusters": 372,
+     "hits": 151,
+     "rate": 0.40591,
+     "per_market": {
+      "kr": {
+       "clusters": 45,
+       "hits": 20
+      },
+      "jp": {
+       "clusters": 98,
+       "hits": 47
+      },
+      "tw": {
+       "clusters": 41,
+       "hits": 19
+      },
+      "in": {
+       "clusters": 23,
+       "hits": 9
+      },
+      "au": {
+       "clusters": 55,
+       "hits": 17
+      },
+      "gb": {
+       "clusters": 70,
+       "hits": 20
+      },
+      "ez": {
+       "clusters": 40,
+       "hits": 19
+      }
+     }
+    },
+    "null_mean": 0.34148,
+    "p": 0.0125,
+    "ratio": 1.18868,
+    "wilson_lb": 0.36486,
+    "wilson_ub": 0.44833,
+    "per_market_ratio": {
+     "kr": 1.01788,
+     "jp": 1.27854,
+     "tw": 1.10611,
+     "in": 1.25295,
+     "au": 1.20352,
+     "gb": 1.01811,
+     "ez": 1.52175
+    }
+   },
+   "pre2016": {
+    "observed": {
+     "clusters": 258,
+     "hits": 112,
+     "rate": 0.43411,
+     "per_market": {
+      "kr": {
+       "clusters": 27,
+       "hits": 14
+      },
+      "jp": {
+       "clusters": 77,
+       "hits": 40
+      },
+      "tw": {
+       "clusters": 27,
+       "hits": 12
+      },
+      "in": {
+       "clusters": 10,
+       "hits": 4
+      },
+      "au": {
+       "clusters": 42,
+       "hits": 13
+      },
+      "gb": {
+       "clusters": 53,
+       "hits": 17
+      },
+      "ez": {
+       "clusters": 22,
+       "hits": 12
+      }
+     }
+    },
+    "null_mean": 0.36997,
+    "p": 0.021,
+    "ratio": 1.17337,
+    "wilson_lb": 0.38429,
+    "wilson_ub": 0.48529,
+    "per_market_ratio": {
+     "kr": 1.08563,
+     "jp": 1.36511,
+     "tw": 0.93927,
+     "in": 1.00946,
+     "au": 1.1247,
+     "gb": 1.04995,
+     "ez": 1.37214
+    }
+   },
+   "post2016": {
+    "observed": {
+     "clusters": 120,
+     "hits": 41,
+     "rate": 0.34167,
+     "per_market": {
+      "kr": {
+       "clusters": 19,
+       "hits": 6
+      },
+      "jp": {
+       "clusters": 22,
+       "hits": 8
+      },
+      "tw": {
+       "clusters": 15,
+       "hits": 7
+      },
+      "in": {
+       "clusters": 13,
+       "hits": 5
+      },
+      "au": {
+       "clusters": 14,
+       "hits": 4
+      },
+      "gb": {
+       "clusters": 18,
+       "hits": 3
+      },
+      "ez": {
+       "clusters": 19,
+       "hits": 8
+      }
+     }
+    },
+    "null_mean": 0.27545,
+    "p": 0.055,
+    "ratio": 1.24038,
+    "wilson_lb": 0.27464,
+    "wilson_ub": 0.41567,
+    "per_market_ratio": {
+     "kr": 0.90126,
+     "jp": 1.09366,
+     "tw": 1.5401,
+     "in": 1.54589,
+     "au": 1.32484,
+     "gb": 0.77603,
+     "ez": 1.82154
+    }
+   },
+   "half1": {
+    "observed": {
+     "clusters": 175,
+     "hits": 82,
+     "rate": 0.46857,
+     "per_market": {
+      "kr": {
+       "clusters": 22,
+       "hits": 13
+      },
+      "jp": {
+       "clusters": 43,
+       "hits": 23
+      },
+      "tw": {
+       "clusters": 23,
+       "hits": 10
+      },
+      "in": {
+       "clusters": 11,
+       "hits": 5
+      },
+      "au": {
+       "clusters": 26,
+       "hits": 10
+      },
+      "gb": {
+       "clusters": 28,
+       "hits": 9
+      },
+      "ez": {
+       "clusters": 22,
+       "hits": 12
+      }
+     }
+    },
+    "null_mean": 0.37397,
+    "p": 0.007,
+    "ratio": 1.25296,
+    "wilson_lb": 0.40747,
+    "wilson_ub": 0.53063,
+    "per_market_ratio": {
+     "kr": 1.08855,
+     "jp": 1.67455,
+     "tw": 0.83917,
+     "in": 1.23766,
+     "au": 1.34412,
+     "gb": 1.14414,
+     "ez": 1.4121
+    }
+   },
+   "half2": {
+    "observed": {
+     "clusters": 198,
+     "hits": 70,
+     "rate": 0.35354,
+     "per_market": {
+      "kr": {
+       "clusters": 23,
+       "hits": 7
+      },
+      "jp": {
+       "clusters": 55,
+       "hits": 24
+      },
+      "tw": {
+       "clusters": 18,
+       "hits": 9
+      },
+      "in": {
+       "clusters": 12,
+       "hits": 4
+      },
+      "au": {
+       "clusters": 29,
+       "hits": 7
+      },
+      "gb": {
+       "clusters": 42,
+       "hits": 11
+      },
+      "ez": {
+       "clusters": 19,
+       "hits": 8
+      }
+     }
+    },
+    "null_mean": 0.31657,
+    "p": 0.1105,
+    "ratio": 1.11678,
+    "wilson_lb": 0.29996,
+    "wilson_ub": 0.41106,
+    "per_market_ratio": {
+     "kr": 0.93651,
+     "jp": 1.01502,
+     "tw": 1.58275,
+     "in": 1.31126,
+     "au": 1.0619,
+     "gb": 0.93379,
+     "ez": 1.7937
+    }
+   },
+   "fp_budget": {
+    "pooled_pp": 1.76,
+    "per_market_pp": {
+     "kr": 1.72,
+     "jp": 2.09,
+     "tw": 1.36,
+     "in": 1.75,
+     "au": 1.58,
+     "gb": 2.02,
+     "ez": 1.83
+    },
+    "pass": true,
+    "caps": {
+     "pooled": 8.0,
+     "per_market": 10.0
+    }
+   },
+   "gates": {
+    "n_floor": true,
+    "lift": false,
+    "p_floor": true,
+    "kill": false,
+    "era": "pass",
+    "split": "pass",
+    "breadth": true,
+    "budget": true,
+    "extra_redundancy": false,
+    "bh": true
+   },
+   "redundancy": {
+    "observed": {
+     "clusters": 326,
+     "hits": 127,
+     "rate": 0.38957,
+     "per_market": {
+      "kr": {
+       "clusters": 35,
+       "hits": 15
+      },
+      "jp": {
+       "clusters": 94,
+       "hits": 45
+      },
+      "tw": {
+       "clusters": 32,
+       "hits": 14
+      },
+      "in": {
+       "clusters": 19,
+       "hits": 6
+      },
+      "au": {
+       "clusters": 49,
+       "hits": 16
+      },
+      "gb": {
+       "clusters": 67,
+       "hits": 19
+      },
+      "ez": {
+       "clusters": 30,
+       "hits": 12
+      }
+     }
+    },
+    "null_mean": 0.34301,
+    "p": 0.0375,
+    "ratio": 1.13574,
+    "wilson_lb": 0.34622,
+    "wilson_ub": 0.43473,
+    "per_market_ratio": {
+     "kr": 0.94696,
+     "jp": 1.26078,
+     "tw": 1.01501,
+     "in": 1.04617,
+     "au": 1.26064,
+     "gb": 1.01082,
+     "ez": 1.29489
+    }
+   },
+   "h2_latency": {
+    "median_diff": 0.0,
+    "per_market_median": {
+     "kr": 0.0,
+     "jp": 0.0,
+     "tw": 0.0,
+     "in": 0.0,
+     "au": 0.0,
+     "gb": 0.0,
+     "ez": 0.0
+    },
+    "n_episodes": 1037,
+    "pass": false
+   },
+   "whipsaw_receipt": {
+    "pre2016": {
+     "clusters": 258,
+     "closed_above_at_h21": 136,
+     "share": 0.527
+    },
+    "post2016": {
+     "clusters": 114,
+     "closed_above_at_h21": 73,
+     "share": 0.64
+    }
+   },
+   "bh_rank": 2,
+   "verdict": "ACCRUE"
+  },
+  "s3_ret21": {
+   "cell": "s3_ret21",
+   "full": {
+    "observed": {
+     "clusters": 294,
+     "hits": 123,
+     "rate": 0.41837,
+     "per_market": {
+      "kr": {
+       "clusters": 34,
+       "hits": 14
+      },
+      "jp": {
+       "clusters": 73,
+       "hits": 37
+      },
+      "tw": {
+       "clusters": 33,
+       "hits": 16
+      },
+      "in": {
+       "clusters": 20,
+       "hits": 9
+      },
+      "au": {
+       "clusters": 41,
+       "hits": 15
+      },
+      "gb": {
+       "clusters": 62,
+       "hits": 18
+      },
+      "ez": {
+       "clusters": 31,
+       "hits": 14
+      }
+     }
+    },
+    "null_mean": 0.36974,
+    "p": 0.049,
+    "ratio": 1.13152,
+    "wilson_lb": 0.372,
+    "wilson_ub": 0.46623,
+    "per_market_ratio": {
+     "kr": 0.86108,
+     "jp": 1.2267,
+     "tw": 1.1164,
+     "in": 1.40276,
+     "au": 1.21416,
+     "gb": 0.97525,
+     "ez": 1.30638
+    }
+   },
+   "pre2016": {
+    "observed": {
+     "clusters": 193,
+     "hits": 92,
+     "rate": 0.47668,
+     "per_market": {
+      "kr": {
+       "clusters": 17,
+       "hits": 11
+      },
+      "jp": {
+       "clusters": 57,
+       "hits": 33
+      },
+      "tw": {
+       "clusters": 18,
+       "hits": 10
+      },
+      "in": {
+       "clusters": 9,
+       "hits": 4
+      },
+      "au": {
+       "clusters": 30,
+       "hits": 12
+      },
+      "gb": {
+       "clusters": 47,
+       "hits": 15
+      },
+      "ez": {
+       "clusters": 15,
+       "hits": 7
+      }
+     }
+    },
+    "null_mean": 0.40337,
+    "p": 0.0235,
+    "ratio": 1.18177,
+    "wilson_lb": 0.41828,
+    "wilson_ub": 0.53574,
+    "per_market_ratio": {
+     "kr": 1.18153,
+     "jp": 1.36783,
+     "tw": 1.06426,
+     "in": 1.16518,
+     "au": 1.18662,
+     "gb": 0.9953,
+     "ez": 1.09652
+    }
+   },
+   "post2016": {
+    "observed": {
+     "clusters": 101,
+     "hits": 31,
+     "rate": 0.30693,
+     "per_market": {
+      "kr": {
+       "clusters": 17,
+       "hits": 3
+      },
+      "jp": {
+       "clusters": 16,
+       "hits": 4
+      },
+      "tw": {
+       "clusters": 15,
+       "hits": 6
+      },
+      "in": {
+       "clusters": 11,
+       "hits": 5
+      },
+      "au": {
+       "clusters": 11,
+       "hits": 3
+      },
+      "gb": {
+       "clusters": 15,
+       "hits": 3
+      },
+      "ez": {
+       "clusters": 16,
+       "hits": 7
+      }
+     }
+    },
+    "null_mean": 0.29353,
+    "p": 0.3725,
+    "ratio": 1.04567,
+    "wilson_lb": 0.2373,
+    "wilson_ub": 0.38664,
+    "per_market_ratio": {
+     "kr": 0.47698,
+     "jp": 0.67587,
+     "tw": 1.39656,
+     "in": 1.69993,
+     "au": 1.15767,
+     "gb": 0.89375,
+     "ez": 1.65777
+    }
+   },
+   "half1": {
+    "observed": {
+     "clusters": 133,
+     "hits": 69,
+     "rate": 0.5188,
+     "per_market": {
+      "kr": {
+       "clusters": 13,
+       "hits": 10
+      },
+      "jp": {
+       "clusters": 30,
+       "hits": 20
+      },
+      "tw": {
+       "clusters": 16,
+       "hits": 9
+      },
+      "in": {
+       "clusters": 10,
+       "hits": 5
+      },
+      "au": {
+       "clusters": 20,
+       "hits": 10
+      },
+      "gb": {
+       "clusters": 29,
+       "hits": 8
+      },
+      "ez": {
+       "clusters": 15,
+       "hits": 7
+      }
+     }
+    },
+    "null_mean": 0.40201,
+    "p": 0.007,
+    "ratio": 1.29052,
+    "wilson_lb": 0.44787,
+    "wilson_ub": 0.58898,
+    "per_market_ratio": {
+     "kr": 1.2447,
+     "jp": 1.84064,
+     "tw": 1.01274,
+     "in": 1.366,
+     "au": 1.41383,
+     "gb": 0.94395,
+     "ez": 1.08326
+    }
+   },
+   "half2": {
+    "observed": {
+     "clusters": 161,
+     "hits": 54,
+     "rate": 0.3354,
+     "per_market": {
+      "kr": {
+       "clusters": 21,
+       "hits": 4
+      },
+      "jp": {
+       "clusters": 43,
+       "hits": 17
+      },
+      "tw": {
+       "clusters": 17,
+       "hits": 7
+      },
+      "in": {
+       "clusters": 10,
+       "hits": 4
+      },
+      "au": {
+       "clusters": 21,
+       "hits": 5
+      },
+      "gb": {
+       "clusters": 33,
+       "hits": 10
+      },
+      "ez": {
+       "clusters": 16,
+       "hits": 7
+      }
+     }
+    },
+    "null_mean": 0.33942,
+    "p": 0.5355,
+    "ratio": 0.98817,
+    "wilson_lb": 0.27736,
+    "wilson_ub": 0.39889,
+    "per_market_ratio": {
+     "kr": 0.54694,
+     "jp": 0.85818,
+     "tw": 1.36093,
+     "in": 1.44151,
+     "au": 0.93489,
+     "gb": 0.99989,
+     "ez": 1.64166
+    }
+   },
+   "fp_budget": {
+    "pooled_pp": 1.83,
+    "per_market_pp": {
+     "kr": 1.35,
+     "jp": 1.76,
+     "tw": 1.24,
+     "in": 1.71,
+     "au": 1.82,
+     "gb": 2.57,
+     "ez": 2.35
+    },
+    "pass": true,
+    "caps": {
+     "pooled": 8.0,
+     "per_market": 10.0
+    }
+   },
+   "gates": {
+    "n_floor": true,
+    "lift": false,
+    "p_floor": true,
+    "kill": false,
+    "era": "pass",
+    "split": "fail",
+    "breadth": true,
+    "budget": true,
+    "extra_redundancy": false,
+    "bh": false
+   },
+   "redundancy": {
+    "observed": {
+     "clusters": 260,
+     "hits": 105,
+     "rate": 0.40385,
+     "per_market": {
+      "kr": {
+       "clusters": 28,
+       "hits": 10
+      },
+      "jp": {
+       "clusters": 73,
+       "hits": 36
+      },
+      "tw": {
+       "clusters": 26,
+       "hits": 12
+      },
+      "in": {
+       "clusters": 16,
+       "hits": 6
+      },
+      "au": {
+       "clusters": 35,
+       "hits": 14
+      },
+      "gb": {
+       "clusters": 58,
+       "hits": 17
+      },
+      "ez": {
+       "clusters": 24,
+       "hits": 10
+      }
+     }
+    },
+    "null_mean": 0.3718,
+    "p": 0.1375,
+    "ratio": 1.0862,
+    "wilson_lb": 0.35503,
+    "wilson_ub": 0.45465,
+    "per_market_ratio": {
+     "kr": 0.73827,
+     "jp": 1.19291,
+     "tw": 1.03069,
+     "in": 1.14282,
+     "au": 1.3128,
+     "gb": 0.97657,
+     "ez": 1.25408
+    }
+   },
+   "h2_latency": {
+    "median_diff": 0.0,
+    "per_market_median": {
+     "kr": 0.0,
+     "jp": 0.0,
+     "tw": 0.0,
+     "in": 0.0,
+     "au": 0.0,
+     "gb": 0.0,
+     "ez": 0.0
+    },
+    "n_episodes": 1037,
+    "pass": false
+   },
+   "whipsaw_receipt": {
+    "pre2016": {
+     "clusters": 193,
+     "closed_above_at_h21": 107,
+     "share": 0.554
+    },
+    "post2016": {
+     "clusters": 101,
+     "closed_above_at_h21": 65,
+     "share": 0.644
+    }
+   },
+   "bh_rank": 3,
+   "verdict": "ACCRUE"
+  }
+ },
+ "verdicts": {
+  "s1_any88": "NO-GO",
+  "s1_exfx88": "NO-GO",
+  "s1_any95": "ACCRUE",
+  "s1_exfx95": "NO-GO",
+  "s2_gate_conditional": "NO-GO",
+  "s2_always": "NO-GO",
+  "s3_ret10": "ACCRUE",
+  "s3_ret21": "ACCRUE"
+ }
+}

@@ -18,8 +18,12 @@ owner_program: metabolism-phase-a
 # stages emit a clean journaled no-op and exit 0.
 per_cycle_usd_cap: 25
 
-# Hard token cap per cycle.  Set conservatively: 1M output tokens ≈ $15 at
-# Opus pricing; 25M is a hard ceiling that is well above any normal cycle.
+# Hard token cap per cycle.  Set conservatively: 1M output tokens ≈ $25 at
+# Opus pricing ($25/MTok output per config/ai_pricing.yml); 25M is a hard
+# ceiling that is well above any normal cycle.
+# NOTE: the usd cap counts METERED dollars only (claude_api/deepseek lanes).
+# Subscription (OAuth/CLI) API-equivalent value is tracked in
+# data/ai_costs/usage.jsonl but does NOT advance the $25 breaker.
 per_cycle_token_cap: 25000000
 
 # Maximum number of proposals a single PROPOSE run may emit.

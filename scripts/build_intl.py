@@ -15,7 +15,7 @@ import json
 import logging
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -222,15 +222,26 @@ def main() -> int:
     except Exception as _e:
         log.error("intl_bonds inversion_board failed (%s)", _e)
 
-    # Read smile_decomp from forex/latest.json if fresh (<36h)
+    # Read smile_decomp from forex/latest.json if fresh (asof today/yesterday).
+    # Freshness is judged from the embedded `asof` date, NEVER file mtime — on CI
+    # runners a checkout rewrites files with mtime = checkout time, so a frozen
+    # forex lane would silently pass an mtime gate forever (the polygon-universe
+    # frozen-cache class, #2690). Missing/unparsable asof ⇒ treated stale (skip).
     smile_result = None
     try:
         _forex_path = config.data_dir() / "forex" / "latest.json"
         if _forex_path.exists():
-            _forex_age_h = (time.time() - _forex_path.stat().st_mtime) / 3600.0
-            if _forex_age_h < 36:
-                _forex_raw = json.loads(_forex_path.read_text(encoding="utf-8"))
+            _forex_raw = json.loads(_forex_path.read_text(encoding="utf-8"))
+            _forex_asof = _forex_raw.get("asof")
+            try:
+                _forex_age_d = (date.today() - date.fromisoformat(str(_forex_asof))).days
+            except Exception:  # noqa: BLE001
+                _forex_age_d = None
+            if _forex_age_d is not None and _forex_age_d <= 1:      # ≈ the old <36h window
                 smile_result = (_forex_raw.get("dollar_desk") or {}).get("smile_decomp")
+            else:
+                log.warning("smile_decomp skipped: forex latest.json asof=%r stale/missing",
+                            _forex_asof)
     except Exception as _e:
         log.error("smile_decomp read from forex/latest.json failed (%s)", _e)
 
@@ -415,6 +426,136 @@ def main() -> int:
     except Exception as _cbf_exc:
         log.exception("flow_regime compose/write failed (non-fatal): %s", _cbf_exc)
 
+    # ---- ITR W1: turn board + rotation ranks (fail-open, hoisted pre-render) -------
+    # Computed BEFORE the page-render try so a turn-engine error never kills the
+    # page render (mirrors the IRD-W3 shim pattern above).
+    turn_board: list | None = None
+    turn_events: list = []
+    rotation_ranks: list = []
+    bench_note: str | None = None
+
+    try:
+        from engine import intl_inputs as _itr_inputs
+        _itr_closes_raw = _itr_inputs._intl_closes()
+        _itr_countries = _itr_inputs.countries()
+
+        # Build a cc->Series dict (primary index only) for the rotation engine
+        _itr_closes: dict[str, "pd.Series"] = {}
+        for _cc, _c in _itr_countries.items():
+            _idx_col = _c["index"]
+            if _idx_col in _itr_closes_raw:
+                _s = _itr_closes_raw[_idx_col].dropna()
+                if not _s.empty:
+                    _itr_closes[_cc] = _s
+
+        # Fetch a fresh benchmark via the ITR-R6 helper in intl_performance
+        _itr_bench: "pd.Series | None" = None
+        if perf is not None:
+            _itr_bench = perf.get("bench")
+            bench_note = perf.get("bench_note")
+        else:
+            try:
+                from engine.intl_performance import _bench_series_fresh as _itr_bf
+                _itr_bench, bench_note = _itr_bf(intl_closes=_itr_closes_raw)
+            except Exception as _e:
+                log.warning("ITR bench freshness helper failed (fail-open): %s", _e)
+
+        # Compute per-market turn states
+        _itr_states: dict[str, dict] = {}
+        try:
+            from engine.intl_market_state import market_states as _itr_ms
+            _itr_states = _itr_ms(_itr_closes, bench=_itr_bench)
+        except Exception as _e:
+            log.warning("intl_market_state.market_states failed (fail-open): %s", _e)
+
+        # Compute rotation ranks
+        try:
+            from engine.intl_rotation import rank as _itr_rank
+            _raw_ranks = _itr_rank(_itr_closes, _itr_bench, _itr_states)
+            # Enrich with name/name_zh/flag from countries config
+            for _rr in _raw_ranks:
+                _cc2 = _rr.get("cc", "")
+                _meta = _itr_countries.get(_cc2, {})
+                _rr["name"]     = _meta.get("name", _cc2)
+                _rr["name_zh"]  = _meta.get("name_zh", _cc2)
+                _rr["flag"]     = _meta.get("flag", "")
+            rotation_ranks = _raw_ranks
+        except Exception as _e:
+            log.warning("intl_rotation.rank failed (fail-open): %s", _e)
+
+        # Leading-risk radar (#2684, schema risk_radar_intl.v1) joined onto its turn
+        # tile by cc — display-only context; never feeds urgency sort or rank.
+        _radar_by_cc = {
+            (_r.get("cc") or ""): _r.get("risk_radar")
+            for _r in (latest.get("records") or [])
+            if isinstance(_r.get("risk_radar"), dict)
+        }
+
+        # Build turn_board: urgency-sorted (desc), ties by dd_pct ascending
+        if _itr_states:
+            _tb_rows = []
+            for _cc3, _st in _itr_states.items():
+                _meta3 = _itr_countries.get(_cc3, {})
+                _row = dict(_st)
+                _row["cc"]       = _cc3
+                _row["name"]     = _meta3.get("name", _cc3)
+                _row["name_zh"]  = _meta3.get("name_zh", _cc3)
+                _row["flag"]     = _meta3.get("flag", "")
+                _row["risk_radar"] = _radar_by_cc.get(_cc3)
+                _tb_rows.append(_row)
+            turn_board = sorted(
+                _tb_rows,
+                key=lambda r: (-r.get("urgency", 0), r.get("dd_pct", 0) or 0),
+            )
+
+        # Build turn_events: top 10 newest cross-market events
+        _all_events = []
+        for _cc4, _st4 in _itr_states.items():
+            _meta4 = _itr_countries.get(_cc4, {})
+            for _ev in (_st4.get("events") or []):
+                _all_events.append({
+                    "date":     _ev.get("date"),
+                    "cc":       _cc4,
+                    "flag":     _meta4.get("flag", ""),
+                    "name":     _meta4.get("name", _cc4),
+                    "name_zh":  _meta4.get("name_zh", _cc4),
+                    "en":       _ev.get("en", ""),
+                    "zh":       _ev.get("zh", ""),
+                    "code":     _ev.get("code", ""),
+                })
+        # Dedup by (date, cc, code) then sort newest first and take top 10
+        _seen_evkeys: set = set()
+        _dedup_events = []
+        for _ev2 in _all_events:
+            _evkey = (_ev2.get("date") or "", _ev2.get("cc", ""), _ev2.get("code", ""))
+            if _evkey not in _seen_evkeys:
+                _seen_evkeys.add(_evkey)
+                _dedup_events.append(_ev2)
+        _dedup_events.sort(key=lambda e: e.get("date") or "", reverse=True)
+        turn_events = _dedup_events[:10]
+
+        # Attach record['turn'] = per-country market_states dict for each country record
+        for _rec in latest.get("records") or []:
+            _cc5 = _rec.get("cc", "")
+            if _cc5 in _itr_states:
+                _rec["turn"] = _itr_states[_cc5]
+
+        # Attach turn state to each leaderboard row too: the template hero KPI
+        # (bestr.get('turn')) and the leaderboard JS (turnLookup / stateChip)
+        # read `turn` off perf.leaderboard rows, not off latest.records.
+        if perf is not None:
+            for _lb_row in (perf.get("leaderboard") or []):
+                _cc6 = _lb_row.get("cc", "")
+                if _cc6 in _itr_states:
+                    _lb_row["turn"] = _itr_states[_cc6]
+
+        log.info(
+            "ITR turn engine: %d states, %d events, bench_note=%s",
+            len(_itr_states), len(turn_events), bench_note,
+        )
+    except Exception as _itr_exc:
+        log.error("ITR turn engine block failed (fail-open): %s", _itr_exc)
+
     try:
         from engine import intl_stocks
         closes, members = intl_stocks.panel()
@@ -440,6 +581,11 @@ def main() -> int:
         for r in latest["records"]:
             r["quad_meaning"] = QUAD_MEANING.get(r.get("quad_name"))
 
+        # the raw benchmark Series is engine-internal — it must never reach the
+        # template ({{ perf | tojson }} cannot serialize a pd.Series)
+        if isinstance(perf, dict):
+            perf.pop("bench", None)
+
         vm = {
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -454,6 +600,11 @@ def main() -> int:
             "rates": rates,
             # risk_desk available to template (None-safe: may be partial on engine error)
             "risk_desk": _intl_risk_payload,
+            # ITR W1: turn engine keys (None/[] when engine errors)
+            "turn_board":     turn_board,
+            "turn_events":    turn_events,
+            "rotation_ranks": rotation_ranks,
+            "bench_note":     bench_note,
         }
 
         site = Path(config.load()["storage"]["site_dir"])

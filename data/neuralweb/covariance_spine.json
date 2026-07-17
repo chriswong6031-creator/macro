@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.covariance_spine.v1",
-  "as_of": "2026-07-15",
+  "as_of": "2026-07-16",
   "display_only": true,
   "authority": "context",
   "descriptive_not_gauntleted": true,
@@ -19,8 +19,8 @@
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5378,
-      "effective_factor_bets_pr": 2.9032,
+      "dominant_factor_pc_share": 0.5375,
+      "effective_factor_bets_pr": 2.9067,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",

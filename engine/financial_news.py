@@ -261,10 +261,12 @@ def _normalise(title: str, url: str, domain: str, seendate: str, source: str,
 # --------------------------------------------------------------------------- #
 # Polygon — ticker-tagged corpus
 # --------------------------------------------------------------------------- #
-def _polygon_news(cfg: dict, now: datetime) -> list[dict]:
+def _polygon_news(cfg: dict, now: datetime) -> tuple[list[dict], str]:
+    """Returns (items, detail) where detail is 'ok'|'no_key'|'http_<code>'|'exception'|'no_rows'."""
     key = config.secret("POLYGON_API_KEY") or config.secret("MASSIVE_API_KEY")
     if not key:
-        return []
+        log.warning("POLYGON_API_KEY / MASSIVE_API_KEY not set — polygon feed dark")
+        return [], "no_key"
     since = (now - timedelta(days=int(cfg.get("window_days", 3)))).date().isoformat()
     params = {"order": "desc", "sort": "published_utc", "limit": "1000",
               "published_utc.gte": since, "apiKey": key}
@@ -275,8 +277,9 @@ def _polygon_news(cfg: dict, now: datetime) -> list[dict]:
         r = requests.get("https://api.polygon.io/v2/reference/news", params=params, timeout=30)
         if r.status_code != 200:
             log.warning("polygon news http %s", r.status_code)
-            return []
-        for a in (r.json().get("results", []) or []):
+            return [], f"http_{r.status_code}"
+        results = r.json().get("results", []) or []
+        for a in results:
             ins = {i.get("ticker"): i.get("sentiment") for i in (a.get("insights") or [])
                    if isinstance(i, dict)}
             tks = [t.upper() for t in (a.get("tickers") or []) if t]
@@ -297,28 +300,35 @@ def _polygon_news(cfg: dict, now: datetime) -> list[dict]:
                                                  "neutral": "neutral"}.get(v)
                                              for k, v in ins.items()}
                 out.append(h)
+        return out, ("ok" if out else "no_rows")
     except Exception as e:  # noqa: BLE001
         log.warning("polygon news failed (%s)", e)
-    return out
+        return [], "exception"
 
 
 # --------------------------------------------------------------------------- #
 # Finnhub — market-wide + per-megacap
 # --------------------------------------------------------------------------- #
-def _finnhub_news(cfg: dict, now: datetime) -> tuple[list[dict], list[dict]]:
-    """Returns (market_wide_items, company_items)."""
+def _finnhub_news(cfg: dict, now: datetime) -> tuple[list[dict], list[dict], str]:
+    """Returns (market_wide_items, company_items, detail).
+    detail is 'ok'|'no_key'|'http_<code>'|'exception'|'no_rows'."""
     key = config.secret("FINNHUB_KEY") or config.secret("FINNHUB_API_KEY")
     if not key:
-        return [], []
+        log.warning("FINNHUB_KEY / FINNHUB_API_KEY not set — finnhub feed dark")
+        return [], [], "no_key"
     market, company = [], []
     crawled_at = now.isoformat()   # W2: stamp at ingest boundary
+    detail = "no_rows"
     try:
         import time
 
         import requests
         r = requests.get("https://finnhub.io/api/v1/news",
                          params={"category": "general", "token": key}, timeout=30)
-        if r.status_code == 200:
+        if r.status_code != 200:
+            log.warning("finnhub news http %s", r.status_code)
+            detail = f"http_{r.status_code}"
+        else:
             for a in (r.json() or [])[:120]:
                 dt = a.get("datetime")
                 iso = (datetime.fromtimestamp(dt, tz=timezone.utc).isoformat()
@@ -354,9 +364,52 @@ def _finnhub_news(cfg: dict, now: datetime) -> tuple[list[dict], list[dict]]:
                     time.sleep(0.2)
                 except Exception:  # noqa: BLE001
                     continue
+        if market or company:
+            detail = "ok"
     except Exception as e:  # noqa: BLE001
         log.warning("finnhub news failed (%s)", e)
-    return market, company
+        detail = "exception"
+    return market, company, detail
+
+
+# --------------------------------------------------------------------------- #
+# MN-08: government-agency acronym collisions. Quiver assigns tickers verbatim,
+# so an Immigration & Customs Enforcement headline arrives tagged ICE
+# (Intercontinental Exchange). For this acronym set only, drop the tag when the
+# title reads as the AGENCY — spelled-out name or strong enforcement vocabulary.
+# Bare ambiguity ("SEC filing") keeps the tag. Display-tier only.
+# --------------------------------------------------------------------------- #
+_AGENCY_NAMES: dict[str, tuple[str, ...]] = {
+    "ICE": ("immigration and customs enforcement", "customs enforcement"),
+    "DOJ": ("department of justice", "justice department"),
+    "SEC": ("securities and exchange commission",),
+    "FBI": ("federal bureau of investigation",),
+    "CIA": ("central intelligence agency",),
+    "DEA": ("drug enforcement administration", "drug enforcement agency"),
+    "IRS": ("internal revenue service",),
+    "EPA": ("environmental protection agency",),
+    "FTC": ("federal trade commission",),
+    "FCC": ("federal communications commission",),
+}
+# "AI agents" is common exchange/fintech copy — only bare "agents" is agency context.
+_AGENCY_CONTEXT = re.compile(
+    r"\b(enforcement|raid(?:s|ed|ing)?|(?<!AI )agents|immigration|immigrants?|"
+    r"deport(?:ation|ations|ed|ees)?|detain(?:s|ed|ee|ees|ment)?|"
+    r"indict(?:ment|ments|ed|s)?|arrest(?:s|ed|ing)?|subpoena(?:s|ed)?|"
+    r"prosecutors?|crackdowns?|asylum|migrants?|undocumented|attorney general)\b",
+    re.I)
+
+
+def _agency_not_ticker(ticker: str, title: str) -> bool:
+    """True when `ticker` collides with a government-agency acronym and `title`
+    carries agency context. Conservative: no context → keep the tag."""
+    names = _AGENCY_NAMES.get(ticker)
+    if not names:
+        return False
+    low = (title or "").lower().replace("&", "and")
+    if any(n in low for n in names):
+        return True
+    return bool(_AGENCY_CONTEXT.search(title or ""))
 
 
 # --------------------------------------------------------------------------- #
@@ -382,6 +435,9 @@ def _quiver_news(cfg: dict, emap: dict, now: datetime) -> list[dict]:
             url = str(r.get("url") or "")
             tk = str(r.get("ticker") or "").upper().strip()
             tks = [tk] if tk and tk != "NAN" else sorted(nc.match_entities(title, emap))
+            # MN-08: match_entities can re-tag ICE/FBI/... too, so filter the
+            # final list, not just the Quiver-assigned tag.
+            tks = [t for t in tks if not _agency_not_ticker(t, title)]
             tval = r.get("time")
             iso = ""
             try:
@@ -475,10 +531,11 @@ def _rss_news(cfg: dict, emap: dict, now: datetime) -> dict:
 # GDELT — keyless thematic supplement (market + sectors)
 # --------------------------------------------------------------------------- #
 def _gdelt_thematic(cfg: dict, emap: dict, now: datetime) -> dict:
-    """Returns {"market": [...], "sectors": {ETF: [...]}}. Each item carries the
-    sector tag it was fetched for. Bounded + paced (GDELT >=6s)."""
+    """Returns {"market": [...], "sectors": {ETF: [...]}, "detail": str}.
+    Each item carries the sector tag it was fetched for. Bounded + paced (GDELT >=6s).
+    detail: 'ok'|'rate_limited(<n> of <m> calls 429)'|'no_rows'|'disabled'."""
     if not cfg.get("gdelt", True):
-        return {"market": [], "sectors": {}}
+        return {"market": [], "sectors": {}, "detail": "disabled"}
     win = int(cfg.get("gdelt_window_days", 2))
     mx = int(cfg.get("gdelt_max_records", 40))
     market, sect = [], {}
@@ -488,7 +545,14 @@ def _gdelt_thematic(cfg: dict, emap: dict, now: datetime) -> dict:
         return bool(tks) or bool(_MARKET_TITLE.search(title or ""))
 
     crawled_at = now.isoformat()   # W2: stamp at the ingest boundary (PIT)
-    raw, _ = nc.gdelt_fetch(_MARKET_QUERY + _GEO, mx, win, now=now)
+    # GDELT-002: track 429 / rate-limit reasons across all calls so providers_detail
+    # carries a transparent 'rate_limited(<n> of <m> calls 429)' when applicable.
+    _total_calls = 1 + len(_SECTOR_QUERIES)   # market + one per sector ETF
+    _rate_limited = 0
+
+    raw, _mkt_reason = nc.gdelt_fetch(_MARKET_QUERY + _GEO, mx, win, now=now)
+    if _mkt_reason and "429" in str(_mkt_reason):
+        _rate_limited += 1
     for a in raw:
         # W2: use entity_resolver.resolve_us for higher-precision GDELT tagging
         tks = _gdelt_tag(a["title"], emap)
@@ -500,7 +564,9 @@ def _gdelt_thematic(cfg: dict, emap: dict, now: datetime) -> dict:
         if h:
             market.append(h)
     for etf, q in _SECTOR_QUERIES.items():
-        raw, _ = nc.gdelt_fetch(q + _GEO, mx, win, now=now)
+        raw, _sec_reason = nc.gdelt_fetch(q + _GEO, mx, win, now=now)
+        if _sec_reason and "429" in str(_sec_reason):
+            _rate_limited += 1
         items = []
         for a in raw:
             tks = _gdelt_tag(a["title"], emap)   # W2: entity_resolver
@@ -513,7 +579,15 @@ def _gdelt_thematic(cfg: dict, emap: dict, now: datetime) -> dict:
                 h["sector_tag"] = etf
                 items.append(h)
         sect[etf] = items
-    return {"market": market, "sectors": sect}
+
+    has_rows = bool(market or any(sect.values()))
+    if _rate_limited:
+        detail = f"rate_limited({_rate_limited} of {_total_calls} calls 429)"
+    elif has_rows:
+        detail = "ok"
+    else:
+        detail = "no_rows"
+    return {"market": market, "sectors": sect, "detail": detail}
 
 
 # --------------------------------------------------------------------------- #
@@ -587,8 +661,9 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
     top_basket = int(cfg.get("top_basket", 8))
     top_ticker = int(cfg.get("top_ticker", 6))
 
-    poly = _polygon_news(cfg, now)
-    fh_market, fh_company = _finnhub_news(cfg, now)
+    # POLY-003 / GDELT-002: unpack new (items, detail) / (mkt, co, detail) signatures.
+    poly, _poly_detail = _polygon_news(cfg, now)
+    fh_market, fh_company, _fh_detail = _finnhub_news(cfg, now)
     quiver = _quiver_news(cfg, emap, now)            # folded Quiver press-release tail
     gd = _gdelt_thematic(cfg, emap, now)
     rss = _rss_news(cfg, emap, now)                  # PRIMARY: top-tier wires & press
@@ -600,11 +675,24 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
     sources = sorted({h.get("source", "") for h in all_items if h.get("source")})
 
     # ---- market-wide --------------------------------------------------------
+    # MN-10: apply 60-char normalised-title-prefix dedup within the market pool
+    # (same idiom as macro_news ~:654) to collapse cross-domain same-event dupes
+    # (e.g. two Netflix earnings items from Polygon + GDELT on the same day).
+    # Keep the higher-quality item (already ensured by _dedup_rank's quality sort).
     market_pool = list(rss["market"]) + list(fh_market) + list(gd["market"])
     for h in tagged:
         if set(h.get("tickers", [])) & _INDEX_TICKERS:
             market_pool.append(h)
-    market = [_public(h) for h in _dedup_rank(market_pool, top_market, max_per_domain=4)]
+    _mkt_title_seen: set[str] = set()
+    _mkt_deduped: list[dict] = []
+    for _mh in sorted(market_pool, key=lambda x: x.get("quality", 0), reverse=True):
+        _mkey = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ",
+                       (_mh.get("title") or "").lower())).strip()[:60].strip()
+        if not _mkey or _mkey in _mkt_title_seen:
+            continue
+        _mkt_title_seen.add(_mkey)
+        _mkt_deduped.append(_mh)
+    market = [_public(h) for h in _dedup_rank(_mkt_deduped, top_market, max_per_domain=4)]
 
     # ---- sectors (11 GICS) --------------------------------------------------
     sectors: dict[str, dict] = {}
@@ -692,20 +780,48 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
     except Exception:  # noqa: BLE001 — qbus read-back is always display-only
         pass
 
+    # POLY-003 / GDELT-002: tri-state providers_detail + improved degraded_reason.
+    # providers booleans kept unchanged for backward compat (additive).
+    _gdelt_ok = bool(gd["market"] or any(gd["sectors"].values()))
+    _providers_detail = {
+        "polygon": _poly_detail,
+        "finnhub": _fh_detail,
+        "quiver": ("ok" if quiver else "no_rows"),
+        "gdelt": gd.get("detail", "ok" if _gdelt_ok else "no_rows"),
+    }
+    # Compose a degraded_reason when any configured (keyed) provider is dark.
+    _dark_reasons: list[str] = []
+    if _poly_detail == "no_key":
+        _dark_reasons.append("polygon_no_key")
+    elif _poly_detail not in ("ok", "no_rows"):
+        _dark_reasons.append(f"polygon_{_poly_detail}")
+    if _fh_detail == "no_key":
+        _dark_reasons.append("finnhub_no_key")
+    elif _fh_detail not in ("ok", "no_rows"):
+        _dark_reasons.append(f"finnhub_{_fh_detail}")
+    _degraded_reason: str | None = None
+    if not all_items:
+        _degraded_reason = "no_sources"
+    elif _dark_reasons:
+        _degraded_reason = "; ".join(_dark_reasons)
+
     out = {
         "schema": "financial_news.v1", "is_context_only": True,
         "fetched_at": now.isoformat(), "asof": today.isoformat(),
         "sources": sources,
+        # providers booleans: backward-compat contract, NEVER changed shape.
         "providers": {"polygon": bool(poly), "finnhub": bool(fh_market or fh_company),
                       "quiver": bool(quiver),
-                      "gdelt": bool(gd["market"] or any(gd["sectors"].values()))},
+                      "gdelt": _gdelt_ok},
+        # providers_detail: POLY-003 / GDELT-002 tri-state additive field.
+        "providers_detail": _providers_detail,
         "counts": {"raw": len(all_items), "tagged": len(tagged),
                    "tickers_covered": len(by_ticker)},
         "market": market, "sectors": sectors, "mag7": mag7, "baskets": baskets,
         "by_ticker": by_ticker,
         "rejected": _collected_rejected,
         "disclaimer": DISCLAIMER_TEXT, "disclaimer_zh": DISCLAIMER_TEXT_ZH,
-        "degraded_reason": None if all_items else "no_sources",
+        "degraded_reason": _degraded_reason,
     }
     try:
         cache.write_text(json.dumps(out))

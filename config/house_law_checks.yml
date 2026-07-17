@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-11"
+updated: "2026-07-16"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -160,9 +160,11 @@ checks:
   - law_id: ui.title_i18n
     summary: >
       Translated (CJK / t() / zh-interpolated) text must never appear inside HTML
-      title= attributes. The dual-span l-en/l-zh mechanism cannot operate in
-      attributes, so a bilingual title= renders both languages mashed together.
-      Law source: CLAUDE.md ("no translated text in title= attributes").
+      title= attributes, and t()/td() dual-span markup must never appear inside a
+      <title> ELEMENT (RCDATA — markup renders as literal browser-tab text, #2705).
+      The dual-span l-en/l-zh mechanism cannot operate in either place. Plain CJK
+      inside a <title> element is allowed — the element rule is markup-in-RCDATA,
+      not language. Law source: CLAUDE.md ("no translated text in title= attributes").
     source_ref:
       - scripts/check_title_i18n.py
       - CLAUDE.md
@@ -175,13 +177,16 @@ checks:
       - workflow: .github/workflows/pages.yml
         job: publish
         lane: publish
-    selftest: false
-    selftest_exempt_reason: >
-      No selftest flag; scans template source deterministically.
+    selftest: true
     allowlist: null
     ratchet: null
     known_limits:
-      - Scans templates/ source; does not re-scan rendered site/ HTML.
+      - Template <title> element rule is line-scoped (dodges committee.html.j2's
+        JS-built SVG title strings), so a bare <title> wrapped across lines with the
+        t()/td() call on its own line is not caught; {% block title %} bodies ARE
+        region-scanned.
+      - Rendered-site rule span-checks the page <title> (first title element) only;
+        inline-SVG <title> tooltips deeper in the page are not span-checked.
     owner_program: engine-fix-masterplan
     notes: null
 
@@ -273,6 +278,62 @@ checks:
       (ci.yml already triggers on templates/**). Render lanes never write
       templates/, so a hand-edited PR is the only drift vector — pr_ci is the
       complete enforcement point; no render/publish wiring needed.
+
+  - law_id: ui.font_ui_defined
+    summary: >
+      Every templates/*.html.j2 whose body-level CSS sets the page font via
+      var(--font-ui) (font-family: or the font: shorthand in a body{} rule)
+      must either link theme.css (a <link rel="stylesheet"> whose href
+      attribute points at theme.css — the href VALUE, never the bare string,
+      because CSS comments mention theme.css and defeat naive greps) or define
+      --font-ui: locally, and should also include _interfonts.html.j2 so the
+      self-hosted Inter actually loads (warning if missing). An undefined
+      custom property makes the font-family declaration
+      invalid-at-computed-value -> unset, so the ENTIRE page renders in the
+      browser default serif (Times) — the #2195 sweep broke 6 standalone page
+      families this way, fixed in #2647 (local :root definition +
+      _interfonts include, commodities.html.j2 precedent). Partials
+      (_*.html.j2) referencing var(--font-ui) are allowed (the token resolves
+      at host-page level) and emit a warning-level note only.
+    source_ref:
+      - scripts/check_font_ui_defined.py
+      - "PR #2647"
+      - "PR #2195"
+    severity: hard
+    check_script: scripts/check_font_ui_defined.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: font-ui-defined
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      Pure-stdlib static checker; functional coverage provided by
+      tests/test_check_font_ui_defined.py (44 cases incl. the real pre-#2647
+      broken shapes, minified/uppercase CSS, Jinja-in-style-block, and the
+      naive-grep theme.css comment trap).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Textual flat CSS scan (selector{block} realignment; Jinja tags are
+        pre-stripped so an interpolation inside a style block cannot void the
+        scan) — a body font rule contributed to a host page by an included
+        partial is attributed to the partial (warning) rather than the host,
+        and Jinja-conditional branches are treated as always-active.
+      - Presence-based, not cascade-resolved — a theme.css link with
+        media="print" or disabled satisfies the check even though the sheet
+        never applies on screen, and a --font-ui definition anywhere in the
+        page counts regardless of selector reachability.
+      - Checks templates/ only, not rendered site/ copies — render lanes
+        regenerate pages from these templates, so the template is the sole
+        drift vector.
+      - Does not verify that _interfonts.html.j2's referenced .woff2 files
+        ship in site/fonts/ (ui.interfonts_theme_sync guards the partial's
+        @font-face contents).
+    owner_program: engine-fix-masterplan
+    notes: >
+      var(--font-ui, fallback) usages with an explicit fallback are still
+      held to the same rule — the page would silently lose Inter even though
+      it would not fall all the way back to Times.
 
   - law_id: ui.ms_board_coherence
     summary: >

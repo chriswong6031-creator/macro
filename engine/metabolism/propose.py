@@ -111,6 +111,10 @@ AUTHORITY_BLOCK: dict[str, Any] = {
 }
 
 # Provider waterfall config for engine.llm_auth (same as whitehouse_brain).
+# NOTE: usage_lane is intentionally ABSENT here — scripts/metabolism_propose.py
+# records usage explicitly via lib.ai_costs.record_usage so that only ONE row
+# lands per call.  Adding usage_lane would cause _capture_usage to write a
+# second (duplicate) row on the same call.
 _LLM_CFG: dict[str, Any] = {
     "provider_order": ["oauth", "anthropic", "deepseek"],
     "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
@@ -570,13 +574,16 @@ def _invoke_llm(
     cfg: dict[str, Any] | None = None,
     lobe: str = LOBE,
     root: Path | None = None,
-) -> tuple[str | None, str | None, str | None]:
+) -> tuple[str | None, str | None, str | None, dict[str, Any]]:
     """Call the Opus proposer via the shared llm_auth waterfall.
 
-    Returns (reply_text, provider_used, degraded_reason).  NEVER raises.
-    Tests patch this function to inject a canned reply without any network.
+    Returns (reply_text, provider_used, degraded_reason, usage_info).
+    usage_info carries {input_tokens, output_tokens, cache_read_tokens,
+    cache_creation_tokens, model} when the SDK exposes them; empty dict otherwise.
+    NEVER raises.  Tests patch this function to inject a canned reply without any network.
     """
     conf = {**_LLM_CFG, **(cfg or {})}
+    _usage: list[dict[str, Any]] = []  # mutable side-channel for resp.usage
     try:
         from engine import llm_auth  # type: ignore[import]
         providers = llm_auth.build_providers(
@@ -584,7 +591,7 @@ def _invoke_llm(
             deepseek_model=conf.get("deepseek_model"),
         )
         if not providers:
-            return None, None, "no_provider"
+            return None, None, "no_provider", {}
 
         system = _build_system_prompt(lobe, root).replace("{max_n}", str(max_n))
         user = _build_user_prompt(context, max_n)
@@ -598,6 +605,21 @@ def _invoke_llm(
                 messages=[{"role": "user", "content": user}],
                 # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
             )
+            # Capture usage from the SDK response object (non-fatal if absent)
+            try:
+                u = getattr(resp, "usage", None)
+                if u is not None:
+                    _usage.append({
+                        "input_tokens": int(getattr(u, "input_tokens", 0) or 0),
+                        "output_tokens": int(getattr(u, "output_tokens", 0) or 0),
+                        "cache_read_tokens": int(
+                            getattr(u, "cache_read_input_tokens", 0) or 0),
+                        "cache_creation_tokens": int(
+                            getattr(u, "cache_creation_input_tokens", 0) or 0),
+                        "model": model,
+                    })
+            except Exception:  # noqa: BLE001
+                pass
             if getattr(resp, "stop_reason", None) == "refusal":
                 return None, "stop_refusal"
             text = "".join(
@@ -607,10 +629,11 @@ def _invoke_llm(
 
         text, reason, provider = llm_auth.make_call(
             providers, _do_call, context="metabolism_propose")
-        return text, provider, reason
+        usage_info = _usage[0] if _usage else {}
+        return text, provider, reason, usage_info
     except Exception as exc:  # noqa: BLE001
         log.warning("propose: LLM invocation failed: %s", exc)
-        return None, None, "llm_error"
+        return None, None, "llm_error", {}
 
 
 def _extract_json_array(text: str) -> list[dict[str, Any]]:
@@ -933,11 +956,12 @@ def propose(
         provider: str | None = None
         degraded: str | None = None
 
+        usage_info: dict[str, Any] = {}
         if injected_proposals is not None:
             raw = injected_proposals
         else:
             context = build_prompt_context(root, lobe=lobe)
-            text, provider, degraded = _invoke_llm(
+            text, provider, degraded, usage_info = _invoke_llm(
                 context, int(max_docket_size), cfg, lobe=lobe, root=root,
             )
             raw = _extract_json_array(text or "")
@@ -966,16 +990,19 @@ def propose(
             except Exception as _te:  # noqa: BLE001
                 log.warning("propose: trajectory stamp failed — %s", _te)
 
+        meta: dict[str, Any] = {
+            "provider": provider,
+            "degraded_reason": degraded,
+            "registered": registered,
+            "n_proposals": len(docket.get("proposals") or []),
+            "n_rejected": len(docket.get("rejected") or []),
+            "artifact": artifact,
+        }
+        if usage_info:
+            meta["usage"] = usage_info
         return {
             "docket": docket,
-            "meta": {
-                "provider": provider,
-                "degraded_reason": degraded,
-                "registered": registered,
-                "n_proposals": len(docket.get("proposals") or []),
-                "n_rejected": len(docket.get("rejected") or []),
-                "artifact": artifact,
-            },
+            "meta": meta,
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("propose: unexpected error for %s: %s", cycle_id, exc)

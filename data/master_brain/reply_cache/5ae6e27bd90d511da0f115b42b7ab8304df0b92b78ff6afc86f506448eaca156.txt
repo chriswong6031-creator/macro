@@ -1,0 +1,10 @@
+**Emerging Watch – Single Hypothesis with Kill-Criterion**
+
+**Watch‑theme:** **Biotech, Pharma & CXO** (hk_biotech)  
+**Current state:** rank #3, score +0.552, durability 0.59 (trend), breadth 0.87, not crowded.  
+**Why it is worth a conditional look:** In an environment where the one‑narrative leader (Tech Hardware) is absorbing 55% of attention, the next‑highest momentum theme with **broad, trending participation** is Biotech. Its high breadth (87% of constituents trending) and reasonable durability suggest that if the leader stumbled, Biotech could already have the cohesion to take over – a possible regime shift forming in the background.  
+**Kill‑criterion (falsification date ~2-4 weeks):** This formation hypothesis is **dead** if, on any weekly review, **Biotech’s score turns negative** (drops below 0) **or its durability bar falls below 0.45**, signalling the trend is breaking and breadth is no longer supportive. Until then, it remains only a **watch**, not a prediction.  
+
+**Current leader fade risk** (not a fade call – sizing only): Tech Hardware & Semis is crowded‑neutral, trend‑intact, and dominant. The only kill for the current leader would be a durability breakdown below 0.6 combined with Biotech overtaking it in score, but that is **not yet the case**.  
+
+*This is a fallible, falsifiable conditional; no position size, no trade, no return forecast. Only one validated edge exists: drawdown control via trend‑gate, which is active for the current leader.*

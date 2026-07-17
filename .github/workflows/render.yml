@@ -153,12 +153,12 @@ jobs:
           echo "$FILES" | sed 's/^/  changed: /'
           region_of() {
             case "$1" in
-              templates/china.html.j2|scripts/build_china.py) echo china;;
+              templates/china.html.j2|templates/china_news.html.j2|scripts/build_china.py) echo china;;
               templates/hk.html.j2|scripts/build_hk.py) echo hk;;
               templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|scripts/build_baskets.py|scripts/build_methodology.py) echo baskets;;
-              templates/dashboard.html.j2|templates/stock.html.j2|scripts/build_site.py) echo macro;;
+              templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|scripts/build_site.py) echo macro;;
               templates/*|scripts/build_*.py|config.yml|lib/*) echo all;;
               *) echo skip;;
             esac
@@ -183,8 +183,8 @@ jobs:
         # like the nightly — so one broken page can't 404 the whole deploy.
         env:
           # Only the live-quotes worker URL (a repo VARIABLE, baked into live_config.js so
-          # browser live prices stay wired) — NO API/LLM secrets, so the render is a pure
-          # function of the committed data on disk.
+          # browser live prices stay wired) — NO API/LLM secrets (one flag-gated exception
+          # below), so the render is a pure function of the committed data on disk.
           LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
           # This lane commits site/ ONLY and discards every data/ write, so build_stock_library's
           # per-build SEC/Wikipedia drip fetches (equity_profile / edgar_rpo / edgar_headcount)
@@ -192,6 +192,11 @@ jobs:
           # committed caches. Skipping them keeps the "no network calls" claim above honest and
           # trims ~3-4 min. The nightly `daily` (which commits data/) leaves this unset.
           RENDER_NO_DRIP: "1"
+          # The flag-gated exception: build_news title_zh cache fill (engine/news_translate.py),
+          # so ZH mode isn't stuck with English titles on fresh intraday headlines. INERT unless
+          # config news_translation.render_lanes is true (default off) — the RENDER_NO_DRIP=1
+          # sentinel gates the call in code, so with the flag off this lane makes zero LLM calls.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
@@ -301,7 +306,7 @@ jobs:
             }
             cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_misc &
             wait
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow options_skew options_ivspread baskets news methodology seasonality reports sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow options_skew options_ivspread options_entry baskets news methodology seasonality reports sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue

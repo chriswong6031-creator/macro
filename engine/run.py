@@ -711,6 +711,8 @@ def run(force: bool = False) -> dict:
         latest["ignition_radar"] = _ig_snap
         # US arm forward log (engine/ignition_audit.py): log today's snapshot, grade
         # matured past reads vs SPY, attach the scorecard. Additive, never fatal.
+        # The log/grade writers self-gate on COLLECT_LANE=nightly (ledger_lane_armed) —
+        # on closing-bell/engine-render this is a read-only scorecard attach.
         try:
             if _ig_snap:
                 _spy_s = None

@@ -1234,7 +1234,7 @@ def _memo_quote_response(
     if not answer_parts:
         answer_parts.append("No cached brain data available yet. Run the nightly cortex job first.")
 
-    note = f"\n\n*(Memo-quote mode: {degraded_reason}. Full interactive brain requires ANTHROPIC_API_KEY.)*"
+    note = f"\n\n*(Memo-quote mode: {degraded_reason}. Full interactive brain requires a Claude key (OAuth pool or API).)*"
     answer_parts.append(note)
     answer_parts.append("\nis_context_only: true — all signals are display-tier pending FDR.")
 
@@ -1643,7 +1643,9 @@ def ask(
     model = _DEFAULT_MODEL
     try:
         from engine import llm_auth  # noqa: PLC0415
-        providers = llm_auth.build_providers({}, opus_model=model, deepseek_model=None)
+        providers = llm_auth.build_providers(
+            {"oauth_pool_lane": "ask-brain", "usage_lane": "ask-brain"},
+            opus_model=model, deepseek_model=None)
         for p in providers:
             if p.get("cred") and p.get("client"):
                 client = p["client"]
@@ -1712,7 +1714,9 @@ def ask_stream(
     model = _DEFAULT_MODEL
     try:
         from engine import llm_auth  # noqa: PLC0415
-        providers = llm_auth.build_providers({}, opus_model=model, deepseek_model=None)
+        providers = llm_auth.build_providers(
+            {"oauth_pool_lane": "ask-brain", "usage_lane": "ask-brain"},
+            opus_model=model, deepseek_model=None)
         for p in providers:
             if p.get("cred") and p.get("client"):
                 client = p["client"]

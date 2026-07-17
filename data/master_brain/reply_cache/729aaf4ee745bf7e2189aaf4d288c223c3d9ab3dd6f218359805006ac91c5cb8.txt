@@ -1,0 +1,21 @@
+{
+  "regime_context": "As of 2026-07-15, the US thematic rotation is dominated by Memory, HBM & Storage (rank 1, zero breadth, low durability) with Cybersecurity as a strong challenger (high durability, full breadth, but crowded). The absolute-trend gate has historically improved drawdown control for this market; rotation signals are display-only and one-narrative dominance is absent.",
+  "theses": [
+    {
+      "subject": "Cybersecurity",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Cybersecurity shows the most durable, broad-based trend structure among eligible themes (durability 0.89, hurst ‘trend’, breadth 1.0), which gives it staying power. The absolute-trend gate provides a validated risk-control backdrop. Crowding (z 2.27) is a sizing caution, not a fade trigger per detector rules.",
+      "evidence": [
+        "durability_bar 0.89 and hurst_tag ‘trend’ indicating persistent trend health",
+        "breadth 1.0 across constituents, showing broad participation",
+        "eligible under absolute-trend gate, which has materially cut drawdowns historically"
+      ],
+      "dissent": "Extreme crowding (z 2.27) often precedes sharp reversals if the narrative fractures; the theme may have already absorbed all positive news flow and suffer asymmetric downside.",
+      "falsifier_text": "Cybersecurity breadth drops below 0.6 and durability-bar falls below 0.7 within 10 trading days, or the trend gate deems it ineligible."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

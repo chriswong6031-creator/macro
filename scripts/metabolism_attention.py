@@ -40,6 +40,7 @@ def _load_providers(model: str) -> list[dict]:
             "provider_order": ["oauth", "anthropic"],
             "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
             "oauth_pool_lane": "metabolism-attention",
+            "usage_lane": "metabolism-attention",
             "api_key_env": "ANTHROPIC_API_KEY",
         }
         return build_providers(cfg, opus_model=model)

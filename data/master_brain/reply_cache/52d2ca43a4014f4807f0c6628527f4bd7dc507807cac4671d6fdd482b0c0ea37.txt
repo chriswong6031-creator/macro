@@ -1,0 +1,23 @@
+{
+  "regime_context": "Hong Kong is in a one-narrative regime: Tech Hardware & Semis dominates with strong durability and trend health, while the absolute-trend gate historically improved drawdown control here. No rotation signal; no scorable themes are currently eligible, limiting falsifiability.",
+  "theses": [
+    {
+      "subject": "Tech Hardware & Semis",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The dominant theme is eligible, in a robust trend (durability 0.74), not crowded, and the absolute-trend gate has helped historically with risk control in this market. In a one-narrative structure with absorption at 0.55, trend continuation is the disciplined base case, though this is not a return forecast.",
+      "evidence": [
+        "eligible=true, rank 1, score 2.075",
+        "durability_bar=0.74, hurst_tag=trend",
+        "crowded=false",
+        "gate_helps=true",
+        "one_narrative=true, absorption=0.55"
+      ],
+      "dissent": "Leadership concentration is narrow (breadth 0.5) and the macro backdrop has 69% unscheduled event risk; a reversal in a few key names could trigger a sharp style rotation that trend discipline would lag.",
+      "falsifier_text": "If, within 20 trading days, Tech Hardware & Semis’ momentum rank falls to 4 or below AND its eligibility flips to false."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

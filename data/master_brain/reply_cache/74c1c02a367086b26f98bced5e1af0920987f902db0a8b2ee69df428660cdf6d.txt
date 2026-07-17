@@ -1,0 +1,40 @@
+## Thematic Desk Note — Canada / TSX
+**As of:** 2026-07-15  
+**Role:** Trend-Rider Analyst (accountable, falsifiable, never sized)  
+**Region:** Canada (TSX benchmark)
+
+---
+
+### Prevailing Durable Theme: Big Banks (ca_banks)
+
+- **Rank:** 1 / Momentum score 1.75 (a focus lens only, not a return forecast)  
+- **Durability bar:** 0.74 (high; well above mean-reversion risk zone)  
+- **Absolute‑trend gate:** Supportive — durability bar 0.74 signals the trend is intact and the validated drawdown‑control edge is active  
+- **Breadth:** 1.0 (all constituents participating)  
+- **Crowding:** Crowded (z = 1.76) — a sizing caution, not a fade or reversal signal
+
+### The Case for Staying with the Leader
+
+The **only validated edge** from multi‑decade sector backtests is drawdown/shake‑out avoidance via the absolute‑trend gate. The gate‑helps flag is true on this market, meaning the discipline has historically reduced volatility and tail losses. Big Banks, as the top‑ranked theme, shows a durability bar (0.74) that is firmly above the region where mean‑reversion typically begins to dominate. Full breadth (1.0) confirms the move is broad and cohesive, not driven by a single outlier.
+
+Crowding is present (ranking 1.76 z), but the backtest evidence is clear: crowding flags are **coincident**, not predictive of basket‑level drawdowns. Fading the leader on a crowding signal is the documented failure mode. The correct response is to **cap exposure**, not exit or fade. The gate’s risk‑control function – lower volatility, shallower drawdowns – aligns perfectly with this approach.
+
+The challenger, Pipelines & Midstream (rank 2, score 0.595), also has a 0.74 durability bar and is crowded, but lacks a clean ETF proxy and a higher score; it does not displace Banks as the primary durable narrative.
+
+### Structure of the Rotation
+
+- Eligible fraction 0.69 (broad rotation), absorption 0.36, one‑narrative = false.  
+- Leadership is not monolithic; other Financials (Insurers rank 3) sit close behind, but Banks retain the highest durability and breadth.  
+- Hurst tag for Banks is “mixed” — trend health is not purely directional, but the durability bar’s level makes staying the trend the dominant discipline.
+
+### Falsifiable Conditional Lean (with check‑by horizon)
+
+**Condition:** If Big Banks remain above their absolute‑trend gate (durability bar staying above ~0.7) and breadth holds near 1.0, the disciplined lean is to stay with the theme while capping position sizes to respect crowding risk.
+
+**De‑risk trigger:** A durability‑bar decline toward 0.50–0.55 (the zone where mean‑reversion often overwhelms trend) would be the objective signal to de‑risk.
+
+**Check‑by horizon:** Next monthly durability assessment (approximately mid‑August 2026). No action until that updated gate reading.
+
+---
+
+*This note is a fallible conditional, not a prediction. It uses the absolute‑trend gate as the only validated edge, and treats momentum rank, crowding, and rotation breadth as coincident context. No sizing, weights, or trades are given.*

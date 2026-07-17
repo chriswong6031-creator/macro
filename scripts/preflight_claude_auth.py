@@ -92,12 +92,63 @@ def _notify_auth_failure(reason: str) -> None:
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
         from scripts.notify import send_telegram  # type: ignore[import]
         send_telegram(
-            f"METABOLISM ALERT: CLAUDE_CODE_OAUTH_TOKEN health check FAILED.\n"
+            f"METABOLISM ALERT: OAuth pool key health check FAILED.\n"
             f"Reason: {reason}\n"
-            f"Action required: re-place the token as GitHub Secret CLAUDE_CODE_OAUTH_TOKEN."
+            f"Action required: verify CLAUDE_CODE_OAUTH_TOKEN_3..7 GitHub Secrets are valid."
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("preflight_claude_auth: notify failed: %s", exc)
+
+
+def _pick_pool_key(root: Path | None = None) -> tuple[str | None, str | None]:
+    """Return (ref_name, token_value) for the first enabled+present+non-cooling pool key.
+
+    Tries engine.neuralweb.key_pool first; falls back to direct env presence
+    checks of CLAUDE_CODE_OAUTH_TOKEN_1..7 filtered by METAB_KEYS_ENABLED.
+    Returns (None, None) when no pool key is available.  NEVER raises.
+    NEVER logs token values.
+    """
+    try:
+        from engine.neuralweb.key_pool import (  # noqa: PLC0415
+            discover_present_keys, get_secret_ref, is_cooling,
+        )
+        for cap_id in discover_present_keys(root):
+            if is_cooling(cap_id, root=root):
+                continue
+            ref = None
+            try:
+                ref = get_secret_ref(cap_id, root=root)
+            except Exception:  # noqa: BLE001
+                pass
+            if not ref:
+                suffix = cap_id.split("_")[-1]
+                ref = f"CLAUDE_CODE_OAUTH_TOKEN_{suffix}" if suffix.isdigit() else None
+            if not ref:
+                continue
+            val = os.environ.get(ref, "").strip()
+            if val:
+                return ref, val
+        return None, None
+    except Exception as exc:  # noqa: BLE001
+        log.debug("preflight: key_pool import failed (%s) — direct env fallback", exc)
+
+    # Fallback: direct env presence checks
+    try:
+        raw = os.environ.get("METAB_KEYS_ENABLED", "").strip()
+        if raw:
+            enabled_nums = {s.strip() for s in raw.split(",") if s.strip().isdigit()}
+        else:
+            enabled_nums = {str(i) for i in range(1, 8)}
+    except Exception:  # noqa: BLE001
+        enabled_nums = {str(i) for i in range(1, 8)}
+    for i in range(1, 8):
+        if str(i) not in enabled_nums:
+            continue
+        ref = f"CLAUDE_CODE_OAUTH_TOKEN_{i}"
+        val = os.environ.get(ref, "").strip()
+        if val:
+            return ref, val
+    return None, None
 
 
 def check_auth(
@@ -105,6 +156,11 @@ def check_auth(
     root: Path | None = None,
 ) -> dict[str, Any]:
     """Run the OAuth preflight health check.
+
+    Selects the first enabled+present+non-cooling pool key (CLAUDE_CODE_OAUTH_TOKEN_N)
+    via key_pool.  Sets that key's VALUE in the subprocess env copy only —
+    never logged, never written to disk.  Reports ref_name as the env NAME.
+    Falls back to absent-key behavior when no pool key is available.
 
     Parameters
     ----------
@@ -119,61 +175,46 @@ def check_auth(
     NEVER raises.
     """
     try:
-        # Step 1: resolve via capability broker (never reads the value)
         if root is not None:
             sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-        from engine.neuralweb.capability_broker import resolve, audit  # type: ignore[import]
 
-        result = resolve(_CAPABILITY_ID, lane, root=root)
-        if not result["allowed"]:
-            reason = f"capability_broker denied: {result['reason']}"
-            log.warning("preflight_claude_auth: %s", reason)
-            _notify_auth_failure(reason)
-            return {"auth_ok": False, "reason": reason, "ref_name": result.get("ref_name")}
+        # Step 1: pick the best pool key (never reads the legacy single token)
+        ref_name, token_value = _pick_pool_key(root=root)
 
-        ref_name: str = result["ref_name"]
-
-        # Step 2: verify the env-var is set (presence only — no value inspection)
-        token_value = os.environ.get(ref_name)
-        if not token_value:
+        if not ref_name or not token_value:
             reason = (
-                f"env var {ref_name!r} is not set in this environment. "
-                f"On the self-hosted runner it must be injected via GitHub Secrets."
+                "No enabled+present pool key found (CLAUDE_CODE_OAUTH_TOKEN_1..7). "
+                "Set at least one pool key in GitHub Secrets and enable it via METAB_KEYS_ENABLED."
             )
             log.warning("preflight_claude_auth: %s", reason)
             _notify_auth_failure(reason)
-            return {"auth_ok": False, "reason": reason, "ref_name": ref_name}
+            return {"auth_ok": False, "reason": reason, "ref_name": None}
 
-        # Step 3: cheapest-tier 1-token ping via claude CLI (subprocess, short timeout)
-        # We do NOT pass the token value as an argument — the subprocess inherits
-        # the environment (which already has the var set by the GH Actions runner).
-        auth_ok, ping_reason = _run_ping_check(ref_name)
+        # Step 2: cheapest-tier 1-token ping via claude CLI (subprocess, short timeout)
+        # The subprocess env receives CLAUDE_CODE_OAUTH_TOKEN set to the pool key's
+        # VALUE — in-process os.environ copy only, never logged or written.
+        auth_ok, ping_reason = _run_ping_check(ref_name, token_value=token_value)
 
         if not auth_ok:
             _notify_auth_failure(ping_reason)
-            # Audit the (failed) use attempt
-            try:
-                audit(_CAPABILITY_ID, lane, workflow="metabolism-preflight", root=root)
-            except Exception:  # noqa: BLE001
-                pass
             return {
                 "auth_ok": False,
                 "reason": ping_reason,
                 "ref_name": ref_name,
-                # Distinguish "binary absent" from "token dead" so SDK-channel
-                # callers can proceed on their own channel (see CLI_MISSING_PREFIX).
                 "cli_missing": ping_reason.startswith(CLI_MISSING_PREFIX),
             }
 
-        # Step 4: audit the successful use
+        # Step 3: audit the successful use via capability broker (best-effort)
         try:
-            audit(_CAPABILITY_ID, lane, workflow="metabolism-preflight", root=root)
+            from engine.neuralweb.capability_broker import audit  # type: ignore[import]
+            cap_id = "claude_code_oauth_" + ref_name.split("_")[-1]
+            audit(cap_id, lane, workflow="metabolism-preflight", root=root)
         except Exception:  # noqa: BLE001
             pass
 
         return {
             "auth_ok": True,
-            "reason": f"CLAUDE_CODE_OAUTH_TOKEN health check passed via {ref_name}",
+            "reason": f"OAuth pool key health check passed via {ref_name}",
             "ref_name": ref_name,
         }
 
@@ -187,26 +228,41 @@ def check_auth(
         return {"auth_ok": False, "reason": reason, "ref_name": None}
 
 
-def _run_ping_check(ref_name: str) -> tuple[bool, str]:
+def _run_ping_check(ref_name: str, *, token_value: str | None = None) -> tuple[bool, str]:
     """Execute the cheapest 1-token health ping.
 
     Returns (auth_ok, reason).  NEVER raises.
 
+    Parameters
+    ----------
+    ref_name : str
+        The env-var NAME of the key being probed (for logging; NOT the value).
+    token_value : str | None
+        When provided, sets CLAUDE_CODE_OAUTH_TOKEN=<value> in the subprocess
+        env copy only (in-process; never logged or written to disk).  The CLI
+        reads the CLAUDE_CODE_OAUTH_TOKEN env var for authentication.
+
     Strategy:
-      1. Try `claude -p '<prompt>'` via subprocess.
+      1. Try `claude -p '<prompt>'` via subprocess with a private env copy.
       2. On CalledProcessError / TimeoutExpired / FileNotFoundError → auth_ok=False.
       3. Non-zero exit → auth_ok=False with stderr snippet.
       4. Empty stdout → auth_ok=False (suggests expired/corrupt session).
       5. Any output → auth_ok=True (the session is alive).
     """
     try:
+        # Build a private env copy: inherit the current environment, then
+        # set CLAUDE_CODE_OAUTH_TOKEN to the chosen pool key's value so the
+        # CLI authenticates as that key (never passed as a CLI argument).
+        import copy as _copy  # noqa: PLC0415
+        subprocess_env = _copy.copy(os.environ.copy())
+        if token_value:
+            subprocess_env["CLAUDE_CODE_OAUTH_TOKEN"] = token_value
         result = subprocess.run(
             [resolve_claude_bin(), "-p", _PING_PROMPT],
             capture_output=True,
             text=True,
             timeout=_PING_TIMEOUT_S,
-            # Inherit env so the runner's CLAUDE_CODE_OAUTH_TOKEN is available.
-            # This is intentional: we need the subprocess to use the same creds.
+            env=subprocess_env,
         )
         if result.returncode != 0:
             stderr_snippet = result.stderr[:200] if result.stderr else "(no stderr)"

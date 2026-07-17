@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-07-15",
+  "asof": "2026-07-16",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -1435,7 +1435,7 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "up",
-        "asof": "2026-07-15",
+        "asof": "2026-07-16",
         "display_only": true,
         "source_lobe": "fx_dollar"
       }
@@ -1448,26 +1448,26 @@
         "subtype": "rates_transmission",
         "state": {
           "rates": {
-            "real_10y": 2.32,
+            "real_10y": 2.33,
             "real_10y_pctile": 0.98,
-            "real_10y_chg_63d_bp": 42.0,
-            "nominal_10y": 4.56,
-            "curve_2s10s": 0.36,
-            "curve_tp_adj": 0.36,
-            "policy_gap": 0.59,
+            "real_10y_chg_63d_bp": 43.0,
+            "nominal_10y": 4.58,
+            "curve_2s10s": 0.42,
+            "curve_tp_adj": 1.2,
+            "policy_gap": 0.55,
             "regime": "restrictive",
             "direction": "rising",
             "label": {
-              "en": "Real 10y 2.32% (restrictive, rising)",
-              "zh": "实际10年期 2.32%（偏紧）"
+              "en": "Real 10y 2.33% (restrictive, rising)",
+              "zh": "实际10年期 2.33%（偏紧）"
             }
           },
           "inflation": {
             "core_pce_yoy": 3.41,
-            "core_cpi_yoy": 2.96,
-            "headline_cpi_yoy": 4.27,
+            "core_cpi_yoy": 2.81,
+            "headline_cpi_yoy": 3.73,
             "core_pce_3m_ann": 3.52,
-            "ppi_core_yoy": 4.9,
+            "ppi_core_yoy": 4.68,
             "eci_comp_yoy": 3.43,
             "vs_target_pp": 1.41,
             "regime": "above target",
@@ -1478,15 +1478,15 @@
             }
           },
           "expectations": {
-            "breakeven_10y": 2.26,
+            "breakeven_10y": 2.23,
             "breakeven_5y5y": 2.21,
-            "model_5y": 2.54,
+            "model_5y": 2.42,
             "survey_1y": 4.8,
-            "market_minus_model_bp": -33.0,
-            "anchoring": "drifting down",
+            "market_minus_model_bp": -21.0,
+            "anchoring": "anchored",
             "label": {
-              "en": "5y5y breakeven 2.21% vs model 2.54% (drifting down)",
-              "zh": "5年5年盈亏平衡 2.21% vs 模型 2.54%（下行）"
+              "en": "5y5y breakeven 2.21% vs model 2.42% (anchored)",
+              "zh": "5年5年盈亏平衡 2.21% vs 模型 2.42%（锚定）"
             }
           }
         },
@@ -1494,8 +1494,8 @@
           "en": "Display-only. Scored-leg gate: NO rate/inflation leg passed the forward-drawdown bar with purged-CV robustness (see reports/rate-inflation-transmission-calibration.md).",
           "zh": "仅供展示。可计分腿检验：没有任何利率/通胀腿通过前瞻回撤门槛并满足清洗交叉验证稳健性（详见校准报告）。"
         },
-        "yield_curve_regime": "bear_flattener",
-        "asof": "2026-07-13",
+        "yield_curve_regime": "bear_steepener",
+        "asof": "2026-07-15",
         "display_only": true,
         "source_lobe": "rates_transmission"
       }
@@ -1508,8 +1508,8 @@
         "subtype": "rates_credit",
         "health_label": "healthy",
         "cycle_phase": "late",
-        "recession_risk": 4.677539465537072,
-        "asof": "2026-07-13",
+        "recession_risk": 4.672700131429446,
+        "asof": "2026-07-15",
         "display_only": true,
         "source_lobe": "rates_credit"
       }
@@ -1540,7 +1540,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-14",
+        "asof": "2026-07-15",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1555,7 +1555,7 @@
         "quad_name": "Stagflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-14",
+        "asof": "2026-07-15",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1570,7 +1570,7 @@
         "quad_name": "Stagflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-14",
+        "asof": "2026-07-15",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1585,7 +1585,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-13",
+        "asof": "2026-07-15",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -13854,6 +13854,56 @@
       "note": "structural: site/leaderradar/radar.json consumed by scripts/build_site.py"
     },
     {
+      "src": "module:scripts/build_stance_matrix.py",
+      "dst": "artifact:site-stance-matrix",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stance_matrix.py writes site/mlcdata/stance_matrix.json"
+    },
+    {
+      "src": "artifact:site-stance-matrix",
+      "dst": "module:templates/baskets.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/mlcdata/stance_matrix.json consumed by templates/baskets.html.j2"
+    },
+    {
+      "src": "artifact:site-stance-matrix",
+      "dst": "module:templates/baskets_desk.js",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/mlcdata/stance_matrix.json consumed by templates/baskets_desk.js"
+    },
+    {
+      "src": "artifact:site-stance-matrix",
+      "dst": "module:templates/allocation.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/mlcdata/stance_matrix.json consumed by templates/allocation.html.j2"
+    },
+    {
+      "src": "artifact:site-stance-matrix",
+      "dst": "module:templates/_leadership_board.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/mlcdata/stance_matrix.json consumed by templates/_leadership_board.html.j2"
+    },
+    {
       "src": "module:scripts/build_leader_radar.py",
       "dst": "artifact:leader-radar-state-history",
       "edge_type": "feeds",
@@ -14554,6 +14604,66 @@
       "note": "structural: engine/credit_momentum.py writes data/corp_bonds/forward_log.jsonl"
     },
     {
+      "src": "module:scripts/build_sector_central.py",
+      "dst": "artifact:site-sector-central",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_sector_central.py writes site/sectordata/sector_central.json"
+    },
+    {
+      "src": "artifact:site-sector-central",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/sectordata/sector_central.json consumed by scripts/build_site.py"
+    },
+    {
+      "src": "artifact:site-sector-central",
+      "dst": "module:scripts/build_stance_matrix.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/sectordata/sector_central.json consumed by scripts/build_stance_matrix.py"
+    },
+    {
+      "src": "artifact:site-sector-central",
+      "dst": "module:engine/theme_scoring.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/sectordata/sector_central.json consumed by engine/theme_scoring.py"
+    },
+    {
+      "src": "artifact:site-sector-central",
+      "dst": "module:engine/group_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/sectordata/sector_central.json consumed by engine/group_context.py"
+    },
+    {
+      "src": "module:scripts/build_china_sector_central.py",
+      "dst": "artifact:site-china-sector-central",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_china_sector_central.py writes site/chinasectordata/sector_central.json"
+    },
+    {
       "src": "site/intelligence/by_ticker.json (demand/tape)",
       "dst": "site/intelligence/briefing.json",
       "edge_type": "contradicts",
@@ -14562,6 +14672,16 @@
       "display_only": true,
       "regime": null,
       "note": "pair_id=briefing-divergences kind=directional-opposition severity=note a=1 ticker-level demand-vs-supply divergences b=n_divergences=1, top tickers=['NVDA']"
+    },
+    {
+      "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
+      "dst": "data/regime/latest.json:regime (equity)",
+      "edge_type": "contradicts",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "pair_id=cross_asset_confirm-diverge kind=directional-opposition severity=tension a=bonds+FX cross-asset leg readings b=cross_asset_confirm verdict=diverge, agree_pct=50"
     },
     {
       "src": "engine:altdata",
@@ -14688,7 +14808,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLB net=-0.4 verdict=headwind source_lobe=rates_transmission asof=2026-07-13"
+      "note": "rates headwind: asset=XLB net=-0.448 verdict=headwind source_lobe=rates_transmission asof=2026-07-15"
     },
     {
       "src": "macro:rates_transmission",
@@ -14698,26 +14818,28 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.392 verdict=headwind source_lobe=rates_transmission asof=2026-07-13"
+      "note": "rates headwind: asset=XLK net=-0.391 verdict=headwind source_lobe=rates_transmission asof=2026-07-15"
     },
     {
       "src": "macro:rates_transmission",
-      "dst": "sector:xlv",
+      "dst": "sector:xlf",
       "edge_type": "headwind",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLV net=-0.368 verdict=headwind source_lobe=rates_transmission asof=2026-07-13"
+      "note": "rates headwind: asset=XLF net=-0.368 verdict=headwind source_lobe=rates_transmission asof=2026-07-15"
     }
   ],
   "contradiction_summary": {
-    "n": 1,
+    "n": 2,
     "by_severity": {
-      "note": 1
+      "note": 1,
+      "tension": 1
     },
     "top_pair_ids": [
-      "briefing-divergences"
+      "briefing-divergences",
+      "cross_asset_confirm-diverge"
     ]
   },
   "contradiction_records": [
@@ -14733,8 +14855,24 @@
       },
       "kind": "directional-opposition",
       "severity": "note",
-      "as_of": "2026-07-15",
+      "as_of": "2026-07-16",
       "note": "1 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: NVDA.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "display_only": true
+    },
+    {
+      "pair_id": "cross_asset_confirm-diverge",
+      "a": {
+        "artifact": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
+        "reading": "bonds+FX cross-asset leg readings"
+      },
+      "b": {
+        "artifact": "data/regime/latest.json:regime (equity)",
+        "reading": "cross_asset_confirm verdict=diverge, agree_pct=50"
+      },
+      "kind": "directional-opposition",
+      "severity": "tension",
+      "as_of": "2026-07-16",
+      "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
       "display_only": true
     }
   ],
@@ -14755,7 +14893,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-16T07:45:11Z",
-  "inputs_hash": "sha256:511f7dd1685e3cc4710e79a4e8a940a7dba188fa92c656b6339b3171ed24d8ee",
+  "produced_at": "2026-07-17T03:53:20Z",
+  "inputs_hash": "sha256:834fc55061a3d1bfcb138b7062d442784f7618e6f05b31f5c7776a439a131d58",
   "tier": "display"
 }

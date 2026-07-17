@@ -173,11 +173,14 @@ def _xjson(text: str):
 # --------------------------------------------------------------------------- #
 # batch summarise + score
 # --------------------------------------------------------------------------- #
-def _summarise_batch_raw(items: list[dict], client, model: str) -> dict[int, dict]:
+def _summarise_batch_raw(items: list[dict], client, model: str):
     """One model call for up to len(items) headlines. items: [{i,title,blurb}].
-    Returns {i: {summary, importance, tone}}. Raises on auth errors (so
-    llm_auth.make_call can detect 401 and trigger provider fallback); degrades
-    to {} on other failures."""
+    Returns (results_dict, resp) where results_dict = {i: {summary, importance, tone}}.
+    Raises on auth errors (so llm_auth.make_call can detect 401 and trigger provider
+    fallback); degrades to ({}, None) on other non-auth failures.
+    The resp object is returned so the caller can pass it back via the 3-tuple
+    make_call contract for usage capture.
+    """
     lines = []
     for it in items:
         blurb = (it.get("blurb") or "").strip()
@@ -191,11 +194,11 @@ def _summarise_batch_raw(items: list[dict], client, model: str) -> dict[int, dic
         model=model, max_tokens=max_tok, system=SYSTEM,
         messages=[{"role": "user", "content": user}])
     if getattr(resp, "stop_reason", "") == "refusal":
-        return {}
+        return {}, resp
     text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
     parsed = _xjson(text)
     if not isinstance(parsed, list):
-        return {}
+        return {}, resp
     out: dict[int, dict] = {}
     for row in parsed:
         if not isinstance(row, dict) or "i" not in row:
@@ -212,7 +215,7 @@ def _summarise_batch_raw(items: list[dict], client, model: str) -> dict[int, dic
         tone = str(row.get("tone", "neutral")).lower()
         tone = tone if tone in ("pos", "neg", "neutral") else "neutral"
         out[idx] = {"summary": summ, "importance": imp, "tone": tone}
-    return out
+    return out, resp
 
 
 # backward-compat alias (tests may import _summarise_batch directly)
@@ -242,7 +245,10 @@ def annotate(headlines: list[dict], batch_size: int | None = None,
     from engine import llm_auth
     haiku = _classify_model()
     ds_model = cfg.get("deepseek_model", DEFAULT_DEEPSEEK)
-    providers = llm_auth.build_providers(cfg, opus_model=haiku, deepseek_model=ds_model)
+    cfg_aug = {**cfg,
+               "oauth_pool_lane": cfg.get("oauth_pool_lane", "news-llm"),
+               "usage_lane": cfg.get("usage_lane", "news-llm")}
+    providers = llm_auth.build_providers(cfg_aug, opus_model=haiku, deepseek_model=ds_model)
     if not providers:
         return headlines
 
@@ -260,7 +266,8 @@ def annotate(headlines: list[dict], batch_size: int | None = None,
                  for gi, h in batch]
 
         def _do_call(client, model: str):
-            return _summarise_batch_raw(items, client, model), None
+            result_dict, resp = _summarise_batch_raw(items, client, model)
+            return result_dict, None, resp
 
         try:
             raw_res, _, pused = llm_auth.make_call(providers, _do_call, context="news_llm")

@@ -49,7 +49,12 @@ _WRITE_LOCK = threading.Lock()
 # ------------------------------------------------------------------ keys ------
 
 FIRE_KEY = ("engine_id", "ticker", "fire_date")
-GRADE_KEY = ("engine_id", "ticker", "fire_date", "horizon")
+# GRADE_KEY includes 'kind' so path rows (kind='path') and return rows
+# (kind='ret') at the same horizon co-exist without being deduped against each
+# other. Legacy rows written before kind was added default to kind=None in the
+# ledger; keep_first treats (engine_id, ticker, fire_date, horizon, None) as a
+# distinct key from (…, 'ret') — they are different rows and both survive.
+GRADE_KEY = ("engine_id", "ticker", "fire_date", "horizon", "kind")
 
 # ------------------------------------------------------------------ schema ----
 

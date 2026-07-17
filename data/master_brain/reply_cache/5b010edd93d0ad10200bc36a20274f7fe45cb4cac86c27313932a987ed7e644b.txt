@@ -1,0 +1,25 @@
+{
+  "regime_context": "China A-shares thematic detector shows AI Compute & Optics leading with a durable trend, but the absolute-trend gate did not reduce historical drawdown; no validated alpha edge exists. Rotation breadth is narrow (32% eligible) and no single narrative dominates. Views are low-conviction and entirely conditional.",
+  "theses": [
+    {
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The theme has the highest momentum rank, strong trend durability (0.66), and no crowding. It is the confirmed rotation leader with a moderate margin over Semiconductors. The macro backdrop is coincidentally heavy on AI tech, but the trend gate's historical failure in this market caps conviction.",
+      "evidence": [
+        "rank_1_score_2.583",
+        "durability_bar_0.66",
+        "hurst_tag_trend",
+        "eligible_true",
+        "crowded_false",
+        "rotation_leader",
+        "macro_narrative_ai_tech_dominant"
+      ],
+      "dissent": "The absolute-trend gate did not reduce drawdown in China A-shares historically; mean-reversion could abruptly unwind. Breadth is only 0.41, suggesting narrow leadership.",
+      "falsifier_text": "If the theme’s durability bar falls below 0.5 or the ETF (515000.SS) closes below its 50-day moving average for three consecutive sessions."
+    }
+  ],
+  "emerging_watch": "Semiconductors: if its momentum score overtakes AI Compute & Optics AND its breadth holds above 0.5, a confirmed handoff may be forming. Kill-criterion: margin over AI Compute widens back above 0.8 or Semiconductors loses trend eligibility.",
+  "confidence": "low"
+}

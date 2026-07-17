@@ -185,6 +185,20 @@
     if (!word) return;
     var disp = d.display || {};
     if (!disp.verdict) return;
+    /* Stale-feed guard: display.verdict is the SERVER-debounced band word — it needs
+       2 consecutive live ticks to flip, so after a nightly band flip it sits stale for
+       a whole closed session (2026-07-16: green "Risk-on" painted over a correctly
+       baked "Mixed" while live AND nightly both said MIXED). When the feed is not live
+       and the debounced word disagrees with the nightly verdict, key the WORD / color /
+       copy off the nightly read instead — the header invariant ("otherwise the page
+       keeps the nightly server-rendered read") — while the score numeral and as-of
+       dates below still patch. */
+    if ((d.stale === true || !d.live_active) && d.nightly && d.nightly.verdict &&
+        disp.verdict !== d.nightly.verdict) {
+      var ntl = d.nightly;
+      disp = { verdict: ntl.verdict, label_en: ntl.label_en, label_zh: ntl.label_zh,
+               color: ntl.color, score: disp.score };
+    }
     if (bakedLabelEn === null) {
       var b0 = document.querySelector(".mx5-verdict-word .l-en");
       bakedLabelEn = b0 ? b0.textContent.trim() : "";

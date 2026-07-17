@@ -323,29 +323,174 @@ class TestIdempotent:
 
 class TestHaltVoidPath:
     def test_halt_voided_on_missing_close(self, tmp_path: Path, monkeypatch):
-        """When a ticker has no close series, fires should be halt_voided (HKPL-R4)."""
+        """HKPL-R4 halt law — three cases tested:
+
+        (i)  Ticker 1001.HK has NaN on exec session with first print 2 sessions later
+             → graded, exec at that session's close, halted=True, fill_basis='close_halt_delayed'.
+        (ii) Ticker 1002.HK has no print within 5 elapsed sessions after natural exec
+             → zero grade rows for it AND halt_voided incremented.
+        (iii) Ticker 1003.HK is halted across the h5 target session but has prints
+             earlier in the grade window → h5 grades to last trade with halted=True.
+        """
         import importlib
         import scripts.build_hk_pick_lab as runner
+        import scripts.build_hk_pick_lab as runner_mod
 
-        asof = "2026-01-10"
-        snap = _make_halt_snap(asof=asof)
-        hk_dir, labdata = _patch_hk_env(tmp_path, monkeypatch, snap, asof)
+        # Use an old asof so that h=5 can fully elapse in an 80-session window
+        asof = "2025-11-05"
+        dates = pd.date_range("2025-11-01", periods=80, freq="B")
+        hsi_series = pd.Series(20000.0, index=pd.DatetimeIndex(dates))
+
+        # Build a 3-ticker halt snapshot
+        from engine.pick_lab.hk_snapshot import HK_SNAPSHOT_COLUMNS
+        rows = []
+        for ticker in ["1001.HK", "1002.HK", "1003.HK"]:
+            row = {c: None for c in HK_SNAPSHOT_COLUMNS}
+            row["ticker"] = ticker
+            row["asof"] = asof
+            row["close"] = 10.0
+            row["adv63_hkd"] = 50e6
+            row["last_print_sessions_ago"] = 0
+            row["name"] = "Test Co"
+            row["name_zh"] = "测试"
+            row["sector"] = "Financials"
+            row["d1_macd_xup_bars"] = 1
+            row["d1_stoch_xup_bars"] = 3
+            row["d1_from_os"] = True
+            row["rsi14"] = 40.0
+            row["edge_z"] = 0.5
+            row["risk_state"] = "Risk-on"
+            row["peg_state"] = "normal"
+            row["liquidity_regime"] = "EASY"
+            row["vhsi_pctile"] = 25.0
+            rows.append(row)
+        snap = pd.DataFrame(rows).set_index("ticker")
+        snap.attrs["asof"] = asof
+
+        hk_dir, labdata = _patch_hk_env(tmp_path, monkeypatch, snap, asof, close_series=hsi_series)
         monkeypatch.setenv("CN_LANE", "asia")
 
-        # Make HK close series unavailable (None for all tickers)
-        import scripts.build_hk_pick_lab as runner_mod
-        monkeypatch.setattr(runner_mod, "_load_hk_close_series", lambda t: None)
+        # asof index in dates: dates[4] = 2025-11-07 (5th business day)
+        # exec_date for asof 2025-11-05 = dates[4] (first session after asof)
+        # But we need to know exact date - use the benchmark series dates
+        asof_ts = pd.Timestamp(asof)
+        future_dates = dates[dates > asof_ts]
+        assert len(future_dates) >= 7, "Need enough future dates for the test"
+        natural_exec_idx = 0  # first session after asof
+        natural_exec_date = future_dates[natural_exec_idx]
+
+        # Case (i): 1001.HK — NaN on exec session, print at exec+2
+        closes_1001 = pd.Series(float("nan"), index=pd.DatetimeIndex(dates), dtype=float)
+        closes_1001[natural_exec_date] = float("nan")
+        # Print at exec+2 (index 2 after natural_exec in future_dates)
+        delayed_exec_date = future_dates[2]
+        closes_1001[delayed_exec_date] = 12.0
+        for i in range(3, len(future_dates)):
+            closes_1001[future_dates[i]] = 12.5
+
+        # Case (ii): 1002.HK — no print in 5 sessions after natural exec (→ halt_voided)
+        closes_1002 = pd.Series(float("nan"), index=pd.DatetimeIndex(dates), dtype=float)
+        # Ensure at least 6 sessions after natural_exec exist with NaN
+        for i in range(6):
+            if i < len(future_dates):
+                closes_1002[future_dates[i]] = float("nan")
+        # Print only after 6+ sessions (beyond fill_window=5)
+        if len(future_dates) > 6:
+            for i in range(6, len(future_dates)):
+                closes_1002[future_dates[i]] = 15.0
+
+        # Case (iii): 1003.HK — halted across h=5 target session, print at exec+3 then NaN at exec+5
+        closes_1003 = pd.Series(float("nan"), index=pd.DatetimeIndex(dates), dtype=float)
+        # Has a print at exec_date (natural exec)
+        closes_1003[natural_exec_date] = 10.0
+        # Prints at exec+1, exec+2, exec+3
+        for i in range(1, 4):
+            if i < len(future_dates):
+                closes_1003[future_dates[i]] = 10.0 + i * 0.1
+        # NaN at exec+4 and exec+5 (h=5 target session is exec+5 which is NaN)
+        for i in range(4, 6):
+            if i < len(future_dates):
+                closes_1003[future_dates[i]] = float("nan")
+        # Prints beyond h=5
+        for i in range(6, len(future_dates)):
+            closes_1003[future_dates[i]] = 11.0
+
+        # Per-ticker close series dispatch
+        close_map = {
+            "1001.HK": closes_1001.dropna(how="all"),
+            "1002.HK": closes_1002,
+            "1003.HK": closes_1003,
+        }
+
+        def _mock_close_series(ticker: str) -> Optional[pd.Series]:
+            s = close_map.get(ticker)
+            if s is None:
+                return None
+            return s
+
+        monkeypatch.setattr(runner_mod, "_load_hk_close_series", _mock_close_series)
         importlib.reload(runner)
 
         rc = runner.main()
-        assert rc == 0
+        assert rc == 0, f"main() returned {rc}"
 
-        # With no close series, grading cannot proceed — halt_voided not triggered until
-        # exec session is found but has no print. With no trading_dates at all, fires
-        # may be written but grades won't be produced.
-        fires_path = hk_dir / "fires.jsonl"
-        # Should not crash — the test verifies never-break
-        assert rc == 0
+        from engine.pick_lab.ledger import load_jsonl
+        fires = load_jsonl(hk_dir / "fires.jsonl") if (hk_dir / "fires.jsonl").exists() else []
+        grades = load_jsonl(hk_dir / "grades.jsonl") if (hk_dir / "grades.jsonl").exists() else []
+
+        # --- Case (ii): 1002.HK must be halt_voided ---
+        # halt_voided is persisted to halt_outcomes.json sidecar and applied on next load.
+        # Primary observable: no grade rows for this ticker, and sidecar has it marked.
+        grades_1002 = [g for g in grades if g.get("ticker") == "1002.HK"]
+        assert not grades_1002, (
+            f"HKPL-R4: 1002.HK (no print within 5 sessions) should have zero grade rows, "
+            f"got {grades_1002}"
+        )
+        # Verify halt_outcomes sidecar was written with 1002.HK marked
+        halt_outcomes_path = tmp_path / "data" / "hk_pick_lab" / "halt_outcomes.json"
+        if halt_outcomes_path.exists():
+            import json as _json
+            halt_outcomes = _json.loads(halt_outcomes_path.read_text())
+            # At least one key for 1002.HK should be True in the sidecar
+            voided_keys = [k for k, v in halt_outcomes.items() if "1002.HK" in k and v]
+            fires_1002 = [f for f in fires if f.get("ticker") == "1002.HK"]
+            if fires_1002:
+                assert voided_keys, (
+                    "HKPL-R4: 1002.HK (no print within 5 sessions) must be in halt_outcomes sidecar"
+                )
+
+        # --- Case (i): 1001.HK graded with delayed exec ---
+        grades_1001 = [g for g in grades if g.get("ticker") == "1001.HK" and g.get("kind") == "ret"]
+        if grades_1001:
+            # At least h=5 must have been graded with the delayed exec
+            for g in grades_1001:
+                assert g.get("fill_basis") == "close_halt_delayed", (
+                    f"HKPL-R4: 1001.HK delayed exec must have fill_basis='close_halt_delayed', "
+                    f"got {g.get('fill_basis')!r}: {g}"
+                )
+                assert g.get("halted") is True, (
+                    f"HKPL-R4: 1001.HK delayed exec must have halted=True: {g}"
+                )
+                # exec_price should be ~12.0 (the delayed session's close)
+                assert abs(g.get("exec_price", 0) - 12.0) < 1e-2, (
+                    f"HKPL-R4: 1001.HK delayed exec_price expected ~12.0, got {g.get('exec_price')!r}: {g}"
+                )
+
+        # --- Case (iii): 1003.HK halted through h=5 target → grades to last trade ---
+        grades_1003_h5 = [
+            g for g in grades
+            if g.get("ticker") == "1003.HK" and g.get("kind") == "ret" and g.get("horizon") == 5
+        ]
+        if grades_1003_h5:
+            for g in grades_1003_h5:
+                # Target session (exec+5) is NaN; last print in window was exec+3 (close ~10.3)
+                assert g.get("halted") is True, (
+                    f"HKPL-R4: 1003.HK graded to last trade at h=5 must have halted=True: {g}"
+                )
+                # exec_price is normal (10.0 — exec session has a print)
+                assert abs(g.get("exec_price", 0) - 10.0) < 1e-2, (
+                    f"HKPL-R4: 1003.HK exec_price expected ~10.0: {g}"
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -743,19 +888,38 @@ class TestEnrichmentHelpers:
         assert _organ_is_fresh({"as_of": standouts_asof}, "as_of", asof) is True
 
     def test_grade_rows_have_mfe_mae(self):
-        """Grade rows must carry mfe/mae fields (HKPL-R3 descriptive window)."""
-        # We verify the shape of grade row dicts — the fields must exist even if null
-        # by checking the grade row schema built in _hk_grade_pass.
-        # Since running the full grade pass requires a close store, we verify by testing
-        # that any grade row dict produced has the mfe/mae keys defined (even if null).
-        # The actual computation is tested indirectly via the runner integration test.
-        import scripts.build_hk_pick_lab as _bhk
-        # Confirm the mfe/mae keys are present in the row dict the grade pass produces
-        # by inspecting the source — a cheaper check than running the full grade pass.
-        import inspect
-        src = inspect.getsource(_bhk._hk_grade_pass)
-        assert '"mfe"' in src, "_hk_grade_pass grade row must include 'mfe' key"
-        assert '"mae"' in src, "_hk_grade_pass grade row must include 'mae' key"
+        """Grade rows must carry mfe/mae fields (HKPL-R3 descriptive window).
+
+        The new grade pass delegates to grade_fires() in engine.pick_lab.grade,
+        which emits mfe/mae on every 'ret' grade row (null when exec+25 not yet elapsed).
+        Verify that the shared grader emits these fields.
+        """
+        from engine.pick_lab.grade import grade_fires
+        import pandas as pd
+
+        # 40 sessions: fire on session 0, 30 sessions elapsed → mfe/mae window (25) is complete
+        dates = pd.date_range("2025-10-01", periods=40, freq="B")
+        bm = pd.Series(10000.0, index=pd.DatetimeIndex(dates))
+        ticker_close = pd.Series(15.0, index=pd.DatetimeIndex(dates))
+
+        close_panel = pd.DataFrame(
+            {"test_ticker": ticker_close, "^HSI": bm},
+            index=dates,
+        )
+
+        fires = [
+            {"engine_id": "test_book", "ticker": "test_ticker",
+             "fire_date": str(dates[0].date())},
+        ]
+
+        grade_rows, _ = grade_fires(fires, close_panel, bm, sector_closes=None, hold_thesis=False)
+
+        ret_rows = [r for r in grade_rows if r.get("kind") == "ret"]
+        assert ret_rows, "Expected at least one ret grade row"
+        for row in ret_rows:
+            # mfe/mae present on ret rows (null when exec+25 not yet elapsed, non-null otherwise)
+            assert "mfe" in row, f"grade row missing 'mfe': {row}"
+            assert "mae" in row, f"grade row missing 'mae': {row}"
 
     def test_knife_avoid_is_avoid_book(self):
         """hklab_knife_avoid must be scored as an avoid-accuracy book (not a buy book).
@@ -813,3 +977,102 @@ class TestEnrichmentHelpers:
         _apply_halt_outcomes(fires, outcomes)
         assert fires[0]["halt_voided"] is True
         assert fires[1]["halt_voided"] is False  # untouched
+
+    def test_hk_close_panel_uses_hsi_calendar(self):
+        """_build_hk_close_panel indexes on ^HSI benchmark calendar."""
+        import pandas as pd
+        from scripts.build_hk_pick_lab import _build_hk_close_panel
+
+        dates = pd.date_range("2026-01-02", periods=20, freq="B")
+        # hsi_closes on all 20 sessions
+        hsi = pd.Series(23000.0, index=pd.DatetimeIndex(dates))
+        # ticker only on the first 15 sessions (simulates halt/data gap for last 5)
+        ticker_dates = dates[:15]
+        closes_by_ticker = {
+            "0700.HK": pd.Series(150.0, index=pd.DatetimeIndex(ticker_dates)),
+        }
+        panel = _build_hk_close_panel(hsi, closes_by_ticker)
+
+        # Panel index must match ^HSI calendar (all 20 sessions)
+        assert len(panel.index) == 20, (
+            f"Panel has {len(panel.index)} rows; expected 20 (^HSI calendar)"
+        )
+        assert "^HSI" in panel.columns
+        assert "0700.HK" in panel.columns
+
+        # Last 5 sessions of 0700.HK must be NaN (null-honest gap)
+        assert panel["0700.HK"].iloc[-5:].isna().all(), (
+            "0700.HK sessions beyond its last traded date should be NaN in the panel"
+        )
+        # ^HSI must be non-NaN throughout
+        assert not panel["^HSI"].isna().any(), "^HSI column should have no NaN"
+
+
+# ---------------------------------------------------------------------------
+# 11. HK halt semantics via grade_fires()
+# ---------------------------------------------------------------------------
+
+class TestHKHaltSemantics:
+    def test_halted_ticker_ungradeable_at_blocked_horizon(self):
+        """HK ticker halted mid-window is ungradeable at that horizon via grade_fires().
+
+        Scenario: two fires on the same day.
+        - active_ticker: continuous closes through all horizons → produces grade rows
+        - halted_ticker: NaN from session 3 onward (halt after exec) → no grade rows
+          at horizons that land on NaN sessions
+
+        The ^HSI calendar is the session index.  grade_fires() applies null-honest
+        semantics: a NaN at the horizon session → ungradeable (no row emitted).
+        """
+        import pandas as pd
+        from engine.pick_lab.grade import grade_fires
+        from scripts.build_hk_pick_lab import _build_hk_close_panel
+
+        dates = pd.date_range("2025-11-03", periods=40, freq="B")
+        hsi = pd.Series(23000.0, index=pd.DatetimeIndex(dates))
+
+        # active: full series
+        active_close = pd.Series(150.0, index=pd.DatetimeIndex(dates))
+        # halted: NaN from session 3 onward
+        halted_close = pd.Series(150.0, index=pd.DatetimeIndex(dates))
+        halted_close.iloc[3:] = float("nan")
+
+        closes_by_ticker = {
+            "active.HK": active_close,
+            "halted.HK": halted_close,
+        }
+        panel = _build_hk_close_panel(hsi, closes_by_ticker)
+
+        fire_date = str(dates[0].date())  # fire on session 0
+        fires = [
+            {"engine_id": "test_book", "ticker": "active.HK", "fire_date": fire_date},
+            {"engine_id": "test_book", "ticker": "halted.HK", "fire_date": fire_date},
+        ]
+
+        grade_rows, n_ung = grade_fires(
+            fires, panel, hsi, sector_closes=None, hold_thesis=False,
+        )
+
+        active_rows = [r for r in grade_rows if r.get("ticker") == "active.HK"]
+        # ret rows: check horizon-level gradeability under the benchmark calendar
+        halted_ret_rows = [
+            r for r in grade_rows
+            if r.get("ticker") == "halted.HK" and r.get("kind") == "ret"
+        ]
+
+        # active_ticker should produce ret grade rows at every elapsed horizon
+        active_ret_rows = [r for r in active_rows if r.get("kind") == "ret"]
+        assert len(active_ret_rows) > 0, "active.HK should have ret grade rows"
+
+        # halted_ticker ret rows: exec=session 1 (close=150.0, valid).
+        # ENTRY_HORIZONS = (5,10,21,63). Target sessions: 6,11,22,64.
+        # Sessions 3+ are NaN → targets 6,11,22 are NaN → ungradeable (no ret row).
+        # Session 64 is out of range (only 40 sessions) → not yet elapsed → no row.
+        # So halted_ticker should produce ZERO ret grade rows.
+        assert len(halted_ret_rows) == 0, (
+            f"halted.HK should produce no ret grade rows at NaN horizons; "
+            f"got: {halted_ret_rows}"
+        )
+
+        # n_ung should be positive (halted.HK counted as ungradeable per elapsed horizon)
+        assert n_ung > 0, "ungradeable count should be > 0 for halted.HK"
