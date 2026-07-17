@@ -107,6 +107,8 @@ _LLM_CFG: dict[str, Any] = {
     "deepseek_model": "deepseek-chat",
     "deepseek_base_url": "https://api.deepseek.com/anthropic",
     "max_tokens": 6000,
+    "oauth_pool_lane": "metabolism-standout",
+    "usage_lane": "metabolism-standout",
 }
 
 # SA-R13 verbatim — LOOP-IMMUTABLE (do not modify without operator PR)
@@ -826,7 +828,7 @@ def _invoke_auditor_llm(
 
             max_tokens = int(conf.get("max_tokens", 6000))
 
-            def _do_call(client: Any, model: str) -> tuple[str | None, str | None]:
+            def _do_call(client: Any, model: str) -> tuple:
                 resp = client.messages.create(
                     model=model,
                     max_tokens=max_tokens,
@@ -835,11 +837,11 @@ def _invoke_auditor_llm(
                     # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
                 )
                 if getattr(resp, "stop_reason", None) == "refusal":
-                    return None, "stop_refusal"
+                    return None, "stop_refusal", resp
                 text = "".join(
                     b.text for b in resp.content if getattr(b, "type", "") == "text"
                 )
-                return (text or None), None
+                return (text or None), None, resp
 
             text, reason, provider = llm_auth.make_call(
                 providers, _do_call, context="standout_auditor"

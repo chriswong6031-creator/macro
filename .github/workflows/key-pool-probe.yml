@@ -77,6 +77,7 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
         run: python -m scripts.key_pool_probe
       - name: write budget status snapshot
         env:
@@ -89,6 +90,7 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
           CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
         run: python -m engine.metabolism.budget_gate --mode manual --write-status 2>/dev/null || true
       - name: narrow-commit key_budget_status.json
         env:

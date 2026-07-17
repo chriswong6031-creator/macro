@@ -230,7 +230,7 @@ def _oauth_pool_candidates(lane: str) -> list[tuple[str, str]]:
         return []
 
 
-def _note_pool_success(p: dict, context: str) -> None:
+def _note_pool_success(p: dict, context: str, est_tokens: int = 0) -> None:
     """Record a successful session for a pool-backed provider (resolves any
     stale cooling row).  No-op for non-pool providers.  NEVER raises."""
     cap_id = p.get("cap_id")
@@ -238,7 +238,7 @@ def _note_pool_success(p: dict, context: str) -> None:
         return
     try:
         from engine.neuralweb.key_pool import record_session
-        record_session(cap_id, est_tokens=0, stage=context or "llm", outcome="ok")
+        record_session(cap_id, est_tokens=est_tokens, stage=context or "llm", outcome="ok")
     except Exception as exc:  # noqa: BLE001
         log.debug("llm_auth: record_session(%s) failed: %s", cap_id, exc)
 
@@ -319,13 +319,24 @@ def make_call(
 
         any_tried = True
         try:
-            text, reason = call_fn(client, model)
+            result = call_fn(client, model)
+            text, reason = result[0], result[1]
             # Success path
             if last_auth_reason or saw_rate_limit or last_exc is not None:
                 # We fell back from at least one failed provider; surface that
                 log.info("llm_auth[%s]: provider '%s' (env=%s) served after fallback",
                          context, name, env_var)
-            _note_pool_success(p, context)
+            # --- usage capture (NEVER-RAISE) -----------------------------------
+            # call_fn may return a 3-tuple (text, reason, resp) where resp is the
+            # raw SDK response object (has .usage attribute).  Existing callers
+            # return 2-tuples; they are unaffected (len check is backward-compat).
+            _resp_obj = result[2] if len(result) > 2 else None
+            _usage_obj = getattr(_resp_obj, "usage", None) if _resp_obj is not None else None
+            _capture_usage(p, _usage_obj, context)
+            # -------------------------------------------------------------------
+            in_tok = int(getattr(_usage_obj, "input_tokens", 0) or 0)
+            out_tok = int(getattr(_usage_obj, "output_tokens", 0) or 0)
+            _note_pool_success(p, context, est_tokens=in_tok + out_tok)
             return text, reason, name
         except Exception as exc:  # noqa: BLE001
             if _is_auth_error(exc):
@@ -371,6 +382,82 @@ def make_call(
     if last_auth_reason:
         return None, "auth_invalid_all", None
     return None, "no_provider", None
+
+
+# --------------------------------------------------------------------------- #
+# Usage capture helper (called on every successful make_call)
+# --------------------------------------------------------------------------- #
+
+def _capture_usage(p: dict, usage_obj, context: str) -> None:
+    """Record one AI usage row to lib.ai_costs.  NEVER raises.
+
+    Parameters
+    ----------
+    p:          provider descriptor (has "name", "cap_id", and optional
+                "usage_lane", "usage_cycle_id", "usage_stage" injected by
+                build_providers callers via the cfg dict that built it).
+    usage_obj:  raw anthropic Usage object (or None).  Expected attributes:
+                input_tokens, output_tokens, cache_read_input_tokens,
+                cache_creation_input_tokens — all optional (getattr, default 0).
+    context:    the make_call context string (used as stage fallback).
+    """
+    try:
+        # When the SDK returns no usage object (2-tuple legacy path), skip the
+        # ledger write entirely — a zero-token row is noise and creates
+        # metabolism duplicates when propose/adjudicate also record directly.
+        if usage_obj is None:
+            return
+
+        in_tok = int(getattr(usage_obj, "input_tokens", 0) or 0)
+        out_tok = int(getattr(usage_obj, "output_tokens", 0) or 0)
+        cr_tok = int(getattr(usage_obj, "cache_read_input_tokens", 0) or 0)
+        cc_tok = int(getattr(usage_obj, "cache_creation_input_tokens", 0) or 0)
+
+        name = p.get("name", "unknown")
+        # Map provider name → provider vocabulary
+        if name in ("oauth",):
+            ai_provider = "claude_oauth"
+            cost_basis = "subscription"
+        elif name == "anthropic":
+            ai_provider = "claude_api"
+            cost_basis = "metered"
+        elif name == "deepseek":
+            ai_provider = "deepseek"
+            cost_basis = "metered"
+        else:
+            ai_provider = "claude_oauth"
+            cost_basis = "subscription"
+
+        lane = p.get("usage_lane") or p.get("_usage_lane") or "unknown"
+        cap_id = p.get("cap_id")
+        key_id: str | None
+        if cap_id:
+            key_id = cap_id
+        elif name in ("oauth",):
+            key_id = "legacy"
+        else:
+            key_id = None
+
+        model = p.get("model") or None
+        cycle_id = str(p.get("usage_cycle_id") or "")
+        stage = str(p.get("usage_stage") or context or "")
+
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        _ac.record_usage(
+            lane=lane,
+            provider=ai_provider,
+            model=model,
+            key_id=key_id,
+            input_tokens=in_tok,
+            output_tokens=out_tok,
+            cache_read_tokens=cr_tok,
+            cache_creation_tokens=cc_tok,
+            cost_basis=cost_basis,
+            cycle_id=cycle_id,
+            stage=stage,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("llm_auth: _capture_usage failed: %s", exc)
 
 
 # --------------------------------------------------------------------------- #
@@ -499,9 +586,18 @@ def build_providers(
         if p == "oauth":
             # Pool expansion (CLAUDE_CODE_OAUTH_TOKEN_1/2/3): opt-in via
             # cfg["oauth_pool_lane"].  Pool keys authorized for that lane come
-            # first (best-available ordering); the legacy single token follows
-            # as a further fallback.  Without the cfg key, behavior is exactly
-            # the legacy single-env path.
+            # first (best-available ordering).
+            #
+            # LEGACY DEPRECATION (V11):
+            # • Pool-aware consumers (cfg["oauth_pool_lane"] set): when at
+            #   least one pool key is present and enabled, the legacy
+            #   CLAUDE_CODE_OAUTH_TOKEN slot is SUPPRESSED entirely; it is only
+            #   added as a last resort when zero pool keys are in the
+            #   environment.  A single log.warning is emitted in that case.
+            # • Non-pool consumers (cfg["oauth_pool_lane"] not set): the legacy
+            #   env slot is EXPANDED so it iterates all present+enabled pool
+            #   keys too (ordered by window_load, cooling-aware) — this ensures
+            #   no consumer anywhere depends on the deprecated token.
             pool_envs: set[str] = set()
             lane = cfg.get("oauth_pool_lane") or ""
             if lane:
@@ -510,23 +606,75 @@ def build_providers(
                     if prov is not None:
                         pool_envs.add(ref_env)
                         out.append(prov)
-            env = cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN")
-            if env and env not in pool_envs:
-                # V10: skip the legacy single-token provider when the operator
-                # has explicitly disabled it via METAB_KEYS_ENABLED.  Scoped to
-                # POOL-AWARE (metabolism) lanes only — callers without
-                # oauth_pool_lane (cortex, whitehouse, altdata, …) are W2 scope
-                # and must be provably unaffected even if the env var leaks
-                # into their environment.  Any error → include (fail-open,
-                # R-V10-2).
+                # Legacy slot: add ONLY when no pool keys resolved (last resort)
                 _legacy_enabled = True
-                if lane:
-                    try:
-                        from engine.neuralweb import key_pool as _kp  # noqa: PLC0415
-                        _legacy_enabled = _kp.is_enabled("legacy")
-                    except Exception as _e:  # noqa: BLE001
-                        log.debug("llm_auth: key_pool.is_enabled('legacy') failed (%s) — including legacy provider", _e)
-                if _legacy_enabled:
+                try:
+                    from engine.neuralweb import key_pool as _kp  # noqa: PLC0415
+                    _legacy_enabled = _kp.is_enabled("legacy")
+                except Exception as _e:  # noqa: BLE001
+                    log.debug("llm_auth: key_pool.is_enabled('legacy') failed (%s) — including legacy", _e)
+                env = cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN")
+                if env and env not in pool_envs:
+                    if pool_envs:
+                        # Pool keys are present — suppress legacy entirely
+                        pass
+                    elif _legacy_enabled:
+                        # Zero pool keys in env — add legacy as last resort and warn
+                        log.warning(
+                            "llm_auth: no pool keys present; falling back to legacy "
+                            "CLAUDE_CODE_OAUTH_TOKEN — this token is deprecated; "
+                            "set CLAUDE_CODE_OAUTH_TOKEN_3..7 secrets to remove this warning"
+                        )
+                        prov = _mk_oauth_provider(env)
+                        if prov is not None:
+                            out.append(prov)
+            else:
+                # Non-pool consumer: expand the legacy env to also iterate all
+                # present+enabled pool keys so no consumer relies on the legacy
+                # single token.  Pool keys come first (cooling-aware ordering:
+                # non-cooling keys sorted by ascending 5h-window load, cooling
+                # last) — mirrors _oauth_pool_candidates ordering.
+                _pool_added: set[str] = set()
+                try:
+                    from engine.neuralweb import key_pool as _kp  # noqa: PLC0415
+                    # Collect (cap_id, ref_env) pairs for all present keys
+                    _candidates: list[tuple[str, str]] = []
+                    for cap_id in _kp.discover_present_keys():
+                        try:
+                            ref_env = _kp.get_secret_ref(cap_id)
+                        except Exception:  # noqa: BLE001
+                            ref_env = None
+                        if not ref_env:
+                            # fall back: derive ref from cap_id shape
+                            # e.g. "claude_code_oauth_3" → CLAUDE_CODE_OAUTH_TOKEN_3
+                            suffix = cap_id.split("_")[-1]
+                            ref_env = f"CLAUDE_CODE_OAUTH_TOKEN_{suffix}" if suffix.isdigit() else None
+                        if ref_env:
+                            _candidates.append((cap_id, ref_env))
+                    # Sort: non-cooling first (lowest window_load first), cooling last
+                    _cool_map = {}
+                    _load_map = {}
+                    for cap_id, _ in _candidates:
+                        try:
+                            _cool_map[cap_id] = bool(_kp.is_cooling(cap_id))
+                        except Exception:  # noqa: BLE001
+                            _cool_map[cap_id] = False
+                        try:
+                            _load_map[cap_id] = int(_kp.window_load(cap_id))
+                        except Exception:  # noqa: BLE001
+                            _load_map[cap_id] = 0
+                    _candidates.sort(key=lambda c: (_cool_map[c[0]], _load_map[c[0]]))
+                    for cap_id, ref_env in _candidates:
+                        if ref_env not in _pool_added:
+                            prov = _mk_oauth_provider(ref_env, cap_id=cap_id)
+                            if prov is not None:
+                                _pool_added.add(ref_env)
+                                out.append(prov)
+                except Exception as _e:  # noqa: BLE001
+                    log.debug("llm_auth: non-pool oauth expansion failed (%s) — legacy-only", _e)
+                # Legacy env — only add when not already covered by pool expansion
+                env = cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN")
+                if env and env not in _pool_added:
                     prov = _mk_oauth_provider(env)
                     if prov is not None:
                         out.append(prov)
@@ -564,5 +712,18 @@ def build_providers(
                              "client": client, "model": ds_model})
             except Exception as e:  # noqa: BLE001
                 log.warning("llm_auth: deepseek client init failed (%s)", e)
+
+    # Inject usage attribution metadata from cfg into every provider descriptor.
+    # _capture_usage() reads these keys to populate the ai_costs ledger row.
+    _usage_lane = cfg.get("usage_lane") or ""
+    _usage_cycle_id = cfg.get("usage_cycle_id") or ""
+    _usage_stage = cfg.get("usage_stage") or ""
+    if _usage_lane:
+        for prov in out:
+            prov["usage_lane"] = _usage_lane
+            if _usage_cycle_id:
+                prov["usage_cycle_id"] = _usage_cycle_id
+            if _usage_stage:
+                prov["usage_stage"] = _usage_stage
 
     return out

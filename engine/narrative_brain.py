@@ -48,6 +48,8 @@ _DEFAULTS = {
     "max_tokens": 6000,
     "horizon_d": 21,                        # trading-day horizon for the falsifiable check
     "rel_threshold": 0.05,                  # ±5% proxy-vs-SPY = the wrong-way threshold
+    "oauth_pool_lane": "narrative-brain",   # pool key expansion for this lane
+    "usage_lane": "narrative-brain",        # ai_costs attribution
 }
 
 DISCLAIMER = (
@@ -145,9 +147,9 @@ def _make_call(cfg: dict):
                          "cache_control": {"type": "ephemeral"}}],
                 messages=[{"role": "user", "content": user}])
             if getattr(resp, "stop_reason", None) == "refusal":
-                return None, "refusal"
+                return None, "refusal", resp
             text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-            return (text, None) if text else (None, "empty_reply")
+            return (text, None, resp) if text else (None, "empty_reply", resp)
 
         try:
             text, reason, _used = llm_auth.make_call(

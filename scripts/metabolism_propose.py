@@ -394,10 +394,63 @@ def _run_single_lobe(args: "argparse.Namespace", root: Path, lobe: str, cycle_id
         )
         meta = result.get("meta", {})
 
+        # ── Real token capture + cost recording ───────────────────────────────
+        _usage = meta.get("usage") or {}
+        _input_tok = int(_usage.get("input_tokens") or 0)
+        _output_tok = int(_usage.get("output_tokens") or 0)
+        _cache_read = int(_usage.get("cache_read_tokens") or 0)
+        _cache_create = int(_usage.get("cache_creation_tokens") or 0)
+        _used_model = str(_usage.get("model") or "claude-opus-4-8")
+        # Fall back to the documented conservative estimate when SDK reports nothing
+        _real_tokens = _input_tok + _output_tok if (_input_tok or _output_tok) else _EST_TOKENS_PER_CALL
+
+        _provider_name = meta.get("provider") or "unknown"
+        _cost_basis = "subscription" if _provider_name in ("oauth", "claude_oauth") else "metered"
+
+        # Compute cost from real tokens (or estimate via fallback)
+        _est_cost: float | None = None
+        try:
+            from lib.ai_costs import estimate_cost_usd as _est_fn  # type: ignore[import]
+            _est_cost = _est_fn(
+                _used_model, _input_tok, _output_tok, _cache_read, _cache_create, root=root,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+        # FIX 5: pass usd ONLY for metered (claude_api/deepseek) lanes so the $25
+        # circuit-breaker tracks billed dollars only.  Subscription (OAuth/CLI) calls
+        # consume quota, not wallet — record 0.0 so the cap stays a metered-dollar cap.
+        _is_metered = _cost_basis == "metered"
+        _budget_usd = (_est_cost if _est_cost is not None else 0.0) if _is_metered else 0.0
+
         try:
             from scripts.metabolism_budget import record_spend  # type: ignore[import]
-            record_spend(cycle_id, _STAGE, tokens=_EST_TOKENS_PER_CALL,
-                         note=f"propose lobe={lobe} n={meta.get('n_proposals')}", root=root)
+            record_spend(
+                cycle_id, _STAGE,
+                tokens=_real_tokens,
+                usd=_budget_usd,
+                note=f"propose lobe={lobe} n={meta.get('n_proposals')}",
+                root=root,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+        try:
+            from lib.ai_costs import record_usage as _rec_usage  # type: ignore[import]
+            _rec_usage(
+                lane="metabolism-propose",
+                provider=_provider_name if _provider_name not in ("oauth",) else "claude_oauth",
+                model=_used_model,
+                input_tokens=_input_tok,
+                output_tokens=_output_tok,
+                cache_read_tokens=_cache_read,
+                cache_creation_tokens=_cache_create,
+                cost_basis=_cost_basis,
+                cycle_id=cycle_id,
+                stage=_STAGE,
+                est_cost_usd=_est_cost,
+                root=root,
+            )
         except Exception:  # noqa: BLE001
             pass
 
@@ -411,8 +464,16 @@ def _run_single_lobe(args: "argparse.Namespace", root: Path, lobe: str, cycle_id
 
         # ── Achievements enrichment (FROZEN CONTRACT) ─────────────────────────
         # Append proposals[] to journal achievements key (fail-soft, never blocks).
+        # Inject usage meta so proposals[] rows can carry optional cost fields.
+        _ach_docket = dict(result.get("docket") or {})
+        if _input_tok or _output_tok:
+            _ach_docket["_usage_meta"] = {
+                "input_tokens": _input_tok,
+                "output_tokens": _output_tok,
+                "est_cost_usd": _est_cost,
+            }
         _append_achievements_proposals(
-            cycle_id, result.get("docket") or {}, root=root,
+            cycle_id, _ach_docket, root=root,
         )
 
         finish_stage(
@@ -457,20 +518,37 @@ def _append_achievements_proposals(
             return
 
         proposed_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        # Cost fields (optional — present only when real usage was captured)
+        _meta = docket.get("_usage_meta") or {}
+        _prop_tokens: int | None = None
+        _prop_cost: "float | None" = None
+        if _meta.get("input_tokens") or _meta.get("output_tokens"):
+            _prop_tokens = (
+                int(_meta.get("input_tokens") or 0)
+                + int(_meta.get("output_tokens") or 0)
+            )
+        if _meta.get("est_cost_usd") is not None:
+            _prop_cost = float(_meta["est_cost_usd"])
+
         new_rows = []
         for prop in proposals_raw:
             pid = str(prop.get("proposal_id") or "")
             if not pid:
                 continue
             title_raw = str(prop.get("title") or "")
-            new_rows.append({
+            row: "dict" = {
                 "id": pid,
                 "lobe": str(prop.get("lobe") or docket.get("lobe") or "unknown"),
                 "kind": str(prop.get("kind") or ""),
                 "tier": str(prop.get("tier") or "T1"),
                 "title": title_raw[:120],
                 "proposed_at": proposed_at,
-            })
+            }
+            if _prop_tokens is not None:
+                row["tokens"] = _prop_tokens
+            if _prop_cost is not None:
+                row["est_cost_usd"] = _prop_cost
+            new_rows.append(row)
 
         if not new_rows:
             return

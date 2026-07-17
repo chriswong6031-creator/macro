@@ -29,7 +29,6 @@ from engine.influence import graph as _graph
 
 log = logging.getLogger(__name__)
 
-OAUTH_BETA = "oauth-2025-04-20"
 _TAG = re.compile(r"<[^>]+>")
 _WS = re.compile(r"\s+")
 
@@ -45,6 +44,8 @@ _DEFAULTS = {
     "max_tokens": 1200,
     "news_limit": 50,
     "filing_limit": 15,
+    "oauth_pool_lane": "influence-extract",  # pool key expansion for this lane
+    "usage_lane": "influence-extract",       # ai_costs attribution
 }
 
 _SYSTEM = (
@@ -77,40 +78,34 @@ def enabled() -> bool:
 
 
 # --------------------------------------------------------------------------- LLM client
-def _client(cfg: dict):
-    """Anthropic client via the Claude-Code OAuth token (Bearer + oauth beta), else API key.
-    Returns the client or None. Never raises."""
-    try:
-        import anthropic
-    except ImportError:
-        return None
-    token = config.secret(cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN"))
-    if token:
-        try:
-            return anthropic.Anthropic(auth_token=token, default_headers={"anthropic-beta": OAUTH_BETA})
-        except Exception:  # noqa: BLE001
-            return None
-    key = config.secret(cfg.get("api_key_env", "ANTHROPIC_API_KEY"))
-    if key:
-        try:
-            return anthropic.Anthropic(api_key=key)
-        except Exception:  # noqa: BLE001
-            return None
-    return None
-
-
 def _call(source_text: str, cfg: dict) -> str | None:
-    client = _client(cfg)
-    if client is None:
-        return None
+    """Call the LLM for one source text via llm_auth waterfall.  Never raises."""
     try:
+        from engine import llm_auth  # noqa: PLC0415
+        providers = llm_auth.build_providers(
+            cfg, opus_model=cfg.get("model", "claude-haiku-4-5-20251001"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("influence extract: provider build failed (%s)", e)
+        return None
+    if not providers:
+        return None
+    max_tokens = int(cfg.get("max_tokens", 1200))
+    model = cfg.get("model", "claude-haiku-4-5-20251001")
+
+    def _call_fn(client, m: str):
         resp = client.messages.create(
-            model=cfg.get("model", "claude-haiku-4-5-20251001"),
-            max_tokens=int(cfg.get("max_tokens", 1200)),
+            model=m,
+            max_tokens=max_tokens,
             system=[{"type": "text", "text": _SYSTEM, "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": f"<doc>\n{source_text}\n</doc>"}],
         )
-        return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text") or None
+        return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text") or None, None, resp
+
+    model_providers = [{**p, "model": model} for p in providers]
+    try:
+        text, _, _ = llm_auth.make_call(model_providers, _call_fn,
+                                         context="influence_extract")
+        return text or None
     except Exception as e:  # noqa: BLE001
         log.warning("influence extract model call failed (%s)", e)
         return None
@@ -236,7 +231,16 @@ def run(root=None, news_limit: int | None = None) -> dict:
     cfg = _cfg()
     if not enabled():
         return {"extracted": 0, "reason": "disabled"}
-    if _client(cfg) is None:
+    # Pool-aware presence check: build providers and return early only when the
+    # list is empty — this mirrors commodity_news's pattern and respects
+    # CLAUDE_CODE_OAUTH_TOKEN_N pool keys in addition to the legacy single-key
+    # env vars.
+    try:
+        from engine import llm_auth as _llm_auth  # noqa: PLC0415
+        _providers = _llm_auth.build_providers(cfg)
+    except Exception:  # noqa: BLE001
+        _providers = []
+    if not _providers:
         return {"extracted": 0, "reason": "no_token"}
     seen = _load_seen(root)
     existing = {_key(e) for e in load_candidates(root)}

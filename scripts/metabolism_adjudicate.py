@@ -240,11 +240,15 @@ def _append_achievements_verdicts(
     results: list,
     *,
     root: "Path | None" = None,
+    usage_meta: "dict | None" = None,
 ) -> None:
     """Append verdict rows to journal achievements.verdicts after adjudication.
 
     Called once per role (orchestrator/adversary/resolve). The resolve role
-    triggers the final verdict summary. NEVER raises.
+    triggers the final verdict summary.
+    usage_meta: optional {tokens, est_cost_usd} captured from the LLM call —
+    written into each verdict row when present.
+    NEVER raises.
     """
     try:
         import json as _json  # noqa: PLC0415
@@ -270,6 +274,21 @@ def _append_achievements_verdicts(
             docket_pids = {str(prop.get("proposal_id") or "") for prop in proposals_raw
                            if prop.get("proposal_id")}
 
+            # Pre-compute optional cost fields from usage_meta (one LLM call per role)
+            _v_tokens: "int | None" = None
+            _v_cost: "float | None" = None
+            if usage_meta:
+                _raw_tok = usage_meta.get("tokens")
+                _raw_inp = usage_meta.get("input_tokens")
+                _raw_out = usage_meta.get("output_tokens")
+                if _raw_tok is not None:
+                    _v_tokens = int(_raw_tok)
+                elif _raw_inp is not None or _raw_out is not None:
+                    _v_tokens = int((_raw_inp or 0) + (_raw_out or 0))
+                _raw_cost = usage_meta.get("est_cost_usd")
+                if _raw_cost is not None:
+                    _v_cost = float(_raw_cost)
+
             # Add verdicts for proposals that were actually adjudicated
             for prop in proposals_raw:
                 pid = str(prop.get("proposal_id") or "")
@@ -278,12 +297,17 @@ def _append_achievements_verdicts(
                 decision, reason_plain = _derive_verdict_plain(
                     pid, cycle_id, str(dp), root=root,
                 )
-                existing_verdicts.append({
+                vrow: dict = {
                     "id": pid,
                     "decision": decision,
                     "reason_plain": reason_plain[:160],
                     "adjudicated_at": adjudicated_at,
-                })
+                }
+                if _v_tokens is not None:
+                    vrow["tokens"] = _v_tokens
+                if _v_cost is not None:
+                    vrow["est_cost_usd"] = _v_cost
+                existing_verdicts.append(vrow)
                 existing_v_ids.add(pid)
 
             # Mark proposals in achievements.proposals that have no verdict
@@ -427,18 +451,100 @@ def main(argv: list[str] | None = None) -> int:
                          note=f"two_key resolved: {n_auth}/{len(res)} authorized",
                          next_stage="build", root=root)
             # ── Achievements: append final verdicts after two-key resolve ─────
+            # Aggregate adjudication cost from the budget ledger (orchestrator +
+            # adversary LLM calls were recorded earlier; resolve makes no LLM call).
+            _resolve_usage_meta: "dict | None" = None
+            try:
+                from scripts.metabolism_budget import _read_ledger as _bl  # type: ignore[import]  # noqa: PLC0415
+                _bl_data = _bl(root)
+                if _bl_data.get("cycle_id") == cycle_id:
+                    _adj_entries = [
+                        e for e in (_bl_data.get("entries") or [])
+                        if str(e.get("stage") or "").startswith("adjudicate")
+                    ]
+                    _tot_tok = sum(int(e.get("tokens") or 0) for e in _adj_entries)
+                    _tot_usd = sum(float(e.get("usd") or 0.0) for e in _adj_entries)
+                    if _tot_tok or _tot_usd:
+                        _resolve_usage_meta = {}
+                        if _tot_tok:
+                            _resolve_usage_meta["tokens"] = _tot_tok
+                        if _tot_usd:
+                            _resolve_usage_meta["est_cost_usd"] = round(_tot_usd, 6)
+            except Exception:  # noqa: BLE001
+                pass
             if not args.dry_run:
                 _append_achievements_verdicts(
-                    cycle_id, docket_file, "resolve", list(res.values()), root=root,
+                    cycle_id, docket_file, "resolve", list(res.values()),
+                    root=root, usage_meta=_resolve_usage_meta,
                 )
         else:
+            _adj_usage_out: list = []
             results = adjudicate_role(role, cycle_id, docket_file,
-                                      run_id=run_id, root=root, dry_run=args.dry_run)
+                                      run_id=run_id, root=root, dry_run=args.dry_run,
+                                      _usage_out=_adj_usage_out)
+            # ── Real token capture + cost recording ───────────────────────────
+            _usage = _adj_usage_out[0] if _adj_usage_out else {}
+            _input_tok = int(_usage.get("input_tokens") or 0)
+            _output_tok = int(_usage.get("output_tokens") or 0)
+            _cache_read = int(_usage.get("cache_read_tokens") or 0)
+            _cache_create = int(_usage.get("cache_creation_tokens") or 0)
+            _used_model = str(_usage.get("model") or "claude-opus-4-8")
+            _real_tokens = (
+                _input_tok + _output_tok
+                if (_input_tok or _output_tok) else _EST_TOKENS_PER_CALL
+            )
+
+            _est_cost: float | None = None
+            try:
+                from lib.ai_costs import estimate_cost_usd as _est_fn  # type: ignore[import]
+                _est_cost = _est_fn(
+                    _used_model, _input_tok, _output_tok, _cache_read, _cache_create,
+                    root=root,
+                )
+            except Exception:  # noqa: BLE001
+                pass
+
+            # FIX 5: pass usd ONLY for metered (claude_api/deepseek) lanes so the $25
+            # circuit-breaker tracks billed dollars only.  Adjudicate uses OAuth by
+            # default (subscription) — cost_basis tells us which.
+            _adj_provider_name = _usage.get("provider") or "claude_oauth"
+            _adj_cost_basis = (
+                "metered"
+                if _adj_provider_name in ("claude_api", "deepseek", "anthropic")
+                else "subscription"
+            )
+            _is_adj_metered = _adj_cost_basis == "metered"
+            _adj_budget_usd = (_est_cost if _est_cost is not None else 0.0) if _is_adj_metered else 0.0
+
             # Record token spend for the LLM roles (best-effort).
             try:
                 if record_spend is not None:
-                    record_spend(cycle_id, stage, tokens=_EST_TOKENS_PER_CALL,
-                                 note=f"{role} n={len(results)}", root=root)
+                    record_spend(
+                        cycle_id, stage,
+                        tokens=_real_tokens,
+                        usd=_adj_budget_usd,
+                        note=f"{role} n={len(results)}",
+                        root=root,
+                    )
+            except Exception:  # noqa: BLE001
+                pass
+
+            try:
+                from lib.ai_costs import record_usage as _rec_usage  # type: ignore[import]
+                _rec_usage(
+                    lane="metabolism-adjudicate",
+                    provider="claude_oauth",
+                    model=_used_model,
+                    input_tokens=_input_tok,
+                    output_tokens=_output_tok,
+                    cache_read_tokens=_cache_read,
+                    cache_creation_tokens=_cache_create,
+                    cost_basis="subscription",
+                    cycle_id=cycle_id,
+                    stage=stage,
+                    est_cost_usd=_est_cost,
+                    root=root,
+                )
             except Exception:  # noqa: BLE001
                 pass
             log.info("metabolism_adjudicate[%s]: cycle=%s ruled=%d",

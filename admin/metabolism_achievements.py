@@ -345,7 +345,7 @@ def _merge_proposals_view(
             pid = str(prop.get("id") or "")
             v = verdict_by_id.get(pid, {})
             b_list = builds_by_id.get(pid, [])
-            merged.append({
+            row: dict[str, Any] = {
                 "id": pid,
                 "lobe": prop.get("lobe"),
                 "kind": prop.get("kind"),
@@ -356,7 +356,35 @@ def _merge_proposals_view(
                 "reason_plain": v.get("reason_plain"),
                 "adjudicated_at": v.get("adjudicated_at"),
                 "builds": b_list,
-            })
+            }
+            # Optional cost fields — passed through when present in the source rows
+            _p_tokens = prop.get("tokens")
+            _p_cost = prop.get("est_cost_usd")
+            if _p_tokens is not None:
+                row["propose_tokens"] = _p_tokens
+            if _p_cost is not None:
+                row["propose_est_cost_usd"] = _p_cost
+            _v_tokens = v.get("tokens")
+            _v_cost = v.get("est_cost_usd")
+            if _v_tokens is not None:
+                row["adjudicate_tokens"] = _v_tokens
+            if _v_cost is not None:
+                row["adjudicate_est_cost_usd"] = _v_cost
+            # Aggregate build cost across all build rows for this proposal
+            _total_b_tokens: int | None = None
+            _total_b_cost: float | None = None
+            for b in b_list:
+                bt = b.get("tokens")
+                bc = b.get("est_cost_usd")
+                if bt is not None:
+                    _total_b_tokens = (_total_b_tokens or 0) + int(bt)
+                if bc is not None:
+                    _total_b_cost = (_total_b_cost or 0.0) + float(bc)
+            if _total_b_tokens is not None:
+                row["build_tokens"] = _total_b_tokens
+            if _total_b_cost is not None:
+                row["build_est_cost_usd"] = round(_total_b_cost, 6)
+            merged.append(row)
         return merged
     except Exception:  # noqa: BLE001
         return []

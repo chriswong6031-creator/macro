@@ -204,15 +204,21 @@ def _build_providers(cfg: dict) -> list[dict]:
     if cortex_key:
         cfg_override["api_key_env"] = _CORTEX_API_KEY_ENV
         log.info("cortex: using dedicated %s for anthropic provider", _CORTEX_API_KEY_ENV)
-        # Promote anthropic ahead of oauth so we don't burn 4×(15/60/180s) of
-        # OAuth 429 backoff before reaching the metered key.  Only override when
-        # config.yml has not set an explicit provider_order (operator config wins).
+        # CRITICAL: metered key promoted FIRST so OAuth 429 backoff is avoided.
+        # Pool keys come after the metered key (standing fix: 2026-07-13 OAuth
+        # org-policy 403).  Only override when config.yml has not set an explicit
+        # provider_order (operator config wins).
         if "provider_order" not in cfg:
             cfg_override["provider_order"] = ["anthropic", "oauth", "deepseek"]
             log.debug("cortex: metered key present — provider order set to anthropic-first")
     else:
         # Ensure the standard key env is used (belt-and-suspenders default)
         cfg_override.setdefault("api_key_env", _FALLBACK_API_KEY_ENV)
+
+    # Pool opt-in: expand the oauth slot across pool keys for this lane.
+    # DeepSeek stays excluded from deliberation (D8 ruling).
+    cfg_override.setdefault("oauth_pool_lane", "cortex")
+    cfg_override.setdefault("usage_lane", "cortex")
 
     return llm_auth.build_providers(
         cfg_override,
@@ -2068,7 +2074,7 @@ def _single_call_fallback(
         text = "".join(
             b.text for b in resp.content if getattr(b, "type", "") == "text"
         )
-        return text, None
+        return text, None, resp
 
     memo_params: dict = {
         "summary": f"[DEGRADED:{degraded_reason}] Fallback memo — tool loop unavailable.",

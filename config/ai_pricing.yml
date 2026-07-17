@@ -1,0 +1,40 @@
+# config/ai_pricing.yml — AI provider pricing table.
+#
+# OPERATOR-MAINTAINED: rates change without notice. Review against Anthropic and
+# DeepSeek billing pages before each billing cycle.
+#
+# Subscription-key costs (claude_oauth, claude_cli "subscription" cost_basis):
+#   est_cost_usd is the API-EQUIVALENT VALUE of the call — what the same tokens
+#   would cost at the pay-as-you-go rate. These are NOT billed dollars (the
+#   subscription has a flat monthly fee), but they track usage burden and
+#   inform model-routing decisions.
+#
+# Schema: ai_pricing.v1
+schema: ai_pricing.v1
+
+# per_mtok: cost in USD per 1,000,000 tokens for each direction.
+# Prefix-match is used for model resolution:
+#   "claude-haiku-4-5-20251001" matches prefix "claude-haiku-4-5"
+per_mtok:
+  claude-opus-4-8:
+    input: 5.00
+    output: 25.00
+  claude-sonnet-4-6:
+    input: 3.00
+    output: 15.00
+  claude-haiku-4-5:
+    input: 1.00
+    output: 5.00
+  deepseek-v4-pro:
+    input: 0.435
+    output: 0.87
+  deepseek-v4-flash:
+    input: 0.14
+    output: 0.28
+
+# cache: multipliers applied on top of the input rate.
+#   read_multiplier:       cache-read tokens cost this fraction of the input rate.
+#   write_5m_multiplier:   cache-creation tokens cost this multiple of the input rate.
+cache:
+  read_multiplier: 0.10
+  write_5m_multiplier: 1.25
