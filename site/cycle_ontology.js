@@ -1,10 +1,10 @@
 /* GENERATED from engine/cycle_ontology.py
-   version 1.0.0
+   version 1.1.0
    DO NOT EDIT — regenerate: python -m scripts.gen_ontology_js */
 
 (function (root) {
   var payload = {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "detector_version": 2,
   "phases": {
     "Trough": {
