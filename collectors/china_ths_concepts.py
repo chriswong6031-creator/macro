@@ -59,7 +59,7 @@ class ThsTruncated(RuntimeError):
 _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
        "(KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36")
 _DATA = config.data_dir() / "baskets_china_ths"
-_MAP_CACHE = _DATA / "concept_map.json"        # {name: code} cache (refreshed if older than _MAP_TTL_DAYS)
+_MAP_CACHE = _DATA / "concept_map.json"        # {"asof": iso-date, "map": {name: code}} (refreshed if asof older than _MAP_TTL_DAYS)
 _MAP_TTL_DAYS = 7
 _PAGE_PAUSE = 1.2                               # seconds between member pages (politeness / SSL stability)
 _THEME_PAUSE = 4.0                              # seconds between themes (THS IP-throttles bursts hard)
@@ -109,32 +109,56 @@ def to_suffixed(code6: str) -> str:
     return f"{code6}.SZ"
 
 
+def _read_map_cache() -> tuple[dict[str, str] | None, int | None]:
+    """(map, age_days) from the disk cache. Freshness is judged from the blob's
+    embedded `asof` stamp, NEVER file mtime — on CI runners a checkout rewrites
+    files with mtime = checkout time, so the committed cache always looked
+    brand-new by mtime and the refetch short-circuited forever (the
+    polygon-universe frozen-cache class, #2690; this map froze at its
+    2026-06-27 fill the same way). Legacy stamp-less blobs ({name: code} flat
+    dict) return age None — usable as a failure fallback but never fresh."""
+    try:
+        blob = json.loads(_MAP_CACHE.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("concept_map cache unreadable (%s)", e)
+        return None, None
+    if isinstance(blob, dict) and isinstance(blob.get("map"), dict):
+        try:
+            age = (date.today() - date.fromisoformat(str(blob.get("asof")))).days
+        except Exception:  # noqa: BLE001
+            age = None
+        return {str(k): str(v) for k, v in blob["map"].items()}, age
+    if isinstance(blob, dict):        # legacy flat {name: code} — stamp-less ⇒ stale
+        return {str(k): str(v) for k, v in blob.items()}, None
+    return None, None
+
+
 def concept_code_map(force: bool = False) -> dict[str, str]:
     """{concept_name: ths_code} for every THS concept board (~370). Disk-cached for _MAP_TTL_DAYS.
 
     Uses akshare's working name endpoint; on failure falls back to a stale cache if present.
     """
-    if not force and _MAP_CACHE.exists():
-        try:
-            age_days = (date.today() - date.fromtimestamp(_MAP_CACHE.stat().st_mtime)).days
-            if age_days < _MAP_TTL_DAYS:
-                return json.loads(_MAP_CACHE.read_text())
-        except Exception as e:  # noqa: BLE001
-            log.warning("concept_map cache unreadable (%s) — refetching", e)
+    cached: dict[str, str] | None = None
+    if _MAP_CACHE.exists():
+        cached, age_days = _read_map_cache()
+        if (not force and cached
+                and age_days is not None and age_days < _MAP_TTL_DAYS):
+            return cached
     try:
         import akshare as ak
         df = ak.stock_board_concept_name_ths()
         m = {str(r["name"]): str(r["code"]) for _, r in df.iterrows()}
         if m:
             _DATA.mkdir(parents=True, exist_ok=True)
-            _MAP_CACHE.write_text(json.dumps(m, ensure_ascii=False, indent=0))
+            _MAP_CACHE.write_text(json.dumps(
+                {"asof": date.today().isoformat(), "map": m}, ensure_ascii=False, indent=0))
             log.info("refreshed THS concept map: %d concepts", len(m))
             return m
     except Exception as e:  # noqa: BLE001
         log.error("THS concept-name fetch failed: %s", e)
-    if _MAP_CACHE.exists():  # better stale than nothing
+    if cached:  # better stale than nothing
         log.warning("using STALE THS concept map")
-        return json.loads(_MAP_CACHE.read_text())
+        return cached
     return {}
 
 

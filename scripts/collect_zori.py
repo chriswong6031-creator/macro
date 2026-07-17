@@ -35,7 +35,7 @@ import logging
 import sys
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -166,15 +166,28 @@ def _build_agg_json(national: pd.DataFrame, metro: pd.DataFrame) -> dict:
 # ---------------------------------------------------------------------------
 
 
+def _fetched_age_days(stamp_path: Path) -> int | None:
+    """Days since the last fetch, from the sidecar _fetched.json stamp — NEVER
+    file mtime (on CI runners a checkout rewrites files with mtime = checkout
+    time, so a committed stale cache always looks freshly written and the
+    re-download short-circuits; polygon-universe frozen-cache class, #2690).
+    Missing/unreadable/stamp-less sidecar returns None (= stale)."""
+    try:
+        asof = json.loads(stamp_path.read_text()).get("asof")
+        return (date.today() - date.fromisoformat(str(asof))).days
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def run(force: bool = False) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     nat_path = OUT_DIR / "national.parquet"
     metro_path = OUT_DIR / "metro.parquet"
+    stamp_path = OUT_DIR / "_fetched.json"
 
     if not force and nat_path.exists():
-        mtime = datetime.fromtimestamp(nat_path.stat().st_mtime, tz=timezone.utc)
-        age_days = (datetime.now(timezone.utc) - mtime).days
-        if age_days < 1:
+        age_days = _fetched_age_days(stamp_path)
+        if age_days is not None and age_days < 1:
             LOG.info("zori data is fresh (age=%dd); skipping", age_days)
             return
 
@@ -203,6 +216,11 @@ def run(force: bool = False) -> None:
     agg = _build_agg_json(national, metro)
     with open(OUT_DIR / "agg_json.json", "w") as fh:
         json.dump(agg, fh, indent=2, default=str)
+
+    try:
+        stamp_path.write_text(json.dumps({"asof": date.today().isoformat()}))
+    except Exception as e:  # noqa: BLE001
+        LOG.warning("zori: could not write fetch stamp: %s", e)
 
     print(f"[zori] Written: {nat_path}, {metro_path}")
     print(f"[zori] as_of={agg['as_of']}, metros_covered={n_metros}")

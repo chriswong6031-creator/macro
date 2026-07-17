@@ -15,7 +15,7 @@ import json
 import logging
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -222,15 +222,26 @@ def main() -> int:
     except Exception as _e:
         log.error("intl_bonds inversion_board failed (%s)", _e)
 
-    # Read smile_decomp from forex/latest.json if fresh (<36h)
+    # Read smile_decomp from forex/latest.json if fresh (asof today/yesterday).
+    # Freshness is judged from the embedded `asof` date, NEVER file mtime — on CI
+    # runners a checkout rewrites files with mtime = checkout time, so a frozen
+    # forex lane would silently pass an mtime gate forever (the polygon-universe
+    # frozen-cache class, #2690). Missing/unparsable asof ⇒ treated stale (skip).
     smile_result = None
     try:
         _forex_path = config.data_dir() / "forex" / "latest.json"
         if _forex_path.exists():
-            _forex_age_h = (time.time() - _forex_path.stat().st_mtime) / 3600.0
-            if _forex_age_h < 36:
-                _forex_raw = json.loads(_forex_path.read_text(encoding="utf-8"))
+            _forex_raw = json.loads(_forex_path.read_text(encoding="utf-8"))
+            _forex_asof = _forex_raw.get("asof")
+            try:
+                _forex_age_d = (date.today() - date.fromisoformat(str(_forex_asof))).days
+            except Exception:  # noqa: BLE001
+                _forex_age_d = None
+            if _forex_age_d is not None and _forex_age_d <= 1:      # ≈ the old <36h window
                 smile_result = (_forex_raw.get("dollar_desk") or {}).get("smile_decomp")
+            else:
+                log.warning("smile_decomp skipped: forex latest.json asof=%r stale/missing",
+                            _forex_asof)
     except Exception as _e:
         log.error("smile_decomp read from forex/latest.json failed (%s)", _e)
 

@@ -297,22 +297,43 @@ def _cache_path(series_id: str) -> Path:
 
 
 def _cache_fresh(path: Path, ttl_h: float = _CACHE_TTL_H) -> bool:
+    """Freshness from the blob's embedded `asof` stamp, NEVER file mtime — on
+    CI runners a checkout rewrites files with mtime = checkout time, so the
+    committed cache looked freshly written on the night right after every real
+    update and the refresh skipped exactly when a new release had just landed
+    (#2690 class). Legacy bare-list blobs (no stamp) read as stale — one
+    refetch upgrades them in place."""
     if not path.exists():
         return False
-    age_h = (datetime.now(timezone.utc).timestamp() - path.stat().st_mtime) / 3600.0
-    return age_h < ttl_h
+    try:
+        blob = json.loads(path.read_text())
+        asof = blob.get("asof") if isinstance(blob, dict) else None
+        if not asof:
+            return False
+        asof_dt = datetime.fromisoformat(str(asof))
+        if asof_dt.tzinfo is None:
+            asof_dt = asof_dt.replace(tzinfo=timezone.utc)
+        age_h = (datetime.now(timezone.utc) - asof_dt).total_seconds() / 3600.0
+        return age_h < ttl_h
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def _cache_read(path: Path) -> list[dict] | None:
     try:
-        return json.loads(path.read_text())
+        blob = json.loads(path.read_text())
+        if isinstance(blob, dict):
+            return blob.get("records")
+        return blob   # legacy bare-list format (pre-asof-stamp)
     except Exception:  # noqa: BLE001
         return None
 
 
 def _cache_write(path: Path, records: list[dict]) -> None:
     try:
-        path.write_text(json.dumps(records, default=str))
+        path.write_text(json.dumps(
+            {"asof": datetime.now(timezone.utc).isoformat(), "records": records},
+            default=str))
     except Exception as e:  # noqa: BLE001
         log.debug("macro_surprise cache write failed (%s)", e)
 
@@ -336,23 +357,23 @@ def _fetch_fred_series(series_id: str) -> list[dict] | None:
         r = requests.get(url, headers={"User-Agent": FREDGRAPH_UA}, timeout=30)
         if r.status_code != 200:
             log.warning("macro_surprise: FRED %s → HTTP %d", series_id, r.status_code)
-            return None
+            return _cache_read(cache)   # no-regress: stale cache beats nothing
         import pandas as pd
         df = pd.read_csv(io.StringIO(r.text))
         if df.shape[1] != 2:
             log.warning("macro_surprise: FRED %s unexpected shape %s", series_id, df.shape)
-            return None
+            return _cache_read(cache)
         df.columns = ["date", "value"]
         df["value"] = pd.to_numeric(df["value"], errors="coerce")
         df = df.dropna(subset=["value"])
         if df.empty:
-            return None
+            return _cache_read(cache)
         records = df.to_dict("records")
         _cache_write(cache, records)
         return records
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("macro_surprise: FRED fetch %s failed (%s)", series_id, e)
-        return None
+        return _cache_read(cache)   # None when no cache exists
 
 
 # --------------------------------------------------------------------------- #
