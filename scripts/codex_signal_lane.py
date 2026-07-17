@@ -87,8 +87,10 @@ def _note_result(run: dict, root: Path) -> None:
 # Build SF context pack (reuse helpers from run_signal_foundry_brainstorm if importable)
 # ---------------------------------------------------------------------------
 
-def _build_context_pack(root: Path, n_candidates: int = 5) -> str:
+def _build_context_pack(root: Path, n_candidates: int = 5) -> tuple[str, bool]:
     """Build a Signal Foundry brainstorm pack for the Codex prompt.
+
+    FIX 17 — Returns (pack_text: str, used_fallback: bool).
 
     Tries to import the _build_sf_pack helper from run_signal_foundry_brainstorm.
     Falls back to a minimal pack (blocklist + registry summary + schema hint)
@@ -96,7 +98,7 @@ def _build_context_pack(root: Path, n_candidates: int = 5) -> str:
     """
     try:
         from scripts.run_signal_foundry_brainstorm import _build_sf_pack  # noqa: PLC0415
-        return _build_sf_pack(root, n_candidates=n_candidates)
+        return _build_sf_pack(root, n_candidates=n_candidates), False
     except Exception as exc:  # noqa: BLE001
         log.info("codex_signal_lane: _build_sf_pack not importable (%s); building minimal pack", exc)
 
@@ -170,7 +172,7 @@ FORBIDDEN: numeric confidence scores (RF-16), 'validated' claims, paths to untra
 WHITELISTED transforms: zscore, pctile_rank, diff, pct_change, sma, ema, ratio, spread, lag, sign, clip, rolling_corr, rolling_vol, drawdown
 """)
 
-    return "\n".join(lines)
+    return "\n".join(lines), True
 
 
 # ---------------------------------------------------------------------------
@@ -245,6 +247,52 @@ def _next_sf_id(candidates_path: Path) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Module-level factory helpers for FIX 14/15 (patchable by tests)
+# ---------------------------------------------------------------------------
+
+def _get_construction_hash_fn():
+    """Return construction_hash function or None. NEVER raises."""
+    try:
+        from engine.signal_foundry.spec import construction_hash  # noqa: PLC0415
+        return construction_hash
+    except (ImportError, AttributeError):
+        return None
+
+
+def _get_validate_spec_fn():
+    """Return validate_spec function or None. NEVER raises."""
+    try:
+        from engine.signal_foundry.spec import validate_spec  # noqa: PLC0415
+        return validate_spec
+    except (ImportError, AttributeError):
+        return None
+
+
+def _is_git_repo(root: Path) -> bool:
+    """Return True if root (or any parent) is a git repo. NEVER raises."""
+    try:
+        import subprocess as _sp  # noqa: PLC0415
+        r = _sp.run(
+            ["git", "-C", str(root), "rev-parse", "--git-dir"],
+            capture_output=True,
+            timeout=5,
+            check=False,
+        )
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+def _get_has_numeric_confidence_fn():
+    """Return _has_numeric_confidence function or None. NEVER raises."""
+    try:
+        from scripts.run_signal_foundry_brainstorm import _has_numeric_confidence  # noqa: PLC0415
+        return _has_numeric_confidence
+    except (ImportError, AttributeError):
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Screen + file specs (reuse _file_specs if available, else inline)
 # ---------------------------------------------------------------------------
 
@@ -283,14 +331,22 @@ def _file_specs(
     except ImportError:
         stamp_gates_hash = None  # type: ignore[assignment]
 
+    # FIX 14 — use module-level cached functions (patchable by tests)
+    _construction_hash_fn = _get_construction_hash_fn()
+    # FIX 15 — use module-level cached functions (patchable by tests)
+    _validate_spec_fn = _get_validate_spec_fn()
+    _has_numeric_confidence_fn = _get_has_numeric_confidence_fn()
+
     candidates_path.parent.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     n_admitted = 0
     n_rejected = 0
     admitted_ids: list[str] = []
 
-    # Determine next id counter from existing file
+    # Determine next id counter from existing file AND build prior-name set for FIX 7b
     next_id_n = 0
+    # FIX 7b — load all prior normalized names once per _file_specs call for pre-dedup
+    _prior_name_map: dict[str, tuple[str, str]] = {}  # normalized_name -> (id, original_name)
     if candidates_path.exists():
         try:
             with candidates_path.open(encoding="utf-8") as fh:
@@ -305,10 +361,21 @@ def _file_specs(
                             n = int(sid[3:])
                             if n > next_id_n:
                                 next_id_n = n
+                        # Build normalized name index
+                        pname = row.get("name", "")
+                        if pname:
+                            import re as _re  # noqa: PLC0415
+                            norm = _re.sub(r"[^a-z0-9 ]", "", pname.lower()).strip()
+                            if norm and norm not in _prior_name_map:
+                                _prior_name_map[norm] = (sid, pname)
                     except Exception:
                         continue
         except OSError:
             pass
+
+    def _normalize_name_local(name: str) -> str:
+        import re as _re  # noqa: PLC0415
+        return _re.sub(r"[^a-z0-9 ]", "", name.lower()).strip()
 
     for spec in specs:
         # Ensure id
@@ -321,11 +388,83 @@ def _file_specs(
         if not spec.get("registered_at"):
             spec = dict(spec, registered_at=datetime.now(timezone.utc).date().isoformat())
 
-        # SF-R7 screen gate
-        try:
-            screen_result = screen_candidate(spec, repo_root=root)
-        except Exception as exc:  # noqa: BLE001
-            screen_result = {"admit": False, "verdict": "error", "reasons": [str(exc)], "gates_passed": [], "gates_failed": ["error"]}
+        # FIX 14 — code-computed construction_hash on EVERY row; overwrite LLM-supplied value
+        if _construction_hash_fn is not None:
+            try:
+                computed_hash = _construction_hash_fn(spec)
+                spec = dict(spec, construction_hash=computed_hash)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("codex_signal_lane: construction_hash failed for %s (%s)", sid, exc)
+                spec = dict(spec)
+                spec.pop("construction_hash", None)  # strip any LLM-supplied value
+        else:
+            # No hash fn available — strip LLM-supplied value to avoid trusting it
+            if "construction_hash" in spec:
+                spec = {k: v for k, v in spec.items() if k != "construction_hash"}
+
+        # FIX 7b — name pre-dedup: check normalized name vs ALL prior candidates
+        spec_name = spec.get("name", "")
+        norm_spec_name = _normalize_name_local(spec_name) if spec_name else ""
+        if norm_spec_name and norm_spec_name in _prior_name_map:
+            prior_id, prior_name = _prior_name_map[norm_spec_name]
+            log.info("codex_signal_lane: NAME_PREDEDUP: %s matches prior '%s' (%s)", sid, prior_name, prior_id)
+            screen_result = {
+                "admit": False,
+                "verdict": "rejected",
+                "reasons": [f"duplicate name vs prior candidate {prior_id} '{prior_name}'"],
+                "gates_passed": [],
+                "gates_failed": ["novelty"],
+            }
+        else:
+            # FIX 15 — Gate 2: numeric-confidence check (before screen_candidate)
+            _numeric_conf_reject = False
+            if _has_numeric_confidence_fn is not None:
+                try:
+                    if _has_numeric_confidence_fn(spec):
+                        _numeric_conf_reject = True
+                        log.info("codex_signal_lane: NUMERIC_CONF_REJECT: %s has numeric confidence scores", sid)
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("codex_signal_lane: _has_numeric_confidence check failed for %s (%s)", sid, exc)
+
+            if _numeric_conf_reject:
+                screen_result = {
+                    "admit": False,
+                    "verdict": "rejected",
+                    "reasons": ["numeric confidence scores are forbidden (RF-16)"],
+                    "gates_passed": [],
+                    "gates_failed": ["numeric_confidence"],
+                }
+            else:
+                # FIX 15 — Gate 3: validate_spec (before screen_candidate)
+                # Only runs when root is a git repo (avoids false-positive git-tracking failures
+                # in tmp-dir test environments).
+                _spec_ok = True
+                _spec_errors: list[str] = []
+                if _validate_spec_fn is not None and _is_git_repo(root):
+                    try:
+                        _spec_ok, _spec_errors = _validate_spec_fn(spec, root)
+                    except Exception as exc:  # noqa: BLE001
+                        log.warning("codex_signal_lane: validate_spec failed for %s (%s)", sid, exc)
+                        _spec_ok = True  # degrade gracefully — don't block on validator error
+
+                if not _spec_ok:
+                    screen_result = {
+                        "admit": False,
+                        "verdict": "rejected",
+                        "reasons": _spec_errors[:5],
+                        "gates_passed": [],
+                        "gates_failed": ["validate_spec"],
+                    }
+                else:
+                    # SF-R7 screen gate
+                    try:
+                        screen_result = screen_candidate(spec, repo_root=root)
+                    except Exception as exc:  # noqa: BLE001
+                        screen_result = {"admit": False, "verdict": "error", "reasons": [str(exc)], "gates_passed": [], "gates_failed": ["error"]}
+
+            # Register new name in map so later specs in the same batch don't collide
+            if norm_spec_name:
+                _prior_name_map.setdefault(norm_spec_name, (sid, spec_name))
 
         if screen_result.get("admit"):
             spec_stamped = dict(spec)
@@ -447,8 +586,77 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
         n_candidates = int(cfg.get("signals_per_run", 5))
         iso_week = _current_iso_week()
 
-        # 2. Build context pack
-        pack = _build_context_pack(r, n_candidates=n_candidates)
+        # FIX 6 — SF-R6 weekly filing budget cap
+        try:
+            import yaml as _yaml  # noqa: PLC0415
+            sf_yml_path = _resolve_root(root) / "config" / "signal_foundry.yml"
+            _sf_cfg: dict = {}
+            if sf_yml_path.exists():
+                try:
+                    _sf_cfg = _yaml.safe_load(sf_yml_path.read_text(encoding="utf-8")) or {}
+                except Exception:
+                    pass
+            cap = int((_sf_cfg.get("budgets") or {}).get("filed_per_week", 5))
+        except Exception:  # noqa: BLE001
+            cap = 5
+
+        cands_path_for_cap = r / "data" / "signal_foundry" / "candidates.jsonl"
+        try:
+            _week_count = 0
+            _week_reject_count = 0  # FIX 16
+            if cands_path_for_cap.exists():
+                with cands_path_for_cap.open(encoding="utf-8") as _fh:
+                    for _line in _fh:
+                        _line = _line.strip()
+                        if not _line:
+                            continue
+                        try:
+                            _row = json.loads(_line)
+                            if _row.get("iso_week") == iso_week:
+                                if _row.get("status") in {"proposed", "registered", "tested"}:
+                                    _week_count += 1
+                                elif _row.get("status") == "screen_rejected":
+                                    _week_reject_count += 1  # FIX 16
+                        except Exception:
+                            continue
+        except Exception:  # noqa: BLE001
+            _week_count = 0
+            _week_reject_count = 0
+
+        if _week_count >= cap:
+            log.info("codex_signal_lane: SF-R6 weekly cap reached (%d/%d); skipping", _week_count, cap)
+            return {
+                "ok": True,
+                "action": "weekly_cap_reached",
+                "detail": f"SF-R6: {_week_count}/{cap} filed this ISO week",
+                "n_admitted": 0,
+                "n_rejected": 0,
+            }
+
+        # FIX 16 — reject-backoff: if >= 25 screen_rejected rows this week, skip
+        if _week_reject_count >= 25:
+            log.info(
+                "codex_signal_lane: FIX-16 reject-backoff: %d screen_rejected this ISO week (>= 25); skipping",
+                _week_reject_count,
+            )
+            return {
+                "ok": True,
+                "action": "reject_backoff",
+                "detail": f"reject_backoff: {_week_reject_count} screen_rejected this ISO week (>= 25)",
+                "n_admitted": 0,
+                "n_rejected": 0,
+            }
+
+        # 2. Build context pack (FIX 17 — returns tuple)
+        pack, _used_fallback = _build_context_pack(r, n_candidates=n_candidates)
+
+        # FIX 17 — governance event on fallback
+        if _used_fallback:
+            _append_governance_event(
+                "sf_pack_fallback",
+                {"reason": "run_signal_foundry_brainstorm._build_sf_pack not importable", "iso_week": iso_week},
+                r,
+            )
 
         # Get list of previously filed/tested/killed constructions for dedup prompt
         cands_path = r / "data" / "signal_foundry" / "candidates.jsonl"
@@ -475,11 +683,17 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
                 pass
 
         # 3. Generator prompt
+        # FIX 7a — raise prior_names cap to 200 most recent; note overflow
         prior_section = ""
         if prior_names:
+            _cap_200 = prior_names[-200:]  # most recent 200
+            _omitted = len(prior_names) - len(_cap_200)
+            _names_block = "\n".join(f"  - {n}" for n in _cap_200)
+            if _omitted > 0:
+                _names_block += f"\n  (+{_omitted} earlier constructions omitted — the construction-hash gate still enforces them)"
             prior_section = (
                 "\n\nPREVIOUSLY FILED/TESTED/KILLED CONSTRUCTIONS (must not re-propose):\n"
-                + "\n".join(f"  - {n}" for n in prior_names[:50])
+                + _names_block
             )
 
         generator_prompt = (
@@ -583,13 +797,29 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
         # 8. Run harness for admitted ids (error-tolerated, skipped in dry_run)
         if admitted_ids and not dry_run:
             try:
-                subprocess.run(  # noqa: S603
+                harness_cp = subprocess.run(  # noqa: S603
                     [sys.executable, "-m", "scripts.run_signal_foundry_harness", "--root", str(r)],
                     cwd=str(r),
                     capture_output=True,
                     text=True,
                     timeout=1800,  # 30 min hard cap
                 )
+                # FIX 7c — capture returncode and emit governance event
+                if harness_cp.returncode != 0:
+                    stderr_tail = (harness_cp.stderr or "")[-300:]
+                    log.warning("codex_signal_lane: harness returned rc=%d; stderr_tail: %s",
+                                harness_cp.returncode, stderr_tail)
+                    _append_governance_event(
+                        "sf_harness_run",
+                        {"ok": False, "returncode": harness_cp.returncode, "stderr_tail": stderr_tail, "admitted_ids": admitted_ids},
+                        r,
+                    )
+                else:
+                    _append_governance_event(
+                        "sf_harness_run",
+                        {"ok": True, "admitted_ids": admitted_ids},
+                        r,
+                    )
             except Exception as exc:  # noqa: BLE001
                 log.warning("codex_signal_lane: harness run failed (%s); non-fatal", exc)
 

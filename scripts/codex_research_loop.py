@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -204,7 +205,26 @@ def run_loop(
         stop_reason: str | None = None
         iterations_run = 0
 
+        # FIX 8 — wall-clock deadline from CODEX_DEADLINE_EPOCH env var
+        _deadline: float | None = None
+        try:
+            _dl_raw = os.environ.get("CODEX_DEADLINE_EPOCH", "").strip()
+            if _dl_raw:
+                _deadline = float(int(_dl_raw))
+        except (ValueError, TypeError):
+            _deadline = None
+
+        # FIX 18 — consecutive unproductive iteration tracking
+        _consecutive_unproductive = 0
+
         for i in range(1, iterations + 1):
+            # FIX 8 — check wall-clock deadline before each iteration
+            if _deadline is not None and time.time() > _deadline:
+                stop_reason = f"deadline (iteration {i})"
+                log.info("codex_research_loop: stopping — %s", stop_reason)
+                _append_journal(r, lane, i, {}, stop_reason)
+                break
+
             # Frozen cross-builder API: fetch live rate limits ONCE per iteration
             # BEFORE the can_run gate, so the gate uses fresh data (CRX-R4).
             rl = _fetch_rate_limits()
@@ -231,6 +251,26 @@ def run_loop(
 
             _append_journal(r, lane, i, iter_results, stop_reason=None)
             iterations_run += 1
+
+            # FIX 18 — check if this iteration was productive
+            # productive = any lane had action=="pr_opened" OR n_admitted>0 OR action=="dry_run"
+            _iter_productive = False
+            for ln_result in iter_results.values():
+                action = ln_result.get("action", "")
+                n_admitted = ln_result.get("n_admitted", 0)
+                if action in ("pr_opened", "dry_run") or (isinstance(n_admitted, int) and n_admitted > 0):
+                    _iter_productive = True
+                    break
+
+            if _iter_productive:
+                _consecutive_unproductive = 0
+            else:
+                _consecutive_unproductive += 1
+                if _consecutive_unproductive >= 2:
+                    stop_reason = "no_progress (2 consecutive unproductive iterations)"
+                    log.info("codex_research_loop: stopping — %s", stop_reason)
+                    _append_journal(r, lane, i + 1, {}, stop_reason)
+                    break
 
         return {
             "ok": True,

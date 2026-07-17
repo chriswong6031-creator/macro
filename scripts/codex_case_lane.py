@@ -114,11 +114,21 @@ def _fill_prompt(template: str, ticker: str, year: int) -> str:
 # ---------------------------------------------------------------------------
 
 def _load_attempted_episodes(root: Path) -> set[str]:
-    """Return set of 'TICKER_YYYY' keys already in case_attempts.jsonl."""
-    attempts: set[str] = set()
+    """Return set of 'TICKER_YYYY' keys that should be EXCLUDED from the queue.
+
+    FIX 1 — retryable transient failures:
+    Exclusion applies only when an episode has:
+      (a) at least one row with status in {"pr_opened", "audit_failed", "generated"}, OR
+      (b) >= 3 rows of any status (bounded retry to avoid poison-pill episodes).
+    Episodes with only 'skipped' rows below the 3-attempt bound are NOT excluded,
+    so transient failures (e.g. codex not installed, timeout) are retryable.
+    """
+    _TERMINAL_STATUSES = {"pr_opened", "audit_failed", "generated"}
+    # episode -> list of statuses
+    ep_rows: dict[str, list[str]] = {}
     path = root / _ATTEMPTS_REL
     if not path.exists():
-        return attempts
+        return set()
     try:
         with path.open(encoding="utf-8") as fh:
             for line in fh:
@@ -128,13 +138,23 @@ def _load_attempted_episodes(root: Path) -> set[str]:
                 try:
                     row = json.loads(line)
                     ep = row.get("episode")
+                    status = row.get("status", "")
                     if ep:
-                        attempts.add(ep)
+                        ep_rows.setdefault(ep, []).append(status)
                 except Exception:
                     continue
     except OSError:
         pass
-    return attempts
+
+    excluded: set[str] = set()
+    for ep, statuses in ep_rows.items():
+        # Exclude if any terminal status is present
+        if any(s in _TERMINAL_STATUSES for s in statuses):
+            excluded.add(ep)
+        # Exclude if 3+ attempts of any kind (poison-pill cap)
+        elif len(statuses) >= 3:
+            excluded.add(ep)
+    return excluded
 
 
 def _append_attempt(root: Path, episode: str, status: str, pr_url: str | None, detail: str) -> None:
@@ -171,12 +191,77 @@ def _existing_case_keys(root: Path) -> set[str]:
     return keys
 
 
-def _build_queue(root: Path) -> list[dict]:
-    """Return episodes ranked by |fwd_excess_126d_pp| desc, excluding existing cases and attempts.
+def _ls_remote_case_keys(root: Path) -> set[str]:
+    """FIX 4 — Return set of 'TICKER_YYYY' keys for branches already on origin.
 
-    Returns list of dicts: [{ticker, year, excess_col_val}]
-    Falls back to an empty list on any error (parquet absent etc.).
+    Runs: git ls-remote --heads origin "codex/case-*"
+    Parses ref names like refs/heads/codex/case-nvda-2023 -> NVDA_2023.
+    Guarded: any failure -> empty set, log warning, NEVER raise.
     """
+    keys: set[str] = set()
+    try:
+        result = subprocess.run(  # noqa: S603
+            ["git", "ls-remote", "--heads", "origin", "codex/case-*"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        if result.returncode != 0:
+            log.warning("codex_case_lane: ls-remote failed (rc=%d): %s", result.returncode, result.stderr.strip()[:200])
+            return keys
+        # Each line: <sha>\trefs/heads/codex/case-<ticker>-<year>
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split("\t", 1)
+            if len(parts) < 2:
+                continue
+            ref = parts[1].strip()
+            # refs/heads/codex/case-nvda-2023
+            prefix = "refs/heads/codex/case-"
+            if not ref.startswith(prefix):
+                continue
+            tail = ref[len(prefix):]  # e.g. "nvda-2023"
+            # Last segment is the year (4 digits), everything before is the ticker
+            dash_parts = tail.rsplit("-", 1)
+            if len(dash_parts) == 2 and dash_parts[1].isdigit() and len(dash_parts[1]) == 4:
+                ticker_part = dash_parts[0].upper().replace("-", "")
+                year_part = dash_parts[1]
+                keys.add(f"{ticker_part}_{year_part}")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("codex_case_lane: _ls_remote_case_keys failed (%s); dedup skipped", exc)
+    return keys
+
+
+def _build_queue(root: Path, track: str = "winner") -> list[dict]:
+    """Return episodes ranked per track, excluding existing cases, attempts, and remote branches.
+
+    FIX 10 — two tracks:
+      winner: keep outcome_label in {"durable_winner","clean_hold"}, require non-null
+              fwd_excess_252d_pp, sort DESC by fwd_excess_252d_pp.
+      failed: keep outcome_label in {"failed","blow_off"}, sort DESC by excess_42d_pp
+              (biggest run-ups that failed to sustain).
+
+    In both tracks:
+      - Exclude tickers matching r'(-USD$)|(_F$)|(^\\^)' (crypto, futures, indices).
+      - Exclude rows with outcome_label == "unmatured" (always).
+      - Exclude existing cases, attempts-ledger exclusions, remote branches.
+
+    If the needed columns are absent (old parquet), fall back to pre-pass-1 behavior
+    (rank by absolute fwd_excess_126d_pp) and log a warning.
+
+    Returns list of dicts: [{ticker, year, excess_val, key, row, outcome_label}]
+    """
+    import re as _re  # noqa: PLC0415
+
+    # FIX 5 — columns to carry in "row" for episode context injection
+    _EPISODE_COLS = ["t0", "sector", "benchmark", "excess_21d_pp", "excess_42d_pp",
+                     "dollar_vol_z21", "dv_5_60_ratio", "new_high_63d"]
+    _TICKER_EXCLUDE_RE = _re.compile(r"(?:-USD$)|(?:_F$)|(?:^\^)")
+
     try:
         import pandas as pd  # noqa: PLC0415
 
@@ -188,7 +273,9 @@ def _build_queue(root: Path) -> list[dict]:
         df = pd.read_parquet(ep_path)
         existing_keys = _existing_case_keys(root)
         attempted_keys = _load_attempted_episodes(root)
-        exclude = existing_keys | attempted_keys
+        # FIX 4 — also exclude episodes whose branch already exists on remote
+        remote_keys = _ls_remote_case_keys(root)
+        exclude = existing_keys | attempted_keys | remote_keys
 
         # Build episode key column
         df["_year"] = pd.to_datetime(df["t0"]).dt.year
@@ -200,27 +287,121 @@ def _build_queue(root: Path) -> list[dict]:
         if df.empty:
             return []
 
-        # Rank by largest absolute forward excess — use best available column
-        excess_col = None
-        for col in ["fwd_excess_126d_pp", "fwd_excess_63d_pp", "fwd_excess_21d_pp"]:
-            if col in df.columns:
-                excess_col = col
-                break
+        # FIX 10 — check for new columns
+        _has_outcome_label = "outcome_label" in df.columns
+        _has_fwd_252 = "fwd_excess_252d_pp" in df.columns
+        _has_excess_42 = "excess_42d_pp" in df.columns
 
-        if excess_col is not None:
-            df["_sort_val"] = df[excess_col].abs()
+        if not _has_outcome_label:
+            log.warning("codex_case_lane: outcome_label column absent (old parquet) — falling back to legacy sort")
+
+        # Always exclude unmatured and non-equity tickers
+        if _has_outcome_label:
+            df = df[df["outcome_label"] != "unmatured"].copy()
+        # Exclude crypto pairs, futures, indices
+        df = df[~df["ticker"].astype(str).str.contains(_TICKER_EXCLUDE_RE)].copy()
+
+        if df.empty:
+            return []
+
+        if _has_outcome_label:
+            # FIX 10 — track-based filtering and sort
+            if track == "failed":
+                df = df[df["outcome_label"].isin({"failed", "blow_off"})].copy()
+                if _has_excess_42:
+                    df = df.sort_values("excess_42d_pp", ascending=False, na_position="last")
+                    sort_col = "excess_42d_pp"
+                else:
+                    df["_sort_val"] = 0.0
+                    sort_col = None
+            else:
+                # winner track (default)
+                df = df[df["outcome_label"].isin({"durable_winner", "clean_hold"})].copy()
+                if _has_fwd_252:
+                    df = df[df["fwd_excess_252d_pp"].notna()].copy()
+                    df = df.sort_values("fwd_excess_252d_pp", ascending=False, na_position="last")
+                    sort_col = "fwd_excess_252d_pp"
+                else:
+                    # fallback within winner track: use 126d
+                    excess_col = None
+                    for col in ["fwd_excess_126d_pp", "fwd_excess_63d_pp", "fwd_excess_21d_pp"]:
+                        if col in df.columns:
+                            excess_col = col
+                            break
+                    if excess_col:
+                        df["_sort_val"] = df[excess_col].abs()
+                        df = df.sort_values("_sort_val", ascending=False, na_position="last")
+                    sort_col = None
         else:
-            df["_sort_val"] = 0.0
+            # Legacy fallback (no outcome_label column)
+            excess_col = None
+            for col in ["fwd_excess_126d_pp", "fwd_excess_63d_pp", "fwd_excess_21d_pp"]:
+                if col in df.columns:
+                    excess_col = col
+                    break
+            if excess_col is not None:
+                df["_sort_val"] = df[excess_col].abs()
+            else:
+                df["_sort_val"] = 0.0
+            df = df.sort_values("_sort_val", ascending=False, na_position="last")
+            sort_col = None
 
-        df = df.sort_values("_sort_val", ascending=False, na_position="last")
+        if df.empty:
+            return []
 
         queue = []
-        for _, row in df.iterrows():
+        for _, row_ser in df.iterrows():
             try:
-                ticker = str(row["ticker"]).strip().upper()
-                year = int(row["_year"])
-                excess_val = float(row["_sort_val"]) if excess_col else 0.0
-                queue.append({"ticker": ticker, "year": year, "excess_val": excess_val, "key": f"{ticker}_{year}"})
+                ticker = str(row_ser["ticker"]).strip().upper()
+                year = int(row_ser["_year"])
+
+                # Determine excess_val for display
+                try:
+                    if _has_outcome_label and track == "failed" and _has_excess_42:
+                        excess_val = float(row_ser["excess_42d_pp"]) if not _is_nan(row_ser["excess_42d_pp"]) else 0.0
+                    elif _has_outcome_label and _has_fwd_252:
+                        excess_val = float(row_ser["fwd_excess_252d_pp"]) if not _is_nan(row_ser["fwd_excess_252d_pp"]) else 0.0
+                    elif "_sort_val" in row_ser.index:
+                        excess_val = float(row_ser["_sort_val"])
+                    else:
+                        excess_val = 0.0
+                except Exception:
+                    excess_val = 0.0
+
+                outcome_label = str(row_ser.get("outcome_label", "")) if _has_outcome_label else ""
+
+                # FIX 5 — carry episode context fields
+                ep_row: dict = {}
+                for col in _EPISODE_COLS:
+                    if col in row_ser.index:
+                        val = row_ser[col]
+                        try:
+                            # Convert pandas/numpy types to plain Python for JSON safety
+                            import numpy as _np  # noqa: PLC0415
+                            if isinstance(val, (_np.integer,)):
+                                val = int(val)
+                            elif isinstance(val, (_np.floating,)):
+                                val = None if (hasattr(val, "__class__") and str(val) in ("nan", "inf", "-inf")) else float(val)
+                            elif hasattr(val, "item"):
+                                val = val.item()
+                            elif hasattr(val, "isoformat"):
+                                val = val.isoformat()
+                            import math
+                            if isinstance(val, float) and not math.isfinite(val):
+                                val = None
+                        except Exception:
+                            val = str(val)
+                        ep_row[col] = val
+                # FIX 10 — add outcome_label to row context
+                ep_row["outcome_label"] = outcome_label
+                queue.append({
+                    "ticker": ticker,
+                    "year": year,
+                    "excess_val": excess_val,
+                    "key": f"{ticker}_{year}",
+                    "row": ep_row,
+                    "outcome_label": outcome_label,
+                })
             except Exception:
                 continue
 
@@ -229,6 +410,15 @@ def _build_queue(root: Path) -> list[dict]:
     except Exception as exc:  # noqa: BLE001
         log.warning("codex_case_lane: _build_queue failed (%s)", exc)
         return []
+
+
+def _is_nan(val: object) -> bool:
+    """Return True if val is a float NaN (never raises)."""
+    try:
+        import math
+        return isinstance(val, float) and not math.isfinite(val)
+    except Exception:
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -243,16 +433,26 @@ _REQUIRED_KEYS = [
 ]
 
 
-def _deterministic_audit(case_path: Path, ticker: str, year: int) -> list[str]:
+def _deterministic_audit(case_path: Path, ticker: str, year: int, expect_failed: bool = False) -> list[str]:
     """Run deterministic checks on a case file. Returns list of failure strings (empty = pass).
 
-    Checks:
+    FIX 11 — extended checks:
     - parse_case_file() succeeds (schema + required keys)
     - ticker/year match filename
-    - every catalyst_ladder entry has source_url
-    - sources non-empty
-    - 'validated' (case-insensitive) absent from file text
+    - every catalyst_ladder entry (dict) has non-empty headline (accept 'title' fallback),
+      non-empty type, and date whose first 10 chars parse as ISO date.
+    - t0_hypothesis parses as ISO date.
+    - run_window: accept dict {start,end} or 2-element list; both parse as ISO dates;
+      t0_hypothesis must lie within [start, end] inclusive; start year within [year-1, year+1].
+    - sources list length >= 2.
+    - catalyst_ladder non-empty.
+    - case_type track match: expect_failed=True requires case_type=='failed_breakaway';
+      expect_failed=False requires case_type != 'failed_breakaway'.
+    - Each catalyst_ladder type validated against ALLOWED_CATALYST_TYPES if importable.
+    - source_url present on each ladder entry (original check).
+    - 'validated' (case-insensitive) absent from file text.
     """
+    from datetime import datetime as _dt  # noqa: PLC0415
     failures: list[str] = []
     try:
         from engine.winner_autopsy import parse_case_file  # noqa: PLC0415
@@ -280,19 +480,129 @@ def _deterministic_audit(case_path: Path, ticker: str, year: int) -> list[str]:
     except (TypeError, ValueError):
         failures.append(f"episode_year not parseable: {case.get('episode_year')!r}")
 
-    # catalyst_ladder: every entry must have source_url
+    # FIX 11 — catalyst_ladder non-empty
     ladder = case.get("catalyst_ladder") or []
+    if not ladder:
+        failures.append("catalyst_ladder is empty")
+
+    # FIX 11 — optionally load allowed catalyst types
+    _allowed_catalyst_types: set[str] | None = None
+    try:
+        import engine.winner_autopsy as _wa  # noqa: PLC0415
+        for _attr in dir(_wa):
+            if "CATALYST" in _attr.upper() and "TYPE" in _attr.upper():
+                _candidate = getattr(_wa, _attr, None)
+                if isinstance(_candidate, (set, list, frozenset, tuple)):
+                    _allowed_catalyst_types = set(_candidate)
+                    break
+    except Exception:
+        pass
+
+    # FIX 11 — catalyst_ladder entry checks + original source_url
     if isinstance(ladder, list):
         for i, entry in enumerate(ladder):
-            if isinstance(entry, dict):
-                url = entry.get("source_url") or entry.get("url") or ""
-                if not url:
-                    failures.append(f"catalyst_ladder[{i}] missing source_url")
+            if not isinstance(entry, dict):
+                continue
+            # headline (accept 'title' as fallback)
+            headline = entry.get("headline") or entry.get("title") or ""
+            if not str(headline).strip():
+                failures.append(f"catalyst_ladder[{i}] missing headline/title")
+            # type
+            ctype = entry.get("type") or ""
+            if not str(ctype).strip():
+                failures.append(f"catalyst_ladder[{i}] missing type")
+            elif _allowed_catalyst_types is not None:
+                if str(ctype) not in _allowed_catalyst_types:
+                    failures.append(f"catalyst_ladder[{i}] type '{ctype}' not in allowed catalyst types")
+            # date: first 10 chars must parse as ISO date
+            cdate = entry.get("date") or ""
+            try:
+                if not str(cdate).strip():
+                    failures.append(f"catalyst_ladder[{i}] missing date")
+                else:
+                    _dt.strptime(str(cdate)[:10], "%Y-%m-%d")
+            except (ValueError, TypeError):
+                failures.append(f"catalyst_ladder[{i}] date '{cdate}' does not parse as ISO date")
+            # source_url (original check, kept)
+            url = entry.get("source_url") or entry.get("url") or ""
+            if not url:
+                failures.append(f"catalyst_ladder[{i}] missing source_url")
 
-    # sources non-empty
+    # FIX 11 — t0_hypothesis parses as ISO date
+    t0_hyp = case.get("t0_hypothesis") or ""
+    t0_dt: "_dt | None" = None
+    try:
+        if not str(t0_hyp).strip():
+            failures.append("t0_hypothesis is empty")
+        else:
+            t0_dt = _dt.strptime(str(t0_hyp)[:10], "%Y-%m-%d")
+    except (ValueError, TypeError):
+        failures.append(f"t0_hypothesis '{t0_hyp}' does not parse as ISO date")
+
+    # FIX 11 — run_window: accept dict {start,end} or 2-element list
+    rw = case.get("run_window")
+    rw_start_dt: "_dt | None" = None
+    rw_end_dt: "_dt | None" = None
+    if rw is not None:
+        try:
+            if isinstance(rw, dict):
+                rw_start_str = str(rw.get("start", "")).strip()
+                rw_end_str = str(rw.get("end", "")).strip()
+            elif isinstance(rw, (list, tuple)) and len(rw) >= 2:
+                rw_start_str = str(rw[0]).strip()
+                rw_end_str = str(rw[1]).strip()
+            elif isinstance(rw, str):
+                # Accept "YYYY-MM-DD / YYYY-MM-DD" or "YYYY-MM-DD YYYY-MM-DD"
+                rw_parts = [p.strip() for p in rw.replace("/", " ").split() if p.strip()]
+                rw_start_str = rw_parts[0] if len(rw_parts) >= 1 else ""
+                rw_end_str = rw_parts[-1] if len(rw_parts) >= 2 else ""
+            else:
+                rw_start_str = str(rw).strip()
+                rw_end_str = rw_start_str
+
+            if rw_start_str:
+                try:
+                    rw_start_dt = _dt.strptime(rw_start_str[:10], "%Y-%m-%d")
+                except (ValueError, TypeError):
+                    failures.append(f"run_window start '{rw_start_str}' does not parse as ISO date")
+            if rw_end_str:
+                try:
+                    rw_end_dt = _dt.strptime(rw_end_str[:10], "%Y-%m-%d")
+                except (ValueError, TypeError):
+                    failures.append(f"run_window end '{rw_end_str}' does not parse as ISO date")
+
+            # t0_hypothesis must lie within [start, end]
+            if rw_start_dt and rw_end_dt and t0_dt:
+                if not (rw_start_dt <= t0_dt <= rw_end_dt):
+                    failures.append(
+                        f"t0_hypothesis {t0_hyp} outside run_window [{rw_start_str}, {rw_end_str}]"
+                    )
+            # start year within [year-1, year+1]
+            if rw_start_dt:
+                if not (year - 1 <= rw_start_dt.year <= year + 1):
+                    failures.append(
+                        f"run_window start year {rw_start_dt.year} outside [{year-1}, {year+1}] for episode_year {year}"
+                    )
+        except Exception as exc:
+            failures.append(f"run_window parse error: {exc}")
+
+    # FIX 11 — sources length >= 2
     sources = case.get("sources") or []
-    if not sources:
-        failures.append("sources is empty")
+    if len(sources) < 2:
+        failures.append(f"sources list has {len(sources)} entries (need >= 2)")
+
+    # FIX 11 — case_type track match
+    case_type = case.get("case_type") or ""
+    if expect_failed:
+        if case_type != "failed_breakaway":
+            failures.append(
+                f"case_type mismatch: expected 'failed_breakaway' (expect_failed=True), got '{case_type}'"
+            )
+    else:
+        if case_type == "failed_breakaway":
+            failures.append(
+                "case_type is 'failed_breakaway' but expect_failed=False (this is a winner track case)"
+            )
 
     # Banned word: 'validated' (case-insensitive, word-boundary matched).
     # The token is EXEMPT when:
@@ -355,6 +665,7 @@ def _run_codex_audit(case_text: str, ticker: str, year: int, cfg: dict, root: Pa
     except ImportError:
         return {"ok": False, "final_message": "", "error_kind": "not_installed", "events_count": 0, "token_usage": None, "rate_limits": None, "raw_tail": "runner not importable"}
 
+    case_path_hint = f"research/winners/cases/{ticker}_{year}.md"
     audit_prompt = f"""\
 You are an independent auditor reviewing a winner autopsy case file for {ticker} ({year}).
 
@@ -368,13 +679,17 @@ If there are issues, return: {{"verdict": "FINDINGS", "findings": ["<detailed is
 
 Do NOT return any other text outside the JSON block.
 
+Full file on disk (read-only): {case_path_hint}
+(If the inlined copy below appears truncated, read the full file from that path.)
+
 === CASE FILE CONTENT ===
-{case_text[:12000]}
+{case_text[:60000]}
 """
     timeout_s = int(cfg.get("session_timeout_min", 25)) * 60
     model = cfg.get("codex_model", "") or ""
-    sandbox = cfg.get("sandbox", "workspace-write")
-    network = bool(cfg.get("network", True))
+    # FIX 3 — audit session is read-only (must not modify the workspace)
+    sandbox = "read-only"
+    network = False
 
     return run_codex(
         audit_prompt,
@@ -419,6 +734,7 @@ def _run_codex_fix(case_text: str, findings: list[str], ticker: str, year: int, 
     except ImportError:
         return {"ok": False, "final_message": "", "error_kind": "not_installed", "events_count": 0, "token_usage": None, "rate_limits": None, "raw_tail": "runner not importable"}
 
+    case_path_hint = f"research/winners/cases/{ticker}_{year}.md"
     findings_text = "\n".join(f"- {f}" for f in findings)
     fix_prompt = f"""\
 You previously generated a winner autopsy case file for {ticker} ({year}).
@@ -428,13 +744,16 @@ An audit found the following issues that must be fixed:
 
 Here is the current case file content:
 === CASE FILE ===
-{case_text[:12000]}
+{case_text[:60000]}
 =================
+
+Full file on disk: {case_path_hint}
+(If the inlined copy above appears truncated, read the full file from that path first.)
 
 Please provide the complete corrected case file. Write ONLY the markdown content
 (no preamble), ending with the fenced ```yaml winner_case.v1 block.
 
-Also write the corrected file to: research/winners/cases/{ticker}_{year}.md
+Also write the corrected file to: {case_path_hint}
 """
     timeout_s = int(cfg.get("session_timeout_min", 25)) * 60
     model = cfg.get("codex_model", "") or ""
@@ -552,17 +871,51 @@ def _open_pr(root: Path, ticker: str, year: int, case_path: Path, audit_summary:
             log.warning("codex_case_lane: commit failed (%s); skipping PR", commit_r.stderr.strip())
             return None
 
-        # 7. Push the branch
+        # 7. Push the branch — FIX 5(a): retry with --force-with-lease on first failure
         push_r = subprocess.run(  # noqa: S603
             ["git", "-C", tmpdir, "push", "origin", branch],
             capture_output=True, text=True,
         )
         if push_r.returncode != 0:
-            log.warning("codex_case_lane: push failed (%s); skipping PR", push_r.stderr.strip())
-            return None
+            log.warning("codex_case_lane: push failed (%s); retrying with --force-with-lease", push_r.stderr.strip())
+            push_r2 = subprocess.run(  # noqa: S603
+                ["git", "-C", tmpdir, "push", "--force-with-lease", "origin", branch],
+                capture_output=True, text=True,
+            )
+            if push_r2.returncode != 0:
+                log.warning("codex_case_lane: force-with-lease push also failed (%s); checking for existing PR", push_r2.stderr.strip())
+                # FIX 5(a): even if push fails, check if PR already exists
+                try:
+                    reuse_r = subprocess.run(  # noqa: S603
+                        ["gh", "pr", "list", "--head", branch, "--state", "open", "--json", "url", "--jq", ".[0].url"],
+                        cwd=str(root),
+                        capture_output=True, text=True, timeout=30,
+                    )
+                    existing_url = reuse_r.stdout.strip()
+                    if existing_url and existing_url.startswith("https://"):
+                        log.info("codex_case_lane: reusing existing PR %s", existing_url)
+                        return existing_url
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("codex_case_lane: PR reuse check failed (%s)", exc)
+                return None
 
         # 8. Open the PR via gh (run with cwd=tmpdir)
         try:
+            # FIX 5(a): check for an existing open PR before creating
+            try:
+                reuse_r = subprocess.run(  # noqa: S603
+                    ["gh", "pr", "list", "--head", branch, "--state", "open", "--json", "url", "--jq", ".[0].url"],
+                    cwd=str(root),
+                    capture_output=True, text=True, timeout=30,
+                )
+                existing_url = reuse_r.stdout.strip()
+                if existing_url and existing_url.startswith("https://"):
+                    log.info("codex_case_lane: PR already exists at %s; skipping create", existing_url)
+                    pr_url = existing_url
+                    return pr_url  # skip push+create
+            except Exception as exc:  # noqa: BLE001
+                log.warning("codex_case_lane: PR existence check failed (%s); proceeding with create", exc)
+
             body = (
                 f"## Winner autopsy: {ticker} {year}\n\n"
                 f"Generated by `codex_case_lane`. Audit summary:\n\n"
@@ -628,18 +981,73 @@ def _open_pr(root: Path, ticker: str, year: int, case_path: Path, audit_summary:
 # Main run_once
 # ---------------------------------------------------------------------------
 
+def _count_pr_opened(root: Path) -> int:
+    """Count case_attempts.jsonl rows with status='pr_opened'. NEVER raises."""
+    try:
+        path = root / _ATTEMPTS_REL
+        if not path.exists():
+            return 0
+        count = 0
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                    if row.get("status") == "pr_opened":
+                        count += 1
+                except Exception:
+                    continue
+        return count
+    except Exception:
+        return 0
+
+
 def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
     """Run one iteration of the case lane.
+
+    FIX 10 — failed-track cadence:
+    Count pr_opened rows; if count % 4 == 3 use track="failed", else "winner".
+    If chosen track's queue is empty, fall back to other track.
+
+    FIX 12 — prior-case context line appended after EPISODE CONTEXT block.
+
+    FIX 13 — worktree_guard wraps GENERATION and FIX codex sessions.
 
     Returns dict: {ok, action, detail, episode, pr_url}.
     NEVER raises.
     """
+    # FIX 13 — guarded import of worktree_guard
+    _wg_snapshot = None
+    _wg_restore = None
+    _wg_protect: list[str] = []
+    try:
+        from engine.codex_lane.worktree_guard import snapshot as _snap, restore as _rest, DEFAULT_PROTECT  # noqa: PLC0415
+        _wg_snapshot = _snap
+        _wg_restore = _rest
+        _wg_protect = list(DEFAULT_PROTECT)
+    except Exception as exc:  # noqa: BLE001
+        log.info("codex_case_lane: worktree_guard not importable (%s); proceeding without guard", exc)
+
     try:
         r = _resolve_root(root)
         cfg = _load_cfg(r)
 
-        # 1. Build work queue
-        queue = _build_queue(r)
+        # FIX 10 — track cadence
+        pr_opened_count = _count_pr_opened(r)
+        use_failed = (pr_opened_count % 4) == 3
+
+        primary_track = "failed" if use_failed else "winner"
+        fallback_track = "winner" if use_failed else "failed"
+
+        queue = _build_queue(r, track=primary_track)
+        active_track = primary_track
+        if not queue:
+            log.info("codex_case_lane: queue empty for track=%s; trying fallback track=%s", primary_track, fallback_track)
+            queue = _build_queue(r, track=fallback_track)
+            active_track = fallback_track
+
         if not queue:
             log.info("codex_case_lane: no uncased episodes available; nothing to do")
             return {"ok": True, "action": "skip", "detail": "no uncased episodes", "episode": None, "pr_url": None}
@@ -650,8 +1058,9 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
         year = ep["year"]
         episode_key = ep["key"]
         case_path = r / _CASES_DIR_REL / f"{ticker}_{year}.md"
+        expect_failed = (active_track == "failed")
 
-        log.info("codex_case_lane: targeting episode %s", episode_key)
+        log.info("codex_case_lane: targeting episode %s (track=%s)", episode_key, active_track)
 
         # 2. Fill prompt template
         template = _load_prompt_template(r)
@@ -660,6 +1069,60 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
             return {"ok": False, "action": "skip", "detail": "prompt template absent", "episode": episode_key, "pr_url": None}
 
         prompt = _fill_prompt(template, ticker, year)
+
+        # FIX 5(b) — episode context injection
+        try:
+            ep_row = ep.get("row", {})
+            ctx_lines = ["", "EPISODE CONTEXT (from data/research/winner_episodes.parquet — real computed stats; use them)"]
+            _float_cols = {"excess_21d_pp", "excess_42d_pp", "dollar_vol_z21", "dv_5_60_ratio"}
+            for fld in ["t0", "sector", "benchmark", "excess_21d_pp", "excess_42d_pp",
+                        "dollar_vol_z21", "dv_5_60_ratio", "new_high_63d"]:
+                if fld in ep_row and ep_row[fld] is not None:
+                    val = ep_row[fld]
+                    if fld in _float_cols and isinstance(val, float):
+                        ctx_lines.append(f"  {fld}: {val:.2f}")
+                    else:
+                        ctx_lines.append(f"  {fld}: {val}")
+            prompt += "\n".join(ctx_lines)
+        except Exception:  # noqa: BLE001
+            pass
+
+        # FIX 12 — prior-case context line
+        try:
+            existing_keys_sorted = sorted(_existing_case_keys(r))
+            _cap = 60
+            if existing_keys_sorted:
+                displayed = existing_keys_sorted[:_cap]
+                overflow = len(existing_keys_sorted) - len(displayed)
+                keys_str = ", ".join(displayed)
+                if overflow > 0:
+                    keys_str += f" (+{overflow} more)"
+                prompt += f"\n\nAlready-cased episodes (context only — the queue already excludes them): {keys_str}"
+        except Exception:  # noqa: BLE001
+            pass
+
+        # FIX 5(b) — price-store availability note (guarded)
+        try:
+            price_store = r / "data" / "massive_stock_day"
+            store_note_lines: list[str] = [""]
+            if not price_store.exists() or len(list(price_store.iterdir())) < 100:
+                store_note_lines.append("NOTE: data/massive_stock_day is unavailable or thin in this checkout.")
+                codex_ps = os.environ.get("CODEX_PRICE_STORE", "")
+                if codex_ps and Path(codex_ps).exists():
+                    store_note_lines.append(f"A full price store is readable at: {Path(codex_ps).resolve()} (absolute path, read-only).")
+                else:
+                    store_note_lines.append("Rely on the EPISODE CONTEXT stats above, data/yahoo/ benchmarks, and state coverage gaps honestly.")
+            prompt += "\n".join(store_note_lines)
+        except Exception:  # noqa: BLE001
+            pass
+
+        # FIX 10 — inject failed-track instruction at end of prompt
+        if expect_failed:
+            prompt += (
+                "\n\nIMPORTANT: This is a FAILED breakaway case (`case_type: failed_breakaway`). "
+                "The run did NOT sustain — the study's purpose is why it failed (what distinguished it "
+                "from durable winners). State this after the first paragraph as the format contract requires."
+            )
 
         # 3. Run Codex to generate the case (dry_run: skip the actual call)
         if dry_run:
@@ -678,6 +1141,17 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
         sandbox = cfg.get("sandbox", "workspace-write")
         network = bool(cfg.get("network", True))
 
+        # FIX 13 — snapshot before generation run
+        _allowed_case_path = f"research/winners/cases/{ticker}_{year}.md"
+        _guard_handle: dict = {}
+        _wt_violations_detail = ""
+        _wt_fix_violations_detail = ""  # surfaced in audit_failed detail (Finding 5)
+        if _wg_snapshot is not None:
+            try:
+                _guard_handle = _wg_snapshot(r, _wg_protect)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("codex_case_lane: worktree_guard.snapshot failed (%s)", exc)
+
         gen_run = run_codex(
             prompt,
             cwd=str(r),
@@ -686,11 +1160,23 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
             sandbox=sandbox,
             network=network,
         )
+
+        # FIX 13 — restore after generation run
+        if _wg_restore is not None and _guard_handle:
+            try:
+                violations = _wg_restore(r, _guard_handle, allowed={_allowed_case_path})
+                if violations:
+                    log.warning("codex_case_lane: worktree_guard violations (gen): %s", violations)
+                    _wt_violations_detail = f"; worktree_violations={len(violations)}"
+            except Exception as exc:  # noqa: BLE001
+                log.warning("codex_case_lane: worktree_guard.restore failed (%s)", exc)
+            _guard_handle = {}
+
         _note_result(gen_run, r)
 
         if not gen_run.get("ok"):
             err = gen_run.get("error_kind", "error")
-            _append_attempt(r, episode_key, "skipped", None, f"gen run failed: {err}")
+            _append_attempt(r, episode_key, "skipped", None, f"gen run failed: {err}{_wt_violations_detail}")
             return {"ok": False, "action": "error", "detail": f"gen run failed: {err}", "episode": episode_key, "pr_url": None}
 
         # 4. If case file not written by Codex, try to extract from final_message
@@ -705,11 +1191,11 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
                     log.warning("codex_case_lane: could not write case from final_message (%s)", exc)
 
         if not case_path.exists():
-            _append_attempt(r, episode_key, "skipped", None, "case file not created by Codex and not extractable from message")
+            _append_attempt(r, episode_key, "skipped", None, f"case file not created by Codex and not extractable from message{_wt_violations_detail}")
             return {"ok": False, "action": "error", "detail": "case file not created", "episode": episode_key, "pr_url": None}
 
-        # 5. Deterministic audit
-        det_failures = _deterministic_audit(case_path, ticker, year)
+        # 5. Deterministic audit (FIX 11: pass expect_failed)
+        det_failures = _deterministic_audit(case_path, ticker, year, expect_failed=expect_failed)
 
         # 6. Codex audit session
         try:
@@ -727,7 +1213,27 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
         if verdict != "PASS" or det_failures:
             all_issues = det_failures + findings
             if all_issues:
+                # FIX 13 — snapshot before fix run
+                _guard_handle_fix: dict = {}
+                _wt_fix_violations_detail = ""
+                if _wg_snapshot is not None:
+                    try:
+                        _guard_handle_fix = _wg_snapshot(r, _wg_protect)
+                    except Exception as exc:  # noqa: BLE001
+                        log.warning("codex_case_lane: worktree_guard.snapshot (fix) failed (%s)", exc)
+
                 fix_run = _run_codex_fix(case_text, all_issues, ticker, year, cfg, r)
+
+                # FIX 13 — restore after fix run
+                if _wg_restore is not None and _guard_handle_fix:
+                    try:
+                        fix_violations = _wg_restore(r, _guard_handle_fix, allowed={_allowed_case_path})
+                        if fix_violations:
+                            log.warning("codex_case_lane: worktree_guard violations (fix): %s", fix_violations)
+                            _wt_fix_violations_detail = f"; worktree_violations={len(fix_violations)}"
+                    except Exception as exc:  # noqa: BLE001
+                        log.warning("codex_case_lane: worktree_guard.restore (fix) failed (%s)", exc)
+
                 _note_result(fix_run, r)
 
                 # Re-read case file (may have been rewritten by fix)
@@ -737,8 +1243,8 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
                     except OSError:
                         pass
 
-                # Re-run deterministic audit
-                det_failures = _deterministic_audit(case_path, ticker, year)
+                # Re-run deterministic audit (FIX 11: pass expect_failed)
+                det_failures = _deterministic_audit(case_path, ticker, year, expect_failed=expect_failed)
 
                 # Re-run Codex audit
                 audit_run2 = _run_codex_audit(case_text, ticker, year, cfg, r)
@@ -759,7 +1265,7 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
             except Exception as exc:  # noqa: BLE001
                 log.warning("codex_case_lane: could not park rejected case (%s)", exc)
 
-            detail = f"audit_failed: {all_failures[:3]}"
+            detail = f"audit_failed: {all_failures[:3]}{_wt_fix_violations_detail}"
             _append_attempt(r, episode_key, "audit_failed", None, detail)
             return {"ok": False, "action": "audit_failed", "detail": detail, "episode": episode_key, "pr_url": None}
 
@@ -768,7 +1274,7 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
         draft = cfg.get("case_pr_mode", "draft") == "draft"
         pr_url = _open_pr(r, ticker, year, case_path, audit_summary, draft=draft)
 
-        _append_attempt(r, episode_key, "pr_opened", pr_url, f"PR opened: {pr_url}")
+        _append_attempt(r, episode_key, "pr_opened", pr_url, f"PR opened: {pr_url}{_wt_violations_detail}")
         return {
             "ok": True,
             "action": "pr_opened",

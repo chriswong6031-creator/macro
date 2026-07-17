@@ -233,17 +233,39 @@ def can_run(
             if s_pct is not None and float(s_pct) >= budget_pct:
                 return False, f"budget:secondary:{s_pct:.1f}%"
 
-        # 3. Degraded-mode session cap
+        # 3. Session cap logic
         if state.get("degraded", True):
+            # Degraded mode: count all sessions in last 5h, excluding not_installed errors
             sessions: list[dict] = state.get("sessions", [])
             window_start = _now_utc() - timedelta(hours=_DEGRADED_WINDOW_HOURS)
             recent = [
                 s for s in sessions
                 if _parse_iso(s.get("ts", "")) is not None
                 and (_parse_iso(s["ts"]) or datetime.min.replace(tzinfo=timezone.utc)) >= window_start
+                and s.get("error_kind") != "not_installed"  # FIX 19(a)
             ]
             if len(recent) >= max_sessions:
                 return False, "session_cap"
+        else:
+            # FIX 19(b) — Non-degraded: if rate_limits has a stale fetched_at (>24h old),
+            # also apply session cap as a safety net
+            rl = state.get("rate_limits")
+            if rl and isinstance(rl, dict):
+                fetched_at_str = rl.get("fetched_at", "")
+                if fetched_at_str:
+                    fetched_at = _parse_iso(fetched_at_str)
+                    if fetched_at is not None and (_now_utc() - fetched_at).total_seconds() > 24 * 3600:
+                        # Rate limits stale >24h — apply session cap as fallback
+                        sessions_nd: list[dict] = state.get("sessions", [])
+                        window_start_nd = _now_utc() - timedelta(hours=_DEGRADED_WINDOW_HOURS)
+                        recent_nd = [
+                            s for s in sessions_nd
+                            if _parse_iso(s.get("ts", "")) is not None
+                            and (_parse_iso(s["ts"]) or datetime.min.replace(tzinfo=timezone.utc)) >= window_start_nd
+                            and s.get("error_kind") != "not_installed"
+                        ]
+                        if len(recent_nd) >= max_sessions:
+                            return False, "session_cap"
 
         return True, "ok"
 
@@ -262,7 +284,16 @@ def _apply_rate_limits_to_state(state: dict, rl: dict) -> None:
     Clears the degraded flag whenever primary or secondary is present and
     non-null.  Trusts the latest reported snapshot over any local estimate
     (CRX-R4).
+
+    If the incoming *rl* dict lacks a truthy ``fetched_at`` key, a copy is
+    stored with ``fetched_at`` stamped to the current UTC time so the
+    staleness session-cap check (can_run gate step 3) always has a reference
+    point.  The caller's dict is never mutated.
     """
+    # Stamp fetched_at if absent so the >24h staleness check has a reference.
+    if not rl.get("fetched_at"):
+        rl = dict(rl)  # shallow copy — do not mutate caller's dict
+        rl["fetched_at"] = _to_iso(_now_utc())
     state["rate_limits"] = rl
     # Clear degraded if at least one window is reported
     primary = rl.get("primary")
@@ -316,7 +347,9 @@ def note_result(run: dict, root: str | Path | None = None) -> None:
         # Handle usage_limit: set paused_until
         error_kind = run.get("error_kind")
         if error_kind == "usage_limit":
-            paused_until = _compute_pause_until(run_rl, now)
+            # FIX 19(c) — if run's rate_limits is None, use state["rate_limits"] as fallback
+            _rl_for_pause = run_rl if run_rl is not None else state.get("rate_limits")
+            paused_until = _compute_pause_until(_rl_for_pause, now)
             state["paused_until"] = _to_iso(paused_until)
             log.info(
                 "codex_lane.budget: usage_limit hit — pausing until %s",
