@@ -1,34 +1,21 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-17 19:38:05 UTC",
+  "built": "2026-07-17 20:42:31 UTC",
   "session": {
     "region": "us",
-    "open": true,
-    "local_time": "2026-07-17 15:38 EDT"
+    "open": false,
+    "local_time": "2026-07-17 16:42 EDT"
   },
-  "live_active": true,
-  "stale": false,
-  "stale_reason": null,
+  "live_active": false,
+  "stale": true,
+  "stale_reason": "market closed",
   "delayed_min": 15,
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-16",
-  "polygon_status": "ok",
-  "n_live_symbols": 12,
-  "movers": [
-    {
-      "sym": "SPY",
-      "chg_pct": -1.07
-    },
-    {
-      "sym": "QQQ",
-      "chg_pct": -1.56
-    },
-    {
-      "sym": "VIX",
-      "chg_pct": 12.61
-    }
-  ],
+  "polygon_status": "unused",
+  "n_live_symbols": 0,
+  "movers": [],
   "display": {
     "verdict": "MIXED",
     "label_en": "Mixed",
@@ -41,7 +28,7 @@
   "live": {
     "verdict": "MIXED",
     "score": 50,
-    "raw_score": 75,
+    "raw_score": 76,
     "color": "yellow",
     "label_en": "Mixed",
     "label_zh": "\u6df7\u5408",
@@ -50,7 +37,7 @@
     "radar": {
       "state": "caution",
       "state_ungated": "caution",
-      "top_score": 69,
+      "top_score": 66,
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": {
@@ -124,9 +111,9 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 78,
-      "basis": "live",
-      "asof": "live"
+      "score": 85,
+      "basis": "carried",
+      "asof": "2026-07-16"
     },
     {
       "key": "risk",
@@ -139,8 +126,8 @@
       "key": "vol",
       "label_en": "Volatility regime",
       "score": 69,
-      "basis": "live",
-      "asof": "live"
+      "basis": "carried",
+      "asof": "2026-07-16"
     },
     {
       "key": "breadth",
@@ -165,9 +152,9 @@
     }
   ],
   "legs_asof": {
-    "tape_trend": "live",
-    "volatility": "live",
-    "radar_fast": "live",
+    "tape_trend": "2026-07-16",
+    "volatility": "2026-07-16",
+    "radar_fast": "2026-07-16",
     "credit_hy_oas": "2026-07-14",
     "breadth": "2026-07-16",
     "liquidity": "2026-07-16",
