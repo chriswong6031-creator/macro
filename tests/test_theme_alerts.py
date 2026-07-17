@@ -95,14 +95,20 @@ def test_rebuild_seed_then_change_roundtrip(tmp_path, monkeypatch):
     assert (tmp_path / "themes" / "state.json").exists()
     assert ta.load_events() == []
 
-    # next run: 'en' enters emerging → exactly one fresh event, appended + readable
+    # next run: 'en' enters emerging — constructive flip is DEBOUNCED (N_STREAK=2)
     intel2 = _intel([_theme("ai", "dominant", "hold", 1, 66),
                      _theme("en", "emerging", "enter", 2, 58)], as_of="2026-06-19")
-    fired = ta.rebuild(intel2)
+    assert ta.rebuild(intel2) == []     # buffered on first sighting
+    assert ta.load_events() == []
+
+    # confirming run on the next session date → one fresh event fires
+    intel3 = _intel([_theme("ai", "dominant", "hold", 1, 66),
+                     _theme("en", "emerging", "enter", 2, 59)], as_of="2026-06-20")
+    fired = ta.rebuild(intel3)
     assert len(fired) == 1 and fired[0]["type"] == "theme_emerging"
     assert len(ta.load_events()) == 1
 
     # idempotent re-run on the SAME payload → no new event, no dup line (keep-first by id)
-    assert ta.rebuild(intel2) == []
+    assert ta.rebuild(intel3) == []
     assert len(ta.load_events()) == 1
-    assert len(ta.recent(30, as_of="2026-06-19")) == 1
+    assert len(ta.recent(30, as_of="2026-06-20")) == 1
