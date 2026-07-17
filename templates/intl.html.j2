@@ -255,6 +255,19 @@
   .ts-chip.ts-basing { background:color-mix(in srgb,var(--info) 8%,transparent); color:var(--info); border-color:color-mix(in srgb,var(--info) 24%,transparent); }
   .ts-chip.ts-downtrend { background:color-mix(in srgb,var(--down) 8%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 24%,transparent); }
   .ts-chip.ts-calm { background:var(--panel2); color:var(--muted); }
+  /* pullback-risk radar strip inside turn tiles (#2684 risk_radar_intl.v1, display-only) */
+  .tb-rd { margin-top:9px; padding-top:8px; border-top:1px dashed var(--line); }
+  .tb-rd-hd { display:flex; align-items:center; gap:6px; }
+  .tb-rd-lb { font-size:10.5px; font-weight:600; color:var(--muted); letter-spacing:.02em; }
+  .tb-rd-chip { display:inline-block; padding:1px 7px; border-radius:7px; font-size:10px; font-weight:700; white-space:nowrap; border:1px solid transparent; margin-left:auto; }
+  .tb-rd-chip.rd-calm { background:var(--panel2); color:var(--muted); border-color:var(--line); }
+  .tb-rd-chip.rd-watch { background:color-mix(in srgb,#d4a017 8%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 22%,transparent); }
+  .tb-rd-chip.rd-caution { background:color-mix(in srgb,#d4a017 14%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 35%,transparent); }
+  .tb-rd-chip.rd-elevated { background:color-mix(in srgb,var(--down) 12%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 30%,transparent); }
+  .tb-rd-chip.rd-risk-off { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .tb-rd-line { font-size:11px; color:var(--text); line-height:1.35; margin-top:5px; }
+  .tb-rd-odds { font-size:10.5px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .tb-rd-foot { margin:10px 2px 0; line-height:1.5; }
 </style>
 </head>
 <body>
@@ -321,10 +334,16 @@
 
 <!-- ===== NEW HERO: World markets — turns & rotation board ===== -->
 {% if turn_board %}
+{# ---- pullback-risk radar plain-word maps (states + stances; enums stay in hover receipts) ---- #}
+{% set RD_STATE_EN = {'calm': 'Calm', 'watch': 'Watch', 'caution': 'Caution', 'elevated': 'Elevated', 'risk-off': 'Risk-off'} %}
+{% set RD_STATE_ZH = {'calm': '平静', 'watch': '留意', 'caution': '谨慎', 'elevated': '偏高', 'risk-off': '避险'} %}
+{% set RD_STANCE_EN = {'watch': "watch, don't chase", 'caution': 'get ready to protect gains', 'elevated': 'protect gains', 'risk-off': 'protect gains, stand aside'} %}
+{% set RD_STANCE_ZH = {'watch': '观察，勿追高', 'caution': '准备保护收益', 'elevated': '保护收益', 'risk-off': '保护收益，观望'} %}
+{% set _rdns = namespace(present=false, lifted=false) %}
 <div class="panel accent">
   <div class="sec-h">
     <h2>{{ t('World markets — turns & rotation', '全球市场 — 拐点与轮动') }}
-      {{ help('State machine per market: crash/breaking/topping (memory-aware, not snapshot); extended/parabolic; uptrend/downtrend/recovery. Urgency-sorted — hottest markets first. Stance line = what to do. Display-only, not a forecast.', '每个市场的状态机：崩跌/破位/拐顶（有记忆，非快照）；偏高/抛物线；上行趋势/下行趋势/修复。按紧迫度排序——最热市场在前。立场行 = 操作建议。仅展示，非预测。') }}
+      {{ help('State machine per market: crash/breaking/topping (memory-aware, not snapshot); extended/parabolic; uptrend/downtrend/recovery. Urgency-sorted — hottest markets first. Stance line = what to do. Pullback-risk chip: separate leading-risk radar per market (US rates, currency, price extension); odds measured from own-market history; display-only while its live forward log accrues. Display-only, not a forecast.', '每个市场的状态机：崩跌/破位/拐顶（有记忆，非快照）；偏高/抛物线；上行趋势/下行趋势/修复。按紧迫度排序——最热市场在前。立场行 = 操作建议。回撤风险标签：各市场独立的领先风险雷达（美债利率、汇率、价格伸展）；概率测自该市场自身历史；前向日志累积期间仅作展示。仅展示，非预测。') }}
     </h2>
     <span style="flex:1"></span>
     <span class="muted small">{{ t('as of', '截至') }} {{ latest.date }}</span>
@@ -337,6 +356,17 @@
     {% elif _ts in ['topping', 'parabolic', 'extended'] %}{% set _tile_cls = 'tb-warm' %}
     {% else %}{% set _tile_cls = 'tb-cool' %}
     {% endif %}
+    {# pullback-risk radar (#2684, display-only) — schema risk_radar_intl.v1; absent/degraded → skipped #}
+    {% set _rd = tile.get('risk_radar') %}
+    {% if not (_rd and _rd.get('state')) %}{% set _rd = none %}{% endif %}
+    {% set _rd_state = _rd.get('state') if _rd else none %}
+    {% set _rd_prob = (_rd.get('drawdown_prob') or {}) if _rd else {} %}
+    {% set _rd_h21 = _rd_prob.get('h21') %}
+    {% set _rd_b21 = _rd_prob.get('base_h21') %}
+    {% set _rd_lift = _rd_prob.get('lift_h21') %}
+    {% if _rd %}{% set _rdns.present = true %}
+      {% if _rd_lift is not none and _rd_lift != 1.0 %}{% set _rdns.lifted = true %}{% endif %}
+    {% endif %}
     {# build Tier-2 receipt text (internal names allowed here per doctrine) #}
     {% set _t2_en = 'State: ' ~ (tile.state_en or tile.state) ~ ' (since ' ~ (tile.since or '—') ~ '). ' %}
     {% set _t2_en = _t2_en ~ 'Extension: ' ~ ('%.0f'|format(tile.ext_pctile) ~ ' pctile' if tile.ext_pctile is not none else '—') ~ '. ' %}
@@ -348,6 +378,31 @@
     {% set _t2_zh = _t2_zh ~ 'RSI背离：' ~ ('是' if tile.rsi_divergence else '否') ~ '。' %}
     {% set _t2_zh = _t2_zh ~ 'MACD：' ~ (tile.macd_state or '—') ~ '。' %}
     {% set _t2_zh = _t2_zh ~ '峰值日期：' ~ (tile.peak_date or '—') %}
+    {% if _rd %}
+    {# radar receipt merged into the tile tip (one hover per tile; enums + stats allowed on Tier 2) #}
+    {% set _t2_en = _t2_en ~ ' — Pullback radar (thru ' ~ (_rd.get('asof') or '—') ~ '): ' ~ _rd_state %}
+    {% if _rd.get('state_ungated') and _rd.get('state_ungated') != _rd_state %}{% set _t2_en = _t2_en ~ ' (ungated ' ~ _rd.get('state_ungated') ~ ')' %}{% endif %}
+    {% if _rd.get('top_score') is not none %}{% set _t2_en = _t2_en ~ ', score ' ~ _rd.get('top_score') ~ '/100' %}{% endif %}
+    {% set _t2_en = _t2_en ~ '. Driver: ' ~ (_rd.get('dominant_label_en') or '—') ~ '.' %}
+    {% if _rd_h21 is not none and _rd_b21 is not none %}
+    {% set _t2_en = _t2_en ~ ' ≥5% dip within 21 sessions: ' ~ ((_rd_h21*100)|round|int) ~ '% vs ' ~ ((_rd_b21*100)|round|int) ~ '% long-run' %}
+    {% if _rd_lift is not none %}{% set _t2_en = _t2_en ~ ' (lift ' ~ ('%.2f'|format(_rd_lift)) ~ '×)' %}{% endif %}
+    {% set _t2_en = _t2_en ~ '.' %}
+    {% endif %}
+    {% set _t2_en = _t2_en ~ ' Forward log n=' ~ ((_rd.get('forward_log') or {}).get('n_graded', 0)) ~ '; ported legs, own-history odds; display-only.' %}
+    {% if (_rd.get('context_gate') or {}).get('recent_parabolic') %}{% set _t2_en = _t2_en ~ ' Recently parabolic.' %}{% endif %}
+    {% set _t2_zh = _t2_zh ~ ' — 回撤雷达（截至' ~ (_rd.get('asof') or '—') ~ '）：' ~ RD_STATE_ZH.get(_rd_state, _rd_state) %}
+    {% if _rd.get('state_ungated') and _rd.get('state_ungated') != _rd_state %}{% set _t2_zh = _t2_zh ~ '（未加约束：' ~ RD_STATE_ZH.get(_rd.get('state_ungated'), _rd.get('state_ungated')) ~ '）' %}{% endif %}
+    {% if _rd.get('top_score') is not none %}{% set _t2_zh = _t2_zh ~ '，得分' ~ _rd.get('top_score') ~ '/100' %}{% endif %}
+    {% set _t2_zh = _t2_zh ~ '。驱动：' ~ (_rd.get('dominant_label_zh') or _rd.get('dominant_label_en') or '—') ~ '。' %}
+    {% if _rd_h21 is not none and _rd_b21 is not none %}
+    {% set _t2_zh = _t2_zh ~ '21个交易日内≥5%回撤：' ~ ((_rd_h21*100)|round|int) ~ '%（长期基准' ~ ((_rd_b21*100)|round|int) ~ '%' %}
+    {% if _rd_lift is not none %}{% set _t2_zh = _t2_zh ~ '，提升' ~ ('%.2f'|format(_rd_lift)) ~ '×' %}{% endif %}
+    {% set _t2_zh = _t2_zh ~ '）。' %}
+    {% endif %}
+    {% set _t2_zh = _t2_zh ~ '前向日志 n=' ~ ((_rd.get('forward_log') or {}).get('n_graded', 0)) ~ '；移植构建、赔率取自自身历史；仅作展示。' %}
+    {% if (_rd.get('context_gate') or {}).get('recent_parabolic') %}{% set _t2_zh = _t2_zh ~ '近期出现抛物线走势。' %}{% endif %}
+    {% endif %}
     <div class="tb-tile {{ _tile_cls }}" data-tip-en="{{ _t2_en }}" data-tip-zh="{{ _t2_zh }}">
       <div class="tb-hd">
         <span class="flg">{{ tile.flag }}</span>
@@ -368,9 +423,38 @@
         <span>{{ t('20d', '20日') }} <span class="tm-v {{ 'pos' if tile.mom20_pct is not none and tile.mom20_pct >= 0 else 'neg' if tile.mom20_pct is not none }}">{% if tile.mom20_pct is not none %}{{ '%+.1f'|format(tile.mom20_pct) }}%{% else %}—{% endif %}</span></span>
         <span>{{ t('off-high', '距高') }} <span class="tm-v {{ 'neg' if tile.dd_pct is not none and tile.dd_pct < -2 }}">{% if tile.dd_pct is not none %}{{ '%.1f'|format(tile.dd_pct) }}%{% else %}—{% endif %}</span></span>
       </div>
+      {% if _rd %}
+      <div class="tb-rd">
+        <div class="tb-rd-hd">
+          <span class="tb-rd-lb">{{ t('Pullback risk', '回撤风险') }}</span>
+          <span class="tb-rd-chip rd-{{ _rd_state }}">{{ t(RD_STATE_EN.get(_rd_state, _rd_state), RD_STATE_ZH.get(_rd_state, _rd_state)) }}</span>
+        </div>
+        <div class="tb-rd-line">
+          {% if _rd_state == 'calm' %}
+          {{ t('no driver elevated — no action needed', '无驱动升高——无需操作') }}
+          {% else %}
+          <span class="l-en">{{ _rd.get('dominant_label_en') or 'driver elevated' }} — {{ RD_STANCE_EN.get(_rd_state, RD_STANCE_EN['watch']) }}</span><span class="l-zh">{{ _rd.get('dominant_label_zh') or _rd.get('dominant_label_en') or '驱动升高' }}——{{ RD_STANCE_ZH.get(_rd_state, RD_STANCE_ZH['watch']) }}</span>
+          {% endif %}
+        </div>
+        {% if _rd_h21 is not none %}
+        <div class="tb-rd-odds">
+          <span class="l-en">≥5% dip within a month: ~{{ (_rd_h21*100)|round|int }}%</span><span class="l-zh">一个月内≥5%回撤：约{{ (_rd_h21*100)|round|int }}%</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
   {% endfor %}
   </div>
+  {% if _rdns.present %}
+  <p class="muted small tb-rd-foot">
+    {% if _rdns.lifted %}
+    {{ t("Pullback odds come from each market's own history plus this radar's live track record. Risk chips are context only — they never rank or exclude markets.", '回撤概率来自各市场自身历史及该雷达的实时跟踪记录。风险标签仅供参考——不参与排名或筛选。') }}
+    {% else %}
+    {{ t("Pullback odds are each market's own long-run odds — this radar's live track record is still building, so no extra lift is added yet. Risk chips are context only — they never rank or exclude markets.", '回撤概率为各市场自身的长期基础概率——该雷达的实时跟踪记录仍在累积，暂未叠加额外调整。风险标签仅供参考——不参与排名或筛选。') }}
+    {% endif %}
+  </p>
+  {% endif %}
 </div>
 
 <!-- ===== What changed strip ===== -->

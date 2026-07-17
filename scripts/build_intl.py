@@ -472,6 +472,14 @@ def main() -> int:
         except Exception as _e:
             log.warning("intl_rotation.rank failed (fail-open): %s", _e)
 
+        # Leading-risk radar (#2684, schema risk_radar_intl.v1) joined onto its turn
+        # tile by cc — display-only context; never feeds urgency sort or rank.
+        _radar_by_cc = {
+            (_r.get("cc") or ""): _r.get("risk_radar")
+            for _r in (latest.get("records") or [])
+            if isinstance(_r.get("risk_radar"), dict)
+        }
+
         # Build turn_board: urgency-sorted (desc), ties by dd_pct ascending
         if _itr_states:
             _tb_rows = []
@@ -482,6 +490,7 @@ def main() -> int:
                 _row["name"]     = _meta3.get("name", _cc3)
                 _row["name_zh"]  = _meta3.get("name_zh", _cc3)
                 _row["flag"]     = _meta3.get("flag", "")
+                _row["risk_radar"] = _radar_by_cc.get(_cc3)
                 _tb_rows.append(_row)
             turn_board = sorted(
                 _tb_rows,
