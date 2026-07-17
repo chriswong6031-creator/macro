@@ -1,2 +1,4 @@
 {"ts": "2026-07-17T09:56:15+00:00", "episode": "MARA_2020", "status": "pr_opened", "pr_url": null, "detail": "PR opened: None"}
 {"ts": "2026-07-17T10:23:56+00:00", "episode": "QCOM_1999", "status": "audit_failed", "pr_url": null, "detail": "audit_failed: ['audit response not parseable as JSON: I\u2019ll check the on-disk file against each contract and content requirement.']"}
+{"ts": "2026-07-17T10:49:25+00:00", "episode": "MARA_2020", "status": "pr_opened", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2753", "detail": "ledger backfill from existing PR (state=OPEN)"}
+{"ts": "2026-07-17T11:03:09+00:00", "episode": "LITE_2025", "status": "pr_create_failed", "pr_url": null, "detail": "gh pr create returned no URL for branch codex/case-lite-2025"}
