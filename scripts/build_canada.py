@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_canada")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-          "charts.js", "tablesort.js", "stockview.js", "stocktable.js")
+          "charts.js", "tablesort.js", "stockview.js", "stocktable.js", "heatmap.js")
 
 
 def _range_selector() -> dict:
@@ -272,7 +272,7 @@ def _action_board(sectors: list[dict]) -> dict:
 def _sector_cards(latest: dict) -> list[dict]:
     """Merge the RS-rank table (from the regime run) with per-sector cycle analysis."""
     from engine.canada_inputs import canada_closes
-    from engine.cycles import analyze
+    from engine.cycles import analyze, STATE_DISPLAY as _STATE_DISPLAY_MAP
     names = config.load()["canada"]["yahoo"]["sector_etfs"]
     closes = canada_closes()
     rs_by = {r["ticker"]: r for r in latest.get("sector_rs", [])}
@@ -296,6 +296,7 @@ def _sector_cards(latest: dict) -> list[dict]:
             "mom60": rs.get("mom_60d_pct"), "above200": rs.get("above_200d_trend"),
             "pctile": rs.get("pctile_252d"),
             "state": lad.get("state"), "label": lad.get("label"),
+            "label_zh": _STATE_DISPLAY_MAP.get(lad.get("state") or "", {}).get("label_zh"),
             "action": lad.get("action"), "dir": lad.get("dir"),
             "entry": lad.get("entry"),
             "age_short": lad.get("age_short"), "age_short_zh": lad.get("age_short_zh"),
@@ -664,6 +665,40 @@ def main() -> int:
             log.error("canada market_state failed (%s); skipping", e)
             vm["market_state"] = None
 
+        # ── ms_history: score_log forward ledger ─────────────────────────────
+        # Appended nightly; deduped by date.  Never fatal.  Guard: only append
+        # when market_state is populated AND we are NOT in a fast-render from
+        # a pickled VM (house law: nightly is the sole advancer of ledgers).
+        try:
+            _ms_snap = vm.get("market_state")
+            if _ms_snap and _ms_snap.get("score") is not None:
+                import os as _osenv
+                if not _osenv.environ.get("CANADA_FAST_RENDER"):
+                    _score_log_dir = config.data_dir() / "canada_market_state"
+                    _score_log_dir.mkdir(parents=True, exist_ok=True)
+                    _score_log_path = _score_log_dir / "score_log.parquet"
+                    _new_row = pd.DataFrame([{
+                        "date": latest.get("date"),
+                        "score": int(_ms_snap["score"]),
+                        "verdict": _ms_snap.get("verdict", ""),
+                        "color": _ms_snap.get("color", ""),
+                    }])
+                    if _score_log_path.exists():
+                        _existing = pd.read_parquet(_score_log_path)
+                        _combined = pd.concat([_existing, _new_row], ignore_index=True)
+                        _combined = _combined.drop_duplicates(subset=["date"], keep="last")
+                    else:
+                        _combined = _new_row
+                    _combined = _combined.sort_values("date").reset_index(drop=True)
+                    _combined.to_parquet(_score_log_path, index=False)
+                    # Expose last 11 rows as vm['ms_history'] for the hero path chart
+                    _hist = _combined.tail(11).copy()
+                    vm["ms_history"] = _hist.to_dict(orient="records")
+                    log.info("canada score_log: %d rows, last 11 -> ms_history", len(_combined))
+        except Exception as _msh_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("canada ms_history build failed (%s); skipping", _msh_e)
+            vm.setdefault("ms_history", None)
+
         # regime history -> Time Machine JSON + lifespan base rates
         hist = store.read("canada_regime", "regime_history")
         if hist is not None and "quad" in hist.columns:
@@ -701,6 +736,23 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("canada standouts enrich failed (%s); using raw setups", e)
 
+        # ── top_setups: top-5 buy rows for the glance card ───────────────────
+        # MUST run AFTER vm["setups"] is assigned + standouts-enriched above
+        # (the first cut ran before it → vm.get("setups") was None → the card
+        # said "No active setups" while 10 buys existed). Never fatal.
+        try:
+            _su = vm.get("setups") or {}
+            _buys = list((_su.get("buy") or []))
+            for _row in _buys:
+                if not isinstance(_row, dict):
+                    continue
+                if not _row.get("industry"):
+                    _row["industry"] = _row.get("sub_industry") or _row.get("sector") or ""
+            vm["top_setups"] = _buys[:5]
+        except Exception as _ts_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("canada top_setups enrich failed (%s); skipping", _ts_e)
+            vm["top_setups"] = []
+
         # ── BRANCH-B board ledger (masterplan §5.4) + hard freshness gate (§2.6) ──
         # This is the board's SCOREBOARD: log the ranked board each render, grade it
         # nightly. Fail-open-LOUD: a ledger failure surfaces a health row, never a crash.
@@ -734,6 +786,19 @@ def main() -> int:
         # TSX Stock Dashboard — the same canada.html.j2 is rendered twice with a `mode`
         # flag (macro / stocks) that selects which sections show. Mirrors China / HK.
         tmpl = env.get_template("canada.html.j2")
+        # DEV-ONLY: dump the fully-built view-model so scripts/render_canada_fast.py
+        # can re-render canada.html / canada_stocks.html in ~1s without re-running
+        # collectors + engine. Env-gated (CANADA_VM_DUMP=1); never fires nightly.
+        import os as _os
+        if _os.environ.get("CANADA_VM_DUMP"):
+            try:
+                import pickle as _pkl
+                _vm_cache = config.data_dir() / "_dev_canada_vm.pkl"
+                with open(_vm_cache, "wb") as _fh:
+                    _pkl.dump(vm, _fh)
+                log.info("CANADA_VM_DUMP: wrote %s", _vm_cache)
+            except Exception as _e:  # noqa: BLE001 — dev-only, never fatal
+                log.error("CANADA_VM_DUMP failed (%s)", _e)
         html = tmpl.render(**vm, mode="macro")
         write_page(site / "canada.html", html)
         for a in ASSETS:
