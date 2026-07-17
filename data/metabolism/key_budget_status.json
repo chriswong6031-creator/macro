@@ -1,6 +1,6 @@
 {
   "schema": "metab_budget_status.v1",
-  "ts": "2026-07-17T12:44:48+00:00",
+  "ts": "2026-07-17T14:59:45+00:00",
   "per_key": {
     "claude_code_oauth_1": {
       "pct_5h": null,
