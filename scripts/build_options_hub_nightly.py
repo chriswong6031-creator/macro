@@ -48,6 +48,7 @@ from engine.options_hub import (
     build_tickers_ctx,
     build_oi_confirmed,
 )
+from engine.levels_publish import levels_payload_from_gex, LEVELS_PREFIX
 
 log = logging.getLogger(__name__)
 
@@ -655,6 +656,29 @@ def main() -> None:
                 log.warning(
                     "options_hub_builder: gex_history dated snapshot failed for %s — %s",
                     root, _hist_err,
+                )
+
+            # ── WP-A2.5: levels.v1 (named gamma-level board) ───────────────────
+            # Translate the SAME gex payload into the named-level board — Anchor,
+            # Call/Put walls, Flip, Cluster, Counter, Void, Trapdoor, Launchpad,
+            # Stack — with the sticky/slippery color law and a plain-English note
+            # per node, and publish levels/{root}.json for the Terminal Levels
+            # board (Voltick Gamma-Levels program, WP-A2.5). This is a pure
+            # downstream transform of gex_payload: the gex key above is unchanged
+            # and this is INERT per root like everything else in this loop. Empty
+            # boards (no by_strike rows) are never written.
+            try:
+                levels_payload = levels_payload_from_gex(gex_payload)
+                if levels_payload is not None:
+                    levels_path = out_dir / "levels" / f"{root}.json"
+                    _write_json(levels_path, levels_payload)
+                    if s3 and bucket and gex_publish:
+                        _upload_r2(s3, bucket, levels_path,
+                                   f"{LEVELS_PREFIX}{root}.json")
+            except Exception as _lv_err:  # noqa: BLE001
+                log.warning(
+                    "options_hub_builder: levels publish failed for %s — %s",
+                    root, _lv_err,
                 )
 
             roots_ok.append(root)
