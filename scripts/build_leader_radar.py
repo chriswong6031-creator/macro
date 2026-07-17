@@ -47,6 +47,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+import statistics as _statistics
 import numpy as np
 import pandas as pd
 
@@ -1443,6 +1444,45 @@ def _compute_fires(
     return fire_p, fire_o
 
 
+# ── Basket EW assembly helper (shared by handoff call sites) ─────────────────
+
+def _assemble_basket_ew_close(
+    closes: list[pd.Series],
+    min_history_sessions: int = 250,
+) -> tuple[pd.Series | None, int]:
+    """Align and equal-weight basket close, excluding young-IPO members.
+
+    Data-quality guard (W-O3a): members whose first valid close is fewer than
+    min_history_sessions observations old are excluded before alignment so that
+    a single young IPO (e.g. CBRS, 31 sessions) cannot truncate the aligned
+    frame and null the entire basket's extension calculation.
+
+    250 sessions is a data-quality threshold, not a signal threshold.
+    Provenance: CBRS (IPO 2026-05-14, 31 sessions) nulled ai_infra and
+    ai_semiconductors extension_pctile_vs_200d until this guard was introduced.
+
+    Args:
+        closes: list of per-member close Series (DatetimeIndex, dropna applied).
+        min_history_sessions: minimum observations required to include a member.
+
+    Returns:
+        (ew_close Series or None, n_used) where n_used is the count of
+        included members. Returns (None, n_used) when <3 survivors (matching
+        the spirit of the existing <3-member guard in _compute_handoff).
+    """
+    survivors = [s for s in closes if len(s) >= min_history_sessions]
+    n_used = len(survivors)
+    if n_used < 3:
+        return None, n_used
+    try:
+        aligned = pd.concat(survivors, axis=1, sort=True).ffill().dropna()
+        if aligned.empty:
+            return None, n_used
+        return aligned.mean(axis=1), n_used
+    except Exception:  # noqa: BLE001
+        return None, n_used
+
+
 # ── Handoff watch (LR-R4) ────────────────────────────────────────────────────
 
 def _compute_handoff(
@@ -1478,12 +1518,11 @@ def _compute_handoff(
             extended_baskets[basket_name] = None
             continue
         try:
-            # EW basket close: align on common index
-            aligned = pd.concat(closes, axis=1, sort=True).ffill().dropna()
-            if aligned.empty:
+            # EW basket close: young-IPO exclusion guard (W-O3a)
+            basket_close, _n_used = _assemble_basket_ew_close(closes)
+            if basket_close is None:
                 extended_baskets[basket_name] = None
                 continue
-            basket_close = aligned.mean(axis=1)
             extended_baskets[basket_name] = _extended_leg(basket_close, spy)
         except Exception:  # noqa: BLE001
             extended_baskets[basket_name] = None
@@ -1962,6 +2001,131 @@ def _build_fire_history(
     return result
 
 
+# ── Sector-median forward P/E helper (W-O3a) ─────────────────────────────────
+
+_SECTOR_MEDIAN_MIN_MEMBERS = 5  # minimum group size for a reliable cross-sectional median
+
+
+def _compute_sector_medians(
+    ticker_sectors: dict[str, str],
+    valuation_store: dict[str, dict],
+    min_members: int = _SECTOR_MEDIAN_MIN_MEMBERS,
+) -> dict[str, float | None]:
+    """Return per-sector median forward P/E for sectors with ≥ min_members valid values.
+
+    Groups tickers by their normalized sector string, collects finite positive fwd_pe
+    values from valuation_store, and returns the median for each group.  Sectors with
+    fewer than min_members valid values map to None (disclosed, not dropped).
+
+    Convention: median includes the ticker itself — symmetric convention; leave-one-out
+    would be stricter but would break the data-quality floor guarantee.
+    """
+    sector_lists: dict[str, list[float]] = {}
+    for ticker, sec in ticker_sectors.items():
+        vrow = valuation_store.get(ticker) or {}
+        fpe = vrow.get("fwd_pe")
+        if fpe is not None:
+            try:
+                fpe_f = float(fpe)
+                if np.isfinite(fpe_f) and fpe_f > 0:
+                    sector_lists.setdefault(sec, []).append(fpe_f)
+            except (TypeError, ValueError):
+                pass
+
+    result: dict[str, float | None] = {}
+    for sec, vals in sector_lists.items():
+        result[sec] = _statistics.median(vals) if len(vals) >= min_members else None
+    return result
+
+
+# ── Forming-handoff rail helper (W-O3a display-tier) ─────────────────────────
+
+
+def _apply_forming_rail(
+    handoff_context: list[dict],
+    rows: list[dict],
+    universe_baskets: dict[str, list[str]],
+    assessments_map: dict[str, Any],
+    universe: list[str],
+) -> None:
+    """Mutate each handoff_context row to attach forming flag and basing_candidates.
+
+    Sets hc["forming"] = True when extension_pctile_vs_200d ≥ 80 AND
+    rs_21d_slope_sign == -1; attaches hc["basing_candidates"] (up to 6) from
+    universe members in SUPPRESSED / QUIET_ACCUMULATION / CATALYST_WINDOW whose
+    primary basket matches.
+
+    The "forming" key is ABSENT when pctile or slope is None (tri-state honesty —
+    template must guard with ``hc.forming is defined and hc.forming``).
+
+    Builds a ticker → row dict once (O(rows)) instead of an O(rows) linear scan
+    per candidate.
+    """
+    from engine.leader_lifecycle import (  # noqa: PLC0415
+        STATE_CATALYST_WINDOW,
+        STATE_QUIET_ACCUMULATION,
+        STATE_SUPPRESSED,
+    )
+
+    _FORMING_PCTILE_SHELF = 80  # display shelf, NOT LR-R4 pair condition (≥90p)
+    _FORMING_BASING_STATES = {STATE_CATALYST_WINDOW, STATE_QUIET_ACCUMULATION, STATE_SUPPRESSED}
+    _forming_state_bucket = {
+        STATE_CATALYST_WINDOW: 0,
+        STATE_QUIET_ACCUMULATION: 1,
+        STATE_SUPPRESSED: 2,
+    }
+
+    # Build ticker → row lookup once (avoid O(rows) linear scan per candidate)
+    _row_by_ticker: dict[str, dict] = {r["ticker"]: r for r in rows}
+
+    # Primary basket per ticker: first theme basket (non-dow30/ndx) in membership
+    _ticker_primary_basket: dict[str, str] = {}
+    for bname, bmembers in universe_baskets.items():
+        if bname in ("dow30", "ndx"):
+            continue
+        for bt in bmembers:
+            if bt not in _ticker_primary_basket:
+                _ticker_primary_basket[bt] = bname
+
+    for hc in handoff_context:
+        pctile = hc.get("extension_pctile_vs_200d")
+        slope = hc.get("rs_21d_slope_sign")
+        if pctile is None or slope is None:
+            # Tri-state: leave "forming" key absent when inputs are null
+            continue
+        if pctile >= _FORMING_PCTILE_SHELF and slope == -1:
+            hc["forming"] = True
+            candidates: list[dict] = []
+            bname_forming = hc["basket"]
+            for ct in universe:
+                if _ticker_primary_basket.get(ct) != bname_forming:
+                    continue
+                ca = assessments_map.get(ct)
+                if ca is None:
+                    continue
+                ct_row = _row_by_ticker.get(ct)
+                ct_state = ct_row["state"] if ct_row else ca.state
+                if ct_state not in _FORMING_BASING_STATES:
+                    continue
+                candidates.append({
+                    "ticker": ct,
+                    "state": ct_state,
+                    "k_true": (ct_row.get("k_true") if ct_row else None),
+                    "n_avail": (ct_row.get("n_avail") if ct_row else None),
+                    "_sort": (
+                        _forming_state_bucket.get(ct_state, 9),
+                        -((ct_row.get("k_true") or 0) if ct_row else 0),
+                        ct,
+                    ),
+                })
+            candidates.sort(key=lambda r: r["_sort"])
+            for c in candidates:
+                del c["_sort"]
+            hc["basing_candidates"] = candidates[:6]  # cap 6
+        else:
+            hc["forming"] = False
+
+
 # ── Main build ────────────────────────────────────────────────────────────────
 
 def build(
@@ -2078,6 +2242,10 @@ def build(
     earnings_store: dict[str, dict] = {}
     personality_store: dict[str, dict] = {}
     mktcap_map: dict[str, float | None] = {}
+    # sector string per ticker (top-level "sector" key in stockdata JSON)
+    # Normalized once here; all downstream passes (sector-median, forming rail) use
+    # this map so grouping is consistent regardless of leading/trailing whitespace.
+    _ticker_sector: dict[str, str] = {}
 
     for ticker in universe:
         sd = _load_stockdata(ticker, site_root)
@@ -2091,6 +2259,41 @@ def build(
         earnings_store[ticker] = _extract_earnings(sd)
         personality_store[ticker] = _extract_personality(sd)
         mktcap_map[ticker] = _extract_mktcap(sd)
+        _sec = (sd.get("sector") or "").strip()
+        if _sec:
+            _ticker_sector[ticker] = _sec
+
+    # ── Sector-median forward P/E (W-O3a rerating unblocking) ────────────────
+    # Cross-sectionally group tickers by normalized stockdata "sector"; compute
+    # per-sector median fwd_pe where ≥_SECTOR_MEDIAN_MIN_MEMBERS universe members
+    # have a non-null forward_pe (data-quality floor).
+    # Feeds sector_median_fwd_pe into valuation_store so rerating_conditions()
+    # multiple_compressed leg 2 (fwd_pe < sector_median) can fire.
+    # cheap_pctile stays None: own-history percentile store does not exist yet.
+    _sector_median_fwd_pe = _compute_sector_medians(_ticker_sector, valuation_store)
+
+    # Inject sector_median_fwd_pe into each ticker's valuation row
+    for _t in universe:
+        _sec = _ticker_sector.get(_t)
+        if _sec:
+            valuation_store[_t]["sector_median_fwd_pe"] = _sector_median_fwd_pe.get(_sec)
+
+    # rerating_coverage disclosure (appended to payload coverage block below)
+    _rerating_fwd_pe_covered = sum(
+        1 for _vr in valuation_store.values() if _vr.get("fwd_pe") is not None
+    )
+    _rerating_sectors_with_median = sum(
+        1 for _v in _sector_median_fwd_pe.values() if _v is not None
+    )
+    rerating_coverage: dict[str, Any] = {
+        "fwd_pe_covered": _rerating_fwd_pe_covered,
+        "sectors_with_median": _rerating_sectors_with_median,
+        "note": (
+            f"sector_median_fwd_pe set for {_rerating_sectors_with_median} sector(s) "
+            f"with ≥{_SECTOR_MEDIAN_MIN_MEMBERS} universe members having forward_pe; "
+            "cheap_pctile absent (own-history percentile store not yet built)"
+        ),
+    }
 
     # ── Regime ────────────────────────────────────────────────────────────────
     regime_raw = _load_regime_inputs(data_root)
@@ -2552,7 +2755,11 @@ def build(
         # extension_pctile_vs_200d: percentile of current basket EW extension vs own 200d
         # history, using the same basket_extension_pctile() helper as extended_leg() so
         # the two callers cannot drift.
+        # Young-IPO exclusion guard (W-O3a): use _assemble_basket_ew_close so that
+        # a single young member (e.g. CBRS, 31 sessions) cannot truncate the aligned
+        # frame and null the basket's extension_pctile_vs_200d.
         _ext_pctile: float | None = None
+        _ext_n_used: int = 0
         _bkt_closes = []
         for t in members:
             _ohlcv = ohlcv_map.get(t)
@@ -2560,9 +2767,8 @@ def build(
                 _bkt_closes.append(_ohlcv["close"].dropna().sort_index())
         if _bkt_closes:
             try:
-                _aligned_bkt = pd.concat(_bkt_closes, axis=1, sort=True).ffill().dropna()
-                if not _aligned_bkt.empty:
-                    _basket_close = _aligned_bkt.mean(axis=1)
+                _basket_close, _ext_n_used = _assemble_basket_ew_close(_bkt_closes)
+                if _basket_close is not None:
                     _ext_pctile = _basket_ext_pctile(_basket_close)
             except Exception:  # noqa: BLE001
                 _ext_pctile = None
@@ -2572,7 +2778,11 @@ def build(
             "is_extended": _is_ext,
             "rs_21d_slope_sign": _rs21_sign,
             "extension_pctile_vs_200d": _ext_pctile,
+            "ext_n_used": _ext_n_used,  # members included after young-IPO exclusion
         })
+
+    # ── Forming handoff rail (W-O3a display-tier near-threshold disclosure) ──
+    _apply_forming_rail(handoff_context, rows, basket_membership, assessments_map, universe)
 
     # ── Freshness + degraded (Items 2 & 4) ───────────────────────────────────
     freshness = _build_freshness(
@@ -2632,6 +2842,7 @@ def build(
         "rows": rows,
         "handoff_pairs": handoff_pairs_list,
         "rerating_watch": rerating_watch,
+        "rerating_coverage": rerating_coverage,
         # LRV-W1 artifacts
         "early_entry": early_entry_rows,
         "handoff_context": handoff_context,

@@ -317,6 +317,16 @@ a{text-decoration:none;color:inherit;}
 .rerate-chip{padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:600;background:rgba(124,58,237,0.12);color:#c4b5fd;border:1px solid rgba(124,58,237,0.20);}
 .rerate-chip.warn{background:rgba(245,158,11,0.10);color:#fcd34d;border-color:rgba(245,158,11,0.20);}
 .rerate-chip.null-chip{background:transparent;color:var(--text-dim);border:1px solid var(--border);font-style:italic;}
+/* Forming-handoff rail (W-O3a display-tier) */
+.forming-rail{margin-top:14px;padding:10px 12px;border-radius:8px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);}
+.forming-rail-title{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(251,191,36,0.7);margin-bottom:3px;}
+.forming-rail-stance{font-size:0.72rem;color:var(--text-muted);margin-bottom:8px;font-style:italic;}
+.forming-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(251,191,36,0.10);font-size:0.78rem;}
+.forming-row:last-child{border-bottom:none;}
+.forming-basket-name{font-weight:700;color:var(--text-primary);min-width:46px;}
+.forming-why{color:var(--text-muted);flex:1;font-size:0.73rem;}
+.forming-candidates{display:flex;gap:4px;flex-wrap:wrap;width:100%;padding-top:3px;}
+.forming-cand-state{font-size:0.62rem;font-weight:400;color:var(--text-dim);}
 /* ── FULL BOARD ── */
 .full-board-section{margin-bottom:24px;}
 .board-toggle{display:flex;align-items:center;gap:8px;padding:12px 18px;cursor:pointer;border-radius:var(--radius-card);border:1px solid var(--border);background:var(--bg-glass-2);transition:var(--transition);user-select:none;justify-content:space-between;}
@@ -1162,6 +1172,18 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
     <div class="side-card-title">{{ t('Handoff watch', '接力观察') }}</div>
     <div class="side-card-sub">{{ t("Stretched leaders basing — who steps up next", '已超伸领涨股筑底 — 谁将接棒') }}</div>
 
+    {# ZH basket display names — hoisted so both the pairs branch, the closest-list, and the forming rail can use it #}
+    {% set _basket_zh = {
+      'mag7': '七巨头',
+      'ai_infra': 'AI基础设施',
+      'ai_semiconductors': 'AI半导体',
+      'semicap_equipment': '半导体设备',
+      'memory_storage': '存储芯片',
+      'data_center_power': '数据中心电力',
+      'ai_software': 'AI软件',
+      'ai_neoclouds': 'AI新云',
+    } %}
+
     {% if handoff_pairs %}
     <div class="rerating-rows">
       {% for pair in handoff_pairs %}
@@ -1192,17 +1214,6 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
     </div>
 
     {# Show "closest to stretched" from handoff_context baskets, sorted by extension_pctile_vs_200d desc, top 3 #}
-    {# ZH basket display names #}
-    {% set _basket_zh = {
-      'mag7': '七巨头',
-      'ai_infra': 'AI基础设施',
-      'ai_semiconductors': 'AI半导体',
-      'semicap_equipment': '半导体设备',
-      'memory_storage': '存储芯片',
-      'data_center_power': '数据中心电力',
-      'ai_software': 'AI软件',
-      'ai_neoclouds': 'AI新云',
-    } %}
     {# Sort handoff_context by extension_pctile_vs_200d desc (nulls last); pick top 3 with non-null pctile #}
     {% set closest_baskets = namespace(items=[]) %}
     {% if handoff_context and handoff_context | length > 0 %}
@@ -1259,7 +1270,59 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
     </div>
     {% endif %}
 
+
     {% endif %}{# /handoff_pairs else #}
+
+    {# ── Rotation watch — forming rail (W-O3a display-tier near-threshold) ── #}
+    {# Renders unconditionally (outside the handoff_pairs if/else) so forming  #}
+    {# baskets are shown even on days when strict pairs have already fired.     #}
+    {# Baskets with forming:true = extension_pctile ≥80 AND rs slope −1.       #}
+    {# Stance: Watch — don't front-run. LR-R4 pair condition (≥90p) NOT met.   #}
+    {% set _forming_items = namespace(items=[]) %}
+    {% if handoff_context and handoff_context | length > 0 %}
+      {% for hc in handoff_context %}
+        {% if hc.forming is defined and hc.forming %}
+          {% set _forming_items.items = _forming_items.items + [hc] %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if _forming_items.items | length > 0 %}
+    <div class="forming-rail">
+      <div class="forming-rail-title">
+        <span class="l-en">Rotation watch — forming, not fired</span><span class="l-zh">轮动观察——酝酿中，未触发</span>
+      </div>
+      <div class="forming-rail-stance">
+        <span class="l-en">Watch — don't front-run</span><span class="l-zh">观察——勿抢跑</span>
+      </div>
+      {% for fhc in _forming_items.items %}
+      {% set _fslug = fhc.basket %}
+      {% set _fpctile = fhc.extension_pctile_vs_200d %}
+      {% set _fn_of_10 = ((_fpctile / 10) | round | int) %}
+      {% set _fn_of_10 = [_fn_of_10, 1] | max %}
+      <div class="forming-row">
+        <span class="forming-basket-name">
+          <span class="l-en">{{ _fslug | replace('_', ' ') | title }}</span><span class="l-zh">{{ _basket_zh[_fslug] if _fslug in _basket_zh else (_fslug | replace('_', ' ') | title) }}</span>
+        </span>
+        <span class="forming-why">
+          <span class="l-en">stretched vs trend — momentum fading</span><span class="l-zh">高于趋势——动能转弱</span>
+          · <span class="l-en">stretched further above trend than {{ _fn_of_10 }} of 10 past readings</span><span class="l-zh">伸展度超过过去{{ _fn_of_10 }}成时间</span>
+        </span>
+        {% if fhc.basing_candidates is defined and fhc.basing_candidates | length > 0 %}
+        <div class="forming-candidates">
+          {% for cand in fhc.basing_candidates %}
+          <span class="rerate-chip" style="font-size:0.72rem;">
+            {{ cand.ticker }}
+            <span class="forming-cand-state">
+              <span class="l-en">· {{ _STATE_PLAIN_EN[cand.state] if cand.state in _STATE_PLAIN_EN else cand.state }}</span><span class="l-zh">· {{ _STATE_PLAIN_ZH[cand.state] if cand.state in _STATE_PLAIN_ZH else cand.state }}</span>
+            </span>
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 
   {# Rerating Watch #}

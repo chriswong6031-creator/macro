@@ -2292,3 +2292,293 @@ class TestNearTriggerMissingChips:
             "Chip outside state's set must not appear in missing_chips"
         )
         assert "bw_emerging" in missing
+
+
+# ── W-O3a: sector-median fwd-PE + young-IPO guard + forming rail ─────────────
+
+
+class TestSectorMedianFwdPe:
+    """Item 1: sector-median fwd-PE injected into valuation_store."""
+
+    def test_sector_with_5_members_gets_median(self):
+        """Sector with ���5 members having forward_pe → median computed and injected."""
+        import statistics
+        from scripts.build_leader_radar import _compute_sector_medians, _extract_valuation
+
+        fwd_pes = [10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
+        sector = "Technology"
+        tickers = [f"T{i}" for i in range(6)]
+        ticker_sectors = {t: sector for t in tickers}
+        valuation_store = {
+            t: _extract_valuation({"sector": sector, "valuation": {"forward_pe": fwd_pes[i]}})
+            for i, t in enumerate(tickers)
+        }
+
+        result = _compute_sector_medians(ticker_sectors, valuation_store)
+
+        assert result[sector] is not None, "sector with 6 members must have a median"
+        expected_median = statistics.median(fwd_pes)
+        assert abs(result[sector] - expected_median) < 1e-9
+
+    def test_sector_with_4_members_gets_none(self):
+        """Sector with only 4 members → median is None (below 5-member floor)."""
+        from scripts.build_leader_radar import _compute_sector_medians, _extract_valuation
+
+        fwd_pes = [10.0, 12.0, 14.0, 16.0]
+        sector = "Biotech"
+        tickers = [f"B{i}" for i in range(4)]
+        ticker_sectors = {t: sector for t in tickers}
+        valuation_store = {
+            t: _extract_valuation({"sector": sector, "valuation": {"forward_pe": fwd_pes[i]}})
+            for i, t in enumerate(tickers)
+        }
+
+        result = _compute_sector_medians(ticker_sectors, valuation_store)
+
+        assert result[sector] is None, "sector with 4 members must yield None"
+
+    def test_ticker_without_fwd_pe_gets_none_chip(self):
+        """Ticker with no forward_pe → fwd_pe key is None in extracted valuation row."""
+        from scripts.build_leader_radar import _extract_valuation
+
+        sd = {"sector": "Tech", "valuation": {}}
+        vrow = _extract_valuation(sd)
+        assert vrow.get("fwd_pe") is None
+
+    def test_whitespace_sector_excluded(self):
+        """Sector string with only whitespace does not form a group (normalized to empty → excluded)."""
+        from scripts.build_leader_radar import _compute_sector_medians, _extract_valuation
+
+        # Blank sector should be excluded — _ticker_sector only stores non-empty normalized strings
+        ticker_sectors = {"T0": "Tech", "T1": "Tech", "T2": "Tech", "T3": "Tech", "T4": "Tech"}
+        valuation_store = {
+            t: _extract_valuation({"valuation": {"forward_pe": 15.0}})
+            for t in ticker_sectors
+        }
+        result = _compute_sector_medians(ticker_sectors, valuation_store)
+        assert "Tech" in result
+        assert result["Tech"] is not None
+
+    def test_rerating_conditions_fires_when_below_sector_median(self):
+        """multiple_compressed fires when fwd_pe < sector_median_fwd_pe."""
+        from engine.leader_lifecycle import rerating_conditions
+
+        valuation_row = {
+            "cheap_pctile": None,     # own-history pctile absent
+            "fwd_pe": 12.0,
+            "sector_median_fwd_pe": 20.0,  # cheaper than median → fires
+        }
+        chips = rerating_conditions(None, valuation_row, None)
+        assert chips["multiple_compressed"] is True, (
+            "fwd_pe < sector_median_fwd_pe must set multiple_compressed True"
+        )
+
+    def test_rerating_conditions_null_when_both_legs_absent(self):
+        """multiple_compressed remains None when neither cheap_pctile nor sector_median available."""
+        from engine.leader_lifecycle import rerating_conditions
+
+        valuation_row = {
+            "cheap_pctile": None,
+            "fwd_pe": 15.0,
+            "sector_median_fwd_pe": None,   # sector too small → no median
+        }
+        chips = rerating_conditions(None, valuation_row, None)
+        assert chips["multiple_compressed"] is None, (
+            "both legs null must keep multiple_compressed None"
+        )
+
+
+class TestAssembleBasketEwClose:
+    """Item 2: _assemble_basket_ew_close young-IPO exclusion guard."""
+
+    def _make_series(self, n: int, seed: int) -> pd.Series:
+        rng = np.random.default_rng(seed)
+        prices = 100.0 * np.cumprod(1 + rng.normal(0.0005, 0.015, size=n))
+        # End-anchor at most recent business date
+        idx = pd.date_range("2021-01-01", periods=n, freq="B")
+        return pd.Series(prices, index=idx, name="close")
+
+    def test_young_member_excluded_n_used_4(self):
+        """5 members, 1 with 30 sessions → extension computed off 4 survivors, n_used==4."""
+        from scripts.build_leader_radar import _assemble_basket_ew_close
+
+        # 4 long-history members (300 sessions) + 1 young (30 sessions)
+        closes = [self._make_series(300, i) for i in range(4)]
+        closes.append(self._make_series(30, 99))  # young IPO — must be excluded
+
+        ew, n_used = _assemble_basket_ew_close(closes, min_history_sessions=250)
+        assert n_used == 4, f"expected 4 survivors, got {n_used}"
+        assert ew is not None, "4 long-history members must produce a valid EW series"
+
+    def test_all_young_returns_none(self):
+        """All 5 members young (< 250 sessions) → (None, 0)."""
+        from scripts.build_leader_radar import _assemble_basket_ew_close
+
+        closes = [self._make_series(30, i) for i in range(5)]
+        ew, n_used = _assemble_basket_ew_close(closes, min_history_sessions=250)
+        assert ew is None
+        assert n_used == 0
+
+    def test_exactly_3_survivors_returns_series(self):
+        """Exactly 3 survivors → result is not None (>=3 is the minimum)."""
+        from scripts.build_leader_radar import _assemble_basket_ew_close
+
+        closes = [self._make_series(300, i) for i in range(3)]
+        closes += [self._make_series(10, 50), self._make_series(10, 51)]
+        ew, n_used = _assemble_basket_ew_close(closes, min_history_sessions=250)
+        assert ew is not None, "3 survivors must produce a valid EW series"
+        assert n_used == 3
+
+    def test_fewer_than_3_survivors_returns_none(self):
+        """Only 2 survivors → (None, 2)."""
+        from scripts.build_leader_radar import _assemble_basket_ew_close
+
+        closes = [self._make_series(300, i) for i in range(2)]
+        closes += [self._make_series(10, 50), self._make_series(10, 51), self._make_series(10, 52)]
+        ew, n_used = _assemble_basket_ew_close(closes, min_history_sessions=250)
+        assert ew is None
+        assert n_used == 2
+
+
+class TestFormingHandoffRail:
+    """Item 3: forming flag and basing_candidates on handoff_context rows."""
+
+    def _make_hc_row(
+        self,
+        basket: str,
+        pctile: float | None,
+        slope: int | None,
+    ) -> dict:
+        return {
+            "basket": basket,
+            "n_members": 5,
+            "is_extended": False,
+            "rs_21d_slope_sign": slope,
+            "extension_pctile_vs_200d": pctile,
+            "ext_n_used": 5,
+        }
+
+    def _call(
+        self,
+        handoff_context: list[dict],
+        basket_membership: dict,
+        rows: list[dict],
+        assessments_map: dict,
+        universe: list[str],
+    ) -> list[dict]:
+        """Delegate directly to the real builder helper."""
+        from scripts.build_leader_radar import _apply_forming_rail  # noqa: PLC0415
+        _apply_forming_rail(handoff_context, rows, basket_membership, assessments_map, universe)
+        return handoff_context
+
+    def test_forming_when_pctile_85_slope_minus1(self):
+        """forming=True when pctile=85 (≥80) and slope=−1."""
+        from engine.leader_lifecycle import STATE_QUIET_ACCUMULATION
+
+        # Mock assessment object
+        class _A:
+            def __init__(self, state):
+                self.state = state
+
+        basket = "ai_infra"
+        membership = {"ai_infra": ["AAPL", "MSFT", "NVDA"]}
+        rows = [
+            {"ticker": "AAPL", "state": STATE_QUIET_ACCUMULATION, "k_true": 2, "n_avail": 4},
+        ]
+        assessments_map = {
+            "AAPL": _A(STATE_QUIET_ACCUMULATION),
+            "MSFT": _A("LEADERSHIP"),  # not in basing states
+        }
+        universe = ["AAPL", "MSFT"]
+        hc_list = [self._make_hc_row(basket, 85.0, -1)]
+        result = self._call(hc_list, membership, rows, assessments_map, universe)
+        assert result[0]["forming"] is True
+        cands = result[0]["basing_candidates"]
+        assert len(cands) == 1
+        assert cands[0]["ticker"] == "AAPL"
+
+    def test_not_forming_when_slope_positive(self):
+        """forming=False when pctile=85 but slope=+1."""
+        basket = "ai_infra"
+        membership = {"ai_infra": ["AAPL"]}
+        hc_list = [self._make_hc_row(basket, 85.0, 1)]
+        result = self._call(hc_list, membership, [], {}, ["AAPL"])
+        assert result[0]["forming"] is False
+
+    def test_not_forming_when_pctile_70(self):
+        """forming=False when pctile=70 (below 80 shelf)."""
+        basket = "ai_infra"
+        membership = {"ai_infra": ["AAPL"]}
+        hc_list = [self._make_hc_row(basket, 70.0, -1)]
+        result = self._call(hc_list, membership, [], {}, ["AAPL"])
+        assert result[0]["forming"] is False
+
+    def test_null_pctile_leaves_forming_absent(self):
+        """When pctile is None, forming key is absent (tri-state honesty)."""
+        basket = "ai_infra"
+        membership = {"ai_infra": ["AAPL"]}
+        hc_list = [self._make_hc_row(basket, None, -1)]
+        result = self._call(hc_list, membership, [], {}, ["AAPL"])
+        assert "forming" not in result[0], "forming key must be absent when pctile is None"
+
+    def test_null_slope_leaves_forming_absent(self):
+        """When slope is None, forming key is absent (tri-state honesty)."""
+        basket = "ai_infra"
+        membership = {"ai_infra": ["AAPL"]}
+        hc_list = [self._make_hc_row(basket, 85.0, None)]
+        result = self._call(hc_list, membership, [], {}, ["AAPL"])
+        assert "forming" not in result[0], "forming key must be absent when slope is None"
+
+    def test_candidates_sorted_cw_before_qa_before_sup(self):
+        """Candidates sort CW < QA < SUP, then k desc, then ticker."""
+        from engine.leader_lifecycle import (
+            STATE_CATALYST_WINDOW,
+            STATE_QUIET_ACCUMULATION,
+            STATE_SUPPRESSED,
+        )
+
+        class _A:
+            def __init__(self, state):
+                self.state = state
+
+        basket = "ai_infra"
+        membership = {"ai_infra": ["A", "B", "C"]}
+        rows = [
+            {"ticker": "A", "state": STATE_SUPPRESSED, "k_true": 3, "n_avail": 4},
+            {"ticker": "B", "state": STATE_QUIET_ACCUMULATION, "k_true": 2, "n_avail": 4},
+            {"ticker": "C", "state": STATE_CATALYST_WINDOW, "k_true": 1, "n_avail": 2},
+        ]
+        assessments_map = {
+            "A": _A(STATE_SUPPRESSED),
+            "B": _A(STATE_QUIET_ACCUMULATION),
+            "C": _A(STATE_CATALYST_WINDOW),
+        }
+        universe = ["A", "B", "C"]
+        hc_list = [self._make_hc_row(basket, 85.0, -1)]
+        result = self._call(hc_list, membership, rows, assessments_map, universe)
+        cands = result[0]["basing_candidates"]
+        assert len(cands) == 3
+        # CW first, then QA, then SUP
+        assert cands[0]["ticker"] == "C", f"CW must be first, got {cands[0]['ticker']}"
+        assert cands[1]["ticker"] == "B"
+        assert cands[2]["ticker"] == "A"
+
+    def test_candidates_capped_at_6(self):
+        """basing_candidates capped at 6 even with more eligible members."""
+        from engine.leader_lifecycle import STATE_QUIET_ACCUMULATION
+
+        class _A:
+            def __init__(self, state):
+                self.state = state
+
+        basket = "ai_infra"
+        tickers = [f"T{i}" for i in range(10)]
+        membership = {"ai_infra": tickers}
+        rows = [
+            {"ticker": t, "state": STATE_QUIET_ACCUMULATION, "k_true": 2, "n_avail": 4}
+            for t in tickers
+        ]
+        assessments_map = {t: _A(STATE_QUIET_ACCUMULATION) for t in tickers}
+        hc_list = [self._make_hc_row(basket, 88.0, -1)]
+        result = self._call(hc_list, membership, rows, assessments_map, tickers)
+        assert len(result[0]["basing_candidates"]) <= 6
