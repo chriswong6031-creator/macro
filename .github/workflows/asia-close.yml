@@ -387,7 +387,16 @@ jobs:
           }
           cl_hk() {
             brun hk               "build hong kong / hang seng (build_hk)"             scripts.build_hk
-            brun baskets_hk       "hong kong thematic baskets (build_baskets_hk)"      scripts.build_baskets_hk
+            # hk_ignition.jsonl advancer: asia-close IS the HK ignition forward-ledger nightly
+            # (only fresh-HKEX lane that commits data/). engine/ignition_audit.py writers
+            # self-gate on COLLECT_LANE=nightly, so arm it for THIS module only — the inline
+            # `VAR=val fn` form reaches the python child and does NOT leak to later brun
+            # calls (verified; same idiom as CN_SLEEVE_LANE above). Nothing else reachable
+            # from build_baskets_hk reads COLLECT_LANE (verified 2026-07-16), so this arms
+            # exactly the ignition ledger. daily.yml's build_vector hook re-runs the module
+            # armed from the same committed store (idempotent dedup / rescue if this band
+            # dies). Guarded by tests/test_ignition_lane_gate.py.
+            COLLECT_LANE=nightly brun baskets_hk "hong kong thematic baskets (build_baskets_hk)" scripts.build_baskets_hk
             brun rotation_events_hk "hk rotation events (build_rotation_events_hk)"    scripts.build_rotation_events_hk  # RC-R14 display-tier, reads hkbasketdata/baskets.json in-process
           }
           # CN-SYS W5a Scope 2 intel chain head (behavior-preserving extraction from
