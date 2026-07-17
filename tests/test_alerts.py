@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.alerts import (  # noqa: E402
     _regime_history,
+    alert_view,
     hy_oas_widening,
     net_liquidity_roc_flip,
     transition_state_change,
@@ -35,6 +36,22 @@ def test_transition_change_fires() -> None:
 def test_transition_no_change_silent() -> None:
     hist = _mk_hist(["STABLE"] * 6)
     assert transition_state_change(hist, pd.DataFrame()) is None
+
+
+def test_transition_view_plainifies_message() -> None:
+    # Presentation tier (doctrine Law 2): the raw enum message is rewritten to
+    # plain words in the rendered view; the stored row keeps the raw string.
+    v = alert_view("transition_state_change", "act",
+                   "Transition state STABLE -> WEAKENING (2 flags active)")
+    assert v["message"] == ("The regime's footing went from steady to weakening "
+                            "(2 warning flags active)")
+    assert v["message_zh"] == "周期状态由「稳定」转为「走弱」（2 个预警激活）"
+    # singular flag count and a non-matching message pass through untouched
+    v1 = alert_view("transition_state_change", "info",
+                    "Transition state WEAKENING -> STABLE (1 flags active)")
+    assert "1 warning flag active" in v1["message"]
+    other = alert_view("transition_state_change", "info", "some other shape", "原文")
+    assert other["message"] == "some other shape" and other["message_zh"] == "原文"
 
 
 def test_liquidity_flip_fires() -> None:
