@@ -4007,6 +4007,19 @@ def main() -> int:
     except Exception as _dcae:  # noqa: BLE001 — display-only, never fatal
         log.warning("deterioration_cascade build failed (%s)", _dcae)
 
+    # CGL W1: US radar card contagion wiring (card-only; hero/mx5 chip is W2).
+    # Pre-compute market_state so we can attach pressure["us"] before building vm.
+    _us_ms_view = market_state_view(latest, f)
+    try:
+        _cgl_us_path = config.data_dir() / "contagion_links" / "latest.json"
+        if _cgl_us_path.exists() and _us_ms_view and isinstance(_us_ms_view.get("radar"), dict):
+            _cgl_us_art = json.loads(_cgl_us_path.read_text(encoding="utf-8"))
+            _us_pressure = (_cgl_us_art.get("pressure") or {}).get("us")
+            if _us_pressure is not None:
+                _us_ms_view["radar"]["contagion"] = _us_pressure
+    except Exception:  # noqa: BLE001 — additive, never break the build
+        pass
+
     vm = dict(
         latest=latest,
         mtf=mtf_data,
@@ -4063,7 +4076,7 @@ def main() -> int:
         cross_asset=cross_asset_snap,
         fear_euphoria=fear_euphoria_synthesis(latest, f),
         regime_snap=_rs_view,
-        market_state=market_state_view(latest, f),  # Green/Yellow/Red market-state command-center (display-only)
+        market_state=_us_ms_view,  # Green/Yellow/Red market-state command-center (display-only)
         ms_history=_ms_history_view(),    # v5 scorecard: last ≤60 sessions {asof,score} — graceful absent
         idx_spark=_idx_spark_view(),      # v5 scorecard: 20-point sparklines SPY/QQQ/^DJI/^RUT — graceful absent
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)

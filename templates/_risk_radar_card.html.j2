@@ -270,6 +270,75 @@
      the live by_sc_y1, wc_y1, and y1-window recovery data.
      Guards: rd.track must be defined AND truthy
      (older renders / first build before engine builder runs = zero output). #}
+  {# ── Contagion pressure strip (CGL W1 display lane, 2026-07-17).
+     Resolves the per-market block from:
+       1. rd.contagion  (engine sets this directly on the radar dict)
+       2. CGL.pressure[rd.market] (global artifact, intl radars)
+     Guard: if neither is present the card is byte-identical to today.
+     Level map: low→Low/低, moderate→Building/升温, high→High/高 (plain, no jargon).
+     Stance: high pressure appends "Watch — don't chase" (Law 1, Design Doctrine).
+     All receipts (linkage weight, drawdown, 10-session return) live in the help()
+     tooltip only — never at glance tier. Shadow-vs-incumbent divergence disclosed
+     honestly when it exists. #}
+  {%- set _cgl_blk = none -%}
+  {%- if rd.contagion -%}
+    {%- set _cgl_blk = rd.contagion -%}
+  {%- endif -%}
+  {%- if _cgl_blk %}
+  {#- level → glance word -#}
+  {%- set _cgl_lv = _cgl_blk.level if _cgl_blk.level is defined else none -%}
+  {%- set _cgl_lv_en = 'High' if _cgl_lv == 'high' else ('Building' if _cgl_lv == 'moderate' else 'Low') -%}
+  {%- set _cgl_lv_zh = '高' if _cgl_lv == 'high' else ('升温' if _cgl_lv == 'moderate' else '低') -%}
+  {%- set _cgl_chip = 'warn' if _cgl_lv == 'high' else ('caut' if _cgl_lv == 'moderate' else 'ok') -%}
+  {#- stance for high level -#}
+  {%- set _cgl_stance_en = ' — watch, don\'t chase' if _cgl_lv == 'high' else '' -%}
+  {%- set _cgl_stance_zh = ' — 观望，勿追入' if _cgl_lv == 'high' else '' -%}
+  {#- top-1 exporter chip -#}
+  {%- set _cgl_top = (_cgl_blk.top_exporters[0]) if (_cgl_blk.top_exporters is defined and _cgl_blk.top_exporters) else none -%}
+  {#- build Tier-2 tooltip (receipts, exporters, shadow divergence) -#}
+  {%- set _ns2 = namespace(tip_en='', tip_zh='') -%}
+  {%- if _cgl_blk.top_exporters is defined and _cgl_blk.top_exporters -%}
+    {%- for exp in _cgl_blk.top_exporters[:3] -%}
+      {%- set _wt = (exp.weight * 100) | round(1) | string if exp.weight is defined and exp.weight is not none else '—' -%}
+      {%- set _dd = ((exp.dd21 * 100) | round(1) | string ~ '%') if exp.dd21 is defined and exp.dd21 is not none else '—' -%}
+      {%- set _r10 = ((exp.ret10 * 100) | round(1) | string ~ '%') if exp.ret10 is defined and exp.ret10 is not none else '—' -%}
+      {%- set _nm_en = exp.name_en if exp.name_en is defined else (exp.market if exp.market is defined else '—') -%}
+      {%- set _nm_zh = exp.name_zh if (exp.name_zh is defined and exp.name_zh) else _nm_en -%}
+      {%- set _ns2.tip_en = _ns2.tip_en ~ (' | ' if _ns2.tip_en else '') ~ _nm_en ~ ': connection ' ~ _wt ~ '%, ' ~ _dd ~ ' off its 21-day high, ' ~ _r10 ~ ' in 10 sessions' -%}
+      {%- set _ns2.tip_zh = _ns2.tip_zh ~ ('；' if _ns2.tip_zh else '') ~ _nm_zh ~ '：关联' ~ _wt ~ '%，近21日高点回落' ~ _dd ~ '，近10日' ~ _r10 -%}
+    {%- endfor -%}
+  {%- endif -%}
+  {#- shadow divergence disclosure -#}
+  {%- set _cgl_shadow = _cgl_blk.shadow_state if _cgl_blk.shadow_state is defined else none -%}
+  {%- set _cgl_incumbent = _cgl_blk.incumbent_state if _cgl_blk.incumbent_state is defined else none -%}
+  {%- set _cgl_show_shadow = _cgl_shadow and _cgl_incumbent and _cgl_shadow != _cgl_incumbent -%}
+  {#- ZH state vocab (mirrors _RADAR_ZH in engine/market_state.py) -#}
+  {%- set _cgl_state_zh_map = {'calm':'平静','watch':'观察','caution':'警戒','elevated':'升高','risk-off':'避险'} -%}
+  {%- if _cgl_show_shadow -%}
+    {%- set _shd_zh = _cgl_state_zh_map.get(_cgl_shadow, _cgl_shadow) -%}
+    {%- set _ns2.tip_en = _ns2.tip_en ~ (' | ' if _ns2.tip_en else '') ~ 'With imported pressure applied this radar would read ' ~ _cgl_shadow ~ ' — shown for transparency, not yet moving the live state.' -%}
+    {%- set _ns2.tip_zh = _ns2.tip_zh ~ ('；' if _ns2.tip_zh else '') ~ '叠加海外传导压力后，本雷达将显示' ~ _shd_zh ~ ' — 仅作透明展示，尚未影响正式状态。' -%}
+  {%- endif -%}
+  {#- render strip — one row matching .rrx-cyc idiom (compact, no extra CSS needed) -#}
+  <div class="rrx-cyc rrx-cgl">
+    <span class="rrx-cyc-k">{{ t('Overseas pressure','境外传导') }}</span>
+    <span class="chip {{ _cgl_chip }}" style="font-size:10px;padding:1px 6px;">{{ t(_cgl_lv_en, _cgl_lv_zh) }}</span>
+    {%- if _cgl_blk.line_en is defined and _cgl_blk.line_en %}
+    <span class="l-en">{{ _cgl_blk.line_en }}{{ _cgl_stance_en }}</span>
+    <span class="l-zh">{{ _cgl_blk.line_zh if (_cgl_blk.line_zh is defined and _cgl_blk.line_zh) else _cgl_blk.line_en }}{{ _cgl_stance_zh }}</span>
+    {%- endif %}
+    {%- if _cgl_top %}
+    <span class="rrx-rec-chip">{{ t((_cgl_top.name_en if _cgl_top.name_en is defined else (_cgl_top.market if _cgl_top.market is defined else '—')), (_cgl_top.name_zh if (_cgl_top.name_zh is defined and _cgl_top.name_zh) else (_cgl_top.name_en if _cgl_top.name_en is defined else '—'))) }}</span>
+    {%- endif %}
+    {%- if _ns2.tip_en %}
+    {{ help(_ns2.tip_en, _ns2.tip_zh) }}
+    {%- endif %}
+    {%- if _cgl_blk.stale is defined and _cgl_blk.stale and _cgl_blk.built_date is defined and _cgl_blk.built_date %}
+    <span class="muted" style="font-size:9.5px;"><span class="l-en">as of {{ _cgl_blk.built_date }}</span><span class="l-zh">截至 {{ _cgl_blk.built_date }}</span></span>
+    {%- endif %}
+  </div>
+  {%- endif %}
+
   {% if rd.track is defined and rd.track %}
   {%- set trk = rd.track -%}
   {%- set mon = trk.get('monitoring') if trk.get is defined else trk.monitoring if trk.monitoring is defined else {} -%}

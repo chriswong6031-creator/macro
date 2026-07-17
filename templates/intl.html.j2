@@ -1429,6 +1429,105 @@
 
 {% endif %}{# end risk_desk section #}
 
+{# ── CGL Directed Pressure Table (CGL W1, 2026-07-17).
+   Shows who is pressing on whom right now — one row per market, sorted by
+   pressure pct descending. Outer guard: CGL is defined AND non-empty. Renders
+   NOTHING when the artifact is absent (progressive enhancement; zero visual
+   change to existing layout). Plain-word glance tier only: no "GFEVD", "VAR",
+   "spillover matrix", no raw percentile numbers. Level → Low/Building/High pill.
+   Receipts (linkage weight) live in the chip labels — each chip shows the source
+   name and weight%. Nulls-printed: data gaps disclosed in a footer line. #}
+{% if CGL is defined and CGL and mode != 'stocks' %}
+{#- helpers -#}
+{%- set _cgl_pressure = CGL.pressure if CGL.pressure is defined else {} -%}
+{%- set _cgl_severity = CGL.severity if CGL.severity is defined else {} -%}
+{%- set _cgl_gaps = CGL.gaps if CGL.gaps is defined else [] -%}
+{#- market display names EN/ZH — covers all 11 CGL markets -#}
+{%- set _cgl_mkt_names = {
+  'us': ('United States', '美国'),
+  'cn': ('China',         '中国'),
+  'hk': ('Hong Kong',     '香港'),
+  'ca': ('Canada',        '加拿大'),
+  'kr': ('South Korea',   '韩国'),
+  'jp': ('Japan',         '日本'),
+  'tw': ('Taiwan',        '台湾'),
+  'in': ('India',         '印度'),
+  'au': ('Australia',     '澳大利亚'),
+  'gb': ('United Kingdom','英国'),
+  'ez': ('Euro area',     '欧元区')
+} -%}
+{#- collect + sort rows by pct desc -#}
+{%- set _cgl_rows = namespace(v=[]) -%}
+{%- for mkt, blk in _cgl_pressure.items() -%}
+  {%- if blk -%}
+    {%- set _pct = blk.pct if (blk.pct is defined and blk.pct is not none) else 0 -%}
+    {%- set _cgl_rows.v = _cgl_rows.v + [{'mkt': mkt, 'blk': blk, 'pct': _pct}] -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- set _cgl_sorted = _cgl_rows.v | sort(attribute='pct', reverse=true) -%}
+<div class="panel">
+  <div class="sec-h">
+    <h2>{{ t('Where crash pressure is flowing now', '冲击压力的实时流向') }}
+      {{ help('How much inbound pressure each market is absorbing from markets that are actually falling — measured from economic linkages and current crash depth. Low / Building / High reflects the severity relative to the past two years. Top sources show which markets are driving the pressure. Source: trade, financial and supply-chain linkages blended with recent price action. Display only — not a signal to trade.', '每个市场正在吸收多少来自真实下跌市场的输入压力——由经济联系与当前跌幅共同衡量。低/升温/高反映过去两年的相对严重程度。压力来源显示哪些市场是主要驱动力。数据来源：贸易、金融与供应链联系，结合近期价格走势。仅作展示，非交易信号。') }}</h2>
+    <span class="sub">{{ t('Measured from market connections and who is actually falling', '由市场关联与实际下跌方共同衡量') }}</span>
+  </div>
+  {%- if _cgl_sorted %}
+  <div style="margin-top:8px;">
+    {%- for row in _cgl_sorted %}
+    {%- set mkt = row.mkt -%}
+    {%- set blk = row.blk -%}
+    {%- set _names = _cgl_mkt_names.get(mkt, (mkt, mkt)) -%}
+    {%- set _lv = blk.level if (blk.level is defined and blk.level) else 'low' -%}
+    {%- set _lv_chip = 'warn' if _lv == 'high' else ('caut' if _lv == 'moderate' else 'ok') -%}
+    {%- set _svr = _cgl_severity.get(mkt, {}) -%}
+    {%- set _is_source = _svr and (_svr.sigma is defined) and (_svr.sigma is not none) and (_svr.sigma >= 0.5) -%}
+    {%- set _pct_bar = ((blk.pct if blk.pct is not none else 0) * 100) | round | int -%}
+    <div class="ird-tx-row" style="align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);">
+      <span style="min-width:120px;font-size:12.5px;font-weight:600;">
+        <span class="l-en">{{ _names[0] }}</span><span class="l-zh">{{ _names[1] }}</span>
+      </span>
+      <span class="chip {{ _lv_chip }}" style="font-size:10px;padding:1px 6px;white-space:nowrap;">
+        {%- if _lv == 'high' %}<span class="l-en">High</span><span class="l-zh">高</span>
+        {%- elif _lv == 'moderate' %}<span class="l-en">Building</span><span class="l-zh">升温</span>
+        {%- else %}<span class="l-en">Low</span><span class="l-zh">低</span>
+        {%- endif %}
+      </span>
+      <div class="ird-tx-bar-wrap" style="flex:1;min-width:40px;max-width:90px;">
+        <div class="ird-tx-bar" style="width:{{ _pct_bar }}%"></div>
+      </div>
+      {%- if blk.top_exporters is defined and blk.top_exporters %}
+      <span style="display:flex;flex-wrap:wrap;gap:3px;flex:1;min-width:0;">
+        {%- for exp in blk.top_exporters[:3] %}
+        {%- set _en = exp.name_en if (exp.name_en is defined and exp.name_en) else (exp.market if exp.market is defined else '?') -%}
+        {%- set _zh = exp.name_zh if (exp.name_zh is defined and exp.name_zh) else _en -%}
+        {%- set _wt = ((exp.weight * 100) | round(0) | int | string ~ '%') if (exp.weight is defined and exp.weight is not none) else '' -%}
+        <span class="rrx-rec-chip" style="font-size:10px;">
+          <span class="l-en">{{ _en }}{% if _wt %} ({{ _wt }}){% endif %}</span>
+          <span class="l-zh">{{ _zh }}{% if _wt %} ({{ _wt }}){% endif %}</span>
+        </span>
+        {%- endfor %}
+      </span>
+      {%- endif %}
+      {%- if _is_source %}
+      <span class="chip warn" style="font-size:9.5px;padding:1px 5px;white-space:nowrap;">
+        <span class="l-en">exporting risk</span><span class="l-zh">风险输出方</span>
+      </span>
+      {%- endif %}
+    </div>
+    {%- endfor %}
+  </div>
+  {%- else %}
+  <p class="muted small">{{ t('Directed pressure data not available yet', '定向传导压力数据暂不可用') }}</p>
+  {%- endif %}
+  {%- if _cgl_gaps %}
+  <p class="caveat ird-asof" style="margin-top:8px;">
+    <span class="l-en">Some links running on structural weights only tonight ({{ _cgl_gaps | length }} data gaps).</span>
+    <span class="l-zh">今晚部分联系仅依靠结构权重运行（{{ _cgl_gaps | length }} 项数据缺口）。</span>
+  </p>
+  {%- endif %}
+</div><!-- /cgl-directed-pressure -->
+{% endif %}{# end CGL directed pressure #}
+
 <!-- ===== Growth × inflation regime map ===== -->
 <div class="panel">
   <h2>{{ t('Regime map — growth × inflation', '周期图 — 增长 × 通胀') }} {{ help('Places each economy on the growth/inflation clock. Right side = better growth; top = more inflation pressure.', '把每个经济体放在增长/通胀时钟上。右侧增长更好；上方通胀压力更高。') }}</h2>
