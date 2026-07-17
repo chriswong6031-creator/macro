@@ -160,9 +160,11 @@ checks:
   - law_id: ui.title_i18n
     summary: >
       Translated (CJK / t() / zh-interpolated) text must never appear inside HTML
-      title= attributes. The dual-span l-en/l-zh mechanism cannot operate in
-      attributes, so a bilingual title= renders both languages mashed together.
-      Law source: CLAUDE.md ("no translated text in title= attributes").
+      title= attributes, and t()/td() dual-span markup must never appear inside a
+      <title> ELEMENT (RCDATA — markup renders as literal browser-tab text, #2705).
+      The dual-span l-en/l-zh mechanism cannot operate in either place. Plain CJK
+      inside a <title> element is allowed — the element rule is markup-in-RCDATA,
+      not language. Law source: CLAUDE.md ("no translated text in title= attributes").
     source_ref:
       - scripts/check_title_i18n.py
       - CLAUDE.md
@@ -175,13 +177,16 @@ checks:
       - workflow: .github/workflows/pages.yml
         job: publish
         lane: publish
-    selftest: false
-    selftest_exempt_reason: >
-      No selftest flag; scans template source deterministically.
+    selftest: true
     allowlist: null
     ratchet: null
     known_limits:
-      - Scans templates/ source; does not re-scan rendered site/ HTML.
+      - Template <title> element rule is line-scoped (dodges committee.html.j2's
+        JS-built SVG title strings), so a bare <title> wrapped across lines with the
+        t()/td() call on its own line is not caught; {% block title %} bodies ARE
+        region-scanned.
+      - Rendered-site rule span-checks the page <title> (first title element) only;
+        inline-SVG <title> tooltips deeper in the page are not span-checked.
     owner_program: engine-fix-masterplan
     notes: null
 
