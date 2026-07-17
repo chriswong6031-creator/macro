@@ -2598,6 +2598,23 @@ modules:
           artifact was written only on Tuesdays, so the #2061 arming was
           invisible in it for days. Non-fatal (exit 0 always).
 
+  # CSP-W6 (2026-07-17): forward-ledger heartbeat (post-publish detector).
+  # Runs as a dedicated job that needs both engine and publish (daily.yml).
+  # Never gates, never fails a downstream step (exit 0 always — CSP-R1).
+  - id: check_ledger_advance
+    module: scripts.check_ledger_advance
+    note: >
+      CSP-W6 — Forward-ledger heartbeat. Post-publish detection step: on trading
+      days where the site republished (--render-happened flag from the workflow),
+      asserts each registered forward ledger's newest asof advanced vs the
+      previous-run snapshot. On stall, appends type_=ledger_stall via the W6b
+      push_ops_alert spine (same channel as check_builder_failstreaks.py) and
+      emits a ::warning:: annotation. Persists snapshot in
+      data/ci/ledger_heartbeat_state.json (sole writer). Trading-day aware;
+      idempotent per calendar date. Always exits 0 (CSP-R1: detection and
+      disclosure, never fail-dark). Wired as a separate post-publish job in
+      daily.yml (needs: [engine, publish], if: always()).
+
   # SA-W2 (2026-07-12): china_regime_store.append() + china_standout_audit.run_attribution()
   # run INLINE inside build_china_library.main() (the scripts.build_china step in asia-close.yml).
   # These are additive non-fatal hooks — no new top-level dag step added (they ride the
