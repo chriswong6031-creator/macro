@@ -54,7 +54,14 @@ jobs:
     # 2026-07-14 split: the 98.5m spike basis included shadow-importance (~14m), which
     # moved to collect_tail — 150m is now ≥1.7× the residual spike and is deliberately
     # kept: an undersized cap costs a whole night's collections (bitten twice).
-    timeout-minutes: 150
+    # 2026-07-17: bitten a THIRD time — the first 18:30-ET (22:30 UTC) Build B run's
+    # collect ran 150.4m and was cancelled AT the final "commit data" step, seconds from
+    # landing ~148m of freshly-pulled collections (run 29542087837; downstream engine/
+    # publish all green but the day's collector data never committed). Runtime grew
+    # ~115m→~148m after the schedule moved 02:00 UTC → 22:30 UTC — suspected early-
+    # evening source retry loops (under forensics). 185m buys survival at the observed
+    # pace + commit headroom while the growth is root-caused.
+    timeout-minutes: 185
     steps:
       - uses: actions/checkout@v4
       - name: python 3.12 (Homebrew venv — self-hosted runner)
