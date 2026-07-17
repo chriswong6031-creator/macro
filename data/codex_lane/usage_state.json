@@ -1,20 +1,20 @@
 {
   "schema": "codex_lane.usage_state.v1",
-  "updated_at": "2026-07-17T13:36:06.351680+00:00",
+  "updated_at": "2026-07-17T14:44:31.228755+00:00",
   "rate_limits": {
     "primary": {
-      "used_percent": 15.0,
+      "used_percent": 17.0,
       "resets_at": "2026-07-23T05:10:30+00:00",
       "window_mins": 10080
     },
     "secondary": null,
     "plan_type": "pro",
-    "fetched_at": "2026-07-17T13:16:20.699076+00:00"
+    "fetched_at": "2026-07-17T14:34:02.092783+00:00"
   },
   "token_usage_last": {
-    "input_tokens": 30298,
-    "output_tokens": 2086,
-    "total_tokens": 32384
+    "input_tokens": 159476,
+    "output_tokens": 1053,
+    "total_tokens": 160529
   },
   "sessions": [
     {
@@ -175,6 +175,102 @@
     },
     {
       "ts": "2026-07-17T13:36:06.351580+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:10:18.914637+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:10:34.648712+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:13:56.707680+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:14:42.582106+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:19:47.918421+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:20:39.228546+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:23:40.524504+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:24:25.078587+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:29:53.877647+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:30:45.532836+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:33:45.887841+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:34:02.084141+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:39:38.689504+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:40:42.572845+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:43:57.138893+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-17T14:44:31.228632+00:00",
       "lane": "cases",
       "ok": true,
       "error_kind": null
