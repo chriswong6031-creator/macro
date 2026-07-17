@@ -55,7 +55,7 @@ import pandas as pd
 
 from lib import config
 
-# ── nullable stamp schema (ruling A6/A9; W-C additions 2026-07-05) ───────────
+# ── nullable stamp schema (ruling A6/A9; W-C additions 2026-07-05; W-OVC 2026-07-17) ─
 # Order is the canonical column order for the ledger schema-union.
 STAMP_COLS: list[str] = [
     "opt_gamma_regime",          # str: 'long'|'short' (summary gamma_regime)
@@ -74,6 +74,13 @@ STAMP_COLS: list[str] = [
     "opt_pin_risk",              # bool: opex_days<=5 AND gamma='long' AND min wall dist <=2% (S-PIN_RISK)
     "opt_wall_dist_up_pct",      # float: (wall_up/spot - 1)*100 — positive = how far above spot
     "opt_wall_dist_down_pct",    # float: (wall_down/spot - 1)*100 — negative = how far below spot
+    # W-OVC additions (2026-07-17) — S-VANNA-RELIEF / S-FRONT-CHARM gate primitives
+    "opt_vanna_relief",          # bool: iv30_5d_chg < 0 AND vanna_hedge_5d in top cross-sectional tercile
+                                 #       per as_of (holdability / de-escalation state; caution-only RO-3)
+    "opt_front7_charm_share",    # float: |charm| OI-weighted notional share for expiries ≤7 calendar days
+                                 #        as fraction of total board; null when chain absent; S-FRONT-CHARM
+    "opt_root_class",            # str: index_etf | sector_etf | industry_etf | single_name (display context)
+                                 #      mandatory alongside opt_front7_charm_share (ETF sign era-unstable)
 ]
 
 # Coverage-gated columns: these require an external data store (polygon_gex, skew snapshots,
@@ -85,7 +92,12 @@ STAMP_COLS: list[str] = [
 # STAMP_COLS — to decide whether a row is "unstamped" and eligible for future re-stamping.
 # This preserves the W1.3 design: rows with only calendar-derived columns (opt_opex_days) remain
 # fully retryable when GEX/skew/ivspread coverage later arrives.
-STAMP_COVERAGE_COLS: list[str] = [c for c in STAMP_COLS if c != "opt_opex_days"]
+# opt_opex_days: excluded because it is calendar-derived (non-null on every business date).
+# opt_root_class: excluded because it is taxonomy-derived from the ticker alone (non-null
+#   for every ticker; equivalent to opt_opex_days in that it needs no data store).
+STAMP_COVERAGE_COLS: list[str] = [
+    c for c in STAMP_COLS if c not in ("opt_opex_days", "opt_root_class")
+]
 
 # every stamp starts as all-None so a name with no options coverage yields a clean null row
 _NULL_STAMP: dict = {c: None for c in STAMP_COLS}
@@ -452,6 +464,198 @@ def _wall_dist_stamp(
     return out
 
 
+# ── W-OVC stamp functions (2026-07-17) ──────────────────────────────────────
+
+def _default_read_chain_by_date(d: _dt.date) -> pd.DataFrame | None:
+    """Read chains/{date}.parquet; returns None if absent or unreadable."""
+    p = _chains_dir() / f"{d.isoformat()}.parquet"
+    if not p.exists():
+        return None
+    try:
+        return pd.read_parquet(p)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _ovc_from_chain(
+    as_of: _dt.date,
+    ticker: str,
+    chain_dates: list[_dt.date],
+    read_chain: Callable[[_dt.date], pd.DataFrame | None],
+) -> dict:
+    """Compute W-OVC display columns from the chain snapshot on/before as_of.
+
+    Returns dict with keys:
+      opt_front7_charm_share  — float | None: |charm|-notional share for ≤7-calendar-day expiries
+      opt_root_class          — str: index_etf | sector_etf | industry_etf | single_name
+
+    PIT-disciplined: only the latest chain snapshot with date ≤ as_of is used.
+    Null-safe: bs_greeks NaN on bad inputs; those contracts skipped silently.
+
+    This function intentionally does NOT compute opt_vanna_relief (that requires cross-
+    sectional tercile ranking across multiple tickers on the same as_of — done in the
+    stamp_ledger pass, not here).
+
+    OI TIMING (PIT-clean, matching the frozen study construction):
+    The adjudicated study (options_opex_vanna_charm_study.py §340-343) builds front7_abs_charm_share
+    from oi_signal = oi.groupby([expiration,strike,right])['open_interest'].shift(1) — prior-day OI
+    per contract.  The adjudication §2 PIT-verification certifies the metric as clean precisely
+    because of this shift.  This function replicates that construction:
+
+      - Greeks (charm/T/iv) are taken from the CURRENT chain snapshot (usable[-1]) — same-day
+        quote-derived inputs, matching the study merge of same-date greeks against shifted OI.
+      - OI is taken from the PRIOR chain snapshot (usable[-2]) — pre-trade-day positions that
+        do NOT include same-day fire-date trades (look-ahead).
+
+    This matches _voi_flag_stamp's pattern (today chain for volume, prior chain for OI).
+    When fewer than 2 usable snapshots exist the metric is null (cannot form prior-day OI).
+    """
+    # Import here to avoid circular dependency at module level
+    from engine.greeks import bs_greeks
+    from engine.options_entry_state import _root_class
+
+    out: dict = {"opt_front7_charm_share": None, "opt_root_class": _root_class(ticker)}
+
+    # Need at least 2 usable snapshots: current for greeks, prior for OI
+    usable = [d for d in chain_dates if d <= as_of]
+    if len(usable) < 2:
+        return out
+    chain_date = usable[-1]   # current snapshot — provides greeks (T, iv, spot, expiry)
+    prev_date = usable[-2]    # prior snapshot — provides OI (pre-fire-day positions)
+
+    cdf = read_chain(chain_date)
+    if cdf is None or cdf.empty:
+        return out
+    prev_cdf = read_chain(prev_date)
+    if prev_cdf is None or prev_cdf.empty:
+        return out
+
+    # required columns
+    required = {"underlying", "K", "T", "iv", "oi", "is_call", "spot", "expiry"}
+    if not required.issubset(set(cdf.columns)):
+        return out
+    if not required.issubset(set(prev_cdf.columns)):
+        return out
+
+    sub = cdf[cdf["underlying"] == ticker].copy()
+    if sub.empty:
+        return out
+
+    # Build prior-OI lookup keyed by (expiry, K, is_call) — the full contract key, matching
+    # the study's groupby([expiration, strike, right]).shift(1). Keying without expiry would
+    # sum OI across every expiry listed at a strike, contaminating front-week weights with
+    # back-month positions.
+    def _exp_key(expiry_val):
+        try:
+            return pd.Timestamp(expiry_val).date().isoformat()
+        except Exception:
+            return None
+
+    prev_sub = prev_cdf[prev_cdf["underlying"] == ticker].copy()
+    if not prev_sub.empty:
+        prev_sub["_k"] = pd.to_numeric(prev_sub["K"], errors="coerce").round(4)
+        prev_sub["oi"] = pd.to_numeric(prev_sub["oi"], errors="coerce")
+        prev_sub["_exp"] = prev_sub["expiry"].apply(_exp_key)
+        prior_oi_map = (
+            prev_sub.dropna(subset=["_k", "oi", "_exp"])
+            .groupby(["_exp", "_k", "is_call"])["oi"]
+            .sum()
+        )
+    else:
+        prior_oi_map = pd.Series(dtype=float)
+
+    for col in ("K", "T", "iv", "spot"):
+        sub[col] = pd.to_numeric(sub[col], errors="coerce")
+    sub["_k"] = sub["K"].round(4)
+    sub["_exp"] = sub["expiry"].apply(_exp_key)
+
+    # days to expiry from the chain snapshot date
+    def _dte(expiry_val) -> int | None:
+        try:
+            return (pd.Timestamp(expiry_val).date() - chain_date).days
+        except Exception:
+            return None
+
+    sub = sub.copy()
+    sub["_dte"] = sub["expiry"].apply(_dte)
+
+    _MULT = 100.0
+    abs_charm_total = 0.0
+    abs_charm_front7 = 0.0
+
+    for _, row in sub.iterrows():
+        S, K_, T_, sigma = row["spot"], row["K"], row["T"], row["iv"]
+        is_call = bool(row["is_call"])
+        dte = row["_dte"]
+        # Look up prior-day OI for this exact contract (expiry + rounded K + is_call)
+        exp_k = row["_exp"]
+        if exp_k is None:
+            continue
+        prior_oi = prior_oi_map.get((exp_k, row["_k"], is_call))
+        if prior_oi is None:
+            continue
+        try:
+            oi_f = float(prior_oi)
+            s_f = float(S)
+        except (TypeError, ValueError):
+            continue
+        if not (math.isfinite(oi_f) and oi_f > 0 and math.isfinite(s_f) and s_f > 0):
+            continue
+        try:
+            _delta, _gamma, _vanna, charm = bs_greeks(S, K_, T_, sigma, is_call)
+        except Exception:
+            continue
+        if not math.isfinite(charm):
+            continue
+        sign = 1.0 if is_call else -1.0
+        charm_not = abs(sign * (charm / 365.0) * oi_f * _MULT * s_f)
+        abs_charm_total += charm_not
+        if dte is not None and 0 <= dte <= 7:
+            abs_charm_front7 += charm_not
+
+    if abs_charm_total > 0:
+        out["opt_front7_charm_share"] = round(abs_charm_front7 / abs_charm_total, 6)
+
+    return out
+
+
+def _vanna_hedge_5d_from_summary(
+    as_of: _dt.date,
+    sdf: pd.DataFrame | None,
+) -> float | None:
+    """Compute vanna_hedge_5d = −net_vex × iv30_5d_chg from summary frame.
+
+    PIT: uses only rows with index date ≤ as_of. Needs ≥ 6 such rows.
+    Returns None when insufficient history, columns absent, or any value non-finite.
+    """
+    if sdf is None or sdf.empty:
+        return None
+    if "net_vex" not in sdf.columns or "iv30" not in sdf.columns:
+        return None
+    idx_dates = [_as_date(d) for d in sdf.index]
+    mask = [d is not None and d <= as_of for d in idx_dates]
+    usable = sdf[mask]
+    if len(usable) < 6:
+        return None
+    latest = usable.iloc[-1]
+    prior = usable.iloc[-6]
+
+    def _f(v) -> float | None:
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            return None
+        return None if not math.isfinite(x) else x
+
+    net_vex = _f(latest.get("net_vex"))
+    iv30_latest = _f(latest.get("iv30"))
+    iv30_prior = _f(prior.get("iv30"))
+    if net_vex is None or iv30_latest is None or iv30_prior is None:
+        return None
+    iv30_5d_chg = iv30_latest - iv30_prior
+    return round(-net_vex * iv30_5d_chg, 6)
+
+
 def _pin_risk_flag(
     opt_opex_days: int | None,
     opt_gamma_regime: str | None,
@@ -549,6 +753,16 @@ def stamp_options_state(
         stamp.get("opt_wall_dist_up_pct"),
         stamp.get("opt_wall_dist_down_pct"),
     )
+
+    # W-OVC fields: front7_charm_share, root_class
+    # opt_vanna_relief is NOT set here — it requires cross-sectional tercile ranking
+    # across all fires on the same as_of, which is done in the stamp_ledger pass.
+    ovc_data = _ovc_from_chain(d, ticker, chain_dates, read_chain)
+    stamp["opt_front7_charm_share"] = ovc_data.get("opt_front7_charm_share")
+    stamp["opt_root_class"] = ovc_data.get("opt_root_class")
+    # opt_vanna_relief stays None; stamp_ledger sets it after cross-sectional ranking.
+    # stamp["opt_vanna_relief"] is already None from _NULL_STAMP.
+
     return stamp
 
 

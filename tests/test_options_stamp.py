@@ -158,9 +158,10 @@ def test_adjusted_root_all_null():
 def test_stamp_always_has_all_columns():
     """A name with zero data-store coverage yields a stamp with every column present.
 
-    W-C note: opt_opex_days is computed from the OPEX calendar (not a data store) and may
-    be non-null even for a name with no polygon_gex/skew/ivspread coverage. All other
-    data-store-dependent columns must be null when no stores are present."""
+    Two columns are always-computable (non-null without any data store):
+      opt_opex_days — OPEX calendar (engine/opex.py; purely date-arithmetic)
+      opt_root_class — ticker taxonomy (static mapping; no data store needed)
+    All other data-store-dependent columns must be null when no stores are present."""
     s = stamp_options_state(
         "2026-06-24", "NOCOV",
         read_summary=lambda t: None,
@@ -173,12 +174,15 @@ def test_stamp_always_has_all_columns():
     )
     assert set(s.keys()) == set(STAMP_COLS)
     # data-store-dependent cols must all be null
-    data_store_cols = [c for c in STAMP_COLS if c != "opt_opex_days"]
+    # (opt_opex_days and opt_root_class are always-computable — excluded from null check)
+    _always_computable = ("opt_opex_days", "opt_root_class")
+    data_store_cols = [c for c in STAMP_COLS if c not in _always_computable]
     assert all(s[c] is None for c in data_store_cols), (
         f"Expected all data-store cols null, got: "
         f"{[(c, s[c]) for c in data_store_cols if s[c] is not None]}"
     )
     # opt_opex_days may be None or int (calendar-derived; depends on engine/opex availability)
+    # opt_root_class is always non-null (taxonomy-derived from ticker alone)
 
 
 # ── stamping pass: schema-union + backfill-does-not-overwrite ────────────────
@@ -511,23 +515,32 @@ def _stamped_ledger_with_ivspread(n_per_bucket, *, effect=0.0):
 
 
 def test_wc_buckets_building_history_below_threshold():
-    """All five W-C buckets are building_history when n < 30 per bucket."""
-    # ledger with only S-VOI data (from existing test helper) — W-C cols absent
+    """All W-C and W-OVC buckets are building_history when n < 30 per bucket."""
+    # ledger with only S-VOI data (from existing test helper) — W-C/W-OVC cols absent
     df = _stamped_ledger(5)
     gate = build_gate(df)
+    # W-C buckets
     for tid in ("S-IVSPREAD-F", "S-SKEW_DECEL", "S-TOP_RISK", "S-PIN_RISK", "S-VOI2"):
         assert gate["tests"][tid].get("ready") is False
         assert gate["verdicts"].get(tid) == "building_history", (
             f"{tid} should be building_history, got {gate['verdicts'].get(tid)}")
-    # gate schema should be v2
-    assert gate["schema"] == "options_entry.gate.v2"
-    # fdr_family block present
+    # W-OVC buckets
+    for tid in ("S-VANNA-RELIEF", "S-FRONT-CHARM"):
+        assert gate["tests"][tid].get("ready") is False
+        assert gate["verdicts"].get(tid) == "building_history", (
+            f"{tid} should be building_history, got {gate['verdicts'].get(tid)}")
+    # gate schema should be v3 (W-OVC bump)
+    assert gate["schema"] == "options_entry.gate.v3"
+    # fdr_family block: 22→28→36 (W-OVC amendment 2026-07-06 added 6 cells to 28;
+    # FS-3 amendment 2026-07-13 added 8 S-FLOWML cells to the same family → 36 total)
     assert "fdr_family" in gate
-    assert gate["fdr_family"]["family_size"] == 22
+    assert gate["fdr_family"]["family_size"] == 36
     assert gate["fdr_family"]["alpha"] == pytest.approx(0.10)
-    # per_family_status block present
+    # per_family_status block includes all W-C and W-OVC buckets
     assert "per_family_status" in gate
     assert gate["per_family_status"]["S-IVSPREAD-F"] == "building_history"
+    assert gate["per_family_status"]["S-VANNA-RELIEF"] == "building_history"
+    assert gate["per_family_status"]["S-FRONT-CHARM"] == "building_history"
 
 
 def test_wc_ivspread_f_synthetic_signal():
@@ -561,15 +574,23 @@ def test_wc_ivspread_f_no_effect():
 
 # ── FIX-ROUND: retry-gate (STAMP_COVERAGE_COLS) ──────────────────────────────
 
-def test_stamp_coverage_cols_excludes_opex_days():
-    """STAMP_COVERAGE_COLS must NOT contain opt_opex_days (the always-computable calendar col)."""
-    assert "opt_opex_days" not in STAMP_COVERAGE_COLS, (
-        "opt_opex_days must be excluded from STAMP_COVERAGE_COLS to avoid locking out rows "
-        "that only have calendar coverage from future GEX/skew/ivspread fills"
-    )
-    # all other STAMP_COLS must be present
+def test_stamp_coverage_cols_excludes_always_computable():
+    """STAMP_COVERAGE_COLS must NOT contain always-computable cols (opt_opex_days, opt_root_class).
+
+    Always-computable cols (no data store needed):
+      opt_opex_days  — OPEX calendar (engine/opex.py; purely date-arithmetic)
+      opt_root_class — ticker taxonomy (static mapping; no data store)
+    Excluding them preserves the W1.3 retry-gate design: rows that only have these cols
+    remain retryable when GEX/skew/ivspread coverage later arrives."""
+    _always_computable = ("opt_opex_days", "opt_root_class")
+    for col in _always_computable:
+        assert col not in STAMP_COVERAGE_COLS, (
+            f"{col} must be excluded from STAMP_COVERAGE_COLS — it is always-computable "
+            "(no data store needed) and should not lock out rows from future retries"
+        )
+    # all other STAMP_COLS must be in STAMP_COVERAGE_COLS
     for col in STAMP_COLS:
-        if col != "opt_opex_days":
+        if col not in _always_computable:
             assert col in STAMP_COVERAGE_COLS, f"{col} missing from STAMP_COVERAGE_COLS"
 
 
@@ -754,4 +775,363 @@ def test_pin_risk_verdict_is_not_breach_driven():
     assert verdict == "no_effect", (
         f"S-PIN_RISK verdict should be 'no_effect' when only breach is elevated "
         f"(breach is not a registered primitive for S-PIN_RISK per §4). Got: '{verdict}'"
+    )
+
+
+# ── W-OVC: gate cell tests (S-VANNA-RELIEF / S-FRONT-CHARM) ─────────────────
+
+def _stamped_ledger_with_vanna_relief(n_per_bucket, *, breach_effect=0.0):
+    """Synthetic ledger split by opt_vanna_relief True vs False.
+
+    breach_effect < 0 → conditioned (vanna_relief=True) bucket has LOWER breach rate
+    (beneficial direction for S-VANNA-RELIEF: vol compression → fewer stop-outs)."""
+    rng = np.random.default_rng(200)
+    rows = []
+    # conditioned (vanna_relief=True): lower breach rate
+    for i in range(n_per_bucket):
+        rows.append({
+            "as_of": "2026-07-17", "ticker": f"VR{i}", "lane": "buy", "horizon": 21,
+            "opt_vanna_relief": True,
+            "post_cushion_breach": bool(rng.random() < 0.5 + breach_effect),
+            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
+            "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
+            "fwd_ret_5": float(rng.normal(0.02, 0.01)),
+            "fwd_mfe_5": float(rng.normal(0.03, 0.01)),
+        })
+    for i in range(n_per_bucket):
+        rows.append({
+            "as_of": "2026-07-17", "ticker": f"VB{i}", "lane": "buy", "horizon": 21,
+            "opt_vanna_relief": False,
+            "post_cushion_breach": bool(rng.random() < 0.5),
+            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
+            "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
+            "fwd_ret_5": float(rng.normal(0.02, 0.01)),
+            "fwd_mfe_5": float(rng.normal(0.03, 0.01)),
+        })
+    df = pd.DataFrame(rows)
+    for c in STAMP_COLS:
+        if c not in df.columns:
+            df[c] = None
+    return df
+
+
+def _stamped_ledger_with_front_charm(n_per_bucket, *, breach_effect=0.0):
+    """Synthetic ledger split by opt_front7_charm_share top tercile vs rest.
+
+    breach_effect > 0 → conditioned (top-tercile) bucket has HIGHER breach rate
+    (beneficial direction for S-FRONT-CHARM caution-only: elevated charm = higher vol risk)."""
+    rng = np.random.default_rng(300)
+    rows = []
+    # conditioned (top-tercile charm share): higher breach rate
+    for i in range(n_per_bucket):
+        rows.append({
+            "as_of": "2026-07-17", "ticker": f"FC{i}", "lane": "buy", "horizon": 21,
+            "opt_front7_charm_share": 0.80 + float(rng.random() * 0.10),  # > 2/3 quantile
+            "post_cushion_breach": bool(rng.random() < 0.5 + breach_effect),
+            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
+            "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
+            "fwd_ret_5": float(rng.normal(0.02, 0.01)),
+            "fwd_mfe_5": float(rng.normal(0.03, 0.01)),
+        })
+    for i in range(n_per_bucket):
+        rows.append({
+            "as_of": "2026-07-17", "ticker": f"FB{i}", "lane": "buy", "horizon": 21,
+            "opt_front7_charm_share": 0.10 + float(rng.random() * 0.20),  # < 2/3 quantile
+            "post_cushion_breach": bool(rng.random() < 0.5),
+            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
+            "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
+            "fwd_ret_5": float(rng.normal(0.02, 0.01)),
+            "fwd_mfe_5": float(rng.normal(0.03, 0.01)),
+        })
+    df = pd.DataFrame(rows)
+    for c in STAMP_COLS:
+        if c not in df.columns:
+            df[c] = None
+    return df
+
+
+def test_ovc_vanna_relief_building_history_below_threshold():
+    """S-VANNA-RELIEF is building_history when n < 30 per bucket."""
+    df = _stamped_ledger_with_vanna_relief(5)
+    gate = build_gate(df)
+    assert gate["tests"]["S-VANNA-RELIEF"].get("ready") is False
+    assert gate["verdicts"]["S-VANNA-RELIEF"] == "building_history"
+    assert "S-VANNA-RELIEF" in gate["per_family_status"]
+    assert gate["fdr_family"]["family_size"] == 36
+
+
+def test_ovc_vanna_relief_signal_when_breach_reduced():
+    """S-VANNA-RELIEF produces 'signal' when n>=30 AND breach rate is lower in flagged bucket."""
+    # breach_effect = -0.35 → flagged bucket has breach rate ≈ 0.5 - 0.35 = 0.15 (much lower)
+    df = _stamped_ledger_with_vanna_relief(MIN_PER_BUCKET + 20, breach_effect=-0.35)
+    gate = build_gate(df)
+    t = gate["tests"]["S-VANNA-RELIEF"]
+    assert t.get("ready") is True
+    assert gate["verdicts"]["S-VANNA-RELIEF"] == "signal", (
+        f"Expected 'signal' for S-VANNA-RELIEF with large breach reduction, "
+        f"got {gate['verdicts']['S-VANNA-RELIEF']}"
+    )
+    # primary primitive: breach delta < 0 AND CI excludes 0
+    b = t["breach"]
+    assert b.get("excludes_zero") is True
+    assert b.get("delta") is not None and b["delta"] < 0
+    # gate still not scored (machine, not a lever)
+    assert gate["scored"] is False
+
+
+def test_ovc_vanna_relief_no_effect_when_no_breach_difference():
+    """S-VANNA-RELIEF returns 'no_effect' when n>=30 but no conditioned breach effect."""
+    df = _stamped_ledger_with_vanna_relief(MIN_PER_BUCKET + 20, breach_effect=0.0)
+    gate = build_gate(df)
+    assert gate["tests"]["S-VANNA-RELIEF"].get("ready") is True
+    assert gate["verdicts"]["S-VANNA-RELIEF"] == "no_effect"
+
+
+def test_ovc_front_charm_building_history_below_threshold():
+    """S-FRONT-CHARM is building_history when n < 30 per bucket."""
+    df = _stamped_ledger_with_front_charm(5)
+    gate = build_gate(df)
+    assert gate["tests"]["S-FRONT-CHARM"].get("ready") is False
+    assert gate["verdicts"]["S-FRONT-CHARM"] == "building_history"
+    assert "S-FRONT-CHARM" in gate["per_family_status"]
+
+
+def test_ovc_front_charm_signal_when_breach_elevated():
+    """S-FRONT-CHARM produces 'signal' (caution-only) when breach is higher in top-tercile.
+
+    Beneficial direction for caution: flagged fires (top-tercile charm) have MORE stop-outs
+    → correctly identifies vol-exposed entries."""
+    # breach_effect = +0.35 → flagged bucket has breach rate ≈ 0.5 + 0.35 = 0.85 (much higher)
+    df = _stamped_ledger_with_front_charm(MIN_PER_BUCKET + 20, breach_effect=0.35)
+    gate = build_gate(df)
+    t = gate["tests"]["S-FRONT-CHARM"]
+    assert t.get("ready") is True
+    assert gate["verdicts"]["S-FRONT-CHARM"] == "signal", (
+        f"Expected 'signal' for S-FRONT-CHARM with large breach elevation, "
+        f"got {gate['verdicts']['S-FRONT-CHARM']}"
+    )
+    # primary primitive: breach delta > 0 (higher breach in flagged = caution-only signal)
+    b = t["breach"]
+    assert b.get("excludes_zero") is True
+    assert b.get("delta") is not None and b["delta"] > 0
+    # gate is still caution-only (scored=False)
+    assert gate["scored"] is False
+    assert t.get("caution_only") is True
+
+
+def test_ovc_front_charm_no_effect_when_no_breach_difference():
+    """S-FRONT-CHARM returns 'no_effect' when n>=30 but no breach difference."""
+    df = _stamped_ledger_with_front_charm(MIN_PER_BUCKET + 20, breach_effect=0.0)
+    gate = build_gate(df)
+    assert gate["tests"]["S-FRONT-CHARM"].get("ready") is True
+    assert gate["verdicts"]["S-FRONT-CHARM"] == "no_effect"
+
+
+def test_ovc_gate_family_size_is_36():
+    """BH-FDR family size must be 36 (28 OVC + 8 FS-3 S-FLOWML cells per masterplan §4 FS-3).
+
+    History: 22 (W-C) → 28 (OVC 2026-07-06) → 36 (FS-3 2026-07-13: +8 S-FLOWML cells).
+    See OPTIONS_ALPHA_MASTERPLAN.md §4 Enlarged-family BH-FDR statement (FS-3, 2026-07-13).
+    """
+    df = _stamped_ledger(5)
+    gate = build_gate(df)
+    assert gate["fdr_family"]["family_size"] == 36, (
+        f"Expected family_size=36 (28 OVC + 8 FS-3 S-FLOWML cells), got {gate['fdr_family']['family_size']}. "
+        "See OPTIONS_ALPHA_MASTERPLAN.md §4 FS-3 Enlarged-family BH-FDR statement (2026-07-13)."
+    )
+
+
+def test_ovc_gate_schema_is_v3():
+    """Gate schema must be v3 after W-OVC additions."""
+    df = _stamped_ledger(5)
+    gate = build_gate(df)
+    assert gate["schema"] == "options_entry.gate.v3"
+
+
+def test_ovc_root_class_always_non_null():
+    """opt_root_class is always non-null — it is derived from the ticker name alone."""
+    from engine.options_stamp import stamp_options_state as _stamp
+    from engine.options_stamp import STAMP_COLS as _STAMP_COLS
+    s = _stamp(
+        "2026-07-17", "SPY",
+        read_summary=lambda t: None,
+        chain_dates=[],
+        read_chain=lambda d: None,
+        skew_df=None,
+        ivspread_df=None,
+        _skew_loader=lambda: None,
+        _ivspread_loader=lambda: None,
+    )
+    assert "opt_root_class" in s
+    assert s["opt_root_class"] == "index_etf", (
+        f"SPY should be index_etf, got {s['opt_root_class']!r}"
+    )
+    # single_name for a non-ETF ticker
+    s2 = _stamp(
+        "2026-07-17", "AAPL",
+        read_summary=lambda t: None,
+        chain_dates=[],
+        read_chain=lambda d: None,
+        skew_df=None,
+        ivspread_df=None,
+        _skew_loader=lambda: None,
+        _ivspread_loader=lambda: None,
+    )
+    assert s2["opt_root_class"] == "single_name"
+
+
+def test_ovc_stamp_coverage_cols_excludes_root_class():
+    """opt_root_class must be excluded from STAMP_COVERAGE_COLS (always-computable)."""
+    assert "opt_root_class" not in STAMP_COVERAGE_COLS, (
+        "opt_root_class is always-computable (taxonomy-derived) and must not lock out "
+        "rows from future GEX/skew/ivspread fills via the retry gate"
+    )
+
+
+# ── W-OVC: PIT-clean OI shift(1) fix tests ──────────────────────────────────
+
+def _ovc_chain_frame(ticker, *, spot=100.0, call_oi=500.0, put_oi=400.0, iv=0.20,
+                     expiry_days=14):
+    """Chain frame with all columns required by _ovc_from_chain, including T and expiry."""
+    import datetime as _dt2
+    expiry = (_dt2.date.today() + _dt2.timedelta(days=expiry_days)).isoformat()
+    T = expiry_days / 365.0
+    strikes = [95.0, 100.0, 105.0]
+    rows = []
+    for k in strikes:
+        rows.append({
+            "underlying": ticker,
+            "K": k,
+            "T": T,
+            "iv": iv,
+            "oi": call_oi,
+            "is_call": True,
+            "spot": spot,
+            "expiry": expiry,
+        })
+        rows.append({
+            "underlying": ticker,
+            "K": k,
+            "T": T,
+            "iv": iv,
+            "oi": put_oi,
+            "is_call": False,
+            "spot": spot,
+            "expiry": expiry,
+        })
+    return pd.DataFrame(rows)
+
+
+def test_ovc_from_chain_null_when_single_snapshot():
+    """_ovc_from_chain returns None for opt_front7_charm_share when only 1 chain snapshot exists.
+
+    The PIT-clean OI construction (matching the frozen study) requires prior-day OI (shift(1)
+    per contract).  With only 1 usable snapshot there is no prior-day snapshot, so the metric
+    cannot be computed without look-ahead.
+    """
+    from engine.options_stamp import _ovc_from_chain
+
+    dates = [_dt.date(2026, 7, 17)]  # only one snapshot
+
+    def read_chain(d):
+        return _ovc_chain_frame("FOO")
+
+    result = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain)
+    assert result["opt_front7_charm_share"] is None, (
+        "With only 1 snapshot, prior-day OI is unavailable — opt_front7_charm_share must be null"
+    )
+    # opt_root_class is always-computable (taxonomy-derived)
+    assert result["opt_root_class"] is not None
+
+
+def test_ovc_from_chain_uses_prior_day_oi():
+    """_ovc_from_chain uses prior-day OI (from usable[-2]), not same-day OI (usable[-1]).
+
+    We plant a 100x OI spike on the CURRENT snapshot but not the prior snapshot.
+    If the function uses current-day OI, the resulting charm_share will differ (is not null).
+    But since the spike is only in the current day, and we verify using prior-day OI,
+    the result should match what you'd get with the prior-day OI values.
+    """
+    from engine.options_stamp import _ovc_from_chain
+
+    dates = [_dt.date(2026, 7, 16), _dt.date(2026, 7, 17)]  # two snapshots
+
+    # Prior day: normal OI
+    # Current day: 100x OI spike — if used, charm_share would be same because ALL contracts
+    # spike equally (the ratio would stay the same). Instead, test that prior OI is used by
+    # making prior OI zero: if prior OI is used, result should be null (no prior OI > 0).
+    def read_chain_zero_prior(d):
+        if d == _dt.date(2026, 7, 16):
+            # prior snapshot: zero OI
+            return _ovc_chain_frame("FOO", call_oi=0.0, put_oi=0.0)
+        else:
+            # current snapshot: normal OI  (should NOT be used for OI)
+            return _ovc_chain_frame("FOO", call_oi=500.0, put_oi=400.0)
+
+    result = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain_zero_prior)
+    assert result["opt_front7_charm_share"] is None, (
+        "Prior-day OI is zero — if prior-day OI is used (correct PIT construction), "
+        "opt_front7_charm_share must be null.  A non-null result means same-day OI was used "
+        "(look-ahead violation)."
+    )
+
+    # Positive control: prior OI normal, current OI zero — should produce a value
+    def read_chain_zero_current(d):
+        if d == _dt.date(2026, 7, 16):
+            # prior snapshot: normal OI
+            return _ovc_chain_frame("FOO", call_oi=500.0, put_oi=400.0)
+        else:
+            # current snapshot: zero OI (irrelevant to OI weighting)
+            return _ovc_chain_frame("FOO", call_oi=0.0, put_oi=0.0)
+
+    result_pos = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain_zero_current)
+    assert result_pos["opt_front7_charm_share"] is not None, (
+        "Prior-day OI is normal and current-day OI is zero — result should be non-null "
+        "when prior-day OI is used correctly (charm_share uses prior OI for weighting, "
+        "current snapshot for greeks/expiry/spot)."
+    )
+
+
+def test_ovc_from_chain_prior_oi_keyed_per_contract_not_pooled_across_expiries():
+    """Prior-OI lookup must key on the full contract (expiry, K, is_call), not (K, is_call).
+
+    Fixture: the SAME strikes exist at a front expiry (3d) and a back expiry (60d).
+    Prior-day OI is ZERO for every front-expiry contract and large for every back-expiry
+    contract.  With correct per-contract keying the front-week charm numerator is exactly 0
+    (front contracts have no prior OI), so opt_front7_charm_share == 0.0 while the total
+    board (back expiry) is non-zero.  A lookup pooled by (K, is_call) would hand the back
+    expiry's OI to the front contracts and produce a positive share.
+    """
+    import datetime as _dt2
+    from engine.options_stamp import _ovc_from_chain
+
+    def _two_expiry_frame(front_oi: float, back_oi: float) -> pd.DataFrame:
+        rows = []
+        for expiry_days, oi in ((3, front_oi), (60, back_oi)):
+            expiry = (_dt2.date.today() + _dt2.timedelta(days=expiry_days)).isoformat()
+            T = expiry_days / 365.0
+            for k in (95.0, 100.0, 105.0):
+                for is_call in (True, False):
+                    rows.append({
+                        "underlying": "FOO", "K": k, "T": T, "iv": 0.20,
+                        "oi": oi, "is_call": is_call, "spot": 100.0, "expiry": expiry,
+                    })
+        return pd.DataFrame(rows)
+
+    dates = [_dt.date(2026, 7, 16), _dt.date(2026, 7, 17)]
+
+    def read_chain(d):
+        if d == _dt.date(2026, 7, 16):
+            return _two_expiry_frame(front_oi=0.0, back_oi=500.0)
+        return _two_expiry_frame(front_oi=200.0, back_oi=500.0)
+
+    result = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain)
+    share = result["opt_front7_charm_share"]
+    assert share is not None, (
+        "Back-expiry contracts have prior OI — total board charm is non-zero, share must compute"
+    )
+    assert share == 0.0, (
+        f"Front-week share must be exactly 0 (front contracts had zero prior-day OI); "
+        f"got {share} — a positive value means prior OI was pooled across expiries "
+        f"(back-month OI leaked into front-week contracts)."
     )

@@ -2,6 +2,8 @@
 
 Options Alpha program W1.3 / W-C (research/OPTIONS_ALPHA_MASTERPLAN.md §4, rulings A6/A9/A10;
 W-C 2026-07-05 adds five new pre-registered bucket tests).
+Extended by W-OVC (2026-07-17): S-VANNA-RELIEF and S-FRONT-CHARM gate cells registered.
+See OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md §4/§5 for the ruling and gate specifications.
 
 THE KEYSTONE MACHINE, NOT A RESULT. This gate answers — once enough fires accrue — the one
 question the desk cares about:
@@ -30,17 +32,28 @@ W-C ADDITIONS (pre-registered 2026-07-05):
   * S-PIN_RISK: OPEX proximity + long-gamma + near-wall flag (opt_pin_risk True vs False)
   * S-VOI2: stricter vol>OI burst (see engine/options_stamp.py notes; FUTURE stamp col)
 
+W-OVC ADDITIONS (pre-registered 2026-07-17 — adjudication OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md):
+  * S-VANNA-RELIEF: vanna-relief vol compression flag (opt_vanna_relief True vs False)
+    PRIMARY: post_cushion_breach delta (beneficial = LOWER breach in flagged bucket)
+    SECONDARY: terminal_state_clean8_21, fwd_mfe_21 (reported honestly; no pre-judged direction)
+    Holdability / de-escalation / stop-width state only (RO-3 caution-only). NOT an entry originator.
+  * S-FRONT-CHARM: front-expiry charm concentration flag (opt_front7_charm_share top tercile vs rest)
+    PRIMARY: post_cushion_breach delta (beneficial = HIGHER breach → flag correctly identifies vol-
+    exposed entries; caution-only per RO-3 — may only LOWER conviction, never short)
+    SECONDARY: terminal_state_clean8_21, fwd_mfe_21 (reported honestly)
+
 Each test is a conditioned-vs-unconditioned delta with a bootstrap CI. HARD RULE (doctrine
 §2.3): NO verdict — no effect-size claim — until n ≥ ``MIN_PER_BUCKET`` fires in EACH condition
-bucket. All five W-C buckets are ``building_history`` on initial dispatch.
+bucket. Both W-OVC buckets are ``building_history`` on initial dispatch (stamp ships first).
 
-Output: ``data/options_entry/gate.json`` (schema ``options_entry.gate.v2``, extends v1).
+Output: ``data/options_entry/gate.json`` (schema ``options_entry.gate.v3``, extends v2).
 
 Only recomputes counts / verdicts — a verdict flip requires the pre-registered thresholds,
 never a code edit. Idempotent, resilient.
 
-FDR FAMILY (BH α=0.10): 22 tests total (see OPTIONS_ALPHA_MASTERPLAN.md §4 FDR statement).
-No verdict claims significance without clearing BH-FDR at α=0.10 over this full family.
+FDR FAMILY (BH α=0.10): 36 tests total (28 OVC + 8 S-FLOWML cells per FS-3 prereg 2026-07-13).
+See OPTIONS_ALPHA_MASTERPLAN.md §4 FS-3 Enlarged-family BH-FDR statement (2026-07-13: 28+8=36).
+No verdict claims significance without clearing BH-FDR at α=0.10 over this full 36-test family.
 """
 from __future__ import annotations
 
@@ -468,17 +481,146 @@ def _voi2_test(df: pd.DataFrame) -> dict:
     return result
 
 
+# ── W-OVC: new pre-registered bucket tests (2026-07-17) ─────────────────────
+
+def _vanna_relief_test(df: pd.DataFrame) -> dict:
+    """S-VANNA-RELIEF: vanna-relief vol compression flag.
+
+    Condition: opt_vanna_relief == True (IV fell 5d AND vanna_hedge_5d in top cross-
+    sectional tercile per as_of) vs False.
+    A10 primitives:
+      PRIMARY:   post_cushion_breach delta (beneficial = LOWER breach in flagged bucket;
+                 vanna relief = hedging flow compresses vol = fewer stop-outs)
+      SECONDARY: terminal_state_clean8_21, fwd_mfe_21 (reported honestly; compression may
+                 trim both tails — no pre-judged direction per masterplan §4 registration)
+    Scored=false, building_history until n≥30/bucket.
+    CAUTION-ONLY per RO-3: holdability / de-escalation / stop-width context only.
+    NOT an entry originator; never initiates a new position.
+
+    Pre-registered gate (OPTIONS_ALPHA_MASTERPLAN.md §4 W-OVC, 2026-07-17).
+    Era: single live-accrual (2026→); stamp ships in W-OVC first (same pattern as S-PIN_RISK).
+    """
+    col = "opt_vanna_relief"
+    if col not in df.columns or df[col].notna().sum() == 0:
+        return {"bucket": "S-VANNA-RELIEF", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": (f"{col} not yet stamped — W-OVC harness extension (stamp ships "
+                         "in this PR; history accrues from live fires)")}
+    flag = df[col].astype("boolean")
+    sub = df[flag.notna()].copy()
+    submask = sub[col].astype("boolean") == True  # noqa: E712
+    result = _bucket_test(
+        sub, submask.fillna(False),
+        "S-VANNA-RELIEF: opt_vanna_relief=True (IV fell 5d AND vanna_hedge top-tercile)"
+    )
+    result["caution_only"] = True
+    result["note"] = (
+        "CAUTION-ONLY (RO-3): holdability / de-escalation / stop-width state. "
+        "PRIMARY = breach delta (beneficial = LOWER breach). "
+        "SECONDARY = clean + mfe21 (reported honestly; no pre-judged direction). "
+        "Never originates a new entry. "
+        "Sign note (audit #29): flag uses signed net vanna under long-call/short-put "
+        "dealer convention; mechanism narrative inherits that assumption."
+    )
+    return result
+
+
+def _front_charm_test(df: pd.DataFrame) -> dict:
+    """S-FRONT-CHARM: front-expiry charm concentration flag (caution-only).
+
+    Condition: opt_front7_charm_share in top cross-sectional tercile per as_of vs rest.
+    A10 primitives:
+      PRIMARY:   post_cushion_breach delta (beneficial = HIGHER breach in flagged bucket →
+                 flag correctly identifies vol-exposed entries; CAUTION-ONLY per RO-3)
+      SECONDARY: terminal_state_clean8_21, fwd_mfe_21 (reported honestly)
+    Scored=false, building_history until n≥30/bucket.
+    CAUTION-ONLY per RO-3: elevated front-charm = wider stops / worse holdability.
+    May only LOWER conviction; never initiates a negative position.
+
+    Root-class caveat (RUL-OVC-3): opt_root_class is reported per-class once n allows.
+    ETF-slice sign is era-unstable (robustness §3.2) — do not interpret without root_class.
+
+    Pre-registered gate (OPTIONS_ALPHA_MASTERPLAN.md §4 W-OVC, 2026-07-17).
+    Era: single live-accrual (2026→); stamp ships in W-OVC first.
+    """
+    col = "opt_front7_charm_share"
+    if col not in df.columns or df[col].notna().sum() == 0:
+        return {"bucket": "S-FRONT-CHARM", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": (f"{col} not yet stamped — W-OVC harness extension (stamp ships "
+                         "in this PR; history accrues from live fires)")}
+    charm_val = pd.to_numeric(df[col], errors="coerce")
+    sub = df[charm_val.notna()].copy()
+    if sub.empty:
+        return {"bucket": "S-FRONT-CHARM", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": "no fires with opt_front7_charm_share stamped yet"}
+    # Top tercile per as_of date (cross-sectional, matching stamp construction)
+    tercile_hi = (
+        sub.groupby("as_of")[col]
+        .transform(lambda x: x.quantile(2.0 / 3.0))
+    )
+    submask = pd.to_numeric(sub[col], errors="coerce") >= tercile_hi
+    result = _bucket_test(
+        sub, submask.fillna(False),
+        "S-FRONT-CHARM: opt_front7_charm_share top-tercile (near-term charm concentration)"
+    )
+    result["caution_only"] = True
+    result["note"] = (
+        "CAUTION-ONLY (RO-3): elevated front-charm = higher near-term vol risk = wider stops. "
+        "PRIMARY = breach delta (beneficial = HIGHER breach — flag correctly identifies "
+        "vol-exposed entries). SECONDARY = clean + mfe21 (reported honestly). "
+        "Never initiates a negative position. "
+        "Root-class caveat: ETF-slice sign is era-unstable (robustness §3.2 of adjudication); "
+        "per-class breakdowns reported once n≥30 per class."
+    )
+    return result
+
+
+def _verdict_for_vanna_relief(t: dict) -> str:
+    """Verdict for S-VANNA-RELIEF.
+
+    Pre-registered primitives: {breach, clean, mfe21}.
+    Primary beneficial direction: breach delta < 0 (LOWER stop-outs in flagged bucket).
+    Secondary: clean + mfe21 reported honestly (no pre-judged direction for secondaries).
+    A 'signal' verdict requires the PRIMARY breach delta to exclude 0 in the beneficial
+    direction (breach < 0). Secondary deltas are evidence only (reported, not gating)."""
+    if not t.get("ready"):
+        return "building_history"
+    b = t.get("breach")
+    if b is None:
+        return "building_history"
+    breach_ok = b.get("excludes_zero") and b.get("delta") is not None and b["delta"] < 0
+    return "signal" if breach_ok else "no_effect"
+
+
+def _verdict_for_front_charm(t: dict) -> str:
+    """Verdict for S-FRONT-CHARM (caution-only).
+
+    Pre-registered primitives: {breach, clean, mfe21}.
+    PRIMARY beneficial direction: breach delta > 0 (HIGHER stop-outs in flagged bucket —
+    flag correctly identifies vol-exposed entries). CAUTION-ONLY per RO-3.
+    A 'signal' verdict requires the PRIMARY breach delta to exclude 0 with delta > 0."""
+    if not t.get("ready"):
+        return "building_history"
+    b = t.get("breach")
+    if b is None:
+        return "building_history"
+    breach_ok = b.get("excludes_zero") and b.get("delta") is not None and b["delta"] > 0
+    return "signal" if breach_ok else "no_effect"
+
+
 def _compute_wc_coverage(df: pd.DataFrame) -> dict:
-    """Compute coverage percentages for W-C stamp columns.  Returns dict of
-    col -> (n_non_null, pct_float) for each W-C column present."""
-    wc_cols = [
+    """Compute coverage percentages for W-C and W-OVC stamp columns.  Returns dict of
+    col -> (n_non_null, pct_float) for each column present."""
+    tracked_cols = [
+        # W-C columns
         "opt_ivspread_rel", "opt_skew", "opt_skew_5d_chg",
         "opt_opex_days", "opt_pin_risk",
         "opt_wall_dist_up_pct", "opt_wall_dist_down_pct",
+        # W-OVC columns
+        "opt_vanna_relief", "opt_front7_charm_share", "opt_root_class",
     ]
     n_total = max(len(df), 1)
     out = {}
-    for col in wc_cols:
+    for col in tracked_cols:
         if col in df.columns:
             n_col = int(df[col].notna().sum())
             out[col] = (n_col, round(n_col / n_total * 100.0, 1))
@@ -549,6 +691,13 @@ def build_gate(df: pd.DataFrame) -> dict:
     # S-VOI2: stricter vol>OI burst — future stamp col, building_history until col exists
     tests["S-VOI2"] = _voi2_test(df)
 
+    # ── W-OVC additions: vanna-relief and front-charm gate cells ─────────────
+    # S-VANNA-RELIEF: holdability state (IV fell + top vanna_hedge tercile)
+    tests["S-VANNA-RELIEF"] = _vanna_relief_test(df)
+
+    # S-FRONT-CHARM: front-expiry charm concentration caution flag
+    tests["S-FRONT-CHARM"] = _front_charm_test(df)
+
     # per-test verdicts (only bucket-delta tests carry a verdict; S-WALL is counts-only)
     _standard_tests = ("S-DOI", "S-IVR", "S-VOI", "S-IVSPREAD-F", "S-SKEW_DECEL", "S-VOI2")
     verdicts = {}
@@ -557,7 +706,9 @@ def build_gate(df: pd.DataFrame) -> dict:
         verdicts[tid] = _verdict_for_test(t) if "breach" in t else "building_history"
     # Caution tests use per-bucket verdict functions (different registered primitives):
     #   S-TOP_RISK: {breach, clean} — _verdict_for_top_risk
-    #   S-PIN_RISK: {clean, mfe21} — _verdict_for_pin_risk (breach is NOT registered for S-PIN_RISK)
+    #   S-PIN_RISK: {clean, mfe21} — _verdict_for_pin_risk (breach is NOT registered)
+    #   S-VANNA-RELIEF: {breach primary, clean+mfe21 secondary} — _verdict_for_vanna_relief
+    #   S-FRONT-CHARM: {breach primary (higher=beneficial), clean+mfe21 secondary} — caution-only
     verdicts["S-TOP_RISK"] = (
         _verdict_for_top_risk(tests["S-TOP_RISK"])
         if "breach" in tests["S-TOP_RISK"] else "building_history"
@@ -566,14 +717,22 @@ def build_gate(df: pd.DataFrame) -> dict:
         _verdict_for_pin_risk(tests["S-PIN_RISK"])
         if "clean" in tests["S-PIN_RISK"] else "building_history"
     )
+    verdicts["S-VANNA-RELIEF"] = (
+        _verdict_for_vanna_relief(tests["S-VANNA-RELIEF"])
+        if "breach" in tests["S-VANNA-RELIEF"] else "building_history"
+    )
+    verdicts["S-FRONT-CHARM"] = (
+        _verdict_for_front_charm(tests["S-FRONT-CHARM"])
+        if "breach" in tests["S-FRONT-CHARM"] else "building_history"
+    )
 
-    _caution_tests = ("S-TOP_RISK", "S-PIN_RISK")
+    _caution_tests = ("S-TOP_RISK", "S-PIN_RISK", "S-VANNA-RELIEF", "S-FRONT-CHARM")
     any_ready = any(
         tests[t].get("ready") for t in (*_standard_tests, *_caution_tests, "S-IVR", "S-VOI")
     )
     any_signal = any(v == "signal" for v in verdicts.values())
 
-    # W-C coverage percentages (honest reporting)
+    # W-C + W-OVC coverage percentages (honest reporting)
     wc_col_coverage = _compute_wc_coverage(df)
 
     # evidence lines — LIVE per-bucket n counts (doctrine §2.3: n before any verdict)
@@ -610,12 +769,25 @@ def build_gate(df: pd.DataFrame) -> dict:
                 f"{tid}: building history (n_cond={t.get('n_cond', 0)}, "
                 f"n_base={t.get('n_base', 0)}; need {MIN_PER_BUCKET}/bucket)"
                 f"{(' — ' + note) if note else ''}")
-    # coverage lines
+    # W-OVC bucket evidence lines
+    for tid in ("S-VANNA-RELIEF", "S-FRONT-CHARM"):
+        t = tests[tid]
+        vdict = verdicts.get(tid, "building_history")
+        if t.get("ready"):
+            evidence.append(
+                f"{tid}: n_cond={t['n_cond']} n_base={t['n_base']} → verdict={vdict}")
+        else:
+            note = t.get("note", "")
+            evidence.append(
+                f"{tid}: building history (n_cond={t.get('n_cond', 0)}, "
+                f"n_base={t.get('n_base', 0)}; need {MIN_PER_BUCKET}/bucket)"
+                f"{(' — ' + note) if note else ''}")
+    # coverage lines (W-C + W-OVC)
     for col, (n_col, pct) in wc_col_coverage.items():
-        evidence.append(f"W-C stamp coverage [{col}]: {n_col}/{len(df)} rows ({pct:.1f}%)")
+        evidence.append(f"stamp coverage [{col}]: {n_col}/{len(df)} rows ({pct:.1f}%)")
 
     return {
-        "schema": "options_entry.gate.v2",
+        "schema": "options_entry.gate.v3",
         "generated_at": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "scored": False,                       # ALWAYS false until a gate passes — machine, not a lever
         "status": "signal" if any_signal else ("scorable" if any_ready else "building_history"),
@@ -628,14 +800,21 @@ def build_gate(df: pd.DataFrame) -> dict:
         "fdr_family": {
             "alpha": 0.10,
             "method": "Benjamini-Hochberg",
-            "family_size": 22,
+            "family_size": 36,
             "description": (
                 "All fire-conditioned bucket tests × A10 primitives × live-accrual era (2026→). "
-                "22 tests total (S-IVR×3, S-DOI×3, S-VOI×3, S-IVSPREAD-F×3, S-SKEW_DECEL×3, "
-                "S-TOP_RISK×2, S-PIN_RISK×2, S-VOI2×3). BH-FDR threshold for k-th ranked "
-                "p-value: p_k <= (k/22) * 0.10. No verdict claims significance without "
-                "clearing BH-FDR at alpha=0.10 over this full family. "
-                "See OPTIONS_ALPHA_MASTERPLAN.md §4 FDR statement for full arithmetic."
+                "36 tests total: 28 OVC buckets (S-IVR×3, S-DOI×3, S-VOI×3, S-IVSPREAD-F×3, "
+                "S-SKEW_DECEL×3, S-TOP_RISK×2, S-PIN_RISK×2, S-VOI2×3, S-VANNA-RELIEF×3, "
+                "S-FRONT-CHARM×3) plus 8 FS-3 flow-score cells "
+                "(S-FLOWML-0_7×1, S-FLOWML-8_90×1, S-FLOWML-90P×2 [63d primary + 126d secondary], "
+                "and per-era holdout cells totalling 8 cells per FS-3 prereg 2026-07-13). "
+                "BH-FDR threshold for k-th ranked p-value: p_k <= (k/36) * 0.10 "
+                "(most-significant single-test threshold ≈ 0.0028). "
+                "No verdict claims significance without clearing BH-FDR at alpha=0.10 over "
+                "this full 36-test family. See OPTIONS_ALPHA_MASTERPLAN.md §4 FS-3 "
+                "Enlarged-family BH-FDR statement (2026-07-13: 28+8=36). "
+                "Amend-on-add re-check: all prior 28 OVC p-values re-ranked against (k/36)×0.10; "
+                "currently vacuous (all building_history, no posted p-values to re-check)."
             ),
         },
         "per_family_status": {
@@ -647,18 +826,23 @@ def build_gate(df: pd.DataFrame) -> dict:
             "S-TOP_RISK": verdicts.get("S-TOP_RISK", "building_history"),
             "S-PIN_RISK": verdicts.get("S-PIN_RISK", "building_history"),
             "S-VOI2": verdicts.get("S-VOI2", "building_history"),
+            "S-VANNA-RELIEF": verdicts.get("S-VANNA-RELIEF", "building_history"),
+            "S-FRONT-CHARM": verdicts.get("S-FRONT-CHARM", "building_history"),
         },
         "tests": tests,
         "verdicts": verdicts,
         "evidence": evidence,
         "note": (
             "Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI + W-C: "
-            "S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2). Display/ledger-seed "
-            "only until a bucket clears n≥30 AND a primitive delta's bootstrap CI excludes 0 "
-            "(doctrine §2.3). Ledger primitives only (ruling A10). FDR family=22 tests, "
-            "BH α=0.10. Never scored until a gate passes. "
-            "S-TOP_RISK/S-PIN_RISK are caution-only: beneficial direction = flagged fires worse "
-            "(correctly de-escalates entries). Never initiates a negative position (RO-3)."
+            "S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2 + W-OVC: "
+            "S-VANNA-RELIEF/S-FRONT-CHARM). Display/ledger-seed only until a bucket "
+            "clears n≥30 AND a primitive delta's bootstrap CI excludes 0 (doctrine §2.3). "
+            "Ledger primitives only (ruling A10). FDR family=36 tests, BH α=0.10. "
+            "Never scored until a gate passes. "
+            "S-TOP_RISK/S-PIN_RISK/S-FRONT-CHARM are caution-only: beneficial direction = "
+            "flagged fires worse/higher-vol (correctly de-escalates). "
+            "S-VANNA-RELIEF is caution-only: holdability context only, not an entry originator. "
+            "Never initiates a negative position (RO-3)."
         ),
     }
 
