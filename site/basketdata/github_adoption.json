@@ -1,7 +1,7 @@
 {
   "schema": "theme_adoption.v1",
-  "as_of": "2026-07-15",
-  "generated_at": "2026-07-16T05:48:03.912565+00:00",
+  "as_of": "2026-07-16",
+  "generated_at": "2026-07-17T02:01:04.506288+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -27,7 +27,7 @@
   "baskets": {
     "ai_infra": {
       "basket_id": "ai_infra",
-      "star_velocity_7d_z": 0.509,
+      "star_velocity_7d_z": 0.219,
       "n_covered": 2,
       "n_basket_total": 24,
       "covered_tickers": [
@@ -48,7 +48,7 @@
     },
     "ai_semiconductors": {
       "basket_id": "ai_semiconductors",
-      "star_velocity_7d_z": 0.509,
+      "star_velocity_7d_z": 0.219,
       "n_covered": 2,
       "n_basket_total": 12,
       "covered_tickers": [
@@ -69,7 +69,7 @@
     },
     "cybersecurity": {
       "basket_id": "cybersecurity",
-      "star_velocity_7d_z": 4.011,
+      "star_velocity_7d_z": 3.123,
       "n_covered": 1,
       "n_basket_total": 10,
       "covered_tickers": [
