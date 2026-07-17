@@ -65,6 +65,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | pick-lab | 3 |
 | policy-shock | 5 |
 | qualitative-intelligence | 23 |
+| rates-inflation-command | 3 |
 | research-factory | 3 |
 | rlt | 3 |
 | rotation-command | 7 |
@@ -763,6 +764,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-foresight-cascade | `site/basketdata/foresight_cascade.json` | json | daily-engine | display | 1 | 1 |
 | stock-desk-theses | `data/stock_desk/theses.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | thematic-desk-theses | `data/thematic_desk/theses.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+
+### rates-inflation-command
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-surface-index-etf | `data/options_surface/index_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |
+| options-surface-industry-etf | `data/options_surface/industry_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |
+| options-surface-sector-etf | `data/options_surface/sector_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |
 
 ### research-factory
 

@@ -1738,39 +1738,41 @@ lanes:
   # Runs on the ops host (Mac Studio / theta-ops-wt worktree) via launchd agents.
   # Neither script appears in any GHA workflow — they are ops-lane-only.
   # The lane is declared here so the house-law coverage audit can find them.
-  - workflow: theta-ops-launchd
-    job: surface-accrual
-    steps:
-      - id: build_options_surface
-        module: scripts.build_options_surface
-        note: >
-          W2 SURFACE (RIC program). Whole-market dealer-surface history builder.
-          Two modes: --backfill (2017→present, one-shot, run manually / once on ops lane)
-          and nightly (forward-accrual, run by com.macro.thetadata-surface launchd agent
-          at 21:10 UTC, AFTER the thetadata EOD refresh pass).
-          Reads ThetaData T1 store (greeks+oi tiers) from
-          /Users/chriswong/theta-ops-wt/data/thetadata_eod (ops-host local, no GHA access).
-          Outputs data/options_surface/index_etf.parquet, sector_etf.parquet,
-          industry_etf.parquet — committed (small aggregates ~single-digit MB each).
-          OI timing law: oi[t] as published by OPRA = EOD t-1 positions (enforced in
-          engine/options_surface.compute_surface_row). Dealer sign = long-call/short-put
-          ASSUMPTION (unobservable); printed in every consumer. Ends with hard_exit().
-          NOT in daily.yml — theta-ops lane only. Single-writer.
-      - id: audit_options_surface_coverage
-        module: scripts.audit_options_surface_coverage
-        note: >
-          W2 SURFACE precursor: per-root coverage audit (greeks+oi first/last date,
-          per-year row counts, PASS/FAIL vs 2017→current coverage floor). Read-only;
-          writes reports/artifacts/options_surface_coverage.md. Run manually before
-          building / when roster needs re-assessment. Audit date 2026-07-17.
-      - id: audit_options_surface_accrual
-        module: scripts.audit_options_surface_accrual
-        note: >
-          W2 SURFACE liveness audit (dead-man's switch). Mirrors audit_thetadata_accrual.
-          Checks newest parquet mtime ≤ max_age_days (3d default). --strict exits 1 on
-          STALE/DARK. Writes data/quality/options_surface_accrual_audit.json.
-          Should be wired into the nightly CI health check or run from the ops lane.
-
+  # NOTE: this lane is launchd-only (no GHA workflow file exists), so it is documented
+  # as comments — check_dag_conformance validates every lanes: entry against a real
+  # .github/workflows file (same reason com.mastermind.optionshub is not a lane).
+  # - workflow: theta-ops-launchd
+  # job: surface-accrual
+  # steps:
+  # - id: build_options_surface
+  # module: scripts.build_options_surface
+  # note: >
+  # W2 SURFACE (RIC program). Whole-market dealer-surface history builder.
+  # Two modes: --backfill (2017→present, one-shot, run manually / once on ops lane)
+  # and nightly (forward-accrual, run by com.macro.thetadata-surface launchd agent
+  # at 21:10 UTC, AFTER the thetadata EOD refresh pass).
+  # Reads ThetaData T1 store (greeks+oi tiers) from
+  # /Users/chriswong/theta-ops-wt/data/thetadata_eod (ops-host local, no GHA access).
+  # Outputs data/options_surface/index_etf.parquet, sector_etf.parquet,
+  # industry_etf.parquet — committed (small aggregates ~single-digit MB each).
+  # OI timing law: oi[t] as published by OPRA = EOD t-1 positions (enforced in
+  # engine/options_surface.compute_surface_row). Dealer sign = long-call/short-put
+  # ASSUMPTION (unobservable); printed in every consumer. Ends with hard_exit().
+  # NOT in daily.yml — theta-ops lane only. Single-writer.
+  # - id: audit_options_surface_coverage
+  # module: scripts.audit_options_surface_coverage
+  # note: >
+  # W2 SURFACE precursor: per-root coverage audit (greeks+oi first/last date,
+  # per-year row counts, PASS/FAIL vs 2017→current coverage floor). Read-only;
+  # writes reports/artifacts/options_surface_coverage.md. Run manually before
+  # building / when roster needs re-assessment. Audit date 2026-07-17.
+  # - id: audit_options_surface_accrual
+  # module: scripts.audit_options_surface_accrual
+  # note: >
+  # W2 SURFACE liveness audit (dead-man's switch). Mirrors audit_thetadata_accrual.
+  # Checks newest parquet mtime ≤ max_age_days (3d default). --strict exits 1 on
+  # STALE/DARK. Writes data/quality/options_surface_accrual_audit.json.
+  # Should be wired into the nightly CI health check or run from the ops lane.
 # ---------------------------------------------------------------------------
 # DIVERGENCES — declared lane-difference ledger
 # Two kinds:
