@@ -313,10 +313,10 @@
       "regime_coverage": 1.0
     }
   },
-  "generated_from": "sha256:1dbc4997d59fd65237a41996ffaff513e386943b607acc583f7ad99e303b8c91",
+  "generated_from": "sha256:a6b9e87d76e611f8a75e8010146259620ec1b2365c93e5821e98ce9f73cce0ef",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-07-16T07:45:07Z",
-  "inputs_hash": "sha256:02706ab2c79ab0fdca47e4a4e4f4d61364563247a73f0a142897e69879673529",
+  "produced_at": "2026-07-17T03:53:16Z",
+  "inputs_hash": "sha256:74ce55369766819e8b5bdbc6973b0b33dfb3831ebff1fc0b3388891a6acc8b2b",
   "tier": "infrastructure"
 }
