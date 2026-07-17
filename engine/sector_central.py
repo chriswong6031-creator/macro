@@ -242,16 +242,26 @@ def market_context() -> dict:
 def _rolling_over(now: dict) -> bool:
     """Fast-rollover detector. The slow 5-phase label (`phase`) is weekly-MACD-led, so a name
     that has dropped hard off a recent high can still read 'Trending/Expansion' for weeks after
-    it rolled — the label LAGS the move. When the oscillator slope is clearly DOWN, the daily
-    timing ladder is in decline, AND the canonical (detrended) position is stretched, the name is
-    topping/rolling regardless of a still-positive weekly MACD. Keys only off signals the cycle
-    record already carries (osc_slope / pos_v2 / timing_state) — no new data, no whipsaw on wiggles
-    (needs all three: falling + stretched + daily-decline)."""
+    it rolled — the label LAGS the move. Keys only off signals the cycle record already carries
+    (osc_slope / pos / pos_v2 / timing_state / signal / divergence) — no new data.
+
+    Two arms (2026-07 audit — the original single arm never fired on the June rollover):
+      • decline arm: oscillator falling + stretched + daily ladder still IN decline.
+      • post-roll arm: oscillator in COLLAPSE (≤ −10) off an elevated position with a SELL
+        turn signal / divergence / decline ladder. The original arm demanded pos ≥ 68 AND a
+        DECLINE-family ladder — but a name that already fell has pos < 68 and its ladder has
+        moved on to bottom-hunting (TURN SIGNALED), so XLK/AI-infra rolled −20/−30 osc points
+        with the chip stuck on the slow label. No whipsaw on wiggles: every arm still needs a
+        clearly falling oscillator plus stretch plus a confirming fast signal."""
     slope = now.get("osc_slope") or 0.0
     pv2 = now.get("pos_v2")
-    hi = (pv2 if pv2 is not None else (now.get("pos") or 0)) >= 68.0
+    pos_eff = pv2 if pv2 is not None else (now.get("pos") or 0)
     timing = (now.get("timing_state") or "").upper()
-    return bool(slope < -3.0 and hi and timing in ("DECLINE", "ROLLING OVER"))
+    hard_dn = timing in ("DECLINE", "ROLLING OVER")
+    if slope < -3.0 and pos_eff >= 68.0 and hard_dn:
+        return True
+    confirm = bool(now.get("signal") == "SELL" or now.get("divergence") or hard_dn)
+    return bool(slope <= -10.0 and pos_eff >= 50.0 and confirm)
 
 
 def _state_score(now: dict) -> tuple[float, dict]:
@@ -288,14 +298,22 @@ def _momentum_confirm(now: dict, n_peers: int) -> tuple[float, dict]:
     rank = now.get("rs_rank")
     above = now.get("above200d")
     rs63 = now.get("rs_63d")
+    rs21 = now.get("rs_21d")
+    rank21 = now.get("rs_21d_rank")
     pct = (1.0 - (rank - 1) / max(n_peers - 1, 1)) if rank else 0.5   # 1=leader
     c = (pct - 0.5) * 0.6                                              # ±0.3
     if above is False:
         c -= 0.1
     c = float(np.clip(c, -0.3, 0.3))
-    lead = ("leading" if (rank or 99) <= max(3, n_peers // 4) else
-            "lagging" if (rank or 0) >= n_peers - max(3, n_peers // 4) else "mid-pack")
-    return c, {"rs_rank": rank, "rs_63d": rs63, "above_200d": above, "lead": lead}
+    # the TAG reads the fast (21d) rank when stamped — the 63d rank kept XLK "leading"
+    # three weeks after its top (2026-07 audit); the capped score nudge above stays on
+    # the legacy 63d rank so graded conviction semantics don't shift mid-ledger.
+    rank_now = rank21 if rank21 is not None else rank
+    lead = ("leading" if (rank_now or 99) <= max(3, n_peers // 4) else
+            "lagging" if (rank_now or 0) >= n_peers - max(3, n_peers // 4) else "mid-pack")
+    fading = bool(rank and rank21 and rank <= max(3, n_peers // 4) and rank21 > n_peers // 2)
+    return c, {"rs_rank": rank, "rs_63d": rs63, "rs_21d": rs21, "rs_21d_rank": rank21,
+               "above_200d": above, "lead": lead, "fading": fading}
 
 
 def _crowd_for_members(members: list, crowd_by_ticker: dict) -> dict | None:
@@ -437,9 +455,9 @@ def _trace(state_d, fwd, mkt, mom_d, crowd, early, stretched, beta, heat) -> lis
             # the slow phase label lags; the fast signals say it has rolled over → surface that
             # instead of the stale 'Trending' read (keeps the board honest vs. a −20% pullback).
             t.append({"layer": "Cycle state", "tier": "validated", "stance": "bearish",
-                      "en": f"Rolling over — position {pos:.0f}/100 · oscillator falling, "
-                            "daily ladder in decline (slow phase label lags)",
-                      "zh": f"回落中 — 位置 {pos:.0f}/100 · 振荡指标下行、日线阶梯走弱（慢速阶段标签滞后）"})
+                      "en": f"Rolling over — position {pos:.0f}/100 · oscillator falling "
+                            "hard off a stretched read (slow phase label lags)",
+                      "zh": f"回落中 — 位置 {pos:.0f}/100 · 振荡指标自高位急跌（慢速阶段标签滞后）"})
         else:
             stance = "bullish" if pos <= 40 else "bearish" if pos >= 65 else "neutral"
             sig = state_d.get("signal")
@@ -474,10 +492,19 @@ def _trace(state_d, fwd, mkt, mom_d, crowd, early, stretched, beta, heat) -> lis
                     f"liquidity {mkt.get('liquidity') or '—'}) → gate ×{mkt.get('gate_factor')}{betatxt}",
               "zh": f"{mkt.get('gate_state_zh') or mkt.get('state_zh') or mkt.get('gate_state_en') or mkt.get('state_en')}（宏观风险 {mkt.get('derisk_blended')}，{quad_zh}）→ 门控 ×{mkt.get('gate_factor')}{betatxt_zh}"})
     lead = mom_d.get("lead")
-    t.append({"layer": "Momentum", "tier": "confirmer", "stance": lead,
-              "en": f"RS #{mom_d.get('rs_rank') or '—'} — {lead} (focus lens, not alpha)"
+    rk21, rk63 = mom_d.get("rs_21d_rank"), mom_d.get("rs_rank")
+    rk_en = (f"RS 21d #{rk21} · 63d #{rk63 or '—'}" if rk21 is not None
+             else f"RS #{rk63 or '—'}")
+    rk_zh = (f"相对强度 21日 #{rk21} · 63日 #{rk63 or '—'}" if rk21 is not None
+             else f"相对强度 #{rk63 or '—'}")
+    fading = mom_d.get("fading")
+    t.append({"layer": "Momentum", "tier": "confirmer",
+              "stance": ("caution" if fading else lead),
+              "en": f"{rk_en} — {lead} (focus lens, not alpha)"
+                    + (" · 63d leader fading on 21d" if fading else "")
                     + (" · early — not yet trend-confirmed" if early else ""),
-              "zh": f"相对强度 #{mom_d.get('rs_rank') or '—'} — {_LEAD_ZH.get(lead, lead)}（聚焦视角，非超额）"
+              "zh": f"{rk_zh} — {_LEAD_ZH.get(lead, lead)}（聚焦视角，非超额）"
+                    + (" · 63日领先、21日转弱" if fading else "")
                     + (" · 偏早 — 趋势尚未确认" if early else "")})
     if heat and heat.get("heat_1M") is not None:
         hstance = "bullish" if (heat.get("heat_1M") or 0) > 0 else "bearish"
@@ -623,5 +650,6 @@ def _carry(rec: dict) -> dict:
         "group": rec.get("group"), "group_zh": rec.get("group_zh"), "accent": rec.get("accent"),
         "cycle": {"phase": now.get("phase"), "phaseLabel": phase_label,
                   "pos": now.get("pos"), "proj": rec.get("proj"),
-                  "rs_rank": now.get("rs_rank"), "above200d": now.get("above200d")},
+                  "rs_rank": now.get("rs_rank"), "rs_21d_rank": now.get("rs_21d_rank"),
+                  "above200d": now.get("above200d")},
     }

@@ -51,6 +51,8 @@ ALPHA_LOOKBACK = 120       # trailing days of risk-adjusted strength for the alp
 ALPHA_REBAL = "MS"         # POINT-IN-TIME rebalance grid (month-start) — a strength
                            # vector is recomputed from data up to each rebalance and
                            # held forward, so no future ranking ever reweights the past
+_STALE_TAIL_GRACE = 5      # bars a member may ride the ffill past its last real bar
+                           # before it exits the live set (suspension/holiday tolerance)
 _CACHE: dict[str, pd.DataFrame | None] = {}
 
 
@@ -90,6 +92,40 @@ def _alpha_weights_pit(present: list[str], ret: pd.DataFrame, mask: pd.DataFrame
     return W
 
 
+def _splice_fresher_tail(ticker: str, deep: pd.DataFrame, fresh: pd.DataFrame) -> pd.DataFrame:
+    """Append a FRESHER store's tail onto a stale deep-store tape. The tail is
+    ratio-rescaled at the last shared bar so an adjustment-basis mismatch between the
+    two stores can't manufacture a seam return; volume passes through unscaled.
+    Returns `deep` unchanged when it is already current (the common case)."""
+    if deep.empty or fresh.empty or "close" not in deep.columns or "close" not in fresh.columns:
+        return deep
+    deep = deep.copy()
+    deep.index = pd.DatetimeIndex(deep.index)
+    fresh = fresh.copy()
+    fresh.index = pd.DatetimeIndex(fresh.index)
+    fresh = fresh[~fresh.index.duplicated(keep="last")].sort_index()
+    if fresh.index.max() <= deep.index.max():
+        return deep
+    if "open" not in fresh.columns:
+        fresh["open"] = fresh["close"]
+    tail = fresh[fresh.index > deep.index.max()]
+    if tail.empty:
+        return deep
+    factor = 1.0
+    common = deep.index.intersection(fresh.index)
+    if len(common):
+        d = common.max()
+        dc, fc = float(deep.loc[d, "close"]), float(fresh.loc[d, "close"])
+        if np.isfinite(dc) and np.isfinite(fc) and fc > 0 and dc > 0:
+            factor = dc / fc
+    tail = tail.copy()
+    px = [c for c in ("open", "high", "low", "close") if c in tail.columns]
+    tail[px] = tail[px] * factor
+    log.warning("basket member %s: deep OHLCV stale (ends %s) — spliced %d fresher rows "
+                "from data/stocks", ticker, deep.index.max().date(), len(tail))
+    return pd.concat([deep, tail])
+
+
 def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
     """Per-member OHLCV, preferring the deep baskets store, then data/stocks (already OHLCV),
     then the China A-share store (data/china_stocks, .SS/.SZ tickers — close/high/low/volume, no
@@ -107,6 +143,16 @@ def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
         if bp.exists():
             df = pd.read_parquet(bp)
             out = df
+            # 2026-07 staleness audit: the nightly deep-store refresh covers only the
+            # NDX/Russell finviz lists, so a membership-only name can freeze (522 tickers
+            # ended 06-29) and SHADOW a fresher data/stocks tape. Splice the fresher tail
+            # on rather than silently serving the stale deep tape.
+            if sp.exists():
+                try:
+                    fresher = pd.read_parquet(sp)
+                    out = _splice_fresher_tail(ticker, out, fresher)
+                except Exception as e:  # noqa: BLE001
+                    log.debug("basket member %s: tail-splice skipped: %s", ticker, e)
         elif sp.exists():
             df = pd.read_parquet(sp)            # close/high/low/volume (no open)
             df = df.copy()
@@ -252,7 +298,8 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
         cols = {t: loaded[t][col].reindex(idx) for t in present if col in loaded[t].columns}
         return pd.DataFrame(cols, index=idx)
 
-    close = _field("close").ffill()
+    close_raw = _field("close")
+    close = close_raw.ffill()
     high = _field("high").ffill()
     low = _field("low").ffill()
     open_ = _field("open").ffill()
@@ -265,6 +312,28 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
     r_open = open_ / prev_close - 1.0
 
     mask = _live_mask(members, idx, present, pit=pit, close=close)
+    # 2026-07 staleness audit: a member whose tape ENDED (deep-store fetch gap, delisting
+    # missing its `removed` stamp) would otherwise ride the ffill at a frozen price,
+    # contributing 0% daily returns that dilute every subsequent basket move (ai_infra
+    # printed −10% off its June top while its median member was −23%). Exit each member
+    # from the live set a few grace bars past its last REAL bar, and disclose in meta.
+    stale_tail = []
+    for t in present:
+        lv = close_raw[t].last_valid_index()
+        if lv is None or lv >= idx[-1]:
+            continue
+        pos_lv = int(idx.get_loc(lv))
+        if (len(idx) - 1 - pos_lv) <= _STALE_TAIL_GRACE:
+            continue
+        cutoff = idx[pos_lv + _STALE_TAIL_GRACE]
+        live_after = mask.loc[mask.index > cutoff, t]
+        if live_after.any():
+            mask.loc[mask.index > cutoff, t] = False
+            stale_tail.append(t)
+    if stale_tail:
+        log.warning("basket candle: %d member tape(s) stale past %d-bar grace — exited "
+                    "from the live set at tape end: %s", len(stale_tail), _STALE_TAIL_GRACE,
+                    ",".join(sorted(stale_tail)[:12]))
 
     # daily renormalised weights over the live set
     lookahead = False
@@ -312,6 +381,9 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
     meta = {
         "mode": mode, "n_total": n_total, "n_with_ohlcv": len(present),
         "n_live": n_live_now, "n_live_with_volume": with_vol_now,
+        # stale-tape disclosure (nulls printed, not hidden): members exited early
+        # because their OHLCV tape ended before the basket's last bar.
+        "n_stale_tail": len(stale_tail), "stale_tail": sorted(stale_tail)[:12],
         "coverage_pct": round(with_vol_now / n_live_now, 3) if n_live_now else None,
         "as_of": str(cand.index.max().date()) if not cand.empty else None,
         "start": str(cand.index.min().date()) if not cand.empty else None,
