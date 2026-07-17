@@ -324,6 +324,7 @@
   @media (max-width: 560px) {
     .rrx { padding: 14px 15px; gap: 10px; }
     .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev, .rrx .rrx-cyc, .rrx .rrx-audit { display: none; }
+    .rrx .rrx-cgl { display: flex; }
     .rrx .rrx-odds { padding: 11px 13px; }
     .rrx .rrx-big { font-size: 34px; }
     .rrx .rrx-threats { gap: 5px; }
@@ -1289,6 +1290,10 @@
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W1.5 board-level suppressed-today note */
   .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
+  /* CSP-W5 board staleness badge */
+  .nb-stale-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;font-weight:600;color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));background:color-mix(in srgb,var(--warn) 9%,transparent)}
+  /* CSP-W5 per-card muted note on expired pending rows */
+  .nb-pending-expired{font-size:9.5px;padding:1px 5px;border-radius:4px;color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent);white-space:normal}
   /* W4 stock-personality slim chips (expander only, guardrail 16) */
   .nb-sp-chart{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
   .nb-sp-mode{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 30%,transparent)}
@@ -9614,11 +9619,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">XLF</span>
         
-        <span class="mx5-ai-ticker-pill">QQQ</span>
+        <span class="mx5-ai-ticker-pill">USO</span>
         
         <span class="mx5-ai-ticker-pill">NFLX</span>
         
-        <span class="mx5-ai-ticker-pill">SPY</span>
+        <span class="mx5-ai-ticker-pill">GLD</span>
         
       </div>
       
@@ -9626,14 +9631,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          9 high-impact signals across channels
+          7 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          9 条高影响信号
+          7 条高影响信号
         </span>
         
       </div>
@@ -10649,6 +10654,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   <div class="rrx-audit"><span class="rrx-audit-k">🧾 <span class="l-en">Self-audit</span><span class="l-zh">自审</span></span><span class="l-en">accruing — grades begin once calls mature (~21 trading days)</span><span class="l-zh">积累中 — 约21个交易日后开始评分</span></div>
   
   
+  
+
   <div class="rrx-trk">
     <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
     
@@ -11299,11 +11306,22 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item" open>
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">As Q2 earnings kick off, these communication services stocks earn an A+ for profitability</span><span class="l-zh">As Q2 earnings kick off, these communication services stocks earn an A+ for profitability</span></span>
+              <span class="nb-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="nb-htitle"><span class="l-en">Fifth Third trades higher as Comerica acquisition boosts Q2 financial results</span><span class="l-zh">Fifth Third trades higher as Comerica acquisition boosts Q2 financial results</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614814-as-q2-earnings-kick-off-these-communication-services-stocks-earn-an-a-for-profitability?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614839-fifth-third-trades-higher-as-comerica-acquisition-boosts-q2-financial-results?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">Regions Financial Q2 earnings beat on solid NII, lower credit provision</span><span class="l-zh">Regions Financial Q2 earnings beat on solid NII, lower credit provision</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4614845-regions-financial-q2-earnings-beat-on-solid-nii-lower-credit-provision?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11354,6 +11372,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+              <span class="nb-htitle"><span class="l-en">Apple upgraded at HSBC as firm sees &#39;strong cycle ahead&#39;</span><span class="l-zh">Apple upgraded at HSBC as firm sees &#39;strong cycle ahead&#39;</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4614854-apple-upgraded-at-hsbc-as-firm-sees-strong-cycle-ahead?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
               <span class="nb-htitle"><span class="l-en">SoftBank sinks over 9% as Asia chip stocks track Wall Street AI sell-off</span><span class="l-zh">SoftBank sinks over 9% as Asia chip stocks track Wall Street AI sell-off</span></span>
             </summary>
@@ -11365,11 +11394,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Kemira Oyj GAAP EPS of EUR 0.52, revenue of EUR 1.37B</span><span class="l-zh">Kemira Oyj GAAP EPS of EUR 0.52, revenue of EUR 1.37B</span></span>
+              <span class="nb-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="nb-htitle"><span class="l-en">Federal Reserve Board&#39;s annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span><span class="l-zh">美联储年度银行压力测试确认大型银行具备承受严重衰退的能力，可继续向家庭和企业放贷</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614828-kemira-oyj-gaap-eps-of-eur-052-revenue-of-eur-137b?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260624a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11388,21 +11417,21 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Best Stocks to Day Trade</span><span class="l-zh">Best Stocks to Day Trade</span></span>
+              <span class="nb-htitle"><span class="l-en">Netflix slide puts spotlight on ETFs with the biggest exposure to the stock</span><span class="l-zh">Netflix slide puts spotlight on ETFs with the biggest exposure to the stock</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.benzinga.com/money/best-stocks-to-day-trade" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614857-netflix-slide-puts-spotlight-on-etfs-with-the-biggest-exposure-to-the-stock?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nb-htitle"><span class="l-en">Federal Reserve Board&#39;s annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span><span class="l-zh">美联储年度银行压力测试确认大型银行具备承受严重衰退的能力，可继续向家庭和企业放贷</span></span>
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">Best Semiconductor Stocks</span><span class="l-zh">Best Semiconductor Stocks</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260624a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.benzinga.com/money/best-semiconductor-stocks" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -14136,9 +14165,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-17 10:20 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-17 11:54 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-17 10:20 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-17 11:54 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   

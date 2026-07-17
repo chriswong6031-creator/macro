@@ -85,6 +85,19 @@
   /* XSR-R2/R9 */
   .chip2.xsr-fast { color: var(--link); border-color: color-mix(in srgb, var(--link) 40%, var(--line)); }
   .chip2.xsr-fast.up { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line)); }
+  .chip2.xsr-fast.muted { color: var(--muted); }
+  /* XSR-W1b: fast-tape rail — ordinal + plain-word state, co-equal with conviction */
+  .ft-rail { display: flex; align-items: baseline; gap: 7px; margin: 7px 0 4px; padding: 6px 9px;
+    background: color-mix(in srgb, var(--link) 6%, var(--panel)); border: 1px solid color-mix(in srgb, var(--link) 22%, var(--line));
+    border-left: 3px solid var(--link); border-radius: 8px; }
+  .ft-rail.ft-top { border-left-color: var(--up); background: color-mix(in srgb, var(--up) 6%, var(--panel)); border-color: color-mix(in srgb, var(--up) 22%, var(--line)); }
+  .ft-rail.ft-await { border-left-color: var(--muted); background: transparent; border-color: var(--line); }
+  .ft-rank { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--link); }
+  .ft-rail.ft-top .ft-rank { color: var(--up); }
+  .ft-rail.ft-await .ft-rank { color: var(--muted); font-size: 11px; font-weight: 600; }
+  .ft-sep { color: var(--muted); font-size: 10px; }
+  .ft-state { font-size: 11px; color: var(--text); }
+  .ft-rail.ft-await .ft-state { color: var(--muted); font-size: 11px; }
   .xsr-split { font-size: 11px; color: var(--warn); border-left: 2px solid var(--warn); padding: 3px 7px; margin: 6px 0 0; line-height: 1.45; }
   /* grader */
   .grader { margin-top: 26px; border: 1px solid var(--line); border-radius: 13px; padding: 14px 16px; background: var(--panel); }
@@ -773,21 +786,36 @@
     // Phase chip: RS rank (63d) moved to hover tip (XSR-R2 ONE-rank law — fast-lens rank is THE displayed rank).
     var rsHover = (cy.rs_21d_rank||cy.rs_rank) ? ' data-tip-en="63d RS rank: #'+(cy.rs_21d_rank||cy.rs_rank)+' (slow clock — see fast tape below)" data-tip-zh="63日RS排名：第'+(cy.rs_21d_rank||cy.rs_rank)+'位（慢时钟——见下方快线）"' : '';
     if(cy.phaseLabel||cy.phase) chips.push('<span class="chip2"'+rsHover+'>'+esc(cy.phaseLabel||cy.phase)+'</span>');
-    // XSR-R2: fast-tape rotation rank chip (THE displayed rank per ONE-rank law).
+    // XSR-W1b: fast-tape board rail — ordinal display (#2 of 11) + plain-word state.
+    // Internal enum names (TURN SIGNALED, RALLY ON, etc.) NEVER appear at tier 1 —
+    // state_plain_en/zh translations from engine._STATE_PLAIN_EN are used instead.
+    // When rotation artifact absent (first nightly not yet run), show a quiet placeholder.
     var rot=s.rotation||null;
-    if(rot && rot.rank!=null){
+    var ftRail='';
+    if(rot && rot.ordinal!=null && rot.n_matched!=null){
       var rcomp = rot.components||{};
-      var tipEn = 'Fast tape rank #'+rot.rank
-        +(rot.score!=null?' (score: '+rot.score+')':'')
+      var isTop = (rot.ordinal <= Math.max(1, Math.round(rot.n_matched*0.18)));
+      // Hover receipt carries the full detail (global rank, score, internal state) — NOT tier 1.
+      var tipEn = 'Fast tape: #'+rot.ordinal+' of '+rot.n_matched+' (global rank #'+rot.rank+')'
+        +(rot.score!=null?' · score: '+rot.score:'')
         +(rcomp.mom20!=null?' · 20d RS: '+rcomp.mom20:'')
-        +(rot.state?' · cycle: '+rot.state:'')
-        +(rot.stale?' · some data stale':'');
-      var tipZh = '快线排名 #'+rot.rank
-        +(rot.score!=null?' (得分: '+rot.score+')':'')
+        +(rot.state?' · internal state: '+rot.state:'')
+        +(rot.stale?' · some inputs stale':'');
+      var tipZh = '快线：第'+rot.ordinal+'位/共'+rot.n_matched+'（全局排名 #'+rot.rank+'）'
+        +(rot.score!=null?' · 得分: '+rot.score:'')
         +(rcomp.mom20!=null?' · 20日RS: '+rcomp.mom20:'')
-        +(rot.state?' · 周期状态: '+rot.state:'')
-        +(rot.stale?' · 部分数据陈旧':'');
-      chips.push('<span class="chip2 xsr-fast'+(rot.rank<=2?' up':'')+(rot.stale?' muted':'')+'" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'+L('fast tape','快线')+' <b>#'+rot.rank+'</b></span>');
+        +(rot.state?' · 内部状态: '+rot.state:'')
+        +(rot.stale?' · 部分输入数据陈旧':'');
+      var stateEn = esc(rot.state_plain_en||'');
+      var stateZh = esc(rot.state_plain_zh||rot.state_plain_en||'');
+      ftRail = '<div class="ft-rail'+(isTop?' ft-top':'')+'" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'
+        +'<span class="ft-rank">'+L('#'+rot.ordinal+' of '+rot.n_matched,'第'+rot.ordinal+'位/共'+rot.n_matched)+'</span>'
+        +(stateEn?'<span class="ft-sep">·</span><span class="ft-state">'+L(stateEn,stateZh||stateEn)+'</span>':'')
+        +'</div>';
+    } else if(rot===null){
+      // Rotation artifact absent — first wired nightly hasn't run yet.
+      ftRail='<div class="ft-rail ft-await"><span class="ft-rank">'+L('fast lens','快线')+'</span>'
+        +'<span class="ft-state">'+L('awaiting tonight\'s data','等待今晚数据')+'</span></div>';
     }
     if(c.confluence) chips.push('<span class="chip2">'+L('confluence','共振')+' <b>'+c.confluence.agree+'/'+c.confluence.of+'</b></span>');
     if(c.early) chips.push('<span class="chip2 early">'+L('early','偏早')+'</span>');
@@ -811,6 +839,7 @@
         '<div class="conv-score">'+c.score+'</div><div class="conv-sub">'+L('conviction','信念')+'</div></div></div>'+
       '<div class="chips">'+chips.join('')+'</div>'+
       miniCycChart(s)+
+      ftRail+
       splitLine+
       '<div class="conflu">'+L('confluence','共振度')+': <b class="'+esc((c.confluence||{}).label||'')+'">'+esc((c.confluence||{}).label||'—')+'</b> · '+
         '<a href="'+cycHref+'" data-focus="'+esc(s.id)+'" style="color:var(--link)">'+L('open cycle →','打开周期 →')+'</a></div>'+
