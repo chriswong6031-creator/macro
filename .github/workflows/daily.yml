@@ -198,8 +198,10 @@ jobs:
         run: |
           python scripts/collect_zori.py \
             || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
-      - name: commit data
+      - name: commit data (local checkpoint — no network ops in this step)
+        id: commitdata
         run: |
+          echo "committed=false" >> "$GITHUB_OUTPUT"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # site/qledger: the qledger grader (scripts/collect.py -> grade_qledger)
@@ -225,6 +227,18 @@ jobs:
           git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
           if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+      # COMMIT/PUSH SPLIT (2026-07-17, run 29542087837 postmortem): the local commit above
+      # is atomic and integrity-complete (fully-staged tree, asia paths reset out, empty-
+      # guarded) — everything below is pure network publish. It lives in a SEPARATE
+      # always()-guarded step so a job-timeout cancel during the push can never again
+      # discard an already-committed night of collections (a hung git push ate 57m and
+      # the 150m cap killed the step mid-publish; the commit existed only on the runner).
+      # Every git network op is alarm-bounded (macOS runners have no GNU timeout;
+      # perl alarm survives execve — SIGALRM kills a hung op, the loop retries).
+      - name: push data (survives a job-cap cancel; alarm-bounded git ops)
+        if: always() && steps.commitdata.outputs.committed == 'true'
+        run: |
           # best-effort push: losing a race with a concurrent push must NOT fail the
           # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
           # preferring our freshly-collected data on any conflict.
@@ -239,17 +253,28 @@ jobs:
             # intersection (runner-local stores and caches are untouched).
             # (Asia paths unstaged above: when newly tracked on main, deleting the local stale
             # copy lets the rebase materialize asia-close's fresh commit — the W0b intent.)
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed data on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
             echo "data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push collected data after 5 attempts (non-fatal)"
+      # Last-ditch publish if the job was CANCELLED mid-push (cap timeout): one bounded
+      # attempt inside the post-cancel grace window. The commit already exists locally;
+      # losing it costs the whole night's collections (2026-07-16 incident).
+      - name: salvage push (job cancelled mid-publish — one bounded attempt)
+        if: cancelled() && steps.commitdata.outputs.committed == 'true'
+        run: |
+          perl -e 'alarm 90; exec @ARGV or die' -- git fetch origin main || true
+          perl -e 'alarm 180; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || true
+          perl -e 'alarm 120; exec @ARGV or die' -- git push \
+            && echo "salvage push landed the collections" \
+            || echo "::warning::salvage push failed — tonight's collections stay uncommitted"
       - name: publish attention store back to R2 (gated on the restore)
         # The day's upserted increments ride back to R2 so tomorrow's restore (and the
         # engine job's render-side restore) reads a CURRENT deep store — a frozen R2
@@ -575,11 +600,11 @@ jobs:
           # data on any conflict; losing all 5 races is non-fatal (the stores
           # are state-resumable and re-accrue next night).
           for i in 1 2 3 4 5; do
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed tail data on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2095,11 +2120,11 @@ jobs:
             # intersection (runner-local stores and caches are untouched).
             # (Asia paths unstaged above: when newly tracked on main, deleting the local stale
             # copy lets the rebase materialize asia-close's fresh commit — the W0b intent.)
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
               # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
@@ -2118,7 +2143,7 @@ jobs:
                 git add site/ && git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
               fi
-              if git push; then echo "pushed engine outputs on attempt $i"; exit 0; fi
+              if perl -e 'alarm 420; exec @ARGV or die' -- git push; then echo "pushed engine outputs on attempt $i"; exit 0; fi
             fi
             git rebase --abort 2>/dev/null || true
             echo "engine push attempt $i lost a race; re-syncing"; sleep $((i * 7))
@@ -2234,11 +2259,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed factor series on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2335,11 +2360,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed factor intelligence outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2459,11 +2484,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed oracle Time Machine feed on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2536,11 +2561,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed tech-lab artifacts on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2592,11 +2617,11 @@ jobs:
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)
           for i in 1 2 3 4 5; do
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed standout audit US artifacts on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2678,11 +2703,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed stock briefs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2887,7 +2912,7 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
@@ -2895,7 +2920,7 @@ jobs:
             # on shared JSONL paths (trial_ledger, governance, machine_registry)
             # surfaces as a conflict → the retry re-runs cleanly instead of
             # silently dropping the causal job's committed rows.
-            if git pull --rebase --autostash origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed cortex outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -3035,11 +3060,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed causal outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -3078,11 +3103,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed sf forward outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -3131,11 +3156,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed active build map on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
