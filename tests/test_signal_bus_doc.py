@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 460, (
-        f"Expected 460 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 463, (
+        f"Expected 463 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        "(CSP-W1 added rsr-leadership-crack-latest, rsr-deterioration-cascade-latest,"
+        " risk-radar-intl-forward-logs = 460->463;"
         "(E1 audit 2026-07-17: 5 site-mirror registrations"
         " site-confluence-graph, site-kernel-families, site-kernel-half-lives,"
         " site-liquidity-plumbing, site-cortex-memo = 455->460;"

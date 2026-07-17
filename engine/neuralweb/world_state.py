@@ -42,6 +42,12 @@ R5 macro lobes (PR-B — display_only=True; all fail-open):
 * macro_deltas       — data/macro_snapshots/transitions.jsonl (may be absent; gap OK)
 factor_weather is composed by _compose_factor_weather() — see §5.4 notes below.
 
+CSP-W1 contagion lobe:
+* contagion_regime — re-projection of RSR organs into AI-context plane (display-only,
+                     is_context_only=True). Sources: data/deterioration_cascade/latest.json,
+                     data/leadership_crack/latest.json, data/intl_risk/latest.json (two_tier),
+                     data/risk_radar_intl/<mkt>_forward_log.jsonl. Fail-soft on absent sources.
+
 BORDER LAW (§9)
 ---------------
 Neural Web owns rails, memory, governance, and synthesis; domain programs own
@@ -2103,6 +2109,165 @@ def _compose_thematic_state(root: "Path | str | None" = None) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# CSP-W1: Contagion Regime lobe
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _compose_contagion_regime(root: "Path | str | None" = None) -> dict:
+    """Compose the contagion_regime lobe from already-shipped RSR organs.
+
+    Pure re-projection of engine-computed facts — never LLM-originated.
+    All fields are is_context_only=True, display_only=True.
+
+    Sources (all fail-soft: absent/corrupt → null fields + degraded[] entry):
+      data/deterioration_cascade/latest.json  — cascade state, alert counts
+      data/leadership_crack/latest.json       — leadership state, z_vel, med_dd
+      data/intl_risk/latest.json              — two_tier.state (us_spillover)
+      data/risk_radar_intl/<mkt>_forward_log.jsonl — per-market last row
+
+    Maturity guard for forward logs: a market is mature when >= 5 prior rows
+    exist with asof < latest row's asof.  Mirrors deterioration_cascade's own
+    maturity guard (CSP-R5 — coincident only, no lead claims).
+
+    state mirrors deterioration_cascade state verbatim.
+    origin_complex = "ai_hardware" only when leadership_crack state != "INTACT",
+    else null.
+    """
+    repo = _repo_root(root)
+
+    degraded: list[str] = []
+
+    # ── 1. deterioration_cascade ───────────────────────────────────────────
+    dc_path = repo / "data" / "deterioration_cascade" / "latest.json"
+    dc_state: str | None = None
+    n_alert: int | None = None
+    d3_alert: int | None = None
+    n_mature: int | None = None
+    dc_immature: list[str] = []
+    dc_asof: str | None = None
+    try:
+        dc = _read_json(dc_path)
+        if dc is None:
+            degraded.append("deterioration_cascade/latest.json: absent or unreadable")
+        else:
+            dc_state = _clean(dc.get("state"))
+            n_alert = _clean(dc.get("n_alert"))
+            d3_alert = _clean(dc.get("d3_alert"))
+            n_mature = _clean(dc.get("n_mature"))
+            dc_immature = [str(m) for m in (dc.get("immature") or [])]
+            dc_asof = _clean(dc.get("asof"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("contagion_regime: deterioration_cascade read failed — %s", exc)
+        degraded.append(f"deterioration_cascade/latest.json: {exc}")
+
+    # ── 2. leadership_crack ────────────────────────────────────────────────
+    lc_path = repo / "data" / "leadership_crack" / "latest.json"
+    lc_state: str | None = None
+    lc_z_vel: float | None = None
+    lc_med_dd: float | None = None
+    lc_state_since: str | None = None
+    try:
+        lc = _read_json(lc_path)
+        if lc is None:
+            degraded.append("leadership_crack/latest.json: absent or unreadable")
+        else:
+            lc_state = _clean(lc.get("state"))
+            lc_z_vel = _clean(lc.get("z_vel"))
+            lc_med_dd = _clean(lc.get("med_dd"))
+            lc_state_since = _clean(lc.get("state_since"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("contagion_regime: leadership_crack read failed — %s", exc)
+        degraded.append(f"leadership_crack/latest.json: {exc}")
+
+    # ── 3. intl_risk two_tier.state → us_spillover ────────────────────────
+    ir_path = repo / "data" / "intl_risk" / "latest.json"
+    us_spillover: str | None = None
+    try:
+        ir = _read_json(ir_path)
+        if ir is None:
+            degraded.append("intl_risk/latest.json: absent or unreadable")
+        else:
+            two_tier = ir.get("two_tier") or {}
+            us_spillover = _clean(two_tier.get("state"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("contagion_regime: intl_risk read failed — %s", exc)
+        degraded.append(f"intl_risk/latest.json: {exc}")
+
+    # ── 4. per-market forward logs ─────────────────────────────────────────
+    intl_dir = repo / "data" / "risk_radar_intl"
+    intl_markets_in_alert: list[dict] = []
+    try:
+        if intl_dir.is_dir():
+            for log_path in sorted(intl_dir.glob("*_forward_log.jsonl")):
+                market = log_path.name.replace("_forward_log.jsonl", "")
+                try:
+                    lines = [
+                        ln for ln in log_path.read_text(encoding="utf-8").splitlines()
+                        if ln.strip()
+                    ]
+                    if not lines:
+                        continue
+                    last_row: dict = json.loads(lines[-1])
+                    if not last_row.get("alert"):
+                        continue
+                    # Maturity guard: >= 5 prior rows with asof < latest asof
+                    latest_asof = last_row.get("asof")
+                    prior_count = 0
+                    for prior_line in lines[:-1]:
+                        try:
+                            pr = json.loads(prior_line)
+                            if pr.get("asof") and latest_asof and pr["asof"] < latest_asof:
+                                prior_count += 1
+                        except Exception:  # noqa: BLE001
+                            pass
+                    mature = prior_count >= 5
+                    intl_markets_in_alert.append({
+                        "market": _clean(market),
+                        "state": _clean(last_row.get("state")),
+                        "asof": _clean(latest_asof),
+                        "mature": mature,
+                    })
+                except Exception as exc:  # noqa: BLE001
+                    log.warning(
+                        "contagion_regime: forward_log %s failed — %s", log_path.name, exc
+                    )
+                    degraded.append(f"risk_radar_intl/{log_path.name}: {exc}")
+        else:
+            degraded.append("data/risk_radar_intl: directory absent")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("contagion_regime: intl forward_log scan failed — %s", exc)
+        degraded.append(f"risk_radar_intl scan: {exc}")
+
+    # ── 5. Derived fields ──────────────────────────────────────────────────
+    # origin_complex: "ai_hardware" when leadership state is not INTACT, else null
+    origin_complex: str | None = None
+    if lc_state is not None and lc_state != "INTACT":
+        origin_complex = "ai_hardware"
+
+    # asof: latest across dc and lc asofs
+    asof: str | None = dc_asof
+
+    return _display_only({
+        "state": dc_state,
+        "origin_complex": origin_complex,
+        "intl_markets_in_alert": intl_markets_in_alert,
+        "leadership_state": lc_state,
+        "leadership_detail": {
+            "z_vel": lc_z_vel,
+            "med_dd": lc_med_dd,
+            "state_since": lc_state_since,
+        },
+        "n_alert": n_alert,
+        "d3_alert": d3_alert,
+        "n_mature": n_mature,
+        "immature": dc_immature,
+        "us_spillover": us_spillover,
+        "asof": asof,
+        "degraded": degraded,
+        "is_context_only": True,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Liquidity Plumbing lobe (neuralweb.liquidity_plumbing.v1)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -2739,6 +2904,20 @@ def build_world_state(
     # optional and produced by build_intl — matches the liquidity_plumbing pattern.
     sources[str(_intl_risk_path.relative_to(repo))] = None  # no asof field in this artifact
 
+    # CSP-W1: contagion_regime lobe (pure re-projection of shipped RSR organs)
+    try:
+        contagion_regime_block: dict = _compose_contagion_regime(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: contagion_regime lobe failed — %s", exc)
+        gaps.append(f"contagion_regime: {exc}")
+        contagion_regime_block = {
+            "state": None, "origin_complex": None, "intl_markets_in_alert": [],
+            "leadership_state": None, "leadership_detail": {}, "n_alert": None,
+            "d3_alert": None, "n_mature": None, "immature": [], "us_spillover": None,
+            "asof": None, "degraded": [f"compose failed: {exc}"],
+            "display_only": True, "is_context_only": True,
+        }
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "verdict": verdict_block,
@@ -2779,6 +2958,7 @@ def build_world_state(
         "live_overlay": live_overlay_block,
         "contradictions": contradictions_block,
         "intl_risk": intl_risk_block,  # IRD-W2 display-only lobe
+        "contagion_regime": contagion_regime_block,  # CSP-W1 display-only lobe
         "gaps": gaps,
         "sources": sources,
     }

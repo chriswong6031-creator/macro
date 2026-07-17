@@ -68,6 +68,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | research-factory | 3 |
 | rlt | 3 |
 | rotation-command | 7 |
+| rri | 1 |
+| rsr | 2 |
 | sector-pulse | 3 |
 | setup-species | 6 |
 | short-side | 1 |
@@ -90,7 +92,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 292 |
+| display | 295 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -99,7 +101,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 438 |
+| git | 441 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -789,6 +791,19 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | data-rotation-events-china-ledger | `data/rotation_events_china/events.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | data-rotation-events-hk-ledger | `data/rotation_events_hk/events.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | data-rotation-events-ledger | `data/rotation_events/events.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+
+### rri
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| risk-radar-intl-forward-logs | `data/risk_radar_intl/` | jsonl | daily-engine | display | 2 | 0 |
+
+### rsr
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| rsr-deterioration-cascade-latest | `data/deterioration_cascade/latest.json` | json | daily-engine | display | 1 | 0 |
+| rsr-leadership-crack-latest | `data/leadership_crack/latest.json` | json | daily-engine | display | 1 | 0 |
 
 ### sector-pulse
 

@@ -982,9 +982,11 @@ def _summarize_risk_radar_reliability(repo: Path) -> tuple[dict, str | None]:
     """Distil site/riskdata/scorecard.json into the risk_radar_reliability lobe.
 
     Source: the frozen cross-builder scorecard artifact (schema risk_radar_scorecard.v1).
-    The artifact carries us + every intl radar market (additive-only key set);
-    this lobe distils only the core four (us, cn, hk, ca) via _summarize_rr_market()
-    and ignores any other market key by design (fixed _MARKET_ORDER whitelist).
+    The artifact carries us + every intl radar market (additive-only key set).
+    Market order: us/cn/hk/ca first (existing order preserved), then any
+    additional keys found in the scorecard sorted alphabetically (CSP-W1
+    dynamic order — additive-only #2687 pattern, never pattern-match/limit).
+    Distils each market via _summarize_rr_market().
 
     Standing laws:
     - 100% deterministic math over already-graded rows (no LLM, no invented scores).
@@ -1009,7 +1011,14 @@ def _summarize_risk_radar_reliability(repo: Path) -> tuple[dict, str | None]:
         )
 
     markets_out: dict = {}
-    _MARKET_ORDER = ("us", "cn", "hk", "ca")
+    # Dynamic market order: us/cn/hk/ca first (existing order preserved), then
+    # any additional market keys found in the scorecard sorted alphabetically.
+    # Additive-only #2687 pattern — never pattern-match/limit the key set.
+    _CORE_MARKETS = ("us", "cn", "hk", "ca")
+    _extra_markets = sorted(
+        k for k in markets_raw if k not in _CORE_MARKETS
+    )
+    _MARKET_ORDER = _CORE_MARKETS + tuple(_extra_markets)
     for mkt in _MARKET_ORDER:
         mkt_data = markets_raw.get(mkt)
         if not isinstance(mkt_data, dict):
@@ -1035,6 +1044,61 @@ def _summarize_risk_radar_reliability(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_contagion(repo: Path) -> tuple[dict, str | None]:
+    """Distil world_state.contagion_regime into the contagion lobe (CSP-W1).
+
+    Source: data/neuralweb/world_state.json (contagion_regime sub-block).
+    All fields are engine-originated, is_context_only=True, display_only=True.
+    LLM consumers read this — they never originate or escalate from it (CSP-R4).
+    Fail-soft: absent world_state or absent contagion_regime sub-block → empty
+    lobe with gap note.
+
+    Standing laws:
+    - 100% deterministic re-projection of already-computed RSR organs.
+    - No LLM-originated content; no invented scores.
+    - Nothing here may gate, rank, size, or escalate any authority surface.
+    - The word 'validated' is banned from all emitted text.
+    """
+    ws_path = repo / "data" / "neuralweb" / "world_state.json"
+    ws = _read_json(ws_path)
+    if ws is None:
+        return {}, "data/neuralweb/world_state.json absent or unreadable"
+
+    cr = (ws.get("contagion_regime") or {}) if isinstance(ws, dict) else {}
+    if not cr:
+        return {}, "world_state.contagion_regime absent (pre-CSP-W1 build)"
+
+    state = cr.get("state")
+    leadership_state = cr.get("leadership_state")
+    us_spillover = cr.get("us_spillover")
+    n_alert = cr.get("n_alert")
+    d3_alert = cr.get("d3_alert")
+    n_mature = cr.get("n_mature")
+    origin_complex = cr.get("origin_complex")
+    intl_markets = cr.get("intl_markets_in_alert") or []
+    degraded = cr.get("degraded") or []
+    asof = cr.get("asof")
+
+    lobe: dict = {
+        "is_context_only": True,
+        "display_only": True,
+        "asof": asof,
+        "state": state,
+        "origin_complex": origin_complex,
+        "leadership_state": leadership_state,
+        "us_spillover": us_spillover,
+        "n_alert": n_alert,
+        "d3_alert": d3_alert,
+        "n_mature": n_mature,
+        "intl_markets_in_alert": intl_markets,
+        "honesty_note": "accruing — unproven; does not change the score",
+    }
+    if degraded:
+        lobe["degraded"] = degraded
+
+    return lobe, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -1050,6 +1114,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "thematic_state": _summarize_thematic_state,
     "mastermind_ai": _summarize_mastermind_ai,
     "risk_radar_reliability": _summarize_risk_radar_reliability,
+    "contagion": _summarize_contagion,  # CSP-W1 contagion context lobe
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -1066,6 +1131,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "thematic_state": ["theme-state"],
     "mastermind_ai": ["mastermind-feedback-summary"],
     "risk_radar_reliability": ["site-riskdata-scorecard"],
+    "contagion": ["world-state"],  # CSP-W1: reads world_state.contagion_regime
 }
 
 

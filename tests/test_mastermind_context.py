@@ -1415,9 +1415,10 @@ class TestRiskRadarReliabilityLobe:
         assert "us" in rr["markets"], "'us' market missing from lobe"
 
     def test_unknown_market_keys_tolerated(self, tmp_path):
-        """markets{} is additive-only under risk_radar_scorecard.v1: extra intl
-        keys (kr/jp/tw/in/au/gb/ez) must be ignored — the lobe still emits
-        exactly its us/cn/hk/ca whitelist and distils us correctly."""
+        """markets{} is additive-only under risk_radar_scorecard.v1 and CSP-W1
+        dynamic order: extra intl keys (kr/jp/tw/in/au/gb/ez) are included in
+        the lobe after the core four (us/cn/hk/ca first, then extras sorted).
+        The core four must be present; extra keys must not be silently dropped."""
         _build_minimal_tree(tmp_path)
         _minimal_rr_scorecard(
             tmp_path,
@@ -1427,8 +1428,19 @@ class TestRiskRadarReliabilityLobe:
         )
         payload = build_context(root=tmp_path, now=_NOW)
         rr = payload["lobes"].get("risk_radar_reliability", {})
-        assert set(rr.get("markets", {})) == {"us", "cn", "hk", "ca"}, (
-            "lobe must emit exactly its whitelist, ignoring unknown market keys"
+        market_keys = list(rr.get("markets", {}).keys())
+        # Core four must be first in declared order
+        assert market_keys[:4] == ["us", "cn", "hk", "ca"], (
+            "core four must appear first in us/cn/hk/ca order"
+        )
+        # Extra markets must be present (additive-only — never silently dropped)
+        extra = set(market_keys[4:])
+        assert extra == {"kr", "jp", "tw", "in", "au", "gb", "ez"}, (
+            "extra markets from scorecard must appear after core four"
+        )
+        # Extra markets sorted alphabetically
+        assert market_keys[4:] == sorted(market_keys[4:]), (
+            "extra markets must be sorted alphabetically"
         )
         us = rr["markets"]["us"]
         assert us.get("monitoring", {}).get("graded_n") == 30
