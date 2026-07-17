@@ -53,6 +53,14 @@ SPARK_DAYS    = 20     # sparkline history
 # Minimum observations for oe_z to be meaningful
 OE_Z_MIN_OBS  = 20
 
+# Interim Terminal Dark Pool pane artifact (roadmap: Terminal Flow surface).
+# EOD tier = daily FINRA-facility off-exchange share + weekly ATS venues. The
+# intraday per-print fields (off-exchange %, price levels, biggest prints) stay
+# null until an equity-tick feed is wired — display-tier "data pending", never
+# faked. Bumps to "intraday" tier when that lands. Debranded: no data-vendor name.
+PANE_SCHEMA    = "darkpool_eod.v1"
+PANE_JSON_NAME = "darkpool_eod.json"
+
 
 # ---------------------------------------------------------------------------
 # Data loading helpers
@@ -340,6 +348,62 @@ def _compute_ats_venue_table(
     }
 
 
+def _emit_pane_json(
+    rows_clean: list[dict],
+    ats_table: dict,
+    *,
+    panel_latest: str,
+    panel_dates: int,
+    below_floor: bool,
+    n_with_oe: int,
+    n_with_ats: int,
+    ats_lag_note: str | None,
+    built: str,
+    out_path: Path | None = None,
+) -> Path:
+    """Write the interim Terminal Dark Pool pane artifact → site/darkpool_eod.json.
+
+    Reuses the already-numpy-cleaned per-ticker rows (same payload the HTML desk
+    embeds), so any Terminal Flow pane can consume it via a plain fetch instead
+    of scraping the page. Additive + guarded: the caller wraps this in try/except
+    so a failure here can NEVER break the HTML desk.
+
+    Tier is EOD — daily FINRA-facility off-exchange share + weekly per-ATS venues.
+    The intraday tick-feed fields (per-print off-exchange %, price levels, biggest
+    prints) are emitted as explicit nulls under `pending`; they are never faked.
+    `source` is debranded (no data-vendor name — house law).
+    """
+    payload = {
+        "schema": PANE_SCHEMA,
+        "tier": "eod",                         # -> "intraday" once an equity-tick feed lands
+        "source": "finra_facilities",          # debranded — no data-vendor name
+        "asof": panel_latest,                  # daily off-exchange data date
+        "panel_dates": panel_dates,
+        "below_floor": below_floor,
+        "n_with_oe": n_with_oe,
+        "n_with_ats": n_with_ats,
+        "universe": rows_clean,                # full ranked per-ticker list (oe_share, oe_trend_pp, oe_z, spark20, ats_*)
+        "venues": {                            # weekly ATS venue rollup + WoW
+            "week_start": ats_table.get("week_start"),
+            "lag_note": ats_lag_note,
+            "n_symbols_total": ats_table.get("n_symbols_total"),
+            "rows": ats_table.get("venues", []),
+        },
+        "pending": {                           # intraday tick-feed fields — explicit null, never faked
+            "intraday_oe_share": None,
+            "price_levels": None,
+            "biggest_prints": None,
+            "note": "intraday per-print off-exchange data pending equity-tick feed",
+        },
+        "built": built,
+    }
+    out = out_path or (config.ROOT / "site" / PANE_JSON_NAME)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
+    log.info("wrote %s (%d names, tier=eod, %d with_oe)", out, len(rows_clean), n_with_oe)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Builder main
 # ---------------------------------------------------------------------------
@@ -466,6 +530,18 @@ def main() -> int:
     write_page(out, html)
     log.info("wrote %s (%d KB, %d rows, %d dates, %d with_oe, %d with_ats)",
              out, len(html) // 1024, len(ticker_stats), panel_dates, n_with_oe, n_with_ats)
+
+    # Interim Terminal Dark Pool pane artifact (EOD tier). Additive + guarded:
+    # never blocks the desk. Upgrades to intraday per-print once a tick feed lands.
+    try:
+        _emit_pane_json(
+            rows_clean, ats_table,
+            panel_latest=panel_latest, panel_dates=panel_dates, below_floor=below_floor,
+            n_with_oe=n_with_oe, n_with_ats=n_with_ats, ats_lag_note=ats_lag_note, built=built,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("pane json emit failed (non-fatal): %s", e)
+
     return 0
 
 

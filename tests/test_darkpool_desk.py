@@ -398,6 +398,7 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
         # bdd.main() then overwrites the REAL site/darkpool.html with this test's
         # synthetic 2024 panel (found trashing the working tree 2026-07-11).
         orig_write = bdd.write_page
+        orig_emit = bdd._emit_pane_json
 
         written_html = {}
 
@@ -406,11 +407,19 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
             (site_dir / "darkpool.html").write_text(html)
             return site_dir / "darkpool.html"
 
+        def _fake_emit(*a, **kw):
+            # main() also emits site/darkpool_eod.json; ROOT is the REAL repo here
+            # (templates must resolve), so redirect this output to tmp too.
+            kw["out_path"] = site_dir / "darkpool_eod.json"
+            return orig_emit(*a, **kw)
+
         bdd.write_page = _fake_write
+        bdd._emit_pane_json = _fake_emit
         try:
             rc = bdd.main()
         finally:
             bdd.write_page = orig_write
+            bdd._emit_pane_json = orig_emit
 
         if rc != 0:
             pytest.skip("builder returned non-zero — may need data; skip nav check")
@@ -436,3 +445,76 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
         bdd.ATS_DIR = orig_ats
         bdd.YAHOO_DIR = orig_yahoo
         lib_config.ROOT = orig_root
+
+
+# ---------------------------------------------------------------------------
+# 6. Interim Terminal Dark Pool pane artifact (site/darkpool_eod.json)
+# ---------------------------------------------------------------------------
+import json as _json
+
+from scripts.build_darkpool_desk import _emit_pane_json
+
+
+def _sample_rows_clean():
+    return [
+        {"ticker": "AAPL", "asof": "2026-07-14", "oe_share": 0.42, "oe_trend_pp": 1.2,
+         "oe_z": 0.8, "spark20": [0.40, 0.41, 0.42], "ats_top_venue": "UBS ATS",
+         "ats_share_pct": 3.1, "finra_total_vol": 12_345_678},
+        {"ticker": "ZZZZ", "asof": "2026-07-14", "oe_share": None, "oe_trend_pp": None,
+         "oe_z": None, "spark20": [], "ats_top_venue": None, "ats_share_pct": None,
+         "finra_total_vol": 1000},
+    ]
+
+
+def _sample_ats_table():
+    return {
+        "week_start": "2026-06-08",
+        "venues": [{"mpid": "UBSA", "venue_name": "UBS ATS", "total_shares": 1_000_000,
+                    "total_trades": 4500, "n_symbols": 300, "share_of_total_pct": 8.1,
+                    "wow_pp": 0.3, "wow_is_new": False}],
+        "n_symbols_total": 300,
+    }
+
+
+def test_pane_json_emitter_contract(tmp_path):
+    """The interim pane artifact carries the EOD contract: schema/tier/source,
+    the full ranked universe passthrough, weekly venues, and explicit-null
+    pending fields (never faked)."""
+    out = tmp_path / "darkpool_eod.json"
+    _emit_pane_json(
+        _sample_rows_clean(), _sample_ats_table(),
+        panel_latest="2026-07-14", panel_dates=120, below_floor=False,
+        n_with_oe=1, n_with_ats=1, ats_lag_note="2–4 wk publication lag",
+        built="2026-07-16 00:00 UTC", out_path=out,
+    )
+    doc = _json.loads(out.read_text(encoding="utf-8"))
+
+    assert doc["schema"] == "darkpool_eod.v1"
+    assert doc["tier"] == "eod"                       # interim; not "intraday" yet
+    assert doc["source"] == "finra_facilities"        # debranded
+    assert doc["asof"] == "2026-07-14"
+    # Full universe passes through, including the null-oe_share tail row
+    assert [r["ticker"] for r in doc["universe"]] == ["AAPL", "ZZZZ"]
+    assert doc["universe"][0]["oe_share"] == 0.42
+    # Weekly venues + lag note preserved
+    assert doc["venues"]["week_start"] == "2026-06-08"
+    assert doc["venues"]["lag_note"].startswith("2")
+    assert doc["venues"]["rows"][0]["venue_name"] == "UBS ATS"
+    # Intraday tick-feed fields are present but null — pending, not faked
+    assert doc["pending"]["intraday_oe_share"] is None
+    assert doc["pending"]["price_levels"] is None
+    assert doc["pending"]["biggest_prints"] is None
+
+
+def test_pane_json_no_data_vendor_name(tmp_path):
+    """Debrand law: the public artifact must not name the tick-data vendor."""
+    out = tmp_path / "darkpool_eod.json"
+    _emit_pane_json(
+        _sample_rows_clean(), _sample_ats_table(),
+        panel_latest="2026-07-14", panel_dates=120, below_floor=False,
+        n_with_oe=1, n_with_ats=1, ats_lag_note=None,
+        built="2026-07-16 00:00 UTC", out_path=out,
+    )
+    text = out.read_text(encoding="utf-8").lower()
+    for vendor in ("thetadata", "theta data", "polygon"):
+        assert vendor not in text, f"debrand: {vendor!r} leaked into public artifact"
