@@ -953,6 +953,7 @@ a{text-decoration:none;color:inherit;}
 /* ── Banner ── */
 .banner{padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:12px;border:1px solid;}
 .banner-stale{background:rgba(239,68,68,.08);border-color:#ef4444;color:#ef4444;}
+.banner-degraded{background:rgba(245,158,11,.08);border-color:#f59e0b;color:#f59e0b;}
 /* ── HEADER ── */
 .site-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:18px 24px;margin-bottom:20px;}
 .header-left{flex:1;min-width:0;}
@@ -974,6 +975,8 @@ a{text-decoration:none;color:inherit;}
 .regime-plain.r-narrow{color:#f59e0b;}
 .regime-plain.r-mixed{color:var(--text-secondary);}
 .regime-sub{font-size:0.75rem;color:var(--text-secondary);margin-top:4px;}
+.regime-evidence{font-size:0.75rem;color:var(--text-secondary);margin-top:4px;line-height:1.3;}
+.regime-stance{font-size:0.78rem;font-weight:600;color:var(--text-primary);margin-top:6px;}
 .regime-chips-row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
 .regime-chip-sm{padding:2px 7px;border-radius:4px;font-size:0.65rem;font-weight:600;letter-spacing:0.04em;}
 .regime-chip-sm.on{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.25);}
@@ -983,6 +986,37 @@ a{text-decoration:none;color:inherit;}
 .section-title{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);}
 .section-count{font-size:0.72rem;color:var(--text-dim);}
 .section-rule{flex:1;height:1px;background:var(--border);}
+/* ── CHANGED TONIGHT ── */
+.changed-tonight-section{margin-bottom:16px;}
+.changed-tonight-wrap{padding:12px 16px;border-radius:var(--radius-card);}
+.ct-empty{font-size:0.82rem;color:var(--text-muted);padding:4px 0;}
+.ct-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.82rem;border-bottom:1px solid var(--border);}
+.ct-row:last-child{border-bottom:none;}
+.ct-ticker{font-weight:700;font-size:0.88rem;min-width:60px;}
+.ct-arrow{color:var(--text-dim);font-size:0.8rem;}
+.ct-badge{border-radius:4px;padding:1px 6px;font-size:0.72rem;font-weight:600;}
+.ct-badge-enter{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);}
+.ct-badge-fire{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);}
+.ct-badge-exit{background:rgba(107,114,128,.10);color:var(--text-muted);border:1px solid rgba(107,114,128,.2);}
+.ct-badge-degrade{background:rgba(107,114,128,.10);color:var(--text-muted);border:1px solid rgba(107,114,128,.2);}
+.ct-badge-crowded{background:rgba(245,158,11,.12);color:#fcd34d;border:1px solid rgba(245,158,11,.25);}
+.ct-from{font-size:0.70rem;color:var(--text-dim);}
+.ct-overflow{font-size:0.72rem;color:var(--text-dim);padding:4px 0;}
+/* ── ONE SIGNAL AWAY ── */
+.near-trigger-section{margin-bottom:16px;}
+.near-trigger-wrap{padding:12px 16px;border-radius:var(--radius-card);}
+.nt-row{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:0.82rem;border-bottom:1px solid var(--border);}
+.nt-row:last-child{border-bottom:none;}
+.nt-ticker{font-weight:700;font-size:0.88rem;min-width:60px;}
+.nt-missing{display:flex;gap:6px;flex-wrap:wrap;}
+.nt-chip-missing{background:rgba(245,158,11,.10);color:#f59e0b;border:1px solid rgba(245,158,11,.25);border-radius:4px;padding:1px 6px;font-size:0.70rem;}
+/* ── FIRE RECEIPTS ── */
+.fire-receipts-section{margin-bottom:16px;}
+.fire-receipts-table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+.fire-receipts-table th{text-align:left;padding:6px 10px;color:var(--text-dim);font-size:0.70rem;font-weight:600;border-bottom:1px solid var(--border);}
+.fire-receipts-table td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text-secondary);}
+.fire-receipts-table tr:last-child td{border-bottom:none;}
+.fire-receipts-footer{font-size:0.72rem;color:var(--text-dim);padding:8px 0 2px;}
 /* ── EARLY ENTRY BOARD ── */
 .early-entry-section{margin-bottom:24px;}
 .lane-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
@@ -1522,8 +1556,6 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       
       <p><strong><span class="l-en">Machine state</span><span class="l-zh">机器状态</span></strong> <span class="l-en">labels appear only in receipts and the field guide. Glance tier uses plain English only.</span><span class="l-zh">标签仅出现在说明弹窗和字段指南中。概览层仅使用通俗语言。</span></p>
       
-      <p><em><span class="l-en">Days-in-stage reads 1 everywhere — state store accumulates nightly from here.</span><span class="l-zh">各阶段天数均显示1 — 状态存储从此次起每晚累计。</span></em></p>
-      
     </div>
   </div>
 </div>
@@ -1539,9 +1571,25 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       <p><span class="l-en">The market's internal structure is checked across breadth conditions: what share of stocks are above their 200-day average, how correlated they are, whether leadership is concentrated in a few mega-caps, and whether a rare breadth thrust event fired.</span><span class="l-zh">市场内部结构通过多项广度条件检验：多少股票站在200日均线以上、相关性高低、领涨是否集中于少数超大盘股，以及是否触发罕见的广度冲击事件。</span></p>
       
       
-      <p><span class="l-en">Rare breadth surge: a Zweig-style breadth thrust event confirmed — historically ~18 occurrences in the modern era. The stage machine weights breakout setups more heavily during broad advances.</span><span class="l-zh">罕见广度冲击：类Zweig广度冲击事件确认 — 现代史约18次发生。在普涨行情中，状态机对突破布局赋予更高权重。</span></p>
       
-      <p><strong><span class="l-en">Machine label:</span><span class="l-zh">机器标签：</span></strong> <code>broad_thrust</code> · <span class="l-en">display only</span><span class="l-zh">仅供展示</span></p>
+      
+      <p>
+        
+        <span class="l-en">Breadth and dispersion mixed — no clear regime</span><span class="l-zh">宽度与分散度交织——无明确格局</span>
+        
+      </p>
+      
+      <p><strong><span class="l-en">Machine label:</span><span class="l-zh">机器标签：</span></strong> <code>mixed</code> · <span class="l-en">display only</span><span class="l-zh">仅供展示</span></p>
+      
+      
+      
+      <p style="font-size:0.8em;color:var(--text-secondary);">
+        <span class="l-en">Breadth legs read the broad market (502 names); this desk tracks 173.</span><span class="l-zh">广度指标取自大盘（502只）；本雷达追踪173只。</span>
+      </p>
+      
+      
+      
+      
     </div>
   </div>
 </div>
@@ -1558,6 +1606,16 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
 <div class="page-wrap">
 
 
+
+
+
+
+
+
+<div class="banner banner-degraded">
+  <span class="l-en"><strong>Data health:</strong> regime inputs 1 session behind price data · breadth 1 session behind price data</span>
+  <span class="l-zh"><strong>数据状态：</strong>制度输入落后价格数据1个交易日 · 广度数据落后价格数据1个交易日</span>
+</div>
 
 
 
@@ -1579,11 +1637,30 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       
       
       
-      <span class="badge-seeding"><span class="l-en">Seeding — day 1</span><span class="l-zh">初始化 — 第1天</span></span>
-      <span class="dot"></span>
       
       
-      <span><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-16</span>
+        
+        
+        
+        
+        
+        
+        
+      <span><span class="l-en">Data through Jul 16 close · updates nightly</span><span class="l-zh">数据截至7月16日收盘 · 每晚更新</span></span>
+      
+      
+      
+        
+        
+        
+        
+        
+        
+        
+        <span class="dot"></span>
+        <span>
+          <span class="l-en">State tracking since Jul 11</span><span class="l-zh">状态追踪自7月11日起</span> · <span class="l-en">2-session gap</span><span class="l-zh">缺口2个交易日</span>
+        </span>
       
       <span class="q-afford" onclick="openPopover('coverage-popover')" data-tip-en="Coverage receipt" data-tip-zh="覆盖情况说明">?</span>
     </div>
@@ -1593,26 +1670,26 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
     <div class="regime-capsule">
       <div class="regime-label-top"><span class="l-en">Market regime</span><span class="l-zh">市场制度</span></div>
       
-      <div class="regime-plain r-broad">
-        <span class="l-en">Broad advance</span><span class="l-zh">普涨行情</span>
-        
+      
+      <div class="regime-plain r-mixed">
+        <span class="l-en">Mixed tape</span><span class="l-zh">多空交织</span>
       </div>
-      <div class="regime-sub">
-        <span class="l-en">Many stocks participating</span><span class="l-zh">多数个股参与其中</span>
+      
+      
+      
+      
+      <div class="regime-evidence">
+        
+        <span class="l-en" style="font-size:0.75em;">Breadth and dispersion mixed — no clear regime</span><span class="l-zh">宽度与分散度交织——无明确格局</span>
         
       </div>
       
-      <div class="regime-chips-row">
-        
-        <span class="regime-chip-sm on"><span class="l-en">Rare breadth surge</span><span class="l-zh">罕见广度冲击</span></span>
-        
-        
-        <span class="regime-chip-sm on"><span class="l-en">Low correlation</span><span class="l-zh">低相关性</span></span>
-        
-        
-        <span class="regime-chip-sm off"><span class="l-en">Most stocks above trend</span><span class="l-zh">多数个股站上趋势线</span></span>
-        
+      
+      <div class="regime-stance">
+        <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
       </div>
+      
+      
       <div style="margin-top:8px;">
         <span class="q-afford" onclick="openPopover('regime-popover')" data-tip-en="What does this mean?" data-tip-zh="这是什么意思？">?</span>
       </div>
@@ -1620,6 +1697,153 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
     
   </div>
 </header>
+
+
+
+
+
+
+
+
+
+
+<section class="changed-tonight-section">
+  <div class="section-header">
+    <span class="section-title"><span class="l-en">Changed tonight</span><span class="l-zh">今夜变化</span></span>
+    <span class="q-afford" style="margin-left:6px;" data-tip-en="Compares tonight's confirmed stages vs the prior session. Tickers entering, exiting, or triggering a watch window." data-tip-zh="对比今夜确认阶段与上一交易日。包含进入、退出或触发观察窗口的标的。">?</span>
+    <span class="section-rule"></span>
+    <span style="font-size:0.72rem;color:var(--text-muted);font-weight:500;"><span class="l-en">Overnight stage moves — context, not signals</span><span class="l-zh">隔夜阶段变化——仅供参考</span></span>
+  </div>
+  <div class="glass changed-tonight-wrap">
+  
+    
+    
+    
+      
+      <div class="ct-row ct-entered">
+        <a class="ct-ticker" href="us_stocks.html#EA" style="color:inherit;text-decoration:none;">EA</a>
+        <span class="ct-arrow">→</span>
+        
+        <span class="ct-badge ct-badge-enter">
+          <span class="l-en">Quiet build</span>
+          <span class="l-zh">静默筑底</span>
+        </span>
+        
+        
+      </div>
+      
+      
+    
+      
+      <div class="ct-row ct-entered">
+        <a class="ct-ticker" href="us_stocks.html#NVDA" style="color:inherit;text-decoration:none;">NVDA</a>
+        <span class="ct-arrow">→</span>
+        
+        <span class="ct-badge ct-badge-enter">
+          <span class="l-en">Quiet build</span>
+          <span class="l-zh">静默筑底</span>
+        </span>
+        
+        
+      </div>
+      
+      
+    
+      
+      <div class="ct-row ct-entered">
+        <a class="ct-ticker" href="us_stocks.html#PAYX" style="color:inherit;text-decoration:none;">PAYX</a>
+        <span class="ct-arrow">→</span>
+        
+        <span class="ct-badge ct-badge-enter">
+          <span class="l-en">Quiet build</span>
+          <span class="l-zh">静默筑底</span>
+        </span>
+        
+        
+      </div>
+      
+      
+    
+    
+    
+    
+    
+    
+  
+  </div>
+</section>
+
+
+
+
+<section class="near-trigger-section">
+  <div class="section-header">
+    <span class="section-title"><span class="l-en">One signal away</span><span class="l-zh">差一个信号</span></span>
+    <span class="q-afford" style="margin-left:6px;" data-tip-en="Quiet-build names missing exactly one signal from a full set. Not a buy list." data-tip-zh="酝酿中个股距信号齐备仅差一项。非买入清单。">?</span>
+    <span class="section-rule"></span>
+    <span style="font-size:0.72rem;color:var(--text-muted);font-weight:500;"><span class="l-en">Watch — not a buy list</span><span class="l-zh">观察——非买入清单</span></span>
+  </div>
+  <div class="glass near-trigger-wrap">
+    
+    
+    <div class="nt-row">
+      <a class="nt-ticker" href="us_stocks.html#AMZN" style="color:inherit;text-decoration:none;">AMZN</a>
+      <div class="nt-missing">
+        
+        <span class="nt-chip-missing">
+          <span class="l-en js-chip-en" data-chip-key="insider_cluster">Insider Cluster</span>
+          <span class="l-zh js-chip-zh" data-chip-key="insider_cluster">Insider Cluster</span>
+        </span>
+        
+      </div>
+    </div>
+    
+    
+    
+    <div class="nt-row">
+      <a class="nt-ticker" href="us_stocks.html#SHW" style="color:inherit;text-decoration:none;">SHW</a>
+      <div class="nt-missing">
+        
+        <span class="nt-chip-missing">
+          <span class="l-en js-chip-en" data-chip-key="insider_cluster">Insider Cluster</span>
+          <span class="l-zh js-chip-zh" data-chip-key="insider_cluster">Insider Cluster</span>
+        </span>
+        
+      </div>
+    </div>
+    
+    
+    
+    <div class="nt-row">
+      <a class="nt-ticker" href="us_stocks.html#MELI" style="color:inherit;text-decoration:none;">MELI</a>
+      <div class="nt-missing">
+        
+        <span class="nt-chip-missing">
+          <span class="l-en js-chip-en" data-chip-key="obv_divergence">Obv Divergence</span>
+          <span class="l-zh js-chip-zh" data-chip-key="obv_divergence">Obv Divergence</span>
+        </span>
+        
+      </div>
+    </div>
+    
+    
+    
+    <div class="nt-row">
+      <a class="nt-ticker" href="us_stocks.html#TRI" style="color:inherit;text-decoration:none;">TRI</a>
+      <div class="nt-missing">
+        
+        <span class="nt-chip-missing">
+          <span class="l-en js-chip-en" data-chip-key="obv_divergence">Obv Divergence</span>
+          <span class="l-zh js-chip-zh" data-chip-key="obv_divergence">Obv Divergence</span>
+        </span>
+        
+      </div>
+    </div>
+    
+    
+  </div>
+</section>
+
 
 
 <section class="early-entry-section">
@@ -1773,6 +1997,18 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         
       
         
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
       
         
       
@@ -1798,6 +2034,12 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
     
     
     
+      
+        
+      
+        
+      
+        
       
         
       
@@ -1909,7 +2151,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       <div class="lane-header quiet">
         <div class="lane-dot quiet"></div>
         <div class="lane-name"><span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span></div>
-        <span class="lane-count-chip quiet">30</span>
+        <span class="lane-count-chip quiet">33</span>
       </div>
 
       
@@ -2341,7 +2583,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         
         <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
              data-ticker="AMZN" data-stage="QUIET_ACCUMULATION"
-             data-days="1"
+             data-days="2"
              data-macd-bars=""
              data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": true, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": true, "valuation_extreme": null}'
              data-fwd-pe="25.8"
@@ -2350,14 +2592,17 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             <a class="card-ticker" href="us_stocks.html#AMZN" onclick="event.stopPropagation()" style="color:inherit;">AMZN</a>
             <div class="card-right">
               
-              <div class="card-days"><span class="l-en">Day 1</span><span class="l-zh">第1天</span></div>
+              <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
               
               <svg class="card-sparkline" data-hist='[0.223, -0.314, -0.189, -1.022, -2.315, -3.36, -4.051, -4.526, -4.374, -4.657, -4.204, -4.401, -4.78, -3.952, -3.141, -2.413, -1.621, -0.969, -0.489, 0.332]' viewBox="0 0 64 24"></svg>
             </div>
           </div>
           <div class="evidence-bar">
             <div class="dot-bar" data-k="4" data-n="5"></div>
-            <span class="ev-label"><span class="l-en"><strong>4</strong> of 5 signals</span><span class="l-zh">信号 4/5</span></span>
+            
+            
+            
+            <span class="ev-label"><span class="l-en">Strengthening</span><span class="l-zh">增强中</span></span>
           </div>
           <div class="evidence-line" data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": true, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": true, "valuation_extreme": null}' data-stage="QUIET_ACCUMULATION"></div>
           
@@ -2797,7 +3042,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         
         <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
              data-ticker="SHW" data-stage="QUIET_ACCUMULATION"
-             data-days="1"
+             data-days="2"
              data-macd-bars=""
              data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": true, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": true, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
              data-fwd-pe="25.0"
@@ -2806,14 +3051,17 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             <a class="card-ticker" href="us_stocks.html#SHW" onclick="event.stopPropagation()" style="color:inherit;">SHW</a>
             <div class="card-right">
               
-              <div class="card-days"><span class="l-en">Day 1</span><span class="l-zh">第1天</span></div>
+              <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
               
               <svg class="card-sparkline" data-hist='[-0.43, -0.723, -1.169, -1.504, -2.002, -1.851, -1.473, -0.967, -0.936, -1.467, -1.559, -0.909, -0.054, 0.955, 1.814, 1.906, 2.365, 2.712, 3.864, 4.75]' viewBox="0 0 64 24"></svg>
             </div>
           </div>
           <div class="evidence-bar">
             <div class="dot-bar" data-k="4" data-n="5"></div>
-            <span class="ev-label"><span class="l-en"><strong>4</strong> of 5 signals</span><span class="l-zh">信号 4/5</span></span>
+            
+            
+            
+            <span class="ev-label"><span class="l-en">Strengthening</span><span class="l-zh">增强中</span></span>
           </div>
           <div class="evidence-line" data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": true, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": true, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}' data-stage="QUIET_ACCUMULATION"></div>
           
@@ -3245,7 +3493,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         
         <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
              data-ticker="ABNB" data-stage="QUIET_ACCUMULATION"
-             data-days="1"
+             data-days="2"
              data-macd-bars="4.2"
              data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": true, "parabolic": true, "qa_context": true, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": true, "valuation_extreme": null}'
              data-fwd-pe=""
@@ -3254,14 +3502,17 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             <a class="card-ticker" href="us_stocks.html#ABNB" onclick="event.stopPropagation()" style="color:inherit;">ABNB</a>
             <div class="card-right">
               
-              <div class="card-days"><span class="l-en">Day 1</span><span class="l-zh">第1天</span></div>
+              <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
               
               <svg class="card-sparkline" data-hist='[-0.872, -0.969, -0.879, -0.576, -0.641, -0.662, -0.791, -0.868, -0.361, 0.072, 0.454, 0.436, 0.588, 0.981, 1.175, 1.324, 1.324, 1.113, 0.864, 0.77]' viewBox="0 0 64 24"></svg>
             </div>
           </div>
           <div class="evidence-bar">
             <div class="dot-bar" data-k="3" data-n="5"></div>
-            <span class="ev-label"><span class="l-en"><strong>3</strong> of 5 signals</span><span class="l-zh">信号 3/5</span></span>
+            
+            
+            
+            <span class="ev-label"><span class="l-en">Strengthening</span><span class="l-zh">增强中</span></span>
           </div>
           <div class="evidence-line" data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": true, "parabolic": true, "qa_context": true, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": true, "valuation_extreme": null}' data-stage="QUIET_ACCUMULATION"></div>
           
@@ -3693,7 +3944,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         
         <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
              data-ticker="AEP" data-stage="QUIET_ACCUMULATION"
-             data-days="1"
+             data-days="2"
              data-macd-bars="1.0"
              data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": true, "valuation_extreme": null}'
              data-fwd-pe="19.3"
@@ -3702,14 +3953,17 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             <a class="card-ticker" href="us_stocks.html#AEP" onclick="event.stopPropagation()" style="color:inherit;">AEP</a>
             <div class="card-right">
               
-              <div class="card-days"><span class="l-en">Day 1</span><span class="l-zh">第1天</span></div>
+              <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
               
               <svg class="card-sparkline" data-hist='[-0.775, -0.654, -0.754, -1.039, -1.009, -0.76, -0.655, -0.509, -0.338, -0.278, -0.261, 0.152, 0.613, 0.932, 0.896, 1.043, 1.013, 0.697, 0.567, 0.245]' viewBox="0 0 64 24"></svg>
             </div>
           </div>
           <div class="evidence-bar">
             <div class="dot-bar" data-k="3" data-n="5"></div>
-            <span class="ev-label"><span class="l-en"><strong>3</strong> of 5 signals</span><span class="l-zh">信号 3/5</span></span>
+            
+            
+            
+            <span class="ev-label"><span class="l-en">Strengthening</span><span class="l-zh">增强中</span></span>
           </div>
           <div class="evidence-line" data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": true, "valuation_extreme": null}' data-stage="QUIET_ACCUMULATION"></div>
           
@@ -13001,8 +13255,1079 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       
       
       
+      
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        
+        
+      
+      
+      
+      
+      
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        
+        
+      
+      
+      
+      
+      
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        
+        
+      
+      
+      
+      
       <div style="font-size:0.72rem;color:var(--text-muted);padding:6px 4px;">
-        +26 <span class="l-en">more in this lane</span><span class="l-zh">个标的在此区间</span>
+        +29 <span class="l-en">more in this lane</span><span class="l-zh">个标的在此区间</span>
       </div>
       
     </div>
@@ -13397,7 +14722,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           
           <div class="entry-card suppressed" onclick="openCardReceiptFromEl(this)"
                data-ticker="ADBE" data-stage="SUPPRESSED"
-               data-days="1"
+               data-days="2"
                data-chips='{"accum_evidence": false, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": false, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
                data-fwd-pe=""
                data-val-pctile="">
@@ -13405,14 +14730,17 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
               <a class="card-ticker" href="us_stocks.html#ADBE" onclick="event.stopPropagation()" style="color:inherit;">ADBE</a>
               <div class="card-right">
                 
-                <div class="card-days"><span class="l-en">Day 1</span><span class="l-zh">第1天</span></div>
+                <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
                 
                 <svg class="card-sparkline" data-hist='[2.101, 1.466, 1.105, 2.951, 2.862, 2.387, 1.13, -0.905, -2.895, -4.597, -5.445, -5.486, -5.407, -4.158, -2.771, -1.098, 0.229, 1.223, 2.39, 2.705]' viewBox="0 0 64 24" style="flex-shrink:0;"></svg>
               </div>
             </div>
             <div class="evidence-bar">
               <div class="dot-bar" data-k="3" data-n="3"></div>
-              <span class="ev-label"><span class="l-en"><strong>3</strong> of 3 signals</span><span class="l-zh">信号 3/3</span></span>
+              
+              
+              
+              <span class="ev-label"><span class="l-en">All signals in</span><span class="l-zh">信号齐备</span></span>
             </div>
             <div class="evidence-line" data-chips='{"accum_evidence": false, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": false, "insider_cluster": false, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": false, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}' data-stage="SUPPRESSED"></div>
           </div>
@@ -13798,7 +15126,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           
           <div class="entry-card suppressed" onclick="openCardReceiptFromEl(this)"
                data-ticker="CRM" data-stage="SUPPRESSED"
-               data-days="1"
+               data-days="2"
                data-chips='{"accum_evidence": false, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": false, "insider_cluster": true, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": false, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": false, "valuation_extreme": null}'
                data-fwd-pe=""
                data-val-pctile="">
@@ -13806,14 +15134,17 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
               <a class="card-ticker" href="us_stocks.html#CRM" onclick="event.stopPropagation()" style="color:inherit;">CRM</a>
               <div class="card-right">
                 
-                <div class="card-days"><span class="l-en">Day 1</span><span class="l-zh">第1天</span></div>
+                <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
                 
                 <svg class="card-sparkline" data-hist='[1.692, 1.683, 0.985, 0.32, 0.705, 1.009, 1.201, 1.251, 1.083, 3.098, 3.032, 2.552, 1.49, 0.234, -0.662, -1.769, -2.547, -2.759, -2.91, -2.309]' viewBox="0 0 64 24" style="flex-shrink:0;"></svg>
               </div>
             </div>
             <div class="evidence-bar">
               <div class="dot-bar" data-k="3" data-n="3"></div>
-              <span class="ev-label"><span class="l-en"><strong>3</strong> of 3 signals</span><span class="l-zh">信号 3/3</span></span>
+              
+              
+              
+              <span class="ev-label"><span class="l-en">All signals in</span><span class="l-zh">信号齐备</span></span>
             </div>
             <div class="evidence-line" data-chips='{"accum_evidence": false, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": false, "insider_cluster": true, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": false, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": false, "valuation_extreme": null}' data-stage="SUPPRESSED"></div>
           </div>
@@ -14199,7 +15530,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           
           <div class="entry-card suppressed" onclick="openCardReceiptFromEl(this)"
                data-ticker="LCID" data-stage="SUPPRESSED"
-               data-days="1"
+               data-days="2"
                data-chips='{"accum_evidence": false, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": true, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": false, "revision_positive": null, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
                data-fwd-pe=""
                data-val-pctile="">
@@ -14207,14 +15538,17 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
               <a class="card-ticker" href="us_stocks.html#LCID" onclick="event.stopPropagation()" style="color:inherit;">LCID</a>
               <div class="card-right">
                 
-                <div class="card-days"><span class="l-en">Day 1</span><span class="l-zh">第1天</span></div>
+                <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
                 
                 <svg class="card-sparkline" data-hist='[0.021, 0.075, 0.133, 0.148, 0.127, 0.079, 0.028, 0.035, 0.035, 0.063, 0.073, 0.083, 0.142, 0.228, 0.239, 0.276, 0.238, 0.189, 0.094, 0.12]' viewBox="0 0 64 24" style="flex-shrink:0;"></svg>
               </div>
             </div>
             <div class="evidence-bar">
               <div class="dot-bar" data-k="3" data-n="3"></div>
-              <span class="ev-label"><span class="l-en"><strong>3</strong> of 3 signals</span><span class="l-zh">信号 3/3</span></span>
+              
+              
+              
+              <span class="ev-label"><span class="l-en">All signals in</span><span class="l-zh">信号齐备</span></span>
             </div>
             <div class="evidence-line" data-chips='{"accum_evidence": false, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": true, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": false, "revision_positive": null, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}' data-stage="SUPPRESSED"></div>
           </div>
@@ -14600,7 +15934,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           
           <div class="entry-card suppressed" onclick="openCardReceiptFromEl(this)"
                data-ticker="ADSK" data-stage="SUPPRESSED"
-               data-days="1"
+               data-days="2"
                data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": false, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
                data-fwd-pe=""
                data-val-pctile="">
@@ -14608,14 +15942,17 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
               <a class="card-ticker" href="us_stocks.html#ADSK" onclick="event.stopPropagation()" style="color:inherit;">ADSK</a>
               <div class="card-right">
                 
-                <div class="card-days"><span class="l-en">Day 1</span><span class="l-zh">第1天</span></div>
+                <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
                 
                 <svg class="card-sparkline" data-hist='[1.108, 0.841, 0.827, 1.257, 0.295, -0.282, -0.985, -2.535, -3.791, -4.697, -4.924, -5.072, -4.77, -3.899, -2.771, -1.331, 0.052, 0.772, 1.511, 1.782]' viewBox="0 0 64 24" style="flex-shrink:0;"></svg>
               </div>
             </div>
             <div class="evidence-bar">
               <div class="dot-bar" data-k="2" data-n="3"></div>
-              <span class="ev-label"><span class="l-en"><strong>2</strong> of 3 signals</span><span class="l-zh">信号 2/3</span></span>
+              
+              
+              
+              <span class="ev-label"><span class="l-en">Strengthening</span><span class="l-zh">增强中</span></span>
             </div>
             <div class="evidence-line" data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": false, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}' data-stage="SUPPRESSED"></div>
           </div>
@@ -17118,7 +18455,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       
       
       <div style="font-size:0.72rem;color:var(--text-dim);padding:6px 4px;">
-        5 <span class="l-en">without lead signs — stance: ignore</span><span class="l-zh">个无领先信号 — 建议：忽略</span>
+        5 <span class="l-en">without lead signs — ignore for now</span><span class="l-zh">个无领先信号——暂不关注</span>
       </div>
       
     </div>
@@ -17212,13 +18549,13 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       
       
       
-      <div class="pipe-seg " style="flex:30 30 0;min-width:92px;">
+      <div class="pipe-seg " style="flex:33 33 0;min-width:92px;">
         <div class="pipe-seg-header">
           <span class="pipe-seg-dot" style="background:var(--col-quiet);"></span>
           <span class="pipe-seg-name"><span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span></span>
         </div>
-        <div class="pipe-seg-count col-violet">30</div>
-        <div class="pipe-seg-stance"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></div>
+        <div class="pipe-seg-count col-violet">33</div>
+        <div class="pipe-seg-stance"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span></div>
         
         <div class="pipe-seg-chips">
           
@@ -17295,8 +18632,14 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           
             
           
+            
           
-          <span class="pipe-seg-chip-more">+26</span>
+            
+          
+            
+          
+          
+          <span class="pipe-seg-chip-more">+29</span>
           
         </div>
         
@@ -17334,7 +18677,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           <span class="pipe-seg-name"><span class="l-en">Breaking away</span><span class="l-zh">突破启动</span></span>
         </div>
         <div class="pipe-seg-count col-green">10</div>
-        <div class="pipe-seg-stance"><span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span></div>
+        <div class="pipe-seg-stance"><span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span></div>
         
         <div class="pipe-seg-chips">
           
@@ -17579,7 +18922,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
     
     <div class="pipe-reservoir">
       <span class="pipe-reservoir-label"><span class="l-en">No signal</span><span class="l-zh">无信号</span></span>
-      <span class="pipe-reservoir-count">80 <span class="l-en">watching</span><span class="l-zh">观察中</span></span>
+      <span class="pipe-reservoir-count">77 <span class="l-en">watching</span><span class="l-zh">观察中</span></span>
       <span class="pipe-reservoir-label">— <span class="l-en">accumulating context nightly</span><span class="l-zh">每晚积累背景数据</span></span>
     </div>
   </div>
@@ -18066,6 +19409,77 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
 </div>
 
 
+
+
+<section class="fire-receipts-section">
+  <div class="section-header">
+    <span class="section-title"><span class="l-en">Fire log</span><span class="l-zh">触发记录</span></span>
+    <span class="section-rule"></span>
+  </div>
+  <div class="glass" style="padding:14px 16px;border-radius:var(--radius-card);">
+    <table class="fire-receipts-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Date</span><span class="l-zh">日期</span></th>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Type</span><span class="l-zh">类型</span></th>
+          <th><span class="l-en">21d vs market</span><span class="l-zh">21日超额</span></th>
+        </tr>
+      </thead>
+      <tbody>
+      
+      <tr>
+        <td style="white-space:nowrap;">2026-07-15</td>
+        <td><a href="us_stocks.html#CRWD" style="color:inherit;text-decoration:none;">CRWD</a></td>
+        <td>
+          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
+          
+        </td>
+        <td>
+          
+          <span style="color:var(--text-dim);font-style:italic;"><span class="l-en">accruing</span><span class="l-zh">累计中</span></span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td style="white-space:nowrap;">2026-07-15</td>
+        <td><a href="us_stocks.html#DDOG" style="color:inherit;text-decoration:none;">DDOG</a></td>
+        <td>
+          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
+          
+        </td>
+        <td>
+          
+          <span style="color:var(--text-dim);font-style:italic;"><span class="l-en">accruing</span><span class="l-zh">累计中</span></span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td style="white-space:nowrap;">2026-07-15</td>
+        <td><a href="us_stocks.html#PYPL" style="color:inherit;text-decoration:none;">PYPL</a></td>
+        <td>
+          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
+          
+        </td>
+        <td>
+          
+          <span style="color:var(--text-dim);font-style:italic;"><span class="l-en">accruing</span><span class="l-zh">累计中</span></span>
+          
+        </td>
+      </tr>
+      
+      </tbody>
+    </table>
+    <div class="fire-receipts-footer">
+      <span class="l-en">Fires are logged and graded automatically after 21 sessions; sample too small for a track record yet.</span><span class="l-zh">触发自动记录，21个交易日后自动评分；样本尚少，未成往绩。</span>
+    </div>
+  </div>
+</section>
+
+
+
 <section class="full-board-section">
   <div class="board-toggle glass" onclick="toggleBoard(this)">
     <div class="board-toggle-left">
@@ -18187,7 +19601,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -18208,7 +19622,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">10 <span class="l-en">names</span><span class="l-zh">个</span></span>
           <span style="margin-left:4px;font-size:0.66rem;color:var(--text-dim);">· <span class="l-en">click to expand/collapse</span><span class="l-zh">点击展开/折叠</span></span>
           <span style="float:right;font-size:0.66rem;color:var(--text-dim);font-style:italic;">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </span>
         </td>
       </tr>
@@ -18286,7 +19700,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -18298,7 +19712,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -18379,7 +19793,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -18391,7 +19805,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -18472,7 +19886,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -18484,7 +19898,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -18565,7 +19979,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -18577,7 +19991,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -18652,7 +20066,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -18664,7 +20078,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -18745,7 +20159,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -18757,7 +20171,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -18832,7 +20246,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -18844,7 +20258,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -18925,7 +20339,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -18937,7 +20351,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19012,7 +20426,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19024,7 +20438,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -19105,7 +20519,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中—勿追</span>
+            <span class="l-en">In motion — don't chase</span><span class="l-zh">行情进行中——勿追</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19117,7 +20531,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19135,10 +20549,10 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           <span class="stage-pill QUIET_ACCUMULATION">
             <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
           </span>
-          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">30 <span class="l-en">names</span><span class="l-zh">个</span></span>
+          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">33 <span class="l-en">names</span><span class="l-zh">个</span></span>
           <span style="margin-left:4px;font-size:0.66rem;color:var(--text-dim);">· <span class="l-en">click to expand/collapse</span><span class="l-zh">点击展开/折叠</span></span>
           <span style="float:right;font-size:0.66rem;color:var(--text-dim);font-style:italic;">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </span>
         </td>
       </tr>
@@ -19208,7 +20622,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19220,7 +20634,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19293,7 +20707,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19305,7 +20719,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19378,7 +20792,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19390,7 +20804,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19463,7 +20877,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19475,7 +20889,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19548,7 +20962,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19560,7 +20974,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19633,7 +21047,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19645,7 +21059,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19718,7 +21132,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19730,7 +21144,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19803,7 +21217,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19815,11 +21229,96 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.985, 1.11, 1.017, 0.86, 0.621, 0.449, 0.247, 0.123, 0.065, -0.034, -0.318, -0.46, -0.551, -0.514, -0.376, -0.32, -0.072, 0.067, -0.196, -0.309]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#EA" style="text-decoration:none;">EA</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill QUIET_ACCUMULATION">
+              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="parabolic"></span>
+              
+              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.191, -0.157, -0.113, -0.025, 0.074, 0.156, 0.167, 0.201, 0.217, 0.208, 0.135, 0.168, 0.255, 0.314, 0.357, 0.346, 0.331, 0.37, 0.355, 0.379]'></svg>
             
           </td>
         </tr>
@@ -19888,7 +21387,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19900,7 +21399,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -19973,7 +21472,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -19985,7 +21484,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20056,7 +21555,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20066,7 +21565,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20139,7 +21638,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20151,7 +21650,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20224,7 +21723,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20236,7 +21735,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20309,7 +21808,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20321,7 +21820,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20394,7 +21893,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20406,7 +21905,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20479,7 +21978,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20491,7 +21990,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20564,7 +22063,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20576,7 +22075,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20649,7 +22148,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20661,7 +22160,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20734,7 +22233,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20746,7 +22245,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20819,7 +22318,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20831,7 +22330,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20904,7 +22403,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -20916,11 +22415,181 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.128, -1.056, -0.895, -0.681, -0.564, -0.43, 0.277, 0.538, 0.686, 0.444, 0.239, 0.483, 0.533, 0.606, 0.296, 0.116, -0.11, 0.115, 0.618, 1.144]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#NVDA" style="text-decoration:none;">NVDA</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill QUIET_ACCUMULATION">
+              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
+              
+              <span class="leg-chip gray" data-chip-key="accum_evidence"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[1.718, 0.883, 0.198, 0.325, -0.303, -1.358, -1.825, -2.305, -2.066, -2.366, -2.099, -2.552, -3.02, -3.242, -3.075, -3.007, -2.69, -1.986, -1.399, -0.387]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#PAYX" style="text-decoration:none;">PAYX</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill QUIET_ACCUMULATION">
+              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="extension_extreme"></span>
+              
+              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[1.047, 0.974, 0.93, 1.301, 1.214, 1.227, 1.152, 0.975, 0.908, 0.597, 0.402, 0.23, 0.016, 0.065, 0.265, 0.595, 0.868, 0.858, 1.075, 1.085]'></svg>
             
           </td>
         </tr>
@@ -20989,7 +22658,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -21001,7 +22670,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21074,7 +22743,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -21086,7 +22755,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21159,7 +22828,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -21171,7 +22840,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21244,7 +22913,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -21256,7 +22925,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21329,7 +22998,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -21341,7 +23010,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21414,7 +23083,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -21426,7 +23095,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21499,7 +23168,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -21511,7 +23180,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21584,7 +23253,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -21596,7 +23265,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21669,7 +23338,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span>
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
           </td>
           <td>
             <div class="leg-chips">
@@ -21681,7 +23350,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21786,7 +23455,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21871,7 +23540,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21956,7 +23625,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22041,7 +23710,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22126,7 +23795,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22211,7 +23880,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22296,7 +23965,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22381,7 +24050,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22466,7 +24135,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22551,7 +24220,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22636,7 +24305,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22721,7 +24390,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22806,7 +24475,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22891,7 +24560,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -22976,7 +24645,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23061,7 +24730,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23118,7 +24787,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23155,7 +24824,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23192,7 +24861,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23229,7 +24898,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -23266,7 +24935,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23303,7 +24972,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23340,7 +25009,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -23377,7 +25046,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23414,7 +25083,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23451,7 +25120,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23488,7 +25157,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23525,7 +25194,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23562,7 +25231,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23599,7 +25268,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23636,7 +25305,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23673,7 +25342,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23710,7 +25379,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23747,7 +25416,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23784,7 +25453,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23821,7 +25490,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23858,7 +25527,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23895,7 +25564,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -23932,7 +25601,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -23969,7 +25638,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24006,7 +25675,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24043,7 +25712,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -24080,7 +25749,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24117,7 +25786,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24154,7 +25823,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24191,7 +25860,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24228,7 +25897,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24265,7 +25934,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24302,7 +25971,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24339,7 +26008,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24376,7 +26045,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24413,7 +26082,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24431,7 +26100,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           <span class="stage-pill NONE">
             <span class="l-en">No signal</span><span class="l-zh">无信号</span>
           </span>
-          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">80 <span class="l-en">names</span><span class="l-zh">个</span></span>
+          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">77 <span class="l-en">names</span><span class="l-zh">个</span></span>
           <span style="margin-left:4px;font-size:0.66rem;color:var(--text-dim);">· <span class="l-en">click to expand/collapse</span><span class="l-zh">点击展开/折叠</span></span>
           <span style="float:right;font-size:0.66rem;color:var(--text-dim);font-style:italic;">
             <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
@@ -24512,7 +26181,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24589,7 +26258,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24670,7 +26339,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24755,7 +26424,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24836,7 +26505,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -24921,7 +26590,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25006,7 +26675,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25091,7 +26760,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -25172,7 +26841,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25257,7 +26926,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25342,7 +27011,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25427,7 +27096,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25508,7 +27177,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25593,7 +27262,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25674,7 +27343,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25751,7 +27420,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25836,7 +27505,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -25917,7 +27586,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26002,7 +27671,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26087,7 +27756,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26127,6 +27796,8 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           
         
           
+            
+          
         
           
         
@@ -26161,10 +27832,12 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           <td>
             <div class="leg-chips">
               
+              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
+              
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26245,7 +27918,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26330,7 +28003,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26415,7 +28088,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26496,7 +28169,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26538,8 +28211,6 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           
         
           
-            
-          
         
           
         
@@ -26576,12 +28247,10 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
               
               <span class="leg-chip gray" data-chip-key="parabolic"></span>
               
-              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
-              
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26662,7 +28331,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26743,7 +28412,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -26820,7 +28489,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -26905,96 +28574,11 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[1.355, 1.56, 1.636, 1.765, 1.62, 1.447, 1.597, 1.41, 1.14, 0.705, 0.457, 0.033, -0.27, -0.378, -0.514, -0.436, -0.23, -0.139, 0.125, 0.038]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#EA" style="text-decoration:none;">EA</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill NONE">
-              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="parabolic"></span>
-              
-              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            1
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.191, -0.157, -0.113, -0.025, 0.074, 0.156, 0.167, 0.201, 0.217, 0.208, 0.135, 0.168, 0.255, 0.314, 0.357, 0.346, 0.331, 0.37, 0.355, 0.379]'></svg>
             
           </td>
         </tr>
@@ -27067,7 +28651,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27152,7 +28736,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27237,7 +28821,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27318,7 +28902,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27399,7 +28983,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27480,7 +29064,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27565,7 +29149,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27650,7 +29234,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27731,7 +29315,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27816,7 +29400,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27901,7 +29485,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -27978,7 +29562,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28063,7 +29647,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28148,7 +29732,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28229,7 +29813,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28306,7 +29890,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28387,7 +29971,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28464,7 +30048,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28549,7 +30133,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28634,7 +30218,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28715,7 +30299,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28800,7 +30384,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -28881,96 +30465,11 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[3.49, 1.318, -0.745, -1.203, -1.334, -0.841, -0.129, 0.385, 1.334, 4.554, 5.942, 5.475, 3.936, 2.135, 1.341, 0.125, -0.907, -1.532, -1.813, -0.877]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#NVDA" style="text-decoration:none;">NVDA</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill NONE">
-              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
-              
-              <span class="leg-chip gray" data-chip-key="accum_evidence"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            1
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[1.718, 0.883, 0.198, 0.325, -0.303, -1.358, -1.825, -2.305, -2.066, -2.366, -2.099, -2.552, -3.02, -3.242, -3.075, -3.007, -2.69, -1.986, -1.399, -0.387]'></svg>
             
           </td>
         </tr>
@@ -29043,7 +30542,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -29128,7 +30627,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -29213,96 +30712,11 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.164, -0.276, -0.371, -0.573, -0.618, -0.419, -0.32, -0.194, -0.087, -0.126, -0.235, -0.237, -0.257, -0.038, 0.273, 0.307, 0.092, -0.137, -0.126, -0.394]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#PAYX" style="text-decoration:none;">PAYX</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill NONE">
-              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="extension_extreme"></span>
-              
-              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            1
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[1.047, 0.974, 0.93, 1.301, 1.214, 1.227, 1.152, 0.975, 0.908, 0.597, 0.402, 0.23, 0.016, 0.065, 0.265, 0.595, 0.868, 0.858, 1.075, 1.085]'></svg>
             
           </td>
         </tr>
@@ -29383,7 +30797,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -29468,7 +30882,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -29549,7 +30963,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -29634,7 +31048,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -29711,7 +31125,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -29796,7 +31210,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -29881,7 +31295,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -29966,7 +31380,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30051,7 +31465,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30136,7 +31550,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30221,7 +31635,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30302,7 +31716,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30387,7 +31801,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30472,7 +31886,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30553,7 +31967,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30638,7 +32052,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30719,7 +32133,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30804,7 +32218,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30889,7 +32303,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -30966,7 +32380,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -31047,7 +32461,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            1
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -31077,7 +32491,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       <div class="pb-bd">
         <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;"><span class="l-en">Machine state: SUPPRESSED / 机器状态：SUPPRESSED</span><span class="l-zh">Machine state: SUPPRESSED / 机器状态：SUPPRESSED</span></div>
         <span class="l-en">RS underperforming for ≥3 months, drawdown ≥25% from 52-week high, valuation often in cheap territory. Sometimes years below the 200dma. Key question: is the compression cyclical or structural?</span><span class="l-zh">RS连续≥3个月跑输大盘，自52周高点回撤≥25%，估值通常处于低廉区间。有时在200日均线下方数年。关键问题：压缩是周期性的还是结构性的？</span>
-        <div style="margin-top:8px;"><em><span class="l-en">Lead indicators:</span><span class="l-zh">领先指标：</span></em> <span class="l-en">revision_positive (cut cycle ending), cheap valuation pctile, insider_cluster, OBV divergence</span><span class="l-zh">revision_positive（削减周期结束），低廉估值分位，insider_cluster，OBV背离</span></div>
+        <div style="margin-top:8px;"><em><span class="l-en">Lead indicators:</span><span class="l-zh">领先指标：</span></em> <span class="l-en"><code>revision_positive</code> (cut cycle ending), cheap valuation pctile, <code>insider_cluster</code>, OBV divergence</span><span class="l-zh">盈利预期转正（削减周期结束）、低廉估值分位、内部人增持、成交量-价格背离</span></div>
       </div>
     </div>
 
@@ -31088,8 +32502,8 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       <div class="pb-bd">
         <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;"><span class="l-en">Machine state: QUIET_ACCUMULATION / 机器状态：QUIET_ACCUMULATION</span><span class="l-zh">Machine state: QUIET_ACCUMULATION / 机器状态：QUIET_ACCUMULATION</span></div>
         <span class="l-en">Base forming: 60-day range compression. At least 2 of: revision cycle turning positive (revision_positive), RS slope turning up while long-term RS still negative (rs_turn), accumulation-day count building (accum_evidence), OBV making new highs while price has not (obv_divergence). Highest-ROI watch stage.</span><span class="l-zh">筑底形成：60日区间压缩。至少2项：预测周期开始转正（revision_positive），RS斜率上升但长期RS仍为负（rs_turn），积累日计数增加（accum_evidence），OBV创新高而价格未创（obv_divergence）。回报率最高的观察阶段。</span>
-        <div style="margin-top:8px;"><em><span class="l-en">Lead:</span><span class="l-zh">领先：</span></em> rs_turn, revision_positive, obv_divergence</div>
-        <div><em><span class="l-en">Lag:</span><span class="l-zh">滞后：</span></em> <span class="l-en">price confirming</span><span class="l-zh">价格确认</span> (bw_emerging)</div>
+        <div style="margin-top:8px;"><em><span class="l-en">Lead:</span><span class="l-zh">领先：</span></em> <span class="l-en"><code>rs_turn</code>, <code>revision_positive</code>, <code>obv_divergence</code></span><span class="l-zh">相对大盘转强、盈利预期转正、底部买盘积累</span></div>
+        <div><em><span class="l-en">Lag:</span><span class="l-zh">滞后：</span></em> <span class="l-en">price confirming (<code>bw_emerging</code>)</span><span class="l-zh">价格确认（突破酝酿中）</span></div>
       </div>
     </div>
 
@@ -31100,8 +32514,8 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       <div class="pb-bd">
         <div style="margin-bottom:6px;color:var(--text-dim);font-size:0.72rem;"><span class="l-en">Machine state: CATALYST_WINDOW / 机器状态：CATALYST_WINDOW</span><span class="l-zh">Machine state: CATALYST_WINDOW / 机器状态：CATALYST_WINDOW</span></div>
         <span class="l-en">Ignition trigger within 10 sessions: gap ≥+5% on ≥2× 20-day volume (gap_ignition), breakaway watch emerging (bw_emerging), or RS-line making 126-day new high while price has not (rs_line_nh — RS leads price). The Stage-2 foundation is a necessary precondition — ignition without a base almost always reverts.</span><span class="l-zh">10个交易日内出现点火触发：跳空≥+5%且成交量≥20日均量的2倍（gap_ignition），突破观察新兴（bw_emerging），或RS线创126日新高而价格未创（rs_line_nh — RS领先价格）。阶段2基础是必要前提 — 无基础的点火几乎总是反转。</span>
-        <div style="margin-top:8px;"><em><span class="l-en">Strongest leading observable:</span><span class="l-zh">最强领先可观测指标：</span></em> rs_line_nh</div>
-        <div><em><span class="l-en">Confirm:</span><span class="l-zh">确认：</span></em> gap_ignition, bw_emerging, <span class="l-en">2D MACD cross</span><span class="l-zh">2日MACD上穿</span></div>
+        <div style="margin-top:8px;"><em><span class="l-en">Strongest leading observable:</span><span class="l-zh">最强领先可观测指标：</span></em> <span class="l-en"><code>rs_line_nh</code></span><span class="l-zh">相对强度先于股价创新高</span></div>
+        <div><em><span class="l-en">Confirm:</span><span class="l-zh">确认：</span></em> <span class="l-en"><code>gap_ignition</code>, <code>bw_emerging</code>, 2D MACD cross</span><span class="l-zh">放量跳空上行、突破酝酿中、2日MACD上穿</span></div>
       </div>
     </div>
 
@@ -31140,10 +32554,10 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         <span><span class="l-en">Signal classification & base rates</span><span class="l-zh">信号分类与基础成功率</span></span><span class="car">&#9658;</span>
       </div>
       <div class="pb-bd">
-        <p><span class="l-en">Even complete setups fail more often than not individually; evidence accrues in the Pick Lab ledgers. A fire badge means the engine logged the event — not that an outcome is expected.</span><span class="l-zh">即使完整布局在单个标的上也更多情况下会失败；证据在Pick Lab台账中积累。触发标记意味着引擎记录了该事件 — 不意味着预期会有某种结果。</span></p>
-        <div style="margin-top:8px;"><strong><span class="l-en">Lead signals (appear before price):</span><span class="l-zh">领先信号（先于价格出现）：</span></strong> rs_line_nh, revision_positive, obv_divergence, insider_cluster</div>
-        <div><strong><span class="l-en">Confirm signals (coincide with price):</span><span class="l-zh">确认信号（与价格同步）：</span></strong> gap_ignition, bw_emerging, accum_evidence, <span class="l-en">2D MACD cross</span><span class="l-zh">2日MACD上穿</span></div>
-        <div><strong><span class="l-en">Lag signals (appear after price):</span><span class="l-zh">滞后信号（价格后出现）：</span></strong> analyst_saturated, call_skew_rich</div>
+        <p><span class="l-en">A fire badge means the engine logged the event — not that an outcome is expected. Fires are logged and graded automatically after 21 sessions; sample too small for a track record yet.</span><span class="l-zh">触发标记意味着引擎记录了该事件，而非预期某种结果。触发自动记录，21个交易日后自动评分；样本尚少，未成往绩。</span></p>
+        <div style="margin-top:8px;"><strong><span class="l-en">Lead signals (appear before price):</span><span class="l-zh">领先信号（先于价格出现）：</span></strong> <span class="l-en"><code>rs_line_nh</code>, <code>revision_positive</code>, <code>obv_divergence</code>, <code>insider_cluster</code></span><span class="l-zh">相对强度先于股价创新高、盈利预期转正、底部买盘悄然积累、内部人增持</span></div>
+        <div><strong><span class="l-en">Confirm signals (coincide with price):</span><span class="l-zh">确认信号（与价格同步）：</span></strong> <span class="l-en"><code>gap_ignition</code>, <code>bw_emerging</code>, <code>accum_evidence</code>, 2D MACD cross</span><span class="l-zh">放量跳空上行、突破酝酿中、成交量温和吸筹、2日MACD上穿</span></div>
+        <div><strong><span class="l-en">Lag signals (appear after price):</span><span class="l-zh">滞后信号（价格后出现）：</span></strong> <span class="l-en"><code>analyst_saturated</code>, <code>call_skew_rich</code></span><span class="l-zh">分析师一致看多、看涨期权被追捧</span></div>
         <div style="margin-top:8px;"><em><span class="l-en">Value-trap question:</span><span class="l-zh">价值陷阱问题：</span></em> <span class="l-en">Is the multiple compression cyclical or structural? The chip prints the observable; the answer is yours to supply.</span><span class="l-zh">估值倍数压缩是周期性还是结构性？信号指标呈现可观测指标；答案需要你自己判断。</span></div>
       </div>
     </div>
@@ -31154,9 +32568,8 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
 
 <footer class="glass">
   <div class="footer-honesty">
-    <span class="l-en">Stages describe observed evidence, not predictions. Even well-staged names fail more often than not — the forward ledger keeps score.</span><span class="l-zh">各阶段描述观察到的证据，而非预测。即使布局完整的标的也更多情况下会失败 — 前瞻台账保存记录。</span>
-    
-    <span class="l-en">Seeding state: stage counters accumulate nightly from here.</span><span class="l-zh">初始化状态：阶段计数器从此次起每晚累计。</span>
+    <span class="l-en">Stages describe observed evidence, not predictions. Fires are logged and graded automatically after 21 sessions — the forward ledger keeps score.</span><span class="l-zh">各阶段描述观察到的证据，而非预测。触发自动记录并于21个交易日后自动评分——前瞻台账保存记录。</span>
+    <span class="l-en">State tracking began 2026-07-11. Counters accumulate nightly.</span><span class="l-zh">状态追踪始于7月11日，计数器每晚累积。</span>
     
   </div>
 </footer>
@@ -31194,7 +32607,7 @@ const CHIP_LABELS_ZH = {
   revision_positive: "盈利预期转正",
   rs_turn: "相对大盘转强",
   accum_evidence: "成交量温和吸筹",
-  obv_divergence: "底部买盘悄然积累",
+  obv_divergence: "成交量-价格背离",
   insider_cluster: "内部人增持",
   gap_ignition: "放量跳空上行",
   rs_line_nh: "相对强度先于股价创新高",
@@ -31234,6 +32647,10 @@ const EXPECTED_CHIPS = {
   BREAKAWAY:          ['extension_extreme','monthly_rsi_80','bw_continuation','bw_breakaway','accum_evidence','revision_positive'],
 };
 const INTERNAL_CHIPS = new Set(['qa_context','context_ok','bw_failed','bw_continuation_pre_leadership']);
+// Young-data chips: store born 2026-06 — display with ~ prefix and note in receipt
+const YOUNG_DATA_CHIPS = new Set(['analyst_saturated','call_skew_rich']);
+const YOUNG_DATA_TIP_EN = 'young data — store since Jun 2026';
+const YOUNG_DATA_TIP_ZH = '数据较新——2026年6月起';
 
 function isZH() { return document.documentElement.getAttribute('data-lang') === 'zh'; }
 function chipLabel(k) { return isZH() ? (CHIP_LABELS_ZH[k] || k) : (CHIP_LABELS_EN[k] || k); }
@@ -31337,7 +32754,8 @@ function openCardReceipt(ticker, stage, chips, macdBars, sparkHist, daysInState,
 
   let html = '<div class="receipt-chip-list">';
   pos.forEach(([k]) => {
-    html += '<span class="receipt-chip on ' + stageCls + '">' + chipLabel(k) + '</span>';
+    const ydTip = YOUNG_DATA_CHIPS.has(k) ? (' <span style="opacity:0.6;font-size:0.85em;" title="' + (zh ? YOUNG_DATA_TIP_ZH : YOUNG_DATA_TIP_EN) + '">ⓘ</span>') : '';
+    html += '<span class="receipt-chip on ' + stageCls + '">' + chipLabel(k) + ydTip + '</span>';
   });
   absentNulls.forEach(k => {
     html += '<span class="receipt-chip null">' + nullLabel(k) + '</span>';
@@ -31347,12 +32765,12 @@ function openCardReceipt(ticker, stage, chips, macdBars, sparkHist, daysInState,
     (zh ? '机器状态：' : 'Machine state: ') + stage + ' · ' +
     (zh ? '仅供展示' : 'display only') + '</div>';
 
-  // Seeding note only when days_in_state is null or <=1
-  if (daysInState === null || daysInState <= 1) {
+  // Session count note — show when very low (young store)
+  if (daysInState !== null && daysInState <= 2) {
     html += '<div class="receipt-seeding-note">' +
       (zh
-        ? '阶段天数显示1，因为状态存储仅有1次运行 — 首次运行正常'
-        : 'Days-in-stage reads 1 because the state store is 1 session old — normal on first run') +
+        ? '追踪仅' + daysInState + '个交易日——状态存储较新'
+        : 'Tracked ' + daysInState + ' session' + (daysInState === 1 ? '' : 's') + ' — state store is young') +
       '</div>';
   }
 
@@ -31411,11 +32829,22 @@ function toggleBoardGroup(id) {
   document.querySelectorAll('.evidence-line[data-chips]').forEach(renderEvidenceLine);
   // Board chip labels
   document.querySelectorAll('.leg-chip[data-chip-key]').forEach(renderBoardChip);
+  // Near-trigger chip labels (EN and ZH sides)
+  function renderNearTriggerChips() {
+    document.querySelectorAll('.js-chip-en[data-chip-key]').forEach(function(el) {
+      el.textContent = CHIP_LABELS_EN[el.dataset.chipKey] || el.dataset.chipKey.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    });
+    document.querySelectorAll('.js-chip-zh[data-chip-key]').forEach(function(el) {
+      el.textContent = CHIP_LABELS_ZH[el.dataset.chipKey] || el.dataset.chipKey.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    });
+  }
+  renderNearTriggerChips();
 
   // Re-render on lang change (theme.js dispatches langchange event)
   document.addEventListener('langchange', function() {
     document.querySelectorAll('.evidence-line[data-chips]').forEach(renderEvidenceLine);
     document.querySelectorAll('.leg-chip[data-chip-key]').forEach(renderBoardChip);
+    renderNearTriggerChips();
   });
 })();
 </script>

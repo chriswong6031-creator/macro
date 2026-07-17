@@ -34,7 +34,7 @@
    "from_leg": "semicap",
    "to_leg": "mag7",
    "started": "2026-07-02",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",
@@ -62,7 +62,7 @@
    "from_leg": "semicap",
    "to_leg": "ai_software",
    "started": "2026-07-06",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",
@@ -90,7 +90,7 @@
    "from_leg": "semicap",
    "to_leg": "software",
    "started": "2026-07-02",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",
@@ -118,7 +118,7 @@
    "from_leg": "software",
    "to_leg": "mag7",
    "started": "2026-07-10",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-04",
@@ -146,7 +146,7 @@
    "from_leg": "software",
    "to_leg": "ai_software",
    "started": "2026-07-06",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-04",

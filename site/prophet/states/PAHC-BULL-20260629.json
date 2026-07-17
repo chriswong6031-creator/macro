@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PAHC-BULL-20260629",
-  "asof": "2026-07-15",
+  "asof": "2026-07-16",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 54.0,
-  "raw_confidence": 54.4,
-  "delta_vs_base": -6.0,
+  "management_confidence": 53.6,
+  "raw_confidence": 53.1,
+  "delta_vs_base": -6.4,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 100.0,
     "progress": 10.7,
-    "pace": 48.6,
+    "pace": 43.0,
     "retention": 50.0,
     "overlay": 59.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.128,
     "dist_to_t1_r": 1.372,
     "dist_to_t2_r": 2.872,
-    "horizon_pct_used": 35.6,
+    "horizon_pct_used": 37.8,
     "p1": 0.085,
     "p2": 0.0425,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Trigger Confirmed",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-15",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 16,
-  "tau": 0.3556
+  "days_elapsed": 17,
+  "tau": 0.3778
 }

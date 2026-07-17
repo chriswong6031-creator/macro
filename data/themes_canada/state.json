@@ -1,5 +1,6 @@
 {
   "_debounce": {
+    "label": {},
     "lead": {
       "displayed": "ca_banks",
       "pending": null

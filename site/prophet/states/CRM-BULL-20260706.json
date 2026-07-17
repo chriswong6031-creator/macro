@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "CRM-BULL-20260706",
-  "asof": "2026-07-15",
+  "asof": "2026-07-16",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 50.8,
-  "raw_confidence": 50.8,
-  "delta_vs_base": -9.2,
+  "management_confidence": 50.5,
+  "raw_confidence": 50.2,
+  "delta_vs_base": -9.5,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
     "validity": 47.5,
     "progress": 0.0,
-    "pace": 81.1,
+    "pace": 75.9,
     "retention": 50.0,
     "overlay": 50.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.576,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 20.0,
+    "horizon_pct_used": 22.2,
     "p1": -0.2828,
     "p2": -0.1414,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 9,
-  "tau": 0.2
+  "days_elapsed": 10,
+  "tau": 0.2222
 }

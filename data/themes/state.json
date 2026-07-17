@@ -1,5 +1,6 @@
 {
   "_debounce": {
+    "label": {},
     "lead": {
       "displayed": "cybersecurity",
       "pending": null
@@ -17,7 +18,7 @@
     "label": "neutral",
     "name": "AI Agents & Applications",
     "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
-    "rank": 36,
+    "rank": 37,
     "reco": "hold",
     "score": 44
   },
@@ -41,9 +42,9 @@
     "label": "deteriorating",
     "name": "AI Semiconductors",
     "name_zh": "AI\u534a\u5bfc\u4f53",
-    "rank": 24,
+    "rank": 25,
     "reco": "avoid",
-    "score": 50
+    "score": 49
   },
   "ai_software": {
     "label": "neutral",
@@ -81,7 +82,7 @@
     "label": "neutral",
     "name": "Crypto & Digital Rails",
     "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8f68\u9053",
-    "rank": 35,
+    "rank": 36,
     "reco": "hold",
     "score": 44
   },
@@ -107,23 +108,23 @@
     "name_zh": "\u56fd\u9632\u4e0e\u822a\u7a7a\u822a\u5929",
     "rank": 42,
     "reco": "avoid",
-    "score": 30
+    "score": 31
   },
   "defensives": {
     "label": "neutral",
     "name": "Defensives",
     "name_zh": "\u9632\u5fa1\u677f\u5757",
-    "rank": 37,
+    "rank": 34,
     "reco": "hold",
-    "score": 43
+    "score": 45
   },
   "energy_complex": {
     "label": "neutral",
     "name": "US Energy Complex",
     "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
-    "rank": 14,
+    "rank": 13,
     "reco": "hold",
-    "score": 57
+    "score": 58
   },
   "housing": {
     "label": "neutral",
@@ -137,7 +138,7 @@
     "label": "neutral",
     "name": "Industrial Distribution & Capital Goods",
     "name_zh": "\u5de5\u4e1a\u5206\u9500\u4e0e\u8d44\u672c\u54c1",
-    "rank": 16,
+    "rank": 17,
     "reco": "hold",
     "score": 57
   },
@@ -161,17 +162,17 @@
     "label": "fading",
     "name": "Managed Care & Insurers",
     "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
-    "rank": 18,
+    "rank": 15,
     "reco": "trim",
-    "score": 56
+    "score": 57
   },
   "memory_storage": {
     "label": "deteriorating",
     "name": "Memory, HBM & Storage",
     "name_zh": "\u5185\u5b58\u3001HBM \u4e0e\u5b58\u50a8",
-    "rank": 34,
+    "rank": 35,
     "reco": "avoid",
-    "score": 46
+    "score": 45
   },
   "non_ai_software": {
     "label": "emerging",
@@ -195,7 +196,7 @@
     "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
     "rank": 40,
     "reco": "avoid",
-    "score": 36
+    "score": 37
   },
   "obesity_glp1": {
     "label": "neutral",
@@ -209,7 +210,7 @@
     "label": "dominant",
     "name": "Payments & Fintech",
     "name_zh": "\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280",
-    "rank": 3,
+    "rank": 4,
     "reco": "accumulate",
     "score": 66
   },
@@ -233,9 +234,9 @@
     "label": "dominant",
     "name": "Regional Banks",
     "name_zh": "\u533a\u57df\u94f6\u884c",
-    "rank": 4,
+    "rank": 3,
     "reco": "hold",
-    "score": 65
+    "score": 66
   },
   "reshoring": {
     "label": "deteriorating",
@@ -243,7 +244,7 @@
     "name_zh": "\u56de\u6d41\u4e0e\u5de5\u4e1a\u8d44\u672c\u5f00\u652f",
     "rank": 19,
     "reco": "avoid",
-    "score": 55
+    "score": 56
   },
   "retail": {
     "label": "deteriorating",
@@ -281,7 +282,7 @@
     "label": "deteriorating",
     "name": "Travel & Experiences",
     "name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c",
-    "rank": 15,
+    "rank": 16,
     "reco": "avoid",
     "score": 57
   },
@@ -305,7 +306,7 @@
     "label": "deteriorating",
     "name": "Consumer Discretionary (Equal-Weight)",
     "name_zh": "\u975e\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09",
-    "rank": 25,
+    "rank": 24,
     "reco": "avoid",
     "score": 50
   },
@@ -337,7 +338,7 @@
     "label": "neutral",
     "name": "Industrials (Equal-Weight)",
     "name_zh": "\u5de5\u4e1a\uff08\u7b49\u6743\uff09",
-    "rank": 17,
+    "rank": 18,
     "reco": "hold",
     "score": 57
   },
@@ -377,7 +378,7 @@
     "label": "neutral",
     "name": "Utilities (Equal-Weight)",
     "name_zh": "\u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09",
-    "rank": 13,
+    "rank": 14,
     "reco": "hold",
     "score": 58
   }

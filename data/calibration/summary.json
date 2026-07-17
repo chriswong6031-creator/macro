@@ -5,14 +5,16 @@
     {
       "name": "AI Desk",
       "slug": "ai_desk",
-      "scored": 7,
+      "scored": 10,
       "open": 30,
-      "hit_rate": 0.714,
-      "dir_accuracy": 0.857,
+      "hit_rate": 0.8,
+      "dir_accuracy": 0.9,
       "conviction_monotone": null,
-      "regimes": [],
-      "health": "cold",
-      "health_note": "only 7 scored \u2014 check-by windows still maturing; treat as provisional"
+      "regimes": [
+        "Goldilocks"
+      ],
+      "health": "calibrated",
+      "health_note": "hit-rate 0.8 over 10 scored; conviction ordering holds"
     },
     {
       "name": "Policy Intent",
@@ -30,7 +32,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 309,
+      "open": 311,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -53,14 +55,14 @@
     {
       "name": "Stock Desk",
       "slug": "stock_desk",
-      "scored": 4,
-      "open": 103,
-      "hit_rate": 0.25,
-      "dir_accuracy": 0.0,
+      "scored": 12,
+      "open": 94,
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.25,
       "conviction_monotone": null,
       "regimes": [],
-      "health": "cold",
-      "health_note": "only 4 scored \u2014 check-by windows still maturing; treat as provisional"
+      "health": "calibrated",
+      "health_note": "hit-rate 0.5 over 12 scored; conviction ordering holds"
     },
     {
       "name": "Demand Chain",
@@ -77,8 +79,8 @@
   ],
   "loops": {
     "total": 6,
-    "live": 0,
-    "cold": 6
+    "live": 2,
+    "cold": 4
   },
   "trial_ledger": {
     "families": [
@@ -794,7 +796,7 @@
     "total_families": 118,
     "total_effective_n": 2816
   },
-  "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position.",
+  "summary_note": "2/6 desk loops live; 4 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position.",
   "standout_tracks": [
     {
       "name": "US Buy Board (v1)",
@@ -811,12 +813,12 @@
       "name": "CN Standout Track",
       "region": "CN",
       "rel_path": "data/china_standout_track/board.parquet",
-      "board_dates": 10,
+      "board_dates": 11,
       "graded_rows": 0,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
-      "health_note": "602 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+      "health_note": "662 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-16",
-  "generated_at": "2026-07-16T07:54:07Z",
+  "as_of": "2026-07-17",
+  "generated_at": "2026-07-17T04:04:32Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -388,10 +388,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-11",
+      "as_of": "2026-07-17",
       "thesis_id": "cybersecurity.v1",
-      "content_hash": "sha256:371d76360d3f30b9c949017f85c97bf4e44ca2e517b3b1d23a6f4c7533a89f0a",
-      "prev_content_hash": "sha256:4eaba2044658a706dc1d4bea3ad5bd6441b2f2576d8d91e6ee4b265e190306bc",
+      "content_hash": "sha256:306af115887d4ad3019c44a5f03eb5c2d74db468de9c17fa613bd3f268ae229b",
+      "prev_content_hash": "sha256:371d76360d3f30b9c949017f85c97bf4e44ca2e517b3b1d23a6f4c7533a89f0a",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -445,7 +445,7 @@
           "rule_en": "If revision_breadth for cybersecurity falls below 0.1, software IT budget compression is overriding the platform cycle tailwind.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.541"
+          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.55"
         },
         {
           "id": "cyber_f2",
@@ -892,10 +892,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-16",
+      "as_of": "2026-07-17",
       "thesis_id": "defense_aerospace.v1",
-      "content_hash": "sha256:0a10cd6eb0251c892e78427cf7d7e0886a69ec6f8a2ce40f3cc4cbf2354468e5",
-      "prev_content_hash": "sha256:322b5225af39762688e26d67015cb4f09d60e413961dcfa03388e02280a375e4",
+      "content_hash": "sha256:1ec0efae882f8a2819b688753eb8ca47ab9bddfd9a7947f62e31582ade379ac8",
+      "prev_content_hash": "sha256:0a10cd6eb0251c892e78427cf7d7e0886a69ec6f8a2ce40f3cc4cbf2354468e5",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -953,7 +953,7 @@
           "rule_en": "If revision_breadth for defense_aerospace falls below 0.0, budget headwinds or program cancellations are spreading through earnings revisions.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.379"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.275"
         },
         {
           "id": "def_f2",
@@ -1303,10 +1303,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-16",
+      "as_of": "2026-07-17",
       "thesis_id": "copper_steel_electrify.v1",
-      "content_hash": "sha256:e8c73673c7970439d7b08012ed7b5158bb632c6f81277b2f3f6f0e0ea97e1ced",
-      "prev_content_hash": "sha256:3aa76d78c214adbf96832d73f9758ac51a9805110f861c83e6e8134049e22ae6",
+      "content_hash": "sha256:1de1daea87118a63651896045c65a3df62f28c3c49a8877d9004a27d0c3b7ef1",
+      "prev_content_hash": "sha256:e8c73673c7970439d7b08012ed7b5158bb632c6f81277b2f3f6f0e0ea97e1ced",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1360,7 +1360,7 @@
           "rule_en": "If revision_breadth for copper_steel_electrify falls below 0.0, earnings upgrades from the electrification story are reversing — macro headwinds may be overwhelming structural demand.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.586"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.636"
         },
         {
           "id": "cu_f2",
@@ -1380,10 +1380,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-15",
+      "as_of": "2026-07-17",
       "thesis_id": "ag_fertilizer.v1",
-      "content_hash": "sha256:c94cc3d8fafe951cd9867687548d2566fbe968f4dac4337016e10aa0b9d50030",
-      "prev_content_hash": "sha256:3e31a2cdcb3a8f010dc8d38ac6aea32865a33880dd0b8a54574086fe968c170a",
+      "content_hash": "sha256:e619ef18f17f16acfab01d3251ffa78ff419159505152e4276b8c0eb242f972d",
+      "prev_content_hash": "sha256:c94cc3d8fafe951cd9867687548d2566fbe968f4dac4337016e10aa0b9d50030",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1437,7 +1437,7 @@
           "rule_en": "If revision_breadth for ag_fertilizer falls negative, crop commodity prices are declining faster than fertilizer input cost savings — farmer economics are deteriorating.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.185"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=-0.019"
         },
         {
           "id": "ag_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-16T07:54:07Z",
-  "inputs_hash": "sha256:8c8f4c799a81fbedecddc1a9411ff2abd7abb0eb5ffd3e5a391522cfbe5e56f8",
+  "produced_at": "2026-07-17T04:04:32Z",
+  "inputs_hash": "sha256:20f0d5a61e6c061cf109b1ac37332b708d7ecf53d8ab6c48f70447644e86217a",
   "tier": "display"
 }

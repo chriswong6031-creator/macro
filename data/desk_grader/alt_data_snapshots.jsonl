@@ -689,3 +689,8 @@
 {"date":"2026-07-16","ticker":"PYPL","departed":true,"left_desk":"2026-07-16","last_rank":28,"last_score":35}
 {"date":"2026-07-16","ticker":"QUBT","departed":true,"left_desk":"2026-07-16","last_rank":null,"last_score":27}
 {"date":"2026-07-16","ticker":"TXN","departed":true,"left_desk":"2026-07-16","last_rank":24,"last_score":36}
+{"date":"2026-07-16","ticker":"META","rank":25,"score":35,"lean":1,"broken":false}
+{"date":"2026-07-16","ticker":"BMY","rank":29,"score":33,"lean":1,"broken":false}
+{"date":"2026-07-16","ticker":"KO","rank":30,"score":33,"lean":1,"broken":false}
+{"date":"2026-07-16","ticker":"UCTT","rank":null,"score":22,"lean":1,"broken":true}
+{"date":"2026-07-16","ticker":"IONQ","rank":null,"score":21,"lean":1,"broken":true}

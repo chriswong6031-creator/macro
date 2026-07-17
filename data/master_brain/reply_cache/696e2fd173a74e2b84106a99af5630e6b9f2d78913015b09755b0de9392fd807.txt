@@ -1,0 +1,30 @@
+{
+  "stance": "Flow shows concentration in Energy and dissipation from Information Technology; in calm VIX this descriptive rotation has no validated forward edge, but the lens leans toward a relative shift until flow reverses.",
+  "candidates": [
+    {
+      "subject": "Energy",
+      "lean": "overweight",
+      "rationale": "Only sector in 'emerging' with positive flow concentration (flow_score +0.63) and high RS pctile (0.68), suggesting its relative strength is the current focal point of cross-sectional flows.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "rationale": "Sector in 'cooling' with the most negative flow concentration (-1.55) and declining breadth, indicating flow rotation away despite still-elevated RS pctile (0.87).",
+      "strength": "weak"
+    },
+    {
+      "subject": "Health Care",
+      "lean": "overweight",
+      "rationale": "Confirmed stage, highest RS pctile (0.925) among sectors, and part of the dominant flow cluster, supporting a persistent leadership read even though cohesion is low.",
+      "strength": "weak"
+    },
+    {
+      "subject": "VIX",
+      "lean": "none",
+      "rationale": "Regime snap shows fear rebuilding but no relief signal (snap=false, relief_magnitude null), removing the fade-fear catalyst; VIX expectation is neutral here.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "A macro shock (e.g., oil price collapse or tech earnings blowout) that reverses the current flow-concentration pattern and breaks the descriptive rotation."
+}

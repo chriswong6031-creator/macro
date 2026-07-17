@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-15",
+  "as_of": "2026-07-16",
   "state": "lean_in",
   "dispersion_pctile": 0.75,
   "avg_corr": 0.07,
@@ -72,6 +72,12 @@
     },
     {
       "as_of": "2026-07-15",
+      "state": "lean_in",
+      "dispersion_pctile": 0.75,
+      "avg_corr": 0.07
+    },
+    {
+      "as_of": "2026-07-16",
       "state": "lean_in",
       "dispersion_pctile": 0.75,
       "avg_corr": 0.07

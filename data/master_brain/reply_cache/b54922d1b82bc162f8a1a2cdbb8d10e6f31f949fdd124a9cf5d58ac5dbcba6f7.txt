@@ -1,0 +1,18 @@
+**Desk Note — Macro-Regime Assessment (2026-07-15)**
+
+**Regime verdict: risk-on theme exposure is tenable only in reduced size and with strict absolute‑trend gate discipline. The backdrop does not support aggressive or concentrated risk-on positioning.**
+
+**Why this is not a strong risk‑on regime:**
+- **Narrative rotation is broad** (72% of eligible themes active) and **one‑narrative absorption is false** (absorption 0.37). Money is not concentrating behind a single dominant story; leadership is diffuse and could churn quickly.
+- **Macro‑news backdrop has an unscheduled/surprise share of 0.69** — a very high fraction of the flow is unanticipated. This injects volatility and makes directional theme exposure fragile to headline shocks, even if the AI/tech narrative dominates the counts.
+- The **headline theme (Memory, HBM & Storage) has a low durability bar (0.48) and a “mixed” Hurst tag**, suggesting momentum is far from a clean, persistent trend. A broad rotation with a mixed leader is not the typical setup for strong trending‑market returns.
+
+**What the validated edge tells us:**
+- The only discipline with a multi‑decade backtested edge is the **absolute‑trend gate for drawdown control** (“gate_helps”: true). That gate works in this environment — it can exit you when individual themes breach their trend, reducing volatility and tail risk.  
+- Therefore, the regime does not argue for a binary “all‑out” or “all‑in” — it argues for **smaller‑than‑normal exposure that is continually risk‑managed by the absolute‑trend gate, with cash raised whenever a theme triggers.**
+
+**What to watch (falsifiable conditional):**
+- **Leader durability check:** If the Memory, HBM & Storage theme’s durability bar (currently 0.48) continues to deteriorate and the theme breaches its absolute‑trend gate within the next 2‑‑4 weeks, and absorption remains below ~0.4, this would confirm a leadership handoff to a potentially weaker or defensive rotation. That outcome would reinforce the case for further de‑risking and raising cash across thematic sleeves.
+
+**Important disclaimer (per detector’s guardrails):**  
+This note is a regime‑interpretation, not a trading forecast. The thematic momentum rank has no forward alpha edge (rank‑IC ~0), and rotation‑timing is unvalidated. No sizing, no trade recommendations, no prediction of the next narrative. The view is a fallible, falsifiable conditional — not edge extracted from the detector.

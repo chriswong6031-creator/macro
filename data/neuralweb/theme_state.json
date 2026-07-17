@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_state.v1",
-  "as_of": "2026-07-16",
-  "generated_at": "2026-07-16T07:54:07Z",
+  "as_of": "2026-07-17",
+  "generated_at": "2026-07-17T04:04:31Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -39,7 +39,7 @@
           "basket_id": "ai_semiconductors",
           "name_en": "AI Semiconductors",
           "name_zh": "AI半导体",
-          "score": 50,
+          "score": 49,
           "label": "deteriorating",
           "label_en": "DETERIORATING",
           "label_zh": "走弱",
@@ -148,7 +148,7 @@
           "basket_id": "memory_storage",
           "name_en": "Memory, HBM & Storage",
           "name_zh": "内存、HBM 与存储",
-          "score": 46,
+          "score": 45,
           "label": "deteriorating",
           "label_en": "DETERIORATING",
           "label_zh": "走弱",
@@ -267,7 +267,7 @@
         "divergence": -0.2353,
         "narrative_pct": 0.4706,
         "money_pct": 0.7059,
-        "asof": "2026-07-07",
+        "asof": "2026-07-17",
         "source": "data/foresight/divergence_log.jsonl"
       },
       "basket_ids": [
@@ -282,7 +282,7 @@
       "name_en": "Data Center Power & Cooling",
       "name_zh": "数据中心电力与冷却",
       "foresight": {
-        "stage": "RE-RATING",
+        "stage": "BROADENING (text)",
         "tier": "P",
         "score": 50.0,
         "entry_ready": false,
@@ -381,7 +381,7 @@
           "basket_id": "nuclear_power",
           "name_en": "Nuclear & SMR Power",
           "name_zh": "核电与小型模块化反应堆",
-          "score": 36,
+          "score": 37,
           "label": "deteriorating",
           "label_en": "DETERIORATING",
           "label_zh": "走弱",
@@ -597,7 +597,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 45.0,
+        "score": 39.5,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -607,7 +607,7 @@
           "basket_id": "defense",
           "name_en": "Defense & Aerospace",
           "name_zh": "国防与航空航天",
-          "score": 30,
+          "score": 31,
           "label": "deteriorating",
           "label_en": "DETERIORATING",
           "label_zh": "走弱",
@@ -670,7 +670,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 37.1,
+        "score": 34.8,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -751,10 +751,10 @@
       },
       "divergence_board": {
         "quadrant": "hidden-opportunity",
-        "divergence": -0.7647,
-        "narrative_pct": 0.1765,
-        "money_pct": 0.9412,
-        "asof": "2026-07-01",
+        "divergence": -0.4118,
+        "narrative_pct": 0.2353,
+        "money_pct": 0.6471,
+        "asof": "2026-07-17",
         "source": "data/foresight/divergence_log.jsonl"
       },
       "basket_ids": [
@@ -846,7 +846,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 40.1,
+        "score": 37.9,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1049,7 +1049,7 @@
       "name_en": "Copper, Steel & Electrification",
       "name_zh": "铜、钢铁与电气化",
       "foresight": {
-        "stage": "BROADENING (text)",
+        "stage": "RE-RATING",
         "tier": "P",
         "score": 50.0,
         "entry_ready": false,
@@ -1061,7 +1061,7 @@
           "basket_id": "reshoring",
           "name_en": "Reshoring & Industrial Capex",
           "name_zh": "回流与工业资本开支",
-          "score": 55,
+          "score": 56,
           "label": "deteriorating",
           "label_en": "DETERIORATING",
           "label_zh": "走弱",
@@ -1115,7 +1115,7 @@
       "name_en": "Agriculture & Fertilizer",
       "name_zh": "农业与化肥",
       "foresight": {
-        "stage": "BROADENING (text)",
+        "stage": "PRECIPICE (text)",
         "tier": "P",
         "score": 50.0,
         "entry_ready": false,
@@ -1174,7 +1174,7 @@
       "foresight": {
         "stage": "PRECIPICE (fingerprint)",
         "tier": "P",
-        "score": 58.1,
+        "score": 57.0,
         "entry_ready": false,
         "bottleneck_band": "TIGHTENING (fingerprint)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1184,7 +1184,7 @@
           "basket_id": "managed_care",
           "name_en": "Managed Care & Insurers",
           "name_zh": "管理式医疗与保险",
-          "score": 56,
+          "score": 57,
           "label": "fading",
           "label_en": "FADING",
           "label_zh": "退潮",
@@ -1240,7 +1240,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 35.6,
+        "score": 36.7,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1282,7 +1282,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 35.3,
+        "score": 35.8,
         "entry_ready": false,
         "bottleneck_band": "LOOSE",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1319,9 +1319,8 @@
     }
   ],
   "stale_legs": [
-    "divergence_log[robotics_automation]: stale (as_of=2026-07-01)",
+    "divergence_log[ai_semiconductors]: stale (as_of=2026-07-12)",
     "divergence_log[glp1_obesity]: stale (as_of=2026-07-07)",
-    "divergence_log[semicap_equipment]: stale (as_of=2026-07-07)",
     "divergence_log[fintech_payments]: stale (as_of=2026-07-07)",
     "divergence_log[memory_storage]: stale (as_of=2026-07-09)"
   ],
@@ -1337,7 +1336,7 @@
   },
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-16T07:54:07Z",
-  "inputs_hash": "sha256:6adc5423d8fe55da05cc820cea5a091906d69f2d8973f22fad4094af281eb63f",
+  "produced_at": "2026-07-17T04:04:31Z",
+  "inputs_hash": "sha256:6c1b0cdc6ea7a487bec9d044cf5dd4f6a2a4da8da1f6d34df504ed17051c5766",
   "tier": "display"
 }
