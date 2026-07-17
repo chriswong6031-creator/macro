@@ -557,11 +557,14 @@ body::before{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:20px;
+  /* size each panel to its own content — the events table must never
+     stretch the sparkline panel into a mostly-empty box */
+  align-items:start;
 }
 /* grid children must be allowed to shrink below content width so inner
    tables/canvases don't force horizontal page overflow on narrow viewports */
 .limits-charts > *{min-width:0}
-.events-table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.events-table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:320px;overflow-y:auto}
 .events-table{
   width:100%;
   border-collapse:collapse;
@@ -624,39 +627,6 @@ body::before{
   width:8px;height:8px;
   border-radius:50%;
   flex-shrink:0;
-}
-
-.falsifier-list{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  margin-bottom:16px;
-}
-.falsifier-item{
-  display:flex;
-  align-items:flex-start;
-  gap:10px;
-  padding:10px 14px;
-  background:var(--panel2);
-  border:1px solid var(--line);
-  border-left:3px solid var(--warn);
-  border-radius:0 10px 10px 0;
-  font-size:12px;
-}
-.falsifier-id{
-  font-size:10px;
-  font-weight:700;
-  font-family:monospace;
-  color:var(--warn);
-  white-space:nowrap;
-  margin-top:1px;
-}
-.falsifier-desc{color:var(--text)}
-.falsifier-horizon{
-  margin-left:auto;
-  font-size:10px;
-  color:var(--muted);
-  white-space:nowrap;
 }
 
 .ledger-row{
@@ -793,6 +763,12 @@ details[open] summary::before{transform:rotate(90deg)}
   color:var(--muted);
   font-size:10.5px;
   padding-top:1px;
+}
+.event-ago{
+  margin-top:2px;
+  font-size:9.5px;
+  color:var(--muted);
+  opacity:.75;
 }
 .event-body{}
 .event-source-chip{
@@ -1272,7 +1248,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
     <!-- Limit Up/Down sparkline -->
     <div class="panel-sm">
       <div class="micro" style="margin-bottom:8px">{{ t('Limit-Up / Down History (90-day)', '涨跌停历史（近90日）') }}</div>
-      <canvas id="sp_limits" height="80" style="width:100%;display:block"></canvas>
+      <canvas id="sp_limits" height="160" style="width:100%;display:block"></canvas>
     </div>
     <!-- Events table -->
     <div class="panel-sm">
@@ -1305,12 +1281,12 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
 <section class="section">
   <div class="section-hdr">
     <span class="section-dot" id="phaseSectionDot"></span>
-    <h2>{{ t('Cycle Phase Memory', '周期阶段记忆') }} {{ help('Current phase classification with confidence, falsifiers, and a 90-session strip. Falsifiers are pre-committed conditions that would prove the current phase call wrong. CN-SYS-R5.', '含置信度的当前阶段分类、证伪条件和90交易日图条。证伪条件是预先提交、一旦触发即证明判断有误的条件。CN-SYS-R5。') }}</h2>
+    <h2>{{ t('Cycle Phase Memory', '周期阶段记忆') }} {{ help('Current phase classification with confidence and a 90-session strip. Behind the scenes, pre-committed checks grade every phase call; the track record below is the receipt. CN-SYS-R5.', '含置信度的当前阶段分类和90交易日图条。后台以预先提交的条件对每次阶段判断进行评分，下方跟踪记录即为凭证。CN-SYS-R5。') }}</h2>
   </div>
 
   <div style="padding:10px 14px;background:rgba(91,155,240,0.04);border-left:3px solid rgba(91,155,240,0.3);border-radius:0 6px 6px 0;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px">
-    <span class="l-en">Markets move through repeating phases — quiet repair, a policy floor, ignition, mania, and eventual unwind. This names where we are now and lists the pre-committed conditions that would prove the call wrong.</span>
-    <span class="l-zh">市场沿着重复的阶段演进——平静修复、政策托底、点火、亢奋，直至去杠杆。本面板标明当前所处阶段，并列出预先设定、一旦触发即证明判断有误的条件。</span>
+    <span class="l-en">Markets move through repeating phases — quiet repair, a policy floor, ignition, mania, and eventual unwind. This names where we are now, and every call is graded against the track record below.</span>
+    <span class="l-zh">市场沿着重复的阶段演进——平静修复、政策托底、点火、亢奋，直至去杠杆。本面板标明当前所处阶段，每次判断都会计入下方的跟踪记录。</span>
   </div>
 
   <div class="panel" style="margin-bottom:16px">
@@ -1369,28 +1345,11 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
     </div>
   </div>
 
-  <!-- Falsifiers -->
-  {% set falsifiers = cp.get('falsifiers') or [] %}
-  {% if falsifiers %}
-  <div class="micro" style="margin-bottom:10px">{{ t('Armed Falsifiers — What Would Prove This Wrong?', '已激活证伪条件 — 什么情况会证明判断有误？') }}</div>
-  <div class="falsifier-list">
-    {% for f in falsifiers %}
-    <div class="falsifier-item">
-      <div class="falsifier-id">{{ f.id }}</div>
-      <div class="falsifier-desc">
-        <code style="font-size:11px;color:var(--info)">{{ f.expr }}</code>
-      </div>
-      <div class="falsifier-horizon">{{ f.horizon_d }}{{ t('d', '天') }}</div>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
   <!-- Ledger -->
   {% set ls = phase.get('ledger_summary') or {} %}
   {% if ls %}
   <div class="panel-sm" style="margin-top:12px">
-    <div class="micro" style="margin-bottom:10px">{{ t('Falsifier Ledger Summary', '证伪台账摘要') }}</div>
+    <div class="micro" style="margin-bottom:10px">{{ t('Phase-Call Track Record', '阶段判断跟踪记录') }}</div>
     <div class="ledger-row">
       <div class="ledger-item"><div class="lv info-color">{{ ls.get('total_graded', 0) }}</div><div class="ll">{{ t('Total Graded', '总评分') }}</div></div>
       <div class="ledger-item"><div class="lv up-color">{{ ls.get('held', 0) }}</div><div class="ll">{{ t('Held', '持守') }}</div></div>
@@ -1470,7 +1429,11 @@ a:focus-visible,button:focus-visible,summary:focus-visible{
   </div>
 
   <div class="panel-sm">
-    <div class="micro" style="margin-bottom:12px">{{ t('Recent Events', '近期事件') }}</div>
+    <div class="micro" style="margin-bottom:6px">{{ t('Recent Events', '近期事件') }}</div>
+    <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">
+      <span class="l-en">Official policy moves are rare — quarterly meetings, rate and reserve-ratio changes, big liquidity swings. A quiet stretch means no new events, not missing data; freshness per source is stamped above.</span>
+      <span class="l-zh">官方政策事件本就稀少——季度例会、利率与存准调整、大额流动性操作。近期安静意味着没有新事件，而非数据缺失；各来源的数据时效见上方标注。</span>
+    </div>
     <div class="policy-events-list" id="policyEventsList"></div>
   </div>
 </section>
@@ -1910,7 +1873,7 @@ function drawLimitsChart(canvasId, lupData, ldnData){
   if(!canvas) return;
   const dpr = window.devicePixelRatio || 1;
   const w = canvas.offsetWidth || canvas.parentElement.offsetWidth || 300;
-  const h = 80;
+  const h = 160;
   canvas.width = w * dpr;
   canvas.height = h * dpr;
   canvas.style.width = w + 'px';
@@ -2163,13 +2126,23 @@ function buildPolicyEvents(){
     regulation:['Regulation','监管'], fiscal:['Fiscal','财政'], meeting:['Meeting','会议'],
   };
   let html='';
+  const now = Date.now();
   for(const e of POLICY_EVENTS){
     const sc = srcClass[e.source] || 'src-pboc';
     const kl = kindLabels[e.kind];
     const kindStr = kl ? `<span class="l-en">${kl[0]}</span><span class="l-zh">${kl[1]}</span>` : (e.kind||'').replace(/_/g,' ');
     const sectors = e.sectors.map(s=>`<span class="sector-tag">${s.replace('_',' ')}</span>`).join('');
+    // honest ago-stamp so old events read as history, not as a broken feed
+    let agoStr = '';
+    const ts = Date.parse(e.ts);
+    if(!isNaN(ts)){
+      const days = Math.max(0, Math.round((now - ts)/86400000));
+      const agoEn = days === 0 ? 'today' : (days >= 30 ? `${Math.round(days/30.44)}mo ago` : `${days}d ago`);
+      const agoZh = days === 0 ? '今日' : (days >= 30 ? `${Math.round(days/30.44)}个月前` : `${days}天前`);
+      agoStr = `<div class="event-ago"><span class="l-en">${agoEn}</span><span class="l-zh">${agoZh}</span></div>`;
+    }
     html += `<div class="policy-event-item">
-      <div class="event-ts">${e.ts}</div>
+      <div class="event-ts">${e.ts}${agoStr}</div>
       <div class="event-body">
         <span class="event-source-chip ${sc}">${e.source.toUpperCase()}</span>
         <span style="font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">${kindStr}</span>
