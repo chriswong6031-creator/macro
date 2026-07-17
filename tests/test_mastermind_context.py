@@ -48,7 +48,7 @@ def _minimal_standouts(tmp_path: Path) -> Path:
     (tmp_path / "site" / "factordata").mkdir(parents=True, exist_ok=True)
     obj = {
         "as_of": "2026-07-05",
-        "rank_by": "bottoming-alignment",
+        "rank_by": "confluence",
         "gate_go": False,
         "buy": [{"ticker": "FIXTURE_BUY", "score": 80}],
         "watch": [{"ticker": "FIXTURE_WATCH", "score": 60}],
