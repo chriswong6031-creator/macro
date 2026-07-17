@@ -49,7 +49,7 @@ files:
 
     '
 - path: config/metabolism_anomaly.yml
-  sha256: 59ba3b07205c518e4530f795effd22ec89af644931f89cc181bf8319c1fd8598
+  sha256: dbb69bd7a458e1765ddc4dbcaa17d017992ca107d0ea0faf6865acc69837cdb5
   role: anomaly_thresholds
   notes: 'V2-A anomaly monitor thresholds (R-V2-9). IMMUTABLE operator-ratified policy:
     robust-z K, n_min, z_thresh per sensor. Loop PRs may NOT modify. R-V8-5: ci_status_artifact

@@ -83,6 +83,21 @@ sensors:
     contract_band: null
     notes: "Organism composite: accruing until multiple lobes mature"
 
+  # W4 EVW (RIC program) — event-window forward ledger fitness sensors
+  event-windows.implied_vs_realized_coverage:
+    K: 12
+    n_min: 8
+    z_thresh: 2.5
+    contract_band: null
+    notes: "Accruing: forward ledger implied vs realized rows. n_min=8 needed before anomaly fires (~2027-Q1)"
+
+  event-windows.phase_rv_coverage:
+    K: 12
+    n_min: 8
+    z_thresh: 2.5
+    contract_band: null
+    notes: "Accruing: phase base-rate fwd-vol vs realized coverage. Aligned with implied_vs_realized maturity"
+
 # ── Band definitions (for future contract-band break detection) ───────────────
 # When a lobe has a registered fitness contract, its expected band is recorded
 # here for anomaly_monitor to check.  Currently empty (Phase V2-A; contracts
