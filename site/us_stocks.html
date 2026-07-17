@@ -2381,6 +2381,10 @@
 .ldb-flow-chip { display: inline-flex; align-items: center; }
 .ldb-flow-inner { font-size: 11px; color: var(--ink-2); cursor: help; }
 .ldb-flow-inner b { color: var(--ink-1); }
+/* sector stance chip (W2b — mixed/split analyst reads on sector RS rows) */
+.ldb-sec-chip { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  font-weight: 600; white-space: nowrap;
+  background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
 </style><div class="span12 ldb ldb-running">
 
   
@@ -2399,7 +2403,7 @@
     <span class="ldb-stance">
       <span class="l-en">In favour — watch, don't chase</span>
       <span class="l-zh">有利 — 观望，勿追</span>
-    </span><span class="ldb-asof"><span class="l-en">as of 2026-07-15</span><span class="l-zh">截至 2026-07-15</span></span>
+    </span><span class="ldb-asof"><span class="l-en">as of 2026-07-15</span><span class="l-zh">截至 2026-07-15</span></span><span class="ldb-asof ldb-stale"><span class="l-en">data 2 days old</span><span class="l-zh">数据滞后2天</span></span>
   </div>
 
   
@@ -2495,7 +2499,7 @@
     
     
     <div class="ldb-tile ldb-tile-lead"
- data-tip-en="Nvidia · above 50dma · above 200dma · 20d 0.0% · vs market -0.3% · trend read: no trend read" data-tip-zh="英伟达 · 50日均线上方 · 200日均线上方 · 20日 0.0% · 相对市场 -0.3% · 趋势判断：暂无趋势判断">
+ data-tip-en="Nvidia · above 50dma · above 200dma · 20d 0.0% · vs market -0.2% · trend read: no trend read" data-tip-zh="英伟达 · 50日均线上方 · 200日均线上方 · 20日 0.0% · 相对市场 -0.2% · 趋势判断：暂无趋势判断">
       <span class="ldb-tile-sym">NVDA</span>
       <span class="ldb-tile-name">
         <span class="l-en">Nvidia</span>
@@ -2522,7 +2526,7 @@
     
     
     <div class="ldb-tile ldb-tile-neutral"
- data-tip-en="Amazon · above 50dma · above 200dma · 20d +3.6% · vs market +3.3% · trend read: quietly building" data-tip-zh="亚马逊 · 50日均线上方 · 200日均线上方 · 20日 +3.6% · 相对市场 +3.3% · 趋势判断：悄然积累">
+ data-tip-en="Amazon · above 50dma · above 200dma · 20d +3.6% · vs market +3.4% · trend read: quietly building" data-tip-zh="亚马逊 · 50日均线上方 · 200日均线上方 · 20日 +3.6% · 相对市场 +3.4% · 趋势判断：悄然积累">
       <span class="ldb-tile-sym">AMZN</span>
       <span class="ldb-tile-name">
         <span class="l-en">Amazon</span>
@@ -2549,7 +2553,7 @@
     
     
     <div class="ldb-tile ldb-tile-weak"
- data-tip-en="Alphabet · below 50dma · above 200dma · 20d +0.4% · vs market +0.1%" data-tip-zh="谷歌 · 50日均线下方 · 200日均线上方 · 20日 +0.4% · 相对市场 +0.1%">
+ data-tip-en="Alphabet · below 50dma · above 200dma · 20d +0.4% · vs market +0.2%" data-tip-zh="谷歌 · 50日均线下方 · 200日均线上方 · 20日 +0.4% · 相对市场 +0.2%">
       <span class="ldb-tile-sym">GOOGL</span>
       <span class="ldb-tile-name">
         <span class="l-en">Alphabet</span>
@@ -2603,7 +2607,7 @@
     
     
     <div class="ldb-tile ldb-tile-weak"
- data-tip-en="Tesla · below 50dma · below 200dma · 20d -4.1% · vs market -4.4% · trend read: not ready" data-tip-zh="特斯拉 · 50日均线下方 · 200日均线下方 · 20日 -4.1% · 相对市场 -4.4% · 趋势判断：尚未就绪">
+ data-tip-en="Tesla · below 50dma · below 200dma · 20d -4.1% · vs market -4.3% · trend read: not ready" data-tip-zh="特斯拉 · 50日均线下方 · 200日均线下方 · 20日 -4.1% · 相对市场 -4.3% · 趋势判断：尚未就绪">
       <span class="ldb-tile-sym">TSLA</span>
       <span class="ldb-tile-name">
         <span class="l-en">Tesla</span>
@@ -2626,7 +2630,7 @@
   <div class="ldb-rs">
     <div class="ldb-rs-h"><span class="l-en">Sector momentum rank</span><span class="l-zh">板块动量排名</span></div>
     <div class="ldb-rs-rows">
-      <div class="ldb-rs-row" data-tip-en="RS #1 — Technology: leading · conviction: Cautious" data-tip-zh="RS #1 — 科技: 领先 · 评级：谨慎">
+      <div class="ldb-rs-row" data-sec="XLK" data-tip-en="RS #1 — Technology: leading · conviction: Cautious" data-tip-zh="RS #1 — 科技: 领先 · 评级：谨慎">
         <span class="ldb-rs-name">
           <span class="l-en">Technology</span>
           <span class="l-zh">科技</span>
@@ -2636,7 +2640,7 @@
           <span class="l-zh">领先</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #2 — Financials: leading · conviction: Cautious" data-tip-zh="RS #2 — 金融: 领先 · 评级：谨慎">
+      <div class="ldb-rs-row" data-sec="XLF" data-tip-en="RS #2 — Financials: leading · conviction: Cautious" data-tip-zh="RS #2 — 金融: 领先 · 评级：谨慎">
         <span class="ldb-rs-name">
           <span class="l-en">Financials</span>
           <span class="l-zh">金融</span>
@@ -2646,7 +2650,7 @@
           <span class="l-zh">领先</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #3 — Health Care: leading · conviction: Reduce" data-tip-zh="RS #3 — 医疗保健: 领先 · 评级：减配">
+      <div class="ldb-rs-row" data-sec="XLV" data-tip-en="RS #3 — Health Care: leading · conviction: Reduce" data-tip-zh="RS #3 — 医疗保健: 领先 · 评级：减配">
         <span class="ldb-rs-name">
           <span class="l-en">Health Care</span>
           <span class="l-zh">医疗保健</span>
@@ -2656,7 +2660,7 @@
           <span class="l-zh">领先</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #4 — Industrials: mid-pack · conviction: Neutral" data-tip-zh="RS #4 — 工业: 中游 · 评级：中性">
+      <div class="ldb-rs-row" data-sec="XLI" data-tip-en="RS #4 — Industrials: mid-pack · conviction: Neutral" data-tip-zh="RS #4 — 工业: 中游 · 评级：中性">
         <span class="ldb-rs-name">
           <span class="l-en">Industrials</span>
           <span class="l-zh">工业</span>
@@ -2666,7 +2670,7 @@
           <span class="l-zh">中游</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #5 — Real Estate: mid-pack · conviction: Reduce" data-tip-zh="RS #5 — 房地产: 中游 · 评级：减配">
+      <div class="ldb-rs-row" data-sec="XLRE" data-tip-en="RS #5 — Real Estate: mid-pack · conviction: Reduce" data-tip-zh="RS #5 — 房地产: 中游 · 评级：减配">
         <span class="ldb-rs-name">
           <span class="l-en">Real Estate</span>
           <span class="l-zh">房地产</span>
@@ -2676,7 +2680,7 @@
           <span class="l-zh">中游</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #6 — Consumer Staples: mid-pack · conviction: Cautious" data-tip-zh="RS #6 — 必需消费: 中游 · 评级：谨慎">
+      <div class="ldb-rs-row" data-sec="XLP" data-tip-en="RS #6 — Consumer Staples: mid-pack · conviction: Cautious" data-tip-zh="RS #6 — 必需消费: 中游 · 评级：谨慎">
         <span class="ldb-rs-name">
           <span class="l-en">Consumer Staples</span>
           <span class="l-zh">必需消费</span>
@@ -2686,7 +2690,7 @@
           <span class="l-zh">中游</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #7 — Energy: mid-pack · conviction: Constructive" data-tip-zh="RS #7 — 能源: 中游 · 评级：建设性">
+      <div class="ldb-rs-row" data-sec="XLE" data-tip-en="RS #7 — Energy: mid-pack · conviction: Constructive" data-tip-zh="RS #7 — 能源: 中游 · 评级：建设性">
         <span class="ldb-rs-name">
           <span class="l-en">Energy</span>
           <span class="l-zh">能源</span>
@@ -2696,7 +2700,7 @@
           <span class="l-zh">中游</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #8 — Consumer Discretionary: lagging · conviction: Neutral" data-tip-zh="RS #8 — 非必需消费: 落后 · 评级：中性">
+      <div class="ldb-rs-row" data-sec="XLY" data-tip-en="RS #8 — Consumer Discretionary: lagging · conviction: Neutral" data-tip-zh="RS #8 — 非必需消费: 落后 · 评级：中性">
         <span class="ldb-rs-name">
           <span class="l-en">Consumer Discretionary</span>
           <span class="l-zh">非必需消费</span>
@@ -2706,7 +2710,7 @@
           <span class="l-zh">落后</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #9 — Communication Services: lagging · conviction: Neutral" data-tip-zh="RS #9 — 通讯服务: 落后 · 评级：中性">
+      <div class="ldb-rs-row" data-sec="XLC" data-tip-en="RS #9 — Communication Services: lagging · conviction: Neutral" data-tip-zh="RS #9 — 通讯服务: 落后 · 评级：中性">
         <span class="ldb-rs-name">
           <span class="l-en">Communication Services</span>
           <span class="l-zh">通讯服务</span>
@@ -2716,7 +2720,7 @@
           <span class="l-zh">落后</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #10 — Utilities: lagging · conviction: Accumulate" data-tip-zh="RS #10 — 公用事业: 落后 · 评级：积极配置">
+      <div class="ldb-rs-row" data-sec="XLU" data-tip-en="RS #10 — Utilities: lagging · conviction: Accumulate" data-tip-zh="RS #10 — 公用事业: 落后 · 评级：积极配置">
         <span class="ldb-rs-name">
           <span class="l-en">Utilities</span>
           <span class="l-zh">公用事业</span>
@@ -2726,7 +2730,7 @@
           <span class="l-zh">落后</span>
         </span>
       </div>
-      <div class="ldb-rs-row" data-tip-en="RS #11 — Materials: lagging · conviction: Cautious" data-tip-zh="RS #11 — 原材料: 落后 · 评级：谨慎">
+      <div class="ldb-rs-row" data-sec="XLB" data-tip-en="RS #11 — Materials: lagging · conviction: Cautious" data-tip-zh="RS #11 — 原材料: 落后 · 评级：谨慎">
         <span class="ldb-rs-name">
           <span class="l-en">Materials</span>
           <span class="l-zh">原材料</span>
@@ -2747,6 +2751,40 @@
   </div>
 
 </div>
+<script>
+(function(){
+  /* setAttribute stores the raw value — HTML-escaping here would double-escape
+     and render literal &amp; inside the hover tip */
+  fetch('mlcdata/stance_matrix.json').then(function(r){ return r.ok?r.json():null; }).then(function(data){
+    if(!data||!data.sectors) return;
+    var byTicker={};
+    data.sectors.forEach(function(s){ if(s&&s.ticker) byTicker[s.ticker]=s; });
+    document.querySelectorAll('.ldb-rs-row[data-sec]').forEach(function(row){
+      var ticker=row.getAttribute('data-sec');
+      var sec=byTicker[ticker];
+      if(!sec||!sec.agreement) return;
+      var ag=sec.agreement;
+      if(ag!=='mixed'&&ag!=='split') return;
+      if(row.querySelector('.ldb-sec-chip')) return;
+      var chipEn=ag==='split'?'split view':'mixed reads';
+      var chipZh=ag==='split'?'严重分歧':'观点分歧';
+      var chip=document.createElement('span');
+      chip.className='ldb-sec-chip';
+      chip.setAttribute('data-tip-en',String(sec.tip_en||''));
+      chip.setAttribute('data-tip-zh',String(sec.tip_zh||''));
+      var spanEn=document.createElement('span');
+      spanEn.className='l-en';
+      spanEn.textContent=chipEn;
+      var spanZh=document.createElement('span');
+      spanZh.className='l-zh';
+      spanZh.textContent=chipZh;
+      chip.appendChild(spanEn);
+      chip.appendChild(spanZh);
+      row.appendChild(chip);
+    });
+  }).catch(function(){});
+})();
+</script>
   
   
 
@@ -2865,7 +2903,7 @@
           <div class="acth-title-row">
             <span class="acth-emoji">🔵</span>
             <span class="acth-name"><span class="l-en">Almost ready</span><span class="l-zh">接近就绪</span></span>
-            <span class="acth-count">2</span>
+            <span class="acth-count">3</span>
           </div>
           <div class="acth-sub"><span class="l-en">Setting up — wait for the trigger, not a buy yet</span><span class="l-zh">构筑中 — 等待触发，尚不可买</span></div>
         </div>
@@ -2885,13 +2923,13 @@
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">8d ago</span><span class="l-zh">8天前</span></span></div>
+          <span class="row-pop-val"><span class="l-en">7d ago</span><span class="l-zh">7天前</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
           <span class="row-pop-val"><span class="up">▲ +32</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="dn">-1.1%</span></span></div>
+          <span class="row-pop-val"><span class="dn">-2.5%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 39 of cycle</span><span class="l-zh">周期第 39 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 38 of cycle</span><span class="l-zh">周期第 38 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
           <span class="row-pop-val">13 / 20</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
@@ -2924,24 +2962,24 @@
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">8d ago</span><span class="l-zh">8天前</span></span></div>
+          <span class="row-pop-val"><span class="l-en">7d ago</span><span class="l-zh">7天前</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
-          <span class="row-pop-val"><span class="up">▲ +40</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
+          <span class="row-pop-val"><span class="up">▲ +37</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="dn">-8.3%</span></span></div>
+          <span class="row-pop-val"><span class="dn">-8.9%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 31 of cycle</span><span class="l-zh">周期第 31 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 30 of cycle</span><span class="l-zh">周期第 30 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
           <span class="row-pop-val">9 / 20</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 53 · Stoch 68</span></div>
+          <span class="row-pop-val">RSI 51 · Stoch 64</span></div>
         <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
           <span class="row-pop-val up"><span class="l-en">+0.1% vs SPY · 51% up · n=2548</span><span class="l-zh">对SPY +0.1% · 51% 上涨 · n=2548</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
           <span class="row-pop-val">+1.1% (68%)</span></div>
       </div>
       <ul class="row-pop-why">
-        <li><span class="l-en">The bottoming setup is not yet confirmed (price still below the 10-day average) and the daily momentum is already rolling over — momentum is fading before the setup has completed. Wait for price to reclaim the 10-day average with momentum stabilising before sizing in.</span><span class="l-zh">筑底形态尚未确认（价格仍位于 10 日均线下方），且日线动量已开始掉头向下——动量在形态完成前已开始衰竭。等待价格收复 10 日均线且动量趋于稳定后再考虑建仓。</span></li>
+        <li><span class="l-en">The bottoming setup is not yet confirmed (price still below the 10-day average) and the 3-day/weekly momentum is rolling over — momentum is fading before the setup has completed. Wait for price to reclaim the 10-day average with momentum stabilising before sizing in.</span><span class="l-zh">筑底形态尚未确认（价格仍位于 10 日均线下方），且3 日/周线动量已开始掉头向下——动量在形态完成前已开始衰竭。等待价格收复 10 日均线且动量趋于稳定后再考虑建仓。</span></li>
       </ul>
       <div class="row-pop-ft">
         <span>XLU</span>
@@ -3014,24 +3052,24 @@
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">1d ago</span><span class="l-zh">1天前</span></span></div>
+          <span class="row-pop-val"><span class="l-en">today</span><span class="l-zh">今日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
           <span class="row-pop-val"><span class="dn">▼ -21</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="up">+1.9%</span></span></div>
+          <span class="row-pop-val"><span class="up">+0.5%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 29 of cycle</span><span class="l-zh">周期第 29 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 28 of cycle</span><span class="l-zh">周期第 28 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
           <span class="row-pop-val">11 / 20</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 72 · Stoch 89</span></div>
+          <span class="row-pop-val">RSI 72 · Stoch 88</span></div>
         <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
           <span class="row-pop-val dn"><span class="l-en">-0.0% vs SPY · 50% up · n=2194</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2194</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
           <span class="row-pop-val">+2.0% (68%)</span></div>
       </div>
       <ul class="row-pop-why">
-        <li><span class="l-en">You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 72)). Don&#39;t chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.</span><span class="l-zh">已错过筑底入场——低点已经形成，目前价格已拉伸（已超买（日线 RSI 72））。不要追高；等待回调至 10 日均线或下一个周期低点。若已持有则继续持有。</span></li>
+        <li><span class="l-en">You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 71)). Don&#39;t chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.</span><span class="l-zh">已错过筑底入场——低点已经形成，目前价格已拉伸（已超买（日线 RSI 71））。不要追高；等待回调至 10 日均线或下一个周期低点。若已持有则继续持有。</span></li>
       </ul>
       <div class="row-pop-ft">
         <span>XLF</span>
@@ -3162,40 +3200,41 @@
     </span>
     </a>
           
-            <a class="actitem" data-rpop href="basket/us_sector_health.html">
+            <a class="actitem" data-rpop href="basket/us_sector_realestate.html">
       <span class="act-row-top">
         <span class="ai-bdg">🏛</span>
-        <span class="act-row-name"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
-      </span><span class="act-row-stat"><span class="l-en">late cycle · today</span><span class="l-zh">周期晚期 · 今日</span></span>
+        <span class="act-row-name"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
+      </span><span class="act-row-stat"><span class="l-en">late cycle · 1d ago</span><span class="l-zh">周期晚期 · 1天前</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
-        <span class="row-pop-name"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
-        <span class="row-pop-kind">XLV</span><span class="row-pop-tag "><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
+        <span class="row-pop-name"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
+        <span class="row-pop-kind">XLRE</span><span class="row-pop-tag "><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
       </div>
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">today</span><span class="l-zh">今日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">1d ago</span><span class="l-zh">1天前</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
           <span class="row-pop-val"><span class="dn">▼ -43</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="up">+3.1%</span></span></div>
+          <span class="row-pop-val"><span class="dn">-4.8%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 18 of cycle</span><span class="l-zh">周期第 18 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 30 of cycle</span><span class="l-zh">周期第 30 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
-          <span class="row-pop-val">13 / 19</span></div>
+          <span class="row-pop-val">6 / 19</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 64 · Stoch 83</span></div>
+          <span class="row-pop-val">RSI 55 · Stoch 46</span></div>
         <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
-          <span class="row-pop-val dn"><span class="l-en">-0.2% vs SPY · 49% up · n=2339</span><span class="l-zh">对SPY -0.2% · 49% 上涨 · n=2339</span></span></div>
+          <span class="row-pop-val up"><span class="l-en">+0.2% vs SPY · 50% up · n=488</span><span class="l-zh">对SPY +0.2% · 50% 上涨 · n=488</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
           <span class="row-pop-val">+3.3% (91%)</span></div>
       </div>
       <ul class="row-pop-why">
         <li><span class="l-en">Stretched/late — protect gains and don&#39;t start new positions; let the next low set up first.</span><span class="l-zh">已拉伸／晚期——保护利润，不要新开仓；先等下一个低点构筑成形。</span></li>
+        <li><span class="l-en">Two reads: cycle <b>NEARING A HIGH</b> vs setup <b>SETUP</b></span><span class="l-zh">两个读数：周期 <b>接近高点</b> vs 形态 <b>SETUP</b></span></li>
       </ul>
       <div class="row-pop-ft">
-        <span>XLV</span>
+        <span>XLRE</span>
       </div>
     </span>
     </a>
@@ -3207,7 +3246,7 @@
           <div class="acth-title-row">
             <span class="acth-emoji">⚪</span>
             <span class="acth-name"><span class="l-en">Stand aside</span><span class="l-zh">观望</span></span>
-            <span class="acth-count">23</span>
+            <span class="acth-count">22</span>
           </div>
           <div class="acth-sub"><span class="l-en">Hold what you own · no new buying</span><span class="l-zh">持有勿动 · 不新开仓</span></div>
         </div>
@@ -3492,17 +3531,17 @@
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">1d ago</span><span class="l-zh">1天前</span></span></div>
+          <span class="row-pop-val"><span class="l-en">today</span><span class="l-zh">今日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
-          <span class="row-pop-val"><span class="up">▲ +69</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
+          <span class="row-pop-val"><span class="up">▲ +66</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="dn">-11.4%</span></span></div>
+          <span class="row-pop-val"><span class="dn">-10.4%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 14 of cycle</span><span class="l-zh">周期第 14 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 13 of cycle</span><span class="l-zh">周期第 13 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
           <span class="row-pop-val">5 / 20</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 51 · Stoch 74</span></div>
+          <span class="row-pop-val">RSI 52 · Stoch 77</span></div>
         <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
           <span class="row-pop-val dn"><span class="l-en">-0.1% vs SPY · 49% up · n=3488</span><span class="l-zh">对SPY -0.1% · 49% 上涨 · n=3488</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
@@ -3820,24 +3859,24 @@
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">4d ago</span><span class="l-zh">4天前</span></span></div>
+          <span class="row-pop-val"><span class="l-en">3d ago</span><span class="l-zh">3天前</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
-          <span class="row-pop-val"><span class="up">▲ +49</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
+          <span class="row-pop-val"><span class="up">▲ +45</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="dn">-8.1%</span></span></div>
+          <span class="row-pop-val"><span class="dn">-8.9%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 39 of cycle</span><span class="l-zh">周期第 39 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 38 of cycle</span><span class="l-zh">周期第 38 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
           <span class="row-pop-val">9 / 19</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 51 · Stoch 32</span></div>
+          <span class="row-pop-val">RSI 49 · Stoch 28</span></div>
         <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
-          <span class="row-pop-val up"><span class="l-en">+0.2% vs SPY · 50% up · n=488</span><span class="l-zh">对SPY +0.2% · 50% 上涨 · n=488</span></span></div>
+          <span class="row-pop-val up"><span class="l-en">+0.4% vs SPY · 50% up · n=1286</span><span class="l-zh">对SPY +0.4% · 50% 上涨 · n=1286</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
           <span class="row-pop-val">+1.5% (54%)</span></div>
       </div>
       <ul class="row-pop-why">
-        <li><span class="l-en">Setup almost complete — likely buy trigger in ~1–6 trading days if it closes back above its 10-day average.</span><span class="l-zh">形态接近完成——若收盘重新站上 10 日均线，预计将在约 1–6 个交易日内出现买入触发。</span></li>
+        <li><span class="l-en">Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.</span><span class="l-zh">形态接近完成——若收盘重新站上 10 日均线，预计将在约 1–3 个交易日内出现买入触发。</span></li>
       </ul>
       <div class="row-pop-ft">
         <span>XLB</span>
@@ -3859,19 +3898,19 @@
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">3d ago</span><span class="l-zh">3天前</span></span></div>
+          <span class="row-pop-val"><span class="l-en">2d ago</span><span class="l-zh">2天前</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
           <span class="row-pop-val"><span class="up">▲ +30</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="dn">-5.8%</span></span></div>
+          <span class="row-pop-val"><span class="dn">-6.0%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 10 of cycle</span><span class="l-zh">周期第 10 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 31 of cycle</span><span class="l-zh">周期第 31 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
           <span class="row-pop-val">0 / 19</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 54 · Stoch 54</span></div>
+          <span class="row-pop-val">RSI 53 · Stoch 52</span></div>
         <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
-          <span class="row-pop-val dn"><span class="l-en">-0.2% vs SPY · 49% up · n=2339</span><span class="l-zh">对SPY -0.2% · 49% 上涨 · n=2339</span></span></div>
+          <span class="row-pop-val dn"><span class="l-en">-0.0% vs SPY · 50% up · n=2194</span><span class="l-zh">对SPY -0.0% · 50% 上涨 · n=2194</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
           <span class="row-pop-val">+0.3% (61%)</span></div>
       </div>
@@ -3898,17 +3937,17 @@
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">3d ago</span><span class="l-zh">3天前</span></span></div>
+          <span class="row-pop-val"><span class="l-en">2d ago</span><span class="l-zh">2天前</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
-          <span class="row-pop-val"><span class="up">▲ +35</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
+          <span class="row-pop-val"><span class="up">▲ +38</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="up">+9.1%</span></span></div>
+          <span class="row-pop-val"><span class="up">+12.0%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 24 of cycle</span><span class="l-zh">周期第 24 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 23 of cycle</span><span class="l-zh">周期第 23 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
           <span class="row-pop-val">8 / 20</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 54 · Stoch 2</span></div>
+          <span class="row-pop-val">RSI 57 · Stoch 2</span></div>
         <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
           <span class="row-pop-val up"><span class="l-en">+0.1% vs SPY · 51% up · n=2548</span><span class="l-zh">对SPY +0.1% · 51% 上涨 · n=2548</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
@@ -3928,7 +3967,7 @@
         <span class="ai-bdg">🏛</span>
         <span class="act-row-name"><span class="l-en">Cons Staples</span><span class="l-zh">必需消费</span></span>
       </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--pos"><span class="l-en">HALF SIZE</span><span class="l-zh">半仓</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
+      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span>
@@ -3937,66 +3976,27 @@
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">1d ago</span><span class="l-zh">1天前</span></span></div>
+          <span class="row-pop-val"><span class="l-en">today</span><span class="l-zh">今日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
-          <span class="row-pop-val"><span class="up">▲ +76</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
+          <span class="row-pop-val"><span class="up">▲ +36</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="dn">-1.5%</span></span></div>
+          <span class="row-pop-val"><span class="dn">-4.5%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 30 of cycle</span><span class="l-zh">周期第 30 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 29 of cycle</span><span class="l-zh">周期第 29 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
           <span class="row-pop-val">8 / 20</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 58 · Stoch 57</span></div>
+          <span class="row-pop-val">RSI 50 · Stoch 41</span></div>
         <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
-          <span class="row-pop-val up"><span class="l-en">+1.0% vs SPY · 56% up · n=199</span><span class="l-zh">对SPY +1.0% · 56% 上涨 · n=199</span></span></div>
+          <span class="row-pop-val up"><span class="l-en">+0.1% vs SPY · 51% up · n=2548</span><span class="l-zh">对SPY +0.1% · 51% 上涨 · n=2548</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
           <span class="row-pop-val">+1.3% (64%)</span></div>
       </div>
       <ul class="row-pop-why">
-        <li><span class="l-en">The daily turn is already in — a low formed ~17 day(s) ago @ 82.18 and price is back above the 10-day average. What&#39;s missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.</span><span class="l-zh">日线转向已经完成——低点于约 17 天前形成 @ 82.18，且价格已重新站上 10 日均线。尚缺的是周线周期的确认，因此这是当下可用的部分信心入场，而非待触发信号：可在此建半仓，或等待周线转向。</span></li>
+        <li><span class="l-en">The bottoming setup is not yet confirmed (price still below the 10-day average) and the daily momentum is already rolling over — momentum is fading before the setup has completed. Wait for price to reclaim the 10-day average with momentum stabilising before sizing in.</span><span class="l-zh">筑底形态尚未确认（价格仍位于 10 日均线下方），且日线动量已开始掉头向下——动量在形态完成前已开始衰竭。等待价格收复 10 日均线且动量趋于稳定后再考虑建仓。</span></li>
       </ul>
       <div class="row-pop-ft">
         <span>XLP</span>
-      </div>
-    </span>
-    </a>
-          
-            <a class="actitem" data-rpop href="basket/us_sector_realestate.html">
-      <span class="act-row-top">
-        <span class="ai-bdg">🏛</span>
-        <span class="act-row-name"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
-      </span>
-      <span class="act-row-chips"><span class="ab-chip ab-chip--neg"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span><span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: AVOID" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：回避">&#10003;</span></span><span class="act-row-stat"><span class="l-en">downtrend</span><span class="l-zh">下跌趋势</span></span>
-      <span class="rp-src" hidden>
-      <div class="row-pop-hd">
-        <span class="row-pop-name"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
-        <span class="row-pop-kind">XLRE</span><span class="row-pop-tag up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-      </div>
-      <div class="row-pop-div"></div>
-      <div class="row-pop-grid">
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">today</span><span class="l-zh">今日</span></span></div>
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
-          <span class="row-pop-val"><span class="up">▲ +94</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="dn">-3.0%</span></span></div>
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 31 of cycle</span><span class="l-zh">周期第 31 日</span></span></div>
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
-          <span class="row-pop-val">6 / 19</span></div>
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 60 · Stoch 58</span></div>
-        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
-          <span class="row-pop-val up"><span class="l-en">+1.0% vs SPY · 56% up · n=199</span><span class="l-zh">对SPY +1.0% · 56% 上涨 · n=199</span></span></div>
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
-          <span class="row-pop-val">+3.3% (91%)</span></div>
-      </div>
-      <ul class="row-pop-why">
-        <li><span class="l-en">Confirmed cycle low — the entry window is open now, with a clear exit if it closes back below 43.48.</span><span class="l-zh">周期低点已确认——入场窗口现已开启，若收盘重新跌破 43.48 则明确离场。</span></li>
-      </ul>
-      <div class="row-pop-ft">
-        <span>XLRE</span>
       </div>
     </span>
     </a>
@@ -4010,29 +4010,29 @@
       <span class="rp-src" hidden>
       <div class="row-pop-hd">
         <span class="row-pop-name"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></span>
-        <span class="row-pop-kind">XLY</span><span class="row-pop-tag up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+        <span class="row-pop-kind">XLY</span><span class="row-pop-tag "><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
       </div>
       <div class="row-pop-div"></div>
       <div class="row-pop-grid">
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
           <span class="row-pop-val"><span class="l-en">today</span><span class="l-zh">今日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
-          <span class="row-pop-val"><span class="up">▲ +71</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
+          <span class="row-pop-val"><span class="dn">▼ -32</span><span class="mut"> · <span class="l-en">How well-timed &amp; low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">None</span></span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="dn">-6.8%</span></span></div>
+          <span class="row-pop-val"><span class="dn">-8.2%</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day 24 of cycle</span><span class="l-zh">周期第 24 日</span></span></div>
+          <span class="row-pop-val"><span class="l-en">day 23 of cycle</span><span class="l-zh">周期第 23 日</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
           <span class="row-pop-val">7 / 20</span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI 52 · Stoch 38</span></div>
+          <span class="row-pop-val">RSI 51 · Stoch 37</span></div>
         <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
-          <span class="row-pop-val up"><span class="l-en">+0.1% vs SPY · 51% up · n=2548</span><span class="l-zh">对SPY +0.1% · 51% 上涨 · n=2548</span></span></div>
+          <span class="row-pop-val dn"><span class="l-en">-0.1% vs SPY · 49% up · n=3488</span><span class="l-zh">对SPY -0.1% · 49% 上涨 · n=3488</span></span></div>
         <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
           <span class="row-pop-val">+1.8% (71%)</span></div>
       </div>
       <ul class="row-pop-why">
-        <li><span class="l-en">Trend intact — hold. Late in the cycle, so don&#39;t add here; a pullback is due.</span><span class="l-zh">趋势完好——持有。已处周期晚期，此处不宜加仓；回调即将到来。</span></li>
+        <li><span class="l-en">You missed the bottoming entry — the low already formed and price is now extended (momentum is fading — the 3-day/weekly momentum has crossed down). Don&#39;t chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.</span><span class="l-zh">已错过筑底入场——低点已经形成，目前价格已拉伸（动量正在衰竭——3 日/周线动量已向下交叉）。不要追高；等待回调至 10 日均线或下一个周期低点。若已持有则继续持有。</span></li>
       </ul>
       <div class="row-pop-ft">
         <span>XLY</span>
@@ -4042,7 +4042,7 @@
           
         </div>
         
-        <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> (17) ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
+        <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> (16) ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
         
       </div>
     </div>
@@ -12846,19 +12846,19 @@
       
       <tr>
         <td class="l"><span class="l-en">Small caps vs large</span><span class="l-zh">小盘对大盘</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Russell 2000 vs S&amp;P 500 (IWM/SPY)</span><span class="l-zh">罗素2000 对 标普500 (IWM/SPY)</span></span><span class="l-zh"><span class="l-en">Russell 2000 vs S&amp;P 500 (IWM/SPY)</span><span class="l-zh">罗素2000 对 标普500 (IWM/SPY)</span></span></span></span></td>
-        <td class="neg">-0.53%</td>
+        <td class="neg">-0.10%</td>
         <td class="l muted"><span class="l-en">large-cap-led — narrowing participation</span><span class="l-zh">大盘主导 — 参与度收窄</span></td>
       </tr>
       
       <tr>
         <td class="l"><span class="l-en">Mid caps vs large</span><span class="l-zh">中盘对大盘</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">S&amp;P MidCap 400 vs S&amp;P 500 (IJH/SPY)</span><span class="l-zh">标普中盘400 对 标普500 (IJH/SPY)</span></span><span class="l-zh"><span class="l-en">S&amp;P MidCap 400 vs S&amp;P 500 (IJH/SPY)</span><span class="l-zh">标普中盘400 对 标普500 (IJH/SPY)</span></span></span></span></td>
-        <td class="neg">-0.25%</td>
+        <td class="neg">-1.24%</td>
         <td class="l muted"><span class="l-en">mega-cap-led — narrowing</span><span class="l-zh">超大盘主导 — 收窄</span></td>
       </tr>
       
       <tr>
         <td class="l"><span class="l-en">Growth vs value</span><span class="l-zh">成长对价值</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Russell 1000 Growth vs Value (IWF/IWD). Style rotation: growth tends to lead in disinflation/slowdowns, value in reflation.</span><span class="l-zh">罗素1000 成长 对 价值 (IWF/IWD)。风格轮动：成长在去通胀/放缓中领先，价值在再通胀中领先。</span></span><span class="l-zh"><span class="l-en">Russell 1000 Growth vs Value (IWF/IWD). Style rotation: growth tends to lead in disinflation/slowdowns, value in reflation.</span><span class="l-zh">罗素1000 成长 对 价值 (IWF/IWD)。风格轮动：成长在去通胀/放缓中领先，价值在再通胀中领先。</span></span></span></span></td>
-        <td class="muted">-4.49%</td>
+        <td class="muted">-1.21%</td>
         <td class="l muted"><span class="l-en">value leadership</span><span class="l-zh">价值领先</span></td>
       </tr>
       
@@ -13070,7 +13070,7 @@
       </span>
     </span></span></h2>
     <p class="muted" style="font-size:12.5px;margin:6px 0 4px">
-      <b>3</b> <span class="l-en">on the buy side</span><span class="l-zh">在买入侧</span> · <b>4</b> <span class="l-en">extended / topping / below trend</span><span class="l-zh">过热／见顶／趋势下方</span>. <span class="l-en">Sorted most-actionable first — a timing map, not a return forecast.</span><span class="l-zh">按可操作性排序——择时地图，非收益预测。</span>
+      <b>2</b> <span class="l-en">on the buy side</span><span class="l-zh">在买入侧</span> · <b>4</b> <span class="l-en">extended / topping / below trend</span><span class="l-zh">过热／见顶／趋势下方</span>. <span class="l-en">Sorted most-actionable first — a timing map, not a return forecast.</span><span class="l-zh">按可操作性排序——择时地图，非收益预测。</span>
       <span class="help">?<span class="tip tip-wide"><span class="l-en">Cross-sectionally the buy side has beaten the avoid side by ~0.8%/quarter (1998-2026). Use it to time rotation and to NOT chase extended leaders — never as a return forecast. Hit-rates ~50-56%; the edge is in magnitude and in AVOIDANCE (stops you chasing "confirmed leadership" that institutions distribute into).</span><span class="l-zh">横截面上买入侧每季度约跑赢回避侧 0.8%（1998–2026）。用于把握轮动、避免追逐过热领先股——切勿当作收益预测。胜率约 50–56%；优势在于幅度与「回避」（避免追逐机构派发的「已确认领先」），而非高胜率。</span></span></span>
     </p>
     <div class="tbl-scroll"><table class="act-fold is-collapsed">
@@ -13086,57 +13086,32 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_staples.html"><b>XLP</b></a> <span class="muted"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span>
+        <td class="l"><a href="basket/us_sector_materials.html"><b>XLB</b></a> <span class="muted"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
         </td>
-        <td class="l" data-sort="1">
+        <td class="l" data-sort="2">
           <span style="display:inline-flex;align-items:center;gap:6px">
             <span class="pill" style="border:1px solid var(--up);color:var(--up);background:transparent;font-weight:700"><span class="l-en">BUY</span><span class="l-zh">买入</span></span>
-            <span style="color:var(--up);letter-spacing:1px;font-size:10px">●●●</span>
+            <span style="color:var(--up);letter-spacing:1px;font-size:10px">●●</span>
           </span>
-          <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Fresh up-turn confirmed on the daily AND 3-day — entry open.</span><span class="l-zh">日线与3日线同时确认转上——入场窗口打开。</span></div>
+          <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">One timeframe has turned up above trend — entry forming.</span><span class="l-zh">一个时间框架已转上且在趋势之上——入场构筑中。</span></div>
           
           
         </td>
-        <td class="l" style="font-size:12px"><span class="l-en">MACD ↑</span><span class="l-zh">MACD 上穿</span></td>
-        <td class="pos" style="font-size:12px">✓200d ✓50d</td>
-        <td style="font-size:12px">RSI 58 · Stoch 57</td>
-        <td class="neg" data-sort="-1.5">-1.5%</td>
+        <td class="l" style="font-size:12px"><span class="l-en">daily turning up</span><span class="l-zh">日线转上</span></td>
+        <td class="" style="font-size:12px">✓200d ✗50d</td>
+        <td style="font-size:12px">RSI 49 · Stoch 28</td>
+        <td class="neg" data-sort="-8.9">-8.9%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+1.5% (54%)</span>
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="6.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="30.9" width="14.2" height="9.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="30.6" width="14.2" height="9.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="19.5" width="14.2" height="20.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="38.7" width="14.2" height="1.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="40.0" width="14.2" height="4.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="29.4" width="14.2" height="10.6" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="40.0" width="14.2" height="1.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="17.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="27.9" width="14.2" height="12.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="28.1" width="14.2" height="11.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.9%</td><td>43%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+1.3%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.3%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.9%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.2%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.6%</td><td>43%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.5%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="neg">-0.2%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-2.4%</td><td>41%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.7%</td><td>56%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+3.6%</td><td>81%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.7%</td><td>67%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="pos" style="font-size:11.5px"><span class="l-en">+1.0% vs SPY · 56% up · n=199</span><span class="l-zh">对SPY +1.0% · 56% 上涨 · n=199</span></td>
+        <td class="pos" style="font-size:11.5px"><span class="l-en">+0.4% vs SPY · 50% up · n=1286</span><span class="l-zh">对SPY +0.4% · 50% 上涨 · n=1286</span></td>
       </tr>
       
       <tr>
         <td class="l"><a href="basket/us_sector_realestate.html"><b>XLRE</b></a> <span class="muted"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
-        </td>
-        <td class="l" data-sort="1">
-          <span style="display:inline-flex;align-items:center;gap:6px">
-            <span class="pill" style="border:1px solid var(--up);color:var(--up);background:transparent;font-weight:700"><span class="l-en">BUY</span><span class="l-zh">买入</span></span>
-            <span style="color:var(--up);letter-spacing:1px;font-size:10px">●●●</span>
-          </span>
-          <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Fresh up-turn confirmed on the daily AND 3-day — entry open.</span><span class="l-zh">日线与3日线同时确认转上——入场窗口打开。</span></div>
-          
-          
-        </td>
-        <td class="l" style="font-size:12px"><span class="l-en">MACD ↑</span><span class="l-zh">MACD 上穿</span></td>
-        <td class="pos" style="font-size:12px">✓200d ✓50d</td>
-        <td style="font-size:12px">RSI 60 · Stoch 58</td>
-        <td class="neg" data-sort="-3.0">-3.0%</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+3.3% (91%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="36.2" width="14.2" height="3.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="2.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="33.1" width="14.2" height="6.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="32.3" width="14.2" height="7.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="37.2" width="14.2" height="2.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="25.5" width="14.2" height="14.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="34.9" width="14.2" height="5.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="23.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="40.0" width="14.2" height="7.1" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="15.4" width="14.2" height="24.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="36.3" width="14.2" height="3.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+0.5%</td><td>55%</td><td class="muted">11</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.3%</td><td>64%</td><td class="muted">11</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+0.9%</td><td>55%</td><td class="muted">11</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+1.0%</td><td>45%</td><td class="muted">11</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.3%</td><td>73%</td><td class="muted">11</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+1.8%</td><td>91%</td><td class="muted">11</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+3.3%</td><td>91%</td><td class="muted">11</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.7%</td><td>60%</td><td class="muted">10</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-3.0%</td><td>30%</td><td class="muted">10</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="neg">-0.9%</td><td>30%</td><td class="muted">10</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+3.1%</td><td>64%</td><td class="muted">11</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+0.5%</td><td>55%</td><td class="muted">11</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
-          </span>
-        </td>
-        <td class="pos" style="font-size:11.5px"><span class="l-en">+1.0% vs SPY · 56% up · n=199</span><span class="l-zh">对SPY +1.0% · 56% 上涨 · n=199</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="basket/us_sector_materials.html"><b>XLB</b></a> <span class="muted"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
         </td>
         <td class="l" data-sort="3">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -13146,11 +13121,21 @@
           <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Approaching an up-cross above trend — get ready, not yet triggered.</span><span class="l-zh">在趋势之上接近上穿——准备，尚未触发。</span></div>
           
           
+          <div style="margin-top:4px">
+            <span class="two-reads-chip"
+              data-tip-en="Two house reads on XLRE: cycle timing = NEARING A HIGH (slow, cap-weighted, cycle position); setup engine = SETUP (3-day tactical, 3D MACD+StochRSI). Different instruments / different horizons — both reads shown, neither overrides the other."
+              data-tip-zh="XLRE 两个本系统读数：周期择时 = NEARING A HIGH（慢速、市值加权、周期位置）；形态引擎 = SETUP（3日战术、3日MACD+StochRSI）。不同工具／不同时间维度——两个读数同时显示，互不覆盖。">
+              <span class="tr-sep">⇔</span>
+              <span class="l-en">two reads: cycle <b>NEARING A HIGH</b> (slow) vs setup <b>SETUP</b> (3D tactical)</span>
+              <span class="l-zh">两个读数：周期 <b>NEARING A HIGH</b>（慢速）vs 形态 <b>SETUP</b>（3日战术）</span>
+            </span>
+          </div>
+          
         </td>
-        <td class="l" style="font-size:12px"><span class="l-en">no fresh cross</span><span class="l-zh">无新交叉</span></td>
-        <td class="" style="font-size:12px">✓200d ✗50d</td>
-        <td style="font-size:12px">RSI 51 · Stoch 32</td>
-        <td class="neg" data-sort="-8.1">-8.1%</td>
+        <td class="l" style="font-size:12px"><span class="l-en">MACD curling up</span><span class="l-zh">MACD 上弯</span></td>
+        <td class="pos" style="font-size:12px">✓200d ✓50d</td>
+        <td style="font-size:12px">RSI 55 · Stoch 46</td>
+        <td class="neg" data-sort="-4.8">-4.8%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+3.3% (91%)</span>
@@ -13174,8 +13159,8 @@
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">no fresh cross</span><span class="l-zh">无新交叉</span></td>
         <td class="" style="font-size:12px">✓200d ✗50d</td>
-        <td style="font-size:12px">RSI 54 · Stoch 2</td>
-        <td class="pos" data-sort="9.1">+9.1%</td>
+        <td style="font-size:12px">RSI 57 · Stoch 2</td>
+        <td class="pos" data-sort="12.0">+12.0%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+1.3% (64%)</span>
@@ -13225,7 +13210,7 @@
         <td class="l" style="font-size:12px"><span class="l-en">StochRSI ↓80, MACD rolling down, ~3d to cross</span><span class="l-zh">StochRSI 跌破80, MACD 下弯, 约3天后交叉</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
         <td style="font-size:12px">RSI 58 · Stoch 51</td>
-        <td class="neg" data-sort="-1.1">-1.1%</td>
+        <td class="neg" data-sort="-2.5">-2.5%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+1.5% (71%)</span>
@@ -13236,7 +13221,7 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_discretionary.html"><b>XLY</b></a> <span class="muted"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></span>
+        <td class="l"><a href="basket/us_sector_staples.html"><b>XLP</b></a> <span class="muted"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span>
         </td>
         <td class="l" data-sort="5">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -13247,10 +13232,10 @@
           
           
         </td>
-        <td class="l" style="font-size:12px"><span class="l-en">MACD ↓</span><span class="l-zh">MACD 下穿</span></td>
-        <td class="pos" style="font-size:12px">✓200d ✓50d</td>
-        <td style="font-size:12px">RSI 52 · Stoch 38</td>
-        <td class="neg" data-sort="-6.8">-6.8%</td>
+        <td class="l" style="font-size:12px"><span class="l-en">no fresh cross</span><span class="l-zh">无新交叉</span></td>
+        <td class="" style="font-size:12px">✓200d ✗50d</td>
+        <td style="font-size:12px">RSI 50 · Stoch 41</td>
+        <td class="neg" data-sort="-4.5">-4.5%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+1.3% (64%)</span>
@@ -13274,8 +13259,8 @@
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">no fresh cross</span><span class="l-zh">无新交叉</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
-        <td style="font-size:12px">RSI 53 · Stoch 68</td>
-        <td class="neg" data-sort="-8.3">-8.3%</td>
+        <td style="font-size:12px">RSI 51 · Stoch 64</td>
+        <td class="neg" data-sort="-8.9">-8.9%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+1.1% (68%)</span>
@@ -13299,8 +13284,8 @@
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">no fresh cross</span><span class="l-zh">无新交叉</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
-        <td style="font-size:12px">RSI 72 · Stoch 89</td>
-        <td class="pos" data-sort="1.9">+1.9%</td>
+        <td style="font-size:12px">RSI 72 · Stoch 88</td>
+        <td class="pos" data-sort="0.5">+0.5%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+2.0% (68%)</span>
@@ -13311,46 +13296,21 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_health.html"><b>XLV</b></a> <span class="muted"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
-        </td>
-        <td class="l" data-sort="8">
-          <span style="display:inline-flex;align-items:center;gap:6px">
-            <span class="pill" style="border:1px solid var(--down);color:var(--down);background:transparent;font-weight:700"><span class="l-en">TOPPING</span><span class="l-zh">见顶</span></span>
-            <span style="color:var(--down);letter-spacing:1px;font-size:10px">●</span>
-          </span>
-          <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Overbought and rolling over — distribution risk; reduce.</span><span class="l-zh">超买且开始回落——派发风险；减仓。</span></div>
-          
-          
-        </td>
-        <td class="l" style="font-size:12px"><span class="l-en">MACD rolling down</span><span class="l-zh">MACD 下弯</span></td>
-        <td class="pos" style="font-size:12px">✓200d ✓50d</td>
-        <td style="font-size:12px">RSI 64 · Stoch 83</td>
-        <td class="pos" data-sort="3.1">+3.1%</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">+1.2% (64%)</span>
-            <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="29.8" width="14.2" height="10.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="2.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="30.2" width="14.2" height="9.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="26.1" width="14.2" height="13.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="34.5" width="14.2" height="5.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="140.2" y="30.7" width="14.2" height="9.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">6</text><rect x="160.0" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="165.6" y="27.5" width="14.2" height="12.5" rx="1.5" style="fill:var(--up);opacity:1"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">7</text><rect x="190.9" y="38.3" width="14.2" height="1.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="13.3" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="32.0" width="14.2" height="8.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="23.5" width="14.2" height="16.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+0.9%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.2%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+0.9%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+1.3%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.5%</td><td>68%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+0.9%</td><td>57%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.2%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.2%</td><td>56%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.2%</td><td>41%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+0.7%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.4%</td><td>78%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.5%</td><td>67%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
-          </span>
-        </td>
-        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.2% vs SPY · 49% up · n=2339</span><span class="l-zh">对SPY -0.2% · 49% 上涨 · n=2339</span></td>
-      </tr>
-      
-      <tr>
         <td class="l"><a href="basket/us_sector_energy.html"><b>XLE</b></a> <span class="muted"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
         </td>
-        <td class="l" data-sort="8">
+        <td class="l" data-sort="7">
           <span style="display:inline-flex;align-items:center;gap:6px">
-            <span class="pill" style="border:1px solid var(--down);color:var(--down);background:transparent;font-weight:700"><span class="l-en">TOPPING</span><span class="l-zh">见顶</span></span>
-            <span style="color:var(--down);letter-spacing:1px;font-size:10px">●</span>
+            <span class="pill" style="border:1px solid var(--orange);color:var(--orange);background:transparent;font-weight:700"><span class="l-en">EXTENDED</span><span class="l-zh">过热</span></span>
+            <span style="color:var(--orange);letter-spacing:1px;font-size:10px">●</span>
           </span>
-          <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Overbought and rolling over — distribution risk; reduce.</span><span class="l-zh">超买且开始回落——派发风险；减仓。</span></div>
+          <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px"><span class="l-en">Overbought and still rising — late; hold/trim, don&#39;t chase.</span><span class="l-zh">超买且仍在上行——已晚；持有/减仓，勿追。</span></div>
           
           
         </td>
-        <td class="l" style="font-size:12px"><span class="l-en">StochRSI ↑20, MACD curling up, ~3d to cross</span><span class="l-zh">StochRSI 上穿20, MACD 上弯, 约3天后交叉</span></td>
+        <td class="l" style="font-size:12px"><span class="l-en">StochRSI ↑20, MACD curling up, ~4d to cross</span><span class="l-zh">StochRSI 上穿20, MACD 上弯, 约4天后交叉</span></td>
         <td class="pos" style="font-size:12px">✓200d ✓50d</td>
-        <td style="font-size:12px">RSI 54 · Stoch 54</td>
-        <td class="neg" data-sort="-5.8">-5.8%</td>
+        <td style="font-size:12px">RSI 53 · Stoch 52</td>
+        <td class="neg" data-sort="-6.0">-6.0%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+0.3% (61%)</span>
@@ -13399,8 +13359,8 @@
         </td>
         <td class="l" style="font-size:12px"><span class="l-en">MACD ↑</span><span class="l-zh">MACD 上穿</span></td>
         <td class="" style="font-size:12px">✗200d ✓50d</td>
-        <td style="font-size:12px">RSI 51 · Stoch 74</td>
-        <td class="neg" data-sort="-11.4">-11.4%</td>
+        <td style="font-size:12px">RSI 52 · Stoch 77</td>
+        <td class="neg" data-sort="-10.4">-10.4%</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">+2.7% (78%)</span>

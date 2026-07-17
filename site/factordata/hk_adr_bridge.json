@@ -15,12 +15,17 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "BIDU": {
+    "BABA": {
       "asof": "2026-07-15",
       "lag_days": 1,
       "state": "fresh"
     },
-    "JD": {
+    "FXI": {
+      "asof": "2026-07-15",
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "BIDU": {
       "asof": "2026-07-15",
       "lag_days": 1,
       "state": "fresh"
@@ -30,12 +35,7 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "FXI": {
-      "asof": "2026-07-15",
-      "lag_days": 1,
-      "state": "fresh"
-    },
-    "FXI": {
+    "JD": {
       "asof": "2026-07-15",
       "lag_days": 1,
       "state": "fresh"
