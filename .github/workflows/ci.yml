@@ -612,6 +612,11 @@ on:
       - "engine/corp_credit.py"
       - "tests/test_corp_credit.py"
       - "scripts/fetch_ishares_validation_sample.py"
+      # Pick Lab liquidity gate: candidates module + liquidity regression test.
+      # Any change to candidates.py or the liquidity test file re-proves the
+      # NaN.ge() regression fix (null-adv rows must pass with liq_unknown=True).
+      - "engine/pick_lab/candidates.py"
+      - "tests/test_pick_lab_liquidity.py"
   workflow_dispatch:
 
 permissions:
@@ -2272,6 +2277,31 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: CCW-W6 Study S1 unit tests
         run: python -m pytest tests/test_ccw_study_s1.py -v
+
+  pick-lab-liquidity:
+    # Pick Lab liquidity gate regression (P0 fix):
+    # On float64, NaN.ge(threshold) returns False — not NA — so the old
+    # fillna(True) was a no-op and null-adv rows were silently excluded
+    # (86.7% of snapshot rows, ~1475 of 1702 names).  Spec §3 says missing
+    # dollar_adv_20d must PASS with liq_unknown=True.
+    # Fix: adv.isna() | adv.ge(_LIQ_ADV_MIN) in _apply_liquidity().
+    # Two suites:
+    #   test_pick_lab_liquidity.py — four required cases (null-adv pass,
+    #                                below-threshold excluded, above-threshold
+    #                                pass, close<5+null-adv excluded) plus
+    #                                boundary / multi-row regression pins.
+    #   test_pick_lab_core.py      — full core suite must not regress.
+    # Network-free; no data/ writes.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: pick lab liquidity gate regression tests
+        run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py -q
 
   collect-identity:
     # Registered-visitor identity capture (app/main.py /api/collect): Supabase session-cookie

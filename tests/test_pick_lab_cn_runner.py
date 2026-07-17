@@ -450,39 +450,136 @@ class TestNeverBreak:
 
 
 # ---------------------------------------------------------------------------
-# 8. Grade pass: hl2 fill from raw OHLC
+# 8. Grade pass: shared grade_fires() via benchmark-calendar panel
 # ---------------------------------------------------------------------------
 
-class TestGradePassHl2:
-    def test_grade_uses_hl2_fill(self, tmp_path: Path, monkeypatch):
-        """grade rows should stamp fill_basis='hl2' when raw OHLC is available."""
+def _make_cn_grade_env(tmp_path: Path, monkeypatch, asof: str):
+    """Build a CN test environment with raw OHLC and a CSI300 benchmark series.
+
+    Returns (cn_dir, raw_dir, bm_series, dates).
+    """
+    raw_dir = tmp_path / "data" / "china_stocks_raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    dates = pd.date_range("2025-11-01", periods=80, freq="B")
+    for ticker in ["100000.SS", "100001.SS"]:
+        df = pd.DataFrame({
+            "open": 10.0, "close": 10.5, "high": 11.0, "low": 9.5, "volume": 1e6,
+        }, index=dates)
+        df.to_parquet(raw_dir / f"{ticker}.parquet")
+
+    snap = _make_cn_snap(n=2, asof=asof)
+    cn_dir, labdata = _patch_cn_env(tmp_path, monkeypatch, snap, asof)
+
+    from engine.pick_lab.profile import MarketProfile, CN_PROFILE
+    from engine.pick_lab import profile as prof_mod
+
+    bm_series = pd.Series(10000.0, index=pd.DatetimeIndex(dates))
+
+    tmp_profile2 = MarketProfile(
+        market_id=prof_mod.CN_PROFILE.market_id,
+        fires_path=cn_dir / "fires.jsonl",
+        grades_path=cn_dir / "grades.jsonl",
+        lh_fires_path=cn_dir / "lh_fires.jsonl",
+        lh_grades_path=cn_dir / "lh_grades.jsonl",
+        snapshot_dir=cn_dir / "snapshots",
+        benchmark_ticker=CN_PROFILE.benchmark_ticker,
+        benchmark_loader=lambda: bm_series,
+        fill_basis="close",
+        raw_store_path_template=str(raw_dir / "{ticker}.parquet"),
+        sealed_up_col=CN_PROFILE.sealed_up_col,
+        fillable_col=CN_PROFILE.fillable_col,
+        entry_horizons=CN_PROFILE.entry_horizons,
+        lh_horizons=CN_PROFILE.lh_horizons,
+        primary_horizon=CN_PROFILE.primary_horizon,
+        mfe_mae_sessions=CN_PROFILE.mfe_mae_sessions,
+        random_ctrl_id=CN_PROFILE.random_ctrl_id,
+        avoid_engine_id=CN_PROFILE.avoid_engine_id,
+        refire_lockout_sessions=CN_PROFILE.refire_lockout_sessions,
+        liq_close_min=CN_PROFILE.liq_close_min,
+        liq_turnover_min=CN_PROFILE.liq_turnover_min,
+        max_picks_default=CN_PROFILE.max_picks_default,
+        extra_fire_stamp_cols=CN_PROFILE.extra_fire_stamp_cols,
+        skipped_unfillable_col=CN_PROFILE.skipped_unfillable_col,
+        data_gap_col=CN_PROFILE.data_gap_col,
+        st_exclude_col=CN_PROFILE.st_exclude_col,
+        default_ruler=CN_PROFILE.default_ruler,
+        excess_label=CN_PROFILE.excess_label,
+    )
+    monkeypatch.setattr(prof_mod, "CN_PROFILE", tmp_profile2)
+    return cn_dir, raw_dir, bm_series, dates
+
+
+class TestGradePassPanel:
+    def test_grade_hl2_fill_basis_with_raw_ohlc(self, tmp_path: Path, monkeypatch):
+        """CNPL-R4: when raw OHLC is present, exec_price = (H+L)/2 and fill_basis='hl2'.
+
+        The test environment writes high=11.0, low=9.5 for every session.
+        Expected exec_price = (11.0 + 9.5) / 2 = 10.25.
+        fill_basis must be 'hl2'.
+        """
         import importlib
 
-        asof = "2026-01-05"  # make date old so grading triggers
-        snap = _make_cn_snap(n=2, asof=asof)
+        asof = "2025-11-05"  # old date so horizon can elapse within the 80-day window
+        cn_dir, raw_dir, bm_series, dates = _make_cn_grade_env(tmp_path, monkeypatch, asof)
 
-        # Create raw OHLC BEFORE calling _patch_cn_env so the path is known
+        monkeypatch.setenv("CN_LANE", "asia")
+        import scripts.build_china_pick_lab as runner
+        importlib.reload(runner)
+
+        rc = runner.main()
+        assert rc == 0
+
+        from engine.pick_lab.ledger import load_jsonl
+        grades = load_jsonl(cn_dir / "grades.jsonl") if (cn_dir / "grades.jsonl").exists() else []
+
+        # Must have produced at least some grade rows (asof is old enough)
+        assert grades, "Expected grade rows with raw OHLC present"
+
+        ret_rows = [g for g in grades if g.get("kind") == "ret"]
+        assert ret_rows, "Expected ret-kind grade rows"
+
+        for g in ret_rows:
+            # CNPL-R4: fill price = (H+L)/2 when raw OHLC present
+            assert g.get("fill_basis") == "hl2", (
+                f"CNPL-R4: fill_basis expected 'hl2' when raw OHLC present, "
+                f"got {g.get('fill_basis')!r}: {g}"
+            )
+            # exec_price must be the hl2 value: (11.0 + 9.5) / 2 = 10.25
+            assert abs(g.get("exec_price", 0) - 10.25) < 1e-3, (
+                f"CNPL-R4: exec_price expected ~10.25 (hl2), got {g.get('exec_price')!r}: {g}"
+            )
+            assert g.get("benchmark_ticker") is not None, (
+                f"grade row missing benchmark_ticker: {g}"
+            )
+            assert g.get("authority") == "display_only"
+
+    def test_grade_close_fallback_when_raw_ohlc_absent(self, tmp_path: Path, monkeypatch):
+        """CNPL-R4 fallback: when raw OHLC is absent, fill_basis='close' (panel close used).
+
+        We set up one ticker WITH raw OHLC (expects hl2) and delete/skip one without.
+        This test writes no raw OHLC at all so every ticker falls back to close.
+        """
+        import importlib
+
+        asof = "2025-11-05"
         raw_dir = tmp_path / "data" / "china_stocks_raw"
         raw_dir.mkdir(parents=True, exist_ok=True)
-        dates = pd.date_range("2025-11-01", periods=60, freq="B")
+        dates = pd.date_range("2025-11-01", periods=80, freq="B")
+
+        # Write raw OHLC WITHOUT high/low columns — forces close fallback
         for ticker in ["100000.SS", "100001.SS"]:
             df = pd.DataFrame({
-                "open": 10.0, "close": 10.5, "high": 11.0, "low": 9.5, "volume": 1e6,
+                "open": 10.0, "close": 10.5, "volume": 1e6,
             }, index=dates)
             df.to_parquet(raw_dir / f"{ticker}.parquet")
 
-        # Patch env; _patch_cn_env sets benchmark_loader=None, so we override
-        # the profile again (freeze still holds — build a new one)
+        snap = _make_cn_snap(n=2, asof=asof)
         cn_dir, labdata = _patch_cn_env(tmp_path, monkeypatch, snap, asof)
 
-        # The _patch_cn_env already replaced CN_PROFILE in prof_mod with a tmp profile.
-        # Re-replace it with benchmark_loader wired in (still frozen; build fresh).
         from engine.pick_lab.profile import MarketProfile, CN_PROFILE
         from engine.pick_lab import profile as prof_mod
 
-        # Build a benchmark series
         bm_series = pd.Series(10000.0, index=pd.DatetimeIndex(dates))
-
         tmp_profile2 = MarketProfile(
             market_id=prof_mod.CN_PROFILE.market_id,
             fires_path=cn_dir / "fires.jsonl",
@@ -492,7 +589,7 @@ class TestGradePassHl2:
             snapshot_dir=cn_dir / "snapshots",
             benchmark_ticker=CN_PROFILE.benchmark_ticker,
             benchmark_loader=lambda: bm_series,
-            fill_basis="hl2_raw",
+            fill_basis="close",
             raw_store_path_template=str(raw_dir / "{ticker}.parquet"),
             sealed_up_col=CN_PROFILE.sealed_up_col,
             fillable_col=CN_PROFILE.fillable_col,
@@ -525,13 +622,126 @@ class TestGradePassHl2:
         from engine.pick_lab.ledger import load_jsonl
         grades = load_jsonl(cn_dir / "grades.jsonl") if (cn_dir / "grades.jsonl").exists() else []
 
-        # The critical test: no grades have fill_basis='unavailable' when raw OHLC was provided.
-        # (There may be zero grades if no trade matured yet — that's ok.)
-        for g in grades:
-            assert g.get("fill_basis") != "unavailable", (
-                f"grade row has fill_basis='unavailable' despite raw OHLC being available: {g}"
+        ret_rows = [g for g in grades if g.get("kind") == "ret"]
+        assert ret_rows, "Expected ret-kind grade rows"
+
+        for g in ret_rows:
+            # No H/L in raw OHLC — must fall back to close
+            assert g.get("fill_basis") == "close", (
+                f"CNPL-R4 fallback: fill_basis expected 'close' when H/L absent, "
+                f"got {g.get('fill_basis')!r}: {g}"
             )
-            assert g.get("authority") == "display_only"
+            # exec_price from panel close = 10.5
+            assert abs(g.get("exec_price", 0) - 10.5) < 1e-3, (
+                f"CNPL-R4 fallback: exec_price expected ~10.5 (close), got {g.get('exec_price')!r}: {g}"
+            )
+            assert g.get("benchmark_ticker") is not None
+
+    def test_grade_excess_spy_uses_csi300(self, tmp_path: Path, monkeypatch):
+        """ret_excess_spy is computed against CSI300 (the CN benchmark)."""
+        import importlib
+
+        asof = "2025-11-05"
+        cn_dir, raw_dir, bm_series, dates = _make_cn_grade_env(tmp_path, monkeypatch, asof)
+
+        monkeypatch.setenv("CN_LANE", "asia")
+        import scripts.build_china_pick_lab as runner
+        importlib.reload(runner)
+
+        rc = runner.main()
+        assert rc == 0
+
+        from engine.pick_lab.ledger import load_jsonl
+        grades = load_jsonl(cn_dir / "grades.jsonl") if (cn_dir / "grades.jsonl").exists() else []
+
+        # When benchmark series is flat (10000), excess = ret_abs (flat benchmark → ret_abs - 0)
+        for g in grades:
+            if g.get("ret_abs") is not None and g.get("ret_excess_spy") is not None:
+                # Flat benchmark: ret_excess_spy should approximately equal ret_abs
+                diff = abs(g["ret_abs"] - g["ret_excess_spy"])
+                assert diff < 1e-4, (
+                    f"ret_excess_spy should equal ret_abs for flat benchmark; "
+                    f"got ret_abs={g['ret_abs']}, ret_excess_spy={g['ret_excess_spy']}"
+                )
+
+
+# ---------------------------------------------------------------------------
+# 10. Halt semantics: NaN close mid-window grades as ungradeable
+# ---------------------------------------------------------------------------
+
+class TestCNHaltSemantics:
+    def test_halted_ticker_grades_ungradeable_at_blocked_horizon(self, tmp_path: Path, monkeypatch):
+        """A CN ticker with NaN closes mid-window grades as ungradeable at those horizons.
+
+        Scenario: two fires on the same day.
+        - normal_ticker: continuous closes throughout the window → grades at h=5
+        - halted_ticker: closes go NaN after exec_date → ungradeable at h=5 (no close)
+
+        The benchmark (CSI300) calendar is continuous; halted_ticker's NaN sessions
+        are represented as NaN in the panel — grade.py's null-honest handling
+        marks it ungradeable (no grade row emitted).
+        """
+        import importlib
+        import numpy as np
+        from engine.pick_lab.grade import grade_fires
+        from scripts.build_china_pick_lab import _build_cn_close_panel
+
+        # 40 benchmark sessions
+        dates = pd.date_range("2025-11-03", periods=40, freq="B")
+        csi300 = pd.Series(10000.0, index=pd.DatetimeIndex(dates))
+
+        # normal_ticker: full close series
+        close_normal = pd.Series(15.0, index=pd.DatetimeIndex(dates))
+
+        # halted_ticker: NaN from session 2 onward (simulates halt immediately after exec)
+        close_halted = pd.Series(15.0, index=pd.DatetimeIndex(dates))
+        close_halted.iloc[2:] = float("nan")  # halted from position 2 onward
+
+        raw_by_ticker = {
+            "normal_ticker": pd.DataFrame({"close": close_normal, "high": close_normal + 0.5, "low": close_normal - 0.5}, index=dates),
+            "halted_ticker": pd.DataFrame({"close": close_halted, "high": close_halted + 0.5, "low": close_halted - 0.5}, index=dates),
+        }
+
+        close_panel, high_panel, low_panel = _build_cn_close_panel(csi300, raw_by_ticker)
+
+        fire_date = str(dates[0].date())  # fire on session 0
+        fires = [
+            {"engine_id": "test_book", "ticker": "normal_ticker", "fire_date": fire_date},
+            {"engine_id": "test_book", "ticker": "halted_ticker", "fire_date": fire_date},
+        ]
+
+        grade_rows, n_ung = grade_fires(
+            fires,
+            close_panel,
+            csi300,
+            sector_closes=None,
+            hold_thesis=False,
+        )
+
+        # normal_ticker should produce ret grade rows at every elapsed horizon
+        normal_ret_rows = [
+            r for r in grade_rows
+            if r.get("ticker") == "normal_ticker" and r.get("kind") == "ret"
+        ]
+        assert len(normal_ret_rows) > 0, "normal_ticker should have ret grade rows"
+
+        # halted_ticker ret rows: exec=session 1 (close=15.0, valid).
+        # ENTRY_HORIZONS = (5,10,21,63). Target sessions: 6,11,22,64.
+        # close_halted is NaN from iloc[2] onward → sessions 2+ are NaN.
+        # Targets 6,11,22 are NaN → ungradeable (no ret row).
+        # Session 64 out of range (40 sessions) → not yet elapsed → no row.
+        # halted_ticker should produce ZERO ret grade rows.
+        halted_ret_rows = [
+            r for r in grade_rows
+            if r.get("ticker") == "halted_ticker" and r.get("kind") == "ret"
+        ]
+        assert len(halted_ret_rows) == 0, (
+            f"halted_ticker should produce no ret grade rows (NaN closes from session 2); "
+            f"got: {halted_ret_rows}"
+        )
+
+        # n_ung should be > 0 (halted_ticker counted as ungradeable per elapsed horizon)
+        assert n_ung > 0, "ungradeable count should be > 0 for the halted ticker"
 
 
 # ---------------------------------------------------------------------------

@@ -47,7 +47,7 @@ def _apply_liquidity(df: pd.DataFrame) -> pd.DataFrame:
         adv_ok = pd.Series(True, index=df.index)
     else:
         df["liq_unknown"] = adv.isna()
-        adv_ok = adv.ge(_LIQ_ADV_MIN).fillna(True)  # null passes (liq_unknown)
+        adv_ok = adv.isna() | adv.ge(_LIQ_ADV_MIN)  # null passes (liq_unknown)
     return df[close_ok & adv_ok].copy()
 
 
