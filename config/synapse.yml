@@ -795,7 +795,7 @@ artifacts:
     known_extra_writers: []
     owner_program: mag7-regime
     cadence: daily-engine
-    storage: git
+    storage: gitignored-local
     asof_field: as_of
     freshness_sla_hours: 30
     schema: mag7_regime.v1
@@ -2550,7 +2550,7 @@ artifacts:
     known_extra_writers: []
     owner_program: turn-sensitivity
     cadence: daily-engine
-    storage: git
+    storage: gitignored-local
     asof_field: as_of
     freshness_sla_hours: 30
     schema: mtf_upturn.v1
@@ -2585,7 +2585,7 @@ artifacts:
     known_extra_writers: []
     owner_program: narrative-ignition
     cadence: daily-engine
-    storage: git
+    storage: gitignored-local
     asof_field: as_of
     freshness_sla_hours: 30
     schema: flare_persistence.v1
@@ -2719,7 +2719,7 @@ artifacts:
     known_extra_writers: []
     owner_program: china-alpha
     cadence: daily-engine
-    storage: git
+    storage: gitignored-local
     asof_field: as_of
     freshness_sla_hours: 30
     schema: mtf_upturn_cn.v1
@@ -3621,10 +3621,14 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - site/state_of_themes.html
     external_consumers:
       - mastermind:vendored
-    notes: "SINGLE authoritative writer enforced by test_build_theme_addons_no_foresight_write.py (CI gate). Previously build_theme_addons.py clobbered this; the regression test now blocks any second writer."
+    notes: >
+      SINGLE authoritative writer enforced by test_build_theme_addons_no_foresight_write.py (CI gate).
+      Previously build_theme_addons.py clobbered this; the regression test now blocks any second writer.
+      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
     qual_ladder_ref: null
 
   # --- 2 consumers ---
@@ -7026,6 +7030,7 @@ artifacts:
     cadence: daily-engine
     storage: git
     asof_field: as_of
+    staleness_from: generated_utc
     freshness_sla_hours: 30
     schema: neural_web_mastermind_context.v1
     tier: display
@@ -7066,6 +7071,7 @@ artifacts:
     cadence: daily-engine
     storage: git
     asof_field: as_of
+    staleness_from: generated_utc
     freshness_sla_hours: 30
     schema: neural_web_mastermind_context.v1
     tier: display
@@ -7587,10 +7593,11 @@ artifacts:
     consumers: []
     external_consumers: []
     notes: >
-      CPI P1 substrate: stable entity id map for the cycle-pattern lake (~180 entities
-      across 9 families; basket/amalgam rows flagged pit_membership=False). Rebuilt by
-      scripts/build_cycle_pattern_lake.py. Infrastructure/display only — no authority.
-      (Notes were a copy-paste of the neuralweb-health artifact until 2026-07-06; fixed.)
+      Site mirror of data/neuralweb/health.json, the NW lobe-status surface. Exposes
+      per-lobe freshness, coverage, and armed/degraded flags for all Neural Web lobes.
+      Consumed by committee.html (NW health panel) for client-side freshness display.
+      Display/infrastructure only — no authority. Written by scripts/build_neuralweb_health.py
+      in the daily-engine step; site copy written atomically alongside the canonical artifact.
 
   # --- NW read layer: committee-page ledger distills (2026-07-10) ---
   site-neuralweb-health-history:
@@ -7806,6 +7813,135 @@ artifacts:
       Site mirror of attention-deterministic for client-side fetch in committee.html.
       Written by scripts/build_attention_deterministic.py in the same step.
 
+  # --- NW site mirrors: confluence-graph, kernel-families, kernel-half-lives, liquidity-plumbing, cortex-memo ---
+
+  site-confluence-graph:
+    path: site/neuralwebdata/confluence_graph.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: neuralweb.confluence_graph.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      Site mirror of confluence-graph (data/neuralweb/confluence_graph.json) for
+      client-side fetch. Copied by scripts/build_site.py in the daily-engine step.
+      Read by committee.html typed-graph panel and aibrief.js context sidebar.
+      SLA mirrors the data-side entry (30h, daily-engine cadence).
+
+  site-kernel-families:
+    path: site/neuralwebdata/kernel_families.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      Site mirror of kernel-families (data/neuralweb/kernel_families.json) for
+      client-side fetch. Copied by scripts/build_site.py in the daily-engine step.
+      Read by committee.html per-engine-family decay diagnostics panel.
+      SLA mirrors the data-side entry (30h, daily-engine cadence).
+
+  site-kernel-half-lives:
+    path: site/neuralwebdata/half_life.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      Site mirror of kernel-half-lives (data/neuralweb/half_life.json) for
+      client-side fetch. Copied by scripts/build_site.py in the daily-engine step.
+      Read by committee.html holding-horizon half-life chip display.
+      SLA mirrors the data-side entry (30h, daily-engine cadence).
+
+  site-liquidity-plumbing:
+    path: site/neuralwebdata/liquidity_plumbing.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    staleness_from: produced_at
+    freshness_sla_hours: 30
+    schema: neuralweb.liquidity_plumbing.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      Site mirror of liquidity-plumbing (data/neuralweb/liquidity_plumbing.json) for
+      client-side fetch. Copied by scripts/build_site.py in the daily-engine step.
+      Read by committee.html liquidity-plumbing lobe panel.
+      Content asof trails produced_at by FRED T+1/T+2 (same as data-side); staleness_from
+      uses produced_at (the run timestamp) so freshness checks are not penalised for the
+      structural data lag. SLA mirrors the data-side entry (30h, daily-engine cadence).
+
+  site-cortex-memo:
+    path: site/neuralweb/cortex_memo.json
+    format: json
+    producer: engine/neuralweb/cortex.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: nightly-cortex
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.cortex_memo.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/aibrief.js
+      - site/committee.html
+    external_consumers: []
+    notes: >
+      Site mirror of cortex-memo (data/neuralweb/cortex/memo.json; note path
+      name-mangling: data side is cortex/memo.json, site side is cortex_memo.json).
+      Written atomically alongside the canonical copy by engine/neuralweb/cortex.py
+      write_memo(). Read by site/aibrief.js (committee AI brief widget) and
+      site/committee.html (cortex deliberation panel). SLA mirrors the data-side
+      cortex-memo entry (30h, nightly-cortex cadence). Display-only; shadow tier
+      on the data side but display here as the site projection is purely read-only.
+
   # --- W1 NW Core-Cognition: Mechanism Pathway Compiler v1 ---
   mechanism-pathways:
     path: data/neuralweb/mechanism_pathways.json
@@ -7932,7 +8068,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - site/state_of_themes.html
     external_consumers: []
     notes: >
       Site mirror of data/neuralweb/theme_state.json for client-side consumption.
@@ -8085,6 +8222,7 @@ artifacts:
       clarity, orthogonality). Ownership/attention legs are hazard context
       only (NEXTL-U13). hard_caveat: not a buy score; no behavior-changing
       consumer.
+      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
 
   site-theme-asymmetry:
     path: site/neuralwebdata/theme_asymmetry.json
@@ -8105,6 +8243,7 @@ artifacts:
     external_consumers: []
     notes: >
       Site projection of theme_asymmetry.json. Display/context only.
+      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
 
   foresight-earliness-grades:
     path: data/foresight/earliness_grades.json
@@ -8357,7 +8496,8 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
-      - cortex-read
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/ask_brain.py
       - engine/master_brain.py
       - engine/forward_calendar_context.py
     external_consumers: []
@@ -8464,6 +8604,7 @@ artifacts:
     cadence: daily-engine
     storage: git
     asof_field: asof
+    staleness_from: produced_at
     freshness_sla_hours: 30
     schema: neuralweb.liquidity_plumbing.v1
     tier: shadow
@@ -8806,8 +8947,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers:
-      - cortex-read
+    consumers: []
     external_consumers: []
     notes: >
       DT-NW-1 (adjudication §4.2). Promotion, not invention (RUL-P5): exposes the
@@ -8822,7 +8962,9 @@ artifacts:
       must never be blended into any momentum ranker. Degrades gracefully (empty
       states list + note) when site/stockdata dir is absent (CI runners). Deterministic
       ordering (sort by ticker) for stable diffs. DT-W1 replication verdict will
-      rewrite the chip caveat string (single source) if warranted.
+      rewrite the chip caveat string (single source) if warranted. No in-repo reader
+      yet (2026-07-17 audit) — no cortex read tool is wired to this artifact;
+      candidate for a read tool if the DT-W1 verdict warrants it.
 
   # stock-personality program
   stock-personality-panel:
@@ -9734,21 +9876,15 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/world_state.py
-      - engine/neuralweb/cortex.py
-      - engine/neuralweb/ask_brain.py
       - scripts/build_site.py
-      - admin/neural_web.py
       - scripts/build_macro_snapshot.py
     notes: >
-      RUL-NW1 — factor_panel job is sole advancer. Context-only committed
-      digest of factor intelligence state (panel health, factor weather,
-      Pair G, hypotheses h1..h5, scorecard). is_context_only=true,
-      display_only=true. allowed_actions block is a mirror, never a switch
-      (RUL-NW9). No scored-path surfaces — display and admin rendering only.
-      Written by scripts/build_factor_intelligence_state.py after the
-      factor_contradictions step in the factor_panel job.
-      Consumers: scripts/build_site.py (factors.html NW status panel, RUL-NW7/NW8
-      §D PR-4) and admin/neural_web.py (factor_intelligence section, §D PR-4).
+      FX regime/pairs snapshot. Current dollar regime (strong/weak/neutral), favored
+      pairs with entry context, and dollar_desk narrative. Written by scripts/build_forex.py
+      in the daily-engine step. Direct readers: engine/neuralweb/world_state.py (FX lobe),
+      scripts/build_site.py (macro page FX panel), and scripts/build_macro_snapshot.py;
+      the cortex/ask_brain see FX state only transitively via world_state.json.
+      is_context_only=true, display_only=true — no score or ranking authority.
 
   transmission-latest:
     path: data/transmission/latest.json
@@ -9771,12 +9907,13 @@ artifacts:
       - scripts/build_stock_library.py
       - scripts/build_macro_snapshot.py
     notes: >
-      RUL-NW10 — append-only per-fire panel coordinates, keyed (as_of, ticker).
-      PIT by construction: panel row at exactly the standouts as_of date. Fields:
-      as_of, ticker, tier, dna_class, style_regime, alibi_share_20d, twin_bleed_flag,
-      twin_rel_20d, alpha_z_house, top_contrib_streams (top-3 Block-A |contrib_20d|
-      stream names), factor_model=v1. Standalone artifact — JOINs to replay/board-ledger
-      outcomes at study time. Display/analysis only (no rank/score surfaces).
+      Macro transmission/decomposition snapshot. Breakeven decomp (real rate vs
+      inflation compensation), transmission chains (policy rate → credit → activity),
+      and scenario projections (base/bull/bear paths). Written by scripts/build_transmission.py
+      in the daily-engine step. Consumed by engine/neuralweb/cortex.py and
+      engine/neuralweb/ask_brain.py as macro-context input, and by
+      scripts/build_stock_library.py and scripts/build_macro_snapshot.py for
+      display context. Display/context only — no score or ranking authority.
 
   bond-health:
     path: data/bonds/bond_health.json
@@ -10825,8 +10962,10 @@ artifacts:
     consumers: []
     external_consumers: []
     notes: >
-      TIL W7 (PR-W7) site projection of hiring-intent velocity.
-      Git-tracked (committed); compact per-basket rows for UI consumption.
+      TIL W7 (PR-W7) nightly-generated machine-readable mirror of hiring-intent velocity.
+      File is absent from the repo and not yet committed (2026-07-17 audit); no in-repo
+      reader yet. Generated by scripts/build_hiring_velocity.py when the DOL-certs
+      collect lane has run; absent until first collect-lane run on the runner.
       Schema: {schema, as_of, authority, coverage_stats, baskets[]}.
       Per-basket fields: basket_id, cert_velocity_z, cert_count_recent,
       ai_title_share, median_wage_yoy, n_matched_employers,
@@ -11149,6 +11288,7 @@ artifacts:
       pends key email-activation; honest null with fresh as_of until then).
       Off render path (collect-lane step or standalone CLI).
       Honest null (all metrics null) when CENSUS_API_KEY not set.
+      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
 
   # --- TIL W10 (PR-W10) — ClinicalTrials.gov theme-level pipeline density ---
 
@@ -11218,6 +11358,7 @@ artifacts:
       Authority: all may_* false; is_context_only=true.
       Off render path (collect-lane step or standalone CLI).
       Honest null when modality_monthly.parquet absent.
+      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
 
   # --- TIL W11 (PR-W11) — Options-tape crowding-hazard witness ---
 
@@ -11295,6 +11436,7 @@ artifacts:
       real legs are newer than 6d — see neuralweb-theme-options-witness
       notes for the real-data path).
       Honest null when ThetaData store absent.
+      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
 
   # ── Metabolism Phase 0 (F3 capability broker) ────────────────────────────
 

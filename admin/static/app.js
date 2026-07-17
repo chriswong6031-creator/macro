@@ -34,7 +34,7 @@ function showLobeTip(el) {
   const age = l.age_hours, sla = l.freshness_sla_hours;
   const ageTxt = age == null ? "—" : fmtAge(age);
   const slaTxt = sla ? ` / ${fmtAge(sla)}` : "";
-  const stt = l.status === "fresh" ? "fresh" : l.status === "stale" ? "stale" : (l.status === "missing" || l.status === "degraded") ? "missing" : "stale";
+  const stt = l.status === "fresh" ? "fresh" : (l.status === "stale" || l.status === "fresh_partial") ? "stale" : (l.status === "missing" || l.status === "degraded") ? "missing" : "stale";
   tip.innerHTML =
     `<div class="lobe-tip-header">` +
       `<span class="status-dot" data-status="${esc(stt)}" style="width:8px;height:8px"></span>` +
@@ -180,13 +180,6 @@ function fmtElapsedSec(totalSec) {
   if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
-}
-
-function fmtLoopDurationMin(startStr, endStr) {
-  try {
-    const dur = (new Date(endStr) - new Date(startStr)) / 60000;
-    return dur > 0 ? dur.toFixed(0) : "0";
-  } catch (e) { return "?"; }
 }
 
 /* Render the live-loop status strip HTML from /api/live_runs response.
@@ -1088,7 +1081,7 @@ AN_RENDER.geo = async () => {
     </div>
     ${unresolved ? `<div class="sub" style="margin-top:10px">Some IPs aren't geolocated yet — the geo-enrich job backfills them every 30 min. <button class="btn" id="anGeoNow">Enrich now</button></div>` : ""}`;
   const g = $("#anGeoNow");
-  if (g) g.onclick = async () => { g.disabled = true; g.textContent = "enriching…"; const r = await post("/api/analytics/fp/geo_enrich", { budget: 300 }); toast(r.ok ? "geo enriched" : (r.reason || "failed"), !r.ok); anLoad("geo"); };
+  if (g) g.onclick = async () => { if (!confirm("Run geo-enrich now? This may make external API calls.")) return; g.disabled = true; g.textContent = "enriching…"; const r = await post("/api/analytics/fp/geo_enrich", { budget: 300, confirm: true }); toast(r.ok ? "geo enriched" : (r.reason || "failed"), !r.ok); anLoad("geo"); };
 };
 AN_RENDER.sessions = async () => {
   const d = await api(`/api/analytics/fp/sessions?limit=60`);
@@ -1175,10 +1168,6 @@ function currentAnalyticsDetail() {
   let m = location.hash.match(/^#\/session\/(.+)$/); if (m) return { kind: "session", id: decodeURIComponent(m[1]) };
   m = location.hash.match(/^#\/visitor\/(.+)$/); if (m) return { kind: "visitor", id: decodeURIComponent(m[1]) };
   return null;
-}
-function anDetailHead(title) {
-  const head = h(`<div class="an-detail-head"><a class="btn" href="#" id="anBack">← Analytics</a><span class="an-detail-title">${title}</span></div>`);
-  return head;
 }
 async function renderSessionDetail(id) {
   if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
@@ -1350,7 +1339,7 @@ RENDER.brief = async () => {
     ${!d.deepseek_key ? `<div class="banner show" style="position:static">⚠︎ No AI key set (<code>DEEPSEEK_API_KEY</code>) — briefs won't generate even if turned on.</div>` : ""}
     <div class="section">AI morning briefs</div>
     <div class="row"><label class="switch"><input type="checkbox" id="mbEn" ${mb.enabled ? "checked" : ""}><span class="slider"></span></label>
-      <div><div class="lab">Generate the morning briefs</div><div class="note">topics: ${(mb.lenses || []).join(", ")} · AI model <code>${esc(mb.model || "?")}</code></div></div>
+      <div><div class="lab">Generate the morning briefs</div><div class="note">topics: ${(mb.lenses || []).map(esc).join(", ")} · AI model <code>${esc(mb.model || "?")}</code></div></div>
       <span class="spacer"></span>${intervalSel("master_brain", mb.interval_days)}</div>
     <div class="row"><label class="switch"><input type="checkbox" id="mbZh" ${mb.translate_zh ? "checked" : ""}><span class="slider"></span></label>
       <div><div class="lab">Chinese version (中文)</div><div class="note">adds a low-cost AI translation to each brief</div></div></div>
@@ -1833,8 +1822,8 @@ function nwSectionGovernance(gov) {
       <div class="kv"><span>Level</span><b>${nwPill(prob.tier || "?", prob.granted ? "s-ok" : "s-warn")}</b></div>
       <div class="kv"><span>Authority granted?</span><b style="color:${prob.granted ? "var(--ok)" : "var(--warn)"}">${prob.granted ? "YES" : "NO"}</b></div>
       <div class="kv"><span>Reason</span><span class="sub">${esc(prob.reason || "—")}</span></div>
-      <div class="kv"><span>Scored so far / needed</span><b>${prob.n_graded != null ? prob.n_graded : "—"} / ${prob.min_n}</b></div>
-      <div class="kv"><span>Correct hits / needed</span><b>${prob.hits != null ? prob.hits : "—"} / ${prob.min_events}</b></div>
+      <div class="kv"><span>Scored so far / needed</span><b>${prob.n_graded != null ? prob.n_graded : "—"} / ${prob.min_n != null ? prob.min_n : "—"}</b></div>
+      <div class="kv"><span>Correct hits / needed</span><b>${prob.hits != null ? prob.hits : "—"} / ${prob.min_events != null ? prob.min_events : "—"}</b></div>
       ${prob.lapses_at ? `<div class="kv"><span>Trial ends</span><b>${esc(prob.lapses_at)}</b></div>` : ""}`);
   }
 
@@ -1992,10 +1981,14 @@ function nwIndependenceCard(indep) {
 function nwHero(d) {
   const st = d.overall_status || "unknown";
   const sc = d.summary_counts || {};
+  const dh = d.desc_health || {};
   const chip = (label, n, cls) => `<span class="pill"><span class="led ${cls}"></span>${n != null ? n : "—"} ${label}</span>`;
   const note = d.source === "synapse_registry"
     ? "Lobe map sourced live from the signal registry (config/synapse.yml). Freshness and cortex activity fill in after the nightly pipeline writes health.json."
     : `Live health as of ${esc(d.as_of || "—")}. Every lobe below is a cross-engine artifact on the Neural Web bus.`;
+  const descLine = (dh.curated != null || dh.stale != null || dh.auto != null)
+    ? `<div class="sub muted" style="margin-top:4px;font-size:11px">descriptions: ${dh.curated || 0} curated · ${dh.stale || 0} outdated · ${dh.auto || 0} auto</div>`
+    : "";
   return `<div class="nw-hero">
     <div class="nw-hero-row">
       <span class="status-dot" data-status="${esc(NW_STATUS_DOT[st] || "unknown")}" style="width:14px;height:14px"></span>
@@ -2007,13 +2000,17 @@ function nwHero(d) {
       ${chip("stale", sc.stale, "warn")}
       ${chip("missing", sc.missing, "bad")}
       ${sc.not_locally_verifiable ? chip("R2-only", sc.not_locally_verifiable, "") : ""}
+      ${(sc.degraded || 0) > 0 ? chip("degraded", sc.degraded, "bad") : ""}
+      ${(sc.fresh_partial || 0) > 0 ? chip("partial", sc.fresh_partial, "warn") : ""}
+      ${(sc.unknown || 0) > 0 ? chip("unknown", sc.unknown, "") : ""}
     </div>
+    ${descLine}
     <div class="nw-hero-note">${note}</div>
   </div>
   ${nwIndependenceCard(d.independence)}`;
 }
 /* Signature system map — core → group anchors (on a ring) → lobe nodes */
-const NW_STATUS_MAP = (s) => s === "fresh" ? "fresh" : s === "stale" ? "stale"
+const NW_STATUS_MAP = (s) => s === "fresh" ? "fresh" : (s === "stale" || s === "fresh_partial") ? "stale"
   : (s === "missing" || s === "degraded") ? "missing" : "unknown";
 
 /* Shorten a lobe label for the map: the group is already labelled, so drop the
@@ -2106,11 +2103,15 @@ function nwLobeCard(l) {
   const age = l.age_hours, sla = l.freshness_sla_hours;
   const frac = (age != null && sla) ? age / sla : null;
   const ageTxt = age == null ? "—" : fmtAge(age);
+  const actChip = (l.n_recent_actions || 0) > 0
+    ? `<span class="lobe-action-chip" title="${l.n_recent_actions} recent action${l.n_recent_actions === 1 ? "" : "s"}">⚡${l.n_recent_actions}</span>`
+    : "";
   return `<a class="lobe-card" href="#/lobe/${encodeURIComponent(l.id)}" data-lobe="${esc(l.id)}">
     <div class="lobe-card-top">
       <span class="lobe-led" data-status="${esc(l.status)}"></span>
       <span class="lobe-name">${esc(l.label)}</span>
       ${descBadge(l.desc_status)}
+      ${actChip}
       <span class="group-chip" data-group="${esc(l.group)}">${esc(l.group)}</span>
     </div>
     <div class="short-desc">${esc(l.short_desc || "No description registered.")}</div>
@@ -2237,6 +2238,96 @@ function nwSectionEvidenceClock(ec) {
   return html;
 }
 
+/* Section F — Daily Brief */
+function nwSectionDailyBrief(db) {
+  if (!db) return nwMissing("daily_brief section missing");
+  if (db.missing) return nwMissing(db.note || "daily_brief.json not yet written");
+  const p1 = db.operator_attention_p1 || [];
+  const p2 = db.operator_attention_p2 || [];
+  const gaps = db.gaps || [];
+  const statusPill = db.status ? nwPill(db.status, db.status === "ok" ? "s-ok" : db.status === "warn" ? "s-warn" : "s-mut") : "";
+  const phasePill = db.phase ? nwPill(db.phase, "s-mut") : "";
+  let html = `<div class="card">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${statusPill}${phasePill}</div>
+    ${db.brain_run_summary ? `<div class="kv"><span>Brain run</span><b>${esc(db.brain_run_summary)}</b></div>` : ""}
+    ${db.cortex_status ? `<div class="kv"><span>Cortex</span><b>${esc(db.cortex_status)}</b></div>` : ""}
+    <div class="sub muted" style="margin-top:6px">as of ${esc(db.as_of || db.produced_at || "—")}</div>
+  </div>`;
+  if (p1.length) {
+    html += `<div class="section" style="margin-top:10px">P1 — Operator attention <span class="cnt">${p1.length}</span></div>
+      <div class="card">${p1.map(a => `<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);last-child:border-bottom:0">
+        <div style="font-weight:600">${esc(a.headline || a.title || "")}</div>
+        ${a.body ? `<div class="sub" style="margin-top:4px">${esc(a.body)}</div>` : ""}
+        ${a.action ? `<div class="note" style="color:var(--warn);margin-top:4px">${esc(a.action)}</div>` : ""}
+      </div>`).join("")}</div>`;
+  }
+  if (p2.length) {
+    html += `<div class="section" style="margin-top:10px">P2 — Watch items <span class="cnt">${p2.length}</span></div>
+      <div class="card sub">${p2.map(a => `<div style="margin-bottom:6px">${esc(a.headline || a.title || "")}</div>`).join("")}</div>`;
+  }
+  if (gaps.length) {
+    html += `<div class="section" style="margin-top:10px">Gaps</div>
+      <div class="card sub muted">${gaps.map(g => `<div style="margin-bottom:4px">${esc(typeof g === "string" ? g : JSON.stringify(g))}</div>`).join("")}</div>`;
+  }
+  return html;
+}
+
+/* Section H — Support Map */
+function nwSectionSupportMap(sm) {
+  if (!sm) return nwMissing("support_map section missing");
+  if (!sm.available) return nwMissing(sm.note || "support_map unavailable");
+  const missing = sm.registered_but_missing_from_confluence || [];
+  const SHOW_CAP = 10;
+  const shown = missing.slice(0, SHOW_CAP);
+  const overflow = missing.length - SHOW_CAP;
+  let html = `<div class="card">
+    <div class="kv"><span>Drift count</span><b>${sm.drift_count != null ? sm.drift_count : "—"}</b></div>
+    ${sm.note ? `<div class="sub muted" style="margin-top:8px">${esc(sm.note)}</div>` : ""}
+  </div>`;
+  if (missing.length) {
+    html += `<div class="section" style="margin-top:10px">Registered but missing from confluence <span class="cnt">${missing.length}</span></div>
+      <div class="card">
+        ${shown.map(id => `<div class="sub mono" style="margin-bottom:4px">${esc(id)}</div>`).join("")}
+        ${overflow > 0 ? `<div class="sub muted" style="margin-top:6px">…and ${overflow} more</div>` : ""}
+      </div>`;
+  }
+  return html;
+}
+
+/* Section I — Mechanism Pathways */
+function nwSectionMechanismPathways(mp) {
+  if (!mp) return nwMissing("mechanism_pathways section missing");
+  if (!mp.available) return nwMissing(mp.note || "mechanism_pathways.json not yet written");
+  const cur = mp.current || {};
+  const mix = mp.history_emission_mix || {};
+  const stale = cur.stale_legs || [];
+  let html = `<div class="card">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      ${cur.has_pathway ? nwPill("pathway active", "s-ok") : nwPill("no pathway", "s-warn")}
+      ${mp.display_only ? nwPill("display-only", "s-mut") : ""}
+    </div>
+    ${cur.primary_family ? `<div class="kv"><span>Family</span><b>${esc(cur.primary_family)}</b></div>` : ""}
+    ${cur.primary_direction ? `<div class="kv"><span>Direction</span><b>${esc(cur.primary_direction)}</b></div>` : ""}
+    ${cur.coverage_score != null ? `<div class="kv"><span>Coverage score</span><b>${esc(String(cur.coverage_score))}${cur.coverage_basis ? ` <span class="sub muted">${esc(cur.coverage_basis)}</span>` : ""}</b></div>` : ""}
+    ${cur.coherence ? `<div class="kv"><span>Coherence</span><b>${esc(cur.coherence)}</b></div>` : ""}
+    ${cur.as_of ? `<div class="sub muted" style="margin-top:6px">as of ${esc(cur.as_of)}</div>` : ""}
+  </div>`;
+  if (stale.length) {
+    html += `<div class="section" style="margin-top:10px">Stale legs <span class="cnt">${stale.length}</span></div>
+      <div class="card sub">${stale.map(l => `<div class="mono" style="margin-bottom:3px">${esc(typeof l === "string" ? l : JSON.stringify(l))}</div>`).join("")}</div>`;
+  }
+  if (mix.available) {
+    const total = (mix.pathway_count || 0) + (mix.no_pathway_count || 0);
+    html += `<div class="section" style="margin-top:10px">Emission mix (last ${mix.tail_rows || "?"} runs)</div>
+      <div class="card">
+        <div class="kv"><span>With pathway</span><b>${mix.pathway_count || 0} of ${total}</b></div>
+        <div class="kv"><span>No pathway</span><b>${mix.no_pathway_count || 0}</b></div>
+        ${Object.keys(mix.no_pathway_reasons || {}).length ? `<div class="sub muted" style="margin-top:6px">${Object.entries(mix.no_pathway_reasons).map(([r, n]) => `${esc(r)}: ${n}`).join(" · ")}</div>` : ""}
+      </div>`;
+  }
+  return html;
+}
+
 async function loadLegacyOps() {
   const box = $("#nw-legacy"); if (!box) return;
   const d = await api("/api/neural_web");
@@ -2247,7 +2338,10 @@ async function loadLegacyOps() {
     ${nwCollapse("bus_graph", "C — How signals agree &amp; disagree", nwSectionBusGraph(d.bus_graph), false)}
     ${nwCollapse("governance", "D — Permissions &amp; change log", nwSectionGovernance(d.governance), false)}
     ${nwCollapse("factor_intelligence", "E — Factor intelligence (what a stock's move is made of)", nwSectionFactorIntelligence(d.factor_intelligence), false)}
-    ${nwCollapse("evidence_clock", "G — Evidence Clock (come-backs &amp; overdue actions)", nwSectionEvidenceClock(d.evidence_clock), false)}`;
+    ${nwCollapse("daily_brief", "F — Daily brief", nwSectionDailyBrief(d.daily_brief), false)}
+    ${nwCollapse("evidence_clock", "G — Evidence Clock (come-backs &amp; overdue actions)", nwSectionEvidenceClock(d.evidence_clock), false)}
+    ${nwCollapse("support_map", "H — Support map (synapse vs confluence drift)", nwSectionSupportMap(d.support_map), false)}
+    ${nwCollapse("mechanism_pathways", "I — Mechanism pathways", nwSectionMechanismPathways(d.mechanism_pathways), false)}`;
 }
 
 /* ---- Lobe detail "page" (#/lobe/<id>) ----------------------------------- */
@@ -3542,6 +3636,7 @@ RENDER.metabolism = async () => {
         <button class="btn" id="thrKeysSetBtn">Set keys_enabled</button>
       </div>
       <div class="sub muted" style="margin-top:4px">1=claude_code_oauth_1, 2=claude_code_oauth_2, 3=claude_code_oauth_3, legacy=CLAUDE_CODE_OAUTH_TOKEN</div>
+      <div id="thrKeysErr" style="color:var(--bad);font-size:12px;margin-top:4px"></div>
     </div>`;
 
   // --- Run-now section (V11) ---
@@ -3722,10 +3817,21 @@ RENDER.metabolism = async () => {
       });
     });
 
-    const keysSetBtn = $("#metKeysSetBtn", v);
+    const keysSetBtn = $("#thrKeysSetBtn", v);
+    const keysErrEl = $("#thrKeysErr", v);
     if (keysSetBtn) {
       keysSetBtn.addEventListener("click", async () => {
         const val = ($("#thrKeysInput", v) || {}).value || "";
+        if (keysErrEl) keysErrEl.textContent = "";
+        /* client-side validation: empty OR csv of tokens matching ^\d+$ or 'legacy' */
+        if (val !== "") {
+          const tokens = val.split(",").map(t => t.trim());
+          const bad = tokens.filter(t => t !== "legacy" && !/^\d+$/.test(t));
+          if (bad.length) {
+            if (keysErrEl) keysErrEl.textContent = `Invalid tokens: ${bad.join(", ")} — must be a number or 'legacy'.`;
+            return;
+          }
+        }
         if (!window.confirm(`Set keys_enabled = "${val || "(empty = all keys)"}"?`)) return;
         keysSetBtn.disabled = true;
         const r = await post("/api/metabolism/throttle", { keys_enabled: val, confirm: true });

@@ -323,11 +323,6 @@ header {
   padding: 12px 20px;
 }
 
-.hrow { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-
-.brand { font-weight: 700; font-size: 16px; letter-spacing: .2px; }
-.brand .dot { color: var(--accent); }
-
 .hmeta {
   display: flex;
   gap: 14px;
@@ -647,8 +642,6 @@ button.btn.primary:hover {
   background: var(--accent);
   border-color: var(--accent);
 }
-
-button.btn.danger:hover { border-color: var(--bad); color: var(--bad); }
 
 button.btn:disabled { opacity: .45; cursor: not-allowed; }
 button.btn:disabled:hover { border-color: var(--border); color: var(--text); }
@@ -1172,6 +1165,15 @@ input:focus, select:focus {
   box-shadow: 0 0 5px var(--bad);
 }
 
+.status-dot[data-status="fresh_partial"],
+.lobe-led[data-status="fresh_partial"] {
+  background: var(--warn);
+  opacity: .6;
+  box-shadow: 0 0 0 2px rgba(255,184,77,.35);
+  outline: 2px dashed rgba(255,184,77,.5);
+  outline-offset: 1px;
+}
+
 .status-dot[data-status="not_locally_verifiable"],
 .status-dot[data-status="unknown"],
 .lobe-led[data-status="not_locally_verifiable"],
@@ -1304,6 +1306,18 @@ input:focus, select:focus {
   background: var(--surface2);
   color: var(--faint);
   border: 1px solid var(--border);
+}
+
+.lobe-action-chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(255,184,77,.12);
+  border: 1px solid rgba(255,184,77,.3);
+  color: var(--warn);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* --------------------------------------------------------------------------
@@ -1483,14 +1497,6 @@ input:focus, select:focus {
 .flow-node[data-kind="script"] { border-color: rgba(177,140,255,.25); }
 .flow-node[data-kind="program"] { border-color: rgba(75,214,160,.25); }
 
-.flow-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--faint);
-  font-size: 18px;
-  padding-top: 28px; /* vertically aligns near top of cols */
-}
 
 .flow-hub {
   display: flex;
@@ -1607,12 +1613,6 @@ input:focus, select:focus {
   margin-bottom: 20px;
 }
 
-.missing-banner-icon {
-  font-size: 16px;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
 /* amber variant — dialogue-health note (W-AI Mastermind AI page) */
 .warn-banner {
   display: flex;
@@ -1626,68 +1626,6 @@ input:focus, select:focus {
   font-size: 13px;
   line-height: 1.45;
   margin-bottom: 14px;
-}
-
-/* --------------------------------------------------------------------------
-   35. LOBE DETAIL HERO
-   -------------------------------------------------------------------------- */
-.lobe-detail-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding: 20px 22px;
-  border-radius: var(--r-lg);
-  border: 1px solid var(--border);
-  background: linear-gradient(145deg, var(--surface) 0, var(--surface2) 100%);
-  box-shadow: var(--shadow-card);
-  animation: fadeInUp var(--dur) var(--ease);
-}
-
-.lobe-detail-title {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-}
-
-.lobe-detail-badges {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.lobe-badge {
-  font-size: 11.5px;
-  padding: 3px 9px;
-  border-radius: 5px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--muted);
-}
-
-/* --------------------------------------------------------------------------
-   36. WHAT-IT-DOES CARD
-   -------------------------------------------------------------------------- */
-.purpose-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  padding: 18px 20px;
-  margin-bottom: 20px;
-}
-
-.purpose-card .purpose-text {
-  font-size: 13.5px;
-  line-height: 1.65;
-  color: var(--text);
-}
-
-.purpose-source {
-  font-size: 11.5px;
-  color: var(--faint);
-  margin-top: 10px;
-  font-family: var(--mono);
 }
 
 /* --------------------------------------------------------------------------

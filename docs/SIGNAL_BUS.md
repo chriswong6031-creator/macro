@@ -54,7 +54,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | momoedge | 8 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
-| neural-web | 57 |
+| neural-web | 61 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 5 |
@@ -71,7 +71,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | sector-pulse | 3 |
 | setup-species | 6 |
 | short-side | 1 |
-| signal-commons | 8 |
+| signal-commons | 9 |
 | signal-foundry | 4 |
 | standout-accountability | 8 |
 | stock-personality | 5 |
@@ -90,7 +90,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 287 |
+| display | 292 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -99,8 +99,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 437 |
-| gitignored-local | 11 |
+| git | 438 |
+| gitignored-local | 15 |
 | r2 | 7 |
 
 ## Artifacts by owner_program
@@ -231,8 +231,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cycle-ontology-falsifiers | `data/cycle_ontology/falsifiers.json` | json | on-demand | infrastructure | 6 | 0 |
 | country-cycles-forward-log | `data/country_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
 | sector-cycles-forward-log | `data/sector_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
+| cycle-pattern-state | `data/neuralweb/cycle_pattern_state.json` | json | daily-engine | display | 4 | 0 |
 | hazard-model | `data/hazard/model_price_c4414dcb.json` | json | on-demand | scored | 4 | 0 |
-| cycle-pattern-state | `data/neuralweb/cycle_pattern_state.json` | json | daily-engine | display | 3 | 0 |
 | cycle-pattern-truths | `data/cycle_pattern/truths.jsonl` | jsonl | on-demand | display | 2 | 0 |
 | fed-net-liquidity | `data/macro/fed_net_liquidity.parquet` | parquet | daily-engine | infrastructure | 2 | 0 |
 | cycle-pattern-entities | `data/cycle_pattern/entities.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
@@ -247,7 +247,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| dt-contra-state | `data/neuralweb/dt_contra_state.json` | json | daily-engine | display | 1 | 0 |
+| dt-contra-state | `data/neuralweb/dt_contra_state.json` | json | daily-engine | display | 0 | 0 |
 
 ### engine-fix
 
@@ -430,9 +430,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| forex-latest | `data/forex/latest.json` | json | daily-engine | display | 6 | 0 |
 | commodity-latest | `data/commodity/latest.json` | json | daily-engine | display | 4 | 0 |
 | transmission-latest | `data/transmission/latest.json` | json | daily-engine | display | 4 | 0 |
+| forex-latest | `data/forex/latest.json` | json | daily-engine | display | 3 | 0 |
 | bond-health | `data/bonds/bond_health.json` | json | daily-engine | display | 2 | 0 |
 | canada-regime-latest | `data/canada_regime/latest.json` | json | daily-engine | display | 2 | 0 |
 | china-regime-latest | `data/china_regime/latest.json` | json | asia-close | display | 2 | 0 |
@@ -584,6 +584,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
 | nw-health-run-history | `data/neuralweb/nw_health_run_history.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
+| site-cortex-memo | `site/neuralweb/cortex_memo.json` | json | nightly-cortex | display | 2 | 0 |
 | causal-mechanisms | `data/neuralweb/causal_mechanisms.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | claim-accountability | `data/governance/claim_accountability.json` | json | collect | infrastructure | 1 | 0 |
 | confluence-sequence | `data/neuralweb/confluence_sequence.json` | json | daily-engine | display | 1 | 0 |
@@ -604,6 +605,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | site-attention-deterministic | `site/neuralwebdata/attention_deterministic.json` | json | daily-engine | display | 1 | 0 |
+| site-confluence-graph | `site/neuralwebdata/confluence_graph.json` | json | daily-engine | display | 1 | 0 |
+| site-kernel-families | `site/neuralwebdata/kernel_families.json` | json | daily-engine | display | 1 | 0 |
+| site-liquidity-plumbing | `site/neuralwebdata/liquidity_plumbing.json` | json | daily-engine | display | 1 | 0 |
 | site-mechanism-pathways | `site/neuralwebdata/mechanism_pathways.json` | json | daily-engine | display | 1 | 0 |
 | site-neuralweb-daily-brief | `site/neuralwebdata/daily_brief.json` | json | daily-engine | display | 1 | 0 |
 | site-neuralweb-governance-recent | `site/neuralwebdata/governance_recent.json` | json | daily-engine | display | 1 | 0 |
@@ -754,9 +758,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | foresight-earliness-log | `data/foresight/earliness_log.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | hub-signal-snapshots | `data/hub/signal_snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | site-ai-desk-us | `site/allocationdata/ai_desk_us.json` | json | daily-engine | display | 1 | 1 |
+| site-foresight-cascade | `site/basketdata/foresight_cascade.json` | json | daily-engine | display | 1 | 1 |
 | stock-desk-theses | `data/stock_desk/theses.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | thematic-desk-theses | `data/thematic_desk/theses.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
-| site-foresight-cascade | `site/basketdata/foresight_cascade.json` | json | daily-engine | display | 0 | 1 |
 
 ### research-factory
 
@@ -821,6 +825,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | event-priors-openfda | `data/special_situations/event_priors/openfda.json` | json | weekly | display | 2 | 0 |
 | event-priors-sp-index-changes | `data/special_situations/event_priors/sp_index_changes.json` | json | weekly | display | 2 | 0 |
 | kernel-half-lives | `data/neuralweb/half_life.json` | json | daily-engine | infrastructure | 1 | 0 |
+| site-kernel-half-lives | `site/neuralwebdata/half_life.json` | json | daily-engine | display | 1 | 0 |
 | event-priors-gov-contract | `data/special_situations/event_priors/gov_contract.json` | json | weekly | display | 0 | 0 |
 | reflexivity-n-eff-history | `data/reflexivity/n_eff_history.json` | json | daily-engine | infrastructure | 0 | 0 |
 
@@ -870,12 +875,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-theme-thesis | `site/neuralwebdata/theme_thesis.json` | json | daily-engine | display | 4 | 0 |
 | qledger-falsifier-evaluations | `data/qledger/falsifier_evaluations.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-theme-pathways | `site/neuralwebdata/theme_pathways.json` | json | daily-engine | display | 1 | 0 |
+| site-theme-state | `site/neuralwebdata/theme_state.json` | json | daily-engine | display | 1 | 0 |
 | theme-phase-history | `data/neuralweb/theme_phase_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | theme-placebo-tape | `data/foresight/theme_placebo_tape.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | theme-thesis-ledger | `data/neuralweb/theme_thesis_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | foresight-earliness-grades | `data/foresight/earliness_grades.json` | json | daily-engine | display | 0 | 0 |
 | site-theme-asymmetry | `site/neuralwebdata/theme_asymmetry.json` | json | daily-engine | display | 0 | 0 |
-| site-theme-state | `site/neuralwebdata/theme_state.json` | json | daily-engine | display | 0 | 0 |
 | theme-asymmetry | `data/neuralweb/theme_asymmetry.json` | json | daily-engine | display | 0 | 0 |
 | theme-pathways | `data/neuralweb/theme_pathways.json` | json | daily-engine | display | 0 | 0 |
 

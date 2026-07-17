@@ -958,7 +958,10 @@ def test_lobes_panel_summary_counts_consistent():
     d = neural_web.lobes_panel()
     sc = d["summary_counts"]
     assert sc["total"] == len(d["lobes"])
-    counted = sc["fresh"] + sc["stale"] + sc["missing"] + sc["degraded"] + sc["unknown"] + sc["not_locally_verifiable"]
+    counted = (
+        sc["fresh"] + sc["stale"] + sc["missing"] + sc["degraded"]
+        + sc.get("fresh_partial", 0) + sc["unknown"] + sc["not_locally_verifiable"]
+    )
     assert counted == sc["total"], f"Status counts don't add up: {sc}"
 
 
@@ -1698,6 +1701,325 @@ def test_ec_section_readiness_as_list_no_crash(tmp_repo):
         assert queue[0]["blocking_reason"] is None, (
             f"blocking_reason should be None when readiness is not a dict: {queue[0]}"
         )
+
+
+# ---------------------------------------------------------------------------
+# New tests from lane C fixes
+# ---------------------------------------------------------------------------
+
+# (a) summary_counts includes fresh_partial; overall_status=warn when only fresh_partial
+def test_summary_counts_fresh_partial_bucket(tmp_repo):
+    """fresh_partial lobes are counted in the fresh_partial bucket (not unknown)."""
+    from admin import neural_web
+
+    synapse_yaml = """
+meta:
+  schema_version: 1
+artifacts:
+  my-lobe:
+    path: data/neuralweb/my_lobe.json
+    format: json
+    producer: engine/neuralweb/my_engine.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    freshness_sla_hours: 30
+    tier: infrastructure
+    horizon_role: context
+    consumers: []
+    external_consumers: []
+"""
+    (tmp_repo / "config" / "synapse.yml").write_text(synapse_yaml)
+    (tmp_repo / "data" / "neuralweb" / "my_lobe.json").write_text("{}")
+
+    # Write health.json with fresh_partial status
+    health = {
+        "schema": "neuralweb.health.v1",
+        "overall_status": "warn",
+        "produced_at": "2026-07-17T00:00:00+00:00",
+        "as_of": "2026-07-17",
+        "lobes": [
+            {
+                "id": "my-lobe",
+                "status": "fresh_partial",
+                "age_hours": 2.0,
+                "freshness_sla_hours": 30,
+            }
+        ],
+        "cortex": {},
+        "summary_counts": {},
+        "workflow_conformance_misses": [],
+    }
+    (tmp_repo / "data" / "neuralweb" / "health.json").write_text(json.dumps(health))
+
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+    neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+    try:
+        d = neural_web.lobes_panel()
+        sc = d["summary_counts"]
+        assert "fresh_partial" in sc, "fresh_partial bucket must exist in summary_counts"
+        assert sc["fresh_partial"] == 1, f"Expected fresh_partial=1, got {sc}"
+        assert sc["unknown"] == 0, f"fresh_partial must not fall into unknown: {sc}"
+        assert d["overall_status"] == "warn", (
+            f"overall_status must be warn when fresh_partial>0, got {d['overall_status']}"
+        )
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+        neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+
+# (b) _iso_hours_ago date-only string returns a float
+def test_iso_hours_ago_date_only_string():
+    """_iso_hours_ago must handle date-only strings ('2026-07-17') without TypeError."""
+    from admin.neural_web import _iso_hours_ago
+    result = _iso_hours_ago("2026-07-17")
+    assert isinstance(result, float), (
+        f"Date-only string should return float, not {type(result)}: {result!r}"
+    )
+    # Should be a positive number of hours since that date
+    assert result >= 0
+
+
+# (c) _assign_group correctness
+def test_assign_group_neuralweb_lobes_to_core():
+    """neuralweb-* lobes (not mastermind) must land in 'core', not 'ops'."""
+    from admin.neural_web import _assign_group
+    for lid in (
+        "neuralweb-market-plane",
+        "neuralweb-discovery-confluence",
+        "neuralweb-theme-clinical",
+        "neuralweb-theme-options-witness",
+        "neuralweb-theme-trade-flows",
+        "neuralweb-orchestrator-runlog",
+    ):
+        assert _assign_group(lid, "") == "core", (
+            f"{lid!r} should be 'core', got {_assign_group(lid, '')!r}"
+        )
+
+
+def test_assign_group_mastermind_stays_bridge():
+    """neuralweb-mastermind-* must stay in 'bridge'."""
+    from admin.neural_web import _assign_group
+    assert _assign_group("neuralweb-mastermind-context", "") == "bridge"
+    assert _assign_group("neuralweb-mastermind-reviews", "") == "bridge"
+
+
+# (d) SLA block carries source and basis fields
+def test_sla_source_and_basis_present(tmp_repo):
+    """SLA block carries source field; each breach carries basis field."""
+    from admin import neural_web
+
+    synapse_yaml = """
+meta:
+  schema_version: 1
+artifacts:
+  stale-lobe:
+    path: data/neuralweb/stale_lobe.json
+    format: json
+    producer: engine/neuralweb/stale_engine.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    freshness_sla_hours: 1
+    tier: infrastructure
+    horizon_role: context
+    consumers: []
+    external_consumers: []
+"""
+    (tmp_repo / "config" / "synapse.yml").write_text(synapse_yaml)
+    (tmp_repo / "data" / "neuralweb" / "stale_lobe.json").write_text("{}")
+
+    # health.json marks it stale with age 50h >> sla 1h
+    health = {
+        "schema": "neuralweb.health.v1",
+        "overall_status": "warn",
+        "produced_at": "2026-07-17T00:00:00+00:00",
+        "as_of": "2026-07-17",
+        "lobes": [
+            {
+                "id": "stale-lobe",
+                "status": "stale",
+                "age_hours": 50.0,
+                "freshness_sla_hours": 1,
+            }
+        ],
+        "cortex": {},
+        "summary_counts": {},
+        "workflow_conformance_misses": [],
+    }
+    (tmp_repo / "data" / "neuralweb" / "health.json").write_text(json.dumps(health))
+
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SPINE_ENVELOPE = neural_web._DATA_NW / "spine_index.parquet.envelope.json"
+    neural_web._SPINE_PARQUET = neural_web._DATA_NW / "spine_index.parquet"
+    neural_web._KERNEL_ENVELOPE = neural_web._DATA_NW / "kernel_estimates.parquet.envelope.json"
+    neural_web._KERNEL_FAMILIES = neural_web._DATA_NW / "kernel_families.json"
+    neural_web._KERNEL_DECISIONS = neural_web._DATA_NW / "kernel_decisions.json"
+    neural_web._LAGGING_SIGNALS = neural_web._DATA_NW / "lagging_signals.json"
+    neural_web._READ_GATE = neural_web._DATA_NW / "read_gate_baseline.json"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._REFLEXES_YML = neural_web._CONFIG / "reflexes.yml"
+    neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+    try:
+        d = neural_web._section_engine_health()
+        sla = d["sla"]
+        assert not sla.get("missing"), "SLA section should not be missing"
+        assert "source" in sla, "sla block must carry 'source' field"
+        # 'mixed': health.json covers NW-scoped artifacts; the rest fall back to mtime.
+        assert sla["source"] == "mixed", f"Expected mixed source, got {sla['source']!r}"
+        assert "mtime_note" in sla, "sla block must carry mtime_note"
+        assert sla["n_breaches"] == 1, f"Expected 1 breach, got {sla['n_breaches']}"
+        breach = sla["breaches"][0]
+        assert breach["id"] == "stale-lobe"
+        assert "basis" in breach, "Each breach must carry 'basis' field"
+        assert breach["basis"] == "health_json"
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SPINE_ENVELOPE = neural_web._DATA_NW / "spine_index.parquet.envelope.json"
+        neural_web._SPINE_PARQUET = neural_web._DATA_NW / "spine_index.parquet"
+        neural_web._KERNEL_ENVELOPE = neural_web._DATA_NW / "kernel_estimates.parquet.envelope.json"
+        neural_web._KERNEL_FAMILIES = neural_web._DATA_NW / "kernel_families.json"
+        neural_web._KERNEL_DECISIONS = neural_web._DATA_NW / "kernel_decisions.json"
+        neural_web._LAGGING_SIGNALS = neural_web._DATA_NW / "lagging_signals.json"
+        neural_web._READ_GATE = neural_web._DATA_NW / "read_gate_baseline.json"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._REFLEXES_YML = neural_web._CONFIG / "reflexes.yml"
+        neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+
+
+# (e) Fixture-based render tests for _section_support_map
+
+def test_section_support_map_fail_open_when_module_unavailable(tmp_repo):
+    """_section_support_map returns available=False when support_map module is not importable."""
+    from admin import neural_web
+    import sys
+
+    # Block the engine.neuralweb.support_map module by inserting a broken sentinel
+    old_mod = sys.modules.get("engine.neuralweb.support_map", None)
+    sys.modules["engine.neuralweb.support_map"] = None  # type: ignore[assignment]
+    try:
+        result = neural_web._section_support_map()
+        assert result["available"] is False
+        assert isinstance(result["drift_count"], int)
+        assert isinstance(result["registered_but_missing_from_confluence"], list)
+        assert "note" in result
+    finally:
+        if old_mod is None:
+            sys.modules.pop("engine.neuralweb.support_map", None)
+        else:
+            sys.modules["engine.neuralweb.support_map"] = old_mod
+
+
+def test_section_support_map_drift_count_is_int():
+    """_section_support_map always returns drift_count as int (never None)."""
+    from admin.neural_web import _section_support_map
+    result = _section_support_map()
+    # Whether available or not, drift_count must be an int
+    assert isinstance(result["drift_count"], int), (
+        f"drift_count must be int, got {type(result['drift_count'])}: {result['drift_count']!r}"
+    )
+    assert isinstance(result["registered_but_missing_from_confluence"], list)
+
+
+# (e) Fixture-based render tests for _section_mechanism_pathways
+
+def test_section_mechanism_pathways_absent_artifact(tmp_repo):
+    """_section_mechanism_pathways returns available=False when artifact is missing."""
+    from admin import neural_web
+
+    mp_path = tmp_repo / "data" / "neuralweb" / "mechanism_pathways.json"
+    if mp_path.exists():
+        mp_path.unlink()
+
+    old_path = neural_web._NW_MECHANISM_PATHWAYS_JSON
+    neural_web._NW_MECHANISM_PATHWAYS_JSON = mp_path
+    try:
+        result = neural_web._section_mechanism_pathways()
+        assert result["available"] is False
+        assert "note" in result
+    finally:
+        neural_web._NW_MECHANISM_PATHWAYS_JSON = old_path
+
+
+def test_section_mechanism_pathways_schema_key_when_present(tmp_repo):
+    """_section_mechanism_pathways returns schema key when artifact is readable."""
+    from admin import neural_web
+
+    mp_payload = {
+        "schema": "neuralweb.mechanism_pathways.v1",
+        "as_of": "2026-07-17",
+        "produced_at": "2026-07-17T06:00:00Z",
+        "pathways": [
+            {
+                "family": "inflation",
+                "direction_en": "rising",
+                "coverage_score": 0.7,
+                "coverage_basis": "weighted",
+                "coherence": "high",
+                "stale_legs": [],
+            }
+        ],
+        "no_pathway": None,
+        "display_only": True,
+        "not_a_signal": True,
+    }
+    mp_path = tmp_repo / "data" / "neuralweb" / "mechanism_pathways.json"
+    mp_path.parent.mkdir(parents=True, exist_ok=True)
+    mp_path.write_text(json.dumps(mp_payload))
+
+    old_path = neural_web._NW_MECHANISM_PATHWAYS_JSON
+    neural_web._NW_MECHANISM_PATHWAYS_JSON = mp_path
+    try:
+        result = neural_web._section_mechanism_pathways()
+        assert result["available"] is True
+        assert result["schema"] == "neuralweb.mechanism_pathways.v1"
+        assert result["current"]["has_pathway"] is True
+        assert result["current"]["primary_family"] == "inflation"
+    finally:
+        neural_web._NW_MECHANISM_PATHWAYS_JSON = old_path
+
+
+# Reflex-count pin comment (pointing at config/reflexes.yml as the update site)
+def test_reflex_count_pin():
+    """n_registered == 19 — update config/reflexes.yml when adding/removing reflexes."""
+    from admin import neural_web
+    rl = neural_web.panel()["reflex_log"]
+    if rl.get("missing"):
+        pytest.skip("reflexes.yml not parseable")
+    # If this fails, add/remove the entry in config/reflexes.yml and bump this pin.
+    assert rl["n_registered"] == 19  # config/reflexes.yml is the update site
 
 
 if __name__ == "__main__":

@@ -87,6 +87,8 @@ def _iso_hours_ago(ts_str: str | None) -> float | None:
         # handle both Z and +00:00 suffixes
         ts_str = ts_str.replace("Z", "+00:00")
         dt = datetime.fromisoformat(ts_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         now = datetime.now(timezone.utc)
         return round((now - dt).total_seconds() / 3600, 2)
     except Exception:  # noqa: BLE001
@@ -327,33 +329,75 @@ def _section_engine_health() -> dict:
     else:
         out["read_gate"] = {"missing": True, "note": "read_gate_baseline.json not yet written"}
 
-    # SLA compliance — parse synapse.yml, compare each artifact mtime vs SLA
+    # SLA compliance — parse synapse.yml; prefer health.json content-stamp age for
+    # NW-scoped artifacts (mtime lies on worktree checkouts and rewrite-without-advance).
+    # mtime is kept as fallback for artifacts not covered by health.json.
     synapse = _parse_yaml_synapse(_SYNAPSE_YML)
     if synapse and isinstance(synapse.get("artifacts"), dict):
         artifacts = synapse["artifacts"]
         total = len(artifacts)
         breaches: list[dict] = []
         no_mtime: list[str] = []
+
+        # Index health.json lobes by artifact id for O(1) lookup
+        _health_by_id: dict[str, dict] = {}
+        if nw_health and nw_health.get("schema") == "neuralweb.health.v1":
+            for _lh in (nw_health.get("lobes") or []):
+                _lid = _lh.get("id")
+                if _lid:
+                    _health_by_id[_lid] = _lh
+
+        # 'mixed' — health.json covers NW-scoped artifacts only; the rest fall
+        # back to mtime, so a blanket 'health_json' label would mislabel them.
+        _sla_source = "mixed" if _health_by_id else "mtime"
+
         for art_id, art in artifacts.items():
             sla_h = art.get("freshness_sla_hours")
             art_path = art.get("path")
             if sla_h is None or not art_path:
                 continue
-            full_path = _ROOT / art_path
-            age = _mtime_hours_ago(full_path)
-            if age is None:
-                no_mtime.append(art_id)
-                continue
-            if age > sla_h:
-                breaches.append({
-                    "id": art_id,
-                    "tier": art.get("tier", "?"),
-                    "owner": art.get("owner_program", "?"),
-                    "sla_hours": sla_h,
-                    "age_hours": age,
-                    "overdue_hours": round(age - sla_h, 1),
-                    "path": art_path,
-                })
+
+            health_lobe = _health_by_id.get(art_id)
+            if health_lobe is not None:
+                # Content-stamp truth: age_hours from health.json (not mtime).
+                # mtime lies on worktree checkouts and rewrite-without-advance.
+                age = health_lobe.get("age_hours")
+                basis = "health_json"
+                if age is None:
+                    no_mtime.append(art_id)
+                    continue
+                if float(age) > float(sla_h):
+                    breaches.append({
+                        "id": art_id,
+                        "tier": art.get("tier", "?"),
+                        "owner": art.get("owner_program", "?"),
+                        "sla_hours": sla_h,
+                        "age_hours": age,
+                        "overdue_hours": round(float(age) - float(sla_h), 1),
+                        "path": art_path,
+                        "basis": basis,
+                        "health_status": health_lobe.get("status"),
+                    })
+            else:
+                # mtime fallback — measures file writes, not data advancement
+                full_path = _ROOT / art_path
+                age = _mtime_hours_ago(full_path)
+                basis = "mtime"
+                if age is None:
+                    no_mtime.append(art_id)
+                    continue
+                if age > sla_h:
+                    breaches.append({
+                        "id": art_id,
+                        "tier": art.get("tier", "?"),
+                        "owner": art.get("owner_program", "?"),
+                        "sla_hours": sla_h,
+                        "age_hours": age,
+                        "overdue_hours": round(age - sla_h, 1),
+                        "path": art_path,
+                        "basis": basis,
+                    })
+
         # Sort worst-first (largest overdue_hours)
         breaches.sort(key=lambda x: x["overdue_hours"], reverse=True)
         out["sla"] = {
@@ -361,6 +405,8 @@ def _section_engine_health() -> dict:
             "n_breaches": len(breaches),
             "n_no_mtime": len(no_mtime),
             "breaches": breaches,  # full list for table
+            "source": _sla_source,
+            "mtime_note": "mtime measures file writes, not data advancement",
         }
     else:
         out["sla"] = {"missing": True, "note": "config/synapse.yml not parseable (pyyaml required)"}
@@ -396,13 +442,13 @@ def _section_reflex_log() -> dict:
         # Determine migration status
         is_mirroring = firings_path.exists()
 
-        # Read recent firings
-        recent = _tail_jsonl(firings_path, 20) if is_mirroring else []
+        # Read a deeper tail for accurate 7-day count; hot reflexes can exceed 20 rows/week.
+        firings_200 = _tail_jsonl(firings_path, 200) if is_mirroring else []
+        recent = firings_200  # also used for last-fired below
 
-        # Count firings in last 7 days
-        now_ts = datetime.now(timezone.utc).timestamp()
+        # Count firings in last 7 days from the 200-row tail
         n_7d = 0
-        for f in recent:
+        for f in firings_200:
             ts_str = f.get("ts") or f.get("timestamp") or f.get("fired_at")
             if ts_str:
                 age_h = _iso_hours_ago(ts_str)
@@ -494,25 +540,33 @@ def _section_governance() -> dict:
     memo = _read_json(_CORTEX_MEMO)
     if memo:
         prob = memo.get("probation", {})
+        _min_n = prob.get("min_n")
+        if _min_n is None:
+            _reason_str = prob.get("reason") or ""
+            _m = re.search(r"min_n=(\d+)", _reason_str)
+            _min_n = int(_m.group(1)) if _m else None
+        _min_events = prob.get("min_events") if prob.get("min_events") is not None else None
         out["probation"] = {
             "tier": prob.get("tier"),
             "granted": prob.get("granted", False),
             "reason": prob.get("reason"),
             "n_graded": (prob.get("attention_track_record") or {}).get("n"),
             "hits": (prob.get("attention_track_record") or {}).get("hits"),
-            "min_n": 30,
-            "min_events": 8,
+            "min_n": _min_n,
+            "min_events": _min_events,
             "lapses_at": prob.get("lapses_at"),
         }
         raw_rs = memo.get("run_status")
         if raw_rs:
             run_status = raw_rs
         else:
-            # Legacy memo without run_status — derive from tool_call_census
+            # Legacy memo without run_status — derive from tool_call_census.
+            # Aligned with engine/neuralweb/health.py:_derive_run_status_legacy:
+            # has_tools → 'ok' (fresh rollup); no tools → 'degraded'.
             tcc = memo.get("tool_call_census") or {}
             has_tools = bool(tcc) and not (len(tcc) == 1 and "fallback_call" in tcc)
             run_status = {
-                "status": "warn" if has_tools else "degraded",
+                "status": "ok" if has_tools else "degraded",
                 "degraded": not has_tools,
                 "degradation_reason": "zero_tool_calls" if not has_tools else None,
                 "provider_attempts": [],
@@ -568,7 +622,8 @@ def _section_factor_intelligence() -> dict:
         gaps: list = []
     else:
         state_as_of = state.get("as_of")
-        state_age_hours = _iso_hours_ago(state.get("produced_at")) or _mtime_hours_ago(_FACTOR_STATE)
+        _iso_age = _iso_hours_ago(state.get("produced_at"))
+        state_age_hours = _iso_age if _iso_age is not None else _mtime_hours_ago(_FACTOR_STATE)
         panel_block = state.get("panel") or {}
         factor_weather = state.get("factor_weather") or {}
         hypotheses = state.get("hypotheses") or {}
@@ -862,6 +917,8 @@ def _assign_group(lobe_id: str, owner_program: str) -> str:
         return "factor"
     if lid.startswith("neuralweb-mastermind") or lid.startswith("site-neuralweb-mastermind") or lid.startswith("options-entry-"):
         return "bridge"
+    if lid.startswith("neuralweb-"):
+        return "core"
     if lid.startswith("bottom-sensors"):
         return "sensors"
     return "ops"
@@ -1008,17 +1065,24 @@ def _derive_lobe_status(
     return status, age_hours, sla_met
 
 
-def _count_recent_actions(lobe_id: str, owner_program: str) -> int:
-    """Count recent actions attributable to this lobe (quick scan, fail-open)."""
+def _count_recent_actions(lobe_id: str, owner_program: str, gov_tail: list | None = None) -> int:
+    """Count recent actions attributable to this lobe (quick scan, fail-open).
+
+    gov_tail: pre-read governance tail (pass from lobes_panel to avoid 111 reads/request).
+    When None, the tail is read from disk (single-lobe callers like lobe_detail).
+    Reflex dirs on disk use underscores; lobe ids use hyphens — try both.
+    """
     count = 0
-    # Reflex firings for reflex-type lobes
+    # Reflex firings: try hyphens first, then underscores
     reflex_dir = _DATA_REFLEXES / lobe_id
+    if not reflex_dir.exists():
+        reflex_dir = _DATA_REFLEXES / lobe_id.replace("-", "_")
     if reflex_dir.exists():
         firings = _tail_jsonl(reflex_dir / "firings.jsonl", 10)
         count += len(firings)
     # Governance events mentioning this lobe id or producer
-    gov_events = _tail_jsonl(_GOVERNANCE_JSONL, 50)
-    for ev in gov_events:
+    _gov = gov_tail if gov_tail is not None else _tail_jsonl(_GOVERNANCE_JSONL, 50)
+    for ev in _gov:
         target = str(ev.get("target", ""))
         if lobe_id in target:
             count += 1
@@ -1029,6 +1093,7 @@ def _build_lobe_summary(
     lobe_id: str,
     art: dict,
     health_lobe: dict | None,
+    gov_tail: list | None = None,
 ) -> dict:
     """Build a <lobe_summary> dict."""
     owner = art.get("owner_program", "")
@@ -1044,7 +1109,7 @@ def _build_lobe_summary(
     row_count = health_lobe.get("row_count") if health_lobe else None
     byte_size = health_lobe.get("byte_size") if health_lobe else None
 
-    n_recent = _count_recent_actions(lobe_id, owner)
+    n_recent = _count_recent_actions(lobe_id, owner, gov_tail=gov_tail)
     p_short, _p_full, desc_status = _plain_desc(lobe_id, art.get("notes"))
 
     return {
@@ -1123,16 +1188,18 @@ def lobes_panel() -> dict:
         }
 
     # --- Build lobe summaries ---
+    # Read governance tail once here to avoid N reads inside _count_recent_actions.
+    _gov_tail = _tail_jsonl(_GOVERNANCE_JSONL, 50)
     lobes_flat: list[dict] = []
     for lobe_id, art in lobe_arts.items():
         health_lobe = health_by_id.get(lobe_id)
-        lobes_flat.append(_build_lobe_summary(lobe_id, art, health_lobe))
+        lobes_flat.append(_build_lobe_summary(lobe_id, art, health_lobe, gov_tail=_gov_tail))
 
     # --- Summary counts ---
     status_counts: dict[str, int] = {
         "total": len(lobes_flat),
         "fresh": 0, "stale": 0, "missing": 0,
-        "degraded": 0, "unknown": 0, "not_locally_verifiable": 0,
+        "degraded": 0, "fresh_partial": 0, "unknown": 0, "not_locally_verifiable": 0,
     }
     for ls in lobes_flat:
         st = ls["status"]
@@ -1148,7 +1215,7 @@ def lobes_panel() -> dict:
     ]
     if status_counts["missing"] > 0 and any(s == "missing" for s in git_statuses):
         overall_status = "degraded"
-    elif status_counts["stale"] > 0 or status_counts["degraded"] > 0:
+    elif status_counts["stale"] > 0 or status_counts["degraded"] > 0 or status_counts["fresh_partial"] > 0:
         overall_status = "warn"
     elif status_counts["total"] == 0:
         overall_status = "unknown"
@@ -1314,8 +1381,11 @@ def lobe_detail(lobe_id: str) -> dict:
     # --- Recent actions ---
     recent_actions: list[dict] = []
 
-    # 1. Reflex firings if this lobe corresponds to a reflex data dir
+    # 1. Reflex firings if this lobe corresponds to a reflex data dir.
+    # On-disk dirs use underscores; lobe ids use hyphens — try both.
     reflex_dir = _DATA_REFLEXES / lobe_id
+    if not reflex_dir.exists():
+        reflex_dir = _DATA_REFLEXES / lobe_id.replace("-", "_")
     if reflex_dir.exists():
         for f in _tail_jsonl(reflex_dir / "firings.jsonl", 15):
             ts = f.get("ts") or f.get("timestamp") or f.get("fired_at") or ""
@@ -1820,6 +1890,7 @@ def orchestrator_panel(root=None) -> dict:
     dialogue = _orch_dialogue(repo)
     cortex = _orch_cortex(repo)
     latest = entries_desc[0] if entries_desc else {}
+    reviews_path = repo / _ORCH_REVIEWS_REL
     status_hero = {
         "id": "orchestrator",
         "label": "Neural Web Orchestrator",
@@ -1838,6 +1909,8 @@ def orchestrator_panel(root=None) -> dict:
         "n_entries": len(data["entries"]),
         "last_review_at": reviews_desc[0].get("produced_at") if reviews_desc else None,
     }
+    if not reviews_path.exists():
+        status_hero["reviews_note"] = "no reviews ledger yet"
     return {
         "ok": True,
         "status_hero": status_hero,
@@ -1856,9 +1929,10 @@ def _orchestrator_hero() -> dict:
     consumers simply ignore this key. Fail-open on every read."""
     latest_rows = _tail_jsonl(_ROOT / _ORCH_RUNLOG_REL, 1)
     latest = latest_rows[0] if latest_rows else {}
-    reviews = _tail_jsonl(_ROOT / _ORCH_REVIEWS_REL, 1)
+    reviews_path = _ROOT / _ORCH_REVIEWS_REL
+    reviews = _tail_jsonl(reviews_path, 1)
     fb = _read_json(_ROOT / _FEEDBACK_SUMMARY_REL) or {}
-    return {
+    out: dict = {
         "id": "orchestrator",
         "label": "Neural Web Orchestrator",
         "run_date": latest.get("run_date"),
@@ -1868,6 +1942,9 @@ def _orchestrator_hero() -> dict:
         "directives_n": len(fb.get("operator_directives") or []),
         "last_review_at": reviews[0].get("produced_at") if reviews else None,
     }
+    if not reviews_path.exists():
+        out["reviews_note"] = "no reviews ledger yet"
+    return out
 
 
 # ---- Top-level panel entry point -------------------------------------------
