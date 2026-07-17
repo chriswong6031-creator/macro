@@ -1,6 +1,6 @@
 {
  "schema": "artifact_manifest/v1",
- "as_of": "2026-07-16",
+ "as_of": "2026-07-17",
  "cadence_basis": "trading_calendar",
  "note": "Per-artifact expected freshness in TRADING-calendar days. A consumer compares the artifact's as_of against `today` counting only trading days; older than expected_max_age_td \u21d2 abstain + flag (fail-closed on genuine staleness, audit #9). Benign weekend/holiday lag is NOT stale because the cadence excludes non-trading days.",
  "artifacts": [
@@ -91,7 +91,7 @@
   {
    "artifact": "site/factordata/us_standouts.json",
    "kind": "board",
-   "schema_version": "1.1.0",
+   "schema_version": "1.2.0",
    "schema_fields": [
     "as_of",
     "buy",
@@ -104,7 +104,9 @@
     "gate_go",
     "laggards",
     "lane_counts",
+    "pending_expired_count",
     "rank_by",
+    "staleness",
     "universe",
     "watch"
    ],
