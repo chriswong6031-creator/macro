@@ -594,6 +594,31 @@ _CONV_PLAIN_ZH: dict[str, str] = {
     "Reduce":       "风险较高",
 }
 
+# XSR-W1b: plain-word translations for rotation state_used enum.
+# Tier 1 (glance) must never expose internal enum names (banned vocab).
+# EN and ZH phrases kept short: fits in a chip label (≤4 words guideline).
+# These are display-only labels; the full state name is retained in hover/receipt.
+_STATE_PLAIN_EN: dict[str, str] = {
+    "FRESH BUY":           "money moving in",
+    "TURN SIGNALED":       "watching for entry",
+    "RALLY ON":            "trend running",
+    "TOP WATCH":           "extended — watch",
+    "ROLLING OVER":        "rolling over",
+    "BOTTOM WATCH":        "washed out — watch",
+    "COUNTERTREND BOUNCE": "bounce, not a turn",
+    "DECLINE":             "declining",
+}
+_STATE_PLAIN_ZH: dict[str, str] = {
+    "FRESH BUY":           "资金流入",
+    "TURN SIGNALED":       "关注入场",
+    "RALLY ON":            "趋势延伸",
+    "TOP WATCH":           "偏高位 — 观察",
+    "ROLLING OVER":        "趋势转弱",
+    "BOTTOM WATCH":        "超跌 — 观察",
+    "COUNTERTREND BOUNCE": "反弹非拐点",
+    "DECLINE":             "下行中",
+}
+
 
 def _rotation_rank_bucket(rank: int, n_total: int) -> int:
     """Map rotation_rank to a tier int 1–5 (5 = best) within its universe.
@@ -745,11 +770,15 @@ def _attach_rotation(records: list[dict], rotation_raw: dict, kind: str) -> list
         stale = bool(inst.get("stale_flags"))
 
         rec["rotation"] = {
-            "rank":       rrank,         # global rank (shown in chip)
-            "score":      rscore,
-            "state":      state,
-            "components": components,
-            "stale":      stale,
+            "rank":        rrank,            # global rank (1-indexed across all kinds; hover receipt)
+            "ordinal":     per_kind_ordinal, # per-kind display rank (e.g. #2 of 11 sectors)
+            "n_matched":   n_total,          # total matched in this kind universe (11 for sectors)
+            "score":       rscore,
+            "state":       state,            # internal enum — hover/receipt only, never tier-1
+            "state_plain_en": _STATE_PLAIN_EN.get(state or "", state or ""),
+            "state_plain_zh": _STATE_PLAIN_ZH.get(state or "", state or ""),
+            "components":  components,
+            "stale":       stale,
         }
 
         # XSR-R9: split view.  Use per-kind ordinal position for bucket math so
