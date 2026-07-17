@@ -695,6 +695,16 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("basket OHLCV step failed: %s", e)
 
+        # Per-member freshness tripwire over the deep OHLCV store, INDEPENDENT of how
+        # the fetch call above is parameterized (the #776 lesson: the whole-store as_of
+        # check in build_baskets can't see a frozen member subset, and a tripwire tied
+        # to the fetch's own universe goes silent with it). Warn-only, never fatal.
+        try:
+            from scripts.fetch_basket_ohlcv import check_membership_staleness
+            check_membership_staleness()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("basket OHLCV staleness census failed: %s", e)
+
         # Re-author the Nasdaq/Russell subsector + amalgamation memberships from the fresh Finviz
         # classification + the refreshed OHLCV (the correlation-validated bulk-outs need prices).
         try:
