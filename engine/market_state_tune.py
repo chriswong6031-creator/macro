@@ -18,6 +18,13 @@ THREE GUARDS so a self-tuning risk gauge can't tune itself off a cliff:
 
 Accepted weights are written to data/market_state/calibration.json (the overlay the engine
 reads); every proposal + verdict is appended to data/market_state/tune_log.jsonl. Never raises.
+
+LANE GATE (#2712 class): nightly is the SOLE advancer of data/ forward ledgers/overlays.
+The call site (scripts/build_site.py market_state_view) also runs on closing-bell and the
+engine-render/render re-render lanes with COLLECT_LANE unset — there tune() still returns its
+display dict, but the mutating writers (_write_calib / _log_review / _append_governance_a6)
+self-gate on market_state_audit.ledger_lane_armed and no-op: an off-lane overlay could be
+computed from a mid-session store, and off-lane appends would be PIT-inconsistent.
 """
 from __future__ import annotations
 
@@ -29,6 +36,7 @@ from pathlib import Path
 from engine import market_state as M
 from engine.market_state_audit import _path as _log_path
 from engine.market_state_audit import _read as _read_log
+from engine.market_state_audit import ledger_lane_armed
 
 log = logging.getLogger(__name__)
 
@@ -118,16 +126,26 @@ def _backtest(rows: list[dict], calib: dict) -> dict:
             "f1": round(f1, 3), "n_risk": n_risk, "tp": tp, "fp": fp}
 
 
-def _write_calib(root, calib: dict, base_rate: float, n_graded: int) -> None:
+def _write_calib(root, calib: dict, base_rate: float, n_graded: int) -> bool:
+    """Write the calibration overlay. Ledger-advancing lanes only
+    (ledger_lane_armed): off-lane the overlay would be computed from a
+    mid-session store — no-op instead."""
+    if not ledger_lane_armed():
+        return False
     payload = {"weights": {k: calib["weights"][k] for k in M.CORROBORATORS},
                "base": calib["base"], "severe_bump": calib.get("severe_bump", 10),
                "floor": calib.get("floor", 12), "base_rate_dd5": base_rate,
                "n_graded": n_graded,
                "updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     _calib_path(root).write_text(json.dumps(payload, indent=2))
+    return True
 
 
 def _log_review(root, record: dict) -> None:
+    """Append the proposal+verdict row. Ledger-advancing lanes only
+    (ledger_lane_armed): off-lane appends would be PIT-inconsistent."""
+    if not ledger_lane_armed():
+        return
     try:
         p = M_config_data_dir(root) / "market_state" / "tune_log.jsonl"
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -139,7 +157,10 @@ def _log_review(root, record: dict) -> None:
 
 def _append_governance_a6(root, decision: str, n_graded: int, base_rate: float,
                            bt_cur: dict, bt_cand: dict) -> None:
-    """Append a6_auto_apply governance event. Fail-open — never raises into the build."""
+    """Append a6_auto_apply governance event. Fail-open — never raises into the build.
+    Ledger-advancing lanes only (ledger_lane_armed): governance rows are PIT."""
+    if not ledger_lane_armed():
+        return
     try:
         from engine.neuralweb.governance import append_event  # type: ignore[import]
         append_event(
@@ -169,7 +190,9 @@ def _append_governance_a6(root, decision: str, n_graded: int, base_rate: float,
 
 
 def tune(root=None) -> dict:
-    """Run one bounded calibration step. Returns a status dict; never raises into the build."""
+    """Run one bounded calibration step. Returns a status dict; never raises into the build.
+    Off-lane (ledger_lane_armed() False) the writer legs no-op and this is a pure read —
+    the display dict is still returned, with a note that nothing was persisted."""
     try:
         rows = _graded(root)
         if len(rows) < MIN_GRADED:
@@ -194,8 +217,11 @@ def tune(root=None) -> dict:
         _log_review(root, rec)
         # A6 lane-(i) governance event — ratified standing approval; fail-open
         _append_governance_a6(root, decision, len(rows), base_rate, bt_cur, bt_cand)
-        return {"status": decision, "n_graded": len(rows), "weights": cand_w,
-                "backtest": rec["backtest"], "corr_lift": corr_lift}
+        out = {"status": decision, "n_graded": len(rows), "weights": cand_w,
+               "backtest": rec["backtest"], "corr_lift": corr_lift}
+        if not ledger_lane_armed():
+            out["note"] = "read-only lane: overlay/log/governance writes deferred to nightly"
+        return out
     except Exception as e:  # noqa: BLE001 — never fatal
         log.warning("market_state_tune failed: %s", e)
         return {"status": "error", "reason": str(e)}
