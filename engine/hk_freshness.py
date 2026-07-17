@@ -94,13 +94,37 @@ def _lag_state(lag_days: int | None, *, tight: bool = False) -> str:
 
 
 def _parquet_index_max(path: Path) -> date | None:
-    """Read a parquet file and return the max DatetimeIndex date. None on any error."""
+    """Read a parquet file and return the max date from its index. None on any error.
+
+    Handles two on-disk shapes:
+      * flat DatetimeIndex — the cache and bellwether price stores.
+      * long-form MultiIndex whose levels include a datetime level — southbound
+        holdings is keyed ``['date', 'ticker']`` (191k rows), so a naive
+        ``isinstance(index, DatetimeIndex)`` check silently returns None and the
+        sentinel falsely reports the store "dead". Prefer the level named
+        ``date`` (the codebase idiom: ``index.get_level_values("date")``), else
+        the first datetime-typed level.
+    """
     try:
         if not path.exists():
             return None
         df = pd.read_parquet(path, columns=[])   # columns=[] reads only the index
-        if isinstance(df.index, pd.DatetimeIndex) and len(df.index):
-            return df.index.max().normalize().date()
+        idx = df.index
+        if isinstance(idx, pd.DatetimeIndex) and len(idx):
+            return idx.max().normalize().date()
+        if isinstance(idx, pd.MultiIndex) and len(idx):
+            date_level: int | str | None = None
+            if idx.names and "date" in idx.names:
+                date_level = "date"
+            else:
+                for i in range(idx.nlevels):
+                    if pd.api.types.is_datetime64_any_dtype(idx.get_level_values(i)):
+                        date_level = i
+                        break
+            if date_level is not None:
+                lv = idx.get_level_values(date_level)
+                if len(lv):
+                    return pd.Timestamp(lv.max()).normalize().date()
         return None
     except Exception as e:  # noqa: BLE001
         log.warning("hk_freshness: %s unreadable (%s)", path, e)
