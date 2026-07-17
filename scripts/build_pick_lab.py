@@ -425,6 +425,35 @@ def _build_picks_today(fires_entry: list[dict], asof: str) -> dict[str, list[dic
     return result
 
 
+def _build_grade_map(grades: list[dict], engine_id: str) -> dict[tuple, dict]:
+    """Build {(ticker, fire_date): grade_dict} for engine_id, preferring h=21/126."""
+    grade_map: dict[tuple, dict] = {}
+    for g in grades:
+        if g.get("engine_id") != engine_id:
+            continue
+        k = (g.get("ticker"), g.get("fire_date"))
+        h = g.get("horizon")
+        if k not in grade_map or h in (21, 126):
+            grade_map[k] = g
+    return grade_map
+
+
+def _attach_grade(fire_row: dict, grade_map: dict[tuple, dict]) -> dict:
+    """Return a copy of fire_row with ret21_excess/ret21_abs/matured attached."""
+    k = (fire_row.get("ticker"), fire_row.get("fire_date"))
+    g = grade_map.get(k)
+    row = dict(fire_row)
+    if g:
+        row["ret21_excess"] = g.get("ret_excess_spy")
+        row["ret21_abs"] = g.get("ret_abs")
+        row["matured"] = bool(g.get("matured"))
+    else:
+        row["ret21_excess"] = None
+        row["ret21_abs"] = None
+        row["matured"] = False
+    return row
+
+
 def _build_recent_fires_with_grades(
     fires: list[dict],
     grades: list[dict],
@@ -438,32 +467,69 @@ def _build_recent_fires_with_grades(
         reverse=True,
     )[:n]
 
-    # Build grade lookup: (ticker, fire_date) → grade at h=21 (or h=126 for LH)
-    grade_map: dict[tuple, dict] = {}
-    for g in grades:
-        if g.get("engine_id") != engine_id:
-            continue
-        k = (g.get("ticker"), g.get("fire_date"))
-        h = g.get("horizon")
-        # prefer h=21 for entry, h=126 for LH
-        if k not in grade_map or h in (21, 126):
-            grade_map[k] = g
+    grade_map = _build_grade_map(grades, engine_id)
 
     result = []
     for f in my_fires:
-        k = (f.get("ticker"), f.get("fire_date"))
-        g = grade_map.get(k)
-        row = dict(f)
-        if g:
-            row["ret21_excess"] = g.get("ret_excess_spy")
-            row["ret21_abs"] = g.get("ret_abs")
-            row["matured"] = bool(g.get("matured"))
-        else:
-            row["ret21_excess"] = None
-            row["ret21_abs"] = None
-            row["matured"] = False
-        result.append(row)
+        result.append(_attach_grade(f, grade_map))
     return result
+
+
+def _build_fires_export(
+    fires_entry: list[dict],
+    fires_lh: list[dict],
+    grades_entry: list[dict],
+    grades_lh: list[dict],
+    asof: str,
+) -> dict:
+    """Build the dict written to site/labdata/pick_lab_fires.json.
+
+    Groups ALL fires (no cap) by engine_id from both entry and LH ledgers.
+    Attaches grade columns using the same grade-map logic as _build_recent_fires_with_grades.
+    Keeps only the compact field set (no 'why', 'features', 'config_hash', etc.)
+    to bound payload size.
+    """
+    # Combined fires and grades across both ledgers
+    all_fires = fires_entry + fires_lh
+    all_grades = grades_entry + grades_lh
+
+    # Collect all engine_ids present
+    engine_ids: list[str] = []
+    seen: set[str] = set()
+    for f in all_fires:
+        eid = f.get("engine_id", "")
+        if eid and eid not in seen:
+            engine_ids.append(eid)
+            seen.add(eid)
+
+    fires_by_book: dict[str, list[dict]] = {}
+    for eid in engine_ids:
+        grade_map = _build_grade_map(all_grades, eid)
+        my_fires = sorted(
+            [f for f in all_fires if f.get("engine_id") == eid],
+            key=lambda x: (x.get("fire_date", ""), x.get("ticker", "")),
+            reverse=True,
+        )
+        rows = []
+        for f in my_fires:
+            enriched = _attach_grade(f, grade_map)
+            rows.append({
+                "ticker": enriched.get("ticker"),
+                "fire_date": enriched.get("fire_date"),
+                "sector": enriched.get("sector"),
+                "rank": enriched.get("rank"),
+                "close_at_fire": enriched.get("close_at_fire"),
+                "ret21_excess": enriched.get("ret21_excess"),
+                "ret21_abs": enriched.get("ret21_abs"),
+                "matured": enriched.get("matured", False),
+            })
+        fires_by_book[eid] = rows
+
+    return {
+        "as_of": asof,
+        "fires_by_book": fires_by_book,
+        "authority": "display_only",
+    }
 
 
 def _build_entry_lanes(snap: pd.DataFrame, fires_entry: list[dict], asof: str) -> dict:
@@ -823,6 +889,12 @@ def _build() -> None:
     _write_site_artifact(labdata / "pick_lab.json", entry_payload)
     _write_site_artifact(labdata / "pick_lab_longhold.json", lh_payload)
 
+    # Write full-history fires export (pick_lab_fires.json)
+    fires_payload = _build_fires_export(
+        fires_entry, fires_lh, grades_entry, grades_lh, asof
+    )
+    _write_site_artifact(labdata / "pick_lab_fires.json", fires_payload)
+
     # (f) Render the page
     try:
         from engine.pick_lab.render import build_vm, render_page, _load_audit_scoreboard
@@ -839,7 +911,11 @@ def _build() -> None:
         # the default audit_scoreboard=None → {"present": False} and render_page's
         # "not in vm" guard never fires (key IS present, just {"present": False}).
         audit_sb = _load_audit_scoreboard(site)
-        vm = build_vm(entry_payload, lh_payload, t0_dict=t0_dict, audit_scoreboard=audit_sb)
+        vm = build_vm(
+            entry_payload, lh_payload,
+            t0_dict=t0_dict, audit_scoreboard=audit_sb,
+            fires_dict=fires_payload,
+        )
         render_page(vm, site)
     except Exception as exc:  # noqa: BLE001
         log.warning("pick_lab: page render failed (%s) — data artifacts are good", exc)

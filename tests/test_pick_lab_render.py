@@ -482,8 +482,9 @@ class TestTemplateRender:
 
     def test_five_tab_buttons(self):
         html = self._render_full()
-        btns = re.findall(r'data-tab="[^"]+"', html)
-        assert len(btns) == 7  # SA-W5: +1 for Accountability tab
+        # Count only the <button class="tabbtn" data-tab="..."> declarations
+        btns = re.findall(r'class="tabbtn[^"]*"[^>]+data-tab="[^"]+"', html)
+        assert len(btns) == 7, f"Expected 7 tabbtn buttons, got {len(btns)}"  # SA-W5: +1 for Accountability tab
 
     def test_bilingual_spans_present(self):
         html = self._render_full()
@@ -734,3 +735,332 @@ class TestDashboardRenderSmoke:
             **self._base_vm(), mode="macro"
         )
         assert "us_stocks_lab.html" not in html
+
+
+# --------------------------------------------------------------------------- #
+#  Fires export helper tests (build_pick_lab._build_fires_export)              #
+# --------------------------------------------------------------------------- #
+
+def _make_fire_row(engine_id: str, ticker: str, fire_date: str, rank: int = 1) -> dict:
+    """Minimal fire row matching fires.jsonl schema."""
+    return {
+        "engine_id": engine_id,
+        "ticker": ticker,
+        "fire_date": fire_date,
+        "exec_date": None,
+        "rank": rank,
+        "close_at_fire": 100.0,
+        "sector": "Information Technology",
+        "why": ["some_signal"],
+        "features": {"rsi14": 50.0},
+        "liq_unknown": False,
+        "regime_calm": 0.5,
+        "regime_stress": 0.0,
+        "config_hash": "abc123",
+        "authority": "display_only",
+    }
+
+
+def _make_grade_row(engine_id: str, ticker: str, fire_date: str,
+                    ret_excess: float, matured: bool) -> dict:
+    return {
+        "engine_id": engine_id,
+        "ticker": ticker,
+        "fire_date": fire_date,
+        "horizon": 21,
+        "ret_excess_spy": ret_excess,
+        "ret_abs": ret_excess + 0.01,
+        "matured": matured,
+    }
+
+
+class TestBuildFiresExport:
+    def test_groups_by_engine_id(self):
+        from scripts.build_pick_lab import _build_fires_export
+        fires_e = [
+            _make_fire_row("eng_a", "AAPL", "2026-07-13"),
+            _make_fire_row("eng_a", "MSFT", "2026-07-14"),
+            _make_fire_row("eng_b", "NVDA", "2026-07-13"),
+        ]
+        result = _build_fires_export(fires_e, [], [], [], "2026-07-14")
+        assert "eng_a" in result["fires_by_book"]
+        assert "eng_b" in result["fires_by_book"]
+        assert len(result["fires_by_book"]["eng_a"]) == 2
+        assert len(result["fires_by_book"]["eng_b"]) == 1
+
+    def test_no_cap_all_fires_included(self):
+        """All fires included — no 30-row cap."""
+        from scripts.build_pick_lab import _build_fires_export
+        fires_e = [_make_fire_row("eng_a", f"T{i:03d}", "2026-07-13", rank=i) for i in range(50)]
+        result = _build_fires_export(fires_e, [], [], [], "2026-07-13")
+        assert len(result["fires_by_book"]["eng_a"]) == 50
+
+    def test_sorted_most_recent_first(self):
+        from scripts.build_pick_lab import _build_fires_export
+        fires_e = [
+            _make_fire_row("eng_a", "AAPL", "2026-07-13"),
+            _make_fire_row("eng_a", "MSFT", "2026-07-15"),
+            _make_fire_row("eng_a", "NVDA", "2026-07-14"),
+        ]
+        result = _build_fires_export(fires_e, [], [], [], "2026-07-15")
+        rows = result["fires_by_book"]["eng_a"]
+        dates = [r["fire_date"] for r in rows]
+        assert dates == sorted(dates, reverse=True), f"Not sorted most-recent-first: {dates}"
+
+    def test_grade_attached(self):
+        from scripts.build_pick_lab import _build_fires_export
+        fires_e = [_make_fire_row("eng_a", "AAPL", "2026-07-13")]
+        grades_e = [_make_grade_row("eng_a", "AAPL", "2026-07-13", 0.05, True)]
+        result = _build_fires_export(fires_e, [], grades_e, [], "2026-07-13")
+        row = result["fires_by_book"]["eng_a"][0]
+        assert row["ret21_excess"] == pytest.approx(0.05)
+        assert row["matured"] is True
+
+    def test_no_grade_defaults_to_none_false(self):
+        from scripts.build_pick_lab import _build_fires_export
+        fires_e = [_make_fire_row("eng_a", "AAPL", "2026-07-13")]
+        result = _build_fires_export(fires_e, [], [], [], "2026-07-13")
+        row = result["fires_by_book"]["eng_a"][0]
+        assert row["ret21_excess"] is None
+        assert row["matured"] is False
+
+    def test_compact_fields_no_why(self):
+        """Export must not include 'why' or 'features' (size bound)."""
+        from scripts.build_pick_lab import _build_fires_export
+        fires_e = [_make_fire_row("eng_a", "AAPL", "2026-07-13")]
+        result = _build_fires_export(fires_e, [], [], [], "2026-07-13")
+        row = result["fires_by_book"]["eng_a"][0]
+        assert "why" not in row
+        assert "features" not in row
+        # required fields present
+        for field in ("ticker", "fire_date", "sector", "rank", "close_at_fire",
+                      "ret21_excess", "ret21_abs", "matured"):
+            assert field in row, f"Missing field: {field}"
+
+    def test_lh_fires_included(self):
+        """LH fires must also appear in fires_by_book."""
+        from scripts.build_pick_lab import _build_fires_export
+        fires_lh = [_make_fire_row("plab_lh_compounder", "MSFT", "2026-07-13")]
+        result = _build_fires_export([], fires_lh, [], [], "2026-07-13")
+        assert "plab_lh_compounder" in result["fires_by_book"]
+        assert len(result["fires_by_book"]["plab_lh_compounder"]) == 1
+
+    def test_graceful_empty_inputs(self):
+        from scripts.build_pick_lab import _build_fires_export
+        result = _build_fires_export([], [], [], [], "2026-07-13")
+        assert result["fires_by_book"] == {}
+        assert result["authority"] == "display_only"
+
+    def test_authority_display_only(self):
+        from scripts.build_pick_lab import _build_fires_export
+        result = _build_fires_export([], [], [], [], "2026-07-13")
+        assert result["authority"] == "display_only"
+
+    def test_tmp_path_jsonl(self, tmp_path):
+        """End-to-end: parse a tmp fires.jsonl, export, verify grouping and no cap."""
+        import json as _json
+        from scripts.build_pick_lab import _build_fires_export
+
+        # Write 40 fire rows for two engines to a tmp jsonl
+        fires = (
+            [_make_fire_row("eng_x", f"TK{i:02d}", "2026-07-13", rank=i) for i in range(35)]
+            + [_make_fire_row("eng_y", "ZVZZ", "2026-07-14")]
+        )
+        jsonl_path = tmp_path / "fires.jsonl"
+        with open(jsonl_path, "w") as fh:
+            for r in fires:
+                fh.write(_json.dumps(r) + "\n")
+
+        # Parse and export (mimicking build_pick_lab logic)
+        loaded = []
+        with open(jsonl_path) as fh:
+            for line in fh:
+                loaded.append(_json.loads(line))
+
+        result = _build_fires_export(loaded, [], [], [], "2026-07-14")
+        assert len(result["fires_by_book"]["eng_x"]) == 35  # no cap
+        assert len(result["fires_by_book"]["eng_y"]) == 1
+
+
+# --------------------------------------------------------------------------- #
+#  VM all_fires threading tests                                                #
+# --------------------------------------------------------------------------- #
+
+def _fires_dict_fixture() -> dict:
+    """Minimal fires_dict matching pick_lab_fires.json schema."""
+    return {
+        "as_of": "2026-07-13",
+        "authority": "display_only",
+        "fires_by_book": {
+            "plab_1d_pure": [
+                {
+                    "ticker": "ROST",
+                    "fire_date": "2026-07-13",
+                    "sector": "Consumer Discretionary",
+                    "rank": 1,
+                    "close_at_fire": 219.46,
+                    "ret21_excess": 0.03,
+                    "ret21_abs": 0.04,
+                    "matured": True,
+                },
+                {
+                    "ticker": "SATS",
+                    "fire_date": "2026-07-14",
+                    "sector": "Communication Services",
+                    "rank": 2,
+                    "close_at_fire": 109.17,
+                    "ret21_excess": None,
+                    "ret21_abs": None,
+                    "matured": False,
+                },
+            ],
+            "plab_lh_edge_durability": [
+                {
+                    "ticker": "SNDK",
+                    "fire_date": "2026-07-13",
+                    "sector": "Information Technology",
+                    "rank": 1,
+                    "close_at_fire": 1673.97,
+                    "ret21_excess": None,
+                    "ret21_abs": None,
+                    "matured": False,
+                },
+            ],
+        },
+    }
+
+
+class TestBuildVmAllFires:
+    def test_all_fires_threaded_into_all_books(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        fd = _fires_dict_fixture()
+        vm = build_vm(pl, lh, fires_dict=fd)
+        # plab_1d_pure is in all_books
+        book = next((b for b in vm["all_books"] if b["engine_id"] == "plab_1d_pure"), None)
+        assert book is not None
+        assert len(book["all_fires"]) == 2
+        # display fields added
+        first = book["all_fires"][0]  # most-recent-first: 2026-07-14 or 2026-07-13 depending on order
+        assert "ret21_excess_fmt" in first
+        assert "matured_label" in first
+
+    def test_all_fires_absent_key_gives_empty_list(self):
+        """Engine not in fires_by_book → all_fires: []."""
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        fd = {"as_of": "2026-07-13", "authority": "display_only", "fires_by_book": {}}
+        vm = build_vm(pl, lh, fires_dict=fd)
+        for book in vm["all_books"]:
+            assert book["all_fires"] == []
+
+    def test_fires_dict_none_gives_empty_list(self):
+        """fires_dict=None → all_fires: [] everywhere."""
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        vm = build_vm(pl, lh, fires_dict=None)
+        for book in vm["all_books"]:
+            assert book["all_fires"] == []
+        for book in vm["lh_books"]:
+            assert book["all_fires"] == []
+
+    def test_lh_fires_threaded_into_lh_books(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        fd = _fires_dict_fixture()
+        vm = build_vm(pl, lh, fires_dict=fd)
+        lh_book = next(
+            (b for b in vm["lh_books"] if b["engine_id"] == "plab_lh_edge_durability"), None
+        )
+        assert lh_book is not None
+        assert len(lh_book["all_fires"]) == 1
+        assert lh_book["all_fires"][0]["ticker"] == "SNDK"
+
+    def test_matured_label_and_fmt(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        fd = _fires_dict_fixture()
+        vm = build_vm(pl, lh, fires_dict=fd)
+        book = next(b for b in vm["all_books"] if b["engine_id"] == "plab_1d_pure")
+        matured_row = next(f for f in book["all_fires"] if f["matured"])
+        open_row = next(f for f in book["all_fires"] if not f["matured"])
+        assert matured_row["matured_label"] == "matured"
+        assert open_row["matured_label"] == "open"
+        assert matured_row["ret21_excess_fmt"] == "+3.0%"
+        assert open_row["ret21_excess_fmt"] == "—"
+
+
+# --------------------------------------------------------------------------- #
+#  Template render: all-fires details block and book-drill button              #
+# --------------------------------------------------------------------------- #
+
+class TestTemplateAllFires:
+    def _render_with_fires(self) -> str:
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        fd = _fires_dict_fixture()
+        vm = build_vm(pl, lh, fires_dict=fd)
+        return _env().get_template("us_stocks_lab.html.j2").render(**vm)
+
+    def _render_without_fires(self) -> str:
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        vm = build_vm(pl, lh, fires_dict=None)
+        return _env().get_template("us_stocks_lab.html.j2").render(**vm)
+
+    def test_all_fires_details_rendered_when_present(self):
+        html = self._render_with_fires()
+        assert "all-fires-details" in html
+        assert "All fires" in html or "全部触发" in html
+
+    def test_all_fires_details_absent_when_no_fires(self):
+        html = self._render_without_fires()
+        # CSS will contain the class name; check there's no <details> element using it
+        assert '<details class="all-fires-details"' not in html
+
+    def test_book_drill_button_in_scoreboard(self):
+        html = self._render_with_fires()
+        assert 'class="book-drill"' in html
+        assert 'data-ab="plab_1d_pure"' in html
+
+    def test_book_drill_data_ab_matches_engine_id(self):
+        """Every .book-drill button must carry a data-ab matching a known engine_id."""
+        html = self._render_with_fires()
+        import re as _re
+        drill_ids = _re.findall(r'class="book-drill"[^>]+data-ab="([^"]+)"', html)
+        # Also match reversed attribute order
+        drill_ids += _re.findall(r'data-ab="([^"]+)"[^>]+class="book-drill"', html)
+        assert len(drill_ids) > 0, "No .book-drill buttons found"
+        assert "plab_1d_pure" in drill_ids
+
+    def test_no_validated_word_with_fires(self):
+        html = self._render_with_fires()
+        assert "validated" not in html.lower()
+
+    def test_fire_rows_appear_in_all_fires_table(self):
+        html = self._render_with_fires()
+        # ROST and SATS are in the fixture fires for plab_1d_pure
+        assert "ROST" in html
+        assert "SATS" in html
+
+    def test_lh_book_card_has_id_anchor(self):
+        html = self._render_with_fires()
+        assert 'id="lh-plab_lh_compounder"' in html
+        assert 'id="lh-plab_lh_edge_durability"' in html
+
+    def test_js_drill_handler_present(self):
+        html = self._render_with_fires()
+        assert "book-drill" in html
+        assert "all-fires-details" in html  # JS references this class
+        assert "lh-" in html  # LH fallback anchor pattern
+
+    def test_render_does_not_crash_fires_key_missing(self):
+        """Render must not crash when fires_dict is entirely absent."""
+        html = self._render_without_fires()
+        assert len(html) > 5000
+
+    def test_all_fires_count_in_summary(self):
+        """The summary line must show the fire count (2 for plab_1d_pure)."""
+        html = self._render_with_fires()
+        # The summary contains the count: "All fires (full history) — 2"
+        assert "— 2" in html or "—&amp; 2" in html or "— 2" in html
