@@ -1024,6 +1024,10 @@
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W1.5 board-level suppressed-today note */
   .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
+  /* CSP-W5 board staleness badge */
+  .nb-stale-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;font-weight:600;color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));background:color-mix(in srgb,var(--warn) 9%,transparent)}
+  /* CSP-W5 per-card muted note on expired pending rows */
+  .nb-pending-expired{font-size:9.5px;padding:1px 5px;border-radius:4px;color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent);white-space:normal}
   /* W4 stock-personality slim chips (expander only, guardrail 16) */
   .nb-sp-chart{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
   .nb-sp-mode{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 30%,transparent)}
@@ -11104,6 +11108,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       ><span class="l-en">📅 {{ _ebn.count }} setup{{ 's' if _ebn.count != 1 else '' }} suppressed today (earnings ≤3d): {{ _ebn.tickers | join(', ') }}</span><span class="l-zh">📅 今日{{ _ebn.count }}个形态因财报（≤3天）被屏蔽：{{ _ebn.tickers | join(', ') }}</span></div>
       {% endif %}
       {% endif %}
+      {# CSP-W5 board staleness badge — shown when the underlying ohlcv store is
+         >= 2 trading sessions behind the expected NYSE session.  Fail-soft: absent
+         key or delayed=False = nothing shown.  Bilingual via l-en/l-zh spans;
+         no translated text in attributes (check_title_i18n). #}
+      {% if _su and _su.get('staleness') and _su.staleness.get('delayed') %}
+      {% set _stale = _su.staleness %}
+      <div class="nb-stale-note">
+        <span class="l-en">⚠ BOARD DELAYED — priced {{ _stale.get('price_through', '?') }} ({{ _stale.get('age_days', '?') }}d behind). Data is stale; entries shown may not reflect latest prices.</span><span class="l-zh">⚠ 数据延迟 — 价格截至 {{ _stale.get('price_through', '?') }}（落后 {{ _stale.get('age_days', '?') }} 天）。当前数据过期，入场信号可能不反映最新价格。</span>
+      </div>
+      {% endif %}
       {# B4 Conviction Delta — collapsed "What changed today" strip.
          Rendered only when us_standouts.delta exists and has >=1 entry.
          Purely descriptive: shows which verb and which reason-codes changed.
@@ -11493,6 +11507,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% endif %}
           {# name-specific notes (expander per spec §4) — needs c #}
           {% if c and c.notes %}{% for nt in c.notes if nt.kind != 'rank' %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
+          {# CSP-W5 pending-expiry muted note — shown when a pending buy has not been
+             confirmed after > 3 trading sessions and was demoted from buy to watch. #}
+          {% if n.get('pending_expired') %}
+          <div class="nb-pending-expired">
+            <span class="l-en">{{ n.get('pending_expiry_reason', 'confirmation expired') }}</span><span class="l-zh">{{ n.get('pending_expiry_reason_zh', '确认超时') }}</span>
+          </div>
+          {% endif %}
           {# B2+B3: Buy Decision Packet dossier (server-rendered, fail-soft on absence). #}
           {# Absent on older artifacts or non-US boards — renders nothing if dossier missing. #}
           {% set _dos = n.get('dossier') %}

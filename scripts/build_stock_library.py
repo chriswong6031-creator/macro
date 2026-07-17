@@ -785,6 +785,184 @@ def _enforce_blocked_buy_invariant(buy_rows: list[dict]) -> int:
     return touched
 
 
+def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | None" = None) -> dict:
+    """CSP-W5: compute staleness metadata for the US standout board.
+
+    Scans data/baskets/ohlcv/*.parquet to find the maximum (most recent) date
+    present in any per-ticker close store — this is the date the board is priced
+    from, the same store the cascade gate reads.
+
+    Returns:
+        {
+          "price_through": "2026-07-15",  # ISO date of most recent close in the store
+          "age_days":      0,             # calendar days since price_through (int)
+          "delayed":       False,         # True when >= 2 trading sessions behind expected
+        }
+
+    Fail-soft: if the store is absent or unreadable, returns
+        {"price_through": None, "age_days": None, "delayed": False}
+    so the badge is silently suppressed — never crashes a build.
+
+    Calendar: uses lib.nyse_calendar.expected_last_session and is_session — the
+    same pure-rule calendar used across the freshness infrastructure.
+    """
+    from datetime import datetime as _dt, timezone as _tz
+    from lib import nyse_calendar as _nyse
+
+    _sentinel = {"price_through": None, "age_days": None, "delayed": False}
+    try:
+        _root = ohlcv_dir or (config.data_dir() / "baskets" / "ohlcv")
+        _root = _root if isinstance(_root, Path) else Path(_root)
+        if not _root.is_dir():
+            return _sentinel
+        _max_date: "date | None" = None
+        for _fname in os.listdir(str(_root)):
+            if not _fname.endswith(".parquet"):
+                continue
+            try:
+                _df = pd.read_parquet(str(_root / _fname), columns=["close"])
+                if _df.empty:
+                    continue
+                _idx = pd.to_datetime(_df.index)
+                _last = _idx.max().date()
+                if _max_date is None or _last > _max_date:
+                    _max_date = _last
+            except Exception:  # noqa: BLE001 — per-file failure is non-fatal
+                continue
+        if _max_date is None:
+            return _sentinel
+
+        _now = now or _dt.now(_tz.utc)
+        _expected = _nyse.expected_last_session(_now)
+
+        # age_days: calendar days between price_through and expected session
+        _age_days = (_expected - _max_date).days
+
+        # delayed: count trading sessions between price_through and expected session
+        # (strictly after price_through, up to and including expected)
+        _d = _max_date
+        _sessions_behind = 0
+        while _d < _expected:
+            _d = _d + timedelta(days=1)
+            if _nyse.is_session(_d):
+                _sessions_behind += 1
+
+        _delayed = _sessions_behind >= 2
+
+        log.debug(
+            "board staleness: price_through=%s expected=%s age_days=%d "
+            "sessions_behind=%d delayed=%s",
+            _max_date, _expected, _age_days, _sessions_behind, _delayed,
+        )
+        return {
+            "price_through": str(_max_date),
+            "age_days": _age_days,
+            "delayed": _delayed,
+        }
+    except Exception as _e:  # noqa: BLE001 — never crashes a build
+        log.warning("_compute_board_staleness: failed (%s) — suppressing badge", _e)
+        return _sentinel
+
+
+def _count_trading_sessions_between(start_date: "date", end_date: "date") -> int:
+    """Count NYSE trading sessions strictly after start_date up through end_date.
+
+    Used by the pending-buy expiry rule: a pending buy that fired on start_date
+    is 'unconfirmed for N sessions' where N = _count_trading_sessions_between(
+    fire_date, board_asof).
+
+    Reuses lib.nyse_calendar.is_session — the same pure-rule calendar used
+    everywhere in the freshness infrastructure.
+    """
+    from lib import nyse_calendar as _nyse
+    _d = start_date
+    _n = 0
+    while _d < end_date:
+        _d = _d + timedelta(days=1)
+        if _nyse.is_session(_d):
+            _n += 1
+    return _n
+
+
+def _expire_pending_buys(buy_rows: list[dict], watch_rows: list[dict],
+                         board_asof: "str | None") -> tuple[list[dict], list[dict], int]:
+    """CSP-W5 pending-buy expiry: move stale unconfirmed pending rows from buy to watch.
+
+    Rule: a buy-lane row whose signal has tier='anticipation', sub='pending',
+    and whose buy fired > 3 trading sessions before board_asof AND is still
+    unconfirmed (quality still 'pending') is demoted to the watch shelf with
+    a bilingual reason string.
+
+    Demotion-only: adds nothing to the buy side.  Never touches confirmed (take)
+    signals.  Deterministic: always produces the same result for the same inputs.
+
+    Returns:
+        (new_buy_rows, new_watch_rows, n_expired)
+        where n_expired is the count of rows moved from buy to watch.
+
+    Fail-soft: if board_asof is None or unparseable, no rows are expired (the rule
+    requires a known current date to count sessions).
+    """
+    if not board_asof:
+        return buy_rows, watch_rows, 0
+    try:
+        _asof = pd.Timestamp(board_asof).date()
+    except Exception:  # noqa: BLE001
+        return buy_rows, watch_rows, 0
+
+    _EXPIRY_SESSIONS = 3  # > 3 trading sessions = expired
+
+    new_buy: list[dict] = []
+    expired: list[dict] = []
+    for _r in buy_rows:
+        _sig = _r.get("signal") or {}
+        # Only target anticipation/pending rows that are still unconfirmed
+        if _sig.get("tier") != "anticipation" or _sig.get("sub") != "pending":
+            new_buy.append(_r)
+            continue
+        _last = _sig.get("last") or {}
+        if _last.get("quality") != "pending":
+            new_buy.append(_r)
+            continue
+        _fire_date_str = _last.get("date")
+        if not _fire_date_str:
+            new_buy.append(_r)
+            continue
+        try:
+            _fire_date = pd.Timestamp(_fire_date_str).date()
+        except Exception:  # noqa: BLE001
+            new_buy.append(_r)
+            continue
+
+        _sessions = _count_trading_sessions_between(_fire_date, _asof)
+        if _sessions > _EXPIRY_SESSIONS:
+            # Demote: mark the row with the expiry reason and move it to watch
+            _r = dict(_r)  # shallow copy — don't mutate the original list item
+            _r["pending_expired"] = True
+            _r["pending_expiry_reason"] = (
+                f"confirmation expired — signal fired {_fire_date_str}, "
+                f"no confirming data since"
+            )
+            _r["pending_expiry_reason_zh"] = (
+                f"确认超时 — 信号于 {_fire_date_str} 触发，此后无确认数据"
+            )
+            _r["lane"] = "watch"    # re-tag lane so the watch grid shows it correctly
+            expired.append(_r)
+        else:
+            new_buy.append(_r)
+
+    new_watch = expired + watch_rows  # expired rows go to the top of watch
+    n_expired = len(expired)
+    if n_expired:
+        log.info(
+            "CSP-W5 pending expiry: %d row(s) moved buy→watch "
+            "(pending > %d sessions unconfirmed): %s",
+            n_expired, _EXPIRY_SESSIONS,
+            [_r.get("ticker") for _r in expired],
+        )
+    return new_buy, new_watch, n_expired
+
+
 def _basket_membership_map() -> dict[str, list[dict]]:
     """All active thematic basket memberships per ticker — for the detail page.
     Reads membership.json (no live performance data needed). Returns
@@ -3883,6 +4061,36 @@ def main() -> int:
                                 len(_gex_chip_rows), _gex_chip_rows[:5])
         except Exception as _e3:  # noqa: BLE001
             log.debug("W6-US invariant (c) GEX check skipped: %s", _e3)
+
+        # CSP-W5 — Board staleness block + pending-buy expiry (display-tier, demotion-only)
+        # ────────────────────────────────────────────────────────────────────────────────
+        # (1) Staleness: compute price_through / age_days / delayed from the max-date in
+        #     data/baskets/ohlcv — the same store the cascade gate reads.  Emit into
+        #     wide["staleness"] so the template can render the BOARD DELAYED badge.
+        # (2) Expiry: move any pending buy that is > 3 trading sessions old and still
+        #     unconfirmed from buy to watch.  Demotion-only: adds nothing to the buy side.
+        # Both are fail-soft: any exception leaves the artifact unchanged.
+        try:
+            _staleness = _compute_board_staleness()
+            wide["staleness"] = _staleness
+            log.info(
+                "CSP-W5 staleness: price_through=%s age_days=%s delayed=%s",
+                _staleness.get("price_through"),
+                _staleness.get("age_days"),
+                _staleness.get("delayed"),
+            )
+        except Exception as _stale_e:  # noqa: BLE001
+            log.warning("CSP-W5 staleness: failed (%s) — block absent from artifact", _stale_e)
+
+        try:
+            _buy_after, _watch_after, _n_expired = _expire_pending_buys(
+                wide.get("buy", []), wide.get("watch", []), wide.get("as_of"))
+            if _n_expired:
+                wide["buy"] = _buy_after
+                wide["watch"] = _watch_after
+                wide["pending_expired_count"] = _n_expired
+        except Exception as _exp_e:  # noqa: BLE001
+            log.warning("CSP-W5 pending expiry: failed (%s) — no rows demoted", _exp_e)
 
         # B4 Conviction Delta — load prev artifact BEFORE overwriting, diff dossier keys,
         # embed compact delta block into wide.  Fail-open: any error leaves delta absent.
