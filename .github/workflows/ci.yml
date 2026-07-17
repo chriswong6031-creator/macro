@@ -7,6 +7,10 @@ on:
   pull_request:
     branches: [main]
     paths:
+      # repo-wide pytest conftest: session fixtures/guards run in EVERY pytest
+      # job, so a conftest edit must trigger the full suite (2026-07-16 #2636
+      # fixture import broke 14 minimal-lane jobs without triggering ci.yml).
+      - "tests/conftest.py"
       - "site/**"
       - "scripts/check_inline_js.py"
       - "scripts/check_site_js.py"
