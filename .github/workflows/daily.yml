@@ -772,6 +772,13 @@ jobs:
           # needs the DeepSeek key here too — not only on the master_brain step below.
           # No-op (degrades to neutral) when the secret is absent.
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          # NWS-01 (#2658) moved build_news INTO this step (pre-build_site) from the
+          # parallel cluster below — the financial_news polygon/finnhub legs need the
+          # provider keys HERE now, or the keyed nightly itself would ship a dark feed
+          # (and after 36h the never-darken guard would lapse into permanent darkness).
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
           # Live intraday layer: set repo VARIABLE LIVE_QUOTES_WORKER_URL (Settings ->
           # Secrets and variables -> Actions -> Variables) to your deployed Cloudflare
           # quotes-worker URL to turn ON browser live prices — build_site bakes it into
