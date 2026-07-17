@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-17",
-  "generated_utc": "2026-07-17T16:25:23.653033+00:00",
+  "generated_utc": "2026-07-17T21:09:03.192531+00:00",
   "n_tickers": 5011,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
