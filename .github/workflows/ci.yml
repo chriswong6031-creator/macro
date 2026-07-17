@@ -2345,6 +2345,32 @@ jobs:
       - name: pick lab liquidity gate regression tests
         run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py -q
 
+  ric-w2-surface:
+    # RIC W2 SURFACE: whole-market dealer-surface history engine unit tests.
+    #   test_options_surface.py — 24 tests covering:
+    #     dealer-sign convention (call-heavy +GEX, put-heavy -GEX)
+    #     dealer_sign_assumption always printed in every row
+    #     |·|-magnitude concentration shares bounded [0,1]
+    #     front7_abs_gex/charm_share = 1.0 when all contracts front-week
+    #     front7_abs_gex/charm_share = 0.0 when all contracts back-bucket
+    #     expiry bucket breakdown: fw+fm+bk == net_gex_bn
+    #     root_class mapping: SPY→index_etf, XLK→sector_etf, SMH→industry_etf
+    #     zero-OI rows excluded (→ None)
+    #     empty/None greeks/OI → None (no exception)
+    #     oi_frac bounded [0,1]
+    #     SURFACE_ROSTER frozen at 19 roots (XLC excluded, audit 2026-07-17)
+    # Zero real-store reads; all inputs are synthetic DataFrames.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: W2 SURFACE engine unit tests
+        run: python -m pytest tests/test_options_surface.py -v
+
   collect-identity:
     # Registered-visitor identity capture (app/main.py /api/collect): Supabase session-cookie
     # parsing (single + chunked base64url), secretless cached token verification (monkeypatched),

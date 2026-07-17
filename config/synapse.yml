@@ -4711,6 +4711,85 @@ artifacts:
       market_gamma engine; MUST NOT feed any scored or arithmetic weight path.
       Companion live store: data/polygon_gex/summary_*.parquet (short window ~2026-06-15+).
 
+  # --- W2 SURFACE: whole-market dealer-surface history (RIC program) ---
+  # Three entries — one per root_class (small committed aggregates, ~single-digit MB each)
+  options-surface-index-etf:
+    path: data/options_surface/index_etf.parquet
+    format: parquet
+    producer: scripts/build_options_surface.py
+    known_extra_writers: []
+    owner_program: rates-inflation-command
+    cadence: theta-ops-nightly
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 36
+    schema: options_surface.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/opex_risk.py
+    external_consumers: []
+    notes: >
+      W2 SURFACE (RIC program). Per-root-per-date dealer-surface aggregates for
+      the index_etf class (SPX, SPXW, SPY, QQQ, IWM, DIA). One row per (root, date)
+      2017→present. Columns: net_gex_bn, net_vex, net_cex (dealer sign = long-call /
+      short-put ASSUMPTION, unobservable, printed in every consumer),
+      front7_abs_charm_share, front7_abs_gex_share (|·|-magnitude, sign-robust),
+      total_abs_gamma_notional, oi_notional, fw/fm/bk bucket GEX+OI fractions.
+      OI shift(1) enforced (OPRA timing law: oi[t] = EOD t-1 positions).
+      Written by theta-ops launchd lane (com.macro.thetadata-surface) ONLY —
+      never from daily.yml. Single-writer. Display-only (no score path, no arithmetic weight).
+      Roster frozen at coverage audit 2026-07-17 (19/20 roots pass; XLC excluded
+      — greeks absent for 2017, ETF launched 2018-06-18).
+
+  options-surface-sector-etf:
+    path: data/options_surface/sector_etf.parquet
+    format: parquet
+    producer: scripts/build_options_surface.py
+    known_extra_writers: []
+    owner_program: rates-inflation-command
+    cadence: theta-ops-nightly
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 36
+    schema: options_surface.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/opex_risk.py
+    external_consumers: []
+    notes: >
+      W2 SURFACE (RIC program). Per-root-per-date dealer-surface aggregates for
+      the sector_etf class (XLB, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY).
+      Same schema and laws as options-surface-index-etf. Single-writer, theta-ops lane.
+
+  options-surface-industry-etf:
+    path: data/options_surface/industry_etf.parquet
+    format: parquet
+    producer: scripts/build_options_surface.py
+    known_extra_writers: []
+    owner_program: rates-inflation-command
+    cadence: theta-ops-nightly
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 36
+    schema: options_surface.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/opex_risk.py
+    external_consumers: []
+    notes: >
+      W2 SURFACE (RIC program). Per-root-per-date dealer-surface aggregates for
+      the industry_etf class (SMH, XBI, KRE).
+      Same schema and laws as options-surface-index-etf. Single-writer, theta-ops lane.
+
   # --- 1 consumer ---
   options-flow-index:
     path: site/flow/index.json
