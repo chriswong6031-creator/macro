@@ -2312,11 +2312,24 @@ modules:
       - site/basketdata/baskets.json
       - data/sector_cycles_data.js
       - data/regime/latest.json
+      - site/marketdata/sp500_heatmap.json
+      - data/us_sector_rotation/latest.json
     writes:
       - site/sector_central.html
       - site/sector_central_data.js
-      - site/factordata/sector_central.json
+      - site/sectordata/sector_central.json
       - data/sector_central/calls.parquet
+    note: >
+      XSR-W1b build-order note: build_site (which bakes RS-strip conviction
+      tooltips into us_stocks.html from sectordata/sector_central.json) runs
+      BEFORE this step in the nightly pipeline.  The resulting one-nightly lag
+      in the static tooltip labels is corrected client-side: _leadership_board.html.j2
+      fetches sectordata/sector_central.json at page-load and patches the
+      data-tip-en/zh attributes (XSR-W1b; no pipeline reorder required because
+      the underlying RS-strip data (rs_rank, lead) is not stale — only the
+      conviction tooltip fragment was lagging).  Render-owned artifact
+      (site/sector_central.html) must not be healed by a source-side lane
+      (#2728 precedent).
     impure: false
     needs_secrets: false
     event_driven: false

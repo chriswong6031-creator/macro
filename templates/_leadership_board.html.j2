@@ -590,5 +590,36 @@
   }).catch(function(){});
 })();
 </script>
+{#- XSR-W1b build-order fix: sector_central.json is written by build_sector_central which runs
+    AFTER build_site in the nightly pipeline. The baked-in conviction tooltip labels in data-tip-en/zh
+    are therefore one nightly stale (build_site read the PREVIOUS nightly's sector_central.json).
+    Fix: fetch the CURRENT nightly's sectordata/sector_central.json client-side and patch the
+    conviction fragment inside each row's data-tip-* attributes.
+    This is display-only / additive — rows without a match keep their baked-in label.
+    Dependency: sectordata/sector_central.json (written by scripts.build_sector_central). #}
+<script>
+(function(){
+  fetch('sectordata/sector_central.json').then(function(r){ return r.ok?r.json():null; }).then(function(sc){
+    if(!sc||!sc.sectors) return;
+    var cvByTicker={};
+    sc.sectors.forEach(function(s){
+      if(s&&s.ticker&&s.conviction){
+        cvByTicker[s.ticker]={en:s.conviction.label_en||'',zh:s.conviction.label_zh||s.conviction.label_en||''};
+      }
+    });
+    document.querySelectorAll('.ldb-rs-row[data-sec]').forEach(function(row){
+      var ticker=row.getAttribute('data-sec');
+      var cv=cvByTicker[ticker]; if(!cv) return;
+      // Patch conviction fragment in the existing baked tip (replace " · conviction: <old>" or append).
+      var tipEn=row.getAttribute('data-tip-en')||'';
+      var tipZh=row.getAttribute('data-tip-zh')||'';
+      tipEn=tipEn.replace(/ · conviction:.*$/,'')+(cv.en?' · conviction: '+cv.en:'');
+      tipZh=tipZh.replace(/ · 评级：.*$/,'')+(cv.zh?' · 评级：'+cv.zh:'');
+      row.setAttribute('data-tip-en',tipEn);
+      row.setAttribute('data-tip-zh',tipZh);
+    });
+  }).catch(function(){});
+})();
+</script>
 {%- endif %}
 {%- endmacro %}
