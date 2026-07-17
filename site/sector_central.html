@@ -82,6 +82,10 @@
   .mc-hov { position: absolute; width: 7px; height: 7px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; }
   .conflu { font-size: 10.5px; color: var(--muted); margin-top: 8px; }
   .conflu b.high { color: var(--up); } .conflu b.moderate { color: var(--warn); }
+  /* XSR-R2/R9 */
+  .chip2.xsr-fast { color: var(--link); border-color: color-mix(in srgb, var(--link) 40%, var(--line)); }
+  .chip2.xsr-fast.up { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line)); }
+  .xsr-split { font-size: 11px; color: var(--warn); border-left: 2px solid var(--warn); padding: 3px 7px; margin: 6px 0 0; line-height: 1.45; }
   /* grader */
   .grader { margin-top: 26px; border: 1px solid var(--line); border-radius: 13px; padding: 14px 16px; background: var(--panel); }
   /* in-board variant: the accuracy footer of the conviction scoreboard — hugs the board, subtler frame */
@@ -206,13 +210,19 @@
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
-        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
-        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
-        <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
-        <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="gex.html">🧲 <span class="nav-sub-text"><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">GEX · screener · flow · dark pool</span><span class="l-zh">GEX · 筛选台 · 资金流 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+            <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+            <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+            <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
+            <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+          </div>
+        </div>
         <a href="leader_radar.html">📡 <span class="l-en">Leader Radar</span><span class="l-zh">领袖雷达</span><span class="d"><span class="l-en">Lifecycle board · regime · handoff watch · rerating watch</span><span class="l-zh">生命周期看板 · 领导力制度 · 交接观察 · 重估观察</span></span></a>
-        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
-        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -399,7 +409,7 @@
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
             <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
-            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Ten national equity markets on one clock</span><span class="l-zh">十大股市同框 · 各自周期位置</span></span></span></a>
             <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
             <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
             <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
@@ -561,8 +571,14 @@
   <footer>
     <span class="l-en">Read-only analytics — not investment advice. Conviction is a gated-confluence read: the cycle state leads; the macro regime and the
       validated absolute-trend drawdown gate gate it; momentum (a focus lens, rank-IC≈0), heat and crowding are capped context. The trend gate is
-      validated for drawdown/staying-power control, not return alpha. There is no directional odds forecast. The grader measures realized accuracy as it accrues.</span><span class="l-zh">只读分析 — 非投资建议。信念为门控共振研判：周期状态主导；宏观体制与经验证的绝对趋势回撤门控进行门控；
-      动量（聚焦视角，秩相关≈0）、热度与拥挤度为受限背景。趋势门控仅对回撤/持续性控制有效，而非收益超额。无方向性概率预测。评分器随数据累积衡量已实现准确度。</span>
+      validated for drawdown/staying-power control, not return alpha. There is no directional odds forecast. The grader measures realized accuracy as it accrues.
+      Board ordering: cards are sorted by the fast rotation lens (20-day relative momentum anchored by 5/10-day fast relative strength, adjusted for cycle
+      state and crowding, display-tier only — no forward-return claim). When the fast lens and conviction tier diverge by two or more steps, a split-view
+      note appears on the card. Conviction labels (Accumulate / Constructive / Neutral / Cautious / Reduce) are unchanged by the ordering.</span>
+    <span class="l-zh">只读分析 — 非投资建议。信念为门控共振研判：周期状态主导；宏观体制与经验证的绝对趋势回撤门控进行门控；
+      动量（聚焦视角，秩相关≈0）、热度与拥挤度为受限背景。趋势门控仅对回撤/持续性控制有效，而非收益超额。无方向性概率预测。评分器随数据累积衡量已实现准确度。
+      看板排序：卡片按快速轮动视角排列（20日相对动量为锚，叠加5/10日RS与周期状态调节，仅作展示，无前瞻性收益主张）。
+      当快线与信念层级相差两步及以上时，卡片上将显示分歧提示。信念标签（积极配置／建设性／中性／谨慎／减配）不受排序影响。</span>
   </footer>
 </div>
 
@@ -754,8 +770,25 @@
     var nm = lang()==='zh' && s.name_zh ? s.name_zh : s.name;
     var sub = (s.kind==='basket' ? (s.etf_proxy?esc(s.etf_proxy)+' · ':'') : (esc(s.ticker||'')+' · ')) + esc(lang()==='zh'?(s.group_zh||s.group):s.group);
     var chips=[];
-    if(cy.phaseLabel||cy.phase) chips.push('<span class="chip2">'+esc(cy.phaseLabel||cy.phase)+'</span>');
-    if(cy.rs_21d_rank||cy.rs_rank) chips.push('<span class="chip2">RS <b>#'+(cy.rs_21d_rank||cy.rs_rank)+'</b></span>');
+    // Phase chip: RS rank (63d) moved to hover tip (XSR-R2 ONE-rank law — fast-lens rank is THE displayed rank).
+    var rsHover = (cy.rs_21d_rank||cy.rs_rank) ? ' data-tip-en="63d RS rank: #'+(cy.rs_21d_rank||cy.rs_rank)+' (slow clock — see fast tape below)" data-tip-zh="63日RS排名：第'+(cy.rs_21d_rank||cy.rs_rank)+'位（慢时钟——见下方快线）"' : '';
+    if(cy.phaseLabel||cy.phase) chips.push('<span class="chip2"'+rsHover+'>'+esc(cy.phaseLabel||cy.phase)+'</span>');
+    // XSR-R2: fast-tape rotation rank chip (THE displayed rank per ONE-rank law).
+    var rot=s.rotation||null;
+    if(rot && rot.rank!=null){
+      var rcomp = rot.components||{};
+      var tipEn = 'Fast tape rank #'+rot.rank
+        +(rot.score!=null?' (score: '+rot.score+')':'')
+        +(rcomp.mom20!=null?' · 20d RS: '+rcomp.mom20:'')
+        +(rot.state?' · cycle: '+rot.state:'')
+        +(rot.stale?' · some data stale':'');
+      var tipZh = '快线排名 #'+rot.rank
+        +(rot.score!=null?' (得分: '+rot.score+')':'')
+        +(rcomp.mom20!=null?' · 20日RS: '+rcomp.mom20:'')
+        +(rot.state?' · 周期状态: '+rot.state:'')
+        +(rot.stale?' · 部分数据陈旧':'');
+      chips.push('<span class="chip2 xsr-fast'+(rot.rank<=2?' up':'')+(rot.stale?' muted':'')+'" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'+L('fast tape','快线')+' <b>#'+rot.rank+'</b></span>');
+    }
     if(c.confluence) chips.push('<span class="chip2">'+L('confluence','共振')+' <b>'+c.confluence.agree+'/'+c.confluence.of+'</b></span>');
     if(c.early) chips.push('<span class="chip2 early">'+L('early','偏早')+'</span>');
     var h=s.heat;
@@ -765,12 +798,20 @@
     var nameHtml = s.kind==='basket'
       ? '<a href="basket/'+esc(String(s.id).replace(/^b-/,''))+'.html">'+esc(nm)+'</a>'
       : '<a href="'+cycHref+'" data-focus="'+esc(s.id)+'">'+esc(nm)+'</a>';
+    // XSR-R9: split view line — plain-word copy when conviction and fast-lens diverge ≥ 2 tiers.
+    // No banned vocab (governor, OB, MACD, mom20, state names) — checked at glance tier.
+    var splitLine = '';
+    if(s.split_view){
+      var splitEn=s.split_copy_en||'', splitZh=s.split_copy_zh||'';
+      splitLine = '<div class="xsr-split">'+L(esc(splitEn),esc(splitZh))+'</div>';
+    }
     return '<article class="card" style="--c:'+esc(s.accent||'var(--muted)')+'">'+
       '<div class="card-top"><div><div class="card-nm">'+nameHtml+'</div><div class="card-sub">'+sub+'</div></div>'+
         '<div class="conv"><span class="conv-badge tier-'+dir+'">'+L(esc(c.label_en),esc(c.label_zh||c.label_en))+'</span>'+
         '<div class="conv-score">'+c.score+'</div><div class="conv-sub">'+L('conviction','信念')+'</div></div></div>'+
       '<div class="chips">'+chips.join('')+'</div>'+
       miniCycChart(s)+
+      splitLine+
       '<div class="conflu">'+L('confluence','共振度')+': <b class="'+esc((c.confluence||{}).label||'')+'">'+esc((c.confluence||{}).label||'—')+'</b> · '+
         '<a href="'+cycHref+'" data-focus="'+esc(s.id)+'" style="color:var(--link)">'+L('open cycle →','打开周期 →')+'</a></div>'+
     '</article>';
