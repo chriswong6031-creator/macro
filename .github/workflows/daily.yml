@@ -1119,6 +1119,11 @@ jobs:
             brun cycle         "cycle intelligence page (build_cycle)"        scripts.build_cycle
             brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
             brun countrycyc    "country cycle intelligence (build_country_cycles)" scripts.build_country_cycles
+            # markets_engine.js is a pure splice of country_cycles.json, so it must re-run
+            # whenever countrycyc does — otherwise markets.html freezes on the previous
+            # vintage and the cycle-consistency PR gate fails on same-tape pos/phase skew
+            # (render.yml already pairs them; cl_misc is sequential so ordering holds).
+            brun markets       "global market cycles shell (build_markets)"    scripts.build_markets
             brun measurement   "cycle measurement hub (build_measurement)"    scripts.build_measurement
             brun sync_gauge    "sync gauge appender (append_sync_gauge)"      scripts.append_sync_gauge
             brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
@@ -1141,7 +1146,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports cycle sectorcyc countrycyc measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
