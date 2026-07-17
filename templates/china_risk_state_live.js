@@ -31,15 +31,6 @@
      BEFORE any live overwrite, so we can detect when the live band moves off it. */
   var bakedLabelEn = null;
 
-  function isZh() {
-    try {
-      var el = document.documentElement;
-      return (el.getAttribute("data-lang") || "").slice(0, 2) === "zh" ||
-             (el.lang || "").slice(0, 2) === "zh" ||
-             document.body.classList.contains("lang-zh");
-    } catch (e) { return false; }
-  }
-
   /* Render a bilingual verdict as the site's dual l-en/l-zh span pair so it follows
      the html[data-lang] CSS toggle — and keeps switching if the user changes language
      AFTER the live feed patches the node. A single-language text node would freeze in
@@ -128,8 +119,12 @@
     var dt = document.getElementById("ms-date");
     if (dt && d.live_active) {
       var hhmm = (d.built || "").slice(11, 16);
-      var freshWord = d.realtime ? (isZh() ? "实时 " : "live ") : (isZh() ? "延迟 " : "delayed ");
-      dt.textContent = "· " + freshWord + hhmm + " UTC";
+      /* Bilingual (l-en/l-zh) so the freshness word follows the html[data-lang] CSS
+         toggle even when the user switches language AFTER this live patch. A plain
+         text node would freeze in whatever language was active at patch time — the
+         exact leak setBL exists to prevent (see the doctrine on setBL above). */
+      setBL(dt, "· " + (d.realtime ? "live " : "delayed ") + hhmm + " UTC",
+                "· " + (d.realtime ? "实时 " : "延迟 ") + hhmm + " UTC");
       dt.classList.toggle("ms-date-live", !!d.realtime);
     } else if (dt && d.nightly_asof) {
       dt.textContent = "· " + d.nightly_asof;
