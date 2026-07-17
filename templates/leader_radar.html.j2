@@ -1684,20 +1684,27 @@ function renderDotBar(el) {
 }
 
 /* ── Evidence line renderer ── */
+/* Dual-span (l-en/l-zh) so the [data-lang] CSS swaps language even when
+   data-lang is set without a langchange event (same idiom as near-trigger chips). */
 function renderEvidenceLine(el) {
   try {
     const chips = JSON.parse(el.dataset.chips || '{}');
-    const stage = el.dataset.stage || '';
     const pos = Object.entries(chips).filter(([k,v]) => v === true && !INTERNAL_CHIPS.has(k));
-    const parts = pos.slice(0,2).map(([k]) => chipLabel(k));
-    el.innerHTML = parts.join('<span class="ev-sep">·</span>') || '—';
+    const keys = pos.slice(0,2).map(([k]) => k);
+    if (!keys.length) { el.textContent = '—'; return; }
+    const sep = '<span class="ev-sep">·</span>';
+    el.innerHTML =
+      '<span class="l-en">' + keys.map(k => CHIP_LABELS_EN[k] || k).join(sep) + '</span>' +
+      '<span class="l-zh">' + keys.map(k => CHIP_LABELS_ZH[k] || k).join(sep) + '</span>';
   } catch(e) { el.textContent = '—'; }
 }
 
 /* ── Board chip label renderer ── */
 function renderBoardChip(el) {
   const k = el.dataset.chipKey;
-  el.textContent = chipLabel(k);
+  el.innerHTML =
+    '<span class="l-en">' + (CHIP_LABELS_EN[k] || k) + '</span>' +
+    '<span class="l-zh">' + (CHIP_LABELS_ZH[k] || k) + '</span>';
 }
 
 /* ── Card receipt via data attributes (safe for JSON chips) ── */
