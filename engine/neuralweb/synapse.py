@@ -38,6 +38,7 @@ _VALID_FORMATS = {"json", "parquet", "jsonl", "js", "other"}
 _VALID_CADENCES = {
     "daily-engine", "collect", "asia-close", "intraday", "weekly", "on-demand",
     "nightly-cortex", "nightly-factor-panel",
+    "theta-ops-nightly",  # theta-ops launchd lane (Mac ops host, not GHA)
 }
 _VALID_STORAGES = {"git", "r2", "gitignored-local", "git+r2"}
 _VALID_ASOF_FIELDS = {"asof", "as_of", "date", "generated_utc", "authored", "null"}

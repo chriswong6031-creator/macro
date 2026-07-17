@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.thetadata-surface.plist
+  launchd agent for the W2 SURFACE nightly forward-accrual.
+
+  Runs scripts/launchd/theta_surface_accrual.sh at 21:10 UTC (14:10 PT / 17:10 ET)
+  — 40 minutes after the thetadata backfill gate opens (20:10 UTC), ensuring the
+  EOD greeks for today are on disk before the surface builder reads them.
+
+  The accrual script:
+    (a) Times out early if the thetadata refresh hasn't settled yet (21:00 UTC gate).
+    (b) Runs python -m scripts.build_options_surface (nightly accrual mode).
+    (c) Commits data/options_surface/*.parquet via a narrow git commit if 0 rows changed.
+
+  OPERATOR INSTALL (from a terminal on the ops host — not from within ~/Documents/):
+    1. Copy the script to the ops worktree (outside ~/Documents/ — macOS TCC restriction):
+         cp /path/to/repo/scripts/launchd/theta_surface_accrual.sh \
+            /Users/chriswong/theta-ops-wt/scripts/launchd/
+         chmod +x /Users/chriswong/theta-ops-wt/scripts/launchd/theta_surface_accrual.sh
+
+    2. Copy this plist to LaunchAgents:
+         cp scripts/launchd/com.macro.thetadata-surface.plist ~/Library/LaunchAgents/
+
+    3. Bootstrap the agent:
+         launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.macro.thetadata-surface.plist
+
+  OPERATOR UNINSTALL:
+    launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.macro.thetadata-surface.plist
+    rm ~/Library/LaunchAgents/com.macro.thetadata-surface.plist
+
+  MANUAL RUN:
+    /Users/chriswong/theta-ops-wt/scripts/launchd/theta_surface_accrual.sh
+
+  LOG TAILING:
+    tail -f /Users/chriswong/theta-ops-wt/surface_accrual.log
+
+  LIVENESS CHECK:
+    python -m scripts.audit_options_surface_accrual --strict
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.macro.thetadata-surface</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <!--
+          Script MUST live OUTSIDE ~/Documents/ — launchd (Aqua session) is TCC-denied
+          exec on files under ~/Documents/ (exit 126). Use the ops worktree.
+        -->
+        <string>/Users/chriswong/theta-ops-wt/scripts/launchd/theta_surface_accrual.sh</string>
+    </array>
+
+    <!--
+      21:10 UTC = 14:10 PT / 17:10 ET.
+      Fires after the thetadata backfill lane opens at 20:10 UTC, giving the
+      nightly ETF refresh ~60m to settle before the surface accrual reads greeks.
+      The accrual script itself has an inner 21:00 UTC gate as a safety margin.
+    -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>21</integer>
+        <key>Minute</key><integer>10</integer>
+    </dict>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/chriswong/theta-ops-wt</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/chriswong/theta-ops-wt/surface_accrual.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/chriswong/theta-ops-wt/surface_accrual.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>THETADATA_STORE</key>
+        <string>/Users/chriswong/theta-ops-wt/data/thetadata_eod</string>
+    </dict>
+
+    <!-- Run once per trigger; KeepAlive=false — not a daemon -->
+    <key>KeepAlive</key>
+    <false/>
+
+    <!-- 60s throttle: if the job exits fast (e.g., timing gate), wait before retry -->
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+</dict>
+</plist>
