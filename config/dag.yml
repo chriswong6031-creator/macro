@@ -1276,6 +1276,17 @@ lanes:
             - scripts.build_china_intel
           cl_central:
             - scripts.build_china_sector_central
+      # serial post-band
+      - id: check_builder_failstreaks
+        module: scripts.check_builder_failstreaks
+        note: >
+          Builder fail-streak sentinel — asia-close port of the daily.yml #2704/#2738
+          step: scans BOTH band scratch dirs (band A + band B, one invocation — two
+          would decay the other band's slugs) and advances the CN/HK ledger
+          data/ci/builder_failstreaks_asia.json (--lane asia; the script binds each
+          write lane to exactly one ledger, so this lane can never advance daily.yml's
+          ledger). Observability only — always exits 0, never blocks the deploy.
+          Declared here to match asia-close.yml (asia job, post-band-B serial step).
       # ── W8-R7: CN MTF upturn organ runs INLINE inside build_china_library.main() ──
       # compute_cn() is called at end of build_china_library.main() after board arrays
       # are assembled (see engine/mtf_upturn.py CN lane). No standalone script entry
