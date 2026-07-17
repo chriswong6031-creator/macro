@@ -1648,7 +1648,7 @@ class TestDegradedList:
     """degraded list fires when state_history lags price_through."""
 
     def test_degraded_fires_on_lagging_state_history(self):
-        """state_history lagging >2 sessions → degraded message present."""
+        """state_history lagging >2 sessions → degraded EN+ZH messages present, parallel."""
         from scripts.build_leader_radar import _build_degraded, _build_freshness
 
         # Price through = 2026-07-15, state history through = 2026-07-08 (5 sessions lag)
@@ -1670,14 +1670,21 @@ class TestDegradedList:
             revisions_df=revisions_df,
             state_df=state_df,
         )
-        degraded = _build_degraded(price_through, freshness, state_df)
+        degraded, degraded_zh = _build_degraded(price_through, freshness, state_df)
         assert isinstance(degraded, list)
+        assert isinstance(degraded_zh, list)
+        assert len(degraded) == len(degraded_zh), (
+            f"EN/ZH degraded lists must be parallel; got {len(degraded)} EN vs {len(degraded_zh)} ZH"
+        )
         assert any("state history" in msg for msg in degraded), (
             f"Expected 'state history' degradation message, got: {degraded}"
         )
+        assert any("状态历史" in msg for msg in degraded_zh), (
+            f"Expected ZH 状态历史 degradation message, got: {degraded_zh}"
+        )
 
     def test_degraded_empty_when_clean(self):
-        """No lag → degraded list is empty."""
+        """No lag → degraded lists are both empty."""
         from scripts.build_leader_radar import _build_degraded, _build_freshness
 
         price_through = date(2026, 7, 15)
@@ -1698,8 +1705,9 @@ class TestDegradedList:
             revisions_df=pd.DataFrame(),
             state_df=state_df,
         )
-        degraded = _build_degraded(price_through, freshness, state_df)
+        degraded, degraded_zh = _build_degraded(price_through, freshness, state_df)
         assert degraded == [], f"Expected empty degraded list, got: {degraded}"
+        assert degraded_zh == [], f"Expected empty degraded_zh list, got: {degraded_zh}"
 
 
 # ── LR PR-A: state_entry_date + old-schema merge (Item 6) ────────────────────
