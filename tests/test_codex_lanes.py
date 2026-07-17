@@ -43,6 +43,7 @@ import os
 import sys
 import tempfile
 import textwrap
+import time
 import types
 import unittest
 from datetime import datetime, timezone
@@ -81,6 +82,7 @@ def _make_case_md(
             {
                 "date": "2023-01-15",
                 "type": "earnings_beat",
+                "headline": "Q4 earnings beat consensus estimates",
                 "source_url": catalyst_source_url,
                 "detail": "Q4 beat",
             }
@@ -90,6 +92,7 @@ def _make_case_md(
             {
                 "date": "2023-01-15",
                 "type": "earnings_beat",
+                "headline": "Q4 earnings beat consensus estimates",
                 "detail": "Q4 beat",
             }
         ]
@@ -97,8 +100,10 @@ def _make_case_md(
     if sources_empty:
         sources = []
     else:
+        # FIX 11: sources must have length >= 2
         sources = [
-            {"url": "https://example.com", "title": "Source 1", "date": "2023-01-15"}
+            {"url": "https://example.com", "title": "Source 1", "date": "2023-01-15"},
+            {"url": "https://example2.com", "title": "Source 2", "date": "2023-02-01"},
         ]
 
     yaml_data: dict = {
@@ -345,15 +350,16 @@ class TestCaseQueueFiltering:
         assert "AAPL_2022" in keys
 
     def test_queue_excludes_attempted_episodes(self, tmp_path: Path):
+        """An episode with a terminal status (audit_failed) is excluded (FIX 1 semantics)."""
         root = _make_root(tmp_path)
         _make_episodes_parquet(root)
 
-        # Write an attempt for AAPL_2022
+        # Write an attempt with terminal status for AAPL_2022
         attempts_path = root / "data" / "codex_lane" / "case_attempts.jsonl"
         row = {
             "ts": datetime.now(timezone.utc).isoformat(),
             "episode": "AAPL_2022",
-            "status": "skipped",
+            "status": "audit_failed",  # terminal — should be excluded
             "pr_url": None,
             "detail": "test",
         }
@@ -488,12 +494,27 @@ class TestCaseLaneDryRun:
         _make_episodes_parquet(root)
         _make_prompt_template(root)
 
-        with patch("subprocess.run") as mock_sub:
+        # FIX 4: _build_queue now calls git ls-remote as part of dedup — allow that call
+        # but capture and verify no git-commit/gh-pr/codex subprocess calls happen.
+        git_ls_remote_result = MagicMock()
+        git_ls_remote_result.returncode = 1  # no remote branches (clean fail)
+        git_ls_remote_result.stdout = ""
+        git_ls_remote_result.stderr = "no remote"
+
+        non_ls_remote_calls = []
+
+        def fake_subprocess_run(args, **kwargs):
+            if isinstance(args, list) and len(args) >= 2 and args[:3] == ["git", "ls-remote", "--heads"]:
+                return git_ls_remote_result
+            non_ls_remote_calls.append(args)
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
             import scripts.codex_case_lane as lane
             result = lane.run_once(root=root, dry_run=True)
 
-        # subprocess.run should NOT be called (no git, no gh, no codex)
-        mock_sub.assert_not_called()
+        # No git-commit / gh / codex subprocess calls should happen in dry_run
+        assert non_ls_remote_calls == [], f"Unexpected non-ls-remote subprocess calls: {non_ls_remote_calls}"
         assert result["ok"] is True
         assert result["action"] == "dry_run"
         assert result["episode"] == "NVDA_2023"
@@ -823,8 +844,10 @@ class TestSignalLaneGovernanceEvent:
         gov_rows = _read_governance(root)
         # Should have at least one governance event
         assert len(gov_rows) >= 1
-        # The last event should be sf_brainstorm_run
-        last = gov_rows[-1]
+        # There must be at least one sf_brainstorm_run event (FIX 7c also adds sf_harness_run)
+        brainstorm_rows = [r for r in gov_rows if r.get("event") == "sf_brainstorm_run"]
+        assert len(brainstorm_rows) >= 1, f"Expected sf_brainstorm_run event; got events: {[r.get('event') for r in gov_rows]}"
+        last = brainstorm_rows[-1]
         assert last.get("event") == "sf_brainstorm_run"
         evidence = last.get("evidence", {})
         assert evidence.get("generator") == "codex"
@@ -1455,11 +1478,16 @@ class TestDeterministicAuditBannedWordBoundary:
             "mechanism": "New product ramp.",
             "stage_map": "compressed prior to catalyst",
             "catalyst_ladder": [{"date": "2023-01-15", "type": "earnings_beat",
+                                  "headline": "Q4 beat expectations",
                                   "source_url": "https://example.com", "detail": "beat"}],
             "hazards": "Competition.",
             "false_positive_checks": {"meme_squeeze": False, "one_day_binary": False,
                                        "sector_beta": False, "options_mirage": False},
-            "sources": [{"url": "https://example.com", "title": "src", "date": "2023-01-15"}],
+            # FIX 11: sources must have length >= 2
+            "sources": [
+                {"url": "https://example.com", "title": "src1", "date": "2023-01-15"},
+                {"url": "https://example2.com", "title": "src2", "date": "2023-02-01"},
+            ],
         }
         yaml_block = _yaml.dump(yaml_data, allow_unicode=True, default_flow_style=False)
         content = f"# Case\n\n{body_text}\n\n```yaml\n{yaml_block}```\n"
@@ -1856,6 +1884,1658 @@ class TestSignalLaneProvenanceAlwaysStamped:
         )
         assert n_admitted == 1
         assert len(admitted_ids) == 1
+
+
+# ---------------------------------------------------------------------------
+# NEW TESTS — FIX 1: retryable transient failures
+# ---------------------------------------------------------------------------
+
+class TestCaseQueueRetryableTransients:
+    """FIX 1: episode with 'skipped' row is retryable; terminal/3+ rows excluded."""
+
+    def _write_attempts(self, root: Path, rows: list[dict]) -> None:
+        path = root / "data" / "codex_lane" / "case_attempts.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as fh:
+            for row in rows:
+                fh.write(json.dumps(row) + "\n")
+
+    def test_one_skipped_row_is_retryable(self, tmp_path: Path):
+        """Episode with a single 'skipped' row must NOT be excluded."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)
+        # Write one skipped row for AAPL_2022
+        self._write_attempts(root, [
+            {"ts": "2026-07-17T00:00:00Z", "episode": "AAPL_2022", "status": "skipped", "pr_url": None, "detail": "timeout"},
+        ])
+        import scripts.codex_case_lane as lane
+        queue = lane._build_queue(root)
+        keys = [ep["key"] for ep in queue]
+        assert "AAPL_2022" in keys, f"AAPL_2022 should be retryable but was excluded; keys={keys}"
+
+    def test_audit_failed_row_is_excluded(self, tmp_path: Path):
+        """Episode with 'audit_failed' row is EXCLUDED (terminal status)."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)
+        self._write_attempts(root, [
+            {"ts": "2026-07-17T00:00:00Z", "episode": "AAPL_2022", "status": "audit_failed", "pr_url": None, "detail": "bad"},
+        ])
+        import scripts.codex_case_lane as lane
+        queue = lane._build_queue(root)
+        keys = [ep["key"] for ep in queue]
+        assert "AAPL_2022" not in keys, f"AAPL_2022 should be excluded (audit_failed) but found; keys={keys}"
+
+    def test_three_skipped_rows_excluded(self, tmp_path: Path):
+        """Episode with 3 'skipped' rows is EXCLUDED (poison-pill cap)."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)
+        self._write_attempts(root, [
+            {"ts": "2026-07-17T00:00:00Z", "episode": "MSFT_2021", "status": "skipped", "pr_url": None, "detail": "t1"},
+            {"ts": "2026-07-17T01:00:00Z", "episode": "MSFT_2021", "status": "skipped", "pr_url": None, "detail": "t2"},
+            {"ts": "2026-07-17T02:00:00Z", "episode": "MSFT_2021", "status": "skipped", "pr_url": None, "detail": "t3"},
+        ])
+        import scripts.codex_case_lane as lane
+        queue = lane._build_queue(root)
+        keys = [ep["key"] for ep in queue]
+        assert "MSFT_2021" not in keys, f"MSFT_2021 should be excluded (3 skips) but found; keys={keys}"
+
+    def test_two_skipped_rows_still_retryable(self, tmp_path: Path):
+        """Episode with 2 'skipped' rows is still retryable (below 3-attempt cap)."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)
+        self._write_attempts(root, [
+            {"ts": "2026-07-17T00:00:00Z", "episode": "MSFT_2021", "status": "skipped", "pr_url": None, "detail": "t1"},
+            {"ts": "2026-07-17T01:00:00Z", "episode": "MSFT_2021", "status": "skipped", "pr_url": None, "detail": "t2"},
+        ])
+        import scripts.codex_case_lane as lane
+        queue = lane._build_queue(root)
+        keys = [ep["key"] for ep in queue]
+        assert "MSFT_2021" in keys, f"MSFT_2021 should be retryable (2 skips) but was excluded; keys={keys}"
+
+
+# ---------------------------------------------------------------------------
+# NEW TESTS — FIX 2: audit/fix prompt contains text beyond 12000 chars
+# ---------------------------------------------------------------------------
+
+class TestAuditPromptNoTruncation:
+    """FIX 2: audit and fix prompts must not cut the case off at 12000 chars."""
+
+    def test_audit_prompt_includes_text_at_char_15000(self, tmp_path: Path):
+        """For a >15KB case, the sentinel at char ~15000 must appear in the prompt."""
+        SENTINEL = "SENTINEL_BEYOND_12K_MARK"
+        # Build a case text >15000 chars with sentinel after char 12000
+        padding = "x" * 12500
+        case_text = padding + SENTINEL + "y" * 3000
+
+        captured_prompt: list[str] = []
+
+        def fake_run_codex(prompt, **kwargs):
+            captured_prompt.append(prompt)
+            return {"ok": True, "final_message": '{"verdict":"PASS","findings":[]}', "events_count": 1,
+                    "token_usage": None, "rate_limits": None, "error_kind": None, "raw_tail": ""}
+
+        root = tmp_path
+        cfg = {"session_timeout_min": 5, "codex_model": "", "sandbox": "workspace-write", "network": True}
+
+        with patch("engine.codex_lane.runner.run_codex", side_effect=fake_run_codex):
+            import scripts.codex_case_lane as lane
+            lane._run_codex_audit(case_text, "NVDA", 2023, cfg, root)
+
+        assert len(captured_prompt) == 1, "run_codex should have been called once"
+        assert SENTINEL in captured_prompt[0], (
+            f"Sentinel beyond 12K was not found in audit prompt. "
+            f"Prompt length={len(captured_prompt[0])}, sentinel={SENTINEL!r}"
+        )
+
+    def test_fix_prompt_includes_text_at_char_15000(self, tmp_path: Path):
+        """For a >15KB case, the fix prompt also must include text beyond 12000 chars."""
+        SENTINEL = "FIX_SENTINEL_BEYOND_12K"
+        padding = "z" * 12500
+        case_text = padding + SENTINEL + "w" * 3000
+
+        captured_prompt: list[str] = []
+
+        def fake_run_codex(prompt, **kwargs):
+            captured_prompt.append(prompt)
+            return {"ok": True, "final_message": "done", "events_count": 1,
+                    "token_usage": None, "rate_limits": None, "error_kind": None, "raw_tail": ""}
+
+        root = tmp_path
+        cfg = {"session_timeout_min": 5, "codex_model": "", "sandbox": "workspace-write", "network": True}
+
+        with patch("engine.codex_lane.runner.run_codex", side_effect=fake_run_codex):
+            import scripts.codex_case_lane as lane
+            lane._run_codex_fix(case_text, ["issue 1"], "NVDA", 2023, cfg, root)
+
+        assert len(captured_prompt) == 1
+        assert SENTINEL in captured_prompt[0], (
+            f"Sentinel beyond 12K was not found in fix prompt. "
+            f"Prompt length={len(captured_prompt[0])}, sentinel={SENTINEL!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# NEW TESTS — FIX 4: ls-remote parse excludes remote branches
+# ---------------------------------------------------------------------------
+
+class TestLsRemoteCaseKeys:
+    """FIX 4: _ls_remote_case_keys parses git ls-remote output correctly."""
+
+    def test_ls_remote_excludes_parsed_keys(self, tmp_path: Path):
+        """Mock ls-remote output with known branches -> keys parsed and returned."""
+        ls_remote_output = (
+            "abc123\trefs/heads/codex/case-nvda-2023\n"
+            "def456\trefs/heads/codex/case-aapl-2022\n"
+            "ghi789\trefs/heads/other-branch\n"  # should NOT match
+        )
+
+        fake_result = MagicMock()
+        fake_result.returncode = 0
+        fake_result.stdout = ls_remote_output
+        fake_result.stderr = ""
+
+        with patch("subprocess.run", return_value=fake_result):
+            import scripts.codex_case_lane as lane
+            keys = lane._ls_remote_case_keys(tmp_path)
+
+        assert "NVDA_2023" in keys, f"NVDA_2023 not in keys: {keys}"
+        assert "AAPL_2022" in keys, f"AAPL_2022 not in keys: {keys}"
+        assert len(keys) == 2, f"Expected 2 keys, got: {keys}"
+
+    def test_ls_remote_failure_returns_empty(self, tmp_path: Path):
+        """On ls-remote failure, returns empty set (guarded)."""
+        fake_result = MagicMock()
+        fake_result.returncode = 1
+        fake_result.stdout = ""
+        fake_result.stderr = "fatal: repository not found"
+
+        with patch("subprocess.run", return_value=fake_result):
+            import scripts.codex_case_lane as lane
+            keys = lane._ls_remote_case_keys(tmp_path)
+
+        assert keys == set(), f"Expected empty set on failure, got: {keys}"
+
+    def test_ls_remote_exception_returns_empty(self, tmp_path: Path):
+        """On subprocess exception, returns empty set (never raise)."""
+        with patch("subprocess.run", side_effect=Exception("network error")):
+            import scripts.codex_case_lane as lane
+            keys = lane._ls_remote_case_keys(tmp_path)
+
+        assert keys == set(), f"Expected empty set on exception, got: {keys}"
+
+    def test_remote_keys_excluded_from_queue(self, tmp_path: Path):
+        """Episodes with remote branches are excluded from _build_queue."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)  # NVDA_2023, AAPL_2022, MSFT_2021
+
+        ls_remote_output = "abc123\trefs/heads/codex/case-nvda-2023\n"
+        fake_result = MagicMock()
+        fake_result.returncode = 0
+        fake_result.stdout = ls_remote_output
+        fake_result.stderr = ""
+
+        with patch("subprocess.run", return_value=fake_result):
+            import scripts.codex_case_lane as lane
+            queue = lane._build_queue(root)
+
+        keys = [ep["key"] for ep in queue]
+        assert "NVDA_2023" not in keys, f"NVDA_2023 should be excluded (remote branch) but found; keys={keys}"
+        assert "AAPL_2022" in keys
+
+
+# ---------------------------------------------------------------------------
+# NEW TESTS — FIX 6: SF-R6 weekly cap in signal lane
+# ---------------------------------------------------------------------------
+
+class TestSignalLaneWeeklyCap:
+    """FIX 6: run_once returns weekly_cap_reached when cap is met; run_codex not called."""
+
+    def _write_candidates_this_week(self, root: Path, n: int, iso_week: str) -> None:
+        """Write n proposed rows for the current ISO week."""
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+        cands_path.parent.mkdir(parents=True, exist_ok=True)
+        with cands_path.open("w", encoding="utf-8") as fh:
+            for i in range(n):
+                row = {
+                    "id": f"SF-{i+1:04d}",
+                    "name": f"signal-{i}",
+                    "status": "proposed",
+                    "iso_week": iso_week,
+                    "proposed_at": "2026-07-17T00:00:00Z",
+                }
+                fh.write(json.dumps(row) + "\n")
+
+    def test_cap_reached_returns_weekly_cap_reached_action(self, tmp_path: Path):
+        """When filed_this_week >= cap, return weekly_cap_reached without calling run_codex."""
+        root = _make_root(tmp_path)
+        now = datetime.now(timezone.utc)
+        year, week, _ = now.isocalendar()
+        iso_week = f"{year}-W{week:02d}"
+        # Write signal_foundry.yml with cap=3
+        sf_yml = root / "config" / "signal_foundry.yml"
+        sf_yml.write_text("budgets:\n  filed_per_week: 3\n", encoding="utf-8")
+        # Write 3 proposed rows for this week (cap reached)
+        self._write_candidates_this_week(root, 3, iso_week)
+
+        codex_called = []
+
+        def fake_run_codex(*a, **kw):
+            codex_called.append(True)
+            return {"ok": True, "final_message": "[]", "events_count": 1,
+                    "token_usage": None, "rate_limits": None, "error_kind": None, "raw_tail": ""}
+
+        with patch.dict(os.environ, {"SIGNAL_FOUNDRY_PAUSED": "false"}):
+            with patch("engine.codex_lane.runner.run_codex", side_effect=fake_run_codex):
+                import scripts.codex_signal_lane as lane
+                result = lane.run_once(root=root)
+
+        assert result["action"] == "weekly_cap_reached", f"Expected weekly_cap_reached, got: {result}"
+        assert result["ok"] is True
+        assert result["n_admitted"] == 0
+        assert codex_called == [], "run_codex should NOT have been called when cap is reached"
+
+    def test_below_cap_does_not_block(self, tmp_path: Path):
+        """When filed_this_week < cap, run_once proceeds normally (dry_run)."""
+        root = _make_root(tmp_path)
+        now = datetime.now(timezone.utc)
+        year, week, _ = now.isocalendar()
+        iso_week = f"{year}-W{week:02d}"
+        sf_yml = root / "config" / "signal_foundry.yml"
+        sf_yml.write_text("budgets:\n  filed_per_week: 5\n", encoding="utf-8")
+        self._write_candidates_this_week(root, 2, iso_week)
+
+        with patch.dict(os.environ, {"SIGNAL_FOUNDRY_PAUSED": "false"}):
+            import scripts.codex_signal_lane as lane
+            result = lane.run_once(root=root, dry_run=True)
+
+        # Should not have hit the cap gate — action should be dry_run, not weekly_cap_reached
+        assert result["action"] != "weekly_cap_reached", f"Should not have hit cap with 2/5 filed; got: {result}"
+
+    def test_rejected_rows_do_not_count_toward_cap(self, tmp_path: Path):
+        """screen_rejected rows for this week must not count toward the cap."""
+        root = _make_root(tmp_path)
+        now = datetime.now(timezone.utc)
+        year, week, _ = now.isocalendar()
+        iso_week = f"{year}-W{week:02d}"
+        sf_yml = root / "config" / "signal_foundry.yml"
+        sf_yml.write_text("budgets:\n  filed_per_week: 3\n", encoding="utf-8")
+        # Write 3 screen_rejected rows for this week — should NOT count as filed
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+        cands_path.parent.mkdir(parents=True, exist_ok=True)
+        with cands_path.open("w", encoding="utf-8") as fh:
+            for i in range(3):
+                fh.write(json.dumps({
+                    "id": f"SF-{i+1:04d}", "name": f"s{i}", "status": "screen_rejected",
+                    "iso_week": iso_week, "proposed_at": "2026-07-17T00:00:00Z",
+                }) + "\n")
+
+        with patch.dict(os.environ, {"SIGNAL_FOUNDRY_PAUSED": "false"}):
+            import scripts.codex_signal_lane as lane
+            result = lane.run_once(root=root, dry_run=True)
+
+        assert result["action"] != "weekly_cap_reached", (
+            f"screen_rejected rows should not trigger cap; got: {result}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# NEW TESTS — FIX 7b: name pre-dedup skips screen_candidate
+# ---------------------------------------------------------------------------
+
+class TestSignalLaneNamePreDedup:
+    """FIX 7b: pre-dedup files screen_rejected without calling screen_candidate."""
+
+    def test_duplicate_name_skips_screen_candidate(self, tmp_path: Path):
+        """A spec whose normalized name matches a prior candidate is rejected without screen call."""
+        root = _make_root(tmp_path)
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+        # Pre-seed a candidate with name "test signal"
+        existing = {
+            "id": "SF-0001", "name": "test signal", "status": "proposed",
+            "iso_week": "2026-W28", "proposed_at": "2026-07-10T00:00:00Z",
+            "provenance": {"generator": "other"},
+            "screen_result": {"verdict": "admit", "gates_passed": [], "gates_failed": []},
+        }
+        cands_path.parent.mkdir(parents=True, exist_ok=True)
+        cands_path.write_text(json.dumps(existing) + "\n", encoding="utf-8")
+
+        # New spec with same normalized name (punctuation stripped but spaces preserved)
+        new_spec = {
+            "id": "SF-0002",
+            "name": "Test Signal!",  # normalizes to "test signal" (! stripped, space kept)
+
+            "market": "US macro",
+            "thesis": "A novel mechanism.",
+            "mechanism": "Test.",
+            "seed_provenance": {"source": "manual", "ref": "x"},
+            "data": [{"path": "data/yahoo/SPY.parquet", "column": "close", "pit": "clean"}],
+            "feature": {"pipeline": []},
+            "target": {"path": "data/yahoo/SPY.parquet", "kind": "excess_return", "horizon_d": 21},
+            "universe": "single_series", "baseline": "buy_and_hold",
+            "gates": {"min_t_hac": 2.0, "fdr_q": 0.10, "dsr": 0.90},
+            "horizon_role": "swing", "orthogonality_note": "unique", "evidence_note": "test",
+        }
+
+        screen_called = []
+
+        def fake_screen(spec, repo_root=None):
+            screen_called.append(spec)
+            return {"admit": True, "verdict": "admit", "reasons": [], "gates_passed": [], "gates_failed": []}
+
+        with patch("engine.signal_foundry.screen.screen_candidate", fake_screen):
+            with patch.dict(sys.modules, {"scripts.run_signal_foundry_brainstorm": None}):  # type: ignore[dict-item]
+                import importlib
+                import scripts.codex_signal_lane as lane
+                importlib.reload(lane)
+                n_admitted, n_rejected, admitted_ids = lane._file_specs(
+                    [new_spec], cands_path, root,
+                    iso_week="2026-W29",
+                    dry_run=False,
+                )
+
+        # screen_candidate must NOT have been called (pre-dedup fires first)
+        assert screen_called == [], f"screen_candidate should not be called for duplicate name; called with: {screen_called}"
+        assert n_rejected == 1
+        assert n_admitted == 0
+        # The filed row should have status screen_rejected
+        rows = _read_candidates(root)
+        rejected = [r for r in rows if r.get("status") == "screen_rejected"]
+        assert len(rejected) == 1
+        assert "novelty" in rejected[0].get("screen_result", {}).get("gates_failed", [])
+
+    def test_novel_name_passes_through_to_screen(self, tmp_path: Path):
+        """A spec with a genuinely novel name is forwarded to screen_candidate."""
+        root = _make_root(tmp_path)
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+        existing = {
+            "id": "SF-0001", "name": "existing signal", "status": "proposed",
+            "iso_week": "2026-W28", "proposed_at": "2026-07-10T00:00:00Z",
+        }
+        cands_path.parent.mkdir(parents=True, exist_ok=True)
+        cands_path.write_text(json.dumps(existing) + "\n", encoding="utf-8")
+
+        novel_spec = {
+            "id": "SF-0002", "name": "novel breadth momentum signal",
+            "market": "US macro", "thesis": "Novel.", "mechanism": "Novel.",
+            "seed_provenance": {"source": "manual", "ref": "x"},
+            "data": [{"path": "data/yahoo/SPY.parquet", "column": "close", "pit": "clean"}],
+            "feature": {"pipeline": []},
+            "target": {"path": "data/yahoo/SPY.parquet", "kind": "excess_return", "horizon_d": 21},
+            "universe": "single_series", "baseline": "buy_and_hold",
+            "gates": {"min_t_hac": 2.0, "fdr_q": 0.10, "dsr": 0.90},
+            "horizon_role": "swing", "orthogonality_note": "unique", "evidence_note": "test",
+        }
+
+        screen_called = []
+
+        def fake_screen(spec, repo_root=None):
+            screen_called.append(spec)
+            return {"admit": False, "verdict": "rejected", "reasons": ["test"], "gates_passed": [], "gates_failed": ["test"]}
+
+        with patch("engine.signal_foundry.screen.screen_candidate", fake_screen):
+            with patch.dict(sys.modules, {"scripts.run_signal_foundry_brainstorm": None}):  # type: ignore[dict-item]
+                import importlib
+                import scripts.codex_signal_lane as lane
+                importlib.reload(lane)
+                lane._file_specs([novel_spec], cands_path, root, iso_week="2026-W29", dry_run=False)
+
+        # screen_candidate SHOULD have been called since name is novel
+        assert len(screen_called) == 1, f"screen_candidate should be called for novel name; called {len(screen_called)} times"
+
+
+# ---------------------------------------------------------------------------
+# NEW TESTS — FIX 8: wall-clock deadline stops the loop
+# ---------------------------------------------------------------------------
+
+class TestLoopDeadline:
+    """FIX 8: CODEX_DEADLINE_EPOCH in the past stops run_loop immediately."""
+
+    def test_past_deadline_stops_before_first_iteration(self, tmp_path: Path):
+        """CODEX_DEADLINE_EPOCH set to past epoch -> stop_reason contains 'deadline', zero iterations."""
+        root = _make_root(tmp_path)
+        past_epoch = str(int(time.time()) - 3600)  # 1 hour in the past
+
+        cases_called = []
+
+        with patch.dict(os.environ, {"CODEX_DEADLINE_EPOCH": past_epoch}):
+            with patch("engine.codex_lane.budget.can_run", return_value=(True, "ok")):
+                with patch("engine.codex_lane.budget.load_cfg", return_value={
+                    "budget_pct": 85, "max_sessions_per_window": 10,
+                }):
+                    with patch("scripts.codex_case_lane.run_once", side_effect=lambda **kw: (
+                        cases_called.append(True) or
+                        {"ok": True, "action": "dry_run", "detail": "", "episode": None, "pr_url": None}
+                    )):
+                        import scripts.codex_research_loop as loop
+                        result = loop.run_loop(root=root, lane="cases", iterations=5, dry_run=True)
+
+        assert result["iterations_run"] == 0, f"Expected 0 iterations, got {result['iterations_run']}"
+        assert result["stop_reason"] is not None
+        assert "deadline" in result["stop_reason"], f"Expected 'deadline' in stop_reason, got: {result['stop_reason']!r}"
+        assert len(cases_called) == 0, "run_once should not be called when deadline is in the past"
+
+    def test_future_deadline_does_not_stop(self, tmp_path: Path):
+        """CODEX_DEADLINE_EPOCH in the future -> loop runs normally (budget gate determines stop)."""
+        root = _make_root(tmp_path)
+        future_epoch = str(int(time.time()) + 7200)  # 2 hours in the future
+
+        with patch.dict(os.environ, {"CODEX_DEADLINE_EPOCH": future_epoch}):
+            with patch("engine.codex_lane.budget.can_run", return_value=(False, "test_stop")):
+                with patch("engine.codex_lane.budget.load_cfg", return_value={
+                    "budget_pct": 85, "max_sessions_per_window": 10,
+                }):
+                    import scripts.codex_research_loop as loop
+                    result = loop.run_loop(root=root, lane="cases", iterations=3, dry_run=True)
+
+        # Stopped by budget gate, not deadline
+        assert result["stop_reason"] is not None
+        assert "deadline" not in result["stop_reason"], f"Should not be a deadline stop; got: {result['stop_reason']!r}"
+        assert "test_stop" in result["stop_reason"]
+
+    def test_absent_deadline_env_runs_normally(self, tmp_path: Path):
+        """Absent CODEX_DEADLINE_EPOCH -> no deadline applied, loop runs normally."""
+        root = _make_root(tmp_path)
+        env = {k: v for k, v in os.environ.items() if k != "CODEX_DEADLINE_EPOCH"}
+
+        with patch.dict(os.environ, env, clear=True):
+            with patch("engine.codex_lane.budget.can_run", return_value=(False, "test_stop")):
+                with patch("engine.codex_lane.budget.load_cfg", return_value={
+                    "budget_pct": 85, "max_sessions_per_window": 10,
+                }):
+                    import scripts.codex_research_loop as loop
+                    result = loop.run_loop(root=root, lane="cases", iterations=1, dry_run=True)
+
+        assert "deadline" not in (result.get("stop_reason") or ""), f"No deadline env -> no deadline stop; got: {result}"
+
+    def test_deadline_journal_entry_written(self, tmp_path: Path):
+        """When deadline stops the loop, a journal row is written with the deadline stop_reason."""
+        root = _make_root(tmp_path)
+        past_epoch = str(int(time.time()) - 100)
+
+        with patch.dict(os.environ, {"CODEX_DEADLINE_EPOCH": past_epoch}):
+            with patch("engine.codex_lane.budget.can_run", return_value=(True, "ok")):
+                with patch("engine.codex_lane.budget.load_cfg", return_value={
+                    "budget_pct": 85, "max_sessions_per_window": 10,
+                }):
+                    import scripts.codex_research_loop as loop
+                    loop.run_loop(root=root, lane="cases", iterations=3, dry_run=True)
+
+        rows = _read_journal(root)
+        stop_rows = [r for r in rows if r.get("stop_reason") and "deadline" in r["stop_reason"]]
+        assert len(stop_rows) >= 1, f"Expected a deadline journal row, got: {rows}"
+
+
+# ---------------------------------------------------------------------------
+# FIX 10 — failed-track cadence + queue filtering
+# ---------------------------------------------------------------------------
+
+def _make_episodes_parquet_with_outcomes(root: Path) -> Path:
+    """Create winner_episodes.parquet with outcome_label column for FIX 10 tests."""
+    rows = [
+        {
+            "ticker": "NVDA",
+            "t0": pd.Timestamp("2023-01-15"),
+            "sector": "Information Technology",
+            "fwd_excess_252d_pp": 85.0,
+            "fwd_excess_126d_pp": 60.0,
+            "fwd_excess_63d_pp": 40.0,
+            "fwd_excess_21d_pp": 20.0,
+            "excess_42d_pp": 50.0,
+            "excess_21d_pp": 20.0,
+            "outcome_label": "durable_winner",
+        },
+        {
+            "ticker": "AAPL",
+            "t0": pd.Timestamp("2022-06-01"),
+            "sector": "Information Technology",
+            "fwd_excess_252d_pp": 30.0,
+            "fwd_excess_126d_pp": 20.0,
+            "fwd_excess_63d_pp": 15.0,
+            "fwd_excess_21d_pp": 10.0,
+            "excess_42d_pp": 25.0,
+            "excess_21d_pp": 10.0,
+            "outcome_label": "failed",
+        },
+        {
+            "ticker": "MSFT",
+            "t0": pd.Timestamp("2021-03-01"),
+            "sector": "Information Technology",
+            "fwd_excess_252d_pp": None,
+            "fwd_excess_126d_pp": 25.0,
+            "fwd_excess_63d_pp": 15.0,
+            "fwd_excess_21d_pp": 8.0,
+            "excess_42d_pp": 30.0,
+            "excess_21d_pp": 8.0,
+            "outcome_label": "blow_off",
+        },
+        {
+            "ticker": "TSLA",
+            "t0": pd.Timestamp("2020-03-01"),
+            "sector": "Consumer Discretionary",
+            "fwd_excess_252d_pp": None,
+            "fwd_excess_126d_pp": None,
+            "fwd_excess_63d_pp": None,
+            "fwd_excess_21d_pp": None,
+            "excess_42d_pp": None,
+            "excess_21d_pp": None,
+            "outcome_label": "unmatured",
+        },
+    ]
+    df = pd.DataFrame(rows)
+    ep_dir = root / "data" / "research"
+    ep_dir.mkdir(parents=True, exist_ok=True)
+    ep_path = ep_dir / "winner_episodes.parquet"
+    df.to_parquet(ep_path, index=False)
+    return ep_path
+
+
+class TestQueueFix10:
+    """FIX 10: queue filtering by track and outcome_label."""
+
+    def test_winner_track_excludes_failed_and_unmatured(self, tmp_path: Path):
+        root = _make_root(tmp_path)
+        _make_episodes_parquet_with_outcomes(root)
+        import scripts.codex_case_lane as lane
+        queue = lane._build_queue(root, track="winner")
+        keys = [ep["key"] for ep in queue]
+        # Only durable_winner should be in winner track
+        assert "NVDA_2023" in keys, f"NVDA_2023 (durable_winner) should be in winner track; keys={keys}"
+        assert "AAPL_2022" not in keys, f"AAPL_2022 (failed) should be excluded from winner track; keys={keys}"
+        assert "MSFT_2021" not in keys, f"MSFT_2021 (blow_off) should be excluded from winner track; keys={keys}"
+        assert "TSLA_2020" not in keys, f"TSLA_2020 (unmatured) should always be excluded; keys={keys}"
+
+    def test_failed_track_excludes_winner_and_unmatured(self, tmp_path: Path):
+        root = _make_root(tmp_path)
+        _make_episodes_parquet_with_outcomes(root)
+        import scripts.codex_case_lane as lane
+        queue = lane._build_queue(root, track="failed")
+        keys = [ep["key"] for ep in queue]
+        # Only failed and blow_off should be in failed track
+        assert "NVDA_2023" not in keys, f"NVDA_2023 (durable_winner) should be excluded from failed track; keys={keys}"
+        assert "AAPL_2022" in keys, f"AAPL_2022 (failed) should be in failed track; keys={keys}"
+        assert "MSFT_2021" in keys, f"MSFT_2021 (blow_off) should be in failed track; keys={keys}"
+        assert "TSLA_2020" not in keys, f"TSLA_2020 (unmatured) should always be excluded; keys={keys}"
+
+    def test_unmatured_always_excluded_on_winner_track(self, tmp_path: Path):
+        root = _make_root(tmp_path)
+        _make_episodes_parquet_with_outcomes(root)
+        import scripts.codex_case_lane as lane
+        queue = lane._build_queue(root, track="winner")
+        keys = [ep["key"] for ep in queue]
+        assert "TSLA_2020" not in keys
+
+    def test_unmatured_always_excluded_on_failed_track(self, tmp_path: Path):
+        root = _make_root(tmp_path)
+        _make_episodes_parquet_with_outcomes(root)
+        import scripts.codex_case_lane as lane
+        queue = lane._build_queue(root, track="failed")
+        keys = [ep["key"] for ep in queue]
+        assert "TSLA_2020" not in keys
+
+    def test_crypto_excluded_from_both_tracks(self, tmp_path: Path):
+        """Tickers matching crypto/futures/index patterns are excluded from both tracks."""
+        root = _make_root(tmp_path)
+        rows = [
+            # Regular equity — should survive
+            {"ticker": "NVDA", "t0": pd.Timestamp("2023-01-15"), "sector": "IT",
+             "fwd_excess_252d_pp": 50.0, "excess_42d_pp": 30.0, "outcome_label": "durable_winner"},
+            # Crypto pair — should be excluded
+            {"ticker": "BTC-USD", "t0": pd.Timestamp("2023-01-15"), "sector": "Crypto",
+             "fwd_excess_252d_pp": 100.0, "excess_42d_pp": 90.0, "outcome_label": "durable_winner"},
+            # Futures — should be excluded
+            {"ticker": "CL_F", "t0": pd.Timestamp("2023-01-15"), "sector": "Commodity",
+             "fwd_excess_252d_pp": 80.0, "excess_42d_pp": 70.0, "outcome_label": "failed"},
+            # Index — should be excluded
+            {"ticker": "^GSPC", "t0": pd.Timestamp("2023-01-15"), "sector": "Index",
+             "fwd_excess_252d_pp": 70.0, "excess_42d_pp": 60.0, "outcome_label": "blow_off"},
+        ]
+        df = pd.DataFrame(rows)
+        ep_dir = root / "data" / "research"
+        ep_dir.mkdir(parents=True, exist_ok=True)
+        (ep_dir / "winner_episodes.parquet").to_parquet if False else df.to_parquet(ep_dir / "winner_episodes.parquet", index=False)
+        import scripts.codex_case_lane as lane
+        q_winner = lane._build_queue(root, track="winner")
+        q_failed = lane._build_queue(root, track="failed")
+        winner_keys = [ep["key"] for ep in q_winner]
+        failed_keys = [ep["key"] for ep in q_failed]
+        assert "NVDA_2023" in winner_keys
+        for excluded in ["BTC-USD_2023", "CL_F_2023", "^GSPC_2023", "BTCUSD_2023"]:
+            assert excluded not in winner_keys, f"{excluded} should be excluded from winner track"
+            assert excluded not in failed_keys, f"{excluded} should be excluded from failed track"
+
+    def test_count_pr_opened(self, tmp_path: Path):
+        """_count_pr_opened counts rows with status='pr_opened'."""
+        root = _make_root(tmp_path)
+        attempts_path = root / "data" / "codex_lane" / "case_attempts.jsonl"
+        rows_data = [
+            {"status": "pr_opened", "episode": "NVDA_2023", "ts": "2026-07-17T00:00:00Z"},
+            {"status": "skipped", "episode": "AAPL_2022", "ts": "2026-07-17T01:00:00Z"},
+            {"status": "pr_opened", "episode": "MSFT_2021", "ts": "2026-07-17T02:00:00Z"},
+        ]
+        with attempts_path.open("w", encoding="utf-8") as fh:
+            for row_data in rows_data:
+                fh.write(json.dumps(row_data) + "\n")
+        import scripts.codex_case_lane as lane
+        count = lane._count_pr_opened(root)
+        assert count == 2
+
+    def test_count_pr_opened_empty_file(self, tmp_path: Path):
+        root = _make_root(tmp_path)
+        import scripts.codex_case_lane as lane
+        count = lane._count_pr_opened(root)
+        assert count == 0
+
+
+# ---------------------------------------------------------------------------
+# FIX 11 — extended _deterministic_audit
+# ---------------------------------------------------------------------------
+
+class TestDeterministicAuditFix11:
+    """FIX 11: extended deterministic audit checks."""
+
+    def _make_case_with_outcome(
+        self,
+        cases_dir: Path,
+        ticker: str = "NVDA",
+        year: int = 2023,
+        case_type: str = "durable_winner",
+        sources_count: int = 2,
+        catalyst_headline: bool = True,
+        catalyst_type_key: str = "type",
+        catalyst_date: str = "2023-01-15",
+        catalyst_source_url: str = "https://example.com",
+        t0_hypothesis: str = "2023-01-15",
+        run_window: str = "2023-01-01 / 2023-12-31",
+    ) -> Path:
+        import yaml as _yaml
+        sources = [
+            {"url": f"https://src{i}.com", "title": f"Source {i}", "date": "2023-01-15"}
+            for i in range(sources_count)
+        ]
+        catalyst_entry: dict = {"source_url": catalyst_source_url, "detail": "Q4 beat"}
+        if catalyst_type_key:
+            catalyst_entry[catalyst_type_key] = "earnings_beat"
+        if catalyst_headline:
+            catalyst_entry["headline"] = "Earnings beat expectations"
+        if catalyst_date:
+            catalyst_entry["date"] = catalyst_date
+        yaml_data = {
+            "schema": "winner_case.v1",
+            "ticker": ticker,
+            "case_type": case_type,
+            "episode_year": year,
+            "run_window": run_window,
+            "t0_hypothesis": t0_hypothesis,
+            "thesis_one_liner": "Product cycle drove sustained alpha.",
+            "mechanism": "Margin expansion.",
+            "stage_map": "compressed prior to catalyst",
+            "catalyst_ladder": [catalyst_entry],
+            "hazards": "Competition.",
+            "false_positive_checks": {"meme_squeeze": False, "one_day_binary": False,
+                                       "sector_beta": False, "options_mirage": False},
+            "sources": sources,
+        }
+        yaml_block = _yaml.dump(yaml_data, allow_unicode=True, default_flow_style=False)
+        content = f"# Case\n\n```yaml\n{yaml_block}```\n"
+        p = cases_dir / f"{ticker}_{year}.md"
+        p.write_text(content, encoding="utf-8")
+        return p
+
+    def test_sources_length_1_fails(self, tmp_path: Path):
+        """sources list with 1 entry fails (need >= 2)."""
+        cases_dir = tmp_path / "research" / "winners" / "cases"
+        cases_dir.mkdir(parents=True)
+        case_path = self._make_case_with_outcome(cases_dir, sources_count=1)
+        import scripts.codex_case_lane as lane
+        failures = lane._deterministic_audit(case_path, "NVDA", 2023)
+        assert any("sources" in f.lower() for f in failures), f"Expected sources failure, got: {failures}"
+
+    def test_sources_length_2_passes(self, tmp_path: Path):
+        """sources list with 2 entries passes."""
+        cases_dir = tmp_path / "research" / "winners" / "cases"
+        cases_dir.mkdir(parents=True)
+        case_path = self._make_case_with_outcome(cases_dir, sources_count=2)
+        import scripts.codex_case_lane as lane
+        failures = lane._deterministic_audit(case_path, "NVDA", 2023)
+        sources_failures = [f for f in failures if "sources" in f.lower()]
+        assert not sources_failures, f"Unexpected sources failure with 2 sources: {sources_failures}"
+
+    def test_failed_breakaway_case_type_match(self, tmp_path: Path):
+        """expect_failed=True + case_type='failed_breakaway' -> PASS on case_type check."""
+        cases_dir = tmp_path / "research" / "winners" / "cases"
+        cases_dir.mkdir(parents=True)
+        case_path = self._make_case_with_outcome(cases_dir, case_type="failed_breakaway")
+        import scripts.codex_case_lane as lane
+        failures = lane._deterministic_audit(case_path, "NVDA", 2023, expect_failed=True)
+        case_type_failures = [f for f in failures if "case_type" in f.lower()]
+        assert not case_type_failures, f"Unexpected case_type failure: {case_type_failures}"
+
+    def test_failed_track_wrong_case_type_fails(self, tmp_path: Path):
+        """expect_failed=True + case_type='durable_winner' -> FAIL on case_type check."""
+        cases_dir = tmp_path / "research" / "winners" / "cases"
+        cases_dir.mkdir(parents=True)
+        case_path = self._make_case_with_outcome(cases_dir, case_type="durable_winner")
+        import scripts.codex_case_lane as lane
+        failures = lane._deterministic_audit(case_path, "NVDA", 2023, expect_failed=True)
+        assert any("case_type" in f.lower() for f in failures), \
+            f"Expected case_type failure for durable_winner on failed track; got: {failures}"
+
+    def test_winner_track_failed_breakaway_fails(self, tmp_path: Path):
+        """expect_failed=False + case_type='failed_breakaway' -> FAIL (wrong track)."""
+        cases_dir = tmp_path / "research" / "winners" / "cases"
+        cases_dir.mkdir(parents=True)
+        case_path = self._make_case_with_outcome(cases_dir, case_type="failed_breakaway")
+        import scripts.codex_case_lane as lane
+        failures = lane._deterministic_audit(case_path, "NVDA", 2023, expect_failed=False)
+        assert any("case_type" in f.lower() for f in failures), \
+            f"Expected case_type failure for failed_breakaway on winner track; got: {failures}"
+
+    def test_catalyst_missing_headline_fails(self, tmp_path: Path):
+        """Catalyst entry missing headline AND title fails."""
+        cases_dir = tmp_path / "research" / "winners" / "cases"
+        cases_dir.mkdir(parents=True)
+        case_path = self._make_case_with_outcome(cases_dir, catalyst_headline=False)
+        import scripts.codex_case_lane as lane
+        failures = lane._deterministic_audit(case_path, "NVDA", 2023)
+        # headline is optional per original design; check for empty-headline detection
+        # The check in FIX 11 looks for missing headline (accept title fallback)
+        # A catalyst without headline AND without title should fail
+        # But our fixture sets no headline key at all — check what the audit returns
+        # Actually the entry still has date/type/source_url/detail — just no headline key
+        # Per FIX 11: "non-empty headline (accept title fallback)"
+        # If neither headline nor title is present, the entry fails
+        assert any("headline" in f or "title" in f or "catalyst_ladder" in f.lower() for f in failures), \
+            f"Expected headline/title failure; got: {failures}"
+
+    def test_catalyst_invalid_date_fails(self, tmp_path: Path):
+        """Catalyst entry with invalid date fails."""
+        cases_dir = tmp_path / "research" / "winners" / "cases"
+        cases_dir.mkdir(parents=True)
+        case_path = self._make_case_with_outcome(cases_dir, catalyst_date="not-a-date")
+        import scripts.codex_case_lane as lane
+        failures = lane._deterministic_audit(case_path, "NVDA", 2023)
+        assert any("date" in f.lower() or "catalyst_ladder" in f.lower() for f in failures), \
+            f"Expected date parse failure; got: {failures}"
+
+
+# ---------------------------------------------------------------------------
+# FIX 13 — worktree_guard unit tests
+# ---------------------------------------------------------------------------
+
+class TestWorktreeGuard:
+    """FIX 13: engine.codex_lane.worktree_guard snapshot/restore mechanics."""
+
+    def test_snapshot_captures_protect_files(self, tmp_path: Path):
+        """snapshot copies existing protect-files into tmpdir."""
+        from engine.codex_lane.worktree_guard import snapshot, DEFAULT_PROTECT
+        # Create one protect file
+        protect_path = tmp_path / "data" / "codex_lane" / "usage_state.json"
+        protect_path.parent.mkdir(parents=True, exist_ok=True)
+        protect_path.write_text('{"test": true}', encoding="utf-8")
+
+        rel_path = "data/codex_lane/usage_state.json"
+        handle = snapshot(tmp_path, [rel_path])
+
+        assert rel_path in handle["copies"], f"Expected {rel_path} in copies; handle={handle}"
+        copy_path = handle["copies"][rel_path]
+        assert Path(copy_path).read_text() == '{"test": true}'
+
+        # Cleanup
+        import shutil
+        shutil.rmtree(handle.get("tmpdir", ""), ignore_errors=True)
+
+    def test_restore_reverts_tampered_protect_file(self, tmp_path: Path):
+        """restore byte-reverts a tampered protect-file."""
+        from engine.codex_lane.worktree_guard import snapshot, restore
+
+        protect_rel = "data/codex_lane/usage_state.json"
+        protect_path = tmp_path / protect_rel
+        protect_path.parent.mkdir(parents=True, exist_ok=True)
+        original_content = '{"original": true}'
+        protect_path.write_text(original_content, encoding="utf-8")
+
+        handle = snapshot(tmp_path, [protect_rel])
+
+        # Tamper the file
+        protect_path.write_text('{"tampered": true}', encoding="utf-8")
+
+        violations = restore(tmp_path, handle, allowed=set())
+
+        # Should have been byte-restored
+        assert protect_path.read_text() == original_content, \
+            f"Expected original content restored; got: {protect_path.read_text()}"
+        assert any("tampered" in v or "protect" in v for v in violations), \
+            f"Expected tamper violation; got: {violations}"
+
+    def test_restore_removes_untracked_unauthorized_file(self, tmp_path: Path):
+        """restore unlinks new untracked files that are not in allowed."""
+        from engine.codex_lane.worktree_guard import snapshot, restore
+        import subprocess as _sp
+
+        # Need a real git repo for porcelain to work
+        _sp.run(["git", "init", str(tmp_path)], capture_output=True, check=False)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.email", "t@t.com"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.name", "T"], capture_output=True)
+        # Initial commit
+        (tmp_path / "README.md").write_text("init")
+        _sp.run(["git", "-C", str(tmp_path), "add", "README.md"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "commit", "-m", "init"], capture_output=True)
+
+        handle = snapshot(tmp_path, [])
+
+        # Create an unauthorized untracked file
+        bad_file = tmp_path / "unauthorized.txt"
+        bad_file.write_text("bad content")
+
+        violations = restore(tmp_path, handle, allowed=set())
+
+        # Unauthorized file should be removed
+        assert not bad_file.exists(), "Unauthorized untracked file should have been removed"
+        assert any("untracked" in v for v in violations), \
+            f"Expected untracked_removed violation; got: {violations}"
+
+    def test_restore_leaves_allowed_files_intact(self, tmp_path: Path):
+        """restore does not touch files in the allowed set."""
+        from engine.codex_lane.worktree_guard import snapshot, restore
+        import subprocess as _sp
+
+        _sp.run(["git", "init", str(tmp_path)], capture_output=True, check=False)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.email", "t@t.com"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.name", "T"], capture_output=True)
+        (tmp_path / "README.md").write_text("init")
+        _sp.run(["git", "-C", str(tmp_path), "add", "README.md"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "commit", "-m", "init"], capture_output=True)
+
+        handle = snapshot(tmp_path, [])
+
+        # Create an allowed file
+        allowed_rel = "research/winners/cases/NVDA_2023.md"
+        allowed_path = tmp_path / allowed_rel
+        allowed_path.parent.mkdir(parents=True, exist_ok=True)
+        allowed_path.write_text("# case content")
+
+        violations = restore(tmp_path, handle, allowed={allowed_rel})
+
+        # Allowed file must remain
+        assert allowed_path.exists(), "Allowed file was removed — should have been left intact"
+        allowed_violations = [v for v in violations if "NVDA" in v]
+        assert not allowed_violations, f"Should not have violations for allowed file; got: {violations}"
+
+    def test_snapshot_never_raises(self, tmp_path: Path):
+        """snapshot never raises even with a bad protect list."""
+        from engine.codex_lane.worktree_guard import snapshot
+        # Non-existent protect files are silently skipped
+        handle = snapshot(tmp_path, ["nonexistent/path.json"])
+        assert "porcelain" in handle
+        assert "copies" in handle
+
+    def test_restore_never_raises(self, tmp_path: Path):
+        """restore never raises even with an empty handle."""
+        from engine.codex_lane.worktree_guard import restore
+        violations = restore(tmp_path, {}, allowed=set())
+        assert isinstance(violations, list)
+
+    def test_restore_removes_untracked_file_with_spaces(self, tmp_path: Path):
+        """restore unlinks new untracked files whose names contain spaces (C-quote bypass)."""
+        from engine.codex_lane.worktree_guard import snapshot, restore
+        import subprocess as _sp
+
+        _sp.run(["git", "init", str(tmp_path)], capture_output=True, check=False)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.email", "t@t.com"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.name", "T"], capture_output=True)
+        (tmp_path / "README.md").write_text("init")
+        _sp.run(["git", "-C", str(tmp_path), "add", "README.md"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "commit", "-m", "init"], capture_output=True)
+
+        handle = snapshot(tmp_path, [])
+
+        # Create a file with a space in the name (git --porcelain quotes it; -z does not)
+        spaced_file = tmp_path / "evil plain.txt"
+        spaced_file.write_text("bad content")
+
+        violations = restore(tmp_path, handle, allowed=set())
+
+        assert not spaced_file.exists(), "Spaced-name untracked file should have been removed"
+        assert any("untracked" in v for v in violations), \
+            f"Expected untracked violation for spaced file; got: {violations}"
+
+    def test_restore_removes_untracked_directory_tree(self, tmp_path: Path):
+        """restore removes new untracked directory trees (porcelain reports 'dir/')."""
+        from engine.codex_lane.worktree_guard import snapshot, restore
+        import subprocess as _sp
+
+        _sp.run(["git", "init", str(tmp_path)], capture_output=True, check=False)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.email", "t@t.com"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.name", "T"], capture_output=True)
+        (tmp_path / "README.md").write_text("init")
+        _sp.run(["git", "-C", str(tmp_path), "add", "README.md"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "commit", "-m", "init"], capture_output=True)
+
+        handle = snapshot(tmp_path, [])
+
+        # Create an unauthorized directory with files inside it
+        bad_dir = tmp_path / "unauthorized_dir"
+        bad_dir.mkdir()
+        (bad_dir / "child.txt").write_text("bad")
+        (bad_dir / "nested").mkdir()
+        (bad_dir / "nested" / "deep.txt").write_text("also bad")
+
+        violations = restore(tmp_path, handle, allowed=set())
+
+        assert not bad_dir.exists(), "Unauthorized untracked directory tree should have been removed"
+        assert any("untracked" in v for v in violations), \
+            f"Expected untracked violation for directory; got: {violations}"
+
+    def test_restore_removes_unauthorized_symlink_without_following(self, tmp_path: Path):
+        """restore unlinks an unauthorized symlink; the symlink target is left untouched."""
+        from engine.codex_lane.worktree_guard import snapshot, restore
+        import subprocess as _sp
+
+        _sp.run(["git", "init", str(tmp_path)], capture_output=True, check=False)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.email", "t@t.com"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "config", "user.name", "T"], capture_output=True)
+        (tmp_path / "README.md").write_text("init")
+        _sp.run(["git", "-C", str(tmp_path), "add", "README.md"], capture_output=True)
+        _sp.run(["git", "-C", str(tmp_path), "commit", "-m", "init"], capture_output=True)
+
+        handle = snapshot(tmp_path, [])
+
+        # Create a symlink inside the repo pointing to a target outside
+        import tempfile as _tf
+        outside_file = Path(_tf.mktemp(prefix="outside_target_"))
+        outside_file.write_text("outside content")
+        symlink_path = tmp_path / "bad_symlink"
+        symlink_path.symlink_to(outside_file)
+
+        violations = restore(tmp_path, handle, allowed=set())
+
+        # Symlink inside repo must be removed
+        assert not symlink_path.exists() and not symlink_path.is_symlink(), \
+            "Unauthorized symlink inside repo should have been unlinked"
+        # Target outside the repo must be untouched
+        assert outside_file.exists(), "Target file outside repo must not be deleted"
+        assert any("symlink" in v or "untracked" in v for v in violations), \
+            f"Expected symlink violation; got: {violations}"
+
+        # Cleanup
+        outside_file.unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# FIX 14 — construction_hash always code-computed in _file_specs
+# ---------------------------------------------------------------------------
+
+class TestFileSpecsFix14:
+    """FIX 14: construction_hash is code-computed, never trust LLM-supplied value."""
+
+    def _make_spec(self, sid: str = "SF-0001", llm_hash: str | None = "LLM_SUPPLIED_HASH") -> dict:
+        spec: dict = {
+            "id": sid,
+            "name": f"test-{sid}",
+            "market": "US macro",
+            "thesis": "A novel mechanism.",
+            "mechanism": "Breadth.",
+            "seed_provenance": {"source": "manual", "ref": "x"},
+            "data": [{"path": "data/yahoo/SPY.parquet", "column": "close", "pit": "clean"}],
+            "feature": {"pipeline": [["zscore", {"window": 21}]]},
+            "target": {"path": "data/yahoo/SPY.parquet", "kind": "excess_return", "horizon_d": 21},
+            "universe": "single_series",
+            "baseline": "buy_and_hold",
+            "gates": {"min_t_hac": 2.0, "fdr_q": 0.10, "dsr": 0.90},
+            "horizon_role": "swing",
+            "orthogonality_note": "unique",
+            "evidence_note": "test",
+        }
+        if llm_hash is not None:
+            spec["construction_hash"] = llm_hash
+        return spec
+
+    def test_llm_hash_overwritten_by_code_computed(self, tmp_path: Path):
+        """LLM-supplied construction_hash is always overwritten by code-computed value."""
+        root = _make_root(tmp_path)
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+        spec = self._make_spec(llm_hash="FAKE_LLM_HASH")
+
+        fake_screen = MagicMock(return_value={
+            "admit": True, "verdict": "admit", "reasons": [],
+            "gates_passed": [], "gates_failed": [],
+        })
+        fake_hash = MagicMock(return_value="CODE_COMPUTED_HASH_XYZ")
+
+        import importlib
+        import scripts.codex_signal_lane as lane
+        importlib.reload(lane)
+        with patch.dict(sys.modules, {"scripts.run_signal_foundry_brainstorm": None}):  # type: ignore[dict-item]
+            with patch("engine.signal_foundry.screen.screen_candidate", fake_screen):
+                with patch.object(lane, "_get_construction_hash_fn", return_value=fake_hash):
+                    lane._file_specs([spec], cands_path, root, iso_week="2026-W28", dry_run=False)
+
+        rows = _read_candidates(root)
+        admitted = [r for r in rows if r.get("status") == "proposed"]
+        if admitted:
+            stored_hash = admitted[0].get("construction_hash")
+            assert stored_hash != "FAKE_LLM_HASH", \
+                f"LLM-supplied hash should have been overwritten; got: {stored_hash!r}"
+            assert stored_hash == "CODE_COMPUTED_HASH_XYZ", \
+                f"Expected code-computed hash; got: {stored_hash!r}"
+
+    def test_hash_also_overwritten_on_rejected_rows(self, tmp_path: Path):
+        """screen_rejected rows must not carry the LLM-supplied construction_hash.
+
+        Invariant: the filed row for a name-dedup-rejected spec either omits
+        ``construction_hash`` entirely (the documented behaviour — rejected rows
+        carry only id/name/status/proposed_at/iso_week/provenance/screen_result)
+        or, if the code ever adds it, the value must be the code-computed one
+        and must NOT equal the bogus LLM-supplied value.
+
+        This replaces the previously vacuous loop (rejected rows never had
+        construction_hash, so the body never ran).
+        """
+        root = _make_root(tmp_path)
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+
+        bogus_llm_hash = "BOGUS_LLM_SUPPLIED_HASH"
+        code_computed_hash = "CODE_COMPUTED_HASH_FOR_REJECTED"
+        fake_hash = MagicMock(return_value=code_computed_hash)
+
+        # Build a spec WITH a bogus LLM-supplied construction_hash
+        spec = self._make_spec(sid="SF-0099", llm_hash=bogus_llm_hash)
+
+        # Pre-seed candidates.jsonl with a prior entry sharing the same normalized name
+        # so the spec is rejected via the name-dedup path (before screen_candidate).
+        prior_id = "SF-0001"
+        prior_name = spec["name"]  # exact same name → same normalized form → dedup fires
+        prior_row = {
+            "id": prior_id,
+            "name": prior_name,
+            "status": "proposed",
+            "proposed_at": "2026-07-01T00:00:00+00:00",
+            "iso_week": "2026-W27",
+            "provenance": {"generator": "codex_chatgpt"},
+        }
+        with cands_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(prior_row) + "\n")
+
+        fake_screen = MagicMock()  # should NOT be called due to name-dedup short-circuit
+
+        import importlib
+        import scripts.codex_signal_lane as lane
+        importlib.reload(lane)
+        with patch.dict(sys.modules, {"scripts.run_signal_foundry_brainstorm": None}):  # type: ignore[dict-item]
+            with patch("engine.signal_foundry.screen.screen_candidate", fake_screen):
+                with patch.object(lane, "_get_construction_hash_fn", return_value=fake_hash):
+                    lane._file_specs([spec], cands_path, root, iso_week="2026-W28", dry_run=False)
+
+        rows = _read_candidates(root)
+        # The newly filed row (not the pre-seeded prior) should be the screen_rejected one
+        new_rows = [r for r in rows if r.get("id") == "SF-0099"]
+        assert len(new_rows) == 1, f"Expected exactly one row for SF-0099; got: {new_rows}"
+        filed_row = new_rows[0]
+
+        # The row must be screen_rejected (name-dedup path)
+        assert filed_row.get("status") == "screen_rejected", \
+            f"Expected screen_rejected; got status={filed_row.get('status')!r}"
+
+        # Core invariant: LLM-supplied bogus hash must NOT appear in the filed row
+        actual_hash = filed_row.get("construction_hash")
+        assert actual_hash != bogus_llm_hash, (
+            f"Bogus LLM-supplied construction_hash must not survive into the filed row; "
+            f"got construction_hash={actual_hash!r}"
+        )
+        # If a hash is present, it must be the code-computed value (not the LLM value)
+        if actual_hash is not None:
+            assert actual_hash == code_computed_hash, (
+                f"If construction_hash is present it must be code-computed={code_computed_hash!r}; "
+                f"got {actual_hash!r}"
+            )
+
+
+# ---------------------------------------------------------------------------
+# FIX 15 — numeric-confidence gate + validate_spec gate in _file_specs
+# ---------------------------------------------------------------------------
+
+class TestFileSpecsFix15:
+    """FIX 15: gate 2 (numeric confidence) and gate 3 (validate_spec) before screen_candidate."""
+
+    def _make_spec_with_confidence(self, sid: str = "SF-0001", confidence: float = 0.9) -> dict:
+        return {
+            "id": sid,
+            "name": f"test-{sid}",
+            "confidence_score": confidence,  # RF-16 violation
+            "market": "US macro",
+            "thesis": "A novel mechanism.",
+            "mechanism": "Breadth.",
+            "seed_provenance": {"source": "manual", "ref": "x"},
+            "data": [{"path": "data/yahoo/SPY.parquet", "column": "close", "pit": "clean"}],
+            "feature": {"pipeline": [["zscore", {"window": 21}]]},
+            "target": {"path": "data/yahoo/SPY.parquet", "kind": "excess_return", "horizon_d": 21},
+            "universe": "single_series",
+            "baseline": "buy_and_hold",
+            "gates": {"min_t_hac": 2.0, "fdr_q": 0.10, "dsr": 0.90},
+            "horizon_role": "swing",
+            "orthogonality_note": "unique",
+            "evidence_note": "test",
+        }
+
+    def test_numeric_confidence_gate_rejects_without_screen_call(self, tmp_path: Path):
+        """Spec with numeric confidence is rejected before screen_candidate is called."""
+        root = _make_root(tmp_path)
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+        spec = self._make_spec_with_confidence()
+
+        screen_called = []
+
+        def fake_screen(s, repo_root=None):
+            screen_called.append(s)
+            return {"admit": True, "verdict": "admit", "reasons": [], "gates_passed": [], "gates_failed": []}
+
+        fake_has_confidence = MagicMock(return_value=True)
+
+        with patch.dict(sys.modules, {"scripts.run_signal_foundry_brainstorm": None}):  # type: ignore[dict-item]
+            with patch("engine.signal_foundry.screen.screen_candidate", fake_screen):
+                import importlib
+                import scripts.codex_signal_lane as lane
+                importlib.reload(lane)
+                # Patch the getter to return the fake function
+                with patch.object(lane, "_get_has_numeric_confidence_fn", return_value=fake_has_confidence):
+                    n_admitted, n_rejected, admitted_ids = lane._file_specs(
+                        [spec], cands_path, root, iso_week="2026-W28", dry_run=False
+                    )
+
+        assert n_rejected == 1
+        assert n_admitted == 0
+        assert screen_called == [], f"screen_candidate should not be called for numeric-confidence spec; called: {screen_called}"
+
+    def test_validate_spec_failure_rejects_before_screen(self, tmp_path: Path):
+        """Spec failing validate_spec is rejected before screen_candidate is called."""
+        root = _make_root(tmp_path)
+        # Make root look like a git repo so validate_spec gate fires
+        import subprocess as _sp
+        _sp.run(["git", "init", str(root)], capture_output=True, check=False)
+        _sp.run(["git", "-C", str(root), "config", "user.email", "t@t.com"], capture_output=True)
+        _sp.run(["git", "-C", str(root), "config", "user.name", "T"], capture_output=True)
+        (root / "README.md").write_text("init")
+        _sp.run(["git", "-C", str(root), "add", "README.md"], capture_output=True)
+        _sp.run(["git", "-C", str(root), "commit", "-m", "init"], capture_output=True)
+
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+        spec = {
+            "id": "SF-0001",
+            "name": "test-invalid",
+            "market": "US macro",
+            "thesis": "A mechanism.",
+            "mechanism": "Test.",
+            "seed_provenance": {"source": "manual", "ref": "x"},
+            "data": [{"path": "data/yahoo/SPY.parquet", "column": "close", "pit": "clean"}],
+            "feature": {"pipeline": []},
+            "target": {"path": "data/yahoo/SPY.parquet", "kind": "excess_return", "horizon_d": 21},
+            "universe": "single_series",
+            "baseline": "buy_and_hold",
+            "gates": {"min_t_hac": 2.0, "fdr_q": 0.10, "dsr": 0.90},
+            "horizon_role": "swing",
+            "orthogonality_note": "unique",
+            "evidence_note": "test",
+        }
+
+        screen_called = []
+
+        def fake_screen(s, repo_root=None):
+            screen_called.append(s)
+            return {"admit": True, "verdict": "admit", "reasons": [], "gates_passed": [], "gates_failed": []}
+
+        # validate_spec returns not-ok
+        fake_validate = MagicMock(return_value=(False, ["schema error: missing required field"]))
+
+        with patch.dict(sys.modules, {"scripts.run_signal_foundry_brainstorm": None}):  # type: ignore[dict-item]
+            with patch("engine.signal_foundry.screen.screen_candidate", fake_screen):
+                with patch("engine.signal_foundry.spec.validate_spec", fake_validate):
+                    import importlib
+                    import scripts.codex_signal_lane as lane
+                    importlib.reload(lane)
+                    # Also patch the getter to return the fake validate
+                    with patch.object(lane, "_get_validate_spec_fn", return_value=fake_validate):
+                        n_admitted, n_rejected, admitted_ids = lane._file_specs(
+                            [spec], cands_path, root, iso_week="2026-W28", dry_run=False
+                        )
+
+        assert n_rejected == 1
+        assert n_admitted == 0
+        assert screen_called == [], f"screen_candidate should not be called after validate_spec failure; called: {screen_called}"
+
+
+# ---------------------------------------------------------------------------
+# FIX 16 — weekly reject-backoff at 25 screen_rejected rows
+# ---------------------------------------------------------------------------
+
+class TestSignalLaneRejectBackoff:
+    """FIX 16: run_once returns reject_backoff when >= 25 screen_rejected rows this week."""
+
+    def _write_rejected_candidates(self, root: Path, n: int, iso_week: str) -> None:
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+        cands_path.parent.mkdir(parents=True, exist_ok=True)
+        with cands_path.open("w", encoding="utf-8") as fh:
+            for i in range(n):
+                row = {
+                    "id": f"SF-{i+1:04d}",
+                    "name": f"rejected-{i}",
+                    "status": "screen_rejected",
+                    "iso_week": iso_week,
+                    "proposed_at": "2026-07-17T00:00:00Z",
+                }
+                fh.write(json.dumps(row) + "\n")
+
+    def test_25_rejected_triggers_backoff(self, tmp_path: Path):
+        """25 screen_rejected rows this week -> reject_backoff action."""
+        root = _make_root(tmp_path)
+        now = datetime.now(timezone.utc)
+        year, week, _ = now.isocalendar()
+        iso_week = f"{year}-W{week:02d}"
+        self._write_rejected_candidates(root, 25, iso_week)
+
+        codex_called = []
+
+        with patch.dict(os.environ, {"SIGNAL_FOUNDRY_PAUSED": "false"}):
+            with patch("engine.codex_lane.runner.run_codex", side_effect=lambda *a, **kw: (
+                codex_called.append(True) or
+                {"ok": True, "final_message": "[]", "events_count": 1,
+                 "token_usage": None, "rate_limits": None, "error_kind": None, "raw_tail": ""}
+            )):
+                import scripts.codex_signal_lane as lane
+                result = lane.run_once(root=root)
+
+        assert result["action"] == "reject_backoff", f"Expected reject_backoff; got: {result}"
+        assert result["ok"] is True
+        assert codex_called == [], "run_codex should not be called during reject_backoff"
+
+    def test_24_rejected_does_not_trigger_backoff(self, tmp_path: Path):
+        """24 screen_rejected rows this week -> no backoff (proceeds to dry_run)."""
+        root = _make_root(tmp_path)
+        now = datetime.now(timezone.utc)
+        year, week, _ = now.isocalendar()
+        iso_week = f"{year}-W{week:02d}"
+        self._write_rejected_candidates(root, 24, iso_week)
+
+        with patch.dict(os.environ, {"SIGNAL_FOUNDRY_PAUSED": "false"}):
+            import scripts.codex_signal_lane as lane
+            result = lane.run_once(root=root, dry_run=True)
+
+        assert result["action"] != "reject_backoff", f"24 rejected should not trigger backoff; got: {result}"
+
+    def test_proposed_rows_do_not_count_toward_reject_backoff(self, tmp_path: Path):
+        """proposed rows do not count toward the 25 screen_rejected threshold."""
+        root = _make_root(tmp_path)
+        now = datetime.now(timezone.utc)
+        year, week, _ = now.isocalendar()
+        iso_week = f"{year}-W{week:02d}"
+        # 25 proposed rows but 0 screen_rejected
+        cands_path = root / "data" / "signal_foundry" / "candidates.jsonl"
+        cands_path.parent.mkdir(parents=True, exist_ok=True)
+        with cands_path.open("w", encoding="utf-8") as fh:
+            for i in range(25):
+                fh.write(json.dumps({
+                    "id": f"SF-{i+1:04d}", "name": f"sig-{i}", "status": "proposed",
+                    "iso_week": iso_week, "proposed_at": "2026-07-17T00:00:00Z",
+                }) + "\n")
+
+        with patch.dict(os.environ, {"SIGNAL_FOUNDRY_PAUSED": "false"}):
+            import scripts.codex_signal_lane as lane
+            # With 25 proposed, cap would be hit (cap=5 default) — just verify it's NOT reject_backoff
+            result = lane.run_once(root=root, dry_run=True)
+
+        assert result["action"] != "reject_backoff", \
+            f"proposed rows should not trigger reject_backoff; got: {result}"
+
+
+# ---------------------------------------------------------------------------
+# FIX 17 — _build_context_pack returns tuple (pack_text, used_fallback)
+# ---------------------------------------------------------------------------
+
+class TestBuildContextPackFix17:
+    """FIX 17: _build_context_pack returns (str, bool) tuple; governance event on fallback."""
+
+    def test_returns_tuple(self, tmp_path: Path):
+        """_build_context_pack returns a (str, bool) tuple."""
+        root = _make_root(tmp_path)
+        with patch.dict(sys.modules, {"scripts.run_signal_foundry_brainstorm": None}):  # type: ignore[dict-item]
+            import importlib
+            import scripts.codex_signal_lane as lane
+            importlib.reload(lane)
+            result = lane._build_context_pack(root, n_candidates=3)
+
+        assert isinstance(result, tuple), f"Expected tuple, got: {type(result)}"
+        assert len(result) == 2
+        pack_text, used_fallback = result
+        assert isinstance(pack_text, str)
+        assert isinstance(used_fallback, bool)
+
+    def test_fallback_returns_used_fallback_true(self, tmp_path: Path):
+        """When _build_sf_pack is not importable, used_fallback=True."""
+        root = _make_root(tmp_path)
+        with patch.dict(sys.modules, {"scripts.run_signal_foundry_brainstorm": None}):  # type: ignore[dict-item]
+            import importlib
+            import scripts.codex_signal_lane as lane
+            importlib.reload(lane)
+            _, used_fallback = lane._build_context_pack(root)
+
+        assert used_fallback is True
+
+    def test_sf_pack_fallback_governance_event(self, tmp_path: Path):
+        """run_once emits sf_pack_fallback governance event when fallback is used."""
+        root = _make_root(tmp_path)
+        gen_result = _make_ok_run_result(final_message="[]")
+
+        fake_screen = MagicMock(return_value={
+            "admit": False, "verdict": "schema_fail", "reasons": [], "gates_passed": [], "gates_failed": [],
+        })
+
+        with patch.dict(os.environ, {"SIGNAL_FOUNDRY_PAUSED": "false"}):
+            with patch("engine.codex_lane.runner.run_codex", return_value=gen_result):
+                with patch("engine.signal_foundry.screen.screen_candidate", fake_screen):
+                    with patch.dict(sys.modules, {"scripts.run_signal_foundry_brainstorm": None}):  # type: ignore[dict-item]
+                        import importlib
+                        import scripts.codex_signal_lane as lane
+                        importlib.reload(lane)
+                        lane.run_once(root=root, dry_run=False)
+
+        gov_rows = _read_governance(root)
+        fallback_events = [r for r in gov_rows if r.get("event") == "sf_pack_fallback"]
+        assert len(fallback_events) >= 1, \
+            f"Expected sf_pack_fallback governance event; got events: {[r.get('event') for r in gov_rows]}"
+
+
+# ---------------------------------------------------------------------------
+# FIX 18 — no_progress stop after 2 consecutive unproductive iterations
+# ---------------------------------------------------------------------------
+
+class TestLoopNoProgress:
+    """FIX 18: consecutive unproductive iterations trigger no_progress stop."""
+
+    def test_two_consecutive_unproductive_stops_loop(self, tmp_path: Path):
+        """Two consecutive unproductive iterations trigger no_progress stop."""
+        root = _make_root(tmp_path)
+
+        # Both lanes return 'skip' (unproductive)
+        with patch("scripts.codex_case_lane.run_once", return_value={
+            "ok": True, "action": "skip", "detail": "no episodes", "episode": None, "pr_url": None,
+        }):
+            with patch("scripts.codex_signal_lane.run_once", return_value={
+                "ok": True, "action": "weekly_cap_reached", "detail": "cap", "n_admitted": 0, "n_rejected": 0,
+            }):
+                with patch("engine.codex_lane.budget.can_run", return_value=(True, "ok")):
+                    with patch("engine.codex_lane.budget.load_cfg", return_value={
+                        "budget_pct": 85, "max_sessions_per_window": 10,
+                    }):
+                        import scripts.codex_research_loop as loop
+                        result = loop.run_loop(root=root, lane="both", iterations=10, dry_run=False)
+
+        # Should have stopped after 2 iterations (both unproductive)
+        assert result["iterations_run"] == 2, f"Expected 2 iterations, got {result['iterations_run']}"
+        assert result["stop_reason"] is not None
+        assert "no_progress" in result["stop_reason"], f"Expected no_progress stop; got: {result['stop_reason']!r}"
+
+    def test_productive_iteration_resets_counter(self, tmp_path: Path):
+        """A productive iteration resets the consecutive-unproductive counter."""
+        root = _make_root(tmp_path)
+
+        call_n = {"n": 0}
+        # Iteration 1: unproductive, Iteration 2: productive (pr_opened), Iteration 3: unproductive
+        # -> counter resets at iter 2, counter=1 after iter 3 (not 2), should NOT stop
+
+        def fake_cases_run(**kw):
+            call_n["n"] += 1
+            if call_n["n"] == 2:
+                return {"ok": True, "action": "pr_opened", "detail": "", "episode": "NVDA_2023", "pr_url": "https://github.com/pr/1"}
+            return {"ok": True, "action": "skip", "detail": "", "episode": None, "pr_url": None}
+
+        with patch("scripts.codex_case_lane.run_once", side_effect=fake_cases_run):
+            with patch("scripts.codex_signal_lane.run_once", return_value={
+                "ok": True, "action": "skip", "detail": "", "n_admitted": 0, "n_rejected": 0,
+            }):
+                with patch("engine.codex_lane.budget.can_run", return_value=(True, "ok")):
+                    with patch("engine.codex_lane.budget.load_cfg", return_value={
+                        "budget_pct": 85, "max_sessions_per_window": 10,
+                    }):
+                        import scripts.codex_research_loop as loop
+                        result = loop.run_loop(root=root, lane="both", iterations=3, dry_run=False)
+
+        # After 3 iterations, counter=1 (only iter 3 is unproductive in last sequence)
+        # So we should get 3 iterations, not stopped at 2
+        assert result["iterations_run"] == 3, \
+            f"Expected 3 iterations (counter reset by productive iter 2); got {result['iterations_run']}"
+
+    def test_dry_run_action_is_productive(self, tmp_path: Path):
+        """action=='dry_run' counts as productive and prevents no_progress stop."""
+        root = _make_root(tmp_path)
+
+        with patch("scripts.codex_case_lane.run_once", return_value={
+            "ok": True, "action": "dry_run", "detail": "", "episode": None, "pr_url": None,
+        }):
+            with patch("scripts.codex_signal_lane.run_once", return_value={
+                "ok": True, "action": "dry_run", "detail": "", "n_admitted": 0, "n_rejected": 0,
+            }):
+                with patch("engine.codex_lane.budget.can_run", return_value=(True, "ok")):
+                    with patch("engine.codex_lane.budget.load_cfg", return_value={
+                        "budget_pct": 85, "max_sessions_per_window": 10,
+                    }):
+                        import scripts.codex_research_loop as loop
+                        result = loop.run_loop(root=root, lane="both", iterations=5, dry_run=True)
+
+        # dry_run is productive, so all 5 iterations should run
+        assert result["iterations_run"] == 5, \
+            f"dry_run iterations are productive and should all complete; got {result['iterations_run']}"
+
+    def test_n_admitted_gt_0_is_productive(self, tmp_path: Path):
+        """n_admitted > 0 in signal lane counts as productive."""
+        root = _make_root(tmp_path)
+
+        with patch("scripts.codex_case_lane.run_once", return_value={
+            "ok": True, "action": "brainstorm_done", "detail": "", "episode": None, "pr_url": None,
+            # note: action is not pr_opened or dry_run, but n_admitted > 0
+        }):
+            with patch("scripts.codex_signal_lane.run_once", return_value={
+                "ok": True, "action": "brainstorm_done", "detail": "", "n_admitted": 1, "n_rejected": 2,
+            }):
+                with patch("engine.codex_lane.budget.can_run", return_value=(True, "ok")):
+                    with patch("engine.codex_lane.budget.load_cfg", return_value={
+                        "budget_pct": 85, "max_sessions_per_window": 10,
+                    }):
+                        import scripts.codex_research_loop as loop
+                        result = loop.run_loop(root=root, lane="both", iterations=4, dry_run=False)
+
+        # n_admitted=1 is productive, all 4 iterations should run
+        assert result["iterations_run"] == 4, \
+            f"n_admitted>0 is productive; got {result['iterations_run']}"
+
+
+# ---------------------------------------------------------------------------
+# FIX 19 — budget.can_run and note_result surgical changes
+# ---------------------------------------------------------------------------
+
+class TestBudgetFix19:
+    """FIX 19: not_installed excluded from degraded cap; stale rate_limits applies session cap;
+    usage_limit with None run_rl uses state rate_limits for pause calculation."""
+
+    def setUp_tmpdir(self):
+        import tempfile
+        tmpdir = tempfile.mkdtemp()
+        Path(tmpdir, "data", "codex_lane").mkdir(parents=True)
+        return tmpdir
+
+    def _write_state(self, tmpdir: str, state: dict) -> None:
+        p = Path(tmpdir, "data", "codex_lane", "usage_state.json")
+        p.write_text(json.dumps(state))
+
+    def _load_state(self, tmpdir: str) -> dict:
+        p = Path(tmpdir, "data", "codex_lane", "usage_state.json")
+        return json.loads(p.read_text())
+
+    def test_not_installed_excluded_from_degraded_cap(self, tmp_path: Path):
+        """(a) not_installed sessions are excluded from degraded session cap count."""
+        from engine.codex_lane.budget import can_run, _to_iso, _now_utc
+        tmpdir = str(tmp_path)
+        (tmp_path / "data" / "codex_lane").mkdir(parents=True)
+        now = _now_utc()
+        from datetime import timedelta as _td
+        sessions = [
+            {"ts": _to_iso(now - _td(minutes=10 * i)), "lane": "signals",
+             "ok": False, "error_kind": "not_installed"}
+            for i in range(10)
+        ]
+        self._write_state(tmpdir, {
+            "schema": "codex_lane.usage_state.v1",
+            "degraded": True,
+            "paused_until": None,
+            "sessions": sessions,
+            "rate_limits": None,
+        })
+        ok, reason = can_run(root=tmpdir)
+        # not_installed sessions excluded -> effective count = 0 -> allows run
+        assert ok is True, f"not_installed sessions should be excluded from cap; reason={reason!r}"
+
+    def test_mixed_sessions_counts_only_non_not_installed(self, tmp_path: Path):
+        """(a) 9 normal + 1 not_installed = 9 effective; just below cap=10 -> allows."""
+        from engine.codex_lane.budget import can_run, _to_iso, _now_utc
+        tmpdir = str(tmp_path)
+        (tmp_path / "data" / "codex_lane").mkdir(parents=True)
+        now = _now_utc()
+        from datetime import timedelta as _td
+        sessions = []
+        for i in range(9):
+            sessions.append({"ts": _to_iso(now - _td(minutes=5 * i)), "lane": "signals",
+                              "ok": False, "error_kind": "error"})
+        sessions.append({"ts": _to_iso(now - _td(minutes=50)), "lane": "signals",
+                         "ok": False, "error_kind": "not_installed"})
+        self._write_state(tmpdir, {
+            "schema": "codex_lane.usage_state.v1",
+            "degraded": True,
+            "paused_until": None,
+            "sessions": sessions,
+            "rate_limits": None,
+        })
+        ok, reason = can_run(root=tmpdir)
+        assert ok is True, f"9 normal + 1 not_installed should be below cap=10; reason={reason!r}"
+
+    def test_stale_rate_limits_applies_session_cap(self, tmp_path: Path):
+        """(b) non-degraded with fetched_at >24h old -> applies session cap."""
+        from engine.codex_lane.budget import can_run, _to_iso, _now_utc
+        from datetime import timedelta as _td
+        tmpdir = str(tmp_path)
+        (tmp_path / "data" / "codex_lane").mkdir(parents=True)
+        now = _now_utc()
+        # Make fetched_at >24h old
+        stale_fetched_at = _to_iso(now - _td(hours=25))
+        sessions = [
+            {"ts": _to_iso(now - _td(minutes=10 * i)), "lane": "signals", "ok": True, "error_kind": None}
+            for i in range(10)
+        ]
+        self._write_state(tmpdir, {
+            "schema": "codex_lane.usage_state.v1",
+            "degraded": False,
+            "paused_until": None,
+            "sessions": sessions,
+            "rate_limits": {
+                "primary": {"used_percent": 10.0, "resets_at": None},
+                "secondary": None,
+                "fetched_at": stale_fetched_at,
+            },
+        })
+        ok, reason = can_run(root=tmpdir)
+        # Stale rate_limits + 10 sessions in 5h -> session_cap
+        assert ok is False, f"Stale rate_limits should trigger session cap; reason={reason!r}"
+        assert reason == "session_cap", f"Expected session_cap; got: {reason!r}"
+
+    def test_fresh_rate_limits_no_session_cap(self, tmp_path: Path):
+        """(b) non-degraded with fresh fetched_at -> session cap does NOT apply."""
+        from engine.codex_lane.budget import can_run, _to_iso, _now_utc
+        from datetime import timedelta as _td
+        tmpdir = str(tmp_path)
+        (tmp_path / "data" / "codex_lane").mkdir(parents=True)
+        now = _now_utc()
+        # Fresh fetched_at (1 hour ago)
+        fresh_fetched_at = _to_iso(now - _td(hours=1))
+        sessions = [
+            {"ts": _to_iso(now - _td(minutes=10 * i)), "lane": "signals", "ok": True, "error_kind": None}
+            for i in range(10)
+        ]
+        self._write_state(tmpdir, {
+            "schema": "codex_lane.usage_state.v1",
+            "degraded": False,
+            "paused_until": None,
+            "sessions": sessions,
+            "rate_limits": {
+                "primary": {"used_percent": 10.0, "resets_at": None},
+                "secondary": None,
+                "fetched_at": fresh_fetched_at,
+            },
+        })
+        ok, reason = can_run(root=tmpdir)
+        # Fresh rate_limits + no over-budget -> allows
+        assert ok is True, f"Fresh rate_limits should not trigger session cap; reason={reason!r}"
+
+    def test_usage_limit_no_run_rl_uses_state_rate_limits(self, tmp_path: Path):
+        """(c) usage_limit with run.rate_limits=None uses state['rate_limits'] for pause calc."""
+        from engine.codex_lane.budget import note_result, load_state, _to_iso, _now_utc
+        from datetime import timedelta as _td
+        tmpdir = str(tmp_path)
+        (tmp_path / "data" / "codex_lane").mkdir(parents=True)
+        now = _now_utc()
+        # Put a secondary-attributed reset in state (7d pause expected)
+        state_rl = {
+            "primary": {"used_percent": 5.0, "resets_at": None},
+            "secondary": {"used_percent": 100.0, "resets_at": None},
+        }
+        self._write_state(tmpdir, {
+            "schema": "codex_lane.usage_state.v1",
+            "degraded": False,
+            "paused_until": None,
+            "sessions": [],
+            "rate_limits": state_rl,
+        })
+
+        # Run result with rate_limits=None
+        run = {
+            "ok": False,
+            "lane": "signals",
+            "error_kind": "usage_limit",
+            "rate_limits": None,  # LLM did not report rate limits this run
+            "token_usage": None,
+        }
+        note_result(run, root=tmpdir)
+
+        state = self._load_state(tmpdir)
+        paused_until_str = state.get("paused_until")
+        assert paused_until_str is not None, "paused_until should be set after usage_limit"
+        paused_until = datetime.fromisoformat(paused_until_str.replace("Z", "+00:00"))
+        diff = (paused_until - now).total_seconds()
+        # secondary-attributed -> 7d fallback
+        assert abs(diff - 7 * 24 * 3600) < 10, \
+            f"Expected ~7d pause (secondary-attributed via state); got {diff:.0f}s"
+
+    def test_usage_limit_no_run_rl_no_state_rl_gives_5h(self, tmp_path: Path):
+        """(c) usage_limit with both run and state rate_limits None -> 5h fallback."""
+        from engine.codex_lane.budget import note_result, _to_iso, _now_utc
+        from datetime import timedelta as _td
+        tmpdir = str(tmp_path)
+        (tmp_path / "data" / "codex_lane").mkdir(parents=True)
+        now = _now_utc()
+        self._write_state(tmpdir, {
+            "schema": "codex_lane.usage_state.v1",
+            "degraded": True,
+            "paused_until": None,
+            "sessions": [],
+            "rate_limits": None,  # no state rate limits either
+        })
+        run = {
+            "ok": False, "lane": "signals", "error_kind": "usage_limit",
+            "rate_limits": None, "token_usage": None,
+        }
+        note_result(run, root=tmpdir)
+        state = self._load_state(tmpdir)
+        paused_until_str = state.get("paused_until")
+        assert paused_until_str is not None
+        paused_until = datetime.fromisoformat(paused_until_str.replace("Z", "+00:00"))
+        diff = (paused_until - now).total_seconds()
+        assert abs(diff - 5 * 3600) < 10, f"Expected ~5h pause; got {diff:.0f}s"
 
 
 # ---------------------------------------------------------------------------

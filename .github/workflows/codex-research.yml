@@ -1,5 +1,7 @@
 name: codex-research
 # Codex Research Engine (CRX) — autonomous winner-case + signal brainstorm lane.
+# Pinned to [self-hosted, codex] — the only runners with the codex CLI + auth.
+# Preflight step checks codex binary + auth.json before spending any lane state.
 # Ships DARK by default (CODEX_MODE absent or off → clean no-op for schedule events).
 #
 # KILL SWITCH — CODEX_MODE repo variable (CRX-R7):
@@ -48,14 +50,51 @@ concurrency:
 
 jobs:
   research-loop:
-    runs-on: [self-hosted, macstudio]
-    timeout-minutes: 170
+    runs-on: [self-hosted, codex]
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+
+      - name: preflight (codex binary + auth check)
+        id: preflight
+        run: |
+          set -uo pipefail
+          CODEX_OK=false
+          # Check binary presence
+          if command -v codex >/dev/null 2>&1; then
+            echo "codex binary found via PATH: $(command -v codex)"
+            CODEX_OK=true
+          else
+            for _p in \
+              "/Applications/ChatGPT.app/Contents/Resources/codex" \
+              "$HOME/.local/bin/codex" \
+              "$HOME/.codex/bin/codex" \
+              "/opt/homebrew/bin/codex" \
+              "/usr/local/bin/codex"; do
+              if [ -x "$_p" ]; then
+                echo "codex binary found at $_p"
+                CODEX_OK=true
+                break
+              fi
+            done
+          fi
+          if [ "$CODEX_OK" = "false" ]; then
+            echo "codex binary NOT found — skipping lane steps"
+          fi
+          # Check auth.json
+          if [ ! -f "$HOME/.codex/auth.json" ]; then
+            echo "~/.codex/auth.json NOT present — codex_ok=false"
+            CODEX_OK=false
+          else
+            echo "~/.codex/auth.json present"
+          fi
+          echo "codex_ok=$CODEX_OK"
+          echo "codex_ok=$CODEX_OK" >> "$GITHUB_OUTPUT"
 
       - name: python 3.12 (Homebrew venv - self-hosted runner)
+        if: steps.preflight.outputs.codex_ok == 'true'
         run: |
           VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
           [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
@@ -63,15 +102,17 @@ jobs:
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
 
       - name: install deps
-        run: pip install --quiet pyyaml pandas pyarrow
+        if: steps.preflight.outputs.codex_ok == 'true'
+        run: pip install --quiet pyyaml pandas pyarrow scipy numpy
 
       - name: mode gate + research loop
+        if: steps.preflight.outputs.codex_ok == 'true'
         env:
           CODEX_MODE: ${{ vars.CODEX_MODE }}
           CODEX_INTERVAL_HOURS: ${{ vars.CODEX_INTERVAL_HOURS }}
           CODEX_LANES: ${{ vars.CODEX_LANES }}
           SIGNAL_FOUNDRY_PAUSED: ${{ vars.SIGNAL_FOUNDRY_PAUSED }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.ADMIN_GH_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_WORKFLOW: ${{ github.workflow }}
           GITHUB_SHA: ${{ github.sha }}
@@ -107,7 +148,7 @@ jobs:
                 _LAST_TS="$(python -c "import json,sys; lines=[l for l in open('$_JOURNAL') if l.strip()]; last=json.loads(lines[-1]) if lines else {}; print(last.get('ts',''))" 2>/dev/null || true)"
                 if [ -n "$_LAST_TS" ]; then
                   _HOURS_SINCE="$(python -c "from datetime import datetime,timezone; ts='$_LAST_TS'; now=datetime.now(timezone.utc); last=datetime.fromisoformat(ts.replace('Z','+00:00')); diff=(now-last).total_seconds()/3600; print(f'{diff:.2f}')" 2>/dev/null || echo 0)"
-                  _OK="$(python -c "print('yes' if float('$_HOURS_SINCE') >= float('$_INTERVAL_HOURS') else 'no')" 2>/dev/null || echo yes)"
+                  _OK="$(python -c "print('yes' if float('$_HOURS_SINCE') >= float('$_INTERVAL_HOURS') else 'no')" 2>/dev/null || echo no)"
                   echo "interval gate: hours_since_last=$_HOURS_SINCE threshold=$_INTERVAL_HOURS ok=$_OK"
                   if [ "$_OK" = "no" ]; then
                     echo "interval gate: too soon — clean no-op."
@@ -132,6 +173,9 @@ jobs:
             echo "schedule event — mode=$_MODE lane=$LANE iters=$ITERS"
           fi
 
+          # FIX 20 — 170-min soft deadline so worst-case iteration + commit fits in 350min
+          export CODEX_DEADLINE_EPOCH=$(( $(date +%s) + 170*60 ))
+
           if [ "$EVENT" = "workflow_dispatch" ]; then
             python -m scripts.codex_research_loop --lane "$LANE" --iterations "$ITERS" --force
           else
@@ -139,6 +183,7 @@ jobs:
           fi
 
       - name: narrow commit and push (codex_lane + sf stores only)
+        if: always()
         run: |
           set -uo pipefail
           git config user.name "dashboard-bot"
