@@ -27,7 +27,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from datetime import date, datetime, timezone
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -42,6 +42,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(messag
 log = logging.getLogger(__name__)
 
 _OUTPUT_PATH = _REPO / "data" / "fred_vintage" / "payems_all_vintages.parquet"
+_STAMP_PATH = _OUTPUT_PATH.with_name("payems_fetched.json")  # {"asof": iso-date}
 _SERIES_ID = "PAYEMS"
 _OUTPUT_TYPE = 2  # all vintages (first→latest revisions per period)
 _REALTIME_START = "1997-01-01"  # FRED's real-time archive begins ~1997
@@ -49,11 +50,30 @@ _FRESH_DAYS = 6  # re-fetch if output is older than this many days
 
 
 def _is_fresh(path: Path, max_age_days: int = _FRESH_DAYS) -> bool:
-    """True if path exists and was written within max_age_days."""
+    """True if `path` exists and the sidecar stamp says it was fetched within
+    max_age_days.
+
+    Freshness is judged from the stamp's embedded `asof` date, NEVER file
+    mtime — the output parquet is git-committed, and on CI runners a checkout
+    rewrites files with mtime = checkout time, so a stale matrix would look
+    freshly written forever (the polygon-universe frozen-cache class, #2690).
+    Missing/unreadable/stamp-less sidecar counts as stale."""
     if not path.exists():
         return False
-    mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).date()
-    return (date.today() - mtime).days <= max_age_days
+    try:
+        import json
+        asof = json.loads(_STAMP_PATH.read_text()).get("asof")
+        return (date.today() - date.fromisoformat(str(asof))).days <= max_age_days
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _write_stamp() -> None:
+    import json
+    try:
+        _STAMP_PATH.write_text(json.dumps({"asof": date.today().isoformat()}))
+    except Exception as e:  # noqa: BLE001
+        log.warning("[payems_vintages] could not write fetch stamp: %s", e)
 
 
 def collect_payems_vintages(force: bool = False, dry_run: bool = False) -> pd.DataFrame:
@@ -141,6 +161,7 @@ def collect_payems_vintages(force: bool = False, dry_run: bool = False) -> pd.Da
         return df
 
     df.to_parquet(_OUTPUT_PATH)
+    _write_stamp()
     log.info("[payems_vintages] wrote %d rows -> %s", n_rows, _OUTPUT_PATH)
     return df
 

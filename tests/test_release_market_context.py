@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -26,8 +27,10 @@ sys.path.insert(0, str(_REPO))
 
 from engine.release_market_context import (
     _ERA_LABEL,
+    _KALSHI_TTL_DAYS,
     _REGIME_MIN_N,
     compute_surprise_distribution,
+    get_kalshi_implied,
     get_market_implied_benchmark,
     get_reaction_sensitivity,
 )
@@ -170,6 +173,13 @@ class TestSurpriseDistribution:
 # 2. get_market_implied_benchmark
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Content-stamp dates for fixtures: the MRI-R33 gate reads the snapshot_date /
+# asof_date COLUMN (never mtime, #2690 class), so fixtures must carry live dates.
+_SNAP_FRESH = date.today().isoformat()
+_SNAP_OLDER = (date.today() - timedelta(days=2)).isoformat()
+_SNAP_STALE = (date.today() - timedelta(days=10)).isoformat()
+
+
 def _make_snapshots_parquet(tmp_path: Path, rows: list[dict]) -> Path:
     p = tmp_path / "data" / "prediction_markets" / "snapshots.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -190,7 +200,7 @@ class TestMarketImpliedBenchmark:
         """Returns None when cpi_print event_key not present."""
         rows = [
             {
-                "snapshot_date": "2026-07-07", "source": "polymarket",
+                "snapshot_date": _SNAP_FRESH, "source": "polymarket",
                 "event_key": "fed_next", "event_title": "Fed Decision",
                 "end_date": "2026-07-31", "outcome": "Hold", "prob": 0.85,
                 "volume24hr": None, "volume_total": None, "liquidity": None,
@@ -205,7 +215,7 @@ class TestMarketImpliedBenchmark:
         """Claims release type → None (no event key configured)."""
         rows = [
             {
-                "snapshot_date": "2026-07-07", "source": "polymarket",
+                "snapshot_date": _SNAP_FRESH, "source": "polymarket",
                 "event_key": "cpi_print", "event_title": "CPI August",
                 "end_date": "2026-08-13", "outcome": ">0.3%", "prob": 0.6,
                 "volume24hr": None, "volume_total": None, "liquidity": None,
@@ -220,21 +230,21 @@ class TestMarketImpliedBenchmark:
         """Parses a valid cpi_print snapshot and returns top outcome."""
         rows = [
             {
-                "snapshot_date": "2026-07-07", "source": "polymarket",
+                "snapshot_date": _SNAP_FRESH, "source": "polymarket",
                 "event_key": "cpi_print", "event_title": "US CPI August 2026",
                 "end_date": "2026-08-13", "outcome": "0.2–0.3%", "prob": 0.55,
                 "volume24hr": 1000.0, "volume_total": 50000.0,
                 "liquidity": 2000.0, "open_interest": 1500.0, "mkt_volume24hr": 800.0,
             },
             {
-                "snapshot_date": "2026-07-07", "source": "polymarket",
+                "snapshot_date": _SNAP_FRESH, "source": "polymarket",
                 "event_key": "cpi_print", "event_title": "US CPI August 2026",
                 "end_date": "2026-08-13", "outcome": ">0.3%", "prob": 0.30,
                 "volume24hr": 1000.0, "volume_total": 50000.0,
                 "liquidity": 2000.0, "open_interest": 1500.0, "mkt_volume24hr": 200.0,
             },
             {
-                "snapshot_date": "2026-07-07", "source": "polymarket",
+                "snapshot_date": _SNAP_FRESH, "source": "polymarket",
                 "event_key": "cpi_print", "event_title": "US CPI August 2026",
                 "end_date": "2026-08-13", "outcome": "<0.2%", "prob": 0.15,
                 "volume24hr": 1000.0, "volume_total": 50000.0,
@@ -248,20 +258,20 @@ class TestMarketImpliedBenchmark:
         assert result["event_key"] == "cpi_print"
         assert result["implied"] == "0.2–0.3%"  # highest prob outcome
         assert result["prob_top"] == pytest.approx(0.55, abs=1e-4)
-        assert result["asof"] == "2026-07-07"
+        assert result["asof"] == _SNAP_FRESH
 
     def test_picks_latest_snapshot_date(self, tmp_path: Path):
         """When multiple snapshot_dates present, uses the latest."""
         rows = [
             {
-                "snapshot_date": "2026-07-01", "source": "polymarket",
+                "snapshot_date": _SNAP_OLDER, "source": "polymarket",
                 "event_key": "cpi_print", "event_title": "CPI Old",
                 "end_date": "2026-08-13", "outcome": "low", "prob": 0.9,
                 "volume24hr": None, "volume_total": None, "liquidity": None,
                 "open_interest": None, "mkt_volume24hr": None,
             },
             {
-                "snapshot_date": "2026-07-07", "source": "polymarket",
+                "snapshot_date": _SNAP_FRESH, "source": "polymarket",
                 "event_key": "cpi_print", "event_title": "CPI New",
                 "end_date": "2026-08-13", "outcome": "high", "prob": 0.7,
                 "volume24hr": None, "volume_total": None, "liquidity": None,
@@ -271,14 +281,14 @@ class TestMarketImpliedBenchmark:
         p = _make_snapshots_parquet(tmp_path, rows)
         result = get_market_implied_benchmark("cpi_headline", "2026-08-13", p)
         assert result is not None
-        assert result["asof"] == "2026-07-07"
+        assert result["asof"] == _SNAP_FRESH
         assert result["event_title"] == "CPI New"
 
     def test_nfp_event_key_used(self, tmp_path: Path):
         """NFP release type uses nfp_print event_key."""
         rows = [
             {
-                "snapshot_date": "2026-07-07", "source": "polymarket",
+                "snapshot_date": _SNAP_FRESH, "source": "polymarket",
                 "event_key": "nfp_print", "event_title": "US Nonfarm Payrolls August",
                 "end_date": "2026-08-01", "outcome": ">200K", "prob": 0.45,
                 "volume24hr": None, "volume_total": None, "liquidity": None,
@@ -294,7 +304,7 @@ class TestMarketImpliedBenchmark:
         """Result contains all expected keys."""
         rows = [
             {
-                "snapshot_date": "2026-07-07", "source": "polymarket",
+                "snapshot_date": _SNAP_FRESH, "source": "polymarket",
                 "event_key": "cpi_print", "event_title": "CPI",
                 "end_date": "2026-08-13", "outcome": "inline", "prob": 0.6,
                 "volume24hr": None, "volume_total": None, "liquidity": None,
@@ -455,26 +465,26 @@ def _kalshi_frame(rows):
 def test_kalshi_summary_row_preferred_latest_asof(tmp_path):
     path = tmp_path / "kalshi_releases.parquet"
     _kalshi_frame([
-        ["2026-07-06", "cpi", "2026-06", float("nan"), None, "summary", True,
+        [_SNAP_OLDER, "cpi", "2026-06", float("nan"), None, "summary", True,
          0.12, 0.61, False, 7, "KXCPI-26JUN", None],
-        ["2026-07-07", "cpi", "2026-06", float("nan"), None, "summary", True,
+        [_SNAP_FRESH, "cpi", "2026-06", float("nan"), None, "summary", True,
          0.10, 0.58, False, 7, "KXCPI-26JUN", None],
         # non-summary bracket row must be ignored
-        ["2026-07-07", "cpi", "2026-06", 0.3, 0.42, "mid", False,
+        [_SNAP_FRESH, "cpi", "2026-06", 0.3, 0.42, "mid", False,
          None, None, None, None, "KXCPI-26JUN", None],
     ]).to_parquet(path, index=False)
     out = get_kalshi_implied("cpi_headline", "2026-06", path)
     assert out is not None
     assert out["source"] == "kalshi"
     assert abs(out["implied_median"] - 0.10) < 1e-9  # latest asof wins
-    assert out["asof"] == "2026-07-07"
+    assert out["asof"] == _SNAP_FRESH
     assert out["n_brackets"] == 7
 
 
 def test_kalshi_core_cpi_not_mapped(tmp_path):
     path = tmp_path / "kalshi_releases.parquet"
     _kalshi_frame([
-        ["2026-07-07", "cpi", "2026-06", float("nan"), None, "summary", True,
+        [_SNAP_FRESH, "cpi", "2026-06", float("nan"), None, "summary", True,
          0.10, 0.58, False, 7, "KXCPI-26JUN", None],
     ]).to_parquet(path, index=False)
     # Kalshi tracks headline only; core must not borrow the headline ladder
@@ -486,12 +496,61 @@ def test_kalshi_absent_file_and_period_failopen(tmp_path):
                               tmp_path / "missing.parquet") is None
     path = tmp_path / "kalshi_releases.parquet"
     _kalshi_frame([
-        ["2026-07-07", "nfp", "2026-07", float("nan"), None, "summary", True,
+        [_SNAP_FRESH, "nfp", "2026-07", float("nan"), None, "summary", True,
          110000.0, 0.55, False, 9, "KXPAYROLLS-26JUL", None],
     ]).to_parquet(path, index=False)
     assert get_kalshi_implied("cpi_headline", "2026-06", path) is None
     out = get_kalshi_implied("nfp", "2026-07", path)
     assert out is not None and out["implied_median"] == 110000.0
+
+
+# ---------------------------------------------------------------------------
+# MRI-R33 STALE-ENRICH content-stamp gate (#2690 class): staleness is judged
+# from the parquet's stamp COLUMN, never file mtime — a checkout-rewritten
+# mtime must not resurrect a dead source.
+# ---------------------------------------------------------------------------
+
+import os
+import time as _time
+
+
+def test_kalshi_stale_stamp_nulls_with_reason(tmp_path):
+    path = tmp_path / "kalshi_releases.parquet"
+    _kalshi_frame([
+        [_SNAP_STALE, "cpi", "2026-06", float("nan"), None, "summary", True,
+         0.10, 0.58, False, 7, "KXCPI-26JUN", None],
+    ]).to_parquet(path, index=False)
+    # freshen the file's mtime to NOW — the gate must still read it as stale
+    os.utime(path, (_time.time(), _time.time()))
+    out = get_kalshi_implied("cpi_headline", "2026-06", path)
+    assert out is not None and out["implied_median"] is None
+    assert "stale" in out["stale_reason"]
+
+
+def test_market_implied_stale_stamp_nulls_with_reason(tmp_path: Path):
+    rows = [{
+        "snapshot_date": _SNAP_STALE, "source": "polymarket",
+        "event_key": "cpi_print", "event_title": "CPI",
+        "end_date": "2026-08-13", "outcome": "inline", "prob": 0.6,
+        "volume24hr": None, "volume_total": None, "liquidity": None,
+        "open_interest": None, "mkt_volume24hr": None,
+    }]
+    p = _make_snapshots_parquet(tmp_path, rows)
+    os.utime(p, (_time.time(), _time.time()))
+    result = get_market_implied_benchmark("cpi_headline", "2026-08-13", p)
+    assert result is not None and result["implied"] is None
+    assert "stale" in result["stale_reason"]
+
+
+def test_missing_stamp_column_reads_stale(tmp_path):
+    """A parquet without the stamp column fails SAFE (guard fires)."""
+    path = tmp_path / "kalshi_releases.parquet"
+    pd.DataFrame({"release_type": ["cpi"], "period": ["2026-06"],
+                  "is_summary": [True], "implied_median": [0.1]}
+                 ).to_parquet(path, index=False)
+    out = get_kalshi_implied("cpi_headline", "2026-06", path)
+    assert out is not None and out["implied_median"] is None
+    assert "stale" in out["stale_reason"]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

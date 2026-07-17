@@ -32,6 +32,7 @@ DATA_DIR = ROOT / "data"
 CMDI_DIR = DATA_DIR / "nyfed_cmdi"
 CMDI_WEEKLY_PATH = CMDI_DIR / "cmdi_weekly.parquet"
 CMDI_MONTHLY_PATH = CMDI_DIR / "cmdi_monthly.parquet"
+CMDI_STAMP_PATH = CMDI_DIR / "_fetched.json"     # {"asof": iso-date} — fetch-date stamp
 
 CMDI_URL = (
     "https://www.newyorkfed.org/medialibrary/research/interactives/data/cmdi/"
@@ -44,11 +45,30 @@ UA = (
 
 
 def _is_fresh(path: Path, max_age_days: int = 0) -> bool:
-    """True if the file exists and was written today (max_age_days=0)."""
+    """True if `path` exists and the sidecar _fetched.json stamp says it was
+    fetched within max_age_days (0 = today).
+
+    Freshness is judged from the stamp's embedded `asof` date, NEVER file
+    mtime — on CI runners a checkout rewrites files with mtime = checkout
+    time, so a committed stale cache always looks freshly written and the
+    re-download short-circuits (the polygon-universe frozen-cache class,
+    #2690). A missing/unreadable/stamp-less sidecar counts as stale."""
     if not path.exists():
         return False
-    mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).date()
-    return (date.today() - mtime).days <= max_age_days
+    try:
+        import json
+        asof = json.loads(CMDI_STAMP_PATH.read_text()).get("asof")
+        return (date.today() - date.fromisoformat(str(asof))).days <= max_age_days
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _write_stamp() -> None:
+    import json
+    try:
+        CMDI_STAMP_PATH.write_text(json.dumps({"asof": date.today().isoformat()}))
+    except Exception as e:  # noqa: BLE001
+        print(f"[cmdi] WARNING: could not write fetch stamp: {e}")
 
 
 def collect_nyfed_cmdi(force: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -105,6 +125,7 @@ def collect_nyfed_cmdi(force: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]
     monthly = df[["market_cmdi", "ig_cmdi", "hy_cmdi"]].resample("ME").last()
     monthly.to_parquet(CMDI_MONTHLY_PATH)
     print(f"[cmdi] saved {len(monthly)} monthly rows -> {CMDI_MONTHLY_PATH}")
+    _write_stamp()
 
     return df, monthly
 
