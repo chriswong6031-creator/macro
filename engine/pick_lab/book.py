@@ -14,6 +14,22 @@ Computes:
 Avoid-book (plab_topping_avoid): scoreboard flips sign into avoid_accuracy.
 LH books: per-horizon medians + first-maturation ETA date only.
 
+Metric definitions
+------------------
+universe_base_rate_21d : float | None
+    Panel-median 21d SPY-excess across ALL snapshot tickers per fire-date, pooled
+    over all mature fire-dates.  Answers: "what does a random pick from tonight's
+    full universe return over 21 sessions?"  Independent of the 12-name random ctrl.
+
+timing_lift_21d : float | None
+    For each matured fire, the ticker's OWN baseline is computed as the median 21d
+    SPY-excess across all panel start dates where the full 21-session window fits,
+    EXCLUDING start dates within 21 sessions of the fire's exec_date (so the fire's
+    own move does not contaminate its own baseline).
+    timing_lift_21d = median over fires of (fire's ret_excess_spy - ticker_baseline).
+    Isolates WHEN-skill from WHICH-skill: a book that picks good names but times them
+    no better than their any-day median will show timing_lift_21d ≈ 0.
+
 Public API
 ----------
 scoreboard(engine_id, fires, grades, ...) -> dict
@@ -373,6 +389,8 @@ def scoreboard(
     ctrl_grades: Optional[list[dict]] = None,
     universe_base_rate_21d: Optional[float] = None,
     open_fire_dates: Optional[set[str]] = None,
+    close_panel: Optional[pd.DataFrame] = None,
+    spy_closes: Optional[pd.Series] = None,
     profile=None,
 ) -> dict:
     """Compute the scoreboard for one book.
@@ -391,20 +409,34 @@ def scoreboard(
                              (absolute reversion-capture), not SPY-excess.
     ctrl_fires             : plab_random_ctrl fire rows (for lift calculation).
     ctrl_grades            : plab_random_ctrl grade rows.
-    universe_base_rate_21d : Median 21d excess from plab_random_ctrl (the honest
-                             proxy for buy-anytime base rate; PL-R5).  Passed as
-                             None when no independent universe metric is available
-                             — callers must not conflate it with lift_vs_ctrl
-                             (both derive from the same random-ctrl distribution).
-                             When caller passes the same value as ctrl_med, the
-                             two lift columns will be numerically equal; callers
-                             should pass None rather than duplicate the number.
+    universe_base_rate_21d : Median 21d excess computed from the close panel across
+                             ALL snapshot tickers per fire-date (PL-R5 second
+                             independent control; spec §9 follow-up).  Passed as
+                             None when no fire-date has matured (honest null) or
+                             when the panel is unavailable.
+                             NOTE: callers must not conflate this with lift_vs_ctrl
+                             (which derives from the 12-name random-ctrl book).
+                             lift_vs_universe_base derives from a different,
+                             much larger population (the full snapshot universe).
     open_fire_dates        : Set of fire_dates whose horizons are not yet matured
                              (used for n_open; computed from fires/grades if None).
+    close_panel            : Optional DataFrame[date_index x ticker] of closes.
+                             When provided together with spy_closes (or 'SPY' column
+                             present in close_panel), enables timing_lift_21d
+                             computation.
+    spy_closes             : Optional Series of SPY closes.  May be omitted when
+                             'SPY' is a column in close_panel.
 
     Returns
     -------
-    dict with all scoreboard fields.
+    dict with all scoreboard fields.  Includes:
+      timing_lift_21d — float | None
+          WHEN-skill vs WHICH-skill baseline.  For each matured h21 fire, the
+          ticker's own any-day median 21d SPY-excess (all panel start dates with a
+          full window, excluding start dates within 21 sessions of exec_date) is
+          subtracted from the fire's ret_excess_spy.  timing_lift_21d is the median
+          of those per-fire deltas.  Null when close_panel absent or no h21 rows
+          have matured.
     """
     _avoid_id = (
         profile.avoid_engine_id if profile is not None else AVOID_ENGINE_ID
@@ -541,8 +573,9 @@ def scoreboard(
     result["lift_vs_ctrl"] = lift_vs_ctrl
 
     # Lift vs universe buy-anytime base rate (PL-R5 second independent control).
-    # Null until a genuinely independent universe-wide base rate is available —
-    # passing ctrl_med here would make this column identical to lift_vs_ctrl.
+    # Derives from the close panel across ALL snapshot tickers (not from the 12-name
+    # random ctrl) — a genuinely different population.  Null when panel unavailable
+    # or no fire-date has matured.
     lift_vs_base = None
     if universe_base_rate_21d is not None:
         if _is_reversion_ruler:
@@ -555,7 +588,187 @@ def scoreboard(
                 lift_vs_base = round(my_med_21 - universe_base_rate_21d, 6)
     result["lift_vs_universe_base"] = lift_vs_base
 
+    # Timing lift (WHEN-skill vs WHICH-skill, PL-R5 / Amendment §A7).
+    # Null for LH books (scored by scoreboard returning early above) and when
+    # close_panel is absent.  Not applicable to the reversion ruler (absolute
+    # capture, not SPY-excess).
+    timing_lift: Optional[float] = None
+    if (
+        not is_lh
+        and not _is_reversion_ruler
+        and close_panel is not None
+        and not close_panel.empty
+    ):
+        _spy = spy_closes if spy_closes is not None else pd.Series(dtype=float)
+        try:
+            timing_lift = _timing_lift(
+                my_fires,
+                my_grades,
+                close_panel,
+                _spy,
+                horizon=NAV_HOLD_SESSIONS,
+                exclusion_sessions=NAV_HOLD_SESSIONS,
+            )
+            if timing_lift is not None:
+                timing_lift = round(timing_lift, 6)
+        except Exception as exc:  # noqa: BLE001
+            log.debug("scoreboard: timing_lift error for %s (%s)", engine_id, exc)
+    result["timing_lift_21d"] = timing_lift
+
     return result
+
+
+# ------------------------------------------------------------------ timing lift ---
+
+
+def _timing_lift(
+    fires: list[dict],
+    grades: list[dict],
+    close_panel: pd.DataFrame,
+    spy_closes: pd.Series,
+    horizon: int = 21,
+    exclusion_sessions: int = 21,
+) -> Optional[float]:
+    """Compute timing_lift_21d for a single book's fires/grades.
+
+    For each matured fire, compute the ticker's OWN baseline = median 21-session
+    SPY-excess across ALL panel start dates where the full 21-session window fits,
+    EXCLUDING start dates within ``exclusion_sessions`` sessions of the fire's
+    exec_date (both before and after, so the fire's own move does not contaminate).
+
+    timing_lift_21d = median over fires of (fire ret_excess_spy − ticker_baseline).
+
+    Vectorized: the full 21-session excess-return matrix is computed ONCE per call
+    (all tickers × all valid start dates), then sliced per (ticker, exec_date).
+
+    Parameters
+    ----------
+    fires            : Fire rows for this book.
+    grades           : Grade rows for this book (kind='ret' only).
+    close_panel      : DataFrame[date_index x ticker] of closes.  Must include 'SPY'.
+    spy_closes       : Series of SPY closes (same index as close_panel).
+    horizon          : Session hold length (default 21).
+    exclusion_sessions: Start dates within this many sessions of exec_date are
+                        excluded from the ticker's baseline (default 21).
+
+    Returns
+    -------
+    float | None — None when panel absent, SPY absent, or no matured fires.
+    """
+    if close_panel is None or close_panel.empty:
+        return None
+    if "SPY" not in close_panel.columns and spy_closes.empty:
+        return None
+
+    # Resolve SPY series
+    if "SPY" in close_panel.columns:
+        spy = close_panel["SPY"].dropna()
+    else:
+        spy = spy_closes.dropna()
+
+    date_index = close_panel.index
+    if not isinstance(date_index, pd.DatetimeIndex):
+        date_index = pd.DatetimeIndex(date_index)
+    date_index = date_index.sort_values()
+    n_dates = len(date_index)
+
+    if n_dates < horizon + 1:
+        return None
+
+    # Build matured-fire map: (ticker, fire_date) -> (exec_date_ts, ret_excess_spy)
+    grade_map: dict[tuple, tuple] = {}
+    ret_grades = _filter_ret(grades)
+    for g in ret_grades:
+        if g.get("horizon") != horizon:
+            continue
+        ex = g.get("ret_excess_spy")
+        if ex is None:
+            continue
+        k = (g["ticker"], g["fire_date"])
+        if k not in grade_map:
+            try:
+                ed = pd.Timestamp(g.get("exec_date") or g.get("fire_date"))
+            except Exception:  # noqa: BLE001
+                continue
+            grade_map[k] = (ed, float(ex))
+
+    if not grade_map:
+        return None
+
+    # Build (ticker, fire_date) -> exec_date from fires (falls back to grade)
+    exec_date_map: dict[tuple, pd.Timestamp] = {}
+    for f in fires:
+        k = (f.get("ticker"), f.get("fire_date"))
+        if k in grade_map:
+            ed_raw = f.get("exec_date") or f.get("fire_date")
+            try:
+                exec_date_map[k] = pd.Timestamp(ed_raw)
+            except Exception:  # noqa: BLE001
+                exec_date_map[k] = grade_map[k][0]
+
+    # Fill any missing exec_dates from grade rows
+    for k, (ed, _) in grade_map.items():
+        if k not in exec_date_map:
+            exec_date_map[k] = ed
+
+    # Collect unique tickers needed
+    needed_tickers = {k[0] for k in grade_map}
+
+    # Precompute SPY returns for all valid start positions (vectorized).
+    # spy_ret_arr[i] = (spy[i+horizon] - spy[i]) / spy[i] for i where window fits.
+    # valid_mask[i] = True when spy_ret_arr[i] is not NaN and spy[i] > 0.
+    spy_arr = spy.reindex(date_index).values.astype(float)  # aligned to date_index
+    # Shift: spy_h[i] = spy_arr[i+horizon] for i < n_dates-horizon, else NaN
+    spy_h = np.full(n_dates, np.nan)
+    spy_h[:n_dates - horizon] = spy_arr[horizon:]
+    spy0 = spy_arr.copy()
+    with np.errstate(divide="ignore", invalid="ignore"):
+        spy_ret_arr = np.where(spy0 > 0, (spy_h - spy0) / spy0, np.nan)
+    valid_mask = np.isfinite(spy_ret_arr)  # True where both spy[i] and spy[i+h] valid
+
+    # Precompute per-ticker excess arrays (vectorized).
+    # ticker_excess[ticker][i] = close_ret[i] - spy_ret[i] where valid.
+    ticker_excess: dict[str, np.ndarray] = {}
+    for ticker in needed_tickers:
+        if ticker not in close_panel.columns:
+            continue
+        c = close_panel[ticker].reindex(date_index).values.astype(float)
+        c_h = np.full(n_dates, np.nan)
+        c_h[:n_dates - horizon] = c[horizon:]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            c_ret = np.where(c > 0, (c_h - c) / c, np.nan)
+        exc = np.where(valid_mask, c_ret - spy_ret_arr, np.nan)
+        ticker_excess[ticker] = exc
+
+    # Compute timing lift per matured fire.
+    # For each fire: exclude start positions within exclusion_sessions of exec_pos;
+    # baseline = median of remaining valid excess values for that ticker.
+    positions = np.arange(n_dates, dtype=int)
+    lifts: list[float] = []
+    for k in grade_map:
+        ticker = k[0]
+        if ticker not in ticker_excess:
+            continue
+        exc_arr = ticker_excess[ticker]
+        exec_date_ts = exec_date_map[k]
+        fire_ret = grade_map[k][1]
+
+        # exec position in date_index
+        exec_pos = int(date_index.searchsorted(exec_date_ts, side="left"))
+        if exec_pos >= n_dates:
+            exec_pos = n_dates - 1
+
+        # Exclusion mask: keep positions where distance from exec_pos >= exclusion_sessions
+        keep = (np.abs(positions - exec_pos) >= exclusion_sessions) & np.isfinite(exc_arr)
+        baseline_vals = exc_arr[keep]
+
+        if len(baseline_vals) == 0:
+            continue
+
+        baseline = float(np.median(baseline_vals))
+        lifts.append(fire_ret - baseline)
+
+    return float(np.median(lifts)) if lifts else None
 
 
 # ------------------------------------------------------------------ base rate ---
@@ -565,18 +778,22 @@ def universe_base_rate(
     random_ctrl_grades: list[dict],
     horizon: int = 21,
 ) -> Optional[float]:
-    """Median 21d excess from plab_random_ctrl.
+    """Median 21d excess from plab_random_ctrl (random-ctrl proxy).
 
-    PL-R5 requires two independent controls: plab_random_ctrl AND the universe
-    buy-anytime base rate.  Until a genuinely independent universe-wide base rate
-    (graded over ALL snapshot tickers) is available, this function returns the
-    random-ctrl proxy only.
+    This function returns the RANDOM-CTRL median, not the full-universe panel
+    base rate.  It is retained for spec continuity and may be used as a diagnostic
+    proxy, but it is NOT the same as universe_base_rate_21d passed to scoreboard().
 
-    NOTE: do NOT pass this value as both ctrl_med and universe_base_rate_21d in
-    all_scoreboards — doing so makes lift_vs_ctrl and lift_vs_universe_base
-    numerically identical, misrepresenting two independent yardsticks.
-    all_scoreboards passes universe_base_rate_21d=None when a true independent
-    base rate is not yet computed.
+    universe_base_rate_21d (the PL-R5 second independent control) is computed from
+    the close panel across ALL snapshot tickers per fire-date in build_pick_lab.py
+    and passed directly to all_scoreboards() / scoreboard().  The two controls
+    derive from different populations:
+      - lift_vs_ctrl         : book median vs 12-name random-ctrl median
+      - lift_vs_universe_base: book median vs full-universe panel median (per fire-date)
+
+    NOTE: do NOT pass the value returned here as universe_base_rate_21d in
+    all_scoreboards — that would make the two lift columns derive from the same
+    12-name population, misrepresenting independent yardsticks.
 
     Parameters
     ----------
@@ -606,21 +823,33 @@ def all_scoreboards(
     ruler_map: Optional[dict[str, str]] = None,
     ctrl_fires: Optional[list[dict]] = None,
     ctrl_grades: Optional[list[dict]] = None,
+    universe_base_rate_21d: Optional[float] = None,
+    close_panel: Optional[pd.DataFrame] = None,
+    spy_closes: Optional[pd.Series] = None,
     profile=None,
 ) -> list[dict]:
     """Compute scoreboards for all books.
 
     Parameters
     ----------
-    fires            : All fire rows (all books).
-    grades           : All grade rows (all books).
-    horizon_role_map : {engine_id: horizon_role} from the registry.
-    ruler_map        : {engine_id: ruler} — pre-declared ruler per book (PL-R3).
-                       Defaults to '21d_spy_excess' for any book not in the map.
-    ctrl_fires       : Fires from plab_random_ctrl (or cnlab_random_ctrl for CN).
-    ctrl_grades      : Grades from plab_random_ctrl (or cnlab_random_ctrl for CN).
-    profile          : optional MarketProfile; when supplied, uses profile.random_ctrl_id
-                       as the control book id.  Omitting preserves US behaviour.
+    fires                  : All fire rows (all books).
+    grades                 : All grade rows (all books).
+    horizon_role_map       : {engine_id: horizon_role} from the registry.
+    ruler_map              : {engine_id: ruler} — pre-declared ruler per book (PL-R3).
+                             Defaults to '21d_spy_excess' for any book not in the map.
+    ctrl_fires             : Fires from plab_random_ctrl (or cnlab_random_ctrl for CN).
+    ctrl_grades            : Grades from plab_random_ctrl (or cnlab_random_ctrl for CN).
+    universe_base_rate_21d : Median 21d SPY-excess across ALL snapshot tickers per
+                             fire-date (PL-R5 second independent control; computed by
+                             build_pick_lab and passed here).  Null when no fire-date
+                             has matured or close panel is unavailable.
+    close_panel            : Optional DataFrame[date_index x ticker] closes.  When
+                             provided, enables timing_lift_21d on each book's
+                             scoreboard.
+    spy_closes             : Optional SPY close series.  May be omitted when 'SPY'
+                             is a column in close_panel.
+    profile                : optional MarketProfile; when supplied, uses
+                             profile.random_ctrl_id as the control book id.
 
     Returns
     -------
@@ -633,12 +862,8 @@ def all_scoreboards(
     ctrl_f = ctrl_fires or _filter(fires, _ctrl_id)
     ruler_map = ruler_map or {}
 
-    # PL-R5 requires lift over BOTH plab_random_ctrl AND the universe buy-anytime
-    # base rate as two INDEPENDENT controls.  Until a genuinely independent base
-    # rate (graded over ALL snapshot tickers, not just the 12-name random book) is
-    # available, universe_base_rate_21d is passed as None so lift_vs_universe_base
-    # is honestly null rather than duplicating lift_vs_ctrl.  When an independent
-    # universe_base_rate_21d is later wired in, pass it here.
+    _spy = spy_closes if spy_closes is not None else pd.Series(dtype=float)
+
     boards = []
     for engine_id, role in horizon_role_map.items():
         book_ruler = ruler_map.get(engine_id, "21d_spy_excess")
@@ -650,7 +875,9 @@ def all_scoreboards(
             ruler=book_ruler,
             ctrl_fires=ctrl_f,
             ctrl_grades=ctrl_g,
-            universe_base_rate_21d=None,  # independent base rate not yet available
+            universe_base_rate_21d=universe_base_rate_21d,
+            close_panel=close_panel,
+            spy_closes=_spy if close_panel is not None else None,
         )
         boards.append(sb)
 

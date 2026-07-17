@@ -8,6 +8,8 @@ Tests
    duplicate fire rows), site artifacts are valid JSON with the schema keys the template
    consumes (scoreboard, books, lanes, regime, as_of, authority).
 4. main() returns 0 even when every internal step throws (never-break contract).
+5. Context stamps: velocity-book fire rows carry pct_gain_60d_low/bars_since_60d_low/
+   ret_252d with hand-computable values; nulls when panel absent (Amendment §A5+§A7).
 """
 from __future__ import annotations
 
@@ -286,3 +288,151 @@ class TestNeverBreak:
         monkeypatch.setattr(build_pick_lab, "_build", _import_error_build)
         rc = build_pick_lab.main()
         assert rc == 0
+
+
+# ---------------------------------------------------------------------------
+# 5. Context stamps (Amendment §A5 + §A7 instrumentation)
+# ---------------------------------------------------------------------------
+
+class TestContextStamps:
+    """_stamp_context computes pct_gain_60d_low / bars_since_60d_low / ret_252d correctly."""
+
+    def _make_close_panel(
+        self,
+        ticker: str,
+        asof: str,
+        prices: list[float],
+        start: str = "2025-01-02",
+    ) -> "pd.DataFrame":
+        """Build a minimal close panel [date x ticker] with exact price series."""
+        dates = pd.bdate_range(start=start, periods=len(prices))
+        return pd.DataFrame({ticker: prices}, index=dates)
+
+    def test_stamps_present_on_velocity_book_fire(self, tmp_path: Path, monkeypatch):
+        """A plab_1d_pure fire row must carry pct_gain_60d_low/bars_since_60d_low/ret_252d
+        when the close panel is available.
+        """
+        from scripts import build_pick_lab
+
+        # Build a close panel: 300 sessions, TICK0 price rises from 10 to 50
+        asof = "2026-03-04"
+        n_sessions = 300
+        prices_tick0 = [10.0 + i * (40.0 / (n_sessions - 1)) for i in range(n_sessions)]
+        dates = pd.bdate_range(start="2024-12-01", periods=n_sessions)
+        close_panel = pd.DataFrame({"TICK0": prices_tick0}, index=dates)
+        close_at_fire = prices_tick0[-1]
+
+        # Manually compute expected values for last 60 sessions
+        last_60 = prices_tick0[-60:]
+        min_close = min(last_60)
+        min_idx_in_60 = last_60.index(min_close)
+        expected_bars_since = 59 - min_idx_in_60  # sessions since min (0 = earliest)
+        expected_pct_gain = (close_at_fire - min_close) / min_close
+
+        # ret_252d: we have 300 sessions total; 253rd from end is index 300-253=47
+        close_252d_ago = prices_tick0[-253]
+        expected_ret_252d = (close_at_fire - close_252d_ago) / close_252d_ago
+
+        # Run _stamp_context directly
+        snap_row = {"pct_vs_20dma": -0.03, "off_52w_high_pct": 0.05, "cycle_state": "TRENDING"}
+
+        stamps = build_pick_lab._stamp_context(
+            ticker="TICK0",
+            snap_row=snap_row,
+            close_panel=close_panel,
+            asof=str(dates[-1].date()),
+        )
+
+        assert "pct_gain_60d_low" in stamps, "pct_gain_60d_low must be stamped"
+        assert "bars_since_60d_low" in stamps, "bars_since_60d_low must be stamped"
+        assert "ret_252d" in stamps, "ret_252d must be stamped"
+
+        # Verify pct_gain_60d_low matches hand-computed value (within float tolerance)
+        assert stamps["pct_gain_60d_low"] is not None
+        assert abs(stamps["pct_gain_60d_low"] - expected_pct_gain) < 1e-9, (
+            f"pct_gain_60d_low={stamps['pct_gain_60d_low']} != expected {expected_pct_gain}"
+        )
+
+        # bars_since_60d_low: integer count
+        assert stamps["bars_since_60d_low"] is not None
+        assert stamps["bars_since_60d_low"] == expected_bars_since, (
+            f"bars_since_60d_low={stamps['bars_since_60d_low']} != expected {expected_bars_since}"
+        )
+
+        # ret_252d
+        assert stamps["ret_252d"] is not None
+        assert abs(stamps["ret_252d"] - expected_ret_252d) < 1e-9
+
+    def test_stamps_snapshot_cols_copied(self, tmp_path: Path, monkeypatch):
+        """pct_vs_20dma, off_52w_high_pct, cycle_state are copied from the snap row."""
+        from scripts import build_pick_lab
+
+        close_panel = pd.DataFrame(
+            {"TICK0": [50.0] * 100},
+            index=pd.bdate_range(start="2025-09-01", periods=100),
+        )
+        snap_row = {
+            "pct_vs_20dma": -0.07,
+            "off_52w_high_pct": 0.12,
+            "cycle_state": "ACCUMULATE",
+        }
+        stamps = build_pick_lab._stamp_context(
+            ticker="TICK0",
+            snap_row=snap_row,
+            close_panel=close_panel,
+            asof=str(close_panel.index[-1].date()),
+        )
+        assert stamps["pct_vs_20dma"] == -0.07
+        assert stamps["off_52w_high_pct"] == 0.12
+        assert stamps["cycle_state"] == "ACCUMULATE"
+
+    def test_stamps_null_when_panel_absent(self, tmp_path: Path, monkeypatch):
+        """pct_gain_60d_low / bars_since_60d_low / ret_252d are null when panel is None."""
+        from scripts import build_pick_lab
+
+        stamps = build_pick_lab._stamp_context(
+            ticker="TICK0",
+            snap_row={"pct_vs_20dma": -0.03, "off_52w_high_pct": 0.05, "cycle_state": "TRENDING"},
+            close_panel=None,
+            asof="2026-03-04",
+        )
+        assert stamps["pct_gain_60d_low"] is None
+        assert stamps["bars_since_60d_low"] is None
+        assert stamps["ret_252d"] is None
+
+    def test_stamps_null_when_ticker_absent_from_panel(self, tmp_path: Path, monkeypatch):
+        """All close-panel stamps are None when ticker is absent from the panel."""
+        from scripts import build_pick_lab
+
+        close_panel = pd.DataFrame(
+            {"OTHER": [50.0] * 100},
+            index=pd.bdate_range(start="2025-09-01", periods=100),
+        )
+        stamps = build_pick_lab._stamp_context(
+            ticker="TICK0",      # not in panel
+            snap_row={},
+            close_panel=close_panel,
+            asof=str(close_panel.index[-1].date()),
+        )
+        assert stamps["pct_gain_60d_low"] is None
+        assert stamps["bars_since_60d_low"] is None
+        assert stamps["ret_252d"] is None
+
+    def test_ret_252d_null_when_insufficient_history(self, tmp_path: Path, monkeypatch):
+        """ret_252d is None when fewer than 253 sessions available."""
+        from scripts import build_pick_lab
+
+        # Only 100 sessions — not enough for 252d return
+        close_panel = pd.DataFrame(
+            {"TICK0": [50.0] * 100},
+            index=pd.bdate_range(start="2025-09-01", periods=100),
+        )
+        stamps = build_pick_lab._stamp_context(
+            ticker="TICK0",
+            snap_row={},
+            close_panel=close_panel,
+            asof=str(close_panel.index[-1].date()),
+        )
+        assert stamps["ret_252d"] is None, (
+            "ret_252d must be None when fewer than 253 sessions available"
+        )

@@ -1,7 +1,7 @@
 """Pick Lab frozen candidate book registry.
 
 23 frozen book definitions: 20 entry books (plab_*) + 3 long-hold grids
-(plab_lh_*) per spec §3.
+(plab_lh_*) per spec §3, plus LH-2b (plab_lh_edge_durability_b) per §A5.
 
 Each entry:
   engine_id              : canonical identifier, never changes
@@ -15,6 +15,9 @@ Each entry:
                            as engine_id-v2 with a fresh ledger (PL-R2)
   config_hash            : sha256 of canonical (sorted-keys, compact) JSON of config
   kill_adjacency         : cite standing kill when applicable (PL-R9 / §8)
+  data_gap               : optional {en, zh} dict — UI badge for structurally dead books
+                           awaiting a data feed; kept OUTSIDE config so config_hash
+                           does not change when this field is added/updated
 
 Expose REGISTRY (ordered list) and BY_ID (dict keyed by engine_id).
 """
@@ -41,8 +44,9 @@ def _entry(
     config: dict,
     kill_adjacency: str = "",
     horizon_role: str = "entry",
+    data_gap: dict | None = None,
 ) -> dict:
-    return {
+    entry = {
         "engine_id": engine_id,
         "name_en": name_en,
         "name_zh": name_zh,
@@ -55,6 +59,10 @@ def _entry(
         "config_hash": _config_hash(config),
         "kill_adjacency": kill_adjacency,
     }
+    # data_gap is OUTSIDE config so it does not affect config_hash (PL-A4-1 note)
+    if data_gap is not None:
+        entry["data_gap"] = data_gap
+    return entry
 
 
 # ------------------------------------------------------------------ Family A — 1D velocity ---
@@ -129,7 +137,10 @@ _A = [
             "d2_macd_xup_bars_max": None,      # no 2D cross requirement
             "d3_macd_crossed": False,           # 3D MACD NOT yet crossed
             "above_200": True,
-            "ext_grade": "none",               # ext_grade = none
+            # 2026-07-17 PL-A4-1 revival: data enum is {null, steady, stretched, parabolic};
+            # null means "no extension". Fix: ext_grade.isna() | ext_grade.eq('none').
+            # Config retains 'none' as the intent label; candidates.py handles the null case.
+            "ext_grade": "none",               # ext_grade = none OR null (no extension)
             "rank_by": "edge_alpha",
         },
     ),
@@ -196,7 +207,9 @@ _B = [
         refire_lockout_sessions=21,
         config={
             "off_52w_high_pct_max": 0.10,  # off_52w_high_pct ≤ 10%
-            "vol_squeeze_on": True,          # vol_squeeze_state is active
+            # 2026-07-17 PL-A4-1 revival: data enum is {NONE,EXPANSION,COMPRESSED,COILED,
+            # FIRED_UP,FIRED_DOWN,null}. Fix in candidates.py: squeeze_on = vss.isin(['COILED','COMPRESSED']).
+            "vol_squeeze_on": True,          # vol_squeeze_state ∈ {COILED, COMPRESSED}
             "rank_by": "composite_z",
         },
         kill_adjacency=(
@@ -218,7 +231,9 @@ _C = [
         refire_lockout_sessions=21,
         config={
             "washout_active": True,
-            "dd_pct_min": 25.0,             # dd_pct > 25
+            # 2026-07-17 PL-A4-1 revival: dd_pct is fractional 0–1 in snapshot (0–0.834 range).
+            # Was 25.0 (treating it as percentage), corrected to 0.25 (fractional equivalent).
+            "dd_pct_min": 0.25,             # dd_pct > 0.25 (i.e. >25% drawdown, fractional scale)
             "coiled_or_star": True,          # coiled OR star
             "d3_from_os": True,              # 3D from_os (uses d3 grid)
             "rank_by": "dd_pct",
@@ -242,6 +257,12 @@ _C = [
             "rotation×cycle-position DON'T-TEST kill; "
             "this is sector-PHASE screen (sector_central), no oracle rotation input — PL-R9/§8"
         ),
+        # data_gap is OUTSIDE config so config_hash does not change (PL-A4-1)
+        # sector_phase is 100% null — no committed nightly sector-cycle artifact yet (§9)
+        data_gap={
+            "en": "awaiting sector-phase feed",
+            "zh": "等待板块周期数据",
+        },
     ),
     _entry(
         engine_id="plab_washout_clean",
@@ -253,8 +274,13 @@ _C = [
         refire_lockout_sessions=21,
         config={
             "washout_active": True,
-            "dd_pct_min": 20.0,
+            # 2026-07-17 PL-A4-1 revival: dd_pct is fractional 0–1 in snapshot.
+            # Was 20.0, corrected to 0.20 (fractional equivalent).
+            "dd_pct_min": 0.20,             # dd_pct > 0.20 (i.e. >20% drawdown, fractional scale)
+            # 2026-07-17 PL-A4-1 revival: dilution_events_365d is 100%-null in snapshot
+            # (producer wiring gap). Null-tolerant: isna() | le(0) in candidates.py.
             "dilution_events_365d_max": 0,
+            "dilution_null_tolerant": True,  # null passes; 'dilution n/a' chip added
             "days_since_shelf_min_or_null": 90,   # > 90 or null passes
             "interest_coverage_min_or_null": 2.0,  # > 2 or null passes
             "rank_by": "axis_quality",
@@ -342,11 +368,21 @@ _E = [
         max_picks=12,
         refire_lockout_sessions=21,
         config={
-            "edge_revision_min": 1.0,
+            # 2026-07-17 PL-A4-1 revival: edge_revision in snapshot is 0–100 percentile-scaled,
+            # not a z-score. Config was 1.0 (z-score intent). Corrected to 84.0, the percentile
+            # equivalent of z≥1 (84th percentile ≈ 1 standard deviation above mean in a normal
+            # distribution). This fix becomes active the day implied_upside_pct ships.
+            "edge_revision_min": 84.0,      # 0–100 percentile scale; 84 ≈ z≥1
             "implied_upside_pct_min": 15.0,
             "not_blackout": True,
             "above_200": True,
             "rank_by": "edge_revision",
+        },
+        # data_gap is OUTSIDE config so config_hash does not change (PL-A4-1)
+        # implied_upside_pct is 100% null — analyst-upside feed not yet wired (§9)
+        data_gap={
+            "en": "awaiting analyst-upside feed",
+            "zh": "等待分析师目标价数据",
         },
     ),
 ]
@@ -430,7 +466,11 @@ _LH = [
         config={
             "axis_quality_top_decile": True,
             "archetypes": ["quality_compounder", "secular_growth"],
+            # 2026-07-17 PL-A4-1 revival: dilution_events_365d is 100%-null in snapshot
+            # (producer wiring gap). Null-tolerant: isna() | le(0) in candidates.py.
+            # Null passes with 'dilution n/a' chip (honesty disclosure).
             "dilution_events_365d_max": 0,
+            "dilution_null_tolerant": True,  # null passes; 'dilution n/a' chip added
             "rank_by": "axis_quality",
         },
     ),
@@ -459,11 +499,47 @@ _LH = [
         max_picks=10,
         refire_lockout_sessions=63,
         config={
-            "dd_pct_min": 40.0,
+            # 2026-07-17 PL-A4-1 revival: dd_pct is fractional 0–1 in snapshot.
+            # Was 40.0, corrected to 0.40 (fractional equivalent).
+            "dd_pct_min": 0.40,             # dd_pct > 0.40 (i.e. >40% drawdown, fractional scale)
             "axis_quality_above_median": True,
+            # 2026-07-17 PL-A4-1 revival: interest_coverage and dilution_events_365d are
+            # 100%-null in snapshot (producer wiring gap). Null-tolerant in candidates.py.
+            # NOTE: quality screens are inert until snapshot producer wires those columns.
+            # Construction temporarily degrades to dd+quality-median; disclosed via chips.
             "interest_coverage_min": 3.0,
+            "interest_coverage_null_tolerant": True,  # null passes; 'ic n/a' chip added
             "dilution_events_365d_max": 0,
+            "dilution_null_tolerant": True,  # null passes; 'dilution n/a' chip added
             "rank_by": "axis_quality",
+        },
+    ),
+]
+
+# ------------------------------------------------------------------ LH-2b (Amendment §A5, PL-A5-1) ---
+# plab_lh_edge_durability_b: paired book — same axis_selection top-decile ranking PLUS
+# (a) axis_quality > 0 absolute floor, (b) sector cap ≤3 per GICS sector per fire-date.
+# v1 keeps firing as the no-gate control; LH-2b divergence at 126d measures whether
+# quality floors + diversification caps matter for hold-theses.
+_LH_B = [
+    _entry(
+        engine_id="plab_lh_edge_durability_b",
+        name_en="LH EDGE Durability B (gated)",
+        name_zh="长持EDGE耐久B (加门控)",
+        family="LH",
+        ruler="126d_252d_sector_relative_spy_excess_descriptive",
+        horizon_role="hold_thesis",
+        max_picks=10,
+        refire_lockout_sessions=63,
+        config={
+            # Same top-decile axis_selection ranking as plab_lh_edge_durability (v1 control)
+            "axis_selection_top_decile": True,
+            # (a) axis_quality > 0 ABSOLUTE floor (not median-relative — fixes near-vacuous median gate)
+            "axis_quality_gt_zero": True,
+            # (b) sector concentration cap: max 3 picks per GICS sector per fire-date
+            # Applied after ranking (walk ranked list, skip when sector already has 3).
+            "sector_cap_per_gics": 3,
+            "rank_by": "axis_selection",
         },
     ),
 ]
@@ -554,9 +630,9 @@ _H = [
 ]
 
 # ------------------------------------------------------------------ Exports ---
-REGISTRY: list[dict] = _A + _B + _C + _D + _E + _F + _LH + _G + _H
+REGISTRY: list[dict] = _A + _B + _C + _D + _E + _F + _LH + _LH_B + _G + _H
 BY_ID: dict[str, dict] = {b["engine_id"]: b for b in REGISTRY}
 
-# Sanity check at module load: 27 books, all config_hashes unique
-assert len(REGISTRY) == 27, f"Expected 27 books, got {len(REGISTRY)}"
-assert len({b["config_hash"] for b in REGISTRY}) == 27, "Duplicate config_hash detected"
+# Sanity check at module load: 28 books (27 original + LH-2b per Amendment §A5), all config_hashes unique
+assert len(REGISTRY) == 28, f"Expected 28 books, got {len(REGISTRY)}"
+assert len({b["config_hash"] for b in REGISTRY}) == 28, "Duplicate config_hash detected"

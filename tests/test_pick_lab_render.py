@@ -390,7 +390,8 @@ class TestBuildVm:
         from engine.pick_lab.render import build_vm
         pl, lh = _prod_fixture()
         vm = build_vm(pl, lh)
-        assert len(vm["lh_books"]) == 3
+        # Task 3: extended to 4 entries (added plab_lh_edge_durability_b)
+        assert len(vm["lh_books"]) == 4
         comp = next(b for b in vm["lh_books"] if b["engine_id"] == "plab_lh_compounder")
         assert len(comp["picks_today"]) == 2
 
@@ -1064,3 +1065,444 @@ class TestTemplateAllFires:
         html = self._render_with_fires()
         # The summary contains the count: "All fires (full history) — 2"
         assert "— 2" in html or "—&amp; 2" in html or "— 2" in html
+
+
+# --------------------------------------------------------------------------- #
+#  Task 1 — Scoreboard detail row: horizon ladder, capture, path               #
+# --------------------------------------------------------------------------- #
+
+def _make_scoreboard_row_with_ladder(engine_id: str, **overrides) -> dict:
+    """Scoreboard row carrying horizon ladder + path fields (as PR #2716 adds)."""
+    base = _make_scoreboard_row(
+        engine_id=engine_id,
+        name_en="1D Pure (velocity gate)",
+        name_zh="1日纯速",
+        family="A",
+        ruler="21d_spy_excess",
+        n_fires=12,
+        status="accruing",
+    )
+    base.update({
+        # per-horizon ladder
+        "h5_n": 12, "h5_wr_abs": 0.58, "h5_wr_exc": 0.06, "h5_med_exc": 0.03,
+        "h10_n": 10, "h10_wr_abs": 0.55, "h10_wr_exc": 0.04, "h10_med_exc": 0.02,
+        "h21_n": 8,  "h21_wr_abs": 0.50, "h21_wr_exc": 0.02, "h21_med_exc": 0.01,
+        "h63_n": 2,  "h63_wr_abs": None, "h63_wr_exc": None, "h63_med_exc": None,
+        # capture ratios
+        "h5_capture": 0.82,
+        "h10_capture": 0.71,
+        "h21_capture": 0.55,
+        "h63_capture": None,
+        # path stats
+        "path25_med_mfe": 0.095,
+        "path25_med_abs_mae": 0.038,
+        "path25_asym": 2.5,
+        "path25_med_t_mfe": 8.0,
+        "path25_med_t_mae": 4.0,
+        "path25_pct_mae_first": 0.62,
+        "path25_med_underwater": 0.28,
+        "path63_med_mfe": None,
+        "path63_med_abs_mae": None,
+    })
+    base.update(overrides)
+    return base
+
+
+def _prod_fixture_with_ladder() -> tuple[dict, dict]:
+    """prod fixture with ladder fields on the first scoreboard row."""
+    pl, lh = _prod_fixture()
+    pl = dict(pl)
+    board = list(pl["scoreboard"])
+    # Replace first row (plab_1d_pure) with ladder-enriched version
+    board[0] = _make_scoreboard_row_with_ladder("plab_1d_pure")
+    pl["scoreboard"] = board
+    return pl, lh
+
+
+class TestHorizonLadderVm:
+    """Task 1 — build_vm: horizon ladder + capture + path fields."""
+
+    def test_horizon_detail_key_present(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_ladder()
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_1d_pure")
+        assert "horizon_detail" in row
+
+    def test_ladder_has_four_horizons(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_ladder()
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_1d_pure")
+        ladder = row["horizon_detail"]["ladder"]
+        assert len(ladder) == 4
+        assert [l["horizon"] for l in ladder] == ["5d", "10d", "21d", "63d"]
+
+    def test_ladder_formats_populated(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_ladder()
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_1d_pure")
+        h5 = row["horizon_detail"]["ladder"][0]
+        assert h5["wr_abs_fmt"] == "58.0%"
+        assert h5["wr_exc_fmt"] == "+6.0%"
+        assert h5["med_exc_fmt"] == "+3.0%"
+        assert h5["capture_fmt"] == "82.0%"
+
+    def test_ladder_null_formats_as_dash(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_ladder()
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_1d_pure")
+        h63 = row["horizon_detail"]["ladder"][3]
+        assert h63["wr_abs_fmt"] == "—"
+        assert h63["capture_fmt"] == "—"
+
+    def test_path_line_en_present(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_ladder()
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_1d_pure")
+        path_en = row["horizon_detail"]["path_en"]
+        assert "day 8" in path_en
+        assert "dip" in path_en
+
+    def test_path_line_zh_present(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_ladder()
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_1d_pure")
+        path_zh = row["horizon_detail"]["path_zh"]
+        assert "日" in path_zh or "峰值" in path_zh
+
+    def test_path_line_null_graceful(self):
+        """When path25_med_t_mfe is null, path line says 'data arriving'."""
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()  # no ladder fields → null
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_1d_pure")
+        path_en = row["horizon_detail"]["path_en"]
+        assert "arriving" in path_en or "—" in path_en
+
+
+class TestHorizonLadderTemplate:
+    """Task 1 — template: detail row rendered with l-en/l-zh spans."""
+
+    def _render_with_ladder(self) -> str:
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_ladder()
+        vm = build_vm(pl, lh)
+        return _env().get_template("us_stocks_lab.html.j2").render(**vm)
+
+    def test_detail_row_rendered(self):
+        html = self._render_with_ladder()
+        assert "sbdet-plab_1d_pure" in html
+
+    def test_detail_contains_horizon_labels(self):
+        html = self._render_with_ladder()
+        assert "5d" in html
+        assert "10d" in html
+        assert "21d" in html
+        assert "63d" in html
+
+    def test_detail_bilingual_summary(self):
+        html = self._render_with_ladder()
+        # Summary line has l-en and l-zh spans
+        assert "Exit horizons" in html
+        assert "退出地平线" in html
+
+    def test_detail_path_line_rendered(self):
+        html = self._render_with_ladder()
+        assert "sb-path-line" in html
+        # path_en should mention day 8 (t_mfe=8)
+        assert "day 8" in html
+
+    def test_detail_path_zh_rendered(self):
+        html = self._render_with_ladder()
+        assert "峰值" in html
+
+    def test_no_validated_in_detail(self):
+        html = self._render_with_ladder()
+        assert "validated" not in html.lower()
+
+    def test_no_title_cjk_in_detail(self):
+        html = self._render_with_ladder()
+        title_attrs = re.findall(r'title="([^"]*)"', html)
+        cjk_range = re.compile(r'[一-鿿㐀-䶿]')
+        violations = [v for v in title_attrs if cjk_range.search(v)]
+        assert not violations, f"CJK in title= attributes: {violations[:3]}"
+
+
+# --------------------------------------------------------------------------- #
+#  Task 2 — data_gap badge                                                     #
+# --------------------------------------------------------------------------- #
+
+def _prod_fixture_with_data_gap() -> tuple[dict, dict]:
+    """Fixture with data_gap on plab_sector_trough and plab_revision_accel."""
+    pl, lh = _prod_fixture()
+    pl = dict(pl)
+    board = []
+    for row in pl["scoreboard"]:
+        row = dict(row)
+        if row["engine_id"] == "plab_sector_trough":
+            row["data_gap"] = {
+                "en": "Sector-phase feed not yet wired — book fires when enrichment source ships",
+                "zh": "板块阶段数据源尚未接入——数据源上线后本书才会触发",
+            }
+        elif row["engine_id"] == "plab_revision_accel":
+            row["data_gap"] = {
+                "en": "implied_upside_pct column not yet populated in snapshot",
+                "zh": "快照中implied_upside_pct列尚未填充",
+            }
+        board.append(row)
+    pl["scoreboard"] = board
+    return pl, lh
+
+
+class TestDataGapBadgeVm:
+    """Task 2 — build_vm: data_gap badge propagates to enriched row."""
+
+    def test_data_gap_badge_present_for_sector_trough(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_data_gap()
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_sector_trough")
+        assert row["data_gap_badge"]["present"] is True
+
+    def test_data_gap_reason_en_populated(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_data_gap()
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_sector_trough")
+        assert "Sector-phase" in row["data_gap_badge"]["reason_en"]
+
+    def test_data_gap_reason_zh_populated(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_data_gap()
+        vm = build_vm(pl, lh)
+        row = next(r for r in vm["scoreboard"] if r["engine_id"] == "plab_sector_trough")
+        assert "板块" in row["data_gap_badge"]["reason_zh"]
+
+    def test_data_gap_absent_for_normal_rows(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        vm = build_vm(pl, lh)
+        for row in vm["scoreboard"]:
+            assert "data_gap_badge" in row
+            # Normal rows (no data_gap in fixture) should have present=False
+            if row["engine_id"] not in ("plab_sector_trough", "plab_revision_accel"):
+                assert row["data_gap_badge"]["present"] is False
+
+
+class TestDataGapBadgeTemplate:
+    """Task 2 — template: AWAITING DATA badge rendered with bilingual spans."""
+
+    def _render_with_gap(self) -> str:
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture_with_data_gap()
+        vm = build_vm(pl, lh)
+        return _env().get_template("us_stocks_lab.html.j2").render(**vm)
+
+    def test_awaiting_data_badge_in_html(self):
+        html = self._render_with_gap()
+        assert "AWAITING DATA" in html
+
+    def test_awaiting_data_zh_in_html(self):
+        html = self._render_with_gap()
+        assert "等待数据" in html
+
+    def test_awaiting_data_badge_css(self):
+        html = self._render_with_gap()
+        assert "badge-awaiting" in html
+
+    def test_awaiting_reason_in_data_tip(self):
+        html = self._render_with_gap()
+        # reason is surfaced in data-tip-en (not in title=)
+        assert "data-tip-en" in html
+        assert "Sector-phase" in html
+
+    def test_no_title_cjk(self):
+        html = self._render_with_gap()
+        title_attrs = re.findall(r'title="([^"]*)"', html)
+        cjk_range = re.compile(r'[一-鿿㐀-䶿]')
+        violations = [v for v in title_attrs if cjk_range.search(v)]
+        assert not violations
+
+    def test_no_validated(self):
+        html = self._render_with_gap()
+        assert "validated" not in html.lower()
+
+
+# --------------------------------------------------------------------------- #
+#  Task 3 — Long-Hold tab: 4 entries, CONTROL flag, why-chips passthrough      #
+# --------------------------------------------------------------------------- #
+
+class TestLongHoldTabVm:
+    """Task 3 — build_vm: LH list has 4 entries; control flag on LH-2 v1."""
+
+    def test_lh_list_has_four_entries(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        vm = build_vm(pl, lh)
+        assert len(vm["lh_books"]) == 4
+
+    def test_lh_book_ids_include_durability_b(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        vm = build_vm(pl, lh)
+        ids = [b["engine_id"] for b in vm["lh_books"]]
+        assert "plab_lh_edge_durability_b" in ids
+
+    def test_lh_edge_durability_v1_is_control(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        vm = build_vm(pl, lh)
+        v1 = next(b for b in vm["lh_books"] if b["engine_id"] == "plab_lh_edge_durability")
+        assert v1["is_control"] is True
+
+    def test_other_lh_books_not_control(self):
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        vm = build_vm(pl, lh)
+        for b in vm["lh_books"]:
+            if b["engine_id"] != "plab_lh_edge_durability":
+                assert b["is_control"] is False
+
+    def test_lh_why_chips_pass_through(self):
+        """why-chips like 'dilution n/a' pass through from pick rows."""
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        lh = dict(lh)
+        lh_books = dict(lh.get("books", {}))
+        lh_books["plab_lh_compounder"] = {
+            "picks_today": [
+                _make_pick("MSFT", 1, 445.30, "Information Technology",
+                           why=["axis_quality top-decile", "dilution n/a", "ic n/a"]),
+            ],
+            "recent_fires": [],
+        }
+        lh["books"] = lh_books
+        vm = build_vm(pl, lh)
+        comp = next(b for b in vm["lh_books"] if b["engine_id"] == "plab_lh_compounder")
+        why_chips = comp["picks_today"][0]["why"]
+        assert "dilution n/a" in why_chips
+        assert "ic n/a" in why_chips
+
+
+class TestLongHoldTabTemplate:
+    """Task 3 — template: CONTROL chip, subtitle, LH-2b present."""
+
+    def _render(self) -> str:
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        vm = build_vm(pl, lh)
+        return _env().get_template("us_stocks_lab.html.j2").render(**vm)
+
+    def test_control_chip_rendered(self):
+        html = self._render()
+        assert "lh-control-chip" in html
+        assert "CONTROL" in html
+
+    def test_no_gate_control_subtitle_en(self):
+        html = self._render()
+        assert "No-gate control" in html
+
+    def test_no_gate_control_subtitle_zh(self):
+        html = self._render()
+        assert "无门控对照" in html
+
+    def test_lh_edge_durability_b_has_anchor(self):
+        html = self._render()
+        assert 'id="lh-plab_lh_edge_durability_b"' in html
+
+    def test_no_validated(self):
+        html = self._render()
+        assert "validated" not in html.lower()
+
+    def test_no_title_cjk(self):
+        html = self._render()
+        title_attrs = re.findall(r'title="([^"]*)"', html)
+        cjk_range = re.compile(r'[一-鿿㐀-䶿]')
+        violations = [v for v in title_attrs if cjk_range.search(v)]
+        assert not violations
+
+    def test_why_chips_passthrough_rendered(self):
+        """dilution n/a and ic n/a chips render in LH pick cards."""
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        lh = dict(lh)
+        lh_books = dict(lh.get("books", {}))
+        lh_books["plab_lh_compounder"] = {
+            "picks_today": [
+                _make_pick("MSFT", 1, 445.30, "Information Technology",
+                           why=["axis_quality top-decile", "dilution n/a", "ic n/a"]),
+            ],
+            "recent_fires": [],
+        }
+        lh["books"] = lh_books
+        vm = build_vm(pl, lh)
+        html = _env().get_template("us_stocks_lab.html.j2").render(**vm)
+        assert "dilution n/a" in html
+        assert "ic n/a" in html
+
+
+# --------------------------------------------------------------------------- #
+#  Task 4 — Method tab: family secondary horizons + path + controls note       #
+# --------------------------------------------------------------------------- #
+
+class TestMethodTab:
+    """Task 4 — template: Method tab updated content (bilingual, no 'validated')."""
+
+    def _render(self) -> str:
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        vm = build_vm(pl, lh)
+        return _env().get_template("us_stocks_lab.html.j2").render(**vm)
+
+    def test_secondary_horizons_section_en(self):
+        """Method tab has family secondary horizons paragraph (EN)."""
+        html = self._render()
+        assert "1D-velocity books" in html or "also judged at 10 days" in html
+
+    def test_secondary_horizons_zh_present(self):
+        html = self._render()
+        assert "1日动能书" in html or "辅助地平线" in html
+
+    def test_path_metrics_explanation_en(self):
+        html = self._render()
+        assert "time-to-peak" in html or "Time-to-peak" in html or "capture rate" in html
+
+    def test_path_metrics_explanation_zh(self):
+        html = self._render()
+        assert "峰值时间" in html or "捕获率" in html
+
+    def test_controls_two_note_en(self):
+        """Controls section mentions random-names control live and timing lift arriving."""
+        html = self._render()
+        assert "Random-names control" in html or "random" in html.lower()
+        assert "timing" in html.lower() or "arriving" in html.lower()
+
+    def test_controls_two_note_zh(self):
+        html = self._render()
+        assert "随机名称控制" in html or "全市场基准率" in html
+
+    def test_no_validated_in_method(self):
+        html = self._render()
+        assert "validated" not in html.lower()
+
+    def test_no_title_cjk_in_method(self):
+        html = self._render()
+        title_attrs = re.findall(r'title="([^"]*)"', html)
+        cjk_range = re.compile(r'[一-鿿㐀-䶿]')
+        violations = [v for v in title_attrs if cjk_range.search(v)]
+        assert not violations
+
+    def test_secondary_horizons_declared_before_data(self):
+        """Must state that secondary horizons were declared before any data matured."""
+        html = self._render()
+        assert "before any data matured" in html
+
+    def test_pre_registered_anti_cherry_pick(self):
+        """Must state that post-hoc horizon selection is forbidden."""
+        html = self._render()
+        assert "forbidden" in html or "trap" in html or "禁止" in html

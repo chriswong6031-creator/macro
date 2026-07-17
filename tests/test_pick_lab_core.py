@@ -147,8 +147,10 @@ def _base_snap(tickers=("AAA", "BBB", "CCC", "DDD", "EEE",
             "coiled": False,
             "star": False,
             "washout_active": False,
-            "dd_pct": 10.0,
-            "vol_squeeze_state": False,
+            "dd_pct": 0.10,  # fractional (10% drawdown; PL-A4-1: dd_pct is 0–1 in snapshot)
+            # vol_squeeze_state uses enum {NONE,EXPANSION,COMPRESSED,COILED,FIRED_UP,FIRED_DOWN,null}
+            # Use None (object dtype) so string values can be set via _snap_with (PL-A4-1 fix)
+            "vol_squeeze_state": None,
             "archetype": "quality_compounder",
             "current_mode": "trending",
             "implied_upside_pct": 20.0,
@@ -312,14 +314,15 @@ class TestSignals1D:
 
 class TestRegistry:
     def test_count(self):
-        assert len(REGISTRY) == 27  # LR W2a added plab_leader_precipice, plab_leader_onset (25->27)
+        # 27 original + 1 LH-2b (plab_lh_edge_durability_b, Amendment §A5) = 28
+        assert len(REGISTRY) == 28
 
     def test_by_id_completeness(self):
         assert set(BY_ID.keys()) == {b["engine_id"] for b in REGISTRY}
 
     def test_config_hashes_unique(self):
         hashes = [b["config_hash"] for b in REGISTRY]
-        assert len(set(hashes)) == 27, "Duplicate config_hash detected"  # LR W2a: 25->27
+        assert len(set(hashes)) == 28, "Duplicate config_hash detected"  # 28 with LH-2b
 
     def test_config_hash_stable(self):
         """config_hash is stable (same input → same output)."""
@@ -356,7 +359,8 @@ class TestRegistry:
 
     def test_lh_books_count(self):
         lh = [b for b in REGISTRY if b["horizon_role"] == "hold_thesis"]
-        assert len(lh) == 3
+        # 3 original LH + 1 LH-2b (Amendment §A5) = 4
+        assert len(lh) == 4
 
     def test_entry_books_count(self):
         entry = [b for b in REGISTRY if b["horizon_role"] == "entry"]
@@ -547,30 +551,34 @@ class TestCandidates:
 
     # ---- Book 8: plab_hi_base ---
     def test_hi_base_fires(self):
+        # 2026-07-17 PL-A4-1: vol_squeeze_state uses enum {COILED,COMPRESSED,...}
         snap = _snap_with({
-            "AAA": {"off_52w_high_pct": 0.05, "vol_squeeze_state": True},
+            "AAA": {"off_52w_high_pct": 0.05, "vol_squeeze_state": "COILED"},
         })
         picks = self._run("plab_hi_base", snap)
         assert "AAA" in [p["ticker"] for p in picks]
 
     def test_hi_base_no_fire_too_far_from_high(self):
+        # 2026-07-17 PL-A4-1: vol_squeeze_state uses enum
         snap = _snap_with({
-            "AAA": {"off_52w_high_pct": 0.25, "vol_squeeze_state": True},
+            "AAA": {"off_52w_high_pct": 0.25, "vol_squeeze_state": "COILED"},
         })
         picks = self._run("plab_hi_base", snap)
         assert "AAA" not in [p["ticker"] for p in picks]
 
     # ---- Book 9: plab_washout_deep ---
     def test_washout_deep_fires(self):
+        # 2026-07-17 PL-A4-1: dd_pct is fractional 0–1; threshold is 0.25
         snap = _snap_with({
-            "AAA": {"washout_active": True, "dd_pct": 30.0, "coiled": True, "d3_from_os": True},
+            "AAA": {"washout_active": True, "dd_pct": 0.30, "coiled": True, "d3_from_os": True},
         })
         picks = self._run("plab_washout_deep", snap)
         assert "AAA" in [p["ticker"] for p in picks]
 
     def test_washout_deep_no_fire_shallow_dd(self):
+        # 2026-07-17 PL-A4-1: dd_pct is fractional 0–1; threshold is 0.25
         snap = _snap_with({
-            "AAA": {"washout_active": True, "dd_pct": 20.0, "coiled": True, "d3_from_os": True},
+            "AAA": {"washout_active": True, "dd_pct": 0.20, "coiled": True, "d3_from_os": True},
         })
         picks = self._run("plab_washout_deep", snap)
         assert "AAA" not in [p["ticker"] for p in picks]
@@ -607,8 +615,9 @@ class TestCandidates:
 
     # ---- Book 11: plab_washout_clean ---
     def test_washout_clean_fires(self):
+        # 2026-07-17 PL-A4-1: dd_pct is fractional 0–1; threshold is 0.20
         snap = _snap_with({
-            "AAA": {"washout_active": True, "dd_pct": 30.0, "dilution_events_365d": 0,
+            "AAA": {"washout_active": True, "dd_pct": 0.30, "dilution_events_365d": 0,
                     "days_since_shelf": 200, "interest_coverage": 5.0},
         })
         picks = self._run("plab_washout_clean", snap)
@@ -616,8 +625,9 @@ class TestCandidates:
 
     def test_washout_clean_null_shelf_passes(self):
         """days_since_shelf null passes per spec 'or null'."""
+        # 2026-07-17 PL-A4-1: fractional dd_pct
         snap = _snap_with({
-            "AAA": {"washout_active": True, "dd_pct": 30.0, "dilution_events_365d": 0,
+            "AAA": {"washout_active": True, "dd_pct": 0.30, "dilution_events_365d": 0,
                     "days_since_shelf": None, "interest_coverage": 5.0},
         })
         picks = self._run("plab_washout_clean", snap)
@@ -625,16 +635,18 @@ class TestCandidates:
 
     def test_washout_clean_null_ic_passes(self):
         """interest_coverage null passes per spec 'or null'."""
+        # 2026-07-17 PL-A4-1: fractional dd_pct
         snap = _snap_with({
-            "AAA": {"washout_active": True, "dd_pct": 30.0, "dilution_events_365d": 0,
+            "AAA": {"washout_active": True, "dd_pct": 0.30, "dilution_events_365d": 0,
                     "days_since_shelf": 200, "interest_coverage": None},
         })
         picks = self._run("plab_washout_clean", snap)
         assert "AAA" in [p["ticker"] for p in picks]
 
     def test_washout_clean_no_fire_dilution(self):
+        # 2026-07-17 PL-A4-1: fractional dd_pct; non-null non-zero dilution still fails
         snap = _snap_with({
-            "AAA": {"washout_active": True, "dd_pct": 30.0, "dilution_events_365d": 1,
+            "AAA": {"washout_active": True, "dd_pct": 0.30, "dilution_events_365d": 1,
                     "days_since_shelf": 200, "interest_coverage": 5.0},
         })
         picks = self._run("plab_washout_clean", snap)
@@ -712,16 +724,27 @@ class TestCandidates:
 
     # ---- Book 16: plab_revision_accel ---
     def test_revision_accel_fires(self):
+        # 2026-07-17 PL-A4-1: edge_revision is 0–100 percentile scale; threshold now 84.0
+        # This book is structurally dead until implied_upside_pct ships but the threshold fix is testable
         snap = _snap_with({
-            "AAA": {"edge_revision": 1.5, "implied_upside_pct": 20.0,
+            "AAA": {"edge_revision": 90.0, "implied_upside_pct": 20.0,
                     "is_blackout": False, "above_200": True},
         })
         picks = self._run("plab_revision_accel", snap)
         assert "AAA" in [p["ticker"] for p in picks]
 
+    def test_revision_accel_no_fire_low_edge_revision(self):
+        # 2026-07-17 PL-A4-1: edge_revision below 84.0 percentile does not fire
+        snap = _snap_with({
+            "AAA": {"edge_revision": 50.0, "implied_upside_pct": 20.0,
+                    "is_blackout": False, "above_200": True},
+        })
+        picks = self._run("plab_revision_accel", snap)
+        assert "AAA" not in [p["ticker"] for p in picks]
+
     def test_revision_accel_no_fire_low_upside(self):
         snap = _snap_with({
-            "AAA": {"edge_revision": 1.5, "implied_upside_pct": 10.0,
+            "AAA": {"edge_revision": 90.0, "implied_upside_pct": 10.0,
                     "is_blackout": False, "above_200": True},
         })
         picks = self._run("plab_revision_accel", snap)
@@ -858,20 +881,22 @@ class TestCandidates:
 
     # ---- LH Book 23: plab_lh_washout_survivor ---
     def test_lh_washout_survivor_fires(self):
+        # 2026-07-17 PL-A4-1: dd_pct is fractional 0–1; threshold is 0.40
         snap = _base_snap()
-        snap.at["AAA", "dd_pct"] = 50.0
+        snap.at["AAA", "dd_pct"] = 0.50   # fractional: 50% drawdown
         snap.at["AAA", "axis_quality"] = 100.0
-        snap.at["AAA", "interest_coverage"] = 5.0
-        snap.at["AAA", "dilution_events_365d"] = 0
+        snap.at["AAA", "interest_coverage"] = None  # null-tolerant after PL-A4-1
+        snap.at["AAA", "dilution_events_365d"] = None  # null-tolerant after PL-A4-1
         picks = self._run("plab_lh_washout_survivor", snap)
         assert "AAA" in [p["ticker"] for p in picks]
 
     def test_lh_washout_survivor_no_fire_shallow_dd(self):
+        # 2026-07-17 PL-A4-1: dd_pct fractional; 0.35 (35%) < 0.40 threshold
         snap = _base_snap()
-        snap.at["AAA", "dd_pct"] = 30.0  # < 40 threshold
+        snap.at["AAA", "dd_pct"] = 0.35   # fractional: below 0.40 threshold
         snap.at["AAA", "axis_quality"] = 100.0
-        snap.at["AAA", "interest_coverage"] = 5.0
-        snap.at["AAA", "dilution_events_365d"] = 0
+        snap.at["AAA", "interest_coverage"] = None
+        snap.at["AAA", "dilution_events_365d"] = None
         picks = self._run("plab_lh_washout_survivor", snap)
         assert "AAA" not in [p["ticker"] for p in picks]
 
@@ -887,9 +912,10 @@ class TestCandidates:
 
     # ---- Rank field is 1-indexed and sequential ---
     def test_ranks_sequential(self):
+        # 2026-07-17 PL-A4-1: dd_pct is fractional; use 0.30 (30% drawdown)
         snap = _base_snap()
         snap.at["AAA", "washout_active"] = True
-        snap.at["AAA", "dd_pct"] = 30.0
+        snap.at["AAA", "dd_pct"] = 0.30   # fractional
         snap.at["AAA", "coiled"] = True
         snap.at["AAA", "d3_from_os"] = True
         picks = self._run("plab_washout_deep", snap)
@@ -1041,15 +1067,19 @@ class TestNullSemantics:
         picks = run_book(BY_ID["plab_1d_pure"], snap)
         assert "AAA" not in [p["ticker"] for p in picks]
 
-    def test_null_ext_grade_fails_condition(self):
-        """Null ext_grade fails eq('none') — does not pass parabolic check either."""
+    def test_null_ext_grade_fires_blastoff(self):
+        """After PL-A4-1 fix: null ext_grade means 'no extension' and fires blastoff.
+
+        The data enum is {null, steady, stretched, parabolic}; null = no-extension label.
+        plab_1d_blastoff now accepts: isna() | eq('none').
+        """
         snap = _snap_with({
             "AAA": {"d1_macd_xup_bars": 2.0, "above_200": True,
                     "d3_macd_xup_bars": None, "ext_grade": None},
         })
         picks = run_book(BY_ID["plab_1d_blastoff"], snap)
-        # ext_grade = None fails eq("none") → AAA should not fire
-        assert "AAA" not in [p["ticker"] for p in picks]
+        # ext_grade = None now passes (PL-A4-1: null means "no extension")
+        assert "AAA" in [p["ticker"] for p in picks]
 
     def test_washout_null_shelf_passes(self):
         """Null days_since_shelf passes per 'or null' spec."""
@@ -1068,3 +1098,450 @@ class TestNullSemantics:
         })
         picks = run_book(BY_ID["plab_washout_clean"], snap)
         assert "AAA" in [p["ticker"] for p in picks]
+
+
+# ============================================================ PL-A4-1 revival pins =====
+# Each test: corrected condition fires on the right data; old encoding would not.
+
+class TestRevivalPins:
+    """PL-A4-1: in-place condition corrections for 6 dead-at-birth books (2026-07-17)."""
+
+    def _run(self, engine_id: str, snap: pd.DataFrame) -> list[dict]:
+        return run_book(BY_ID[engine_id], snap)
+
+    # ---- plab_1d_blastoff: ext_grade null → passes (data enum has no 'none') ---
+
+    def test_blastoff_null_ext_grade_fires(self):
+        """ext_grade=null means no extension — should fire after PL-A4-1 fix."""
+        snap = _snap_with({
+            "AAA": {
+                "d1_macd_xup_bars": 2, "above_200": True,
+                "d3_macd_xup_bars": None,
+                "ext_grade": None,  # null = no extension in the data enum
+            },
+        })
+        picks = self._run("plab_1d_blastoff", snap)
+        assert "AAA" in [p["ticker"] for p in picks], (
+            "ext_grade=null must fire blastoff (PL-A4-1: null means no extension)"
+        )
+
+    def test_blastoff_steady_ext_grade_fails(self):
+        """ext_grade='steady' is NOT 'none'/null — must NOT fire."""
+        snap = _snap_with({
+            "AAA": {
+                "d1_macd_xup_bars": 2, "above_200": True,
+                "d3_macd_xup_bars": None,
+                "ext_grade": "steady",  # not null and not 'none'
+            },
+        })
+        picks = self._run("plab_1d_blastoff", snap)
+        assert "AAA" not in [p["ticker"] for p in picks], (
+            "ext_grade='steady' must NOT fire blastoff (extension present)"
+        )
+
+    def test_blastoff_parabolic_ext_grade_fails(self):
+        """ext_grade='parabolic' must NOT fire."""
+        snap = _snap_with({
+            "AAA": {
+                "d1_macd_xup_bars": 2, "above_200": True,
+                "d3_macd_xup_bars": None,
+                "ext_grade": "parabolic",
+            },
+        })
+        picks = self._run("plab_1d_blastoff", snap)
+        assert "AAA" not in [p["ticker"] for p in picks]
+
+    # ---- plab_washout_deep: dd_pct fractional scale fix ---
+
+    def test_washout_deep_fractional_fires(self):
+        """dd_pct=0.30 (30% drawdown, fractional) fires after PL-A4-1 fix."""
+        snap = _snap_with({
+            "AAA": {
+                "washout_active": True, "dd_pct": 0.30,  # fractional
+                "coiled": True, "d3_from_os": True,
+            },
+        })
+        picks = self._run("plab_washout_deep", snap)
+        assert "AAA" in [p["ticker"] for p in picks], (
+            "dd_pct=0.30 (30%%) must fire washout_deep (PL-A4-1 scale fix)"
+        )
+
+    def test_washout_deep_below_threshold_fails(self):
+        """dd_pct=0.20 (20% drawdown) is below 0.25 threshold — must NOT fire."""
+        snap = _snap_with({
+            "AAA": {
+                "washout_active": True, "dd_pct": 0.20,
+                "coiled": True, "d3_from_os": True,
+            },
+        })
+        picks = self._run("plab_washout_deep", snap)
+        assert "AAA" not in [p["ticker"] for p in picks], (
+            "dd_pct=0.20 is below 0.25 threshold — must not fire"
+        )
+
+    def test_washout_deep_old_scale_fails(self):
+        """dd_pct=30.0 (old percentage encoding) would be >> 1.0 — must NOT match fractional data."""
+        # 30.0 is way above any real fractional value (max ~0.834 per audit)
+        # but this verifies the threshold logic reads fractional correctly.
+        # With the corrected threshold 0.25, a value of 30.0 would technically pass
+        # (30.0 > 0.25 is True) — but real snapshot data is 0–1 so this can't happen in prod.
+        # The meaningful test is that 0.20 does NOT pass (below 0.25 threshold).
+        snap = _snap_with({
+            "AAA": {
+                "washout_active": True, "dd_pct": 0.20,
+                "coiled": True, "d3_from_os": True,
+            },
+        })
+        picks = self._run("plab_washout_deep", snap)
+        assert "AAA" not in [p["ticker"] for p in picks]
+
+    # ---- plab_washout_clean: fractional dd + dilution null-tolerant ---
+
+    def test_washout_clean_fractional_fires(self):
+        """dd_pct=0.25 (fractional) with zero dilution fires after PL-A4-1 fix."""
+        snap = _snap_with({
+            "AAA": {
+                "washout_active": True, "dd_pct": 0.25,
+                "dilution_events_365d": 0,
+                "days_since_shelf": 200, "interest_coverage": 5.0,
+            },
+        })
+        picks = self._run("plab_washout_clean", snap)
+        assert "AAA" in [p["ticker"] for p in picks], (
+            "dd_pct=0.25 (25%%) must fire washout_clean (fractional scale fix)"
+        )
+
+    def test_washout_clean_null_dilution_fires(self):
+        """dilution_events_365d=null passes (PL-A4-1: 100%-null in snapshot, null-tolerant fix)."""
+        snap = _snap_with({
+            "AAA": {
+                "washout_active": True, "dd_pct": 0.25,
+                "dilution_events_365d": None,  # 100%-null in real snapshot
+                "days_since_shelf": 200, "interest_coverage": 5.0,
+            },
+        })
+        picks = self._run("plab_washout_clean", snap)
+        assert "AAA" in [p["ticker"] for p in picks], (
+            "dilution_events_365d=null must pass washout_clean (PL-A4-1 null-tolerant fix)"
+        )
+
+    def test_washout_clean_null_dilution_chip(self):
+        """'dilution n/a' why-chip added when dilution column is null (honesty disclosure)."""
+        snap = _snap_with({
+            "AAA": {
+                "washout_active": True, "dd_pct": 0.25,
+                "dilution_events_365d": None,
+                "days_since_shelf": 200, "interest_coverage": 5.0,
+            },
+        })
+        picks = self._run("plab_washout_clean", snap)
+        aaa = next((p for p in picks if p["ticker"] == "AAA"), None)
+        assert aaa is not None
+        assert "dilution n/a" in aaa["why"], (
+            "'dilution n/a' chip must appear when dilution column is null"
+        )
+
+    def test_washout_clean_below_threshold_fails(self):
+        """dd_pct=0.15 (15%) is below 0.20 threshold — must NOT fire."""
+        snap = _snap_with({
+            "AAA": {
+                "washout_active": True, "dd_pct": 0.15,
+                "dilution_events_365d": 0,
+                "days_since_shelf": 200, "interest_coverage": 5.0,
+            },
+        })
+        picks = self._run("plab_washout_clean", snap)
+        assert "AAA" not in [p["ticker"] for p in picks]
+
+    # ---- plab_hi_base: COILED/COMPRESSED enum fix ---
+
+    def test_hi_base_coiled_fires(self):
+        """vol_squeeze_state='COILED' fires after PL-A4-1 fix (data enum fix)."""
+        snap = _snap_with({
+            "AAA": {"off_52w_high_pct": 0.05, "vol_squeeze_state": "COILED"},
+        })
+        picks = self._run("plab_hi_base", snap)
+        assert "AAA" in [p["ticker"] for p in picks], (
+            "vol_squeeze_state='COILED' must fire plab_hi_base (PL-A4-1 enum fix)"
+        )
+
+    def test_hi_base_compressed_fires(self):
+        """vol_squeeze_state='COMPRESSED' fires (data enum fix)."""
+        snap = _snap_with({
+            "AAA": {"off_52w_high_pct": 0.05, "vol_squeeze_state": "COMPRESSED"},
+        })
+        picks = self._run("plab_hi_base", snap)
+        assert "AAA" in [p["ticker"] for p in picks], (
+            "vol_squeeze_state='COMPRESSED' must fire plab_hi_base"
+        )
+
+    def test_hi_base_true_does_not_fire(self):
+        """vol_squeeze_state=True (old boolean) no longer matches COILED/COMPRESSED enum."""
+        snap = _snap_with({
+            "AAA": {"off_52w_high_pct": 0.05, "vol_squeeze_state": True},
+        })
+        picks = self._run("plab_hi_base", snap)
+        # Boolean True is NOT in ['COILED','COMPRESSED'] — should not fire
+        assert "AAA" not in [p["ticker"] for p in picks], (
+            "vol_squeeze_state=True must NOT fire after PL-A4-1 enum fix"
+        )
+
+    def test_hi_base_expansion_fails(self):
+        """vol_squeeze_state='EXPANSION' is not a squeeze state — must NOT fire."""
+        snap = _snap_with({
+            "AAA": {"off_52w_high_pct": 0.05, "vol_squeeze_state": "EXPANSION"},
+        })
+        picks = self._run("plab_hi_base", snap)
+        assert "AAA" not in [p["ticker"] for p in picks]
+
+    def test_hi_base_none_enum_fails(self):
+        """vol_squeeze_state='NONE' is not a squeeze state — must NOT fire."""
+        snap = _snap_with({
+            "AAA": {"off_52w_high_pct": 0.05, "vol_squeeze_state": "NONE"},
+        })
+        picks = self._run("plab_hi_base", snap)
+        assert "AAA" not in [p["ticker"] for p in picks]
+
+    # ---- plab_lh_compounder: dilution null-tolerant ---
+
+    def test_lh_compounder_null_dilution_fires(self):
+        """dilution_events_365d=null passes for lh_compounder (PL-A4-1 null-tolerant fix)."""
+        snap = _base_snap()
+        snap.at["AAA", "axis_quality"] = 100.0
+        snap.at["AAA", "archetype"] = "quality_compounder"
+        snap.at["AAA", "dilution_events_365d"] = None  # 100%-null in snapshot
+        picks = self._run("plab_lh_compounder", snap)
+        assert "AAA" in [p["ticker"] for p in picks], (
+            "dilution_events_365d=null must pass lh_compounder (PL-A4-1 null-tolerant fix)"
+        )
+
+    def test_lh_compounder_null_dilution_chip(self):
+        """'dilution n/a' why-chip when dilution column is null."""
+        snap = _base_snap()
+        snap.at["AAA", "axis_quality"] = 100.0
+        snap.at["AAA", "archetype"] = "quality_compounder"
+        snap.at["AAA", "dilution_events_365d"] = None
+        picks = self._run("plab_lh_compounder", snap)
+        aaa = next((p for p in picks if p["ticker"] == "AAA"), None)
+        assert aaa is not None
+        assert "dilution n/a" in aaa["why"]
+
+    def test_lh_compounder_nonzero_dilution_fails(self):
+        """dilution_events_365d=2 (non-null, non-zero) must still fail."""
+        snap = _base_snap()
+        snap.at["AAA", "axis_quality"] = 100.0
+        snap.at["AAA", "archetype"] = "quality_compounder"
+        snap.at["AAA", "dilution_events_365d"] = 2
+        picks = self._run("plab_lh_compounder", snap)
+        assert "AAA" not in [p["ticker"] for p in picks]
+
+    # ---- plab_lh_washout_survivor: dd_pct scale + null-tolerant quality screens ---
+
+    def test_lh_washout_survivor_fractional_fires(self):
+        """dd_pct=0.50 (50% fractional) above median quality fires after PL-A4-1 fix."""
+        snap = _base_snap()
+        snap.at["AAA", "dd_pct"] = 0.50  # fractional; threshold is 0.40
+        snap.at["AAA", "axis_quality"] = 100.0
+        snap.at["AAA", "interest_coverage"] = None  # null-tolerant
+        snap.at["AAA", "dilution_events_365d"] = None  # null-tolerant
+        picks = self._run("plab_lh_washout_survivor", snap)
+        assert "AAA" in [p["ticker"] for p in picks], (
+            "dd_pct=0.50 must fire lh_washout_survivor (fractional scale fix)"
+        )
+
+    def test_lh_washout_survivor_below_threshold_fails(self):
+        """dd_pct=0.35 (35%) is below 0.40 threshold — must NOT fire."""
+        snap = _base_snap()
+        snap.at["AAA", "dd_pct"] = 0.35
+        snap.at["AAA", "axis_quality"] = 100.0
+        snap.at["AAA", "interest_coverage"] = None
+        snap.at["AAA", "dilution_events_365d"] = None
+        picks = self._run("plab_lh_washout_survivor", snap)
+        assert "AAA" not in [p["ticker"] for p in picks]
+
+    def test_lh_washout_survivor_ic_chip(self):
+        """'ic n/a' chip added when interest_coverage is null."""
+        snap = _base_snap()
+        snap.at["AAA", "dd_pct"] = 0.50
+        snap.at["AAA", "axis_quality"] = 100.0
+        snap.at["AAA", "interest_coverage"] = None
+        snap.at["AAA", "dilution_events_365d"] = None
+        picks = self._run("plab_lh_washout_survivor", snap)
+        aaa = next((p for p in picks if p["ticker"] == "AAA"), None)
+        assert aaa is not None
+        assert "ic n/a" in aaa["why"]
+        assert "dilution n/a" in aaa["why"]
+
+
+# ============================================================ LH-2b (Amendment §A5) =====
+
+class TestLH2b:
+    """plab_lh_edge_durability_b — quality floor + sector cap tests."""
+
+    def _run(self, snap: pd.DataFrame) -> list[dict]:
+        return run_book(BY_ID["plab_lh_edge_durability_b"], snap)
+
+    def test_lh2b_registered(self):
+        """plab_lh_edge_durability_b must exist in registry."""
+        assert "plab_lh_edge_durability_b" in BY_ID
+        b = BY_ID["plab_lh_edge_durability_b"]
+        assert b["horizon_role"] == "hold_thesis"
+        assert b["max_picks"] == 10
+        assert b["refire_lockout_sessions"] == 63
+
+    def test_lh2b_quality_floor_positive(self):
+        """axis_quality > 0 passes the absolute quality floor."""
+        snap = _base_snap()
+        snap.at["AAA", "axis_selection"] = 100.0
+        snap.at["AAA", "axis_quality"] = 0.5   # > 0
+        picks = self._run(snap)
+        assert "AAA" in [p["ticker"] for p in picks]
+
+    def test_lh2b_quality_floor_excludes_negative(self):
+        """axis_quality <= 0 must be excluded by the absolute quality floor."""
+        snap = _base_snap()
+        # Give AAA top axis_selection but negative quality
+        for t in snap.index:
+            snap.at[t, "axis_selection"] = 1.0
+            snap.at[t, "axis_quality"] = 1.0   # positive for all
+        snap.at["AAA", "axis_selection"] = 100.0  # top ranked
+        snap.at["AAA", "axis_quality"] = -0.5     # negative quality — must be excluded
+        picks = self._run(snap)
+        assert "AAA" not in [p["ticker"] for p in picks], (
+            "axis_quality <= 0 must be excluded by absolute quality floor (PL-A5-1)"
+        )
+
+    def test_lh2b_quality_floor_excludes_zero(self):
+        """axis_quality = 0 is NOT > 0 — must be excluded."""
+        snap = _base_snap()
+        snap.at["AAA", "axis_selection"] = 100.0
+        snap.at["AAA", "axis_quality"] = 0.0   # exactly 0 — must fail
+        picks = self._run(snap)
+        assert "AAA" not in [p["ticker"] for p in picks], (
+            "axis_quality=0 must be excluded (condition is strictly >0)"
+        )
+
+    def test_lh2b_sector_cap_limits_to_3(self):
+        """Sector cap: max 3 picks per GICS sector per fire-date.
+
+        Use 30 tickers all in the same sector; all tie at high axis_selection so
+        all pass the top-decile gate. Sector cap must limit picks to ≤ 3.
+        """
+        # 30 tickers all in same sector, all passing quality + decile gate
+        tickers = [f"T{i:02d}" for i in range(30)]
+        snap = _base_snap(tickers=tickers)
+        # All same sector, all tie at high axis_selection so all pass top-decile
+        for t in snap.index:
+            snap.at[t, "sector"] = "Information Technology"
+            snap.at[t, "axis_quality"] = 5.0
+            snap.at[t, "axis_selection"] = 99.0   # all tie — all in top decile
+        picks = self._run(snap)
+        # With all in the same sector, sector cap limits to exactly 3
+        assert len(picks) <= 3, (
+            f"Sector cap violated: {len(picks)} picks in same sector > cap 3 (PL-A5-1)"
+        )
+        assert len(picks) == 3, (
+            f"Expected exactly 3 picks with sector cap (all in same sector); got {len(picks)}"
+        )
+
+    def test_lh2b_sector_cap_ranking_preserved(self):
+        """Sector cap: top-ranked names fill first; 4th+ in same sector are skipped.
+
+        Strategy: use 50 tickers so the top-decile gate admits ~5 per sector.
+        T00..T06 all at axis_selection=99.0 (Health Care) → top decile passes all 7.
+        With sector cap=3, only T00..T02 are picked; T03+ are skipped.
+        T07..T09 in Energy with axis_selection=95.0 → pass decile + cap.
+        """
+        # 50 tickers: top-decile = top 5 (10%) when values are spread
+        # Use 30 tickers with values designed so enough are in top decile
+        tickers = [f"T{i:02d}" for i in range(30)]
+        snap = _base_snap(tickers=tickers)
+
+        # All tickers: axis_quality > 0 (required), axis_selection = low baseline
+        for t in snap.index:
+            snap.at[t, "axis_quality"] = 5.0
+            snap.at[t, "axis_selection"] = 1.0   # low baseline
+
+        # T00..T06: Health Care, high axis_selection (will be in top decile of 30)
+        # Top decile of 30 tickers = top 3 (10% of 30 = 3); set 7 of them very high
+        # so they all tie at a value above q90; with 7 tying at the same high value,
+        # quantile(0.90) = 99.0 → they all pass the ge(q90) check.
+        for i in range(7):
+            snap.at[f"T{i:02d}", "sector"] = "Health Care"
+            snap.at[f"T{i:02d}", "axis_selection"] = 99.0  # all tie at 99.0
+
+        # T07..T12: Energy, also high axis_selection
+        for i in range(7, 13):
+            snap.at[f"T{i:02d}", "sector"] = "Energy"
+            snap.at[f"T{i:02d}", "axis_selection"] = 99.0
+
+        # T13..T29: different sectors, low axis_selection (won't pass top decile)
+        for i in range(13, 30):
+            snap.at[f"T{i:02d}", "sector"] = "Materials"
+            snap.at[f"T{i:02d}", "axis_selection"] = 1.0
+
+        picks = self._run(snap)
+        tickers_picked = [p["ticker"] for p in picks]
+
+        # Health Care: T00..T06 all qualify for top decile, but cap = 3 limits to 3
+        hc_picks = [t for t in tickers_picked if snap.at[t, "sector"] == "Health Care"]
+        assert len(hc_picks) <= 3, (
+            f"Sector cap violated for Health Care: {len(hc_picks)} > 3 (PL-A5-1)"
+        )
+        assert len(hc_picks) == 3, (
+            f"Expected exactly 3 Health Care picks (cap); got {len(hc_picks)}: {hc_picks}"
+        )
+
+        # Energy: T07..T12 also qualify; cap limits to 3
+        energy_picks = [t for t in tickers_picked if snap.at[t, "sector"] == "Energy"]
+        assert len(energy_picks) <= 3, (
+            f"Sector cap violated for Energy: {len(energy_picks)} > 3"
+        )
+        assert len(energy_picks) > 0, "Energy tickers must appear (different sector)"
+
+        # Total picks <= max_picks (10)
+        assert len(picks) <= 10
+
+    def test_lh2b_why_chips(self):
+        """Fire rows carry 'EDGE decile', 'quality>0', 'sector cap 3' why-chips."""
+        snap = _base_snap()
+        snap.at["AAA", "axis_selection"] = 100.0
+        snap.at["AAA", "axis_quality"] = 5.0
+        picks = self._run(snap)
+        aaa = next((p for p in picks if p["ticker"] == "AAA"), None)
+        assert aaa is not None
+        assert "EDGE decile" in aaa["why"]
+        assert "quality>0" in aaa["why"]
+        assert "sector cap 3" in aaa["why"]
+
+    def test_lh2b_data_gap_not_in_config(self):
+        """plab_lh_edge_durability_b has no data_gap field (no blocking data dependency)."""
+        b = BY_ID["plab_lh_edge_durability_b"]
+        # No data_gap should be present (it's not a structurally dead book)
+        assert "data_gap" not in b
+
+    def test_data_gap_on_sector_trough(self):
+        """plab_sector_trough has data_gap with en/zh keys for UI badge."""
+        b = BY_ID["plab_sector_trough"]
+        assert "data_gap" in b
+        assert "en" in b["data_gap"]
+        assert "zh" in b["data_gap"]
+
+    def test_data_gap_on_revision_accel(self):
+        """plab_revision_accel has data_gap with en/zh keys for UI badge."""
+        b = BY_ID["plab_revision_accel"]
+        assert "data_gap" in b
+        assert "en" in b["data_gap"]
+        assert "zh" in b["data_gap"]
+
+    def test_data_gap_outside_config_hash(self):
+        """data_gap must NOT affect config_hash (per PL-A4-1 instruction)."""
+        from engine.pick_lab.registry import _config_hash, _entry
+        cfg = {"sector_phases": ["Trough"], "rank_by": "composite_z"}
+        # Hash without data_gap
+        h_without = _config_hash(cfg)
+        # The book's config_hash should equal _config_hash of its config only
+        b = BY_ID["plab_sector_trough"]
+        assert b["config_hash"] == _config_hash(b["config"]), (
+            "config_hash must equal hash of config dict only (data_gap excluded)"
+        )

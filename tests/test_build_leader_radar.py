@@ -578,16 +578,23 @@ class TestConsumptionNotRecomputation:
 
 
 class TestRegistryBookCount:
-    """Registry 27 books + unique config_hashes."""
+    """Registry integrity: Family H books survive + config_hashes globally unique.
 
-    def test_registry_count_27(self):
+    Count-agnostic on purpose (2026-07-17): other programs add books to the shared
+    registry (28th = plab_lh_edge_durability_b, PR #2743); an exact-count pin here
+    breaks THEIR CI. The invariants this suite owns are (a) our two Family H books
+    exist and (b) no hash collisions anywhere — both count-independent. The exact
+    count is pinned where it belongs: tests/test_pick_lab_core.py::TestRegistry.
+    """
+
+    def test_registry_min_count(self):
         from engine.pick_lab.registry import REGISTRY
-        assert len(REGISTRY) == 27, f"Expected 27 books, got {len(REGISTRY)}"
+        assert len(REGISTRY) >= 27, f"Registry shrank: {len(REGISTRY)} books"
 
-    def test_config_hashes_unique_27(self):
+    def test_config_hashes_unique(self):
         from engine.pick_lab.registry import REGISTRY
         hashes = [b["config_hash"] for b in REGISTRY]
-        assert len(set(hashes)) == 27, "Duplicate config_hash detected"
+        assert len(set(hashes)) == len(hashes), "Duplicate config_hash detected"
 
     def test_leader_precipice_in_registry(self):
         from engine.pick_lab.registry import BY_ID

@@ -65,6 +65,80 @@ def _status_badge(status: str | None) -> dict:
     return {"css": "badge-accruing", "label_en": "ACCRUING", "label_zh": "累积中"}
 
 
+def _enrich_horizon_ladder(row: dict) -> dict:
+    """Extract and format the per-horizon ladder fields (h5/h10/h21/h63).
+
+    Returns a dict with keys:
+        ladder: list of {horizon, wr_abs_fmt, wr_exc_fmt, med_exc_fmt, capture_fmt}
+        path_en: plain-word EN path summary line
+        path_zh: plain-word ZH path summary line
+    All values are em-dash when the underlying data is null (grades not yet matured).
+    """
+    horizons = [
+        ("h5",  "5d"),
+        ("h10", "10d"),
+        ("h21", "21d"),
+        ("h63", "63d"),
+    ]
+    ladder = []
+    for key, label in horizons:
+        wr_abs = row.get(f"{key}_wr_abs")
+        wr_exc = row.get(f"{key}_wr_exc")
+        med_exc = row.get(f"{key}_med_exc")
+        capture = row.get(f"{key}_capture")
+        ladder.append({
+            "horizon": label,
+            "wr_abs_fmt": _fmt_pct(wr_abs, signed=False),
+            "wr_exc_fmt": _fmt_pct(wr_exc, signed=True),
+            "med_exc_fmt": _fmt_pct(med_exc, signed=True),
+            "capture_fmt": _fmt_pct(capture, signed=False),
+        })
+
+    # Path summary (plain words)
+    t_mfe = row.get("path25_med_t_mfe")       # median session of peak (1-based)
+    t_mae = row.get("path25_med_t_mae")        # median session of trough
+    mfe = row.get("path25_med_mfe")            # median best gain
+    med_uw = row.get("path25_med_underwater")  # median fraction of sessions underwater
+    mae = row.get("path25_med_abs_mae")        # median worst dip (absolute)
+    pct_mae_first = row.get("path25_pct_mae_first")  # fraction where trough before peak
+
+    # Build plain-word path line only when at least t_mfe is available
+    if t_mfe is not None:
+        t_mfe_int = int(round(t_mfe))
+        mfe_pct = f"{mfe * 100:.1f}%" if mfe is not None else "—"
+        mae_pct = f"{mae * 100:.1f}%" if mae is not None else "—"
+        if pct_mae_first is not None:
+            pct_first_int = int(round(pct_mae_first * 100))
+            dip_timing = (
+                f"dip usually before peak ({pct_first_int}% of cases)"
+                if pct_mae_first >= 0.5
+                else f"peak usually before dip ({100 - pct_first_int}% of cases)"
+            )
+            dip_timing_zh = (
+                f"下跌通常早于峰值（{pct_first_int}%的情况）"
+                if pct_mae_first >= 0.5
+                else f"峰值通常早于下跌（{100 - pct_first_int}%的情况）"
+            )
+        else:
+            dip_timing = "dip timing: —"
+            dip_timing_zh = "下跌时机：—"
+
+        path_en = (
+            f"Peak typically day {t_mfe_int}; {dip_timing}; "
+            f"median best gain {mfe_pct}; median worst dip −{mae_pct}"
+        )
+        t_mfe_zh = t_mfe_int
+        path_zh = (
+            f"峰值通常第{t_mfe_zh}日；{dip_timing_zh}；"
+            f"中位最佳收益{mfe_pct}；中位最大回撤−{mae_pct}"
+        )
+    else:
+        path_en = "Path data arriving as grades mature"
+        path_zh = "路径数据随评级成熟而填入"
+
+    return {"ladder": ladder, "path_en": path_en, "path_zh": path_zh}
+
+
 def _enrich_scoreboard_row(row: dict) -> dict:
     """Add display-formatted fields to a scoreboard row from the JSON artifact."""
     r = dict(row)
@@ -89,6 +163,21 @@ def _enrich_scoreboard_row(row: dict) -> dict:
     r["is_random"] = r.get("engine_id") == "plab_random_ctrl"
     # is_inverse: plab_topping_avoid is scored as avoid-accuracy
     r["is_inverse"] = r.get("engine_id") == "plab_topping_avoid"
+
+    # Task 1 — horizon ladder + capture + path detail
+    r["horizon_detail"] = _enrich_horizon_ladder(r)
+
+    # Task 2 — data_gap badge (plab_sector_trough, plab_revision_accel carry data_gap field)
+    dg = r.get("data_gap")
+    if dg and isinstance(dg, dict):
+        r["data_gap_badge"] = {
+            "present": True,
+            "reason_en": dg.get("en", "Awaiting feed"),
+            "reason_zh": dg.get("zh", "等待数据源"),
+        }
+    else:
+        r["data_gap_badge"] = {"present": False}
+
     return r
 
 
@@ -273,21 +362,26 @@ def build_vm(
         lh_as_of = longhold_dict.get("as_of")
         first_maturation_eta = longhold_dict.get("first_maturation_eta")
 
+    # Task 3 — LH book list extended to 4 entries; LH-2 v1 flagged as no-gate control
     lh_book_ids = [
-        ("plab_lh_compounder", "LH Compounder Grid", "长持复利网格"),
-        ("plab_lh_edge_durability", "LH EDGE Durability Grid", "长持EDGE耐久网格"),
-        ("plab_lh_washout_survivor", "LH Washout Survivor Grid", "长持洗盘幸存网格"),
+        ("plab_lh_compounder",           "LH Compounder Grid",              "长持复利网格",            False),
+        ("plab_lh_edge_durability",      "LH EDGE Durability (no-gate control)", "长持EDGE耐久（无门控对照）", True),
+        ("plab_lh_washout_survivor",     "LH Washout Survivor Grid",        "长持洗盘幸存网格",        False),
+        ("plab_lh_edge_durability_b",    "LH EDGE Durability B (gated)",    "长持EDGE耐久B（有门控）",   False),
     ]
     lh_books: list[dict] = []
-    for eid, en, zh in lh_book_ids:
+    for eid, en, zh, is_control in lh_book_ids:
         b_data = lh_books_raw.get(eid) or {}
         picks_today = [_enrich_pick(p) for p in (b_data.get("picks_today") or [])]
         recent_fires = [_enrich_fire(f) for f in (b_data.get("recent_fires") or [])]
         all_fires_raw = fires_by_book.get(eid) or []
+        # Passthrough why-chips that pick rows may carry (e.g. 'dilution n/a', 'ic n/a')
+        # _enrich_pick already passes the why list through; template renders them.
         lh_books.append({
             "engine_id": eid,
             "name_en": en,
             "name_zh": zh,
+            "is_control": is_control,
             "picks_today": picks_today,
             "recent_fires": recent_fires,
             "all_fires": _enrich_all_fires(all_fires_raw),
