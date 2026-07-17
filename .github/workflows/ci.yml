@@ -754,11 +754,16 @@ jobs:
     # languages mashed together. This scans template SOURCE for CJK, t() calls, or
     # zh-variable interpolations inside title attributes (the fix is data-tip-en/
     # data-tip-zh + the theme.js popover, an English-only title, or no title).
+    # Same class, different door (#2705): <title> is RCDATA, so a t()/td() in a
+    # template <title>/{% block title %} — or a '<span' in a rendered page title —
+    # ships literal markup as the browser-tab text; the sweep covers site/ too.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: no translated text in title attributes
-        run: python3 scripts/check_title_i18n.py templates
+      - name: guard self-test (known-bad flagged, known-good clean)
+        run: python3 scripts/check_title_i18n.py --self-test
+      - name: no translated text in title attributes or markup in <title> RCDATA
+        run: python3 scripts/check_title_i18n.py templates site
 
   signal-contract:
     # HARD pre-merge gate for the signal→chart §7 contract (research/signal_engine/SCHEMA.json,
