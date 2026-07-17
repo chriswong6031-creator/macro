@@ -148,6 +148,47 @@ _CONVICTION_ETF_FALLBACK: dict[str, str] = {
 }
 
 
+def _apply_momentum_cooling_demotion(act_now: dict, themes_by_id: dict) -> None:
+    """MLC-W4: move buy items whose theme has rollover_risk band=='high' AND the new
+    histogram-fade leg fired (hist_fade==True) into the conflicted shelf.
+
+    Mutates act_now in-place.  De-escalation ONLY (never escalation).
+    Run AFTER _apply_sector_conflict_demotion so sector-demoted items are already gone
+    from buy; an item already in conflicted is NOT re-stamped.
+    AssertionError (logic bug) propagates by design — the sibling W2b pass has the same
+    contract; data errors fail open.
+
+    Pre-registered-arbitrary (MLC-W4; frozen — no tuning on observed cases).
+    """
+    _orig_total = len(act_now["buy"]) + len(act_now["conflicted"])
+
+    _remaining = []
+    for _item_w4 in act_now["buy"]:
+        _bid = _item_w4.get("id") or ""
+        _theme = themes_by_id.get(_bid) or {}
+        _rr = (_theme.get("textures") or {}).get("rollover_risk") or {}
+        _band = _rr.get("band")
+        _hist_fade = _rr.get("hist_fade", False)
+        # Gate: BOTH band==high AND the histogram-fade leg fired
+        if _band == "high" and _hist_fade:
+            # Read hist_fade_n directly — the int is threaded from basket_score.rollover_risk.
+            _n = _rr.get("hist_fade_n")
+            _n_str = str(int(_n)) if isinstance(_n, (int, float)) and _n == _n else "multiple"
+            act_now["conflicted"].append({
+                **_item_w4,
+                "reason_en": f"momentum cooling — {_n_str} straight sessions of fade",
+                "reason_zh": f"动能降温 — 连续{_n_str}日走弱",
+                "cooling": True,
+            })
+        else:
+            _remaining.append(_item_w4)
+
+    act_now["buy"] = _remaining
+    # Escalation impossible: total must be conserved (items only move OUT of buy)
+    assert len(act_now["buy"]) + len(act_now["conflicted"]) == _orig_total, \
+        "MLC-W4 invariant: cooling demotion must not create or destroy items"
+
+
 def _apply_sector_conflict_demotion(act_now: dict, site_root: "Path") -> None:
     """MLC-W2b: move buy items whose home sector rates 'Reduce' into the conflicted shelf.
 
@@ -1235,6 +1276,24 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         )
         act_now["buy"] = _w2b_orig_buys
         act_now["conflicted"] = []
+
+    # MLC-W4: Momentum-cooling demotion — run AFTER W2b so sector-demoted items are already
+    # out of buy.  Demotes to conflicted when rollover_risk.band=="high" AND hist_fade==True.
+    # Fail-open: on any exception, restore buy snapshot and leave conflicted unchanged.
+    _w4_orig_buys = list(act_now["buy"])
+    _w4_orig_conflicted = list(act_now["conflicted"])
+    _themes_by_id = {th["id"]: th for th in themes}
+    try:
+        _apply_momentum_cooling_demotion(act_now, _themes_by_id)
+    except AssertionError:
+        raise  # invariant violation — logic bug, must surface
+    except Exception as _e_w4:  # noqa: BLE001 — fail-open
+        import logging as _log_w4
+        _log_w4.getLogger(__name__).warning(
+            "MLC-W4 cooling demotion failed (fail-open) : %s", _e_w4
+        )
+        act_now["buy"] = _w4_orig_buys
+        act_now["conflicted"] = _w4_orig_conflicted
 
     # MLC-W5: strip _live_tickers from theme dicts now that _act() has consumed them.
     # _act() is called above (enter_buys/acc_buys/reduce_) and reads _live_tickers via closure.
