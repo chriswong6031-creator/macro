@@ -25,7 +25,9 @@ Analyst buy-share feed (LR-R2 CROWDED chip e, `analyst_saturated`):
   num_analysts — no rating-category counts, so no buy-share is derivable from it.
   Null-honest: store absent / ticker uncovered / latest period older than
   _ANALYST_MAX_AGE_DAYS → analyst_buy_pct=None → chip null (never False).
-  Store born 2026-06-20 → young-data tag per LR-R14 (coverage.analyst_note + page banner).
+  Store birth is read from the parquet's `_first_seen` (never hardcoded — the collector
+  was key-blocked until 2026-07-16, so the store was born late) → young-data tag per
+  LR-R14 (coverage.analyst_note + page banner); store absent → note says so.
 
 Output artifact:
   site/leaderradar/radar.json         — schema leader_radar.v1
@@ -2143,6 +2145,18 @@ def build(
         log.warning("build_leader_radar: analyst buy-share load failed: %s", e)
     analyst_covered = [t for t in universe if t in analyst_store]
     analyst_uncovered = [t for t in universe if t not in analyst_store]
+    # LR-R14 young-data tag: store birth read from the parquet itself (min _first_seen),
+    # never hardcoded — FINNHUB key was absent until 2026-07-16, so the store was born
+    # well after its 2026-06-20 charter date and any fixed date would be a false claim.
+    analyst_store_since = None
+    try:
+        _rec_p = data_root / "finnhub" / "recommendation.parquet"
+        if _rec_p.exists():
+            _fs = pd.read_parquet(_rec_p, columns=["_first_seen"])["_first_seen"].dropna()
+            if len(_fs):
+                analyst_store_since = str(_fs.min())[:10]
+    except Exception as e:  # noqa: BLE001
+        log.debug("build_leader_radar: analyst store-birth read failed: %s", e)
 
     # RS rank history: {ticker: DataFrame(rs_rank) | None}  (vectorized)
     rs_rank_history_map: dict[str, Any] = {}
@@ -2602,13 +2616,16 @@ def build(
             "tape_note": "4H data available for select core names only; null-honest elsewhere",
             "rs_depth_note": "rs_series full-history backfill on first run (rs_series depth == ohlcv depth)",
             # LRV-R1e: analyst buy-share coverage (finnhub recommendation-trends,
-            # ~120-name basket watchlist ⊂ universe; store born 2026-06-20 → young data)
+            # ~120-name basket watchlist ⊂ universe; store-birth date from _first_seen)
             "analyst_covered": len(analyst_covered),
             "analyst_uncovered": analyst_uncovered[:50],  # cap list
             "analyst_note": (
                 "analyst buy-share from finnhub recommendation-trends "
-                "(monthly rating counts, ~120-name watchlist; young data — store live since 2026-06-20); "
-                "uncovered or stale-period names carry a null chip"
+                "(monthly rating counts, ~120-name watchlist; "
+                + (f"young data — store live since {analyst_store_since}); "
+                   if analyst_store_since else
+                   "store absent — chip null pending first accrual); ")
+                + "uncovered or stale-period names carry a null chip"
             ),
         },
         "regime": regime,
