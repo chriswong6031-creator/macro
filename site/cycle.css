@@ -10,7 +10,7 @@
    site/markets.html). mastermind-x.com is fronted by the TencentEdgeOne CDN,
    which caches CSS aggressively by full URL, so BUMP the ?v= on every one of
    those links whenever you edit this file — otherwise the edge keeps serving
-   the stale copy to users. Currently v=2 (v=1 = the unversioned original). */
+   the stale copy to users. Currently v=4 (v=1 = the unversioned original). */
 
 .cyc-page { --c: var(--link); --rad: 16px; --ease: cubic-bezier(.22,.61,.36,1); }
 .cyc-wrap { max-width: 1320px; margin: 0 auto; padding: 0 22px 72px; }
@@ -494,6 +494,8 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
   padding: 3px 8px; border-radius: 999px; white-space: nowrap; cursor: help; }
 .cyc-tier.tier-measured { color: var(--text); background: color-mix(in srgb, var(--text) 10%, transparent); border: 1px solid color-mix(in srgb, var(--text) 30%, transparent); }
 .cyc-tier.tier-frame { color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent); }
+/* stale-tape chip (per-band degrade): amber, same hover-hint mechanics as the tier chips */
+.cyc-tier.tier-stale { color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent); }
 /* the hover "how computed" micro-line — proxy/basis/epoch/fitness detail */
 .cyc-tier-h { display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; width: max-content; max-width: 230px;
   font-size: 10.5px; font-weight: 500; letter-spacing: 0; text-transform: none; text-align: left; line-height: 1.35;

@@ -279,3 +279,42 @@ def test_committed_engine_js_parses_if_present():
             for b in card["bands"]:
                 if b["tier"] == "frame":
                     assert "osc" not in b and "proj" not in b and b["position_gauge"] is False
+
+
+# ── (6) STALE-TAPE DEGRADE (data-guarded) ────────────────────────────────────
+def test_stale_indpro_degrades_only_business(monkeypatch):
+    """Regression for the 2026-07-16/17 freeze: a stale INDPRO must degrade ONLY the
+    business band — compute() still returns the full payload, the business band still
+    renders from its last data and carries band['stale'] for the card chip, and every
+    other card (semis, memory, …) is fresh and unflagged."""
+    import pandas as pd
+    if not any(_have(b) for _, b in cp.measured_bands()):
+        pytest.skip("no measured tapes on disk")
+    real_load = cp.load_series
+    cutoff = pd.Timestamp.now().normalize() - pd.Timedelta(days=120)
+
+    def truncating_load(band):
+        s = real_load(band)
+        refs = band.get("series")
+        refs = [refs] if isinstance(refs, str) else (refs or [])
+        if any("INDPRO" in r for r in refs):
+            attrs = dict(s.attrs)
+            s = s[s.index <= cutoff]
+            s.attrs.update(attrs)
+        return s
+
+    monkeypatch.setattr(cp, "load_series", truncating_load)
+    payload = build_cycle.compute(ROOT)          # must NOT raise
+
+    biz = payload["cycles"]["business"]["bands"][0]
+    assert biz.get("stale"), "stale INDPRO must flag the business band"
+    assert biz["stale"]["days"] > biz["stale"]["limit"]
+    assert biz["osc"] and biz["turns"], "stale band still renders from its last data"
+    assert biz["health"]["ok"] is False
+
+    for cid in ("semis", "memory"):
+        mb = next(b for b in payload["cycles"][cid]["bands"] if b["tier"] == "measured")
+        assert not mb.get("stale"), f"{cid} must be unaffected by the stale INDPRO"
+
+    assert payload["census"]["stale_bands"] >= 1
+    assert payload["census"]["cards"] >= 20      # the page is whole, not aborted

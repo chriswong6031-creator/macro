@@ -18,7 +18,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "^SOX index level backs the falsifier; SOXX ETF is the tradeable cycle"
+          "note": "^SOX index level backs the falsifier; SOXX ETF is the tradeable cycle",
+          "stale_limit_days": null
         }
       ]
     },
@@ -41,7 +42,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "FRED WTI spot preferred over continuous futures for ZigZag cleanliness"
+          "note": "FRED WTI spot preferred over continuous futures for ZigZag cleanliness",
+          "stale_limit_days": null
         }
       ]
     },
@@ -61,7 +63,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "falsifier $/t = $/lb \u00d7 2204.62"
+          "note": "falsifier $/t = $/lb \u00d7 2204.62",
+          "stale_limit_days": null
         }
       ]
     },
@@ -81,7 +84,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "INVERTED: tights = cycle top (risk-on). 100 = tightest spreads (complacent)"
+          "note": "INVERTED: tights = cycle top (risk-on). 100 = tightest spreads (complacent)",
+          "stale_limit_days": null
         }
       ]
     },
@@ -101,7 +105,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "DBA is the tradeable GSCI-ag object; ZC=F backs the corn falsifier leg"
+          "note": "DBA is the tradeable GSCI-ag object; ZC=F backs the corn falsifier leg",
+          "stale_limit_days": null
         }
       ]
     },
@@ -124,7 +129,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "INVERTED: deep calm = cycle top. Richest turn sample (~2y period)"
+          "note": "INVERTED: deep calm = cycle top. Richest turn sample (~2y period)",
+          "stale_limit_days": null
         }
       ]
     },
@@ -147,7 +153,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "XBI equal-weight primary; IBB cap-weight secondary"
+          "note": "XBI equal-weight primary; IBB cap-weight secondary",
+          "stale_limit_days": null
         }
       ]
     },
@@ -167,7 +174,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "INVERTED 30y yield = price-cycle clock (low yield = price top). DEVIATION: D3's abs-35bp expressed as vol-scaled % on 1/x; TLT backs the falsifier"
+          "note": "INVERTED 30y yield = price-cycle clock (low yield = price top). DEVIATION: D3's abs-35bp expressed as vol-scaled % on 1/x; TLT backs the falsifier",
+          "stale_limit_days": null
         }
       ]
     },
@@ -190,7 +198,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "Henry Hub spot; storage falsifier leg (EIA weekly) not collected \u2192 dropped"
+          "note": "Henry Hub spot; storage falsifier leg (EIA weekly) not collected \u2192 dropped",
+          "stale_limit_days": null
         }
       ]
     },
@@ -210,7 +219,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "gold/silver ratio derived for tripwires"
+          "note": "gold/silver ratio derived for tripwires",
+          "stale_limit_days": null
         }
       ]
     },
@@ -230,7 +240,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "MSCI-EM-index falsifier levels rewritten as EEM levels"
+          "note": "MSCI-EM-index falsifier levels rewritten as EEM levels",
+          "stale_limit_days": null
         }
       ]
     },
@@ -250,7 +261,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "NP-3 trap: explicit PL=F (platinum) \u2014 NOT PL (Planet Labs equity). PA=F (palladium) is the second leg for the falsifier"
+          "note": "NP-3 trap: explicit PL=F (platinum) \u2014 NOT PL (Planet Labs equity). PA=F (palladium) is the second leg for the falsifier",
+          "stale_limit_days": null
         }
       ]
     },
@@ -273,7 +285,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "DEVIATION: D3 specced a leading-index COMPOSITE via business_cycle.py; W3.1 binds INDPRO monthly with abs-ZigZag on its z-score (1.5\u03c3, zz_standardize=True \u2014 a raw-abs threshold over-segments a trending level). Kitchin ~4y \u2192 ~7 turns/30y, gradeable at the monthly horizon"
+          "note": "DEVIATION: D3 specced a leading-index COMPOSITE via business_cycle.py; W3.1 binds INDPRO monthly with abs-ZigZag on its z-score (1.5\u03c3, zz_standardize=True \u2014 a raw-abs threshold over-segments a trending level). Kitchin ~4y \u2192 ~7 turns/30y, gradeable at the monthly horizon",
+          "stale_limit_days": 85
         }
       ]
     },
@@ -369,7 +382,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "measured intermediate cycle"
+          "note": "measured intermediate cycle",
+          "stale_limit_days": null
         },
         {
           "band": "secular",
@@ -403,7 +417,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "measured intermediate cycle; kept out of the equity hazard family"
+          "note": "measured intermediate cycle; kept out of the equity hazard family",
+          "stale_limit_days": null
         },
         {
           "band": "secular",
@@ -440,7 +455,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "DXY is price-basis already (no dividends) \u2014 clean"
+          "note": "DXY is price-basis already (no dividends) \u2014 clean",
+          "stale_limit_days": null
         },
         {
           "band": "secular",
@@ -477,7 +493,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "local-ccy Nikkei primary (61y tape); EWJ (USD) as the FX-decomposed leg"
+          "note": "local-ccy Nikkei primary (61y tape); EWJ (USD) as the FX-decomposed leg",
+          "stale_limit_days": null
         },
         {
           "band": "secular",
@@ -605,7 +622,8 @@
           "proxy": false,
           "position_gauge": true,
           "fitness": null,
-          "note": "markets.html US flagship; ^GSPC backs the falsifier levels"
+          "note": "markets.html US flagship; ^GSPC backs the falsifier levels",
+          "stale_limit_days": null
         }
       ]
     }
