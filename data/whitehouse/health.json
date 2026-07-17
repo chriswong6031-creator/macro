@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-17T22:06:16.109222+00:00",
-  "posts_seen": 12,
-  "seen_total": 35,
-  "evaluated": 0,
+  "as_of": "2026-07-17T23:08:02.780460+00:00",
+  "posts_seen": 8,
+  "seen_total": 36,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-17-setting-the-record-straight-president-trump-declassifies-intel-on-foreign-electi",
+      "importance": 10,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }
