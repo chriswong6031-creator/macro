@@ -215,11 +215,11 @@ ARTIFACT_MANIFEST = [
      "note": "confluence signal state + markers (BUY/SELL/cut) per stock"},
     {"artifact": "site/factordata/us_standouts.json",
      "kind": "board",
-     "schema_version": "1.1.0",
+     "schema_version": "1.2.0",
      "schema_fields": [
          "as_of", "buy", "concentration", "delta", "dispersion_regime", "donor",
          "earnings_blackout_note", "eligible", "gate_go", "laggards", "lane_counts",
-         "rank_by", "universe", "watch",
+         "pending_expired_count", "rank_by", "staleness", "universe", "watch",
      ],
      "schema_item_fields": [
          "above_trend", "adv_dollar_20d_median", "adv_dollar_21d", "align_tier", "alpha",
