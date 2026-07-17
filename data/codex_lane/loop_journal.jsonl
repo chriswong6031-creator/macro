@@ -3,3 +3,4 @@
 {"ts": "2026-07-17T10:23:57+00:00", "lane": "both", "iteration": 2, "results": {}, "stop_reason": "budget_gate (iteration 2): paused_until:2026-08-16T10:12:04+00:00"}
 {"ts": "2026-07-17T10:32:49+00:00", "lane": "cases", "iteration": 1, "results": {}, "stop_reason": "budget_gate (iteration 1): paused_until:2026-08-16T10:12:04+00:00"}
 {"ts": "2026-07-17T11:03:09+00:00", "lane": "cases", "iteration": 1, "results": {"cases": {"ok": false, "action": "pr_create_failed", "detail": "gh pr create returned no URL for branch codex/case-lite-2025", "episode": "LITE_2025", "pr_url": null}}, "stop_reason": null}
+{"ts": "2026-07-17T11:22:31+00:00", "lane": "cases", "iteration": 1, "results": {"cases": {"ok": true, "action": "pr_opened", "detail": "case QUBT_2024 passed audit; PR=https://github.com/chriswong6031-creator/macro/pull/2769", "episode": "QUBT_2024", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2769"}}, "stop_reason": null}
