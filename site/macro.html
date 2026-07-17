@@ -6857,6 +6857,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   .rr-grp:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
   .rr-grp-label{font-size:10px;font-weight:700;text-transform:uppercase;
     letter-spacing:.09em;color:var(--muted);margin-bottom:6px}
+  /* W4 EVW: event-window context row in CONTEXT tab */
+  .rr-ctx-row{font-size:11.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72));margin:4px 0}
   /* shared metric row */
   .rr-meta-row{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin:4px 0}
   /* interval cone bar */
@@ -8204,6 +8206,80 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       /* ---- TAB 4: CONTEXT ---- */
       var tab4 = '';
       {
+        /* W4 EVW: event-window phase + collision context (display-only, RIC program).
+           Reads item.event_window_ctx attached by build_release_forecast._attach_evw_context().
+           is_context_only=True — display only, never scored (RIC-R3, DO_NOT_REBUILD.md §4). */
+        var evwCtx = item.event_window_ctx;
+        if (evwCtx && evwCtx.is_context_only) {
+          var evwParts = [];
+          /* Phase read */
+          if (evwCtx.phase && evwCtx.phase !== 'quiet') {
+            evwParts.push(
+              '<div class="rr-ctx-row">'
+              +'<span class="l-en">'+esc(evwCtx.phase_read_en||'')+'</span>'
+              +'<span class="l-zh">'+esc(evwCtx.phase_read_zh||'')+'</span>'
+              +'</div>'
+            );
+          }
+          /* Active collisions */
+          if (evwCtx.active_collisions && evwCtx.active_collisions.length) {
+            var colCopy = {
+              cpi_in_opex_week: {
+                en: 'CPI lands inside expiration week — expect louder tape. Watch, don’t chase.',
+                zh: 'CPI 落于期权到期周内——预计市场噪音更大。观望为主，勿追涨。'
+              },
+              fomc_in_opex_week: {
+                en: 'Fed decision inside expiration week — pin risk elevated.',
+                zh: '美联储决议落于到期周内——锁定风险上升。'
+              },
+              cpi_fomc_same_week: {
+                en: 'CPI and Fed decision same week — one print can reset the other’s read.',
+                zh: 'CPI 与美联储决议同周发布——一个数据可能重置另一个的解读。'
+              },
+              triple_stack: {
+                en: 'Triple stack: data print, Fed, and OPEX converge this week — louder tape likely.',
+                zh: '三重叠加：数据、美联储与期权到期本周齐发——市场噪音可能明显放大。'
+              }
+            };
+            evwCtx.active_collisions.forEach(function(c){
+              var cp = colCopy[c];
+              if (cp) evwParts.push(
+                '<div class="rr-ctx-row">'
+                +'<span class="l-en">'+esc(cp.en)+'</span>'
+                +'<span class="l-zh">'+esc(cp.zh)+'</span>'
+                +'</div>'
+              );
+            });
+          }
+          /* Ex-ante read */
+          var ea = evwCtx.ex_ante;
+          if (ea && ea.available) {
+            evwParts.push(
+              '<div class="rr-ctx-row" style="margin-top:4px;font-size:10.5px">'
+              +'<span class="l-en">'+esc(ea.glance_en||'')+'</span>'
+              +'<span class="l-zh">'+esc(ea.glance_zh||'')+'</span>'
+              +'</div>'
+            );
+            /* Disclaimer */
+            evwParts.push(
+              '<div style="font-size:9.5px;color:var(--muted);margin-top:2px">'
+              +'<span class="l-en">'+esc(ea.disclaimer_en||'')+'</span>'
+              +'<span class="l-zh">'+esc(ea.disclaimer_zh||'')+'</span>'
+              +'</div>'
+            );
+          }
+          if (evwParts.length) {
+            tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
+              +'<span class="l-en">Calendar context</span><span class="l-zh">日历背景</span>'
+              +'</div>'
+              +evwParts.join('')
+              +'<div style="font-size:9px;color:var(--muted);margin-top:3px">'
+              +'<span class="l-en">Display context only — not a signal, no return claim (RIC-R3).</span>'
+              +'<span class="l-zh">仅供展示 — 非信号，不作收益主张。</span>'
+              +'</div></div>';
+          }
+        }
+
         /* policy backdrop */
         if (item.policy_backdrop){
           tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
@@ -9529,6 +9605,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
       <div class="sxg-face-sub"><span class="l-en">Intensity 66/100</span><span class="l-zh">强度 66/100</span></div>
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
     </div>
   </div>
   
@@ -9621,9 +9707,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">XLF</span>
         
-        <span class="mx5-ai-ticker-pill">AAPL</span>
+        <span class="mx5-ai-ticker-pill">UNH</span>
         
-        <span class="mx5-ai-ticker-pill">XLK</span>
+        <span class="mx5-ai-ticker-pill">GLD</span>
         
       </div>
       
@@ -9631,14 +9717,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">rates</span><br>
-          4 high-impact signals across channels
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 High-Impact Items</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">individual stocks</span><br>
+          5 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">利率</span><br>
-          4 条高影响信号
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 条高影响信息</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">个股</span><br>
+          5 条高影响信号
         </span>
         
       </div>
@@ -10005,11 +10091,18 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             
             <div style="margin-top:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-              <span style="font-size:10px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.5));letter-spacing:.04em;text-transform:uppercase">
-                <span class="l-en">Dealer pressure: quiet</span>
-                <span class="l-zh">经销商压力：平静</span>
+              <span style="font-size:10px;font-weight:600;color:#e8a04a;letter-spacing:.04em;text-transform:uppercase">
+                <span class="l-en">Dealer pressure: elevated</span>
+                <span class="l-zh">经销商压力：偏高</span>
               </span>
               
+              <span style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36))">3/3</span>
+              
+            </div>
+            
+            <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:4px;line-height:1.4" title="OPEX window risk — display context only. Never a buy/sell signal.">
+              <span class="l-en">Expiration week (quad-witching) — 0d to expiry. price may stick near big strikes, dealer books stretched, expiry-week exposure crowded. Dealer load rising — watch for sticky tape. Watch, don&#39;t chase. (3/3 signals active)</span>
+              <span class="l-zh">Expiration week (quad-witching) — 0d to expiry。价格或被大额行权价吸住，做市商持仓拉满，到期周敞口拥挤。经销商负载上升 — 注意粘性价格行为。观望，不追涨。（3/3项信号激活）</span>
             </div>
             
             
@@ -10165,6 +10258,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           
         </div>
+        
+
+        
+        
+        
         
 
         
@@ -11381,21 +11479,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Apple reclaims world’s largest market cap from Nvidia</span><span class="l-zh">Apple reclaims world’s largest market cap from Nvidia</span></span>
+              <span class="nb-htitle"><span class="l-en">Novartis wins full FDA approval for kidney disease drug Fabhalta in IgA nephropathy</span><span class="l-zh">Novartis wins full FDA approval for kidney disease drug Fabhalta in IgA nephropathy</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614973-apple-reclaims-worlds-largest-market-cap-from-nvidia?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">AI memory, chip stocks dip amid Japan&#39;s Nikkei slump, Moonshot&#39;s new AI model</span><span class="l-zh">AI memory, chip stocks dip amid Japan&#39;s Nikkei slump, Moonshot&#39;s new AI model</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614852-ai-memory-chip-stocks-dip-amid-japans-nikkei-slump-moonshots-new-ai-model?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614987-novartis-wins-full-fda-approval-for-kidney-disease-drug-fabhalta-in-iga-nephropathy?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11407,17 +11494,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260624a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Only these five chip stocks earn top valuation grade despite sector correction</span><span class="l-zh">Only these five chip stocks earn top valuation grade despite sector correction</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614968-only-these-five-semiconductor-stocks-earn-top-valuation-grades-despite-sector-correction?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11436,10 +11512,32 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Tokyo is ‘astonishingly cheap,’ creating opportunities for investors – Deutsche Bank’s Jim Reid</span><span class="l-zh">Tokyo is ‘astonishingly cheap,’ creating opportunities for investors – Deutsche Bank’s Jim Reid</span></span>
+              <span class="nb-htitle"><span class="l-en">AMD&#39;s Advancing AI event could see customer announcements, more: Jefferies</span><span class="l-zh">AMD&#39;s Advancing AI event could see customer announcements, more: Jefferies</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4614976-tokyo-is-astonishingly-cheap-creating-opportunities-for-investors-deutsche-bank-s-jim-reid?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4614981-amds-advancing-ai-event-could-see-customer-announcements-more-jefferies?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">Palo Alto leads security stocks up, while most enterprise software names inch down</span><span class="l-zh">Palo Alto leads security stocks up, while most enterprise software names inch down</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4614971-palo-alto-leads-security-stocks-up-while-most-enterprise-software-names-inch-down?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">Jefferies&#39; Manhattan offices evacuated after fire incident - report</span><span class="l-zh">Jefferies&#39; Manhattan offices evacuated after fire incident - report</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4614982-jefferies-manhattan-offices-evacuated-after-fire-incident---report?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -14173,9 +14271,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-17 14:55 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-17 15:48 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-17 14:55 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-17 15:48 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
