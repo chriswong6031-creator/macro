@@ -55,6 +55,93 @@
 	# auth lives in the API (Supabase) + (later) a login wall; no shared password.
 	reverse_proxy /api/* 127.0.0.1:8000
 
+	# ── Site Access Gate ──────────────────────────────────────────────────────
+	#
+	# WHAT IT DOES: HTML navigations (the root "/" and any *.html path) are
+	# checked against an operator-managed IP/country blocklist by asking the
+	# macro-api gate endpoint (/api/gate/check) before serving the file.
+	#   • 204 (allow)  → fall through to file_server below (normal serving).
+	#   • 403 (block)  → return the 403 response body (the coming-soon page)
+	#                    directly to the visitor.
+	# Assets (JS, CSS, images, fonts, JSON, etc.) are NOT gated — the visitor
+	# who is blocked on HTML navigation cannot load those either, since the
+	# coming-soon page is fully self-contained and has no external asset refs.
+	#
+	# FAIL-OPEN (verified with a local Caddy + stub-gate test — all cases pass):
+	#   1. app/gate.py is fail-open (missing/corrupt store → enabled=false → 204).
+	#   2. The `route` below asks the gate and CONTINUES to file_server on a 2xx
+	#      allow; a 403 copy_response writes the coming-soon page and STOPS, so the
+	#      block page keeps its no-store and is never tagged with the max-age header.
+	#   3. If the gate upstream is DOWN, the reverse_proxy errors and `handle_errors`
+	#      serves the requested static file with a forced 200 — never a 502.
+	#
+	# DEFAULT STATE IS SAFE: the store file defaults to {enabled:false}, so the gate
+	# returns 204 for every visitor on a fresh install (every HTML request does a
+	# cheap 204 gate check, then serves normally). A 403 only ever happens when the
+	# operator enables the gate AND the visitor matches a blocked rule.
+	#
+	# WHY ONLY HTML: the coming-soon page is fully self-contained (no external
+	# deps), so gating HTML navigation is sufficient — a blocked visitor sees the
+	# coming-soon page and nothing else. Assets stay ungated (one hop per pageview).
+	#
+	# This file is re-installed by macro-update on every main commit. Do NOT
+	# "simplify" the route / handle_errors shape without re-running the fail-open
+	# test — the earlier `handle` + `handle_response @blocked` shape shipped inert
+	# (the gate was never consulted). See app/deploy/SITE_GATE.md.
+
+	@gate_html {
+		# Match the root and .html paths; exclude /api/* (already proxied above).
+		path / *.html
+		not path /api/*
+	}
+
+	handle @gate_html {
+		route {
+			# Ask the gate about THIS request. `method GET` + `rewrite` turn the
+			# sub-request into GET /api/gate/check while preserving the visitor's
+			# headers (EO-Client-IPCountry / EO-Connecting-IP / CF-*) so the gate
+			# can read them.
+			reverse_proxy 127.0.0.1:8000 {
+				method GET
+				rewrite /api/gate/check
+
+				# 2xx (204 allow): empty handle_response → CONTINUE to file_server.
+				@allow status 2xx
+				handle_response @allow {
+				}
+				# Non-2xx (403 block): the default copy_response streams the gate's
+				# body (the self-contained coming-soon page) + its no-store/X-Gate
+				# headers back to the visitor and STOPS — so the max-age header
+				# below never touches the block response (it keeps no-store).
+			}
+			# Reached ONLY on allow — serve the file with the normal short HTML TTL.
+			header Cache-Control "public, max-age=60, must-revalidate"
+			file_server {
+				index index.html
+			}
+		}
+	}
+
+	handle_errors {
+		# FAIL-OPEN: if the gate upstream (macro-api) is DOWN, the reverse_proxy
+		# above errors; serve the requested static HTML with a forced 200 instead
+		# of a 502 white-page (which EdgeOne could surface as its own error page).
+		# Scoped to gated HTML paths; every other error keeps Caddy's default
+		# handling, and a genuinely missing file still yields its natural 404.
+		@gate_html_err {
+			path / *.html
+			not path /api/*
+		}
+		handle @gate_html_err {
+			header Cache-Control "no-store"
+			file_server {
+				status 200
+				index index.html
+			}
+		}
+	}
+
+	# Non-HTML assets (and anything not matched above) — served directly.
 	file_server {
 		index index.html
 	}
@@ -66,15 +153,15 @@
 	# and forces the edge to revalidate against the (healthy) origin. Mirrors the
 	# greydeercapital.com block below. The zero-window structural fix (atomic
 	# swap + flock + 0-byte rsync guard) lives in update.sh.
-	@html {
-		path *.html /
-		not path /api/*
-	}
+	#
+	# NOTE: HTML's max-age=60 is now set INSIDE the Site Access Gate handle above
+	# (on the allow path only), so a blocked visitor's coming-soon page keeps its
+	# Cache-Control: no-store instead of being clobbered to a cacheable 60s. Do not
+	# re-add a blanket `header @html Cache-Control` here — it would re-cache blocks.
 	@static {
 		path /vendor/* *.js *.css *.json *.svg *.png *.jpg *.jpeg *.ico *.webp *.woff *.woff2
 		not path /api/*
 	}
-	header @html   Cache-Control "public, max-age=60, must-revalidate"
 	header @static Cache-Control "public, max-age=300, must-revalidate"
 
 	header {

@@ -1948,3 +1948,113 @@ input:focus, select:focus {
 
 .chat-input textarea:focus { outline: none; border-color: var(--accent); }
 
+/* --------------------------------------------------------------------------
+   SITE ACCESS GATE panel  (RENDER.site_gate)
+   -------------------------------------------------------------------------- */
+
+/* Master toggle row */
+.sg-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+/* IP add row */
+.sg-ip-add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Self-lockout warning banner */
+.sg-warn {
+  background: var(--warn-bg);
+  border: 1px solid rgba(255,184,77,.3);
+  color: var(--warn);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+/* IP chip (blocked or allow list) */
+.sg-ip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 3px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* Remove (×) button inside a chip */
+.sg-ip-rm {
+  all: unset;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.sg-ip-rm:hover {
+  color: var(--warn);
+}
+
+/* Country grid */
+.sg-cc-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 2px 0;
+}
+
+/* Individual country toggle button */
+.sg-cc-btn {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface2);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+  user-select: none;
+}
+
+.sg-cc-btn:hover {
+  border-color: var(--accent);
+}
+
+/* Blocked state — red tint */
+.sg-cc-on {
+  border-color: rgba(255,107,107,.55);
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+
+.sg-cc-code {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 11px;
+  color: inherit;
+  opacity: .8;
+}
+
+.sg-cc-en {
+  color: inherit;
+}
+
+.sg-cc-zh {
+  font-size: 11px;
+  opacity: .65;
+}
+

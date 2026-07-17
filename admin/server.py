@@ -36,7 +36,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, analytics_first_party, a
                metabolism_panel,
                neural_web,
                orchestrator_chat,
-               services, settings, system, umami, uptime_board, users, vector_override)
+               services, settings, site_gate, system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
 _CTYPES = {".html": "text/html; charset=utf-8",
@@ -190,6 +190,17 @@ class Handler(BaseHTTPRequestHandler):
             return self.client_address[0]
         except Exception:  # noqa: BLE001
             return "-"
+
+    def _real_client_ip(self) -> str:
+        """The visitor IP as the SITE gate would see it — mirrors app/main.py
+        _mm_client_ip: prefer the CDN real-client headers, then fall back to
+        _client_id(). Used for the site-access gate's self-lockout allow-list so the
+        IP we auto-allow matches the IP the gate actually evaluates on the site."""
+        for k in ("EO-Connecting-IP", "CF-Connecting-IP", "True-Client-IP"):
+            v = (self.headers.get(k) or "").strip()
+            if v:
+                return v.split(",")[0].strip()[:64]
+        return self._client_id()
 
     def _secure_cookie(self) -> bool:
         # Behind Caddy the real scheme is X-Forwarded-Proto; deployed = always TLS.
@@ -395,6 +406,22 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/metabolism/history":
                 limit = int((q.get("limit") or ["100"])[0])
                 return self._json(metabolism_history.history(limit=limit))
+            if path == "/api/site_gate":
+                rules = site_gate.read_rules()
+                return self._json({
+                    "ok": True,
+                    "rules": {
+                        "enabled": rules["enabled"],
+                        "blocked_ips": rules["blocked_ips"],
+                        "blocked_countries": rules["blocked_countries"],
+                        "allow_ips": rules["allow_ips"],
+                        "updated_at": rules.get("updated_at"),
+                    },
+                    "your_ip": self._real_client_ip(),
+                    "site_url": config_store.get_value("notify.site_url"),
+                    "gate_status": site_gate.gate_status(),
+                })
+
             if path == "/api/metabolism/achievements":
                 try:
                     from admin import metabolism_achievements  # noqa: PLC0415
@@ -646,6 +673,12 @@ class Handler(BaseHTTPRequestHandler):
                     "mode": mode,
                     "dispatched": dispatch_result is not None and bool(dispatch_result.get("ok")),
                 })
+
+            if path == "/api/site_gate/save":
+                result = site_gate.save_rules(b, self._real_client_ip())
+                if not result.get("ok"):
+                    return self._json(result, 400)
+                return self._json(result)
 
             if path == "/api/codex/mode":
                 if not b.get("confirm"):

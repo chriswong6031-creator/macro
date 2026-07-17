@@ -8,6 +8,16 @@ WorkingDirectory=/opt/macro
 # Optional env: SUPABASE_JWT_SECRET (activates auth), SUPABASE_PROJECT_REF, etc.
 # The leading '-' makes the file optional so the service starts without it.
 EnvironmentFile=-/etc/macro-api.env
+# ── Site Access Gate env (all optional; safe defaults apply when absent) ─────
+# SITE_GATE_STATE=/var/lib/macro-api/site_gate.json  # blocklist store (NOT in git)
+# SITE_GATE_COUNTRY_HEADER=EO-Client-IPCountry        # CDN country header name
+#   EdgeOne:    EO-Client-IPCountry (default)
+#   Cloudflare: CF-IPCountry
+#   Custom:     set to whatever your CDN emits
+# GEOIP_DB=/var/lib/macro-api/GeoLite2-Country.mmdb  # MaxMind db (optional)
+#   Absent => country detection falls back to CDN header only; gate still works.
+#   Download: MAXMIND_LICENSE_KEY=<key> bash /opt/macro/app/deploy/geoip-setup.sh
+# SITE_GATE_PAGE=site/coming-soon.html               # coming-soon HTML (relative to MACRO_REPO)
 ExecStart=/opt/macro-api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=2
