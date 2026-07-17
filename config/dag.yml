@@ -484,6 +484,14 @@ lanes:
             - scripts.build_cycle_pattern_live
             - scripts.build_cycle_pattern_state
       # serial post-band
+      - id: check_builder_failstreaks
+        module: scripts.check_builder_failstreaks
+        note: >
+          Builder fail-streak sentinel added by #2704 (alarm-bound git ops):
+          scans the band artifact dir for repeated per-builder failures across
+          nights and pings Telegram/Discord on a streak. Observability only —
+          always exits 0, never blocks the deploy, writes no data/ artifacts.
+          Declared here to match daily.yml (engine job, post-band serial step).
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >
