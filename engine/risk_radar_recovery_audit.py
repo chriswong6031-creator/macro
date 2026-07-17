@@ -4,6 +4,7 @@ Mirrors engine/risk_radar_audit.py patterns exactly (read that module first).
 
 File: data/risk_radar/recovery_log.jsonl
   One idempotent-by-asof line per daily snapshot. Graded when SPY path matures.
+  Every writer self-gates on ledger_lane_armed(), so off-lane renders are read-only.
 
 Ruler: REBOUND CAPTURE (RRX-R2 — the only valid ruler for recovery confirmers):
   Conditioned on radar phase in {peaking, receding}, grade h21 (primary) and h63 (secondary)
@@ -35,6 +36,25 @@ RECOVERY_PHASES = ("peaking", "receding")   # which phases count as "something t
 _N_MIN_SIGNIFICANCE = 30   # minimum per arm before any significance claim (printed, not hidden)
 
 
+def ledger_lane_armed() -> bool:
+    """True only on a ledger-advancing collect lane (COLLECT_LANE=nightly, legacy
+    alias US_LANE). House law: nightly is the SOLE advancer of data/ forward
+    ledgers — this log's only advancing lane is daily.yml's engine job (job-level
+    COLLECT_LANE=nightly; verified via git log on data/risk_radar/recovery_log.jsonl:
+    every advancing commit is that job's "engine: regime update"). engine/run.py
+    also runs on closing-bell (whose contract, closing-bell.yml, is that every
+    ledger writer self-gates on COLLECT_LANE) and the engine-render/render
+    re-render lanes; there snapshot_and_grade degrades to a pure scorecard read,
+    but log/grade must not advance — appends are idempotent-by-asof with
+    FIRST-WRITER-WINS, so a mid-session off-lane append would permanently displace
+    the nightly row. Canonical gate:
+    engine/risk_radar_intl_audit.ledger_lane_armed (#2684); ignition sibling
+    engine/ignition_audit.ledger_lane_armed (#2693)."""
+    import os
+    lane = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return lane.lower() == "nightly"
+
+
 def _path(root=None) -> Path:
     base = config.data_dir() if root is None else (Path(root) / "data")
     p = base / "risk_radar" / "recovery_log.jsonl"
@@ -64,12 +84,16 @@ def _write(p: Path, rows: list[dict]) -> None:
 def log_snapshot(recovery: dict, radar_snap: dict, root=None) -> bool:
     """Append today's recovery snapshot to the forward log (idempotent by asof).
     Returns True if a new row was written.
+    Ledger-advancing lanes only (ledger_lane_armed): off-lane calls no-op, returning False.
 
     Args:
         recovery: output of engine.risk_radar_recovery.assess()
         radar_snap: the risk_radar snapshot (latest['risk_radar'])
     """
     try:
+        if not ledger_lane_armed():
+            log.debug("risk_radar_recovery_audit log skipped: lane not armed")
+            return False
         if not recovery or not isinstance(recovery, dict):
             return False
 
@@ -169,8 +193,15 @@ def _grade_entry(entry: dict, spy: pd.Series) -> dict | None:
 
 
 def grade_log(root=None) -> int:
-    """Grade every matured, ungraded recovery entry. Returns # newly graded."""
+    """Grade every matured, ungraded recovery entry. Returns # newly graded.
+
+    Ledger-advancing lanes only (ledger_lane_armed): grades are keep-first-permanent,
+    so an off-lane grade computed from a mid-session store would stick — no-op, 0.
+    """
     try:
+        if not ledger_lane_armed():
+            log.debug("risk_radar_recovery_audit grade skipped: lane not armed")
+            return 0
         p = _path(root)
         rows = _read(p)
         if not rows:
@@ -276,7 +307,11 @@ def scorecard(root=None) -> dict:
 
 def snapshot_and_grade(recovery: dict, radar_snap: dict, root=None) -> dict:
     """Convenience for run.py: log today's snapshot, grade matured entries, return the scorecard.
-    Never raises."""
+    Never raises.
+
+    Off-lane (ledger_lane_armed() False) the log/grade legs no-op and this is a
+    pure scorecard read — the display payload stays populated on the
+    closing-bell / engine-render / render lanes without advancing the ledger."""
     try:
         log_snapshot(recovery, radar_snap, root=root)
         grade_log(root=root)
