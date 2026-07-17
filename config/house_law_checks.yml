@@ -855,6 +855,34 @@ checks:
     notes: >
       Allowlist is config/dag.yml divergences section.
 
+  - law_id: ops.builder_failstreaks
+    summary: >
+      Nightly observability sentinel (added by #2704): scans the engine job's
+      parallel-band artifact dir for per-builder failures and alerts
+      Telegram/Discord when the same builder fails on consecutive nights.
+      Pure telemetry — always exits 0, never blocks the deploy, writes no
+      data/ artifacts and mutates nothing.
+    source_ref:
+      - scripts/check_builder_failstreaks.py
+      - "PR #2704"
+    severity: warn
+    check_script: scripts/check_builder_failstreaks.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+    selftest: false
+    selftest_exempt_reason: >
+      Non-gating alerting sentinel (|| warning in daily.yml); a failure can
+      only lose an alert, never block a build or darken an artifact.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Streak state derives from band artifact logs present on the runner; a
+        cancelled engine job (no artifacts) resets streak visibility.
+    owner_program: pipeline-reliability
+    notes: null
+
   - law_id: nw.evidence_clock_display_only
     summary: >
       The Global Evidence Clock artifact (data/neuralweb/evidence_clock.json)
