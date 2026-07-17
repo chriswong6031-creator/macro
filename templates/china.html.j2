@@ -578,6 +578,25 @@
   .st-chip-knife { background:color-mix(in srgb,var(--down) 12%,transparent);
     color:var(--down); border:1px solid color-mix(in srgb,var(--down) 25%,transparent); }
 
+  /* ── W-FCT: stage facet bar (grid view) — browse one shelf at a time ────
+     stgf- prefix on purpose: .stf-* belongs to the stocktable.js filter chrome
+     (it already ships a .stf-bar) — do not reuse that prefix here. */
+  .stgf-bar { margin:2px 0 12px; }
+  .stgf-n { display:inline-block; margin-left:6px; font-size:10px; font-weight:800;
+    padding:1px 7px; border-radius:999px; vertical-align:1px;
+    background:color-mix(in srgb,var(--muted) 14%,transparent); color:var(--muted); }
+  .sb-seg button[aria-selected="true"] .stgf-n {
+    background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  /* facet visibility — tagged groups not matching the active facet hide;
+     facet "all" matches no rule so everything stays visible */
+  #standouts[data-stfacet="entry"] .nb-grid-section [data-stf]:not([data-stf~="entry"]),
+  #standouts[data-stfacet="rip"]   .nb-grid-section [data-stf]:not([data-stf~="rip"]),
+  #standouts[data-stfacet="early"] .nb-grid-section [data-stf]:not([data-stf~="early"]),
+  #standouts[data-stfacet="ran"]   .nb-grid-section [data-stf]:not([data-stf~="ran"]) { display:none; }
+  /* the ripening shelf is shared by two facets — split its zones */
+  #standouts[data-stfacet="rip"] .rip-zone:not(.rz-ready) { display:none; }
+  #standouts[data-stfacet="early"] .rip-zone.rz-ready { display:none; }
+
   /* filter row */
   /* filter-row + column-chooser chrome (.stf-*) is injected by stocktable.js since v3 */
 
@@ -2488,7 +2507,25 @@
     "cap_composition": {{ (setups.get('cap_composition') or {}) | tojson }}
   }
   </script>
-  <div class="panel span12" id="standouts">
+  {# ── W-FCT: shelf partitions hoisted above the panel so the facet bar can render
+     counts and the default facet server-side. Same guards as the shelves below. #}
+  {% set _entry_rows = setups.buy | selectattr('stage', 'equalto', 'ENTRY') | list %}
+  {% set _ran_late_rows = setups.buy | selectattr('stage', 'equalto', 'RAN_LATE') | list %}
+  {# Backward compat: pre-W1 artifact where 'stage' is absent → whole board is the entry shelf. #}
+  {% if (_entry_rows | length == 0) and (_ran_late_rows | length == 0) and (setups.buy | length > 0) %}
+    {% set _entry_rows = setups.buy %}
+  {% endif %}
+  {% set _rip = setups.get('ripening') or [] %}
+  {% set _rip_ready  = (_rip | selectattr('zone','equalto','READY')  | list) if _rip else [] %}
+  {% set _rip_basing = (_rip | selectattr('zone','equalto','BASING') | list) if _rip else [] %}
+  {% set _rip_fall   = setups.get('ripening_falling') or [] %}
+  {% set _ran = setups.get('ran') or [] %}
+  {% set _n_entry = _entry_rows | length %}
+  {% set _n_rip = _rip_ready | length %}
+  {% set _n_early = (_rip_basing | length) + (_rip_fall | length) %}
+  {% set _n_ran = (_ran_late_rows | length) + (_ran | length) %}
+  {% set _stf_default = 'entry' if _n_entry else 'all' %}
+  <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}">
     <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
       {{ help("How to read this board. Each card is an A-share name that sold off hard, settled, and just turned back up (the system grades that washout → base → fresh-turn sequence, T1–T4). Score 0–100 = buy-readiness: how ready it looks to buy, not a win-rate or a guarantee. Rank puts the cleanest setups first. Two gauges show setup quality and entry timing (buy now vs wait for a pullback). It is a research shortlist, not a buy list — and its track record is still accruing.", "如何看这个榜单。每张卡片都是一只大幅回调、企稳后刚刚回升的A股（系统按 洗盘→筑底→新转向 顺序分级，T1–T4）。评分0–100＝买入就绪度：该股离买点有多近，并非胜率或保证。排序把形态最干净的排在前面。两个量表显示形态质量与入场时机（现在买还是等回调）。这是研究备选清单，而非买入清单——其成绩仍在累积。") }}
       {# W8-E: grid/table view toggle #}
@@ -2514,16 +2551,22 @@
 
     {# ── W8-E: grid section (hidden in table mode by CSS .nb-grid-section) ── #}
     <div class="nb-grid-section">
+    {# ── W-FCT: stage facet bar — filter the shelves instead of scrolling them.
+       Lives inside .nb-grid-section so table mode hides it (the table has its own
+       stage filter). Chips render only for non-empty shelves; Entry is the default
+       (falls back to All when the entry shelf is empty today). #}
+    <div class="sb-seg stgf-bar" id="st-facet-bar" role="tablist" aria-label="stage filter">
+      <button role="tab" data-facet="entry" aria-selected="{{ 'true' if _stf_default == 'entry' else 'false' }}" data-tip-en="Fresh turns that look buyable now — the main board." data-tip-zh="刚完成转向、当前最接近买点的主榜单。">🎯 {{ t('Entry', '入场') }}<span class="stgf-n">{{ _n_entry }}</span></button>
+      {% if _n_rip %}<button role="tab" data-facet="rip" aria-selected="false" data-tip-en="The turn is forming — nearest to entry, but not buyable yet." data-tip-zh="转向形成中——最接近入场，但尚不可买。">🌱 {{ t('Ripening', '蓄势中') }}<span class="stgf-n">{{ _n_rip }}</span></button>{% endif %}
+      {% if _n_early %}<button role="tab" data-facet="early" aria-selected="false" data-tip-en="Still basing or still falling — no turn yet. Watch, don't touch." data-tip-zh="仍在筑底或下跌——尚未转向。只看不动。">⏳ {{ t('Too early', '为时尚早') }}<span class="stgf-n">{{ _n_early }}</span></button>{% endif %}
+      {% if _n_ran %}<button role="tab" data-facet="ran" aria-selected="false" data-tip-en="Signal fired and the entry window passed — shown for honesty. Do not chase." data-tip-zh="信号已触发、入场窗口已过——出于诚实展示，不要追涨。">🏁 {{ t('Already ran', '信号已过') }}<span class="stgf-n">{{ _n_ran }}</span></button>{% endif %}
+      <button role="tab" data-facet="all" aria-selected="{{ 'true' if _stf_default == 'all' else 'false' }}">{{ t('All', '全部') }}<span class="stgf-n">{{ _n_entry + _n_rip + _n_early + _n_ran }}</span></button>
+    </div>
     {# ── W1-C: ENTRY SHELF ────────────────────────────────────────────────────
        Only ENTRY cards may use BUY-family language. Stage badge is the loudest element.
-       Preserves existing blend_sorted order unchanged (F3 discipline). #}
-    {% set _entry_rows = setups.buy | selectattr('stage', 'equalto', 'ENTRY') | list %}
-    {% set _ran_late_rows = setups.buy | selectattr('stage', 'equalto', 'RAN_LATE') | list %}
-    {# Backward compat: if no rows were partitioned (pre-W1 artifact where 'stage' key absent or all None),
-       fall back to showing all buy rows on the ENTRY shelf so the board degrades gracefully. #}
-    {% if (_entry_rows | length == 0) and (_ran_late_rows | length == 0) and (setups.buy | length > 0) %}
-      {% set _entry_rows = setups.buy %}
-    {% endif %}
+       Preserves existing blend_sorted order unchanged (F3 discipline).
+       Row partition (_entry_rows / _ran_late_rows sets) hoisted above the panel div — W-FCT. #}
+    <div class="stgf-grp" data-stf="entry">
     <div class="nbgrid" data-showmore-rows="3">
     {% for n in _entry_rows %}
       {% set _d = n.dir or 'caution' %}
@@ -2614,12 +2657,14 @@
       </a>
     {% endfor %}
     </div>
+    </div>{# /stgf-entry #}
 
     {# ── W1-C: RAN / LATE SHELF (buy rows — rule 2) ──────────────────────────
        These are gate-eligible names whose entry_signal says hold/extended/topping.
        Signal is live but entry timing has passed. No BUY-family language.
        Score is muted (opacity:0.45 via nb-stage-ran-card). #}
     {% if _ran_late_rows %}
+    <div class="stgf-grp" data-stf="ran">
     <div class="nb-shelf-hdr" style="margin-top:16px">
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal live — entry passed; wait for pullback. Shown for honesty, not action — do not chase.</span><span class="l-zh">信号有效但入场时机已过；等待回调。出于诚实展示 — 不要追涨。</span></span>
@@ -2697,20 +2742,17 @@
       </a>
     {% endfor %}
     </div>
+    </div>{# /stgf-ran #}
     {% endif %}
 
     {# ── W8-R1: RIPENING SHELF (three-zone lifecycle: READY / BASING / FALLING sink) ─
        Full scorecards for READY + BASING; collapsed knife-sink for FALLING.
-       NOT entry signals. No BUY-family language anywhere. #}
-    {% set _rip = setups.get('ripening') or [] %}
-    {# ── W8-R1: RIPENING three-zone shelf (READY / BASING / FALLING sink) ────────────
-       Full scorecards for READY + BASING; collapsed knife-sink for FALLING.
-       NOT an entry signal. No BUY-family words. W8-R1/R2. #}
-    {% set _rip_ready  = (_rip | selectattr('zone','equalto','READY')  | list) if _rip else [] %}
-    {% set _rip_basing = (_rip | selectattr('zone','equalto','BASING') | list) if _rip else [] %}
-    {% set _rip_fall   = setups.get('ripening_falling') or [] %}
+       NOT entry signals. No BUY-family language anywhere.
+       Zone partition (_rip / _rip_ready / _rip_basing / _rip_fall sets) hoisted
+       above the panel div — W-FCT. Tagged for BOTH facets: READY carries the
+       "rip" facet, BASING + FALLING carry "early"; CSS splits the zones. #}
     {% if _rip or _rip_fall %}
-    <div class="rip-shelf" style="margin-top:16px">
+    <div class="rip-shelf" data-stf="rip early" style="margin-top:16px">
       {# ── Shelf header ──────────────────────────────────────────────── #}
       <div class="rip-shelf-hdr">
         <span class="rip-shelf-title"><span class="l-en">RIPENING SHELF</span><span class="l-zh">筑底观察区</span></span>
@@ -2948,9 +2990,10 @@
 
     {# ── W1-C: RAN array (non-buy universe, rule 3) ───────────────────────────
        Names whose 3D/2D cross fired within 15 sessions but are now gate-ineligible.
-       Shown for honesty — do not chase. No BUY-family language. #}
-    {% set _ran = setups.get('ran') or [] %}
+       Shown for honesty — do not chase. No BUY-family language.
+       (_ran set hoisted above the panel div — W-FCT.) #}
     {% if _ran %}
+    <div class="stgf-grp" data-stf="ran">
     <div class="nb-shelf-hdr" style="margin-top:16px">
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal fired and aged out — shown for honesty, not action. Do not chase.</span><span class="l-zh">信号已触发并过期 — 出于诚实展示，不可追涨。</span></span>
@@ -2977,6 +3020,7 @@
     </div>
     {% endfor %}
     </div>
+    </div>{# /stgf-ran2 #}
     {% endif %}
 
     {% if setups.laggards %}
@@ -3223,7 +3267,10 @@
     {% if _rd_picks %}
     <div class="nbgrid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px" data-showmore-rows="2">
       {% for n in _rd_picks %}
-      <div class="nbcard nb-up" style="cursor:default">
+      {# W-FCT: whole card links to the stock's chart (china_lookup anchor —
+         theme.js reroutes these to the Terminal app), same idiom as the
+         standout ENTRY cards above. #}
+      <a class="nbcard nb-up" href="china_lookup.html#{{ n.get('ticker','') }}">
         <div class="nb-id">
           <div class="nb-tkrow">
             <span class="nb-tk">{{ n.get('ticker','') }}</span>
@@ -3254,7 +3301,7 @@
           {% set _ncp = n.get('cycle_phase') %}
           {% if _ncp %}<span class="chip c-muted" style="font-size:10px">{{ _ncp }}</span>{% endif %}
         </div>
-      </div>
+      </a>
       {% endfor %}
     </div>
     {% else %}
@@ -3269,6 +3316,9 @@
   {# Data: mtf_upturn_cn (mtf_upturn_cn.v1 artifact, built by build_china_library). #}
   {% if mode == 'stocks' and mtf_upturn_cn %}
   {% set _mtf_cn = mtf_upturn_cn %}
+  {# W-FCT: ticker → "EN / ZH" name map (built by build_china.py from the committed
+     china_search members store). Guarded — old pickled VMs may not carry the key. #}
+  {% set _mtf_names = (cn_name_by_ticker if cn_name_by_ticker is defined else none) or {} %}
   {% set _mtf_members = _mtf_cn.get('members', {}) %}
   {% set _mtf_confirmed = _mtf_cn.get('cohort', {}).get('confirmed', []) %}
   {% set _mtf_watch = _mtf_cn.get('cohort', {}).get('watch', []) %}
@@ -3323,7 +3373,7 @@
       {% set _state = _td.get('state', 'NONE') %}
       {% set _legs = _td.get('legs', {}) %}
       <tr>
-        <td class="l"><b>{{ _sym }}</b></td>
+        <td class="l"><a href="china_lookup.html#{{ _sym }}" style="color:var(--text)"><b>{{ _sym }}</b>{% set _mtf_nm = _mtf_names.get(_sym) %}{% if _mtf_nm %}<span style="display:block;font-size:9.5px;font-weight:400;color:var(--muted);white-space:normal;max-width:200px;line-height:1.3">{{ nm(_mtf_nm) }}</span>{% endif %}</a></td>
         <td>
           <span class="dash-mtf-badge {{ 'confirmed' if _state == 'UPTURN_CONFIRMED' else 'watch' if _state == 'UPTURN_WATCH' else 'none' }}">
             <span class="l-en">{{ 'CONFIRMED' if _state == 'UPTURN_CONFIRMED' else 'WATCH' if _state == 'UPTURN_WATCH' else '—' }}</span>
@@ -3351,7 +3401,7 @@
       {% set _state = _td.get('state', 'NONE') %}
       {% set _legs = _td.get('legs', {}) %}
       <tr>
-        <td class="l"><b>{{ _sym }}</b></td>
+        <td class="l"><a href="china_lookup.html#{{ _sym }}" style="color:var(--text)"><b>{{ _sym }}</b>{% set _mtf_nm = _mtf_names.get(_sym) %}{% if _mtf_nm %}<span style="display:block;font-size:9.5px;font-weight:400;color:var(--muted);white-space:normal;max-width:200px;line-height:1.3">{{ nm(_mtf_nm) }}</span>{% endif %}</a></td>
         <td>
           <span class="dash-mtf-badge {{ 'confirmed' if _state == 'UPTURN_CONFIRMED' else 'watch' if _state == 'UPTURN_WATCH' else 'none' }}">
             <span class="l-en">{{ 'CONFIRMED' if _state == 'UPTURN_CONFIRMED' else 'WATCH' if _state == 'UPTURN_WATCH' else '—' }}</span>
@@ -3698,6 +3748,21 @@ window.__CHART_SWAP__ = {
 
   /* restore persisted view */
   applyView(currentView);
+})();
+</script>
+<script>
+/* W-FCT: standout stage facet bar — grid view only; no-op when the bar is absent. */
+(function(){
+  var box = document.getElementById('standouts');
+  var bar = document.getElementById('st-facet-bar');
+  if (!box || !bar) return;
+  bar.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-facet]');
+    if (!btn) return;
+    box.setAttribute('data-stfacet', btn.getAttribute('data-facet'));
+    var bs = bar.querySelectorAll('button[data-facet]');
+    for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-selected', bs[i] === btn ? 'true' : 'false');
+  });
 })();
 </script>
 <script>
