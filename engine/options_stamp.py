@@ -541,14 +541,24 @@ def _ovc_from_chain(
     if sub.empty:
         return out
 
-    # Build prior-OI lookup keyed by (K, is_call) — matching _voi_flag_stamp pattern
+    # Build prior-OI lookup keyed by (expiry, K, is_call) — the full contract key, matching
+    # the study's groupby([expiration, strike, right]).shift(1). Keying without expiry would
+    # sum OI across every expiry listed at a strike, contaminating front-week weights with
+    # back-month positions.
+    def _exp_key(expiry_val):
+        try:
+            return pd.Timestamp(expiry_val).date().isoformat()
+        except Exception:
+            return None
+
     prev_sub = prev_cdf[prev_cdf["underlying"] == ticker].copy()
     if not prev_sub.empty:
         prev_sub["_k"] = pd.to_numeric(prev_sub["K"], errors="coerce").round(4)
         prev_sub["oi"] = pd.to_numeric(prev_sub["oi"], errors="coerce")
+        prev_sub["_exp"] = prev_sub["expiry"].apply(_exp_key)
         prior_oi_map = (
-            prev_sub.dropna(subset=["_k", "oi"])
-            .groupby(["_k", "is_call"])["oi"]
+            prev_sub.dropna(subset=["_k", "oi", "_exp"])
+            .groupby(["_exp", "_k", "is_call"])["oi"]
             .sum()
         )
     else:
@@ -557,6 +567,7 @@ def _ovc_from_chain(
     for col in ("K", "T", "iv", "spot"):
         sub[col] = pd.to_numeric(sub[col], errors="coerce")
     sub["_k"] = sub["K"].round(4)
+    sub["_exp"] = sub["expiry"].apply(_exp_key)
 
     # days to expiry from the chain snapshot date
     def _dte(expiry_val) -> int | None:
@@ -576,8 +587,11 @@ def _ovc_from_chain(
         S, K_, T_, sigma = row["spot"], row["K"], row["T"], row["iv"]
         is_call = bool(row["is_call"])
         dte = row["_dte"]
-        # Look up prior-day OI for this contract (keyed by rounded K + is_call)
-        prior_oi = prior_oi_map.get((row["_k"], is_call))
+        # Look up prior-day OI for this exact contract (expiry + rounded K + is_call)
+        exp_k = row["_exp"]
+        if exp_k is None:
+            continue
+        prior_oi = prior_oi_map.get((exp_k, row["_k"], is_call))
         if prior_oi is None:
             continue
         try:

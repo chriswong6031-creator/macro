@@ -1090,3 +1090,48 @@ def test_ovc_from_chain_uses_prior_day_oi():
         "when prior-day OI is used correctly (charm_share uses prior OI for weighting, "
         "current snapshot for greeks/expiry/spot)."
     )
+
+
+def test_ovc_from_chain_prior_oi_keyed_per_contract_not_pooled_across_expiries():
+    """Prior-OI lookup must key on the full contract (expiry, K, is_call), not (K, is_call).
+
+    Fixture: the SAME strikes exist at a front expiry (3d) and a back expiry (60d).
+    Prior-day OI is ZERO for every front-expiry contract and large for every back-expiry
+    contract.  With correct per-contract keying the front-week charm numerator is exactly 0
+    (front contracts have no prior OI), so opt_front7_charm_share == 0.0 while the total
+    board (back expiry) is non-zero.  A lookup pooled by (K, is_call) would hand the back
+    expiry's OI to the front contracts and produce a positive share.
+    """
+    import datetime as _dt2
+    from engine.options_stamp import _ovc_from_chain
+
+    def _two_expiry_frame(front_oi: float, back_oi: float) -> pd.DataFrame:
+        rows = []
+        for expiry_days, oi in ((3, front_oi), (60, back_oi)):
+            expiry = (_dt2.date.today() + _dt2.timedelta(days=expiry_days)).isoformat()
+            T = expiry_days / 365.0
+            for k in (95.0, 100.0, 105.0):
+                for is_call in (True, False):
+                    rows.append({
+                        "underlying": "FOO", "K": k, "T": T, "iv": 0.20,
+                        "oi": oi, "is_call": is_call, "spot": 100.0, "expiry": expiry,
+                    })
+        return pd.DataFrame(rows)
+
+    dates = [_dt.date(2026, 7, 16), _dt.date(2026, 7, 17)]
+
+    def read_chain(d):
+        if d == _dt.date(2026, 7, 16):
+            return _two_expiry_frame(front_oi=0.0, back_oi=500.0)
+        return _two_expiry_frame(front_oi=200.0, back_oi=500.0)
+
+    result = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain)
+    share = result["opt_front7_charm_share"]
+    assert share is not None, (
+        "Back-expiry contracts have prior OI — total board charm is non-zero, share must compute"
+    )
+    assert share == 0.0, (
+        f"Front-week share must be exactly 0 (front contracts had zero prior-day OI); "
+        f"got {share} — a positive value means prior OI was pooled across expiries "
+        f"(back-month OI leaked into front-week contracts)."
+    )
