@@ -1,16 +1,16 @@
 {
   "schema": "china_risk_state.v1",
-  "built": "2026-07-17 03:55:12 UTC",
+  "built": "2026-07-17 06:09:41 UTC",
   "session": {
     "cn": {
       "region": "cn",
-      "open": false,
-      "local_time": "2026-07-17 11:55 CST"
+      "open": true,
+      "local_time": "2026-07-17 14:09 CST"
     },
     "hk": {
       "region": "hk",
       "open": true,
-      "local_time": "2026-07-17 11:55 HKT"
+      "local_time": "2026-07-17 14:09 HKT"
     }
   },
   "live_active": true,
@@ -20,15 +20,19 @@
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-16",
-  "n_live_symbols": 5,
+  "n_live_symbols": 11,
   "movers": [
     {
-      "sym": "HSI",
-      "chg_pct": -1.93
+      "sym": "SHCOMP",
+      "chg_pct": -3.29
     },
     {
-      "sym": "CNH",
-      "chg_pct": 0.16
+      "sym": "CSI300",
+      "chg_pct": -3.96
+    },
+    {
+      "sym": "HSI",
+      "chg_pct": -2.56
     }
   ],
   "display": {
@@ -36,14 +40,14 @@
     "label_en": "Risk-off",
     "label_zh": "\u907f\u9669",
     "color": "red",
-    "score": 33,
+    "score": 30,
     "band_changed": false,
     "pending": null
   },
   "live": {
     "verdict": "RISK_OFF",
-    "score": 33,
-    "raw_score": 33,
+    "score": 30,
+    "raw_score": 30,
     "color": "red",
     "label_en": "Risk-off",
     "label_zh": "\u907f\u9669",
@@ -52,7 +56,7 @@
     "radar": {
       "state": "risk-off",
       "state_ungated": null,
-      "top_score": 98,
+      "top_score": 96,
       "label_en": "Breadth breakdown (all-boats)",
       "label_zh": "\u5e7f\u5ea6\u666e\u8dcc\uff08\u666e\u8dcc\uff09",
       "context_gate": null,
@@ -86,7 +90,7 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 37,
+      "score": 25,
       "basis": "live",
       "asof": "live"
     },
@@ -127,7 +131,7 @@
     }
   ],
   "legs_asof": {
-    "tape_trend": "2026-07-16",
+    "tape_trend": "live",
     "radar_capital_flow": "live",
     "radar_rate_shock": "2026-07-14",
     "breadth": "2026-07-16",
