@@ -664,6 +664,9 @@ artifacts:
       Frozen cross-builder scorecard contract (schema risk_radar_scorecard.v1).
       100% deterministic math over already-graded forward-ledger rows — no LLM,
       no model scores. hit_rate=null when graded_n < 5 (honest-null floor).
+      Covers markets: us, cn, hk, ca, kr, jp, tw, in, au, gb, ez (market keys
+      are additive-only under v1 — consumers read by key and must tolerate
+      unknown keys).
       Display/context only: nothing here may gate, rank, size, or escalate.
       The word 'validated' is banned from all emitted copy.
 
@@ -693,9 +696,11 @@ artifacts:
       Frozen cross-builder scorecard contract (schema risk_radar_scorecard.v1).
       100% deterministic math over already-graded forward-ledger rows — no LLM,
       no model scores. hit_rate=null when graded_n < 5 (honest-null floor).
-      Covers markets: us, cn, hk, ca. US data sourced from
-      data/risk_radar/forward_log.jsonl + recovery_log.jsonl; intl from
-      data/risk_radar_intl/<market>_forward_log.jsonl.
+      Covers markets: us, cn, hk, ca, kr, jp, tw, in, au, gb, ez (market keys
+      are additive-only under v1 — consumers must tolerate unknown keys; the
+      mastermind lobe distils only us/cn/hk/ca and ignores the rest by design).
+      US data sourced from data/risk_radar/forward_log.jsonl + recovery_log.jsonl;
+      intl from data/risk_radar_intl/<market>_forward_log.jsonl.
       Display/context only: nothing here may gate, rank, size, or escalate.
       The word 'validated' is banned from all emitted copy.
 
