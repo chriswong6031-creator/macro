@@ -2908,6 +2908,9 @@ body.page-macro .mx2-hero-ctx{
 }
 body.page-macro .mx2-hero-ctx strong{color:var(--text)}
 body.page-macro .mx2-hero-ctx .mx2-alerts-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* Leadership context line — muted context, not an alert; hidden when sector_bias absent */
+body.page-macro .mx2-leadership-ctx{font-size:11px;color:var(--muted);line-height:1.55;padding:5px 8px;background:color-mix(in srgb,var(--muted) 7%,var(--panel));border:1px solid color-mix(in srgb,var(--muted) 14%,transparent);border-radius:6px;margin-top:2px}
+body.page-macro .mx2-leadership-ctx strong{color:var(--ink-2);font-weight:600}
 /* Grid view: hide driver-ctx text block (Zone 2 covers it); keep alerts+catalyst pill row */
 body.page-macro.mx4-grid .mx2-hero-ctx>div:first-child{display:none;}
 /* In grid view, ctx card becomes a slim row with just alerts */
@@ -5312,6 +5315,18 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <span class="l-zh"> 减少追高；择优入场而非追逐已延展的龙头。</span>
             
           </div>
+          
+          
+          
+          
+          
+          
+          
+          <div class="mx2-leadership-ctx">
+            <span class="l-en">Under the surface: <strong>Health Care / Staples / Utilities</strong> have held while <strong>Energy / Discretionary</strong> faded — a rotation read, not a high-beta cue.</span>
+            <span class="l-zh">表面之下：<strong>医疗保健／必需消费／公用事业</strong>相对坚挺，<strong>能源／可选消费</strong>走弱 — 这是轮动观察，并非追高贝塔的信号。</span>
+          </div>
+          
           
           <div class="mx2-alerts-row">
             <div class="ms-alerts-wrap">
@@ -9323,11 +9338,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">XLF</span>
         
-        <span class="mx5-ai-ticker-pill">USO</span>
+        <span class="mx5-ai-ticker-pill">QQQ</span>
         
         <span class="mx5-ai-ticker-pill">XLK</span>
         
-        <span class="mx5-ai-ticker-pill">UNH</span>
+        <span class="mx5-ai-ticker-pill">USO</span>
         
       </div>
       
@@ -9335,14 +9350,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">guidance</span><br>
-          7 high-impact signals across channels
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">rates</span><br>
+          6 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩指引</span><br>
-          7 条高影响信号
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">利率</span><br>
+          6 条高影响信号
         </span>
         
       </div>
@@ -11065,17 +11080,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item" open>
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">UnitedHealth blows past estimates, hikes earnings outlook as it reins in costs</span><span class="l-zh">联合健康业绩超预期，上调盈利展望，成本控制成效显著</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/16/unitedhealth-group-unh-earnings-q2-2026.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
               <span class="nb-htitle"><span class="l-en">Home BancShares signals November Mountain Commerce conversion with $5.5M annual cost saves, while stepping up buybacks</span><span class="l-zh">Home BancShares signals November Mountain Commerce conversion with $5.5M annual cost saves, while stepping up buybacks</span></span>
             </summary>
@@ -11092,6 +11096,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://www.cnbc.com/2026/07/16/netflix-nflx-earnings-q2-2026.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">UnitedHealth blows past estimates, hikes earnings outlook as it reins in costs</span><span class="l-zh">联合健康业绩超预期，上调盈利展望，成本控制成效显著</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/16/unitedhealth-group-unh-earnings-q2-2026.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11120,11 +11135,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="nb-htitle"><span class="l-en">Short sellers load up against SpaceX as stock drops below IPO price</span><span class="l-zh">Short sellers load up against SpaceX as stock drops below IPO price</span></span>
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">SoftBank sinks over 9% as Asia chip stocks track Wall Street AI sell-off</span><span class="l-zh">SoftBank sinks over 9% as Asia chip stocks track Wall Street AI sell-off</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/16/short-sellers-load-up-against-spacex-as-stock-retreats-back-to-ipo-price.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/17/softbank-chip-stocks-asia-wall-street-ai-rout.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -13902,9 +13917,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-17 01:47 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-17 02:36 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-17 01:47 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-17 02:36 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   

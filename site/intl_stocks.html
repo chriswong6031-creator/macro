@@ -250,6 +250,19 @@
   .ts-chip.ts-basing { background:color-mix(in srgb,var(--info) 8%,transparent); color:var(--info); border-color:color-mix(in srgb,var(--info) 24%,transparent); }
   .ts-chip.ts-downtrend { background:color-mix(in srgb,var(--down) 8%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 24%,transparent); }
   .ts-chip.ts-calm { background:var(--panel2); color:var(--muted); }
+  /* pullback-risk radar strip inside turn tiles (#2684 risk_radar_intl.v1, display-only) */
+  .tb-rd { margin-top:9px; padding-top:8px; border-top:1px dashed var(--line); }
+  .tb-rd-hd { display:flex; align-items:center; gap:6px; }
+  .tb-rd-lb { font-size:10.5px; font-weight:600; color:var(--muted); letter-spacing:.02em; }
+  .tb-rd-chip { display:inline-block; padding:1px 7px; border-radius:7px; font-size:10px; font-weight:700; white-space:nowrap; border:1px solid transparent; margin-left:auto; }
+  .tb-rd-chip.rd-calm { background:var(--panel2); color:var(--muted); border-color:var(--line); }
+  .tb-rd-chip.rd-watch { background:color-mix(in srgb,#d4a017 8%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 22%,transparent); }
+  .tb-rd-chip.rd-caution { background:color-mix(in srgb,#d4a017 14%,transparent); color:#d4a017; border-color:color-mix(in srgb,#d4a017 35%,transparent); }
+  .tb-rd-chip.rd-elevated { background:color-mix(in srgb,var(--down) 12%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 30%,transparent); }
+  .tb-rd-chip.rd-risk-off { background:color-mix(in srgb,var(--down) 18%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .tb-rd-line { font-size:11px; color:var(--text); line-height:1.35; margin-top:5px; }
+  .tb-rd-odds { font-size:10.5px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .tb-rd-foot { margin:10px 2px 0; line-height:1.5; }
 </style>
 </head>
 <body>
@@ -546,7 +559,7 @@
   <div class="row">
     <h1>🌍 <span class="l-en">International Stock Dashboard</span><span class="l-zh">国际股票看板</span></h1>
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-16 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-17 03:01 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-16 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-17 03:48 UTC</span>
   </div>
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout names from major non-US markets, ranked within their own market. Search any name above.</span><span class="l-zh">主要非美市场精选个股，按各自市场内部排序。可在上方搜索。</span>
     <a href="intl.html" style="color:var(--link);font-weight:600">← <span class="l-en">Macro comparison</span><span class="l-zh">宏观对比</span></a></p>

@@ -755,7 +755,7 @@
     var sub = (s.kind==='basket' ? (s.etf_proxy?esc(s.etf_proxy)+' · ':'') : (esc(s.ticker||'')+' · ')) + esc(lang()==='zh'?(s.group_zh||s.group):s.group);
     var chips=[];
     if(cy.phaseLabel||cy.phase) chips.push('<span class="chip2">'+esc(cy.phaseLabel||cy.phase)+'</span>');
-    if(cy.rs_rank) chips.push('<span class="chip2">RS <b>#'+cy.rs_rank+'</b></span>');
+    if(cy.rs_21d_rank||cy.rs_rank) chips.push('<span class="chip2">RS <b>#'+(cy.rs_21d_rank||cy.rs_rank)+'</b></span>');
     if(c.confluence) chips.push('<span class="chip2">'+L('confluence','共振')+' <b>'+c.confluence.agree+'/'+c.confluence.of+'</b></span>');
     if(c.early) chips.push('<span class="chip2 early">'+L('early','偏早')+'</span>');
     var h=s.heat;
