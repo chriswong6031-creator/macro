@@ -1,16 +1,7 @@
 {
   "schema": "codex_lane.usage_state.v1",
   "updated_at": "2026-07-17T10:32:49.750420+00:00",
-  "rate_limits": {
-    "primary": {
-      "used_percent": 100.0,
-      "resets_at": "2026-08-16T10:12:17+00:00",
-      "window_mins": 43200
-    },
-    "secondary": null,
-    "plan_type": "free",
-    "fetched_at": "2026-07-17T10:32:48.823512+00:00"
-  },
+  "rate_limits": null,
   "token_usage_last": {
     "input_tokens": 86337,
     "output_tokens": 6999,
@@ -60,6 +51,6 @@
       "error_kind": "usage_limit"
     }
   ],
-  "paused_until": "2026-08-16T10:12:04+00:00",
-  "degraded": false
+  "paused_until": null,
+  "degraded": true
 }
