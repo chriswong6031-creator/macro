@@ -1620,6 +1620,9 @@ def _dispatch_build_session(
         changed_files = _diff_worktree_files(wt_path)
         if changed_files is None:
             # diff failed — fail-closed: cannot verify containment
+            # Reset the Step-6 optimistic dispatched=True: this is an abort, and
+            # dispatched=True must be reachable ONLY after Step 8's containment pass.
+            result["dispatched"] = False
             result["reason"] = "foreign_file_check_failed: git diff returned None"
             if cycle_id:
                 _journal_dispatch(cycle_id, pid, {"status": "diff_error"}, root=root)
@@ -1639,6 +1642,11 @@ def _dispatch_build_session(
         if foreign:
             reason = f"FOREIGN_FILE_ABORT: session changed files outside target_files + data/metabolism/: {foreign}"
             log.warning("BUILD: %s proposal=%s", reason, pid)
+            # Reset the Step-6 optimistic dispatched=True: a foreign-file abort is
+            # NOT a dispatch. Leaving it True made run_build_lane record the aborted
+            # session as a successful "pr_opened" — the inverse of the containment
+            # contract. dispatched=True is legitimate only after Step 8 passes.
+            result["dispatched"] = False
             result["reason"] = reason
             result["foreign_files"] = foreign
             # Clean up worktree (best-effort)
