@@ -1511,6 +1511,50 @@ checks:
     owner_program: engine-fix-masterplan
     notes: null
 
+  - law_id: ops.ledger_heartbeat
+    summary: >
+      CSP-W6: On trading days where the nightly site republished, each registered
+      forward ledger (risk_radar, market_state, mag7_regime, leadership_crack,
+      deterioration_cascade) must have advanced its newest asof vs the previous
+      run's snapshot. A stall while the site republished means stale ledger content
+      backed fresh pages silently. Detection only (CSP-R1 forbids fail-dark):
+      stalls append type_=ledger_stall via the W6b push_ops_alert spine and emit
+      a ::warning:: annotation; the pipeline job always exits 0 and never gates
+      any downstream step. Snapshot persisted in data/ci/ledger_heartbeat_state.json
+      (sole writer). Trading-day aware (lib.nyse_calendar); idempotent per
+      calendar date. Born from the 2026-07-16 collect-cancel-while-always()
+      incident where the site republished on 07-15 stores undetected.
+    source_ref:
+      - scripts/check_ledger_advance.py
+      - "PR #2761 (CSP-W6)"
+      - research/CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md
+    severity: warn
+    check_script: scripts/check_ledger_advance.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: ledger_heartbeat
+        lane: scheduled
+    selftest: false
+    selftest_exempt_reason: >
+      Non-gating post-publish detector (exit 0 always, CSP-R1); functional
+      coverage provided by tests/test_check_ledger_advance.py (16 cases: advance
+      silent, stall+render, stall without render, weekend skip, double-run
+      idempotent, missing file skipped, state persistence, multiple stalls,
+      corrupt state fail-open, push_ops_alert failure fail-open, stalled_since
+      preservation, main() exit-0, render-happened flag, asof/date field fallback).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Stall detection requires --render-happened flag from the workflow; if the
+        flag is not passed (e.g. manual invocation), no stall is escalated even
+        on a genuinely frozen ledger.
+      - Missing ledger files are silently skipped; a ledger that has never been
+        built produces no stall even after republish.
+      - The tail-scan reads the last 20 rows; a ledger whose newest row is buried
+        deeper (malformed file) may produce a stale asof reading.
+    owner_program: csp-program
+    notes: null
+
   # ── Metabolism Phase 0 guards ──────────────────────────────────────────────
 
   - law_id: metabolism.grader_immutability
