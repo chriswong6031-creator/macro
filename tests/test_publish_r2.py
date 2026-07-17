@@ -185,3 +185,86 @@ def test_bytes_floor_scoped_to_registered_dirs():
     """Dirs without a _DATA_DIR_MIN_BYTES entry are unaffected by tiny trees."""
     assert _data_dir_syncable("massive_stock_day", 14906, total_bytes=1)[0]
     assert _data_dir_syncable("stockdata", 2, total_bytes=1)[0]
+
+
+# ── per-file upload failure tolerance ─────────────────────────────────────────
+# 2026-07-16 incident: a transient network blip exhausted boto's retries on ONE
+# file of the 60 GB thetadata_eod bulk sync and the whole process died. The fake
+# below raises synchronously — i.e. it models the TERMINAL failure surface after
+# boto's own retry loop has given up (the retry count itself is covered by
+# test_client_retry_config). A single file's terminal failure must be logged/
+# counted, not abort the remaining uploads — the md5/ETag delta pass self-heals
+# the miss next run.
+
+class _FakeS3:
+    """Just enough boto3-client surface for publish(): empty remote listing,
+    upload_file raising on selected keys, manifest get/put recording."""
+
+    def __init__(self, fail_keys=()):
+        self.fail_keys = set(fail_keys)
+        self.uploaded: list[str] = []
+        self.manifest_puts: list[str] = []
+
+    def list_objects_v2(self, **kw):
+        return {"Contents": [], "IsTruncated": False}
+
+    def get_object(self, **kw):
+        raise Exception("no remote manifest")
+
+    def upload_file(self, filename, bucket, key, ExtraArgs=None):
+        if key in self.fail_keys:
+            raise ConnectionError(f"simulated terminal failure: {key}")
+        self.uploaded.append(key)
+
+    def put_object(self, **kw):
+        self.manifest_puts.append(kw["Key"])
+
+
+def _wire_fake_tree(tmp_path, monkeypatch, s3, names):
+    import lib.config as config
+    import scripts.publish_r2 as pr2
+    d = tmp_path / "site" / "stockdata"
+    d.mkdir(parents=True)
+    for n in names:
+        (d / n).write_text("{}")
+    monkeypatch.setattr(config, "ROOT", tmp_path)
+    monkeypatch.setattr(config, "load",
+                        lambda: {"storage": {"site_dir": "site", "data_dir": "data"}})
+    monkeypatch.setattr(pr2, "_client", lambda: s3)
+    monkeypatch.setenv("R2_BUCKET", "test-bucket")
+    return pr2
+
+
+def test_upload_failure_does_not_abort_remaining(tmp_path, monkeypatch):
+    s3 = _FakeS3(fail_keys={"stockdata/B.json"})
+    pr2 = _wire_fake_tree(tmp_path, monkeypatch, s3, ["A.json", "B.json", "C.json"])
+    rc = pr2.publish(["stockdata"])
+    assert sorted(s3.uploaded) == ["stockdata/A.json", "stockdata/C.json"]
+    assert rc == 1                    # the miss still surfaces to the lane
+    assert s3.manifest_puts == []     # manifest never lists files not in place
+
+
+def test_clean_publish_exits_zero_and_puts_manifest(tmp_path, monkeypatch):
+    s3 = _FakeS3()
+    pr2 = _wire_fake_tree(tmp_path, monkeypatch, s3, ["A.json", "B.json"])
+    assert pr2.publish(["stockdata"]) == 0
+    assert sorted(s3.uploaded) == ["stockdata/A.json", "stockdata/B.json"]
+    assert s3.manifest_puts == ["stockdata/_manifest.json"]
+
+
+def test_client_retry_config(monkeypatch):
+    """The shared client (fetch_r2 reuses it) must carry the bulk-lane retry
+    posture: 10 adaptive attempts, not the 4/standard that died 2026-07-16."""
+    import pytest
+    pytest.importorskip("boto3")
+    from scripts.publish_r2 import _client
+    monkeypatch.setenv("R2_ENDPOINT", "https://example.r2.cloudflarestorage.com")
+    monkeypatch.setenv("R2_ACCESS_KEY_ID", "x")
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "y")
+    cfg = _client().meta.config
+    assert cfg.retries["mode"] == "adaptive"
+    # botocore normalizes max_attempts=10 into total_max_attempts=11 (initial + 10)
+    assert cfg.retries.get("total_max_attempts") == 11 or cfg.retries.get("max_attempts") == 10
+    # fail-fast connect bounds the hard-down worst case (serial dir lists inside
+    # daily.yml's 150-min engine job) — 10 retries must not mean 10 x 60s hangs
+    assert cfg.connect_timeout == 15 and cfg.read_timeout == 60
