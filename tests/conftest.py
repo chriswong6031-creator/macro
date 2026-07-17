@@ -77,8 +77,19 @@ def _redirect_breadth_divergence_stamp(tmp_path_factory):
     appends the repo's real forward ledger (three separate suites did:
     test_theme_regionalize, test_flip_distance, test_theme_scoring).  Redirect
     the default stamp target to a session tmp for every test; unit tests of
-    log_stamp itself pass an explicit path= and are unaffected."""
-    from engine import basket_breadth_divergence as bd
+    log_stamp itself pass an explicit path= and are unaffected.
+
+    ImportError guard: this autouse-session fixture executes for EVERY pytest
+    run, including the ~8 minimal-deps CI jobs (pip install pytest pyyaml
+    only) whose suites never touch theme-intel paths — the engine import
+    chain needs numpy/pandas and errored ALL their tests at session start
+    (self-mod-fence red, 2026-07-16). No deps -> no net needed: nothing in
+    those jobs can reach compute_theme_intel."""
+    try:
+        from engine import basket_breadth_divergence as bd
+    except ImportError:
+        yield
+        return
     target = tmp_path_factory.mktemp("bd_stamp") / "forward_log.parquet"
     mp = pytest.MonkeyPatch()
     mp.setattr(bd, "_log_path", lambda: target)
