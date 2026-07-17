@@ -112,6 +112,25 @@ def run() -> dict:
                         rec["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(rec["risk_radar"], _prof)
                         rec["risk_radar"]["can_force"] = bool(rec["risk_radar"]["forward_log"].get("can_force"))
                         _rrt.tune(_prof)
+                        # RRI Stage-B shadow accrual — 3 ACCRUE variants logged per
+                        # nightly run for the 7 new-market profiles only (cn/hk/ca
+                        # are byte-frozen and excluded from scope).  composite_series
+                        # is called once here; shadow_snapshot derives all 3 variants
+                        # from the single (B, sub, comp, gate) substrate (budget law).
+                        # Writes are lane-gated above AND self-gated inside the module.
+                        try:
+                            from engine.rri_shadow import MARKETS as _SHD_MARKETS
+                            from engine import rri_shadow as _shd
+                            if _prof.key in _SHD_MARKETS:
+                                _B, _sub, _comp, _gate = _rri.composite_series(_prof)
+                                if _B is not None:
+                                    _shadow_rows = _shd.shadow_snapshot(
+                                        _prof, _B, _sub, _comp, _gate)
+                                    _shd.log_shadow(_prof.key, _shadow_rows)
+                                    _shd.grade_shadow(_prof.key)
+                        except Exception as _se:  # noqa: BLE001
+                            log.warning(
+                                "intl %s rri-shadow accrual failed (%s); skipping", cc, _se)
                     else:
                         # Read-only fast-path: snapshot still renders; ledger/tuner do not advance.
                         sc = _rra.scorecard(_prof.key, log_governance=False)
