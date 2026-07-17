@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-15",
-  "generated_at": "2026-07-16T08:00:09.750439+00:00",
+  "generated_at": "2026-07-17T04:09:45.012670+00:00",
   "degraded": null,
   "notes": [
     {
@@ -11,16 +11,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Revisions (z=0.82) and residual momentum (z=1.62) support a base-building pattern, while the event-edge context (insider buying via FDR, PEAD) provides a conditional tailwind; however, negative SUE (z=-0.75) tempers the fundamental surprise signal, and the deteriorating Consumer Staples basket (validated risk gate) caps upside.",
+      "thesis": "TGT is building a base with a constructive event-edge (insider buying context, revisions) and a modest pullback, though the deteriorating Consumer Staples basket tempers conviction.",
       "evidence": [
+        "verdict 'Constructive \u2014 building a base'",
         "selection axes: revisions z=0.82, momentum z=1.62",
-        "entry signals: off-high -2.1%, RSI, vol-squeeze",
-        "trust tier: event-edge (insider buying/PEAD context)",
-        "caution: basket deterioration risk gate"
+        "entry not blocked, off-high only -2.1%",
+        "caution: Consumer Staples Equal-Weight basket deteriorating"
       ],
-      "dissent": "Negative SUE suggests last quarter's momentum was negative, and basket headwinds could swamp individual stock strength.",
+      "dissent": "Negative SUE signal (z=-0.75) and a deteriorating sector basket could undermine the base-building.",
       "falsifier": {
-        "text": "SPDR Consumer Staples (XLP) breaks below its 200-day moving average and TGT closes below $133.",
+        "text": "If TGT breaks below its recent base low of ~135, the constructive lean is invalid.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "TGT",
@@ -40,15 +40,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Positive SUE (z=1.52) and momentum (z=1.23) support a recovery trend, while the entry setup (off-high -1.7%, pullback, RSI, imminent urgency) suggests a near-term opportunity; however, the Real Estate basket deterioration (validated risk gate) and a neutral band flag a diluted edge.",
+      "thesis": "HST shows a strong SUE (z=1.52) and momentum (z=1.23) on a constructive base setup, although the deteriorating Real Estate basket warrants caution.",
       "evidence": [
-        "selection: SUE z=1.52, momentum z=1.23",
-        "entry: off-high -1.7%, urgency 'imminent', pullback signal",
-        "caution: Real Estate basket deteriorating"
+        "verdict 'Constructive \u2014 building a base'",
+        "SUE z=1.52, momentum z=1.23",
+        "entry not blocked, off-high -1.7%",
+        "caution: Real Estate Equal-Weight basket deteriorating"
       ],
-      "dissent": "The SUE data is 46 days old and may be stale; a reversal in hotel REITs driven by macro rates could cause underperformance despite technicals.",
+      "dissent": "Sector headwinds and a stale SUE (47d old) could cap upside.",
       "falsifier": {
-        "text": "Real Estate Select Sector SPDR (XLRE) declines more than 5% from current and HST breaks below $22.50.",
+        "text": "If HST fails to hold its recent base support at ~23.30, the constructive lean is broken.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "HST",
@@ -68,15 +69,16 @@
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The engine sees no clear edge: selection is weak (SUE near zero, revisions negative), despite favorable entry signals (vol-squeeze, off-high, RSI). A fresh buy board signal is insufficient to overcome the lack of an event or fundamental catalyst.",
+      "thesis": "The engine finds no clear edge: earnings signals are weak (SUE z=-0.04, revisions z=-1.14) despite an attractive entry setup, warranting a neutral stance.",
       "evidence": [
-        "selection axes: SUE z=-0.04, revisions z=-1.15",
-        "entry axes: off-high -2.2%, vol-squeeze, urgency",
-        "verdict: Neutral \u2014 no clear edge"
+        "verdict 'Neutral \u2014 no clear edge'",
+        "selection z -0.41 with negative revisions",
+        "entry z=0.67 not blocked but insufficient to overcome lack of edge",
+        "no cautions"
       ],
-      "dissent": "If entry signals prove potent, a short-term bounce could occur, but the absence of insider/earnings tailwinds limits sustainability.",
+      "dissent": "The fresh buy signal and oversold conditions could trigger a bounce, but no earnings tailwind.",
       "falsifier": {
-        "text": "NJR falls below $55 on below-average volume within 10 trading days \u2014 suggesting entry signal failure.",
+        "text": "If NJR breaks above $60 on above-average volume and positive revisions emerge, the neutral call would be too cautious.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -89,24 +91,26 @@
       "id": "2026-07-15-STAA-4",
       "ticker": "STAA",
       "name": null,
-      "lean": "constructive",
-      "conviction": "low",
+      "lean": "cautious",
+      "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "The selection edge is strong (SUE, insider, revisions all positive) supporting the Leader designation, and the deep pullback (off-high -14.5%) offers a base; however, the accounting watch flag demands confirmation and increases tail risk, warranting a low-conviction constructive stance.",
+      "thesis": "STAA carries strong earnings and insider edge but is flagged 'accounting watch'; the deep 14.5% pullback off highs offers a potential base, yet the accounting risk demands confirmation before committing, hence cautious.",
       "evidence": [
-        "selection: SUE z=1.85, insider z=1.5, revisions z=2.25",
-        "entry: off-high -14.5%, RSI signal",
-        "caution: accounting watch flag"
+        "verdict 'Leader \u00b7 accounting watch \u2014 confirm before adding'",
+        "SUE z=1.85, insider z=1.5, revisions z=2.24",
+        "entry not blocked but caution flag",
+        "off-high -14.5%",
+        "accounting watch flag"
       ],
-      "dissent": "Accounting irregularities could result in a sharp re-rating or SEC inquiry, erasing any fundamentals-driven advantage quickly.",
+      "dissent": "If the accounting watch is resolved benignly, the strong earnings momentum could fuel a sharp rally.",
       "falsifier": {
-        "text": "STAA closes below $26 (breaching the recent pullback low) on above-average volume, negating the base-building thesis.",
+        "text": "If STAA falls below $26 (recent support) or if an accounting issue materializes, the cautious lean is justified; if it clears accounting concerns and breaks out above $32, the cautious lean is proven wrong.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "STAA",
           "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
+          "op": ">",
+          "threshold": 0.05,
           "horizon_d": 20
         }
       },
@@ -120,15 +124,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "A strong TURN SIGNALED board state combined with positive SUE (z=1.79) and revisions (z=0.85) suggests an upward reversal from a deep pullback (-19.2%); the lack of cautions allows a constructive lean, though the small-track-record context keeps conviction low.",
+      "thesis": "KMT exhibits a turn signal with a compelling earnings edge (SUE z=1.79) and deep pullback (-19.2%), forming a base; no obvious cautions.",
       "evidence": [
-        "board state: TURN SIGNALED, urgency 'now'",
-        "selection: SUE z=1.79, revisions z=0.85",
-        "entry: off-high -19.2%, pullback signal, RSI"
+        "verdict 'Constructive \u2014 building a base'",
+        "SUE z=1.79, revisions z=0.85",
+        "entry signal 'TURN SIGNALED' urgency now, off-high -19.2%",
+        "no cautions"
       ],
-      "dissent": "The deep off-high drawdown may reflect structural deterioration not captured by the screen; the turn signal could fail if industrial demand weakens.",
+      "dissent": "The deep pullback might indicate underlying deterioration not captured, and the optimistic turn signal could fail if earnings momentum stalls.",
       "falsifier": {
-        "text": "KMT closes below the recent swing low ($32.50) on decisively higher volume, indicating the turn signal was false.",
+        "text": "If KMT reverses and closes below $33, the turn signal fails and the constructive lean is wrong.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "KMT",
@@ -147,22 +152,22 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The sole edge is residual momentum (z=0.65), which is context-only and insufficient for a directional call; moreover, earnings in 8 days introduce a binary risk that makes any forecast unreliable over this window.",
+      "horizon_d": 20,
+      "thesis": "TR lacks a discernible edge (only residual momentum) and faces an earnings binary event in 7 days, making a neutral stance prudent.",
       "evidence": [
-        "selection: only momentum present, no SUE/revisions/insider",
-        "caution: earnings in 8d \u2014 binary event",
-        "verdict: Neutral \u2014 no clear edge"
+        "verdict 'Neutral \u2014 no clear edge'",
+        "selection only momentum z=0.65, no SUE or revision edge",
+        "caution: earnings in 7d \u2014 binary event"
       ],
-      "dissent": "Momentum could persist through earnings if the result surprises, but that is a coin-flip outcome not supported by the screen's edge.",
+      "dissent": "A strong earnings beat could propel the stock higher, but that is speculative.",
       "falsifier": {
-        "text": "TR reports earnings and the stock does not move beyond \u00b12% in the subsequent week, confirming the lack of investable edge.",
+        "text": "If TR rallies post-earnings and sustains above $42, then the neutral lean would have been too timid.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-05",
+      "check_by": "2026-08-12",
       "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],
