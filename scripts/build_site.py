@@ -1740,6 +1740,28 @@ def _breadth_split_view() -> dict | None:
         return None
 
 
+def _evw_snapshot_view() -> dict | None:
+    """Load event-window snapshot from site/event_windows/snapshot.json.
+
+    Written by scripts/build_event_windows.py (W4 EVW, RIC program, cl_gex cluster).
+    JSON-or-None only — NEVER falls back to compute() (RIC-R3, display-only law).
+    Failure-safe: any error returns None so the macro page still deploys.
+
+    Consumers:
+      - Macro strip collision chip (dashboard.html.j2): shown when a collision state active.
+      - Release-radar CONTEXT tab: event-window phase + collision context per release.
+      - Risk-radar card context chip: high-impact event ≤2 trading days out."""
+    try:
+        site_dir = config.ROOT / config.load()["storage"]["site_dir"]
+        p = site_dir / "event_windows" / "snapshot.json"
+        if p.exists():
+            return json.loads(p.read_text())
+        return None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("evw_snapshot view failed (%s)", e)
+        return None
+
+
 def _froth_fragility_view(latest: dict) -> dict | None:
     """Froth & Fragility gauge (engine.froth_fragility) for the macro page: retail
     euphoria + hidden-distribution top-risk, with the forward-outcome track record
@@ -4098,6 +4120,7 @@ def main() -> int:
         fear_greed=_fear_greed_view(),    # Fear/Greed composite dial (display-only, P1.2)
         vol_weather=_vol_weather_view(),  # VSB W3: vol weather chips (display-only)
         breadth_split=_breadth_split_view(),  # VSB W4: AI vs non-AI breadth (display-only)
+        evw_snap=_evw_snapshot_view(),  # W4 EVW: event-window phase + collision states (display-only)
         sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
         dispersion_regime=_dispersion_regime_view(),  # L3 selection-regime chip (NW Rails W2 PR-4, display-only)
         policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
@@ -4272,6 +4295,7 @@ def main() -> int:
             "fear_greed": vm.get("fear_greed"),
             "vol_weather": vm.get("vol_weather"),
             "breadth_split": vm.get("breadth_split"),
+            "evw_snap": vm.get("evw_snap"),
             "growth_score": latest.get("growth_score"),
             "inflation_score": latest.get("inflation_score"),
             "components_confirming": vm.get("components_confirming"),

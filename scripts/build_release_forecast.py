@@ -2575,6 +2575,71 @@ def _benchmark_median(benchmark_set: dict) -> float | None:
     return float(np.median(vals))
 
 
+def _attach_evw_context(upcoming_block: list[dict], root: Path) -> None:
+    """W4 EVW: attach event-window phase + collision context to each upcoming release.
+
+    Reads the committed site/event_windows/snapshot.json artifact (written by
+    scripts/build_event_windows.py, cl_gex cluster).  Additive, failure-safe:
+    any error leaves item["event_window_ctx"] = None.
+
+    The attached dict surfaces in the 5-tab modal CONTEXT tab (tab4 JS renders
+    evw_ctx when present).  is_context_only=True — display only, never scored.
+    Calendar/event-window-gated risk legs FORBIDDEN (DO_NOT_REBUILD.md §4).
+    engine/risk_radar.py is NOT touched by this function.
+    """
+    try:
+        snap_path = root / "site" / "event_windows" / "snapshot.json"
+        if not snap_path.exists():
+            log.info("_attach_evw_context: snapshot not found — skipped")
+            return
+        snap = json.loads(snap_path.read_text())
+        if not snap.get("available"):
+            return
+
+        phase = snap.get("phase", "quiet")
+        active_collisions = snap.get("active_collisions") or []
+        phase_read_en = snap.get("read", "")
+        phase_read_zh = snap.get("read_zh", "")
+
+        # Map release_type → td_to_* field
+        td_map: dict[str, str] = {
+            "cpi_headline": "td_to_cpi",
+            "cpi_core": "td_to_cpi",
+            "nfp": "td_to_nfp",
+            "ppi_finaldemand": "td_to_ppi",
+            "pce_headline": "td_to_cpi",  # PCE closest to CPI window
+            "pce_core": "td_to_cpi",
+            "claims": "td_to_nfp",        # claims day is a Thursday — nfp window
+        }
+
+        for item in upcoming_block:
+            try:
+                rt = (item.get("release_type") or item.get("release") or "").lower()
+                td_field = td_map.get(rt)
+                td_val = snap.get(td_field) if td_field else None
+
+                ex_ante = None
+                if td_val is not None and isinstance(td_val, int) and td_val <= 2:
+                    ex_ante = snap.get("ex_ante")
+
+                item["event_window_ctx"] = {
+                    "schema": "event_window.release_ctx.v1",
+                    "phase": phase,
+                    "active_collisions": active_collisions,
+                    "phase_read_en": phase_read_en,
+                    "phase_read_zh": phase_read_zh,
+                    "td_to_release": td_val,
+                    "ex_ante": ex_ante,
+                    "is_context_only": True,
+                }
+            except Exception as exc:  # noqa: BLE001
+                log.debug("_attach_evw_context item failed (%s): %s", rt, exc)
+                item.setdefault("event_window_ctx", None)
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("_attach_evw_context: failed (%s) — skipped", exc)
+
+
 def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
     """Attach PR-I enrichment fields to each upcoming entry in-place. Fail-open."""
     try:
@@ -3076,6 +3141,12 @@ def build(root: Path, dry_run: bool = False) -> dict:
     # Runs after PR-I so the full enrichment order is stable.
     _attach_integrity_and_revision_context(upcoming_block, root, today)
     log.info("integrity chip + revision context attached to %d items", len(upcoming_block))
+
+    # 3a-W4-EVW. Event-window context (display-only, RIC program).
+    # Runs after print-integrity so enrichment order is stable.
+    # Reads committed site/event_windows/snapshot.json (written by build_event_windows.py).
+    # Failure-safe: any exception leaves event_window_ctx = None (never blocks build).
+    _attach_evw_context(upcoming_block, root)
 
     # 4. Load existing ledger
     ledger_path = root / _LEDGER_RELPATH

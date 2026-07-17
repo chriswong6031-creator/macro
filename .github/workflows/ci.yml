@@ -254,6 +254,15 @@ on:
       - "tests/test_signal_bus_doc.py"
       - "tests/test_synapse_registry.py"
       - "tests/test_neuralweb_envelope.py"
+      # RIC W4 EVW: event-window engine + forward ledger + ex-ante read (P3 RIC program).
+      # engine/** already covers engine/event_window.py; test file + research doc +
+      # config/lobe_charters.yml + config/metabolism_anomaly.yml need explicit paths.
+      - "engine/event_window.py"
+      - "tests/test_event_window.py"
+      - "scripts/build_event_windows.py"
+      - "research/DEALER_LOAD_EXTREME_LANE_II_PREREG.md"
+      - "config/lobe_charters.yml"
+      - "config/metabolism_anomaly.yml"
       # RLT-R1/R2: rebalance calendar organ + rebalance pulse detector.
       - "engine/rebalance_calendar.py"
       - "engine/rebalance_pulse.py"

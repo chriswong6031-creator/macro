@@ -441,6 +441,8 @@ lanes:
           cl_gex:
             - scripts.build_gex_board
             - scripts.build_vol_regime
+            # W4 EVW (RIC program, P3): event-window snapshot + forward-log stamp
+            - scripts.build_event_windows
             - scripts.build_options_flow
             - scripts.build_flow_desk
             - scripts.build_options_screener
@@ -2747,3 +2749,24 @@ modules:
       W2 SURFACE pure computation engine. compute_surface_row() is called by
       scripts/build_options_surface.py. No direct writes — pure function over
       greeks+oi DataFrames. Dealer-sign passport: long_call_short_put (assumption).
+
+  # ── W4 EVW (RIC program) — event-window engine ───────────────────────────────
+  - module: scripts.build_event_windows
+    reads:
+      - site/macrodata/release_forecast.json
+      - site/options_hub/vol/SPY.json
+      - site/vol/regime.json
+    writes:
+      - data/event_windows/forward_log.jsonl
+      - site/event_windows/snapshot.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      W4 EVW (RIC program). Event-window producer: calls engine.event_window.snapshot()
+      and engine.event_window.stamp_ex_ante() (ledger-lane-gated, COLLECT_LANE=nightly).
+      Reads only committed artifacts (no ThetaData/T1 reads). Display-only:
+      is_context_only=True, no score path, no _SCARES entry. Calendar/event-window-gated
+      risk legs FORBIDDEN (DO_NOT_REBUILD.md §4). Pre-FOMC drift expected DEAD post-2016
+      (house ruling). cl_gex cluster (daily.yml), after build_vol_regime so
+      site/vol/regime.json is available.

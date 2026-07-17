@@ -4767,6 +4767,71 @@ artifacts:
       the sector_etf class (XLB, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY).
       Same schema and laws as options-surface-index-etf. Single-writer, theta-ops lane.
 
+  # --- W4 EVW (RIC program) — event-window engine, forward ledger, ex-ante read ---
+  event-windows-forward-log:
+    path: data/event_windows/forward_log.jsonl
+    format: jsonl
+    producer: scripts/build_event_windows.py
+    known_extra_writers: []
+    owner_program: rates-inflation-command
+    cadence: daily-engine
+    storage: git
+    asof_field: stamped_at
+    freshness_sla_hours: 50
+    # 50h SLA: rows only stamped on T-1 nights (when a release is 0-2 trading days out);
+    # non-release nights add no rows — same sparse-cadence pattern as other event ledgers.
+    # 50h covers a long weekend without false stale alerts.
+    schema: event_windows.forward_log.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/event_window.py
+      - scripts/build_event_windows.py
+    external_consumers: []
+    notes: >
+      W4 EVW (RIC program). Forward ledger: one row per release event stamped at
+      T-1 (ex-ante read frozen — implied move, MRI surprise sigma, phase, collisions).
+      Keep-FIRST; nightly sole advancer (ledger_lane_armed() gate; cadence=daily-engine
+      because the advancing job is daily.yml engine stage with COLLECT_LANE=nightly).
+      Grade fields filled post-release by grade_forward_log() (called by build_event_windows).
+      Rulers frozen in W4 PR: primary=realized_event_day_move_vs_implied,
+      secondary=realized_vol_vs_phase_base_rate,
+      descriptive=surprise_direction_x_reaction_sign_by_regime.
+      Display-only: is_context_only=True. No score path, no arithmetic weight.
+      authority.may_rank/gate/size/escalate=false (RIC-R3, RIC-R6).
+
+  event-windows-snapshot:
+    path: site/event_windows/snapshot.json
+    format: json
+    producer: scripts/build_event_windows.py
+    known_extra_writers: []
+    owner_program: rates-inflation-command
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: event_window.snapshot.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/dashboard.html.j2
+      - scripts/build_release_forecast.py      # render-side readers (read-gate Article-2): macro strip + radar-card chip
+      - scripts/build_site.py
+
+    external_consumers: []
+    notes: >
+      W4 EVW (RIC program). Nightly snapshot of current event-window phase,
+      collision states, seasonality stats, and ex-ante release-risk read chip.
+      Written by scripts/build_event_windows.py in cl_gex cluster (daily.yml).
+      Display-only surface: collision chip on macro strip + release radar CONTEXT tab
+      + risk-radar-card context chip (rendered, never read by compute()).
+      is_context_only=True throughout. No score path. authority.may_rank/gate/size/escalate=false.
+      Pre-FOMC drift expected DEAD post-2016 (house ruling); null printed, not hidden.
+
   options-surface-industry-etf:
     path: data/options_surface/industry_etf.parquet
     format: parquet

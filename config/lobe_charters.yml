@@ -1253,4 +1253,44 @@ charters:
     owner_program: neural-web
     notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
       do not edit independently.
+  # --- W4 EVW (RIC program) ---
+  event-windows-forward-log:
+    lobe_id: event-windows-forward-log
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - id: implied_vs_realized_coverage
+      store: data/event_windows/forward_log.jsonl
+      maturity_date: '2027-07-17'
+      accruing: true
+      description: >-
+        Forward ledger graded rows: implied event move vs realized event-day move.
+        Accruing until >= 12 graded release events (~12 months of major prints).
+    - id: phase_rv_coverage
+      store: data/event_windows/forward_log.jsonl
+      maturity_date: '2027-07-17'
+      accruing: true
+      description: >-
+        Phase base-rate fwd-vol vs realized fwd-vol (secondary ruler). Accruing
+        until >= 8 graded rows.
+    owner_program: rates-inflation-command
+    notes: >-
+      W4 EVW (RIC program). Event-window forward ledger (nightly-gated, keep-FIRST).
+      display_only=True. Fitness sensors ACCRUING until 2027-07-17 (12 months of
+      surface + ledger history). No Loop-PROPOSE eligibility until maturity.
+      authority.may_rank/gate/size/escalate=false (RIC-R3, RIC-R6).
+  event-windows-snapshot:
+    lobe_id: event-windows-snapshot
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    owner_program: rates-inflation-command
+    notes: >-
+      W4 EVW (RIC program). Nightly event-window phase snapshot + collision states
+      + ex-ante release-risk read chip. Display context only (is_context_only=True).
+      authority.may_rank/gate/size/escalate=false.
 

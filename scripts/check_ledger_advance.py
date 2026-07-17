@@ -98,6 +98,14 @@ _LEDGER_MANIFEST: list[dict[str, str]] = [
         "label": "deterioration_cascade",
         # NOTE: may not exist until CSP-W1/W2 ships; silently skipped until then.
     },
+    {
+        "path": "data/event_windows/forward_log.jsonl",
+        "label": "event_windows",
+        # NOTE: sparse cadence — rows stamped only on T-1 nights before a release
+        # (CPI/NFP/FOMC/PPI within 2 trading days).  Non-release nights add no rows;
+        # the ledger-advance check uses a 50h SLA (synapse.yml) to avoid false stale
+        # alerts across long weekends.  Silently skipped until first nightly stamp.
+    },
     # ── Add new ledgers below this line ────────────────────────────────────
 ]
 

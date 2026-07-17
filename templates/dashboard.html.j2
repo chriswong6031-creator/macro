@@ -6092,6 +6092,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   .rr-grp:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
   .rr-grp-label{font-size:10px;font-weight:700;text-transform:uppercase;
     letter-spacing:.09em;color:var(--muted);margin-bottom:6px}
+  /* W4 EVW: event-window context row in CONTEXT tab */
+  .rr-ctx-row{font-size:11.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72));margin:4px 0}
   /* shared metric row */
   .rr-meta-row{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin:4px 0}
   /* interval cone bar */
@@ -7440,6 +7442,80 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       /* ---- TAB 4: CONTEXT ---- */
       var tab4 = '';
       {
+        /* W4 EVW: event-window phase + collision context (display-only, RIC program).
+           Reads item.event_window_ctx attached by build_release_forecast._attach_evw_context().
+           is_context_only=True — display only, never scored (RIC-R3, DO_NOT_REBUILD.md §4). */
+        var evwCtx = item.event_window_ctx;
+        if (evwCtx && evwCtx.is_context_only) {
+          var evwParts = [];
+          /* Phase read */
+          if (evwCtx.phase && evwCtx.phase !== 'quiet') {
+            evwParts.push(
+              '<div class="rr-ctx-row">'
+              +'<span class="l-en">'+esc(evwCtx.phase_read_en||'')+'</span>'
+              +'<span class="l-zh">'+esc(evwCtx.phase_read_zh||'')+'</span>'
+              +'</div>'
+            );
+          }
+          /* Active collisions */
+          if (evwCtx.active_collisions && evwCtx.active_collisions.length) {
+            var colCopy = {
+              cpi_in_opex_week: {
+                en: 'CPI lands inside expiration week — expect louder tape. Watch, don’t chase.',
+                zh: 'CPI 落于期权到期周内——预计市场噪音更大。观望为主，勿追涨。'
+              },
+              fomc_in_opex_week: {
+                en: 'Fed decision inside expiration week — pin risk elevated.',
+                zh: '美联储决议落于到期周内——锁定风险上升。'
+              },
+              cpi_fomc_same_week: {
+                en: 'CPI and Fed decision same week — one print can reset the other’s read.',
+                zh: 'CPI 与美联储决议同周发布——一个数据可能重置另一个的解读。'
+              },
+              triple_stack: {
+                en: 'Triple stack: data print, Fed, and OPEX converge this week — louder tape likely.',
+                zh: '三重叠加：数据、美联储与期权到期本周齐发——市场噪音可能明显放大。'
+              }
+            };
+            evwCtx.active_collisions.forEach(function(c){
+              var cp = colCopy[c];
+              if (cp) evwParts.push(
+                '<div class="rr-ctx-row">'
+                +'<span class="l-en">'+esc(cp.en)+'</span>'
+                +'<span class="l-zh">'+esc(cp.zh)+'</span>'
+                +'</div>'
+              );
+            });
+          }
+          /* Ex-ante read */
+          var ea = evwCtx.ex_ante;
+          if (ea && ea.available) {
+            evwParts.push(
+              '<div class="rr-ctx-row" style="margin-top:4px;font-size:10.5px">'
+              +'<span class="l-en">'+esc(ea.glance_en||'')+'</span>'
+              +'<span class="l-zh">'+esc(ea.glance_zh||'')+'</span>'
+              +'</div>'
+            );
+            /* Disclaimer */
+            evwParts.push(
+              '<div style="font-size:9.5px;color:var(--muted);margin-top:2px">'
+              +'<span class="l-en">'+esc(ea.disclaimer_en||'')+'</span>'
+              +'<span class="l-zh">'+esc(ea.disclaimer_zh||'')+'</span>'
+              +'</div>'
+            );
+          }
+          if (evwParts.length) {
+            tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
+              +'<span class="l-en">Calendar context</span><span class="l-zh">日历背景</span>'
+              +'</div>'
+              +evwParts.join('')
+              +'<div style="font-size:9px;color:var(--muted);margin-top:3px">'
+              +'<span class="l-en">Display context only — not a signal, no return claim (RIC-R3).</span>'
+              +'<span class="l-zh">仅供展示 — 非信号，不作收益主张。</span>'
+              +'</div></div>';
+          }
+        }
+
         /* policy backdrop */
         if (item.policy_backdrop){
           tab4 += '<div class="rr-grp"><div class="rr-grp-label">'
@@ -8235,6 +8311,30 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {% if _rdr_score is not none %}
       <div class="sxg-face-sub"><span class="l-en">Intensity {{ _rdr_score }}/100</span><span class="l-zh">强度 {{ _rdr_score }}/100</span></div>
       {% endif %}
+      {# W4 EVW: high-impact event ≤2 trading days out — context chip (display-only, RIC-R3). #}
+      {# engine/risk_radar.py is untouched; this chip is rendered-only calendar context. #}
+      {% if evw_snap is defined and evw_snap and evw_snap.get('available') %}
+      {% set _evw_td_cpi = evw_snap.get('td_to_cpi') %}
+      {% set _evw_td_fomc = evw_snap.get('td_to_fomc') %}
+      {% set _evw_td_nfp = evw_snap.get('td_to_nfp') %}
+      {% set _evw_td_ppi = evw_snap.get('td_to_ppi') %}
+      {% set _evw_near = (
+          (_evw_td_cpi is not none and _evw_td_cpi <= 2) or
+          (_evw_td_fomc is not none and _evw_td_fomc <= 2) or
+          (_evw_td_nfp is not none and _evw_td_nfp <= 2) or
+          (_evw_td_ppi is not none and _evw_td_ppi <= 2)
+      ) %}
+      {% if _evw_near %}
+      {% set _evw_what_en = 'CPI' if (_evw_td_cpi is not none and _evw_td_cpi <= 2) else ('Fed decision' if (_evw_td_fomc is not none and _evw_td_fomc <= 2) else ('Payrolls' if (_evw_td_nfp is not none and _evw_td_nfp <= 2) else 'PPI')) %}
+      {% set _evw_what_zh = '消费者物价' if (_evw_td_cpi is not none and _evw_td_cpi <= 2) else ('美联储决议' if (_evw_td_fomc is not none and _evw_td_fomc <= 2) else ('非农就业' if (_evw_td_nfp is not none and _evw_td_nfp <= 2) else '生产者物价')) %}
+      {% set _evw_days_en = 'today' if ((_evw_td_cpi == 0 or _evw_td_fomc == 0 or _evw_td_nfp == 0 or _evw_td_ppi == 0)) else ('tomorrow' if ((_evw_td_cpi == 1 or _evw_td_fomc == 1 or _evw_td_nfp == 1 or _evw_td_ppi == 1)) else 'in 2 days') %}
+      {% set _evw_days_zh = '今日' if ((_evw_td_cpi == 0 or _evw_td_fomc == 0 or _evw_td_nfp == 0 or _evw_td_ppi == 0)) else ('明日' if ((_evw_td_cpi == 1 or _evw_td_fomc == 1 or _evw_td_nfp == 1 or _evw_td_ppi == 1)) else '2日后') %}
+      <div style="margin-top:5px;font-size:10.5px;color:var(--warn,#f59e0b);line-height:1.4">
+        <span class="l-en">{{ _evw_what_en }} {{ _evw_days_en }} — expect elevated tape noise.</span>
+        <span class="l-zh">{{ _evw_what_zh }}{{ _evw_days_zh }}发布 — 市场噪音可能放大。</span>
+      </div>
+      {% endif %}
+      {% endif %}
     </div>
   </div>{# /sx-risk-v2 #}
   {% endif %}{# /market_state #}
@@ -8666,6 +8766,46 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           {% endfor %}
         </div>
+        {% endif %}
+
+        {# — W4 EVW collision chip (display-only, RIC program) — #}
+        {# Shown ONLY when a collision state is active: plain-word copy, no scoring, no internal state names. #}
+        {# is_context_only=True throughout; engine/risk_radar.py untouched. #}
+        {% if evw_snap is defined and evw_snap and evw_snap.get('available') and evw_snap.get('active_collisions') %}
+        {% set _evw_cols = evw_snap.active_collisions %}
+        {% if _evw_cols %}
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Calendar Context</span><span class="l-zh">日历背景</span></div>
+        <div style="padding:8px 0 4px;display:flex;flex-direction:column;gap:6px">
+          {% for _col in _evw_cols %}
+          {% if _col == 'cpi_in_opex_week' %}
+          <div style="font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72))">
+            <span class="l-en">CPI lands inside expiration week — expect louder tape. Watch, don&rsquo;t chase.</span>
+            <span class="l-zh">CPI 落于期权到期周内——预计市场噪音更大。观望为主，勿追涨。</span>
+          </div>
+          {% elif _col == 'fomc_in_opex_week' %}
+          <div style="font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72))">
+            <span class="l-en">Fed decision inside expiration week — pin risk elevated. Sizing caution warranted.</span>
+            <span class="l-zh">美联储决议落于到期周内——锁定风险上升，适当缩减仓位。</span>
+          </div>
+          {% elif _col == 'cpi_fomc_same_week' %}
+          <div style="font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72))">
+            <span class="l-en">CPI and Fed decision in the same week — sequenced vol risk, not additive. One print can reset the other&rsquo;s read.</span>
+            <span class="l-zh">CPI 与美联储决议同周发布——波动风险有序叠加，而非简单相加。一个数据可能重置另一个的解读。</span>
+          </div>
+          {% elif _col == 'triple_stack' %}
+          <div style="font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72))">
+            <span class="l-en">Triple stack — major data print, Fed, and options expiration converge this week. Tape likely louder than usual. Watch, don&rsquo;t chase.</span>
+            <span class="l-zh">三重叠加——重磅数据、美联储决议与期权到期本周齐发。市场噪音可能明显放大。观望为主，勿追涨。</span>
+          </div>
+          {% endif %}
+          {% endfor %}
+          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));margin-top:2px">
+            <span class="l-en">Calendar context — display only. Not a signal; no return claim.</span>
+            <span class="l-zh">日历背景 — 仅供展示。非信号，不作任何收益主张。</span>
+          </div>
+        </div>
+        {% endif %}
         {% endif %}
 
         {# — Fed prediction market pricing — #}

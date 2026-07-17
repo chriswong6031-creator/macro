@@ -65,7 +65,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | pick-lab | 3 |
 | policy-shock | 5 |
 | qualitative-intelligence | 23 |
-| rates-inflation-command | 5 |
+| rates-inflation-command | 7 |
 | research-factory | 3 |
 | rlt | 3 |
 | rotation-command | 7 |
@@ -93,7 +93,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 299 |
+| display | 301 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 70 |
@@ -102,7 +102,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 446 |
+| git | 448 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -770,6 +770,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | opex-risk-snapshot | `site/vol/regime.json` | json | daily-engine | display | 3 | 1 |
+| event-windows-snapshot | `site/event_windows/snapshot.json` | json | daily-engine | display | 3 | 0 |
+| event-windows-forward-log | `data/event_windows/forward_log.jsonl` | jsonl | daily-engine | display | 2 | 0 |
 | options-surface-index-etf | `data/options_surface/index_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |
 | options-surface-industry-etf | `data/options_surface/industry_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |
 | options-surface-sector-etf | `data/options_surface/sector_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |
