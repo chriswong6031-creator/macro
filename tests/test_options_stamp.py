@@ -158,9 +158,10 @@ def test_adjusted_root_all_null():
 def test_stamp_always_has_all_columns():
     """A name with zero data-store coverage yields a stamp with every column present.
 
-    W-C note: opt_opex_days is computed from the OPEX calendar (not a data store) and may
-    be non-null even for a name with no polygon_gex/skew/ivspread coverage. All other
-    data-store-dependent columns must be null when no stores are present."""
+    Two columns are always-computable (non-null without any data store):
+      opt_opex_days — OPEX calendar (engine/opex.py; purely date-arithmetic)
+      opt_root_class — ticker taxonomy (static mapping; no data store needed)
+    All other data-store-dependent columns must be null when no stores are present."""
     s = stamp_options_state(
         "2026-06-24", "NOCOV",
         read_summary=lambda t: None,
@@ -173,12 +174,15 @@ def test_stamp_always_has_all_columns():
     )
     assert set(s.keys()) == set(STAMP_COLS)
     # data-store-dependent cols must all be null
-    data_store_cols = [c for c in STAMP_COLS if c != "opt_opex_days"]
+    # (opt_opex_days and opt_root_class are always-computable — excluded from null check)
+    _always_computable = ("opt_opex_days", "opt_root_class")
+    data_store_cols = [c for c in STAMP_COLS if c not in _always_computable]
     assert all(s[c] is None for c in data_store_cols), (
         f"Expected all data-store cols null, got: "
         f"{[(c, s[c]) for c in data_store_cols if s[c] is not None]}"
     )
     # opt_opex_days may be None or int (calendar-derived; depends on engine/opex availability)
+    # opt_root_class is always non-null (taxonomy-derived from ticker alone)
 
 
 # ── stamping pass: schema-union + backfill-does-not-overwrite ────────────────
@@ -511,23 +515,31 @@ def _stamped_ledger_with_ivspread(n_per_bucket, *, effect=0.0):
 
 
 def test_wc_buckets_building_history_below_threshold():
-    """All five W-C buckets are building_history when n < 30 per bucket."""
-    # ledger with only S-VOI data (from existing test helper) — W-C cols absent
+    """All W-C and W-OVC buckets are building_history when n < 30 per bucket."""
+    # ledger with only S-VOI data (from existing test helper) — W-C/W-OVC cols absent
     df = _stamped_ledger(5)
     gate = build_gate(df)
+    # W-C buckets
     for tid in ("S-IVSPREAD-F", "S-SKEW_DECEL", "S-TOP_RISK", "S-PIN_RISK", "S-VOI2"):
         assert gate["tests"][tid].get("ready") is False
         assert gate["verdicts"].get(tid) == "building_history", (
             f"{tid} should be building_history, got {gate['verdicts'].get(tid)}")
-    # gate schema should be v2
-    assert gate["schema"] == "options_entry.gate.v2"
-    # fdr_family block present
+    # W-OVC buckets
+    for tid in ("S-VANNA-RELIEF", "S-FRONT-CHARM"):
+        assert gate["tests"][tid].get("ready") is False
+        assert gate["verdicts"].get(tid) == "building_history", (
+            f"{tid} should be building_history, got {gate['verdicts'].get(tid)}")
+    # gate schema should be v3 (W-OVC bump)
+    assert gate["schema"] == "options_entry.gate.v3"
+    # fdr_family block: 22→28 (W-OVC amendment adds S-VANNA-RELIEF×3 + S-FRONT-CHARM×3)
     assert "fdr_family" in gate
-    assert gate["fdr_family"]["family_size"] == 22
+    assert gate["fdr_family"]["family_size"] == 28
     assert gate["fdr_family"]["alpha"] == pytest.approx(0.10)
-    # per_family_status block present
+    # per_family_status block includes all W-C and W-OVC buckets
     assert "per_family_status" in gate
     assert gate["per_family_status"]["S-IVSPREAD-F"] == "building_history"
+    assert gate["per_family_status"]["S-VANNA-RELIEF"] == "building_history"
+    assert gate["per_family_status"]["S-FRONT-CHARM"] == "building_history"
 
 
 def test_wc_ivspread_f_synthetic_signal():
@@ -561,15 +573,23 @@ def test_wc_ivspread_f_no_effect():
 
 # ── FIX-ROUND: retry-gate (STAMP_COVERAGE_COLS) ──────────────────────────────
 
-def test_stamp_coverage_cols_excludes_opex_days():
-    """STAMP_COVERAGE_COLS must NOT contain opt_opex_days (the always-computable calendar col)."""
-    assert "opt_opex_days" not in STAMP_COVERAGE_COLS, (
-        "opt_opex_days must be excluded from STAMP_COVERAGE_COLS to avoid locking out rows "
-        "that only have calendar coverage from future GEX/skew/ivspread fills"
-    )
-    # all other STAMP_COLS must be present
+def test_stamp_coverage_cols_excludes_always_computable():
+    """STAMP_COVERAGE_COLS must NOT contain always-computable cols (opt_opex_days, opt_root_class).
+
+    Always-computable cols (no data store needed):
+      opt_opex_days  — OPEX calendar (engine/opex.py; purely date-arithmetic)
+      opt_root_class — ticker taxonomy (static mapping; no data store)
+    Excluding them preserves the W1.3 retry-gate design: rows that only have these cols
+    remain retryable when GEX/skew/ivspread coverage later arrives."""
+    _always_computable = ("opt_opex_days", "opt_root_class")
+    for col in _always_computable:
+        assert col not in STAMP_COVERAGE_COLS, (
+            f"{col} must be excluded from STAMP_COVERAGE_COLS — it is always-computable "
+            "(no data store needed) and should not lock out rows from future retries"
+        )
+    # all other STAMP_COLS must be in STAMP_COVERAGE_COLS
     for col in STAMP_COLS:
-        if col != "opt_opex_days":
+        if col not in _always_computable:
             assert col in STAMP_COVERAGE_COLS, f"{col} missing from STAMP_COVERAGE_COLS"
 
 
@@ -754,4 +774,210 @@ def test_pin_risk_verdict_is_not_breach_driven():
     assert verdict == "no_effect", (
         f"S-PIN_RISK verdict should be 'no_effect' when only breach is elevated "
         f"(breach is not a registered primitive for S-PIN_RISK per §4). Got: '{verdict}'"
+    )
+
+
+# ── W-OVC: gate cell tests (S-VANNA-RELIEF / S-FRONT-CHARM) ─────────────────
+
+def _stamped_ledger_with_vanna_relief(n_per_bucket, *, breach_effect=0.0):
+    """Synthetic ledger split by opt_vanna_relief True vs False.
+
+    breach_effect < 0 → conditioned (vanna_relief=True) bucket has LOWER breach rate
+    (beneficial direction for S-VANNA-RELIEF: vol compression → fewer stop-outs)."""
+    rng = np.random.default_rng(200)
+    rows = []
+    # conditioned (vanna_relief=True): lower breach rate
+    for i in range(n_per_bucket):
+        rows.append({
+            "as_of": "2026-07-17", "ticker": f"VR{i}", "lane": "buy", "horizon": 21,
+            "opt_vanna_relief": True,
+            "post_cushion_breach": bool(rng.random() < 0.5 + breach_effect),
+            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
+            "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
+            "fwd_ret_5": float(rng.normal(0.02, 0.01)),
+            "fwd_mfe_5": float(rng.normal(0.03, 0.01)),
+        })
+    for i in range(n_per_bucket):
+        rows.append({
+            "as_of": "2026-07-17", "ticker": f"VB{i}", "lane": "buy", "horizon": 21,
+            "opt_vanna_relief": False,
+            "post_cushion_breach": bool(rng.random() < 0.5),
+            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
+            "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
+            "fwd_ret_5": float(rng.normal(0.02, 0.01)),
+            "fwd_mfe_5": float(rng.normal(0.03, 0.01)),
+        })
+    df = pd.DataFrame(rows)
+    for c in STAMP_COLS:
+        if c not in df.columns:
+            df[c] = None
+    return df
+
+
+def _stamped_ledger_with_front_charm(n_per_bucket, *, breach_effect=0.0):
+    """Synthetic ledger split by opt_front7_charm_share top tercile vs rest.
+
+    breach_effect > 0 → conditioned (top-tercile) bucket has HIGHER breach rate
+    (beneficial direction for S-FRONT-CHARM caution-only: elevated charm = higher vol risk)."""
+    rng = np.random.default_rng(300)
+    rows = []
+    # conditioned (top-tercile charm share): higher breach rate
+    for i in range(n_per_bucket):
+        rows.append({
+            "as_of": "2026-07-17", "ticker": f"FC{i}", "lane": "buy", "horizon": 21,
+            "opt_front7_charm_share": 0.80 + float(rng.random() * 0.10),  # > 2/3 quantile
+            "post_cushion_breach": bool(rng.random() < 0.5 + breach_effect),
+            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
+            "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
+            "fwd_ret_5": float(rng.normal(0.02, 0.01)),
+            "fwd_mfe_5": float(rng.normal(0.03, 0.01)),
+        })
+    for i in range(n_per_bucket):
+        rows.append({
+            "as_of": "2026-07-17", "ticker": f"FB{i}", "lane": "buy", "horizon": 21,
+            "opt_front7_charm_share": 0.10 + float(rng.random() * 0.20),  # < 2/3 quantile
+            "post_cushion_breach": bool(rng.random() < 0.5),
+            "terminal_state_clean8_21": CLEAN if rng.random() < 0.5 else "STOPPED",
+            "fwd_mfe_21": float(rng.normal(0.10, 0.02)),
+            "fwd_ret_5": float(rng.normal(0.02, 0.01)),
+            "fwd_mfe_5": float(rng.normal(0.03, 0.01)),
+        })
+    df = pd.DataFrame(rows)
+    for c in STAMP_COLS:
+        if c not in df.columns:
+            df[c] = None
+    return df
+
+
+def test_ovc_vanna_relief_building_history_below_threshold():
+    """S-VANNA-RELIEF is building_history when n < 30 per bucket."""
+    df = _stamped_ledger_with_vanna_relief(5)
+    gate = build_gate(df)
+    assert gate["tests"]["S-VANNA-RELIEF"].get("ready") is False
+    assert gate["verdicts"]["S-VANNA-RELIEF"] == "building_history"
+    assert "S-VANNA-RELIEF" in gate["per_family_status"]
+    assert gate["fdr_family"]["family_size"] == 28
+
+
+def test_ovc_vanna_relief_signal_when_breach_reduced():
+    """S-VANNA-RELIEF produces 'signal' when n>=30 AND breach rate is lower in flagged bucket."""
+    # breach_effect = -0.35 → flagged bucket has breach rate ≈ 0.5 - 0.35 = 0.15 (much lower)
+    df = _stamped_ledger_with_vanna_relief(MIN_PER_BUCKET + 20, breach_effect=-0.35)
+    gate = build_gate(df)
+    t = gate["tests"]["S-VANNA-RELIEF"]
+    assert t.get("ready") is True
+    assert gate["verdicts"]["S-VANNA-RELIEF"] == "signal", (
+        f"Expected 'signal' for S-VANNA-RELIEF with large breach reduction, "
+        f"got {gate['verdicts']['S-VANNA-RELIEF']}"
+    )
+    # primary primitive: breach delta < 0 AND CI excludes 0
+    b = t["breach"]
+    assert b.get("excludes_zero") is True
+    assert b.get("delta") is not None and b["delta"] < 0
+    # gate still not scored (machine, not a lever)
+    assert gate["scored"] is False
+
+
+def test_ovc_vanna_relief_no_effect_when_no_breach_difference():
+    """S-VANNA-RELIEF returns 'no_effect' when n>=30 but no conditioned breach effect."""
+    df = _stamped_ledger_with_vanna_relief(MIN_PER_BUCKET + 20, breach_effect=0.0)
+    gate = build_gate(df)
+    assert gate["tests"]["S-VANNA-RELIEF"].get("ready") is True
+    assert gate["verdicts"]["S-VANNA-RELIEF"] == "no_effect"
+
+
+def test_ovc_front_charm_building_history_below_threshold():
+    """S-FRONT-CHARM is building_history when n < 30 per bucket."""
+    df = _stamped_ledger_with_front_charm(5)
+    gate = build_gate(df)
+    assert gate["tests"]["S-FRONT-CHARM"].get("ready") is False
+    assert gate["verdicts"]["S-FRONT-CHARM"] == "building_history"
+    assert "S-FRONT-CHARM" in gate["per_family_status"]
+
+
+def test_ovc_front_charm_signal_when_breach_elevated():
+    """S-FRONT-CHARM produces 'signal' (caution-only) when breach is higher in top-tercile.
+
+    Beneficial direction for caution: flagged fires (top-tercile charm) have MORE stop-outs
+    → correctly identifies vol-exposed entries."""
+    # breach_effect = +0.35 → flagged bucket has breach rate ≈ 0.5 + 0.35 = 0.85 (much higher)
+    df = _stamped_ledger_with_front_charm(MIN_PER_BUCKET + 20, breach_effect=0.35)
+    gate = build_gate(df)
+    t = gate["tests"]["S-FRONT-CHARM"]
+    assert t.get("ready") is True
+    assert gate["verdicts"]["S-FRONT-CHARM"] == "signal", (
+        f"Expected 'signal' for S-FRONT-CHARM with large breach elevation, "
+        f"got {gate['verdicts']['S-FRONT-CHARM']}"
+    )
+    # primary primitive: breach delta > 0 (higher breach in flagged = caution-only signal)
+    b = t["breach"]
+    assert b.get("excludes_zero") is True
+    assert b.get("delta") is not None and b["delta"] > 0
+    # gate is still caution-only (scored=False)
+    assert gate["scored"] is False
+    assert t.get("caution_only") is True
+
+
+def test_ovc_front_charm_no_effect_when_no_breach_difference():
+    """S-FRONT-CHARM returns 'no_effect' when n>=30 but no breach difference."""
+    df = _stamped_ledger_with_front_charm(MIN_PER_BUCKET + 20, breach_effect=0.0)
+    gate = build_gate(df)
+    assert gate["tests"]["S-FRONT-CHARM"].get("ready") is True
+    assert gate["verdicts"]["S-FRONT-CHARM"] == "no_effect"
+
+
+def test_ovc_gate_family_size_is_28():
+    """BH-FDR family size must be 28 (22 prior + 6 W-OVC tests)."""
+    df = _stamped_ledger(5)
+    gate = build_gate(df)
+    assert gate["fdr_family"]["family_size"] == 28, (
+        f"Expected family_size=28 (22 prior + 6 W-OVC), got {gate['fdr_family']['family_size']}. "
+        "See OPTIONS_ALPHA_MASTERPLAN.md §4 amended BH-FDR statement (2026-07-06 OVC amendment)."
+    )
+
+
+def test_ovc_gate_schema_is_v3():
+    """Gate schema must be v3 after W-OVC additions."""
+    df = _stamped_ledger(5)
+    gate = build_gate(df)
+    assert gate["schema"] == "options_entry.gate.v3"
+
+
+def test_ovc_root_class_always_non_null():
+    """opt_root_class is always non-null — it is derived from the ticker name alone."""
+    from engine.options_stamp import stamp_options_state as _stamp
+    from engine.options_stamp import STAMP_COLS as _STAMP_COLS
+    s = _stamp(
+        "2026-07-17", "SPY",
+        read_summary=lambda t: None,
+        chain_dates=[],
+        read_chain=lambda d: None,
+        skew_df=None,
+        ivspread_df=None,
+        _skew_loader=lambda: None,
+        _ivspread_loader=lambda: None,
+    )
+    assert "opt_root_class" in s
+    assert s["opt_root_class"] == "index_etf", (
+        f"SPY should be index_etf, got {s['opt_root_class']!r}"
+    )
+    # single_name for a non-ETF ticker
+    s2 = _stamp(
+        "2026-07-17", "AAPL",
+        read_summary=lambda t: None,
+        chain_dates=[],
+        read_chain=lambda d: None,
+        skew_df=None,
+        ivspread_df=None,
+        _skew_loader=lambda: None,
+        _ivspread_loader=lambda: None,
+    )
+    assert s2["opt_root_class"] == "single_name"
+
+
+def test_ovc_stamp_coverage_cols_excludes_root_class():
+    """opt_root_class must be excluded from STAMP_COVERAGE_COLS (always-computable)."""
+    assert "opt_root_class" not in STAMP_COVERAGE_COLS, (
+        "opt_root_class is always-computable (taxonomy-derived) and must not lock out "
+        "rows from future GEX/skew/ivspread fills via the retry gate"
     )

@@ -9,7 +9,11 @@ the nightly rebuilds it idempotently from LATEST source rows.
 Sources (all read-only):
   - data/polygon_gex/summary_<SYM>.parquet     → gamma_regime, dist_to_flip_pct,
                                                   magnet_up/down → wall distance pcts,
-                                                  iv30, max_pain (if present)
+                                                  iv30, max_pain (if present),
+                                                  net_vex (for vanna_hedge_5d),
+  - data/polygon_gex/chains/{date}.parquet      → per-contract K/T/iv/oi/is_call/expiry/
+                                                  gamma/delta/spot; engine/greeks.bs_greeks
+                                                  computes vanna/charm from these fields
   - data/options_skew/snapshots.parquet         → skew + 5d change
   - data/options_ivspread/snapshots.parquet     → ivspread_rel + 5d change
   - data/options_flow/summary_<SYM>.parquet     → fresh_contracts, net_doi, doi_pc,
@@ -33,7 +37,11 @@ Columns emitted (per masterplan W-A acceptance gate):
   dist_to_flip_pct,
   wall_up_dist_pct, wall_down_dist_pct,
   max_pain_dist_pct              — null if max_pain absent,
-  opex_days,
+  opex_days,                     — CALENDAR days to next monthly OPEX (3rd Friday).
+                                   NAMING NOTE (RUL-OVC-8): opex_days here is CALENDAR days.
+                                   engine/opex.py tag().td_to is TRADING days (opt_opex_days
+                                   in the ledger stamp).  Both are kept; this column is
+                                   display-only context; the stamp uses td_to for PIT accuracy.
   pin_risk                       — bool: opex_days<=5 AND gamma_regime=='long' AND
                                    min(wall_up_dist_pct, wall_down_dist_pct,
                                        max_pain_dist_pct) <= PIN_RISK_WALL_PCT (2.0%)
@@ -42,7 +50,37 @@ Columns emitted (per masterplan W-A acceptance gate):
                                    effects can mechanically pin or release spot at expiry,
   gex_confirm_verdict,
   evidence_quality               — 'full'/'partial'/'thin'/'stale' per-row freshness,
-  src_gex_asof, src_skew_asof, src_ivspread_asof, src_flow_asof.
+  src_gex_asof, src_skew_asof, src_ivspread_asof, src_flow_asof,
+
+  W-OVC additions (RO-2 display-only, no composites):
+  front7_charm_share             — |charm| OI-weighted notional share for expiries within
+                                   7 calendar days, as fraction of total board.  Null when
+                                   no chain data or zero total.  See _compute_chain_ovc().
+  front7_gex_share               — |gamma| OI-weighted notional share for expiries within
+                                   7 calendar days (same construction as front7_charm_share).
+  signed_vanna_pressure          — net board-wide signed vanna notional (sum of
+                                   sign×vanna×oi×mult×spot×pm, same dealer convention as
+                                   engine/gex_engine.py: long-call +1, short-put +1).
+                                   Display-only; the sign inherits the unobservable dealer
+                                   convention (audit #29).
+  vanna_hedge_5d                 — −net_vex × iv30_5d_chg from the summary store.
+                                   net_vex = net signed vanna-dollar exposure (from
+                                   summary_{SYM}.parquet); iv30_5d_chg = latest iv30 minus
+                                   iv30 5 summary rows ago (calendar days, not trading days).
+                                   Null when < 5 summary rows available or net_vex absent.
+  root_class                     — enum: index_etf | sector_etf | industry_etf | single_name.
+                                   Derived from ROOT_CLASS_MAP (see below). Display-only context
+                                   for front7_*_share interpretation (RUL-OVC-6 caveat: sign
+                                   of front7_charm_share → RV is era-unstable within ETF class).
+
+OI TIMING LAW (OPRA convention, matching existing column treatment in this file):
+  Options OI is reported T+1 by OPRA — contracts traded on date t are reflected in the
+  OI of the t+1 chain snapshot.  The chains/{date}.parquet stores carry the OI as-reported
+  for that file date.  This module reads LATEST chain snapshot without additional shifting
+  (matching existing behaviour for pin_risk/gex_confirm_verdict which also read the latest
+  summary row).  For display context at render time this is appropriate; the PIT-stamping
+  path in engine/options_stamp.py additionally applies strict date-≤-fire_date filtering
+  so the ledger stamp always uses T−1 positions relative to fire date.
 
 Missing/gitignored stores → null fields + evidence_quality='thin'.  NEVER raises on
 missing stores; NEVER emits fake-neutral values for absent data.
@@ -55,6 +93,7 @@ import datetime as _dt
 import glob
 import json
 import logging
+import math
 from pathlib import Path
 from typing import Any
 
@@ -62,6 +101,7 @@ import numpy as np
 import pandas as pd
 
 from engine import gex_confirm
+from engine.greeks import bs_greeks
 
 log = logging.getLogger(__name__)
 
@@ -73,6 +113,42 @@ LOOKBACK_TRADING_DAYS = 5
 
 # Evidence-quality stale threshold: source as_of older than this many calendar days.
 STALE_CALENDAR_DAYS = 3
+
+# ── Root-class mapping (W-OVC, RUL-OVC-6) ────────────────────────────────────
+# One place for the entire taxonomy. display-only — no signal/scoring use.
+# Mandatory alongside front7_*_share (ETF-slice sign is era-unstable per robustness §3.2).
+_INDEX_ETFS: frozenset[str] = frozenset({"SPY", "QQQ", "IWM", "DIA"})
+_SECTOR_ETFS: frozenset[str] = frozenset({
+    # 11 SPDR Select Sector ETFs
+    "XLB", "XLC", "XLE", "XLF", "XLI", "XLK", "XLP", "XLRE", "XLU", "XLV", "XLY",
+})
+_INDUSTRY_ETFS: frozenset[str] = frozenset({
+    "SMH", "SOXX", "XBI", "KRE", "ARKK",
+    # Additional common industry ETFs (additive-only; never remove existing entries)
+    "GDX", "GDXJ", "XOP", "XHB", "ITB", "IBB", "FXI", "EWZ", "EEM", "GLD", "SLV", "TLT",
+    "HYG", "LQD", "JETS", "BITO",
+})
+
+# lookup function — single_name is the default for anything not in the above sets
+def _root_class(ticker: str) -> str:
+    """Return the root_class for a ticker: index_etf | sector_etf | industry_etf | single_name.
+
+    Mapping is intentionally conservative and additive-only (never remove entries once live).
+    New ETFs are added to _INDUSTRY_ETFS by default unless they fit a narrower category.
+    """
+    t = str(ticker).upper()
+    if t in _INDEX_ETFS:
+        return "index_etf"
+    if t in _SECTOR_ETFS:
+        return "sector_etf"
+    if t in _INDUSTRY_ETFS:
+        return "industry_etf"
+    return "single_name"
+
+
+# Multiplier and point-move factor matching engine/gex_engine.py convention
+_CHAIN_MULT = 100.0   # US equity options: 100 shares per contract
+_CHAIN_PM = 0.01      # per-1-point move in underlying dollar-dollar
 
 
 # ---------------------------------------------------------------------------
@@ -160,6 +236,214 @@ def _evidence_quality(
     if stale_count > 0 and fresh_count == 0:
         return "stale"
     return "thin"
+
+
+# ---------------------------------------------------------------------------
+# W-OVC chain helpers
+# ---------------------------------------------------------------------------
+
+def _compute_chain_ovc(root: Path, ticker: str) -> dict:
+    """Compute W-OVC display columns from the LATEST chains/{date}.parquet for ticker.
+
+    Returns dict with keys:
+      front7_charm_share  — |charm| OI-weighted notional share for expiries ≤7 calendar
+                             days from the chain date, as fraction of total board (0..1).
+                             Null when chain absent or total board |charm| notional = 0.
+      front7_gex_share    — |gamma| OI-weighted notional share for expiries ≤7 calendar
+                             days (same construction as front7_charm_share).
+      signed_vanna_pressure — net signed vanna notional across the full board (display).
+      All keys always present; values are float | None.
+
+    FORMULA (matches scripts/research/options_opex_vanna_charm_study.py):
+      For each contract:
+        dealer_sign = +1 for calls, -1 for puts  (long-call/short-put convention)
+        vanna_notional = dealer_sign × vanna × oi × MULT × spot × PM
+        charm_notional = dealer_sign × (charm / 365) × oi × MULT × spot
+        gex_notional   = dealer_sign × gamma × oi × MULT × spot²  (but |·| for shares)
+
+      front7_charm_share = sum(|charm_notional| where dte≤7) / sum(|charm_notional|)
+      front7_gex_share   = sum(|gex_notional|  where dte≤7) / sum(|gex_notional|)
+      signed_vanna_pressure = sum(vanna_notional) [full board, signed]
+
+    OI TIMING: chains/{date}.parquet carries OI as reported by OPRA for that file date
+    (T+1 publication: day-t trades reflected in day-t+1 OI).  We read the LATEST chain
+    snapshot available without additional shifting — this matches the existing behaviour
+    of the options_entry_state display table (see docstring OI TIMING LAW).
+
+    Null-safe: any per-contract failure (non-positive inputs to bs_greeks) silently
+    produces NaN vanna/charm for that row; those rows are excluded from the sums.
+    A zero total (all NaN or all-zero notionals) returns null for both shares.
+    Never raises; coverage gaps → null fields, never crashes.
+    """
+    out: dict = {
+        "front7_charm_share": None,
+        "front7_gex_share": None,
+        "signed_vanna_pressure": None,
+    }
+    chains_dir = root / "data" / "polygon_gex" / "chains"
+    if not chains_dir.exists():
+        return out
+    # Find the latest available chain file
+    chain_files = sorted(chains_dir.glob("*.parquet"))
+    if not chain_files:
+        return out
+    latest_chain_path = chain_files[-1]
+    try:
+        cdf = pd.read_parquet(latest_chain_path)
+    except Exception:
+        log.debug("Cannot read chain %s — skipping OVC", latest_chain_path)
+        return out
+    if cdf.empty:
+        return out
+    # Filter to this ticker
+    required_cols = {"underlying", "K", "T", "iv", "oi", "is_call", "spot", "expiry"}
+    if not required_cols.issubset(set(cdf.columns)):
+        log.debug("Chain %s missing required columns for OVC", latest_chain_path)
+        return out
+    sub = cdf[cdf["underlying"] == ticker].copy()
+    if sub.empty:
+        return out
+
+    # Chain snapshot date (for computing days-to-expiry)
+    chain_date_str = latest_chain_path.stem  # "YYYY-MM-DD"
+    try:
+        chain_date = _dt.date.fromisoformat(chain_date_str)
+    except ValueError:
+        log.debug("Cannot parse chain date from %s", latest_chain_path.name)
+        return out
+
+    # Coerce numeric columns
+    for col in ("K", "T", "iv", "oi", "spot"):
+        sub[col] = pd.to_numeric(sub[col], errors="coerce")
+
+    # Compute calendar days to expiry from chain snapshot date
+    def _dte(expiry_val) -> int | None:
+        try:
+            exp = pd.Timestamp(expiry_val).date()
+            return (exp - chain_date).days
+        except Exception:
+            return None
+
+    sub = sub.copy()
+    sub["_dte"] = sub["expiry"].apply(_dte)
+
+    # Compute vanna and charm per contract using bs_greeks
+    vanna_list: list[float] = []
+    charm_list: list[float] = []
+    gamma_list: list[float] = []
+    oi_list: list[float] = []
+    spot_list: list[float] = []
+    dte_list: list[int | None] = []
+    is_call_list: list[bool] = []
+
+    for _, row in sub.iterrows():
+        S = row["spot"]
+        K = row["K"]
+        T = row["T"]
+        sigma = row["iv"]
+        oi = row["oi"]
+        is_call = bool(row["is_call"])
+        dte = row["_dte"]
+        # bs_greeks returns NaN on degenerate inputs — that is the null-safe path
+        try:
+            _delta, gamma, vanna, charm = bs_greeks(S, K, T, sigma, is_call)
+        except Exception:
+            vanna, charm, gamma = float("nan"), float("nan"), float("nan")
+        vanna_list.append(vanna)
+        charm_list.append(charm)
+        gamma_list.append(gamma)
+        oi_list.append(float(oi) if oi is not None and not math.isnan(float(oi)) else float("nan"))
+        spot_list.append(float(S) if S is not None and not math.isnan(float(S)) else float("nan"))
+        dte_list.append(dte)
+        is_call_list.append(is_call)
+
+    n = len(vanna_list)
+    if n == 0:
+        return out
+
+    va = np.array(vanna_list, dtype=float)
+    ch = np.array(charm_list, dtype=float)
+    gm = np.array(gamma_list, dtype=float)
+    oi_arr = np.array(oi_list, dtype=float)
+    sp_arr = np.array(spot_list, dtype=float)
+    is_call_arr = np.array(is_call_list, dtype=float)
+
+    # Dealer sign: +1 calls, -1 puts  (long-call/short-put convention, audit #29)
+    sign_arr = np.where(is_call_arr, 1.0, -1.0)
+
+    # charm notional: sign × (charm/365) × oi × MULT × spot  (per-day charm exposure)
+    charm_notional = sign_arr * (ch / 365.0) * oi_arr * _CHAIN_MULT * sp_arr
+    # gex notional: sign × gamma × oi × MULT × spot² (standard GEX dollar-gamma)
+    gex_notional = sign_arr * gm * oi_arr * _CHAIN_MULT * sp_arr * sp_arr
+    # vanna notional: sign × vanna × oi × MULT × spot × PM
+    vanna_notional = sign_arr * va * oi_arr * _CHAIN_MULT * sp_arr * _CHAIN_PM
+
+    # front-7 calendar-day mask
+    dte_arr = np.array(
+        [d if d is not None else -1 for d in dte_list], dtype=float
+    )
+    front7_mask = (dte_arr >= 0) & (dte_arr <= 7)
+
+    abs_charm = np.abs(charm_notional)
+    abs_gex = np.abs(gex_notional)
+
+    # Null-safe sums (ignore NaN cells)
+    total_abs_charm = float(np.nansum(abs_charm))
+    front7_abs_charm = float(np.nansum(abs_charm[front7_mask]))
+    total_abs_gex = float(np.nansum(abs_gex))
+    front7_abs_gex = float(np.nansum(abs_gex[front7_mask]))
+    total_signed_vanna = float(np.nansum(vanna_notional))
+
+    if total_abs_charm > 0:
+        out["front7_charm_share"] = round(front7_abs_charm / total_abs_charm, 6)
+    if total_abs_gex > 0:
+        out["front7_gex_share"] = round(front7_abs_gex / total_abs_gex, 6)
+    if math.isfinite(total_signed_vanna):
+        out["signed_vanna_pressure"] = round(total_signed_vanna, 2)
+
+    return out
+
+
+def _compute_vanna_hedge_5d(root: Path, ticker: str) -> float | None:
+    """Compute vanna_hedge_5d = −net_vex × iv30_5d_chg from summary_{ticker}.parquet.
+
+    iv30_5d_chg = latest iv30 minus iv30 from 5 rows earlier in the summary.
+    Returns None when < 6 summary rows exist, net_vex is absent, or any required
+    value is non-finite.
+
+    SOURCE: data/polygon_gex/summary_{ticker}.parquet (net_vex + iv30 columns).
+    This does NOT use the chain file — net_vex is the signed vanna-dollar aggregate
+    already computed nightly by engine/gex_engine.py and written to the summary store.
+    """
+    summary_path = root / "data" / "polygon_gex" / f"summary_{ticker}.parquet"
+    if not summary_path.exists():
+        return None
+    try:
+        sdf = pd.read_parquet(summary_path)
+    except Exception:
+        return None
+    if sdf.empty or len(sdf) < 6:
+        return None
+    if "net_vex" not in sdf.columns or "iv30" not in sdf.columns:
+        return None
+    # Latest row and the row 5 positions earlier (by DataFrame position, not calendar days)
+    latest = sdf.iloc[-1]
+    prior = sdf.iloc[-6]  # index -6 gives the row 5 steps before -1
+
+    def _f(v) -> float | None:
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            return None
+        return None if (not math.isfinite(x)) else x
+
+    net_vex = _f(latest.get("net_vex"))
+    iv30_latest = _f(latest.get("iv30"))
+    iv30_prior = _f(prior.get("iv30"))
+    if net_vex is None or iv30_latest is None or iv30_prior is None:
+        return None
+    iv30_5d_chg = iv30_latest - iv30_prior
+    return round(-net_vex * iv30_5d_chg, 6)
 
 
 # ---------------------------------------------------------------------------
@@ -472,6 +756,22 @@ def build_state(root: str | Path | None = None) -> pd.DataFrame:
                 if wall_candidates:
                     pin_risk = bool(min(wall_candidates) <= PIN_RISK_WALL_PCT)
 
+        # ---- W-OVC: chain-derived columns (fail-soft — null on missing chain) ---
+        # front7_charm_share, front7_gex_share, signed_vanna_pressure (from latest chain)
+        ovc = _compute_chain_ovc(root, ticker)
+        front7_charm_share = ovc.get("front7_charm_share")
+        front7_gex_share = ovc.get("front7_gex_share")
+        signed_vanna_pressure = ovc.get("signed_vanna_pressure")
+
+        # ---- W-OVC: vanna_hedge_5d (from summary net_vex × iv30 history) ----
+        vanna_hedge_5d = _compute_vanna_hedge_5d(root, ticker)
+
+        # ---- W-OVC: root_class --------------------------------------------------
+        # display-only context for front7_*_share interpretation (RUL-OVC-6).
+        # ETF-slice sign of front7_charm_share is era-unstable — root_class is mandatory
+        # alongside any display use of the front7 columns.
+        root_class: str = _root_class(ticker)
+
         # ---- as_of for the overall row: latest non-null source date --------
         source_dates = [
             d for d in [src_gex_asof, src_skew_asof, src_ivspread_asof, src_flow_asof]
@@ -509,6 +809,12 @@ def build_state(root: str | Path | None = None) -> pd.DataFrame:
             "src_skew_asof": src_skew_asof,
             "src_ivspread_asof": src_ivspread_asof,
             "src_flow_asof": src_flow_asof,
+            # W-OVC additions (display-only, RO-2)
+            "front7_charm_share": front7_charm_share,
+            "front7_gex_share": front7_gex_share,
+            "signed_vanna_pressure": signed_vanna_pressure,
+            "vanna_hedge_5d": vanna_hedge_5d,
+            "root_class": root_class,
         })
 
     if not rows:
@@ -521,6 +827,9 @@ def build_state(root: str | Path | None = None) -> pd.DataFrame:
             "wall_up_dist_pct", "wall_down_dist_pct", "max_pain_dist_pct",
             "opex_days", "pin_risk", "gex_confirm_verdict", "evidence_quality",
             "src_gex_asof", "src_skew_asof", "src_ivspread_asof", "src_flow_asof",
+            # W-OVC
+            "front7_charm_share", "front7_gex_share", "signed_vanna_pressure",
+            "vanna_hedge_5d", "root_class",
         ])
 
     df = pd.DataFrame(rows)

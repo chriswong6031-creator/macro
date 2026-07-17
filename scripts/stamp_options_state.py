@@ -4,6 +4,8 @@ Options Alpha program W1.3 / W-C (research/OPTIONS_ALPHA_MASTERPLAN.md, rulings 
 W-C 2026-07-05 extends with skew/ivspread/opex/wall-dist/pin-risk columns).
 Extended by P2.2 (research/LIVE_FLOW_PRODUCTION_ROADMAP_BY_FABLE.md §3 P2.2) to add four
 tape-flow stamp columns from engine/tape_flow_stamp.py.
+Extended by W-OVC (2026-07-17) to add opt_vanna_relief, opt_front7_charm_share,
+opt_root_class — see OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md §5 build docket.
 
 Runs AFTER ``scripts.grade_us_board --nightly`` in the daily.yml render job (see the
 "US Buy Board ledger" step). Given the freshly-graded + accumulated
@@ -57,8 +59,10 @@ Idempotent, resilient: if the ledger is absent this is a no-op.
 from __future__ import annotations
 
 import argparse
+import math
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from engine.options_stamp import (
@@ -163,6 +167,13 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
 
     newly_stamped = 0
 
+    # ── W-OVC: collect per-row stamp results so opt_vanna_relief can be ranked
+    # cross-sectionally per as_of before committing any W-OVC values. ─────────
+    # Structure: {(as_of, ticker): stamp_dict}  (options-state family only)
+    _ovc_pending: dict[tuple, dict] = {}
+    # Separate map for vanna_hedge_5d values (computed per-ticker for cross-sectional ranking)
+    _ovc_vhd_precomputed: dict[tuple, float | None] = {}
+
     for idx in df.index[eligible_mask]:
         as_of = df.at[idx, "as_of"]
         ticker = df.at[idx, "ticker"]
@@ -170,7 +181,7 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
         key = (as_of, ticker)
         row_committed = False
 
-        # ── options-state family (W1.3 + W-C; own retry gate) ─────────────────
+        # ── options-state family (W1.3 + W-C + W-OVC; own retry gate) ────────
         if bool(opts_retry_mask.at[idx]):
             if key not in w13_cache:
                 w13_cache[key] = stamp_options_state(
@@ -180,6 +191,13 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
                     ivspread_df=ivspread_df,
                 )
             stamp = w13_cache[key]
+            _ovc_pending[key] = stamp  # stash for cross-sectional ranking below
+            # Compute vanna_hedge_5d for this (as_of, ticker) if not already done
+            if key not in _ovc_vhd_precomputed:
+                from engine.options_stamp import _vanna_hedge_5d_from_summary, _default_read_summary, _as_date as _stamp_as_date
+                _as_of_d = _stamp_as_date(as_of)
+                _sdf = _default_read_summary(ticker)
+                _ovc_vhd_precomputed[key] = _vanna_hedge_5d_from_summary(_as_of_d, _sdf) if _as_of_d else None
             # Always write opt_opex_days (calendar-derived; always available) even when
             # coverage-gated cols are null.  This lets us track OPEX proximity for all
             # fires without poisoning the retry gate.
@@ -214,7 +232,100 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
         if row_committed:
             newly_stamped += 1
 
+    # ── W-OVC: cross-sectional opt_vanna_relief ranking ──────────────────────
+    # opt_vanna_relief = (iv30_5d_chg < 0) AND (vanna_hedge_5d in top tercile per as_of)
+    # The tercile is ranked cross-sectionally over all fires on the same as_of date
+    # that were stamped in this pass. This exactly mirrors the study construction
+    # (§3.1, tercile rank within date).
+    #
+    # Step 1: Use precomputed vanna_hedge_5d map (populated in the main loop above).
+    _ovc_vhd: dict[tuple, float | None] = _ovc_vhd_precomputed
+
+    # Step 2: Per as_of, compute the top-tercile threshold over all tickers with
+    # non-null vanna_hedge_5d. Needs ≥ 3 values to have a meaningful tercile boundary.
+    _vhd_by_asof: dict[str, list[float]] = {}
+    for (asof_k, _tk), vhd in _ovc_vhd.items():
+        if vhd is not None and math.isfinite(vhd):
+            _vhd_by_asof.setdefault(str(asof_k), []).append(vhd)
+
+    _tercile_hi: dict[str, float] = {}
+    for asof_k, vals in _vhd_by_asof.items():
+        if len(vals) >= 3:
+            _tercile_hi[asof_k] = float(np.percentile(vals, 100.0 * 2.0 / 3.0))
+
+    # Step 3: Compute opt_vanna_relief per eligible row and write it back.
+    # Also compute iv30_5d_chg directly from the summary frame for each ticker.
+    # We need iv30_5d_chg (sign) separately from vanna_hedge_5d to avoid any
+    # sign confusion due to net_vex magnitude — read it from the stamp's raw values.
+    for idx in df.index[eligible_mask]:
+        as_of_val = df.at[idx, "as_of"]
+        ticker_val = df.at[idx, "ticker"]
+        key = (as_of_val, ticker_val)
+        if key not in _ovc_pending:
+            continue
+        stamp = _ovc_pending[key]
+
+        # Only write opt_vanna_relief if the options-state family has coverage
+        coverage_vals = {c: stamp.get(c) for c in STAMP_COVERAGE_COLS if c in stamp}
+        if not any(v is not None for v in coverage_vals.values()):
+            continue
+
+        vhd = _ovc_vhd.get(key)
+        vanna_relief: bool | None = None
+        if vhd is not None and math.isfinite(vhd):
+            thr = _tercile_hi.get(str(as_of_val))
+            if thr is not None:
+                in_top_tercile = bool(vhd >= thr)
+                # iv30_5d_chg: load the summary frame for this ticker (PIT ≤ as_of)
+                # and compute latest_iv30 − iv30_5_rows_prior.
+                # This is the same calculation as _vanna_hedge_5d_from_summary but
+                # we only need the sign of iv30_5d_chg here.
+                iv30_chg = _get_iv30_5d_chg_from_summary(
+                    as_of_val, ticker_val, w13_cache.get(key, {})
+                )
+                if iv30_chg is not None:
+                    vanna_relief = bool(iv30_chg < 0 and in_top_tercile)
+
+        df.at[idx, "opt_vanna_relief"] = vanna_relief
+
     return df, newly_stamped
+
+
+def _get_iv30_5d_chg_from_summary(
+    as_of: str,
+    ticker: str,
+    stamp: dict,
+) -> float | None:
+    """Extract iv30_5d_chg for (as_of, ticker) from the summary parquet.
+
+    PIT: reads only rows with index date ≤ as_of. Needs ≥ 6 such rows.
+    Returns None when insufficient history or columns absent.
+
+    We re-read the summary parquet rather than storing it in the stamp to keep
+    STAMP_COLS clean (iv30_5d_chg is a transient quantity for the ranking pass).
+    """
+    from engine.options_stamp import _default_read_summary, _as_date
+    import datetime as _dt_local
+
+    as_of_d = _as_date(as_of)
+    if as_of_d is None:
+        return None
+    sdf = _default_read_summary(ticker)
+    if sdf is None or sdf.empty or "iv30" not in sdf.columns:
+        return None
+    idx_dates = [_as_date(d) for d in sdf.index]
+    mask = [d is not None and d <= as_of_d for d in idx_dates]
+    usable = sdf[mask]
+    if len(usable) < 6:
+        return None
+    try:
+        iv30_latest = float(usable.iloc[-1]["iv30"])
+        iv30_prior = float(usable.iloc[-6]["iv30"])
+    except (TypeError, ValueError, KeyError):
+        return None
+    if not (math.isfinite(iv30_latest) and math.isfinite(iv30_prior)):
+        return None
+    return iv30_latest - iv30_prior
 
 
 def main() -> None:
@@ -266,6 +377,13 @@ def main() -> None:
                 n_col = int(df[col].notna().sum())
                 pct = round(n_col / max(n_before, 1) * 100, 1)
                 print(f"  W-C coverage [{col}]: {n_col}/{n_before} rows ({pct}%)")
+        # W-OVC coverage summary
+        ovc_cols = ["opt_vanna_relief", "opt_front7_charm_share", "opt_root_class"]
+        for col in ovc_cols:
+            if col in df.columns:
+                n_col = int(df[col].notna().sum())
+                pct = round(n_col / max(n_before, 1) * 100, 1)
+                print(f"  W-OVC coverage [{col}]: {n_col}/{n_before} rows ({pct}%)")
 
 
 if __name__ == "__main__":

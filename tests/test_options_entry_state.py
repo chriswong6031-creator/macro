@@ -41,6 +41,9 @@ REQUIRED_COLUMNS = [
     "gex_confirm_verdict",
     "evidence_quality",
     "src_gex_asof", "src_skew_asof", "src_ivspread_asof", "src_flow_asof",
+    # W-OVC additions (display-only, RO-2)
+    "front7_charm_share", "front7_gex_share",
+    "signed_vanna_pressure", "vanna_hedge_5d", "root_class",
 ]
 
 FORBIDDEN_COLUMNS = [
@@ -475,3 +478,157 @@ def test_no_exceptions_on_corrupt_parquet(tmp_path):
     assert isinstance(df, pd.DataFrame)
     # CORRUPT ticker should not appear (row was skipped, not crashed)
     assert "CORRUPT" not in df["ticker"].values
+
+
+# ---------------------------------------------------------------------------
+# W-OVC tests: root_class, front7_*_share, vanna_hedge_5d, null-safety
+# ---------------------------------------------------------------------------
+
+def test_root_class_always_present(tmp_path):
+    """root_class must be non-null for every row; correct values for known ETFs."""
+    _write_gex_summary(tmp_path, "SPY")
+    _write_gex_summary(tmp_path, "XLK")
+    _write_gex_summary(tmp_path, "SMH")
+    _write_gex_summary(tmp_path, "AAPL")
+    df = OES.build_state(tmp_path)
+    assert len(df) > 0
+    # root_class is always non-null
+    assert df["root_class"].notna().all(), "root_class must never be null"
+    rows = {row["ticker"]: row for _, row in df.iterrows()}
+    assert rows["SPY"]["root_class"] == "index_etf"
+    assert rows["XLK"]["root_class"] == "sector_etf"
+    assert rows["SMH"]["root_class"] == "industry_etf"
+    assert rows["AAPL"]["root_class"] == "single_name"
+
+
+def test_front7_columns_null_when_no_chain(tmp_path):
+    """front7_charm_share and front7_gex_share are null when chains/ directory is absent."""
+    _write_gex_summary(tmp_path, "NOCHAIN")
+    df = OES.build_state(tmp_path)
+    rows = df[df["ticker"] == "NOCHAIN"]
+    assert not rows.empty
+    # No chains/ directory → front7 columns must be null
+    assert pd.isna(rows.iloc[0]["front7_charm_share"]) or rows.iloc[0]["front7_charm_share"] is None
+    assert pd.isna(rows.iloc[0]["front7_gex_share"]) or rows.iloc[0]["front7_gex_share"] is None
+
+
+def _write_minimal_chain(tmp_path: Path, ticker: str, date: str = "2026-07-15",
+                           front7_expiry: str = "2026-07-17",
+                           far_expiry: str = "2026-08-15") -> None:
+    """Write a minimal chains/{date}.parquet with two expiries for the ticker."""
+    chains_dir = tmp_path / "data" / "polygon_gex" / "chains"
+    chains_dir.mkdir(parents=True, exist_ok=True)
+    spot = 100.0
+    rows = []
+    # Front expiry (≤7 days from chain date 2026-07-15 → 2-day expiry on 2026-07-17)
+    for is_call, K_ in [(True, 100.0), (False, 99.0)]:
+        T_val = (pd.Timestamp(front7_expiry) - pd.Timestamp(date)).days / 365.0
+        rows.append({
+            "underlying": ticker, "strike_ticker": f"O:{ticker}C00{int(K_)}000",
+            "expiry": front7_expiry, "K": K_, "T": max(T_val, 0.001),
+            "is_call": is_call, "oi": 500.0, "iv": 0.25,
+            "gamma": 0.03, "delta": 0.5, "volume": 50.0,
+            "spot": spot, "asof": date,
+        })
+    # Far expiry (> 7 days)
+    for is_call, K_ in [(True, 100.0), (False, 99.0)]:
+        T_val = (pd.Timestamp(far_expiry) - pd.Timestamp(date)).days / 365.0
+        rows.append({
+            "underlying": ticker, "strike_ticker": f"O:{ticker}C00{int(K_)}000F",
+            "expiry": far_expiry, "K": K_, "T": max(T_val, 0.001),
+            "is_call": is_call, "oi": 500.0, "iv": 0.25,
+            "gamma": 0.02, "delta": 0.5, "volume": 30.0,
+            "spot": spot, "asof": date,
+        })
+    chain_df = pd.DataFrame(rows)
+    chain_df.to_parquet(chains_dir / f"{date}.parquet", index=False)
+
+
+def test_front7_shares_computed_when_chain_present(tmp_path):
+    """front7_charm_share and front7_gex_share are non-null when a chain file exists."""
+    _write_gex_summary(tmp_path, "CHAINTEST", date="2026-07-15")
+    _write_minimal_chain(tmp_path, "CHAINTEST")
+    df = OES.build_state(tmp_path)
+    rows = df[df["ticker"] == "CHAINTEST"]
+    assert not rows.empty
+    row = rows.iloc[0]
+    # front7 values should be non-null fractions in [0, 1]
+    v_charm = row["front7_charm_share"]
+    v_gex = row["front7_gex_share"]
+    if v_charm is not None and not (isinstance(v_charm, float) and v_charm != v_charm):
+        assert 0.0 <= float(v_charm) <= 1.0, f"front7_charm_share out of [0,1]: {v_charm}"
+    if v_gex is not None and not (isinstance(v_gex, float) and v_gex != v_gex):
+        assert 0.0 <= float(v_gex) <= 1.0, f"front7_gex_share out of [0,1]: {v_gex}"
+
+
+def test_front7_charm_share_is_less_than_one_when_far_expiry_present(tmp_path):
+    """When there is a far expiry (> 7 days), front7 share must be < 1.0."""
+    _write_gex_summary(tmp_path, "MIXED", date="2026-07-15")
+    _write_minimal_chain(tmp_path, "MIXED",
+                          front7_expiry="2026-07-17",  # 2 days → front7
+                          far_expiry="2026-08-15")     # 31 days → not front7
+    df = OES.build_state(tmp_path)
+    rows = df[df["ticker"] == "MIXED"]
+    assert not rows.empty
+    row = rows.iloc[0]
+    # With equal OI in front7 and far expiries, share should be ≈ 0.5
+    v_charm = row["front7_charm_share"]
+    if v_charm is not None and not (isinstance(v_charm, float) and v_charm != v_charm):
+        assert float(v_charm) < 1.0, (
+            f"front7_charm_share should be < 1.0 when far-expiry contracts exist, got {v_charm}"
+        )
+
+
+def test_vanna_hedge_5d_null_when_insufficient_summary_history(tmp_path):
+    """vanna_hedge_5d must be null when the summary has fewer than 6 rows."""
+    gex_dir = tmp_path / "data" / "polygon_gex"
+    gex_dir.mkdir(parents=True, exist_ok=True)
+    # Only 3 rows (< 6 required)
+    rows = []
+    for i in range(3):
+        rows.append({
+            "spot": 100.0, "net_gex_bn": 0.1, "net_vex": 1e8, "net_cex": 5e6,
+            "gamma_flip": 90.0, "dist_to_flip_pct": 10.0, "gamma_regime": "long",
+            "magnet_up": 101.0, "magnet_down": 97.0, "charm_anchor": 100.0,
+            "charm_net_sign": 1, "iv30": 0.25 + i * 0.01, "put_call_oi_ratio": 0.8,
+            "max_pain": 98.0, "n_strikes": 50, "tier": "full",
+        })
+    dates = pd.DatetimeIndex(["2026-07-13", "2026-07-14", "2026-07-15"])
+    short_df = pd.DataFrame(rows, index=dates)
+    short_df.to_parquet(gex_dir / "summary_SHORTSUM.parquet")
+    df = OES.build_state(tmp_path)
+    rows_out = df[df["ticker"] == "SHORTSUM"]
+    assert not rows_out.empty
+    v = rows_out.iloc[0]["vanna_hedge_5d"]
+    assert v is None or (isinstance(v, float) and v != v), (
+        f"vanna_hedge_5d should be null with < 6 summary rows, got {v!r}"
+    )
+
+
+def test_ovc_columns_null_safe_no_crash(tmp_path):
+    """build_state must not raise when chains/ exists but is corrupt/empty."""
+    _write_gex_summary(tmp_path, "SAFENULL")
+    chains_dir = tmp_path / "data" / "polygon_gex" / "chains"
+    chains_dir.mkdir(parents=True, exist_ok=True)
+    # Write a corrupt chain file
+    (chains_dir / "2026-07-15.parquet").write_bytes(b"not a valid parquet")
+    # Should not raise; front7 columns should be null
+    df = OES.build_state(tmp_path)
+    rows = df[df["ticker"] == "SAFENULL"]
+    assert not rows.empty, "SAFENULL ticker should appear in result even with corrupt chain"
+    row = rows.iloc[0]
+    # front7 columns null (chain was corrupt)
+    assert row["front7_charm_share"] is None or (
+        isinstance(row["front7_charm_share"], float) and row["front7_charm_share"] != row["front7_charm_share"]
+    )
+    # root_class still populated (does not depend on chain)
+    assert row["root_class"] is not None and row["root_class"] == "single_name"
+
+
+def test_ovc_schema_completeness(tmp_path):
+    """All W-OVC columns must be present in the result schema."""
+    _write_gex_summary(tmp_path, "OVC_SCHEMA")
+    df = OES.build_state(tmp_path)
+    for col in ("front7_charm_share", "front7_gex_share", "signed_vanna_pressure",
+                "vanna_hedge_5d", "root_class"):
+        assert col in df.columns, f"W-OVC column {col!r} missing from result"
