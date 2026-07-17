@@ -98,6 +98,7 @@ DISPLAY_SYMBOLS = [
     "GC=F", "SI=F", "HG=F", "CL=F", "BZ=F", "DX-Y.NYB",   # commodities strip
     "EURUSD=X", "USDJPY=X", "GBPUSD=X", "USDCAD=X",       # forex strip
     "USDCNH=X", "USDCHF=X", "USDMXN=X", "USDBRL=X",
+    "^N225", "^KS11", "^TWII",                        # macro overnight/Asia strip
 ]
 
 

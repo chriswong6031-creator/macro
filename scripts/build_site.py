@@ -3890,6 +3890,107 @@ def main() -> int:
             except Exception as _m7e:  # noqa: BLE001 — additive, never fatal
                 log.warning("mag7_regime site publish failed (%s)", _m7e)
 
+    # ── B1: intl cascade / spillover / ETF lag reads (display-only, always fail-open) ──
+    _intl_cascade: dict | None = None
+    try:
+        _INTL_LOG_CODES = {
+            "cn": ("China A", "中国A股"),
+            "hk": ("Hong Kong", "港股"),
+            "tw": ("Taiwan", "台股"),
+            "kr": ("Korea", "韩股"),
+            "jp": ("Japan", "日股"),
+            "ca": ("Canada", "加股"),
+            "au": ("Australia", "澳股"),
+            "in": ("India", "印度"),
+            "gb": ("UK", "英股"),
+            "ez": ("Eurozone", "欧元区"),
+        }
+        _irl_base = config.data_dir() / "risk_radar_intl"
+        _irl_rows: list[dict] = []
+        _irl_asofs: list[str] = []
+        for _code, (_nen, _nzh) in _INTL_LOG_CODES.items():
+            _lf = _irl_base / f"{_code}_forward_log.jsonl"
+            if not _lf.exists():
+                continue
+            try:
+                _lines = _lf.read_text(encoding="utf-8").strip().split("\n")
+                _last = json.loads(_lines[-1]) if _lines and _lines[-1] else {}
+            except Exception:  # noqa: BLE001
+                continue
+            _irl_asofs.append(_last.get("asof", ""))
+            _irl_rows.append({
+                "code": _code,
+                "name_en": _nen,
+                "name_zh": _nzh,
+                "score": round(_last.get("top_score") or 0),
+                "state": _last.get("state", ""),
+                "alert": bool(_last.get("alert")),
+                "asof": _last.get("asof", ""),
+            })
+        _irl_alerts = [r for r in _irl_rows if r["alert"]]
+        _irl_alerts.sort(key=lambda r: -r["score"])
+        _intl_cascade = {
+            "n_alert": len(_irl_alerts),
+            "n_total": len(_irl_rows),
+            "alerts": _irl_alerts,
+            "asof": max(_irl_asofs) if _irl_asofs else None,
+        }
+    except Exception as _ice:  # noqa: BLE001 — display-only, never fatal
+        log.warning("intl_cascade build failed (%s)", _ice)
+
+    _intl_spillover: dict | None = None
+    try:
+        _isp_path = config.data_dir() / "intl_risk" / "latest.json"
+        if _isp_path.exists():
+            _isp = json.loads(_isp_path.read_text(encoding="utf-8"))
+            _isp_tt = _isp.get("two_tier") or {}
+            _isp_t2 = _isp_tt.get("tier2") or {}
+            _isp_state = _isp_tt.get("state")
+            if _isp_state:
+                _intl_spillover = {
+                    "state": _isp_state,
+                    "hot_count": _isp_t2.get("hot_count", 0),
+                    "n_legs": len(_isp_t2.get("legs") or {}),
+                }
+    except Exception as _ispe:  # noqa: BLE001 — display-only, never fatal
+        log.warning("intl_spillover read failed (%s)", _ispe)
+
+    _global_leg_lag_days: int | None = None
+    try:
+        import numpy as _nplag
+        # Read index max from 4 representative intl ETFs (EWY=KR, EWJ=JP, EWT=TW, EWH=HK).
+        # NOTE: this is a PROXY for the "Global breadth" radar leg's input staleness.
+        # It measures ETF parquet freshness, not the actual inputs to lg.value for that
+        # leg. If the leg ever sources from a fresher/different feed, this lag note will
+        # be misleading. Acceptable as a display-only staleness hint; do not promote to a
+        # gate or use it for scoring decisions.
+        # Returns business-day lag vs the latest radar asof.
+        _etf_base = config.data_dir() / "intl_etf"
+        _rep_etfs = ["EWY", "EWJ", "EWT", "EWH"]
+        _etf_dates: list[str] = []
+        for _esym in _rep_etfs:
+            _ep = _etf_base / f"{_esym}.parquet"
+            if not _ep.exists():
+                continue
+            try:
+                import pandas as _pd
+                _edf = _pd.read_parquet(_ep)
+                _emax = _edf.index.max()
+                if hasattr(_emax, "date"):
+                    _etf_dates.append(str(_emax.date()))
+                else:
+                    _etf_dates.append(str(_emax)[:10])
+            except Exception:  # noqa: BLE001
+                continue
+        if _etf_dates:
+            _etf_max_str = max(_etf_dates)
+            # Compare vs radar asof (from intl_cascade if available)
+            _rdr_asof_str = (_intl_cascade or {}).get("asof") or str(pd.Timestamp.today().date())
+            _lag = int(_nplag.busday_count(_etf_max_str, _rdr_asof_str[:10]))
+            _global_leg_lag_days = max(0, _lag)
+    except Exception as _glle:  # noqa: BLE001 — display-only, never fatal
+        log.warning("global_leg_lag_days compute failed (%s)", _glle)
+
     vm = dict(
         latest=latest,
         mtf=mtf_data,
@@ -3961,6 +4062,9 @@ def main() -> int:
         flip_confirmation=_flip_confirmation_view(),  # T+1 sector-flip confirmation lens (Policy-Shock W1-C, display-only)
         shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
         leadership_board=_leadership_board_view(),  # MLC-W1 — board NO LONGER RENDERED (removed from all pages 2026-07-15); call retained (dormant, still assembles the payload). Audit its synapse consumer edges (mag7_regime / leaderradar / earnings) before deleting.
+        intl_cascade=_intl_cascade,          # B1a: n_alert/n_total/alerts/asof from intl forward logs (display-only)
+        intl_spillover=_intl_spillover,      # B1c: two-tier spillover state from intl_risk/latest.json (display-only)
+        global_leg_lag_days=_global_leg_lag_days,  # B1d: ETF parquet lag vs radar asof in business days (display-only)
         **_master_brief_vm(),
     )
 

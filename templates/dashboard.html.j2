@@ -4463,6 +4463,77 @@ body.page-macro.mx4-grid .mx5-mkt-delta.dn{color:var(--down,#ef4444);}
 body.page-macro.mx4-grid .mx5-spark{margin-top:10px;}
 body.page-macro.mx4-grid .mx5-spark svg{width:100%;height:32px;display:block;}
 
+/* ── B2: OVERNIGHT / ASIA secondary strip (inside sx-markets-v2 face) ──────── */
+body.page-macro.mx4-grid .mx5-ovn-eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3,rgba(255,255,255,.36));margin-top:16px;margin-bottom:8px;
+}
+body.page-macro.mx4-grid .mx5-ovn-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:10px;
+}
+@media(max-width:1100px){
+  body.page-macro.mx4-grid .mx5-ovn-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:700px){
+  body.page-macro.mx4-grid .mx5-ovn-grid{grid-template-columns:1fr 1fr;}
+}
+/* Overnight tiles: slightly smaller than main index tiles */
+body.page-macro.mx4-grid .mx5-ovn-tile{
+  background:rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:9px;
+  padding:10px 12px 8px;
+  position:relative;overflow:hidden;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-ovn-tile{
+  background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.05);
+}
+body.page-macro.mx4-grid .mx5-ovn-ticker{
+  font-size:10px;font-weight:700;letter-spacing:.07em;
+  color:var(--ink-3,rgba(255,255,255,.36));text-transform:uppercase;margin-bottom:2px;
+}
+body.page-macro.mx4-grid .mx5-ovn-sub{
+  font-size:9px;color:var(--ink-3,rgba(255,255,255,.36));
+  letter-spacing:.03em;text-transform:uppercase;margin-bottom:3px;
+}
+body.page-macro.mx4-grid .mx5-ovn-price{
+  font-size:14px;font-weight:700;line-height:1;
+  color:var(--ink-1,rgba(255,255,255,.92));margin-bottom:3px;
+  font-variant-numeric:tabular-nums;
+}
+body.page-macro.mx4-grid .mx5-ovn-delta{font-size:11px;font-weight:600;color:var(--ink-3,rgba(255,255,255,.36));}
+body.page-macro.mx4-grid .mx5-ovn-delta.up{color:var(--up,#22d97a);}
+body.page-macro.mx4-grid .mx5-ovn-delta.dn{color:var(--down,#ef4444);}
+/* B2: overnight banner */
+body.page-macro.mx4-grid .mx5-ovn-note{
+  display:none;margin-top:10px;padding:7px 10px 7px 12px;
+  border-left:3px solid var(--muted);border-radius:0 6px 6px 0;
+  font-size:11.5px;line-height:1.5;background:rgba(255,255,255,.02);
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-ovn-note{background:rgba(0,0,0,.02);}
+body.page-macro.mx4-grid .mx5-ovn-note.ovn-red{border-left-color:var(--down);}
+body.page-macro.mx4-grid .mx5-ovn-note.ovn-amber{border-left-color:var(--warn);}
+body.page-macro.mx4-grid .mx5-ovn-note.ovn-quiet{border-left-color:var(--muted);opacity:.7;}
+/* B3: intl risk chips in the hero button row — red (alert) variant + non-interactive chip */
+body.page-macro.mx4-grid a.mx5-sc-btn{text-decoration:none;}
+body.page-macro.mx4-grid .mx5-sc-btn-alert{
+  color:var(--down,#ef4444);
+  border-color:color-mix(in srgb,var(--down,#ef4444) 30%,transparent);
+  background:color-mix(in srgb,var(--down,#ef4444) 9%,transparent);
+}
+body.page-macro.mx4-grid .mx5-sc-btn-static{cursor:default;}
+/* B4: stocks context strip */
+body.page-stocks .stk-ctx-strip{
+  display:block;text-decoration:none;padding:7px 14px;
+  border-left:4px solid var(--muted);border-radius:0 6px 6px 0;
+  margin-bottom:12px;font-size:12px;line-height:1.6;
+  background:rgba(255,255,255,.03);color:var(--ink-2,rgba(255,255,255,.62));
+}
+[data-theme="light"] body.page-stocks .stk-ctx-strip{background:rgba(0,0,0,.03);}
+body.page-stocks .stk-ctx-strip.ctx-green{border-left-color:var(--up);}
+body.page-stocks .stk-ctx-strip.ctx-yellow{border-left-color:var(--warn);}
+body.page-stocks .stk-ctx-strip.ctx-red{border-left-color:var(--down);}
+
 /* ── WHAT TO DO (action-list inside sx-evidence face) ────────── */
 body.page-macro.mx4-grid .mx5-action-list{display:flex;flex-direction:column;}
 body.page-macro.mx4-grid .mx5-action-item{
@@ -5173,6 +5244,42 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% endif %}
           <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
         </button>
+
+        {# B3: intl cascade chip — glance-tier rollup of our own per-market pullback radars;
+           only shown when at least one market is in risk-off alert. Links to intl.html. #}
+        {% if intl_cascade is defined and intl_cascade and intl_cascade.n_alert is not none and intl_cascade.n_alert > 0 %}
+        {% set _cas_names_en = [] %}
+        {% set _cas_names_zh = [] %}
+        {% set _cas_ns = namespace(count=0) %}
+        {% for _a in intl_cascade.alerts %}
+          {% if _cas_ns.count < 3 %}
+            {% if _cas_names_en.append(_a.name_en) %}{% endif %}
+            {% if _cas_names_zh.append(_a.name_zh) %}{% endif %}
+            {% set _cas_ns.count = _cas_ns.count + 1 %}
+          {% endif %}
+        {% endfor %}
+        {% set _cas_extra = intl_cascade.n_alert - 3 if intl_cascade.n_alert > 3 else 0 %}
+        {% set _cas_list_en = _cas_names_en | join(' · ') ~ (' +' ~ _cas_extra if _cas_extra > 0 else '') %}
+        {% set _cas_list_zh = _cas_names_zh | join('·') ~ (' +' ~ _cas_extra if _cas_extra > 0 else '') %}
+        {% set _cas_tip_en = 'Stress abroad at the source — not a US signal on its own. Markets risk-off: ' ~ (intl_cascade.alerts | map(attribute='name_en') | list | join(', ')) ~ ('. As of ' ~ intl_cascade.asof if intl_cascade.asof else '') %}
+        {% set _cas_tip_zh = '海外源头压力——本身并非美股信号。避险市场：' ~ (intl_cascade.alerts | map(attribute='name_zh') | list | join('、')) ~ ('。截至' ~ intl_cascade.asof if intl_cascade.asof else '') %}
+        <a class="mx5-sc-btn mx5-sc-btn-alert" href="intl.html" data-tip-en="{{ _cas_tip_en }}" data-tip-zh="{{ _cas_tip_zh }}">
+          <span class="l-en">&#9888; {{ intl_cascade.n_alert }} of {{ intl_cascade.n_total }} markets risk-off — {{ _cas_list_en }}</span>
+          <span class="l-zh">&#9888; {{ intl_cascade.n_total }}个海外市场中{{ intl_cascade.n_alert }}个避险 — {{ _cas_list_zh }}</span>
+        </a>
+        {% endif %}
+        {# B3: spillover-to-US chip — contagion two-tier read (quiet/contained/watching/transmitting) #}
+        {% if intl_spillover is defined and intl_spillover and intl_spillover.state is defined %}
+        {% set _spill_state = intl_spillover.state %}
+        {% set _spill_word_map = {'quiet': ('quiet', '平静'), 'contained': ('contained', '受控'), 'watching': ('watching', '关注中'), 'transmitting': ('transmitting', '正在传导')} %}
+        {% set _spill_words = _spill_word_map.get(_spill_state, (_spill_state, _spill_state)) %}
+        {% set _spill_tip_en = 'Reads US credit, bank stocks and rates vol for actual transmission — ' ~ intl_spillover.hot_count ~ ' of ' ~ intl_spillover.n_legs ~ ' channels hot.' %}
+        {% set _spill_tip_zh = '监测美国信用、银行股与利率波动的实际传导——' ~ intl_spillover.n_legs ~ '条通道中' ~ intl_spillover.hot_count ~ '条发热。' %}
+        <span class="mx5-sc-btn mx5-sc-btn-static{% if _spill_state == 'transmitting' %} mx5-sc-btn-alert{% elif _spill_state in ('contained', 'watching') %} mx5-sc-btn-warn{% endif %}" data-tip-en="{{ _spill_tip_en }}" data-tip-zh="{{ _spill_tip_zh }}">
+          <span class="l-en">Spillover to US: {{ _spill_words[0] }}</span>
+          <span class="l-zh">对美传导：{{ _spill_words[1] }}</span>
+        </span>
+        {% endif %}
 
         {# POPOVER: Factor Breakdown #}
         <div class="mx5-popover" id="mx5PopFactors" role="dialog"
@@ -8046,6 +8153,46 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-mkt-delta nb-chg" data-sym="NQ=F" data-mkt="us">—</div>
         </div>
       </div>
+      {# B2: Overnight / Asia secondary strip — 5 index tiles + severity banner.
+         Tiles use the same nb-px/nb-chg data-sym pattern so live.js patches them.
+         data-bare suppresses "$" prefix on price. Banner hidden until JS evaluates. #}
+      <div class="mx5-ovn-eyebrow"><span class="l-en">OVERNIGHT / ASIA</span><span class="l-zh">隔夜 / 亚洲</span></div>
+      <div class="mx5-ovn-grid">
+        <div class="mx5-ovn-tile" data-sym="^N225" data-mkt="us">
+          <div class="mx5-ovn-ticker">N225</div>
+          <div class="mx5-ovn-sub"><span class="l-en">Nikkei</span><span class="l-zh">日经</span></div>
+          <div class="mx5-ovn-price nb-px" data-sym="^N225" data-mkt="us" data-bare>—</div>
+          <div class="mx5-ovn-delta nb-chg" data-sym="^N225" data-mkt="us">—</div>
+        </div>
+        <div class="mx5-ovn-tile" data-sym="^KS11" data-mkt="us">
+          <div class="mx5-ovn-ticker">KOSPI</div>
+          <div class="mx5-ovn-sub"><span class="l-en">Korea</span><span class="l-zh">韩国</span></div>
+          <div class="mx5-ovn-price nb-px" data-sym="^KS11" data-mkt="us" data-bare>—</div>
+          <div class="mx5-ovn-delta nb-chg" data-sym="^KS11" data-mkt="us">—</div>
+        </div>
+        <div class="mx5-ovn-tile" data-sym="^TWII" data-mkt="us">
+          <div class="mx5-ovn-ticker">TWII</div>
+          <div class="mx5-ovn-sub"><span class="l-en">Taiwan</span><span class="l-zh">台湾加权</span></div>
+          <div class="mx5-ovn-price nb-px" data-sym="^TWII" data-mkt="us" data-bare>—</div>
+          <div class="mx5-ovn-delta nb-chg" data-sym="^TWII" data-mkt="us">—</div>
+        </div>
+        <div class="mx5-ovn-tile" data-sym="^HSI" data-mkt="us">
+          <div class="mx5-ovn-ticker">HSI</div>
+          <div class="mx5-ovn-sub"><span class="l-en">Hang Seng</span><span class="l-zh">恒指</span></div>
+          <div class="mx5-ovn-price nb-px" data-sym="^HSI" data-mkt="us" data-bare>—</div>
+          <div class="mx5-ovn-delta nb-chg" data-sym="^HSI" data-mkt="us">—</div>
+        </div>
+        <div class="mx5-ovn-tile" data-sym="000001.SS" data-mkt="us">
+          <div class="mx5-ovn-ticker">SSE</div>
+          <div class="mx5-ovn-sub"><span class="l-en">Shanghai</span><span class="l-zh">上证</span></div>
+          <div class="mx5-ovn-price nb-px" data-sym="000001.SS" data-mkt="us" data-bare>—</div>
+          <div class="mx5-ovn-delta nb-chg" data-sym="000001.SS" data-mkt="us">—</div>
+        </div>
+      </div>
+      {# B2: severity banner — hidden until ovnSeverity() evaluates after live data loads #}
+      <div class="mx5-ovn-note" id="mx5-ovn-note" style="display:none" aria-live="polite">
+        <span class="l-en ovn-txt-en"></span><span class="l-zh ovn-txt-zh"></span>
+      </div>
     </div>
     {# Heatmap staging: heatmap.js mounts on first #heatmap-scorecard at DOMContentLoaded;
        this div sits outside any dialog, height-collapsed so it doesn't affect layout.
@@ -8795,6 +8942,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <span class="sc-name">
               <span class="l-en">{{ sc.label_en if sc.label_en is defined else (sc.name_en if sc.name_en is defined else sc.name) }}</span>
               <span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span>
+              {# B3: staleness honesty — the global leg reads US-listed country-ETF stores that
+                 can trail the radar's as-of by a session; disclose the lag in plain words. #}
+              {% if sc.scare is defined and sc.scare == 'global' and global_leg_lag_days is defined and global_leg_lag_days and global_leg_lag_days > 0 %}
+              <span style="font-size:10px;font-weight:400;color:var(--ink-3,rgba(255,255,255,.36));margin-left:5px"><span class="l-en">· data {{ global_leg_lag_days }} day{{ 's' if global_leg_lag_days != 1 else '' }} behind</span><span class="l-zh">· 数据滞后{{ global_leg_lag_days }}天</span></span>
+              {% endif %}
               {# Plain-word description — one sentence per scare; engine may provide desc_en/desc_zh #}
               {% if sc.desc_en is defined and sc.desc_en %}
               <div style="font-size:10px;font-weight:400;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4">
@@ -10549,6 +10701,21 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   <!-- ======================= ACTION BOARD ======================= -->
   {% if mode != 'macro' %}
+  {# B4: market-state context strip for stocks mode — one-line banner, never a veto #}
+  {% if market_state is defined and market_state %}
+  {% set _b4_color = market_state.color if (market_state.color is defined and market_state.color) else 'yellow' %}
+  {% set _b4_cls = 'ctx-red' if _b4_color == 'red' else ('ctx-green' if _b4_color == 'green' else 'ctx-yellow') %}
+  {% set _b4_stance_en = 'defend capital' if _b4_color == 'red' else ('conditions supportive' if _b4_color == 'green' else 'trade smaller, take profits faster') %}
+  {% set _b4_stance_zh = '保住本金' if _b4_color == 'red' else ('环境偏多' if _b4_color == 'green' else '缩小仓位、及早止盈') %}
+  {% set _b4_label_en = (market_state.label_en if (market_state.label_en is defined and market_state.label_en) else _b4_color) %}
+  {% set _b4_label_zh = (market_state.label_zh if (market_state.label_zh is defined and market_state.label_zh) else _b4_label_en) %}
+  {% set _b4_alert_en = (' · ⚠ ' ~ intl_cascade.n_alert ~ ' market' ~ ('s' if intl_cascade.n_alert != 1 else '') ~ ' abroad risk-off') if (intl_cascade is defined and intl_cascade and intl_cascade.n_alert is not none and intl_cascade.n_alert > 0) else '' %}
+  {% set _b4_alert_zh = (' · ⚠ ' ~ intl_cascade.n_alert ~ '个海外市场避险') if (intl_cascade is defined and intl_cascade and intl_cascade.n_alert is not none and intl_cascade.n_alert > 0) else '' %}
+  <a class="stk-ctx-strip {{ _b4_cls }} span12" href="macro.html#sx-risk-v2">
+    <span class="l-en">Market state: {{ _b4_label_en }} — {{ _b4_stance_en }}{{ _b4_alert_en }}</span>
+    <span class="l-zh">市场状态：{{ _b4_label_zh }}——{{ _b4_stance_zh }}{{ _b4_alert_zh }}</span>
+  </a>
+  {% endif %}{# /market_state B4 #}
   {% if action_board %}
   <div class="panel span12">
     <h2>{{ t('What to act on now', '当前可操作') }}
@@ -12095,6 +12262,77 @@ window.__CHART_SWAP__ = {
 <script src="live.js"></script>
 <script src="risk_state_live.js"></script>
 <script src="heatmap.js"></script>
+<script>
+/* B2: Overnight / Asia severity banner — reads changePct from DOM elements that
+   live.js has already painted (avoids a redundant quotes.json fetch alongside the
+   live.js poller). Runs once 2s after load (live.js first tick) and re-evaluates
+   every 5 min by re-reading the same DOM nodes. Guards all DOM ops (absent in
+   stocks mode). */
+(function(){
+  var ASIA_SYMS = ['^N225','^KS11','^TWII','^HSI','000001.SS'];
+  var FUT_SYMS  = ['ES=F','NQ=F'];
+  var INTERVAL_MS = 5 * 60 * 1000;
+
+  /* Read changePct from a .nb-chg[data-sym] element painted by live.js.
+     live.js sets textContent to e.g. "+1.23%" or "-0.45%"; returns null if
+     the element is absent or not yet painted (still shows the placeholder). */
+  function pctFromDom(sym){
+    var el = document.querySelector('.nb-chg[data-sym="' + sym + '"]');
+    if(!el) return null;
+    var txt = (el.textContent || '').trim();
+    if(!txt || txt === '—' || txt === '-') return null;
+    var v = parseFloat(txt.replace(/[^-0-9.]/g, ''));
+    return isNaN(v) ? null : v;
+  }
+
+  function evalSeverity(){
+    var asia = ASIA_SYMS.map(pctFromDom).filter(function(v){ return v != null; });
+    if(asia.length < 3) return null; // not enough data yet
+    var fut = FUT_SYMS.map(pctFromDom).filter(function(v){ return v != null; });
+    var asiaDown15 = asia.filter(function(v){ return v <= -1.5; }).length;
+    var asiaMin    = Math.min.apply(null, asia);
+    var futMin     = fut.length ? Math.min.apply(null, fut) : 0;
+    var asiaDown1  = asia.filter(function(v){ return v <= -1.0; }).length;
+    if(asiaDown15 >= 3 || asiaMin <= -3){ return 'red'; }
+    if(asiaDown1  >= 2 || futMin <= -0.75){ return 'amber'; }
+    return 'quiet';
+  }
+
+  function applyBanner(sev){
+    var el = document.getElementById('mx5-ovn-note');
+    if(!el) return;
+    var enEl = el.querySelector('.ovn-txt-en');
+    var zhEl = el.querySelector('.ovn-txt-zh');
+    el.className = 'mx5-ovn-note';
+    if(sev === 'red'){
+      el.classList.add('ovn-red');
+      if(enEl) enEl.textContent = 'Broad overnight selling — numbers elsewhere are last close. Protect gains; don\'t chase.';
+      if(zhEl) zhEl.textContent = '隔夜普跌——其他数据为昨收。保住利润，勿追高。';
+      el.style.display = 'block';
+    } else if(sev === 'amber'){
+      el.classList.add('ovn-amber');
+      if(enEl) enEl.textContent = 'Overnight tape is weak — watch, don\'t chase.';
+      if(zhEl) zhEl.textContent = '隔夜盘面偏弱——观望，勿追高。';
+      el.style.display = 'block';
+    } else if(sev === 'quiet'){
+      el.classList.add('ovn-quiet');
+      if(enEl) enEl.textContent = 'Overnight session quiet.';
+      if(zhEl) zhEl.textContent = '隔夜平静。';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  function run(){ applyBanner(evalSeverity()); }
+
+  /* Run once after live.js has had a chance to paint its first tick, then on interval */
+  if(document.getElementById('mx5-ovn-note')){
+    setTimeout(run, 2000);
+    setInterval(run, INTERVAL_MS);
+  }
+})();
+</script>
 <script>
 /* Keep .help tooltips on-screen: flip below the icon when it's near the top of
    the viewport, and clamp horizontally near the left/right edges. Hover-only,
