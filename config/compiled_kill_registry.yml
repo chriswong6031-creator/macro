@@ -132,6 +132,18 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: 'Cross-organ flip-counter (conjunction-of-transitions deterioration meter) as a standalone organ'
+    verdict: 'KILLED — double-counts the cascade meter''s intl leg, log-birth FP (07-07 artifact), count-conjunction class (RISK_RADAR_TUNING line 93 governs any authority path)'
+    source: 'RSR-R6a, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
+    section: 2
+    section_name: killed_signal_families
+
+  - topic: '"4-of-4 defensive-lean floor bundle" v1 (radar-caution × ≥3-intl-alerts × rotation-bottom × weekly-roll → display 35)'
+    verdict: 'KILLED — claimed 1–2d lead collapsed on verification (only CN+HK alerted pre-07-16, TW log born 07-16 → zero lead); count-conjunction class. Floor QUESTION stays open via RSR-W5 prereg'
+    source: 'RSR-R6b, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Insider × T2 interaction'
     verdict: 'KILLED'
     source: 'Codex buy-decision docket adjudication (#1781)'
