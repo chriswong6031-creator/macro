@@ -479,6 +479,17 @@ lanes:
             - scripts.build_cycle_pattern_live
             - scripts.build_cycle_pattern_state
       # serial post-band
+      - id: build_us_sector_rotation
+        module: scripts.build_us_sector_rotation
+        note: >
+          XSR W1 fast-rotation lens for the 11 SPDR sector ETFs and named US
+          thematic baskets. Display-tier only — produces
+          data/us_sector_rotation/latest.json, which build_sector_central reads
+          to re-order the conviction board by fast-rotation rank.  Reads
+          sector_cycles outputs (forward_log.parquet from build_sector_cycles in
+          the parallel band) so must run AFTER the band barrier. Non-fatal
+          (always exits 0). DISPLAY-ONLY; CONST-ART2 authority: false.
+          Artifact: data/us_sector_rotation/latest.json.
       - id: build_sector_central
         module: scripts.build_sector_central
       - id: build_stance_matrix

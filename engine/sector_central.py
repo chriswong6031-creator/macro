@@ -553,6 +553,233 @@ def _trend_gates(closes, rotation) -> dict:
     return gates
 
 
+# ---------------------------------------------------------------------------
+# XSR-R2 / XSR-R9 helpers — fast-rotation attach, board sort, split view
+# ---------------------------------------------------------------------------
+
+# Conviction label → tier integer (highest = most bullish)
+_CONVICTION_TIER: dict[str, int] = {
+    "Accumulate":   5,
+    "Constructive": 4,
+    "Neutral":      3,
+    "Cautious":     2,
+    "Reduce":       1,
+}
+
+# Plain-word copy for split_view (XSR-R9).  Banned vocab: governor, OB, MACD,
+# mom20, state names.  "fast tape" = the fast rotation lens; "slow clock" = the
+# gated-confluence conviction.
+_SPLIT_COPY_EN = {
+    "faster":  "Slow clock: {conv}. Fast tape: money rotating in — split view.",
+    "slower":  "Slow clock: {conv}. Fast tape: rotating out — split view.",
+}
+_SPLIT_COPY_ZH = {
+    "faster":  "慢时钟：{conv}。快线：资金流入中 — 分歧视角。",
+    "slower":  "慢时钟：{conv}。快线：资金流出 — 分歧视角。",
+}
+
+# Plain-word equivalents for the conviction labels in split copy
+_CONV_PLAIN_EN: dict[str, str] = {
+    "Accumulate":   "looking extended after the run",
+    "Constructive": "constructive on the trend",
+    "Neutral":      "neutral, no strong lean",
+    "Cautious":     "cautious",
+    "Reduce":       "risk looks elevated",
+}
+_CONV_PLAIN_ZH: dict[str, str] = {
+    "Accumulate":   "强势延伸后偏高位",
+    "Constructive": "趋势建设性",
+    "Neutral":      "中性，无明显倾向",
+    "Cautious":     "偏谨慎",
+    "Reduce":       "风险较高",
+}
+
+
+def _rotation_rank_bucket(rank: int, n_total: int) -> int:
+    """Map rotation_rank to a tier int 1–5 (5 = best) within its universe.
+
+    Per-kind: top ~18% → 5, then roughly quintile-ish buckets.
+    Documented thresholds (11 sectors example):
+        rank 1-2  → 5  (top 18%)
+        rank 3-4  → 4
+        rank 5-7  → 3
+        rank 8-9  → 2
+        rank 10-11 → 1
+    Generalised to any N with ceiling-division.
+    """
+    if rank is None or n_total is None or n_total < 1:
+        return 0  # unmatched / unknown
+    top18 = max(1, round(n_total * 0.18))
+    if rank <= top18:
+        return 5
+    # remaining N-top18 split into 4 roughly equal buckets
+    rem = n_total - top18
+    bucket_size = max(1, rem / 4.0)
+    pos_in_rem = rank - top18  # 1-indexed
+    if pos_in_rem <= bucket_size:
+        return 4
+    if pos_in_rem <= 2 * bucket_size:
+        return 3
+    if pos_in_rem <= 3 * bucket_size:
+        return 2
+    return 1
+
+
+def _load_rotation_artifact() -> dict:
+    """Load data/us_sector_rotation/latest.json.
+
+    Returns an empty dict on any error (fail-open: callers degrade gracefully).
+    """
+    import datetime as _dt
+    try:
+        p = config.data_dir() / "us_sector_rotation" / "latest.json"
+        if not p.exists():
+            log.debug("sector_central: rotation artifact absent — conviction sort retained")
+            return {}
+        raw = json.loads(p.read_text(encoding="utf-8"))
+        # Freshness guard: if artifact is >48h old, skip re-ordering
+        ts_str = raw.get("ts") or raw.get("asof")
+        if ts_str:
+            try:
+                from datetime import timezone as _tz
+                ts_dt = _dt.datetime.fromisoformat(str(ts_str))
+                # Treat naive datetimes as UTC
+                if ts_dt.tzinfo is None:
+                    ts_dt = ts_dt.replace(tzinfo=_tz.utc)
+                age_h = (_dt.datetime.now(_tz.utc) - ts_dt).total_seconds() / 3600
+                if age_h > 48:
+                    log.warning("sector_central: rotation artifact stale (%.1fh) — conviction sort retained", age_h)
+                    return {}
+            except Exception:
+                pass  # unparseable ts — accept the artifact anyway
+        return raw
+    except Exception as e:  # noqa: BLE001
+        log.warning("sector_central: rotation artifact load failed (%s) — conviction sort retained", e)
+        return {}
+
+
+def _attach_rotation(records: list[dict], rotation_raw: dict, kind: str) -> list[dict]:
+    """Attach rotation block to each record and re-sort by rotation_rank ascending.
+
+    If rotation_raw is empty or parsing fails, returns records in conviction order
+    (unchanged).  Unmatched records sort last (by conviction score descending as
+    tiebreaker among themselves).
+
+    Matching is kind-aware: a record with kind=='sector' may only match a rotation
+    instrument that also has kind=='sector'; a record with kind=='basket' may only
+    match a rotation instrument with kind=='basket'.  This prevents the 11
+    b-us_sector_* proxy-basket records from borrowing a sector's rank via ticker
+    match — those proxies now receive rotation=None and sort among unmatched by
+    conviction score.
+
+    Also sets split_view / split_copy_en / split_copy_zh (XSR-R9) when the
+    conviction tier and rotation tier diverge by ≥ 2.  Split-view tier math for
+    baskets is computed only over genuinely-matched basket records.
+    """
+    instruments_raw = rotation_raw.get("instruments") if rotation_raw else None
+    if not rotation_raw or not instruments_raw or not isinstance(instruments_raw, list):
+        # fail-open: no rotation data (or malformed) → conviction sort already applied
+        for rec in records:
+            rec["rotation"] = None
+        return records
+
+    # Build lookup: (kind, key) → rotation instrument record.
+    # Separate tables keyed by (kind, id), (kind, ticker), (kind, basket_id) so
+    # a sector record can never match a basket instrument and vice versa.
+    rot_by_id: dict[tuple[str, str], dict] = {}
+    rot_by_ticker: dict[tuple[str, str], dict] = {}
+    rot_by_basket: dict[tuple[str, str], dict] = {}
+    for inst in instruments_raw:
+        inst_kind = inst.get("kind") or ""
+        iid = inst.get("id") or inst.get("key") or ""
+        tk = (inst.get("ticker") or "").upper()
+        bid = inst.get("basket_id") or ""
+        if iid:
+            rot_by_id[(inst_kind, iid)] = inst
+        if tk:
+            rot_by_ticker[(inst_kind, tk)] = inst
+        if bid:
+            rot_by_basket[(inst_kind, bid)] = inst
+
+    # First pass: match records to rotation instruments (kind-aware)
+    matched_pairs: list[tuple[dict, dict]] = []  # (rec, inst)
+    unmatched: list[dict] = []
+
+    for rec in records:
+        rec_kind = rec.get("kind") or ""
+        rid = rec.get("id") or ""
+        ticker = (rec.get("ticker") or "").upper()
+        basket_id = rec.get("id") or ""  # sector_central uses id as basket_id
+
+        inst = (
+            rot_by_id.get((rec_kind, rid))
+            or rot_by_id.get((rec_kind, rid.lstrip("b-")))
+            or rot_by_ticker.get((rec_kind, ticker))
+            or rot_by_basket.get((rec_kind, basket_id))
+            or rot_by_basket.get((rec_kind, "b-" + basket_id))
+        )
+
+        if inst is None:
+            rec["rotation"] = None
+            unmatched.append(rec)
+        else:
+            matched_pairs.append((rec, inst))
+
+    # Sort matched pairs by global rotation_rank (score tiebreak) — determines
+    # per-kind display order and the per-kind ordinal rank for split-tier math.
+    matched_pairs.sort(key=lambda t: (t[1].get("rotation_rank") or 9999,
+                                      -(t[1].get("rotation_score") or 0.0)))
+
+    # Per-kind ordinal rank: position in the sorted matched list (1-indexed).
+    # This is semantically correct for _rotation_rank_bucket — the bucket function
+    # measures where this instrument sits among its own kind (sectors or baskets),
+    # not in the global mixed-kind ranking.
+    n_total = len(matched_pairs) if matched_pairs else 1
+
+    matched: list[dict] = []
+    for per_kind_ordinal, (rec, inst) in enumerate(matched_pairs, 1):
+        rrank = inst.get("rotation_rank")   # global rank (stored; for display/hover)
+        rscore = inst.get("rotation_score")
+        state = inst.get("state_used")
+        components = inst.get("components") or {}
+        stale = bool(inst.get("stale_flags"))
+
+        rec["rotation"] = {
+            "rank":       rrank,         # global rank (shown in chip)
+            "score":      rscore,
+            "state":      state,
+            "components": components,
+            "stale":      stale,
+        }
+
+        # XSR-R9: split view.  Use per-kind ordinal position for bucket math so
+        # the tier comparison is within-universe (11 sectors vs 11 sectors, not
+        # sector #7 of 46 instruments).
+        conv_label = (rec.get("conviction") or {}).get("label_en", "")
+        conv_tier = _CONVICTION_TIER.get(conv_label, 0)
+        rot_tier = _rotation_rank_bucket(per_kind_ordinal, n_total)
+
+        diff = rot_tier - conv_tier  # positive = faster than conviction
+        if abs(diff) >= 2 and conv_tier > 0 and rot_tier > 0:
+            direction = "faster" if diff > 0 else "slower"
+            plain_en = _CONV_PLAIN_EN.get(conv_label, conv_label.lower())
+            plain_zh = _CONV_PLAIN_ZH.get(conv_label, conv_label)
+            rec["split_view"] = True
+            rec["split_copy_en"] = _SPLIT_COPY_EN[direction].format(conv=plain_en)
+            rec["split_copy_zh"] = _SPLIT_COPY_ZH[direction].format(conv=plain_zh)
+        else:
+            rec["split_view"] = False
+            rec["split_copy_en"] = None
+            rec["split_copy_zh"] = None
+
+        matched.append(rec)
+
+    # Unmatched sort by conviction score descending (preserve their relative order)
+    unmatched.sort(key=lambda x: -(x.get("conviction") or {}).get("score", 0))
+
+    return matched + unmatched
+
+
 def compute() -> dict | None:
     """Top-level: fuse the cycle spine + market regime + trend gates + heat/crowding into
     per-sector and per-basket central intelligence records, ranked by conviction."""
@@ -610,19 +837,32 @@ def compute() -> dict | None:
                       members=memb.get(bid, []))
         baskets.append({**carried, **fused})
 
+    # XSR-R2: primary sort is conviction score (will be replaced by rotation rank below).
+    # This establishes the fallback order used when rotation artifact is absent.
     sectors.sort(key=lambda x: -x["conviction"]["score"])
     baskets.sort(key=lambda x: -x["conviction"]["score"])
+
+    # XSR-R2/R9: load rotation artifact and re-sort by fast-rotation rank.
+    # Fail-open: if artifact missing/stale/unparseable, conviction sort is kept and
+    # rotation fields are null on all records.
+    rotation_raw = _load_rotation_artifact()
+    sectors = _attach_rotation(sectors, rotation_raw, kind="sector")
+    baskets = _attach_rotation(baskets, rotation_raw, kind="basket")
+
     n_above = sum(1 for s in sectors if (s.get("forward") or {}).get("trend_pass") is True)
     mkt.pop("_crowd_by_ticker", None)
     mkt["n_above_trend"] = n_above
     mkt["n_sectors"] = len(sectors)
+    rotation_armed = bool(rotation_raw and rotation_raw.get("instruments"))
+    mkt["rotation_board_order"] = "fast-lens" if rotation_armed else "conviction"
 
     return {
         "as_of": cyc["meta"]["asOf"],
         "meta": {"n_sectors": len(sectors), "n_baskets": len(baskets),
                  "region": "us", "experimental": True,
                  "method": "gated-confluence (trend gate validated_risk_control, "
-                           "data/strategies/thematic_rotation_phase0.json)"},
+                           "data/strategies/thematic_rotation_phase0.json)",
+                 "board_order": "fast-lens (XSR-R2)" if rotation_armed else "conviction"},
         "market": mkt,
         "sectors": sectors,
         "baskets": baskets,

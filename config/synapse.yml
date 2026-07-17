@@ -810,6 +810,35 @@ artifacts:
       CDN-facing copy of data/mag7_regime/latest.json written in the same
       engine/mag7_regime.snapshot() call.
 
+  # XSR-R2: US fast-sector rotation artifact.
+  us-sector-rotation-latest:
+    path: data/us_sector_rotation/latest.json
+    format: json
+    producer: engine/us_sector_rotation.py
+    known_extra_writers: []
+    owner_program: XSR
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: us_sector_rotation.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/sector_central.py
+      - scripts/build_site.py
+    external_consumers: []
+    notes: >
+      XSR W1 (XSR-R2) display-tier fast rotation score for the 11 SPDR sector
+      ETFs and named US thematic baskets. Produced by
+      scripts/build_us_sector_rotation.py (thin wrapper around
+      engine/us_sector_rotation.compute_and_write()). Runs AFTER the parallel
+      band barrier and BEFORE build_sector_central, which reads this artifact to
+      re-order the conviction board by rotation rank. DISPLAY-ONLY; feeds no
+      gate, size, score, or calibrated key.
+
   # M7C-R2/R3: Mag-7 Regime daily ledger — idempotent by date.
   mag7-regime-ledger:
     path: data/mag7_regime/ledger.jsonl
