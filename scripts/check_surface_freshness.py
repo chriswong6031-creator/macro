@@ -49,6 +49,7 @@ _ARTIFACTS: list[ArtifactSpec] = [
     ArtifactSpec("site/basketdata/oracle_state.json"),
     ArtifactSpec("site/basketdata/sector_pulse.json"),
     ArtifactSpec("site/basketdata/turn_watch.json"),  # FTR W4 basket turn-watch organ
+    ArtifactSpec("site/factordata/us_standouts.json"),  # CSP-W5 FT-R8 registration
 ]
 
 
