@@ -1163,6 +1163,27 @@ jobs:
             fi
           done
           exit 0
+      - name: builder fail-streak escalation (consecutive-night freeze detector)
+        # brun() (above) BY DESIGN never aborts on a broken builder — but that makes a
+        # builder failing MANY CONSECUTIVE nightlies look identical to a one-off at a
+        # glance (2026-07-16/17: build_cycle aborted two nights running, cycle.html
+        # silently froze at the 07-13 render while the run stayed green — PR #2732 fixed
+        # the builder; this step fixes the visibility gap). Reads the band's per-builder
+        # scratch rc files ($RUNNER_TEMP/band/<slug>.rc), advances a per-builder streak
+        # ledger (data/ci/builder_failstreaks.json — covered by 'git add data/' in
+        # 'commit engine outputs' below), and at streak >=2 escalates loudly: a distinct
+        # ::error:: per frozen page + step-summary section + one W6b ops alert
+        # (engine/alert_triage.push_ops_alert, dispatch-always — same spine as the
+        # nw_health streak escalation, PR #2621 precedent). --lane nightly gates the
+        # ledger WRITE (nightly = sole advancer); future closing-bell/asia-close ports
+        # must pass their own lane and stay report-only. rc==0 resets a streak; a >4-day
+        # gap (nightly itself dead) starts a fresh streak. Resilient: always exits 0 —
+        # never blocks the deploy, never changes brun()'s never-abort semantics.
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m scripts.check_builder_failstreaks --art-dir "$RUNNER_TEMP/band" --lane nightly || echo "::warning::builder fail-streak check failed (non-fatal)"
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles
