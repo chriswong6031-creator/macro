@@ -43,6 +43,16 @@ _CTYPES = {".html": "text/html; charset=utf-8",
            ".css": "text/css; charset=utf-8",
            ".js": "application/javascript; charset=utf-8"}
 
+
+def _int_param(q: dict, key: str, default: int, lo: int, hi: int) -> int:
+    """Parse an integer query parameter, returning *default* on error and clamping to [lo, hi]."""
+    try:
+        v = int((q.get(key) or [default])[0])
+    except (ValueError, TypeError):
+        return default
+    return max(lo, min(hi, v))
+
+
 _LOOPBACK_NAMES = {"localhost", "127.0.0.1", "::1"}
 
 # W-AI: orchestrator settings editable from the Master Brain page.
@@ -93,6 +103,8 @@ def _host_only(host_header: str) -> str:
     h = (host_header or "").strip()
     if h.startswith("["):                 # [::1]:port
         return h[1:].split("]")[0]
+    if ":" in h and h.count(":") >= 2:   # bare IPv6 (e.g. ::1) — no port component
+        return h
     return h.rsplit(":", 1)[0] if ":" in h else h
 
 
@@ -130,6 +142,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
         for c in (cookies or []):
             self.send_header("Set-Cookie", c)
         self.end_headers()
@@ -146,6 +160,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
         self.end_headers()
         self.wfile.write(body)
 
@@ -153,6 +169,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             n = int(self.headers.get("Content-Length", 0))
             if n <= 0:
+                return {}
+            if n > 1_000_000:
                 return {}
             return json.loads(self.rfile.read(n) or b"{}")
         except Exception:  # noqa: BLE001
@@ -203,11 +221,11 @@ class Handler(BaseHTTPRequestHandler):
         return self._client_id()
 
     def _secure_cookie(self) -> bool:
-        # Behind Caddy the real scheme is X-Forwarded-Proto; deployed = always TLS.
-        if settings.deployed():
-            return True
-        xf = (self.headers.get("X-Forwarded-Proto") or "").split(",")[0].strip().lower()
-        return xf == "https"
+        # Deployed mode is always behind Caddy/TLS — Secure flag is always set.
+        # Local mode binds loopback-only over plain http; X-Forwarded-Proto from
+        # the request is spoofable by any caller, so the Secure flag is never set
+        # (it would be useless over http anyway).
+        return settings.deployed()
 
     def _set_cookies(self, session: str, csrf: str, clear: bool = False) -> list[str]:
         attrs = "; Path=/; SameSite=Strict"
@@ -338,16 +356,19 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(content.uptime())
             if path == "/api/uptime/all":
                 return self._json(uptime_board.probe_all())
+            # Standalone ops/debug routes — no SPA callers; kept for curl/ops debugging only.
             if path == "/api/git":
                 return self._json(gitops.status())
             if path == "/api/deploy":
-                wf = (q.get("workflow") or [None])[0]
+                _wf_raw = (q.get("workflow") or [None])[0]
+                _ALLOWED_WF = {"daily.yml", "pages.yml", "weekly.yml"}
+                wf = _wf_raw if _wf_raw in _ALLOWED_WF else None
                 return self._json(github_api.list_runs(workflow=wf))
             # analytics — Umami primary, GA4 kept as a secondary source
             if path == "/api/analytics":
                 return self._json(umami.status())
             if path == "/api/analytics/report":
-                days = int((q.get("days") or ["7"])[0])
+                days = _int_param(q, "days", 7, 1, 365)
                 return self._json(umami.report(days=days))
             if path == "/api/analytics/active":
                 return self._json(umami.active())
@@ -356,7 +377,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/traffic/realtime":
                 return self._json(ga4.realtime())
             if path == "/api/traffic/report":
-                days = int((q.get("days") or ["7"])[0])
+                days = _int_param(q, "days", 7, 1, 365)
                 return self._json(ga4.report(days=days))
             # first-party analytics (self-hosted; reads analytics_events/search_events/ip_geo).
             # Params are string-in; the reader int-clamps days/limit and allowlist-validates ids.
@@ -384,7 +405,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/users":
                 return self._json(users.summary())
             if path == "/api/users/recent":
-                limit = int((q.get("limit") or ["30"])[0])
+                limit = _int_param(q, "limit", 30, 1, 1000)
                 return self._json(users.recent(limit=limit))
             # system / services
             if path == "/api/system":
@@ -393,7 +414,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(services.status())
             if path == "/api/alerts":
                 # Operator capture feed (RUL-8: authed only, no public write endpoint).
-                limit = int((q.get("limit") or ["60"])[0])
+                limit = _int_param(q, "limit", 60, 1, 1000)
                 return self._json(_alerts_mod.panel(limit=limit))
             if path == "/api/codex":
                 return self._json(codex_panel.panel())
@@ -404,7 +425,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/metabolism/keys":
                 return self._json(metabolism_panel.keys())
             if path == "/api/metabolism/history":
-                limit = int((q.get("limit") or ["100"])[0])
+                limit = _int_param(q, "limit", 100, 1, 1000)
                 return self._json(metabolism_history.history(limit=limit))
             if path == "/api/site_gate":
                 rules = site_gate.read_rules()
@@ -457,6 +478,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True},
                                   cookies=self._set_cookies(auth.mint_session(), csrf))
             if path == "/api/logout":
+                # CSRF double-submit intentionally omitted: logout is idempotent and
+                # SameSite=Strict + Origin check in _guard already prevent cross-site reads.
                 return self._json({"ok": True},
                                   cookies=self._set_cookies("", "", clear=True))
 
@@ -478,6 +501,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(config_store.set_bool(flag_path, value))
 
             if path == "/api/analytics/fp/geo_enrich":
+                if not b.get("confirm"):
+                    return self._json({"ok": False, "error": "confirm required"}, 400)
                 return self._json(analytics_first_party.geo_enrich_now(budget=b.get("budget") or 300))
 
             if path == "/api/brief/interval":

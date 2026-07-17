@@ -276,7 +276,18 @@ def _lobe_record(art_id: str, art: dict, root: Path) -> dict:
     try:
         obj = None
         if fmt == "json":
-            obj = _read_json(full_path)
+            raw = _read_json(full_path)
+            if isinstance(raw, list):
+                # Top-level JSON arrays (e.g. health_history.json, governance_recent.json)
+                # have no envelope keys; capture the honest row count before nulling so
+                # len(array) flows through to rec['row_count'] below.
+                rec["row_count"] = len(raw)
+                # Try the .envelope.json sidecar for produced_at / as_of metadata.
+                sidecar = Path(str(full_path) + ".envelope.json")
+                obj = _read_json(sidecar) if sidecar.exists() else None
+                # If no sidecar, obj stays None → mtime fallback applies.
+            else:
+                obj = raw
 
         # as_of from artifact content
         as_of = _extract_as_of(obj) if obj else None
@@ -287,7 +298,10 @@ def _lobe_record(art_id: str, art: dict, root: Path) -> dict:
         rec["as_of"] = as_of
         rec["produced_at"] = produced_at
         rec["byte_size"] = _byte_size(full_path)
-        rec["row_count"] = _row_count(full_path, fmt)
+        # row_count may already be set for top-level JSON arrays (len captured before
+        # nulling obj); only invoke _row_count when it hasn't been set yet.
+        if rec["row_count"] is None:
+            rec["row_count"] = _row_count(full_path, fmt)
 
         # Age: prefer content as_of, fallback to mtime.
         # Self-monitoring artifacts are the exception: their as_of is a
@@ -486,8 +500,11 @@ def _workflow_conformance(in_scope: list[dict], root: Path) -> list[dict]:
         producer = rec.get("producer") or ""
         if not producer:
             continue
-        # Strip path separators to a module name for matching
-        producer_stem = producer.replace("/", ".").replace("\\", ".").rstrip(".py").rstrip(".")
+        # Strip path separators to a module name for matching.
+        # Remove the trailing '.py' suffix via slicing BEFORE replacing '/' with '.'
+        # so that module names ending in 'p' or 'y' are never mangled by rstrip.
+        _p = producer[:-3] if producer.endswith(".py") else producer
+        producer_stem = _p.replace("/", ".").replace("\\", ".")
         # Also try the bare filename
         producer_base = Path(producer).stem
         if producer not in daily_text and producer_stem not in daily_text and producer_base not in daily_text:
@@ -518,7 +535,7 @@ def _overall_status(lobes: list[dict], cortex: dict, world_state_id: str = "worl
     lobe_map = {r["id"]: r for r in lobes}
     ws = lobe_map.get(world_state_id, {})
     ws_status = ws.get("status", "unknown")
-    if ws_status in ("missing", "stale"):
+    if ws_status in ("missing", "stale", "unknown"):
         return "degraded"
 
     # Missing lobes only drive 'degraded' when they have a real SLA (< 8760h).
@@ -534,12 +551,14 @@ def _overall_status(lobes: list[dict], cortex: dict, world_state_id: str = "worl
     if any_missing:
         return "degraded"
 
-    # cortex degraded (steady state under the OAuth-only ruling) or warn
-    # (model_fallback, context_stale, budget) elevates overall to warn.
-    if cortex_status in ("degraded", "warn"):
+    # cortex degraded (steady state under the OAuth-only ruling), warn
+    # (model_fallback, context_stale, budget), or missing (memo absent) elevates
+    # overall to warn.  An unverifiable cortex is treated as at-least-warn so the
+    # operator sees it — nulls printed, not hidden.
+    if cortex_status in ("degraded", "warn", "missing"):
         return "warn"
 
-    any_bad = any(r["status"] in ("stale", "fresh_partial", "degraded") for r in lobes)
+    any_bad = any(r["status"] in ("stale", "fresh_partial", "degraded", "unknown") for r in lobes)
     if any_bad:
         return "warn"
 
@@ -990,6 +1009,9 @@ def refresh_cortex(existing: dict, root: Path | None = None) -> dict:
     updated["cortex"] = cortex
     updated["overall_status"] = overall
     updated["summary_counts"] = counts
+    # as_of is intentionally left from the engine build: it is the conservative
+    # min-rollup of lobe data timestamps and does not change when only the cortex
+    # section is refreshed.
     return updated
 
 

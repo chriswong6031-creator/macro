@@ -2,7 +2,7 @@
 
 Off the render critical path.  Produces:
     data/dol_certs/hiring_velocity.json    (runner-local; gitignored; provenance artifact)
-    site/basketdata/hiring_intent.json     (site projection; git-tracked)
+    site/basketdata/hiring_intent.json     (site projection; generated, not yet committed)
 
 This script is a COLLECT-LANE job: it runs after collect_dol_certs has ingested
 at least one quarterly file.  It is cheap once the store exists (pure in-memory

@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from admin.server import Handler
+from admin.server import Handler, _host_only, _int_param
 
 
 def _server():
@@ -121,6 +121,59 @@ def test_toggle_rejects_unmanaged_path():
             assert "unmanaged" in json.loads(e.read())["error"]
     finally:
         httpd.shutdown(); httpd.server_close()
+
+
+def test_int_param_happy_and_clamp():
+    """_int_param returns default on missing/bad values and clamps to [lo, hi]."""
+    # normal parse
+    assert _int_param({"days": ["14"]}, "days", 7, 1, 365) == 14
+    # missing key → default
+    assert _int_param({}, "days", 7, 1, 365) == 7
+    # non-numeric → default
+    assert _int_param({"days": ["abc"]}, "days", 7, 1, 365) == 7
+    # below lo → clamped to lo
+    assert _int_param({"limit": ["0"]}, "limit", 30, 1, 1000) == 1
+    # above hi → clamped to hi
+    assert _int_param({"limit": ["99999"]}, "limit", 30, 1, 1000) == 1000
+    # exactly at bounds
+    assert _int_param({"days": ["1"]}, "days", 7, 1, 365) == 1
+    assert _int_param({"days": ["365"]}, "days", 7, 1, 365) == 365
+
+
+def test_host_only_bare_ipv6():
+    """_host_only must return bare IPv6 addresses unchanged (no port stripping)."""
+    assert _host_only("::1") == "::1"
+    assert _host_only("2001:db8::1") == "2001:db8::1"
+    # bracketed form with port is still stripped correctly
+    assert _host_only("[::1]:8080") == "::1"
+    # plain host:port
+    assert _host_only("localhost:8080") == "localhost"
+    # plain host, no port
+    assert _host_only("localhost") == "localhost"
+
+
+def test_body_size_cap():
+    """_body() returns {} without reading when Content-Length > 1_000_000."""
+    import io
+    import unittest.mock as mock
+
+    # Build a minimal fake handler to exercise _body() directly.
+    h = object.__new__(Handler)
+    # Simulate a large Content-Length header.
+    h.headers = {"Content-Length": "1100000"}
+    # rfile should never be read when the cap fires; wrap a sentinel to assert that.
+    h.rfile = mock.MagicMock()
+    result = h._body()
+    assert result == {}, f"expected empty dict, got {result!r}"
+    h.rfile.read.assert_not_called()
+
+    # A normal-sized body is still parsed.
+    payload = b'{"key": "value"}'
+    h2 = object.__new__(Handler)
+    h2.headers = {"Content-Length": str(len(payload))}
+    h2.rfile = io.BytesIO(payload)
+    result2 = h2._body()
+    assert result2 == {"key": "value"}
 
 
 if __name__ == "__main__":

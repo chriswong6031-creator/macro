@@ -1238,3 +1238,227 @@ def test_missing_sla_30_drives_degraded(tmp_path):
         f"SLA=30 missing lobe must drive overall_status to 'degraded'; "
         f"got {result['overall_status']!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Fix 1: JSON-array artifact handling
+# ---------------------------------------------------------------------------
+
+def test_json_array_artifact_with_sidecar(tmp_path):
+    """Fix 1: a top-level JSON array artifact with a .envelope.json sidecar
+    must resolve to status='fresh' and row_count == len(array).
+    The per-lobe AttributeError (list has no .get) must not occur."""
+    from datetime import datetime, timezone, timedelta
+
+    recent_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
+        "%Y-%m-%dT%H:%M:%S+00:00"
+    )
+    arr = [{"event": "a"}, {"event": "b"}, {"event": "c"}]
+    arr_path = tmp_path / "site" / "neuralwebdata" / "health_history.json"
+    arr_path.parent.mkdir(parents=True, exist_ok=True)
+    arr_path.write_text(json.dumps(arr), encoding="utf-8")
+
+    sidecar_path = tmp_path / "site" / "neuralwebdata" / "health_history.json.envelope.json"
+    sidecar_path.write_text(json.dumps({
+        "produced_at": recent_ts,
+        "as_of": recent_ts,
+    }), encoding="utf-8")
+
+    root = _make_repo(tmp_path, {
+        "health-history": _art(
+            "site/neuralwebdata/health_history.json",
+            freshness_sla_hours=30.0,
+        ),
+    })
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    lobe = lobes["health-history"]
+
+    assert lobe["status"] == "fresh", (
+        f"array artifact with sidecar must be fresh; got {lobe['status']!r}. "
+        f"gaps={lobe['gaps']}"
+    )
+    assert lobe["row_count"] == 3, (
+        f"row_count must equal len(array)=3; got {lobe['row_count']!r}"
+    )
+
+
+def test_json_array_artifact_without_sidecar_uses_mtime(tmp_path):
+    """Fix 1: a top-level JSON array artifact without a sidecar must fall back
+    to mtime for age (not produce status='unknown' from AttributeError)."""
+    arr = [{"x": 1}]
+    arr_path = tmp_path / "site" / "neuralwebdata" / "governance_recent.json"
+    arr_path.parent.mkdir(parents=True, exist_ok=True)
+    arr_path.write_text(json.dumps(arr), encoding="utf-8")
+
+    root = _make_repo(tmp_path, {
+        "governance-recent": _art(
+            "site/neuralwebdata/governance_recent.json",
+            freshness_sla_hours=30.0,
+        ),
+    })
+    result = build(root=root)
+    lobes = {r["id"]: r for r in result["lobes"]}
+    lobe = lobes["governance-recent"]
+
+    assert lobe["status"] != "unknown", (
+        f"array artifact without sidecar must not be unknown (AttributeError); "
+        f"got {lobe['status']!r}. gaps={lobe['gaps']}"
+    )
+    assert lobe["row_count"] == 1, (
+        f"row_count must equal len(array)=1; got {lobe['row_count']!r}"
+    )
+    # The file was just written so mtime-based age is near 0h → fresh
+    assert lobe["status"] == "fresh", (
+        f"freshly-written array artifact must be fresh via mtime fallback; "
+        f"got {lobe['status']!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Fix 2: _overall_status edge cases
+# ---------------------------------------------------------------------------
+
+def test_overall_status_ws_unknown_is_degraded(tmp_path):
+    """Fix 2a: when world-state lobe status='unknown', overall_status must be
+    'degraded' (unknown world state is as alarming as missing)."""
+    import engine.neuralweb.health as _health
+
+    # Build a fresh world-state file then force the lobe to unknown via monkeypatch
+    from datetime import datetime, timezone, timedelta
+    recent_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
+        "%Y-%m-%dT%H:%M:%S+00:00"
+    )
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": recent_ts})
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json"),
+    })
+    result = build(root=root)
+    # Inject status=unknown directly into the lobes list and call _overall_status
+    lobes = result["lobes"]
+    for lobe in lobes:
+        if lobe["id"] == "world-state":
+            lobe["status"] = "unknown"
+    cortex = {"status": "fresh"}
+    status = _health._overall_status(lobes, cortex, world_state_id="world-state")
+    assert status == "degraded", (
+        f"world-state unknown must yield overall_status=degraded; got {status!r}"
+    )
+
+
+def test_overall_status_lone_unknown_lobe_yields_warn(tmp_path):
+    """Fix 2b: a non-world-state lobe with status='unknown' must elevate
+    overall_status to at least 'warn'."""
+    import engine.neuralweb.health as _health
+    from datetime import datetime, timezone, timedelta
+
+    recent_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
+        "%Y-%m-%dT%H:%M:%S+00:00"
+    )
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": recent_ts})
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json"),
+        "some-lobe": _art("data/neuralweb/some_lobe.json"),
+    })
+    result = build(root=root)
+    lobes = result["lobes"]
+    for lobe in lobes:
+        if lobe["id"] == "some-lobe":
+            lobe["status"] = "unknown"
+    cortex = {"status": "fresh"}
+    status = _health._overall_status(lobes, cortex, world_state_id="world-state")
+    assert status in ("warn", "degraded"), (
+        f"lone unknown non-ws lobe must yield at least warn; got {status!r}"
+    )
+    assert status == "warn", (
+        f"lone unknown non-ws lobe with fresh world-state must yield warn not degraded; "
+        f"got {status!r}"
+    )
+
+
+def test_overall_status_cortex_missing_yields_warn(tmp_path):
+    """Fix 2c: cortex status='missing' must elevate overall_status to 'warn'
+    (missing memo is an unverifiable cortex — must not silently fall to 'ok')."""
+    import engine.neuralweb.health as _health
+    from datetime import datetime, timezone, timedelta
+
+    recent_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
+        "%Y-%m-%dT%H:%M:%S+00:00"
+    )
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": recent_ts})
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json"),
+    })
+    result = build(root=root)
+    lobes = result["lobes"]
+    # No cortex memo was written → cortex_section returns status='missing'
+    # Verify directly via _overall_status
+    cortex = {"status": "missing"}
+    status = _health._overall_status(lobes, cortex, world_state_id="world-state")
+    assert status == "warn", (
+        f"cortex missing must elevate overall to warn; got {status!r}"
+    )
+
+
+def test_overall_status_cortex_missing_integration(tmp_path):
+    """Fix 2c integration: build() with no cortex memo file must produce
+    overall_status='warn' (not 'ok'), because cortex section will be 'missing'."""
+    from datetime import datetime, timezone, timedelta
+
+    recent_ts = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
+        "%Y-%m-%dT%H:%M:%S+00:00"
+    )
+    _nw_json_artifact(tmp_path, "data/neuralweb/world_state.json", {"as_of": recent_ts})
+    root = _make_repo(tmp_path, {
+        "world-state": _art("data/neuralweb/world_state.json"),
+    })
+    # Do NOT write a cortex memo
+    result = build(root=root)
+    assert result["cortex"]["status"] == "missing"
+    assert result["overall_status"] == "warn", (
+        f"missing cortex memo must yield overall_status=warn; "
+        f"got {result['overall_status']!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Fix 3: _workflow_conformance stem computation
+# ---------------------------------------------------------------------------
+
+def test_workflow_conformance_decay_py_not_mangled(tmp_path):
+    """Fix 3: producer 'engine/neuralweb/decay.py' must map to stem
+    'engine.neuralweb.decay' — the old rstrip('.py') mangled it to 'engine.neuralweb.deca'.
+    When daily.yml mentions 'engine.neuralweb.decay' the producer must pass (no miss)."""
+    daily_text = "python -m engine.neuralweb.decay\n"
+    root = _make_repo(tmp_path, {
+        "decay-lobe": _art(
+            "data/neuralweb/decay_output.json",
+            cadence="daily-engine",
+            producer="engine/neuralweb/decay.py",
+        ),
+    }, daily_yml_text=daily_text)
+    _nw_json_artifact(tmp_path, "data/neuralweb/decay_output.json", {
+        "as_of": "2026-07-06T00:00:00+00:00",
+    })
+    result = build(root=root)
+    misses = result["workflow_conformance_misses"]
+    assert not any("decay" in (m.get("producer") or "") for m in misses), (
+        f"producer 'engine/neuralweb/decay.py' must match 'engine.neuralweb.decay' "
+        f"in daily.yml without stem mangling; misses={misses}"
+    )
+
+
+def test_workflow_conformance_stem_unit():
+    """Fix 3: unit test that the stem computation for 'engine/neuralweb/decay.py'
+    produces 'engine.neuralweb.decay' and NOT 'engine.neuralweb.deca'."""
+    import engine.neuralweb.health as _health
+
+    # Simulate the stem computation that _workflow_conformance applies.
+    producer = "engine/neuralweb/decay.py"
+    _p = producer[:-3] if producer.endswith(".py") else producer
+    stem = _p.replace("/", ".").replace("\\", ".")
+
+    assert stem == "engine.neuralweb.decay", (
+        f"stem must be 'engine.neuralweb.decay', got {stem!r}. "
+        "Old rstrip('.py') would have produced 'engine.neuralweb.deca'."
+    )

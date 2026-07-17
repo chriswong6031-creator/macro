@@ -73,10 +73,13 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 455, (
-        f"Expected 455 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 460, (
+        f"Expected 460 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        "(XSR-R2 #2730 added us-sector-rotation-latest = 454->455;"
+        "(E1 audit 2026-07-17: 5 site-mirror registrations"
+        " site-confluence-graph, site-kernel-families, site-kernel-half-lives,"
+        " site-liquidity-plumbing, site-cortex-memo = 455->460;"
+        " XSR-R2 us-sector-rotation-latest = 454->455 (was never pinned);"
         "(sector-central site-payload registration added site-sector-central,"
         " site-china-sector-central = 452->454;"
         "(MLC-W2b added site-stance-matrix = 451->452;"
