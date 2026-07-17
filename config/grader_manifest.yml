@@ -1,152 +1,115 @@
-# config/grader_manifest.yml — Grader immutability manifest (F1, R-AUT-7)
-#
-# Every fitness-producing file in the Metabolism is registered here with its
-# SHA-256 content hash.  The CI check (scripts/check_grader_manifest.py) recomputes
-# these hashes at every PR and hard-fails if any hash has drifted.
-#
-# IMMUTABLE set: these files may NOT be changed by any loop-authored PR.  A change
-# to any hash is blocked at the F2 self-modification fence for loop PRs, and blocked
-# at this manifest check for ALL PRs (human or loop) until the manifest is updated
-# with a T2 operator-tap ruling.
-#
-# Changing a grader hash is a QUARANTINE event (R-AUT-7):
-#   1. The loop-authored diff is blocked by the F2 fence (loop can never change these).
-#   2. A human-authored change must be accompanied by a manifest update (this file).
-#   3. The CI check (check_grader_manifest.py) runs OLD-vs-NEW grader against a frozen
-#      replay corpus and prints the fitness delta, which the operator must ratify.
-#
-# To update this manifest (human author only):
-#   python3 scripts/check_grader_manifest.py --regen
-# Then inspect the diff, ratify the delta in the PR, and commit both changes together.
-#
-# Schema: grader_manifest.v1
 schema: grader_manifest.v1
-generated_at: "2026-07-09"
+generated_at: '2026-07-09'
 owner_program: metabolism-phase0
-
 files:
-  - path: scripts/grade_thematic.py
-    sha256: 6950102876bb608cf3f44ffa4f0d436116207beab4f375722544c4a822b91d79
-    role: orchestrator
-    notes: >
-      TIL W6 grading-pack orchestrator — runs Stage 1 (foresight_leadlag),
-      Stage 2 (theme_placebo), Stage 3 (qledger_falsifier) in sequence.
+- path: scripts/grade_thematic.py
+  sha256: 6950102876bb608cf3f44ffa4f0d436116207beab4f375722544c4a822b91d79
+  role: orchestrator
+  notes: 'TIL W6 grading-pack orchestrator — runs Stage 1 (foresight_leadlag), Stage
+    2 (theme_placebo), Stage 3 (qledger_falsifier) in sequence.
 
-  - path: engine/foresight_leadlag.py
-    sha256: 04d84438f6d6e5bfb381954afce21f17e64c8fe2825dd62c31b523c0797a62e2
-    role: sensor
-    notes: >
-      Crowd-arrival lead-lag grader: signed lead-days between flag date and
-      attention leg crossings.  Writes data/foresight/earliness_grades.json.
+    '
+- path: engine/foresight_leadlag.py
+  sha256: 04d84438f6d6e5bfb381954afce21f17e64c8fe2825dd62c31b523c0797a62e2
+  role: sensor
+  notes: 'Crowd-arrival lead-lag grader: signed lead-days between flag date and attention
+    leg crossings.  Writes data/foresight/earliness_grades.json.
 
-  - path: engine/theme_placebo.py
-    sha256: f3089c26abd263725a535272696e2586ca6be0dece3d5d7a998101f63d934d04
-    role: placebo
-    notes: >
-      Placebo tape: appends K=3 random peer themes + 1 time-shifted variant to
-      data/foresight/theme_placebo_tape.jsonl (append-only, deduped).
-      Guards against cherry-picked comparisons.
-      2026-07-16 hash update ratifies the #2598 COLLECT_LANE=nightly write gate
-      (single-writer hardening, write-site only): replay vs the frozen foresight
-      corpus is byte-identical in the nightly lane; grading semantics unchanged.
-      2026-07-16 second hash update ratifies sorted() peer pool: set-iteration
-      order made random_peer selection PYTHONHASHSEED-dependent (docstring
-      determinism claim was false across processes; each nightly leaked a few
-      re-drawn peer rows past dedup). Replay vs the frozen corpus is now
-      byte-identical across hash seeds; peer pool remains a uniform seeded draw.
+    '
+- path: engine/theme_placebo.py
+  sha256: f3089c26abd263725a535272696e2586ca6be0dece3d5d7a998101f63d934d04
+  role: placebo
+  notes: 'Placebo tape: appends K=3 random peer themes + 1 time-shifted variant to
+    data/foresight/theme_placebo_tape.jsonl (append-only, deduped). Guards against
+    cherry-picked comparisons. 2026-07-16 hash update ratifies the #2598 COLLECT_LANE=nightly
+    write gate (single-writer hardening, write-site only): replay vs the frozen foresight
+    corpus is byte-identical in the nightly lane; grading semantics unchanged. 2026-07-16
+    second hash update ratifies sorted() peer pool: set-iteration order made random_peer
+    selection PYTHONHASHSEED-dependent (docstring determinism claim was false across
+    processes; each nightly leaked a few re-drawn peer rows past dedup). Replay vs
+    the frozen corpus is now byte-identical across hash seeds; peer pool remains a
+    uniform seeded draw.
 
-  - path: engine/qledger_falsifier.py
-    sha256: 3ce3f410c17a2de59d994b5eae1ea8c64b8fb6f7ceb14b093837b315efb8ffdc
-    role: falsifier
-    notes: >
-      Falsifier auto-evaluation: evaluates qledger claims whose check_by has
-      arrived and appends FALSIFIER_TRIPPED / CONFIRMED / UNVERIFIABLE rows to
-      data/qledger/falsifier_evaluations.jsonl (append-only, capped).
-      2026-07-16 hash update ratifies the #2598 COLLECT_LANE=nightly write gate
-      (single-writer hardening, write-site only): replay vs the frozen claims
-      corpus yields identical evaluations; grading semantics unchanged.
+    '
+- path: engine/qledger_falsifier.py
+  sha256: 3ce3f410c17a2de59d994b5eae1ea8c64b8fb6f7ceb14b093837b315efb8ffdc
+  role: falsifier
+  notes: 'Falsifier auto-evaluation: evaluates qledger claims whose check_by has arrived
+    and appends FALSIFIER_TRIPPED / CONFIRMED / UNVERIFIABLE rows to data/qledger/falsifier_evaluations.jsonl
+    (append-only, capped). 2026-07-16 hash update ratifies the #2598 COLLECT_LANE=nightly
+    write gate (single-writer hardening, write-site only): replay vs the frozen claims
+    corpus yields identical evaluations; grading semantics unchanged.
 
-  - path: scripts/sample_qledger_placebo.py
-    sha256: 15fb32261fb5971c359524f20e09199e325464d449a97c0ae5542cf4c6b042be
-    role: placebo_sampler
-    notes: >
-      qledger placebo sampler: draws control claims from the qledger for use
-      in placebo-adjusted evaluation of falsifier accuracy.
+    '
+- path: scripts/sample_qledger_placebo.py
+  sha256: 15fb32261fb5971c359524f20e09199e325464d449a97c0ae5542cf4c6b042be
+  role: placebo_sampler
+  notes: 'qledger placebo sampler: draws control claims from the qledger for use in
+    placebo-adjusted evaluation of falsifier accuracy.
 
-  # --- V2-A IMMUTABLE configs (R-V2-8) ---
+    '
+- path: config/metabolism_anomaly.yml
+  sha256: 59ba3b07205c518e4530f795effd22ec89af644931f89cc181bf8319c1fd8598
+  role: anomaly_thresholds
+  notes: 'V2-A anomaly monitor thresholds (R-V2-9). IMMUTABLE operator-ratified policy:
+    robust-z K, n_min, z_thresh per sensor. Loop PRs may NOT modify. R-V8-5: ci_status_artifact
+    wired from null to data/metabolism/ci_status.json.
 
-  - path: config/metabolism_anomaly.yml
-    sha256: 4b73e80310ce3252777591de69228b835428ddc524bf559d21bc1ce03bfaeb5d
-    role: anomaly_thresholds
-    notes: >
-      V2-A anomaly monitor thresholds (R-V2-9). IMMUTABLE operator-ratified
-      policy: robust-z K, n_min, z_thresh per sensor. Loop PRs may NOT modify.
-      R-V8-5: ci_status_artifact wired from null to data/metabolism/ci_status.json.
+    '
+- path: config/fable_mode_core.md
+  sha256: 7034195ac0221da208c75e52bf66e4dd0e9e8f8ec7d403c0b6b4dab314dc5c41
+  role: doctrine
+  notes: 'V2-A vendored Fable-mode doctrine (R-V2-2): five commitments + pre-send
+    gate. Injected into orchestrator system prompt when model is Opus-class. IMMUTABLE
+    — loop PRs may not modify. Runner never reads ~/.
 
-  - path: config/fable_mode_core.md
-    sha256: 7034195ac0221da208c75e52bf66e4dd0e9e8f8ec7d403c0b6b4dab314dc5c41
-    role: doctrine
-    notes: >
-      V2-A vendored Fable-mode doctrine (R-V2-2): five commitments + pre-send
-      gate. Injected into orchestrator system prompt when model is Opus-class.
-      IMMUTABLE — loop PRs may not modify. Runner never reads ~/.
+    '
+- path: config/metabolism_schedule.yml
+  sha256: a80d83f41fe6680a08728dce0a4a58ee1ba792c7afba41520362c5de8c7745ef
+  role: dispatch_schedule
+  notes: 'V2-B dispatch spread table (R-V2-8). Operator-ratified time-of-day gating
+    so lobe activations are spread across UTC hours — the loop never fires 40 sessions
+    at once. IMMUTABLE — loop PRs may not modify. Dispatcher reads it; it never writes
+    to it.
 
-  # --- V2-B IMMUTABLE configs (R-V2-8) ---
+    '
+- path: config/ux_simplicity_rules.yml
+  sha256: 059dd08f6c929fc8db2a7aec5b0017bc76d3718f11276c870a7a4f5566fa5f3b
+  role: ux_gate
+  notes: 'V2-D UX-simplicity gate rules (R-V2-6). Deterministic screen in adjudicate.py
+    fires on front-page asset diffs. Rules: <=N numbers per default view, plain-language
+    label requirement (jargon blocklist), one clear primary action. IMMUTABLE — loop
+    PRs may not modify. The LLM cannot relax this gate. Human-authored changes require
+    T2 operator-tap ruling + manifest update.
 
-  - path: config/metabolism_schedule.yml
-    sha256: a80d83f41fe6680a08728dce0a4a58ee1ba792c7afba41520362c5de8c7745ef
-    role: dispatch_schedule
-    notes: >
-      V2-B dispatch spread table (R-V2-8). Operator-ratified time-of-day
-      gating so lobe activations are spread across UTC hours — the loop never
-      fires 40 sessions at once. IMMUTABLE — loop PRs may not modify.
-      Dispatcher reads it; it never writes to it.
+    '
+- path: config/nw_information_domains.yml
+  sha256: 3bc272062cceb17697a0d9e95201e78d62594ac69894e251645684b6fe3911ec
+  role: scout_domain_universe
+  notes: 'V2-C Unit 6 curated NW-scope domain universe. The Uncovered-Domain Scout
+    (engine/metabolism/scout.py) proposes a display-tier charter only for a domain
+    uncovered across >= K distinct cycles. IMMUTABLE — a loop PR that could add a
+    domain could manufacture its own charter mandate (R-V2-8; originating an escalation
+    is forbidden by R-AUT-1/R-V2-9). Operator-only.
 
-  # --- V2-D IMMUTABLE configs (R-V2-8) ---
+    '
+- path: config/nw_mission.yml
+  sha256: 427546fd03d4f958418b64493ed83a2d12a957732efdf4b736c1c8246918a5b7
+  role: mission_self_model
+  notes: 'V4-W3 machine-readable mission self-model (R-V4-4). Encodes the operator''s
+    endgame, mission pillars, standing laws, strategic posture, and forward clocks
+    in YAML. Injected into every orchestrator-tier PROPOSE prompt. IMMUTABLE — the
+    loop may read it but never edit it; a loop PR that rewrites this file rewrites
+    the loop''s own purpose (highest-privilege attack path).
 
-  - path: config/ux_simplicity_rules.yml
-    sha256: 059dd08f6c929fc8db2a7aec5b0017bc76d3718f11276c870a7a4f5566fa5f3b
-    role: ux_gate
-    notes: >
-      V2-D UX-simplicity gate rules (R-V2-6). Deterministic screen in adjudicate.py
-      fires on front-page asset diffs. Rules: <=N numbers per default view,
-      plain-language label requirement (jargon blocklist), one clear primary action.
-      IMMUTABLE — loop PRs may not modify. The LLM cannot relax this gate.
-      Human-authored changes require T2 operator-tap ruling + manifest update.
+    '
+- path: config/metabolism_immune.yml
+  sha256: 650e0ffd7ea120ed24e855de8020e692925c66a2b609df42f58f5ca93f48615d
+  role: immune_recipe_registry
+  notes: 'V8-A immune system recipe registry + spurious-checks allowlist (R-V8-1,
+    R-V8-3). Operator-ratified heal recipes (check → heal_cmd → detector), known-spurious
+    CI check filter, and lane-health thresholds. Fenced here so R-V8-3b auto-merge
+    inherits the guarantee that the loop cannot expand its own auto-merge allowlist
+    or remove spurious-check filters. IMMUTABLE — loop PRs may not modify.
 
-  # --- V2-C Unit 6 IMMUTABLE config (R-V2-8) ---
-
-  - path: config/nw_information_domains.yml
-    sha256: 3bc272062cceb17697a0d9e95201e78d62594ac69894e251645684b6fe3911ec
-    role: scout_domain_universe
-    notes: >
-      V2-C Unit 6 curated NW-scope domain universe. The Uncovered-Domain Scout
-      (engine/metabolism/scout.py) proposes a display-tier charter only for a
-      domain uncovered across >= K distinct cycles. IMMUTABLE — a loop PR that
-      could add a domain could manufacture its own charter mandate (R-V2-8;
-      originating an escalation is forbidden by R-AUT-1/R-V2-9). Operator-only.
-
-  # --- V4-W3 IMMUTABLE config (R-V4-4) ---
-
-  - path: config/nw_mission.yml
-    sha256: 427546fd03d4f958418b64493ed83a2d12a957732efdf4b736c1c8246918a5b7
-    role: mission_self_model
-    notes: >
-      V4-W3 machine-readable mission self-model (R-V4-4). Encodes the operator's
-      endgame, mission pillars, standing laws, strategic posture, and forward
-      clocks in YAML. Injected into every orchestrator-tier PROPOSE prompt.
-      IMMUTABLE — the loop may read it but never edit it; a loop PR that rewrites
-      this file rewrites the loop's own purpose (highest-privilege attack path).
-
-  # --- V8-A IMMUTABLE config (R-V8-3) ---
-
-  - path: config/metabolism_immune.yml
-    sha256: 650e0ffd7ea120ed24e855de8020e692925c66a2b609df42f58f5ca93f48615d
-    role: immune_recipe_registry
-    notes: >
-      V8-A immune system recipe registry + spurious-checks allowlist (R-V8-1,
-      R-V8-3). Operator-ratified heal recipes (check → heal_cmd → detector),
-      known-spurious CI check filter, and lane-health thresholds. Fenced here so
-      R-V8-3b auto-merge inherits the guarantee that the loop cannot expand its
-      own auto-merge allowlist or remove spurious-check filters. IMMUTABLE —
-      loop PRs may not modify.
+    '
