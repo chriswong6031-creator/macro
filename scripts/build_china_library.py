@@ -2610,5 +2610,12 @@ def main(alpha: dict | None = None) -> dict | None:
 
 
 if __name__ == "__main__":
-    main()
+    # CLI parity with build_china's in-process call: without alpha the CN pick-lab
+    # snapshot block self-skips ("no as_of"), so the resilient-rebuild fallback lane
+    # could never produce snapshots (2026-07-13..15 drought).
+    try:
+        _cli_alpha = compute_china_alpha()
+    except Exception:  # noqa: BLE001 — never-fatal, mirrors build_china's alpha leg
+        _cli_alpha = None
+    main(alpha=_cli_alpha)
     sys.exit(0)
