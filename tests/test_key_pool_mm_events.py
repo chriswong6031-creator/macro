@@ -294,8 +294,8 @@ class TestMMSessionsWindow:
             "Only the recent MM row should count; >7d-old row must be excluded"
         )
 
-    def test_exactly_at_7d_boundary_excluded(self, tmp_path: Path) -> None:
-        """A row exactly at the 7d boundary (== cutoff) is counted (>= semantics)."""
+    def test_just_inside_7d_boundary_counts(self, tmp_path: Path) -> None:
+        """A row just inside the 7d window (cutoff + 10s) counts (>= semantics)."""
         _write_ledger(tmp_path, [_ledger_row("claude_code_oauth_4")])
         # Slightly inside the 7d window
         _write_mm_events(tmp_path, [
