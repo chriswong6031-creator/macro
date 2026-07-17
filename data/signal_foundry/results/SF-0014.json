@@ -1,0 +1,164 @@
+{
+  "spec": {
+    "id": "SF-0014",
+    "name": "Real wage purchasing-power impulse",
+    "name_zh": "\u5b9e\u9645\u5de5\u8d44\u8d2d\u4e70\u529b\u8109\u51b2",
+    "market": "US macro",
+    "thesis": "Accelerating real hourly earnings predict stronger forward equity returns because household purchasing power supports consumption before corporate sales and profits fully adjust.",
+    "mechanism": "Dividing average hourly earnings by the core consumer-price index forms a real-wage proxy; its year-over-year acceleration captures whether labor income is gaining purchasing power, which can sustain household demand and reduce late-cycle revenue downside.",
+    "seed_provenance": {
+      "source": "data/neuralweb/causal_surprise_queue.jsonl",
+      "ref": "2ad3e22eb448fd95"
+    },
+    "data": [
+      {
+        "path": "data/fred/CES0500000003.parquet",
+        "column": "avg_hourly_earnings",
+        "pit": "release_lag"
+      },
+      {
+        "path": "data/fred/CPILFESL.parquet",
+        "column": "core_cpi",
+        "pit": "release_lag"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "ratio",
+          {}
+        ],
+        [
+          "pct_change",
+          {
+            "n": 12
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 60
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 1
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "absolute_return",
+      "horizon_d": 63
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This measures the consumption cash-flow channel through real labor compensation, distinct from the existing claims-based recession leg, nominal inflation regimes, sentiment surveys, and financial-conditions indicators.",
+    "evidence_note": "Lettau and Ludvigson (2001) connect consumption, wealth, and labor income to return predictability; this construction uses real wage growth as a narrow, interpretable proxy for the household cash-flow component.",
+    "registered_at": "2026-07-17",
+    "construction_hash": "e05dfd6220dfbd6a6746",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-17T10:01:06+00:00",
+    "iso_week": "2026-W29",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 136,
+    "effective_months": 136,
+    "full_ic": 0.2219,
+    "hac": {
+      "mean": null,
+      "se": null,
+      "t": null,
+      "p": null,
+      "n": 3
+    },
+    "split_half": {
+      "h1_ic": 0.1915,
+      "h2_ic": 0.2493,
+      "split_half_sign_flip": false
+    },
+    "era_split": {
+      "pre_ic": null,
+      "post_ic": 0.1887,
+      "era_n_pre": 11,
+      "era_n_post": 125,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.0277,
+      "ci_97p5": 0.4405,
+      "boot_mean": 0.2297,
+      "n_draws": 200,
+      "block_size": 11,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.4519,
+      "sr_daily": 0.17388,
+      "sr_annual": 2.76,
+      "sr0_daily": 0.186864,
+      "sr0_annual": 2.97,
+      "n_trials": 14,
+      "T": 136,
+      "skew": -2.394,
+      "kurt": 19.985,
+      "dsr_series": "strategy_net_return"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.935,
+      "obs_ic": 0.2219,
+      "placebo_pct_ge_abs_obs": 0.065,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": 0.1588,
+      "obs_ic_same_window": 0.1908,
+      "neg_dominates": false
+    }
+  },
+  "backtest": {
+    "net_sharpe": 2.76,
+    "gross_sharpe": 2.807,
+    "hold_sharpe": 4.55,
+    "cagr_net": 4.3192,
+    "cagr_gross": 4.4895,
+    "max_dd": -0.2933,
+    "cost_bps": 8.0,
+    "baseline": "buy_and_hold",
+    "years": 17.75
+  },
+  "verdict": "insufficient_power",
+  "verdict_reasons": [
+    "n_obs=136 < 25 or HAC t unavailable"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-17",
+  "ledger_n_at_run": 14
+}

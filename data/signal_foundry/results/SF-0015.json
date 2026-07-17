@@ -1,0 +1,155 @@
+{
+  "spec": {
+    "id": "SF-0015",
+    "name": "Breakeven curve twist shock",
+    "name_zh": "\u76c8\u4e8f\u5e73\u8861\u901a\u80c0\u66f2\u7ebf\u626d\u8f6c\u51b2\u51fb",
+    "market": "US macro",
+    "thesis": "A rapid rise in five-year inflation compensation relative to ten-year compensation predicts equity drawdown onset by concentrating inflation risk in the nearer policy and earnings horizon.",
+    "mechanism": "The five-year-minus-ten-year breakeven spread removes much of the common inflation level; a sharp positive monthly change indicates near-horizon inflation compensation repricing faster than long-run expectations, raising discount-rate uncertainty and margin pressure.",
+    "seed_provenance": {
+      "source": "data/neuralweb/causal_surprise_queue.jsonl",
+      "ref": "21093b8656b14c81"
+    },
+    "data": [
+      {
+        "path": "data/fred/T5YIE.parquet",
+        "column": "breakeven_5y",
+        "pit": "clean"
+      },
+      {
+        "path": "data/fred/T10YIE.parquet",
+        "column": "breakeven_10y",
+        "pit": "clean"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "spread",
+          {}
+        ],
+        [
+          "diff",
+          {
+            "n": 21
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 252
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 1
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "drawdown_onset",
+      "horizon_d": 21
+    },
+    "universe": "single_series",
+    "baseline": "flat",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This is a change in inflation-curve shape, not a breakeven level, nominal yield-curve slope, term-premium level, credit spread, or VIX-family stress measure.",
+    "evidence_note": "Ang, Bekaert, and Wei (2008) document the term structure of expected inflation, while Campbell and Vuolteenaho (2004) connect inflation mispricing to equity valuation; the curve twist isolates near-horizon inflation repricing.",
+    "registered_at": "2026-07-17",
+    "construction_hash": "798e984aede3d529225d",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-17T10:01:06+00:00",
+    "iso_week": "2026-W29",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 5772,
+    "effective_months": 278,
+    "full_ic": -0.0351,
+    "hac": {
+      "mean": -0.07702,
+      "se": 0.06464,
+      "t": -1.192,
+      "p": 0.2334,
+      "n": 275
+    },
+    "split_half": {
+      "h1_ic": 0.005,
+      "h2_ic": -0.0778,
+      "split_half_sign_flip": true
+    },
+    "era_split": {
+      "pre_ic": -0.0213,
+      "post_ic": -0.0412,
+      "era_n_pre": 1665,
+      "era_n_post": 4107,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.1116,
+      "ci_97p5": 0.0425,
+      "boot_mean": -0.0349,
+      "n_draws": 200,
+      "block_size": 21,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.0018,
+      "sr_daily": -0.069244,
+      "sr_annual": -1.1,
+      "sr0_daily": 0.107727,
+      "sr0_annual": 1.71,
+      "n_trials": 15,
+      "T": 275,
+      "skew": -0.128,
+      "kurt": 20.243,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.67,
+      "obs_ic": -0.0351,
+      "placebo_pct_ge_abs_obs": 0.33,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.1064,
+      "obs_ic_same_window": -0.0369,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "unstable",
+  "verdict_reasons": [
+    "split-half sign flip: H1 IC=0.005, H2 IC=-0.0778",
+    "bootstrap CI [-0.1116, 0.0425] straddles 0"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-17",
+  "ledger_n_at_run": 15
+}

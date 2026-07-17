@@ -1,5 +1,5 @@
 {
   "status": "full",
-  "asof": "2026-07-15T11:26:43+00:00",
-  "reason": "harness batch: nothing to run (all up to date); iso_week=2026-W29"
+  "asof": "2026-07-17T10:01:10+00:00",
+  "reason": "harness batch: 5 registered, 5 run, 0 skipped, 0 failed; iso_week=2026-W29"
 }

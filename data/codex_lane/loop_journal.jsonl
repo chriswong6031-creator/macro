@@ -1,0 +1,1 @@
+{"ts": "2026-07-17T10:01:10+00:00", "lane": "both", "iteration": 1, "results": {"cases": {"ok": true, "action": "pr_opened", "detail": "case MARA_2020 passed audit; PR=None", "episode": "MARA_2020", "pr_url": null}, "signals": {"ok": true, "action": "brainstorm_done", "detail": "specs=5 admitted=5 rejected=0", "n_admitted": 5, "n_rejected": 0}}, "stop_reason": null}

@@ -1,0 +1,164 @@
+{
+  "spec": {
+    "id": "SF-0013",
+    "name": "Manufacturing backlog liquidation pulse",
+    "name_zh": "\u5236\u9020\u4e1a\u79ef\u538b\u8ba2\u5355\u6d88\u9000\u8109\u51b2",
+    "market": "US macro",
+    "thesis": "A falling manufacturing backlog-to-shipments ratio predicts weaker forward equity returns because demand commitments are being worked down faster than they are replenished.",
+    "mechanism": "Unfilled orders are a stock of committed future production while shipments are current throughput; a sustained decline in their ratio marks backlog liquidation, weaker pricing power, and an approaching industrial earnings slowdown before aggregate profits fully reflect it.",
+    "seed_provenance": {
+      "source": "data/neuralweb/causal_surprise_queue.jsonl",
+      "ref": "6c05b048292f6388"
+    },
+    "data": [
+      {
+        "path": "data/fred/AMTMUO.parquet",
+        "column": "unfilled_orders",
+        "pit": "release_lag"
+      },
+      {
+        "path": "data/fred/AMTMVS.parquet",
+        "column": "shipments_total",
+        "pit": "release_lag"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "ratio",
+          {}
+        ],
+        [
+          "diff",
+          {
+            "n": 3
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 60
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 2
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "absolute_return",
+      "horizon_d": 63
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This is a real-economy stock-to-flow imbalance inside the manufacturing order book, not a credit-spread level, recession composite, macro regime label, or price-trend signal.",
+    "evidence_note": "The leading-indicator tradition of Burns and Mitchell and the Conference Board's use of manufacturers' new orders support order-flow deterioration as an early-cycle measure; the backlog-to-shipments ratio isolates committed demand relative to realized throughput.",
+    "registered_at": "2026-07-17",
+    "construction_hash": "f6080e45fadf478077d7",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-17T10:01:06+00:00",
+    "iso_week": "2026-W29",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 251,
+    "effective_months": 251,
+    "full_ic": 0.0031,
+    "hac": {
+      "mean": null,
+      "se": null,
+      "t": null,
+      "p": null,
+      "n": 4
+    },
+    "split_half": {
+      "h1_ic": -0.0497,
+      "h2_ic": 0.1117,
+      "split_half_sign_flip": true
+    },
+    "era_split": {
+      "pre_ic": -0.0497,
+      "post_ic": 0.1117,
+      "era_n_pre": 125,
+      "era_n_post": 126,
+      "sign_flip": true
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.1329,
+      "ci_97p5": 0.1455,
+      "boot_mean": 0.0039,
+      "n_draws": 200,
+      "block_size": 15,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.9874,
+      "sr_daily": 0.241712,
+      "sr_annual": 3.84,
+      "sr0_daily": 0.104441,
+      "sr0_annual": 1.66,
+      "n_trials": 13,
+      "T": 251,
+      "skew": 0.656,
+      "kurt": 7.742,
+      "dsr_series": "strategy_net_return"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.02,
+      "obs_ic": 0.0031,
+      "placebo_pct_ge_abs_obs": 0.98,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": 0.1152,
+      "obs_ic_same_window": -0.0539,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {
+    "net_sharpe": 3.837,
+    "gross_sharpe": 3.922,
+    "hold_sharpe": 4.288,
+    "cagr_net": 6.9531,
+    "cagr_gross": 7.3505,
+    "max_dd": -0.3154,
+    "cost_bps": 8.0,
+    "baseline": "buy_and_hold",
+    "years": 32.58
+  },
+  "verdict": "insufficient_power",
+  "verdict_reasons": [
+    "n_obs=251 < 25 or HAC t unavailable"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-17",
+  "ledger_n_at_run": 13
+}

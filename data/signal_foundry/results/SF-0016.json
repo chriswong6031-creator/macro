@@ -1,0 +1,148 @@
+{
+  "spec": {
+    "id": "SF-0016",
+    "name": "Equal-weight breadth erosion",
+    "name_zh": "\u7b49\u6743\u5e02\u573a\u5e7f\u5ea6\u4fb5\u8680",
+    "market": "US macro",
+    "thesis": "A deep drawdown in equal-weight SPY relative to capitalization-weighted SPY predicts higher forward volatility because narrowing participation leaves the index dependent on fewer large constituents.",
+    "mechanism": "The RSP-to-SPY ratio falls when the average constituent lags the capitalization-weighted index; a persistent relative drawdown therefore measures concentration fragility, which can precede volatility when leadership finally weakens or laggards transmit stress.",
+    "seed_provenance": {
+      "source": "engine/signal_lab.py",
+      "ref": "Constructive-base scanner (IBD pivot)"
+    },
+    "data": [
+      {
+        "path": "data/yahoo/RSP.parquet",
+        "column": "close",
+        "pit": "clean"
+      },
+      {
+        "path": "data/yahoo/SPY.parquet",
+        "column": "close",
+        "pit": "clean"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "ratio",
+          {}
+        ],
+        [
+          "drawdown",
+          {
+            "window": 126
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 252
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "forward_vol",
+      "horizon_d": 21
+    },
+    "universe": "single_series",
+    "baseline": "flat",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This is an aggregate participation-and-concentration state with a volatility target; it does not reuse single-name pivot proximity, momentum confirmation, global country breadth, or sector-rotation timing.",
+    "evidence_note": "The advance-decline and diffusion-index literature treats participation breadth as information beyond index level; equal-weight relative performance provides a same-universe proxy for whether gains are broadly shared.",
+    "registered_at": "2026-07-17",
+    "construction_hash": "c3783a00f524e0cbd889",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-17T10:01:06+00:00",
+    "iso_week": "2026-W29",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 5725,
+    "effective_months": 274,
+    "full_ic": -0.0574,
+    "hac": {
+      "mean": -0.18672,
+      "se": 0.13119,
+      "t": -1.423,
+      "p": 0.1547,
+      "n": 273
+    },
+    "split_half": {
+      "h1_ic": -0.1032,
+      "h2_ic": -0.0184,
+      "split_half_sign_flip": false
+    },
+    "era_split": {
+      "pre_ic": -0.0203,
+      "post_ic": -0.0707,
+      "era_n_pre": 1588,
+      "era_n_post": 4137,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.1923,
+      "ci_97p5": 0.0419,
+      "boot_mean": -0.0619,
+      "n_draws": 200,
+      "block_size": 21,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.0,
+      "sr_daily": -0.122488,
+      "sr_annual": -1.94,
+      "sr0_daily": 0.07544,
+      "sr0_annual": 1.2,
+      "n_trials": 16,
+      "T": 273,
+      "skew": -5.749,
+      "kurt": 49.461,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.6,
+      "obs_ic": -0.0574,
+      "placebo_pct_ge_abs_obs": 0.4,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.0266,
+      "obs_ic_same_window": -0.0552,
+      "neg_dominates": false
+    }
+  },
+  "backtest": {},
+  "verdict": "null",
+  "verdict_reasons": [
+    "time-shift placebo: IC at 60% of null distribution (floor=90%) \u2014 indistinguishable from lagged echo (DT-R14)"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-17",
+  "ledger_n_at_run": 16
+}

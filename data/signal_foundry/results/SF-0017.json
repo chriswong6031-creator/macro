@@ -1,0 +1,151 @@
+{
+  "spec": {
+    "id": "SF-0017",
+    "name": "Cash-volume instability forecast",
+    "name_zh": "\u73b0\u8d27\u6210\u4ea4\u91cf\u4e0d\u7a33\u5b9a\u6027\u9884\u6d4b",
+    "market": "US macro",
+    "thesis": "Elevated instability in daily SPY volume predicts higher near-term realized volatility because abrupt turnover changes reveal heterogeneous information arrival and unstable market liquidity.",
+    "mechanism": "The rolling volatility of daily volume growth measures turnover turbulence rather than whether volume confirms a price move; persistent turbulence indicates uneven participation and information arrival that can carry into subsequent price variance.",
+    "seed_provenance": {
+      "source": "engine/signal_lab.py",
+      "ref": "RVOL momentum confirmer"
+    },
+    "data": [
+      {
+        "path": "data/yahoo/SPY.parquet",
+        "column": "volume",
+        "pit": "clean"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "pct_change",
+          {
+            "n": 1
+          }
+        ],
+        [
+          "rolling_vol",
+          {
+            "window": 21
+          }
+        ],
+        [
+          "pctile_rank",
+          {
+            "window": 252
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 1
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "forward_vol",
+      "horizon_d": 10
+    },
+    "universe": "single_series",
+    "baseline": "flat",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This forecasts variance from instability in cash-market turnover; it neither confirms directional momentum nor duplicates dealer-gamma, VIX, VVIX, SKEW, put-call, or manager-exposure constructions.",
+    "evidence_note": "Karpoff (1987) surveys the price-volume relation, and Andersen (1996) links trading intensity to return volatility; both support turnover variation as a volatility-state variable rather than a directional confirmer.",
+    "registered_at": "2026-07-17",
+    "construction_hash": "f478016a264ba83f3746",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-17T10:01:06+00:00",
+    "iso_week": "2026-W29",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 8343,
+    "effective_months": 399,
+    "full_ic": -0.0306,
+    "hac": {
+      "mean": -0.00695,
+      "se": 0.04637,
+      "t": -0.15,
+      "p": 0.8808,
+      "n": 835
+    },
+    "split_half": {
+      "h1_ic": -0.0101,
+      "h2_ic": -0.0228,
+      "split_half_sign_flip": false
+    },
+    "era_split": {
+      "pre_ic": -0.0115,
+      "post_ic": -0.0225,
+      "era_n_pre": 4195,
+      "era_n_post": 4148,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.0881,
+      "ci_97p5": 0.03,
+      "boot_mean": -0.0302,
+      "n_draws": 200,
+      "block_size": 10,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.0204,
+      "sr_daily": -0.007477,
+      "sr_annual": -0.12,
+      "sr0_daily": 0.063106,
+      "sr0_annual": 1.0,
+      "n_trials": 17,
+      "T": 835,
+      "skew": -0.856,
+      "kurt": 15.951,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.415,
+      "obs_ic": -0.0306,
+      "placebo_pct_ge_abs_obs": 0.585,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": 0.0465,
+      "obs_ic_same_window": -0.0302,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "null",
+  "verdict_reasons": [
+    "time-shift placebo: IC at 42% of null distribution (floor=90%) \u2014 indistinguishable from lagged echo (DT-R14)"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-17",
+  "ledger_n_at_run": 17
+}
