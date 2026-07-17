@@ -196,7 +196,7 @@ def chart_dollar(dol: pd.DataFrame, years: float = 8) -> str:
     """Broad dollar + DXY (rebased) and the risk-off composite (right axis)."""
     d = _tail_years(dol, years)
     fig = go.Figure()
-    for col, name, color in (("broad", "Broad USD", C["ink"]), ("dxy", "DXY", C["blue"])):
+    for col, name, color in (("broad", "Broad USD", C["indigo"]), ("dxy", "DXY", C["blue"])):
         s = d[col].dropna()
         if len(s):
             rb = 100 * s / s.iloc[0]
@@ -231,7 +231,7 @@ def chart_real_rate(drivers: dict, years: float = 9) -> str:
     rb = 100 * b / b.iloc[0]
     pidx = _plot_idx(b.index)
     fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(rb.reindex(pidx), 2), name="Broad USD",
-                             line={"color": C["ink"], "width": 1.8}))
+                             line={"color": C["indigo"], "width": 1.8}))
     pidx2 = _plot_idx(r.index)
     fig.add_trace(go.Scatter(x=_dx(pidx2), y=_plot_y(r.reindex(pidx2), 2), name="US 10y real yield",
                              line={"color": C["blue"], "width": 1.6}, yaxis="y2",
