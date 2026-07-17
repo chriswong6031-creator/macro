@@ -55,6 +55,8 @@ curated, not generated. Do not build an extractor.
 
 | Topic | Verdict | Ruling / source |
 |---|---|---|
+| Cross-organ flip-counter (conjunction-of-transitions deterioration meter) as a standalone organ | KILLED — double-counts the cascade meter's intl leg, log-birth FP (07-07 artifact), count-conjunction class (RISK_RADAR_TUNING line 93 governs any authority path) | RSR-R6a, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17) |
+| "4-of-4 defensive-lean floor bundle" v1 (radar-caution × ≥3-intl-alerts × rotation-bottom × weekly-roll → display 35) | KILLED — claimed 1–2d lead collapsed on verification (only CN+HK alerted pre-07-16, TW log born 07-16 → zero lead); count-conjunction class. Floor QUESTION stays open via RSR-W5 prereg | RSR-R6b, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17) |
 | Insider × T2 interaction | KILLED | Codex buy-decision docket adjudication (#1781) |
 | Washout × turn (2W operator seed) | KILLED — operator seed dies in test | Entry-stack Amendment-3 adjudication (#1747) |
 | Signed-charm / charm-intensity narratives | KILLED — vol/size confound, trail-RV IC .5–.6 | OPEX vanna/charm adjudication (2026-07-06) |
