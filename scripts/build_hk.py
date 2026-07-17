@@ -841,32 +841,39 @@ def main() -> int:
             vm["market_state"] = None
 
         # ms_history: 11-session score-log for the hero path chart. Mirrors the
-        # China score-log (data/china_market_state/score_log.parquet). Guarded behind
-        # HK_FAST_RENDER so dev renders don't append. Never fatal — hero degrades to
-        # "Building score history…" placeholder when < 2 rows exist.
+        # China score-log (data/china_market_state/score_log.parquet). The READ is
+        # unconditional — any render (incl. HK_FAST_RENDER dev renders and nights
+        # where the snapshot degrades) draws the path from the committed log; only
+        # the APPEND is gated so off-lane renders never advance the ledger. Never
+        # fatal — hero degrades to "Building score history…" when < 2 rows exist.
         try:
             import os as _osenv  # noqa: PLC0415 — local import mirrors build_china.py:1049
-            if not _osenv.environ.get("HK_FAST_RENDER"):
-                _ms_obj = vm.get("market_state")
-                if _ms_obj is not None:
-                    _ms_score = _ms_obj.get("score")
-                    _ms_date  = latest.get("date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
-                    if _ms_score is not None:
-                        _sl_dir  = config.data_dir() / "hk_market_state"
-                        _sl_dir.mkdir(parents=True, exist_ok=True)
-                        _sl_path = _sl_dir / "score_log.parquet"
-                        _new_row = pd.DataFrame([{"date": _ms_date, "score": float(_ms_score)}])
-                        if _sl_path.exists():
-                            _existing = pd.read_parquet(_sl_path)
-                            # deduplicate: drop any existing row for today's date
-                            _existing = _existing[_existing["date"].astype(str) != str(_ms_date)]
-                            _combined = pd.concat([_existing, _new_row], ignore_index=True)
-                        else:
-                            _combined = _new_row
-                        _combined.to_parquet(_sl_path, index=False)
-                        _hist = _combined.tail(11)
-                        vm["ms_history"] = _hist.to_dict(orient="records")
-                        log.info("hk score_log: %d rows, last 11 -> ms_history", len(_combined))
+            _sl_path = config.data_dir() / "hk_market_state" / "score_log.parquet"
+            _ms_obj = vm.get("market_state")
+            _ms_score = _ms_obj.get("score") if _ms_obj is not None else None
+            if _osenv.environ.get("HK_FAST_RENDER"):
+                pass                       # dev re-render: read-only, never append
+            elif _ms_score is None:
+                log.warning("hk score_log: market_state score unavailable — no append "
+                            "(path renders from the committed log)")
+            else:
+                _ms_date = latest.get("date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                _sl_path.parent.mkdir(parents=True, exist_ok=True)
+                _new_row = pd.DataFrame([{"date": _ms_date, "score": float(_ms_score)}])
+                if _sl_path.exists():
+                    _existing = pd.read_parquet(_sl_path)
+                    # deduplicate: drop any existing row for today's date
+                    _existing = _existing[_existing["date"].astype(str) != str(_ms_date)]
+                    _combined = pd.concat([_existing, _new_row], ignore_index=True)
+                else:
+                    _combined = _new_row
+                _combined.to_parquet(_sl_path, index=False)
+            if _sl_path.exists():
+                _all = pd.read_parquet(_sl_path).sort_values("date")
+                _hist = _all.tail(11)
+                vm["ms_history"] = _hist.to_dict(orient="records")
+                log.info("hk score_log: last %d of %d rows -> ms_history",
+                         len(_hist), len(_all))
         except Exception as _msh_e:  # noqa: BLE001
             log.warning("hk ms_history build failed (%s); skipping", _msh_e)
             vm.setdefault("ms_history", None)

@@ -1114,37 +1114,44 @@ def main() -> int:
             vm["cn_name_by_ticker"] = {}
 
         # ── MX5 hero: 11-session score path log ──────────────────────────────
-        # Appended nightly; deduped by date.  Never fatal.  Intraday lanes that
-        # call build_china outside the nightly path must NOT call this — the
-        # log is a forward ledger (house law: nightly is the sole advancer).
-        # Guard: only append when market_state is populated AND we are in the
-        # nightly/primary call (not a fast-render from pickled VM).
+        # Appended nightly; deduped by date.  Never fatal.  The READ is
+        # unconditional — every render (incl. CHINA_FAST_RENDER dev renders and
+        # nights where the snapshot degrades) draws the path from the committed
+        # log; only the APPEND is gated so off-lane renders never advance the
+        # ledger (house law: nightly is the sole advancer).
         try:
+            import os as _osenv
+            _score_log_path = config.data_dir() / "china_market_state" / "score_log.parquet"
             _ms_snap = vm.get("market_state")
-            if _ms_snap and _ms_snap.get("score") is not None:
-                import os as _osenv
-                if not _osenv.environ.get("CHINA_FAST_RENDER"):
-                    _score_log_dir = config.data_dir() / "china_market_state"
-                    _score_log_dir.mkdir(parents=True, exist_ok=True)
-                    _score_log_path = _score_log_dir / "score_log.parquet"
-                    _new_row = pd.DataFrame([{
-                        "date": latest.get("date"),
-                        "score": int(_ms_snap["score"]),
-                        "verdict": _ms_snap.get("verdict", ""),
-                        "color": _ms_snap.get("color", ""),
-                    }])
-                    if _score_log_path.exists():
-                        _existing = pd.read_parquet(_score_log_path)
-                        _combined = pd.concat([_existing, _new_row], ignore_index=True)
-                        _combined = _combined.drop_duplicates(subset=["date"], keep="last")
-                    else:
-                        _combined = _new_row
-                    _combined = _combined.sort_values("date").reset_index(drop=True)
-                    _combined.to_parquet(_score_log_path, index=False)
-                    # Expose last 11 rows as vm['ms_history'] for the hero path chart
-                    _hist = _combined.tail(11).copy()
-                    vm["ms_history"] = _hist.to_dict(orient="records")
-                    log.info("china score_log: %d rows, last 11 -> ms_history", len(_combined))
+            _ms_sc = _ms_snap.get("score") if _ms_snap else None
+            if _osenv.environ.get("CHINA_FAST_RENDER"):
+                pass                       # dev re-render: read-only, never append
+            elif _ms_sc is None:
+                log.warning("china score_log: market_state score unavailable — no append "
+                            "(path renders from the committed log)")
+            else:
+                _score_log_path.parent.mkdir(parents=True, exist_ok=True)
+                _new_row = pd.DataFrame([{
+                    "date": latest.get("date"),
+                    "score": int(_ms_sc),
+                    "verdict": _ms_snap.get("verdict", ""),
+                    "color": _ms_snap.get("color", ""),
+                }])
+                if _score_log_path.exists():
+                    _existing = pd.read_parquet(_score_log_path)
+                    _combined = pd.concat([_existing, _new_row], ignore_index=True)
+                    _combined = _combined.drop_duplicates(subset=["date"], keep="last")
+                else:
+                    _combined = _new_row
+                _combined = _combined.sort_values("date").reset_index(drop=True)
+                _combined.to_parquet(_score_log_path, index=False)
+            # Expose last 11 rows as vm['ms_history'] for the hero path chart
+            if _score_log_path.exists():
+                _all = pd.read_parquet(_score_log_path).sort_values("date")
+                _hist = _all.tail(11).copy()
+                vm["ms_history"] = _hist.to_dict(orient="records")
+                log.info("china score_log: last %d of %d rows -> ms_history",
+                         len(_hist), len(_all))
         except Exception as _msh_e:  # noqa: BLE001 — additive, never fatal
             log.warning("china ms_history build failed (%s); skipping", _msh_e)
             vm.setdefault("ms_history", None)
