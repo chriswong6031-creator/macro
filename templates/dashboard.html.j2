@@ -5222,10 +5222,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
         </button>
 
-        {# Button 2: risk — warn style when elevated, neutral otherwise #}
+        {# Button 2: risk — warn style when elevated, neutral otherwise.
+           Opens the full risk dialog in ONE click (was a two-step
+           button→"Dominant Risk Ladder" popover→"Full risk detail"→dialog). A
+           risk warning shouldn't be gated behind an intermediate summary — this
+           matches the China board's direct Pullback-Risk entry (china.html.j2).
+           Deliberately more direct than the sibling Factors button, which keeps
+           its popover (factor breakdown is not time-critical). #}
         <button class="mx5-sc-btn{% if _mx5_risk_elevated %} mx5-sc-btn-warn{% endif %}" id="mx5BtnRisk"
-                onclick="mx5TogglePop('mx5PopRisk','mx5BtnRisk')"
-                aria-expanded="false" aria-controls="mx5PopRisk"
+                onclick="mx5OpenDlg('dlg-risk')"
+                aria-haspopup="dialog"
                 type="button">
           {% if _mx5_risk_elevated %}
           <svg width="12" height="11" viewBox="0 0 24 21" fill="none">
@@ -5242,7 +5248,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-en">Risk Detail</span>
           <span class="l-zh">风险详情</span>
           {% endif %}
-          <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
+          {# no down-caret: this button opens a modal dialog, not a popover-below
+             (the sibling Factors button keeps its caret — it does open a popover) #}
         </button>
 
         {# B3: intl cascade chip — glance-tier rollup of our own per-market pullback radars;
@@ -5318,52 +5325,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </button>
           </div>
         </div>{# /mx5PopFactors #}
-
-        {# POPOVER: Dominant Risk Ladder #}
-        <div class="mx5-popover mx5-pop-right" id="mx5PopRisk" role="dialog"
-             aria-label="Dominant Risk Ladder">
-          {# Mobile close bar — sticky at top of bottom-sheet; hidden on desktop via CSS #}
-          <div class="mx5-pop-close-bar">
-            <div style="width:32px"></div>
-            <div class="mx5-pop-close-handle"></div>
-            <button class="mx5-pop-close-btn" type="button"
-                    onclick="mx5CloseAllPopovers()" aria-label="Close">&#xd7;</button>
-          </div>
-          <div class="mx5-popover-title"><span class="l-en">Dominant Risk Ladder</span><span class="l-zh">主导风险阶梯</span></div>
-          {% if latest.risk_radar is defined and latest.risk_radar and latest.risk_radar.scares %}
-          {% set _mx5_top_sc = latest.risk_radar.scares[0] %}
-          <div class="mx5-scare-dominant-row">
-            <span class="mx5-scare-dominant-num">{{ _mx5_top_sc.score | round | int }}</span>
-            <span class="mx5-scare-dominant-title"><span class="l-en">{{ _mx5_top_sc.label_en if _mx5_top_sc.label_en is defined else _mx5_top_sc.name }}</span><span class="l-zh">{{ _mx5_top_sc.label_zh if _mx5_top_sc.label_zh is defined else (_mx5_top_sc.name_zh if _mx5_top_sc.name_zh is defined else _mx5_top_sc.name) }}</span></span>
-          </div>
-          {% if _mx5_rdr and _mx5_rdr.do_en is defined %}
-          <div class="mx5-scare-driver"><span class="l-en">{{ _mx5_rdr.do_en }}</span><span class="l-zh">{{ _mx5_rdr.do_zh if _mx5_rdr.do_zh is defined else _mx5_rdr.do_en }}</span></div>
-          {% endif %}
-          <div class="mx5-scare-list">
-            {% for sc in latest.risk_radar.scares[:4] %}
-            {% set _sc_s = sc.score if (sc.score is defined and sc.score is not none) else 0 %}
-            {% set _sclevel = 'hi' if _sc_s >= 60 else ('mid' if _sc_s >= 40 else 'lo') %}
-            {% set _scistop = loop.index == 1 %}
-            <div class="mx5-scare-item">
-              <div class="mx5-scare-item-header">
-                <span class="mx5-scare-item-name"><span class="l-en">{{ sc.label_en if sc.label_en is defined else sc.name }}</span><span class="l-zh">{{ sc.label_zh if sc.label_zh is defined else (sc.name_zh if sc.name_zh is defined else sc.name) }}</span></span>
-                <span class="mx5-scare-item-val {% if _scistop %}top{% else %}lower{% endif %}">{{ sc.score }}</span>
-              </div>
-              <div class="mx5-scare-meter"><div class="mx5-scare-fill {{ _sclevel }}" style="width:{{ [_sc_s, 100] | min }}%"></div></div>
-              {% if _scistop and _sc_s >= 50 %}<div class="mx5-scare-item-label"><span class="l-en">ELEVATED</span><span class="l-zh">偏高</span></div>{% endif %}
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div style="font-size:12px;color:var(--ink-2)"><span class="l-en">No active risk readings.</span><span class="l-zh">暂无活跃风险读数。</span></div>
-          {% endif %}
-          <div class="mx5-pop-footer">
-            <button class="mx5-pop-footer-link" type="button"
-                    onclick="mx5CloseAllPopovers();mx5OpenDlg('dlg-risk')">
-              <span class="l-en">Full risk detail &#8595;</span><span class="l-zh">完整风险分析 &#8595;</span>
-            </button>
-          </div>
-        </div>{# /mx5PopRisk #}
 
       </div>{# /mx5-btn-row #}
     </div>{# /mx5-sc-left #}
@@ -8874,6 +8835,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _dlgr_rdr = market_state.radar if market_state.radar is defined else {} %}
         {% set _dlgr_state = _dlgr_rdr.state if _dlgr_rdr else 'unknown' %}
         {% set _dlgr_col = 'var(--down)' if _dlgr_state in ('risk-off','high') else ('var(--warn)' if _dlgr_state in ('elevated','caution') else 'var(--up)') %}
+        {# _dlgr_has = a real radar reading exists. When it doesn't (degraded/no-radar),
+           the content blocks below all gate off, so the header must still carry a
+           plain-word stance — a bare "Unknown" enum here would fail Law 1/Law 2.
+           (This replaces the "No active risk readings" fallback the old scorecard
+           popover carried, now that the button opens this dialog directly.) #}
+        {% set _dlgr_has = _dlgr_rdr and _dlgr_rdr.state and _dlgr_state not in ('unknown','none') %}
         <div class="mx5-dlg-driver-hd">
           <div class="mx5-dlg-driver-icon">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ _dlgr_col }}" stroke-width="2" stroke-linecap="round">
@@ -8883,13 +8850,21 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div>
             <div class="mx5-dlg-driver-label" style="color:{{ _dlgr_col }}">
+              {% if _dlgr_has %}
               <span class="l-en">{{ (_dlgr_rdr.label_en if _dlgr_rdr.label_en is defined else _dlgr_state) | title }}</span>
               <span class="l-zh">{{ _dlgr_rdr.label_zh if (_dlgr_rdr.label_zh is defined and _dlgr_rdr.label_zh) else (_dlgr_rdr.label_en if _dlgr_rdr.label_en is defined else _dlgr_state) }}</span>
+              {% else %}
+              <span class="l-en">No active risk readings</span><span class="l-zh">暂无活跃风险读数</span>
+              {% endif %}
             </div>
             {% if _dlgr_rdr.do_en is defined and _dlgr_rdr.do_en %}
             <div class="mx5-dlg-driver-sub">
               <span class="l-en">{{ _dlgr_rdr.do_en }}</span>
               <span class="l-zh">{{ _dlgr_rdr.do_zh if (_dlgr_rdr.do_zh is defined and _dlgr_rdr.do_zh) else _dlgr_rdr.do_en }}</span>
+            </div>
+            {% elif not _dlgr_has %}
+            <div class="mx5-dlg-driver-sub">
+              <span class="l-en">Nothing to chase right now — watch.</span><span class="l-zh">当前无需追高 — 观望。</span>
             </div>
             {% endif %}
             {% if _dlgr_rdr.top_score is defined and _dlgr_rdr.top_score is not none %}
