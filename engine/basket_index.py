@@ -92,8 +92,27 @@ def _alpha_weights_pit(present: list[str], ret: pd.DataFrame, mask: pd.DataFrame
     return W
 
 
-def _splice_fresher_tail(ticker: str, deep: pd.DataFrame, fresh: pd.DataFrame) -> pd.DataFrame:
-    """Append a FRESHER store's tail onto a stale deep-store tape. The tail is
+def _parquet_last_date(path) -> pd.Timestamp | None:
+    """Last index date of a per-ticker parquet WITHOUT reading any data column —
+    ``pd.read_parquet(path, columns=[])`` loads only the index (the
+    engine/hk_freshness probe idiom), so probing a fallback's recency costs ~1ms
+    on the render path instead of a full 5-column read. None on empty / non-date
+    index / any error — the caller treats None as "no opinion, skip the guard"."""
+    try:
+        idx = pd.DatetimeIndex(pd.read_parquet(path, columns=[]).index)
+        if not len(idx):
+            return None
+        if idx.tz is not None:              # must compare cleanly with a naive deep tape
+            idx = idx.tz_localize(None)
+        last = idx.max()
+        return None if pd.isna(last) else last
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _splice_fresher_tail(ticker: str, deep: pd.DataFrame, fresh: pd.DataFrame,
+                         store: str = "data/stocks") -> pd.DataFrame:
+    """Append a FRESHER fallback store's tail onto a stale deep-store tape. The tail is
     ratio-rescaled at the last shared bar so an adjustment-basis mismatch between the
     two stores can't manufacture a seam return; volume passes through unscaled.
     Returns `deep` unchanged when it is already current (the common case)."""
@@ -103,11 +122,18 @@ def _splice_fresher_tail(ticker: str, deep: pd.DataFrame, fresh: pd.DataFrame) -
     deep.index = pd.DatetimeIndex(deep.index)
     fresh = fresh.copy()
     fresh.index = pd.DatetimeIndex(fresh.index)
+    # tz-strip both tapes — a tz-aware store vs a naive one must seam-compare and
+    # concat instead of raising (a raise here would skip the heal, not just a row)
+    if deep.index.tz is not None:
+        deep.index = deep.index.tz_localize(None)
+    if fresh.index.tz is not None:
+        fresh.index = fresh.index.tz_localize(None)
     fresh = fresh[~fresh.index.duplicated(keep="last")].sort_index()
     if fresh.index.max() <= deep.index.max():
         return deep
-    if "open" not in fresh.columns:
-        fresh["open"] = fresh["close"]
+    for c in ("open", "high", "low"):
+        if c not in fresh.columns:
+            fresh[c] = fresh["close"]
     tail = fresh[fresh.index > deep.index.max()]
     if tail.empty:
         return deep
@@ -122,7 +148,7 @@ def _splice_fresher_tail(ticker: str, deep: pd.DataFrame, fresh: pd.DataFrame) -
     px = [c for c in ("open", "high", "low", "close") if c in tail.columns]
     tail[px] = tail[px] * factor
     log.warning("basket member %s: deep OHLCV stale (ends %s) — spliced %d fresher rows "
-                "from data/stocks", ticker, deep.index.max().date(), len(tail))
+                "from %s", ticker, deep.index.max().date(), len(tail), store)
     return pd.concat([deep, tail])
 
 
@@ -131,7 +157,9 @@ def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
     then the China A-share store (data/china_stocks, .SS/.SZ tickers — close/high/low/volume, no
     open), then the yahoo store (close+volume → high/low/open synthesised as the close). Cached.
     The china_stocks fallback never collides with the US stores (A-share tickers carry a .SS/.SZ
-    suffix), so it makes the basket machinery China-capable without touching the US path."""
+    suffix), so it makes the basket machinery China-capable without touching the US path.
+    Deep store preferred but recency-probed against the first existing fallback (index-only read)
+    and a stale/empty deep tape is healed from it."""
     if ticker in _CACHE:
         return _CACHE[ticker]
     out: pd.DataFrame | None = None
@@ -142,38 +170,56 @@ def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
     try:
         if bp.exists():
             df = pd.read_parquet(bp)
-            out = df
-            # 2026-07 staleness audit: the nightly deep-store refresh covers only the
-            # NDX/Russell finviz lists, so a membership-only name can freeze (522 tickers
-            # ended 06-29) and SHADOW a fresher data/stocks tape. Splice the fresher tail
-            # on rather than silently serving the stale deep tape.
-            if sp.exists():
+            if len(df):
+                out = df
+                # 2026-07 staleness audit (#2697/#2698): the nightly deep-store refresh
+                # covers only the NDX/Russell finviz lists, so a membership-only name can
+                # freeze (522 tickers ended 06-29) and SHADOW a fresher fallback tape.
+                # The probe is an INDEX-ONLY read (columns=[], the hk_freshness idiom):
+                # the all-fresh common case costs no second full parquet read on the
+                # render path; the full fallback read + tail-splice run only on an
+                # actual probed lead.
                 try:
-                    fresher = pd.read_parquet(sp)
-                    out = _splice_fresher_tail(ticker, out, fresher)
-                except Exception as e:  # noqa: BLE001
-                    log.debug("basket member %s: tail-splice skipped: %s", ticker, e)
-        elif sp.exists():
-            df = pd.read_parquet(sp)            # close/high/low/volume (no open)
-            df = df.copy()
-            if "open" not in df.columns:
-                df["open"] = df["close"]
-            out = df
-        elif cp.exists():
-            df = pd.read_parquet(cp)            # A-share close/high/low/volume (no open)
-            df = df.copy()
-            if "open" not in df.columns:
-                df["open"] = df["close"]
-            out = df
-        elif yp.exists():
-            df = pd.read_parquet(yp)            # close[,volume]
-            df = df.copy()
-            for c in ("open", "high", "low"):
-                if c not in df.columns:
-                    df[c] = df["close"]
-            if "volume" not in df.columns:
-                df["volume"] = np.nan
-            out = df
+                    di = pd.DatetimeIndex(df.index)
+                    deep_last = (di.tz_localize(None) if di.tz is not None else di).max()
+                except Exception:  # noqa: BLE001
+                    deep_last = pd.NaT
+                for fpath, store in ((sp, "data/stocks"), (cp, "data/china_stocks"),
+                                     (yp, "data/yahoo")):
+                    if not fpath.exists():
+                        continue
+                    fb_last = _parquet_last_date(fpath)
+                    if fb_last is None:
+                        continue  # empty/unreadable candidate has no opinion — next store
+                    try:
+                        if pd.isna(deep_last) or fb_last > deep_last:
+                            out = _splice_fresher_tail(ticker, out, pd.read_parquet(fpath), store)
+                    except Exception as e:  # noqa: BLE001
+                        log.debug("basket member %s: tail-splice skipped: %s", ticker, e)
+                    break  # first PROBEABLE fallback decides — the fall-through preference order
+            # an EMPTY deep-store file must not shadow a full fallback tape — fall through
+        if out is None:
+            if sp.exists():
+                df = pd.read_parquet(sp)            # close/high/low/volume (no open)
+                df = df.copy()
+                if "open" not in df.columns:
+                    df["open"] = df["close"]
+                out = df
+            elif cp.exists():
+                df = pd.read_parquet(cp)            # A-share close/high/low/volume (no open)
+                df = df.copy()
+                if "open" not in df.columns:
+                    df["open"] = df["close"]
+                out = df
+            elif yp.exists():
+                df = pd.read_parquet(yp)            # close[,volume]
+                df = df.copy()
+                for c in ("open", "high", "low"):
+                    if c not in df.columns:
+                        df[c] = df["close"]
+                if "volume" not in df.columns:
+                    df["volume"] = np.nan
+                out = df
         if out is not None:
             out = out[[c for c in OHLCV_COLS if c in out.columns]].copy()
             out.index = pd.DatetimeIndex(out.index)
