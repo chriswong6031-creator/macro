@@ -551,7 +551,7 @@ def _snapshot_inner(
     level_zh = _level_word_zh(n_hot)
 
     # ── Glance copy (Tier-1, stance-verb, plain words) ─────────────────────
-    phase = wp.get("phase") or "mid_cycle"
+    phase = wp.get("phase")  # None when SPY series unavailable — glance says "Options cycle", never fabricates a phase
     td_to = wp.get("td_to_opex")
     is_quad = bool(wp.get("is_quad_cycle"))
     glance_en, glance_zh = _make_glance(
@@ -623,21 +623,23 @@ def _make_glance(
 
     # Context chips
     chips_en, chips_zh = [], []
+    # Plain words only at Tier-1 (Design Doctrine) — the internal state names
+    # (vanna_relief, dealer_load_extreme, ...) stay in the Tier-2 state stack.
     if states.get("pin_proximity"):
-        chips_en.append("pin risk active")
-        chips_zh.append("价格钉住风险激活")
+        chips_en.append("price may stick near big strikes")
+        chips_zh.append("价格或被大额行权价吸住")
     if states.get("vanna_relief_active"):
-        chips_en.append("vanna relief (holdability)")
-        chips_zh.append("Vanna缓解（持仓性改善）")
+        chips_en.append("hedging flows easing — positions sit easier")
+        chips_zh.append("对冲压力缓解 — 持仓更稳")
     elif states.get("vanna_drag"):
-        chips_en.append("vanna drag (watch)")
-        chips_zh.append("Vanna阻力（观察）")
+        chips_en.append("hedging flows dragging")
+        chips_zh.append("对冲压力拖累")
     if states.get("dealer_load_extreme"):
-        chips_en.append("dealer load extreme")
-        chips_zh.append("经销商负载极端")
+        chips_en.append("dealer books stretched")
+        chips_zh.append("做市商持仓拉满")
     if states.get("concentration_hot"):
-        chips_en.append("front concentration hot")
-        chips_zh.append("近端期权集中度偏高")
+        chips_en.append("expiry-week exposure crowded")
+        chips_zh.append("到期周敞口拥挤")
 
     chip_str_en = (", ".join(chips_en) + ". ") if chips_en else ""
     chip_str_zh = ("，".join(chips_zh) + "。") if chips_zh else ""

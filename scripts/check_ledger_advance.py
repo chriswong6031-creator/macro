@@ -67,6 +67,14 @@ except Exception:  # noqa: BLE001
 # files, so entries can be pre-registered before the building pipeline ships.
 _LEDGER_MANIFEST: list[dict[str, str]] = [
     {
+        # RIC-W3: monthly OPEX window read — advances only near each monthly
+        # expiry (T-5 stamp), so most nights legitimately show no advance;
+        # the heartbeat only escalates on republish nights where an expected
+        # row is missing per its keep-FIRST window key.
+        "path": "data/opex_windows/forward_log.jsonl",
+        "label": "opex_windows",
+    },
+    {
         "path": "data/risk_radar/forward_log.jsonl",
         "label": "risk_radar",
         # NOTE: extend the list below as new forward ledgers are created;
