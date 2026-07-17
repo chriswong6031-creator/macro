@@ -12,12 +12,19 @@ MARKET CAP SOURCE:
   Polygon /v3/reference/tickers/{ticker} -> market_cap field.
   Per-ticker rate-limited fetch; checkpointed to survive interruption.
   Rate limit: 5 req/s (free/starter), 50 req/s (pro). We use 5 req/s conservatively.
-  Only tickers NOT already in the checkpoint are fetched (idempotent first-fill).
+  The checkpoint is SAME-DAY resume state only: a run interrupted mid-fetch
+  resumes where it left off, but a checkpoint from a previous day is discarded
+  so market caps are re-fetched fresh (a non-expiring checkpoint froze caps at
+  their first-fetch values — the July-2026 frozen-cache bug).
 
 CACHE POLICY:
-  Refresh if the parquet is absent OR mtime > STALE_DAYS days old (default 7).
-  Within the nightly hub build the script is called once; it exits immediately if
-  cache is fresh. A --force flag resets the checkpoint and rebuilds from scratch.
+  Refresh if the parquet is absent OR its `asof` column is >= STALE_DAYS
+  calendar days old (default 1 — nightly refresh, ~2 min of rate-limited
+  fetches for ~500 names). Freshness is judged from the asof COLUMN, never
+  file mtime: CI checkouts rewrite files with mtime = checkout time, so a
+  committed months-old cache always looks brand-new by mtime and the rebuild
+  short-circuits forever. Same-day re-runs exit immediately (idempotent).
+  A --force flag resets the checkpoint and rebuilds from scratch.
 
 DISPLAY-TIER ONLY: this script populates reference data (sector, market cap) for
 grouping and tile-sizing. No scoring, no money-path.
@@ -41,7 +48,7 @@ import logging
 import os
 import sys
 import time
-from datetime import date, datetime, timezone
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -56,7 +63,7 @@ log = logging.getLogger(__name__)
 
 # ── constants ──────────────────────────────────────────────────────────────────
 
-STALE_DAYS = 7               # cache is valid for 7 calendar days
+STALE_DAYS = 1               # refresh nightly; same-day re-runs no-op (asof-date based)
 _RATE_LIMIT_DELAY = 0.22     # 4-5 req/s (conservative for free/starter tier)
 _BATCH_LOG = 50              # log progress every N tickers fetched
 
@@ -92,11 +99,24 @@ def _checkpoint_path() -> Path:
 # ── freshness check ────────────────────────────────────────────────────────────
 
 def is_fresh(p: Path, stale_days: int = STALE_DAYS) -> bool:
-    """True if the parquet exists and was written within stale_days calendar days."""
+    """True if the parquet exists and its newest `asof` date is < stale_days old.
+
+    Judged from the asof COLUMN, never file mtime — on CI runners a checkout
+    rewrites files (mtime = checkout time), so mtime can only ever look TOO NEW,
+    which silently freezes the committed cache forever. An unreadable file or
+    missing/empty asof column counts as stale (rebuild).
+    """
     if not p.exists():
         return False
-    age_days = (datetime.now(timezone.utc).timestamp() - p.stat().st_mtime) / 86400
-    return age_days < stale_days
+    try:
+        asof = pd.read_parquet(p, columns=["asof"])["asof"].dropna()
+        if asof.empty:
+            return False
+        newest = max(date.fromisoformat(str(v)) for v in asof.unique())
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_polygon_universe: cannot read asof from %s (%s) — treating as stale", p, e)
+        return False
+    return (date.today() - newest).days < stale_days
 
 
 # ── GICS sector sources ────────────────────────────────────────────────────────
@@ -208,6 +228,7 @@ def fetch_mcaps(
         fetched += 1
         if fetched % _BATCH_LOG == 0:
             log.info("build_polygon_universe: fetched %d / %d caps", fetched, len(pending))
+            _save_checkpoint(out)   # incremental — a killed run resumes here same-day
         time.sleep(_RATE_LIMIT_DELAY)
 
     log.info("build_polygon_universe: mcap fetch done. have=%d non-null=%d",
@@ -218,13 +239,23 @@ def fetch_mcaps(
 # ── checkpoint helpers ─────────────────────────────────────────────────────────
 
 def _load_checkpoint() -> dict[str, float | None]:
+    """Same-day resume state ONLY: {"asof": "YYYY-MM-DD", "caps": {ticker: cap|null}}.
+
+    A checkpoint from a previous day (or the legacy flat {ticker: cap} format)
+    is discarded so every refresh re-fetches live market caps — carrying caps
+    across days froze them at their first-fetch values forever.
+    """
     p = _checkpoint_path()
     if not p.exists():
         return {}
     try:
         raw = json.loads(p.read_text())
-        # stored as {"ticker": cap_or_null}
-        return {k: (float(v) if v is not None else None) for k, v in raw.items()}
+        if raw.get("asof") != date.today().isoformat():
+            log.info("build_polygon_universe: discarding stale/legacy checkpoint (asof=%s)",
+                     raw.get("asof"))
+            return {}
+        caps = raw.get("caps") or {}
+        return {k: (float(v) if v is not None else None) for k, v in caps.items()}
     except Exception as e:  # noqa: BLE001
         log.warning("build_polygon_universe: checkpoint load failed: %s", e)
         return {}
@@ -233,7 +264,8 @@ def _load_checkpoint() -> dict[str, float | None]:
 def _save_checkpoint(cp: dict[str, float | None]) -> None:
     p = _checkpoint_path()
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(cp, separators=(",", ":")))
+    p.write_text(json.dumps({"asof": date.today().isoformat(), "caps": cp},
+                            separators=(",", ":")))
 
 
 # ── main build ─────────────────────────────────────────────────────────────────
