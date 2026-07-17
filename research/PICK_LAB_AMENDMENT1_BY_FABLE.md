@@ -118,6 +118,21 @@ values or scales that do not exist in the snapshot data (all verified 2026-07-16
 (`plab_beta_squeeze` is a ninth suspect: `'squeeze'` did not appear in the `current_mode`
 enum on the audited night — verify the emitter's enum before concluding.)
 
+**2026-07-17 P1 scouting addenda:**
+- `plab_beta_squeeze` CLEARED — `'squeeze'` is a real enum in
+  `engine/stock_personality.py::CURRENT_MODE_PRECEDENCE`; the book is regime-quiet,
+  not broken. No change.
+- `plab_sector_trough` phase source ruled OUT for now: the only committed candidate,
+  `data/sector_cycles/leg_context.json`, was 17 days stale at inspection and uses a
+  different phase vocabulary (Bottoming/Prime entry/Trending/Topping/Rolling over vs
+  the masterplan's Trough/Recovery). Wiring it would stamp stale, mistranslated
+  phases — the book stays dead with an AWAITING-DATA badge until a nightly-committed
+  phase feed exists.
+- `plab_revision_accel` stays dead (implied_upside_pct still unwired), but its
+  `edge_revision` threshold is corrected to the column's real 0–100 percentile scale
+  (config 1.0 was a z-score intent → 84.0, the percentile equivalent of z≥1) so the
+  book is correct the day the upside column ships.
+
 **PL-A4-1 (revival law).** Because every affected book has ZERO lifetime fires (verified),
 in-place condition correction with a refreshed `config_hash` and a dated registry comment is
 authorized as equivalent to PL-R2's engine-v2-with-fresh-ledger (the ledger IS fresh). Any

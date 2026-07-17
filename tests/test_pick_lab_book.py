@@ -40,6 +40,7 @@ from engine.pick_lab.book import (
     _distinct_fire_dates,
     _path_stats,
     _capture_ratio,
+    _timing_lift,
     FLOOR_N_FIRES,
     FLOOR_MONTHS_SPAN,
     FLOOR_DISTINCT_FIRE_DATES,
@@ -1343,3 +1344,381 @@ class TestPathStatsInScoreboard:
         # h21 stats should be null (no ret rows at h=21)
         assert sb["h21_wr_abs"] is None, "h21_wr_abs should be None with no ret rows"
         assert sb["h21_n"] == 0
+
+
+# ================================================================ TASK 1+2 TESTS ====
+# New tests for universe base rate (TASK 1) and timing lift (TASK 2).
+# Also verifies that lift_vs_universe_base is no longer always-null when a base
+# rate derived from a different population (the close panel) is passed in (TASK 1c).
+
+
+def _make_flat_spy_panel(
+    tickers: list[str],
+    n: int = 80,
+    start: str = "2024-01-02",
+    spy_price: float = 450.0,
+    base_price: float = 100.0,
+) -> tuple[pd.DataFrame, pd.Series]:
+    """Flat-price panel for SPY and all tickers.
+
+    All tickers return base_price every session.  SPY returns spy_price.
+    Returns (panel, spy_series).
+    """
+    dates = pd.bdate_range(start=start, periods=n)
+    data = {t: np.full(n, base_price) for t in tickers}
+    data["SPY"] = np.full(n, spy_price)
+    panel = pd.DataFrame(data, index=dates)
+    return panel, panel["SPY"]
+
+
+class TestUniverseBaseRatePanel:
+    """(a) TASK 1: universe_base_rate_21d computed from close panel, 3-ticker example.
+
+    The helper lives in build_pick_lab._compute_universe_base_rate_21d.
+    We test the invariant via scoreboard()'s lift_vs_universe_base column.
+    """
+
+    def _make_panel_3ticker(
+        self,
+        n: int = 80,
+        start: str = "2024-01-02",
+        drifts: dict = None,
+    ) -> tuple[pd.DataFrame, pd.Series]:
+        """Panel with 3 tickers (T1/T2/T3) + flat SPY.
+
+        drifts = {ticker: daily_return} — applied as compound drift.
+        """
+        dates = pd.bdate_range(start=start, periods=n)
+        drifts = drifts or {"T1": 0.0, "T2": 0.0, "T3": 0.0}
+        data = {"SPY": np.full(n, 450.0)}
+        for t, d in drifts.items():
+            data[t] = 100.0 * (1 + d) ** np.arange(n)
+        panel = pd.DataFrame(data, index=dates)
+        return panel, panel["SPY"]
+
+    def test_base_rate_known_median_flat_spy(self):
+        """3 tickers with flat prices + flat SPY → 21d excess = 0 for all → median = 0."""
+        from scripts.build_pick_lab import _compute_universe_base_rate_21d
+
+        panel, spy = _make_flat_spy_panel(
+            ["T1", "T2", "T3"], n=80, spy_price=450.0, base_price=100.0
+        )
+        # Create a fire on session 0; exec = session 1; exec+21 = session 22 (in panel)
+        dates = panel.index
+        fires = [
+            {"engine_id": "plab_1d_pure", "ticker": "T1",
+             "fire_date": str(dates[0].date()), "exec_date": str(dates[1].date()),
+             "authority": "display_only"},
+        ]
+        ubr = _compute_universe_base_rate_21d(fires, panel, horizon=21)
+        assert ubr is not None, "Base rate should be computable with flat panel"
+        assert abs(ubr) < 1e-8, f"All flat prices + flat SPY → excess=0; got {ubr}"
+
+    def test_base_rate_null_when_window_not_elapsed(self):
+        """No fire with a fully elapsed 21-session window → base rate is None."""
+        from scripts.build_pick_lab import _compute_universe_base_rate_21d
+
+        # Very short panel: only 10 sessions total → exec+21 never in panel
+        panel, spy = _make_flat_spy_panel(
+            ["T1", "T2"], n=10, spy_price=450.0, base_price=100.0
+        )
+        dates = panel.index
+        fires = [
+            {"engine_id": "plab_1d_pure", "ticker": "T1",
+             "fire_date": str(dates[0].date()), "exec_date": str(dates[1].date()),
+             "authority": "display_only"},
+        ]
+        ubr = _compute_universe_base_rate_21d(fires, panel, horizon=21)
+        assert ubr is None, f"Window not elapsed → base rate must be None; got {ubr}"
+
+    def test_base_rate_null_when_no_fires(self):
+        """No fires → base rate is None."""
+        from scripts.build_pick_lab import _compute_universe_base_rate_21d
+
+        panel, spy = _make_flat_spy_panel(["T1"], n=80)
+        ubr = _compute_universe_base_rate_21d([], panel, horizon=21)
+        assert ubr is None
+
+    def test_base_rate_null_when_panel_none(self):
+        """None close_panel → base rate is None (never fatal)."""
+        from scripts.build_pick_lab import _compute_universe_base_rate_21d
+
+        fires = [{"engine_id": "plab_1d_pure", "ticker": "T1",
+                  "fire_date": "2024-01-10", "authority": "display_only"}]
+        ubr = _compute_universe_base_rate_21d(fires, None, horizon=21)
+        assert ubr is None
+
+    def test_base_rate_known_drift(self):
+        """T1 drifts +1% per session, SPY flat → 21d excess ≈ (1.01^21 - 1)."""
+        from scripts.build_pick_lab import _compute_universe_base_rate_21d
+
+        panel, spy = self._make_panel_3ticker(
+            n=80, drifts={"T1": 0.01, "T2": 0.0, "T3": -0.01}
+        )
+        dates = panel.index
+        fires = [
+            {"engine_id": "plab_1d_pure", "ticker": "T1",
+             "fire_date": str(dates[0].date()), "exec_date": str(dates[1].date()),
+             "authority": "display_only"},
+        ]
+        ubr = _compute_universe_base_rate_21d(fires, panel, horizon=21)
+        assert ubr is not None
+        # Median of T1/T2/T3 excesses for this one fire_date:
+        # T1: (1.01^21 - 1) - 0 ≈ 0.2314, T2: 0 - 0 = 0, T3: (0.99^21 - 1) ≈ -0.1893
+        # Median of [0.2314, 0, -0.1893] = 0.0
+        assert abs(ubr) < 1e-4, f"Expected median ≈ 0 (T2 is median), got {ubr}"
+
+
+class TestTimingLift:
+    """(b) TASK 2: timing_lift_21d — WHEN-skill isolation.
+
+    Hand-computable: ticker with one fire whose 21d window beats its own
+    any-day baseline by a known margin.  Also tests exclusion window and
+    null-when-panel-absent.
+    """
+
+    def _make_step_panel(
+        self,
+        n: int = 120,
+        start: str = "2024-01-02",
+        step_pos: int = 30,
+        step_size: float = 0.10,
+        ticker: str = "AA",
+    ) -> tuple[pd.DataFrame, pd.Series, pd.DatetimeIndex]:
+        """Panel where price is flat then jumps by step_size at step_pos.
+
+        The ticker's any-day baseline (median 21d return across all valid windows
+        NOT near the fire) is ~0 when most of the panel is flat.  The fire at
+        step_pos gives a 21d excess ≈ step_size (since SPY is flat).
+        timing_lift_21d ≈ step_size - 0 = step_size.
+        """
+        dates = pd.bdate_range(start=start, periods=n)
+        prices = np.full(n, 100.0)
+        # After step_pos: price is 100*(1+step_size)
+        prices[step_pos:] = 100.0 * (1 + step_size)
+        data = {ticker: prices, "SPY": np.full(n, 450.0)}
+        panel = pd.DataFrame(data, index=dates)
+        return panel, panel["SPY"], dates
+
+    def test_timing_lift_known_margin(self):
+        """Fire timed at the step earns timing_lift ≈ step_size above its baseline.
+
+        The fire is placed one session before the step so exec=step_pos and the 21d
+        window captures the step.  The ticker's baseline is computed from all windows
+        NOT near exec — those see the flat price → baseline ≈ 0.
+        """
+        from engine.pick_lab.book import _timing_lift, _filter_ret
+
+        n = 120
+        step_pos = 40
+        step_size = 0.10
+        panel, spy, dates = self._make_step_panel(
+            n=n, step_pos=step_pos, step_size=step_size, ticker="AA"
+        )
+
+        # Fire on dates[step_pos - 1]; exec on dates[step_pos]
+        # At exec (step_pos), close = 100 (pre-step); at exec+21 = step_pos+21,
+        # close = 100*(1+step_size) → ret_abs = step_size; SPY flat → excess = step_size
+        fire_date = str(dates[step_pos - 1].date())
+        exec_date = str(dates[step_pos].date())
+
+        fire = {"engine_id": "plab_1d_pure", "ticker": "AA",
+                "fire_date": fire_date, "exec_date": exec_date,
+                "authority": "display_only"}
+        grade = {
+            "engine_id": "plab_1d_pure", "ticker": "AA",
+            "fire_date": fire_date, "exec_date": exec_date,
+            "horizon": 21, "kind": "ret",
+            "ret_excess_spy": float(step_size),
+            "matured": True, "authority": "display_only",
+        }
+
+        tl = _timing_lift([fire], [grade], panel, spy, horizon=21, exclusion_sessions=21)
+        assert tl is not None, "timing_lift should be computable"
+        # Most baseline windows see flat prices → baseline ≈ 0
+        # timing_lift ≈ step_size - 0 ≈ step_size
+        assert abs(tl - step_size) < 0.02, (
+            f"Expected timing_lift ≈ {step_size:.3f}, got {tl:.6f}"
+        )
+
+    def test_timing_lift_exclusion_window_respected(self):
+        """Start dates within 21 sessions of exec_date are excluded from baseline.
+
+        When we INCLUDE exec-adjacent windows, the baseline would be polluted by the
+        step return.  When excluded, the baseline is from the flat region only.
+        We verify that the exclusion-adjusted lift is larger than it would be if
+        adjacent windows were included.
+        """
+        from engine.pick_lab.book import _timing_lift
+
+        n = 120
+        step_pos = 40
+        step_size = 0.15
+        panel, spy, dates = self._make_step_panel(
+            n=n, step_pos=step_pos, step_size=step_size, ticker="AA"
+        )
+        fire_date = str(dates[step_pos - 1].date())
+        exec_date = str(dates[step_pos].date())
+
+        fire = {"engine_id": "plab_1d_pure", "ticker": "AA",
+                "fire_date": fire_date, "exec_date": exec_date,
+                "authority": "display_only"}
+        grade = {
+            "engine_id": "plab_1d_pure", "ticker": "AA",
+            "fire_date": fire_date, "exec_date": exec_date,
+            "horizon": 21, "kind": "ret",
+            "ret_excess_spy": float(step_size),
+            "matured": True, "authority": "display_only",
+        }
+
+        # With 21-session exclusion (correct behaviour)
+        tl_with_excl = _timing_lift(
+            [fire], [grade], panel, spy, horizon=21, exclusion_sessions=21
+        )
+        # Without exclusion: set exclusion_sessions=0 (include adjacent windows)
+        # The step windows bleed into the baseline → baseline is higher → lift is smaller
+        tl_no_excl = _timing_lift(
+            [fire], [grade], panel, spy, horizon=21, exclusion_sessions=0
+        )
+        assert tl_with_excl is not None
+        assert tl_no_excl is not None
+        # With exclusion: baseline is flat-only → lift ≈ step_size
+        # Without exclusion: step windows inflate baseline → lift is smaller
+        assert tl_with_excl >= tl_no_excl, (
+            f"Exclusion should increase lift (flat baseline), "
+            f"but with_excl={tl_with_excl:.4f} < no_excl={tl_no_excl:.4f}"
+        )
+
+    def test_timing_lift_null_when_panel_absent(self):
+        """timing_lift_21d is None when close_panel is absent."""
+        fire = _fire(ticker="T01", fire_date="2024-01-10")
+        grade = _grade(ticker="T01", fire_date="2024-01-10", ret_excess_spy=0.05)
+        sb = scoreboard("plab_1d_pure", [fire], [grade], close_panel=None)
+        assert sb["timing_lift_21d"] is None, (
+            f"timing_lift_21d must be None when close_panel absent; got {sb['timing_lift_21d']}"
+        )
+
+    def test_timing_lift_null_when_no_matured_grades(self):
+        """timing_lift_21d is None when no h21 grades have matured (no ret_excess_spy)."""
+        n = 80
+        panel, spy = _make_flat_spy_panel(["T01"], n=n)
+        fire = _fire(ticker="T01", fire_date=str(panel.index[0].date()))
+        # Grade at h=5 only (not h=21) so no matured h21 ret_excess_spy
+        grade = _grade(ticker="T01", fire_date=str(panel.index[0].date()),
+                       horizon=5, ret_excess_spy=0.02)
+        sb = scoreboard("plab_1d_pure", [fire], [grade],
+                        close_panel=panel, spy_closes=spy)
+        assert sb["timing_lift_21d"] is None, (
+            "timing_lift_21d must be None when no h21 grades matured"
+        )
+
+    def test_timing_lift_in_scoreboard_result(self):
+        """timing_lift_21d key is always present in entry scoreboard."""
+        fire = _fire(ticker="T01", fire_date="2024-01-10")
+        grade = _grade(ticker="T01", fire_date="2024-01-10")
+        sb = scoreboard("plab_1d_pure", [fire], [grade])
+        assert "timing_lift_21d" in sb, "timing_lift_21d must be a key in the scoreboard dict"
+
+    def test_timing_lift_absent_in_lh_scoreboard(self):
+        """LH books: scoreboard returns early before timing_lift is computed → key absent."""
+        fire = _fire(engine_id="plab_lh_compounder", ticker="T01",
+                     fire_date="2024-01-10")
+        grade = _grade(engine_id="plab_lh_compounder", ticker="T01",
+                       fire_date="2024-01-10", horizon=126)
+        sb = scoreboard("plab_lh_compounder", [fire], [grade],
+                        horizon_role="hold_thesis")
+        # LH scoreboard returns before timing_lift is added
+        # (it's not in the result for LH books)
+        assert sb.get("timing_lift_21d") is None or "timing_lift_21d" not in sb, (
+            "LH books should not compute timing_lift_21d"
+        )
+
+
+class TestLiftVsUniverseBaseNotAlwaysNull:
+    """(c) TASK 1+2 integration: lift_vs_universe_base is no longer always-null when
+    a base rate from a different population (close panel) is passed.
+
+    The docstring guard in book.py/universe_base_rate still holds: do NOT pass the
+    random-ctrl median as universe_base_rate_21d (that would make lift_vs_ctrl and
+    lift_vs_universe_base numerically identical).  Here we pass a base rate computed
+    from a different computation path (simulating what build_pick_lab wires in).
+    """
+
+    def test_lift_vs_universe_base_populated_when_different_base_rate(self):
+        """lift_vs_universe_base non-null when universe_base_rate_21d != ctrl median."""
+        ctrl_grades = [
+            _grade(engine_id="plab_random_ctrl", ticker=f"C{i:02d}",
+                   fire_date=f"2024-01-{10+i:02d}", ret_excess_spy=0.01)
+            for i in range(5)
+        ]
+        my_fires = [_fire(ticker=f"T{i:02d}", fire_date=f"2024-01-{10+i:02d}")
+                    for i in range(5)]
+        my_grades = [
+            _grade(ticker=f["ticker"], fire_date=f["fire_date"], ret_excess_spy=0.04)
+            for f in my_fires
+        ]
+        # Simulate a panel-derived base rate (different from ctrl median 0.01)
+        panel_derived_base_rate = 0.005  # full universe tends to return less than random ctrl
+        sb = scoreboard(
+            "plab_1d_pure", my_fires, my_grades,
+            ctrl_fires=[], ctrl_grades=ctrl_grades,
+            universe_base_rate_21d=panel_derived_base_rate,
+        )
+        # lift_vs_ctrl = 0.04 - 0.01 = 0.03
+        # lift_vs_universe_base = 0.04 - 0.005 = 0.035
+        assert sb["lift_vs_ctrl"] is not None
+        assert sb["lift_vs_universe_base"] is not None
+        assert abs(sb["lift_vs_ctrl"] - 0.03) < 1e-5
+        assert abs(sb["lift_vs_universe_base"] - 0.035) < 1e-5
+        # The two columns must differ (derive from different populations)
+        assert abs(sb["lift_vs_ctrl"] - sb["lift_vs_universe_base"]) > 1e-6, (
+            "lift_vs_ctrl and lift_vs_universe_base must differ when derived from "
+            "different populations"
+        )
+
+    def test_all_scoreboards_passes_universe_base_rate_through(self):
+        """all_scoreboards now accepts and threads universe_base_rate_21d through."""
+        my_fires = [_fire(ticker="T01", fire_date="2024-01-10")]
+        my_grades = [_grade(ticker="T01", fire_date="2024-01-10", ret_excess_spy=0.05)]
+        boards = all_scoreboards(
+            my_fires, my_grades,
+            {"plab_1d_pure": "entry"},
+            universe_base_rate_21d=0.02,
+        )
+        sb = next(b for b in boards if b["engine_id"] == "plab_1d_pure")
+        assert sb["lift_vs_universe_base"] is not None
+        assert abs(sb["lift_vs_universe_base"] - 0.03) < 1e-5
+
+    def test_ctrl_docstring_guard_still_holds(self):
+        """universe_base_rate() (random-ctrl proxy) returns ctrl median, NOT panel base rate.
+
+        If caller passes universe_base_rate() result as universe_base_rate_21d, the
+        two lift columns become equal — this is wrong.  The test documents the trap.
+        """
+        from engine.pick_lab.book import universe_base_rate
+
+        ctrl_grades = [
+            _grade(engine_id="plab_random_ctrl", ticker=f"C{i:02d}",
+                   fire_date=f"2024-01-{10+i:02d}", ret_excess_spy=0.01)
+            for i in range(5)
+        ]
+        my_fires = [_fire(ticker=f"T{i:02d}", fire_date=f"2024-01-{10+i:02d}")
+                    for i in range(5)]
+        my_grades = [
+            _grade(ticker=f["ticker"], fire_date=f["fire_date"], ret_excess_spy=0.04)
+            for f in my_fires
+        ]
+        # Wrong: passing ctrl proxy as universe_base_rate_21d
+        ctrl_proxy = universe_base_rate(ctrl_grades, horizon=21)
+        assert ctrl_proxy is not None  # 0.01
+
+        sb_wrong = scoreboard(
+            "plab_1d_pure", my_fires, my_grades,
+            ctrl_fires=[], ctrl_grades=ctrl_grades,
+            universe_base_rate_21d=ctrl_proxy,  # BAD: same population as ctrl
+        )
+        # Both lifts would be equal (0.04 - 0.01 = 0.03)
+        assert abs(sb_wrong["lift_vs_ctrl"] - sb_wrong["lift_vs_universe_base"]) < 1e-6, (
+            "When ctrl proxy is passed as universe_base_rate_21d, both lift columns are equal "
+            "(this documents the trap — callers must NOT do this)"
+        )

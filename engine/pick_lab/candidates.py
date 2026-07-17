@@ -203,7 +203,11 @@ def _book_1d_sectorheat(df: pd.DataFrame, book: dict) -> list[dict]:
 
 
 def _book_1d_blastoff(df: pd.DataFrame, book: dict) -> list[dict]:
-    """plab_1d_blastoff — 1D cross ≤3 AND 3D not yet crossed AND above_200 AND ext_grade=none."""
+    """plab_1d_blastoff — 1D cross ≤3 AND 3D not yet crossed AND above_200 AND ext_grade=none.
+
+    2026-07-17 PL-A4-1 revival: data enum is {null, steady, stretched, parabolic}.
+    null means NO extension. Fix: ext_grade.isna() | ext_grade.eq('none').
+    """
     cfg = book["config"]
     mask = (
         df["d1_macd_xup_bars"].le(cfg["macd_xup_bars_max"]).fillna(False)
@@ -214,10 +218,12 @@ def _book_1d_blastoff(df: pd.DataFrame, book: dict) -> list[dict]:
         # null = never crossed (within window) → passes; value present = crossed → fails
         d3_not_crossed = df["d3_macd_xup_bars"].isna()
         mask = mask & d3_not_crossed
-    # ext_grade must be 'none' exactly (null fails)
+    # ext_grade: null OR 'none' both mean "no extension at all" (PL-A4-1 fix)
+    # The data enum is {null, steady, stretched, parabolic}; null = no-extension label absent
     ext = df.get("ext_grade")
     if ext is not None:
-        mask = mask & ext.eq("none").fillna(False)
+        no_extension = ext.isna() | ext.eq("none")
+        mask = mask & no_extension
     sub = df[mask].copy()
     if sub.empty:
         return []
@@ -306,22 +312,21 @@ def _book_otr_pullback(df: pd.DataFrame, book: dict) -> list[dict]:
 
 
 def _book_hi_base(df: pd.DataFrame, book: dict) -> list[dict]:
-    """plab_hi_base — off_52w_high≤10% AND vol_squeeze active."""
+    """plab_hi_base — off_52w_high≤10% AND vol_squeeze active (COILED or COMPRESSED).
+
+    2026-07-17 PL-A4-1 revival: data enum is {NONE,EXPANSION,COMPRESSED,COILED,
+    FIRED_UP,FIRED_DOWN,null}. Previous code accepted True/'on'/'active'/'squeeze'
+    which never matched. Fix: squeeze_on = vss.isin(['COILED','COMPRESSED']).
+    """
     cfg = book["config"]
-    mask = (
-        df["off_52w_high_pct"].le(cfg["off_52w_high_pct_max"]).fillna(False)
-        & df["vol_squeeze_state"].eq(True).fillna(False)
-    )
-    # Also accept truthy string values for vol_squeeze_state
+    off_high_ok = df["off_52w_high_pct"].le(cfg["off_52w_high_pct_max"]).fillna(False)
     if "vol_squeeze_state" in df.columns:
         vss = df["vol_squeeze_state"]
-        squeeze_on = (
-            vss.eq(True).fillna(False)
-            | vss.eq("on").fillna(False)
-            | vss.eq("active").fillna(False)
-            | vss.eq("squeeze").fillna(False)
-        )
-        mask = df["off_52w_high_pct"].le(cfg["off_52w_high_pct_max"]).fillna(False) & squeeze_on
+        # 2026-07-17 PL-A4-1: data enum — active squeeze = COILED or COMPRESSED
+        squeeze_on = vss.isin(["COILED", "COMPRESSED"]).fillna(False)
+    else:
+        squeeze_on = pd.Series(False, index=df.index)
+    mask = off_high_ok & squeeze_on
     sub = df[mask].copy()
     if sub.empty:
         return []
@@ -336,11 +341,18 @@ def _book_hi_base(df: pd.DataFrame, book: dict) -> list[dict]:
 
 
 def _book_washout_deep(df: pd.DataFrame, book: dict) -> list[dict]:
-    """plab_washout_deep — washout_active AND dd>25 AND (coiled OR star) AND 3D from_os."""
+    """plab_washout_deep — washout_active AND dd>0.25 (>25% fractional) AND (coiled OR star) AND 3D from_os.
+
+    2026-07-17 PL-A4-1 revival: dd_pct is fractional 0–1 in snapshot.
+    Config corrected to 0.25 (was 25.0 — wrong scale). No candidates.py logic change needed;
+    the threshold reads from config.
+    """
     cfg = book["config"]
+    # dd_pct_min in config is fractional (0.25 = 25% drawdown)
+    dd_threshold = cfg["dd_pct_min"]
     mask = (
         df["washout_active"].eq(True).fillna(False)
-        & df["dd_pct"].gt(cfg["dd_pct_min"]).fillna(False)
+        & df["dd_pct"].gt(dd_threshold).fillna(False)
         & df["d3_from_os"].eq(True).fillna(False)
     )
     # coiled OR star
@@ -351,9 +363,11 @@ def _book_washout_deep(df: pd.DataFrame, book: dict) -> list[dict]:
     if sub.empty:
         return []
     sub = sub.sort_values("dd_pct", ascending=False).head(book["max_picks"])
+    # Display threshold as percentage in why-chip (fractional × 100)
+    dd_pct_display = int(round(dd_threshold * 100))
     picks = []
     for rank, (ticker, _) in enumerate(sub.iterrows(), 1):
-        picks.append(_pick(df, ticker, rank, ["washout", f"dd>{cfg['dd_pct_min']}%", "3D from_OS", "coiled/star"], {
+        picks.append(_pick(df, ticker, rank, ["washout", f"dd>{dd_pct_display}%", "3D from_OS", "coiled/star"], {
             "dd_pct": _col(df, "dd_pct", ticker),
             "d3_from_os": _col(df, "d3_from_os", ticker),
             "coiled": _col(df, "coiled", ticker),
@@ -388,32 +402,64 @@ def _book_sector_trough(df: pd.DataFrame, book: dict) -> list[dict]:
 
 
 def _book_washout_clean(df: pd.DataFrame, book: dict) -> list[dict]:
-    """plab_washout_clean — washout_active AND dd>20 AND no dilution AND quality screens."""
+    """plab_washout_clean — washout_active AND dd>0.20 AND no dilution AND quality screens.
+
+    2026-07-17 PL-A4-1 revival:
+    - dd_pct_min corrected to 0.20 (fractional scale; was 20.0).
+    - dilution_events_365d is 100%-null in snapshot (producer wiring gap).
+      Null-tolerant: isna() | le(0). 'dilution n/a' chip added when column was null.
+    """
     cfg = book["config"]
-    mask = (
+    dd_threshold = cfg["dd_pct_min"]
+    base_mask = (
         df["washout_active"].eq(True).fillna(False)
-        & df["dd_pct"].gt(cfg["dd_pct_min"]).fillna(False)
-        & df["dilution_events_365d"].le(cfg["dilution_events_365d_max"]).fillna(False)
+        & df["dd_pct"].gt(dd_threshold).fillna(False)
     )
+    # Dilution: null-tolerant if config says so (PL-A4-1 revival)
+    dil = df.get("dilution_events_365d")
+    if dil is not None:
+        if cfg.get("dilution_null_tolerant"):
+            dil_ok = dil.isna() | dil.le(cfg["dilution_events_365d_max"])
+        else:
+            dil_ok = dil.le(cfg["dilution_events_365d_max"]).fillna(False)
+        base_mask = base_mask & dil_ok
+    else:
+        # Column absent — treat as null-tolerant pass
+        dil_ok = pd.Series(True, index=df.index)
+
     # days_since_shelf > 90 OR null passes — null is NaN in pandas, gt returns False for NaN
     shelf = df.get("days_since_shelf")
     if shelf is not None:
         shelf_ok = shelf.isna() | shelf.gt(cfg["days_since_shelf_min_or_null"])
-        mask = mask & shelf_ok
+        base_mask = base_mask & shelf_ok
     # interest_coverage > 2 OR null passes — same pattern
     ic = df.get("interest_coverage")
     if ic is not None:
         ic_ok = ic.isna() | ic.gt(cfg["interest_coverage_min_or_null"])
-        mask = mask & ic_ok
-    sub = df[mask].copy()
+        base_mask = base_mask & ic_ok
+
+    sub = df[base_mask].copy()
     if sub.empty:
         return []
     sub = sub.sort_values("axis_quality", ascending=False).head(book["max_picks"])
+    dd_pct_display = int(round(dd_threshold * 100))
     picks = []
     for rank, (ticker, _) in enumerate(sub.iterrows(), 1):
-        picks.append(_pick(df, ticker, rank, ["washout", f"dd>{cfg['dd_pct_min']}%", "no-dilution", "quality"], {
+        # Build why-chips; every or-null screen that passed on a NULL value gets
+        # an honesty chip (disclosure parity across all inert quality screens)
+        why = ["washout", f"dd>{dd_pct_display}%", "quality"]
+        dil_val = _col(df, "dilution_events_365d", ticker)
+        if dil_val is None and cfg.get("dilution_null_tolerant"):
+            why.append("dilution n/a")
+        else:
+            why.append("no-dilution")
+        if _col(df, "days_since_shelf", ticker) is None:
+            why.append("shelf n/a")
+        if _col(df, "interest_coverage", ticker) is None:
+            why.append("ic n/a")
+        picks.append(_pick(df, ticker, rank, why, {
             "dd_pct": _col(df, "dd_pct", ticker),
-            "dilution_events_365d": _col(df, "dilution_events_365d", ticker),
+            "dilution_events_365d": dil_val,
             "axis_quality": _col(df, "axis_quality", ticker),
         }))
     return picks
@@ -628,22 +674,38 @@ def _book_random_ctrl(df: pd.DataFrame, book: dict) -> list[dict]:
 # Long-hold grids
 
 def _book_lh_compounder(df: pd.DataFrame, book: dict) -> list[dict]:
-    """plab_lh_compounder — axis_quality top-decile AND archetype compounder/growth AND no dilution."""
+    """plab_lh_compounder — axis_quality top-decile AND archetype compounder/growth AND no dilution.
+
+    2026-07-17 PL-A4-1 revival: dilution_events_365d is 100%-null in snapshot (producer
+    wiring gap). Null-tolerant: isna() | le(0). 'dilution n/a' chip added when null.
+    """
     cfg = book["config"]
     td = _top_decile_mask(df, "axis_quality")
     arch = df.get("archetype", pd.Series(None, index=df.index))
-    mask = (
-        td
-        & arch.isin(cfg["archetypes"]).fillna(False)
-        & df["dilution_events_365d"].le(cfg["dilution_events_365d_max"]).fillna(False)
-    )
-    sub = df[mask].copy()
+    base_mask = td & arch.isin(cfg["archetypes"]).fillna(False)
+
+    # Dilution: null-tolerant if config says so (PL-A4-1 revival)
+    dil = df.get("dilution_events_365d")
+    if dil is not None:
+        if cfg.get("dilution_null_tolerant"):
+            dil_ok = dil.isna() | dil.le(cfg["dilution_events_365d_max"])
+        else:
+            dil_ok = dil.le(cfg["dilution_events_365d_max"]).fillna(False)
+        base_mask = base_mask & dil_ok
+
+    sub = df[base_mask].copy()
     if sub.empty:
         return []
     sub = sub.sort_values("axis_quality", ascending=False).head(book["max_picks"])
     picks = []
     for rank, (ticker, _) in enumerate(sub.iterrows(), 1):
-        picks.append(_pick(df, ticker, rank, ["quality decile", "compounder/growth", "no-dilution"], {
+        dil_val = _col(df, "dilution_events_365d", ticker)
+        why = ["quality decile", "compounder/growth"]
+        if dil_val is None and cfg.get("dilution_null_tolerant"):
+            why.append("dilution n/a")
+        else:
+            why.append("no-dilution")
+        picks.append(_pick(df, ticker, rank, why, {
             "axis_quality": _col(df, "axis_quality", ticker),
             "archetype": _col(df, "archetype", ticker),
         }))
@@ -668,25 +730,107 @@ def _book_lh_edge_durability(df: pd.DataFrame, book: dict) -> list[dict]:
     return picks
 
 
-def _book_lh_washout_survivor(df: pd.DataFrame, book: dict) -> list[dict]:
-    """plab_lh_washout_survivor — dd>40 AND quality>median AND ic>3 AND no dilution."""
+def _book_lh_edge_durability_b(df: pd.DataFrame, book: dict) -> list[dict]:
+    """plab_lh_edge_durability_b — LH-2b paired book (Amendment §A5, PL-A5-1).
+
+    Same axis_selection top-decile ranking as plab_lh_edge_durability PLUS:
+    (a) axis_quality > 0 ABSOLUTE floor (not median-relative; fixes near-vacuous median gate).
+    (b) Sector concentration cap: max 3 picks per GICS sector per fire-date.
+        Applied after ranking — walk ranked list, skip names whose sector already has 3.
+
+    Why-chips: 'EDGE decile', 'quality>0', 'sector cap 3'.
+    v1-vs-2b divergence at 126d measures whether quality floors + diversification caps matter.
+    """
     cfg = book["config"]
-    am = _above_median_mask(df, "axis_quality")
-    mask = (
-        df["dd_pct"].gt(cfg["dd_pct_min"]).fillna(False)
-        & am
-        & df["interest_coverage"].gt(cfg["interest_coverage_min"]).fillna(False)
-        & df["dilution_events_365d"].le(cfg["dilution_events_365d_max"]).fillna(False)
-    )
+    td = _top_decile_mask(df, "axis_selection")
+    # (a) axis_quality > 0 absolute floor
+    aq = df.get("axis_quality", pd.Series(np.nan, index=df.index))
+    quality_ok = aq.gt(0).fillna(False)
+    mask = td & quality_ok
     sub = df[mask].copy()
     if sub.empty:
         return []
+    # Sort by axis_selection descending (ranking criterion)
+    sub = sub.sort_values("axis_selection", ascending=False)
+    # (b) Sector concentration cap: max 3 per GICS sector
+    sector_counts: dict[str, int] = {}
+    capped: list[tuple] = []
+    for ticker, row in sub.iterrows():
+        sector = row.get("sector") if hasattr(row, "get") else None
+        if pd.isna(sector) if not isinstance(sector, str) else not sector:
+            sector = "__unknown__"
+        count = sector_counts.get(sector, 0)
+        if count >= cfg.get("sector_cap_per_gics", 3):
+            continue  # sector already at cap — skip
+        sector_counts[sector] = count + 1
+        capped.append(ticker)
+        if len(capped) >= book["max_picks"]:
+            break
+
+    picks = []
+    for rank, ticker in enumerate(capped, 1):
+        picks.append(_pick(df, ticker, rank, ["EDGE decile", "quality>0", "sector cap 3"], {
+            "axis_selection": _col(df, "axis_selection", ticker),
+            "axis_quality": _col(df, "axis_quality", ticker),
+            "sector": _col(df, "sector", ticker),
+        }))
+    return picks
+
+
+def _book_lh_washout_survivor(df: pd.DataFrame, book: dict) -> list[dict]:
+    """plab_lh_washout_survivor — dd>0.40 AND quality>median AND ic>3 AND no dilution.
+
+    2026-07-17 PL-A4-1 revival:
+    - dd_pct_min corrected to 0.40 (fractional scale; was 40.0).
+    - interest_coverage and dilution_events_365d are 100%-null in snapshot (producer wiring gap).
+      Both null-tolerant per config flags. Chips 'ic n/a'/'dilution n/a' added when null.
+    NOTE: quality screens are inert until snapshot producer wires those columns.
+    Construction temporarily degrades to dd+quality-median, disclosed via chips.
+    """
+    cfg = book["config"]
+    dd_threshold = cfg["dd_pct_min"]
+    am = _above_median_mask(df, "axis_quality")
+    base_mask = df["dd_pct"].gt(dd_threshold).fillna(False) & am
+
+    # interest_coverage: null-tolerant if config says so (PL-A4-1 revival)
+    ic_col = df.get("interest_coverage")
+    if ic_col is not None:
+        if cfg.get("interest_coverage_null_tolerant"):
+            ic_ok = ic_col.isna() | ic_col.gt(cfg["interest_coverage_min"])
+        else:
+            ic_ok = ic_col.gt(cfg["interest_coverage_min"]).fillna(False)
+        base_mask = base_mask & ic_ok
+
+    # Dilution: null-tolerant if config says so (PL-A4-1 revival)
+    dil = df.get("dilution_events_365d")
+    if dil is not None:
+        if cfg.get("dilution_null_tolerant"):
+            dil_ok = dil.isna() | dil.le(cfg["dilution_events_365d_max"])
+        else:
+            dil_ok = dil.le(cfg["dilution_events_365d_max"]).fillna(False)
+        base_mask = base_mask & dil_ok
+
+    sub = df[base_mask].copy()
+    if sub.empty:
+        return []
     sub = sub.sort_values("axis_quality", ascending=False).head(book["max_picks"])
+    dd_pct_display = int(round(dd_threshold * 100))
     picks = []
     for rank, (ticker, _) in enumerate(sub.iterrows(), 1):
-        picks.append(_pick(df, ticker, rank, ["dd>40%", "quality>median", "ic>3", "no-dilution"], {
+        ic_val = _col(df, "interest_coverage", ticker)
+        dil_val = _col(df, "dilution_events_365d", ticker)
+        why = [f"dd>{dd_pct_display}%", "quality>median"]
+        if ic_val is None and cfg.get("interest_coverage_null_tolerant"):
+            why.append("ic n/a")
+        else:
+            why.append("ic>3")
+        if dil_val is None and cfg.get("dilution_null_tolerant"):
+            why.append("dilution n/a")
+        else:
+            why.append("no-dilution")
+        picks.append(_pick(df, ticker, rank, why, {
             "dd_pct": _col(df, "dd_pct", ticker),
-            "interest_coverage": _col(df, "interest_coverage", ticker),
+            "interest_coverage": ic_val,
         }))
     return picks
 
@@ -974,9 +1118,10 @@ _BOOK_FUNCS: dict[str, object] = {
     "plab_flagship_t3t4":        _book_flagship_t3t4,
     "plab_topping_avoid":        _book_topping_avoid,
     "plab_random_ctrl":          _book_random_ctrl,
-    "plab_lh_compounder":        _book_lh_compounder,
-    "plab_lh_edge_durability":   _book_lh_edge_durability,
-    "plab_lh_washout_survivor":  _book_lh_washout_survivor,
+    "plab_lh_compounder":          _book_lh_compounder,
+    "plab_lh_edge_durability":     _book_lh_edge_durability,
+    "plab_lh_edge_durability_b":   _book_lh_edge_durability_b,  # LH-2b (Amendment §A5, PL-A5-1)
+    "plab_lh_washout_survivor":    _book_lh_washout_survivor,
     # Family G — Flow Leaders (FL-R8): artifact-sourced books (bypass snap-based filter)
     "plab_flow_leader":          _book_flow_leader,
     "plab_flow_washout":         _book_flow_washout,

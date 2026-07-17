@@ -391,6 +391,137 @@ def _enrich_snapshot(snap: pd.DataFrame, regime: dict) -> pd.DataFrame:
     return df
 
 
+# ------------------------------------------------------------------ context-stamp helper ---
+
+# Books that receive entry-context stamps (Amendment §A5 + §A7 instrumentation).
+# PL-R7: candidate logic reads ONLY the snapshot; stamps are computed AFTER selection.
+# LH-family: all books in the 'LH' family (hold_thesis role).
+# Family A velocity books: plab_1d_*
+# Family B momentum books: plab_breakout_vol, plab_resid_mom, plab_otr_pullback, plab_hi_base
+_CONTEXT_STAMP_BOOKS: frozenset[str] = frozenset([
+    # LH family
+    "plab_lh_compounder",
+    "plab_lh_edge_durability",
+    "plab_lh_edge_durability_b",
+    "plab_lh_washout_survivor",
+    # Family A — 1D velocity
+    "plab_1d_pure",
+    "plab_1d_regime",
+    "plab_1d_sectorheat",
+    "plab_1d_blastoff",
+    # Family B — momentum/continuation
+    "plab_breakout_vol",
+    "plab_resid_mom",
+    "plab_otr_pullback",
+    "plab_hi_base",
+])
+
+
+def _stamp_context(
+    ticker: str,
+    snap_row,
+    close_panel: Optional[pd.DataFrame],
+    asof: str,
+) -> dict:
+    """Compute entry-context stamps for a fire row (instrumentation, not candidate input).
+
+    Parameters
+    ----------
+    ticker     : the ticker being stamped
+    snap_row   : the snapshot row (Series) for this ticker; provides snapshot columns
+    close_panel: the broad-universe close panel [date x ticker]; may be None
+    asof       : the fire date string (YYYY-MM-DD)
+
+    Returns a dict with context fields to merge into fire_row['features'].
+    All fields null-honest — missing data silently stamps None, never fatal.
+    """
+    stamps: dict = {}
+
+    # ── Snapshot-based stamps (always available when snap_row is provided) ────
+    try:
+        def _sval(col: str):
+            v = snap_row.get(col) if hasattr(snap_row, "get") else None
+            if v is None:
+                return None
+            try:
+                return None if pd.isna(v) else v
+            except (TypeError, ValueError):
+                return v
+
+        stamps["pct_vs_20dma"] = _sval("pct_vs_20dma")
+        stamps["off_52w_high_pct"] = _sval("off_52w_high_pct")
+        stamps["cycle_state"] = _sval("cycle_state")
+    except Exception as exc:  # noqa: BLE001
+        log.debug("pick_lab ctx_stamp: snapshot cols error for %s (%s)", ticker, exc)
+
+    # ── Close-panel stamps (need price history) ───────────────────────────────
+    if close_panel is None or close_panel.empty or ticker not in close_panel.columns:
+        stamps["pct_gain_60d_low"] = None
+        stamps["bars_since_60d_low"] = None
+        stamps["ret_252d"] = None
+        return stamps
+
+    try:
+        asof_ts = pd.Timestamp(asof)
+        series = close_panel[ticker].dropna()
+        if series.empty:
+            stamps["pct_gain_60d_low"] = None
+            stamps["bars_since_60d_low"] = None
+            stamps["ret_252d"] = None
+            return stamps
+
+        # Locate fire date in the panel index (use last date <= asof)
+        panel_idx = close_panel.index
+        dates_le = panel_idx[panel_idx <= asof_ts]
+        if len(dates_le) == 0:
+            stamps["pct_gain_60d_low"] = None
+            stamps["bars_since_60d_low"] = None
+            stamps["ret_252d"] = None
+            return stamps
+        fire_date_ts = dates_le[-1]
+        close_at_fire = series.get(fire_date_ts)
+        if close_at_fire is None or pd.isna(close_at_fire):
+            stamps["pct_gain_60d_low"] = None
+            stamps["bars_since_60d_low"] = None
+            stamps["ret_252d"] = None
+            return stamps
+
+        # Trailing 60 sessions before and including fire_date
+        hist_60 = series.loc[series.index <= fire_date_ts].iloc[-60:]
+        if len(hist_60) > 0:
+            min_close = hist_60.min()
+            min_idx = hist_60.idxmin()
+            # Position of min within the trailing window (0 = earliest, n-1 = most recent)
+            bars_since = len(hist_60) - 1 - hist_60.index.get_loc(min_idx)
+            stamps["pct_gain_60d_low"] = (
+                (close_at_fire - min_close) / min_close
+                if min_close > 0 else None
+            )
+            stamps["bars_since_60d_low"] = int(bars_since)
+        else:
+            stamps["pct_gain_60d_low"] = None
+            stamps["bars_since_60d_low"] = None
+
+        # 252d return (close_at_fire / close 252 sessions ago − 1)
+        hist_252 = series.loc[series.index <= fire_date_ts]
+        if len(hist_252) >= 253:
+            close_252d_ago = hist_252.iloc[-253]
+            stamps["ret_252d"] = (
+                (close_at_fire - close_252d_ago) / close_252d_ago
+                if close_252d_ago > 0 else None
+            )
+        else:
+            stamps["ret_252d"] = None  # insufficient history
+
+    except Exception as exc:  # noqa: BLE001
+        log.debug("pick_lab ctx_stamp: close-panel error for %s (%s)", ticker, exc)
+        stamps.setdefault("pct_gain_60d_low", None)
+        stamps.setdefault("bars_since_60d_low", None)
+        stamps.setdefault("ret_252d", None)
+
+    return stamps
+
+
 # ------------------------------------------------------------------ fire pass ---
 
 
@@ -400,10 +531,15 @@ def _fire_all_books(
     fires_entry: list[dict],
     fires_lh: list[dict],
     trading_dates: pd.DatetimeIndex,
+    close_panel: Optional[pd.DataFrame] = None,
 ) -> tuple[list[dict], list[dict]]:
-    """Run all 23 books against the snapshot; apply refire lockout.
+    """Run all books against the snapshot; apply refire lockout; stamp context.
 
     Returns (new_entry_fires, new_lh_fires).
+
+    close_panel is passed so _stamp_context can compute pct_gain_60d_low /
+    bars_since_60d_low / ret_252d for LH-family and Family-A/B books (§A5+§A7).
+    If None, those stamps are null (never fatal — PL-R10).
     """
     from engine.pick_lab.candidates import run_book
     from engine.pick_lab.ledger import is_open
@@ -421,6 +557,7 @@ def _fire_all_books(
         is_lh = horizon_role == "hold_thesis"
         existing_fires = fires_lh if is_lh else fires_entry
         lockout = book["refire_lockout_sessions"]
+        should_stamp = engine_id in _CONTEXT_STAMP_BOOKS
 
         try:
             picks = run_book(book, snap_with_asof)
@@ -440,6 +577,19 @@ def _fire_all_books(
                 )
                 continue
 
+            # Build features dict — start from pick's features, then add context stamps
+            features = dict(pick.get("features") or {})
+            if should_stamp:
+                # Lookup snapshot row for this ticker (may be absent for artifact-sourced books)
+                snap_row = snap_with_asof.loc[ticker] if ticker in snap_with_asof.index else None
+                try:
+                    ctx = _stamp_context(ticker, snap_row, close_panel, asof)
+                    features.update(ctx)
+                except Exception as exc_stamp:  # noqa: BLE001
+                    log.debug(
+                        "pick_lab ctx_stamp: %s/%s stamp error (%s)", engine_id, ticker, exc_stamp
+                    )
+
             fire_row: dict = {
                 "engine_id": engine_id,
                 "ticker": ticker,
@@ -449,7 +599,7 @@ def _fire_all_books(
                 "close_at_fire": pick.get("close"),
                 "sector": pick.get("sector"),
                 "why": pick.get("why") or [],
-                "features": pick.get("features") or {},
+                "features": features,
                 "liq_unknown": bool(pick.get("liq_unknown")),
                 # Regime stamp AT fire_date
                 "regime_calm": float(snap_with_asof["calm"].iloc[0])
@@ -800,6 +950,7 @@ def _build_entry_site_payload(
         row["max_dd"] = sb.get("nav_max_drawdown")
         row["vs_random_lift"] = sb.get("lift_vs_ctrl")
         row["vs_universe_lift"] = sb.get("lift_vs_universe_base")
+        row["timing_lift_21d"] = sb.get("timing_lift_21d")
         row["n_dates"] = sb.get("n_distinct_fire_dates")
         scoreboard_out.append(row)
 
@@ -871,6 +1022,179 @@ def _build_longhold_site_payload(
             "First maturation ETA: ~2027-01."
         ),
     }
+
+
+def _read_snapshot_tickers_for_asof(
+    asof: str,
+    base_dir: Optional[str] = None,
+) -> Optional[list[str]]:
+    """Read the list of tickers from the snapshot store for a given asof date.
+
+    Returns None on any error (never fatal).  Falls back to None so the caller
+    can use the full close-panel columns instead.
+
+    Parameters
+    ----------
+    asof     : Date string YYYY-MM-DD.
+    base_dir : Snapshot directory; defaults to data/pick_lab/snapshots.
+    """
+    from engine.pick_lab.snapshot import SNAPSHOT_DIR
+    snap_dir = Path(base_dir or config.data_dir() / "pick_lab" / "snapshots")
+    ym = str(asof)[:7]
+    part = snap_dir / f"{ym}.parquet"
+    if not part.exists():
+        return None
+    try:
+        df = pd.read_parquet(part)
+        if "asof" not in df.columns:
+            return None
+        sub = df[df["asof"] == asof]
+        if sub.empty:
+            return None
+        # Ticker may be index or a column
+        if sub.index.name == "ticker":
+            return list(sub.index)
+        if "ticker" in sub.columns:
+            return list(sub["ticker"].dropna())
+        return None
+    except Exception as exc:  # noqa: BLE001
+        log.debug("pick_lab universe_base_rate: snapshot read failed for %s (%s)", asof, exc)
+        return None
+
+
+def _compute_universe_base_rate_21d(
+    fires: list[dict],
+    close_panel: Optional[pd.DataFrame],
+    horizon: int = 21,
+) -> Optional[float]:
+    """Compute panel-median 21d SPY-excess across ALL snapshot tickers per fire-date.
+
+    For each distinct fire_date in the fires ledger whose 21-session window has
+    FULLY elapsed in the close panel, compute for every snapshot ticker of that night
+    the 21-session SPY-excess starting at the next session after fire_date (same exec
+    convention as grading: exec = next session close, ret = exec→exec+21, excess vs
+    SPY over identical sessions).  universe_base_rate_21d = median over ALL
+    (ticker, fire_date) pairs pooled.
+
+    Convention note vs grade.py: this pooled base rate uses the FIXED natural exec
+    session and drops tickers NaN at exec via masking — it does NOT replicate
+    grade.py's per-fire defer/void exec resolution (exec_fill_window shifting).
+    Acceptable for a pooled median over the whole universe (a NaN-at-exec ticker is
+    simply not a member of that night's investable pool); do not reuse this helper
+    for per-fire grading.
+
+    Vectorized with pandas panel.shift math — no per-ticker Python loops.
+    Never-fatal; returns None when panel unavailable or no fire-date has matured.
+
+    Parameters
+    ----------
+    fires       : All entry fires (from fires ledger).
+    close_panel : DataFrame[date_index x ticker] of closes; must include 'SPY'.
+    horizon     : Session hold length (default 21).
+
+    Returns
+    -------
+    float | None
+    """
+    if close_panel is None or close_panel.empty:
+        return None
+    if "SPY" not in close_panel.columns:
+        return None
+
+    date_index = close_panel.index
+    if not isinstance(date_index, pd.DatetimeIndex):
+        date_index = pd.DatetimeIndex(date_index)
+    date_index = date_index.sort_values()
+    n = len(date_index)
+
+    if n < horizon + 2:
+        return None
+
+    # Collect distinct fire_dates from all entry fires (any engine_id)
+    fire_dates_raw = {f.get("fire_date") for f in fires if f.get("fire_date")}
+    if not fire_dates_raw:
+        return None
+
+    # For each fire_date: exec = next session after fire_date; matured when
+    # exec + horizon sessions are IN the panel.  Compute via vectorized panel ops.
+
+    # Build spy return series (position-based, aligned to date_index)
+    spy = close_panel["SPY"].reindex(date_index)
+
+    # Panel of all non-SPY tickers (or all columns, will drop SPY from excess)
+    # We compute ret[i→i+horizon] for all positions at once using shift.
+    # exec position = position AFTER fire_date in the sorted date_index.
+
+    all_excesses: list[float] = []
+
+    for fd_raw in sorted(fire_dates_raw):
+        try:
+            fd_ts = pd.Timestamp(fd_raw)
+        except Exception:  # noqa: BLE001
+            continue
+
+        # exec = first session strictly after fire_date
+        future = date_index[date_index > fd_ts]
+        if len(future) == 0:
+            continue
+        exec_date = future[0]
+        exec_pos = int(date_index.searchsorted(exec_date, side="left"))
+
+        # Target position = exec_pos + horizon; must be in-panel
+        target_pos = exec_pos + horizon
+        if target_pos >= n:
+            continue  # window not fully elapsed
+
+        exec_date_ts = date_index[exec_pos]
+        target_date_ts = date_index[target_pos]
+
+        # SPY return over this window
+        spy_exec = spy.at[exec_date_ts] if exec_date_ts in spy.index else None
+        spy_target = spy.at[target_date_ts] if target_date_ts in spy.index else None
+        if spy_exec is None or spy_target is None:
+            continue
+        try:
+            spy_exec = float(spy_exec)
+            spy_target = float(spy_target)
+        except (TypeError, ValueError):
+            continue
+        if spy_exec <= 0:
+            continue
+        spy_ret = (spy_target - spy_exec) / spy_exec
+
+        # Read snapshot tickers for this fire_date; fall back to panel columns
+        snap_tickers = _read_snapshot_tickers_for_asof(fd_raw)
+        if snap_tickers is None:
+            # Fall back: all panel columns except SPY
+            snap_tickers = [c for c in close_panel.columns if c != "SPY"]
+
+        # Compute SPY-excess for each ticker at this exec/target
+        exec_prices = close_panel.reindex(columns=snap_tickers).loc[exec_date_ts] \
+            if exec_date_ts in close_panel.index else None
+        target_prices = close_panel.reindex(columns=snap_tickers).loc[target_date_ts] \
+            if target_date_ts in close_panel.index else None
+
+        if exec_prices is None or target_prices is None:
+            continue
+
+        # Vectorized excess per ticker
+        valid = exec_prices > 0
+        ret_abs = (target_prices - exec_prices) / exec_prices
+        excess = ret_abs - spy_ret  # scalar broadcast
+
+        # Only include non-NaN, finite values
+        mask = valid & ret_abs.notna() & excess.notna()
+        all_excesses.extend(excess[mask].tolist())
+
+    if not all_excesses:
+        return None
+
+    result = float(pd.Series(all_excesses).median())
+    log.info(
+        "pick_lab universe_base_rate_21d: %.6f (from %d (ticker,fire_date) pairs across %d fire dates)",
+        result, len(all_excesses), len(fire_dates_raw),
+    )
+    return result
 
 
 def _write_site_artifact(path: Path, payload: dict) -> None:
@@ -1030,7 +1354,8 @@ def _build() -> None:
     fires_lh = load_fires(hold_thesis=True)
 
     new_entry, new_lh = _fire_all_books(
-        snap_enriched, asof, fires_entry, fires_lh, trading_dates
+        snap_enriched, asof, fires_entry, fires_lh, trading_dates,
+        close_panel=close_panel,  # passed for context stamping (§A5+§A7)
     )
 
     written_entry = append_fires(new_entry, hold_thesis=False)
@@ -1065,6 +1390,20 @@ def _build() -> None:
     ctrl_fires_e = [f for f in fires_entry if f.get("engine_id") == "plab_random_ctrl"]
     ctrl_grades_e = [g for g in grades_entry if g.get("engine_id") == "plab_random_ctrl"]
 
+    # Compute universe buy-anytime base rate (PL-R5 second independent control, spec §9).
+    # panel-median 21d SPY-excess across ALL snapshot tickers per fire-date, pooled.
+    # Returns None when no fire-date has matured (tonight's typical state) — null-honest.
+    ubr_21d: Optional[float] = None
+    try:
+        ubr_21d = _compute_universe_base_rate_21d(fires_entry, close_panel, horizon=21)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("pick_lab: universe_base_rate_21d computation failed (%s) — passing None", exc)
+
+    # Build SPY close series from the panel (needed for timing_lift in book.py)
+    spy_closes_series: Optional[pd.Series] = None
+    if close_panel is not None and "SPY" in close_panel.columns:
+        spy_closes_series = close_panel["SPY"].dropna()
+
     all_sbs = all_scoreboards(
         fires_entry + fires_lh,
         grades_entry + grades_lh,
@@ -1072,6 +1411,9 @@ def _build() -> None:
         ruler_map=ruler_map,
         ctrl_fires=ctrl_fires_e,
         ctrl_grades=ctrl_grades_e,
+        universe_base_rate_21d=ubr_21d,
+        close_panel=close_panel,
+        spy_closes=spy_closes_series,
     )
 
     sbs_entry = [s for s in all_sbs if s.get("horizon_role") != "hold_thesis"]

@@ -61,7 +61,27 @@
   .badge-active{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--up) 50%,var(--line));
     color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent)}
+  .badge-awaiting{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--muted) 50%,var(--line));
+    color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent)}
   .sb-yardstick-label{font-size:10px;color:var(--muted);margin-left:4px}
+
+  /* ── scoreboard detail row (horizon ladder + path) ── */
+  .sb-detail-row td{padding:0!important;border-bottom:1px solid var(--line)}
+  .sb-detail-inner{padding:10px 12px 12px;background:color-mix(in srgb,var(--panel) 60%,transparent)}
+  .sb-ladder{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums;margin-bottom:8px}
+  .sb-ladder th{text-align:right;padding:3px 8px;color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line)}
+  .sb-ladder th:first-child{text-align:left}
+  .sb-ladder td{text-align:right;padding:3px 8px}
+  .sb-ladder td:first-child{text-align:left;color:var(--muted);font-weight:600}
+  .sb-path-line{font-size:11.5px;color:var(--muted);margin:4px 0 0}
+  .sb-detail-inner summary::-webkit-details-marker{display:none}
+  .sb-detail-inner[open] summary span:first-child{content:'▼'}
+
+  /* ── lh control chip ── */
+  .lh-control-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+    border:1px solid color-mix(in srgb,var(--muted) 50%,var(--line));
+    color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent);margin-left:6px}
 
   /* ── empty state hero ── */
   .pl-empty{text-align:center;padding:60px 20px 80px;color:var(--muted)}
@@ -276,6 +296,15 @@
               </button>
               {% if row.is_random %}<span class="sb-yardstick-label">{{ t('(yardstick)', '(基准)') }}</span>{% endif %}
               {% if row.is_inverse %}<span class="sb-yardstick-label">{{ t('(AVOID — inverse)', '(规避 — 反向)') }}</span>{% endif %}
+              {# Task 2 — data_gap badge: structurally waiting on a feed, not accruing slowly #}
+              {% if row.data_gap_badge.present %}
+              <span class="badge-awaiting"
+                data-tip-en="{{ row.data_gap_badge.reason_en }}"
+                data-tip-zh="{{ row.data_gap_badge.reason_zh }}">
+                <span class="l-en">AWAITING DATA</span>
+                <span class="l-zh">等待数据</span>
+              </span>
+              {% endif %}
             </td>
             <td>{{ row.family }}</td>
             <td>
@@ -298,6 +327,50 @@
             <td class="neg">{{ row.max_dd_fmt }}</td>
             <td class="{{ 'pos' if row.vs_random_lift is not none and row.vs_random_lift > 0 else ('neg' if row.vs_random_lift is not none and row.vs_random_lift < 0 else '') }}">{{ row.vs_random_lift_fmt }}</td>
             <td class="{{ 'pos' if row.vs_universe_lift is not none and row.vs_universe_lift > 0 else ('neg' if row.vs_universe_lift is not none and row.vs_universe_lift < 0 else '') }}">{{ row.vs_universe_lift_fmt }}</td>
+          </tr>
+          {# Task 1 — expandable detail row: horizon ladder + capture + path #}
+          {% set hd = row.horizon_detail %}
+          <tr class="sb-detail-row" id="sbdet-{{ row.engine_id }}">
+            <td colspan="17">
+              <details class="sb-detail-inner">
+                <summary style="cursor:pointer;font-size:11px;font-weight:700;color:var(--muted);
+                  text-transform:uppercase;letter-spacing:.06em;list-style:none;display:flex;
+                  align-items:center;gap:6px;padding:4px 0">
+                  <span style="font-size:10px">▶</span>
+                  <span class="l-en">Exit horizons &amp; path</span>
+                  <span class="l-zh">退出地平线与路径</span>
+                </summary>
+                {# Horizon mini-table: 5d / 10d / 21d / 63d: WR + median excess + capture #}
+                <table class="sb-ladder">
+                  <thead><tr>
+                    <th>{{ t('Horizon', '地平线') }}</th>
+                    <th>{{ t('Win rate', '胜率') }}</th>
+                    <th>{{ t('Exc vs SPY', '超额') }}</th>
+                    <th>{{ t('Med exc', '中位超额') }}</th>
+                    <th data-tip-en="Median fraction of the 25-session peak captured by an exit at this horizon"
+                        data-tip-zh="该地平线退出所捕获的25节峰值中位比例">
+                      {{ t('Capture', '捕获率') }}
+                    </th>
+                  </tr></thead>
+                  <tbody>
+                    {% for leg in hd.ladder %}
+                    <tr>
+                      <td>{{ leg.horizon }}</td>
+                      <td>{{ leg.wr_abs_fmt }}</td>
+                      <td class="{{ 'pos' if leg.wr_exc_fmt not in ('—', '+0.0%') else '' }}">{{ leg.wr_exc_fmt }}</td>
+                      <td class="{{ 'pos' if leg.med_exc_fmt not in ('—', '+0.0%') else '' }}">{{ leg.med_exc_fmt }}</td>
+                      <td>{{ leg.capture_fmt }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {# Plain-word path line #}
+                <p class="sb-path-line">
+                  <span class="l-en">{{ hd.path_en }}</span>
+                  <span class="l-zh">{{ hd.path_zh }}</span>
+                </p>
+              </details>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -688,7 +761,19 @@
           <span class="l-en">ACCRUING</span>
           <span class="l-zh">累积中</span>
         </span>
+        {# Task 3 — CONTROL chip for LH-2 v1 (no-gate control) #}
+        {% if book.is_control %}
+        <span class="lh-control-chip">CONTROL</span>
+        {% endif %}
       </div>
+
+      {# Task 3a — CONTROL subtitle for LH-2 v1 #}
+      {% if book.is_control %}
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px;max-width:78ch">
+        <span class="l-en">No-gate control — measures EDGE persistence without entry conditions; not a pick list</span>
+        <span class="l-zh">无门控对照——衡量EDGE在无入场条件下的持久性；非选股列表</span>
+      </p>
+      {% endif %}
 
       {% if book.picks_today %}
       <div class="pick-grid">
@@ -702,6 +787,7 @@
           {% if p.sector %}<div class="pick-sector">{{ p.sector }}</div>{% endif %}
           {% if p.why %}
           <div class="pick-why">
+            {# Task 3c — passthrough why-chips (may include 'dilution n/a', 'ic n/a') #}
             {% for chip in p.why %}<span class="why-chip accent">{{ chip }}</span>{% endfor %}
           </div>
           {% endif %}
@@ -999,8 +1085,35 @@
         <li>{{ t('Long-hold grids: 126d and 252d sector-relative + SPY-excess, descriptive only.', '长持网格：126日和252日板块相对+SPY超额，仅描述性。') }}</li>
       </ul>
 
+      {# Task 4 — family secondary horizons (Amendment §A2), pre-registered before any data matured #}
+      <h3>{{ t('Secondary horizons (pre-declared before any data matured — Amendment §A2)', '辅助地平线（数据成熟前预先声明 — 修正案§A2）') }}</h3>
+      <ul>
+        <li>
+          <span class="l-en"><b>1D-velocity books (Family A)</b> are also judged at 10 days — declared before any data matured, because 1D triggers lead the 3D gate by about 2 sessions and burst edges can decay fast.</span>
+          <span class="l-zh"><b>1日动能书（A族）</b>同样在10日评判——在任何数据成熟前已声明，因为1日触发比3日门控提前约2节，且爆发性优势消退较快。</span>
+        </li>
+        <li>
+          <span class="l-en"><b>Momentum and quality books (Families B and D)</b> are also judged at 63 days — declared before any data matured, because breakout and EDGE theses need room to run and often take weeks to pay out.</span>
+          <span class="l-zh"><b>动能与质量书（B族和D族）</b>同样在63日评判——在任何数据成熟前已声明，因为突破和EDGE论点需要时间兑现，往往需要数周。</span>
+        </li>
+        <li>
+          <span class="l-en">Picking a book's best-looking horizon after grades are in is forbidden — that is a multiple-comparisons trap. Only these pre-declared horizons earn verdict language.</span>
+          <span class="l-zh">禁止在评级出来后才选择表现最佳的地平线——这是多重比较陷阱。只有这些预先声明的地平线才能使用结论性语言。</span>
+        </li>
+      </ul>
+
+      {# Task 4 — path metrics plain-word explanation #}
+      <h3>{{ t('What "time-to-peak" and "capture rate" mean', '"峰值时间"与"捕获率"含义') }}</h3>
+      <p>
+        <span class="l-en">The scoreboard detail row shows how a typical trade played out over 25 sessions after entry. <b>Time-to-peak</b> (median session of the best gain) tells you how long the move usually takes to reach its high point — so a peak on day 8 with a 21-day exit means you are typically selling after the move has already rolled over. <b>Capture rate</b> is what fraction of that best gain you actually keep at a given exit horizon — a 10-day exit with 70% capture means a typical hold of 10 days keeps about 70 cents of every peak dollar. These are descriptive numbers, not targets; they help you decide which exit horizon fits the thesis.</span>
+        <span class="l-zh">记分板详情行显示了入场后25节内一笔典型交易的表现。<b>峰值时间</b>（最佳收益的中位节次）告诉你走势通常需要多久才能到达高点——例如第8日见顶而21日退出，意味着你通常是在走势已经回落后才卖出。<b>捕获率</b>是在某一退出地平线实际保留的最佳收益比例——10日退出70%捕获率意味着持有10日通常能保留约每个峰值美元的70分。这些是描述性数字，不是目标；它们帮助你判断哪个退出地平线符合论点。</span>
+      </p>
+
       <h3>{{ t('Controls (PL-R5)', '控制变量（PL-R5）') }}</h3>
-      <p>{{ t('Every book is measured against two yardsticks: (1) the Random Control book (12 uniform-random liquid names, deterministic seed per day), visible in the scoreboard; and (2) the universe buy-anytime base rate. Every headline number is lift over both, not raw win rate.', '每本书均与两个基准进行比较：（1）随机控制书（12个均匀随机流动名称，每日确定性种子），在记分板中可见；以及（2）全市场随时买入基准率。每个标题数字是相对于两者的提升，而非原始胜率。') }}</p>
+      <p>
+        <span class="l-en">Every book is measured against two yardsticks. <b>Random-names control</b> (live now): 12 uniform-random liquid names per day with a deterministic seed — measures selection skill, pinned in the scoreboard. <b>Universe base rate and timing lift</b>: the buy-anytime return across all snapshot tickers and a timing-only control are arriving as grades mature — the column shows a dash until then. A book needs to beat both to claim an edge.</span>
+        <span class="l-zh">每本书均与两个基准比较。<b>随机名称控制</b>（现已上线）：每日12个确定性种子的均匀随机流动名称——衡量选股技能，固定在记分板中。<b>全市场基准率与时机提升</b>：全部快照代码的随时买入回报及纯时机控制将随评级成熟而填入——届时前列显示破折号。一本书需要同时超越两者才能宣称存在优势。</span>
+      </p>
 
       <h3>{{ t('ACCRUING floor (PL-R4)', '累积下限（PL-R4）') }}</h3>
       <div class="law">
