@@ -1,0 +1,598 @@
+{
+  "as_of": "2026-07-17",
+  "days": {
+    "2026-06-23": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.187142
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.702174
+      }
+    },
+    "2026-06-24": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.927254
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.631404
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.759039
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.010426
+      }
+    },
+    "2026-06-25": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.302812
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.771478
+      }
+    },
+    "2026-06-26": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.766474
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.910916
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.996042
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.267864
+      }
+    },
+    "2026-06-28": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.719105
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.896169
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.685229
+      }
+    },
+    "2026-06-29": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.711448
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 3.515769
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.921436
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.060499
+      }
+    },
+    "2026-06-30": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.641423
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.084365
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.827134
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.728676
+      }
+    },
+    "2026-07-01": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.725341
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 4.049444
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.01174
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.831259
+      }
+    },
+    "2026-07-02": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.998924
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.960862
+      },
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 7.732051
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.325558
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.711054
+      }
+    },
+    "2026-07-03": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.957538
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.015378
+      },
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.903897
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.865799
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.632629
+      }
+    },
+    "2026-07-04": {
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.343839
+      }
+    },
+    "2026-07-05": {
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.454139
+      }
+    },
+    "2026-07-06": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.393006
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.949492
+      },
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 4.761073
+      }
+    },
+    "2026-07-07": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 3.77065
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 3.933829
+      },
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 3.660073
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.853795
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 3.055751
+      }
+    },
+    "2026-07-08": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 3.44
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 3.772771
+      },
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 3.793272
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.963606
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.901193
+      }
+    },
+    "2026-07-09": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.984159
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.825111
+      },
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.425235
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.891724
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 2.266744
+      }
+    },
+    "2026-07-10": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.014183
+      },
+      "china": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.106708
+      },
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.365812
+      },
+      "heavyweight": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 0.938839
+      },
+      "hk": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.134065
+      }
+    },
+    "2026-07-12": {
+      "autonomous": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.983966
+      },
+      "flagship": {
+        "cache_read_tokens": 0,
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "seats": {},
+        "usd": 1.60229
+      }
+    },
+    "2026-07-17": {
+      "system": {
+        "cache_read_tokens": 0,
+        "calls": 1,
+        "input_tokens": 10,
+        "keys": {
+          "claude_code_oauth_3": {
+            "calls": 1,
+            "input_tokens": 10,
+            "output_tokens": 50,
+            "usd": 0.047223
+          }
+        },
+        "output_tokens": 50,
+        "seats": {
+          "scout": {
+            "calls": 1,
+            "input_tokens": 10,
+            "output_tokens": 50,
+            "usd": 0.047223
+          }
+        },
+        "usd": 0.047223
+      }
+    }
+  },
+  "schema": "mastermind.cost_summary.v1",
+  "totals_30d": {
+    "by_book": {
+      "autonomous": 28.523425,
+      "china": 31.652218,
+      "flagship": 30.041681,
+      "heavyweight": 11.828364,
+      "hk": 21.285389,
+      "system": 0.047223
+    },
+    "by_key": {
+      "claude_code_oauth_3": 0.047223
+    },
+    "by_seat": {
+      "scout": 0.047223
+    },
+    "input_tokens": 10,
+    "output_tokens": 50,
+    "usd": 123.3783
+  }
+}
