@@ -1,0 +1,9 @@
+{
+  "steady_max_alert": 1,
+  "steady_max_d3": 0,
+  "slipping_min_d3": 1,
+  "slipping_min_escalating": 2,
+  "fast_min_alert": 3,
+  "fast_min_d3": 2,
+  "maturity_min_prior": 5
+}

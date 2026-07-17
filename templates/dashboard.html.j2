@@ -5268,6 +5268,52 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-zh">&#9888; {{ intl_cascade.n_total }}个海外市场中{{ intl_cascade.n_alert }}个避险 — {{ _cas_list_zh }}</span>
         </a>
         {% endif %}
+        {# RSR-R5: deterioration cascade SPEED chip — how fast risk-off is spreading (complements the count chip above) #}
+        {% if det_cascade is defined and det_cascade and det_cascade.state is defined and det_cascade.state != 'STEADY' %}
+        {% set _dc_n_mat = det_cascade.n_mature if det_cascade.n_mature is defined else 0 %}
+        {% set _dc_n_alert = det_cascade.n_alert if det_cascade.n_alert is defined else 0 %}
+        {% set _dc_immature = det_cascade.immature if det_cascade.immature is defined else [] %}
+        {% set _dc_tip_en = 'Overseas risk-off spreading: ' ~ _dc_n_alert ~ ' of ' ~ _dc_n_mat ~ ' tracked markets in alert. ' ~ (_dc_immature | length) ~ ' markets excluded (log too young). Does not change the score — accruing since 2026-07-17, unproven.' %}
+        {% set _dc_tip_zh = '海外避险扩散：' ~ _dc_n_mat ~ '个已追踪市场中' ~ _dc_n_alert ~ '个发出警报。' ~ (_dc_immature | length) ~ '个市场因数据不足暂不计入。不影响评分——自2026-07-17起积累中，尚未经验证。' %}
+        <span class="mx5-sc-btn{% if det_cascade.state == 'DETERIORATING_FAST' %} mx5-sc-btn-alert{% else %} mx5-sc-btn-warn{% endif %} mx5-sc-btn-static"
+              data-tip-en="{{ _dc_tip_en }}" data-tip-zh="{{ _dc_tip_zh }}">
+          {% if det_cascade.state == 'DETERIORATING_FAST' %}
+          <span class="l-en">&#9888; Broad, fast overseas risk-off.</span>
+          <span class="l-zh">&#9888; 海外避险快速蔓延，范围广泛。</span>
+          {% else %}
+          <span class="l-en">Risk-off spreading overseas — watch, don't chase.</span>
+          <span class="l-zh">海外避险情绪扩散——观望，勿追高。</span>
+          {% endif %}
+        </span>
+        {% endif %}
+        {# RSR-R2/R4: leadership crack chip — AI-hardware cohort velocity + carnage state #}
+        {% if leadership_crack is defined and leadership_crack and leadership_crack.state is defined and leadership_crack.state != 'INTACT' %}
+        {% set _lc_state = leadership_crack.state %}
+        {% set _lc_med_dd_pct = ((leadership_crack.med_dd if leadership_crack.med_dd is not none else 0) * 100) | round | int %}
+        {% set _lc_share20_pct = ((leadership_crack.carnage_share_ema if leadership_crack.carnage_share_ema is not none else 0) * 100) | round | int %}
+        {% set _lc_since = leadership_crack.state_since if leadership_crack.state_since is defined else '' %}
+        {% set _lc_n_fresh = leadership_crack.n_fresh if leadership_crack.n_fresh is defined else 0 %}
+        {% set _lc_n_total = leadership_crack.n_total if leadership_crack.n_total is defined else 0 %}
+        {% set _lc_worst = leadership_crack.worst_members if leadership_crack.worst_members is defined else [] %}
+        {% set _lc_worst_ns = namespace(parts_en=[], parts_zh=[]) %}
+        {% for _w in _lc_worst[:6] %}
+          {% set _wp = _w.ticker ~ ' ' ~ ((_w.dd * 100) | round | int) ~ '%' %}
+          {% if _lc_worst_ns.parts_en.append(_wp) %}{% endif %}
+          {% if _lc_worst_ns.parts_zh.append(_wp) %}{% endif %}
+        {% endfor %}
+        {% set _lc_tip_en = 'Since ' ~ _lc_since ~ ': z-velocity ' ~ (leadership_crack.z_vel | round(2) if leadership_crack.z_vel is not none else 'n/a') ~ ', ' ~ _lc_share20_pct ~ '% of names 20%+ off highs. Worst: ' ~ (_lc_worst_ns.parts_en | join(', ')) ~ '. Watching ' ~ _lc_n_fresh ~ ' of ' ~ _lc_n_total ~ ' names. Accruing since 2026-07-17 — unproven; does not change the score.' %}
+        {% set _lc_tip_zh = '自' ~ _lc_since ~ '：z速度 ' ~ (leadership_crack.z_vel | round(2) if leadership_crack.z_vel is not none else 'n/a') ~ '，' ~ _lc_share20_pct ~ '%个股较高点跌逾20%。最差个股：' ~ (_lc_worst_ns.parts_zh | join('、') ) ~ '。追踪' ~ _lc_n_total ~ '个成分中' ~ _lc_n_fresh ~ '个。自2026-07-17起积累中，尚未经验证；不影响评分。' %}
+        <span class="mx5-sc-btn{% if _lc_state == 'BROKEN' %} mx5-sc-btn-alert{% else %} mx5-sc-btn-warn{% endif %} mx5-sc-btn-static"
+              data-tip-en="{{ _lc_tip_en }}" data-tip-zh="{{ _lc_tip_zh }}">
+          {% if _lc_state == 'BROKEN' %}
+          <span class="l-en">&#9888; Leaders broken — typical AI-hardware name {{ _lc_med_dd_pct }}% off its high while the index holds. Watch — don't chase.</span>
+          <span class="l-zh">&#9888; 龙头股受损——AI硬件个股中位数较高点回撤{{ _lc_med_dd_pct }}%，而指数仍稳。观望，勿追高。</span>
+          {% else %}
+          <span class="l-en">Leaders cracking — AI-hardware names sliding faster than the index. Watch — don't chase.</span>
+          <span class="l-zh">龙头股承压——AI硬件个股跑输指数。观望，勿追高。</span>
+          {% endif %}
+        </span>
+        {% endif %}
         {# B3: spillover-to-US chip — contagion two-tier read (quiet/contained/watching/transmitting) #}
         {% if intl_spillover is defined and intl_spillover and intl_spillover.state is defined %}
         {% set _spill_state = intl_spillover.state %}

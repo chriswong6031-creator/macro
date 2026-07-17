@@ -788,6 +788,26 @@ def run(force: bool = False) -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("froth-fragility gauge failed: %s", e)
         latest["froth_fragility"] = None
+    # Leadership Crack (engine/leadership_crack.py, RSR-R2/R4): AI-hardware cohort
+    # velocity + carnage state. DISPLAY-ONLY — feeds NO score, NO gate. Writes
+    # data/leadership_crack/latest.json every run; appends forward_log.jsonl on
+    # nightly lane only. Additive, never fatal.
+    try:
+        from engine import leadership_crack as _lc
+        latest["leadership_crack"] = _lc.build()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("leadership_crack organ failed: %s", e)
+        latest["leadership_crack"] = None
+    # Deterioration Cascade (engine/deterioration_cascade.py, RSR-R5): speed of
+    # international risk-off spread across mature market logs. DISPLAY-ONLY. Writes
+    # data/deterioration_cascade/latest.json every run; appends forward_log.jsonl on
+    # nightly lane only. Additive, never fatal.
+    try:
+        from engine import deterioration_cascade as _dca
+        latest["deterioration_cascade"] = _dca.build()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("deterioration_cascade organ failed: %s", e)
+        latest["deterioration_cascade"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal

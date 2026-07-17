@@ -3991,6 +3991,22 @@ def main() -> int:
     except Exception as _glle:  # noqa: BLE001 — display-only, never fatal
         log.warning("global_leg_lag_days compute failed (%s)", _glle)
 
+    # ── RSR-R2/R4: leadership crack (AI-hardware cohort velocity + carnage) ──
+    _leadership_crack: dict | None = None
+    try:
+        from engine import leadership_crack as _lc
+        _leadership_crack = _lc.build()
+    except Exception as _lce:  # noqa: BLE001 — display-only, never fatal
+        log.warning("leadership_crack build failed (%s)", _lce)
+
+    # ── RSR-R5: deterioration cascade (intl forward-log speed-of-spread) ──
+    _det_cascade: dict | None = None
+    try:
+        from engine import deterioration_cascade as _dca
+        _det_cascade = _dca.build()
+    except Exception as _dcae:  # noqa: BLE001 — display-only, never fatal
+        log.warning("deterioration_cascade build failed (%s)", _dcae)
+
     vm = dict(
         latest=latest,
         mtf=mtf_data,
@@ -4065,6 +4081,8 @@ def main() -> int:
         intl_cascade=_intl_cascade,          # B1a: n_alert/n_total/alerts/asof from intl forward logs (display-only)
         intl_spillover=_intl_spillover,      # B1c: two-tier spillover state from intl_risk/latest.json (display-only)
         global_leg_lag_days=_global_leg_lag_days,  # B1d: ETF parquet lag vs radar asof in business days (display-only)
+        leadership_crack=_leadership_crack,  # RSR-R2/R4: AI-hardware cohort velocity+carnage state (display-only)
+        det_cascade=_det_cascade,            # RSR-R5: intl deterioration speed state (display-only)
         **_master_brief_vm(),
     )
 
