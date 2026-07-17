@@ -1,36 +1,36 @@
 {
-  "date": "2026-07-09",
+  "date": "2026-07-16",
   "authority": {
     "tier": "context_only"
   },
-  "turnover_z20": -0.8288884648416436,
-  "turnover_z60": -0.1975311238359842,
-  "margin_balance": 29561.96187273,
-  "margin_chg_5d": -2.206494683985505,
-  "margin_to_mcap": 2.834422,
-  "southbound_net": 9830.47,
-  "southbound_z": 0.8912854138231785,
-  "etf_share_chg": null,
+  "turnover_z20": -1.7908642097694252,
+  "turnover_z60": -1.777634077887596,
+  "margin_balance": 28581.55886773,
+  "margin_chg_5d": -3.3164341704411404,
+  "margin_to_mcap": 2.861582,
+  "southbound_net": 5039.48,
+  "southbound_z": 0.2774903293612345,
+  "etf_share_chg": 0.143504854582271,
   "zt_breadth": null,
   "failed_seal_ratio": null,
-  "qvix": 21.74,
-  "qvix_z": 1.3128427780270098,
-  "broker_rs": -0.09066481064589513,
+  "qvix": 22.69,
+  "qvix_z": 1.5748720992021574,
+  "broker_rs": 0.024699607343057022,
   "regime": "dormant",
   "who_controls": "mixed",
   "risk": "low",
   "evidence": [
-    "turnover_z20=-0.83",
-    "fin_pct_float=2.83%",
-    "qvix_z=1.31 (inverted-semantics: high=stress)"
+    "turnover_z20=-1.79",
+    "fin_pct_float=2.86%",
+    "broker_rs=0.0247 (positive, sector leading)",
+    "qvix_z=1.57 (inverted-semantics: high=stress)"
   ],
   "contradictions": [],
   "data_gaps": [
-    "zt_breadth:null on 2026-07-09",
-    "etf_share_chg:null on 2026-07-09",
+    "zt_breadth:null on 2026-07-16",
     "northbound:DEAD post-2024-08-16 SLF-050",
-    "snapshot_staleness:published row 2026-07-09 is 6d behind tape tail 2026-07-15; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+    "snapshot_staleness:published row 2026-07-16 is 1d behind tape tail 2026-07-17; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
   ],
   "backfill": false,
-  "snapshot_note": "core legs null on 2026-07-15; publishing last fully-populated row (2026-07-09)"
+  "snapshot_note": "core legs null on 2026-07-17; publishing last fully-populated row (2026-07-16)"
 }

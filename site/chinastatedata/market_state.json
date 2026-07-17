@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
-  "as_of": "2026-07-16",
-  "generated_utc": "2026-07-16T10:02:39Z",
+  "as_of": "2026-07-17",
+  "generated_utc": "2026-07-17T10:03:38Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -22,7 +22,7 @@
     "as_of": null,
     "evidence": [
       "turnover_z20_null",
-      "participation_regime_nan"
+      "qvix_z_elevated (1.98)"
     ],
     "contradictions": [],
     "falsifiers": [
@@ -44,51 +44,52 @@
     ]
   },
   "participation": {
-    "as_of": "2026-07-09",
+    "as_of": "2026-07-16",
     "regime": "dormant",
     "who_controls": "mixed",
     "risk": "low",
-    "turnover_z20": -0.8288884648416436,
-    "turnover_z60": -0.1975311238359842,
-    "margin_balance": 29561.96187273,
-    "margin_chg_5d": -2.206494683985505,
-    "margin_to_mcap": 2.834422,
+    "turnover_z20": -1.7908642097694252,
+    "turnover_z60": -1.777634077887596,
+    "margin_balance": 28581.55886773,
+    "margin_chg_5d": -3.3164341704411404,
+    "margin_to_mcap": 2.861582,
     "zt_breadth": null,
     "failed_seal_ratio": null,
-    "southbound_net": 9830.47,
-    "southbound_z": 0.8912854138231785,
-    "qvix": 21.74,
-    "qvix_z": 1.3128427780270098,
+    "southbound_net": 5039.48,
+    "southbound_z": 0.2774903293612345,
+    "qvix": 22.69,
+    "qvix_z": 1.5748720992021574,
     "evidence": [
-      "turnover_z20=-0.83",
-      "fin_pct_float=2.83%",
-      "qvix_z=1.31 (inverted-semantics: high=stress)"
+      "turnover_z20=-1.79",
+      "fin_pct_float=2.86%",
+      "broker_rs=0.0247 (positive, sector leading)",
+      "qvix_z=1.57 (inverted-semantics: high=stress)"
     ],
     "contradictions": []
   },
   "microstructure": {
-    "as_of": "2026-07-16",
+    "as_of": "2026-07-17",
     "aggregate": {
-      "date": "2026-07-16",
-      "limit_up_count": 14.0,
-      "limit_down_count": 11.0,
-      "sealed_up_close": 6.0,
-      "failed_up_seal_count": 8.0,
-      "lianban_2plus": 0.0,
-      "lianban_max": 1.0,
-      "universe_n": 1612.0,
-      "limit_up_breadth_pct": 0.8685,
-      "limit_down_breadth_pct": 0.6824
+      "date": "2026-07-17",
+      "limit_up_count": 8.0,
+      "limit_down_count": 46.0,
+      "sealed_up_close": 5.0,
+      "failed_up_seal_count": 3.0,
+      "lianban_2plus": 1.0,
+      "lianban_max": 2.0,
+      "universe_n": 1621.0,
+      "limit_up_breadth_pct": 0.4935,
+      "limit_down_breadth_pct": 2.8378
     },
     "name_summary": {
       "n_packets": 122,
-      "chase_veto_count": 6,
+      "chase_veto_count": 1,
       "fillable_count": 119
     },
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
   },
   "policy": {
-    "as_of": "2026-07-16",
+    "as_of": "2026-07-17",
     "policy_impulse": "targeted_support",
     "transmission_channel": [
       "fiscal_or_structural",
@@ -129,15 +130,15 @@
     ],
     "staleness": {
       "per_source_days": {
-        "lpr": 24,
-        "rrr": 435,
+        "lpr": 25,
+        "rrr": 436,
         "fr007": 0,
-        "communiques": 79
+        "communiques": 80
       }
     }
   },
   "rotation": {
-    "as_of": "2026-07-16",
+    "as_of": "2026-07-17",
     "sector_phase_distribution": {
       "Bottoming": 39,
       "Topping": 7,
@@ -161,57 +162,57 @@
       "LAGGARD: Agriculture ranked #29/31 (-26.3%) — among the weakest this leg"
     ],
     "ths_heat": {
-      "as_of": "2026-07-16",
+      "as_of": "2026-07-17",
       "basket_count": 237,
-      "above_200d_pct": 58.6,
+      "above_200d_pct": 38.8,
       "hot_baskets": [
         {
-          "id": "ths_storage_chip",
-          "ret_60d": 0.3942
+          "id": "thsc308690",
+          "ret_60d": 0.2725
         },
         {
-          "id": "thsc308690",
-          "ret_60d": 0.3941
+          "id": "ths_storage_chip",
+          "ret_60d": 0.2581
         },
         {
           "id": "ths_consumer_elec",
-          "ret_60d": 0.3599
-        },
-        {
-          "id": "thsc301085",
-          "ret_60d": 0.2837
+          "ret_60d": 0.2118
         },
         {
           "id": "thsc308582",
-          "ret_60d": 0.2776
+          "ret_60d": 0.1744
+        },
+        {
+          "id": "thsc307816",
+          "ret_60d": 0.1394
         }
       ],
       "cold_baskets": [
         {
-          "id": "thsc308869",
-          "ret_60d": -0.2538
-        },
-        {
-          "id": "thsc309128",
-          "ret_60d": -0.2559
-        },
-        {
           "id": "thsc301104",
-          "ret_60d": -0.2718
+          "ret_60d": -0.2877
+        },
+        {
+          "id": "thsc308869",
+          "ret_60d": -0.2884
         },
         {
           "id": "ths_prepared_food",
-          "ret_60d": -0.2756
+          "ret_60d": -0.3217
+        },
+        {
+          "id": "thsc309128",
+          "ret_60d": -0.3324
         },
         {
           "id": "thsc300180",
-          "ret_60d": -0.2932
+          "ret_60d": -0.3366
         }
       ]
     }
   },
   "macro": {
-    "as_of": "2026-07-16",
+    "as_of": "2026-07-17",
     "quad": "Q3",
     "quad_name": "Stagflation",
     "liquidity_overlay": "contracting",
@@ -230,73 +231,73 @@
     ],
     "conditions": {
       "roro": {
-        "roro": -0.042,
-        "roro_raw": -0.042,
+        "roro": -0.256,
+        "roro_raw": -0.261,
         "roro_state": "neutral",
-        "china_roro_copper_gold": 2.707,
-        "china_roro_breadth": -0.421,
-        "china_roro_southbound": -0.404,
-        "china_roro_m1_m2": -0.817,
-        "china_roro_turnover": 0.238,
-        "china_roro_qvix": -0.636,
-        "china_roro_usdcnh": -0.51,
-        "china_roro_margin": -0.492,
+        "china_roro_copper_gold": 2.578,
+        "china_roro_breadth": -0.414,
+        "china_roro_southbound": -0.401,
+        "china_roro_m1_m2": -0.813,
+        "china_roro_turnover": -0.077,
+        "china_roro_qvix": -1.46,
+        "china_roro_usdcnh": -1.008,
+        "china_roro_margin": -0.495,
         "china_roro_ah_premium": null,
         "legs": [
           {
             "key": "copper_gold",
             "name_en": "Copper / Gold",
             "name_zh": "铜／金 比",
-            "value": 2.707,
+            "value": 2.578,
             "lean": "risk-on"
           },
           {
             "key": "breadth",
             "name_en": "Breadth (% > 50d)",
             "name_zh": "市场宽度（>50日）",
-            "value": -0.421,
+            "value": -0.414,
             "lean": "risk-off"
           },
           {
             "key": "southbound",
             "name_en": "Southbound smart-money",
             "name_zh": "南向资金",
-            "value": -0.404,
+            "value": -0.401,
             "lean": "risk-off"
           },
           {
             "key": "m1_m2",
             "name_en": "M1−M2 scissors",
             "name_zh": "M1−M2 剪刀差",
-            "value": -0.817,
+            "value": -0.813,
             "lean": "risk-off"
           },
           {
             "key": "turnover",
             "name_en": "Turnover band",
             "name_zh": "成交活跃度",
-            "value": 0.238,
-            "lean": "risk-on"
+            "value": -0.077,
+            "lean": "risk-off"
           },
           {
             "key": "qvix",
             "name_en": "QVIX fear (300)",
             "name_zh": "QVIX 恐慌（300）",
-            "value": -0.636,
+            "value": -1.46,
             "lean": "risk-off"
           },
           {
             "key": "usdcnh",
             "name_en": "Offshore yuan (20d)",
             "name_zh": "离岸人民币（20日）",
-            "value": -0.51,
+            "value": -1.008,
             "lean": "risk-off"
           },
           {
             "key": "margin",
             "name_en": "Margin froth",
             "name_zh": "融资拥挤度",
-            "value": -0.492,
+            "value": -0.495,
             "lean": "risk-off"
           }
         ]
@@ -374,7 +375,7 @@
         "note_zh": "已用20年A股前瞻数据校准：无前瞻回撤优势（A股均值回归 —— 高读数偏平/逆向）；区间为历史分位锚定。描述性背景，从不计入评分。"
       },
       "drawdown_risk": {
-        "score": 62.1,
+        "score": 66.3,
         "band": "elevated",
         "uncalibrated": false,
         "calibrated": true,
@@ -389,32 +390,32 @@
   },
   "external": {
     "yield_curve": {
-      "as_of": "2026-07-15",
+      "as_of": "2026-07-16",
       "staleness_days": 1,
-      "cn_10y": 1.7406,
-      "cn_2y": 1.271,
-      "cn_slope_10_2": 0.4696,
-      "cn_us_10y_spread": -2.8094
+      "cn_10y": 1.7437,
+      "cn_2y": 1.2706,
+      "cn_slope_10_2": 0.4731000000000001,
+      "cn_us_10y_spread": -2.8263000000000003
     },
     "cgb_curve": {
-      "as_of": "2026-07-15",
+      "as_of": "2026-07-16",
       "staleness_days": 1,
-      "m3": 1.08,
-      "y1": 1.1197,
+      "m3": 1.0998,
+      "y1": 1.1297,
       "y5": 1.4426,
-      "y10": 1.7406,
-      "y30": 2.247,
-      "slope_10y_3m": 0.6606
+      "y10": 1.7437,
+      "y30": 2.2515,
+      "slope_10y_3m": 0.6439
     },
     "usdcnh": {
-      "quote": 6.74,
-      "chg_pct": 0.3,
-      "as_of": "Jul 16, 2026"
+      "quote": 6.7505,
+      "chg_pct": 0.4,
+      "as_of": "Jul 17, 2026"
     },
     "dxy": null
   },
   "allocation": {
-    "as_of": "2026-07-16",
+    "as_of": "2026-07-17",
     "variant": "balanced",
     "label_en": "Balanced",
     "label_zh": "均衡",
@@ -429,14 +430,14 @@
     "macro_confirming: inflation_ppi_direction",
     "policy: impulse=targeted_support channels=['fiscal_or_structural', 'liquidity']",
     "participation: regime=dormant who_controls=mixed risk=low",
-    "participation_evidence: turnover_z20=-0.83",
-    "participation_evidence: fin_pct_float=2.83%",
+    "participation_evidence: turnover_z20=-1.79",
+    "participation_evidence: fin_pct_float=2.86%",
     "phase: POLICY_PUT confidence=0.75",
     "phase_evidence: turnover_z20_null",
-    "phase_evidence: participation_regime_nan"
+    "phase_evidence: qvix_z_elevated (1.98)"
   ],
   "contradictions": [
-    "microstructure_chase_vs_participation: 6 names carry chase_veto while participation.regime='dormant' (theme-level chase pressure in a low-participation tape — theme breadth may be narrow)"
+    "microstructure_chase_vs_participation: 1 names carry chase_veto while participation.regime='dormant' (theme-level chase pressure in a low-participation tape — theme breadth may be narrow)"
   ],
   "falsifiers": [
     {
@@ -456,10 +457,9 @@
     }
   ],
   "data_gaps": [
-    "participation: zt_breadth:null on 2026-07-09",
-    "participation: etf_share_chg:null on 2026-07-09",
+    "participation: zt_breadth:null on 2026-07-16",
     "participation: northbound:DEAD post-2024-08-16 SLF-050",
-    "participation: snapshot_staleness:published row 2026-07-09 is 6d behind tape tail 2026-07-15; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag",
+    "participation: snapshot_staleness:published row 2026-07-16 is 1d behind tape tail 2026-07-17; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag",
     "external: DXY not in current forex/latest.json (no dedicated store)"
   ]
 }

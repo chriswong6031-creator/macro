@@ -1,38 +1,38 @@
 {
   "display_only": true,
-  "hk_session_date": "2026-07-16",
+  "hk_session_date": "2026-07-17",
   "adr_date": "2026-07-16",
-  "expected_hk_session": "2026-07-16",
+  "expected_hk_session": "2026-07-17",
   "freshness_verdict": "ok",
   "adr_freshness": {
-    "PDD": {
+    "KWEB": {
       "asof": "2026-07-16",
-      "lag_days": 0,
+      "lag_days": 1,
       "state": "fresh"
     },
     "FXI": {
       "asof": "2026-07-16",
-      "lag_days": 0,
+      "lag_days": 1,
       "state": "fresh"
     },
-    "KWEB": {
+    "PDD": {
       "asof": "2026-07-16",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "JD": {
-      "asof": "2026-07-16",
-      "lag_days": 0,
+      "lag_days": 1,
       "state": "fresh"
     },
     "BABA": {
       "asof": "2026-07-16",
-      "lag_days": 0,
+      "lag_days": 1,
+      "state": "fresh"
+    },
+    "JD": {
+      "asof": "2026-07-16",
+      "lag_days": 1,
       "state": "fresh"
     },
     "BIDU": {
       "asof": "2026-07-16",
-      "lag_days": 0,
+      "lag_days": 1,
       "state": "fresh"
     }
   },
@@ -52,7 +52,7 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-16",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       }
     },
@@ -71,7 +71,7 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-16",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       }
     },
@@ -90,7 +90,7 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-16",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       }
     },
@@ -109,7 +109,7 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-16",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       }
     },
@@ -128,7 +128,7 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-16",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       }
     },
@@ -147,7 +147,7 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-16",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       }
     },
@@ -166,7 +166,7 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-16",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       }
     },
@@ -185,7 +185,7 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-16",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       }
     },
@@ -204,7 +204,7 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-07-16",
-        "lag_days": 0,
+        "lag_days": 1,
         "state": "fresh"
       }
     }

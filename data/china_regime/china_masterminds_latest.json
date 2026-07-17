@@ -1,17 +1,17 @@
 {
   "schema": "china_masterminds.latest.v2",
   "n": 3,
-  "built": "2026-07-16 09:51 UTC",
-  "asof": "2026-07-16",
+  "built": "2026-07-17 09:51 UTC",
+  "asof": "2026-07-17",
   "stale_after_min": 1440,
   "cards": [
     {
       "key": "cnmm_conservative",
       "name": "China Mastermind \u2014 Conservative",
-      "cagr": 6.92,
+      "cagr": 6.9,
       "sharpe": 1.33,
       "maxdd": -6.2,
-      "asof": "2026-07-16",
+      "asof": "2026-07-17",
       "gross_now": 0.52,
       "alloc": [
         {
@@ -43,10 +43,10 @@
     {
       "key": "cnmm_moderate",
       "name": "China Mastermind \u2014 Moderate",
-      "cagr": 9.96,
+      "cagr": 9.93,
       "sharpe": 1.15,
       "maxdd": -12.1,
-      "asof": "2026-07-16",
+      "asof": "2026-07-17",
       "gross_now": 0.96,
       "alloc": [
         {
@@ -78,10 +78,10 @@
     {
       "key": "cnmm_aggressive",
       "name": "China Mastermind \u2014 Aggressive",
-      "cagr": 14.02,
+      "cagr": 13.97,
       "sharpe": 1.08,
       "maxdd": -22.3,
-      "asof": "2026-07-16",
+      "asof": "2026-07-17",
       "gross_now": 1.74,
       "alloc": [
         {

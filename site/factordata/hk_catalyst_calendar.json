@@ -1,7 +1,35 @@
 {
-  "as_of": "2026-07-16",
+  "as_of": "2026-07-17",
   "horizon_days": 45,
   "display_only": true,
-  "upcoming": [],
-  "imminent": null
+  "upcoming": [
+    {
+      "type": "MSCI_REVIEW",
+      "name_en": "MSCI Index Review \u2014 Aug semi-annual 2026",
+      "name_zh": "MSCI\u6307\u6570\u68c0\u8ba8 \u2014 2026\u5e748\u6708\uff08semi-annual\uff09",
+      "announce_date": "2026-08-03",
+      "effective_date": "2026-08-31",
+      "scope": "MSCI EM / China A-Inclusion / HK indexes",
+      "source_note": "rule-computed: effective = last business day of Aug 2026; verify at msci.com",
+      "provisional": true,
+      "display_only": true,
+      "date": "2026-08-31",
+      "days_until": 45,
+      "imminent": false,
+      "dow": "Mon",
+      "dow_zh": "\u5468\u4e00",
+      "md": "Aug 31",
+      "md_zh": "8\u670831\u65e5"
+    }
+  ],
+  "imminent": {
+    "en": "Next catalyst: MSCI Index Review \u2014 Aug semi-annual 2026 in 45 days (Aug 31) [provisional].",
+    "zh": "\u4e0b\u4e00\u7ed3\u6784\u6027\u50ac\u5316\uff1aMSCI\u6307\u6570\u68c0\u8ba8 \u2014 2026\u5e748\u6708\uff08semi-annual\uff0945\u5929\u540e\uff088\u670831\u65e5\uff09 [provisional]\u3002",
+    "type": "MSCI_REVIEW",
+    "date": "2026-08-31",
+    "days_until": 45,
+    "imminent": false,
+    "provisional": true,
+    "display_only": true
+  }
 }

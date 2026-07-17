@@ -1,8 +1,8 @@
 {
   "display_only": true,
   "organ": "hk_narrative",
-  "as_of": "2026-07-16",
-  "generated_utc": "2026-07-17T06:23:35+00:00",
+  "as_of": "2026-07-17",
+  "generated_utc": "2026-07-17T09:51:17+00:00",
   "freshness": "degraded",
   "entities": [
     {
@@ -88,12 +88,12 @@
       "ticker": "1024.HK",
       "name_en": "Kuaishou",
       "name_zh": "\u5feb\u624b",
-      "attention_shock_z": 2.122,
+      "attention_shock_z": 1.611,
       "tone_pctile": null,
-      "narrative_state": "attention_spike",
+      "narrative_state": "quiet",
       "young": false,
       "n_obs": 86,
-      "as_of_date": "2026-07-16",
+      "as_of_date": "2026-07-17",
       "no_data_reason": null
     },
     {

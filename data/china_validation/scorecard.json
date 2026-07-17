@@ -1,7 +1,7 @@
 {
   "schema": "china_validation.v1",
   "is_context_only": true,
-  "generated_utc": "2026-07-16T09:54:03.169443+00:00",
+  "generated_utc": "2026-07-17T09:54:18.902483+00:00",
   "fdr_alpha": 0.1,
   "horizons": [
     5,
@@ -15,18 +15,18 @@
       "status": "tested",
       "tier": "pending",
       "proven": false,
-      "n_obs": 7,
+      "n_obs": 8,
       "by_horizon": {
         "5": {
-          "mean_ic": 0.2283,
-          "ic_ir": 1.395,
-          "t_hac": null,
-          "p_hac": null,
-          "hit": 0.857,
-          "n": 7,
+          "mean_ic": 0.2406,
+          "ic_ir": 1.129,
+          "t_hac": 2.772,
+          "p_hac": 0.0056,
+          "hit": 0.75,
+          "n": 8,
           "incremental": {
-            "surviving_frac": 0.667,
-            "ic_delta": -0.0761
+            "surviving_frac": 0.716,
+            "ic_delta": -0.0684
           }
         },
         "10": {
@@ -35,7 +35,7 @@
           "t_hac": null,
           "p_hac": null,
           "hit": null,
-          "n": 1
+          "n": 2
         },
         "21": {
           "mean_ic": null,
@@ -66,236 +66,236 @@
       "status": "tested",
       "tier": "pending",
       "proven": false,
-      "n_obs": 266,
+      "n_obs": 267,
       "by_horizon": {
         "5": {
-          "mean_ic": 0.0026,
-          "ic_ir": 0.032,
-          "t_hac": 0.496,
-          "p_hac": 0.62,
-          "hit": 0.538,
-          "n": 266,
+          "mean_ic": 0.0031,
+          "ic_ir": 0.038,
+          "t_hac": 0.604,
+          "p_hac": 0.5458,
+          "hit": 0.539,
+          "n": 267,
           "incremental": {
-            "surviving_frac": 1.308,
-            "ic_delta": 0.0008
+            "surviving_frac": 1.129,
+            "ic_delta": 0.0004
           }
         },
         "10": {
-          "mean_ic": 0.0023,
-          "ic_ir": 0.029,
-          "t_hac": 0.416,
-          "p_hac": 0.6778,
-          "hit": 0.54,
-          "n": 261,
+          "mean_ic": 0.0026,
+          "ic_ir": 0.033,
+          "t_hac": 0.469,
+          "p_hac": 0.6392,
+          "hit": 0.542,
+          "n": 262,
           "incremental": {
-            "surviving_frac": 0.826,
-            "ic_delta": -0.0004
+            "surviving_frac": 0.808,
+            "ic_delta": -0.0005
           }
         },
         "21": {
-          "mean_ic": 0.0071,
-          "ic_ir": 0.094,
-          "t_hac": 1.233,
-          "p_hac": 0.2175,
-          "hit": 0.532,
-          "n": 250,
+          "mean_ic": 0.0067,
+          "ic_ir": 0.088,
+          "t_hac": 1.151,
+          "p_hac": 0.2497,
+          "hit": 0.53,
+          "n": 251,
           "incremental": {
-            "surviving_frac": 0.282,
-            "ic_delta": -0.0051
+            "surviving_frac": 0.299,
+            "ic_delta": -0.0047
           }
         },
         "63": {
-          "mean_ic": 0.0171,
-          "ic_ir": 0.228,
-          "t_hac": 2.843,
-          "p_hac": 0.0045,
-          "hit": 0.62,
-          "n": 208,
+          "mean_ic": 0.0173,
+          "ic_ir": 0.232,
+          "t_hac": 2.88,
+          "p_hac": 0.004,
+          "hit": 0.622,
+          "n": 209,
           "incremental": {
-            "surviving_frac": 0.62,
-            "ic_delta": -0.0065
+            "surviving_frac": 0.618,
+            "ic_delta": -0.0066
           }
         }
       },
       "sign_expected": 1,
       "sign_ok": true,
-      "t_hac": 1.233,
-      "mean_ic": 0.0071,
+      "t_hac": 1.151,
+      "mean_ic": 0.0067,
       "is_context_only": true,
-      "q_fdr": 0.435
+      "q_fdr": 0.4994
     },
     "chips": {
       "family": "chips",
       "status": "validated",
       "tier": "confirmer",
       "proven": false,
-      "n_obs": 266,
+      "n_obs": 267,
       "by_horizon": {
         "5": {
-          "mean_ic": -0.0034,
-          "ic_ir": -0.025,
-          "t_hac": -0.237,
-          "p_hac": 0.8129,
-          "hit": 0.485,
-          "n": 266,
+          "mean_ic": -0.0033,
+          "ic_ir": -0.024,
+          "t_hac": -0.226,
+          "p_hac": 0.8213,
+          "hit": 0.487,
+          "n": 267,
           "incremental": {
-            "surviving_frac": -0.382,
-            "ic_delta": 0.0047
+            "surviving_frac": -0.455,
+            "ic_delta": 0.0048
           }
         },
         "10": {
-          "mean_ic": 0.0031,
-          "ic_ir": 0.023,
-          "t_hac": 0.192,
-          "p_hac": 0.8479,
-          "hit": 0.533,
-          "n": 261,
+          "mean_ic": 0.0029,
+          "ic_ir": 0.022,
+          "t_hac": 0.182,
+          "p_hac": 0.8552,
+          "hit": 0.531,
+          "n": 262,
           "incremental": {
-            "surviving_frac": 0.484,
-            "ic_delta": -0.0016
+            "surviving_frac": 0.552,
+            "ic_delta": -0.0013
           }
         },
         "21": {
-          "mean_ic": 0.0279,
-          "ic_ir": 0.242,
-          "t_hac": 1.86,
-          "p_hac": 0.0629,
-          "hit": 0.596,
-          "n": 250,
+          "mean_ic": 0.0259,
+          "ic_ir": 0.217,
+          "t_hac": 1.689,
+          "p_hac": 0.0911,
+          "hit": 0.598,
+          "n": 251,
           "incremental": {
-            "surviving_frac": 0.502,
-            "ic_delta": -0.0139
+            "surviving_frac": 0.49,
+            "ic_delta": -0.0132
           }
         },
         "63": {
-          "mean_ic": 0.0291,
-          "ic_ir": 0.349,
-          "t_hac": 2.777,
-          "p_hac": 0.0055,
-          "hit": 0.673,
-          "n": 208,
+          "mean_ic": 0.0292,
+          "ic_ir": 0.351,
+          "t_hac": 2.799,
+          "p_hac": 0.0051,
+          "hit": 0.675,
+          "n": 209,
           "incremental": {
-            "surviving_frac": 0.907,
-            "ic_delta": -0.0027
+            "surviving_frac": 0.897,
+            "ic_delta": -0.003
           }
         }
       },
       "sign_expected": -1,
       "sign_ok": false,
-      "t_hac": 1.86,
-      "mean_ic": 0.0279,
+      "t_hac": 1.689,
+      "mean_ic": 0.0259,
       "is_context_only": true,
-      "q_fdr": 0.2516
+      "q_fdr": 0.3644
     },
     "guidance": {
       "family": "guidance",
       "status": "tested",
       "tier": "pending",
       "proven": false,
-      "n_obs": 23,
+      "n_obs": 24,
       "by_horizon": {
         "5": {
-          "mean_ic": -0.0252,
-          "ic_ir": -0.099,
-          "t_hac": -0.93,
-          "p_hac": 0.3523,
-          "hit": 0.478,
-          "n": 23,
+          "mean_ic": -0.0364,
+          "ic_ir": -0.143,
+          "t_hac": -1.342,
+          "p_hac": 0.1795,
+          "hit": 0.458,
+          "n": 24,
           "incremental": {
-            "surviving_frac": -1.405,
-            "ic_delta": 0.0606
+            "surviving_frac": -1.228,
+            "ic_delta": 0.0811
           }
         },
         "10": {
-          "mean_ic": 0.0141,
-          "ic_ir": 0.063,
-          "t_hac": 0.3,
-          "p_hac": 0.7644,
+          "mean_ic": 0.0133,
+          "ic_ir": 0.06,
+          "t_hac": 0.284,
+          "p_hac": 0.7766,
           "hit": 0.5,
           "n": 20,
           "incremental": {
-            "surviving_frac": 6.624,
-            "ic_delta": 0.0793
+            "surviving_frac": 6.902,
+            "ic_delta": 0.0785
           }
         },
         "21": {
-          "mean_ic": 0.0156,
-          "ic_ir": 0.063,
-          "t_hac": 0.303,
-          "p_hac": 0.7617,
+          "mean_ic": 0.0151,
+          "ic_ir": 0.061,
+          "t_hac": 0.293,
+          "p_hac": 0.7692,
           "hit": 0.5,
           "n": 20,
           "incremental": {
-            "surviving_frac": 6.551,
+            "surviving_frac": 6.735,
             "ic_delta": 0.0866
           }
         },
         "63": {
-          "mean_ic": 0.0616,
-          "ic_ir": 0.262,
-          "t_hac": 1.118,
-          "p_hac": 0.2636,
-          "hit": 0.632,
-          "n": 19,
+          "mean_ic": 0.0608,
+          "ic_ir": 0.265,
+          "t_hac": 1.15,
+          "p_hac": 0.2502,
+          "hit": 0.65,
+          "n": 20,
           "incremental": {
-            "surviving_frac": 0.693,
-            "ic_delta": -0.0189
+            "surviving_frac": 0.714,
+            "ic_delta": -0.0174
           }
         }
       },
       "sign_expected": 1,
       "sign_ok": true,
-      "t_hac": 0.303,
-      "mean_ic": 0.0156,
+      "t_hac": 0.293,
+      "mean_ic": 0.0151,
       "is_context_only": true,
-      "q_fdr": 0.7617
+      "q_fdr": 0.7692
     },
     "margin": {
       "family": "margin",
       "status": "tested",
       "tier": "pending",
       "proven": false,
-      "n_obs": 3431,
+      "n_obs": 3432,
       "by_horizon": {
         "5": {
-          "mean_ic": 0.00136,
+          "mean_ic": 0.00134,
           "ic_ir": null,
-          "t_hac": 1.377,
-          "p_hac": 0.1684,
+          "t_hac": 1.36,
+          "p_hac": 0.1738,
           "hit": null,
-          "n": 3431
+          "n": 3432
         },
         "10": {
-          "mean_ic": 0.0022,
+          "mean_ic": 0.00218,
           "ic_ir": null,
-          "t_hac": 1.118,
-          "p_hac": 0.2637,
+          "t_hac": 1.107,
+          "p_hac": 0.2684,
           "hit": null,
-          "n": 3426
+          "n": 3427
         },
         "21": {
-          "mean_ic": 0.00384,
+          "mean_ic": 0.00381,
           "ic_ir": null,
-          "t_hac": 0.86,
-          "p_hac": 0.3898,
+          "t_hac": 0.855,
+          "p_hac": 0.3925,
           "hit": null,
-          "n": 3415
+          "n": 3416
         },
         "63": {
-          "mean_ic": 0.0154,
+          "mean_ic": 0.01539,
           "ic_ir": null,
-          "t_hac": 1.046,
-          "p_hac": 0.2957,
+          "t_hac": 1.045,
+          "p_hac": 0.2959,
           "hit": null,
-          "n": 3373
+          "n": 3374
         }
       },
       "sign_expected": -1,
       "sign_ok": false,
-      "t_hac": 0.86,
-      "mean_ic": 0.00384,
+      "t_hac": 0.855,
+      "mean_ic": 0.00381,
       "is_context_only": true,
-      "q_fdr": 0.5197
+      "q_fdr": 0.5233
     },
     "news_sentiment": {
       "family": "news_sentiment",

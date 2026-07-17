@@ -1,20 +1,20 @@
 {
   "schema": "china_intel.analogs.v1",
   "is_context_only": true,
-  "generated_utc": "2026-07-16T10:02:30Z",
-  "as_of": "2026-07-16",
+  "generated_utc": "2026-07-17T10:03:28Z",
+  "as_of": "2026-07-17",
   "coverage": {
     "start": "2006-03-30",
-    "end": "2026-07-16",
-    "n_candidate_days": 5296
+    "end": "2026-07-17",
+    "n_candidate_days": 5297
   },
   "query": {
-    "date": "2026-07-16",
+    "date": "2026-07-17",
     "quad": "Q3",
     "quad_name": "Stagflation",
     "liquidity": "contracting",
     "cycle": "mid",
-    "growth_z": -0.7343,
+    "growth_z": -0.7342,
     "inflation_z": 0.1977
   },
   "analogs": [
@@ -37,16 +37,16 @@
       }
     },
     {
-      "date": "2008-08-05",
+      "date": "2008-07-29",
       "distance": 0.0684,
       "quad": "Q3",
       "quad_name": "Stagflation",
       "liquidity": "contracting",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": -0.177685,
-        "h60": -0.4594,
-        "h120": -0.200771
+        "h20": -0.191562,
+        "h60": -0.475269,
+        "h120": -0.343658
       },
       "fwd_csi300": null
     },
@@ -124,7 +124,7 @@
     },
     {
       "date": "2024-08-07",
-      "distance": 0.4822,
+      "distance": 0.4823,
       "quad": "Q3",
       "quad_name": "Stagflation",
       "liquidity": "contracting",
@@ -177,24 +177,6 @@
       }
     },
     {
-      "date": "2016-05-27",
-      "distance": 1.004,
-      "quad": "Q2",
-      "quad_name": "Reflation",
-      "liquidity": "contracting",
-      "cycle": "mid",
-      "fwd_shcomp": {
-        "h20": 0.03794,
-        "h60": 0.089231,
-        "h120": 0.144716
-      },
-      "fwd_csi300": {
-        "h20": 0.030237,
-        "h60": 0.09999,
-        "h120": 0.157969
-      }
-    },
-    {
       "date": "2015-05-07",
       "distance": 1.004,
       "quad": "Q2",
@@ -210,6 +192,24 @@
         "h20": 0.134773,
         "h60": -0.161246,
         "h120": -0.199346
+      }
+    },
+    {
+      "date": "2016-05-27",
+      "distance": 1.004,
+      "quad": "Q2",
+      "quad_name": "Reflation",
+      "liquidity": "contracting",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.03794,
+        "h60": 0.089231,
+        "h120": 0.144716
+      },
+      "fwd_csi300": {
+        "h20": 0.030237,
+        "h60": 0.09999,
+        "h120": 0.157969
       }
     },
     {
