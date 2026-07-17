@@ -8,7 +8,7 @@
     "/Users/chriswong/actions-runner-1/_work/macro/macro/data/metabolism/dockets/cycle-2026-07-13-e159-site-china-standouts.json"
   ],
   "next_stage": "build",
-  "ts": "2026-07-16T11:54:47+00:00",
+  "ts": "2026-07-17T11:42:03+00:00",
   "stages": {
     "propose": {
       "status": "done",
@@ -18,12 +18,12 @@
     },
     "adjudicate_orchestrator": {
       "status": "noop_paused",
-      "finished_at": "2026-07-16T11:54:45+00:00",
+      "finished_at": "2026-07-17T11:42:00+00:00",
       "note": "preflight auth failed: claude -p ping exited 1: (no stderr)"
     },
     "adjudicate_adversary": {
       "status": "noop_paused",
-      "finished_at": "2026-07-16T11:54:47+00:00",
+      "finished_at": "2026-07-17T11:42:03+00:00",
       "note": "preflight auth failed: claude -p ping exited 1: (no stderr)"
     },
     "adjudicate_resolve": {
