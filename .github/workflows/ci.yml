@@ -169,6 +169,9 @@ on:
       - "templates/allocation.html.j2"
       - "tests/test_stance_matrix.py"
       - "tests/test_theme_scoring_conflicted.py"
+      # MLC-W4: histogram-fade leg in rollover_risk + cooling demotion.
+      - "engine/basket_score.py"
+      - "tests/test_basket_score_rollover_w4.py"
       # FL-D FC-R5: cohort flow chips on turn surfaces + cohort_flow.v1 forward ledger.
       - "engine/basket_turn_watch.py"
       - "templates/basket_detail.html.j2"
@@ -902,6 +905,7 @@ jobs:
           tests/test_leadership_board.py
           tests/test_stance_matrix.py
           tests/test_theme_scoring_conflicted.py
+          tests/test_basket_score_rollover_w4.py
           tests/test_index_momentum.py
           tests/test_cohort_flow_chips.py
           tests/test_statement_tape.py
