@@ -76,6 +76,11 @@ _LEDGER_REL = "data/metabolism/key_ledger.jsonl"
 _SCHEMA = "metabolism.key_ledger.v1"
 _USAGE_LEDGER_REL = "data/metabolism/key_usage.jsonl"
 _USAGE_SCHEMA = "metabolism.key_usage.v1"
+# Mastermind bot publishes its own key-pool ledger rows here (same schema).
+# This is a display-only join: rotation-relevant reads (is_cooling, window_load,
+# weekly_load, discover_present_keys) remain macro-only by design.
+# Cross-repo rotation coordination is an explicitly deferred follow-up.
+_MM_EVENTS_REL = "data/mastermind/key_events.jsonl"
 
 # The capability_ids this pool manages (in order).
 # Operator adds keys by setting CLAUDE_CODE_OAUTH_TOKEN_1.._7 as GH secrets
@@ -119,6 +124,42 @@ def _ledger_path(root: Path | None = None) -> Path:
 def _usage_ledger_path(root: Path | None = None) -> Path:
     base = root if root is not None else _repo_root()
     return base / _USAGE_LEDGER_REL
+
+
+def _mm_events_path(root: Path | None = None) -> Path:
+    base = root if root is not None else _repo_root()
+    return base / _MM_EVENTS_REL
+
+
+# ── Mastermind event reader ───────────────────────────────────────────────────
+
+def _read_mm_events(root: Path | None = None) -> list[dict[str, Any]]:
+    """Read Mastermind bot key-pool ledger rows (display-only join).
+
+    Mirrors _read_ledger: absent file -> [], corrupt lines skipped, NEVER raises.
+
+    SCOPE GUARD: this reader is ONLY for display aggregation in usage_snapshot().
+    Rotation-relevant reads (is_cooling, window_load, weekly_load,
+    discover_present_keys) remain macro-only by design.  Cross-repo rotation
+    coordination is an explicitly deferred follow-up.
+    """
+    try:
+        p = _mm_events_path(root)
+        if not p.exists():
+            return []
+        rows: list[dict[str, Any]] = []
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass  # corrupt row — skip gracefully
+        return rows
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool._read_mm_events: %s", exc)
+        return []
 
 
 # ── Manifest helpers ─────────────────────────────────────────────────────────
@@ -308,7 +349,8 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
         window_5h_est_tokens, weekly_est_tokens,
         window_5h_sessions, weekly_sessions,
         last_outcome, last_ts,
-        ratelimit_headers, headers_ts.
+        ratelimit_headers, headers_ts,
+        mm_sessions (count of Mastermind bot rows for this key in the last 7d).
 
     Covers POOL_CAPABILITY_IDS + "legacy".
     Returns [] on error (NEVER-RAISE).
@@ -320,6 +362,25 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
 
         all_rows = _read_ledger(root)
         usage_rows = _read_usage_ledger(root)
+
+        # Read Mastermind bot events and filter to known key_ids + correct schema
+        # (display-only join; rotation reads stay macro-only — see _read_mm_events)
+        _valid_key_ids: set[str] = set(POOL_CAPABILITY_IDS) | {"legacy"}
+        mm_rows = [
+            r for r in _read_mm_events(root)
+            if r.get("schema") == _SCHEMA
+            and r.get("key_id") in _valid_key_ids
+        ]
+
+        # Count mm_sessions per key_id in the last 7d
+        mm_sessions_per_key: dict[str, int] = {}
+        for row in mm_rows:
+            kid = row.get("key_id")
+            if not kid:
+                continue
+            ts = _parse_ts(row.get("ts", ""))
+            if ts is not None and ts >= week_cutoff:
+                mm_sessions_per_key[kid] = mm_sessions_per_key.get(kid, 0) + 1
 
         # Build per-key aggregates from the main ledger
         per_key: dict[str, dict[str, Any]] = {}
@@ -432,6 +493,7 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
                 "last_ts": agg.get("last_ts"),
                 "ratelimit_headers": lu.get("ratelimit_headers", {}),
                 "headers_ts": lu.get("headers_ts"),
+                "mm_sessions": mm_sessions_per_key.get(kid, 0),
             })
         return result
     except Exception as exc:  # noqa: BLE001

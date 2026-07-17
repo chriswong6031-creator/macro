@@ -1260,6 +1260,7 @@ RENDER.cost = async () => {
       <th>Key ID</th><th>Enabled</th><th>Cooling</th><th>Reset hint</th>
       <th class="r">5h est tokens</th><th class="r">5h sessions</th>
       <th class="r">7d est tokens</th><th class="r">7d sessions</th>
+      <th class="r">MM 7d</th>
       <th>Last outcome</th><th>Reported rate-limit headers</th>
     </tr></thead><tbody>
     ${rows.map(k => {
@@ -1279,12 +1280,13 @@ RENDER.cost = async () => {
         <td class="r">${k.window_5h_sessions != null ? k.window_5h_sessions : "—"}</td>
         <td class="r">${fmtTok(k.weekly_est_tokens)} <span class="muted sub">est.</span></td>
         <td class="r">${k.weekly_sessions != null ? k.weekly_sessions : "—"}</td>
+        <td class="r">${(k.mm_sessions || 0) > 0 ? k.mm_sessions : `<span class="muted sub">0</span>`}</td>
         <td>${k.last_outcome ? `<span class="statpill ${k.last_outcome === "ok" ? "s-ok" : "s-bad"}">${esc(k.last_outcome)}</span>` : `<span class="muted sub">—</span>`}</td>
         <td style="max-width:320px">${headers}</td>
       </tr>`;
     }).join("")}
     </tbody></table>
-    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = Anthropic response header value</div>`;
+    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = Anthropic response header value · MM 7d = Mastermind bot sessions in last 7 days</div>`;
   })();
 };
 
