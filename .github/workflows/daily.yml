@@ -1158,6 +1158,15 @@ jobs:
             fi
           done
           exit 0
+      - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
+        # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
+        # named US thematic baskets. Ported from China #2634. Reads sector_cycles
+        # forward_log.parquet (written by build_sector_cycles in the parallel band above) so
+        # it MUST be a serial step AFTER the band wait barrier.  Writes
+        # data/us_sector_rotation/latest.json, which build_sector_central reads immediately
+        # after to re-order the conviction board by fast-rotation rank.
+        # Additive (always exits 0 — never breaks the deploy).
+        run: python -m scripts.build_us_sector_rotation || echo "::warning::build_us_sector_rotation non-fatal failure"
       - name: US sector central intelligence (build_sector_central)
         # The US Sector Central hub fuses the cycle spine + baskets + narrative rotation + heatmap.
         # It reads baskets.json (cl_baskets) + sector_cycles_data.js (cl_misc → sectorcyc) + the
