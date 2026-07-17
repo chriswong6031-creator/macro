@@ -145,9 +145,13 @@ def _lifespan_rows(quad: pd.Series) -> list[dict]:
     rows = []
     for q in ("Q1", "Q2", "Q3", "Q4"):
         nxt = trans["matrix"].get(q, {})
-        rows.append({"name": QUAD_SHORT[q], "n": trans["n_by_quad"].get(q, "—"),
-                     "median": trans["median_days"].get(q, "—"),
-                     "next": next_quads_line(nxt), "next_zh": next_quads_line(nxt, zh=True)})
+        rows.append({
+            "quad": QUAD_SHORT[q],           # display name (template reads row.quad)
+            "n": trans["n_by_quad"].get(q, "—"),
+            "median_days": trans["median_days"].get(q, "—"),  # template reads row.median_days
+            "next": next_quads_line(nxt),
+            "next_zh": next_quads_line(nxt, zh=True),
+        })
     return rows
 
 

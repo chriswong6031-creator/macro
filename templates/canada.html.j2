@@ -293,8 +293,9 @@
   body.page-canada .ms-green .cax-regime-pill .dot{background:var(--up)}
   body.page-canada .ms-yellow .cax-regime-pill{background:rgba(224,160,48,.10)}
   body.page-canada .ms-yellow .cax-regime-pill .dot{background:var(--warn)}
-  body.page-canada .cax-gauge-row{display:flex;gap:18px;align-items:center;margin-top:10px}
-  body.page-canada .cax-gauge-svg{flex:0 0 110px;width:110px;height:72px;overflow:visible}
+  body.page-canada .cax-gauge-row{display:flex;gap:20px;align-items:center;margin-bottom:16px;margin-top:10px}
+  body.page-canada .cax-gauge-svg{flex:0 0 192px;width:192px;height:120px;overflow:visible;display:block}
+  @media(max-width:560px){body.page-canada .cax-gauge-svg{flex:0 0 90px;width:90px;height:58px}}
   body.page-canada .ms-green .cax-gauge-fill{stroke:var(--up)}
   body.page-canada .ms-yellow .cax-gauge-fill{stroke:var(--warn)}
   body.page-canada .ms-red .cax-gauge-fill{stroke:var(--down)}
@@ -308,15 +309,17 @@
   body.page-canada .ms-red .cax-needle-hub{stroke:var(--down)}
   body.page-canada .ms-red .cax-needle-core,body.page-canada .ms-red .cax-needle-tip{fill:var(--down)}
   body.page-canada .ms-red .cax-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
-  body.page-canada .cax-score-line{display:flex;align-items:baseline;gap:10px}
-  body.page-canada .cax-big-score{font-size:52px;font-weight:750;line-height:1;color:var(--warn)}
-  body.page-canada .ms-green .cax-big-score{color:var(--up)}
-  body.page-canada .ms-red .cax-big-score{color:var(--down)}
-  body.page-canada .cax-verdict{font-size:22px;font-weight:700}
+  body.page-canada .cax-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  body.page-canada .cax-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
+  body.page-canada .ms-green .cax-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
+  body.page-canada .ms-red .cax-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  @media(max-width:560px){body.page-canada .cax-big-score{font-size:34px;text-shadow:none}}
+  body.page-canada .cax-verdict{font-size:19px;font-weight:700;white-space:nowrap}
+  @media(max-width:560px){body.page-canada .cax-verdict{font-size:13px}}
   body.page-canada .cax-verdict .arr{color:var(--warn)}
   body.page-canada .ms-green .cax-verdict .arr{color:var(--up)}
   body.page-canada .ms-red .cax-verdict .arr{color:var(--down)}
-  body.page-canada .cax-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--warn);margin-top:2px}
+  body.page-canada .cax-sub-line{font-size:11px;font-weight:600;letter-spacing:.4px;color:var(--warn);margin-top:3px}
   body.page-canada .ms-green .cax-sub-line{color:var(--up)}
   body.page-canada .ms-red .cax-sub-line{color:var(--down)}
   body.page-canada .cax-sub-line .cax-sub-g,body.page-canada .cax-sub-line .cax-sub-r{display:none}
@@ -495,6 +498,31 @@
   [data-theme="light"] body.page-canada .cax-chip.hot{color:#b4232a}
   [data-theme="light"] body.page-canada .cax-chip.turn{color:#1f7a44}
   [data-theme="light"] body.page-canada .cax-tkr-btn{color:#2456a8}
+  /* ── Aurora backdrop (state-keyed ambient glow, fixed behind all content) ── */
+  .cax-aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .cax-aurora::before{content:'';position:absolute;width:900px;height:700px;top:-200px;left:-150px;filter:blur(90px);background:radial-gradient(ellipse,rgba(34,217,122,.12) 0%,transparent 70%)}
+  .cax-aurora::after{content:'';position:absolute;width:700px;height:600px;bottom:-100px;right:-100px;filter:blur(90px);background:radial-gradient(ellipse,rgba(99,102,241,.10) 0%,transparent 70%)}
+  .cax-aurora .cax-a3{position:absolute;width:600px;height:500px;top:40%;left:50%;transform:translate(-50%,-50%);filter:blur(90px);background:radial-gradient(ellipse,rgba(34,217,122,.07) 0%,transparent 70%)}
+  .cax-aurora .cax-a4{position:absolute;width:800px;height:600px;bottom:-150px;left:20%;filter:blur(90px);background:radial-gradient(ellipse,rgba(99,102,241,.08) 0%,transparent 70%)}
+  /* state tints */
+  .cax-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(245,158,11,.10) 0%,transparent 70%)}
+  .cax-aurora.au-yellow .cax-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%)}
+  .cax-aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%)}
+  .cax-aurora.au-red .cax-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%)}
+  /* light mode — much fainter */
+  [data-theme="light"] .cax-aurora::before{background:radial-gradient(ellipse,rgba(34,217,122,.05) 0%,transparent 70%)}
+  [data-theme="light"] .cax-aurora::after{background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%)}
+  [data-theme="light"] .cax-aurora .cax-a3{background:radial-gradient(ellipse,rgba(34,217,122,.03) 0%,transparent 70%)}
+  [data-theme="light"] .cax-aurora .cax-a4{background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%)}
+  [data-theme="light"] .cax-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%)}
+  [data-theme="light"] .cax-aurora.au-yellow .cax-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%)}
+  [data-theme="light"] .cax-aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%)}
+  [data-theme="light"] .cax-aurora.au-red .cax-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%)}
+  /* ensure page content sits above the aurora z-layer */
+  body.page-canada .cax-wrap{position:relative;z-index:1}
+  body.page-canada .site-nav{position:relative;z-index:2}
+  body.page-canada .panel{position:relative;z-index:1}
+  @media(prefers-reduced-motion:reduce){.cax-aurora,.cax-aurora::before,.cax-aurora::after,.cax-aurora .cax-a3,.cax-aurora .cax-a4{animation:none;transition:none}}
 {%- endif %}{# /mode != stocks — MX5 CSS #}
 
 {% if mode == 'stocks' %}
@@ -662,10 +690,13 @@
 {% set ov = overlay or {} %}
 {% set cp = coupling or {} %}
 
+{# aurora: state class baked from market_state color (yellow → au-yellow, red → au-red, green = default) #}
+<div class="cax-aurora{{ ' au-yellow' if _ms_color == 'yellow' else (' au-red' if _ms_color == 'red' else '') }}" aria-hidden="true"><div class="cax-a3"></div><div class="cax-a4"></div></div>
+
 <div class="cax-wrap">
 
 <!-- =============== HERO =============== -->
-<div class="cax-card cax-hero{{ ' cax-hero-solo' if not (ms_history and ms_history|length >= 2) else '' }} ms-front ms ms-{{ _ms_color }}" id="ms-board" style="padding:0">
+<div class="cax-card cax-hero{{ ' cax-hero-solo' if not ms_history else '' }} ms-front ms ms-{{ _ms_color }}" id="ms-board" style="padding:0">
   <div class="cax-hero-left">
     {# quad zh from the site's canonical map (_regime_prob_panel idiom) — the vm
        carries no quad_name_zh; never render EN into the zh span. #}
@@ -765,7 +796,7 @@
       <text x="536" y="222" font-size="9" fill="var(--muted)" text-anchor="end">{{ _pts[-1].date if _pts[-1] else '' }}</text>
     </svg>
     {% else %}
-    <div style="height:232px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)">{{ t('Building score history…','评分历史积累中…') }}</div>
+    <div style="height:232px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)">{{ t('Building the trend view — ' ~ (ms_history|length if ms_history else 0) ~ ' of 11 sessions logged. Fills in nightly.','趋势图积累中 — 已记录 ' ~ (ms_history|length if ms_history else 0) ~ '/11 个交易日，每晚更新。') }}</div>
     {% endif %}
   </div>
 </div>
@@ -797,37 +828,42 @@
     {% if _tf.cad is none and ('CAD' in _lab) %}{% set _tf.cad = f %}{% endif %}
     {% if _tf.oil is none and ('oil' in _lab|lower or 'crude' in _lab|lower or 'energy' in _lab|lower) %}{% set _tf.oil = f %}{% endif %}
   {% endfor %}
-  {# S&P 500 (US context via overlay) #}
+  {# S&P 500 (US context via overlay) — pair.tsx_spx has TSX/SPX level #}
   {% set _spy_f = _tf.spy %}
+  {% set _pr = pair or {} %}
   <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
     <div class="sym">SPY</div><div class="nm">{{ t('S&P 500','标普500') }}</div>
     {% if _spy_f is not none %}
-    <div class="px" style="font-size:14px">{{ '%+.2f'|format(_spy_f.z) }}σ</div>
-    <div class="chg {{ 'up' if _spy_f.risk == 'on' else ('dn' if _spy_f.risk == 'off' else '') }}">{{ t({'on':'Risk-on','off':'Risk-off','neutral':'Neutral'}.get(_spy_f.risk or '', '—'), {'on':'偏多','off':'偏空','neutral':'中性'}.get(_spy_f.risk or '', '—')) }}</div>
+    <div class="px {{ 'up' if _spy_f.risk == 'on' else ('dn' if _spy_f.risk == 'off' else '') }}">{{ t({'on':'Risk-on','off':'Risk-off','neutral':'Neutral'}.get(_spy_f.risk or '', '—'), {'on':'偏多','off':'偏空','neutral':'中性'}.get(_spy_f.risk or '', '—')) }}</div>
+    <div class="chg" style="color:var(--muted)" data-tip-en="{{ '%+.2f'|format(_spy_f.z) }}σ vs 1y range" data-tip-zh="较1年区间 {{ '%+.2f'|format(_spy_f.z) }}σ">{{ t('US backdrop','美股背景') }}</div>
     {% else %}
     <div class="px" style="color:var(--muted)">—</div>
-    <div class="chg" style="color:var(--muted)">{{ t('US context','美股背景') }}</div>
+    <div class="chg" style="color:var(--muted)">{{ t('US backdrop','美股背景') }}</div>
     {% endif %}
   </div>
-  {# USDCAD #}
+  {# USDCAD — use pair.usdcad.level for actual FX rate #}
   {% set _usdcad_f = _tf.cad %}
+  {% set _usdcad_pair = _pr.get('usdcad') %}
   <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
-    <div class="sym">USDCAD</div><div class="nm">{{ t('LOONIE','加元') }}</div>
-    {% if _usdcad_f is not none %}
-    <div class="px" style="font-size:14px">{{ '%+.2f'|format(_usdcad_f.z) }}σ</div>
-    <div class="chg {{ 'dn' if _usdcad_f.risk == 'on' else ('up' if _usdcad_f.risk == 'off' else '') }}">{{ t('CAD ' + ('firm' if _usdcad_f.risk == 'on' else ('soft' if _usdcad_f.risk == 'off' else 'flat')), '加元' + ('走强' if _usdcad_f.risk == 'on' else ('走弱' if _usdcad_f.risk == 'off' else '平稳'))) }}</div>
+    <div class="sym">USD/CAD</div><div class="nm">{{ t('LOONIE','加元') }}</div>
+    {% if _usdcad_pair and _usdcad_pair.level %}
+    <div class="px">{{ '%.4f'|format(_usdcad_pair.level) }}</div>
+    <div class="chg {{ 'dn' if (_usdcad_pair.chg_20d_pct or 0) > 0 else 'up' }}">CAD {{ t('firm','走强') if (_usdcad_pair.chg_20d_pct or 0) < 0 else t('soft','走弱') }} <span class="cax-sub">{{ '%+.1f'|format(_usdcad_pair.chg_20d_pct) }}%</span></div>
+    {% elif _usdcad_f is not none %}
+    <div class="px {{ 'up' if _usdcad_f.risk == 'on' else ('dn' if _usdcad_f.risk == 'off' else '') }}">{{ t('CAD ' + ('firm' if _usdcad_f.risk == 'on' else ('soft' if _usdcad_f.risk == 'off' else 'flat')), '加元' + ('走强' if _usdcad_f.risk == 'on' else ('走弱' if _usdcad_f.risk == 'off' else '平稳'))) }}</div>
+    <div class="chg" style="color:var(--muted)" data-tip-en="{{ '%+.2f'|format(_usdcad_f.z) }}σ" data-tip-zh="{{ '%+.2f'|format(_usdcad_f.z) }}σ">{{ t('FX context','汇率背景') }}</div>
     {% else %}
     <div class="px" style="color:var(--muted)">—</div>
     <div class="chg" style="color:var(--muted)">{{ t('FX context','汇率背景') }}</div>
     {% endif %}
   </div>
-  {# Crude / Energy #}
+  {# Crude / Energy — overlay z-score with plain word stance #}
   {% set _oil_f = _tf.oil %}
   <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
-    <div class="sym">XEG / OIL</div><div class="nm">{{ t('CRUDE / ENERGY','原油/能源') }}</div>
+    <div class="sym">XEG / WTI</div><div class="nm">{{ t('CRUDE / ENERGY','原油/能源') }}</div>
     {% if _oil_f is not none %}
-    <div class="px" style="font-size:14px">{{ '%+.2f'|format(_oil_f.z) }}σ</div>
-    <div class="chg {{ 'up' if _oil_f.risk == 'on' else ('dn' if _oil_f.risk == 'off' else '') }}">{{ t({'on':'Supportive','off':'Headwind','neutral':'Neutral'}.get(_oil_f.risk or '', '—'), {'on':'利多','off':'利空','neutral':'中性'}.get(_oil_f.risk or '', '—')) }}</div>
+    <div class="px {{ 'up' if _oil_f.risk == 'on' else ('dn' if _oil_f.risk == 'off' else '') }}">{{ t({'on':'Supportive','off':'Headwind','neutral':'Neutral'}.get(_oil_f.risk or '', '—'), {'on':'利多','off':'利空','neutral':'中性'}.get(_oil_f.risk or '', '—')) }}</div>
+    <div class="chg" style="color:var(--muted)" data-tip-en="{{ '%+.2f'|format(_oil_f.z) }}σ vs 1y range" data-tip-zh="较1年区间 {{ '%+.2f'|format(_oil_f.z) }}σ">{{ t('Commodity context','商品背景') }}</div>
     {% else %}
     <div class="px" style="color:var(--muted)">—</div>
     <div class="chg" style="color:var(--muted)">{{ t('Commodity context','商品背景') }}</div>
@@ -939,9 +975,16 @@
     <div class="cax-heat">
       {% for s in (sectors[:12] if sectors else []) %}
       {% set _tone = 'c' if s.dir == 'down' else ('h2' if s.dir == 'caution' else ('h3' if s.dir == 'up' else 'n')) %}
-      <i class="{{ _tone }}" title="{{ s.ticker }}"></i>
+      <i class="{{ _tone }}" data-tip-en="{{ s.name }}" data-tip-zh="{{ s.name }}"></i>
       {% endfor %}
     </div>
+    {# Stance: count by direction for a "so what" answer (Law 1) #}
+    {% if sectors %}
+    {% set _ns_up = (sectors | selectattr('dir', 'equalto', 'up') | list | length) %}
+    {% set _ns_caution = (sectors | selectattr('dir', 'equalto', 'caution') | list | length) %}
+    {% set _ns_dn = (sectors | selectattr('dir', 'equalto', 'down') | list | length) %}
+    <div class="cax-foot"><span class="cax-stword {{ 'ok' if _ns_up > _ns_dn else ('bad' if _ns_dn > _ns_up else 'warn') }}">{% if _ns_up > _ns_dn %}{{ t('More rising than falling — lean long.','上升多于下降 — 偏多布局。') }}{% elif _ns_dn > _ns_up %}{{ t('More falling than rising — stay cautious.','下降多于上升 — 保持谨慎。') }}{% else %}{{ t('Balanced — watch, don\'t chase.','平衡 — 观察，勿追。') }}{% endif %}</span></div>
+    {% endif %}
   </div>
 </div>
 
@@ -970,7 +1013,9 @@
     <div class="cax-kv"><span class="k">{{ t('GoC−UST 10y','加债−美债 10y') }}</span><span class="v">{{ '%+.2f'|format(cp.goc_minus_ust_10y) }}</span></div>
     {% endif %}
     <div class="cax-kv"><span class="k">{{ t('BoC stance','央行立场') }}</span><span class="v">{{ td(latest.liquidity_overlay) }}</span></div>
-    <div class="cax-foot">{{ t('GoC curve + BoC-vs-Fed context. Click for charts.','加债曲线与央行-美联储背景。点击查看图表。') }}</div>
+    {# Stance: derive from BoC stance (Law 1 — every card answers "so what") #}
+    {% set _liq = (latest.liquidity_overlay or '') | lower %}
+    <div class="cax-foot">{% if 'easing' in _liq or 'accommodative' in _liq %}<span class="cax-stword ok">{{ t('BoC easing — tailwind for TSX. Watch duration.','央行宽松 — TSX 顺风。关注久期。') }}</span>{% elif 'tighten' in _liq or 'restrictive' in _liq or 'hawkish' in _liq %}<span class="cax-stword bad">{{ t('BoC tight — rate headwind. Favour shorter duration.','央行收紧 — 利率逆风。偏好短久期。') }}</span>{% elif 'neutral' in _liq or 'hold' in _liq or 'pause' in _liq %}<span class="cax-stword warn">{{ t('BoC on hold — watch data for the next move.','央行暂停 — 观察数据等待下一步。') }}</span>{% else %}<span class="cax-stword warn">{{ t('Watch — no clear BoC signal.','观察 — 央行信号不明。') }}</span>{% endif %}</div>
   </div>
 
   {# Housing #}
@@ -980,7 +1025,8 @@
     <div class="cax-kv"><span class="k">{{ t('Real price index','实际房价指数') }}</span><span class="v"><b>{{ housing.level }}</b></span></div>
     {% if housing.yoy is not none %}<div class="cax-kv"><span class="k">{{ t('~1y change','约1年变化') }}</span><span class="v cax-stword {{ 'ok' if housing.yoy >= 0 else 'bad' }}">{{ '%+.1f'|format(housing.yoy) }}%</span></div>{% endif %}
     <div class="cax-kv"><span class="k">{{ t('Off peak','距峰值') }}</span><span class="v cax-stword {{ 'bad' if housing.off_peak < -10 else 'warn' }}">{{ '%.1f'|format(housing.off_peak) }}%</span></div>
-    <div class="cax-foot"><span class="cax-stword warn">{{ t('Key fragility: household debt + mortgage resets.','关键脆弱点：家庭债务与按揭续期。') }}</span></div>
+    {# Stance from off_peak — Law 1 every card answers "so what" #}
+    <div class="cax-foot">{% if housing.off_peak < -20 %}<span class="cax-stword bad">{{ t('Prices well below peak — mortgage stress risk. Protect.','房价远低于峰值 — 按揭风险。保守为主。') }}</span>{% elif housing.off_peak < -10 %}<span class="cax-stword warn">{{ t('Prices off peak — watch household debt drag.','房价低于峰值 — 关注家庭债务压力。') }}</span>{% else %}<span class="cax-stword warn">{{ t('Near peak — fragility remains high.','接近峰值 — 脆弱性依然较高。') }}</span>{% endif %}</div>
     {% else %}
     <div style="font-size:12px;color:var(--muted)">{{ t('Housing data not available.','房产数据暂不可用。') }}</div>
     {% endif %}
@@ -1059,7 +1105,15 @@
       {% if items %}
       <div class="cax-eyebrow">{{ t(en, zh) }}</div>
       {% for it in items %}
-      <div class="cax-ledd"><span><b>{{ td(it.name) }}</b> <span class="rk">{{ it.ticker }}</span></span></div>
+      <div class="cax-ledd">
+        <span><b>{{ td(it.name) }}</b> <span class="rk">{{ it.ticker }}</span>
+          {% if it.tag %}<span style="font-size:10px;color:var(--warn);margin-left:5px">{{ it.tag }}</span>{% endif %}
+        </span>
+        <span style="display:flex;gap:6px;align-items:center">
+          {% if it.days is not none %}<span class="rk" style="font-size:10px" data-tip-en="Days to trigger" data-tip-zh="触发天数">{{ it.days }}d</span>{% endif %}
+          {% if it.dir %}<span class="lad {{ 'up' if it.dir == 'up' else ('down' if it.dir == 'down' else 'flat') }}" style="font-size:10px">{{ t({'up':'▲ Up','down':'▼ Down','caution':'◐ Caution'}.get(it.dir, it.dir), {'up':'▲ 上升','down':'▼ 下降','caution':'◐ 谨慎'}.get(it.dir, it.dir)) }}</span>{% endif %}
+        </span>
+      </div>
       {% endfor %}
       {% endif %}
       {% endfor %}
@@ -1082,16 +1136,29 @@
       <div class="cax-eyebrow">{{ t('Current quad','当前象限') }}</div>
       <div style="font-size:18px;font-weight:750;margin-bottom:8px">{{ td(latest.quad_name) }}</div>
       {% if quad_meaning %}<p style="font-size:12.5px;color:var(--muted);margin:0 0 12px">{{ t(quad_meaning[0], quad_meaning[1]) }}</p>{% endif %}
+      {# Sector preference check: does tape agree with regime? (GAP 15) #}
+      {% if pref and pref.get('preferred') %}
+      <div class="cax-eyebrow">{{ t('Quad-preferred sectors','象限偏好板块') }}</div>
+      <div class="cax-chips" style="margin-bottom:10px">
+        {% for tk in (pref.preferred or []) %}<span class="cax-chip {{ 'turn' if not pref.disagreement_flag else '' }}">{{ tk }}</span>{% endfor %}
+      </div>
+      {% if pref.note %}<div style="font-size:11px;color:var(--muted);margin-bottom:8px">{{ pref.note }}</div>{% endif %}
+      {% endif %}
       <div class="cax-eyebrow">{{ t('Lifespan base rates','寿命基准率') }}</div>
       {% if lifespan_rows %}
       <div class="cax-mt" style="overflow-x:auto">
       <table class="cax-mt">
-        <tr><th>{{ t('Quad','象限') }}</th><th class="r">{{ t('Median (d)','中位数(天)') }}</th><th class="r">{{ t('p25','25分位') }}</th><th class="r">{{ t('p75','75分位') }}</th><th class="r">{{ t('n','样本数') }}</th></tr>
+        <tr><th>{{ t('Quad','象限') }}</th><th class="r">{{ t('Median (d)','中位数(天)') }}</th><th class="r">{{ t('n','样本数') }}</th><th>{{ t('Typical next','典型下一象限') }}</th></tr>
         {% for row in lifespan_rows %}
-        <tr><td>{{ td(row.quad) }}</td><td class="r">{{ row.median_days }}</td><td class="r">{{ row.p25 }}</td><td class="r">{{ row.p75 }}</td><td class="r">{{ row.n }}</td></tr>
+        <tr><td>{{ td(row.quad) }}</td><td class="r">{{ row.median_days }}</td><td class="r">{{ row.n }}</td><td style="font-size:11px">{{ t(row.next, row.next_zh) }}</td></tr>
         {% endfor %}
       </table>
       </div>
+      {% endif %}
+      {% if axes_chart %}
+      <div class="cax-sep"></div>
+      <div class="cax-eyebrow">{{ t('Growth & inflation axes over time','增长与通胀轴历史') }}</div>
+      <div style="max-width:100%;overflow-x:hidden">{{ axes_chart | safe }}</div>
       {% endif %}
       <div class="cax-receipt">{{ t('Display-only. Quad dates vary; confirm with the macro backdrop.','仅供展示。象限日期因情况而异，请结合宏观背景确认。') }}</div>
     </div>
@@ -1173,6 +1240,23 @@
       </div>
       {% endfor %}
       {% if ov.terms_of_trade %}<div class="cax-kv" style="margin-top:12px"><span class="k">{{ t('Terms of trade','贸易条件') }}</span><span class="v cax-stword {{ 'ok' if ov.terms_of_trade == 'improving' else ('bad' if ov.terms_of_trade == 'deteriorating' else 'warn') }}">{{ td(ov.terms_of_trade) }}</span></div>{% endif %}
+      {# pair ratios: structural cross-market levels (GAP 15) #}
+      {% if pair %}
+      <div class="cax-sep"></div>
+      <div class="cax-eyebrow">{{ t('Cross-market ratios','跨市场比率') }}</div>
+      {% set _pr_labels = {'usdcad': ('USD/CAD','美元/加元'), 'tsx_spx': ('TSX/SPX ratio','TSX/标普比率'), 'copper_gold': ('Copper/Gold','铜金比'), 'cyc_def': ('Cyclical/Defensive','周期/防御'), 'infl_basket': ('Inflation basket','通胀篮子')} %}
+      {% for k, (en_l, zh_l) in _pr_labels.items() %}
+      {% set _pv = pair.get(k) %}
+      {% if _pv %}
+      <div class="cax-kv">
+        <span class="k">{{ t(en_l, zh_l) }}</span>
+        <span class="v">{{ '%.4f'|format(_pv.level) if _pv.level else '—' }}
+          {% if _pv.chg_20d_pct is not none %}<span class="cax-sub {{ 'cax-tt-up' if _pv.chg_20d_pct >= 0 else 'cax-tt-dn' }}">{{ '%+.1f'|format(_pv.chg_20d_pct) }}% 20d</span>{% endif %}
+        </span>
+      </div>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
       <div class="cax-receipt">{{ t('Cross-asset overlay: oil/gold/copper/CAD + US risk (SPY/VIX/DXY). Context only.','跨资产叠加：油/金/铜/加元 + 美股风险（SPY/VIX/DXY）。仅作背景。') }}</div>
     </div>
   </div>
@@ -1190,8 +1274,16 @@
       {% if cp.boc_rate is not none %}
       <div class="cax-kv"><span class="k">{{ t('BoC policy rate','加央行政策利率') }}</span><span class="v"><b>{{ '%.2f'|format(cp.boc_rate) }}%</b></span></div>
       {% endif %}
-      {% if cp.goc_curve_2s10s is not none %}<div class="cax-kv"><span class="k">{{ t('GoC 2s10s spread','加债 2s10s 利差') }}</span><span class="v cax-stword {{ 'ok' if cp.goc_curve_2s10s > 0 else 'warn' }}">{{ '%+.2f'|format(cp.goc_curve_2s10s) }}</span></div>{% endif %}
-      {% if cp.goc_minus_ust_10y is not none %}<div class="cax-kv"><span class="k">{{ t('GoC−UST 10y','加债−美债 10y') }}</span><span class="v">{{ '%+.2f'|format(cp.goc_minus_ust_10y) }}</span></div>{% endif %}
+      {# BoC vs Fed context — the primary Canada driver (docstring) #}
+      {% if cp.get('us_2y') is not none or cp.us_2y is defined %}
+      {% set _us2y = cp.get('us_2y') if cp.get('us_2y') is not none else none %}
+      {% if _us2y is not none and cp.boc_rate is not none %}
+      {% set _boc_fed_gap = cp.boc_rate - _us2y %}
+      <div class="cax-kv"><span class="k">{{ t('BoC vs Fed (2y proxy)','央行利差 vs 美联储(2年代理)') }}</span><span class="v {{ 'cax-tt-up' if _boc_fed_gap > 0 else 'cax-tt-dn' }}">{{ '%+.2f'|format(_boc_fed_gap) }}pp</span></div>
+      {% endif %}
+      {% endif %}
+      {% if cp.goc_minus_ust_10y is not none %}<div class="cax-kv"><span class="k">{{ t('GoC−UST 10y spread','加债−美债 10y 利差') }}</span><span class="v {{ 'cax-tt-up' if cp.goc_minus_ust_10y > 0 else 'cax-tt-dn' }}">{{ '%+.2f'|format(cp.goc_minus_ust_10y) }}pp <span class="cax-sub">{{ t('CAD rate premium vs USD','加元利率溢价vs美元') if cp.goc_minus_ust_10y > 0 else t('CAD rate discount vs USD','加元利率折价vs美元') }}</span></span></div>{% endif %}
+      {% if cp.goc_curve_2s10s is not none %}<div class="cax-kv"><span class="k">{{ t('GoC 2s10s spread','加债 2s10s 利差') }}</span><span class="v cax-stword {{ 'ok' if cp.goc_curve_2s10s > 0 else 'warn' }}">{{ '%+.2f'|format(cp.goc_curve_2s10s) }}pp <span class="cax-sub">{{ t('upward slope','正向曲线') if cp.goc_curve_2s10s > 0 else t('inverted','倒挂') }}</span></span></div>{% endif %}
       {% if curve_chart %}
       <div class="cax-sep"></div>
       <div class="cax-eyebrow">{{ t('BoC rate path & GoC curve','加央行利率路径与加债曲线') }}</div>
@@ -1830,7 +1922,13 @@
   window.caxCloseDlg=caxCloseDlg;
   window.caxTogglePop=caxTogglePop;
   window.caxClosePops=caxClosePops;
-  caxResolveHash();
+  /* defer hash-open to DOMContentLoaded so heatmap.js has time to register
+     window.MMHeatmap before cax-dlg-markets is opened (china pattern fix) */
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',caxResolveHash);
+  }else{
+    caxResolveHash();
+  }
   window.addEventListener('hashchange',caxResolveHash);
 })();
 </script>
