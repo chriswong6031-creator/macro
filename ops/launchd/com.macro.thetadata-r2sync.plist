@@ -120,5 +120,17 @@
   <key>ThrottleInterval</key>
   <integer>60</integer>
 
+  <!--
+    launchd agents inherit macOS's 256-fd soft limit. publish_r2's 32 upload
+    threads x s3transfer's ~10 concurrent multipart part-readers on GB-class
+    greeks parquets (+ 64 pooled sockets) exceed that — the first sync
+    (2026-07-16) died EMFILE on greeks/SPY/2022.parquet. 4096 is ~8x headroom.
+  -->
+  <key>SoftResourceLimits</key>
+  <dict>
+    <key>NumberOfFiles</key>
+    <integer>4096</integer>
+  </dict>
+
 </dict>
 </plist>
