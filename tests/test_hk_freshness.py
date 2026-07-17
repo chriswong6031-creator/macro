@@ -101,6 +101,24 @@ def _write_parquet_with_date(path: Path, d: date) -> None:
     df.to_parquet(path)
 
 
+def _write_southbound_parquet(path: Path, d: date) -> None:
+    """Write a southbound holdings parquet matching PRODUCTION shape.
+
+    The real store (collectors/hk_southbound_holdings.py) persists a long-form
+    panel keyed by a ``MultiIndex(['date', 'ticker'])`` — NOT a flat
+    DatetimeIndex. Using the flat writer here masked a bug where the sentinel's
+    _parquet_index_max returned None for the MultiIndex store and falsely
+    reported southbound "dead" on every render.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    idx = pd.MultiIndex.from_tuples(
+        [(pd.Timestamp(d), "0700.HK"), (pd.Timestamp(d), "9988.HK")],
+        names=["date", "ticker"],
+    )
+    df = pd.DataFrame({"close": [100.0, 200.0], "own_pct": [1.0, 2.0]}, index=idx)
+    df.to_parquet(path)
+
+
 def _write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload))
@@ -148,9 +166,10 @@ class TestHKFreshnessSentinel:
             _write_json(state_dir / "state.json",
                         {"cache_max": str(prev_cache_max)})
 
-        # Write southbound holdings parquet (check 7 — W5 addition)
+        # Write southbound holdings parquet (check 7 — W5 addition).
+        # Production shape is a MultiIndex(['date','ticker']) long-form panel.
         if southbound_date is not None:
-            _write_parquet_with_date(
+            _write_southbound_parquet(
                 data_root / "hk_southbound" / "holdings.parquet", southbound_date)
 
         with (patch("lib.config.data_dir", return_value=data_root),
@@ -374,3 +393,25 @@ class TestHKFreshnessJSON:
         assert out.exists()
         loaded = json.loads(out.read_text())
         assert loaded["verdict"] == "ok"
+
+
+class TestParquetIndexMax:
+    """Directly exercise _parquet_index_max against both store shapes."""
+
+    def test_flat_datetimeindex(self, tmp_path):
+        from engine.hk_freshness import _parquet_index_max
+        p = tmp_path / "flat.parquet"
+        _write_parquet_with_date(p, date(2026, 7, 13))
+        assert _parquet_index_max(p) == date(2026, 7, 13)
+
+    def test_multiindex_date_ticker(self, tmp_path):
+        """The southbound holdings shape: MultiIndex(['date','ticker'])."""
+        from engine.hk_freshness import _parquet_index_max
+        p = tmp_path / "holdings.parquet"
+        _write_southbound_parquet(p, date(2026, 7, 15))
+        # Must read the max of the 'date' level, not silently return None.
+        assert _parquet_index_max(p) == date(2026, 7, 15)
+
+    def test_missing_file_is_none(self, tmp_path):
+        from engine.hk_freshness import _parquet_index_max
+        assert _parquet_index_max(tmp_path / "nope.parquet") is None
