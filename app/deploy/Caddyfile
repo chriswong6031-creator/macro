@@ -467,3 +467,19 @@ greydeercapital.com, www.greydeercapital.com {
 
 	tls internal
 }
+
+# ---- scan.mastermind-x.com — LookScanned (Next.js standalone :3200) -----------
+# Separate SaaS (repo: lookscanned-saas). Served by lookscanned.service — a Next.js
+# standalone server on 127.0.0.1:3200. Same convention as app.*/notes.*: self-signed
+# origin cert, TLS terminated at the EdgeOne CDN edge which origin-pulls over
+# (non-strict) HTTPS. REQUIRES the EdgeOne console origin for `scan` = 146.190.142.17;
+# if the edge origin points back at the domain/CDN it loops (cdn-loop 423) and never
+# reaches this box (added 2026-07-17 after diagnosing exactly that).
+scan.mastermind-x.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3200
+	header {
+		-Server
+	}
+	tls internal
+}
