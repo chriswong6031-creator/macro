@@ -1277,7 +1277,7 @@
   <div class="cnx-card cnx-hero{{ ' cnx-hero-solo' if not (ms_history and ms_history|length >= 2) else '' }} ms-front ms ms-{{ _ms_color }}" style="padding:0">
     <div class="cnx-hero-left">
       <span class="cnx-regime-pill"><span class="dot"></span>
-        {{ t(latest.quad_name, latest.quad_name) }}<span style="opacity:.55"> · {{ t(latest.cycle_tag or 'mid', latest.cycle_tag or 'mid') }}</span></span>
+        {{ td(latest.quad_name) }}<span style="opacity:.55"> · {{ td(latest.cycle_tag or 'mid') }}</span></span>
       <span id="ms-live-pill" class="cnx-live-pill"><span class="d"></span>
         <span class="l-en">LIVE</span><span class="l-zh">实时</span>
         <span id="ms-date" style="margin-left:4px">{{ latest.date }}</span></span>
