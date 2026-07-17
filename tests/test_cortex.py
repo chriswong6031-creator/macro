@@ -29,6 +29,23 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+
+@pytest.fixture(autouse=True)
+def _isolate_ai_costs_ledger(tmp_path, monkeypatch):
+    """Redirect the lib.ai_costs usage ledger to tmp for every test here.
+
+    The single-call fallback path drives the real llm_auth.make_call
+    (context="cortex_fallback"); every successful call records a usage row
+    via _capture_usage -> lib.ai_costs.record_usage(), a path with no root=
+    threading — it defaults to the REAL repo, appends to
+    data/ai_costs/usage.jsonl, and trips the MM_DATA_GUARD session tripwire
+    in conftest.py.  The recorder still runs against the mocked response;
+    only the ledger destination moves.
+    """
+    from lib import ai_costs
+    monkeypatch.setattr(ai_costs, "_repo_root", lambda: tmp_path)
+
+
 # ---------------------------------------------------------------------------
 # Fixture builders
 # ---------------------------------------------------------------------------

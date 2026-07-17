@@ -21,9 +21,27 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 # Ensure repo root is on path
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
+
+
+@pytest.fixture(autouse=True)
+def _isolate_ai_costs_ledger(tmp_path, monkeypatch):
+    """Redirect the lib.ai_costs usage ledger to tmp for every test here.
+
+    llm_auth.make_call records a usage row on every successful call
+    (_capture_usage -> lib.ai_costs.record_usage) and that path carries no
+    root= threading — it defaults to the REAL repo.  The mocked-provider
+    tests below drive make_call for real, so without this redirect they
+    append synthetic rows to data/ai_costs/usage.jsonl and trip the
+    MM_DATA_GUARD session tripwire in conftest.py.  The recorder still runs
+    against the mock usage object; only the ledger destination moves.
+    """
+    from lib import ai_costs
+    monkeypatch.setattr(ai_costs, "_repo_root", lambda: tmp_path)
 
 
 # ---------------------------------------------------------------------------
