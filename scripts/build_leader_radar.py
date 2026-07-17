@@ -1676,17 +1676,20 @@ def _build_degraded(
     price_through: date | None,
     freshness: dict,
     state_df: pd.DataFrame,
-) -> list[str]:
-    """Build the degraded list (Item 4).
+) -> tuple[list[str], list[str]]:
+    """Build the degraded lists (Item 4).
+
+    Returns (degraded_en, degraded_zh) — parallel lists, same order.
 
     Checks:
       - state_history lags price_through by >2 NYSE sessions
       - regime_as_of lags price_through by >0 sessions
       - breadth lags price_through by >0 sessions
     """
-    msgs: list[str] = []
+    msgs_en: list[str] = []
+    msgs_zh: list[str] = []
     if price_through is None:
-        return msgs
+        return msgs_en, msgs_zh
 
     # state_history lag
     sh_through_str = freshness.get("state_history_through")
@@ -1697,7 +1700,8 @@ def _build_degraded(
                 gap = _nyse_sessions_between(sh_through + timedelta(days=1), price_through)
                 n_lag = len(gap)
                 if n_lag > 2:
-                    msgs.append(f"state history {n_lag} sessions behind price data")
+                    msgs_en.append(f"state history {n_lag} sessions behind price data")
+                    msgs_zh.append(f"状态历史落后价格数据{n_lag}个交易日")
         except Exception:  # noqa: BLE001
             pass
 
@@ -1710,7 +1714,8 @@ def _build_degraded(
                 gap = _nyse_sessions_between(regime_asof + timedelta(days=1), price_through)
                 n_lag = len(gap)
                 if n_lag > 0:
-                    msgs.append(f"regime inputs {n_lag} session{'s' if n_lag > 1 else ''} behind price data")
+                    msgs_en.append(f"regime inputs {n_lag} session{'s' if n_lag > 1 else ''} behind price data")
+                    msgs_zh.append(f"制度输入落后价格数据{n_lag}个交易日")
         except Exception:  # noqa: BLE001
             pass
 
@@ -1723,11 +1728,12 @@ def _build_degraded(
                 gap = _nyse_sessions_between(bt + timedelta(days=1), price_through)
                 n_lag = len(gap)
                 if n_lag > 0:
-                    msgs.append(f"breadth {n_lag} session{'s' if n_lag > 1 else ''} behind price data")
+                    msgs_en.append(f"breadth {n_lag} session{'s' if n_lag > 1 else ''} behind price data")
+                    msgs_zh.append(f"广度数据落后价格数据{n_lag}个交易日")
         except Exception:  # noqa: BLE001
             pass
 
-    return msgs
+    return msgs_en, msgs_zh
 
 
 def _build_history_gaps(state_df: pd.DataFrame) -> tuple[str | None, list[str]]:
@@ -2563,7 +2569,7 @@ def build(
         revisions_df=revisions_df,
         state_df=state_df,
     )
-    degraded = _build_degraded(latest_date, freshness, state_df)
+    degraded, degraded_zh = _build_degraded(latest_date, freshness, state_df)
 
     # ── history_since / history_gaps (Item 6) ────────────────────────────────
     history_since, history_gaps = _build_history_gaps(state_df)
@@ -2583,7 +2589,8 @@ def build(
         "as_of": as_of,           # price data-through date (ISO date); template [:10] is no-op
         "built_at": built_at,     # UTC wall clock ISO timestamp
         "stale": stale,
-        "degraded": degraded,     # list of plain-string degradation messages (PR-B renders banner)
+        "degraded": degraded,     # list of plain-string EN degradation messages
+        "degraded_zh": degraded_zh,  # parallel ZH degradation messages (same order as degraded)
         "elapsed_s": round(elapsed, 2),
         "freshness": freshness,
         "history_since": history_since,
