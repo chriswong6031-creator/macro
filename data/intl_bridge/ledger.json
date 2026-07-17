@@ -1,5 +1,5 @@
 {
-  "asof": "2026-07-02",
+  "asof": "2026-07-17",
   "family": "intl_bridge",
   "features": [
     {
@@ -460,6 +460,93 @@
       "validation_ref": "scripts/intl_phase0.py (grade) \u2014 cross_asset_confirm is LIVE in run",
       "kill": true,
       "notes": "cross_asset_confirm is LIVE in run.py (INTL-46) but its leading legs are never consumed upstream of stock scoring, and no vote HISTORY exists on disk \u2192 the votes (credit HY-band/widening, rates-vol MOVE-band/leads-VIX, dollar risk-off) are reconstructed causally from their input series. Gate: the credit/curve votes may be near-duplicates of the nfci/recession MRS legs \u2014 that is the orthogonality test. Needs only orthogonality + measured weight. | weak/unstable \u2014 shown as context, never sized"
+    },
+    {
+      "id": "c3b_local_index_breadth",
+      "channel": "C3",
+      "hypothesis": "% of local bench indices (>=8 of the 10 radar benches, LOCAL closes) above their 200dma, with its 63d slope, leads US >=5% drawdowns \u2014 the C3 mechanism on a substrate that is a session faster and immune to US-session smoothing.",
+      "direction": "de-risk",
+      "verdict": "PENDING",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": null,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null,
+        "maxdd_cut": null
+      },
+      "gates": {
+        "freshness": true
+      },
+      "source_series": [
+        "intl/^KS11",
+        "intl/^N225",
+        "intl/^TWII",
+        "intl/^NSEI",
+        "intl/^AXJO",
+        "intl/^FTSE",
+        "intl/^STOXX",
+        "china/000001.SS",
+        "hk/_HSI",
+        "canada/_GSPTSE"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 RRI-S4a (2026-07-17)",
+      "kill": false,
+      "notes": "RRI-S4a (2026-07-17). Anti-fire postmortem of the 2026-07-17 Asia crash. Extra gate: incremental content vs c3_global_etf_breadth (residual must retain >=0.50 of the unconditional surviving fraction) + t vs t+1 timing decomposition (research/RRI_S4_FAST_GLOBAL_LEG_PREREG.md \u00a73). | no gate evaluated (builder not implemented) \u2014 declared, not graded"
+    },
+    {
+      "id": "c3c_intl_radar_alert_breadth",
+      "channel": "C3",
+      "hypothesis": "Fraction of intl radar profiles (10 markets) in gated elevated/risk-off, causal 504d percentile, leads US >=5% drawdowns \u2014 the radars aggregate rate/FX/extension drivers that individual breadth lenses miss.",
+      "direction": "de-risk",
+      "verdict": "PENDING",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": null,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null,
+        "maxdd_cut": null
+      },
+      "gates": {
+        "freshness": true
+      },
+      "source_series": [
+        "intl/^KS11",
+        "intl/^N225",
+        "intl/^TWII",
+        "intl/^NSEI",
+        "intl/^AXJO",
+        "intl/^FTSE",
+        "intl/^STOXX",
+        "china/000001.SS",
+        "hk/_HSI",
+        "canada/_GSPTSE",
+        "fred/DGS2",
+        "fred/DFII10",
+        "fred/DGS10",
+        "intl/USDKRW=X",
+        "intl/USDJPY=X",
+        "intl/USDTWD=X",
+        "intl/USDINR=X",
+        "intl/AUDUSD=X",
+        "intl/GBPUSD=X",
+        "intl/EURUSD=X",
+        "yahoo/DX-Y.NYB",
+        "yahoo/CNH_F",
+        "china_property/cgb",
+        "china_breadth/breadth",
+        "canada_breadth/breadth"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 RRI-S4b (2026-07-17)",
+      "kill": false,
+      "notes": "RRI-S4b (2026-07-17). Deterministic transform of committed store data via engine.risk_radar_intl.composite_series \u2014 a DATA leg, not a verdict router (FR-1/R3 fence): no can_force, no veto, no state is consumed; only the count of band-crossings of a published deterministic construction. Graded by THIS battery vs _GSPC at (21, 42) \u2014 NOT by risk_radar_intl_audit (research/RRI_S4_FAST_GLOBAL_LEG_PREREG.md \u00a72-3). | no gate evaluated (builder not implemented) \u2014 declared, not graded"
     }
   ]
 }

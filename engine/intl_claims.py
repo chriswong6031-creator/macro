@@ -241,6 +241,61 @@ CLAIMS: list[dict] = [
                  "may be near-duplicates of the nfci/recession MRS legs — that is the orthogonality "
                  "test. Needs only orthogonality + measured weight.",
     },
+    # -- RRI-S4 · fast global legs (2026-07-17, operator-ratified prereg) --------
+    # research/RRI_S4_FAST_GLOBAL_LEG_PREREG.md (frozen in PR #2725). Two LOCAL-close
+    # substrates for the C3 global-breadth channel, motivated by the 2026-07-17 Asia-crash
+    # anti-fire postmortem: the ETF-based c3_global_etf_breadth prices at the US close (a
+    # session behind Asia cash) and reads %>200dma level (blind at parabolic tops). Both
+    # claims carry an EXTRA gate beyond the standard battery: incremental content vs the
+    # same-day c3_global_etf_breadth feature + a t vs t+1 timing decomposition (prereg §3).
+    # APPEND-ONLY at the list tail: tests index CLAIMS positionally (e.g. CLAIMS[1] = c2).
+    {
+        "id": "c3b_local_index_breadth",
+        "channel": "C3",
+        "hypothesis": "% of local bench indices (>=8 of the 10 radar benches, LOCAL closes) above "
+                      "their 200dma, with its 63d slope, leads US >=5% drawdowns — the C3 mechanism "
+                      "on a substrate that is a session faster and immune to US-session smoothing.",
+        "direction": "de-risk",
+        "target": ("yahoo", "_GSPC"),
+        "horizons": _DD_HORIZONS,
+        "source_series": [("intl", "^KS11"), ("intl", "^N225"), ("intl", "^TWII"),
+                          ("intl", "^NSEI"), ("intl", "^AXJO"), ("intl", "^FTSE"),
+                          ("intl", "^STOXX"), ("china", "000001.SS"), ("hk", "_HSI"),
+                          ("canada", "_GSPTSE")],
+        "freshness_sla_days": 5,
+        "builder": None,   # builder PR only after this declare lands (prereg lifecycle)
+        "notes": "RRI-S4a (2026-07-17). Anti-fire postmortem of the 2026-07-17 Asia crash. "
+                 "Extra gate: incremental content vs c3_global_etf_breadth (residual must retain "
+                 ">=0.50 of the unconditional surviving fraction) + t vs t+1 timing decomposition "
+                 "(research/RRI_S4_FAST_GLOBAL_LEG_PREREG.md §3).",
+    },
+    {
+        "id": "c3c_intl_radar_alert_breadth",
+        "channel": "C3",
+        "hypothesis": "Fraction of intl radar profiles (10 markets) in gated elevated/risk-off, "
+                      "causal 504d percentile, leads US >=5% drawdowns — the radars aggregate "
+                      "rate/FX/extension drivers that individual breadth lenses miss.",
+        "direction": "de-risk",
+        "target": ("yahoo", "_GSPC"),
+        "horizons": _DD_HORIZONS,
+        "source_series": [("intl", "^KS11"), ("intl", "^N225"), ("intl", "^TWII"),
+                          ("intl", "^NSEI"), ("intl", "^AXJO"), ("intl", "^FTSE"),
+                          ("intl", "^STOXX"), ("china", "000001.SS"), ("hk", "_HSI"),
+                          ("canada", "_GSPTSE"), ("fred", "DGS2"), ("fred", "DFII10"),
+                          ("fred", "DGS10"), ("intl", "USDKRW=X"), ("intl", "USDJPY=X"),
+                          ("intl", "USDTWD=X"), ("intl", "USDINR=X"), ("intl", "AUDUSD=X"),
+                          ("intl", "GBPUSD=X"), ("intl", "EURUSD=X"), ("yahoo", "DX-Y.NYB"),
+                          ("yahoo", "CNH_F"), ("china_property", "cgb"),
+                          ("china_breadth", "breadth"), ("canada_breadth", "breadth")],
+        "freshness_sla_days": 5,
+        "builder": None,   # builder PR only after this declare lands (prereg lifecycle)
+        "notes": "RRI-S4b (2026-07-17). Deterministic transform of committed store data via "
+                 "engine.risk_radar_intl.composite_series — a DATA leg, not a verdict router "
+                 "(FR-1/R3 fence): no can_force, no veto, no state is consumed; only the count of "
+                 "band-crossings of a published deterministic construction. Graded by THIS battery "
+                 "vs _GSPC at (21, 42) — NOT by risk_radar_intl_audit "
+                 "(research/RRI_S4_FAST_GLOBAL_LEG_PREREG.md §2-3).",
+    },
 ]
 
 
