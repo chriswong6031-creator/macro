@@ -83,6 +83,18 @@
     var sc = document.getElementById("ms-score");
     if (sc && disp.score != null) sc.textContent = disp.score;
 
+    /* gauge needle + arc fill follow the live score (else the baked needle
+       points at last night's number while #ms-score shows the live one).
+       Geometry contract with china.html.j2: arc centre (60,68), needle
+       rotate = score*1.8-90, arc dasharray = score*1.57 of 200. */
+    if (disp.score != null) {
+      var ndl = document.querySelector(".cnx-gauge-needle");
+      if (ndl) ndl.setAttribute("transform",
+        "rotate(" + ((disp.score * 1.8) - 90).toFixed(1) + " 60 68)");
+      var arc = document.querySelector(".cnx-gauge-fill");
+      if (arc) arc.setAttribute("stroke-dasharray", (disp.score * 1.57).toFixed(1) + " 200");
+    }
+
     /* #ms-tick left% */
     var tick = document.getElementById("ms-tick");
     if (tick && disp.score != null) tick.style.left = disp.score + "%";

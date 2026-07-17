@@ -798,11 +798,22 @@
   body.page-hk .hkx-live-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.8px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:999px;margin-left:8px;opacity:.45}
   body.page-hk .hkx-live-pill .d{width:6px;height:6px;border-radius:50%;background:var(--muted)}
   body.page-hk .hkx-gauge-row{display:flex;gap:18px;align-items:center;margin-top:10px}
-  body.page-hk .hkx-gauge-svg{flex:0 0 110px}
+  body.page-hk .hkx-gauge-svg{flex:0 0 110px;width:110px;height:72px;overflow:visible}
   /* Mechanic #4: gauge arc color per state */
   body.page-hk .hkx-gauge-fill{stroke:var(--warn)}
   body.page-hk .ms-green .hkx-gauge-fill{stroke:var(--up)}
   body.page-hk .ms-red .hkx-gauge-fill{stroke:var(--down)}
+  /* needle accents follow the same .ms-* class (US idiom: hub ring + core +
+     glowing tip dot in the verdict colour; stem is theme-text) */
+  body.page-hk .hkx-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
+  body.page-hk .hkx-needle-core,body.page-hk .hkx-needle-tip{fill:var(--warn)}
+  body.page-hk .hkx-needle-tip{filter:drop-shadow(0 0 3.5px var(--warn))}
+  body.page-hk .ms-green .hkx-needle-hub{stroke:var(--up)}
+  body.page-hk .ms-green .hkx-needle-core,body.page-hk .ms-green .hkx-needle-tip{fill:var(--up)}
+  body.page-hk .ms-green .hkx-needle-tip{filter:drop-shadow(0 0 3.5px var(--up))}
+  body.page-hk .ms-red .hkx-needle-hub{stroke:var(--down)}
+  body.page-hk .ms-red .hkx-needle-core,body.page-hk .ms-red .hkx-needle-tip{fill:var(--down)}
+  body.page-hk .ms-red .hkx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
   body.page-hk .hkx-score-line{display:flex;align-items:baseline;gap:10px}
   body.page-hk .hkx-big-score{font-size:52px;font-weight:750;line-height:1;color:var(--warn)}
   body.page-hk .ms-green .hkx-big-score{color:var(--up)}
@@ -1093,6 +1104,14 @@
           <path class="hkx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none"
                 stroke-width="9" stroke-linecap="round"
                 stroke-dasharray="{{ _score_dash }} 200"/>
+          {# needle (US idiom): rotate around arc centre (60,68); score 0→-90°…100→+90°;
+             accents class-driven via .ms-* #}
+          <g class="hkx-gauge-needle" transform="rotate({{ (((ms.score or 0) * 1.8) - 90) | round(1) }} 60 68)">
+            <line x1="60" y1="68" x2="60" y2="31" stroke="var(--text)" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+            <circle class="hkx-needle-hub" cx="60" cy="68" r="5"/>
+            <circle class="hkx-needle-core" cx="60" cy="68" r="1.8"/>
+            <circle class="hkx-needle-tip" cx="60" cy="30" r="2.6"/>
+          </g>
           {% endif %}
         </svg>
         <div>
