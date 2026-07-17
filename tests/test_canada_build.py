@@ -102,9 +102,15 @@ def test_canada_macro_template_renders():
     assert "Canada — S&P/TSX Regime" in html
     assert "Goldilocks" in html
     assert "Risk-off" in html
-    assert "Commodity / CAD" in html
+    # mx5 card set (#2674/#2683): overlay hero became the "Commodities & FX" card,
+    # flanked by the Regime Watch / What To Do / Rates & BoC glance cards
+    assert "Commodities & FX" in html
+    assert "Regime Watch" in html and "What To Do" in html
+    assert "Rates & BoC" in html
     assert "XEG.TO" in html                            # sector rotation stays on macro
-    assert "ON THE RUN" in html and "XFN.TO" in html   # #1513 lane split ported (violet lane)
+    # #1513 lane split still ported (violet lane) — post-#2683 it lives in the
+    # playbook dialog ("On the run — do not chase") rather than a page-level board
+    assert "ab-on_the_run" in html and "XFN.TO" in html
     assert "TD Bank" not in html                       # standouts moved to the stock dashboard
     assert "canada_stocks.html" in html                # cross-link to the stock dashboard
     # nav search moved into the shared multi-market lib (theme.js) — assert the page
