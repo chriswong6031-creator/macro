@@ -1,6 +1,6 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-07-17T02:24:29+00:00",
+  "generated_at": "2026-07-17T03:00:13+00:00",
   "markets": {
     "us": {
       "asof_last_row": "2026-07-15",
@@ -173,6 +173,391 @@
         "log_fresh": true,
         "last_logged_days_ago": 1,
         "ungraded_backlog": 5,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "kr": {
+      "asof_last_row": null,
+      "monitoring": {
+        "log_fresh": false,
+        "last_logged_days_ago": null,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "jp": {
+      "asof_last_row": null,
+      "monitoring": {
+        "log_fresh": false,
+        "last_logged_days_ago": null,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "tw": {
+      "asof_last_row": null,
+      "monitoring": {
+        "log_fresh": false,
+        "last_logged_days_ago": null,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "in": {
+      "asof_last_row": null,
+      "monitoring": {
+        "log_fresh": false,
+        "last_logged_days_ago": null,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "au": {
+      "asof_last_row": null,
+      "monitoring": {
+        "log_fresh": false,
+        "last_logged_days_ago": null,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "gb": {
+      "asof_last_row": null,
+      "monitoring": {
+        "log_fresh": false,
+        "last_logged_days_ago": null,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "ez": {
+      "asof_last_row": null,
+      "monitoring": {
+        "log_fresh": false,
+        "last_logged_days_ago": null,
+        "ungraded_backlog": 0,
         "graded_n": 0
       },
       "windows": {
