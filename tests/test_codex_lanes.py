@@ -2063,6 +2063,73 @@ class TestLsRemoteCaseKeys:
 
         assert keys == set(), f"Expected empty set on exception, got: {keys}"
 
+    def test_hyphen_ticker_key_preserves_hyphen(self, tmp_path: Path):
+        """Branch codex/case-brk-b-2020 must map to key BRK-B_2020 (hyphen preserved, not stripped).
+
+        Finding 2: .replace('-', '') was incorrectly removing hyphens from multi-part tickers.
+        rsplit('-', 1) on 'brk-b-2020' gives ['brk-b', '2020'], so ticker='BRK-B', key='BRK-B_2020'.
+        """
+        ls_remote_output = "abc123\trefs/heads/codex/case-brk-b-2020\n"
+
+        fake_result = MagicMock()
+        fake_result.returncode = 0
+        fake_result.stdout = ls_remote_output
+        fake_result.stderr = ""
+
+        with patch("subprocess.run", return_value=fake_result):
+            import scripts.codex_case_lane as lane
+            keys = lane._ls_remote_case_keys(tmp_path)
+
+        assert "BRK-B_2020" in keys, (
+            f"Expected BRK-B_2020 (hyphen preserved) in keys, got: {keys}"
+        )
+        assert "BRKB_2020" not in keys, (
+            f"BRKB_2020 (hyphen stripped) must NOT appear in keys; got: {keys}"
+        )
+
+    def test_recovery_sweep_key_preserves_hyphen(self, tmp_path: Path):
+        """Recovery sweep derives episode key BRK-B_2020 from branch codex/case-brk-b-2020.
+
+        Finding 2: rsplit('-', 1) on 'brk-b-2020' -> ticker 'BRK-B', key 'BRK-B_2020'.
+        """
+        root = _make_root(tmp_path)
+
+        # Seed ledger with a pr_opened row for BRK-B_2020 to trigger the "skip" path
+        attempts_path = root / "data" / "codex_lane" / "case_attempts.jsonl"
+        attempts_path.parent.mkdir(parents=True, exist_ok=True)
+        import json as _json
+        with attempts_path.open("w", encoding="utf-8") as fh:
+            fh.write(_json.dumps({
+                "ts": "2026-01-01T00:00:00+00:00",
+                "episode": "BRK-B_2020",
+                "status": "pr_opened",
+                "pr_url": "https://github.com/owner/repo/pull/77",
+                "detail": "prior run",
+            }) + "\n")
+
+        ls_remote_output = "abc123\trefs/heads/codex/case-brk-b-2020\n"
+        gh_create_calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            if args_list[:3] == ["git", "ls-remote", "--heads"]:
+                m = MagicMock(); m.returncode = 0
+                m.stdout = ls_remote_output; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "create" in args_list:
+                gh_create_calls.append(args_list)
+                return MagicMock(returncode=0, stdout="https://github.com/owner/repo/pull/99\n", stderr="")
+            return MagicMock(returncode=0, stdout="[]", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
+            import scripts.codex_case_lane as lane
+            lane._pr_recovery_sweep(root, {"case_pr_mode": "draft"})
+
+        # Because BRK-B_2020 already has a pr_opened row, no create should be attempted
+        assert len(gh_create_calls) == 0, (
+            f"Expected no create call (BRK-B_2020 already in ledger), got: {gh_create_calls}"
+        )
+
     def test_remote_keys_excluded_from_queue(self, tmp_path: Path):
         """Episodes with remote branches are excluded from _build_queue."""
         root = _make_root(tmp_path)
@@ -3536,6 +3603,608 @@ class TestBudgetFix19:
         paused_until = datetime.fromisoformat(paused_until_str.replace("Z", "+00:00"))
         diff = (paused_until - now).total_seconds()
         assert abs(diff - 5 * 3600) < 10, f"Expected ~5h pause; got {diff:.0f}s"
+
+
+# ---------------------------------------------------------------------------
+# FIX A — gh pr create token fallback tests
+# ---------------------------------------------------------------------------
+
+class TestOpenPrTokenFallback:
+    """FIX A: gh pr create rc!=0 with GH_TOKEN_FALLBACK set -> second attempt uses fallback."""
+
+    def _setup_git_repos(self, tmp_path: Path):
+        """Create a bare origin and a clone with origin/main."""
+        import subprocess as _sp
+
+        origin = tmp_path / "origin.git"
+        clone = tmp_path / "clone"
+
+        _sp.run(["git", "init", "--bare", str(origin)], check=True, capture_output=True)
+        _sp.run(["git", "clone", str(origin), str(clone)], check=True, capture_output=True)
+        _sp.run(["git", "-C", str(clone), "config", "user.email", "test@test.com"], check=True, capture_output=True)
+        _sp.run(["git", "-C", str(clone), "config", "user.name", "Test"], check=True, capture_output=True)
+
+        (clone / "README.md").write_text("init\n")
+        _sp.run(["git", "-C", str(clone), "add", "README.md"], check=True, capture_output=True)
+        _sp.run(["git", "-C", str(clone), "commit", "-m", "init"], check=True, capture_output=True)
+        _sp.run(["git", "-C", str(clone), "push", "origin", "HEAD:refs/heads/main"], check=True, capture_output=True)
+        _sp.run(["git", "-C", str(clone), "fetch", "origin"], check=True, capture_output=True)
+
+        return origin, clone
+
+    def test_fallback_token_used_on_primary_failure(self, tmp_path: Path):
+        """gh pr create fails with primary token (rc!=0) -> retry with GH_TOKEN_FALLBACK -> URL returned.
+
+        The fake dispatches on BOTH subcommand AND token so the pr list reuse-check never
+        short-circuits: list always returns empty, create fails on primary and succeeds on fallback.
+        """
+        import subprocess as _real_sp
+
+        origin, clone = self._setup_git_repos(tmp_path)
+
+        cases_dir = clone / "research" / "winners" / "cases"
+        cases_dir.mkdir(parents=True, exist_ok=True)
+        case_path = cases_dir / "NVDA_2023.md"
+        case_path.write_text(_make_case_md("NVDA", 2023), encoding="utf-8")
+
+        _real_run = _real_sp.run
+
+        # Track (subcommand, token) pairs for all gh calls
+        gh_create_calls: list[dict] = []
+
+        def fake_run(args, **kwargs):
+            args_list = list(args) if args else []
+            if args_list and str(args_list[0]) == "gh":
+                subcommand = args_list[2] if len(args_list) > 2 else ""
+                gh_token = (kwargs.get("env") or {}).get("GH_TOKEN", "")
+                proc = MagicMock()
+                if subcommand == "list":
+                    # Reuse-check always returns empty — no existing PR on any token
+                    proc.returncode = 0
+                    proc.stdout = "[]"
+                    proc.stderr = ""
+                    return proc
+                # subcommand == "create"
+                gh_create_calls.append({"token": gh_token, "args": args_list})
+                if gh_token == "primary-token":
+                    # Primary fails
+                    proc.returncode = 1
+                    proc.stdout = ""
+                    proc.stderr = "Resource not accessible by integration"
+                else:
+                    # Fallback token succeeds
+                    proc.returncode = 0
+                    proc.stdout = "https://github.com/owner/repo/pull/42\n"
+                    proc.stderr = ""
+                return proc
+            return _real_run(args, **kwargs)
+
+        env_patch = {**os.environ, "GH_TOKEN": "primary-token", "GH_TOKEN_FALLBACK": "fallback-token"}
+        with patch.dict(os.environ, env_patch):
+            with patch("subprocess.run", side_effect=fake_run):
+                import scripts.codex_case_lane as lane
+                result = lane._open_pr(
+                    root=clone, ticker="NVDA", year=2023, case_path=case_path,
+                    audit_summary="PASS", draft=True,
+                )
+
+        # (a) gh pr create must have been called at least twice (primary fail + fallback)
+        assert len(gh_create_calls) >= 2, (
+            f"Expected at least 2 gh pr create calls (primary + fallback), got: {gh_create_calls}"
+        )
+        # (b) a create call must have used the fallback token
+        fallback_create = [c for c in gh_create_calls if c["token"] == "fallback-token"]
+        assert fallback_create, (
+            f"Expected a gh pr create call with fallback-token, got create calls: {gh_create_calls}"
+        )
+        # (c) the returned URL is from the fallback attempt
+        assert result == "https://github.com/owner/repo/pull/42", \
+            f"Expected fallback PR URL, got: {result!r}"
+
+    def test_no_fallback_token_no_retry(self, tmp_path: Path):
+        """When GH_TOKEN_FALLBACK is not set, only one create attempt is made."""
+        import subprocess as _real_sp
+
+        origin, clone = self._setup_git_repos(tmp_path)
+
+        cases_dir = clone / "research" / "winners" / "cases"
+        cases_dir.mkdir(parents=True, exist_ok=True)
+        case_path = cases_dir / "NVDA_2023.md"
+        case_path.write_text(_make_case_md("NVDA", 2023), encoding="utf-8")
+
+        _real_run = _real_sp.run
+        create_calls: list = []
+
+        def fake_run(args, **kwargs):
+            if args and str(args[0]) == "gh" and "create" in args:
+                create_calls.append(args)
+                proc = MagicMock()
+                proc.returncode = 1
+                proc.stdout = ""
+                proc.stderr = "Forbidden"
+                return proc
+            elif args and str(args[0]) == "gh":
+                # pr list (reuse check) returns empty
+                proc = MagicMock()
+                proc.returncode = 0
+                proc.stdout = ""
+                proc.stderr = ""
+                return proc
+            return _real_run(args, **kwargs)
+
+        env_patch = {k: v for k, v in os.environ.items() if k != "GH_TOKEN_FALLBACK"}
+        env_patch["GH_TOKEN"] = "only-token"
+        with patch.dict(os.environ, env_patch, clear=True):
+            with patch("subprocess.run", side_effect=fake_run):
+                import scripts.codex_case_lane as lane
+                result = lane._open_pr(
+                    root=clone, ticker="NVDA", year=2023, case_path=case_path,
+                    audit_summary="PASS", draft=True,
+                )
+
+        # Should have made exactly one create call (no retry without fallback)
+        assert len(create_calls) == 1, f"Expected 1 create call, got {len(create_calls)}"
+        assert result is None
+
+
+# ---------------------------------------------------------------------------
+# FIX B — pr_create_failed: retryable + not terminal; recovery sweep
+# ---------------------------------------------------------------------------
+
+class TestPrCreateFailed:
+    """FIX B(a): _open_pr returning None -> attempt row pr_create_failed, action pr_create_failed."""
+
+    def test_open_pr_none_writes_pr_create_failed(self, tmp_path: Path):
+        """When _open_pr returns None, run_once writes pr_create_failed (not pr_opened)."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)
+        _make_prompt_template(root)
+
+        case_dir = root / "research" / "winners" / "cases"
+        case_path = case_dir / "NVDA_2023.md"
+
+        call_count = {"n": 0}
+
+        def fake_run_codex(prompt, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                # Generation: write the case file
+                case_path.write_text(_make_case_md("NVDA", 2023), encoding="utf-8")
+                return _make_ok_run_result("done")
+            # Audit sessions
+            return _make_ok_run_result('{"verdict": "PASS", "findings": []}')
+
+        with patch("engine.codex_lane.runner.run_codex", side_effect=fake_run_codex):
+            with patch("scripts.codex_case_lane._open_pr", return_value=None):
+                with patch("scripts.codex_case_lane._pr_recovery_sweep"):
+                    import scripts.codex_case_lane as lane
+                    result = lane.run_once(root=root, dry_run=False)
+
+        assert result["action"] == "pr_create_failed", f"Expected pr_create_failed, got: {result['action']}"
+        assert result["ok"] is False
+        assert result["pr_url"] is None
+
+        rows = _read_attempts(root)
+        pr_fail_rows = [r for r in rows if r.get("status") == "pr_create_failed"]
+        assert len(pr_fail_rows) >= 1, f"Expected pr_create_failed row, got statuses: {[r['status'] for r in rows]}"
+        # branch name should appear in detail
+        assert "codex/case-nvda-2023" in pr_fail_rows[0].get("detail", ""), \
+            f"Expected branch name in detail: {pr_fail_rows[0].get('detail')!r}"
+
+    def test_pr_create_failed_is_not_terminal(self, tmp_path: Path):
+        """An episode with only pr_create_failed rows is NOT excluded from the queue (retryable)."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)
+
+        # Write a pr_create_failed row for NVDA_2023
+        attempts_path = root / "data" / "codex_lane" / "case_attempts.jsonl"
+        row = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "episode": "NVDA_2023",
+            "status": "pr_create_failed",
+            "pr_url": None,
+            "detail": "gh pr create returned no URL for branch codex/case-nvda-2023",
+        }
+        with attempts_path.open("a") as fh:
+            fh.write(json.dumps(row) + "\n")
+
+        import scripts.codex_case_lane as lane
+        queue = lane._build_queue(root)
+        keys = [ep["key"] for ep in queue]
+        # NVDA_2023 should still be in the queue (pr_create_failed is retryable)
+        assert "NVDA_2023" in keys, \
+            f"Expected NVDA_2023 in queue (pr_create_failed is retryable), got: {keys}"
+
+    def test_pr_create_failed_not_regenrated_if_remote_branch_exists(self, tmp_path: Path):
+        """An episode with pr_create_failed AND a remote branch is excluded from queue via ls-remote."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)
+
+        # Write a pr_create_failed row for NVDA_2023
+        attempts_path = root / "data" / "codex_lane" / "case_attempts.jsonl"
+        row = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "episode": "NVDA_2023",
+            "status": "pr_create_failed",
+            "pr_url": None,
+            "detail": "test",
+        }
+        with attempts_path.open("a") as fh:
+            fh.write(json.dumps(row) + "\n")
+
+        # Simulate ls-remote returning the branch for NVDA_2023
+        ls_remote_output = "abc123\trefs/heads/codex/case-nvda-2023\n"
+
+        def fake_subprocess_run(args, **kwargs):
+            if isinstance(args, list) and args[:3] == ["git", "ls-remote", "--heads"]:
+                m = MagicMock()
+                m.returncode = 0
+                m.stdout = ls_remote_output
+                m.stderr = ""
+                return m
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
+            import scripts.codex_case_lane as lane
+            queue = lane._build_queue(root)
+
+        keys = [ep["key"] for ep in queue]
+        # NVDA_2023 should be excluded via remote-branch scan
+        assert "NVDA_2023" not in keys, \
+            f"Expected NVDA_2023 excluded via ls-remote (branch exists), got: {keys}"
+
+
+class TestPrRecoverySweep:
+    """FIX B(b): PR recovery sweep behavior."""
+
+    def test_sweep_creates_pr_for_stranded_branch(self, tmp_path: Path):
+        """Remote branch with no pr_opened row and no existing PR -> gh pr create called, pr_opened row appended."""
+        root = _make_root(tmp_path)
+        # No attempts at all for NVDA_2023
+        ls_remote_output = "abc123\trefs/heads/codex/case-nvda-2023\n"
+
+        gh_create_calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            if args_list[:3] == ["git", "ls-remote", "--heads"]:
+                m = MagicMock(); m.returncode = 0
+                m.stdout = ls_remote_output; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "list" in args_list:
+                # No existing PR
+                m = MagicMock(); m.returncode = 0; m.stdout = ""; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "create" in args_list:
+                gh_create_calls.append(args_list)
+                m = MagicMock(); m.returncode = 0
+                m.stdout = "https://github.com/owner/repo/pull/99\n"; m.stderr = ""
+                return m
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
+            import scripts.codex_case_lane as lane
+            lane._pr_recovery_sweep(root, {"case_pr_mode": "draft"})
+
+        assert len(gh_create_calls) >= 1, "Expected gh pr create to be called for stranded branch"
+        rows = _read_attempts(root)
+        pr_opened = [r for r in rows if r.get("status") == "pr_opened" and r.get("pr_url")]
+        assert len(pr_opened) >= 1, f"Expected pr_opened row after sweep, got: {rows}"
+        assert pr_opened[0]["episode"] == "NVDA_2023"
+        assert "recovered by PR sweep" in pr_opened[0].get("detail", "")
+
+    def test_sweep_backfills_ledger_when_pr_exists(self, tmp_path: Path):
+        """Remote branch with existing PR (open/merged) but no pr_opened row -> backfill, no create call."""
+        root = _make_root(tmp_path)
+        ls_remote_output = "abc123\trefs/heads/codex/case-nvda-2023\n"
+        existing_pr_url = "https://github.com/owner/repo/pull/55"
+
+        gh_create_calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            if args_list[:3] == ["git", "ls-remote", "--heads"]:
+                m = MagicMock(); m.returncode = 0
+                m.stdout = ls_remote_output; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "list" in args_list:
+                m = MagicMock(); m.returncode = 0
+                m.stdout = existing_pr_url + "\n"; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "create" in args_list:
+                gh_create_calls.append(args_list)
+                return MagicMock(returncode=0, stdout="", stderr="")
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
+            import scripts.codex_case_lane as lane
+            lane._pr_recovery_sweep(root, {"case_pr_mode": "draft"})
+
+        # No create call — backfill only
+        assert len(gh_create_calls) == 0, f"Expected no create call (PR already exists), got: {gh_create_calls}"
+        rows = _read_attempts(root)
+        backfill = [r for r in rows if r.get("status") == "pr_opened" and r.get("pr_url") == existing_pr_url]
+        assert len(backfill) >= 1, f"Expected backfill row with existing URL, got: {rows}"
+        assert "ledger backfill from existing PR" in backfill[0].get("detail", "")
+
+    def test_sweep_capped_at_3_branches(self, tmp_path: Path):
+        """Sweep processes at most 3 branches per run even if more exist."""
+        root = _make_root(tmp_path)
+
+        # 5 branches
+        ls_remote_output = "\n".join(
+            f"sha{i:03d}\trefs/heads/codex/case-stock{i:03d}-202{i}"
+            for i in range(1, 6)
+        ) + "\n"
+
+        gh_create_calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            if args_list[:3] == ["git", "ls-remote", "--heads"]:
+                m = MagicMock(); m.returncode = 0
+                m.stdout = ls_remote_output; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "list" in args_list:
+                m = MagicMock(); m.returncode = 0; m.stdout = ""; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "create" in args_list:
+                gh_create_calls.append(args_list)
+                n = len(gh_create_calls)
+                m = MagicMock(); m.returncode = 0
+                m.stdout = f"https://github.com/owner/repo/pull/{n}\n"; m.stderr = ""
+                return m
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
+            import scripts.codex_case_lane as lane
+            lane._pr_recovery_sweep(root, {"case_pr_mode": "draft"})
+
+        assert len(gh_create_calls) <= 3, \
+            f"Expected at most 3 create calls (cap), got {len(gh_create_calls)}"
+
+    def test_sweep_skips_branch_when_episode_has_3_ledger_rows(self, tmp_path: Path):
+        """Finding 3: episode with >= 3 ledger rows (any status) is skipped by sweep; no create call."""
+        import json as _json
+        root = _make_root(tmp_path)
+
+        # Write 3 rows for NVDA_2023 (all pr_create_failed, so not terminal via status)
+        attempts_path = root / "data" / "codex_lane" / "case_attempts.jsonl"
+        attempts_path.parent.mkdir(parents=True, exist_ok=True)
+        with attempts_path.open("w", encoding="utf-8") as fh:
+            for i in range(3):
+                fh.write(_json.dumps({
+                    "ts": "2026-01-01T00:00:00+00:00",
+                    "episode": "NVDA_2023",
+                    "status": "pr_create_failed",
+                    "pr_url": None,
+                    "detail": "recovery sweep create failed",
+                }) + "\n")
+
+        ls_remote_output = "abc123\trefs/heads/codex/case-nvda-2023\n"
+        gh_create_calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            if args_list[:3] == ["git", "ls-remote", "--heads"]:
+                m = MagicMock(); m.returncode = 0
+                m.stdout = ls_remote_output; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "create" in args_list:
+                gh_create_calls.append(args_list)
+                return MagicMock(returncode=0, stdout="https://github.com/owner/repo/pull/99\n", stderr="")
+            return MagicMock(returncode=0, stdout="[]", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
+            import scripts.codex_case_lane as lane
+            lane._pr_recovery_sweep(root, {"case_pr_mode": "draft"})
+
+        assert len(gh_create_calls) == 0, (
+            f"Expected no create call (episode has >= 3 ledger rows), got: {gh_create_calls}"
+        )
+
+    def test_sweep_appends_pr_create_failed_on_create_failure(self, tmp_path: Path):
+        """Finding 3: when gh pr create fails in sweep, a pr_create_failed row is appended."""
+        root = _make_root(tmp_path)
+        ls_remote_output = "abc123\trefs/heads/codex/case-nvda-2023\n"
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            if args_list[:3] == ["git", "ls-remote", "--heads"]:
+                m = MagicMock(); m.returncode = 0
+                m.stdout = ls_remote_output; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "list" in args_list:
+                return MagicMock(returncode=0, stdout="[]", stderr="")
+            if args_list[0] == "gh" and "create" in args_list:
+                return MagicMock(returncode=1, stdout="", stderr="Forbidden")
+            return MagicMock(returncode=0, stdout="[]", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
+            import scripts.codex_case_lane as lane
+            lane._pr_recovery_sweep(root, {"case_pr_mode": "draft"})
+
+        rows = _read_attempts(root)
+        failed_rows = [r for r in rows if r.get("status") == "pr_create_failed"]
+        assert len(failed_rows) >= 1, (
+            f"Expected at least one pr_create_failed row after sweep create failure; got rows: {rows}"
+        )
+        assert failed_rows[0]["episode"] == "NVDA_2023"
+        assert failed_rows[0].get("pr_url") is None
+
+    def test_sweep_closed_pr_appends_pr_exists_closed_and_skips_create(self, tmp_path: Path):
+        """Finding 4: closed (unmerged) PR -> append pr_exists_closed row, no create call.
+
+        State CLOSED means the operator rejected the PR. This is terminal — never regenerate.
+        """
+        root = _make_root(tmp_path)
+        ls_remote_output = "abc123\trefs/heads/codex/case-nvda-2023\n"
+        closed_pr_url = "https://github.com/owner/repo/pull/55"
+        gh_create_calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            if args_list[:3] == ["git", "ls-remote", "--heads"]:
+                m = MagicMock(); m.returncode = 0
+                m.stdout = ls_remote_output; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "list" in args_list:
+                # Return JSON with state=CLOSED
+                import json as _json
+                m = MagicMock(); m.returncode = 0
+                m.stdout = _json.dumps([{"url": closed_pr_url, "state": "CLOSED"}]) + "\n"
+                m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "create" in args_list:
+                gh_create_calls.append(args_list)
+                return MagicMock(returncode=0, stdout="https://github.com/owner/repo/pull/99\n", stderr="")
+            return MagicMock(returncode=0, stdout="[]", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
+            import scripts.codex_case_lane as lane
+            lane._pr_recovery_sweep(root, {"case_pr_mode": "draft"})
+
+        # No create call — operator rejected PR is terminal
+        assert len(gh_create_calls) == 0, (
+            f"Expected no create call for CLOSED PR (terminal), got: {gh_create_calls}"
+        )
+        rows = _read_attempts(root)
+        closed_rows = [r for r in rows if r.get("status") == "pr_exists_closed"]
+        assert len(closed_rows) >= 1, (
+            f"Expected pr_exists_closed row for CLOSED PR, got rows: {rows}"
+        )
+        assert closed_rows[0]["episode"] == "NVDA_2023"
+        assert closed_pr_url in (closed_rows[0].get("detail") or ""), (
+            f"Expected closed PR URL in detail, got: {closed_rows[0]}"
+        )
+
+    def test_sweep_merged_pr_backfills_pr_opened(self, tmp_path: Path):
+        """Finding 4: merged PR -> pr_opened backfill row noting state=MERGED, no create call."""
+        root = _make_root(tmp_path)
+        ls_remote_output = "abc123\trefs/heads/codex/case-nvda-2023\n"
+        merged_pr_url = "https://github.com/owner/repo/pull/60"
+        gh_create_calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            if args_list[:3] == ["git", "ls-remote", "--heads"]:
+                m = MagicMock(); m.returncode = 0
+                m.stdout = ls_remote_output; m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "list" in args_list:
+                import json as _json
+                m = MagicMock(); m.returncode = 0
+                m.stdout = _json.dumps([{"url": merged_pr_url, "state": "MERGED"}]) + "\n"
+                m.stderr = ""
+                return m
+            if args_list[0] == "gh" and "create" in args_list:
+                gh_create_calls.append(args_list)
+                return MagicMock(returncode=0, stdout="", stderr="")
+            return MagicMock(returncode=0, stdout="[]", stderr="")
+
+        with patch("subprocess.run", side_effect=fake_subprocess_run):
+            import scripts.codex_case_lane as lane
+            lane._pr_recovery_sweep(root, {"case_pr_mode": "draft"})
+
+        assert len(gh_create_calls) == 0, (
+            f"Expected no create call for MERGED PR, got: {gh_create_calls}"
+        )
+        rows = _read_attempts(root)
+        backfill = [r for r in rows if r.get("status") == "pr_opened" and r.get("pr_url") == merged_pr_url]
+        assert len(backfill) >= 1, (
+            f"Expected pr_opened backfill row for MERGED PR, got rows: {rows}"
+        )
+
+    def test_sweep_closed_pr_excluded_from_queue_regeneration(self, tmp_path: Path):
+        """Finding 4: episode with pr_exists_closed in ledger is excluded from _load_attempted_episodes."""
+        import json as _json
+        root = _make_root(tmp_path)
+
+        attempts_path = root / "data" / "codex_lane" / "case_attempts.jsonl"
+        attempts_path.parent.mkdir(parents=True, exist_ok=True)
+        with attempts_path.open("w", encoding="utf-8") as fh:
+            fh.write(_json.dumps({
+                "ts": "2026-01-01T00:00:00+00:00",
+                "episode": "NVDA_2023",
+                "status": "pr_exists_closed",
+                "pr_url": None,
+                "detail": "operator-rejected PR at https://github.com/owner/repo/pull/55",
+            }) + "\n")
+
+        import scripts.codex_case_lane as lane
+        excluded = lane._load_attempted_episodes(root)
+        assert "NVDA_2023" in excluded, (
+            f"Expected NVDA_2023 excluded (pr_exists_closed is terminal), got excluded: {excluded}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# FIX C — raw_tail logged on codex failure
+# ---------------------------------------------------------------------------
+
+class TestRawTailLogging:
+    """FIX C: raw_tail logged at WARNING level when codex run ok=False."""
+
+    def test_gen_fail_raw_tail_logged_in_case_lane(self, tmp_path: Path):
+        """When gen run fails, log.warning is called with raw_tail content."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)
+        _make_prompt_template(root)
+
+        fail_result = {
+            "ok": False,
+            "final_message": "",
+            "events_count": 0,
+            "token_usage": None,
+            "rate_limits": None,
+            "error_kind": "error",
+            "raw_tail": "FATAL: codex CLI flag --sandbox not recognized",
+        }
+
+        log_warnings: list = []
+
+        def fake_log_warning(msg, *args):
+            log_warnings.append(msg % args if args else msg)
+
+        with patch("engine.codex_lane.runner.run_codex", return_value=fail_result):
+            with patch("scripts.codex_case_lane._pr_recovery_sweep"):
+                import scripts.codex_case_lane as lane
+                with patch.object(lane.log, "warning", side_effect=fake_log_warning):
+                    lane.run_once(root=root, dry_run=False)
+
+        # At least one warning should contain both error_kind and raw_tail fragment
+        raw_tail_warnings = [w for w in log_warnings if "FATAL" in w or "--sandbox" in w or "raw_tail" in w.lower()]
+        assert len(raw_tail_warnings) >= 1, \
+            f"Expected raw_tail in log warning, got warnings: {log_warnings}"
+
+    def test_gen_fail_raw_tail_logged_in_signal_lane(self, tmp_path: Path):
+        """Signal lane: when gen run fails, log.warning includes raw_tail."""
+        root = _make_root(tmp_path)
+
+        fail_result = {
+            "ok": False,
+            "final_message": "",
+            "events_count": 0,
+            "token_usage": None,
+            "rate_limits": None,
+            "error_kind": "error",
+            "raw_tail": "Unknown flag: --network rejected by codex v2",
+        }
+
+        log_warnings: list = []
+
+        def fake_log_warning(msg, *args):
+            log_warnings.append(msg % args if args else msg)
+
+        with patch.dict(os.environ, {"SIGNAL_FOUNDRY_PAUSED": "false"}):
+            with patch("engine.codex_lane.runner.run_codex", return_value=fail_result):
+                import scripts.codex_signal_lane as lane
+                with patch.object(lane.log, "warning", side_effect=fake_log_warning):
+                    lane.run_once(root=root, dry_run=False)
+
+        raw_tail_warnings = [w for w in log_warnings if "Unknown flag" in w or "--network" in w or "raw_tail" in w.lower()]
+        assert len(raw_tail_warnings) >= 1, \
+            f"Expected raw_tail in signal lane log warning, got: {log_warnings}"
 
 
 # ---------------------------------------------------------------------------

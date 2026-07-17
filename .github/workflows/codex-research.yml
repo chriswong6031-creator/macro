@@ -62,9 +62,11 @@ jobs:
         run: |
           set -uo pipefail
           CODEX_OK=false
+          CODEX_BIN=""
           # Check binary presence
           if command -v codex >/dev/null 2>&1; then
-            echo "codex binary found via PATH: $(command -v codex)"
+            CODEX_BIN="$(command -v codex)"
+            echo "codex binary found via PATH: $CODEX_BIN"
             CODEX_OK=true
           else
             for _p in \
@@ -74,6 +76,7 @@ jobs:
               "/opt/homebrew/bin/codex" \
               "/usr/local/bin/codex"; do
               if [ -x "$_p" ]; then
+                CODEX_BIN="$_p"
                 echo "codex binary found at $_p"
                 CODEX_OK=true
                 break
@@ -82,6 +85,10 @@ jobs:
           fi
           if [ "$CODEX_OK" = "false" ]; then
             echo "codex binary NOT found — skipping lane steps"
+          else
+            # FIX D(a): print binary path and version for every run
+            echo "codex_bin=$CODEX_BIN"
+            "$CODEX_BIN" --version 2>&1 | head -1 || true
           fi
           # Check auth.json
           if [ ! -f "$HOME/.codex/auth.json" ]; then
@@ -114,6 +121,7 @@ jobs:
           SIGNAL_FOUNDRY_PAUSED: ${{ vars.SIGNAL_FOUNDRY_PAUSED }}
           CODEX_PRICE_STORE: ${{ vars.CODEX_PRICE_STORE }}
           GH_TOKEN: ${{ secrets.ADMIN_GH_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN_FALLBACK: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_WORKFLOW: ${{ github.workflow }}
           GITHUB_SHA: ${{ github.sha }}

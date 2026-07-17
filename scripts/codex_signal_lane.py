@@ -743,6 +743,9 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
 
         if not gen_run.get("ok"):
             err = gen_run.get("error_kind", "error")
+            # FIX C — log raw_tail so failure diagnostics are visible in the runner log
+            _raw_tail_gen = (gen_run.get("raw_tail") or "")[-500:]
+            log.warning("codex_signal_lane: gen run failed error_kind=%s raw_tail=%r", err, _raw_tail_gen)
             _append_governance_event(
                 "sf_brainstorm_run",
                 {"generator": "codex", "ok": False, "error_kind": err, "iso_week": iso_week},
