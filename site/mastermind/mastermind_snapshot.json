@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_snapshot.v1",
-  "generated_at": "2026-07-17T08:17:05Z",
+  "generated_at": "2026-07-17T12:25:00Z",
   "default_book": "flagship",
   "live_url": "http://localhost:8000",
   "books": [
@@ -11,10 +11,10 @@
       "kind": "gated",
       "manager": "engine",
       "benchmark": "SPY",
-      "as_of": "2026-07-16",
+      "as_of": "2026-07-17",
       "market_status": "closed",
-      "gross": 0.4708,
-      "cash": 0.5292,
+      "gross": 0.4652,
+      "cash": 0.5348,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -22,8 +22,8 @@
       },
       "sleeves": {
         "leadership": 0.268,
-        "conviction": 0.2028,
-        "cash": 0.5292
+        "conviction": 0.1972,
+        "cash": 0.5348
       },
       "positions": [
         {
@@ -175,9 +175,9 @@
           "theme_id": "theme:mag7",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0238,
+          "weight": 0.018,
           "verdict": "add",
-          "thesis_id": "2026-07-16-AAPL-conv",
+          "thesis_id": "2026-07-17-AAPL-conv",
           "time_stop_by": "2026-10-08",
           "confluence": 0.333,
           "entry_price": 327.5,
@@ -196,12 +196,27 @@
           "size_stage": "full",
           "entry_levels": {
             "ticker": "AAPL",
-            "price": 327.5
+            "price": 327.5,
+            "stop": 275.1,
+            "buy_zone": {
+              "low": 301.9,
+              "high": 313.1,
+              "pct_from_spot": -6.1
+            },
+            "entry_grade": "light",
+            "chase_above": 327.5
           },
+          "published_stop": 275.1,
+          "buy_zone": {
+            "low": 301.9,
+            "high": 313.1,
+            "pct_from_spot": -6.1
+          },
+          "entry_grade": "light",
           "opened_at": "2026-07-14T06:21:00.676699+00:00",
           "held_days": 3,
           "thesis_full": {
-            "summary": "AAPL clears the multi-sided conviction gate: 4/6 lenses are bullish (confluence +0.33), size_authority = up. No hard vetoes. Sized at 2.4% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "summary": "AAPL clears the multi-sided conviction gate: 4/6 lenses are bullish (confluence +0.33), size_authority = up. No hard vetoes. Sized at 1.8% — the confluence-weighted allocation within the conviction sleeve budget.",
             "why_now": "All 6 scored lenses were evaluated today; 4 sided bullish, 2 bearish, giving a positive +0.33 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
               "Quality score strong (quality_z=0.78, accounting=clean).",
@@ -220,7 +235,7 @@
             "vetoes": [],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if AAPL underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. AAPL receives 2.4% (confluence +0.33 (4/6 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. AAPL receives 1.8% (confluence +0.33 (4/6 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-08.",
             "confluence": 0.333,
             "prob_correct": 0.68
           }
@@ -230,9 +245,9 @@
           "theme_id": "theme:ai_infra",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0132,
+          "weight": 0.0133,
           "verdict": "add",
-          "thesis_id": "2026-07-16-ANET-conv",
+          "thesis_id": "2026-07-17-ANET-conv",
           "time_stop_by": "2026-10-08",
           "confluence": 0.429,
           "entry_price": 171.92,
@@ -286,9 +301,9 @@
           "theme_id": "theme:regional_banks",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0651,
+          "weight": 0.0657,
           "verdict": "add",
-          "thesis_id": "2026-07-16-RF-conv",
+          "thesis_id": "2026-07-17-RF-conv",
           "time_stop_by": "2026-10-13",
           "confluence": 1.0,
           "entry_price": 31.48,
@@ -312,7 +327,7 @@
           "opened_at": "2026-07-17T02:21:12.667170+00:00",
           "held_days": 0,
           "thesis_full": {
-            "summary": "RF clears the multi-sided conviction gate: 3/3 lenses are bullish (confluence +1.00), size_authority = up. No hard vetoes. Sized at 6.5% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "summary": "RF clears the multi-sided conviction gate: 3/3 lenses are bullish (confluence +1.00), size_authority = up. No hard vetoes. Sized at 6.6% — the confluence-weighted allocation within the conviction sleeve budget.",
             "why_now": "All 3 scored lenses were evaluated today; 3 sided bullish, 0 bearish, giving a positive +1.00 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
               "Valuation supportive: value_z=0.85, trailing P/E cheaper than 68% of history.",
@@ -330,7 +345,7 @@
             "vetoes": [],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if RF underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. RF receives 6.5% (confluence +1.00 (3/3 lenses bullish = +1.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-13.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. RF receives 6.6% (confluence +1.00 (3/3 lenses bullish = +1.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-13.",
             "confluence": 1.0,
             "prob_correct": 0.7
           },
@@ -344,9 +359,9 @@
           "theme_id": "theme:us_sector_financials",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0501,
+          "weight": 0.0506,
           "verdict": "add",
-          "thesis_id": "2026-07-16-SCHW-conv",
+          "thesis_id": "2026-07-17-SCHW-conv",
           "time_stop_by": "2026-10-13",
           "confluence": 0.6,
           "entry_price": 102.79,
@@ -370,7 +385,7 @@
           "opened_at": "2026-07-17T02:21:12.667170+00:00",
           "held_days": 0,
           "thesis_full": {
-            "summary": "SCHW clears the multi-sided conviction gate: 4/5 lenses are bullish (confluence +0.60), size_authority = up. No hard vetoes. Sized at 5.0% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "summary": "SCHW clears the multi-sided conviction gate: 4/5 lenses are bullish (confluence +0.60), size_authority = up. No hard vetoes. Sized at 5.1% — the confluence-weighted allocation within the conviction sleeve budget.",
             "why_now": "All 5 scored lenses were evaluated today; 4 sided bullish, 1 bearish, giving a positive +0.60 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
               "Growth trajectory positive: revenue CAGR 15.4%, EPS CAGR 17.0%.",
@@ -388,7 +403,7 @@
             "vetoes": [],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if SCHW underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. SCHW receives 5.0% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-13.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. SCHW receives 5.1% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-13.",
             "confluence": 0.6,
             "prob_correct": 0.7
           },
@@ -402,9 +417,9 @@
           "theme_id": "theme:payments_fintech",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0347,
+          "weight": 0.0335,
           "verdict": "add",
-          "thesis_id": "2026-07-16-V-conv",
+          "thesis_id": "2026-07-17-V-conv",
           "time_stop_by": "2026-10-13",
           "confluence": 0.6,
           "entry_price": 355.14,
@@ -428,7 +443,7 @@
           "opened_at": "2026-07-17T02:21:12.667170+00:00",
           "held_days": 0,
           "thesis_full": {
-            "summary": "V clears the multi-sided conviction gate: 4/5 lenses are bullish (confluence +0.60), size_authority = up. No hard vetoes. Sized at 3.5% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "summary": "V clears the multi-sided conviction gate: 4/5 lenses are bullish (confluence +0.60), size_authority = up. No hard vetoes. Sized at 3.4% — the confluence-weighted allocation within the conviction sleeve budget.",
             "why_now": "All 5 scored lenses were evaluated today; 4 sided bullish, 1 bearish, giving a positive +0.60 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
               "Growth trajectory positive: revenue CAGR 12.9%.",
@@ -446,7 +461,7 @@
             "vetoes": [],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if V underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. V receives 3.5% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-13.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. V receives 3.4% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-13.",
             "confluence": 0.6,
             "prob_correct": 0.7
           },
@@ -460,9 +475,9 @@
           "theme_id": "name:XLE",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.0159,
+          "weight": 0.0161,
           "verdict": "hold",
-          "thesis_id": "2026-07-16-XLE-conv",
+          "thesis_id": "2026-07-17-XLE-conv",
           "time_stop_by": "2026-10-09",
           "confluence": 0.333,
           "entry_price": 56.5,
@@ -508,17 +523,25 @@
       ],
       "decisions": [
         {
-          "id": "2026-07-16-AAPL-conv",
+          "id": "2026-07-17-AAPL-conv",
           "subject": "AAPL",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.68,
           "horizon_d": 21,
           "thesis": "Multi-sided confluence +0.33 (bull 4/bear 2); all sides confirm and no hard veto — sized 2%.",
-          "state_asof": "2026-07-16",
+          "state_asof": "2026-07-17",
           "entry_levels": {
             "ticker": "AAPL",
-            "price": 327.5
+            "price": 327.5,
+            "stop": 275.1,
+            "buy_zone": {
+              "low": 301.9,
+              "high": 313.1,
+              "pct_from_spot": -6.1
+            },
+            "entry_grade": "light",
+            "chase_above": 327.5
           },
           "evidence": [
             "size_authority=up",
@@ -530,7 +553,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-13",
+          "time_stop_by": "2026-10-14",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -544,18 +567,18 @@
             },
             "text": "FALSE if AAPL underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-14",
+          "check_by": "2026-08-17",
           "raw_prob_correct": 0.68
         },
         {
-          "id": "2026-07-16-ANET-conv",
+          "id": "2026-07-17-ANET-conv",
           "subject": "ANET",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.7,
           "horizon_d": 21,
           "thesis": "Multi-sided confluence +0.43 (bull 5/bear 2); all sides confirm and no hard veto — sized 2%.",
-          "state_asof": "2026-07-16",
+          "state_asof": "2026-07-17",
           "entry_levels": {
             "ticker": "ANET",
             "price": 171.92
@@ -570,7 +593,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-13",
+          "time_stop_by": "2026-10-14",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -584,18 +607,18 @@
             },
             "text": "FALSE if ANET underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-14",
+          "check_by": "2026-08-17",
           "raw_prob_correct": 0.7
         },
         {
-          "id": "2026-07-16-RF-conv",
+          "id": "2026-07-17-RF-conv",
           "subject": "RF",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.7,
           "horizon_d": 21,
           "thesis": "Multi-sided confluence +1.00 (bull 3/bear 0); all sides confirm and no hard veto — sized 7%.",
-          "state_asof": "2026-07-16",
+          "state_asof": "2026-07-17",
           "entry_levels": {
             "ticker": "RF",
             "price": 31.48
@@ -610,7 +633,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-13",
+          "time_stop_by": "2026-10-14",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -624,18 +647,18 @@
             },
             "text": "FALSE if RF underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-14",
+          "check_by": "2026-08-17",
           "raw_prob_correct": 0.7
         },
         {
-          "id": "2026-07-16-SCHW-conv",
+          "id": "2026-07-17-SCHW-conv",
           "subject": "SCHW",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.7,
           "horizon_d": 21,
           "thesis": "Multi-sided confluence +0.60 (bull 4/bear 1); all sides confirm and no hard veto — sized 5%.",
-          "state_asof": "2026-07-16",
+          "state_asof": "2026-07-17",
           "entry_levels": {
             "ticker": "SCHW",
             "price": 102.79
@@ -650,7 +673,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-13",
+          "time_stop_by": "2026-10-14",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -664,18 +687,18 @@
             },
             "text": "FALSE if SCHW underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-14",
+          "check_by": "2026-08-17",
           "raw_prob_correct": 0.7
         },
         {
-          "id": "2026-07-16-V-conv",
+          "id": "2026-07-17-V-conv",
           "subject": "V",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.7,
           "horizon_d": 21,
           "thesis": "Multi-sided confluence +0.60 (bull 4/bear 1); all sides confirm and no hard veto — sized 3%.",
-          "state_asof": "2026-07-16",
+          "state_asof": "2026-07-17",
           "entry_levels": {
             "ticker": "V",
             "price": 355.14
@@ -690,7 +713,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-13",
+          "time_stop_by": "2026-10-14",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -704,18 +727,18 @@
             },
             "text": "FALSE if V underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-14",
+          "check_by": "2026-08-17",
           "raw_prob_correct": 0.7
         },
         {
-          "id": "2026-07-16-XLE-conv",
+          "id": "2026-07-17-XLE-conv",
           "subject": "XLE",
           "lean": "hold",
           "conviction": "medium",
           "prob_correct": 0.68,
           "horizon_d": 21,
           "thesis": "Hysteresis HOLD — confluence +0.33 is above the exit floor (+0.25) but the entry gate was NOT re-cleared (bull 2/bear 1); carried, not freshly confirmed. Monitor for exit.",
-          "state_asof": "2026-07-16",
+          "state_asof": "2026-07-17",
           "entry_levels": {
             "ticker": "XLE",
             "price": 56.5
@@ -730,7 +753,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-13",
+          "time_stop_by": "2026-10-14",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -743,140 +766,140 @@
             },
             "text": "XLE: 'hold' is non-directional — tracked as a watch, not falsifiable as a trade"
           },
-          "check_by": "2026-08-14",
+          "check_by": "2026-08-17",
           "raw_prob_correct": 0.68
         }
       ],
       "pending_orders": [
         {
-          "id": "2026-07-16-IWM-sell",
+          "id": "2026-07-17-IWM-sell",
           "ticker": "IWM",
           "side": "sell",
           "shares": 210.0,
           "est_price": 295.59,
           "est_value": 62073.9,
           "weight": 0.0,
-          "placed_asof": "2026-07-16",
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-AAPL-sell",
+          "id": "2026-07-17-AAPL-sell",
           "ticker": "AAPL",
           "side": "sell",
-          "shares": 58.582996,
+          "shares": 75.256047,
           "est_price": 333.26,
-          "est_value": 19523.37,
-          "weight": 0.0238,
-          "placed_asof": "2026-07-16",
+          "est_value": 25079.83,
+          "weight": 0.018,
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-ANET-sell",
+          "id": "2026-07-17-ANET-sell",
           "ticker": "ANET",
           "side": "sell",
-          "shares": 130.977814,
+          "shares": 130.409464,
           "est_price": 168.56,
-          "est_value": 22077.62,
-          "weight": 0.0132,
-          "placed_asof": "2026-07-16",
+          "est_value": 21981.82,
+          "weight": 0.0133,
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-XLE-sell",
+          "id": "2026-07-17-XLE-sell",
           "ticker": "XLE",
           "side": "sell",
-          "shares": 202.85921,
+          "shares": 199.498949,
           "est_price": 57.02,
-          "est_value": 11567.03,
-          "weight": 0.0159,
-          "placed_asof": "2026-07-16",
+          "est_value": 11375.43,
+          "weight": 0.0161,
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-SMH-buy",
+          "id": "2026-07-17-SMH-buy",
           "ticker": "SMH",
           "side": "buy",
           "shares": 18.0,
           "est_price": 568.92,
           "est_value": 10240.56,
           "weight": 0.0637,
-          "placed_asof": "2026-07-16",
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-XLK-buy",
+          "id": "2026-07-17-XLK-buy",
           "ticker": "XLK",
           "side": "buy",
           "shares": 88.0,
           "est_price": 177.52,
           "est_value": 15621.76,
           "weight": 0.0637,
-          "placed_asof": "2026-07-16",
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-MTUM-buy",
+          "id": "2026-07-17-MTUM-buy",
           "ticker": "MTUM",
           "side": "buy",
           "shares": 34.0,
           "est_price": 303.41,
           "est_value": 10315.94,
           "weight": 0.0606,
-          "placed_asof": "2026-07-16",
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-QUAL-buy",
+          "id": "2026-07-17-QUAL-buy",
           "ticker": "QUAL",
           "side": "buy",
           "shares": 347.0,
           "est_price": 220.66,
           "est_value": 76569.02,
           "weight": 0.08,
-          "placed_asof": "2026-07-16",
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-RF-buy",
+          "id": "2026-07-17-RF-buy",
           "ticker": "RF",
           "side": "buy",
-          "shares": 1924.0,
+          "shares": 1942.0,
           "est_price": 32.4,
-          "est_value": 62337.6,
-          "weight": 0.0651,
-          "placed_asof": "2026-07-16",
+          "est_value": 62920.8,
+          "weight": 0.0657,
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-SCHW-buy",
+          "id": "2026-07-17-SCHW-buy",
           "ticker": "SCHW",
           "side": "buy",
-          "shares": 466.0,
+          "shares": 471.0,
           "est_price": 102.8,
-          "est_value": 47904.8,
-          "weight": 0.0501,
-          "placed_asof": "2026-07-16",
+          "est_value": 48418.8,
+          "weight": 0.0506,
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         },
         {
-          "id": "2026-07-16-V-buy",
+          "id": "2026-07-17-V-buy",
           "ticker": "V",
           "side": "buy",
-          "shares": 91.0,
+          "shares": 87.0,
           "est_price": 365.14,
-          "est_value": 33227.74,
-          "weight": 0.0347,
-          "placed_asof": "2026-07-16",
+          "est_value": 31767.18,
+          "weight": 0.0335,
+          "placed_asof": "2026-07-17",
           "fill_after": "2026-07-17",
           "status": "pending"
         }
@@ -900,7 +923,7 @@
           "bear": [
             "Asymmetry lens bearish",
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -75% off 52w high, RSI 33, down -27% in recent sessions (falling knife)",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -75% off 52w high, RSI 33, down -32% in recent sessions (falling knife)",
             "Options lens bearish"
           ],
           "confluence": -1.0
@@ -913,7 +936,7 @@
           ],
           "bear": [
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -70% off 52w high, RSI 38",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -70% off 52w high, RSI 38, down -13% in recent sessions (falling knife)",
             "Narrative: theme 'uranium_miners' rank 46/46, score -1.00, 5d rel -3.2%",
             "Fed Path lens bearish"
           ],
@@ -928,7 +951,7 @@
           "bear": [
             "Valuation stretched (value_z=-1.00)",
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -50% off 52w high, RSI 37",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -50% off 52w high, RSI 37, down -16% in recent sessions (falling knife)",
             "Options lens bearish"
           ],
           "confluence": -1.0
@@ -974,7 +997,7 @@
           ],
           "bear": [
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -50% off 52w high, RSI 33",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -50% off 52w high, RSI 33, down -18% in recent sessions (falling knife)",
             "Options lens bearish",
             "Narrative: theme 'critical_minerals' rank 16/46, score +0.07, 5d rel -7.1%"
           ],
@@ -1047,7 +1070,7 @@
           "bear": [
             "Asymmetry lens bearish",
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, -54% off 52w high, RSI 34",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, -54% off 52w high, RSI 34, down -18% in recent sessions (falling knife)",
             "Options lens bearish"
           ],
           "confluence": -0.714
@@ -1086,7 +1109,7 @@
           "vetoes": [],
           "bear": [
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -64% off 52w high",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -64% off 52w high, down -15% in recent sessions (falling knife)",
             "Options lens bearish",
             "Narrative: theme 'power_grid' rank 34/46, score -0.38, 5d rel -1.3%"
           ],
@@ -1100,7 +1123,7 @@
           ],
           "bear": [
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -66% off 52w high, RSI 36, down -18% in recent sessions (falling knife)",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -66% off 52w high, RSI 36, down -31% in recent sessions (falling knife)",
             "Options lens bearish",
             "Narrative: theme 'critical_minerals' rank 16/46, score +0.07, 5d rel -7.1%"
           ],
@@ -1108,7 +1131,7 @@
         },
         {
           "ticker": "VKTX",
-          "reason": "Weak asymmetry — upside/downside cone 0.76 (not asymmetric)",
+          "reason": "Falling knife — sharp recent multi-day decline (await stabilization)",
           "vetoes": [],
           "bear": [
             "Asymmetry lens bearish",
@@ -1120,7 +1143,7 @@
         },
         {
           "ticker": "AXON",
-          "reason": "Falling knife — sharp recent multi-day decline (await stabilization)",
+          "reason": "Weak asymmetry — upside/downside cone 0.16 (not asymmetric)",
           "vetoes": [],
           "bear": [
             "Valuation stretched (value_z=-1.11)",
@@ -1143,7 +1166,7 @@
           "confluence": -0.6
         }
       ],
-      "rejected_count": 147,
+      "rejected_count": 145,
       "disclaimer": "Paper-only / display-only. Accountability, not alpha. Not investment advice.",
       "zh": {
         "disclaimer": "仅纸面/仅展示；从不自动执行。"
@@ -1157,7 +1180,7 @@
         "total_return_pct": -4.1989,
         "vs_spy_pct": -5.5162,
         "benchmark": "SPY",
-        "day_change_pct": -0.4546,
+        "day_change_pct": 0.0,
         "max_drawdown_pct": -4.7499,
         "realized_since": "2026-06-19",
         "series": [
@@ -4509,20 +4532,20 @@
       "kind": "hk_brain",
       "manager": "brain",
       "benchmark": "FXI",
-      "as_of": "2026-07-16",
+      "as_of": "2026-07-17",
       "market_status": {
         "open": false,
         "venue": "HKEX (Hong Kong)",
-        "asof": "2026-07-16T17:00:05.451327+08:00",
-        "asof_cst": "2026-07-16T17:00:05.451327+08:00",
+        "asof": "2026-07-17T17:00:06.762069+08:00",
+        "asof_cst": "2026-07-17T17:00:06.762069+08:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-17T09:30:00+08:00",
-        "next_open_day": "2026-07-17",
-        "prev_trading_day": "2026-07-15"
+        "next_open": "2026-07-20T09:30:00+08:00",
+        "next_open_day": "2026-07-20",
+        "prev_trading_day": "2026-07-16"
       },
-      "gross": 0.7393,
-      "cash": 0.2607,
+      "gross": 0.7348,
+      "cash": 0.2652,
       "regime": {
         "quad": "Q3",
         "quad_name": "Stagflation",
@@ -4535,17 +4558,17 @@
           "name": "Tencent",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1519,
+          "weight": 0.1473,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 23,
+          "held_days": 24,
           "cost_basis": 448.3611,
-          "current_price": 484.0,
-          "market_value": 151217.94,
-          "unrealized_pnl": 11134.81,
-          "unrealized_pct": 7.95,
+          "current_price": 461.6,
+          "market_value": 144219.43,
+          "unrealized_pnl": 4136.29,
+          "unrealized_pct": 2.95,
           "thesis_full": null
         },
         {
@@ -4553,17 +4576,17 @@
           "name": "China Life",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1326,
+          "weight": 0.1289,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 23,
+          "held_days": 24,
           "cost_basis": 27.9125,
-          "current_price": 27.7,
-          "market_value": 131959.46,
-          "unrealized_pnl": -1012.1,
-          "unrealized_pct": -0.76,
+          "current_price": 26.48,
+          "market_value": 126147.52,
+          "unrealized_pnl": -6824.04,
+          "unrealized_pct": -5.13,
           "thesis_full": null
         },
         {
@@ -4571,17 +4594,17 @@
           "name": "China Mobile",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0799,
+          "weight": 0.0816,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-09T01:42:56.199873+00:00",
-          "held_days": 7,
+          "held_days": 8,
           "cost_basis": 78.4876,
-          "current_price": 79.6,
-          "market_value": 79520.4,
-          "unrealized_pnl": 1111.3,
-          "unrealized_pct": 1.42,
+          "current_price": 79.95,
+          "market_value": 79870.05,
+          "unrealized_pnl": 1460.95,
+          "unrealized_pct": 1.86,
           "thesis_full": null
         },
         {
@@ -4589,17 +4612,17 @@
           "name": "ICBC",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0713,
+          "weight": 0.0728,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 23,
+          "held_days": 24,
           "cost_basis": 6.7841,
-          "current_price": 6.88,
-          "market_value": 70965.99,
-          "unrealized_pnl": 989.38,
-          "unrealized_pct": 1.41,
+          "current_price": 6.91,
+          "market_value": 71275.43,
+          "unrealized_pnl": 1298.82,
+          "unrealized_pct": 1.86,
           "thesis_full": null
         },
         {
@@ -4607,17 +4630,17 @@
           "name": "China Construction Bank",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0694,
+          "weight": 0.0714,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-13T01:35:11.426685+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 8.13,
-          "current_price": 8.19,
-          "market_value": 69033.51,
-          "unrealized_pnl": 505.74,
-          "unrealized_pct": 0.74,
+          "current_price": 8.29,
+          "market_value": 69876.41,
+          "unrealized_pnl": 1348.64,
+          "unrealized_pct": 1.97,
           "thesis_full": null
         },
         {
@@ -4625,17 +4648,17 @@
           "name": "Alibaba",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0639,
+          "weight": 0.0626,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-10T01:44:17.779308+00:00",
-          "held_days": 6,
+          "held_days": 7,
           "cost_basis": 108.0,
-          "current_price": 116.9,
-          "market_value": 63593.6,
-          "unrealized_pnl": 4841.6,
-          "unrealized_pct": 8.24,
+          "current_price": 112.6,
+          "market_value": 61254.4,
+          "unrealized_pnl": 2502.4,
+          "unrealized_pct": 4.26,
           "thesis_full": null
         },
         {
@@ -4643,17 +4666,17 @@
           "name": "CSPC Pharmaceutical",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0591,
+          "weight": 0.0566,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-01T01:35:06.770648+00:00",
-          "held_days": 15,
+          "held_days": 16,
           "cost_basis": 6.97,
-          "current_price": 8.6,
-          "market_value": 58772.4,
-          "unrealized_pnl": 11139.42,
-          "unrealized_pct": 23.39,
+          "current_price": 8.1,
+          "market_value": 55355.4,
+          "unrealized_pnl": 7722.42,
+          "unrealized_pct": 16.21,
           "thesis_full": null
         },
         {
@@ -4661,17 +4684,17 @@
           "name": "Ping An Insurance",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0508,
+          "weight": 0.0514,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-13T01:35:11.426685+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 53.05,
-          "current_price": 54.8,
-          "market_value": 50525.6,
-          "unrealized_pnl": 1613.5,
-          "unrealized_pct": 3.3,
+          "current_price": 54.6,
+          "market_value": 50341.2,
+          "unrealized_pnl": 1429.1,
+          "unrealized_pct": 2.92,
           "thesis_full": null
         },
         {
@@ -4679,17 +4702,17 @@
           "name": "Bank of China",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0307,
+          "weight": 0.0311,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 23,
+          "held_days": 24,
           "cost_basis": 5.23,
-          "current_price": 5.1,
-          "market_value": 30572.44,
-          "unrealized_pnl": -779.3,
-          "unrealized_pct": -2.49,
+          "current_price": 5.08,
+          "market_value": 30452.55,
+          "unrealized_pnl": -899.19,
+          "unrealized_pct": -2.87,
           "thesis_full": null
         },
         {
@@ -4697,17 +4720,17 @@
           "name": "Power Assets",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0297,
+          "weight": 0.0311,
           "verdict": "hold",
           "conviction": null,
           "rationale": null,
           "opened_at": "2026-07-03T01:35:00.962739+00:00",
-          "held_days": 13,
+          "held_days": 14,
           "cost_basis": 56.55,
-          "current_price": 58.05,
-          "market_value": 29547.45,
-          "unrealized_pnl": 763.5,
-          "unrealized_pct": 2.65,
+          "current_price": 59.8,
+          "market_value": 30438.2,
+          "unrealized_pnl": 1654.25,
+          "unrealized_pct": 5.75,
           "thesis_full": null
         }
       ],
@@ -4724,13 +4747,13 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 995287.17,
+        "current_nav": 978808.97,
         "cash": 259578.38,
-        "invested": 735708.79,
-        "total_return_pct": -0.4713,
-        "vs_spy_pct": -4.4052,
+        "invested": 719230.59,
+        "total_return_pct": -2.1191,
+        "vs_spy_pct": -5.8128,
         "benchmark": "FXI",
-        "day_change_pct": 0.7288,
+        "day_change_pct": -1.6556,
         "max_drawdown_pct": -5.9056,
         "realized_since": "2026-06-21",
         "series": [

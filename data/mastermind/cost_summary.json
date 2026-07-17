@@ -552,26 +552,32 @@
     "2026-07-17": {
       "system": {
         "cache_read_tokens": 0,
-        "calls": 1,
-        "input_tokens": 10,
+        "calls": 2,
+        "input_tokens": 20,
         "keys": {
           "claude_code_oauth_3": {
             "calls": 1,
             "input_tokens": 10,
             "output_tokens": 50,
             "usd": 0.047223
-          }
-        },
-        "output_tokens": 50,
-        "seats": {
-          "scout": {
+          },
+          "claude_code_oauth_4": {
             "calls": 1,
             "input_tokens": 10,
-            "output_tokens": 50,
-            "usd": 0.047223
+            "output_tokens": 63,
+            "usd": 0.046996
           }
         },
-        "usd": 0.047223
+        "output_tokens": 113,
+        "seats": {
+          "scout": {
+            "calls": 2,
+            "input_tokens": 20,
+            "output_tokens": 113,
+            "usd": 0.094219
+          }
+        },
+        "usd": 0.094219
       }
     }
   },
@@ -583,16 +589,17 @@
       "flagship": 30.041681,
       "heavyweight": 11.828364,
       "hk": 21.285389,
-      "system": 0.047223
+      "system": 0.094219
     },
     "by_key": {
-      "claude_code_oauth_3": 0.047223
+      "claude_code_oauth_3": 0.047223,
+      "claude_code_oauth_4": 0.046996
     },
     "by_seat": {
-      "scout": 0.047223
+      "scout": 0.094219
     },
-    "input_tokens": 10,
-    "output_tokens": 50,
-    "usd": 123.3783
+    "input_tokens": 20,
+    "output_tokens": 113,
+    "usd": 123.4253
   }
 }
