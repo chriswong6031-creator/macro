@@ -1094,6 +1094,25 @@ def main() -> int:
             log.error("china stocks: reversion_desk load failed (%s); skipping", _rd_e)
             vm["reversion_desk"] = None
 
+        # W-FCT: ticker → "EN / ZH" display-name map for panels whose artifacts
+        # don't carry names (Turn Setups / mtf_upturn_cn). data/china_search/
+        # members.parquet is COMMITTED, so this resolves on re-render lanes too.
+        # Never fatal; the template degrades to ticker-only for missing names.
+        try:
+            _nm_syms = set((((vm.get("mtf_upturn_cn") or {}).get("members")) or {}).keys())
+            _nm_map = {}
+            if _nm_syms:
+                _mem = pd.read_parquet(
+                    config.data_dir() / "china_search" / "members.parquet",
+                    columns=["name"])
+                _all_names = {str(k): str(v) for k, v in _mem["name"].items()}
+                _nm_map = {s: _all_names[s] for s in _nm_syms if s in _all_names}
+            vm["cn_name_by_ticker"] = _nm_map
+        except Exception as _nm_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("cn_name_by_ticker map failed (%s); Turn Setups names "
+                        "degrade to ticker-only", _nm_e)
+            vm["cn_name_by_ticker"] = {}
+
         # ── MX5 hero: 11-session score path log ──────────────────────────────
         # Appended nightly; deduped by date.  Never fatal.  Intraday lanes that
         # call build_china outside the nightly path must NOT call this — the
