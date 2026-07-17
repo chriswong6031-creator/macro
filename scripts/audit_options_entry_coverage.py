@@ -418,20 +418,21 @@ def _consistency_rows(gate: dict, root: Path, today: date) -> list[dict]:
     gate_family_size = gate.get("fdr_family", {}).get("family_size", None)
     gate_description = gate.get("fdr_family", {}).get("description", "")
     # Count mentions of "×N" patterns in the description to derive registered tests
-    # The masterplan registered 28 after #1674 per adjudication §5.1 / §2 census note
-    REGISTERED_TEST_COUNT = 28      # registry value post-#1674 (per adjudication §5.1)
-    VALIDATE_DOCSTRING_COUNT = 22   # validate_options_entry.py docstring FDR statement
+    # FS-3 amendment (2026-07-13) expanded the family: 28 OVC + 8 flow-score = 36
+    REGISTERED_TEST_COUNT = 36      # registry value post-FS-3 (masterplan §4 FS-3 BH-FDR statement)
+    VALIDATE_DOCSTRING_COUNT = 36   # validate_options_entry.py fdr_family.family_size (updated by W-OVC fix)
     rows.append({
         "check": "bh_test_count_drift",
         "registry_registered": REGISTERED_TEST_COUNT,
         "gate_json_family_size": gate_family_size,
         "validate_docstring_count": VALIDATE_DOCSTRING_COUNT,
         "note": (
-            f"BH test-count drift: registry after #1674 = {REGISTERED_TEST_COUNT} tests; "
+            f"BH test-count drift: registry after FS-3 (2026-07-13) = {REGISTERED_TEST_COUNT} tests "
+            f"(28 OVC + 8 S-FLOWML cells); "
             f"gate.json fdr_family.family_size = {gate_family_size}; "
-            f"validate_options_entry.py FDR docstring = {VALIDATE_DOCSTRING_COUNT}. "
+            f"validate_options_entry.py FDR family_size = {VALIDATE_DOCSTRING_COUNT}. "
             "These are TEST counts (the BH family size), not bucket counts. "
-            "Discrepancy is printed only — fix owned by W-OVC as first obligation (RUL-U5)."
+            "Reconciled to 36 by W-OVC fix per RUL-U5 obligation."
         ),
     })
 

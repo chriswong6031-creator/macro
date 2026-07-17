@@ -496,10 +496,19 @@ def _ovc_from_chain(
     sectional tercile ranking across multiple tickers on the same as_of — done in the
     stamp_ledger pass, not here).
 
-    OI TIMING: chains/{date}.parquet carries T+1-published OI (OPRA convention). The PIT
-    filter (date ≤ as_of) means a fire on date D uses OI published on or before D, which
-    corresponds to positions held as of D−1. This matches the existing chain-stamp convention
-    in _doi_slope_stamp and _voi_flag_stamp.
+    OI TIMING (PIT-clean, matching the frozen study construction):
+    The adjudicated study (options_opex_vanna_charm_study.py §340-343) builds front7_abs_charm_share
+    from oi_signal = oi.groupby([expiration,strike,right])['open_interest'].shift(1) — prior-day OI
+    per contract.  The adjudication §2 PIT-verification certifies the metric as clean precisely
+    because of this shift.  This function replicates that construction:
+
+      - Greeks (charm/T/iv) are taken from the CURRENT chain snapshot (usable[-1]) — same-day
+        quote-derived inputs, matching the study merge of same-date greeks against shifted OI.
+      - OI is taken from the PRIOR chain snapshot (usable[-2]) — pre-trade-day positions that
+        do NOT include same-day fire-date trades (look-ahead).
+
+    This matches _voi_flag_stamp's pattern (today chain for volume, prior chain for OI).
+    When fewer than 2 usable snapshots exist the metric is null (cannot form prior-day OI).
     """
     # Import here to avoid circular dependency at module level
     from engine.greeks import bs_greeks
@@ -507,26 +516,47 @@ def _ovc_from_chain(
 
     out: dict = {"opt_front7_charm_share": None, "opt_root_class": _root_class(ticker)}
 
-    # find latest chain date ≤ as_of
+    # Need at least 2 usable snapshots: current for greeks, prior for OI
     usable = [d for d in chain_dates if d <= as_of]
-    if not usable:
+    if len(usable) < 2:
         return out
-    chain_date = usable[-1]
+    chain_date = usable[-1]   # current snapshot — provides greeks (T, iv, spot, expiry)
+    prev_date = usable[-2]    # prior snapshot — provides OI (pre-fire-day positions)
+
     cdf = read_chain(chain_date)
     if cdf is None or cdf.empty:
+        return out
+    prev_cdf = read_chain(prev_date)
+    if prev_cdf is None or prev_cdf.empty:
         return out
 
     # required columns
     required = {"underlying", "K", "T", "iv", "oi", "is_call", "spot", "expiry"}
     if not required.issubset(set(cdf.columns)):
         return out
+    if not required.issubset(set(prev_cdf.columns)):
+        return out
 
     sub = cdf[cdf["underlying"] == ticker].copy()
     if sub.empty:
         return out
 
-    for col in ("K", "T", "iv", "oi", "spot"):
+    # Build prior-OI lookup keyed by (K, is_call) — matching _voi_flag_stamp pattern
+    prev_sub = prev_cdf[prev_cdf["underlying"] == ticker].copy()
+    if not prev_sub.empty:
+        prev_sub["_k"] = pd.to_numeric(prev_sub["K"], errors="coerce").round(4)
+        prev_sub["oi"] = pd.to_numeric(prev_sub["oi"], errors="coerce")
+        prior_oi_map = (
+            prev_sub.dropna(subset=["_k", "oi"])
+            .groupby(["_k", "is_call"])["oi"]
+            .sum()
+        )
+    else:
+        prior_oi_map = pd.Series(dtype=float)
+
+    for col in ("K", "T", "iv", "spot"):
         sub[col] = pd.to_numeric(sub[col], errors="coerce")
+    sub["_k"] = sub["K"].round(4)
 
     # days to expiry from the chain snapshot date
     def _dte(expiry_val) -> int | None:
@@ -543,23 +573,25 @@ def _ovc_from_chain(
     abs_charm_front7 = 0.0
 
     for _, row in sub.iterrows():
-        S, K_, T_, sigma, oi_val = (
-            row["spot"], row["K"], row["T"], row["iv"], row["oi"]
-        )
+        S, K_, T_, sigma = row["spot"], row["K"], row["T"], row["iv"]
         is_call = bool(row["is_call"])
         dte = row["_dte"]
+        # Look up prior-day OI for this contract (keyed by rounded K + is_call)
+        prior_oi = prior_oi_map.get((row["_k"], is_call))
+        if prior_oi is None:
+            continue
+        try:
+            oi_f = float(prior_oi)
+            s_f = float(S)
+        except (TypeError, ValueError):
+            continue
+        if not (math.isfinite(oi_f) and oi_f > 0 and math.isfinite(s_f) and s_f > 0):
+            continue
         try:
             _delta, _gamma, _vanna, charm = bs_greeks(S, K_, T_, sigma, is_call)
         except Exception:
             continue
         if not math.isfinite(charm):
-            continue
-        try:
-            oi_f = float(oi_val)
-            s_f = float(S)
-        except (TypeError, ValueError):
-            continue
-        if not (math.isfinite(oi_f) and math.isfinite(s_f) and s_f > 0):
             continue
         sign = 1.0 if is_call else -1.0
         charm_not = abs(sign * (charm / 365.0) * oi_f * _MULT * s_f)

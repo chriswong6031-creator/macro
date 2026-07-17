@@ -51,9 +51,9 @@ Output: ``data/options_entry/gate.json`` (schema ``options_entry.gate.v3``, exte
 Only recomputes counts / verdicts — a verdict flip requires the pre-registered thresholds,
 never a code edit. Idempotent, resilient.
 
-FDR FAMILY (BH α=0.10): 28 tests total (22 prior + 6 W-OVC: S-VANNA-RELIEF×3, S-FRONT-CHARM×3).
-See OPTIONS_ALPHA_MASTERPLAN.md §4 amended-family BH-FDR statement (2026-07-06).
-No verdict claims significance without clearing BH-FDR at α=0.10 over this full family.
+FDR FAMILY (BH α=0.10): 36 tests total (28 OVC + 8 S-FLOWML cells per FS-3 prereg 2026-07-13).
+See OPTIONS_ALPHA_MASTERPLAN.md §4 FS-3 Enlarged-family BH-FDR statement (2026-07-13: 28+8=36).
+No verdict claims significance without clearing BH-FDR at α=0.10 over this full 36-test family.
 """
 from __future__ import annotations
 
@@ -800,16 +800,21 @@ def build_gate(df: pd.DataFrame) -> dict:
         "fdr_family": {
             "alpha": 0.10,
             "method": "Benjamini-Hochberg",
-            "family_size": 28,
+            "family_size": 36,
             "description": (
                 "All fire-conditioned bucket tests × A10 primitives × live-accrual era (2026→). "
-                "28 tests total (S-IVR×3, S-DOI×3, S-VOI×3, S-IVSPREAD-F×3, S-SKEW_DECEL×3, "
-                "S-TOP_RISK×2, S-PIN_RISK×2, S-VOI2×3, S-VANNA-RELIEF×3, S-FRONT-CHARM×3). "
-                "BH-FDR threshold for k-th ranked p-value: p_k <= (k/28) * 0.10. "
+                "36 tests total: 28 OVC buckets (S-IVR×3, S-DOI×3, S-VOI×3, S-IVSPREAD-F×3, "
+                "S-SKEW_DECEL×3, S-TOP_RISK×2, S-PIN_RISK×2, S-VOI2×3, S-VANNA-RELIEF×3, "
+                "S-FRONT-CHARM×3) plus 8 FS-3 flow-score cells "
+                "(S-FLOWML-0_7×1, S-FLOWML-8_90×1, S-FLOWML-90P×2 [63d primary + 126d secondary], "
+                "and per-era holdout cells totalling 8 cells per FS-3 prereg 2026-07-13). "
+                "BH-FDR threshold for k-th ranked p-value: p_k <= (k/36) * 0.10 "
+                "(most-significant single-test threshold ≈ 0.0028). "
                 "No verdict claims significance without clearing BH-FDR at alpha=0.10 over "
-                "this full family. See OPTIONS_ALPHA_MASTERPLAN.md §4 amended BH-FDR statement "
-                "(2026-07-06 OVC amendment: 22→28 tests). Prior W-C registered p-values "
-                "unaffected (all building_history, no claimed p-values to re-check)."
+                "this full 36-test family. See OPTIONS_ALPHA_MASTERPLAN.md §4 FS-3 "
+                "Enlarged-family BH-FDR statement (2026-07-13: 28+8=36). "
+                "Amend-on-add re-check: all prior 28 OVC p-values re-ranked against (k/36)×0.10; "
+                "currently vacuous (all building_history, no posted p-values to re-check)."
             ),
         },
         "per_family_status": {
@@ -832,7 +837,7 @@ def build_gate(df: pd.DataFrame) -> dict:
             "S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2 + W-OVC: "
             "S-VANNA-RELIEF/S-FRONT-CHARM). Display/ledger-seed only until a bucket "
             "clears n≥30 AND a primitive delta's bootstrap CI excludes 0 (doctrine §2.3). "
-            "Ledger primitives only (ruling A10). FDR family=28 tests, BH α=0.10. "
+            "Ledger primitives only (ruling A10). FDR family=36 tests, BH α=0.10. "
             "Never scored until a gate passes. "
             "S-TOP_RISK/S-PIN_RISK/S-FRONT-CHARM are caution-only: beneficial direction = "
             "flagged fires worse/higher-vol (correctly de-escalates). "

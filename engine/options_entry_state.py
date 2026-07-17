@@ -242,8 +242,56 @@ def _evidence_quality(
 # W-OVC chain helpers
 # ---------------------------------------------------------------------------
 
-def _compute_chain_ovc(root: Path, ticker: str) -> dict:
-    """Compute W-OVC display columns from the LATEST chains/{date}.parquet for ticker.
+def _load_latest_chain_ovc(root: Path) -> tuple[_dt.date | None, dict[str, pd.DataFrame]]:
+    """Load the latest chains/{date}.parquet ONCE and return (chain_date, {ticker: sub_df}).
+
+    Called once per build_state invocation.  The per-ticker sub-frames are pre-filtered
+    and numeric-coerced so the per-ticker loop in build_state does not re-read or re-parse
+    the whole-market parquet ~350 times.
+
+    Returns (None, {}) when no chain file exists or required columns are missing.
+    """
+    _OVC_REQUIRED = {"underlying", "K", "T", "iv", "oi", "is_call", "spot", "expiry"}
+    chains_dir = root / "data" / "polygon_gex" / "chains"
+    if not chains_dir.exists():
+        return None, {}
+    chain_files = sorted(chains_dir.glob("*.parquet"))
+    if not chain_files:
+        return None, {}
+    latest_chain_path = chain_files[-1]
+    try:
+        chain_date_str = latest_chain_path.stem
+        chain_date = _dt.date.fromisoformat(chain_date_str)
+    except ValueError:
+        log.debug("Cannot parse chain date from %s — skipping OVC", latest_chain_path.name)
+        return None, {}
+    try:
+        cdf = pd.read_parquet(latest_chain_path)
+    except Exception:
+        log.debug("Cannot read chain %s — skipping OVC", latest_chain_path)
+        return None, {}
+    if cdf.empty or not _OVC_REQUIRED.issubset(set(cdf.columns)):
+        log.debug("Chain %s empty or missing required OVC columns", latest_chain_path.name)
+        return None, {}
+    # Coerce numerics once, then split by underlying
+    for col in ("K", "T", "iv", "oi", "spot"):
+        cdf[col] = pd.to_numeric(cdf[col], errors="coerce")
+    by_ticker: dict[str, pd.DataFrame] = {
+        sym: grp.copy()
+        for sym, grp in cdf.groupby("underlying", sort=False)
+    }
+    return chain_date, by_ticker
+
+
+def _compute_chain_ovc_from_sub(
+    sub: pd.DataFrame,
+    chain_date: _dt.date,
+) -> dict:
+    """Compute W-OVC display columns from a pre-loaded per-ticker chain sub-frame.
+
+    Called by build_state with frames produced by _load_latest_chain_ovc (loaded once for
+    the whole board, then split by underlying).  This replaces the old _compute_chain_ovc
+    which re-read the entire chain parquet once per ticker (~350 reads per build_state call).
 
     Returns dict with keys:
       front7_charm_share  — |charm| OI-weighted notional share for expiries ≤7 calendar
@@ -265,10 +313,11 @@ def _compute_chain_ovc(root: Path, ticker: str) -> dict:
       front7_gex_share   = sum(|gex_notional|  where dte≤7) / sum(|gex_notional|)
       signed_vanna_pressure = sum(vanna_notional) [full board, signed]
 
-    OI TIMING: chains/{date}.parquet carries OI as reported by OPRA for that file date
-    (T+1 publication: day-t trades reflected in day-t+1 OI).  We read the LATEST chain
-    snapshot available without additional shifting — this matches the existing behaviour
-    of the options_entry_state display table (see docstring OI TIMING LAW).
+    OI TIMING (display-path note):
+    This display path uses raw same-snapshot OI, consistent with the OI TIMING LAW in the
+    module docstring (display context at render time; not a gate-feeding ledger primitive).
+    The gate-feeding primitive in engine/options_stamp.py:_ovc_from_chain uses prior-day OI
+    (shift(1) per contract) to match the frozen PIT-clean study construction.
 
     Null-safe: any per-contract failure (non-positive inputs to bs_greeks) silently
     produces NaN vanna/charm for that row; those rows are excluded from the sums.
@@ -280,41 +329,8 @@ def _compute_chain_ovc(root: Path, ticker: str) -> dict:
         "front7_gex_share": None,
         "signed_vanna_pressure": None,
     }
-    chains_dir = root / "data" / "polygon_gex" / "chains"
-    if not chains_dir.exists():
+    if sub is None or sub.empty:
         return out
-    # Find the latest available chain file
-    chain_files = sorted(chains_dir.glob("*.parquet"))
-    if not chain_files:
-        return out
-    latest_chain_path = chain_files[-1]
-    try:
-        cdf = pd.read_parquet(latest_chain_path)
-    except Exception:
-        log.debug("Cannot read chain %s — skipping OVC", latest_chain_path)
-        return out
-    if cdf.empty:
-        return out
-    # Filter to this ticker
-    required_cols = {"underlying", "K", "T", "iv", "oi", "is_call", "spot", "expiry"}
-    if not required_cols.issubset(set(cdf.columns)):
-        log.debug("Chain %s missing required columns for OVC", latest_chain_path)
-        return out
-    sub = cdf[cdf["underlying"] == ticker].copy()
-    if sub.empty:
-        return out
-
-    # Chain snapshot date (for computing days-to-expiry)
-    chain_date_str = latest_chain_path.stem  # "YYYY-MM-DD"
-    try:
-        chain_date = _dt.date.fromisoformat(chain_date_str)
-    except ValueError:
-        log.debug("Cannot parse chain date from %s", latest_chain_path.name)
-        return out
-
-    # Coerce numeric columns
-    for col in ("K", "T", "iv", "oi", "spot"):
-        sub[col] = pd.to_numeric(sub[col], errors="coerce")
 
     # Compute calendar days to expiry from chain snapshot date
     def _dte(expiry_val) -> int | None:
@@ -669,6 +685,10 @@ def build_state(root: str | Path | None = None) -> pd.DataFrame:
     ivspread_data = _load_ivspread_snapshots(root)
     flow_data = _load_flow_summaries(root)
 
+    # Load the latest chain parquet ONCE for the whole board (render-budget fix: avoids
+    # re-reading the whole-market chain parquet ~350 times in the per-ticker loop).
+    _chain_date, _chain_by_ticker = _load_latest_chain_ovc(root)
+
     opex_days = _opex_days_today()
 
     # Universe = union of all tickers found across all sources
@@ -758,7 +778,13 @@ def build_state(root: str | Path | None = None) -> pd.DataFrame:
 
         # ---- W-OVC: chain-derived columns (fail-soft — null on missing chain) ---
         # front7_charm_share, front7_gex_share, signed_vanna_pressure (from latest chain)
-        ovc = _compute_chain_ovc(root, ticker)
+        # Uses pre-loaded chain split (loaded once above) to avoid re-reading ~350×.
+        _ticker_sub = _chain_by_ticker.get(ticker)
+        ovc = (
+            _compute_chain_ovc_from_sub(_ticker_sub, _chain_date)
+            if (_ticker_sub is not None and _chain_date is not None)
+            else {"front7_charm_share": None, "front7_gex_share": None, "signed_vanna_pressure": None}
+        )
         front7_charm_share = ovc.get("front7_charm_share")
         front7_gex_share = ovc.get("front7_gex_share")
         signed_vanna_pressure = ovc.get("signed_vanna_pressure")

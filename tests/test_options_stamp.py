@@ -531,9 +531,10 @@ def test_wc_buckets_building_history_below_threshold():
             f"{tid} should be building_history, got {gate['verdicts'].get(tid)}")
     # gate schema should be v3 (W-OVC bump)
     assert gate["schema"] == "options_entry.gate.v3"
-    # fdr_family block: 22→28 (W-OVC amendment adds S-VANNA-RELIEF×3 + S-FRONT-CHARM×3)
+    # fdr_family block: 22→28→36 (W-OVC amendment 2026-07-06 added 6 cells to 28;
+    # FS-3 amendment 2026-07-13 added 8 S-FLOWML cells to the same family → 36 total)
     assert "fdr_family" in gate
-    assert gate["fdr_family"]["family_size"] == 28
+    assert gate["fdr_family"]["family_size"] == 36
     assert gate["fdr_family"]["alpha"] == pytest.approx(0.10)
     # per_family_status block includes all W-C and W-OVC buckets
     assert "per_family_status" in gate
@@ -856,7 +857,7 @@ def test_ovc_vanna_relief_building_history_below_threshold():
     assert gate["tests"]["S-VANNA-RELIEF"].get("ready") is False
     assert gate["verdicts"]["S-VANNA-RELIEF"] == "building_history"
     assert "S-VANNA-RELIEF" in gate["per_family_status"]
-    assert gate["fdr_family"]["family_size"] == 28
+    assert gate["fdr_family"]["family_size"] == 36
 
 
 def test_ovc_vanna_relief_signal_when_breach_reduced():
@@ -926,13 +927,17 @@ def test_ovc_front_charm_no_effect_when_no_breach_difference():
     assert gate["verdicts"]["S-FRONT-CHARM"] == "no_effect"
 
 
-def test_ovc_gate_family_size_is_28():
-    """BH-FDR family size must be 28 (22 prior + 6 W-OVC tests)."""
+def test_ovc_gate_family_size_is_36():
+    """BH-FDR family size must be 36 (28 OVC + 8 FS-3 S-FLOWML cells per masterplan §4 FS-3).
+
+    History: 22 (W-C) → 28 (OVC 2026-07-06) → 36 (FS-3 2026-07-13: +8 S-FLOWML cells).
+    See OPTIONS_ALPHA_MASTERPLAN.md §4 Enlarged-family BH-FDR statement (FS-3, 2026-07-13).
+    """
     df = _stamped_ledger(5)
     gate = build_gate(df)
-    assert gate["fdr_family"]["family_size"] == 28, (
-        f"Expected family_size=28 (22 prior + 6 W-OVC), got {gate['fdr_family']['family_size']}. "
-        "See OPTIONS_ALPHA_MASTERPLAN.md §4 amended BH-FDR statement (2026-07-06 OVC amendment)."
+    assert gate["fdr_family"]["family_size"] == 36, (
+        f"Expected family_size=36 (28 OVC + 8 FS-3 S-FLOWML cells), got {gate['fdr_family']['family_size']}. "
+        "See OPTIONS_ALPHA_MASTERPLAN.md §4 FS-3 Enlarged-family BH-FDR statement (2026-07-13)."
     )
 
 
@@ -980,4 +985,108 @@ def test_ovc_stamp_coverage_cols_excludes_root_class():
     assert "opt_root_class" not in STAMP_COVERAGE_COLS, (
         "opt_root_class is always-computable (taxonomy-derived) and must not lock out "
         "rows from future GEX/skew/ivspread fills via the retry gate"
+    )
+
+
+# ── W-OVC: PIT-clean OI shift(1) fix tests ──────────────────────────────────
+
+def _ovc_chain_frame(ticker, *, spot=100.0, call_oi=500.0, put_oi=400.0, iv=0.20,
+                     expiry_days=14):
+    """Chain frame with all columns required by _ovc_from_chain, including T and expiry."""
+    import datetime as _dt2
+    expiry = (_dt2.date.today() + _dt2.timedelta(days=expiry_days)).isoformat()
+    T = expiry_days / 365.0
+    strikes = [95.0, 100.0, 105.0]
+    rows = []
+    for k in strikes:
+        rows.append({
+            "underlying": ticker,
+            "K": k,
+            "T": T,
+            "iv": iv,
+            "oi": call_oi,
+            "is_call": True,
+            "spot": spot,
+            "expiry": expiry,
+        })
+        rows.append({
+            "underlying": ticker,
+            "K": k,
+            "T": T,
+            "iv": iv,
+            "oi": put_oi,
+            "is_call": False,
+            "spot": spot,
+            "expiry": expiry,
+        })
+    return pd.DataFrame(rows)
+
+
+def test_ovc_from_chain_null_when_single_snapshot():
+    """_ovc_from_chain returns None for opt_front7_charm_share when only 1 chain snapshot exists.
+
+    The PIT-clean OI construction (matching the frozen study) requires prior-day OI (shift(1)
+    per contract).  With only 1 usable snapshot there is no prior-day snapshot, so the metric
+    cannot be computed without look-ahead.
+    """
+    from engine.options_stamp import _ovc_from_chain
+
+    dates = [_dt.date(2026, 7, 17)]  # only one snapshot
+
+    def read_chain(d):
+        return _ovc_chain_frame("FOO")
+
+    result = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain)
+    assert result["opt_front7_charm_share"] is None, (
+        "With only 1 snapshot, prior-day OI is unavailable — opt_front7_charm_share must be null"
+    )
+    # opt_root_class is always-computable (taxonomy-derived)
+    assert result["opt_root_class"] is not None
+
+
+def test_ovc_from_chain_uses_prior_day_oi():
+    """_ovc_from_chain uses prior-day OI (from usable[-2]), not same-day OI (usable[-1]).
+
+    We plant a 100x OI spike on the CURRENT snapshot but not the prior snapshot.
+    If the function uses current-day OI, the resulting charm_share will differ (is not null).
+    But since the spike is only in the current day, and we verify using prior-day OI,
+    the result should match what you'd get with the prior-day OI values.
+    """
+    from engine.options_stamp import _ovc_from_chain
+
+    dates = [_dt.date(2026, 7, 16), _dt.date(2026, 7, 17)]  # two snapshots
+
+    # Prior day: normal OI
+    # Current day: 100x OI spike — if used, charm_share would be same because ALL contracts
+    # spike equally (the ratio would stay the same). Instead, test that prior OI is used by
+    # making prior OI zero: if prior OI is used, result should be null (no prior OI > 0).
+    def read_chain_zero_prior(d):
+        if d == _dt.date(2026, 7, 16):
+            # prior snapshot: zero OI
+            return _ovc_chain_frame("FOO", call_oi=0.0, put_oi=0.0)
+        else:
+            # current snapshot: normal OI  (should NOT be used for OI)
+            return _ovc_chain_frame("FOO", call_oi=500.0, put_oi=400.0)
+
+    result = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain_zero_prior)
+    assert result["opt_front7_charm_share"] is None, (
+        "Prior-day OI is zero — if prior-day OI is used (correct PIT construction), "
+        "opt_front7_charm_share must be null.  A non-null result means same-day OI was used "
+        "(look-ahead violation)."
+    )
+
+    # Positive control: prior OI normal, current OI zero — should produce a value
+    def read_chain_zero_current(d):
+        if d == _dt.date(2026, 7, 16):
+            # prior snapshot: normal OI
+            return _ovc_chain_frame("FOO", call_oi=500.0, put_oi=400.0)
+        else:
+            # current snapshot: zero OI (irrelevant to OI weighting)
+            return _ovc_chain_frame("FOO", call_oi=0.0, put_oi=0.0)
+
+    result_pos = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain_zero_current)
+    assert result_pos["opt_front7_charm_share"] is not None, (
+        "Prior-day OI is normal and current-day OI is zero — result should be non-null "
+        "when prior-day OI is used correctly (charm_share uses prior OI for weighting, "
+        "current snapshot for greeks/expiry/spot)."
     )
