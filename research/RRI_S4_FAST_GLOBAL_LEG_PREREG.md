@@ -147,4 +147,4 @@ as last-committed data — no intraday recompute on the render path.
 Drafted: Fable (main loop), 2026-07-17. On ratification: `--declare` PR first (claims land in
 the ledger as PENDING), builder PR second, wiring PR (if CONFIRMED) third — three separate
 gates, per the C3 lifecycle precedent.
-Operator: ☐ ratify both claims · ☐ ratify c3b only · ☐ ratify c3c only · ☐ decline.
+Operator: ☑ **RATIFIED — both claims** (in-session, 2026-07-17).

@@ -106,4 +106,4 @@ operator priced in here.
 ## Ratification
 
 Drafted: Fable (main loop), 2026-07-17. Pre-freeze compute: outcome-blind census only.
-Operator: ☐ ratify · ☐ decline.
+Operator: ☑ **RATIFIED** (in-session, 2026-07-17).

@@ -195,4 +195,4 @@ a RESULTS doc that reports against this family without rewriting it (dated-appen
   zero alert-day change until a later per-candidate swap ruling. If everything eventually GOes
   and wires, S1 dominates the potential steady-state cost (~+10pp loud-day share, census-priced);
   S2/S3 add roughly +2–8pp each; S4 touches only the US book's Tier-B escalator.
-- Operator ruling: ☐ ratify all four · ☐ ratify subset · ☐ decline (docs stand as record).
+- Operator ruling: ☑ **RATIFIED — all four preregs** (operator, in-session, 2026-07-17, following the ratification ask). Stage-A replay + shadow accrual authorized; live swaps remain per-candidate rulings.

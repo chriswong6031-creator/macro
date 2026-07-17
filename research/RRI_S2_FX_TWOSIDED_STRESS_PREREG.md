@@ -105,4 +105,4 @@ accrual only; the live swap needs the operator ruling per cover §2.
 ## Ratification
 
 Drafted: Fable (main loop), 2026-07-17. Pre-freeze compute: outcome-blind census only.
-Operator: ☐ ratify · ☐ decline.
+Operator: ☑ **RATIFIED** (in-session, 2026-07-17).
