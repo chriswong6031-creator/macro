@@ -1,12 +1,12 @@
 /* markets_data.js — Global Market Cycles Dashboard · REAL web-sourced dataset
-   9 national equity-market bull/bear cycles. Each turn carries its real closing
+   10 national equity-market bull/bear cycles. Each turn carries its real closing
    LEVEL (v) and drawdown (draw); `now` carries the live level / % off ATH / returns;
    `valuation` carries P/E, CAPE, yield. Researched + adversarially verified via web
    (workflow market-cycles-REAL), as of ~2026-06-25. */
 (function(){
   "use strict";
   window.MARKET_META = {
-  "asOf": "2026-07-16",
+  "asOf": "2026-07-17",
   "today": 2026.48,
   "xDomain": [
     2000,
@@ -1080,6 +1080,185 @@
       "https://www.taipeitimes.com/News/front/archives/2026/01/01/2003849853",
       "https://en.macromicro.me/series/5683/taiwan-stock-price-to-earnings-ratio",
       "https://www.federalreserve.gov/monetarypolicy/fomcminutes20260318.htm"
+    ]
+  },
+  {
+    "id": "korea",
+    "name": "South Korea / KOSPI",
+    "short": "Korea",
+    "group": "Asia EM",
+    "accent": "#22d3ee",
+    "proxy": "KOSPI · Samsung+SK Hynix heavy",
+    "archetype": "The KOSPI is the world's most concentrated major-market index by its top-two constituents: Samsung Electronics and SK Hynix together reached roughly 60% of index market cap by mid-2026 as the AI/HBM memory supercycle drove the pair to dominate KOSPI earnings. This extreme semiconductor and export-cycle beta makes the index among the highest-beta proxies globally to the memory-chip pricing cycle, global trade volumes, and USD/KRW direction. Historically burdened by the 'Korea discount' — low ROE (~7% decade average), opaque chaebol structures, and low dividends compressing valuation multiples to roughly 1× book — the 2024-2026 Corporate Value-Up Program and Commercial Act fiduciary reform under President Lee Jae-myung structurally raised shareholder returns and began compressing that discount. Foreign investors (~35–40% of market cap) are acutely sensitive to USD/KRW: a weak won triggers outflows that further weaken the won, creating a self-reinforcing loop amplified by North Korea tail risk on geopolitical flare-ups.",
+    "period": {
+      "central": 4,
+      "low": 1,
+      "high": 8
+    },
+    "turns": [
+      {
+        "t": "1999-12",
+        "k": "peak",
+        "v": 1028,
+        "e": "Dot-com peak; KOSPI tops 1,028",
+        "draw": null
+      },
+      {
+        "t": "2001-09",
+        "k": "trough",
+        "v": 469,
+        "e": "Dot-com bust + 9/11 shock low",
+        "draw": -54.4
+      },
+      {
+        "t": "2002-03",
+        "k": "peak",
+        "v": 902,
+        "e": "Post-bust recovery high",
+        "draw": 92.3
+      },
+      {
+        "t": "2003-03",
+        "k": "trough",
+        "v": 515,
+        "e": "Credit-card crisis / Iraq war trough",
+        "draw": -42.9
+      },
+      {
+        "t": "2007-10",
+        "k": "peak",
+        "v": 2065,
+        "e": "Global liquidity peak — KOSPI first crosses 2,000",
+        "draw": 300.9
+      },
+      {
+        "t": "2008-10",
+        "k": "trough",
+        "v": 939,
+        "e": "Global financial crisis low",
+        "draw": -54.5
+      },
+      {
+        "t": "2011-05",
+        "k": "peak",
+        "v": 2229,
+        "e": "Post-GFC recovery peak; eurozone crisis onset",
+        "draw": 137.4
+      },
+      {
+        "t": "2011-09",
+        "k": "trough",
+        "v": 1653,
+        "e": "Eurozone crisis trough",
+        "draw": -25.8
+      },
+      {
+        "t": "2018-01",
+        "k": "peak",
+        "v": 2598,
+        "e": "Semis supercycle peak — trade war follows",
+        "draw": 57.2
+      },
+      {
+        "t": "2020-03",
+        "k": "trough",
+        "v": 1458,
+        "e": "COVID-19 crash",
+        "draw": -43.9
+      },
+      {
+        "t": "2021-07",
+        "k": "peak",
+        "v": 3305,
+        "e": "Retail / HBM boom — post-COVID ATH at 3,305",
+        "draw": 126.7
+      },
+      {
+        "t": "2022-09",
+        "k": "trough",
+        "v": 2155,
+        "e": "Fed tightening + chip downcycle trough",
+        "draw": -34.8
+      },
+      {
+        "t": "2024-07",
+        "k": "peak",
+        "v": 2891,
+        "e": "Pre-carry-unwind peak; martial-law crisis follows",
+        "draw": 34.1
+      },
+      {
+        "t": "2025-04",
+        "k": "trough",
+        "v": 2294,
+        "e": "Tariff crash trough",
+        "draw": -20.7
+      },
+      {
+        "t": "2026-06",
+        "k": "peak",
+        "v": 9115,
+        "e": "AI/HBM supercycle ATH — KOSPI all-time high",
+        "draw": 297.3
+      },
+      {
+        "t": "2026-07",
+        "k": "trough",
+        "v": 6807,
+        "e": "AI-memory complex unwind crash (provisional)",
+        "draw": -25.3
+      }
+    ],
+    "now": {
+      "level": 6847.88,
+      "asOf": "2026-07-16",
+      "ath": 9114.55,
+      "athDate": "2026-06",
+      "pctFromATH": -24.9,
+      "ytd": 62.5,
+      "ret1y": 124.2,
+      "pos": 97,
+      "phase": "Downturn",
+      "phaseLabel": "Rolling over",
+      "confidence": "high",
+      "read": "The KOSPI closed at 6,848 on July 16, 2026 — down 24.9% from its all-time high close of 9,115 set on June 22, yet still up ~62.5% year-to-date from a December 2025 close of 4,214. The 2025–2026 melt-up was the most compressed secular re-rate in the index's 46-year history: from the April 2025 tariff-crash trough of 2,294, the KOSPI surged +297% as Samsung and SK Hynix rode the AI/HBM memory supercycle to roughly 60% combined index weight by June 2026. RSI-14 climaxed at 83.9 on May 11 while the index traded 67% above its 200-day moving average — exhaust signals verified on-tape. The ATH was marked by divergence: RSI of only 66.6 at the June 22 peak versus 83.9 at the May climax, a 17-point lower RSI on a +16.5% higher price. The crash since has been acute: KOSPI fell 8.95% on July 13 alone, triggering a 20-minute circuit breaker, as SK Hynix dropped 15.4% on an HBM4 ramp-shortfall note. The engine confirms phase = Downturn, oscillator pos_v2 ≈ 97 (historically elevated), and AVOID stance. The provisional trough was 6,807 on July 13; the bounce to 6,848 on July 16 is tentative. Forward P/E compressed from ~12× at the rally's start to a briefly sub-GFC 6.25× intraday on July 8 before recovering to ~8.7×."
+    },
+    "valuation": {
+      "trailingPE": 19.8,
+      "forwardPE": 8.7,
+      "cape": null,
+      "divYield": 0.88,
+      "pb": 1.9,
+      "note": "fwd P/E ~8.7× compressed sharply from 12× as EPS est. rose +7.9% since peak; PBR ~1.9× overall but ~1.0× ex-semis; 64% of constituents still below 1.0× book"
+    },
+    "proj": {
+      "nextTurn": "trough",
+      "central": "2026-10",
+      "low": "2026-08",
+      "high": "2026-12",
+      "tilt": "headwind",
+      "drivers": [
+        "AI infrastructure capex cycle sustaining HBM demand — Samsung+SK Hynix control ~80% of global HBM supply",
+        "Corporate governance re-rating (Commercial Act fiduciary reform + Value-Up mandates) compressing the Korea discount over 3–5 years",
+        "MSCI Developed Market reclassification trajectory toward ~2029 inclusion; offshore KRW and investor-ID reforms progressing"
+      ],
+      "falsifier": "A sustained close below 6,000 within the next four weeks — extending the drawdown beyond 36% from the June 19 intraday all-time high (9,385) while semiconductor EPS revisions turn negative — would indicate a full chip-cycle peak-out rather than a geopolitical/positioning correction, invalidating the bull thesis of a self-correcting HBM demand supercycle."
+    },
+    "regimeNote": "As of mid-July 2026 the KOSPI is in a concentrated momentum unwind rather than a proven demand collapse: AI/HBM EPS revisions remain positive (+7.9% since the June peak), governance reform under President Lee is structurally intact, but the index faces acute near-term headwinds from the US-Iran conflict (same date as the June ATH), the MSCI DM denial (June 24), and semiconductor inventory risk that a full chip-cycle turn would validate.",
+    "sources": [
+      "https://www.indmoney.com/blog/us-stocks/kospi-index-crash-analysis",
+      "https://www.mexc.com/news/886611",
+      "https://www.fxstreet.com/news/can-the-kospi-index-sustain-its-record-breaking-performance-in-2026-part-one-202603091205",
+      "https://www.equitymidcap.com/2026/02/why-kospi-is-all-time-high.html?m=1",
+      "https://en.wikipedia.org/wiki/KOSPI",
+      "https://siblisresearch.com/data/kospi-korea-pe-earnings/",
+      "https://amro-asia.org/narrowing-the-korea-discount-stock-market-reform-via-corporate-value-up",
+      "https://www.cnbc.com/2026/06/24/msci-south-korea-emerging-market-indonesia-review-extended.html",
+      "https://www.kedglobal.com/korean-stock-market/newsView/ked202607080013",
+      "https://www.koreatimes.co.kr/economy/20260714/kospi-closes-higher-at-685683-after-wild-swing-kosdaq-hits-year-low",
+      "https://lipperalpha.refinitiv.com/2025/06/new-reform-new-era-of-south-korea/",
+      "https://seoulclosingbell.com/how-foreign-investor-flows-move-the-kospi/",
+      "https://www.koreaherald.com/article/3028581"
     ]
   },
   {

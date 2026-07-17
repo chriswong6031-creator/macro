@@ -1,7 +1,7 @@
 """Render the Global Market Cycles page (templates/markets.html.j2 -> site/markets.html).
 
 W3.5 addition: emit site/marketsdata/markets_engine.js (window.MARKETS_ENGINE) by
-mapping each of the 9 curated markets to its engine record in
+mapping each of the 10 curated markets to its engine record in
 site/countrycyclesdata/country_cycles.json.  The hand-curated markets_data.js STAYS
 as the overlay source (turning-point history, valuations, prose) — it no longer drives
 plotted cycle positions.  The engine's pos_v2 / phase_v2 / turns / proj / overdue /
@@ -11,7 +11,7 @@ Markets without a country_cycles record (US and Europe — SPY / VGK are not in 
 country engine yet) get a null engine record so markets_app.js can gracefully fall
 back to rendering the curated position clearly flagged as OPINION.
 
-Sibling of build_cycle.py: a bespoke cycle-family dashboard (nine national equity
+Sibling of build_cycle.py: a bespoke cycle-family dashboard (ten national equity
 markets on one clock) whose data, logic and styles live as committed site/ assets —
 markets_data.js (the curated dataset), markets_app.js (synthesis + UI), markets_i18n.js
 (bilingual copy), cycle.css (the shared cycle design system) and mm_charts.js (the
@@ -47,6 +47,7 @@ MARKET_TO_ENGINE: dict[str, str | None] = {
     "china":   "fxi",
     "india":   "inda",
     "taiwan":  "ewt",
+    "korea":   "ewy",
     "europe":  None,   # VGK not in country_cycles yet
 }
 
@@ -60,6 +61,7 @@ MARKET_TO_CC_ANCHOR: dict[str, str | None] = {
     "china":   "fxi",
     "india":   "inda",
     "taiwan":  "ewt",
+    "korea":   "ewy",
     "europe":  None,
 }
 
