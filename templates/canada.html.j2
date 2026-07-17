@@ -294,10 +294,20 @@
   body.page-canada .ms-yellow .cax-regime-pill{background:rgba(224,160,48,.10)}
   body.page-canada .ms-yellow .cax-regime-pill .dot{background:var(--warn)}
   body.page-canada .cax-gauge-row{display:flex;gap:18px;align-items:center;margin-top:10px}
-  body.page-canada .cax-gauge-svg{flex:0 0 110px}
+  body.page-canada .cax-gauge-svg{flex:0 0 110px;width:110px;height:72px;overflow:visible}
   body.page-canada .ms-green .cax-gauge-fill{stroke:var(--up)}
   body.page-canada .ms-yellow .cax-gauge-fill{stroke:var(--warn)}
   body.page-canada .ms-red .cax-gauge-fill{stroke:var(--down)}
+  /* needle accents follow the same .ms-* class (US idiom) */
+  body.page-canada .cax-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
+  body.page-canada .cax-needle-core,body.page-canada .cax-needle-tip{fill:var(--warn)}
+  body.page-canada .cax-needle-tip{filter:drop-shadow(0 0 3.5px var(--warn))}
+  body.page-canada .ms-green .cax-needle-hub{stroke:var(--up)}
+  body.page-canada .ms-green .cax-needle-core,body.page-canada .ms-green .cax-needle-tip{fill:var(--up)}
+  body.page-canada .ms-green .cax-needle-tip{filter:drop-shadow(0 0 3.5px var(--up))}
+  body.page-canada .ms-red .cax-needle-hub{stroke:var(--down)}
+  body.page-canada .ms-red .cax-needle-core,body.page-canada .ms-red .cax-needle-tip{fill:var(--down)}
+  body.page-canada .ms-red .cax-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
   body.page-canada .cax-score-line{display:flex;align-items:baseline;gap:10px}
   body.page-canada .cax-big-score{font-size:52px;font-weight:750;line-height:1;color:var(--warn)}
   body.page-canada .ms-green .cax-big-score{color:var(--up)}
@@ -664,10 +674,18 @@
     <span class="cax-regime-pill"><span class="dot"></span>
       {{ t(latest.quad_name, _QZH.get(latest.quad_name, latest.quad_name)) }}<span style="opacity:.55"> · {{ t(latest.cycle_tag or 'mid', _CZH.get(latest.cycle_tag or 'mid', latest.cycle_tag or 'mid')) }}</span></span>
     <div class="cax-gauge-row">
-      {% set _ang = (_ms_score / 100) %}
+      {# arc centre (60,68) r=50; needle rotates around the centre (US idiom):
+         score 0→-90° … 100→+90°; accents class-driven via .ms-* #}
+      {% set _needle_deg = ((_ms_score * 1.8) - 90) | round(1) %}
       <svg class="cax-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
         <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
         <path class="cax-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
+        <g class="cax-gauge-needle" transform="rotate({{ _needle_deg }} 60 68)">
+          <line x1="60" y1="68" x2="60" y2="31" stroke="var(--text)" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+          <circle class="cax-needle-hub" cx="60" cy="68" r="5"/>
+          <circle class="cax-needle-core" cx="60" cy="68" r="1.8"/>
+          <circle class="cax-needle-tip" cx="60" cy="30" r="2.6"/>
+        </g>
       </svg>
       <div>
         <div class="cax-score-line"><span id="ms-score" class="cax-big-score">{{ _ms_score }}</span><span id="ms-word" class="cax-verdict">{{ t(_ms_label, _ms_label_zh) }} <span class="arr">▶</span></span></div>

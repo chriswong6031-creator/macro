@@ -710,12 +710,23 @@
   body.page-china .cnx-live-pill.on{opacity:1;color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
   body.page-china .cnx-live-pill.on .d{background:var(--up);box-shadow:0 0 5px var(--up)}
   body.page-china .cnx-gauge-row{display:flex;gap:18px;align-items:center;margin-top:10px}
-  body.page-china .cnx-gauge-svg{flex:0 0 110px}
+  body.page-china .cnx-gauge-svg{flex:0 0 110px;width:110px;height:72px;overflow:visible}
   /* gauge fill colour follows the .ms-{color} class (which the live lane swaps) so it
      never shows a red arc next to a green/yellow live verdict. (Fill fraction is baked.) */
   body.page-china .ms-green .cnx-gauge-fill{stroke:var(--up)}
   body.page-china .ms-yellow .cnx-gauge-fill{stroke:var(--warn)}
   body.page-china .ms-red .cnx-gauge-fill{stroke:var(--down)}
+  /* needle accents follow the same .ms-* class as the arc (US idiom: hub ring +
+     core + glowing tip dot in the verdict colour; stem is theme-text) */
+  body.page-china .cnx-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
+  body.page-china .cnx-needle-core,body.page-china .cnx-needle-tip{fill:var(--warn)}
+  body.page-china .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--warn))}
+  body.page-china .ms-green .cnx-needle-hub{stroke:var(--up)}
+  body.page-china .ms-green .cnx-needle-core,body.page-china .ms-green .cnx-needle-tip{fill:var(--up)}
+  body.page-china .ms-green .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--up))}
+  body.page-china .ms-red .cnx-needle-hub{stroke:var(--down)}
+  body.page-china .ms-red .cnx-needle-core,body.page-china .ms-red .cnx-needle-tip{fill:var(--down)}
+  body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
   body.page-china .cnx-score-line{display:flex;align-items:baseline;gap:10px}
   body.page-china .cnx-big-score{font-size:52px;font-weight:750;line-height:1;color:var(--warn)}
   body.page-china .ms-green .cnx-big-score{color:var(--up)}
@@ -1252,13 +1263,20 @@
         <span class="l-en">LIVE</span><span class="l-zh">实时</span>
         <span id="ms-date" style="margin-left:4px">{{ latest.date }}</span></span>
       <div class="cnx-gauge-row">
-        {# semi-circle gauge SVG — needle angle based on score 0-100 #}
-        {% set _ang = (_ms_score / 100) %}
-        {% set _cx = 12 + (_ang * 96) %}
-        {% set _cy = 68 - (40 * (1 - ((_ang - 0.5) * (_ang - 0.5)) * 4)) %}
+        {# semi-circle gauge — arc centre (60,68) r=50; needle rotates around the
+           centre: score 0→-90° (left) … 100→+90° (right), US mx5 idiom #}
+        {% set _needle_deg = ((_ms_score * 1.8) - 90) | round(1) %}
         <svg class="cnx-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
           <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
           <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
+          {# needle (US idiom): stem + hub + accent tip dot; colours are CLASS-driven
+             via .ms-* so they always match the verdict, both themes #}
+          <g class="cnx-gauge-needle" transform="rotate({{ _needle_deg }} 60 68)">
+            <line x1="60" y1="68" x2="60" y2="31" stroke="var(--text)" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+            <circle class="cnx-needle-hub" cx="60" cy="68" r="5"/>
+            <circle class="cnx-needle-core" cx="60" cy="68" r="1.8"/>
+            <circle class="cnx-needle-tip" cx="60" cy="30" r="2.6"/>
+          </g>
         </svg>
         <div>
           <div class="cnx-score-line"><span id="ms-score" class="cnx-big-score">{{ _ms_score }}</span><span id="ms-word" class="cnx-verdict">{{ t(_ms_label, _ms_label_zh) }} <span class="arr">▶</span></span></div>
@@ -1482,15 +1500,18 @@
           <stop offset="0" stop-color="var(--down)"/><stop offset=".5" stop-color="var(--warn)"/><stop offset="1" stop-color="var(--up)"/>
         </linearGradient></defs>
         <path d="M18 96 A82 82 0 0 1 182 96" fill="none" stroke="url(#cnx-dg)" stroke-width="11" stroke-linecap="round" opacity=".8"/>
-        {# needle based on fe_score 0-100 or 50 default #}
-        {% set _fe_ang = ((_fe_score or 50) / 100) %}
-        {% set _nax = 100 + 70 * (2 * _fe_ang - 1) * 0.866 %}
-        {% set _nay = 96 - 70 * (1 - (2 * _fe_ang - 1) * (2 * _fe_ang - 1)) | abs %}
-        {# needle y: map 0-1 angle to arc; simple linear approximation #}
-        {% set _ny = (96 - 62 * (1 - (2*_fe_ang - 1)*(2*_fe_ang - 1)))|round(1) %}
-        {# only draw the needle when we have a real fear/euphoria score — otherwise a
-           default center needle contradicts the band word shown below (e.g. "Mania"). #}
-        {% if _fe_score is not none %}<line x1="100" y1="96" x2="{{ _nax | round(1) }}" y2="{{ _ny }}" stroke="var(--text)" stroke-width="2.4"/>{% endif %}
+        {# needle position: the fear/euphoria score when scored; else the turnover-heat
+           percentile — the SAME series the fallback band word ("Mania") below comes
+           from, so the needle can never contradict the word. Hidden only when
+           neither exists. Exact rotation around the arc centre (100,96), 0→-90°. #}
+        {% set _to_pct = (I.turnover.pctile | float) if (I.turnover and I.turnover.get('pctile') is not none) else none %}
+        {% set _fe_pos = _fe_score if _fe_score is not none else _to_pct %}
+        {% if _fe_pos is not none %}
+        <g transform="rotate({{ (((_fe_pos | float) * 1.8) - 90) | round(1) }} 100 96)">
+          <line x1="100" y1="96" x2="100" y2="32" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>
+          <circle cx="100" cy="31" r="3.2" fill="var(--text)"/>
+        </g>
+        {% endif %}
         <circle cx="100" cy="96" r="5" fill="var(--text)"/>
         <text x="16" y="106" font-size="9" fill="var(--muted)">{{ t('PANIC','恐慌') }}</text>
         <text x="158" y="106" font-size="9" fill="var(--muted)">{{ t('EUPHORIA','亢奋') }}</text>
