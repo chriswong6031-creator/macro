@@ -142,6 +142,9 @@ def _write_finnhub_reco(root: Path, rows: list[dict]) -> None:
     df = pd.DataFrame(rows, columns=[
         "ticker", "period", "strongBuy", "buy", "hold", "sell", "strongSell", "prev_buy",
     ])
+    # collector stamps _first_seen (ISO UTC) on every row; the builder reads the
+    # store birthdate from min(_first_seen) for the young-data coverage note (#2689)
+    df["_first_seen"] = "2026-07-16T00:00:00+00:00"
     p = root / "data" / "finnhub" / "recommendation.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(p)
