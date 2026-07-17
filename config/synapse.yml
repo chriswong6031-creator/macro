@@ -4790,6 +4790,62 @@ artifacts:
       the industry_etf class (SMH, XBI, KRE).
       Same schema and laws as options-surface-index-etf. Single-writer, theta-ops lane.
 
+  # --- RIC W3 artifacts ---
+  opex-risk-snapshot:
+    path: site/vol/regime.json
+    format: json
+    producer: scripts/build_vol_regime.py
+    known_extra_writers: []
+    owner_program: rates-inflation-command
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: opex_risk.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+      - scripts/build_intraday_flow.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      RIC W3 OPEXRISK. OPEX window risk snapshot embedded as regime.json['opex_risk'].
+      Schema opex_risk.v1: n_hot, n_applicable, level (quiet/elevated/heavy), glance
+      copy (EN/ZH), per-state stack, window_phase context, doctrine/passport strings.
+      Display-only context; never read by compute(), never in _SCARES, never sizes
+      or gates anything (RIC-R2/R3). Sole writer: scripts/build_vol_regime.py (nightly).
+      Partial/absent surface data degrades gracefully (n_applicable shrinks).
+      CONST-ART2 authority: false. authority.may_rank/gate/size/escalate=false.
+
+  opex-windows-forward-log:
+    path: data/opex_windows/forward_log.jsonl
+    format: jsonl
+    producer: scripts/build_vol_regime.py
+    known_extra_writers: []
+    owner_program: rates-inflation-command
+    cadence: daily-engine
+    storage: git
+    asof_field: entry_date
+    freshness_sla_hours: 720
+    schema: opex_window_log.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      RIC W3 forward ledger. One row per monthly OPEX window, stamped at T-5 before
+      expiration (keep-FIRST idempotent by window_month = YYYY-MM). Lane gate:
+      COLLECT_LANE=nightly only. Grading rulers FROZEN in W3 PR: forward_5d_rv,
+      forward_10d_rv (vol vs trailing), max_dd_post10d (path/drawdown), range_compression
+      (pin behavior). Grading targets are VOL/PATH objects — never directional return
+      (RO-3/F-21). Graded field set when maturity arrives (horizon: 10d post-expiry).
+      Accruing from 2026-07; maturity_date 2026-09-30. Sole writer: scripts/build_vol_regime.py.
+
   # --- 1 consumer ---
   options-flow-index:
     path: site/flow/index.json

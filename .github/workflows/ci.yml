@@ -628,6 +628,14 @@ on:
       # NaN.ge() regression fix (null-adv rows must pass with liq_unknown=True).
       - "engine/pick_lab/candidates.py"
       - "tests/test_pick_lab_liquidity.py"
+      # RIC W3 OPEXRISK: opex_risk engine + event_calendar enrichment + tests.
+      # Any change to these surfaces re-proves the n_hot/n_applicable math,
+      # availability-normalization, keep-FIRST idempotency, and lane gate.
+      - "engine/opex_risk.py"
+      - "engine/event_calendar.py"
+      - "scripts/build_vol_regime.py"
+      - "tests/test_opex_risk.py"
+      - "data/opex_windows/.gitkeep"
   workflow_dispatch:
 
 permissions:
@@ -962,7 +970,8 @@ jobs:
           tests/test_w8b_macro_prior_entries.py
           tests/test_rr_scorecard_card.py
           tests/test_engine_run_no_regress.py
-          tests/test_cycles.py -q
+          tests/test_cycles.py
+          tests/test_opex_risk.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)

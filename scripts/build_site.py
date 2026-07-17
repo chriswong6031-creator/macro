@@ -3714,6 +3714,19 @@ def main() -> int:
         _mncfg = config.load().get("macro_news", {}) or {}
         _horizon = _mncfg.get("catalysts_horizon_days", 14)
         macro_catalysts = _mnews.upcoming_catalysts(horizon_days=_horizon)
+        # RIC W3: enrich OPEX event rows with the window level chip (display-only;
+        # reads site/vol/regime.json['opex_risk'] — never blocks on absence).
+        try:
+            import json as _json
+            _site_dir = config.ROOT / config.load()["storage"]["site_dir"]
+            _vr_path = _site_dir / "vol" / "regime.json"
+            _or_snap = None
+            if _vr_path.exists():
+                _vr = _json.loads(_vr_path.read_text())
+                _or_snap = _vr.get("opex_risk")
+            macro_catalysts = _ec.enrich_opex_events(macro_catalysts, _or_snap)
+        except Exception as _e:  # noqa: BLE001
+            pass   # enrichment is additive; failure leaves catalysts unchanged
         # compact "US high-impact next 14 days" glance strip + the imminent-catalyst
         # text line fed to the LLM brief below (context only; never a scored input)
         event_strip = _ec.high_impact_strip(horizon_days=_horizon)

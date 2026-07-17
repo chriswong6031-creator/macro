@@ -14,6 +14,11 @@ The regime legs are SCORED only where data/vol_regime/gate.json (written by
 scripts/validate_vol_regime.py) marks them earned; otherwise everything is display/context.
 Additive + graceful: any missing series degrades a leg, never raises into the build.
 
+RIC W3 addition: regime.json gains an 'opex_risk' block — the OPEX window risk read
+from engine/opex_risk.py (n_hot/n_applicable, level, glance copy, state stack).
+Display-only context; never read by compute(). Partial/absent surface data → nulls,
+never a build failure.
+
 Run: .venv/bin/python -m scripts.build_vol_regime
 """
 from __future__ import annotations
@@ -25,7 +30,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from engine import opex, options_desk, vol_regime
+from engine import opex, opex_risk, options_desk, vol_regime
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -71,8 +76,15 @@ def build() -> dict | None:
         opex_snap = opex.snapshot(spy) if spy is not None else None
     except Exception as e:  # noqa: BLE001 — additive context, never fatal
         log.warning("vol_regime: opex snapshot failed: %s", e)
+    # RIC W3: OPEX window risk read (display-only; null-safe; never fatal)
+    opex_risk_snap = None
+    try:
+        opex_risk_snap = opex_risk.snapshot(spy_close=spy)
+    except Exception as e:  # noqa: BLE001
+        log.warning("vol_regime: opex_risk snapshot failed: %s", e)
     return {"schema": "vol_regime.v1", "asof": snap.get("asof"),
             "snapshot": snap, "game_plan": plan, "opex": opex_snap,
+            "opex_risk": opex_risk_snap,
             "built": str(date.today())}
 
 
@@ -119,6 +131,14 @@ def main() -> int:
     log.info("vol_regime: %s regime=%s risk=%s scored=%s vt=%s",
              snap.get("asof"), snap.get("regime"), snap.get("risk_score"),
              snap.get("scored_score"), snap.get("vol_target_scalar"))
+    # RIC W3: log the OPEX window entry to the forward ledger (nightly lane only;
+    # lane gate is enforced inside log_window — off-lane = silent no-op).
+    or_snap = payload.get("opex_risk")
+    if or_snap:
+        try:
+            opex_risk.log_window(or_snap)
+        except Exception as e:  # noqa: BLE001
+            log.warning("vol_regime: opex_risk.log_window failed: %s", e)
     return 0
 
 

@@ -60,6 +60,21 @@ sensors:
     contract_band: null
     notes: "Live-leg quality: accruing until 2026-10-15"
 
+  # RIC W3 OPEX window forward ledger (accruing until 2026-09-30)
+  opex_windows.vol_lift_in_window:
+    K: 12
+    n_min: 2
+    z_thresh: 2.5
+    contract_band: null
+    notes: "OPEX vol lift: accruing until 2026-09-30 (first graded windows arrive ~2026-09)"
+
+  opex_windows.range_compression_in_window:
+    K: 12
+    n_min: 2
+    z_thresh: 2.5
+    contract_band: null
+    notes: "OPEX range compression: accruing until 2026-09-30"
+
   # Whole-organism composite — only meaningful when ≥1 lobe has matured data
   organism.composite_fitness:
     K: 20

@@ -489,3 +489,52 @@ def imminent_line(today: date | None = None, horizon_days: int = 14) -> str:
     parts = [f"{i['md']} {i['type']}" + (f" {i['time_et']}ET" if i['time_et'] else "")
              for i in items[:6]]
     return f"Imminent US catalysts (next {horizon_days}d): " + "; ".join(parts) + "."
+
+
+# --------------------------------------------------------------------------- #
+# RIC W3: enrich OPEX event rows with the window level chip
+# --------------------------------------------------------------------------- #
+
+def enrich_opex_events(
+    events: list[dict],
+    opex_risk_snap: dict | None,
+) -> list[dict]:
+    """Inject opex_risk_level / glance onto OPEX-type event dicts.
+
+    Call site: scripts/build_site.py after it has computed the opex_risk snapshot
+    (from site/vol/regime.json['opex_risk'] or a fresh opex_risk.snapshot() call).
+
+    The chip is GLANCE-TIER: level word + stance verb; technicals in hover/Tier-2.
+    This function is additive — OPEX rows gain extra fields; non-OPEX rows are
+    unchanged; the list order is preserved.
+
+    DISCIPLINE: display-only. These fields must NEVER be read by compute(), used in
+    _SCARES, or wired to any sizing/gating path. RIC-R3.
+
+    Args:
+        events:          list of event dicts (from us_macro_events / upcoming_catalysts)
+        opex_risk_snap:  dict from engine/opex_risk.snapshot(), or None (nulls out)
+
+    Returns the same list with OPEX rows enriched in place (new list, original untouched).
+    """
+    if not events:
+        return events
+    snap = opex_risk_snap or {}
+    level = snap.get("level") or "quiet"
+    level_zh = snap.get("level_zh") or "平静"
+    glance_en = snap.get("glance_en") or ""
+    glance_zh = snap.get("glance_zh") or ""
+    n_hot = snap.get("n_hot")
+    n_applicable = snap.get("n_applicable")
+    out = []
+    for ev in events:
+        if ev.get("type") == "OPEX":
+            ev = dict(ev)  # shallow copy — never mutate caller's dict
+            ev["opex_risk_level"] = level
+            ev["opex_risk_level_zh"] = level_zh
+            ev["opex_risk_glance_en"] = glance_en
+            ev["opex_risk_glance_zh"] = glance_zh
+            ev["opex_risk_n_hot"] = n_hot
+            ev["opex_risk_n_applicable"] = n_applicable
+        out.append(ev)
+    return out

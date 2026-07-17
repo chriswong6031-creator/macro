@@ -8642,6 +8642,27 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="l-zh">{{ c.get('typical_move_zh') or c.get('move_context_zh') or c.get('typical_move') or c.get('move_context') }}</span>
             </div>
             {% endif %}
+            {# RIC W3: OPEX window risk level chip (display context only; RIC-R3) #}
+            {% if c.type == 'OPEX' and c.get('opex_risk_level') %}
+            {% set _opex_lvl = c.get('opex_risk_level') %}
+            {% set _opex_lvl_zh = c.get('opex_risk_level_zh') or _opex_lvl %}
+            {% set _opex_col = {'quiet': 'var(--ink-2,rgba(255,255,255,.5))', 'elevated': '#e8a04a', 'heavy': '#e05c5c'}.get(_opex_lvl, 'var(--ink-2,rgba(255,255,255,.5))') %}
+            <div style="margin-top:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:10px;font-weight:600;color:{{ _opex_col }};letter-spacing:.04em;text-transform:uppercase">
+                <span class="l-en">Dealer pressure: {{ _opex_lvl }}</span>
+                <span class="l-zh">经销商压力：{{ _opex_lvl_zh }}</span>
+              </span>
+              {% if c.get('opex_risk_n_hot') is not none and c.get('opex_risk_n_applicable') %}
+              <span style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36))">{{ c.get('opex_risk_n_hot') }}/{{ c.get('opex_risk_n_applicable') }}</span>
+              {% endif %}
+            </div>
+            {% if c.get('opex_risk_glance_en') %}
+            <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:4px;line-height:1.4" title="OPEX window risk — display context only. Never a buy/sell signal.">
+              <span class="l-en">{{ c.get('opex_risk_glance_en') }}</span>
+              <span class="l-zh">{{ c.get('opex_risk_glance_zh') or c.get('opex_risk_glance_en') }}</span>
+            </div>
+            {% endif %}
+            {% endif %}
           </div>
           {% endfor %}
         </div>

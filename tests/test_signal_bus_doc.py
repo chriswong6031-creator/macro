@@ -73,9 +73,10 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 466, (
-        f"Expected 466 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 468, (
+        f"Expected 468 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        "(RIC-W3 added opex-risk-snapshot, opex-windows-forward-log = 466->468;"
         "(RIC-W2 added options-surface-index-etf, options-surface-sector-etf,"
         " options-surface-industry-etf = 463->466;"
         "(CSP-W1 added rsr-leadership-crack-latest, rsr-deterioration-cascade-latest,"
