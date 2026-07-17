@@ -122,6 +122,28 @@ def _enrich_vulnerability(vuln: dict | None) -> dict | None:
     return vuln
 
 
+def _cgl_compact_summary(artifact: dict | None) -> dict | None:
+    """Build compact contagion_links summary for data/intl_risk/latest.json (additive key).
+
+    Returns {as_of, pressure: {mkt: {pct, level}}, top_stressed: [up to 3 mkts by pct]}
+    or None when artifact unavailable. CGL-R10 additive-only.
+    """
+    if not artifact:
+        return None
+    pressure = artifact.get("pressure") or {}
+    pct_map = {}
+    for mkt, p in pressure.items():
+        pct = p.get("pct")
+        if pct is not None:
+            pct_map[mkt] = {"pct": pct, "level": p.get("level", "low")}
+    top_stressed = sorted(pct_map, key=lambda m: -(pct_map[m]["pct"] or 0.0))[:3]
+    return {
+        "as_of":       artifact.get("built", "")[:10],
+        "pressure":    pct_map,
+        "top_stressed": top_stressed,
+    }
+
+
 def main() -> int:
     try:
         from engine.intl_run import run
@@ -207,6 +229,24 @@ def main() -> int:
         contagion_state = (two_tier_result or {}).get("state")
     except Exception as _e:
         log.error("contagion two_tier_read failed (%s)", _e)
+
+    # CGL W1: contagion_links directed-pressure artifact (fail-open per CGL-R7)
+    # Must run AFTER intl_run.run() (radar states available) and on the nightly lane
+    # (CGL-R6: ledger_lane_armed() guards history/shadow appends internally).
+    # The artifact's per-market pressure blocks are attached to each intl record
+    # (rec["contagion"]) and passed to the template as CGL context var.
+    _cgl_artifact: dict | None = None
+    try:
+        from engine import contagion_links as _cgl
+        _cgl_artifact = _cgl.snapshot()
+        # Attach per-market contagion block to each record
+        _cgl_pressure = (_cgl_artifact or {}).get("pressure") or {}
+        for _rec in latest.get("records") or []:
+            _cc_mkt = _rec.get("cc", "")
+            if _cc_mkt in _cgl_pressure:
+                _rec["contagion"] = _cgl_pressure[_cc_mkt]
+    except Exception as _cgl_e:
+        log.warning("contagion_links snapshot failed (fail-open): %s", _cgl_e)
 
     cb_desk_result = None
     try:
@@ -351,6 +391,8 @@ def main() -> int:
         "top_transmitters_display": _annotated_transmitters,
         "emb_ief_spark_svg": _emb_ief_spark_svg,
         "spillover_spark_svg": _spillover_spark_svg,
+        # CGL W1: contagion_links compact summary (additive; CGL-R10)
+        "contagion_links": _cgl_compact_summary(_cgl_artifact),
     }
     try:
         (_ird_dir / "latest.json").write_text(
@@ -600,6 +642,8 @@ def main() -> int:
             "rates": rates,
             # risk_desk available to template (None-safe: may be partial on engine error)
             "risk_desk": _intl_risk_payload,
+            # CGL W1: full artifact for the directed contagion table (templates guard {% if CGL %})
+            "CGL": _cgl_artifact,
             # ITR W1: turn engine keys (None/[] when engine errors)
             "turn_board":     turn_board,
             "turn_events":    turn_events,

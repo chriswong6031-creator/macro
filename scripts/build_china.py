@@ -896,8 +896,44 @@ def main() -> int:
                 _rrs.write()
             except Exception as _e:  # noqa: BLE001
                 log.warning("build_china: risk-radar scorecard write (pre-render) failed: %s", _e)
+            # CGL W1: load the contagion artifact so the directed-pressure table
+            # (template CGL var) is available; the actual per-market pressure block
+            # is attached to vm["market_state"]["radar"] AFTER market_state_snapshot
+            # builds the post-transform rd dict (_radar_to_rd rebuilds from scratch
+            # so pre-transform attachments to latest["risk_radar"] are discarded).
+            vm.setdefault("CGL", None)
+            _cgl_art_cn: dict | None = None
+            try:
+                _cgl_path = config.data_dir() / "contagion_links" / "latest.json"
+                if _cgl_path.exists():
+                    _cgl_art_cn = json.loads(_cgl_path.read_text(encoding="utf-8"))
+                    vm["CGL"] = _cgl_art_cn
+            except Exception:  # noqa: BLE001 — additive, never fatal
+                pass
             vm["market_state"] = _ms.market_state_snapshot(
                 latest, _f, latest.get("alerts") or [], profile=CN_PROFILE)
+            # Attach contagion block to the post-transform radar dict so rd.contagion
+            # resolves in _risk_radar_card.html.j2 (build_site.py idiom, CGL W1).
+            # FIX 2: disclose staleness when the CGL artifact predates the page's as_of.
+            try:
+                if _cgl_art_cn and vm.get("market_state") and isinstance(
+                    (vm["market_state"] or {}).get("radar"), dict
+                ):
+                    _cn_pressure = (_cgl_art_cn.get("pressure") or {}).get("cn")
+                    if _cn_pressure is not None:
+                        _blk = dict(_cn_pressure)
+                        try:
+                            from datetime import date as _date_cls  # noqa: PLC0415
+                            _cgl_built_date = str(_cgl_art_cn.get("built", ""))[:10]
+                            _page_asof = str(latest.get("date", ""))[:10]
+                            if _cgl_built_date and _page_asof and _cgl_built_date < _page_asof:
+                                _blk["stale"] = True
+                                _blk["built_date"] = _cgl_built_date
+                        except Exception:  # noqa: BLE001
+                            pass
+                        vm["market_state"]["radar"]["contagion"] = _blk
+            except Exception:  # noqa: BLE001 — additive, never fatal
+                pass
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal
             log.error("china market_state failed (%s); skipping", e)
             vm["market_state"] = None
