@@ -10,7 +10,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ t('Canada — S&P/TSX Regime', '加拿大 — 标普/TSX 周期') }} — {{ latest.date }}</title>
+<title>Canada — S&P/TSX Regime — {{ latest.date }}</title>
 {% set seo_title = 'Canada Market Dashboard — TSX Composite Regime and Sectors | Mastermind' %}{% set seo_desc = 'Track the Canadian market regime — S&P/TSX sector rotation, factor signals and cycle position, updated daily.' %}{% set seo_path = 'canada.html' %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
@@ -20,7 +20,7 @@
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
          "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
-  @media (min-width: 1100px) { body { padding: 24px max(36px, calc((100vw - 1500px) / 2)); } }
+  @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
   html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
   a { text-decoration: none; color: var(--link); }
   h1 { font-size: 21px; margin: 0 0 2px; }
@@ -270,6 +270,232 @@
 {% include "_cmd_hero.css.j2" %}
 {% include "_market_state.css.j2" %}
   body.page-canada { padding-top: 24px; }
+  /* defensive: if mx5 wrap nests inside .grid, force block layout */
+  body.page-canada .grid { display: block; }
+
+{% if mode != 'stocks' %}
+  /* ═══════════════════════ MX5 CANADA — cax- scoped CSS ═══════════════════════ */
+  body.page-canada .cax-wrap{max-width:1500px;margin:0 auto;padding:24px 0 32px}
+  body.page-canada .cax-card{background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.10));border-radius:18px;backdrop-filter:blur(20px) saturate(1.3);padding:18px 20px;box-shadow:0 4px 22px rgba(0,0,0,.28),0 1px 0 rgba(255,255,255,.04) inset;transition:box-shadow .2s,background .2s,border-color .2s}
+  body.page-canada .cax-card[role="button"]{cursor:pointer}
+  body.page-canada .cax-card[role="button"]:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);box-shadow:0 6px 28px rgba(0,0,0,.35)}
+  /* hero */
+  body.page-canada .cax-hero{display:grid;grid-template-columns:3fr 2fr;position:relative;z-index:30;padding:0}
+  body.page-canada .cax-hero-solo{grid-template-columns:1fr}
+  /* until the score log accrues >=2 sessions, HIDE the empty history panel
+     (1-col grid alone just reflows it below the hero) */
+  body.page-canada .cax-hero-solo .cax-hero-right{display:none}
+  body.page-canada .cax-hero-left{padding:22px 24px 18px;border-right:1px solid rgba(255,255,255,.09)}
+  body.page-canada .cax-hero-right{padding:18px 24px 14px}
+  body.page-canada .cax-regime-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:4px 12px;font-size:11.5px;background:rgba(208,69,69,.10)}
+  body.page-canada .cax-regime-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--q3)}
+  body.page-canada .ms-green .cax-regime-pill{background:rgba(69,184,115,.10)}
+  body.page-canada .ms-green .cax-regime-pill .dot{background:var(--up)}
+  body.page-canada .ms-yellow .cax-regime-pill{background:rgba(224,160,48,.10)}
+  body.page-canada .ms-yellow .cax-regime-pill .dot{background:var(--warn)}
+  body.page-canada .cax-gauge-row{display:flex;gap:18px;align-items:center;margin-top:10px}
+  body.page-canada .cax-gauge-svg{flex:0 0 110px;width:110px;height:72px;overflow:visible}
+  body.page-canada .ms-green .cax-gauge-fill{stroke:var(--up)}
+  body.page-canada .ms-yellow .cax-gauge-fill{stroke:var(--warn)}
+  body.page-canada .ms-red .cax-gauge-fill{stroke:var(--down)}
+  /* needle accents follow the same .ms-* class (US idiom) */
+  body.page-canada .cax-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
+  body.page-canada .cax-needle-core,body.page-canada .cax-needle-tip{fill:var(--warn)}
+  body.page-canada .cax-needle-tip{filter:drop-shadow(0 0 3.5px var(--warn))}
+  body.page-canada .ms-green .cax-needle-hub{stroke:var(--up)}
+  body.page-canada .ms-green .cax-needle-core,body.page-canada .ms-green .cax-needle-tip{fill:var(--up)}
+  body.page-canada .ms-green .cax-needle-tip{filter:drop-shadow(0 0 3.5px var(--up))}
+  body.page-canada .ms-red .cax-needle-hub{stroke:var(--down)}
+  body.page-canada .ms-red .cax-needle-core,body.page-canada .ms-red .cax-needle-tip{fill:var(--down)}
+  body.page-canada .ms-red .cax-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
+  body.page-canada .cax-score-line{display:flex;align-items:baseline;gap:10px}
+  body.page-canada .cax-big-score{font-size:52px;font-weight:750;line-height:1;color:var(--warn)}
+  body.page-canada .ms-green .cax-big-score{color:var(--up)}
+  body.page-canada .ms-red .cax-big-score{color:var(--down)}
+  body.page-canada .cax-verdict{font-size:22px;font-weight:700}
+  body.page-canada .cax-verdict .arr{color:var(--warn)}
+  body.page-canada .ms-green .cax-verdict .arr{color:var(--up)}
+  body.page-canada .ms-red .cax-verdict .arr{color:var(--down)}
+  body.page-canada .cax-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--warn);margin-top:2px}
+  body.page-canada .ms-green .cax-sub-line{color:var(--up)}
+  body.page-canada .ms-red .cax-sub-line{color:var(--down)}
+  body.page-canada .cax-sub-line .cax-sub-g,body.page-canada .cax-sub-line .cax-sub-r{display:none}
+  body.page-canada .cax-sub-line .cax-sub-y{display:inline}
+  body.page-canada .ms-green .cax-sub-line .cax-sub-g{display:inline}
+  body.page-canada .ms-green .cax-sub-line .cax-sub-y{display:none}
+  body.page-canada .ms-red .cax-sub-line .cax-sub-r{display:inline}
+  body.page-canada .ms-red .cax-sub-line .cax-sub-y{display:none}
+  body.page-canada .cax-thesis{font-size:13px;color:var(--text);max-width:42ch;margin:12px 0 10px}
+  body.page-canada .cax-flip{font-size:11.5px;color:var(--muted);background:rgba(224,160,48,.08);border:1px solid rgba(224,160,48,.25);border-radius:10px;padding:7px 10px;max-width:46ch}
+  body.page-canada .cax-hero-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;position:relative}
+  body.page-canada .cax-hbtn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);color:var(--text);border-radius:999px;padding:5px 12px;font-size:11.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+  body.page-canada .cax-hbtn:hover{background:rgba(255,255,255,.09)}
+  body.page-canada .cax-hbtn .n{font-weight:700}
+  body.page-canada .cax-path-h{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  body.page-canada .cax-path-svg{width:100%;height:auto;display:block}
+  /* popovers */
+  body.page-canada .cax-pop{position:absolute;top:calc(100% + 10px);left:0;width:300px;background:rgba(13,18,26,.97);border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.6);padding:16px 18px;z-index:40;display:none}
+  body.page-canada .cax-pop.open{display:block}
+  body.page-canada .cax-pop-h{font-size:10.5px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--text);margin-bottom:12px}
+  body.page-canada .cax-pop-row{margin:9px 0}
+  body.page-canada .cax-pop-row .pr-t{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+  body.page-canada .cax-pop-row .pr-t b{font-weight:700}
+  body.page-canada .cax-pop-bar{height:4px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+  body.page-canada .cax-pop-bar i{display:block;height:100%;border-radius:3px}
+  body.page-canada .cax-pop-link{display:block;font-size:11.5px;font-weight:650;color:var(--link);margin-top:12px;cursor:pointer}
+  body.page-canada .cax-pop-big{display:flex;align-items:baseline;gap:10px;margin:2px 0 4px}
+  body.page-canada .cax-pop-big .n{font-size:30px;font-weight:750;color:var(--act)}
+  body.page-canada .cax-pop-big .t{font-size:12.5px;font-weight:700;color:var(--act)}
+  body.page-canada .cax-pop-sub{font-size:11.5px;color:var(--muted);margin-bottom:8px}
+  /* tiles */
+  body.page-canada .cax-secbar{display:flex;align-items:baseline;justify-content:space-between;margin:20px 2px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  body.page-canada .cax-secbar b{color:var(--text);font-weight:700}
+  body.page-canada .cax-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 16px}
+  @media(max-width:1100px){body.page-canada .cax-tiles{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){body.page-canada .cax-tiles{grid-template-columns:1fr}}
+  body.page-canada .cax-tile{padding:13px 15px}
+  body.page-canada .cax-tile .sym{font-size:11px;font-weight:700;letter-spacing:.6px}
+  body.page-canada .cax-tile .nm{font-size:9.5px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-top:1px}
+  body.page-canada .cax-tile .px{font-size:19px;font-weight:700;margin-top:7px}
+  body.page-canada .cax-tile .chg{font-size:11.5px;font-weight:650;margin-top:1px}
+  body.page-canada .cax-tile .chg.up,.cax-tile .chg.pos{color:var(--up)}
+  body.page-canada .cax-tile .chg.dn,.cax-tile .chg.neg{color:var(--down)}
+  body.page-canada .cax-sub{margin-left:7px;color:var(--muted);font-weight:400}
+  /* card rows */
+  body.page-canada .cax-rack2{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
+  body.page-canada .cax-rack3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+  @media(max-width:1000px){body.page-canada .cax-rack2,body.page-canada .cax-rack3{grid-template-columns:1fr}body.page-canada .cax-hero{grid-template-columns:1fr}body.page-canada .cax-hero-left{border-right:none;border-bottom:1px solid rgba(255,255,255,.12)}}
+  body.page-canada .cax-ctitle{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  body.page-canada .cax-row{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px}
+  body.page-canada .cax-row:last-child{border-bottom:none}
+  body.page-canada .cax-row .ic{flex:0 0 20px;text-align:center;font-size:12px;padding-top:1px;opacity:.9}
+  body.page-canada .cax-row .tx{flex:1;min-width:0}
+  body.page-canada .cax-row .tx b{font-weight:650}
+  body.page-canada .cax-row .sub{display:block;font-size:10.5px;color:var(--muted);margin-top:1px}
+  body.page-canada .cax-kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px}
+  body.page-canada .cax-kv:last-of-type{border-bottom:none}
+  body.page-canada .cax-kv .k{color:var(--muted)}
+  body.page-canada .cax-kv .v{font-weight:650;text-align:right}
+  body.page-canada .cax-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+  body.page-canada .cax-chip{font-size:11px;border-radius:999px;padding:3px 10px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04)}
+  body.page-canada .cax-chip.hot{background:rgba(224,100,100,.13);border-color:rgba(224,100,100,.4);color:#eda8a8}
+  body.page-canada .cax-chip.turn{background:rgba(69,184,115,.12);border-color:rgba(69,184,115,.4);color:#8fd7ae}
+  body.page-canada .cax-lbl{font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:8px 0 4px}
+  body.page-canada .cax-foot{font-size:10.5px;color:var(--muted);margin-top:10px;border-top:1px solid rgba(255,255,255,.05);padding-top:8px}
+  body.page-canada .cax-bignum{font-size:30px;font-weight:750;line-height:1.05}
+  body.page-canada .cax-bigsub{font-size:12px;font-weight:650;margin-top:3px}
+  body.page-canada .cax-alert-pill{margin-left:auto;font-size:10px;font-weight:700;background:rgba(224,160,48,.16);color:var(--warn);border-radius:999px;padding:2px 9px;letter-spacing:.5px}
+  body.page-canada .cax-heat{display:flex;gap:4px;margin-top:6px}
+  body.page-canada .cax-heat i{flex:1;height:12px;border-radius:3px;background:var(--up);opacity:.85}
+  body.page-canada .cax-heat i.h2{opacity:.55}body.page-canada .cax-heat i.h3{opacity:.3}
+  body.page-canada .cax-heat i.c{background:var(--down)}
+  body.page-canada .cax-heat i.c2{background:var(--down);opacity:.45}
+  body.page-canada .cax-heat i.n{background:rgba(255,255,255,.12)}
+  body.page-canada .cax-stk{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+  body.page-canada .cax-stk .tkr{flex:0 0 auto}
+  body.page-canada .cax-stk:last-of-type{border-bottom:none}
+  body.page-canada .cax-tkr-btn{display:inline-block;background:rgba(91,155,240,.10);border:1px solid rgba(91,155,240,.35);color:#a9c8f5;border-radius:8px;padding:3px 10px;font-weight:700;font-size:12px;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s}
+  body.page-canada .cax-tkr-btn:hover{background:rgba(91,155,240,.22);border-color:rgba(91,155,240,.6)}
+  body.page-canada .cax-stk .meta{flex:1;min-width:0;color:var(--muted);font-size:10.5px;line-height:1.35}
+  body.page-canada .cax-stk .meta b{color:var(--text);font-weight:650;font-size:11.5px}
+  body.page-canada .cax-stage{flex:0 0 auto;font-size:9px;font-weight:700;letter-spacing:.6px;border-radius:5px;padding:2px 7px;background:rgba(69,184,115,.14);color:#8fd7ae;border:1px solid rgba(69,184,115,.35)}
+  body.page-canada .cax-screener-btn{display:block;width:100%;text-align:center;margin-top:12px;background:linear-gradient(135deg,rgba(91,155,240,.18),rgba(69,184,115,.14));border:1px solid rgba(91,155,240,.4);color:var(--text);font-weight:700;font-size:12.5px;border-radius:12px;padding:10px 0;cursor:pointer;text-decoration:none;letter-spacing:.4px;transition:box-shadow .2s,transform .2s}
+  body.page-canada .cax-screener-btn:hover{box-shadow:0 6px 22px rgba(91,155,240,.25);transform:translateY(-1px)}
+  body.page-canada .cax-stword.ok{color:var(--up)}
+  body.page-canada .cax-stword.warn{color:var(--warn)}
+  body.page-canada .cax-stword.bad{color:var(--down)}
+  body.page-canada .cax-links{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 12px}
+  body.page-canada .cax-links a{color:var(--text);text-decoration:none;font-size:12px;border:1px solid rgba(255,255,255,.12);background:rgba(16,22,30,.55);border-radius:999px;padding:7px 15px}
+  body.page-canada .cax-links a:hover{border-color:rgba(255,255,255,.25)}
+  body.page-canada .cax-dh{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);padding:12px 20px;background:rgba(16,22,30,.55);border:1px solid rgba(255,255,255,.12);border-radius:18px;backdrop-filter:blur(20px);margin-top:8px}
+  body.page-canada .cax-dh b{color:var(--text);font-weight:650}
+  body.page-canada .cax-dh .d{width:8px;height:8px;border-radius:50%;background:var(--ok,var(--up))}
+  /* dialogs */
+  body.page-canada .cax-dlg{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;z-index:200;overflow:auto;padding:5vh 16px}
+  body.page-canada .cax-dlg.open{display:flex}
+  body.page-canada .cax-dlg-backdrop{position:fixed;inset:0;background:rgba(5,8,12,.6);backdrop-filter:blur(6px)}
+  body.page-canada .cax-dlg-panel{position:relative;width:min(900px,94vw);background:rgba(13,17,24,.94);border:1px solid rgba(255,255,255,.14);border-radius:20px;box-shadow:0 30px 90px rgba(0,0,0,.6);backdrop-filter:blur(28px) saturate(1.4);margin-bottom:6vh}
+  body.page-canada .cax-dlg-head{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,.09)}
+  body.page-canada .cax-dlg-title{font-size:13px;font-weight:700;letter-spacing:.7px;text-transform:uppercase}
+  body.page-canada .cax-dlg-close{background:none;border:1px solid rgba(255,255,255,.16);color:var(--text);width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;line-height:1}
+  body.page-canada .cax-dlg-body{padding:18px 22px 22px}
+  @media(prefers-reduced-motion:no-preference){
+    body.page-canada .cax-dlg-backdrop{opacity:0;transition:opacity 240ms ease-out}
+    body.page-canada .cax-dlg.cax-in .cax-dlg-backdrop{opacity:1}
+    body.page-canada .cax-dlg-panel{opacity:0;transform:translateY(14px) scale(.965);transition:opacity 320ms cubic-bezier(.22,.9,.26,1.02),transform 320ms cubic-bezier(.22,.9,.26,1.02)}
+    body.page-canada .cax-dlg.cax-in .cax-dlg-panel{opacity:1;transform:translateY(0) scale(1)}
+    body.page-canada .cax-dlg.cax-closing .cax-dlg-backdrop{transition-duration:180ms}
+    body.page-canada .cax-dlg.cax-closing .cax-dlg-panel{transition-duration:180ms}
+    body.page-canada .cax-dlg-body > *{opacity:0;transform:translateY(10px);transition:opacity 300ms ease-out,transform 300ms cubic-bezier(.22,.9,.26,1.02)}
+    body.page-canada .cax-dlg.cax-in .cax-dlg-body > *{opacity:1;transform:translateY(0)}
+    body.page-canada .cax-dlg.cax-in .cax-dlg-body > *:nth-child(1){transition-delay:60ms}
+    body.page-canada .cax-dlg.cax-in .cax-dlg-body > *:nth-child(2){transition-delay:100ms}
+    body.page-canada .cax-dlg.cax-in .cax-dlg-body > *:nth-child(3){transition-delay:140ms}
+    body.page-canada .cax-dlg.cax-in .cax-dlg-body > *:nth-child(4){transition-delay:180ms}
+    body.page-canada .cax-dlg.cax-in .cax-dlg-body > *:nth-child(5){transition-delay:220ms}
+    body.page-canada .cax-dlg.cax-in .cax-dlg-body > *:nth-child(n+6){transition-delay:0ms}
+    body.page-canada .cax-dlg.cax-closing .cax-dlg-body > *{transition-delay:0ms!important}
+    body.page-canada .cax-pop{transform-origin:top left;animation:caxPopIn .16s cubic-bezier(.22,.9,.26,1.02)}
+    @keyframes caxPopIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+  }
+  @media(prefers-reduced-motion:reduce){
+    body.page-canada .cax-dlg.open .cax-dlg-backdrop{opacity:1}
+    body.page-canada .cax-dlg.open .cax-dlg-panel{opacity:1;transform:none}
+    body.page-canada .cax-dlg.open .cax-dlg-body > *{opacity:1;transform:none}
+  }
+  body.page-canada .cax-eyebrow{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
+  body.page-canada .cax-eyebrow:first-child{margin-top:0}
+  body.page-canada .cax-sep{height:1px;background:rgba(255,255,255,.07);margin:14px 0}
+  body.page-canada .cax-frow{display:grid;grid-template-columns:200px 1fr 56px;gap:12px;align-items:center;padding:7px 0;font-size:12.5px}
+  body.page-canada .cax-frow .fread{font-size:11px;color:var(--muted)}
+  body.page-canada .cax-fbar{height:7px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}
+  body.page-canada .cax-fbar i{display:block;height:100%;border-radius:4px}
+  body.page-canada .cax-fscore{text-align:right;font-weight:700}
+  body.page-canada .cax-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+  @media(max-width:980px){body.page-canada .cax-cols2{grid-template-columns:minmax(0,1fr)}}
+  body.page-canada .cax-dlg-body :is(.js-plotly-plot,.plotly-graph-div,.plotly){max-width:100%!important}
+  body.page-canada .cax-dlg-body .cax-mt{display:block;max-width:100%;overflow-x:auto}
+  body.page-canada .cax-receipt{font-size:11px;color:var(--muted);border-top:1px solid rgba(255,255,255,.07);margin-top:14px;padding-top:10px}
+  body.page-canada .cax-ihcard{border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02)}
+  body.page-canada .cax-ihgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+  body.page-canada .cax-ihcard .t{font-size:11px;font-weight:700;letter-spacing:.5px}
+  body.page-canada .cax-ihcard .p{font-size:17px;font-weight:700;margin:4px 0 6px}
+  body.page-canada .cax-okchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(69,184,115,.13);color:#8fd7ae}
+  body.page-canada .cax-badchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(224,100,100,.13);color:#eda8a8}
+  body.page-canada .cax-nchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(255,255,255,.06);color:var(--muted)}
+  body.page-canada .cax-ledd{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+  body.page-canada .cax-ledd .rk{color:var(--muted);font-size:10.5px}
+  body.page-canada table.cax-mt{width:100%;border-collapse:collapse;font-size:12px}
+  body.page-canada table.cax-mt th{font-size:9.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.09)}
+  body.page-canada table.cax-mt td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05)}
+  body.page-canada table.cax-mt td.r,body.page-canada table.cax-mt th.r{text-align:right}
+  body.page-canada .cax-tt-dn{color:var(--down);font-weight:650}
+  body.page-canada .cax-tt-up{color:var(--up);font-weight:650}
+  body.page-canada .cax-tt-fl{color:var(--warn);font-weight:650}
+  body.page-canada .cax-hm-wrap{position:relative;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.02);padding:12px;transition:all .35s cubic-bezier(.2,.8,.2,1)}
+  body.page-canada .cax-hm-wrap.hm-full{position:fixed;inset:18px;z-index:120;background:rgba(11,14,19,.99);overflow:auto;box-shadow:0 40px 120px rgba(0,0,0,.8);padding:22px}
+  /* ── Light-mode tokens for page-canada ── */
+  [data-theme="light"] body.page-canada{--mx5-glass-bg:rgba(255,255,255,.82);--mx5-glass-border:rgba(0,0,0,.06);--mx5-pop-bg:rgba(255,255,255,.97)}
+  [data-theme="light"] body.page-canada .cax-card{box-shadow:0 4px 24px rgba(0,0,0,.09),0 1px 0 rgba(255,255,255,.95) inset}
+  [data-theme="light"] body.page-canada .cax-card[role="button"]:hover{background:rgba(255,255,255,.92);border-color:rgba(0,0,0,.14);box-shadow:0 6px 24px rgba(0,0,0,.12)}
+  [data-theme="light"] body.page-canada .cax-pop{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1);box-shadow:0 8px 32px rgba(0,0,0,.13)}
+  [data-theme="light"] body.page-canada .cax-dlg-panel{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1)}
+  [data-theme="light"] body.page-canada .cax-dlg-backdrop{background:rgba(20,24,30,.34)}
+  [data-theme="light"] body.page-canada .cax-dlg-head{border-bottom-color:rgba(0,0,0,.09)}
+  [data-theme="light"] body.page-canada .cax-dlg-close{border-color:rgba(0,0,0,.18)}
+  [data-theme="light"] body.page-canada .cax-hm-wrap.hm-full{background:rgba(255,255,255,.99)}
+  [data-theme="light"] body.page-canada .cax-links a,[data-theme="light"] body.page-canada .cax-dh{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.09)}
+  [data-theme="light"] body.page-canada .cax-hero-left{border-right-color:rgba(0,0,0,.08)}
+  [data-theme="light"] body.page-canada .cax-row,[data-theme="light"] body.page-canada .cax-kv,[data-theme="light"] body.page-canada .cax-foot,[data-theme="light"] body.page-canada .cax-stk,[data-theme="light"] body.page-canada .cax-ledd,[data-theme="light"] body.page-canada .cax-receipt,[data-theme="light"] body.page-canada table.cax-mt td,[data-theme="light"] body.page-canada table.cax-mt th{border-color:rgba(0,0,0,.08)}
+  [data-theme="light"] body.page-canada .cax-pop-bar,[data-theme="light"] body.page-canada .cax-sep,[data-theme="light"] body.page-canada .cax-fbar,[data-theme="light"] body.page-canada .cax-heat i.n{background:rgba(0,0,0,.09)}
+  [data-theme="light"] body.page-canada .cax-hbtn{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.12)}
+  [data-theme="light"] body.page-canada .cax-hbtn:hover{background:rgba(0,0,0,.06)}
+  [data-theme="light"] body.page-canada .cax-chip:not(.hot):not(.turn),[data-theme="light"] body.page-canada .cax-ihcard,[data-theme="light"] body.page-canada .cax-hm-wrap,[data-theme="light"] body.page-canada .cax-nchip{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.1)}
+  [data-theme="light"] body.page-canada .cax-regime-pill{border-color:rgba(0,0,0,.12)}
+  [data-theme="light"] body.page-canada .cax-chip.hot{color:#b4232a}
+  [data-theme="light"] body.page-canada .cax-chip.turn{color:#1f7a44}
+  [data-theme="light"] body.page-canada .cax-tkr-btn{color:#2456a8}
+{%- endif %}{# /mode != stocks — MX5 CSS #}
 
 {% if mode == 'stocks' %}
   /* ── W8-G: Standout table view (CA port of W8-E) ──────────────────────── */
@@ -328,6 +554,7 @@
   .st-new-dot::before { content:"NEW"; display:inline-block; font-size:8px; font-weight:800;
     background:var(--up); color:#fff; padding:0 4px; border-radius:4px; margin-right:4px;
     vertical-align:1px; }
+  html[data-lang="zh"] .st-new-dot::before { content:"新"; font-size:10px; }
   .st-th-tip { display:inline-flex; align-items:center; justify-content:center;
     width:13px; height:13px; border-radius:50%; border:1px solid var(--muted);
     color:var(--muted); font-size:9px; font-weight:700; cursor:help;
@@ -411,176 +638,654 @@
 </div>
 {% endif %}
 
-{% if mode != 'stocks' %}{# ===== macro-only sections (regime → action board) ===== #}
-<!-- ===== Canada regime — command-center hero ===== -->
+{% if mode != 'stocks' %}{# ===== MX5 CANADA GLANCE — macro mode ===== #}
+{# hero locals #}
+{% set ms = market_state %}
+{% set _ms_color = (ms.color if ms else 'yellow') %}
+{% set _ms_score = (ms.score if ms else 50) %}
+{% set _ms_verdict = (ms.verdict if ms else 'MIXED') %}
+{% set _ms_label = (ms.label_en if ms else 'Mixed') %}
+{% set _ms_label_zh = (ms.label_zh if ms else '混合') %}
+{% set _ms_posture = (ms.posture_en if ms else 'Trade with caution') %}
+{% set _ms_posture_zh = (ms.posture_zh if ms else '谨慎交易') %}
+{% set _ms_thesis = (ms.headline_en if ms else '') %}
+{% set _ms_thesis_zh = (ms.headline_zh if ms else '') %}
+{% set _ms_flip = (ms.flip_en if ms else '') %}
+{% set _ms_flip_zh = (ms.flip_zh if ms else '') %}
+{% set _comps = (ms.components if ms else []) %}
+{% set _rr = (ms.radar if ms else {}) %}
+{% set _rr_score = (_rr.get('top_score') if (_rr and _rr.get('top_score') is not none) else none) %}
+{% set _rr_p21 = _rr.get('dd21') if _rr else none %}
+{% set _rr_lift = _rr.get('dd_lift') if _rr else none %}
+{% set _rr_do_en = (_rr.get('do_en') or '') if _rr else '' %}
+{% set _rr_do_zh = (_rr.get('do_zh') or '') if _rr else '' %}
 {% set ov = overlay or {} %}
-{% set _ol = {
-  'Q1': ('Falling inflation with steady growth — supportive for quality and rate-sensitives. The TSX tape is set by commodities and the loonie.', '通胀回落、增长平稳 — 利好质量股与利率敏感股。多伦多大盘的盘面由大宗商品与加元决定。'),
-  'Q2': ('Growth and inflation both firming — favour energy, materials and financials, the heart of the TSX.', '增长与通胀同步走强 — 偏好能源、材料与金融，多伦多大盘的核心。'),
-  'Q3': ('Sticky inflation into slowing growth — the dangerous regime; defend capital, lean on gold and energy.', '通胀粘性叠加增长放缓 — 最危险的周期；保住本金，依靠黄金与能源。'),
-  'Q4': ('A growth scare with cooling inflation — lean defensive; bonds and staples over cyclicals.', '增长恐慌伴随通胀降温 — 偏防御；债券与必需消费优于周期股。')
-} %}
-<div class="panel cmd-hero" id="regime-radar">
-  {% if market_state %}
-  {% set ms = market_state %}
-  {% set board = {
-    'eyebrow_help_en': "What kind of TSX market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite (the commodity / CAD / S&P / VIX / DXY overlay), the volatility regime (VIX, Canada's cross-asset fear gauge), market breadth, BoC liquidity & the GoC curve, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction — every leg reads what has ALREADY turned, not a forecast. DISPLAY-ONLY: a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.",
-    'eyebrow_help_zh': "当前是什么样的 TSX 市场 — 一个把多周期大盘趋势、跨资产风险偏好（商品／加元／标普／VIX／美元指数综合）、波动率环境（VIX，加拿大的跨资产恐慌指标）、市场广度、加央行流动性与加债曲线，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测 — 每条腿读取的是已经转向的东西，而非预测。仅供展示：它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。",
-    'tape_title_en': "Multi-timeframe tape · the broad TSX market", 'tape_title_zh': "多周期趋势 · TSX 大盘",
-    'tape_help_en': "How the broad TSX market is trending across four timeframes — 1D, 3D, 7D and 30D — for the S&P/TSX Composite plus its two dominant pillars, Financials and Energy (the TSX is heavily concentrated in them). ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes.",
-    'tape_help_zh': "TSX 大盘在四个周期（1D、3D、7D、30D）上的趋势 — 标普/TSX 综合指数及其两大支柱金融与能源（TSX 高度集中于此）。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论。",
-    'divider_en': "Macro backdrop — the growth × inflation regime", 'divider_zh': "宏观背景 — 增长 × 通胀周期"
-  } %}
-  {% endif %}
-  {# ===== ONE side-by-side board: Market State (left) + the TSX regime backdrop (right) ===== #}
-  <div class="ms-front{% if market_state %} ms ms-{{ market_state.color }}{% endif %}">
-  {% if market_state %}{% include "_market_state_board.html.j2" %}{% endif %}
-  <div class="hero-bar">
-    <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
-    <div class="hero-loc">
-      <div class="loc-axes"><span>{{ t('GROWTH','增长') }} ↑</span><span>{{ t('INFL','通胀') }} →</span></div>
-      <div class="qmini">
-        <span class="qm{{ ' on' if Q == 'Q1' }}" style="--qc:var(--q1)"></span>
-        <span class="qm{{ ' on' if Q == 'Q2' }}" style="--qc:var(--q2)"></span>
-        <span class="qm{{ ' on' if Q == 'Q4' }}" style="--qc:var(--q4)"></span>
-        <span class="qm{{ ' on' if Q == 'Q3' }}" style="--qc:var(--q3)"></span>
+{% set cp = coupling or {} %}
+
+<div class="cax-wrap">
+
+<!-- =============== HERO =============== -->
+<div class="cax-card cax-hero{{ ' cax-hero-solo' if not (ms_history and ms_history|length >= 2) else '' }} ms-front ms ms-{{ _ms_color }}" id="ms-board" style="padding:0">
+  <div class="cax-hero-left">
+    {# quad zh from the site's canonical map (_regime_prob_panel idiom) — the vm
+       carries no quad_name_zh; never render EN into the zh span. #}
+    {% set _QZH = {'Goldilocks':'理想增长','Reflation':'再通胀','Stagflation':'滞胀','Growth-scare':'增长恐慌','Growth scare':'增长恐慌'} %}
+    {% set _CZH = {'early':'早期','mid':'中期','late':'后期'} %}
+    <span class="cax-regime-pill"><span class="dot"></span>
+      {{ t(latest.quad_name, _QZH.get(latest.quad_name, latest.quad_name)) }}<span style="opacity:.55"> · {{ t(latest.cycle_tag or 'mid', _CZH.get(latest.cycle_tag or 'mid', latest.cycle_tag or 'mid')) }}</span></span>
+    <div class="cax-gauge-row">
+      {# arc centre (60,68) r=50; needle rotates around the centre (US idiom):
+         score 0→-90° … 100→+90°; accents class-driven via .ms-* #}
+      {% set _needle_deg = ((_ms_score * 1.8) - 90) | round(1) %}
+      <svg class="cax-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
+        <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
+        <path class="cax-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
+        <g class="cax-gauge-needle" transform="rotate({{ _needle_deg }} 60 68)">
+          <line x1="60" y1="68" x2="60" y2="31" stroke="var(--text)" stroke-width="2" stroke-linecap="round" opacity=".45"/>
+          <circle class="cax-needle-hub" cx="60" cy="68" r="5"/>
+          <circle class="cax-needle-core" cx="60" cy="68" r="1.8"/>
+          <circle class="cax-needle-tip" cx="60" cy="30" r="2.6"/>
+        </g>
+      </svg>
+      <div>
+        <div class="cax-score-line"><span id="ms-score" class="cax-big-score">{{ _ms_score }}</span><span id="ms-word" class="cax-verdict">{{ t(_ms_label, _ms_label_zh) }} <span class="arr">▶</span></span></div>
+        <div class="cax-sub-line">
+          <span class="cax-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">绿 — 支持趋势跟随</span></span>
+          <span class="cax-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">黄 — 谨慎交易</span></span>
+          <span class="cax-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">红 — 优先保住本金</span></span>
+        </div>
       </div>
     </div>
-    <!-- CENTER — headline regime + plain-English standfirst -->
-    <div class="hero-main">
-      <div class="hero-eyebrow"><span class="num">{{ latest.date }}</span> · {{ t('CANADA TSX REGIME', '加拿大 TSX 周期') }}
-        · <span class="num {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ t('G','增') }} {{ '%+.2f'|format(latest.growth_score) }}</span>
-        <span class="num {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ t('I','胀') }} {{ '%+.2f'|format(latest.inflation_score) }}</span>
-        {{ help("Growth and inflation create the four regimes. Because the TSX is commodity-heavy, read this with the CAD/commodity overlay.", "增长与通胀组成四种周期。TSX 大宗商品权重高，所以要和加元/商品叠加一起看。") }}
+    <p class="cax-thesis">{{ t(_ms_thesis or 'TSX market state.', _ms_thesis_zh or 'TSX 市场状态。') }}</p>
+    {% if _ms_flip %}<div class="cax-flip">{{ t(_ms_flip, _ms_flip_zh or _ms_flip) }}</div>{% endif %}
+    <div class="cax-hero-btns">
+      {% set _n_bull = (_comps | selectattr('tone', 'equalto', 'pos') | list | length) %}
+      {% set _n_total = (_comps | length) %}
+      <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-signals',event)">⌁
+        <span class="l-en">{{ _n_bull }} of {{ _n_total }} signals aligned</span><span class="l-zh">{{ _n_total }} 项中 {{ _n_bull }} 项一致</span>
+        <span class="n">▾</span></button>
+      <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-risk',event)" style="border-color:rgba(224,100,100,.5)">⚠
+        <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span>{% if _rr_score is not none %} · <span class="n" style="color:var(--act)">{{ _rr_score }}</span>{% endif %} ▾</button>
+
+      <!-- popover: factor breakdown -->
+      <div class="cax-pop" id="cax-pop-signals">
+        <div class="cax-pop-h">{{ t('Factor breakdown', '因子分解') }} — {{ _n_total }} {{ t('signals', '信号') }}</div>
+        {% for c in _comps %}
+        <div class="cax-pop-row">
+          <div class="pr-t">
+            <span {% if c.tone == 'bad' %}style="color:var(--down)"{% elif c.tone == 'good' %}style="color:var(--up)"{% endif %}>{{ t(c.label_en, c.label_zh) }}</span>
+            <b {% if c.tone == 'bad' %}style="color:var(--down)"{% elif c.tone == 'good' %}style="color:var(--up)"{% endif %}>{{ c.score }}</b>
+          </div>
+          <div class="cax-pop-bar"><i style="width:{{ c.score }}%;background:{{ 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') }}"></i></div>
+        </div>
+        {% endfor %}
+        <span class="cax-pop-link" onclick="caxClosePops();caxOpenDlg('cax-dlg-read')">{{ t('Full breakdown ↓', '完整分解 ↓') }}</span>
       </div>
-      <div class="hero-regime">
-        <span class="hr-dot" style="background:var(--q{{ Q[1] }});box-shadow:0 0 14px var(--q{{ Q[1] }})"></span>
-        <h1 class="hr-name">{{ td(latest.quad_name) }}</h1>
-      </div>
-      <p class="hero-says">{{ t(_ol[Q][0], _ol[Q][1]) }}</p>
-      <p class="hero-says" style="margin-top:6px"><a class="navbtn" href="canada_history.html" style="font-size:12px">{{ t('Regime history →', '周期历史 →') }}</a></p>
-    </div>
-    <!-- RIGHT — vitals strip: Canada's native drivers -->
-    <div class="hero-vitals">
-      <div class="vital">
-        <div class="v-top"><span class="v-label">{{ t('BoC STANCE', '央行立场') }}</span>
-          {{ help('Recent BoC rate direction. Cuts ease conditions; hikes tighten.', '近期加央行利率方向。降息偏宽松；加息偏紧。') }}</div>
-        <span class="v-chip liq-{{ latest.liquidity_overlay }}">{{ td(latest.liquidity_overlay) }}</span>
-        <span class="v-mean">{{ t('policy-rate direction', '政策利率方向') }}</span>
-      </div>
-      <div class="vital">
-        <div class="v-top"><span class="v-label">{{ t('COMMODITIES', '大宗商品') }}</span>
-          {{ help('Commodity strength plus a firm CAD usually helps Canada. This is current context, not a forecast.', '商品走强且加元坚挺通常利好加拿大。这是当前背景，非预测。') }}</div>
-        <span class="v-chip {{ 'tone-up' if ov.state=='Risk-on' else ('tone-down' if ov.state=='Risk-off' else '') }}">{{ td(ov.state or 'unknown') }}</span>
-        <span class="v-mean">{% if ov.terms_of_trade %}{{ t('terms of trade', '贸易条件') }} {{ td(ov.terms_of_trade) }}{% else %}{{ t('oil · gold · CAD', '原油 · 黄金 · 加元') }}{% endif %}</span>
-      </div>
-      <div class="vital">
-        <div class="v-top"><span class="v-label">{{ t('AGREEMENT', '一致度') }}</span>
-          {{ help('How many inputs agree. Low agreement means choppy signals.', '有多少输入方向一致。一致度低代表信号较乱。') }}</div>
-        <span class="v-num num-lg">{{ '%.0f'|format(latest.confidence*100) }}<small>%</small></span>
-        <span class="v-meter" style="--p:{{ (latest.confidence*100)|round|int }}%;--mc:{{ 'var(--up)' if latest.confidence>=0.45 else ('var(--warn)' if latest.confidence>=0.30 else 'var(--down)') }}"></span>
-      </div>
-      <div class="vital">
-        <div class="v-top"><span class="v-label">{{ t('CYCLE', '商业周期') }}</span></div>
-        <span class="v-chip">{{ td(latest.cycle_tag) }}</span>
-        <span class="v-mean">
-          {%- if latest.confirming %}✓{{ latest.confirming|length }} {% endif %}{% if latest.contradicting %}✗{{ latest.contradicting|length }} {% endif %}{{ t('multi-year backdrop', '多年期背景') }}</span>
+
+      <!-- popover: pullback risk radar -->
+      <div class="cax-pop" id="cax-pop-risk" style="left:auto">
+        <div class="cax-pop-h">{{ t('Pullback risk radar', '回撤风险雷达') }}</div>
+        {% if _rr_score is not none %}
+        <div class="cax-pop-big"><span class="n">{{ _rr_score }}</span><span class="t">{{ t(_rr.get('label_en') or '', _rr.get('label_zh') or '') }}</span></div>
+        <div class="cax-pop-sub">{{ t(_rr_do_en or _ms_posture, _rr_do_zh or _ms_posture_zh) }}</div>
+        {% for leg in (_rr.get('scares') or [])[:3] %}
+        <div class="cax-pop-row">
+          <div class="pr-t"><span>{{ t(leg.get('label_en') or leg.get('scare',''), leg.get('label_zh') or leg.get('scare','')) }}</span><b>{{ leg.score|round|int }}</b></div>
+          <div class="cax-pop-bar"><i style="width:{{ leg.score|round|int }}%;background:var(--act)"></i></div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="cax-pop-sub">{{ t('No radar data.', '暂无雷达数据。') }}</div>
+        {% endif %}
+        <span class="cax-pop-link" onclick="caxClosePops();caxOpenDlg('cax-dlg-risk')">{{ t('Full risk detail ↓', '完整风险详情 ↓') }}</span>
       </div>
     </div>
   </div>
-  </div>{# /.ms-front — close the side-by-side board #}
+  <div class="cax-hero-right">
+    <div class="cax-path-h"><span>{{ t('11-session path', '11交易日走势') }}</span></div>
+    {% if ms_history and ms_history | length >= 2 %}
+    {% set _pts = ms_history %}
+    {% set _n = _pts | length %}
+    <svg class="cax-path-svg" viewBox="0 0 560 232" aria-hidden="true">
+      <rect x="20" y="22" width="520" height="56" fill="rgba(69,184,115,.06)"/>
+      <rect x="20" y="134" width="520" height="56" fill="rgba(224,100,100,.06)"/>
+      <line x1="20" y1="106" x2="540" y2="106" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
+      <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end">{{ t('Risk-on','风险偏好') }}</text>
+      <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end">{{ t('Mixed','混合') }}</text>
+      <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end">{{ t('Risk-off','避险') }}</text>
+      <text x="14" y="26" font-size="9" fill="var(--muted)" text-anchor="end">100</text>
+      <text x="14" y="109" font-size="9" fill="var(--muted)" text-anchor="end">50</text>
+      <text x="14" y="192" font-size="9" fill="var(--muted)" text-anchor="end">0</text>
+      {% set _step = 520 / ([_n - 1, 1] | max) %}
+      {% set _poly_pts = [] %}
+      {% for p in _pts %}{% set _x = 20 + loop.index0 * _step %}{% set _y = 190 - (p.score / 100) * 168 %}{% set _ = _poly_pts.append((_x|round(1)|string) + ' ' + (_y|round(1)|string)) %}{% endfor %}
+      <path d="M{{ _poly_pts | join(' L') }}"
+            fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="2.2" stroke-linejoin="round"/>
+      <text x="30" y="222" font-size="9" fill="var(--muted)">{{ _pts[0].date if _pts[0] else '' }}</text>
+      <text x="536" y="222" font-size="9" fill="var(--muted)" text-anchor="end">{{ _pts[-1].date if _pts[-1] else '' }}</text>
+    </svg>
+    {% else %}
+    <div style="height:232px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)">{{ t('Building score history…','评分历史积累中…') }}</div>
+    {% endif %}
+  </div>
+</div>
+{# /hero #}
+
+<!-- =============== 4 MARKET TILES =============== -->
+<div class="cax-secbar"><b>{{ t('CANADA DASHBOARD','加拿大看板') }}</b><span>{{ latest.date }}</span></div>
+<div class="cax-tiles">
+  {# TSX Composite #}
+  {% if benchmark %}
+  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-markets')">
+    <div class="sym">^GSPTSE</div><div class="nm">{{ t('TSX COMPOSITE','TSX 综合') }}</div>
+    <div class="px">{{ '{:,.0f}'.format(benchmark.price) }}</div>
+    <div class="chg {{ 'up' if benchmark.chg >= 0 else 'dn' }}">{{ '%+.2f'|format(benchmark.chg) }}%</div>
+  </div>
+  {% else %}
+  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-markets')">
+    <div class="sym">^GSPTSE</div><div class="nm">{{ t('TSX COMPOSITE','TSX 综合') }}</div>
+    <div class="px" style="color:var(--muted)">—</div>
+  </div>
+  {% endif %}
+  {# Overlay-factor tiles. Jinja gotcha: {% set %} inside {% for %} is LOOP-LOCAL
+     and never escapes — a plain `{% set _f = f %}` in the loop leaves the outer
+     var none (all tiles rendered '—' until this used namespace()). #}
+  {% set _tf = namespace(spy=none, cad=none, oil=none) %}
+  {% for f in (ov.factors or []) %}
+    {% set _lab = (f.label or '') %}
+    {% if _tf.spy is none and ('SPY' in _lab or 'SP500' in _lab or 'S&P' in _lab) %}{% set _tf.spy = f %}{% endif %}
+    {% if _tf.cad is none and ('CAD' in _lab) %}{% set _tf.cad = f %}{% endif %}
+    {% if _tf.oil is none and ('oil' in _lab|lower or 'crude' in _lab|lower or 'energy' in _lab|lower) %}{% set _tf.oil = f %}{% endif %}
+  {% endfor %}
+  {# S&P 500 (US context via overlay) #}
+  {% set _spy_f = _tf.spy %}
+  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
+    <div class="sym">SPY</div><div class="nm">{{ t('S&P 500','标普500') }}</div>
+    {% if _spy_f is not none %}
+    <div class="px" style="font-size:14px">{{ '%+.2f'|format(_spy_f.z) }}σ</div>
+    <div class="chg {{ 'up' if _spy_f.risk == 'on' else ('dn' if _spy_f.risk == 'off' else '') }}">{{ t({'on':'Risk-on','off':'Risk-off','neutral':'Neutral'}.get(_spy_f.risk or '', '—'), {'on':'偏多','off':'偏空','neutral':'中性'}.get(_spy_f.risk or '', '—')) }}</div>
+    {% else %}
+    <div class="px" style="color:var(--muted)">—</div>
+    <div class="chg" style="color:var(--muted)">{{ t('US context','美股背景') }}</div>
+    {% endif %}
+  </div>
+  {# USDCAD #}
+  {% set _usdcad_f = _tf.cad %}
+  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
+    <div class="sym">USDCAD</div><div class="nm">{{ t('LOONIE','加元') }}</div>
+    {% if _usdcad_f is not none %}
+    <div class="px" style="font-size:14px">{{ '%+.2f'|format(_usdcad_f.z) }}σ</div>
+    <div class="chg {{ 'dn' if _usdcad_f.risk == 'on' else ('up' if _usdcad_f.risk == 'off' else '') }}">{{ t('CAD ' + ('firm' if _usdcad_f.risk == 'on' else ('soft' if _usdcad_f.risk == 'off' else 'flat')), '加元' + ('走强' if _usdcad_f.risk == 'on' else ('走弱' if _usdcad_f.risk == 'off' else '平稳'))) }}</div>
+    {% else %}
+    <div class="px" style="color:var(--muted)">—</div>
+    <div class="chg" style="color:var(--muted)">{{ t('FX context','汇率背景') }}</div>
+    {% endif %}
+  </div>
+  {# Crude / Energy #}
+  {% set _oil_f = _tf.oil %}
+  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
+    <div class="sym">XEG / OIL</div><div class="nm">{{ t('CRUDE / ENERGY','原油/能源') }}</div>
+    {% if _oil_f is not none %}
+    <div class="px" style="font-size:14px">{{ '%+.2f'|format(_oil_f.z) }}σ</div>
+    <div class="chg {{ 'up' if _oil_f.risk == 'on' else ('dn' if _oil_f.risk == 'off' else '') }}">{{ t({'on':'Supportive','off':'Headwind','neutral':'Neutral'}.get(_oil_f.risk or '', '—'), {'on':'利多','off':'利空','neutral':'中性'}.get(_oil_f.risk or '', '—')) }}</div>
+    {% else %}
+    <div class="px" style="color:var(--muted)">—</div>
+    <div class="chg" style="color:var(--muted)">{{ t('Commodity context','商品背景') }}</div>
+    {% endif %}
+  </div>
 </div>
 
-<!-- ===== Commodity / CAD / BoC overlay hero (the primary driver) ===== -->
-{% set ov = overlay or {} %}
-<div class="panel">
-  <h2>{{ t('Commodity / CAD / BoC-vs-Fed overlay', '大宗商品／加元／央行-美联储 叠加') }}
-    {{ help('Fast read for the TSX: commodities, CAD, US risk appetite and volatility. Context only.', 'TSX 快速读数：商品、加元、美股风险偏好与波动率。仅作背景。') }}
-  </h2>
-  <div class="row" style="gap:18px">
-    <span class="riskbig risk-{{ (ov.state or 'unknown')|lower|replace('-','') }}">{{ td(ov.state or 'unknown') }}</span>
-    {% if ov.score is not none %}<span class="muted">{{ t('composite', '综合') }} {{ '%+.2f'|format(ov.score) }}</span>{% endif %}
-    {% if ov.terms_of_trade %}<span class="chip {{ 'on' if ov.terms_of_trade=='improving' else ('off' if ov.terms_of_trade=='deteriorating' else 'neutral') }}">{{ t('Terms of trade', '贸易条件') }}: <b>{{ td(ov.terms_of_trade) }}</b></span>{% endif %}
+<!-- =============== ROW 1: What To Do + Regime Watch =============== -->
+<div class="cax-rack2">
+  {# What To Do #}
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-playbook')">
+    <div class="cax-ctitle">{{ t('What To Do','该怎么做') }}</div>
+    {% if actions %}
+    {% set _buy_now = (actions.buy_now or []) %}
+    {% set _buy_soon = (actions.buy_soon or []) %}
+    {% set _avoid = (actions.avoid or []) %}
+    {% if _buy_now %}
+    <div class="cax-row"><span class="ic">✅</span><div class="tx"><b>{{ t('Buy now','立即买入') }}</b><span class="sub">{{ _buy_now | map(attribute='name') | list | join(' · ') | truncate(60, true, '…') }}</span></div></div>
+    {% endif %}
+    {% if _buy_soon %}
+    <div class="cax-row"><span class="ic">⏳</span><div class="tx"><b>{{ t('Buy soon','即将买入') }}</b><span class="sub">{{ _buy_soon | map(attribute='name') | list | join(' · ') | truncate(60, true, '…') }}</span></div></div>
+    {% endif %}
+    {% if actions.get('on_the_run') %}
+    <div class="cax-row"><span class="ic">🏃</span><div class="tx"><b>{{ t('On the run','顺势运行') }}</b><span class="sub">{{ t('do not chase','勿追高') }}</span></div></div>
+    {% endif %}
+    {% if _avoid %}
+    <div class="cax-row"><span class="ic">🚫</span><div class="tx"><b>{{ t('Avoid','回避') }}</b><span class="sub">{{ _avoid | map(attribute='name') | list | join(' · ') | truncate(60, true, '…') }}</span></div></div>
+    {% endif %}
+    {% else %}
+    <div class="cax-row"><span class="ic">◐</span><div class="tx"><b>{{ t('Regime data loading…','周期数据加载中…') }}</b></div></div>
+    {% endif %}
   </div>
-  <div class="factors">
-    {% for f in ov.factors or [] %}
-    <div class="fct {{ f.risk }}">
-      <span class="fl">{{ td(f.label) }}</span>
-      <span class="fv">{{ '%+.2f'|format(f.z) }}σ <span class="muted small">{{ f.risk }}</span></span>
+  {# Regime Watch #}
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-regime')">
+    <div class="cax-ctitle">{{ t('Regime Watch','周期观察') }}</div>
+    <div class="cax-kv"><span class="k">{{ t('Quad','象限') }}</span><span class="v">{{ td(latest.quad_name) }}</span></div>
+    <div class="cax-kv"><span class="k">{{ t('Growth','增长') }}</span><span class="v {{ 'cax-tt-up' if latest.growth_score >= 0 else 'cax-tt-dn' }}">{{ '%+.2f'|format(latest.growth_score) }}</span></div>
+    <div class="cax-kv"><span class="k">{{ t('Inflation','通胀') }}</span><span class="v {{ 'cax-tt-up' if latest.inflation_score >= 0 else 'cax-tt-dn' }}">{{ '%+.2f'|format(latest.inflation_score) }}</span></div>
+    <div class="cax-kv"><span class="k">{{ t('Confidence','一致度') }}</span><span class="v">{{ '%.0f'|format(latest.confidence * 100) }}%</span></div>
+    {# pending_quad is a float NaN when nothing is pending (NaN is truthy!) —
+       the x == x self-equality test is the NaN-safe guard; also require days > 0 #}
+    {% if latest.pending_quad and latest.pending_quad == latest.pending_quad and latest.pending_quad is string and (latest.pending_days or 0) > 0 %}<div class="cax-kv"><span class="k">{{ t('Pending','待确认') }}</span><span class="v" style="color:var(--warn)">{{ td(latest.pending_quad) }} <span style="color:var(--muted)">{{ latest.pending_days }}d</span></span></div>{% endif %}
+  </div>
+</div>
+
+<!-- =============== ROW 2: Pullback Risk ↔ Top Stocks + Participation + Sector Temperature =============== -->
+<div class="cax-rack3">
+  {# Pullback Risk or Top Stocks #}
+  {% set _risk_state = (_rr.get('state') if _rr else 'calm') %}
+  {% set _show_risk = _risk_state in ('caution', 'elevated', 'risk-off') %}
+  {% if _show_risk %}
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-risk')" style="border-color:rgba(224,100,100,.35)">
+    <div class="cax-ctitle">{{ t('Pullback Risk','回撤风险') }} <span class="cax-alert-pill" style="background:rgba(224,100,100,.16);color:var(--act)">{{ t('HIGH','高') }}</span></div>
+    {% if _rr_score is not none %}
+    <div class="cax-bignum" style="color:var(--act)">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)"> /100</span></div>
+    <div class="cax-bigsub" style="color:var(--act)">{{ t(_rr.get('label_en') or '', _rr.get('label_zh') or '') }}</div>
+    {% endif %}
+    {% if _rr_p21 is not none %}<div class="cax-kv"><span class="k">{{ t('≥5% dip odds','≥5%回撤概率') }}</span><span class="v">{{ (_rr_p21*100)|round|int }}%</span></div>{% endif %}
+    <div class="cax-foot">{{ t(_rr_do_en or 'High pullback risk — size down, watch alerts.', _rr_do_zh or '回撤风险高 — 缩仓，关注警报。') }}</div>
+  </div>
+  {% else %}
+  <div class="cax-card">
+    <div class="cax-ctitle">{{ t('Top Stock Setups','精选买点') }} <span style="margin-left:auto;font-size:10px;color:var(--muted)">{{ t('FROM SCREENER','来自筛选器') }}</span></div>
+    {% for s in (top_setups or []) %}
+    <div class="cax-stk">
+      <span class="tkr"><a class="cax-tkr-btn" href="https://app.mastermind-x.com/terminal?symbol={{ s.ticker }}" target="_blank" rel="noopener">{{ s.ticker }}</a></span>
+      <div class="meta"><b>{{ s.name or s.ticker }}</b> · {{ s.industry or s.sector or '' }}</div>
+      <span class="cax-stage">{{ s.get('state') or 'ENTRY' }}</span>
     </div>
+    {% else %}
+    <div style="font-size:12px;color:var(--muted);padding:8px 0">{{ t('No active setups right now.','暂无有效买点。') }}</div>
+    {% endfor %}
+    <a class="cax-screener-btn" href="canada_stocks.html">{{ t('Stock Screener →','选股看板 →') }}</a>
+  </div>
+  {% endif %}
+
+  {# Participation (breadth) #}
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-breadth')">
+    <div class="cax-ctitle">{{ t('Participation','参与度') }}</div>
+    {% if breadth %}
+    <div class="cax-kv"><span class="k">{{ t('Above 50d','50日上方') }}</span><span class="v {{ 'cax-tt-up' if breadth.pct_above_50 >= 50 else 'cax-tt-dn' }}">{{ breadth.pct_above_50 }}%</span></div>
+    <div class="cax-kv"><span class="k">{{ t('Above 200d','200日上方') }}</span><span class="v {{ 'cax-tt-up' if breadth.pct_above_200 >= 50 else 'cax-tt-dn' }}">{{ breadth.pct_above_200 }}%</span></div>
+    <div class="cax-kv"><span class="k">{{ t('Adv / Dec','涨/跌') }}</span><span class="v"><span style="color:var(--up)">{{ breadth.adv }}</span> / <span style="color:var(--down)">{{ breadth.dec }}</span></span></div>
+    <div class="cax-kv"><span class="k">{{ t('Net new highs','净新高') }}</span><span class="v {{ 'cax-tt-up' if breadth.net_nh > 0 else ('cax-tt-dn' if breadth.net_nh < 0 else '') }}">{{ '%+d'|format(breadth.net_nh) }}</span></div>
+    <div class="cax-foot"><span class="cax-stword {{ 'ok' if breadth.state == 'broad' else ('warn' if breadth.state == 'mixed' else 'bad') }}">{% if breadth.state=='broad' %}{{ t('Broad — confirms the move.','广泛 — 确认走势。') }}{% elif breadth.state=='thin' %}{{ t('Thin — rallies are fragile.','稀薄 — 反弹脆弱。') }}{% else %}{{ t('Mixed — no clear edge.','参差 — 无明显方向。') }}{% endif %}</span></div>
+    {% else %}
+    <div style="font-size:12px;color:var(--muted)">{{ t('Breadth data pending…','广度数据待更新…') }}</div>
+    {% endif %}
+  </div>
+
+  {# Sector Temperature #}
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-sector')">
+    <div class="cax-ctitle">{{ t('Sector Temperature','板块温度') }}</div>
+    {% set _buy_chips = ((actions.buy_now if actions and actions.buy_now else []) + (actions.buy_soon if actions and actions.buy_soon else []))[:3] %}
+    {% set _avoid_chips = (actions.avoid if actions and actions.avoid else [])[:2] %}
+    {% if _buy_chips %}
+    <div class="cax-lbl">{{ t('Turning up','回升中') }}</div>
+    <div class="cax-chips">
+      {% for x in _buy_chips %}<span class="cax-chip turn">{{ td(x.name) }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if _avoid_chips %}
+    <div class="cax-lbl">{{ t('Avoid','回避') }}</div>
+    <div class="cax-chips">
+      {% for x in _avoid_chips %}<span class="cax-chip hot">{{ td(x.name) }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="cax-lbl">{{ t('Sector heat','板块热度') }}</div>
+    <div class="cax-heat">
+      {% for s in (sectors[:12] if sectors else []) %}
+      {% set _tone = 'c' if s.dir == 'down' else ('h2' if s.dir == 'caution' else ('h3' if s.dir == 'up' else 'n')) %}
+      <i class="{{ _tone }}" title="{{ s.ticker }}"></i>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- =============== ROW 3: Commodities & FX + Rates & BoC + Housing =============== -->
+<div class="cax-rack3">
+  {# Commodities & FX #}
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
+    <div class="cax-ctitle">{{ t('Commodities & FX','大宗商品与汇率') }}</div>
+    <div class="cax-kv"><span class="k">{{ t('Overlay state','叠加状态') }}</span><span class="v cax-stword {{ 'ok' if ov.state == 'Risk-on' else ('bad' if ov.state == 'Risk-off' else 'warn') }}">{{ td(ov.state or '—') }}</span></div>
+    {% if ov.terms_of_trade %}<div class="cax-kv"><span class="k">{{ t('Terms of trade','贸易条件') }}</span><span class="v cax-stword {{ 'ok' if ov.terms_of_trade == 'improving' else ('bad' if ov.terms_of_trade == 'deteriorating' else 'warn') }}">{{ td(ov.terms_of_trade) }}</span></div>{% endif %}
+    {% for f in (ov.factors or [])[:4] %}
+    <div class="cax-kv"><span class="k">{{ td(f.label) }}</span><span class="v cax-stword {{ 'ok' if f.risk == 'on' else ('bad' if f.risk == 'off' else 'warn') }}">{{ '%+.2f'|format(f.z) }}σ</span></div>
     {% endfor %}
   </div>
-  {% set cp = coupling or {} %}
-  {% if cp.boc_rate is not none %}
-  <p class="small" style="margin:11px 0 0">{{ t('BoC vs Fed', '央行 vs 美联储') }}:
-    {{ t('policy rate', '政策利率') }} <b>{{ '%.2f'|format(cp.boc_rate) }}%</b> ·
-    {{ t('GoC 2s10s', '加债 2s10s') }} <b>{{ '%+.2f'|format(cp.goc_curve_2s10s) if cp.goc_curve_2s10s is not none else '—' }}</b>
-    {% if cp.goc_minus_ust_10y is not none %} · {{ t('GoC−UST 10y', '加债−美债 10y') }} <b>{{ '%+.2f'|format(cp.goc_minus_ust_10y) }}</b>{% else %}<span class="muted"> · {{ t('US-coupling spreads pending FRED', '美债利差待 FRED') }}</span>{% endif %}
-  </p>
-  {% endif %}
+
+  {# Rates & BoC #}
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-rates')">
+    <div class="cax-ctitle">{{ t('Rates & BoC','利率与央行') }}</div>
+    {% if cp.boc_rate is not none %}
+    <div class="cax-kv"><span class="k">{{ t('BoC rate','加央行利率') }}</span><span class="v"><b>{{ '%.2f'|format(cp.boc_rate) }}%</b></span></div>
+    {% endif %}
+    {% if cp.goc_curve_2s10s is not none %}
+    <div class="cax-kv"><span class="k">{{ t('GoC 2s10s','加债 2s10s') }}</span><span class="v cax-stword {{ 'ok' if cp.goc_curve_2s10s > 0 else 'warn' }}">{{ '%+.2f'|format(cp.goc_curve_2s10s) }}</span></div>
+    {% endif %}
+    {% if cp.goc_minus_ust_10y is not none %}
+    <div class="cax-kv"><span class="k">{{ t('GoC−UST 10y','加债−美债 10y') }}</span><span class="v">{{ '%+.2f'|format(cp.goc_minus_ust_10y) }}</span></div>
+    {% endif %}
+    <div class="cax-kv"><span class="k">{{ t('BoC stance','央行立场') }}</span><span class="v">{{ td(latest.liquidity_overlay) }}</span></div>
+    <div class="cax-foot">{{ t('GoC curve + BoC-vs-Fed context. Click for charts.','加债曲线与央行-美联储背景。点击查看图表。') }}</div>
+  </div>
+
+  {# Housing #}
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-housing')">
+    <div class="cax-ctitle">{{ t('Housing','房地产') }}</div>
+    {% if housing %}
+    <div class="cax-kv"><span class="k">{{ t('Real price index','实际房价指数') }}</span><span class="v"><b>{{ housing.level }}</b></span></div>
+    {% if housing.yoy is not none %}<div class="cax-kv"><span class="k">{{ t('~1y change','约1年变化') }}</span><span class="v cax-stword {{ 'ok' if housing.yoy >= 0 else 'bad' }}">{{ '%+.1f'|format(housing.yoy) }}%</span></div>{% endif %}
+    <div class="cax-kv"><span class="k">{{ t('Off peak','距峰值') }}</span><span class="v cax-stword {{ 'bad' if housing.off_peak < -10 else 'warn' }}">{{ '%.1f'|format(housing.off_peak) }}%</span></div>
+    <div class="cax-foot"><span class="cax-stword warn">{{ t('Key fragility: household debt + mortgage resets.','关键脆弱点：家庭债务与按揭续期。') }}</span></div>
+    {% else %}
+    <div style="font-size:12px;color:var(--muted)">{{ t('Housing data not available.','房产数据暂不可用。') }}</div>
+    {% endif %}
+  </div>
 </div>
 
-<!-- ===== Rate path / GoC curve ===== -->
-{% if curve_chart %}
-<div class="panel">
-  <h2>{{ t('Bank of Canada rate path & GoC curve', '央行利率路径与加债收益率曲线') }}
-    {{ help('Shows BoC policy and the 2y/10y Canada yield curve.', '显示加央行政策利率与加拿大2年/10年曲线。') }}
-  </h2>
-  {{ curve_chart | safe }}
+<!-- =============== DIALOGS =============== -->
+
+<!-- Factor breakdown dialog -->
+<div class="cax-dlg" id="cax-dlg-read">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Factor Breakdown','因子分解') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      <div class="cax-eyebrow">{{ t('TSX Market State — components','TSX 市场状态 — 组成部分') }}</div>
+      {% for c in _comps %}
+      <div class="cax-frow">
+        <span>{{ t(c.label_en, c.label_zh) }}</span>
+        <div class="cax-fbar"><i style="width:{{ c.score }}%;background:{{ 'var(--up)' if c.tone == 'good' else ('var(--down)' if c.tone == 'bad' else 'var(--warn)') }}"></i></div>
+        <span class="cax-fscore {{ 'cax-tt-up' if c.tone == 'good' else ('cax-tt-dn' if c.tone == 'bad' else 'cax-tt-fl') }}">{{ c.score }}</span>
+      </div>
+      {% if c.read_en %}<div class="fread">{{ t(c.read_en, c.read_zh or c.read_en) }}</div>{% endif %}
+      {% endfor %}
+      {% if ms and ms.caveat_en %}<div class="cax-receipt">{{ t(ms.caveat_en, ms.caveat_zh or ms.caveat_en) }}</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Pullback Risk dialog -->
+<div class="cax-dlg" id="cax-dlg-risk">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Pullback Risk Radar','回撤风险雷达') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      {% if _rr_score is not none %}
+      <div class="cax-eyebrow">{{ t('CA External Risk Monitor','加拿大外部风险监控') }}</div>
+      <div style="font-size:28px;font-weight:750;color:var(--act)">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)">/100</span></div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">{{ t(_rr.get('label_en') or _rr_do_en, _rr.get('label_zh') or _rr_do_zh) }}</div>
+      {% for leg in (_rr.get('scares') or []) %}
+      <div class="cax-frow">
+        <span>{{ t(leg.get('label_en') or leg.get('scare',''), leg.get('label_zh') or leg.get('scare','')) }}</span>
+        <div class="cax-fbar"><i style="width:{{ leg.score|round|int }}%;background:var(--act)"></i></div>
+        <span class="cax-fscore cax-tt-dn">{{ leg.score|round|int }}</span>
+      </div>
+      {% endfor %}
+      {% if _rr_p21 is not none %}
+      <div style="margin-top:12px;font-size:12.5px">{{ t('~%d%% ≥5%% pullback probability within 21d'|format((_rr_p21*100)|round|int), '未来21日内≥5%%回撤概率约%d%%'|format((_rr_p21*100)|round|int)) }}</div>
+      {% endif %}
+      {% if _rr.get('caveat_en') %}<div class="cax-receipt">{{ t(_rr.caveat_en, _rr.get('caveat_zh') or _rr.caveat_en) }}</div>{% endif %}
+      {% else %}
+      <div style="font-size:12px;color:var(--muted)">{{ t('No radar data available.','暂无雷达数据。') }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- What To Do / Playbook dialog -->
+<div class="cax-dlg" id="cax-dlg-playbook">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('What To Do','该怎么做') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      {% if actions %}
+      {% set abmap = [('buy_now','✅ Buy now','立即买入'),('buy_soon','⏳ Buy soon','即将买入'),('on_the_run','🏃 On the run — do not chase','顺势运行 — 勿追高'),('take_profits','💰 Take profits','止盈'),('hold','✋ Hold','持有'),('avoid','🚫 Avoid','回避')] %}
+      {% for key, en, zh in abmap %}
+      {% set items = actions.get(key, []) %}
+      {% if items %}
+      <div class="cax-eyebrow">{{ t(en, zh) }}</div>
+      {% for it in items %}
+      <div class="cax-ledd"><span><b>{{ td(it.name) }}</b> <span class="rk">{{ it.ticker }}</span></span></div>
+      {% endfor %}
+      {% endif %}
+      {% endfor %}
+      {% else %}
+      <div style="font-size:12px;color:var(--muted)">{{ t('Action data loading…','操作数据加载中…') }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Regime Watch dialog -->
+<div class="cax-dlg" id="cax-dlg-regime">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Regime Watch','周期观察') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      <div class="cax-eyebrow">{{ t('Current quad','当前象限') }}</div>
+      <div style="font-size:18px;font-weight:750;margin-bottom:8px">{{ td(latest.quad_name) }}</div>
+      {% if quad_meaning %}<p style="font-size:12.5px;color:var(--muted);margin:0 0 12px">{{ t(quad_meaning[0], quad_meaning[1]) }}</p>{% endif %}
+      <div class="cax-eyebrow">{{ t('Lifespan base rates','寿命基准率') }}</div>
+      {% if lifespan_rows %}
+      <div class="cax-mt" style="overflow-x:auto">
+      <table class="cax-mt">
+        <tr><th>{{ t('Quad','象限') }}</th><th class="r">{{ t('Median (d)','中位数(天)') }}</th><th class="r">{{ t('p25','25分位') }}</th><th class="r">{{ t('p75','75分位') }}</th><th class="r">{{ t('n','样本数') }}</th></tr>
+        {% for row in lifespan_rows %}
+        <tr><td>{{ td(row.quad) }}</td><td class="r">{{ row.median_days }}</td><td class="r">{{ row.p25 }}</td><td class="r">{{ row.p75 }}</td><td class="r">{{ row.n }}</td></tr>
+        {% endfor %}
+      </table>
+      </div>
+      {% endif %}
+      <div class="cax-receipt">{{ t('Display-only. Quad dates vary; confirm with the macro backdrop.','仅供展示。象限日期因情况而异，请结合宏观背景确认。') }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Breadth dialog -->
+<div class="cax-dlg" id="cax-dlg-breadth">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Market Participation','市场参与度') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      {% if breadth %}
+      <div class="cax-eyebrow">{{ t('Breadth snapshot','广度快照') }}</div>
+      <div class="cax-kv"><span class="k">{{ t('Above 50-day MA','50日均线上方') }}</span><span class="v">{{ breadth.pct_above_50 }}%</span></div>
+      <div class="cax-kv"><span class="k">{{ t('Above 200-day MA','200日均线上方') }}</span><span class="v">{{ breadth.pct_above_200 }}%</span></div>
+      <div class="cax-kv"><span class="k">{{ t('Advancing','上涨') }}</span><span class="v" style="color:var(--up)">{{ breadth.adv }}</span></div>
+      <div class="cax-kv"><span class="k">{{ t('Declining','下跌') }}</span><span class="v" style="color:var(--down)">{{ breadth.dec }}</span></div>
+      <div class="cax-kv"><span class="k">{{ t('New highs','新高') }}</span><span class="v">{{ breadth.nh }}</span></div>
+      <div class="cax-kv"><span class="k">{{ t('New lows','新低') }}</span><span class="v">{{ breadth.nl }}</span></div>
+      {# ad_trend is a raw enum (up/down/flat) — render plain words, never the slug #}
+      <div class="cax-kv"><span class="k">{{ t('A/D trend','涨跌趋势') }}</span><span class="v cax-stword {{ 'ok' if breadth.ad_trend == 'up' else ('bad' if breadth.ad_trend == 'down' else 'warn') }}">{{ t('Rising','上升') if breadth.ad_trend == 'up' else (t('Falling','下降') if breadth.ad_trend == 'down' else t('Flat','持平')) }}</span></div>
+      <div class="cax-receipt">{{ breadth.n_members }} {{ t('names · full S&P/TSX Composite','只成分 · 完整标普/TSX 综合') if breadth.full else t('names · curated large-cap','只成分 · 精选大盘') }}</div>
+      {% else %}
+      <div style="font-size:12px;color:var(--muted)">{{ t('No breadth data.','暂无广度数据。') }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Sector Temperature dialog -->
+<div class="cax-dlg" id="cax-dlg-sector">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Sector Rotation','板块轮动') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      <div class="cax-mt" style="overflow-x:auto">
+      <table class="cax-mt">
+        <tr><th>{{ t('Rank','排名') }}</th><th>{{ t('Sector','板块') }}</th><th>{{ t('Ticker','代码') }}</th><th class="r">{{ t('1m RS','1月相对') }}</th><th class="r">{{ t('3m RS','3月相对') }}</th><th>{{ t('State','状态') }}</th></tr>
+        {% for c in sectors %}
+        <tr>
+          <td class="r">{{ c.rank or '—' }}</td>
+          <td>{{ td(c.name) }}</td>
+          <td><a href="sectors/{{ c.ticker }}.html">{{ c.ticker }}</a></td>
+          <td class="r {{ 'cax-tt-up' if (c.mom20 or 0) >= 0 else 'cax-tt-dn' }}">{{ '%+.1f'|format(c.mom20) if c.mom20 is not none else '—' }}</td>
+          <td class="r {{ 'cax-tt-up' if (c.mom60 or 0) >= 0 else 'cax-tt-dn' }}">{{ '%+.1f'|format(c.mom60) if c.mom60 is not none else '—' }}</td>
+          <td><span class="lad {{ 'up' if c.dir=='up' else ('down' if c.dir=='down' else 'flat') }}">{{ td(c.label) if c.label else td(c.state) }}</span></td>
+        </tr>
+        {% endfor %}
+      </table>
+      </div>
+      <div class="cax-receipt">{{ t('Ranked by 3-month relative strength vs TSX. Display-only.','按3月相对TSX强弱排序。仅供展示。') }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Commodities & FX dialog -->
+<div class="cax-dlg" id="cax-dlg-commod">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Commodities & FX Overlay','大宗商品与汇率叠加') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      <div class="cax-eyebrow">{{ t('Overlay state','叠加状态') }}: <span class="cax-stword {{ 'ok' if ov.state == 'Risk-on' else ('bad' if ov.state == 'Risk-off' else 'warn') }}">{{ td(ov.state or '—') }}</span></div>
+      {% if ov.score is not none %}<div style="font-size:12px;color:var(--muted);margin-bottom:10px">{{ t('Composite','综合') }} {{ '%+.2f'|format(ov.score) }}</div>{% endif %}
+      {% for f in (ov.factors or []) %}
+      <div class="cax-frow">
+        <span>{{ td(f.label) }}</span>
+        <div class="cax-fbar"><i style="width:{{ ([f.z + 3, 0]|max / 6 * 100)|round|int }}%;background:{{ 'var(--up)' if f.risk == 'on' else ('var(--down)' if f.risk == 'off' else 'var(--muted)') }}"></i></div>
+        <span class="cax-fscore cax-stword {{ 'ok' if f.risk == 'on' else ('bad' if f.risk == 'off' else 'warn') }}">{{ '%+.2f'|format(f.z) }}σ</span>
+      </div>
+      {% endfor %}
+      {% if ov.terms_of_trade %}<div class="cax-kv" style="margin-top:12px"><span class="k">{{ t('Terms of trade','贸易条件') }}</span><span class="v cax-stword {{ 'ok' if ov.terms_of_trade == 'improving' else ('bad' if ov.terms_of_trade == 'deteriorating' else 'warn') }}">{{ td(ov.terms_of_trade) }}</span></div>{% endif %}
+      <div class="cax-receipt">{{ t('Cross-asset overlay: oil/gold/copper/CAD + US risk (SPY/VIX/DXY). Context only.','跨资产叠加：油/金/铜/加元 + 美股风险（SPY/VIX/DXY）。仅作背景。') }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Rates & BoC dialog -->
+<div class="cax-dlg" id="cax-dlg-rates">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Rates & Bank of Canada','利率与加拿大央行') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      {% if cp.boc_rate is not none %}
+      <div class="cax-kv"><span class="k">{{ t('BoC policy rate','加央行政策利率') }}</span><span class="v"><b>{{ '%.2f'|format(cp.boc_rate) }}%</b></span></div>
+      {% endif %}
+      {% if cp.goc_curve_2s10s is not none %}<div class="cax-kv"><span class="k">{{ t('GoC 2s10s spread','加债 2s10s 利差') }}</span><span class="v cax-stword {{ 'ok' if cp.goc_curve_2s10s > 0 else 'warn' }}">{{ '%+.2f'|format(cp.goc_curve_2s10s) }}</span></div>{% endif %}
+      {% if cp.goc_minus_ust_10y is not none %}<div class="cax-kv"><span class="k">{{ t('GoC−UST 10y','加债−美债 10y') }}</span><span class="v">{{ '%+.2f'|format(cp.goc_minus_ust_10y) }}</span></div>{% endif %}
+      {% if curve_chart %}
+      <div class="cax-sep"></div>
+      <div class="cax-eyebrow">{{ t('BoC rate path & GoC curve','加央行利率路径与加债曲线') }}</div>
+      <div style="max-width:100%;overflow-x:hidden">{{ curve_chart | safe }}</div>
+      {% endif %}
+      {% if axes_chart %}
+      <div class="cax-sep"></div>
+      <div class="cax-eyebrow">{{ t('Growth & inflation over time','增长与通胀随时间变化') }}</div>
+      <div style="max-width:100%;overflow-x:hidden">{{ axes_chart | safe }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Housing dialog -->
+<div class="cax-dlg" id="cax-dlg-housing">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Housing & Household Debt','房地产与家庭债务') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      {% if housing %}
+      <div class="cax-kv"><span class="k">{{ t('Real house price index','实际房价指数') }}</span><span class="v"><b>{{ housing.level }}</b></span></div>
+      {% if housing.yoy is not none %}<div class="cax-kv"><span class="k">{{ t('~1-year change','约1年变化') }}</span><span class="v cax-stword {{ 'ok' if housing.yoy >= 0 else 'bad' }}">{{ '%+.1f'|format(housing.yoy) }}%</span></div>{% endif %}
+      <div class="cax-kv"><span class="k">{{ t('Off peak','距峰值') }}</span><span class="v cax-stword {{ 'bad' if housing.off_peak < -10 else 'warn' }}">{{ '%.1f'|format(housing.off_peak) }}%</span></div>
+      {% if housing.asof %}<div class="cax-kv"><span class="k">{{ t('As of','截至') }}</span><span class="v">{{ housing.asof }}</span></div>{% endif %}
+      <div class="cax-sep"></div>
+      <p style="font-size:12.5px;color:var(--muted)">{{ t('Canada\'s housing market is a key fragility — household debt runs among the highest in the G7, and the mortgage-reset cycle means rate changes flow through to spending power with a lag. This is context (FRED/BIS series), not a trade signal.','加拿大楼市是关键脆弱点 — 家庭债务在 G7 中居于高位，按揭续期周期意味着利率变化会以滞后方式影响消费能力。这是背景数据（FRED/BIS 系列），不是交易信号。') }}</p>
+      {% else %}
+      <div style="font-size:12px;color:var(--muted)">{{ t('Housing data not available.','房产数据暂不可用。') }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Markets dialog (index health + heatmap + key rates) -->
+<div class="cax-dlg" id="cax-dlg-markets">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Markets','市场') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      {% if benchmark %}
+      <div class="cax-eyebrow">{{ t('Index health','指数健康') }}</div>
+      <div class="cax-ihgrid">
+        <div class="cax-ihcard">
+          <div class="t">^GSPTSE · {{ t('TSX Composite','TSX 综合指数') }}</div>
+          <div class="p">{{ '{:,.0f}'.format(benchmark.price) }} <span class="{{ 'cax-tt-up' if benchmark.chg >= 0 else 'cax-tt-dn' }}" style="font-size:13px">{{ '%+.2f'|format(benchmark.chg) }}%</span></div>
+          <span class="lad {{ 'up' if benchmark.dc_day else 'flat' }}">{{ td(benchmark.label) if benchmark.label else td(benchmark.state) }}</span>
+        </div>
+      </div>
+      {% endif %}
+      <div class="cax-sep"></div>
+      <div class="cax-eyebrow">{{ t('Canada TSX Heatmap','加拿大 TSX 热力图') }}</div>
+      {# heatmap lazy-mount — MMHeatmap.mountScorecard renders its own header+Expand button #}
+      <div class="cax-hm-wrap">
+        <div id="ca-hm-embed"></div>
+      </div>
+      {% if cp.boc_rate is not none %}
+      <div class="cax-sep"></div>
+      <div class="cax-eyebrow">{{ t('Key rates','关键利率') }}</div>
+      <div class="cax-kv"><span class="k">{{ t('BoC rate','加央行利率') }}</span><span class="v">{{ '%.2f'|format(cp.boc_rate) }}%</span></div>
+      {% if cp.goc_curve_2s10s is not none %}<div class="cax-kv"><span class="k">{{ t('GoC 2s10s','加债 2s10s') }}</span><span class="v">{{ '%+.2f'|format(cp.goc_curve_2s10s) }}</span></div>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- =============== NAV LINKS + DATA HEALTH =============== -->
+<div class="cax-links">
+  <a href="canada_stocks.html">{{ t('TSX Stocks →','TSX 个股 →') }}</a>
+  <a href="canada_history.html">{{ t('Regime History →','周期历史 →') }}</a>
+  <a href="canada_heatmap.html">{{ t('Heatmap →','热力图 →') }}</a>
+  <a href="canada.html" onclick="caxOpenDlg('cax-dlg-markets');return false">{{ t('Markets ↗','市场 ↗') }}</a>
+</div>
+
+{% if health %}
+<div class="cax-dh">
+  <span class="d" style="--ok:{{ 'var(--up)' if health | selectattr('status', 'in', ['OK','FRESH','HEALTHY']) | list | length == health | length else 'var(--warn)' }}"></span>
+  <b>{{ t('Data','数据') }}</b>
+  {% for h in health %}
+  <span>{{ t(h.en, h.zh) }} · {{ h.status }}{% if h.last and h.last != '—' %} <span style="opacity:.55">({{ h.last }})</span>{% endif %}</span>
+  {% endfor %}
 </div>
 {% endif %}
 
-<!-- ===== The two dials over time ===== -->
-{% if axes_chart %}
-<div class="panel">
-  <h2>{{ t('Growth & inflation over time', '增长与通胀随时间变化') }}</h2>
-  {{ axes_chart | safe }}
-</div>
-{% endif %}
+<p class="muted small" style="margin-top:12px">{{ t('Generated','生成于') }} {{ built }}</p>
 
-<!-- ===== Sector rotation ===== -->
-<div class="panel">
-  <h2>{{ t('Sector rotation — TSX sector ETFs', '板块轮动 — TSX 板块 ETF') }}
-    {{ help('Canadian sectors ranked by strength vs the TSX, with trend and cycle state.', '加拿大板块按相对 TSX 强弱排序，并显示趋势与周期状态。') }}
-  </h2>
-  <div class="cards">
-    {% for c in sectors %}
-    <div class="card">
-      <div class="row" style="gap:8px">
-        <span class="rk">#{{ c.rank if c.rank else '—' }}</span>
-        <a href="sectors/{{ c.ticker }}.html"><b>{{ td(c.name) }}</b></a>
-        <span class="muted small">{{ c.ticker }}</span>
-        <span style="flex:1"></span>
-        <span class="lad {{ 'up' if c.dir=='up' else ('down' if c.dir=='down' else 'flat') }}">{{ td(c.label) if c.label else td(c.state) }}</span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:6px 0">
-        <span>{{ t('1m RS', '1月相对') }} {{ '%+.1f'|format(c.mom20) if c.mom20 is not none else '—' }}</span>
-        <span>{{ t('3m RS', '3月相对') }} {{ '%+.1f'|format(c.mom60) if c.mom60 is not none else '—' }}</span>
-        {% if c.pctile is not none %}<span>{{ t('pctile', '分位') }} {{ '%.0f'|format(c.pctile) }}</span>{% endif %}
-        {% if c.above200 %}<span class="pos">↑200d</span>{% else %}<span class="neg">↓200d</span>{% endif %}
-      </div>
-      <div data-mtf='{{ c.mtf_json }}'></div>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-
-<!-- ===== Action board ===== -->
-<div class="panel">
-  <h2>{{ t('What to act on — sector entry timing', '可执行 — 板块入场时机') }}</h2>
-  <div class="ab">
-    {% set abmap = [('buy_now','✅ '+('立即买入' if False else 'Buy now'),'立即买入'), ('buy_soon','⏳ Buy soon','即将买入'), ("on_the_run", "🏃 ON THE RUN — don't chase", '顺势运行 — 勿追高'), ('take_profits','💰 Take profits','止盈'), ('hold','✋ Hold','持有'), ('avoid','🚫 Avoid','回避')] %}
-    {% for key, en, zh in abmap %}
-    {% set items = actions.get(key, []) %}
-    <div class="abcol ab-{{ key }}">
-      <h3>{{ t(en, zh) }} <span class="muted">({{ items|length }})</span></h3>
-      {% for it in items %}<div class="it">{{ td(it.name) }} <span class="muted small">{{ it.ticker }}</span></div>{% endfor %}
-      {% if not items %}<div class="it muted">—</div>{% endif %}
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}{# /macro-only sections #}
+</div>{# /cax-wrap #}
+{% endif %}{# /macro mode #}
 
 <!-- ===== Standout stocks (BRANCH B ripe-list contract) — the TSX Stock Dashboard headline ===== -->
 {% if mode == 'stocks' and setups and setups.buy %}
@@ -894,76 +1599,6 @@
 </div>
 {% endif %}
 
-<!-- ===== Breadth + benchmark ===== -->
-<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
-  {% if breadth %}
-  <div class="panel">
-    <h2>{{ t('Market breadth' if breadth.full else 'Large-cap breadth', '市场广度' if breadth.full else '大盘宽度') }}
-      {{ help('Shows how many TSX names are participating. Thin breadth makes rallies fragile.' if breadth.full else 'Large-cap participation: 50/200-day trend, new highs/lows, and advance/decline.', '显示有多少 TSX 个股参与行情。广度变薄则反弹更脆弱。' if breadth.full else '大盘股参与度：50/200日趋势、新高/新低与涨跌线。') }}
-    </h2>
-    <p class="{{ breadth.tone }}" style="margin:2px 0 10px; font-size:13px; line-height:1.5">
-      {{ t('Participation looks', '参与度看起来') }}
-      <b>{% if breadth.state=='broad' %}{{ t('broad', '广泛') }}{% elif breadth.state=='thin' %}{{ t('thin', '稀薄') }}{% else %}{{ t('mixed', '参差') }}{% endif %}</b> —
-      <b>{{ breadth.pct_above_50 }}%</b> {{ t('above their 50-day line', '在50日均线上方') }},
-      <b>{{ breadth.pct_above_200 }}%</b> {{ t('above their 200-day', '在200日上方') }};
-      {{ t('net new highs', '净新高') }} <b>{{ '%+d'|format(breadth.net_nh) }}</b>.
-      <span class="muted">{% if breadth.state=='broad' %}{{ t('Broad participation confirms the move.', '广泛参与确认了走势。') }}{% elif breadth.state=='thin' %}{{ t('Few names hold trend — rallies are fragile.', '守住趋势的个股很少 — 反弹脆弱。') }}{% else %}{{ t('No clear breadth edge either way.', '广度上无明显方向优势。') }}{% endif %}</span>
-    </p>
-    <div class="row" style="gap:18px">
-      <div class="dial"><span class="lbl">{{ t('above 50d', '50日上方') }}</span><b>{{ breadth.pct_above_50 }}%</b></div>
-      <div class="dial"><span class="lbl">{{ t('above 200d', '200日上方') }}</span><b>{{ breadth.pct_above_200 }}%</b></div>
-      <div class="dial"><span class="lbl">{{ t('adv / dec', '涨/跌') }}</span><b><span class="pos">{{ breadth.adv }}</span> / <span class="neg">{{ breadth.dec }}</span></b></div>
-      <div class="dial"><span class="lbl">{{ t('NH / NL', '新高/新低') }}</span><b>{{ breadth.nh }} / {{ breadth.nl }}</b></div>
-      <div class="dial"><span class="lbl">{{ t('A/D trend', '涨跌趋势') }}</span><b class="{{ 'pos' if breadth.ad_trend=='up' else 'neg' }}">{{ td(breadth.ad_trend) }}</b></div>
-    </div>
-    <p class="muted small" style="margin:8px 0 0">{{ t('20d change in % above 50d:', '50日上方占比 20日变化：') }} {{ '%+.1f'|format(breadth.pct50_chg20) }} · {{ breadth.n_members }} {{ t('names', '只成分') }} · {{ t('full S&P/TSX Composite', '完整标普/TSX 综合') if breadth.full else t('curated large-cap', '精选大盘') }}</p>
-  </div>
-  {% endif %}
-  {% if benchmark %}
-  <div class="panel">
-    <h2>{{ t('S&P/TSX Composite', '标普/TSX 综合指数') }}</h2>
-    <div class="row" style="gap:12px">
-      <b style="font-size:18px">{{ '{:,.0f}'.format(benchmark.price) }}</b>
-      <span class="{{ 'pos' if benchmark.chg>=0 else 'neg' }}">{{ '%+.2f'|format(benchmark.chg) }}%</span>
-      <span class="lad {{ 'up' if benchmark.dc_day else 'flat' }}">{{ td(benchmark.label) if benchmark.label else td(benchmark.state) }}</span>
-    </div>
-    <div data-mtf='{{ benchmark.mtf_json }}' style="margin-top:8px"></div>
-  </div>
-  {% endif %}
-</div>
-
-{% if mode != 'stocks' %}{# ===== macro-only: housing + data health ===== #}
-<!-- ===== Housing / household-debt context ===== -->
-{% if housing %}
-<div class="panel">
-  <h2>{{ t('Housing & household-debt context', '房地产与家庭债务背景') }}
-    {{ help('Housing is a key Canada fragility because household debt and mortgage resets matter. Context only.', '住房是加拿大关键脆弱点，因为家庭债务和按揭续期很重要。仅作背景。') }}
-  </h2>
-  <div class="row" style="gap:18px">
-    <div class="dial"><span class="lbl">{{ t('real house price idx', '实际房价指数') }}</span><b>{{ housing.level }}</b></div>
-    {% if housing.yoy is not none %}<div class="dial"><span class="lbl">{{ t('~1y change', '约1年变化') }}</span><b class="{{ 'pos' if housing.yoy>=0 else 'neg' }}">{{ '%+.1f'|format(housing.yoy) }}%</b></div>{% endif %}
-    <div class="dial"><span class="lbl">{{ t('off peak', '距峰值') }}</span><b class="{{ 'neg' if housing.off_peak<0 else 'pos' }}">{{ '%.1f'|format(housing.off_peak) }}%</b></div>
-    <span class="muted small">{{ t('as of', '截至') }} {{ housing.asof }}</span>
-  </div>
-</div>
-{% endif %}
-
-<!-- ===== Data health ===== -->
-{% if health %}
-<div class="panel">
-  <h2>{{ t('Data health', '数据健康') }}</h2>
-  <table>
-    <tr><th>{{ t('source', '来源') }}</th><th>{{ t('status', '状态') }}</th><th>{{ t('rows', '行数') }}</th><th>{{ t('last', '最新') }}</th></tr>
-    {% for h in health %}
-    <tr><td>{{ t(h.en, h.zh) }}</td><td>{{ h.status }}</td><td>{{ h.rows }}</td><td>{{ h.last }}</td></tr>
-    {% endfor %}
-  </table>
-</div>
-{% endif %}
-{% endif %}{# /macro-only: housing + data health #}
-
-<p class="muted small">{{ t('Generated', '生成于') }} {{ built }}</p>
-
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>
@@ -1128,6 +1763,79 @@
   }, true);
 })();
 </script>
+{%- if mode != 'stocks' %}
+<script>
+/* MX5 Canada — dialog / popover / heatmap helpers (macro mode only) */
+(function(){
+  var _hmMounted=false;
+  function caxOpenDlg(id){
+    var el=document.getElementById(id);
+    if(!el)return;
+    document.querySelectorAll('.cax-dlg.open').forEach(function(d){d.classList.remove('open','cax-in','cax-closing');});
+    el.classList.add('open');
+    document.body.style.overflow='hidden';
+    history.replaceState(null,'',location.pathname+'#'+id);
+    requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add('cax-in');});});
+    /* Lazy-mount the Canada heatmap the first time the Markets dialog opens */
+    if(id==='cax-dlg-markets'&&!_hmMounted&&window.MMHeatmap&&MMHeatmap.mountScorecard){
+      _hmMounted=true;
+      try{MMHeatmap.mountScorecard('ca-hm-embed','marketdata/canada_heatmap.json');}
+      catch(e){_hmMounted=false;}
+    }
+    setTimeout(function(){
+      if(window.Plotly&&Plotly.Plots){
+        el.querySelectorAll('.js-plotly-plot').forEach(function(g){try{
+          var host=g.parentElement,w=host?host.clientWidth:0;
+          if(Plotly.relayout&&w>10){Plotly.relayout(g,{width:w});}else{Plotly.Plots.resize(g);}
+        }catch(e){}});
+      }
+    },380);
+  }
+  function caxCloseDlg(){
+    document.querySelectorAll('.cax-dlg.open').forEach(function(el){
+      var panel=el.querySelector('.cax-dlg-panel');
+      el.classList.add('cax-closing');el.classList.remove('cax-in');
+      var fired=false;
+      var done=function(){if(fired)return;fired=true;if(panel)panel.removeEventListener('transitionend',onEnd);el.classList.remove('open','cax-closing');};
+      var onEnd=function(e){if(e.target===panel)done();};
+      if(panel)panel.addEventListener('transitionend',onEnd);
+      setTimeout(done,360);
+    });
+    document.body.style.overflow='';
+    history.replaceState(null,'',location.pathname);
+  }
+  function caxTogglePop(id,ev){
+    if(ev){ev.stopPropagation();}
+    var el=document.getElementById(id);
+    if(!el)return;
+    var was=el.classList.contains('open');
+    caxClosePops();
+    if(!was)el.classList.add('open');
+  }
+  function caxClosePops(){
+    document.querySelectorAll('.cax-pop.open').forEach(function(p){p.classList.remove('open');});
+  }
+  /* hash-resolver */
+  function caxResolveHash(){
+    var h=(location.hash||'').slice(1);
+    if(!h)return;
+    var el=document.getElementById(h);
+    if(el&&el.classList.contains('cax-dlg'))caxOpenDlg(h);
+    else if(el)el.scrollIntoView({behavior:'smooth'});
+  }
+  /* Escape key: bail if heatmap fullscreen overlay is open */
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document.querySelector('.hm-ov'))return;caxCloseDlg();}});
+  document.addEventListener('click',function(){caxClosePops();});
+  window.caxOpenDlg=caxOpenDlg;
+  window.caxCloseDlg=caxCloseDlg;
+  window.caxTogglePop=caxTogglePop;
+  window.caxClosePops=caxClosePops;
+  caxResolveHash();
+  window.addEventListener('hashchange',caxResolveHash);
+})();
+</script>
+<script src="heatmap.js"></script>
+{%- endif %}
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>

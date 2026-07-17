@@ -10,6 +10,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | owner_program | count |
 |---|---|
+| XSR | 1 |
 | active-build-map | 1 |
 | btc-vector | 5 |
 | causal-hypothesis-factory | 9 |
@@ -33,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
 | ihm | 2 |
-| institutional-sector-intelligence | 2 |
+| institutional-sector-intelligence | 4 |
 | intl-fix | 1 |
 | intraday-flow-tracker | 3 |
 | ird | 5 |
@@ -49,6 +50,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-v2c | 4 |
 | metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
+| mlc | 1 |
 | momoedge | 8 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
@@ -88,7 +90,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 283 |
+| display | 287 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 69 |
@@ -97,11 +99,17 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 433 |
+| git | 437 |
 | gitignored-local | 11 |
 | r2 | 7 |
 
 ## Artifacts by owner_program
+
+### XSR
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| us-sector-rotation-latest | `data/us_sector_rotation/latest.json` | json | daily-engine | display | 2 | 0 |
 
 ### active-build-map
 
@@ -338,8 +346,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-sector-central | `site/sectordata/sector_central.json` | json | daily-engine | display | 4 | 0 |
 | china-sector-central-calls | `data/china_sector_central/calls.parquet` | parquet | asia-close | display | 2 | 0 |
 | sector-central-calls | `data/sector_central/calls.parquet` | parquet | daily-engine | display | 2 | 0 |
+| site-china-sector-central | `site/chinasectordata/sector_central.json` | json | asia-close | display | 0 | 0 |
 
 ### intl-fix
 
@@ -512,6 +522,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | capability-manifest | `config/capability_manifest.yml` | other | on-demand | infrastructure | 1 | 0 |
 | capability-audit | `data/neuralweb/capability_audit.jsonl` | jsonl | on-demand | infrastructure | 0 | 0 |
+
+### mlc
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-stance-matrix | `site/mlcdata/stance_matrix.json` | json | daily-engine | display | 4 | 0 |
 
 ### momoedge
 

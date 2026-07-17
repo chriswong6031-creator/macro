@@ -93,7 +93,13 @@ def test_flip_distance_none_delta_matches_label_coalescing():
 
 
 # --------------------------------------------------------------- integration smoke
-def test_payload_carries_flip_distance_and_honest_act_now_split():
+def test_payload_carries_flip_distance_and_honest_act_now_split(tmp_path, monkeypatch):
+    from engine import basket_breadth_divergence as bd
+
+    # compute_theme_intel stamps elevated/high breadth-divergence textures into
+    # the forward accountability log as a side effect — redirect the stamp to
+    # tmp so real caches are read but data/breadth_divergence/ is never written.
+    monkeypatch.setattr(bd, "_log_path", lambda: tmp_path / "forward_log.parquet")
     ti = ts.compute_theme_intel()
     if ti is None:                                      # caches absent in CI shard
         return

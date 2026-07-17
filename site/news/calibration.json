@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-07-15",
-  "n_events_logged": 71,
+  "asof": "2026-07-16",
+  "n_events_logged": 91,
   "n_events_graded": 0,
   "classes": [
     {
@@ -21,7 +21,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 8,
+      "n": 10,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -47,7 +47,7 @@
     {
       "event_type": "guidance_cut",
       "direction": "bearish",
-      "n": 2,
+      "n": 4,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -60,7 +60,7 @@
     {
       "event_type": "guidance_raise",
       "direction": "bullish",
-      "n": 3,
+      "n": 5,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -73,7 +73,7 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 33,
+      "n": 42,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -112,7 +112,20 @@
     {
       "event_type": "mna_confirmed",
       "direction": "bullish",
-      "n": 2,
+      "n": 5,
+      "n_graded": 0,
+      "hit_5d": null,
+      "hit_21d": null,
+      "avg_rel_5d": null,
+      "avg_rel_21d": null,
+      "wilson_low_5d": null,
+      "wilson_high_5d": null,
+      "verdict": "insufficient"
+    },
+    {
+      "event_type": "mna_rumor",
+      "direction": "bullish",
+      "n": 1,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -164,7 +177,7 @@
     {
       "event_type": "rating_change",
       "direction": "mixed",
-      "n": 2,
+      "n": 3,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -189,7 +202,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 177,
+    "n_sampled": 213,
     "n_graded": 0,
     "classes": []
   }

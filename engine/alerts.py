@@ -1012,11 +1012,42 @@ ALERT_CONVICTION: dict[str, dict] = {
 }
 
 
+# Presentation-tier plain-words rewrite of the transition-state message: the raw
+# enum form ("Transition state WEAKENING -> TRANSITIONING (3 flags active)") is
+# machine vocabulary, banned at glance tier (docs/DESIGN_DOCTRINE.md Law 2) —
+# it renders at rest on the macro Alerts Centre face. The stored alert row keeps
+# the raw string (build_vector's translator matches it there); only the rendered
+# view changes. Unknown state tokens fall through lowercased, never dropped.
+_TS_MSG_RE = re.compile(r"Transition state (\w+) -> (\w+) \((\d+) flags active\)")
+_TS_PLAIN_EN = {"STABLE": "steady", "WEAKENING": "weakening",
+                "TRANSITIONING": "shifting", "NEW_REGIME": "a new regime"}
+_TS_PLAIN_ZH = {"STABLE": "稳定", "WEAKENING": "走弱",
+                "TRANSITIONING": "转换中", "NEW_REGIME": "新周期"}
+
+
+def _plain_transition_msg(message: str) -> tuple[str, str] | None:
+    m = _TS_MSG_RE.match(message)
+    if not m:
+        return None
+    prev, cur, n = m.group(1), m.group(2), int(m.group(3))
+    en = (f"The regime's footing went from "
+          f"{_TS_PLAIN_EN.get(prev, prev.replace('_', ' ').lower())} to "
+          f"{_TS_PLAIN_EN.get(cur, cur.replace('_', ' ').lower())} "
+          f"({n} warning flag{'s' if n != 1 else ''} active)")
+    zh = (f"周期状态由「{_TS_PLAIN_ZH.get(prev, prev)}」转为"
+          f"「{_TS_PLAIN_ZH.get(cur, cur)}」（{n} 个预警激活）")
+    return en, zh
+
+
 def alert_view(rule: str, severity: str, message: str, message_zh: str = "") -> dict:
     """Enrich a stored alert (rule/severity/message) with plain-English copy, an
     icon, the dashboard panel anchor it deep-links to, and a conviction tier +
     grounded edge note. Unknown rules fall back to generic defaults so a new rule
     still renders sensibly."""
+    if rule == "transition_state_change":
+        plain = _plain_transition_msg(message)
+        if plain:
+            message, message_zh = plain
     return {"rule": rule, "severity": severity, "message": message,
             "message_zh": message_zh,
             **ALERT_META.get(rule, _DEFAULT_META),

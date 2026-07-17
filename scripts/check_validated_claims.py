@@ -13,7 +13,8 @@ This gate makes that mechanically true. It scans the user-facing surfaces
 
 NEGATED / HEDGED uses are NOT claims and are ignored automatically:
   'no validated ...', 'not a validated ...', 'unvalidated', 'not ... validated',
-  'un-validated', '无...验证', '非...验证', '未...验证', '未经验证', '不...已验证'.
+  'un-validated', "hasn't/doesn't/won't/… (any n't contraction) ... validated",
+  'cannot ... validated', '无...验证', '非...验证', '未...验证', '未经验证', '不...已验证'.
 These are honest disclaimers ("HK has no validated selection edge") and must never be
 forced to cite an artifact.
 
@@ -88,7 +89,7 @@ _STRUCTURAL = [
 # same line, the use is a disclaimer, not a claim.
 _NEG_EN = re.compile(
     r"(?:\bno\b|\bnot\b|\bnon-?|\bun-?|\bnever\b|\bno-\b|without|"
-    r"lacks?|\bwithout\b|\bisn't\b|\baren't\b|\bwasn't\b)\s*[\w\s,'’\-/×&()]{0,30}$",
+    r"lacks?|\bwithout\b|\bcannot\b|\b\w+n['’]t\b)\s*[\w\s,'’\-/×&()]{0,30}$",
     re.IGNORECASE)
 # 'un'/'in'/'re' glued directly to the token, e.g. 'unvalidated', 'invalidated', 're-validated'
 _GLUED_UN = re.compile(r"un-?$|re-?$|in$", re.IGNORECASE)
@@ -223,6 +224,12 @@ def selftest() -> int:
          "This edge is validated &amp; deployed everywhere.", True, amp_allow),
         ("negation behind entity apostrophe ignored",
          "This isn&#39;t a validated edge.", False, allow),
+        ("EN negated perfect-tense contraction",
+         "the PRIOR hasn't been validated, so trade the tape, not the narrative.", False, allow),
+        ("perfect-tense contraction behind entity apostrophe",
+         "the PRIOR hasn&#39;t been validated, so trade the tape.", False, allow),
+        ("EN negated 'cannot be validated'",
+         "This construction cannot be validated on the available window.", False, allow),
     ]
     ok = True
     for name, line, should_fire, allow_entries in cases:

@@ -172,31 +172,48 @@ def _classify_cause(asset: str, move_desc: str, headlines: list[dict],
                     cfg: dict) -> tuple[dict | None, str | None]:
     if not cfg.get("llm_classify", False):
         return None, None
-    if not os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("DISABLE_COMMODITY_NEWS_LLM"):
+    if os.environ.get("DISABLE_COMMODITY_NEWS_LLM"):
         return None, None
     if not headlines:
         return None, None
     try:
-        import anthropic
+        from engine import llm_auth  # noqa: PLC0415
     except ImportError:
         return None, "llm_error"
+    llm_cfg = {
+        "provider_order": ["oauth", "anthropic"],
+        "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+        "api_key_env": "ANTHROPIC_API_KEY",
+        "oauth_pool_lane": "commodity-news",
+        "usage_lane": "commodity-news",
+    }
+    model = cfg.get("llm_model", "claude-haiku-4-5")
+    providers = llm_auth.build_providers(llm_cfg, opus_model=model)
+    if not providers:
+        return None, None   # no key present — graceful skip
     try:
-        client = anthropic.Anthropic()
         lines = "\n".join(f"- {h['title']} ({h['domain']}, {h['seendate'][:10]})" for h in headlines)
         user = f"Commodity: {asset}\nDetected move: {move_desc}\nHeadlines:\n{lines}"
-        resp = client.messages.create(
-            model=cfg.get("llm_model", "claude-haiku-4-5"), max_tokens=256,
-            system=CLASSIFY_SYSTEM, messages=[{"role": "user", "content": user}],
-            output_config={"format": {"type": "json_schema", "schema": CLASSIFY_SCHEMA}})
-        if getattr(resp, "stop_reason", None) in ("refusal", "max_tokens"):
-            return None, "llm_refusal"
-        text = next(b.text for b in resp.content if getattr(b, "type", "") == "text")
+
+        def _call_fn(client, m: str):
+            resp = client.messages.create(
+                model=m, max_tokens=256,
+                system=CLASSIFY_SYSTEM, messages=[{"role": "user", "content": user}],
+                output_config={"format": {"type": "json_schema", "schema": CLASSIFY_SCHEMA}})
+            if getattr(resp, "stop_reason", None) in ("refusal", "max_tokens"):
+                return None, "llm_refusal", resp
+            text = next(b.text for b in resp.content if getattr(b, "type", "") == "text")
+            return text, None, resp
+
+        text, degraded, _ = llm_auth.make_call(providers, _call_fn, context="commodity_news")
+        if not text:
+            return None, degraded or "llm_error"
         parsed = json.loads(text)
         # auditable code-side confidence gate (not in the prompt)
         thr = cfg.get("llm_min_confidence", "high")
         if _CONF_RANK.get(parsed.get("confidence"), 0) < _CONF_RANK.get(thr, 2):
             parsed["cause"] = "unknown"
-        parsed["model"] = cfg.get("llm_model", "claude-haiku-4-5")
+        parsed["model"] = model
         parsed["applied_threshold"] = thr
         return parsed, None
     except Exception as e:  # noqa: BLE001 — degrade, never raise

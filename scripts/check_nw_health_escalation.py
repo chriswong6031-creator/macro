@@ -114,15 +114,21 @@ def _append_run_record(
             "produced_at": produced_at,
             "reasons_count": len(reasons),
         })
+        # Probe the trailing byte with a separate binary handle: 'a'-mode
+        # handles are write-only, so read(1) on one raises
+        # io.UnsupportedOperation — which the fail-open except below would
+        # swallow, silently dropping every append once the file exists.
+        needs_newline = False
+        try:
+            if path.stat().st_size > 0:
+                with open(path, "rb") as rb:
+                    rb.seek(-1, 2)  # SEEK_END
+                    needs_newline = rb.read(1) != b"\n"
+        except FileNotFoundError:
+            pass  # First run; file created by the append below
         with open(path, "a", encoding="utf-8") as fh:
-            # Seek back to check if file ends with a newline; if not, add one
-            # so that the new record starts on its own line.
-            fh.seek(0, 2)  # SEEK_END
-            if fh.tell() > 0:
-                fh.seek(fh.tell() - 1)
-                last_char = fh.read(1)
-                if last_char != "\n":
-                    fh.write("\n")
+            if needs_newline:
+                fh.write("\n")
             fh.write(record + "\n")
     except Exception as exc:  # noqa: BLE001
         log.warning("check_nw_health_escalation: could not append run record (%s)", exc)

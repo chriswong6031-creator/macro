@@ -12,9 +12,9 @@
   ],
   "held": [
     "cn_ai_compute",
+    "cn_pharma_cxo",
     "cn_robotics",
-    "cn_rare_earth",
-    "cn_pharma_cxo"
+    "cn_rare_earth"
   ],
   "leader": "cn_ai_compute",
   "names": {

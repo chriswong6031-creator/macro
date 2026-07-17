@@ -20,10 +20,11 @@ def test_universe_includes_gtaa_assets():
     assert len(uni) <= int((blo.config.load().get("live") or {}).get("max_universe", 150))
 
 
-def test_offline_build_emits_valid_v2_overlay():
-    res = blo.build(offline=True, limit=8)
+def test_offline_build_emits_valid_v2_overlay(tmp_path):
+    # site_dir=tmp_path: output never lands in the repo's real site/ tree
+    res = blo.build(offline=True, limit=8, site_dir=tmp_path)
     assert res["status"] == "ok"
-    site = blo.config.ROOT / blo.config.load()["storage"]["site_dir"]
+    site = tmp_path
     raw = (site / "live" / "overlay.json").read_text()
     assert "NaN" not in raw                         # allow_nan=False -> never invalid JSON
     out = json.loads(raw)
@@ -37,28 +38,25 @@ def test_offline_build_emits_valid_v2_overlay():
     assert (site / "live_config.js").exists()
 
 
-def test_offline_allocations_are_stale_marked():
-    blo.build(offline=True, limit=4)
-    site = blo.config.ROOT / blo.config.load()["storage"]["site_dir"]
-    out = json.loads((site / "live" / "overlay.json").read_text())
+def test_offline_allocations_are_stale_marked(tmp_path):
+    blo.build(offline=True, limit=4, site_dir=tmp_path)
+    out = json.loads((tmp_path / "live" / "overlay.json").read_text())
     for region in out.get("allocations", {}).values():
         for card in region["cards"]:
             for leg in card["alloc"]:
                 assert leg["stale"] is True and leg["live_price"] is None
 
 
-def test_market_session_block_shape():
-    blo.build(offline=True, limit=2)
-    site = blo.config.ROOT / blo.config.load()["storage"]["site_dir"]
-    out = json.loads((site / "live" / "overlay.json").read_text())
+def test_market_session_block_shape(tmp_path):
+    blo.build(offline=True, limit=2, site_dir=tmp_path)
+    out = json.loads((tmp_path / "live" / "overlay.json").read_text())
     us = out["sessions"]["us"]
     assert set(us) == {"region", "open", "local_time"} and isinstance(us["open"], bool)
 
 
-def test_live_config_js_carries_worker_url():
-    site = blo.config.ROOT / blo.config.load()["storage"]["site_dir"]
-    blo.write_live_config(site)
-    js = (site / "live_config.js").read_text()
+def test_live_config_js_carries_worker_url(tmp_path):
+    blo.write_live_config(tmp_path)
+    js = (tmp_path / "live_config.js").read_text()
     assert "LIVE_QUOTES_URL" in js and "LIVE_POLL_SEC" in js
 
 

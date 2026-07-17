@@ -137,6 +137,126 @@ _SECTOR_PROXY = {
     "nuclear_power":     "XLU",   # utilities ETF: nuclear operators genuinely classify within XLU
 }
 
+# Pre-registered-arbitrary (MLC-W2b; frozen — no tuning on observed cases).
+# sector_central only carries the 11 GICS SPDRs; SMH has no row there.
+# AI-semi baskets (ai_infra / ai_semiconductors / semicap_equipment / memory_storage) map to SMH
+# via _SECTOR_PROXY, so they would be silently inert without this fallback.
+# Conviction exists only at GICS grain — semis inherit Technology (XLK).
+# Twin copy in scripts/build_stance_matrix.py (_CONVICTION_ETF_FALLBACK_INLINE) — keep in sync.
+_CONVICTION_ETF_FALLBACK: dict[str, str] = {
+    "SMH": "XLK",  # pre-registered-arbitrary (MLC-W2b; frozen): semis inherit Technology
+}
+
+
+def _apply_momentum_cooling_demotion(act_now: dict, themes_by_id: dict) -> None:
+    """MLC-W4: move buy items whose theme has rollover_risk band=='high' AND the new
+    histogram-fade leg fired (hist_fade==True) into the conflicted shelf.
+
+    Mutates act_now in-place.  De-escalation ONLY (never escalation).
+    Run AFTER _apply_sector_conflict_demotion so sector-demoted items are already gone
+    from buy; an item already in conflicted is NOT re-stamped.
+    AssertionError (logic bug) propagates by design — the sibling W2b pass has the same
+    contract; data errors fail open.
+
+    Pre-registered-arbitrary (MLC-W4; frozen — no tuning on observed cases).
+    """
+    _orig_total = len(act_now["buy"]) + len(act_now["conflicted"])
+
+    _remaining = []
+    for _item_w4 in act_now["buy"]:
+        _bid = _item_w4.get("id") or ""
+        _theme = themes_by_id.get(_bid) or {}
+        _rr = (_theme.get("textures") or {}).get("rollover_risk") or {}
+        _band = _rr.get("band")
+        _hist_fade = _rr.get("hist_fade", False)
+        # Gate: BOTH band==high AND the histogram-fade leg fired
+        if _band == "high" and _hist_fade:
+            # Read hist_fade_n directly — the int is threaded from basket_score.rollover_risk.
+            _n = _rr.get("hist_fade_n")
+            _n_str = str(int(_n)) if isinstance(_n, (int, float)) and _n == _n else "multiple"
+            act_now["conflicted"].append({
+                **_item_w4,
+                "reason_en": f"momentum cooling — {_n_str} straight sessions of fade",
+                "reason_zh": f"动能降温 — 连续{_n_str}日走弱",
+                "cooling": True,
+            })
+        else:
+            _remaining.append(_item_w4)
+
+    act_now["buy"] = _remaining
+    # Escalation impossible: total must be conserved (items only move OUT of buy)
+    assert len(act_now["buy"]) + len(act_now["conflicted"]) == _orig_total, \
+        "MLC-W4 invariant: cooling demotion must not create or destroy items"
+
+
+def _apply_sector_conflict_demotion(act_now: dict, site_root: "Path") -> None:
+    """MLC-W2b: move buy items whose home sector rates 'Reduce' into the conflicted shelf.
+
+    Mutates act_now in-place.  This is de-escalation ONLY (never escalation).
+    Raises AssertionError on invariant violation (logic bug); caller may catch and
+    fail-open by restoring original buy and clearing conflicted.
+
+    T-1 read: site_root/sectordata/sector_central.json (RLT-R6 semantics; last committed).
+    Freshness gate: as_of > 5 calendar days OR file absent/unparseable → skip (fail-open;
+    conflicted list stays empty).
+    Only 'Reduce' demotes — 'Cautious' does NOT (spec MLC-W2b).
+    SMH-proxied baskets fall back to XLK when SMH has no sector_central row
+    (sector_central only carries GICS SPDRs; see _CONVICTION_ETF_FALLBACK).
+    Pre-registered-arbitrary (MLC-W2b; frozen — no tuning on observed cases).
+    """
+    import json as _json_w2b
+    from datetime import date as _date_w2b
+    from pathlib import Path as _Path_w2b
+
+    _orig_buy_count = len(act_now["buy"])  # snapshot for the invariant assertion
+
+    _sc_path_w2b = _Path_w2b(site_root) / "sectordata" / "sector_central.json"
+    _sc_fresh = False
+    _sc_by_etf_w2b: dict[str, str] = {}  # ETF ticker -> label_en
+    if _sc_path_w2b.exists():
+        _sc_doc_w2b = _json_w2b.loads(_sc_path_w2b.read_text(encoding="utf-8"))
+        _sc_as_of_w2b = _sc_doc_w2b.get("as_of") or ""
+        try:
+            _sc_age = (_date_w2b.today() - _date_w2b.fromisoformat(str(_sc_as_of_w2b)[:10])).days
+            _sc_fresh = _sc_age <= 5
+        except Exception:  # noqa: BLE001
+            _sc_fresh = False
+        if _sc_fresh:
+            for _sec_w2b in (_sc_doc_w2b.get("sectors") or []):
+                _etf_w2b = _sec_w2b.get("ticker")
+                _conv_w2b = (_sec_w2b.get("conviction") or {}).get("label_en")
+                if _etf_w2b and _conv_w2b:
+                    _sc_by_etf_w2b[_etf_w2b] = _conv_w2b
+    if _sc_fresh and _sc_by_etf_w2b:
+        _remaining_buys = []
+        for _item_w2b in act_now["buy"]:
+            _bid_w2b = _item_w2b.get("id") or ""
+            _etf_key = _SECTOR_PROXY.get(_bid_w2b)
+            # Two-step lookup: try the direct proxy ETF first, fall back via
+            # _CONVICTION_ETF_FALLBACK (e.g. SMH -> XLK) when the proxy ETF has no
+            # sector_central row (sector_central only carries GICS SPDRs, not SMH).
+            _conv_lbl = _sc_by_etf_w2b.get(_etf_key) if _etf_key else None
+            if _conv_lbl is None and _etf_key:
+                _fallback_etf = _CONVICTION_ETF_FALLBACK.get(_etf_key)
+                _conv_lbl = _sc_by_etf_w2b.get(_fallback_etf) if _fallback_etf else None
+            if _conv_lbl == "Reduce":
+                # demote: move OUT of buy into conflicted (de-escalation only; assert below)
+                act_now["conflicted"].append({
+                    **_item_w2b,
+                    "reason_en": "sector view is Reduce — held out of the Buy list",
+                    "reason_zh": "所属板块评级为减配 — 暂不列入买入清单",
+                    "sector_stance": "Reduce",
+                    "sector_stance_zh": "减配",
+                    "sector_etf": _etf_key,
+                })
+            else:
+                _remaining_buys.append(_item_w2b)
+        act_now["buy"] = _remaining_buys
+    # Assertion: escalation is impossible by construction (items only move OUT of buy)
+    assert len(act_now["buy"]) + len(act_now["conflicted"]) == _orig_buy_count, \
+        "MLC-W2b invariant: conflicted items must come exclusively from buy"
+
+
 # Lifecycle label -> (en, zh) display.
 LABELS = {
     "dominant":      ("DOMINANT", "主导"),
@@ -1137,7 +1257,43 @@ def compute_theme_intel(region: str = "us") -> dict | None:
                          f"now — entry quality {qs}",
             "reason_zh": f"看好（{x['action_zh']}）但当前无干净入场点 — 入场质量 {qs}"})
     act_now = {"buy": [x for x in constructive if x["clean_entry"]],
-               "add_on_pullback": add_on_pullback, "reduce": reduce_}
+               "add_on_pullback": add_on_pullback, "reduce": reduce_,
+               "conflicted": []}   # MLC-W2b: 4th key — always present; populated below
+
+    # MLC-W2b: Sector-conviction demotion — extracted into _apply_sector_conflict_demotion().
+    # T-1 read: site/sectordata/sector_central.json (RLT-R6 semantics; last committed).
+    # Freshness gate: > 5 calendar days OR absent/unparseable → fail-open (conflicted=[]).
+    # ONLY "Reduce" demotes; SMH-proxied baskets fall back to XLK (see _CONVICTION_ETF_FALLBACK).
+    _w2b_orig_buys = list(act_now["buy"])  # snapshot for fail-open restore
+    try:
+        _apply_sector_conflict_demotion(act_now, config.site_dir())
+    except AssertionError:
+        raise  # invariant violation — logic bug, must surface
+    except Exception as _e_w2b:  # noqa: BLE001 — fail-open: leave conflicted empty, buy intact
+        import logging as _log_w2b
+        _log_w2b.getLogger(__name__).warning(
+            "MLC-W2b demotion failed (fail-open, conflicted=[]) : %s", _e_w2b
+        )
+        act_now["buy"] = _w2b_orig_buys
+        act_now["conflicted"] = []
+
+    # MLC-W4: Momentum-cooling demotion — run AFTER W2b so sector-demoted items are already
+    # out of buy.  Demotes to conflicted when rollover_risk.band=="high" AND hist_fade==True.
+    # Fail-open: on any exception, restore buy snapshot and leave conflicted unchanged.
+    _w4_orig_buys = list(act_now["buy"])
+    _w4_orig_conflicted = list(act_now["conflicted"])
+    _themes_by_id = {th["id"]: th for th in themes}
+    try:
+        _apply_momentum_cooling_demotion(act_now, _themes_by_id)
+    except AssertionError:
+        raise  # invariant violation — logic bug, must surface
+    except Exception as _e_w4:  # noqa: BLE001 — fail-open
+        import logging as _log_w4
+        _log_w4.getLogger(__name__).warning(
+            "MLC-W4 cooling demotion failed (fail-open) : %s", _e_w4
+        )
+        act_now["buy"] = _w4_orig_buys
+        act_now["conflicted"] = _w4_orig_conflicted
 
     # MLC-W5: strip _live_tickers from theme dicts now that _act() has consumed them.
     # _act() is called above (enter_buys/acc_buys/reduce_) and reads _live_tickers via closure.

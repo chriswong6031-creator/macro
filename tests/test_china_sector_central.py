@@ -35,6 +35,32 @@ def test_state_score_washout_is_bullish():
     assert bull > 0.4 and bear < -0.3 and bull > bear
 
 
+def test_rolling_over_two_arms():
+    """2026-07 rollover-lag audit port: the detector must fire BOTH on a stretched name whose
+    daily ladder is still in decline (legacy arm) AND on a name that has ALREADY fallen — pos
+    dropped below 68 and the ladder moved on to bottom-hunting — when the oscillator collapse
+    carries a confirming fast signal (post-roll arm). Mild wiggles never fire."""
+    # legacy decline arm: falling + stretched + ladder in decline
+    assert cc._rolling_over({"osc_slope": -5.0, "pos_v2": 80.0, "timing_state": "DECLINE"})
+    # post-roll arm: collapse off an elevated (not stretched) position + SELL confirm —
+    # the pre-fix single arm read this False (pos < 68, ladder = TURN SIGNALED)
+    assert cc._rolling_over({"osc_slope": -18.0, "pos_v2": 55.0,
+                             "timing_state": "TURN SIGNALED", "signal": "SELL"})
+    assert cc._rolling_over({"osc_slope": -12.0, "pos_v2": 60.0,
+                             "timing_state": "TURN SIGNALED", "divergence": "bearish"})
+    # collapse without any confirming fast signal: stays quiet
+    assert not cc._rolling_over({"osc_slope": -12.0, "pos_v2": 60.0,
+                                 "timing_state": "TURN SIGNALED"})
+    # mild wiggle: neither arm
+    assert not cc._rolling_over({"osc_slope": -4.0, "pos_v2": 55.0,
+                                 "timing_state": "TURN SIGNALED", "signal": "SELL"})
+    # rolling-over de-rates the state score to cautious even off a lagging bullish phase
+    score, d = cc._state_score({"signature": {"score": 40}, "phase": "Expansion",
+                                "osc_slope": -18.0, "pos_v2": 55.0,
+                                "timing_state": "TURN SIGNALED", "signal": "SELL"})
+    assert d["rolling"] is True and score <= -0.25
+
+
 def test_forward_tilt_only_with_pathway():
     assert cc._forward_tilt({})[0] is None
     # W2.6 schema: n_months + n_eff + block-bootstrap LIFT band (lift_ci_lo/hi around 0).

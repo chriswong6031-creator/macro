@@ -15,7 +15,7 @@
 </style>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-<title>Macro Weather Station — 2026-07-15</title>
+<title>Macro Weather Station — 2026-07-17</title>
 
 
 
@@ -566,7 +566,34 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
 .site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
 /* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
 .site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
-.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px}
+.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px;position:relative;min-width:0}
+/* global stock search field — the #286 repair restored the menu/brand/controls but
+   left the search field itself unstyled: the <input> fell back to a raw browser box
+   (inset border, square corners, ~150px wide) with the 🔎 glyph floating inline and
+   the suggestions list dropping into normal flow ("search bar looks css-broken").
+   Port theme.css's .nav-search recipe, scoped to .site-nav and themed via var
+   fallbacks that cover every palette this partial serves: theme.css pages
+   (--panel2/--line/--text/--muted/--link/--glass-*), the --card/--grid/--text/--muted
+   pages, and commodities' --panel2/--line/--tx/--mut/--blue. Loaded after each page's
+   own <style> (and after theme.css on the two pages that link it), so it wins. */
+.site-nav .nav-search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.65;pointer-events:none}
+.site-nav .nav-search input{width:100%;box-sizing:border-box;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--text,var(--tx));font:inherit;font-size:13px;outline:none;transition:border-color .18s,box-shadow .25s ease;animation:vpSearchGlow 3.8s ease-in-out infinite}
+@keyframes vpSearchGlow{
+  0%,100%{border-color:color-mix(in srgb,#416aec 30%,var(--line,var(--grid)));box-shadow:0 0 0 0 rgba(65,106,236,0),0 0 5px 0 rgba(65,106,236,.10)}
+  50%{border-color:#416aec;box-shadow:0 0 0 3px rgba(65,106,236,.22),0 0 16px 2px rgba(65,106,236,.38)}}
+.site-nav .nav-search input::placeholder{color:var(--muted,var(--mut))}
+.site-nav .nav-search input:focus{border-color:var(--blue,var(--link));animation:none;box-shadow:none}
+@media(prefers-reduced-motion:reduce){.site-nav .nav-search input{animation:none}}
+.site-nav .nav-sugg{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:80;background:var(--glass-bg,color-mix(in srgb,var(--card,var(--panel)) 92%,transparent));-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));border:1px solid var(--glass-brd,color-mix(in srgb,var(--ink) 12%,transparent));border-radius:13px;overflow:hidden;overflow-y:auto;max-height:60vh;box-shadow:var(--glass-shadow,0 20px 54px -24px rgba(20,32,64,.34),0 10px 24px -14px rgba(20,32,64,.20));display:none}
+html[data-theme="dark"] .site-nav .nav-sugg{box-shadow:var(--glass-shadow,0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55))}
+.site-nav .nav-sugg.show{display:block}
+.site-nav .nav-sugg .row{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer}
+.site-nav .nav-sugg .row:hover,.site-nav .nav-sugg .row.sel{background:color-mix(in srgb,var(--blue,var(--link)) 12%,var(--panel2,var(--card)))}
+.site-nav .nav-sugg .row .mkt{flex:none;width:20px;text-align:center;font-size:13px;line-height:1}
+.site-nav .nav-sugg .row b{min-width:58px;font-size:13px;color:var(--text,var(--tx));font-weight:600}
+.site-nav .nav-sugg .row small{flex:1;color:var(--muted,var(--mut));font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.site-nav .nav-sugg .row .stt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap}
+.site-nav .nav-sugg .empty{padding:11px 13px;color:var(--muted,var(--mut));font-size:12.5px}
 /* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
 .site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
 .site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
@@ -985,7 +1012,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <a href="#timeline">
       <span class="l-en">Transitions</span><span class="l-zh">转换记录</span>
       
-      <span class="cnt">5 <span class="l-en">today</span><span class="l-zh">今日</span></span>
+      <span class="cnt">6 <span class="l-en">today</span><span class="l-zh">今日</span></span>
       
     </a>
     <a href="#census">
@@ -1002,17 +1029,17 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="hero-content">
       <div class="hero-top">
         <div class="hero-headline-group">
-          <div class="hero-eyebrow"><span class="l-en">Macro Weather Station</span><span class="l-zh">宏观气象台</span> &bull; 2026-07-15</div>
+          <div class="hero-eyebrow"><span class="l-en">Macro Weather Station</span><span class="l-zh">宏观气象台</span> &bull; 2026-07-17</div>
           <div class="hero-headline">
-            <span class="l-en">Risk receding — liquidity turning supportive</span><span class="l-zh">风险回落 — 流动性转向支持</span>
+            <span class="l-en">Macro regime loading</span><span class="l-zh">宏观周期加载中</span>
           </div>
           
           <div class="hero-sub">
             <span class="chip c-q1">Q1 <span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
             &bull; <span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span>
-            &bull; <span class="l-en">conf</span><span class="l-zh">置信</span> 12%
+            &bull; <span class="l-en">conf</span><span class="l-zh">置信</span> 15%
             &bull; <span class="l-en">stress-expansion</span><span class="l-zh">stress-expansion</span>
-            &bull; VIX 15.03
+            &bull; VIX 15.67
           </div>
           
           <div class="display-badge">&#9432; <span class="l-en">Display-only context — not signals</span><span class="l-zh">仅展示背景 — 非信号</span></div>
@@ -1020,8 +1047,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="hero-score-box">
           <div class="hero-score-label"><span class="l-en">Risk Score</span><span class="l-zh">风险评分</span></div>
-          <div class="hero-score-num c-up">77</div>
-          <div class="hero-score-tag c-up"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span></div>
+          <div class="hero-score-num c-warn">50</div>
+          <div class="hero-score-tag c-warn"><span class="l-en">Mixed</span><span class="l-zh">混合</span></div>
         </div>
         
       </div>
@@ -1032,7 +1059,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Regime</span><span class="l-zh">周期象限</span></span>
           <span class="kpi-val c-q1">Q1 <span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
-          <span class="kpi-sub"><span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span> &bull; 12%</span>
+          <span class="kpi-sub"><span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span> &bull; 15%</span>
         </div>
         
         
@@ -1045,28 +1072,28 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="kpi-chip">
           <span class="kpi-label">VIX</span>
-          <span class="kpi-val c-up">15.03</span>
+          <span class="kpi-val c-up">15.67</span>
           <span class="kpi-sub"><span class="l-en">normalizing</span><span class="l-zh">normalizing</span></span>
         </div>
         
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Breadth &gt;200d</span><span class="l-zh">广度&gt;200日</span></span>
-          <span class="kpi-val c-up">68.1%</span>
+          <span class="kpi-val c-up">67.5%</span>
           <span class="kpi-sub">502 <span class="l-en">members</span><span class="l-zh">成员</span></span>
         </div>
         
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Radar</span><span class="l-zh">雷达</span></span>
-          <span class="kpi-val c-warn">WATCH</span>
+          <span class="kpi-val c-warn">CAUTION</span>
           <span class="kpi-sub">Growth scare / def</span>
         </div>
         
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Repricing</span><span class="l-zh">重定价</span></span>
-          <span class="kpi-val c-info">ELEVATED</span>
+          <span class="kpi-val c-up">QUIET</span>
           <span class="kpi-sub"><span class="l-en">coherence</span><span class="l-zh">一致性</span></span>
         </div>
         
@@ -1075,23 +1102,23 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
              data-tip-en="HMM smoothed posterior (display-only). Scored use requires causal refit against live regime labels."
              data-tip-zh="HMM平滑后验（仅展示）。评分使用需对实时周期标签进行因果重拟合。">
           <span class="kpi-label"><span class="l-en">Regime HMM</span><span class="l-zh">象限HMM</span></span>
-          <span class="kpi-val c-info">P(Q1) 0.88</span>
-          <span class="kpi-sub l-en">hazard 0.48 &middot; ~2.1mo dwell &middot; 3mo in</span>
-          <span class="kpi-sub l-zh">风险0.48 &middot; 预期停留~2.1月 &middot; 已3月</span>
+          <span class="kpi-val c-info">P(Q1) 0.71</span>
+          <span class="kpi-sub l-en">hazard 0.47 &middot; ~2.1mo dwell &middot; 3mo in</span>
+          <span class="kpi-sub l-zh">风险0.47 &middot; 预期停留~2.1月 &middot; 已3月</span>
         </div>
         
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Net Liquidity</span><span class="l-zh">净流动性</span></span>
-          <span class="kpi-val c-info">$5997bn</span>
-          <span class="kpi-sub">&Delta;65d -10bn &bull; p84</span>
+          <span class="kpi-val c-info">$5948bn</span>
+          <span class="kpi-sub">&Delta;65d +13bn &bull; p82</span>
         </div>
         
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Transitions 14d</span><span class="l-zh">14日转换</span></span>
-          <span class="kpi-val c-warn">23</span>
-          <span class="kpi-sub">5 <span class="l-en">today</span><span class="l-zh">今日</span></span>
+          <span class="kpi-val c-warn">34</span>
+          <span class="kpi-sub">6 <span class="l-en">today</span><span class="l-zh">今日</span></span>
         </div>
         
       </div>
@@ -1101,56 +1128,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 
       <!-- Recovery spark -->
       
-      <div class="hero-recovery">
-        <div class="recovery-text">
-          <div class="recovery-hed"><span class="l-en">Risk receding — liquidity turning supportive</span><span class="l-zh">风险回落 — 流动性转向支持</span></div>
-          <div class="recovery-sub"><span class="l-en">Pullback odds 19% → 13% (peaked 11 days ago).</span><span class="l-zh">回撤概率 19% → 13%（11 日前见顶）。</span></div>
-          
-          <div style="margin-top:6px" class="deesc-chip"><span class="l-en">De-escalation eligible</span><span class="l-zh">可降级</span></div>
-          
-        </div>
-        <div class="spark-wrap">
-          <svg width="100" height="30"
-               viewBox="-2 -2 100 30"
-               xmlns="http://www.w3.org/2000/svg">
-            <polyline
-              points="3.0,20.3 6.9,16.6 10.8,17.1 14.7,16.9 18.7,12.5 22.6,16.8 26.5,23.0 30.4,18.3 34.3,20.0 38.2,13.8 42.1,8.4 46.0,6.0 50.0,3.0 53.9,5.0 57.8,6.9 61.7,10.6 65.6,6.4 69.5,9.9 73.4,16.0 77.3,11.0 81.3,18.8 85.2,17.1 89.1,15.4 93.0,19.9"
-              fill="none" stroke="var(--warn)" stroke-width="1.8"
-              stroke-linejoin="round" stroke-linecap="round"/>
-            
-            <circle cx="50.0" cy="3.0" r="3" fill="var(--down)"/>
-            
-            
-            <circle cx="93.0" cy="19.9" r="3" fill="var(--up)"/>
-            
-          </svg>
-          <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:2px;">
-            <span class="l-en">24d intensity</span><span class="l-zh">24日强度</span> &bull;
-            <span style="color:var(--down)">&#9679;</span> <span class="l-en">peak</span><span class="l-zh">峰值</span>
-            <span style="color:var(--up)">&#9679;</span> <span class="l-en">now</span><span class="l-zh">当前</span>
-          </div>
-        </div>
-      </div>
-      
 
       <!-- Market state mini bar -->
       
       <div style="display:flex;gap:4px;align-items:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
         <span style="font-size:10px;color:var(--muted);margin-right:6px;text-transform:uppercase;letter-spacing:.07em;line-height:1"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
-        
-        
-        <div data-tip-en="2026-07-10: RISK_ON (77)"
-             data-tip-zh="2026-07-10: RISK_ON (77)"
-             style="width:10px;height:22px;border-radius:3px 3px 0 0;
-               background:var(--up);
-               opacity:0.7;"></div>
-        
-        
-        <div data-tip-en="2026-07-11: RISK_ON (77)"
-             data-tip-zh="2026-07-11: RISK_ON (77)"
-             style="width:10px;height:22px;border-radius:3px 3px 0 0;
-               background:var(--up);
-               opacity:0.7;"></div>
         
         
         <div data-tip-en="2026-07-12: RISK_ON (80)"
@@ -1181,7 +1163,21 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                opacity:0.7;"></div>
         
         
-        <span style="font-size:10px;color:var(--muted);margin-left:4px">77/100</span>
+        <div data-tip-en="2026-07-16: RISK_ON (79)"
+             data-tip-zh="2026-07-16: RISK_ON (79)"
+             style="width:10px;height:22px;border-radius:3px 3px 0 0;
+               background:var(--up);
+               opacity:0.7;"></div>
+        
+        
+        <div data-tip-en="2026-07-17: MIXED (50)"
+             data-tip-zh="2026-07-17: MIXED (50)"
+             style="width:10px;height:16px;border-radius:3px 3px 0 0;
+               background:var(--warn);
+               opacity:0.7;"></div>
+        
+        
+        <span style="font-size:10px;color:var(--muted);margin-left:4px">50/100</span>
         
       </div>
       
@@ -1194,53 +1190,53 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     
     <div class="radar-board">
       
+      <div class="scare-tile band-caution dominant">
+        <div class="scare-name"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></div>
+        <div class="scare-score band-caution">65</div>
+        <div class="scare-band band-caution">CAUTION</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-caution" style="width:65%"></div></div>
+      </div>
+      
+      <div class="scare-tile band-watch">
+        <div class="scare-name"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span></div>
+        <div class="scare-score band-watch">60</div>
+        <div class="scare-band band-watch">WATCH</div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-watch" style="width:60%"></div></div>
+      </div>
+      
       <div class="scare-tile band-watch">
         <div class="scare-name"><span class="l-en">Bubble / blow-off unwind</span><span class="l-zh">泡沫/见顶回吐</span></div>
-        <div class="scare-score band-watch">56</div>
+        <div class="scare-score band-watch">51</div>
         <div class="scare-band band-watch">WATCH</div>
-        <div class="scare-bar-track"><div class="scare-bar-fill band-watch" style="width:56%"></div></div>
-      </div>
-      
-      <div class="scare-tile band-watch dominant">
-        <div class="scare-name"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></div>
-        <div class="scare-score band-watch">56</div>
-        <div class="scare-band band-watch">WATCH</div>
-        <div class="scare-bar-track"><div class="scare-bar-fill band-watch" style="width:56%"></div></div>
-      </div>
-      
-      <div class="scare-tile band-watch">
-        <div class="scare-name"><span class="l-en">Global breadth breakdown</span><span class="l-zh">全球广度破位</span></div>
-        <div class="scare-score band-watch">55</div>
-        <div class="scare-band band-watch">WATCH</div>
-        <div class="scare-bar-track"><div class="scare-bar-fill band-watch" style="width:55%"></div></div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-watch" style="width:51%"></div></div>
       </div>
       
       <div class="scare-tile band-calm">
-        <div class="scare-name"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span></div>
-        <div class="scare-score band-calm">42</div>
+        <div class="scare-name"><span class="l-en">Global breadth breakdown</span><span class="l-zh">全球广度破位</span></div>
+        <div class="scare-score band-calm">49</div>
         <div class="scare-band band-calm">CALM</div>
-        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:42%"></div></div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:49%"></div></div>
       </div>
       
       <div class="scare-tile band-calm">
         <div class="scare-name"><span class="l-en">Rates / inflation shock</span><span class="l-zh">利率/通胀冲击</span></div>
-        <div class="scare-score band-calm">38</div>
+        <div class="scare-score band-calm">24</div>
         <div class="scare-band band-calm">CALM</div>
-        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:38%"></div></div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:24%"></div></div>
       </div>
       
       <div class="scare-tile band-calm">
         <div class="scare-name"><span class="l-en">Breadth internals deterioration</span><span class="l-zh">内部广度恶化</span></div>
-        <div class="scare-score band-calm">13</div>
+        <div class="scare-score band-calm">14</div>
         <div class="scare-band band-calm">CALM</div>
-        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:13%"></div></div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:14%"></div></div>
       </div>
       
       <div class="scare-tile band-calm">
         <div class="scare-name"><span class="l-en">Volatility event</span><span class="l-zh">波动率事件</span></div>
-        <div class="scare-score band-calm">4</div>
+        <div class="scare-score band-calm">6</div>
         <div class="scare-band band-calm">CALM</div>
-        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:4%"></div></div>
+        <div class="scare-bar-track"><div class="scare-bar-fill band-calm" style="width:6%"></div></div>
       </div>
       
     </div>
@@ -1252,7 +1248,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       <div class="dd-cell">
         <div class="dd-cell-h">H5d</div>
-        <div class="dd-cell-v">2%</div>
+        <div class="dd-cell-v">3%</div>
         <div class="dd-cell-base"><span class="l-en">base</span><span class="l-zh">基准</span> 4%</div>
       </div>
       
@@ -1260,7 +1256,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       <div class="dd-cell">
         <div class="dd-cell-h">H10d</div>
-        <div class="dd-cell-v">6%</div>
+        <div class="dd-cell-v">8%</div>
         <div class="dd-cell-base"><span class="l-en">base</span><span class="l-zh">基准</span> 9%</div>
       </div>
       
@@ -1268,7 +1264,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       <div class="dd-cell">
         <div class="dd-cell-h">H21d</div>
-        <div class="dd-cell-v">13%</div>
+        <div class="dd-cell-v">16%</div>
         <div class="dd-cell-base"><span class="l-en">base</span><span class="l-zh">基准</span> 18%</div>
       </div>
       
@@ -1280,17 +1276,15 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <!-- Trajectory -->
     <div class="dd-meta">
       
-      <span class="traj"><span class="l-en">Phase</span><span class="l-zh">阶段</span>: receding</span>
+      <span class="traj"><span class="l-en">Phase</span><span class="l-zh">阶段</span>: rising</span>
       
       
       <span><span class="l-en">Peak</span><span class="l-zh">峰值</span> 90.8
-        · 11d <span class="l-en">ago</span><span class="l-zh">前</span></span>
+        · 13d <span class="l-en">ago</span><span class="l-zh">前</span></span>
       
       
-      <span><span class="l-en">Velocity</span><span class="l-zh">速度</span> -8.0/d</span>
+      <span><span class="l-en">Velocity</span><span class="l-zh">速度</span> 6.8/d</span>
       
-      
-      <span class="deesc-chip"><span class="l-en">De-escalation eligible</span><span class="l-zh">可降级</span></span>
       
     </div>
 
@@ -1349,8 +1343,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-14"
-                data-tip-zh="数据截至 2026-07-14">2026-07-14</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         <div class="domain-chips">
@@ -1364,7 +1358,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Transition"
                data-tip-zh="转换状态">
             <span class="field-chip-name"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
@@ -1373,7 +1367,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             </span>
           </div>
           
-          <div class="field-chip changed-today"
+          <div class="field-chip"
                data-tip-en="Fused Risk"
                data-tip-zh="融合风险">
             <span class="field-chip-name"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
@@ -1396,7 +1390,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-zh="风险雷达">
             <span class="field-chip-name"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
             <span class="field-chip-val" style="color:var(--warn)">
-              <span class="l-en">watch</span><span class="l-zh">watch</span>
+              <span class="l-en">caution</span><span class="l-zh">caution</span>
             </span>
           </div>
           
@@ -1440,8 +1434,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="Froth / Fragility"
                data-tip-zh="泡沫/脆弱度">
             <span class="field-chip-name"><span class="l-en">Froth / Fragility</span><span class="l-zh">泡沫/脆弱度</span></span>
-            <span class="field-chip-val" style="color:var(--warn)">
-              <span class="l-en">watch</span><span class="l-zh">watch</span>
+            <span class="field-chip-val" style="color:var(--muted)">
+              <span class="l-en">calm</span><span class="l-zh">平静</span>
             </span>
           </div>
           
@@ -1467,8 +1461,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="Repricing Coherence"
                data-tip-zh="重定价一致性">
             <span class="field-chip-name"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
-            <span class="field-chip-val" style="color:var(--info)">
-              <span class="l-en">ELEVATED</span><span class="l-zh">ELEVATED</span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">QUIET</span><span class="l-zh">QUIET</span>
             </span>
           </div>
           
@@ -1481,21 +1475,21 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             </span>
           </div>
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Vol Risk Premium"
                data-tip-zh="波动风险溢价">
             <span class="field-chip-name"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
-            <span class="field-chip-val" style="color:var(--info)">
-              <span class="l-en">collapsing (de-risk)</span><span class="l-zh">collapsing (de-risk)</span>
+            <span class="field-chip-val" style="color:var(--up)">
+              <span class="l-en">normal</span><span class="l-zh">正常</span>
             </span>
           </div>
           
-          <div class="field-chip changed-today"
+          <div class="field-chip"
                data-tip-en="Cross-Asset"
                data-tip-zh="跨资产">
             <span class="field-chip-name"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
             <span class="field-chip-val" style="color:var(--warn)">
-              <span class="l-en">mixed</span><span class="l-zh">中性</span>
+              <span class="l-en">diverge</span><span class="l-zh">diverge</span>
             </span>
           </div>
           
@@ -1506,14 +1500,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="hist-dots">
           
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-05: Q1"
-               data-tip-zh="2026-07-05: Q1"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: Q1"
-               data-tip-zh="2026-07-06: Q1"></div>
           
           <div class="hist-d "
                data-tip-en="2026-07-07: Q1"
@@ -1539,6 +1525,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: Q1"
                data-tip-zh="2026-07-15: Q1"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: Q1"
+               data-tip-zh="2026-07-16: Q1"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: Q1"
+               data-tip-zh="2026-07-17: Q1"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1552,8 +1546,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-14"
-                data-tip-zh="数据截至 2026-07-14">2026-07-14</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         <div class="domain-chips">
@@ -1562,8 +1556,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="Verdict"
                data-tip-zh="判定">
             <span class="field-chip-name"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
-            <span class="field-chip-val" style="color:var(--up)">
-              <span class="l-en">RISK_ON</span><span class="l-zh">RISK_ON</span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">MIXED</span><span class="l-zh">MIXED</span>
             </span>
           </div>
           
@@ -1576,14 +1570,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-05: RISK_OFF"
-               data-tip-zh="2026-07-05: RISK_OFF"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: RISK_OFF"
-               data-tip-zh="2026-07-06: RISK_OFF"></div>
-          
-          <div class="hist-d changed"
                data-tip-en="2026-07-07: MIXED"
                data-tip-zh="2026-07-07: MIXED"></div>
           
@@ -1607,6 +1593,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: RISK_ON"
                data-tip-zh="2026-07-15: RISK_ON"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: RISK_ON"
+               data-tip-zh="2026-07-16: RISK_ON"></div>
+          
+          <div class="hist-d changed"
+               data-tip-en="2026-07-17: MIXED"
+               data-tip-zh="2026-07-17: MIXED"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1620,18 +1614,18 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-13"
-                data-tip-zh="数据截至 2026-07-13">2026-07-13</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         <div class="domain-chips">
           
-          <div class="field-chip"
+          <div class="field-chip changed-today"
                data-tip-en="Curve Regime"
                data-tip-zh="曲线周期">
             <span class="field-chip-name"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
-            <span class="field-chip-val" style="color:var(--down)">
-              <span class="l-en">bear_flattener</span><span class="l-zh">bear_flattener</span>
+            <span class="field-chip-val" style="color:var(--warn)">
+              <span class="l-en">bear_steepener</span><span class="l-zh">bear_steepener</span>
             </span>
           </div>
           
@@ -1651,14 +1645,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="hist-dots">
           
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-05: bull_flattener"
-               data-tip-zh="2026-07-05: bull_flattener"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: bull_flattener"
-               data-tip-zh="2026-07-06: bull_flattener"></div>
           
           <div class="hist-d "
                data-tip-en="2026-07-07: bull_flattener"
@@ -1684,6 +1670,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: bear_flattener"
                data-tip-zh="2026-07-15: bear_flattener"></div>
           
+          <div class="hist-d changed"
+               data-tip-en="2026-07-16: bear_steepener"
+               data-tip-zh="2026-07-16: bear_steepener"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: bear_steepener"
+               data-tip-zh="2026-07-17: bear_steepener"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1697,8 +1691,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-15"
-                data-tip-zh="数据截至 2026-07-15">2026-07-15</span>
+                data-tip-en="Source as-of 2026-07-17"
+                data-tip-zh="数据截至 2026-07-17">2026-07-17</span>
           
         </div>
         <div class="domain-chips">
@@ -1766,14 +1760,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-05: up"
-               data-tip-zh="2026-07-05: up"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: up"
-               data-tip-zh="2026-07-06: up"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-07: up"
                data-tip-zh="2026-07-07: up"></div>
           
@@ -1797,6 +1783,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: up"
                data-tip-zh="2026-07-15: up"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: up"
+               data-tip-zh="2026-07-16: up"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: up"
+               data-tip-zh="2026-07-17: up"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1811,8 +1805,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">International Risk</span><span class="l-zh">国际风险</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-15"
-                data-tip-zh="数据截至 2026-07-15">2026-07-15</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         
@@ -1848,8 +1842,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">Bonds &amp; Credit</span><span class="l-zh">债券与信用</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-13"
-                data-tip-zh="数据截至 2026-07-13">2026-07-13</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         <div class="domain-chips">
@@ -1899,14 +1893,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-05: healthy"
-               data-tip-zh="2026-07-05: healthy"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: healthy"
-               data-tip-zh="2026-07-06: healthy"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-07: healthy"
                data-tip-zh="2026-07-07: healthy"></div>
           
@@ -1930,6 +1916,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: healthy"
                data-tip-zh="2026-07-15: healthy"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: healthy"
+               data-tip-zh="2026-07-16: healthy"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: healthy"
+               data-tip-zh="2026-07-17: healthy"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -1943,8 +1937,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-15"
-                data-tip-zh="数据截至 2026-07-15">2026-07-15</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         <div class="domain-chips">
@@ -1976,14 +1970,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-05: Goldilocks"
-               data-tip-zh="2026-07-05: Goldilocks"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: Goldilocks"
-               data-tip-zh="2026-07-06: Goldilocks"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-07: Goldilocks"
                data-tip-zh="2026-07-07: Goldilocks"></div>
           
@@ -2007,6 +1993,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: Goldilocks"
                data-tip-zh="2026-07-15: Goldilocks"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: Goldilocks"
+               data-tip-zh="2026-07-16: Goldilocks"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: Goldilocks"
+               data-tip-zh="2026-07-17: Goldilocks"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -2020,8 +2014,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">China</span><span class="l-zh">中国</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-14"
-                data-tip-zh="数据截至 2026-07-14">2026-07-14</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         <div class="domain-chips">
@@ -2039,8 +2033,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="Property"
                data-tip-zh="房地产">
             <span class="field-chip-name"><span class="l-en">Property</span><span class="l-zh">房地产</span></span>
-            <span class="field-chip-val" style="color:var(--warn)">
-              <span class="l-en">Deep contraction (easing)</span><span class="l-zh">深度收缩（宽松中）</span>
+            <span class="field-chip-val" style="color:var(--info)">
+              <span class="l-en">Contraction (easing)</span><span class="l-zh">Contraction (easing)</span>
             </span>
           </div>
           
@@ -2048,8 +2042,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="Fear / Euphoria"
                data-tip-zh="恐惧/亢奋">
             <span class="field-chip-name"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
-            <span class="field-chip-val" style="color:var(--info)">
-              <span class="l-en">Greed</span><span class="l-zh">Greed</span>
+            <span class="field-chip-val" style="color:var(--muted)">
+              <span class="l-en">Neutral</span><span class="l-zh">中性</span>
             </span>
           </div>
           
@@ -2060,14 +2054,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="hist-dots">
           
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-05: Q3"
-               data-tip-zh="2026-07-05: Q3"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: Q3"
-               data-tip-zh="2026-07-06: Q3"></div>
           
           <div class="hist-d "
                data-tip-en="2026-07-07: Q3"
@@ -2093,6 +2079,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: Q3"
                data-tip-zh="2026-07-15: Q3"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: Q3"
+               data-tip-zh="2026-07-16: Q3"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: Q3"
+               data-tip-zh="2026-07-17: Q3"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -2106,8 +2100,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-14"
-                data-tip-zh="数据截至 2026-07-14">2026-07-14</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         <div class="domain-chips">
@@ -2148,14 +2142,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-05: Q4"
-               data-tip-zh="2026-07-05: Q4"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: Q4"
-               data-tip-zh="2026-07-06: Q4"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-07: Q4"
                data-tip-zh="2026-07-07: Q4"></div>
           
@@ -2179,6 +2165,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: Q3"
                data-tip-zh="2026-07-15: Q3"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: Q3"
+               data-tip-zh="2026-07-16: Q3"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: Q3"
+               data-tip-zh="2026-07-17: Q3"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -2192,8 +2186,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-13"
-                data-tip-zh="数据截至 2026-07-13">2026-07-13</span>
+                data-tip-en="Source as-of 2026-07-15"
+                data-tip-zh="数据截至 2026-07-15">2026-07-15</span>
           
         </div>
         <div class="domain-chips">
@@ -2234,14 +2228,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           
           <div class="hist-d "
-               data-tip-en="2026-07-05: Q1"
-               data-tip-zh="2026-07-05: Q1"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: Q1"
-               data-tip-zh="2026-07-06: Q1"></div>
-          
-          <div class="hist-d "
                data-tip-en="2026-07-07: Q1"
                data-tip-zh="2026-07-07: Q1"></div>
           
@@ -2265,6 +2251,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: Q1"
                data-tip-zh="2026-07-15: Q1"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: Q1"
+               data-tip-zh="2026-07-16: Q1"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: Q1"
+               data-tip-zh="2026-07-17: Q1"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -2278,8 +2272,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">Dispersion</span><span class="l-zh">离散度</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-15"
-                data-tip-zh="数据截至 2026-07-15">2026-07-15</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         <div class="domain-chips">
@@ -2300,14 +2294,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="hist-dots">
           
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-05: lean_in"
-               data-tip-zh="2026-07-05: lean_in"></div>
-          
-          <div class="hist-d "
-               data-tip-en="2026-07-06: lean_in"
-               data-tip-zh="2026-07-06: lean_in"></div>
           
           <div class="hist-d "
                data-tip-en="2026-07-07: lean_in"
@@ -2333,6 +2319,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: lean_in"
                data-tip-zh="2026-07-15: lean_in"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: lean_in"
+               data-tip-zh="2026-07-16: lean_in"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: lean_in"
+               data-tip-zh="2026-07-17: lean_in"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -2346,8 +2340,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-14"
-                data-tip-zh="数据截至 2026-07-14">2026-07-14</span>
+                data-tip-en="Source as-of 2026-07-16"
+                data-tip-zh="数据截至 2026-07-16">2026-07-16</span>
           
         </div>
         <div class="domain-chips">
@@ -2443,6 +2437,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                data-tip-en="2026-07-15: Q1"
                data-tip-zh="2026-07-15: Q1"></div>
           
+          <div class="hist-d "
+               data-tip-en="2026-07-16: Q1"
+               data-tip-zh="2026-07-16: Q1"></div>
+          
+          <div class="hist-d "
+               data-tip-en="2026-07-17: Q1"
+               data-tip-zh="2026-07-17: Q1"></div>
+          
           
           <span class="hist-hint"><span class="l-en">ledger</span><span class="l-zh">账本</span></span>
         </div>
@@ -2468,7 +2470,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px"><span class="l-en">US</span><span class="l-zh">美国</span></div>
             <div class="quad-name-lbl"><span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></div>
             
-            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 12%</div>
+            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 15%</div>
             
             
             <div class="quad-note"><span class="l-en">expanding</span><span class="l-zh">扩张</span></div>
@@ -2485,7 +2487,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 8%</div>
             
             
-            <div class="quad-note"><span class="l-en">neutral</span><span class="l-zh">中性</span></div>
+            <div class="quad-note"><span class="l-en">contracting</span><span class="l-zh">收缩</span></div>
             
             
             
@@ -2496,11 +2498,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px"><span class="l-en">HK</span><span class="l-zh">香港</span></div>
             <div class="quad-name-lbl"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></div>
             
-            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 1%</div>
+            <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 12%</div>
             
             
-            <div class="quad-note"><span class="l-en">neutral</span><span class="l-zh">中性</span></div>
+            <div class="quad-note"><span class="l-en">contracting</span><span class="l-zh">收缩</span></div>
             
+            
+            <div class="quad-pending">→ Q2 <span class="l-en">pending</span><span class="l-zh">待确认</span></div>
             
             
             <div class="quad-note">weak-side (outflow)</div>
@@ -2515,7 +2519,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <div class="quad-conf"><span class="l-en">conf</span><span class="l-zh">置信</span> 28%</div>
             
             
-            <div class="quad-note"><span class="l-en">neutral</span><span class="l-zh">中性</span></div>
+            <div class="quad-note"><span class="l-en">expanding</span><span class="l-zh">扩张</span></div>
             
             
             
@@ -2623,28 +2627,28 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Policy Rate</span><span class="l-zh">政策利率</span></span>
-            <span class="stat-val">3.62%</span>
+            <span class="stat-val">3.63%</span>
           </div>
           
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Implied Cuts (6m)</span><span class="l-zh">隐含降息(6月)</span></span>
-            <span class="stat-val">-2</span>
+            <span class="stat-val">-1</span>
           </div>
           
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Market vs Fed</span><span class="l-zh">市场vs美联储</span></span>
-            <span class="stat-val">+17bp</span>
+            <span class="stat-val">+3bp</span>
           </div>
           
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">2s10s Spread</span><span class="l-zh">2s10s利差</span></span>
             <div>
-              <span class="stat-val">36bp</span>
+              <span class="stat-val">42bp</span>
               
-              <div class="stat-pctile">p65</div>
+              <div class="stat-pctile">p68</div>
               
             </div>
           </div>
@@ -2653,7 +2657,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Real 10y</span><span class="l-zh">实际10年</span></span>
             <div>
-              <span class="stat-val">2.32%</span>
+              <span class="stat-val">2.33%</span>
               
               <div class="stat-pctile">p98</div>
               
@@ -2663,7 +2667,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Term Premium</span><span class="l-zh">期限溢价</span></span>
-            <span class="stat-val">0.36%</span>
+            <span class="stat-val">1.20%</span>
           </div>
           
         </div>
@@ -2698,7 +2702,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                 <span class="leg-dot"></span>
                 <span class="l-en">bullish</span><span class="l-zh">bullish</span>
                 
-                <span style="font-size:10px;color:var(--muted)">0.62</span>
+                <span style="font-size:10px;color:var(--muted)">0.63</span>
                 
               </span>
             </div>
@@ -2722,7 +2726,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                 <span class="leg-dot"></span>
                 <span class="l-en">bullish</span><span class="l-zh">bullish</span>
                 
-                <span style="font-size:10px;color:var(--muted)">0.94</span>
+                <span style="font-size:10px;color:var(--muted)">0.98</span>
                 
               </span>
             </div>
@@ -2734,7 +2738,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
                 <span class="leg-dot"></span>
                 <span class="l-en">bearish</span><span class="l-zh">bearish</span>
                 
-                <span style="font-size:10px;color:var(--muted)">-0.54</span>
+                <span style="font-size:10px;color:var(--muted)">-0.58</span>
                 
               </span>
             </div>
@@ -2754,25 +2758,25 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="liq-row">
           <div class="liq-stat">
             <div class="liq-stat-k"><span class="l-en">Net Liq</span><span class="l-zh">净流动性</span></div>
-            <div class="liq-stat-v c-info">$5997bn</div>
-            <div class="liq-stat-sub">2026-07-13</div>
+            <div class="liq-stat-v c-info">$5948bn</div>
+            <div class="liq-stat-sub">2026-07-15</div>
           </div>
           
           <div class="liq-stat">
             <div class="liq-stat-k">&Delta;20d</div>
-            <div class="liq-stat-v c-up">+88bn</div>
+            <div class="liq-stat-v c-up">+214bn</div>
           </div>
           
           
           <div class="liq-stat">
             <div class="liq-stat-k">&Delta;65d</div>
-            <div class="liq-stat-v c-down">-10bn</div>
+            <div class="liq-stat-v c-up">+13bn</div>
           </div>
           
           
           <div class="liq-stat">
             <div class="liq-stat-k"><span class="l-en">Pctile</span><span class="l-zh">分位数</span></div>
-            <div class="liq-stat-v c-info">p84</div>
+            <div class="liq-stat-v c-info">p82</div>
           </div>
           
         </div>
@@ -2781,7 +2785,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="spark-container">
           <div class="spark-lbl"><span class="l-en">90d net liquidity</span><span class="l-zh">90日净流动性</span></div>
           <svg width="140" height="32" viewBox="0 0 140 32" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="0.0,19.8 1.6,21.9 3.1,22.3 4.7,15.7 6.3,16.0 7.9,15.8 9.4,27.4 11.0,26.7 12.6,21.1 14.2,21.7 15.7,20.6 17.3,24.1 18.9,21.1 20.4,17.6 22.0,16.3 23.6,18.6 25.2,20.3 26.7,23.8 28.3,13.1 29.9,10.5 31.5,8.6 33.0,10.4 34.6,7.6 36.2,1.9 37.8,1.0 39.3,2.4 40.9,7.3 42.5,9.2 44.0,20.9 45.6,25.1 47.2,27.5 48.8,31.0 50.3,30.3 51.9,28.1 53.5,24.8 55.1,25.2 56.6,27.7 58.2,26.7 59.8,27.1 61.3,26.1 62.9,15.5 64.5,17.5 66.1,15.8 67.6,15.3 69.2,13.8 70.8,13.1 72.4,14.5 73.9,13.6 75.5,8.9 77.1,8.3 78.7,4.3 80.2,7.3 81.8,11.0 83.4,9.8 84.9,8.3 86.5,11.6 88.1,16.6 89.7,14.0 91.2,14.5 92.8,20.2 94.4,15.2 96.0,16.1 97.5,13.6 99.1,13.4 100.7,11.7 102.2,13.5 103.8,12.1 105.4,8.3 107.0,8.2 108.5,9.6 110.1,24.1 111.7,25.1 113.3,21.6 114.8,17.4 116.4,20.2 118.0,18.9 119.6,16.7 121.1,14.1 122.7,16.3 124.3,14.4 125.8,20.2 127.4,9.0 129.0,5.8 130.6,6.4 132.1,7.0 133.7,7.3 135.3,3.1 136.9,2.9 138.4,1.9 140.0,1.9" fill="none" stroke="var(--info)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <polyline points="0.0,22.3 1.6,15.7 3.1,16.0 4.7,15.8 6.3,27.4 7.9,26.7 9.4,21.1 11.0,21.7 12.6,20.6 14.2,24.1 15.7,21.1 17.3,17.6 18.9,16.3 20.4,18.6 22.0,20.3 23.6,23.8 25.2,13.1 26.7,10.5 28.3,8.6 29.9,10.4 31.5,7.6 33.0,1.9 34.6,1.0 36.2,2.4 37.8,7.3 39.3,9.2 40.9,20.9 42.5,25.1 44.0,27.5 45.6,31.0 47.2,30.3 48.8,28.1 50.3,24.8 51.9,25.2 53.5,27.7 55.1,26.7 56.6,27.1 58.2,26.1 59.8,15.5 61.3,17.5 62.9,15.8 64.5,15.3 66.1,13.8 67.6,13.1 69.2,14.5 70.8,13.6 72.4,8.9 73.9,8.3 75.5,4.3 77.1,7.3 78.7,11.0 80.2,9.8 81.8,8.3 83.4,11.6 84.9,16.6 86.5,14.0 88.1,14.5 89.7,20.2 91.2,15.2 92.8,16.1 94.4,13.6 96.0,13.4 97.5,11.7 99.1,13.5 100.7,12.1 102.2,8.3 103.8,8.2 105.4,9.6 107.0,24.1 108.5,25.1 110.1,21.6 111.7,17.4 113.3,20.2 114.8,18.9 116.4,16.7 118.0,14.1 119.6,16.3 121.1,14.4 122.7,20.2 124.3,9.0 125.8,5.8 127.4,6.4 129.0,7.0 130.6,7.3 132.1,3.1 133.7,2.9 135.3,1.9 136.9,2.9 138.4,6.2 140.0,6.2" fill="none" stroke="var(--info)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
           </svg>
         </div>
         
@@ -2789,7 +2793,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="liq-row" style="margin-top:14px">
           <div class="liq-stat">
             <div class="liq-stat-k"><span class="l-en">RRP</span><span class="l-zh">逆回购</span></div>
-            <div class="liq-stat-v c-down">$0.8bn</div>
+            <div class="liq-stat-v c-down">$0.2bn</div>
             
             <div class="liq-stat-sub" style="color:var(--down)"><span class="l-en">EXHAUSTED</span><span class="l-zh">已耗尽</span></div>
             
@@ -2797,7 +2801,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           <div class="liq-stat">
             <div class="liq-stat-k">TGA</div>
-            <div class="liq-stat-v c-muted">$738bn</div>
+            <div class="liq-stat-v c-muted">$788bn</div>
           </div>
           
           <div class="liq-stat">
@@ -2810,14 +2814,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="liq-row" style="margin-top:10px">
           <div class="liq-stat">
             <div class="liq-stat-k">OFR FSI</div>
-            <div class="liq-stat-v c-up">-2.278</div>
+            <div class="liq-stat-v c-up">-2.392</div>
             <div class="liq-stat-sub"><span class="l-en">low stress</span><span class="l-zh">低压力</span></div>
           </div>
           
           <div style="padding:10px 0">
             <div class="spark-lbl"><span class="l-en">90d OFR FSI</span><span class="l-zh">90日OFR FSI</span></div>
             <svg width="100" height="28" viewBox="0 0 140 32" xmlns="http://www.w3.org/2000/svg">
-              <polyline points="0.0,10.5 1.6,5.7 3.1,16.7 4.7,11.7 6.3,8.7 7.9,7.0 9.4,10.4 11.0,15.3 12.6,14.3 14.2,12.0 15.7,9.3 17.3,7.4 18.9,8.3 20.4,9.7 22.0,5.0 23.6,5.4 25.2,1.0 26.7,5.6 28.3,15.0 29.9,9.3 31.5,15.0 33.0,11.7 34.6,9.4 36.2,17.0 37.8,18.5 39.3,19.9 40.9,19.8 42.5,22.3 44.0,23.4 45.6,23.4 47.2,25.0 48.8,22.3 50.3,22.6 51.9,23.0 53.5,23.2 55.1,22.3 56.6,22.5 58.2,21.5 59.8,21.5 61.3,22.8 62.9,20.1 64.5,19.3 66.1,20.1 67.6,22.1 69.2,23.5 70.8,24.3 72.4,25.1 73.9,24.6 75.5,25.1 77.1,26.3 78.7,24.3 80.2,23.5 81.8,23.4 83.4,24.2 84.9,26.1 86.5,26.4 88.1,26.3 89.7,26.9 91.2,27.2 92.8,28.7 94.4,31.0 96.0,28.6 97.5,27.7 99.1,28.4 100.7,28.2 102.2,26.2 103.8,25.2 105.4,24.7 107.0,21.0 108.5,21.8 110.1,24.5 111.7,27.4 113.3,28.8 114.8,28.9 116.4,28.8 118.0,28.0 119.6,28.6 121.1,25.8 122.7,23.2 124.3,26.3 125.8,25.4 127.4,23.3 129.0,25.5 130.6,27.0 132.1,29.8 133.7,28.2 135.3,27.8 136.9,29.7 138.4,22.6 140.0,24.4" fill="none" stroke="var(--up)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+              <polyline points="0.0,16.7 1.6,11.7 3.1,8.7 4.7,7.0 6.3,10.4 7.9,15.3 9.4,14.3 11.0,12.0 12.6,9.3 14.2,7.4 15.7,8.3 17.3,9.7 18.9,5.0 20.4,5.4 22.0,1.0 23.6,5.6 25.2,15.0 26.7,9.3 28.3,15.0 29.9,11.7 31.5,9.4 33.0,17.0 34.6,18.5 36.2,19.9 37.8,19.8 39.3,22.3 40.9,23.4 42.5,23.4 44.0,25.0 45.6,22.3 47.2,22.6 48.8,23.0 50.3,23.2 51.9,22.3 53.5,22.5 55.1,21.5 56.6,21.5 58.2,22.8 59.8,20.1 61.3,19.3 62.9,20.1 64.5,22.1 66.1,23.5 67.6,24.3 69.2,25.1 70.8,24.6 72.4,25.1 73.9,26.3 75.5,24.3 77.1,23.5 78.7,23.4 80.2,24.2 81.8,26.1 83.4,26.4 84.9,26.3 86.5,26.9 88.1,27.2 89.7,28.7 91.2,31.0 92.8,28.6 94.4,27.7 96.0,28.4 97.5,28.2 99.1,26.2 100.7,25.2 102.2,24.7 103.8,21.0 105.4,21.8 107.0,24.5 108.5,27.4 110.1,28.8 111.7,28.9 113.3,28.8 114.8,28.0 116.4,28.6 118.0,25.8 119.6,23.2 121.1,26.3 122.7,25.4 124.3,23.3 125.8,25.5 127.4,27.0 129.0,29.8 130.6,28.2 132.1,27.8 133.7,29.7 135.3,22.6 136.9,24.4 138.4,26.6 140.0,25.5" fill="none" stroke="var(--up)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
             </svg>
           </div>
           
@@ -2846,7 +2850,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="htw-item head">
             <span class="htw-asset">XLB</span>
             <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="htw-net">-0.40</span>
+            <span class="htw-net">-0.44</span>
+          </div>
+          
+          <div class="htw-item head">
+            <span class="htw-asset">SPY</span>
+            <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
+            <span class="htw-net">-0.41</span>
           </div>
           
           <div class="htw-item head">
@@ -2858,13 +2868,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="htw-item head">
             <span class="htw-asset">QQQ</span>
             <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="htw-net">-0.39</span>
+            <span class="htw-net">-0.38</span>
           </div>
           
           <div class="htw-item head">
-            <span class="htw-asset">XLV</span>
+            <span class="htw-asset">XLF</span>
             <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="htw-net">-0.37</span>
+            <span class="htw-net">-0.36</span>
           </div>
           
           <div class="htw-item head">
@@ -2873,28 +2883,22 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <span class="htw-net">-0.33</span>
           </div>
           
-          <div class="htw-item head">
-            <span class="htw-asset">SPY</span>
-            <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
-            <span class="htw-net">-0.31</span>
-          </div>
-          
           
           <div class="htw-item tail">
-            <span class="htw-asset">GC=F</span>
+            <span class="htw-asset">TLT</span>
             <span class="chip c-up"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
             <span class="htw-net">+0.20</span>
           </div>
           
           <div class="htw-item tail">
-            <span class="htw-asset">FXI</span>
+            <span class="htw-asset">GC=F</span>
             <span class="chip c-up"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
-            <span class="htw-net">+0.14</span>
+            <span class="htw-net">+0.11</span>
           </div>
           
         </div>
         
-        <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-13</div>
+        <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-16</div>
       </div>
 
       <!-- FX / Dollar -->
@@ -2931,7 +2935,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         
         
-        <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-15</div>
+        <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-17</div>
       </div>
     </div>
   </div>
@@ -2945,9 +2949,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="breaking-slug">
       <span class="breaking-badge"><span class="l-en">TODAY</span><span class="l-zh">今日</span></span>
       <span class="breaking-text">
-        5 <span class="l-en">flip(s) this session</span><span class="l-zh">项转换本轮</span>
+        6 <span class="l-en">flip(s) this session</span><span class="l-zh">项转换本轮</span>
         
-        — <span class="l-en">China</span><span class="l-zh">中国</span>: <span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span>, <span class="l-en">US Regime</span><span class="l-zh">美国周期</span>: <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span>, <span class="l-en">US Regime</span><span class="l-zh">美国周期</span>: <span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span> +2 <span class="l-en">more</span><span class="l-zh">更多</span>
+        — <span class="l-en">China</span><span class="l-zh">中国</span>: <span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span>, <span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span>: <span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span>, <span class="l-en">US Regime</span><span class="l-zh">美国周期</span>: <span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span> +3 <span class="l-en">more</span><span class="l-zh">更多</span>
         
       </span>
     </div>
@@ -2956,8 +2960,58 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     
     
     <div class="tl-date-group">
+      <div class="tl-date-header">
+        2026-07-17
+        
+      </div>
+      <div class="tl-events">
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">China</span><span class="l-zh">中国</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Property</span><span class="l-zh">房地产</span></span>
+          <span class="tl-from">Deep contraction (easing)</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">Contraction (easing)</span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
+          <span class="tl-from">RISK_ON</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">MIXED</span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
+          <span class="tl-from">mixed</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">diverge</span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
+          <span class="tl-from">watch</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">caution</span>
+        </div>
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
+          <span class="tl-from">WEAKENING</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">TRANSITIONING</span>
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="tl-date-group">
       <div class="tl-date-header today">
-        2026-07-15
+        2026-07-16
          — <span class="l-en">TODAY</span><span class="l-zh">今日</span>
       </div>
       <div class="tl-events">
@@ -2965,12 +3019,70 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">China</span><span class="l-zh">中国</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
+          <span class="tl-from">Greed</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">Neutral</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
+          <span class="tl-from">bear_flattener</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">bear_steepener</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
+          <span class="tl-from">collapsing (de-risk)</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">normal</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
+          <span class="tl-from">ELEVATED</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">QUIET</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Froth / Fragility</span><span class="l-zh">泡沫/脆弱度</span></span>
+          <span class="tl-from">watch</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">calm</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
+          <span class="tl-from">TRANSITIONING</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">WEAKENING</span>
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="tl-date-group">
+      <div class="tl-date-header">
+        2026-07-15
+        
+      </div>
+      <div class="tl-events">
+        
+        <div class="tl-event">
+          <span class="tl-domain"><span class="l-en">China</span><span class="l-zh">中国</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
           <span class="tl-from">Neutral</span>
           <span class="tl-arrow">&#8594;</span>
           <span class="tl-to">Greed</span>
         </div>
         
-        <div class="tl-event hot">
+        <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
           <span class="tl-from">diverge</span>
@@ -2978,7 +3090,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="tl-to">mixed</span>
         </div>
         
-        <div class="tl-event hot">
+        <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
           <span class="tl-from">QUIET</span>
@@ -2986,7 +3098,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="tl-to">ELEVATED</span>
         </div>
         
-        <div class="tl-event hot">
+        <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Froth / Fragility</span><span class="l-zh">泡沫/脆弱度</span></span>
           <span class="tl-from">calm</span>
@@ -2994,7 +3106,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="tl-to">watch</span>
         </div>
         
-        <div class="tl-event hot">
+        <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
           <span class="tl-from">risk-on</span>
@@ -3218,14 +3330,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         </div>
         
         
-        <div class="contra-sub"><span class="l-en">Intelligence divergences</span><span class="l-zh">情报分歧</span>: 6</div>
+        <div class="contra-sub"><span class="l-en">Intelligence divergences</span><span class="l-zh">情报分歧</span>: 9</div>
         
         
         <div class="contra-pairs">
           
-          <span class="contra-pair-chip">regime_vector-vs-risk_radar</span>
-          
           <span class="contra-pair-chip">briefing-divergences</span>
+          
+          <span class="contra-pair-chip">cross_asset_confirm-diverge</span>
           
         </div>
         
@@ -3241,11 +3353,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   <div id="footnote" class="section">
     <div class="sec-lbl"><span class="l-en">Footnote</span><span class="l-zh">注脚</span></div>
     <div class="footnote">
-      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>de97bebd8e611c7b</code>
+      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>50baba5c623ea849</code>
       &nbsp;·&nbsp;
-      <b><span class="l-en">As of</span><span class="l-zh">截至</span>:</b> 2026-07-15
+      <b><span class="l-en">As of</span><span class="l-zh">截至</span>:</b> 2026-07-17
       &nbsp;·&nbsp;
-      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 23
+      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 34
       &nbsp;·&nbsp;
       <a href="committee.html"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></a>
       &nbsp;·&nbsp;
@@ -3256,7 +3368,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-16 03:54 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-17 06:24 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->

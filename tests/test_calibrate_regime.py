@@ -11,6 +11,7 @@ Tests:
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -23,21 +24,45 @@ _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
 
+@pytest.fixture(scope="module")
+def calib_report(tmp_path_factory):
+    """Run main() once against an isolated copy of the real signals store.
+
+    main() reads data/vector/signals.parquet and writes regime_calibration.json
+    via config.data_dir(); unredirected, that write dirties the REAL data/
+    tree (tests/conftest.py MM_DATA_GUARD). One ~2.5MB copy + one run per
+    module; the smoke tests below share the resulting report.
+
+    Returns (main_return_code, report_path).
+    """
+    from lib import config
+    from scripts.calibrate_regime import main
+
+    real_signals = config.data_dir() / "vector" / "signals.parquet"
+    if not real_signals.exists():
+        pytest.skip("data/vector/signals.parquet absent")
+    root = tmp_path_factory.mktemp("calib_data")
+    vec = root / "vector"
+    vec.mkdir(parents=True)
+    shutil.copyfile(real_signals, vec / "signals.parquet")
+
+    mp = pytest.MonkeyPatch()
+    mp.setattr(config, "data_dir", lambda: root)
+    try:
+        ret = main()
+    finally:
+        mp.undo()
+    return ret, root / "vector" / "regime_calibration.json"
+
+
 # --------------------------------------------------------------------------- #
 # 1. main() runs and writes regime_calibration.json
 # --------------------------------------------------------------------------- #
-def test_main_runs_and_writes_json(tmp_path, monkeypatch):
+def test_main_runs_and_writes_json(calib_report):
     """Full smoke test: main() must complete without raising and write the output
-    JSON in the configured data/vector/ directory."""
-    from scripts.calibrate_regime import main
-    from lib import config
-
-    # Run main — it writes to the real data/vector/regime_calibration.json
-    # (safe: this is a separate file from data/vector/calibration.json)
-    ret = main()
+    JSON in the configured (isolated) data/vector/ directory."""
+    ret, out = calib_report
     assert ret == 0, "main() should return 0 on success"
-
-    out = config.data_dir() / "vector" / "regime_calibration.json"
     assert out.exists(), f"Expected {out} to be written by main()"
 
     data = json.loads(out.read_text())
@@ -50,7 +75,7 @@ def test_main_runs_and_writes_json(tmp_path, monkeypatch):
 # --------------------------------------------------------------------------- #
 # 2. n_trials is reproducible
 # --------------------------------------------------------------------------- #
-def test_n_trials_reproducible():
+def test_n_trials_reproducible(calib_report):
     """n_trials must equal len(choice_ledger) and must be the same value
     on two independent calls — it is determined purely by code structure."""
     from scripts.calibrate_regime import _build_choice_ledger
@@ -61,14 +86,12 @@ def test_n_trials_reproducible():
     assert len(ledger1) == len(ledger2), "choice_ledger length must be deterministic"
     assert len(ledger1) > 0, "choice_ledger must not be empty"
 
-    # Check that the JSON output (if it exists) agrees
-    from lib import config
-    out = config.data_dir() / "vector" / "regime_calibration.json"
-    if out.exists():
-        data = json.loads(out.read_text())
-        assert data["n_trials"] == len(ledger1), (
-            f"JSON n_trials={data['n_trials']} ≠ len(choice_ledger)={len(ledger1)}"
-        )
+    # Check that the freshly written JSON output agrees
+    _, out = calib_report
+    data = json.loads(out.read_text())
+    assert data["n_trials"] == len(ledger1), (
+        f"JSON n_trials={data['n_trials']} ≠ len(choice_ledger)={len(ledger1)}"
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -147,15 +170,10 @@ def test_pit_path_does_not_crash():
 # --------------------------------------------------------------------------- #
 # 5. Verdict field is present and display-only
 # --------------------------------------------------------------------------- #
-def test_verdict_is_display_only():
+def test_verdict_is_display_only(calib_report):
     """The verdict in the JSON must contain 'DISPLAY-ONLY' (the composite does
     not gate-clear; any other verdict indicates an unexpected result)."""
-    from lib import config
-
-    out = config.data_dir() / "vector" / "regime_calibration.json"
-    if not out.exists():
-        pytest.skip("regime_calibration.json not yet written — run main() first")
-
+    _, out = calib_report
     data = json.loads(out.read_text())
     verdict = data.get("verdict", "")
     assert "DISPLAY-ONLY" in verdict, (
@@ -196,14 +214,9 @@ def test_choice_ledger_knobs():
 # --------------------------------------------------------------------------- #
 # 7. CPCV structure sanity
 # --------------------------------------------------------------------------- #
-def test_cpcv_structure():
+def test_cpcv_structure(calib_report):
     """CPCV result must have non_independence_warning=True and a n_paths ≥ 0."""
-    from lib import config
-
-    out = config.data_dir() / "vector" / "regime_calibration.json"
-    if not out.exists():
-        pytest.skip("regime_calibration.json not yet written")
-
+    _, out = calib_report
     data = json.loads(out.read_text())
     cpcv = data.get("cpcv", {})
     assert cpcv.get("non_independence_warning") is True, (

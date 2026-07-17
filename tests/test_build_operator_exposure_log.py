@@ -420,9 +420,12 @@ class TestExposureKind:
 
 class TestRunAsCollectStep:
     def test_never_raises_on_missing_everything(self, tmp_path: Path, monkeypatch) -> None:
-        monkeypatch.chdir(tmp_path)
-        # run_as_collect_step uses default root (repo parent) which won't exist
-        # — it must not raise
+        # run_as_collect_step's default root is the REAL repo root (chdir does
+        # not change Path(__file__) resolution) — route root=tmp_path through
+        # so the missing-everything path is genuinely exercised and the
+        # summary JSON cannot land in the real data/governance tree.
+        orig_run = boel.run
+        monkeypatch.setattr(boel, "run", lambda **kw: orig_run(root=tmp_path, **kw))
         boel.run_as_collect_step()  # should not raise
 
     def test_never_raises_on_broken_json(self, tmp_path: Path, monkeypatch) -> None:

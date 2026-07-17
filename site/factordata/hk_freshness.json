@@ -1,48 +1,45 @@
 {
-  "checked_at": "2026-07-16T03:53:28+00:00",
-  "expected_session": "2026-07-15",
+  "checked_at": "2026-07-17T06:23:30+00:00",
+  "expected_session": "2026-07-16",
   "stores": {
     "cache": {
-      "asof": "2026-07-15",
+      "asof": "2026-07-16",
       "lag_days": 0,
       "state": "fresh"
     },
     "bellwether": {
-      "asof": "2026-07-15",
+      "asof": "2026-07-16",
       "lag_days": 0,
       "state": "fresh"
     },
     "standouts": {
-      "asof": "2026-07-15",
+      "asof": "2026-07-16",
       "lag_days": 0,
       "state": "fresh"
     },
     "regime": {
-      "asof": "2026-07-15",
+      "asof": "2026-07-16",
       "lag_days": 0,
       "state": "fresh"
     },
     "southbound": {
-      "asof": null,
-      "lag_days": null,
-      "state": "dead"
+      "asof": "2026-07-15",
+      "lag_days": 1,
+      "state": "fresh"
     }
   },
   "coherence": {
     "ok": true,
-    "standouts_asof": "2026-07-15",
-    "regime_date": "2026-07-15",
+    "standouts_asof": "2026-07-16",
+    "regime_date": "2026-07-16",
     "note": null
   },
   "regression": {
     "ok": true,
-    "prev_cache_max": "2026-07-15",
-    "curr_cache_max": "2026-07-15",
+    "prev_cache_max": "2026-07-16",
+    "curr_cache_max": "2026-07-16",
     "note": null
   },
-  "verdict": "degraded",
-  "banner_message": {
-    "en": "HK data degraded \u2014 southbound \u2014 behind (last \u2014)",
-    "zh": "\u6e2f\u80a1\u6570\u636e\u964d\u7ea7 \u2014 southbound \u843d\u540e \u2014\uff08\u6700\u540e \u2014\uff09"
-  }
+  "verdict": "ok",
+  "banner_message": null
 }

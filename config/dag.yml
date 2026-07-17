@@ -346,6 +346,15 @@ lanes:
       - id: build_policy_lever
         module: scripts.build_policy_lever
         note: Policy-Shock W2-F — ARMED/QUIET lever card; non-fatal; site artifact only (PS-R7)
+      # NWS-01 fix (#2658): build_news + grade_news_events moved out of cl_baskets to the
+      # serial spine BEFORE build_site, so news.html renders against the CURRENT
+      # macro_releases.json / rejected.json / calibration.json instead of the prior run's.
+      - id: build_news
+        module: scripts.build_news
+        note: display-tier/leaf (context-only); ~1-3 min serial cost accepted for board coherence
+      - id: grade_news_events
+        module: scripts.grade_news_events
+        note: writes site/news/calibration.json which build_site reads (W4 side-artifact)
       - id: build_site
         module: scripts.build_site
       - id: build_index_leadership
@@ -370,6 +379,10 @@ lanes:
           build_pick_lab (Pick Lab plab_flow_leader/plab_flow_washout books
           consume leaders.json). Absent stores → honest nulls; always exits 0.
           outputs: [site/flowleaders/leaders.json, site/flow_leaders.html]
+      # moved before build_leader_radar to match daily.yml (#2672 reorder; declared-order heal in #2658)
+      - id: build_dispersion_regime
+        module: scripts.build_dispersion_regime
+        note: NW Rails W2 PR-4 — L3 dispersion regime lens (display-only, seconds)
       - id: build_leader_radar
         module: scripts.build_leader_radar
         note: >
@@ -392,9 +405,6 @@ lanes:
         note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
       - id: build_impulse
         module: scripts.build_impulse
-      - id: build_dispersion_regime
-        module: scripts.build_dispersion_regime
-        note: NW Rails W2 PR-4 — L3 dispersion regime lens (display-only, seconds)
       - id: build_dt_contra_state
         module: scripts.build_dt_contra_state
         note: DT-NW-1 — aggregate per-ticker dt_contra chip state into NW display artifact (display-only, seconds)
@@ -449,8 +459,7 @@ lanes:
             - scripts.build_rotation_events
             # RLT-R2 Rebalance Pulse — declared to match daily.yml (off render path, display/context)
             - scripts.build_rebalance_pulse
-            - scripts.build_news
-            - scripts.grade_news_events
+            # build_news + grade_news_events moved to the serial spine pre-build_site (#2658 NWS-01)
             - scripts.build_methodology
             - scripts.build_nasdaq_internals
             - scripts.build_rotation_events
@@ -462,6 +471,11 @@ lanes:
             - scripts.build_cycle
             - scripts.build_sector_cycles
             - scripts.build_country_cycles
+            # markets_engine.js is a pure splice of country_cycles.json — build_markets
+            # must re-run in every lane that rebuilds countrycyc, or markets.html freezes
+            # on the prior vintage and the cycle-consistency gate fails (#2728; render.yml
+            # already paired them).
+            - scripts.build_markets
             - scripts.build_measurement
             - scripts.append_sync_gauge
             - engine.policy_intent_desk
@@ -470,8 +484,29 @@ lanes:
             - scripts.build_cycle_pattern_live
             - scripts.build_cycle_pattern_state
       # serial post-band
+      - id: build_us_sector_rotation
+        module: scripts.build_us_sector_rotation
+        note: >
+          XSR W1 fast-rotation lens for the 11 SPDR sector ETFs and named US
+          thematic baskets. Display-tier only — produces
+          data/us_sector_rotation/latest.json, which build_sector_central reads
+          to re-order the conviction board by fast-rotation rank.  Reads
+          sector_cycles outputs (forward_log.parquet from build_sector_cycles in
+          the parallel band) so must run AFTER the band barrier. Non-fatal
+          (always exits 0). DISPLAY-ONLY; CONST-ART2 authority: false.
+          Artifact: data/us_sector_rotation/latest.json.
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: build_stance_matrix
+        module: scripts.build_stance_matrix
+        note: >
+          MLC-W2b stance-matrix builder. Per-basket coherence layer collecting
+          sector/theme/confluence/allocation/m7c verdicts mapped to signed tier
+          scale (-2..+2). Reads baskets.json, sector_central.json (built by
+          build_sector_central above), basket_confluence.json, allocation.json,
+          mag7_regime latest.json. Absent inputs yield null fields / row omission
+          (fail-soft, always exits 0). Display-only; CONST-ART2 authority: false.
+          outputs: [site/mlcdata/stance_matrix.json]
       - id: build_basket_turn_grading
         module: scripts.build_basket_turn_grading
         note: >
@@ -489,6 +524,12 @@ lanes:
                     data/qledger/claims.jsonl (via register_batch)]
       - id: build_polygon_universe
         module: scripts.build_polygon_universe
+        note: >
+          GICS sector + USD market cap reference cache (display-tier, no money-path).
+          Nightly refresh judged from the parquet's asof column, never file mtime
+          (CI checkouts reset mtime — froze the cache at its 2026-07-09 first fill).
+          Checkpoint json is same-day resume state only, gitignored.
+          outputs: [data/polygon_universe/reference.parquet]
       - id: mirror_flow_idx
         module: scripts.mirror_flow_idx
       - id: build_flow_signals
@@ -1811,15 +1852,19 @@ divergences:
 
   - lanes: [render, engine-render]
     differs: >
-      cl_misc order differs from daily cl_misc: render has sectorcyc→countrycyc→cycle→markets
-      vs daily cycle→sectorcyc→countrycyc (no markets). render adds build_markets; daily does
-      not. No documented justification for the order difference or the build_markets addition.
+      cl_misc order differs from daily cl_misc: render has sectorcyc→countrycyc→cycle→
+      measurement→markets vs daily cycle→sectorcyc→countrycyc→markets→measurement. Order
+      only: the former build_markets asymmetry (render had it, daily did not) was a real
+      bug — every daily engine run refreshed country_cycles.json and left its splice
+      markets_engine.js on the prior vintage, failing the cycle-consistency gate — fixed
+      #2728 by adding build_markets to daily cl_misc after countrycyc. Both lanes now
+      satisfy the one ordering constraint that matters (markets after countrycyc).
     status: suspect
     note: >
-      UNDOCUMENTED drift inherited at W5a adoption — needs owner review.
-      render.yml cl_misc line 266-276 (render adds build_markets, order differs from daily.yml
-      lines 420-429). Either document why render needs build_markets + the different order, or
-      align the order and remove build_markets from the render lane.
+      UNDOCUMENTED drift inherited at W5a adoption — needs owner review (residual
+      cosmetic order difference only; the build_markets half was resolved by #2728).
+      Either document why the two lanes sequence cycle/measurement/markets differently,
+      or align the order.
 
   - lanes: [engine-render]
     differs: >

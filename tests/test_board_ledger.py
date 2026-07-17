@@ -1048,3 +1048,31 @@ class TestNearMissFields:
         row = pd.read_parquet(tmp_path / "hk_board.parquet").iloc[0]
         assert pd.isna(row["primary_rejection_reason"])
         assert pd.isna(row["knife_z"])
+
+
+# ---------------------------------------------------------------------------
+# 15. gate_ver provenance stamp (2026-07-16 HK INCLUDE gate swap, §5.0 amendment)
+# ---------------------------------------------------------------------------
+class TestGateVerStamp:
+    """The gate_ver payload key must pass through append_board into the parquet
+    (W7/Q4 grading splits pre/post-swap samples on it). Regression: the first
+    implementation added gate_ver to _SCHEMA only — the row-build whitelist
+    dropped the payload and the column wrote all-None."""
+
+    def test_gate_ver_passthrough(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        bl.append_board([{"ticker": "0700.HK", "group": "entry_open",
+                          "edge_z": 1.0, "gate_ver": "cascade_v1"}],
+                        market="HK", asof="2026-07-16")
+        row = pd.read_parquet(tmp_path / "hk_board.parquet").iloc[0]
+        assert row["gate_ver"] == "cascade_v1"
+
+    def test_gate_ver_absent_is_null(self, tmp_path, monkeypatch):
+        """Callers that don't stamp (CN/CA today, pre-swap HK rows) stay None."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        bl.append_board([{"ticker": "0005.HK", "group": "entry_open",
+                          "edge_z": 1.0}], market="HK", asof="2026-07-16")
+        row = pd.read_parquet(tmp_path / "hk_board.parquet").iloc[0]
+        assert pd.isna(row["gate_ver"])

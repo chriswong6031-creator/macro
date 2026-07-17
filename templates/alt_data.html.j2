@@ -20,7 +20,7 @@
 } %}
 {% macro ch(c) %}{% set p = CH.get(c, [c, c]) %}<span class="l-en">{{ p[0] }}</span><span class="l-zh">{{ p[1] }}</span>{% endmacro %}
 
-{% block title %}{{ t('Alternative Data — Signal Intelligence', '替代数据 — 信号情报') }}{% endblock %}
+{% block title %}Alternative Data — Signal Intelligence{% endblock %}
 
 {% block base_css %}
   .sid { --num: "SF Mono", ui-monospace, "DejaVu Sans Mono", monospace; max-width:1180px; margin:0 auto; }

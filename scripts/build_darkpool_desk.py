@@ -46,11 +46,20 @@ YAHOO_DIR  = config.data_dir() / "yahoo"
 MIN_DATES = 30
 
 # History windows for z-score and trend
-RECENT_DAYS  = 5      # "recent" window for short ratio
-BASELINE_DAYS = 40    # longer baseline for z-score
+RECENT_DAYS   = 5      # "recent" window for short ratio and oe share
+BASELINE_DAYS = 40     # longer baseline for z-score
+SPARK_DAYS    = 20     # sparkline history
 
-# Per-name table cap (performance)
-TABLE_CAP = 100
+# Minimum observations for oe_z to be meaningful
+OE_Z_MIN_OBS  = 20
+
+# Interim Terminal Dark Pool pane artifact (roadmap: Terminal Flow surface).
+# EOD tier = daily FINRA-facility off-exchange share + weekly ATS venues. The
+# intraday per-print fields (off-exchange %, price levels, biggest prints) stay
+# null until an equity-tick feed is wired — display-tier "data pending", never
+# faked. Bumps to "intraday" tier when that lands. Debranded: no data-vendor name.
+PANE_SCHEMA    = "darkpool_eod.v1"
+PANE_JSON_NAME = "darkpool_eod.json"
 
 
 # ---------------------------------------------------------------------------
@@ -93,27 +102,28 @@ def _load_yahoo_volume(tickers: list[str]) -> dict[str, pd.Series]:
     return out
 
 
-def _load_ats() -> pd.DataFrame | None:
-    """Load latest available ATS weekly transparency data."""
+def _load_ats_two() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+    """Load the latest TWO ATS weekly parquet files (digit-named only).
+    Returns (latest_df, prior_df). Either may be None."""
     if not ATS_DIR.exists():
-        return None
-    # Week files are <YYYYMMDD>.parquet — the group dir ALSO holds the runner's
-    # heartbeat series (finra_ats__ingest.parquet), which sorts lexicographically
-    # AFTER every digit-named week file and used to shadow the real latest week
-    # (schema mismatch → silent None → venue table never rendered).
+        return None, None
     files = sorted(p for p in ATS_DIR.glob("*.parquet") if p.stem.isdigit())
     if not files:
-        return None
-    # Load latest week
-    latest_file = files[-1]
+        return None, None
+    latest_df = _safe_load_ats(files[-1])
+    prior_df  = _safe_load_ats(files[-2]) if len(files) >= 2 else None
+    return latest_df, prior_df
+
+
+def _safe_load_ats(path: Path) -> pd.DataFrame | None:
     try:
-        df = pd.read_parquet(latest_file)
+        df = pd.read_parquet(path)
         if df.empty:
             return None
         df["week_start"] = pd.to_datetime(df["week_start"])
         return df
     except Exception as e:  # noqa: BLE001
-        log.warning("ATS load failed: %s", e)
+        log.warning("ATS load failed %s: %s", path.name, e)
         return None
 
 
@@ -121,19 +131,54 @@ def _load_ats() -> pd.DataFrame | None:
 # Computation
 # ---------------------------------------------------------------------------
 
-def _compute_ticker_stats(panel: pd.DataFrame, yahoo_vol: dict[str, pd.Series]) -> list[dict]:
-    """Per-name off-exchange share, short ratio, z-scores, trends.
+def _compute_ticker_stats(
+    panel: pd.DataFrame,
+    yahoo_vol: dict[str, pd.Series],
+    ats_latest: pd.DataFrame | None,
+    ats_week_start: pd.Timestamp | None,
+) -> tuple[list[dict], int, int]:
+    """Per-name off-exchange share series, short ratio, z-scores, trends, ATS join.
 
     SEMANTICS: off_ex_share = FINRA-facility total_vol / yahoo consolidated volume.
     The denominator is labeled explicitly in the page copy.
+
+    Returns: (rows, n_with_oe, n_with_ats)
     """
+    # Build per-ticker ATS lookup {ticker -> {ats_shares, ats_top_venue, ats_venues_n, ats_share_pct}}
+    ats_lookup: dict[str, dict] = {}
+    if ats_latest is not None:
+        for ticker, grp in ats_latest.groupby("ticker"):
+            ats_shares = float(grp["shares"].sum())
+            top_idx = grp["shares"].idxmax() if not grp.empty else None
+            ats_top_venue = str(grp.loc[top_idx, "venue_name"]) if top_idx is not None else None
+            ats_venues_n = int(grp["mpid"].nunique())
+
+            # ats_share_pct = ats_shares / sum(yahoo vol in that ATS week Mon–Fri)
+            ats_share_pct: float | None = None
+            if ats_week_start is not None and str(ticker) in yahoo_vol:
+                week_end = ats_week_start + pd.Timedelta(days=4)
+                ys = yahoo_vol[str(ticker)]
+                week_vol = float(ys.loc[(ys.index >= ats_week_start) & (ys.index <= week_end)].sum())
+                if week_vol > 0:
+                    ats_share_pct = round(ats_shares / week_vol * 100, 2)
+
+            ats_lookup[str(ticker)] = {
+                "ats_shares": int(ats_shares),
+                "ats_top_venue": ats_top_venue,
+                "ats_venues_n": ats_venues_n,
+                "ats_share_pct": ats_share_pct,
+            }
+
     rows: list[dict] = []
+    n_with_oe = 0
+    n_with_ats = 0
+
     for ticker, grp in panel.groupby("ticker"):
         grp = grp.sort_values("date")
         if len(grp) < 3:
             continue
 
-        # Short ratio stats
+        # --- Short ratio stats ---
         ratios = grp["short_ratio"].values
         latest_ratio = float(ratios[-1])
         recent_ratio = float(grp.tail(RECENT_DAYS)["short_vol"].sum() /
@@ -142,7 +187,7 @@ def _compute_ticker_stats(panel: pd.DataFrame, yahoo_vol: dict[str, pd.Series]) 
                                 max(grp.tail(BASELINE_DAYS)["total_vol"].sum(), 1))
         trend_pp = round((recent_ratio - baseline_ratio) * 100, 2)
 
-        # Z-score vs own history
+        # Z-score of short ratio vs own history
         if len(ratios) >= 5:
             mu = float(np.nanmean(ratios))
             sigma = float(np.nanstd(ratios))
@@ -150,72 +195,213 @@ def _compute_ticker_stats(panel: pd.DataFrame, yahoo_vol: dict[str, pd.Series]) 
         else:
             z = 0.0
 
-        # Off-exchange share: FINRA-facility vol ÷ consolidated (yahoo) vol
-        asof_date = grp["date"].iloc[-1]
+        # --- Off-exchange share series (exact-date inner join with yahoo) ---
         oe_share: float | None = None
-        oe_note = "denominator: yahoo consolidated vol"
-        if ticker in yahoo_vol:
-            ys = yahoo_vol[ticker]
-            # Use the closest date within ±3 trading days
-            nearby = ys.loc[(ys.index <= asof_date) & (ys.index >= asof_date - pd.Timedelta(days=5))]
-            if not nearby.empty:
-                cons_vol = float(nearby.iloc[-1])
-                finra_vol = float(grp.iloc[-1]["total_vol"])
-                if cons_vol > 0:
-                    oe_share = round(finra_vol / cons_vol, 4)
-        if oe_share is None:
-            oe_note = "denominator unavailable"
+        oe_share_5d: float | None = None
+        oe_share_40d: float | None = None
+        oe_trend_pp: float | None = None
+        oe_z: float | None = None
+        spark20: list[float] = []
+
+        if str(ticker) in yahoo_vol:
+            ys = yahoo_vol[str(ticker)]
+            finra_ser = grp.drop_duplicates("date", keep="last").set_index("date")["total_vol"]
+            # Exact-date inner join
+            joined = finra_ser.to_frame().join(ys.rename("yahoo_vol"), how="inner")
+            joined = joined[joined["yahoo_vol"] > 0]
+            if not joined.empty:
+                oe_ser = joined["total_vol"] / joined["yahoo_vol"]
+                oe_ser = oe_ser.dropna()
+                if not oe_ser.empty:
+                    oe_share = round(float(oe_ser.iloc[-1]), 4)
+                    n_with_oe += 1
+                    tail5 = oe_ser.tail(RECENT_DAYS)
+                    tail40 = oe_ser.tail(BASELINE_DAYS)
+                    oe_share_5d  = round(float(tail5.mean()), 4) if len(tail5) >= 1 else None
+                    oe_share_40d = round(float(tail40.mean()), 4) if len(tail40) >= 5 else None
+                    if oe_share_5d is not None and oe_share_40d is not None:
+                        oe_trend_pp = round((oe_share_5d - oe_share_40d) * 100, 2)
+                    if len(oe_ser) >= OE_Z_MIN_OBS:
+                        mu_oe = float(oe_ser.mean())
+                        sd_oe = float(oe_ser.std(ddof=0))  # match ratio_z's population σ
+                        oe_z = round((float(oe_ser.iloc[-1]) - mu_oe) / sd_oe, 2) if sd_oe > 0 else 0.0
+                    spark20 = [round(float(v), 3) for v in oe_ser.tail(SPARK_DAYS).tolist()]
+
+        # --- ATS per-ticker join ---
+        ats_info = ats_lookup.get(str(ticker), {})
+        if ats_info:
+            n_with_ats += 1
 
         rows.append({
             "ticker": str(ticker),
-            "asof": str(asof_date.date()),
+            "asof": str(grp["date"].iloc[-1].date()),
+            # Short ratio
             "short_ratio": round(latest_ratio, 4),
             "short_ratio_recent": round(recent_ratio, 4),
             "short_ratio_baseline": round(baseline_ratio, 4),
             "trend_pp": trend_pp,
             "ratio_z": z,
             "n_days": int(len(grp)),
-            "oe_share": oe_share,          # None if denominator unavailable
-            "oe_note": oe_note,
             "finra_total_vol": int(grp.iloc[-1]["total_vol"]),
+            # Off-exchange share (series-derived)
+            "oe_share": oe_share,
+            "oe_share_5d": oe_share_5d,
+            "oe_share_40d": oe_share_40d,
+            "oe_trend_pp": oe_trend_pp,
+            "oe_z": oe_z,
+            "spark20": spark20,
+            # ATS
+            "ats_shares": ats_info.get("ats_shares"),
+            "ats_top_venue": ats_info.get("ats_top_venue"),
+            "ats_venues_n": ats_info.get("ats_venues_n"),
+            "ats_share_pct": ats_info.get("ats_share_pct"),
         })
-    return rows
+
+    return rows, n_with_oe, n_with_ats
 
 
 def _sort_ticker_stats(ticker_stats: list[dict]) -> list[dict]:
-    """Sort ticker rows by off-exchange share (desc), then by short_ratio (desc) for rows without share data."""
-    # Sort by oe_share desc (those with data), then by short_ratio
-    with_share = [r for r in ticker_stats if r["oe_share"] is not None]
+    """Sort ticker rows by off-exchange share (desc), then by short_ratio (desc)."""
+    with_share    = [r for r in ticker_stats if r["oe_share"] is not None]
     without_share = [r for r in ticker_stats if r["oe_share"] is None]
-    sorted_rows = (
+    return (
         sorted(with_share, key=lambda r: r["oe_share"], reverse=True)
         + sorted(without_share, key=lambda r: r["short_ratio"], reverse=True)
     )
-    return sorted_rows
 
 
-def _compute_ats_venue_table(ats_df: pd.DataFrame) -> dict:
-    """Aggregate ATS data into a venue table (total shares and trades per venue)."""
-    if ats_df is None or ats_df.empty:
+def _compute_ats_venue_table(
+    ats_latest: pd.DataFrame | None,
+    ats_prior: pd.DataFrame | None,
+) -> dict:
+    """Aggregate ATS data into a venue table (top 20) with wow_pp."""
+    if ats_latest is None or ats_latest.empty:
         return {}
-    week_start = str(ats_df["week_start"].iloc[0].date()) if not ats_df.empty else "unknown"
-    venue_agg = (
-        ats_df[ats_df["mpid"].str.len() > 0]
+
+    week_start = str(ats_latest["week_start"].iloc[0].date())
+
+    # Filter valid mpid rows
+    valid = ats_latest[ats_latest["mpid"].str.len() > 0]
+
+    latest_agg = (
+        valid
         .groupby(["mpid", "venue_name"])
-        .agg(total_shares=("shares", "sum"), total_trades=("trades", "sum"), n_symbols=("ticker", "nunique"))
+        .agg(
+            total_shares=("shares", "sum"),
+            total_trades=("trades", "sum"),
+            n_symbols=("ticker", "nunique"),
+        )
         .reset_index()
-        .sort_values("total_shares", ascending=False)
     )
-    venues = venue_agg.head(20).to_dict("records")
+    all_shares_latest = float(latest_agg["total_shares"].sum())
+    if all_shares_latest > 0:
+        latest_agg["share_of_total_pct"] = (
+            latest_agg["total_shares"] / all_shares_latest * 100
+        ).round(2)
+    else:
+        latest_agg["share_of_total_pct"] = None
+
+    # WoW: compute prior week share_of_total_pct per mpid
+    if ats_prior is not None and not ats_prior.empty:
+        prior_valid = ats_prior[ats_prior["mpid"].str.len() > 0]
+        prior_agg = (
+            prior_valid
+            .groupby("mpid")
+            .agg(prior_shares=("shares", "sum"))
+            .reset_index()
+        )
+        all_shares_prior = float(prior_agg["prior_shares"].sum())
+        if all_shares_prior > 0:
+            prior_agg["prior_pct"] = (
+                prior_agg["prior_shares"] / all_shares_prior * 100
+            ).round(2)
+        else:
+            prior_agg["prior_pct"] = None
+
+        merged = latest_agg.merge(prior_agg[["mpid", "prior_pct"]], on="mpid", how="left")
+        merged["wow_pp"] = (merged["share_of_total_pct"] - merged["prior_pct"]).round(2)
+        # New venue this week (absent prior)
+        merged["wow_is_new"] = merged["prior_pct"].isna()
+    else:
+        merged = latest_agg.copy()
+        merged["wow_pp"] = None
+        merged["wow_is_new"] = False
+
+    merged = merged.sort_values("total_shares", ascending=False)
+    venues = merged.head(20).to_dict("records")
+
     for v in venues:
         v["total_shares"] = int(v["total_shares"])
         v["total_trades"] = int(v["total_trades"])
-        v["n_symbols"] = int(v["n_symbols"])
+        v["n_symbols"]    = int(v["n_symbols"])
+        # Convert numpy scalars / NaN to Python native for JSON serialisation
+        sot = v.get("share_of_total_pct")
+        v["share_of_total_pct"] = round(float(sot), 2) if sot is not None and not (isinstance(sot, float) and np.isnan(sot)) else None
+        wow = v.get("wow_pp")
+        v["wow_pp"] = round(float(wow), 2) if wow is not None and not (isinstance(wow, float) and np.isnan(wow)) else None
+        v["wow_is_new"] = bool(v.get("wow_is_new", False))
+
     return {
         "week_start": week_start,
         "venues": venues,
-        "n_symbols_total": int(ats_df["ticker"].nunique()),
+        "n_symbols_total": int(ats_latest["ticker"].nunique()),
     }
+
+
+def _emit_pane_json(
+    rows_clean: list[dict],
+    ats_table: dict,
+    *,
+    panel_latest: str,
+    panel_dates: int,
+    below_floor: bool,
+    n_with_oe: int,
+    n_with_ats: int,
+    ats_lag_note: str | None,
+    built: str,
+    out_path: Path | None = None,
+) -> Path:
+    """Write the interim Terminal Dark Pool pane artifact → site/darkpool_eod.json.
+
+    Reuses the already-numpy-cleaned per-ticker rows (same payload the HTML desk
+    embeds), so any Terminal Flow pane can consume it via a plain fetch instead
+    of scraping the page. Additive + guarded: the caller wraps this in try/except
+    so a failure here can NEVER break the HTML desk.
+
+    Tier is EOD — daily FINRA-facility off-exchange share + weekly per-ATS venues.
+    The intraday tick-feed fields (per-print off-exchange %, price levels, biggest
+    prints) are emitted as explicit nulls under `pending`; they are never faked.
+    `source` is debranded (no data-vendor name — house law).
+    """
+    payload = {
+        "schema": PANE_SCHEMA,
+        "tier": "eod",                         # -> "intraday" once an equity-tick feed lands
+        "source": "finra_facilities",          # debranded — no data-vendor name
+        "asof": panel_latest,                  # daily off-exchange data date
+        "panel_dates": panel_dates,
+        "below_floor": below_floor,
+        "n_with_oe": n_with_oe,
+        "n_with_ats": n_with_ats,
+        "universe": rows_clean,                # full ranked per-ticker list (oe_share, oe_trend_pp, oe_z, spark20, ats_*)
+        "venues": {                            # weekly ATS venue rollup + WoW
+            "week_start": ats_table.get("week_start"),
+            "lag_note": ats_lag_note,
+            "n_symbols_total": ats_table.get("n_symbols_total"),
+            "rows": ats_table.get("venues", []),
+        },
+        "pending": {                           # intraday tick-feed fields — explicit null, never faked
+            "intraday_oe_share": None,
+            "price_levels": None,
+            "biggest_prints": None,
+            "note": "intraday per-print off-exchange data pending equity-tick feed",
+        },
+        "built": built,
+    }
+    out = out_path or (config.ROOT / "site" / PANE_JSON_NAME)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
+    log.info("wrote %s (%d names, tier=eod, %d with_oe)", out, len(rows_clean), n_with_oe)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -269,23 +455,51 @@ def main() -> int:
     # Load yahoo volumes for off-exchange share computation
     yahoo_vol = _load_yahoo_volume(tickers)
 
-    # Compute per-name stats
-    ticker_stats = _compute_ticker_stats(panel_universe, yahoo_vol)
+    # Load ATS (latest two weeks for wow_pp)
+    ats_latest, ats_prior = _load_ats_two()
+    ats_week_start: pd.Timestamp | None = None
+    if ats_latest is not None and not ats_latest.empty:
+        ats_week_start = ats_latest["week_start"].iloc[0]
+        log.info("ATS latest week: %s, prior: %s",
+                 str(ats_week_start.date()) if ats_week_start is not None else "none",
+                 str(ats_prior["week_start"].iloc[0].date()) if ats_prior is not None else "none")
+
+    # Compute per-name stats (all qualifying names, no cap)
+    ticker_stats, n_with_oe, n_with_ats = _compute_ticker_stats(
+        panel_universe, yahoo_vol, ats_latest, ats_week_start
+    )
     ticker_stats = _sort_ticker_stats(ticker_stats)
 
-    # Cap table for rendering
-    table_rows = ticker_stats[:TABLE_CAP]
-
-    # ATS venue table
-    ats_df = _load_ats()
-    ats_table = _compute_ats_venue_table(ats_df)
+    # ATS venue table (with wow_pp)
+    ats_table = _compute_ats_venue_table(ats_latest, ats_prior)
 
     # Data freshness
-    panel_latest = str(panel["date"].max().date())
-    panel_dates  = n_dates
-    below_floor  = n_dates < MIN_DATES
-    ats_week_start = ats_table.get("week_start")
-    ats_lag_note  = "2–4 wk publication lag" if ats_week_start else None
+    panel_latest   = str(panel["date"].max().date())
+    panel_dates    = n_dates
+    below_floor    = n_dates < MIN_DATES
+    ats_week_label = ats_table.get("week_start")
+    ats_lag_note   = "2–4 wk publication lag" if ats_week_label else None
+
+    # JSON payload for client-side rendering — all qualifying rows, no cap
+    # Use a custom encoder that safely handles numpy types and None
+    def _clean(v):
+        if v is None:
+            return None
+        if isinstance(v, float) and np.isnan(v):
+            return None
+        if isinstance(v, (np.integer,)):
+            return int(v)
+        if isinstance(v, (np.floating,)):
+            return float(v)
+        return v
+
+    def _clean_row(r: dict) -> dict:
+        return {k: _clean(v) if not isinstance(v, list) else [_clean(x) for x in v]
+                for k, v in r.items()}
+
+    rows_clean = [_clean_row(r) for r in ticker_stats]
+    # <\/ guard: venue names are external FINRA strings — prevent </script> breakout
+    table_json = json.dumps(rows_clean, separators=(",", ":")).replace("</", r"<\/")
 
     # Render
     site = config.ROOT / "site"
@@ -304,17 +518,30 @@ def main() -> int:
         panel_latest=panel_latest,
         panel_dates=panel_dates,
         below_floor=below_floor,
-        table_rows=table_rows,
         ats_table=ats_table,
         ats_lag_note=ats_lag_note,
         n_tickers_total=len(ticker_stats),
         display_universe_size=len(display_universe) or len(tickers),
-        has_oe_share=any(r["oe_share"] is not None for r in table_rows),
+        n_with_oe=n_with_oe,
+        n_with_ats=n_with_ats,
+        table_json=table_json,
     )
     out = site / "darkpool.html"
     write_page(out, html)
-    log.info("wrote %s (%d KB, %d rows, %d dates)",
-             out, len(html) // 1024, len(table_rows), panel_dates)
+    log.info("wrote %s (%d KB, %d rows, %d dates, %d with_oe, %d with_ats)",
+             out, len(html) // 1024, len(ticker_stats), panel_dates, n_with_oe, n_with_ats)
+
+    # Interim Terminal Dark Pool pane artifact (EOD tier). Additive + guarded:
+    # never blocks the desk. Upgrades to intraday per-print once a tick feed lands.
+    try:
+        _emit_pane_json(
+            rows_clean, ats_table,
+            panel_latest=panel_latest, panel_dates=panel_dates, below_floor=below_floor,
+            n_with_oe=n_with_oe, n_with_ats=n_with_ats, ats_lag_note=ats_lag_note, built=built,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("pane json emit failed (non-fatal): %s", e)
+
     return 0
 
 

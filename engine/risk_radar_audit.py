@@ -1,7 +1,8 @@
 """Risk Radar — forward-outcome log + deterministic grading (Phase B).
 
 Every daily risk_radar snapshot is APPENDED to data/risk_radar/forward_log.jsonl (idempotent
-by as-of date). Once an entry's horizon matures, it is GRADED deterministically against the
+by as-of date; every writer self-gates on ledger_lane_armed(), so off-lane renders are
+read-only). Once an entry's horizon matures, it is GRADED deterministically against the
 realized SPY path: did a >= threshold drawdown actually occur within H business days? Each
 alert is then a true-positive or a false-positive. The rolling scorecard (realized precision /
 recall / false-positive rate per state-band and per scare-type and per horizon) is what the
@@ -28,6 +29,25 @@ HORIZONS = {"h5": 5, "h10": 10, "h21": 21}        # business-day forward windows
 DD_THRESHOLDS = (0.05, 0.08)                       # a >=5% pullback = a "drawdown"; 8% = a bigger one
 PRIMARY_DD = 0.05
 ALERT_STATES = ("elevated", "risk-off")            # which states count as a loud alert for precision
+
+
+def ledger_lane_armed() -> bool:
+    """True only on a ledger-advancing collect lane (COLLECT_LANE=nightly, legacy
+    alias US_LANE). House law: nightly is the SOLE advancer of data/ forward
+    ledgers — this log's only advancing lane is daily.yml's engine job (job-level
+    COLLECT_LANE=nightly; verified via git log on data/risk_radar/forward_log.jsonl:
+    every advancing commit is that job's "engine: regime update"). engine/run.py
+    also runs on closing-bell (whose contract, closing-bell.yml, is that every
+    ledger writer self-gates on COLLECT_LANE) and the engine-render/render
+    re-render lanes; there the radar still renders and snapshot_and_grade degrades
+    to a pure scorecard read, but log/grade must not advance — appends are
+    idempotent-by-asof with FIRST-WRITER-WINS, so a mid-session off-lane append
+    would permanently displace the nightly row. Canonical gate:
+    engine/risk_radar_intl_audit.ledger_lane_armed (#2684); ignition sibling
+    engine/ignition_audit.ledger_lane_armed (#2693)."""
+    import os
+    lane = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return lane.lower() == "nightly"
 
 
 def _path(root=None) -> Path:
@@ -89,8 +109,12 @@ def _entry_from_snapshot(snap: dict) -> dict | None:
 
 
 def log_snapshot(snap: dict, root=None) -> bool:
-    """Append today's snapshot to the forward log (idempotent by as-of). Returns True if added."""
+    """Append today's snapshot to the forward log (idempotent by as-of). Returns True if added.
+    Ledger-advancing lanes only (ledger_lane_armed): off-lane calls no-op, returning False."""
     try:
+        if not ledger_lane_armed():
+            log.debug("risk_radar_audit log skipped: lane not armed")
+            return False
         entry = _entry_from_snapshot(snap)
         if entry is None:
             return False
@@ -146,8 +170,15 @@ def _grade_entry(entry: dict, spy: pd.Series) -> dict | None:
 
 
 def grade_log(root=None) -> int:
-    """Grade every matured, ungraded entry against the realized SPY path. Returns # newly graded."""
+    """Grade every matured, ungraded entry against the realized SPY path. Returns # newly graded.
+
+    Ledger-advancing lanes only (ledger_lane_armed): grades are keep-first-permanent,
+    so an off-lane grade computed from a mid-session store would stick — no-op, 0.
+    """
     try:
+        if not ledger_lane_armed():
+            log.debug("risk_radar_audit grade skipped: lane not armed")
+            return 0
         p = _path(root)
         rows = _read(p)
         if not rows:
@@ -214,7 +245,11 @@ def scorecard(root=None) -> dict:
 
 def snapshot_and_grade(snap: dict, root=None) -> dict:
     """Convenience for run.py: log today's snapshot, grade matured entries, return the scorecard
-    (which the engine attaches to latest['risk_radar']['forward_log'])."""
+    (which the engine attaches to latest['risk_radar']['forward_log']).
+
+    Off-lane (ledger_lane_armed() False) the log/grade legs no-op and this is a
+    pure scorecard read — the display payload stays populated on the
+    closing-bell / engine-render / render lanes without advancing the ledger."""
     log_snapshot(snap, root=root)
     grade_log(root=root)
     return scorecard(root=root)

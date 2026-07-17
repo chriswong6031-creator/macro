@@ -67,13 +67,16 @@ DEFAULT_ROOTS = [
 
 # ── store helpers ─────────────────────────────────────────────────────────────
 
-def _store_root_path() -> Path:
-    """Path to the thetadata_eod store root (env override or default)."""
-    env = os.environ.get("THETADATA_STORE")
-    if env:
-        return Path(env)
-    # Default: theta-ops-wt pattern (matches flow-ops-wt convention)
-    return Path.home() / "theta-ops-wt" / "data" / "thetadata_eod"
+def _store_root_path() -> Path | None:
+    """Resolve the thetadata_eod store root via the canonical resolver.
+
+    WP-RESOLVER: THETADATA_STORE env → data_dir()/thetadata_eod → ops-wt,
+    every candidate content-checked (empty stub dirs do not resolve).
+    Returns None when nothing resolves — build() then refuses to write an
+    all-null baseline artifact.
+    """
+    from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
+    return resolve_thetadata_store(required=False, purpose="build_unusual_baseline")
 
 
 def _out_path() -> Path:
@@ -286,6 +289,13 @@ def build(roots: list[str], store: Path | None = None,
     """
     if store is None:
         store = _store_root_path()
+    if store is None:
+        # Fail-loud contract (WP-RESOLVER): this builder publishes to R2 — an
+        # all-null payload built from a missing store must never be written.
+        raise RuntimeError(
+            "unusual_baseline: no ThetaData store resolves via the canonical "
+            "chain (THETADATA_STORE env / data_dir / ops-wt) — refusing to "
+            "build an all-null baseline artifact; pass --store or fix the env")
 
     asof = date.today().isoformat()
     roots_out: dict[str, dict] = {}
@@ -359,7 +369,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--store", default=None,
-        help="Path to ThetaData EOD store root (default: THETADATA_STORE env or ~/theta-ops-wt/...)",
+        help="Path to ThetaData EOD store root (default: canonical resolver — "
+             "THETADATA_STORE env, then data_dir()/thetadata_eod, then ops-wt)",
     )
     parser.add_argument(
         "--dry-run", action="store_true", default=False,
@@ -377,7 +388,12 @@ def main(argv: list[str] | None = None) -> int:
     roots = [r.upper() for r in args.roots]
     log.info("unusual_baseline: roots=%d publish=%s dry_run=%s", len(roots), args.publish, args.dry_run)
 
-    payload = build(roots=roots, store=store, publish=args.publish, dry_run=args.dry_run)
+    try:
+        payload = build(roots=roots, store=store, publish=args.publish, dry_run=args.dry_run)
+    except RuntimeError as e:
+        # WP-RESOLVER fail-loud: no store resolves → exit nonzero, write nothing.
+        log.error("%s", e)
+        return 1
 
     n_ok   = sum(1 for v in payload["roots"].values() if v.get("mean_vol_30d") is not None)
     n_null = sum(1 for v in payload["roots"].values() if v.get("mean_vol_30d") is None)

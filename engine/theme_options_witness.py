@@ -46,7 +46,9 @@ OI TIMING LAW (engine/thetadata_store.py docstring):
   Same-day OI in a day-t signal is a lookahead bug.
 
 STORE ACCESS:
-  Reads from THETADATA_STORE env → /Users/chriswong/theta-ops-wt/data/thetadata_eod.
+  Canonical resolver — engine.thetadata_store.resolve_thetadata_store:
+  THETADATA_STORE env → data_dir()/thetadata_eod → ops-wt store, each candidate
+  existence- AND content-checked (empty stub dirs never resolve).
   YOUR WORKTREE WILL NOT HAVE THE STORE (untracked-store false-null trap).
   When store absent → keep-last-real: if the committed artifact holds real
   legs (store_present true) newer than _KEEP_REAL_DAYS, the write is SKIPPED
@@ -115,11 +117,6 @@ _CROSSWALK_YML = _REPO_ROOT / "config" / "theme_crosswalk.yml"
 _NW_OUT = _REPO_ROOT / "data" / "neuralweb" / "theme_options_witness.json"
 _SITE_OUT = _REPO_ROOT / "site" / "basketdata" / "options_witness.json"
 
-# Main checkout fallback for THETADATA_STORE (the untracked-store pattern)
-_MAIN_CHECKOUT_THETA = Path(
-    "/Users/chriswong/theta-ops-wt/data/thetadata_eod"
-)
-
 # ---------------------------------------------------------------------------
 # Compute parameters
 # ---------------------------------------------------------------------------
@@ -148,26 +145,23 @@ _KEEP_REAL_DAYS = 6
 
 
 # ---------------------------------------------------------------------------
-# Store resolution — mirrors thetadata_store.store_root() pattern
+# Store resolution — canonical resolver (WP-RESOLVER)
 # ---------------------------------------------------------------------------
 
 def _theta_store() -> Optional[Path]:
-    """Resolve the ThetaData store root. Returns None when absent."""
-    env = os.environ.get("THETADATA_STORE")
-    if env:
-        p = Path(env)
-        if p.exists():
-            return p
-        log.warning("theme_options_witness: THETADATA_STORE=%s does not exist", env)
-        return None
-    # Try the standard ops-worktree path
-    if _MAIN_CHECKOUT_THETA.exists():
-        return _MAIN_CHECKOUT_THETA
-    # Try repo-local data/thetadata_eod (test fixtures land here)
-    local = _REPO_ROOT / "data" / "thetadata_eod"
-    if local.exists():
-        return local
-    return None
+    """Resolve the ThetaData store root via the canonical resolver.
+
+    Delegates to engine.thetadata_store.resolve_thetadata_store (env →
+    data_dir()/thetadata_eod → ops-wt; every candidate existence- AND
+    content-checked, so an empty stub dir does NOT resolve — the exact shape
+    of the 0/18 all-suppressed options_witness incident). The ops-wt path now
+    lives in ONE place (engine/thetadata_store._OPS_WT_STORE), not here.
+
+    Returns None when nothing resolves; build() then applies keep-last-real
+    instead of clobbering the committed real artifact with a null.
+    """
+    from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
+    return resolve_thetadata_store(required=False, purpose="theme_options_witness")
 
 
 # ---------------------------------------------------------------------------
@@ -880,8 +874,8 @@ def compute_theme_options_witness(
 
     if not store_present:
         log.warning(
-            "theme_options_witness: ThetaData store not found "
-            "(THETADATA_STORE env unset; theta-ops-wt absent; local fixture absent). "
+            "theme_options_witness: ThetaData store not found — nothing resolves "
+            "via the canonical chain (THETADATA_STORE env / data_dir / ops-wt). "
             "Emitting honest null artifact. Exit 0."
         )
 

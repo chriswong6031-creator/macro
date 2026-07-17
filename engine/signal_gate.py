@@ -213,6 +213,10 @@ def gate(ticker: str, daily_close) -> dict:
     v["weight"] = confluence_tiers.WEIGHTS.get(tier_c, 0.0)
     v["tier_sub"] = casc.get("sub")           # deep|shallow (display modifier; equal weight)
     v["bars_to_cross"] = casc.get("bars_to_cross")
+    # 2D/3D RSI-MACD histogram (display-tier glyph feed for the boards' MACD D/2D/3D
+    # column; sign → ▲/▼). Carried on every verdict incl. non-eligible — never a gate input.
+    v["hist_d2"] = casc.get("hist_d2")
+    v["hist_d3"] = casc.get("hist_d3")
     # PROVISIONAL-basis flag (W6 #22): a T3 grade is projected off the incomplete 2D resample
     # tail and repaints at a measured 23.8% US / 15.1% CN of fresh fires — above the ~15% flip
     # criterion (T1/T2 measured 5.3%/8.8%, fine). Boards badge it so the trader knows the tier

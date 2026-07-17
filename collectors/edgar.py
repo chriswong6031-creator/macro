@@ -286,8 +286,11 @@ def _cache_age_days() -> float | None:
 def fetch_company_tickers(max_age_days: int = 30, force: bool = False) -> bool:
     """Fetch and cache the SEC broad CIK→ticker map (company_tickers.json).
 
-    Called once per month by the collector pipeline. The file is committed to
-    the repo (data/edgar/company_tickers.json) because:
+    Called once per month by the collector pipeline. The file is a LOCAL,
+    GITIGNORED cache (data/edgar/company_tickers.json — see .gitignore), so
+    the mtime age gate below is valid: the file is never rewritten by a git
+    checkout, mtime = the host's own last fetch (contrast the #2690
+    committed-artifact mtime class, which this is NOT). It exists because:
       • engine/name_resolver reads it keylessly at query time to reach ~10k-name
         coverage (vs 4,101 without it).
       • www.sec.gov enforces a declared User-Agent (SEC fair-access policy); our

@@ -51,6 +51,8 @@ ALPHA_LOOKBACK = 120       # trailing days of risk-adjusted strength for the alp
 ALPHA_REBAL = "MS"         # POINT-IN-TIME rebalance grid (month-start) — a strength
                            # vector is recomputed from data up to each rebalance and
                            # held forward, so no future ranking ever reweights the past
+_STALE_TAIL_GRACE = 5      # bars a member may ride the ffill past its last real bar
+                           # before it exits the live set (suspension/holiday tolerance)
 _CACHE: dict[str, pd.DataFrame | None] = {}
 
 
@@ -90,12 +92,74 @@ def _alpha_weights_pit(present: list[str], ret: pd.DataFrame, mask: pd.DataFrame
     return W
 
 
+def _parquet_last_date(path) -> pd.Timestamp | None:
+    """Last index date of a per-ticker parquet WITHOUT reading any data column —
+    ``pd.read_parquet(path, columns=[])`` loads only the index (the
+    engine/hk_freshness probe idiom), so probing a fallback's recency costs ~1ms
+    on the render path instead of a full 5-column read. None on empty / non-date
+    index / any error — the caller treats None as "no opinion, skip the guard"."""
+    try:
+        idx = pd.DatetimeIndex(pd.read_parquet(path, columns=[]).index)
+        if not len(idx):
+            return None
+        if idx.tz is not None:              # must compare cleanly with a naive deep tape
+            idx = idx.tz_localize(None)
+        last = idx.max()
+        return None if pd.isna(last) else last
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _splice_fresher_tail(ticker: str, deep: pd.DataFrame, fresh: pd.DataFrame,
+                         store: str = "data/stocks") -> pd.DataFrame:
+    """Append a FRESHER fallback store's tail onto a stale deep-store tape. The tail is
+    ratio-rescaled at the last shared bar so an adjustment-basis mismatch between the
+    two stores can't manufacture a seam return; volume passes through unscaled.
+    Returns `deep` unchanged when it is already current (the common case)."""
+    if deep.empty or fresh.empty or "close" not in deep.columns or "close" not in fresh.columns:
+        return deep
+    deep = deep.copy()
+    deep.index = pd.DatetimeIndex(deep.index)
+    fresh = fresh.copy()
+    fresh.index = pd.DatetimeIndex(fresh.index)
+    # tz-strip both tapes — a tz-aware store vs a naive one must seam-compare and
+    # concat instead of raising (a raise here would skip the heal, not just a row)
+    if deep.index.tz is not None:
+        deep.index = deep.index.tz_localize(None)
+    if fresh.index.tz is not None:
+        fresh.index = fresh.index.tz_localize(None)
+    fresh = fresh[~fresh.index.duplicated(keep="last")].sort_index()
+    if fresh.index.max() <= deep.index.max():
+        return deep
+    for c in ("open", "high", "low"):
+        if c not in fresh.columns:
+            fresh[c] = fresh["close"]
+    tail = fresh[fresh.index > deep.index.max()]
+    if tail.empty:
+        return deep
+    factor = 1.0
+    common = deep.index.intersection(fresh.index)
+    if len(common):
+        d = common.max()
+        dc, fc = float(deep.loc[d, "close"]), float(fresh.loc[d, "close"])
+        if np.isfinite(dc) and np.isfinite(fc) and fc > 0 and dc > 0:
+            factor = dc / fc
+    tail = tail.copy()
+    px = [c for c in ("open", "high", "low", "close") if c in tail.columns]
+    tail[px] = tail[px] * factor
+    log.warning("basket member %s: deep OHLCV stale (ends %s) — spliced %d fresher rows "
+                "from %s", ticker, deep.index.max().date(), len(tail), store)
+    return pd.concat([deep, tail])
+
+
 def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
     """Per-member OHLCV, preferring the deep baskets store, then data/stocks (already OHLCV),
     then the China A-share store (data/china_stocks, .SS/.SZ tickers — close/high/low/volume, no
     open), then the yahoo store (close+volume → high/low/open synthesised as the close). Cached.
     The china_stocks fallback never collides with the US stores (A-share tickers carry a .SS/.SZ
-    suffix), so it makes the basket machinery China-capable without touching the US path."""
+    suffix), so it makes the basket machinery China-capable without touching the US path.
+    Deep store preferred but recency-probed against the first existing fallback (index-only read)
+    and a stale/empty deep tape is healed from it."""
     if ticker in _CACHE:
         return _CACHE[ticker]
     out: pd.DataFrame | None = None
@@ -106,28 +170,56 @@ def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
     try:
         if bp.exists():
             df = pd.read_parquet(bp)
-            out = df
-        elif sp.exists():
-            df = pd.read_parquet(sp)            # close/high/low/volume (no open)
-            df = df.copy()
-            if "open" not in df.columns:
-                df["open"] = df["close"]
-            out = df
-        elif cp.exists():
-            df = pd.read_parquet(cp)            # A-share close/high/low/volume (no open)
-            df = df.copy()
-            if "open" not in df.columns:
-                df["open"] = df["close"]
-            out = df
-        elif yp.exists():
-            df = pd.read_parquet(yp)            # close[,volume]
-            df = df.copy()
-            for c in ("open", "high", "low"):
-                if c not in df.columns:
-                    df[c] = df["close"]
-            if "volume" not in df.columns:
-                df["volume"] = np.nan
-            out = df
+            if len(df):
+                out = df
+                # 2026-07 staleness audit (#2697/#2698): the nightly deep-store refresh
+                # covers only the NDX/Russell finviz lists, so a membership-only name can
+                # freeze (522 tickers ended 06-29) and SHADOW a fresher fallback tape.
+                # The probe is an INDEX-ONLY read (columns=[], the hk_freshness idiom):
+                # the all-fresh common case costs no second full parquet read on the
+                # render path; the full fallback read + tail-splice run only on an
+                # actual probed lead.
+                try:
+                    di = pd.DatetimeIndex(df.index)
+                    deep_last = (di.tz_localize(None) if di.tz is not None else di).max()
+                except Exception:  # noqa: BLE001
+                    deep_last = pd.NaT
+                for fpath, store in ((sp, "data/stocks"), (cp, "data/china_stocks"),
+                                     (yp, "data/yahoo")):
+                    if not fpath.exists():
+                        continue
+                    fb_last = _parquet_last_date(fpath)
+                    if fb_last is None:
+                        continue  # empty/unreadable candidate has no opinion — next store
+                    try:
+                        if pd.isna(deep_last) or fb_last > deep_last:
+                            out = _splice_fresher_tail(ticker, out, pd.read_parquet(fpath), store)
+                    except Exception as e:  # noqa: BLE001
+                        log.debug("basket member %s: tail-splice skipped: %s", ticker, e)
+                    break  # first PROBEABLE fallback decides — the fall-through preference order
+            # an EMPTY deep-store file must not shadow a full fallback tape — fall through
+        if out is None:
+            if sp.exists():
+                df = pd.read_parquet(sp)            # close/high/low/volume (no open)
+                df = df.copy()
+                if "open" not in df.columns:
+                    df["open"] = df["close"]
+                out = df
+            elif cp.exists():
+                df = pd.read_parquet(cp)            # A-share close/high/low/volume (no open)
+                df = df.copy()
+                if "open" not in df.columns:
+                    df["open"] = df["close"]
+                out = df
+            elif yp.exists():
+                df = pd.read_parquet(yp)            # close[,volume]
+                df = df.copy()
+                for c in ("open", "high", "low"):
+                    if c not in df.columns:
+                        df[c] = df["close"]
+                if "volume" not in df.columns:
+                    df["volume"] = np.nan
+                out = df
         if out is not None:
             out = out[[c for c in OHLCV_COLS if c in out.columns]].copy()
             out.index = pd.DatetimeIndex(out.index)
@@ -252,7 +344,8 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
         cols = {t: loaded[t][col].reindex(idx) for t in present if col in loaded[t].columns}
         return pd.DataFrame(cols, index=idx)
 
-    close = _field("close").ffill()
+    close_raw = _field("close")
+    close = close_raw.ffill()
     high = _field("high").ffill()
     low = _field("low").ffill()
     open_ = _field("open").ffill()
@@ -265,6 +358,28 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
     r_open = open_ / prev_close - 1.0
 
     mask = _live_mask(members, idx, present, pit=pit, close=close)
+    # 2026-07 staleness audit: a member whose tape ENDED (deep-store fetch gap, delisting
+    # missing its `removed` stamp) would otherwise ride the ffill at a frozen price,
+    # contributing 0% daily returns that dilute every subsequent basket move (ai_infra
+    # printed −10% off its June top while its median member was −23%). Exit each member
+    # from the live set a few grace bars past its last REAL bar, and disclose in meta.
+    stale_tail = []
+    for t in present:
+        lv = close_raw[t].last_valid_index()
+        if lv is None or lv >= idx[-1]:
+            continue
+        pos_lv = int(idx.get_loc(lv))
+        if (len(idx) - 1 - pos_lv) <= _STALE_TAIL_GRACE:
+            continue
+        cutoff = idx[pos_lv + _STALE_TAIL_GRACE]
+        live_after = mask.loc[mask.index > cutoff, t]
+        if live_after.any():
+            mask.loc[mask.index > cutoff, t] = False
+            stale_tail.append(t)
+    if stale_tail:
+        log.warning("basket candle: %d member tape(s) stale past %d-bar grace — exited "
+                    "from the live set at tape end: %s", len(stale_tail), _STALE_TAIL_GRACE,
+                    ",".join(sorted(stale_tail)[:12]))
 
     # daily renormalised weights over the live set
     lookahead = False
@@ -312,6 +427,9 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
     meta = {
         "mode": mode, "n_total": n_total, "n_with_ohlcv": len(present),
         "n_live": n_live_now, "n_live_with_volume": with_vol_now,
+        # stale-tape disclosure (nulls printed, not hidden): members exited early
+        # because their OHLCV tape ended before the basket's last bar.
+        "n_stale_tail": len(stale_tail), "stale_tail": sorted(stale_tail)[:12],
         "coverage_pct": round(with_vol_now / n_live_now, 3) if n_live_now else None,
         "as_of": str(cand.index.max().date()) if not cand.empty else None,
         "start": str(cand.index.min().date()) if not cand.empty else None,

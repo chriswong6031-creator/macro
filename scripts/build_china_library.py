@@ -689,6 +689,36 @@ def _setup_score(rec: dict) -> tuple[float, dict] | None:
     return setup_score(rec, alpha_weight=CN_ALPHA_WEIGHT)
 
 
+def _detach_board_track_plumbing(bt) -> tuple[dict | None, dict | None]:
+    """Pop grade()'s F7 ``fwd_excess_map_21d`` off the board-track dict before it is
+    attached to the china_standouts artifact. The map is INTERNAL plumbing keyed by
+    (ticker, date) TUPLES — json.dumps rejects tuple KEYS (``default=`` only covers
+    values), so leaving it on ``bt`` crashes the final artifact write and the board
+    goes stale on the persisted fallback (07-13→07-16 outage, 5×SLA). Returns
+    (bt, fwd_map); ``bt`` is mutated in place. The tuple keys stay intact for the
+    one legitimate consumer, china_standout_audit.run_attribution."""
+    if not isinstance(bt, dict):
+        return bt, None
+    return bt, bt.pop("fwd_excess_map_21d", None)
+
+
+def _find_bad_json_keys(obj, path: str = "$") -> list[str]:
+    """Locate dict keys json.dumps would reject (anything not str/int/float/bool/None),
+    returning JSONPath-ish strings. Diagnostic for the artifact-write guard below —
+    a bare TypeError from json.dumps never says WHICH key, so regressions were
+    unlocatable from CI logs."""
+    bad: list[str] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if not isinstance(k, (str, int, float, bool, type(None))):
+                bad.append(f"{path}.{k!r} (key type {type(k).__name__})")
+            bad.extend(_find_bad_json_keys(v, f"{path}.{k}"))
+    elif isinstance(obj, (list, tuple)):
+        for i, v in enumerate(obj):
+            bad.extend(_find_bad_json_keys(v, f"{path}[{i}]"))
+    return bad
+
+
 def main(alpha: dict | None = None) -> dict | None:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "chinastockdata"
@@ -1618,6 +1648,20 @@ def main(alpha: dict | None = None) -> dict | None:
         r["stage_sublabel_zh"] = _stage_res.get("sublabel_zh")
         r["stage_detail"] = _stage_res.get("detail") or {}
         r["why_ranked"] = _why_ranked(r)
+        # MACD D/2D/3D column feed (display-tier, no rank/stage change): the cascade's
+        # 2D/3D RSI-MACD histograms off the gate verdict (sign → ▲/▼ glyph) + the daily
+        # price-MACD hist last value (same construction as the ripening rows below).
+        r["macd_d2"] = _sv.get("hist_d2")
+        r["macd_d3"] = _sv.get("hist_d3")
+        try:
+            _c_b = _close_map.get(_t)
+            _c_b = _c_b.dropna() if _c_b is not None else None
+            if _c_b is not None and len(_c_b) >= 35:
+                _mh_b = _macd_parts(_c_b)["hist"].dropna()
+                if len(_mh_b):
+                    r["macd_hist_d"] = round(float(_mh_b.iloc[-1]), 4)
+        except Exception:  # noqa: BLE001 — display-only, never fatal
+            pass
 
     # After stage assignment: propagate muted_entry from stage_detail to the row dict
     # so Jinja can suppress green banding without reading the nested detail dict.
@@ -1658,11 +1702,25 @@ def main(alpha: dict | None = None) -> dict | None:
                 "maxup_pct": _hold_s.get("maxup_pct"),
                 "invalidation": _hold_s.get("invalidation"),
             }
+        # MACD D/2D/3D column feed (display-tier; only computed for rows that pass the
+        # RAN filters above, so the _macd_parts cost stays on the small shelf set).
+        _ran_macd_d: float | None = None
+        try:
+            _c_r = _close_w.dropna() if _close_w is not None else None
+            if _c_r is not None and len(_c_r) >= 35:
+                _mh_r = _macd_parts(_c_r)["hist"].dropna()
+                if len(_mh_r):
+                    _ran_macd_d = round(float(_mh_r.iloc[-1]), 4)
+        except Exception:  # noqa: BLE001 — display-only, never fatal
+            pass
         _ran_rows.append({
             "ticker": _t, "name": _name_w or _t, "sector": _sector_w or "",
             "cross_date": _lci["cross_date"],
             "sessions_since": _lci["sessions_since"],
             "pct_since": _lci.get("pct_since"),
+            "macd_hist_d": _ran_macd_d,
+            "macd_d2": _sv.get("hist_d2"),
+            "macd_d3": _sv.get("hist_d3"),
             "sublabel": _stage_r.get("sublabel"),
             "basing_chip": (_stage_r.get("detail") or {}).get("basing_chip"),
             "launched_chip": (_stage_r.get("detail") or {}).get("launched_chip"),
@@ -1824,6 +1882,10 @@ def main(alpha: dict | None = None) -> dict | None:
             "spot_pct_in_range": (_ws.get("base") or {}).get("spot_pct_in_range"),
             "ret_5d": _ret5d,
             "macd_hist_d": _macd_hist_last,
+            # 2D/3D RSI-MACD histogram off the gate verdict (display-tier glyph feed;
+            # _sv may be None for names outside the verdict map → slots render ·).
+            "macd_d2": (_sv or {}).get("hist_d2"),
+            "macd_d3": (_sv or {}).get("hist_d3"),
             "macd_hist_slope": (
                 1 if (_macd_hist_last is not None and _macd_hist_prev is not None
                       and _macd_hist_last > _macd_hist_prev)
@@ -2061,6 +2123,9 @@ def main(alpha: dict | None = None) -> dict | None:
                 log.warning("china_regime_store.append failed (%s) — board track continues", _rs_e)
             _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
             _bt = china_standout_track.grade()
+            # Detach the tuple-keyed F7 map BEFORE _bt reaches wide/setups — it must
+            # never ride into the JSON artifact (see _detach_board_track_plumbing).
+            _bt, _fwd_map = _detach_board_track_plumbing(_bt)
             if _bt.get("available"):
                 # Interim (unrealized) mark-to-latest-close read — shown while the forward ledger
                 # is still pre-maturity so the panel isn't a black box until ~07-29. Labeled
@@ -2083,8 +2148,8 @@ def main(alpha: dict | None = None) -> dict | None:
                 from engine import china_standout_audit as _cn_audit  # noqa: PLC0415
                 from engine.china_standout_track import _bench_close as _cn_bench  # noqa: PLC0415,SLF001
                 _bench = _cn_bench()
-                # F7: thread the pre-computed map (grade() already opened these stores)
-                _fwd_map = _bt.get("fwd_excess_map_21d") if isinstance(_bt, dict) else None
+                # F7: thread the pre-computed map (grade() already opened these stores);
+                # _fwd_map was detached from _bt right after grade() above.
                 _audit_result = _cn_audit.run_attribution(
                     bench_close=_bench, lane=_lane, fwd_excess_map=_fwd_map,
                 )
@@ -2245,8 +2310,17 @@ def main(alpha: dict | None = None) -> dict | None:
                      len(_ripening_rows) + len(_ripening_falling), _rn)
         except Exception as _re:  # noqa: BLE001 — ledger is additive, never fatal
             log.warning("W1-B ripening ledger failed (%s)", _re)
-        _standouts_path.write_text(
-            json.dumps(wide, separators=(",", ":"), default=str))
+        # Serialize BEFORE opening the file; on TypeError name the offending key path
+        # (a bare "keys must be str..." from json.dumps is unlocatable in CI logs —
+        # that anonymity is what let the 07-13 tuple-key crash run for 3 sessions).
+        try:
+            _standouts_payload = json.dumps(wide, separators=(",", ":"), default=str)
+        except TypeError:
+            _bad = _find_bad_json_keys(wide)
+            log.error("china_standouts.json NOT written — non-JSON dict keys at: %s",
+                      "; ".join(_bad[:20]) or "(none found — non-key TypeError)")
+            raise
+        _standouts_path.write_text(_standouts_payload)
         log.info("wrote china_standouts.json (%d buy [%d ENTRY/%d RAN_LATE] / %d RIPENING"
                  " [%d READY+%d BASING] / %d FALLING / %d RAN / %d eligible / %d universe)",
                  len(wide["buy"]), _n_entry, _n_ran_late,
@@ -2536,5 +2610,12 @@ def main(alpha: dict | None = None) -> dict | None:
 
 
 if __name__ == "__main__":
-    main()
+    # CLI parity with build_china's in-process call: without alpha the CN pick-lab
+    # snapshot block self-skips ("no as_of"), so the resilient-rebuild fallback lane
+    # could never produce snapshots (2026-07-13..15 drought).
+    try:
+        _cli_alpha = compute_china_alpha()
+    except Exception:  # noqa: BLE001 — never-fatal, mirrors build_china's alpha leg
+        _cli_alpha = None
+    main(alpha=_cli_alpha)
     sys.exit(0)

@@ -175,6 +175,20 @@
     margin:12px 0;font-size:13px;color:var(--muted)}
   .method-body .law b{color:var(--text)}
 
+  /* ── book drill button (scoreboard name-cell) ── */
+  .book-drill{background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;text-align:left}
+  .book-drill:hover{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+
+  /* ── all-fires details block ── */
+  .all-fires-details{margin-top:14px}
+  .all-fires-details summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.06em;list-style:none;display:flex;align-items:center;gap:6px;
+    padding:6px 0}
+  .all-fires-details summary::-webkit-details-marker{display:none}
+  .all-fires-details summary::before{content:'▶';font-size:10px;transition:.15s}
+  .all-fires-details[open] summary::before{content:'▼'}
+  .all-fires-details .fires-tbl{margin-top:6px}
+
   /* ── responsive ── */
   @media(max-width:700px){
     .pl-wrap{padding:0 12px 60px}
@@ -256,8 +270,10 @@
           <tr class="{{ 'row-random' if row.is_random else ('row-inverse' if row.is_inverse else '') }}">
             <td class="name-cell l" style="white-space:normal;min-width:160px">
               <span class="family-badge">{{ row.family }}</span>
-              <span class="l-en">{{ row.name_en }}</span>
-              <span class="l-zh">{{ row.name_zh }}</span>
+              <button class="book-drill" data-ab="{{ row.engine_id }}">
+                <span class="l-en">{{ row.name_en }}</span>
+                <span class="l-zh">{{ row.name_zh }}</span>
+              </button>
               {% if row.is_random %}<span class="sb-yardstick-label">{{ t('(yardstick)', '(基准)') }}</span>{% endif %}
               {% if row.is_inverse %}<span class="sb-yardstick-label">{{ t('(AVOID — inverse)', '(规避 — 反向)') }}</span>{% endif %}
             </td>
@@ -538,6 +554,33 @@
       {% else %}
       <p class="fires-hd" style="font-style:italic">{{ t('No graded fires yet for this book.', '此书尚无已评级触发。') }}</p>
       {% endif %}
+
+      {% if book.all_fires %}
+      <details class="all-fires-details">
+        <summary>
+          <span class="l-en">All fires (full history) — {{ book.all_fires | length }}</span>
+          <span class="l-zh">全部触发（完整历史）— {{ book.all_fires | length }}</span>
+        </summary>
+        <table class="fires-tbl">
+          <thead><tr>
+            <th>{{ t('Ticker', '代码') }}</th>
+            <th>{{ t('Fire date', '触发日期') }}</th>
+            <th>{{ t('21d exc', '21日超额') }}</th>
+            <th>{{ t('Status', '状态') }}</th>
+          </tr></thead>
+          <tbody>
+            {% for f in book.all_fires %}
+            <tr>
+              <td>{{ f.ticker }}</td>
+              <td>{{ f.fire_date }}</td>
+              <td class="{{ 'pos' if f.ret21_excess is not none and f.ret21_excess > 0 else ('neg' if f.ret21_excess is not none and f.ret21_excess < 0 else '') }}">{{ f.ret21_excess_fmt }}</td>
+              <td>{{ f.matured_label }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+      {% endif %}
     </div>
     {% endfor %}
     {% endif %}
@@ -634,7 +677,7 @@
     {% if lh_as_of %}<p style="font-size:12px;color:var(--muted);margin:0 0 12px">{{ t('As of', '截至') }} {{ lh_as_of }}</p>{% endif %}
 
     {% for book in lh_books %}
-    <div class="book-section">
+    <div class="book-section" id="lh-{{ book.engine_id }}">
       <div class="book-hd">
         <span class="book-name">
           <span class="family-badge">LH</span>
@@ -687,6 +730,33 @@
           {% endfor %}
         </tbody>
       </table>
+      {% endif %}
+
+      {% if book.all_fires %}
+      <details class="all-fires-details">
+        <summary>
+          <span class="l-en">All fires (full history) — {{ book.all_fires | length }}</span>
+          <span class="l-zh">全部触发（完整历史）— {{ book.all_fires | length }}</span>
+        </summary>
+        <table class="fires-tbl">
+          <thead><tr>
+            <th>{{ t('Ticker', '代码') }}</th>
+            <th>{{ t('Fire date', '触发日期') }}</th>
+            <th>{{ t('21d exc', '21日超额') }}</th>
+            <th>{{ t('Status', '状态') }}</th>
+          </tr></thead>
+          <tbody>
+            {% for f in book.all_fires %}
+            <tr>
+              <td>{{ f.ticker }}</td>
+              <td>{{ f.fire_date }}</td>
+              <td class="{{ 'pos' if f.ret21_excess is not none and f.ret21_excess > 0 else ('neg' if f.ret21_excess is not none and f.ret21_excess < 0 else '') }}">{{ f.ret21_excess_fmt }}</td>
+              <td>{{ f.matured_label }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
       {% endif %}
     </div>
     {% endfor %}
@@ -996,6 +1066,47 @@
       chip.classList.add('on');
       var panel = document.getElementById('ab-' + id);
       if (panel) panel.style.display = 'block';
+    });
+  });
+  /* Scoreboard book-drill: click engine name → jump to All Books or Long-Hold panel */
+  document.querySelectorAll('.book-drill').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-ab');
+      /* Try All Books tab first */
+      var abPanel = document.getElementById('ab-' + id);
+      if (abPanel) {
+        /* Switch to allbooks tab */
+        tabs.forEach(function (b) { b.classList.remove('on'); });
+        panels.forEach(function (p) { p.style.display = 'none'; });
+        var abTab = document.querySelector('.pl-tabs .tabbtn[data-tab="allbooks"]');
+        if (abTab) abTab.classList.add('on');
+        var abSection = document.querySelector('[data-tab-panel="allbooks"]');
+        if (abSection) abSection.style.display = 'block';
+        /* Activate the chip for this engine */
+        chips.forEach(function (c) { c.classList.remove('on'); });
+        document.querySelectorAll('.ab-panel').forEach(function (p) { p.style.display = 'none'; });
+        var targetChip = document.querySelector('#ab-chips .book-chip[data-ab="' + id + '"]');
+        if (targetChip) targetChip.classList.add('on');
+        abPanel.style.display = 'block';
+        /* Open the all-fires details */
+        var det = abPanel.querySelector('.all-fires-details');
+        if (det) det.open = true;
+        abPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        /* Fall back to Long-Hold tab */
+        tabs.forEach(function (b) { b.classList.remove('on'); });
+        panels.forEach(function (p) { p.style.display = 'none'; });
+        var lhTab = document.querySelector('.pl-tabs .tabbtn[data-tab="longhold"]');
+        if (lhTab) lhTab.classList.add('on');
+        var lhSection = document.querySelector('[data-tab-panel="longhold"]');
+        if (lhSection) lhSection.style.display = 'block';
+        var lhCard = document.getElementById('lh-' + id);
+        if (lhCard) {
+          var det2 = lhCard.querySelector('.all-fires-details');
+          if (det2) det2.open = true;
+          lhCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
     });
   });
 })();

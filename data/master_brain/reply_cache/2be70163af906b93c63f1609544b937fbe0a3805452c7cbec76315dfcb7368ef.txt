@@ -1,0 +1,25 @@
+Macro-Regime Desk Note
+2026-07-15 | Canada / TSX
+
+**Regime assessment: risk-on exposure is fragile – prefer cash, keep any thematic size small.**  
+This is not a call on direction; it’s a reading of environment fragility. The two dominant signals – unscheduled macro flow and narrative cohesion – argue for a defensive posture.
+
+**Why cash looks the sensible baseline**
+- **Unscheduled news share 0.69** – almost 70% of the macro/policy/geo narrative flow over the last 5 days is tagged as unscheduled (surprises, tweets, crisis-escalation rather than pre-planned data). Markets driven by reactive headlines punish steady trend-following; gap risk is elevated.
+- **Narrative absorption 0.36, one_narrative false** – the market lacks a single dominant story; capital is rotating broadly (69% of eligible themes participate). This is a rotational, not a directional, environment. When the “one-narrative” flag is absent, conventional risk-on baskets tend to chop, and drawdown protection outweighs momentum chasing.
+- **The only validated edge is drawdown control** – the absolute-trend gate has helped historically (gate_helps = true), and it operates through downside mitigation, not return forecasting. In an environment this noisy, respecting the gate’s “size-and-de-risk” mandate is the discipline’s core contribution.
+
+**Headline theme: Big Banks (leader, but fragile)**
+- The leader (score +1.75) is **crowded** (z +1.76) and carries a mixed Hurst durability (bar 0.74). Durability leans borderline trend-like, but mixed means the trend is not clearly persistent – it could stall or reverse without warning.
+- The crowding flag does **not** call for a fade; guardrails explicitly forbid that (reflexivity – fading the leader is the documented failure mode). Instead, the regime signal from crowding is simply **cap exposure**, do not chase, and do not treat this as a high-conviction trade.
+- The challenger (Pipelines & Midstream) is also crowded and not scoreable; the rotation margin (1.155) is large enough that leadership is not truly contested, but the leader’s own health is unconvincing.
+
+**Macro backdrop (coincident, for risk-appetite context only)**
+- AI/Tech dominates news volume (277 counts), but that theme is not the market’s performance leader – it sits rank 13 with a negative score. The market is ignoring the most-hyped narrative, a classic late-cycle risk-appetite split.
+- Geopolitics (111) is the second theme; combined with high unscheduled share, it suggests headline risk can override any thematic momentum at short notice.
+
+**Falsifiable conditional lean (check-by: 2026-07-22)**
+- **If** by 22-Jul the narrative absorption remains below 0.4 **and** unscheduled macro share stays above 0.5, **then** the regime continues to argue for minimal risk-on theme exposure, with cash as the default position – regardless of the Big Banks’ momentum rank.  
+- **Falsification trigger:** A sustained rise in absorption (≥0.6) accompanied by a fall in unscheduled share (≤0.4) and no leadership handoff would reduce the defensive need, but still would not justify large thematic allocations given the leader’s crowding and mixed durability.
+
+No size, no weight, no trade – simply the regime signal as a drawdown-conscious cockpit reading.

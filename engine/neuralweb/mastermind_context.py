@@ -982,7 +982,9 @@ def _summarize_risk_radar_reliability(repo: Path) -> tuple[dict, str | None]:
     """Distil site/riskdata/scorecard.json into the risk_radar_reliability lobe.
 
     Source: the frozen cross-builder scorecard artifact (schema risk_radar_scorecard.v1).
-    Covers markets: us, cn, hk, ca — each distilled by _summarize_rr_market().
+    The artifact carries us + every intl radar market (additive-only key set);
+    this lobe distils only the core four (us, cn, hk, ca) via _summarize_rr_market()
+    and ignores any other market key by design (fixed _MARKET_ORDER whitelist).
 
     Standing laws:
     - 100% deterministic math over already-graded rows (no LLM, no invented scores).

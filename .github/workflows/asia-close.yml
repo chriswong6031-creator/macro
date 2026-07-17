@@ -228,6 +228,14 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CN_LANE: asia   # explicit asia-lane gate: the ONLY lane that may persist the board ledger
                           # (this job runs after the A-share close and commits data/). Render lanes
@@ -303,6 +311,14 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CN_LANE: asia            # same lane gate as the spine step (ledger writers in this band:
                                    # baskets_china turn ledger, radar accrue, special_sits qledger)
@@ -371,7 +387,16 @@ jobs:
           }
           cl_hk() {
             brun hk               "build hong kong / hang seng (build_hk)"             scripts.build_hk
-            brun baskets_hk       "hong kong thematic baskets (build_baskets_hk)"      scripts.build_baskets_hk
+            # hk_ignition.jsonl advancer: asia-close IS the HK ignition forward-ledger nightly
+            # (only fresh-HKEX lane that commits data/). engine/ignition_audit.py writers
+            # self-gate on COLLECT_LANE=nightly, so arm it for THIS module only — the inline
+            # `VAR=val fn` form reaches the python child and does NOT leak to later brun
+            # calls (verified; same idiom as CN_SLEEVE_LANE above). Nothing else reachable
+            # from build_baskets_hk reads COLLECT_LANE (verified 2026-07-16), so this arms
+            # exactly the ignition ledger. daily.yml's build_vector hook re-runs the module
+            # armed from the same committed store (idempotent dedup / rescue if this band
+            # dies). Guarded by tests/test_ignition_lane_gate.py.
+            COLLECT_LANE=nightly brun baskets_hk "hong kong thematic baskets (build_baskets_hk)" scripts.build_baskets_hk
             brun rotation_events_hk "hk rotation events (build_rotation_events_hk)"    scripts.build_rotation_events_hk  # RC-R14 display-tier, reads hkbasketdata/baskets.json in-process
           }
           # CN-SYS W5a Scope 2 intel chain head (behavior-preserving extraction from
@@ -427,6 +452,14 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CN_LANE: asia   # intel_hub's signal-snapshot ledger append is lane-gated
         run: |

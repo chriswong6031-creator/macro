@@ -1,0 +1,91 @@
+{
+  "regime_context": "The S&P 500 thematic landscape as of 2026-07-15 shows Memory, HBM & Storage as a dominant leader (score 4.125, rank #1) but with zero breadth, signaling highly concentrated leadership. The rotation is broad (72% of themes eligible), but the absolute-trend gate is validated only for risk mitigation, not return forecasting, and the headline narrative is not yet one-narrative dominant.",
+  "theses": [
+    {
+      "subject": "Memory, HBM & Storage",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 25,
+      "thesis": "The strongest momentum signal with a wide lead over the challenger (margin 2.172) and not yet crowded (crowding_z -0.26). The absolute-trend gate supports trend-following discipline, though the theme is not in a durable uptrend (hurst mixed, durability_bar 0.48).",
+      "evidence": [
+        "Rank #1 score 4.125 (momentum screen)",
+        "Not crowded (crowding_z -0.26, crowded=false)",
+        "Gate_helps true, verified drawdown/risk control via absolute-trend gate"
+      ],
+      "dissent": "Zero breadth (0.0) means leadership is brittle – likely driven by a handful of names; mixed hurst indicates trend stability is questionable and a reversal could come without warning.",
+      "falsifier_text": "If the theme's score falls below 2.0 within 10 trading days, or the SMH ETF (proxy) closes below its 50-day moving average, the overweight thesis is wrong."
+    },
+    {
+      "subject": "Cybersecurity",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Rank #2 with strong durability (0.89) and trend signal, but extreme crowding (crowding_z 2.27) caps upside. The guardrails prohibit fading the leader, so an underweight relative to benchmark is the prudent stance.",
+      "evidence": [
+        "Rank #2 score 1.953, high durability_bar 0.89, trend hurst tag",
+        "Crowded true with crowding_z 2.27 (extreme positioning)",
+        "Gate_helps true, but crowding only advises sizing down, not fading"
+      ],
+      "dissent": "The theme's exceptional durability and trend cohesion could sustain momentum despite high crowding; a small overweight might still capture residual gains.",
+      "falsifier_text": "If cybersecurity's equal-weighted basket makes a new 20-day high relative to S&P 500 while VIX stays below 18, the underweight call is premature."
+    },
+    {
+      "subject": "AI Semiconductors",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 25,
+      "thesis": "Rank #3 with a decent score (1.095), not crowded (crowding_z 0.15), and a still-healthy durability (0.67). The trend gate is positive, though breadth is narrow (0.333), which limits conviction.",
+      "evidence": [
+        "Rank #3 score 1.095, not crowded",
+        "Trend hurst tag, durability_bar 0.67",
+        "Breadth 0.333 – some participation, but not broad"
+      ],
+      "dissent": "Narrow breadth and moderate score suggest the theme may be a derivative of the AI hardware cycle rather than a self-sustaining narrative; a rotation away from AI capex could hurt.",
+      "falsifier_text": "If the average stock in the AI Semiconductors basket breaks below its 20-day moving average for more than 3 consecutive days, the overweight is invalid."
+    },
+    {
+      "subject": "Managed Care & Insurers",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Rank #4 with strong durability (0.81) and high breadth (0.889), but crowding is elevated (crowding_z 1.77). The trend is intact, yet the crowding metric calls for a reduced allocation.",
+      "evidence": [
+        "Rank #4 score 1.075, durability_bar 0.81, trend hurst",
+        "Crowded true, crowding_z 1.77",
+        "Gate_helps true, but crowding suggests trimming exposure"
+      ],
+      "dissent": "The high breadth and defensive characteristics of the sector could make crowding a sign of structural demand, not fragility; an overweight might be appropriate for a volatility-control mandate.",
+      "falsifier_text": "If the XLV healthcare ETF (proxy) outperforms the S&P 500 by more than 2% over the next 15 days on a relative basis while correlations of managed-care stocks hold above 0.7, the underweight is likely wrong."
+    },
+    {
+      "subject": "AI Infrastructure",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 25,
+      "thesis": "Rank #5, still in the top tier but clearly over-owned (crowding_z 1.22, crowded=true). The mixed durability (0.55) and narrow breadth (0.333) add caution, so a weighting below benchmark is warranted.",
+      "evidence": [
+        "Rank #5 score 1.055, crowded true, crowding_z 1.22",
+        "Mixed hurst tag, durability_bar 0.55, breadth 0.333",
+        "Crowding acts as a size-down signal per guardrails"
+      ],
+      "dissent": "AI infrastructure is a multi-year capex cycle; the slight crowding may not be binding if capital expenditure plans continue to escalate, and the mixed durability could flip to trend.",
+      "falsifier_text": "If the theme's score rises above 2.0 and breadth expands above 0.5 within 15 trading days, the underweight thesis is unsupported."
+    },
+    {
+      "subject": "Technology (Equal-Weight)",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Rank #8, broad tech equal-weight shows a positive score (0.427) with attractive durability (0.71) and not crowded (crowding_z 0.36). This offers diversified participation in the tech theme without single-stock risk.",
+      "evidence": [
+        "Rank #8 score 0.427, durability_bar 0.71, trend hurst",
+        "Not crowded (crowding_z 0.36, crowded=false)",
+        "Broad breadth 0.365 and equal-weight construction provide diversification"
+      ],
+      "dissent": "The relatively low score (rank #8) and moderate breadth mean the theme may underperform more concentrated AI leaders if the AI trade stays narrow.",
+      "falsifier_text": "If the equal-weighted tech ETF (XLK proxy) underperforms the market-cap-weight S&P 500 tech sector by more than 100bps over a rolling 20-day period, the overweight is wrong."
+    }
+  ],
+  "emerging_watch": "Healthcare REITs & Senior Housing (AHR, CTRE, ENSG, LTC, OHI, SBRA, UHT, VTR) – a noisy but coherent cluster (cohesion 0.632, cohesion_chg +0.223) emerging on the candidate radar, potentially driven by demographics and interest-rate stabilization. Kill-criterion: if the equal-weight average 20-day forward return vs S&P 500 turns negative, or if cluster cohesion falls below 0.50 for five consecutive days. Treat as a falsifiable watch only, no thesis.",
+  "confidence": "low"
+}

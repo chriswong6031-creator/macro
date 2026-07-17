@@ -37,6 +37,18 @@ except Exception:  # noqa: BLE001
 _API = "https://api.supabase.com/v1"
 _ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,64}$")  # session_id / visitor_id shape (uuid or 's-…')
 
+# Canonical-identity CTE. Maps each mm_aid cookie to the Supabase user uuid it belongs to,
+# EXCLUDING cookies signed into by 2+ accounts (ambiguous shared/kiosk devices — never merged).
+# Prepend to a query that aliases analytics_events as `e` and left-joins `ident i`; then
+# _CANON_VISITORS counts PEOPLE (a signed-in user's devices collapse to one), so the headline
+# counts reconcile with the merged 'Frequent visitors' list.
+_IDENT_CTE = (
+    "with ident as (select visitor_id, max(user_id::text) as uid "
+    "from public.analytics_events where visitor_id is not null and user_id is not null "
+    "group by visitor_id having count(distinct user_id) = 1) "
+)
+_CANON_VISITORS = "count(distinct coalesce(i.uid, e.visitor_id))::int as visitors"
+
 
 def status() -> dict:
     pat = settings.supabase_pat()
@@ -98,24 +110,29 @@ def _guard(fn):
 def overview(days=7) -> dict:
     d = _days(days)
     def run():
-        win = (_query(
+        # 'visitors' counts PEOPLE (canonical identity), not raw cookies — see _IDENT_CTE.
+        win = (_query(_IDENT_CTE +
             "select count(*)::int as events, "
-            "count(distinct visitor_id)::int as visitors, "
-            "count(distinct session_id)::int as sessions, "
-            "count(*) filter (where type in ('pageview','route'))::int as pageviews, "
-            "count(*) filter (where type='ticker_view')::int as ticker_views, "
-            "count(*) filter (where type='search')::int as searches "
-            f"from public.analytics_events where created_at > now() - interval '{d} days'") or [{}])[0]
-        alltime = (_query("select count(*)::int as events, count(distinct visitor_id)::int as visitors "
-                          "from public.analytics_events") or [{}])[0]
-        by_site = _query(
-            "select site, count(*)::int as events, count(distinct visitor_id)::int as visitors "
-            f"from public.analytics_events where created_at > now() - interval '{d} days' "
-            "group by site order by events desc") or []
-        daily = _query(
-            "select to_char(date_trunc('day', created_at),'YYYY-MM-DD') as day, "
-            "count(distinct visitor_id)::int as visitors, count(*)::int as events "
-            f"from public.analytics_events where created_at > now() - interval '{d} days' "
+            f"{_CANON_VISITORS}, "
+            "count(distinct e.session_id)::int as sessions, "
+            "count(*) filter (where e.type in ('pageview','route'))::int as pageviews, "
+            "count(*) filter (where e.type='ticker_view')::int as ticker_views, "
+            "count(*) filter (where e.type='search')::int as searches "
+            "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
+            f"where e.created_at > now() - interval '{d} days'") or [{}])[0]
+        alltime = (_query(_IDENT_CTE +
+            f"select count(*)::int as events, {_CANON_VISITORS} "
+            "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id") or [{}])[0]
+        by_site = _query(_IDENT_CTE +
+            f"select e.site, count(*)::int as events, {_CANON_VISITORS} "
+            "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
+            f"where e.created_at > now() - interval '{d} days' "
+            "group by e.site order by events desc") or []
+        daily = _query(_IDENT_CTE +
+            "select to_char(date_trunc('day', e.created_at),'YYYY-MM-DD') as day, "
+            f"{_CANON_VISITORS}, count(*)::int as events "
+            "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
+            f"where e.created_at > now() - interval '{d} days' "
             "group by 1 order by 1") or []
         return {"days": d, "window": win, "alltime": alltime, "by_site": by_site, "daily": daily}
     return _guard(run)
@@ -178,23 +195,47 @@ def sessions(limit=40) -> dict:
 
 
 def visitors(limit=100) -> dict:
-    """One row per visitor (person) — the 'Frequent Visitors' list. Grouped by the mm_aid cookie,
-    ordered by session count. Joins the visitor's most-recent IP to ip_geo for country/state/city."""
+    """One row per PERSON — the 'Frequent Visitors' list.
+
+    Identity resolution: any anonymous cookie (mm_aid) that ever appears on a signed-in
+    event is merged under that user, so all of one person's cookies/devices collapse into
+    a single row keyed by their Supabase user id and labelled with their email. Purely
+    anonymous visitors stay keyed by their mm_aid. `identities` = how many cookies merged.
+    Ordered by session count."""
     n = _limit(limit, 100, 500)
     def run():
         rows = _query(
-            "select v.visitor_id, v.events, v.sessions, v.ips, v.last_ip, v.user_id, "
-            "to_char(v.first_seen,'YYYY-MM-DD HH24:MI') as first_seen, "
-            "to_char(v.last_seen,'YYYY-MM-DD HH24:MI') as last_seen, "
-            "g.city, g.region, g.country, g.country_code, g.is_vpn "
-            "from (select visitor_id, count(*)::int as events, "
-            "  count(distinct session_id)::int as sessions, count(distinct ip)::int as ips, "
+            # ident: each mm_aid -> the user uuid it belongs to (if ever authenticated).
+            # A cookie signed into by 2+ DIFFERENT accounts (shared/kiosk device) is
+            # AMBIGUOUS — excluded from the auto-merge so one person's activity is never
+            # silently reassigned to another; those events stay under the cookie.
+            "with ident as ("
+            "  select visitor_id, max(user_id::text) as uid "
+            "  from public.analytics_events "
+            "  where visitor_id is not null and user_id is not null "
+            "  group by visitor_id having count(distinct user_id) = 1"
+            # ev: every event tagged with its canonical identity (uid if known, else mm_aid)
+            "), ev as ("
+            "  select e.session_id, e.ip, e.created_at, e.visitor_id, i.uid, "
+            "    coalesce(i.uid, e.visitor_id) as canon "
+            "  from public.analytics_events e "
+            "  left join ident i on i.visitor_id = e.visitor_id "
+            "  where e.visitor_id is not null"
+            ") "
+            "select v.canon as visitor_id, (v.uid is not null) as is_user, u.email, "
+            "  v.events, v.sessions, v.identities, v.ips, v.last_ip, "
+            "  to_char(v.first_seen,'YYYY-MM-DD HH24:MI') as first_seen, "
+            "  to_char(v.last_seen,'YYYY-MM-DD HH24:MI') as last_seen, "
+            "  g.city, g.region, g.country, g.country_code, g.is_vpn "
+            "from (select canon, max(uid) as uid, count(*)::int as events, "
+            "  count(distinct session_id)::int as sessions, "
+            "  count(distinct visitor_id)::int as identities, count(distinct ip)::int as ips, "
             "  min(created_at) as first_seen, max(created_at) as last_seen, "
-            "  max(user_id::text) as user_id, "
             "  (array_agg(ip order by created_at desc))[1] as last_ip "
-            "  from public.analytics_events where visitor_id is not null "
-            "  group by visitor_id order by count(distinct session_id) desc, max(created_at) desc "
+            "  from ev group by canon "
+            "  order by count(distinct session_id) desc, max(created_at) desc "
             f"  limit {n}) v "
+            "left join auth.users u on u.id::text = v.uid "
             "left join public.ip_geo g on g.ip = v.last_ip "
             "order by v.sessions desc, v.last_seen desc") or []
         return {"visitors": rows}
@@ -259,47 +300,68 @@ def terminal(days=7, limit=25) -> dict:
 
 
 def visitor(visitor_id: str) -> dict:
+    """One person's profile. `visitor_id` is the canonical id from the visitors() list —
+    either a Supabase user uuid (a registered person, whose every mm_aid cookie is merged)
+    or a bare mm_aid (a purely anonymous visitor). All sub-queries resolve it to the full
+    set of that person's cookies via the `myaids` CTE, so a signed-in user's activity across
+    every device/cookie shows as one profile."""
     if not visitor_id or not _ID_RE.match(visitor_id):
         return {"ok": False, "reason": "invalid visitor id"}
-    v = visitor_id
+    v = visitor_id   # _ID_RE-allowlisted ([A-Za-z0-9._:-]{1,64}) — safe to interpolate
+    # Prepended to every sub-query: map the canonical id to all mm_aid cookies of the person.
+    # If v is a user uuid -> every mm_aid ever seen on one of that user's events; if v is an
+    # mm_aid -> just itself (the `union select '{v}'` covers the anonymous case).
+    cte = (
+        "with ident as ("
+        "  select visitor_id, max(user_id::text) as uid from public.analytics_events "
+        "  where visitor_id is not null and user_id is not null "
+        "  group by visitor_id having count(distinct user_id) = 1"   # drop ambiguous shared cookies
+        f"), myaids as (select visitor_id from ident where uid = '{v}' union select '{v}') "
+    )
+    inaids = "visitor_id in (select visitor_id from myaids)"
     def run():
-        profile = (_query(
+        profile = (_query(cte +
             "select min(created_at) as first_seen, max(created_at) as last_seen, "
             "count(*)::int as events, count(distinct session_id)::int as sessions, "
             "count(distinct ip)::int as ips, count(distinct fp)::int as fingerprints, "
-            "max(user_id::text) as user_id "
-            f"from public.analytics_events where visitor_id = '{v}'") or [{}])[0]
-        ips = _query(
+            "count(distinct visitor_id)::int as identities, max(user_id::text) as user_id "
+            f"from public.analytics_events where {inaids}") or [{}])[0]
+        er = _query(f"select email from auth.users where id::text = '{v}'") or []
+        email = er[0].get("email") if er else None
+        ips = _query(cte +
             "select e.ip, g.city, g.region, g.country_code, g.asn, g.org, "
             "g.is_vpn, g.is_proxy, g.is_hosting, count(*)::int as events "
             "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
-            f"where e.visitor_id = '{v}' group by 1,2,3,4,5,6,7,8,9 order by events desc") or []
-        # same human, different cookie/IP: visitors that share a fingerprint or an IP with this one
-        linked = _query(
+            f"where e.{inaids} group by 1,2,3,4,5,6,7,8,9 order by events desc") or []
+        # OTHER anon visitors sharing a fingerprint or IP with this person (not yet merged by login)
+        linked = _query(cte +
             "select e2.visitor_id, count(*)::int as shared_events, "
-            "max(case when e2.fp = e1fp then 1 else 0 end) as via_fp, "
-            "max(case when e2.ip = e1ip then 1 else 0 end) as via_ip "
+            "max(case when e2.fp = k.e1fp then 1 else 0 end) as via_fp, "
+            "max(case when e2.ip = k.e1ip then 1 else 0 end) as via_ip "
             "from public.analytics_events e2 "
             "join (select distinct fp as e1fp, ip as e1ip from public.analytics_events "
-            f"      where visitor_id = '{v}') k "
+            f"      where {inaids}) k "
             "  on (e2.fp = k.e1fp and e2.fp is not null) "
             "  or (e2.ip = k.e1ip and e2.ip is not null and e2.ip <> 'unknown') "
-            f"where e2.visitor_id <> '{v}' group by 1 order by shared_events desc limit 50") or []
-        recent = _query(
+            "where e2.visitor_id not in (select visitor_id from myaids) "
+            "group by 1 order by shared_events desc limit 50") or []
+        recent = _query(cte +
             "select type, coalesce(path,'') as path, ticker, "
             "to_char(created_at,'YYYY-MM-DD HH24:MI') as t "
-            f"from public.analytics_events where visitor_id = '{v}' order by id desc limit 40") or []
-        # tickers this person searched (search_events.anon_id = the mm_aid visitor cookie) + viewed
-        searches = _query(
+            f"from public.analytics_events where {inaids} order by id desc limit 40") or []
+        # tickers this person searched (search_events.anon_id = the mm_aid cookie, OR the
+        # signed-in user_id directly — catches searches from a cookie with no beacon rows) + viewed
+        searches = _query(cte +
             "select symbol as ticker, count(*)::int as n, "
             "to_char(max(created_at),'YYYY-MM-DD HH24:MI') as last "
-            f"from public.search_events where anon_id = '{v}' "
+            "from public.search_events "
+            f"where (anon_id in (select visitor_id from myaids) or user_id::text = '{v}') "
             "group by 1 order by n desc, last desc limit 50") or []
-        tickers_viewed = _query(
+        tickers_viewed = _query(cte +
             "select ticker, count(*)::int as n "
-            f"from public.analytics_events where visitor_id = '{v}' and type='ticker_view' and ticker is not null "
+            f"from public.analytics_events where {inaids} and type='ticker_view' and ticker is not null "
             "group by 1 order by n desc limit 50") or []
-        return {"visitor_id": v, "profile": profile, "ips": ips, "linked": linked,
+        return {"visitor_id": v, "email": email, "profile": profile, "ips": ips, "linked": linked,
                 "recent": recent, "searches": searches, "tickers_viewed": tickers_viewed}
     return _guard(run)
 

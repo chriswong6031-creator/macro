@@ -42,7 +42,12 @@ def _ca_overlay() -> dict:
 
 
 def _ca_ignition(data: dict, overlay: dict) -> dict:
-    """Sector-ignition strip (engine.sector_ignition) + forward ledger. CA adds the oil-flip."""
+    """Sector-ignition strip (engine.sector_ignition) + forward ledger. CA adds the oil-flip.
+
+    The ledger legs self-gate on ignition_audit.ledger_lane_armed() (COLLECT_LANE=nightly —
+    daily.yml's engine job, this ledger's advancing lane, sets it job-wide). Off-lane
+    (closing-bell / engine-render / render run this via build_vector) snapshot_and_grade is
+    a pure scorecard read, so the scoreboard still renders."""
     try:
         from engine.sector_ignition import compute_ignition
         from engine.baskets_canada import _closes, member_closes_getter

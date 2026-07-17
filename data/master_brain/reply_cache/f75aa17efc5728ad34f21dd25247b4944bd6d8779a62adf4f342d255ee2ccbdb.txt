@@ -1,0 +1,18 @@
+**HK Macro-Regime Desk Note**  
+*2026-07-15 | Hang Seng universe | For discussion — not a recommendation or size*
+
+**Regime verdict: risk-on theme exposure is conditionally supportable, but only with materially smaller-than-normal size and a defensive cash buffer.**  
+
+The dominant narrative is a clean, uncrowded “Tech Hardware & Semis” theme (durability 0.74, Hurst “trend”, one‑narrative flag true, crowding_z barely positive). Rotation breadth has narrowed to only 5 eligible themes (frac 0.29), reinforcing concentration, while absorption sits at a moderate 0.55 — leadership is absorbing capital, but not manically. The absolute‑trend gate (the one validated risk‑control edge) *has* historically lowered drawdowns in HK (`gate_helps: true`), so the regime’s structure favours respecting the trend direction rather than going to outright cash.  
+
+**However**, the coincident macro backdrop injects heavy caution. Unscheduled/surprise news share is extreme at 0.70 (70% of recent flow), and geopolitics is a loud secondary theme — a combination that typically compresses risk appetite and elevates tail risk. This backdrop does **not** invalidate the trend signal, but it demands that any exposure be well below a “normal” risk‑on allocation.  
+
+**Interpretation** (within the guardrails):  
+- Do **not** fade the leader (crowding is absent; the documented failure mode is fading, not capping).  
+- Do **not** treat the momentum rank as a return forecast.  
+- The only validated edge is drawdown avoidance via the absolute‑trend gate; therefore any lean must be paired with a clear stop‑out plan.  
+
+**Falsifiable conditional lean (check‑by: 2026‑08‑01):**  
+If (i) the Hang Seng absolute‑trend gate stays positive, (ii) the Tech Hardware durability bar remains above 0.65 & crowding_z below 1.5, **and** (iii) the unscheduled headline share drops below 0.5, the regime would continue to support holding a *modest* risk‑on exposure — “modest” meaning materially reduced from a full‑confidence theme allocation. If the trend gate flips negative or macro uncertainty intensifies (unscheduled share >0.8), we would expect the discipline to mandate a predominantly cash posture.  
+
+*This is a fallible regime read, not an edge extracted from the detector. The only validated edge is the absolute‑trend gate’s drawdown control; everything else is coincident context for risk‑management calibration.*

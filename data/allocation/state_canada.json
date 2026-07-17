@@ -12,14 +12,13 @@
     "ca_pipelines",
     "ca_rails_ind",
     "ca_reits",
-    "ca_tech",
     "ca_utilities"
   ],
   "held": [
     "ca_banks",
     "ca_pipelines",
-    "ca_rails_ind",
-    "ca_utilities"
+    "ca_base_metals",
+    "ca_rails_ind"
   ],
   "leader": "ca_banks",
   "names": {

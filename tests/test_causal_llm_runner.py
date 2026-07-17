@@ -21,9 +21,27 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 # Ensure repo root is on path
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
+
+
+@pytest.fixture(autouse=True)
+def _isolate_ai_costs_ledger(tmp_path, monkeypatch):
+    """Redirect the lib.ai_costs usage ledger to tmp for every test here.
+
+    llm_auth.make_call records a usage row on every successful call
+    (_capture_usage -> lib.ai_costs.record_usage) and that path carries no
+    root= threading — it defaults to the REAL repo.  The mocked-provider
+    tests below drive make_call for real, so without this redirect they
+    append synthetic rows to data/ai_costs/usage.jsonl and trip the
+    MM_DATA_GUARD session tripwire in conftest.py.  The recorder still runs
+    against the mock usage object; only the ledger destination moves.
+    """
+    from lib import ai_costs
+    monkeypatch.setattr(ai_costs, "_repo_root", lambda: tmp_path)
 
 
 # ---------------------------------------------------------------------------
@@ -104,10 +122,12 @@ def _make_mock_anthropic_response(text: str) -> MagicMock:
     content_block.text = text
     resp = MagicMock()
     resp.content = [content_block]
-    usage = MagicMock()
-    usage.input_tokens = 100
-    usage.output_tokens = 50
-    resp.usage = usage
+    # resp.usage MUST stay None. A populated usage object makes
+    # engine.llm_auth.make_call's _capture_usage() call lib.ai_costs.record_usage(),
+    # which appends to the REAL data/ai_costs/usage.jsonl (root=None → repo root) and
+    # trips MM_DATA_GUARD in CI (causal-factory job, exit 1). No test here asserts on
+    # token counts; usage-capture itself is covered by the llm_auth tests.
+    resp.usage = None
     return resp
 
 
@@ -463,6 +483,24 @@ class TestStatusOnly(unittest.TestCase):
             self._run_status_only({"auto_loop": False}, root)
             doc = json.loads(lane.read_text())
         self.assertEqual(doc["status"], "awaiting_phase_a")
+
+    def test_degraded_status_writes_explicit_flag(self):
+        """degraded_* statuses stamp degraded:true so health.py's boolean
+        self-report check fires regardless of status-enum spelling; healthy
+        statuses must NOT carry the flag."""
+        import tempfile
+        import scripts.run_causal_brainstorm as runner
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runner._write_lane_status(
+                "degraded_pack_only", "generator failed: auth_invalid_all", root=root)
+            doc = json.loads(self._lane_path(root).read_text())
+            self.assertIs(doc["degraded"], True)
+            self.assertEqual(doc["reason"], "generator failed: auth_invalid_all")
+
+            runner._write_lane_status("armed", "auto_loop armed", root=root)
+            doc = json.loads(self._lane_path(root).read_text())
+            self.assertNotIn("degraded", doc)
 
 
 # ---------------------------------------------------------------------------

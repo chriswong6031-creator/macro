@@ -5,7 +5,7 @@
 <script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><span class="l-en">News Intelligence Boards — Market &amp; Macro Deltas</span><span class="l-zh">新闻情报面板 — 市场与宏观变化</span></title>
+<title>News Intelligence Boards — Market &amp; Macro Deltas</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -71,7 +71,17 @@
                  background:var(--panel2); color:var(--muted); }
   .board-count { margin-left:auto; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
   .board-note { color:var(--muted); font-size:11.5px; padding:10px 18px; border-bottom:1px solid var(--line); }
+  .board-stance { color:var(--muted); font-size:11.5px; font-style:italic;
+                  padding:8px 18px; border-bottom:1px solid var(--line); background:color-mix(in srgb,var(--link) 3%,var(--panel)); }
   .board-empty { padding:28px 20px; text-align:center; color:var(--muted); font-size:13px; }
+  /* aged-item chip (NEWS-DD-02) */
+  .ev-aged { font-size:10px; color:var(--muted); border:1px solid var(--line);
+             border-radius:5px; padding:1px 6px; vertical-align:middle; }
+  /* ? help tip button (NEWS-DD-04/08) */
+  .help-tip { display:inline-flex; align-items:center; justify-content:center;
+              width:16px; height:16px; border-radius:50%; border:1px solid var(--line);
+              color:var(--muted); font-size:10px; font-weight:700; cursor:default;
+              vertical-align:middle; margin-left:5px; user-select:none; }
 
   /* ---- collapsible board wrapper ---- */
   .board-toggle > summary { list-style:none; cursor:pointer; }
@@ -182,6 +192,10 @@
   .na-pill.tk { color:var(--link); border-color:color-mix(in srgb,var(--link) 40%,var(--line)); }
   .na-read { justify-self:start; color:var(--link); font-size:12px; font-weight:700; }
   .na-when { color:var(--muted); font-size:11px; }
+  /* ZH-mode note for untranslated headlines (NWS-04) */
+  .na-zh-note { display:none; }
+  html[data-lang="zh"] .na-zh-note { display:block; color:var(--muted); font-size:11px;
+    padding:6px 18px 10px; font-style:italic; }
 
   /* ---- reject log ---- */
   .rej-group { border-bottom:1px solid var(--line); }
@@ -214,6 +228,15 @@
   .calib-cell .cc-row { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:3px; }
   .calib-cell .cc-hit { font-weight:700; color:var(--text); }
   .calib-accruing { padding:20px 20px; text-align:center; color:var(--muted); font-size:13px; }
+
+  /* ---- financial wires board (NWS-05) ---- */
+  .mag7-row { display:flex; flex-wrap:wrap; gap:8px; padding:12px 18px; border-bottom:1px solid var(--line); }
+  .mag7-chip { display:inline-flex; align-items:center; gap:5px; background:var(--panel2);
+               border:1px solid var(--line); border-radius:6px; padding:4px 10px; font-size:11.5px; }
+  .mag7-chip .m7t { font-weight:800; color:var(--link); }
+  .mag7-chip .m7n { color:var(--muted); font-size:10.5px; }
+  .fn-degraded { color:var(--warn); font-size:11.5px; padding:10px 18px; font-style:italic;
+                 border-bottom:1px solid var(--line); }
 
   /* ---- rail ---- */
   .news-layout { display:grid; grid-template-columns:minmax(0,1fr) 310px; gap:20px; align-items:start; }
@@ -559,32 +582,34 @@
   
   <div class="exec-strip">
     <div class="exec-chip ev">
-      <span class="ec-n">4</span>
+      <span class="ec-n">5</span>
       <span class="ec-l"><span class="l-en">Event<br>deltas</span><span class="l-zh">事件<br>变化</span></span>
     </div>
     <div class="exec-chip rel">
-      <span class="ec-n">2</span>
+      <span class="ec-n">9</span>
       <span class="ec-l"><span class="l-en">Parsed<br>releases</span><span class="l-zh">已解析<br>数据发布</span></span>
     </div>
     <div class="exec-chip rej">
-      <span class="ec-n">24</span>
-      <span class="ec-l l-en">24 filtered out (top reason: calendar preview)</span>
-      <span class="ec-l l-zh">24 条已筛出（主要原因：calendar preview）</span>
+      <span class="ec-n">72</span>
+      
+      
+      <span class="ec-l l-en">72 filtered out (top: single stock advertorial)</span>
+      <span class="ec-l l-zh">72 条已筛出（主因：single stock advertorial）</span>
     </div>
     <div class="exec-chip ctx">
-      <span class="ec-n">14</span>
-      <span class="ec-l"><span class="l-en">Context<br>headlines</span><span class="l-zh">背景<br>头条</span></span>
+      <span class="ec-n">30</span>
+      <span class="ec-l"><span class="l-en">Other macro<br>headlines</span><span class="l-zh">其他宏观<br>头条</span></span>
     </div>
     
     <span class="exec-line">
       <span class="l-en">
-        6 sources
-         · 367 scanned · 18 kept
-         · <span class="rel-time" data-ts="2026-07-16T03:29:18.247554+00:00"></span>
+        11 sources
+         · 374 scanned · 35 kept
+         · <span class="rel-time" data-ts="2026-07-17T05:58:04.778521+00:00"></span>
       </span>
       <span class="l-zh">
-        6 个来源
-         · 367 条已扫描 · 18 条保留
+        11 个来源
+         · 374 条已扫描 · 35 条保留
       </span>
     </span>
     
@@ -601,34 +626,49 @@
         <div class="board-head">
           <h2><span class="l-en">Event Delta Board</span><span class="l-zh">事件变化面板</span></h2>
           <span class="board-badge"><span class="l-en">DELTA DESK</span><span class="l-zh">变化台</span></span>
-          <span class="board-count">4 <span class="l-en">events</span><span class="l-zh">事件</span></span>
+          <span class="board-count">5 <span class="l-en">events</span><span class="l-zh">事件</span></span>
         </div>
+        
         <div class="board-note">
-          <span class="l-en">Kept headlines where a typed event was detected — sorted by novelty z-score (how unusual this event is for this ticker/theme), then recency. Theme is secondary context. No event = demoted to Context section below.</span>
-          <span class="l-zh">检测到类型化事件的保留头条，按新颖度z值（该事件对此标的/主题的异常程度）及时效性排序。主题为次要背景。无事件类型 = 降至下方背景区。</span>
+          <span class="l-en">Headlines with a detected corporate or macro event, most recent first; items more than 5 days old are flagged.</span>
+          <span class="l-zh">检测到企业或宏观事件的头条，最新优先；超过5天的条目会标注提示。</span>
+        </div>
+        
+        <div class="board-stance">
+          <span class="l-en">Background read — check what's happening, don't chase these headlines.</span>
+          <span class="l-zh">背景阅读 — 了解动态，不必追随这些头条。</span>
         </div>
         
           
           
-          <div class="ev-card">
+          
+          
+            
+            
+          
+          
+          <div class="ev-card" data-seendate="2026-07-16T19:00:37+00:00">
             <div class="ev-card-top">
               <div class="ev-title">
                 
-                  <a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20260617a.htm" target="_blank" rel="noopener"><span class="l-en">Federal Reserve issues FOMC statement</span><span class="l-zh">美联储发布FOMC声明</span></a>
+                  <a href="https://www.cnbc.com/2026/07/16/unitedhealth-group-unh-earnings-q2-2026.html" target="_blank" rel="noopener"><span class="l-en">UnitedHealth blows past estimates, hikes earnings outlook as it reins in costs</span><span class="l-zh">联合健康业绩超预期，上调盈利展望，成本控制成效显著</span></a>
                 
+                
+                <span class="ev-aged" style="display:none" data-aged-en="older item" data-aged-zh="较早消息"></span>
               </div>
               <div class="ev-badges">
                 
                   
                   
                   
-                  <span class="nb-event ev-macro_release"><span class="l-en">Macro Release</span><span class="l-zh">宏观数据</span></span>
+                  <span class="nb-event ev-guidance_raise"><span class="l-en">Guidance Raise</span><span class="l-zh">上调指引</span></span>
                   
-  <span class="nb-dir info"><span class="l-en">Info</span><span class="l-zh">信息</span></span>
+  <span class="nb-dir bull"><span class="l-en">Bullish</span><span class="l-zh">利多</span></span>
+  
 
                 
                 
-                  <span class="ev-theme-pill th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+                  <span class="ev-theme-pill th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
                 
               </div>
             </div>
@@ -636,25 +676,38 @@
             <div class="ev-meta">
               <span class="em-item">
                 <span class="em-k"><span class="l-en">Novelty</span><span class="l-zh">新颖度</span></span>
+                
                 <span class="em-v">
   
-    <span class="nov-high">
-      z=+5.9</span>
+    
+    
+    
+      
+    
+    <span class="nov-high" data-tip-en="z=+10.70" data-tip-zh="z=+10.70">
+      <span class="l-en">Unusual</span><span class="l-zh">罕见</span></span>
   
 </span>
               </span>
               
               
+              <span class="em-item">
+                <span class="em-k"><span class="l-en">Focus</span><span class="l-zh">聚焦</span></span>
+                
+                <span class="em-v"><span class="l-en">Central</span><span class="l-zh">核心</span></span>
+              </span>
+              
+              
               
               <span class="em-item">
                 
-                <span class="tier-badge tier-official"><span class="l-en">Official</span><span class="l-zh">官方</span></span>
-                <span class="em-v">Federal Reserve - Monetary Policy</span>
+                <span class="tier-badge tier-tier1"><span class="l-en">Tier 1</span><span class="l-zh">一级来源</span></span>
+                <span class="em-v">CNBC - Markets</span>
               </span>
               
               
               <span class="em-item">
-                <span class="na-when rel-time" data-ts="2026-06-17T18:00:00+00:00"></span>
+                <span class="na-when rel-time" data-ts="2026-07-16T19:00:37+00:00"></span>
               </span>
               
             </div>
@@ -667,31 +720,46 @@
               
               
               
+              
+              
             
             
+            
+            <div class="ev-nums" style="margin-top:4px">
+              <span class="na-pill tk">UNH</span>
+            </div>
             
           </div>
           
           
-          <div class="ev-card">
+          
+          
+            
+            
+          
+          
+          <div class="ev-card" data-seendate="2026-07-16T23:12:00+00:00">
             <div class="ev-card-top">
               <div class="ev-title">
                 
-                  <a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20260617b.htm" target="_blank" rel="noopener"><span class="l-en">Federal Reserve Board and Federal Open Market Committee release economic projections from the June 16-17 FOMC meeting</span><span class="l-zh">美联储及联邦公开市场委员会公布6月16-17日FOMC会议经济预测</span></a>
+                  <a href="https://www.marketwatch.com/story/ge-boosts-profit-outlook-but-stock-falls-as-booming-order-growth-cools-f5184533?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">GE boosts profit outlook, but stock falls as booming order growth cools</span><span class="l-zh">通用电气上调盈利展望，但订单增长放缓致股价下跌</span></a>
                 
+                
+                <span class="ev-aged" style="display:none" data-aged-en="older item" data-aged-zh="较早消息"></span>
               </div>
               <div class="ev-badges">
                 
                   
                   
                   
-                  <span class="nb-event ev-macro_release"><span class="l-en">Macro Release</span><span class="l-zh">宏观数据</span></span>
+                  <span class="nb-event ev-guidance_raise"><span class="l-en">Guidance Raise</span><span class="l-zh">上调指引</span></span>
                   
-  <span class="nb-dir info"><span class="l-en">Info</span><span class="l-zh">信息</span></span>
+  <span class="nb-dir bull"><span class="l-en">Bullish</span><span class="l-zh">利多</span></span>
+  
 
                 
                 
-                  <span class="ev-theme-pill th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+                  <span class="ev-theme-pill th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
                 
               </div>
             </div>
@@ -699,75 +767,7 @@
             <div class="ev-meta">
               <span class="em-item">
                 <span class="em-k"><span class="l-en">Novelty</span><span class="l-zh">新颖度</span></span>
-                <span class="em-v">
-  
-    <span class="nov-high">
-      z=+5.9</span>
-  
-</span>
-              </span>
-              
-              <span class="em-item">
-                <span class="em-k"><span class="l-en">Centrality</span><span class="l-zh">中心性</span></span>
-                <span class="em-v">primary</span>
-              </span>
-              
-              
-              
-              <span class="em-item">
                 
-                <span class="tier-badge tier-official"><span class="l-en">Official</span><span class="l-zh">官方</span></span>
-                <span class="em-v">Federal Reserve - Monetary Policy</span>
-              </span>
-              
-              
-              <span class="em-item">
-                <span class="na-when rel-time" data-ts="2026-06-17T18:00:00+00:00"></span>
-              </span>
-              
-            </div>
-            
-            
-              
-              
-              
-              
-              
-              
-              
-            
-            
-            
-          </div>
-          
-          
-          <div class="ev-card">
-            <div class="ev-card-top">
-              <div class="ev-title">
-                
-                  <a href="https://finance.yahoo.com/markets/stocks/articles/freedom-capital-upgrades-iren-limited-160924269.html" target="_blank" rel="noopener"><span class="l-en">Freedom Capital Upgrades IREN Limited (IREN) to Buy</span><span class="l-zh">Freedom Capital Upgrades IREN Limited (IREN) to Buy</span></a>
-                
-              </div>
-              <div class="ev-badges">
-                
-                  
-                  
-                  
-                  <span class="nb-event ev-rating_change"><span class="l-en">Rating Change</span><span class="l-zh">评级变动</span></span>
-                  
-  <span class="nb-dir mix"><span class="l-en">Mixed</span><span class="l-zh">多空交织</span></span>
-  
-
-                
-                
-                  <span class="ev-theme-pill th-analyst"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-                
-              </div>
-            </div>
-            
-            <div class="ev-meta">
-              <span class="em-item">
-                <span class="em-k"><span class="l-en">Novelty</span><span class="l-zh">新颖度</span></span>
                 <span class="em-v">
   —
 </span>
@@ -775,20 +775,23 @@
               
               
               
+              
               <span class="em-item">
                 
-                <span class="tier-badge tier-quality"><span class="l-en">Quality</span><span class="l-zh">精选来源</span></span>
-                <span class="em-v">Yahoo Finance - Top Stories</span>
+                <span class="tier-badge tier-tier1"><span class="l-en">Tier 1</span><span class="l-zh">一级来源</span></span>
+                <span class="em-v">MarketWatch - Top Stories</span>
               </span>
               
               
               <span class="em-item">
-                <span class="na-when rel-time" data-ts="2026-07-14T16:09:24Z"></span>
+                <span class="na-when rel-time" data-ts="2026-07-16T23:12:00+00:00"></span>
               </span>
               
             </div>
             
             
+              
+              
               
               
               
@@ -802,12 +805,20 @@
           </div>
           
           
-          <div class="ev-card">
+          
+          
+            
+            
+          
+          
+          <div class="ev-card" data-seendate="2026-07-13T16:30:12+00:00">
             <div class="ev-card-top">
               <div class="ev-title">
                 
                   <a href="https://www.npr.org/2026/07/13/nx-s1-5879286/paramount-warner-bros-discovery-lawsuit" target="_blank" rel="noopener"><span class="l-en">States sue to stop Paramount-Warner Bros blockbuster merger</span><span class="l-zh">多州起诉阻止派拉蒙与华纳兄弟的巨额合并交易</span></a>
                 
+                
+                <span class="ev-aged" style="display:none" data-aged-en="older item" data-aged-zh="较早消息"></span>
               </div>
               <div class="ev-badges">
                 
@@ -829,11 +840,19 @@
             <div class="ev-meta">
               <span class="em-item">
                 <span class="em-k"><span class="l-en">Novelty</span><span class="l-zh">新颖度</span></span>
+                
                 <span class="em-v">
   —
 </span>
               </span>
               
+              
+              
+                
+                <span class="em-item">
+                  <span class="em-k"><span class="l-en">Echo</span><span class="l-zh">回响</span></span>
+                  <span class="em-v">1 <span class="l-en">src</span><span class="l-zh">来源</span> · 1 <span class="l-en">desk</span><span class="l-zh">台</span></span>
+                </span>
               
               
               <span class="em-item">
@@ -857,6 +876,161 @@
               
               
               
+              
+              
+            
+            
+            
+          </div>
+          
+          
+          
+          
+            
+            
+          
+          
+          <div class="ev-card" data-seendate="2026-06-17T18:00:00+00:00">
+            <div class="ev-card-top">
+              <div class="ev-title">
+                
+                  <a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20260617a.htm" target="_blank" rel="noopener"><span class="l-en">Federal Reserve issues FOMC statement</span><span class="l-zh">美联储发布FOMC声明</span></a>
+                
+                
+                <span class="ev-aged" style="display:none" data-aged-en="older item" data-aged-zh="较早消息"></span>
+              </div>
+              <div class="ev-badges">
+                
+                  
+                  
+                  
+                  <span class="nb-event ev-macro_release"><span class="l-en">Macro Release</span><span class="l-zh">宏观数据</span></span>
+                  
+  <span class="nb-dir info"><span class="l-en">Info</span><span class="l-zh">信息</span></span>
+
+                
+                
+                  <span class="ev-theme-pill th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+                
+              </div>
+            </div>
+            
+            <div class="ev-meta">
+              <span class="em-item">
+                <span class="em-k"><span class="l-en">Novelty</span><span class="l-zh">新颖度</span></span>
+                
+                <span class="em-v">
+  
+    
+    
+    
+      
+    
+    <span class="nov-mid" data-tip-en="z=+1.39" data-tip-zh="z=+1.39">
+      <span class="l-en">Notable</span><span class="l-zh">值得注意</span></span>
+  
+</span>
+              </span>
+              
+              
+              
+              
+              <span class="em-item">
+                
+                <span class="tier-badge tier-official"><span class="l-en">Official</span><span class="l-zh">官方</span></span>
+                <span class="em-v">Federal Reserve - Monetary Policy</span>
+              </span>
+              
+              
+              <span class="em-item">
+                <span class="na-when rel-time" data-ts="2026-06-17T18:00:00+00:00"></span>
+              </span>
+              
+            </div>
+            
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
+            
+            
+            
+          </div>
+          
+          
+          
+          
+            
+            
+          
+          
+          <div class="ev-card" data-seendate="2026-07-06T19:10:00+00:00">
+            <div class="ev-card-top">
+              <div class="ev-title">
+                
+                  <a href="https://www.sec.gov/newsroom/press-releases/2026-62-sec-names-paul-knight-chief-operating-officer" target="_blank" rel="noopener"><span class="l-en">SEC Names Paul Knight as Chief Operating Officer</span><span class="l-zh">SEC任命Paul Knight为首席运营官</span></a>
+                
+                
+                <span class="ev-aged" style="display:none" data-aged-en="older item" data-aged-zh="较早消息"></span>
+              </div>
+              <div class="ev-badges">
+                
+                  
+                  
+                  
+                  <span class="nb-event ev-management_change"><span class="l-en">Management Change</span><span class="l-zh">管理层变动</span></span>
+                  
+  <span class="nb-dir mix"><span class="l-en">Mixed</span><span class="l-zh">多空交织</span></span>
+  
+
+                
+                
+                  <span class="ev-theme-pill th-analyst"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+                
+              </div>
+            </div>
+            
+            <div class="ev-meta">
+              <span class="em-item">
+                <span class="em-k"><span class="l-en">Novelty</span><span class="l-zh">新颖度</span></span>
+                
+                <span class="em-v">
+  —
+</span>
+              </span>
+              
+              
+              
+              
+              <span class="em-item">
+                
+                <span class="tier-badge tier-official"><span class="l-en">Official</span><span class="l-zh">官方</span></span>
+                <span class="em-v">SEC - Press Releases</span>
+              </span>
+              
+              
+              <span class="em-item">
+                <span class="na-when rel-time" data-ts="2026-07-06T19:10:00+00:00"></span>
+              </span>
+              
+            </div>
+            
+            
+              
+              
+              
+              
+              
+              
+              
+              
+              
             
             
             
@@ -873,13 +1047,117 @@
         <div class="board-head">
           <h2><span class="l-en">Macro Release Board</span><span class="l-zh">宏观数据发布面板</span></h2>
           <span class="board-badge"><span class="l-en">DATA DESK</span><span class="l-zh">数据台</span></span>
-          <span class="board-count">2 <span class="l-en">releases</span><span class="l-zh">发布</span></span>
-        </div>
-        <div class="board-note">
-          <span class="l-en">Official FRED-sourced prints from the last 10 days. Prior = revised prior (first-print vintage deferred). Surprise measured vs prior and 3y z-score — no consensus feed, no fabricated miss/beat.</span>
-          <span class="l-zh">过去10天内FRED官方数据。前值 = 修正前值（初值将在后续波次跟进）。偏差相对前值及3年z分数衡量 — 无一致预期数据，不伪造超预期/不及预期。</span>
+          <span class="board-count">9 <span class="l-en">releases</span><span class="l-zh">发布</span></span>
         </div>
         
+        <div class="board-note">
+          <span class="l-en">Most recent FRED print per series, shown within its release cycle. No consensus feed — surprise measured against prior and recent history only.</span>
+          <span class="l-zh">每个系列最新FRED数据，按其发布周期展示。无一致预期数据 — 偏差仅与前值及近期历史对比。</span>
+        </div>
+        
+        <div class="board-stance">
+          <span class="l-en">Data check — these prints confirm the regime, not a trade trigger.</span>
+          <span class="l-zh">数据核查 — 这些数据确认当前格局，不是交易信号。</span>
+        </div>
+        
+          
+          <div class="rel-card">
+            <div class="rel-top">
+              <span class="rel-name">
+                <span class="l-en">CPI (Consumer Price Index)</span>
+                <span class="l-zh">CPI (Consumer Price Index)</span>
+              </span>
+              
+                <span class="rel-size sz-notable">NOTABLE</span>
+              
+              
+              
+            </div>
+            <div class="rel-grid">
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Actual</span><span class="l-zh">实际</span></div>
+                <div class="rcv">0.4729</div>
+                <div class="rcsub">May 2026</div>
+              </div>
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Prior (revised)</span><span class="l-zh">前值（修正）</span></div>
+                <div class="rcv">0.64</div>
+                <div class="rcsub">vs revised prior</div>
+              </div>
+              
+                
+                
+                <div class="rel-cell">
+                  <div class="rck"><span class="l-en">Δ vs prior</span><span class="l-zh">Δ 较前值</span></div>
+                  <div class="rcv">-0.1671</div>
+                </div>
+                
+              
+              
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">vs 3y range</span><span class="l-zh">较3年区间</span></div>
+                <div class="rcv "
+                     data-tip-en="z-score vs 3y history: +1.21"
+                     data-tip-zh="较3年历史z分数：+1.21">
+                  
+                  <span class="l-en">In range</span><span class="l-zh">区间内</span>
+                </div>
+              </div>
+              
+            </div>
+            
+            <div class="rel-summary">CPI (Consumer Price Index): +0.5%; vs +0.6% revised prior; outside the 3y trend; inflation cooler.</div>
+            
+          </div>
+          
+          <div class="rel-card">
+            <div class="rel-top">
+              <span class="rel-name">
+                <span class="l-en">PPI (Producer Price Index)</span>
+                <span class="l-zh">PPI (Producer Price Index)</span>
+              </span>
+              
+                <span class="rel-size sz-large">LARGE</span>
+              
+              
+              
+            </div>
+            <div class="rel-grid">
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Actual</span><span class="l-zh">实际</span></div>
+                <div class="rcv">1.0563</div>
+                <div class="rcsub">May 2026</div>
+              </div>
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Prior (revised)</span><span class="l-zh">前值（修正）</span></div>
+                <div class="rcv">1.0552</div>
+                <div class="rcsub">vs revised prior</div>
+              </div>
+              
+                
+                
+                <div class="rel-cell">
+                  <div class="rck"><span class="l-en">Δ vs prior</span><span class="l-zh">Δ 较前值</span></div>
+                  <div class="rcv">+0.0012</div>
+                </div>
+                
+              
+              
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">vs 3y range</span><span class="l-zh">较3年区间</span></div>
+                <div class="rcv rel-dir-bull"
+                     data-tip-en="z-score vs 3y history: +2.38"
+                     data-tip-zh="较3年历史z分数：+2.38">
+                  
+                  <span class="l-en">High</span><span class="l-zh">偏高</span>
+                </div>
+              </div>
+              
+            </div>
+            
+            <div class="rel-summary">PPI (Producer Price Index): +1.1%; vs +1.1% revised prior; well outside the 3y trend; inflation hotter.</div>
+            
+          </div>
           
           <div class="rel-card">
             <div class="rel-top">
@@ -915,8 +1193,13 @@
               
               
               <div class="rel-cell">
-                <div class="rck"><span class="l-en">z-score (3y)</span><span class="l-zh">z分数(3年)</span></div>
-                <div class="rcv ">-0.34</div>
+                <div class="rck"><span class="l-en">vs 3y range</span><span class="l-zh">较3年区间</span></div>
+                <div class="rcv "
+                     data-tip-en="z-score vs 3y history: -0.34"
+                     data-tip-zh="较3年历史z分数：-0.34">
+                  
+                  <span class="l-en">In range</span><span class="l-zh">区间内</span>
+                </div>
               </div>
               
             </div>
@@ -959,13 +1242,263 @@
               
               
               <div class="rel-cell">
-                <div class="rck"><span class="l-en">z-score (3y)</span><span class="l-zh">z分数(3年)</span></div>
-                <div class="rcv ">+0.51</div>
+                <div class="rck"><span class="l-en">vs 3y range</span><span class="l-zh">较3年区间</span></div>
+                <div class="rcv "
+                     data-tip-en="z-score vs 3y history: +0.51"
+                     data-tip-zh="较3年历史z分数：+0.51">
+                  
+                  <span class="l-en">In range</span><span class="l-zh">区间内</span>
+                </div>
               </div>
               
             </div>
             
             <div class="rel-summary">Unemployment Rate: 4.2%; vs 4.3% revised prior; outside the 3y trend; labor improving.</div>
+            
+          </div>
+          
+          <div class="rel-card">
+            <div class="rel-top">
+              <span class="rel-name">
+                <span class="l-en">Retail Sales</span>
+                <span class="l-zh">Retail Sales</span>
+              </span>
+              
+                <span class="rel-size sz-notable">NOTABLE</span>
+              
+              
+              
+            </div>
+            <div class="rel-grid">
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Actual</span><span class="l-zh">实际</span></div>
+                <div class="rcv">0.8809</div>
+                <div class="rcsub">May 2026</div>
+              </div>
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Prior (revised)</span><span class="l-zh">前值（修正）</span></div>
+                <div class="rcv">0.4009</div>
+                <div class="rcsub">vs revised prior</div>
+              </div>
+              
+                
+                
+                <div class="rel-cell">
+                  <div class="rck"><span class="l-en">Δ vs prior</span><span class="l-zh">Δ 较前值</span></div>
+                  <div class="rcv">+0.48</div>
+                </div>
+                
+              
+              
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">vs 3y range</span><span class="l-zh">较3年区间</span></div>
+                <div class="rcv "
+                     data-tip-en="z-score vs 3y history: +0.86"
+                     data-tip-zh="较3年历史z分数：+0.86">
+                  
+                  <span class="l-en">In range</span><span class="l-zh">区间内</span>
+                </div>
+              </div>
+              
+            </div>
+            
+            <div class="rel-summary">Retail Sales: +0.9%; vs +0.4% revised prior; outside the 3y trend; growth stronger.</div>
+            
+          </div>
+          
+          <div class="rel-card">
+            <div class="rel-top">
+              <span class="rel-name">
+                <span class="l-en">Trade Balance</span>
+                <span class="l-zh">Trade Balance</span>
+              </span>
+              
+                <span class="rel-size sz-inline">INLINE</span>
+              
+              
+              
+            </div>
+            <div class="rel-grid">
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Actual</span><span class="l-zh">实际</span></div>
+                <div class="rcv">-77585.0</div>
+                <div class="rcsub">May 2026</div>
+              </div>
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Prior (revised)</span><span class="l-zh">前值（修正）</span></div>
+                <div class="rcv">-54570.0</div>
+                <div class="rcsub">vs revised prior</div>
+              </div>
+              
+                
+                
+                <div class="rel-cell">
+                  <div class="rck"><span class="l-en">Δ vs prior</span><span class="l-zh">Δ 较前值</span></div>
+                  <div class="rcv">-2.302e+04</div>
+                </div>
+                
+              
+              
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">vs 3y range</span><span class="l-zh">较3年区间</span></div>
+                <div class="rcv "
+                     data-tip-en="z-score vs 3y history: -0.37"
+                     data-tip-zh="较3年历史z分数：-0.37">
+                  
+                  <span class="l-en">In range</span><span class="l-zh">区间内</span>
+                </div>
+              </div>
+              
+            </div>
+            
+            <div class="rel-summary">Trade Balance: $-77,585.0bn; vs $-54,570.0bn revised prior; in line with the 3y trend.</div>
+            
+          </div>
+          
+          <div class="rel-card">
+            <div class="rel-top">
+              <span class="rel-name">
+                <span class="l-en">Initial Jobless Claims</span>
+                <span class="l-zh">Initial Jobless Claims</span>
+              </span>
+              
+                <span class="rel-size sz-notable">NOTABLE</span>
+              
+              
+              
+            </div>
+            <div class="rel-grid">
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Actual</span><span class="l-zh">实际</span></div>
+                <div class="rcv">215000.0</div>
+                <div class="rcsub">wk of Jul 4</div>
+              </div>
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Prior (revised)</span><span class="l-zh">前值（修正）</span></div>
+                <div class="rcv">217000.0</div>
+                <div class="rcsub">vs revised prior</div>
+              </div>
+              
+                
+                
+                <div class="rel-cell">
+                  <div class="rck"><span class="l-en">Δ vs prior</span><span class="l-zh">Δ 较前值</span></div>
+                  <div class="rcv">-2000</div>
+                </div>
+                
+              
+              
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">vs 3y range</span><span class="l-zh">较3年区间</span></div>
+                <div class="rcv "
+                     data-tip-en="z-score vs 3y history: -0.57"
+                     data-tip-zh="较3年历史z分数：-0.57">
+                  
+                  <span class="l-en">In range</span><span class="l-zh">区间内</span>
+                </div>
+              </div>
+              
+            </div>
+            
+            <div class="rel-summary">Initial Jobless Claims: 215,000; vs 217,000 revised prior; outside the 3y trend; labor improving.</div>
+            
+          </div>
+          
+          <div class="rel-card">
+            <div class="rel-top">
+              <span class="rel-name">
+                <span class="l-en">Real GDP (Quarterly, SAAR)</span>
+                <span class="l-zh">Real GDP (Quarterly, SAAR)</span>
+              </span>
+              
+                <span class="rel-size sz-inline">INLINE</span>
+              
+              
+              
+            </div>
+            <div class="rel-grid">
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Actual</span><span class="l-zh">实际</span></div>
+                <div class="rcv">2.1</div>
+                <div class="rcsub">Q1 2026</div>
+              </div>
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Prior (revised)</span><span class="l-zh">前值（修正）</span></div>
+                <div class="rcv">0.5</div>
+                <div class="rcsub">vs revised prior</div>
+              </div>
+              
+                
+                
+                <div class="rel-cell">
+                  <div class="rck"><span class="l-en">Δ vs prior</span><span class="l-zh">Δ 较前值</span></div>
+                  <div class="rcv">+1.6</div>
+                </div>
+                
+              
+              
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">vs 3y range</span><span class="l-zh">较3年区间</span></div>
+                <div class="rcv "
+                     data-tip-en="z-score vs 3y history: -0.30"
+                     data-tip-zh="较3年历史z分数：-0.30">
+                  
+                  <span class="l-en">In range</span><span class="l-zh">区间内</span>
+                </div>
+              </div>
+              
+            </div>
+            
+            <div class="rel-summary">Real GDP (Quarterly, SAAR): 2.1%; vs 0.5% revised prior; in line with the 3y trend; growth stronger.</div>
+            
+          </div>
+          
+          <div class="rel-card">
+            <div class="rel-top">
+              <span class="rel-name">
+                <span class="l-en">PCE Price Index</span>
+                <span class="l-zh">PCE Price Index</span>
+              </span>
+              
+                <span class="rel-size sz-notable">NOTABLE</span>
+              
+              
+              
+            </div>
+            <div class="rel-grid">
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Actual</span><span class="l-zh">实际</span></div>
+                <div class="rcv">0.4498</div>
+                <div class="rcsub">May 2026</div>
+              </div>
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">Prior (revised)</span><span class="l-zh">前值（修正）</span></div>
+                <div class="rcv">0.4103</div>
+                <div class="rcsub">vs revised prior</div>
+              </div>
+              
+                
+                
+                <div class="rel-cell">
+                  <div class="rck"><span class="l-en">Δ vs prior</span><span class="l-zh">Δ 较前值</span></div>
+                  <div class="rcv">+0.0396</div>
+                </div>
+                
+              
+              
+              <div class="rel-cell">
+                <div class="rck"><span class="l-en">vs 3y range</span><span class="l-zh">较3年区间</span></div>
+                <div class="rcv "
+                     data-tip-en="z-score vs 3y history: +1.48"
+                     data-tip-zh="较3年历史z分数：+1.48">
+                  
+                  <span class="l-en">In range</span><span class="l-zh">区间内</span>
+                </div>
+              </div>
+              
+            </div>
+            
+            <div class="rel-summary">PCE Price Index: +0.4%; vs +0.4% revised prior; outside the 3y trend; inflation hotter.</div>
             
           </div>
           
@@ -981,15 +1514,22 @@
           <h2><span class="l-en">Theme Pulse</span><span class="l-zh">主题脉冲</span></h2>
           <span class="board-badge"><span class="l-en">NEWS-SIDE ONLY</span><span class="l-zh">仅新闻侧</span></span>
         </div>
+        
         <div class="board-note">
-          <span class="l-en">Headline count + max novelty z per theme, from the kept set. Price-confirmation join is pending (news theme keys do not map cleanly to the rotation universe) — news-side intensity only.</span>
-          <span class="l-zh">保留集中各主题的头条数量及最高新颖度z值。价格确认连接待完善（新闻主题键与轮动标的不能清晰对应）— 仅展示新闻侧强度。</span>
+          <span class="l-en">Headline count and peak novelty per theme from today's kept set — a texture read, not a signal.</span>
+          <span class="l-zh">今日保留集中各主题的头条数量及最高新颖度 — 纹理参考，非信号。</span>
         </div>
         
         
           
           
             
+          
+            
+          
+            
+          
+            
               
               
                 
@@ -1000,6 +1540,35 @@
             
           
             
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+              
+              
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
               
               
                 
@@ -1018,21 +1587,11 @@
             
           
             
-          
-            
               
               
-            
-          
-            
-          
-            
+                
+                
               
-              
-            
-          
-            
-          
             
           
             
@@ -1040,6 +1599,31 @@
             
               
               
+                
+                
+              
+            
+          
+            
+          
+            
+          
+            
+              
+              
+                
+                
+              
+            
+          
+            
+              
+              
+                
+                
+              
+            
+          
             
           
             
@@ -1061,124 +1645,6 @@
             
           
             
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-              
-              
-                
-                
-                  
-                
-              
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-              
-              
-                
-                
-                  
-                
-              
-            
-          
-            
-          
-            
-              
-              
-                
-                
-              
-            
-          
-            
-              
-              
-                
-                
-              
-            
-          
-            
-              
-              
-                
-                
-                  
-                
-              
-            
-          
-            
-          
-          
-            
-          
-        
-          
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-          
-        
-          
           
             
           
@@ -1223,6 +1689,58 @@
             
           
             
+              
+              
+                
+                
+              
+            
+          
+            
+          
+            
+              
+              
+                
+                
+              
+            
+          
+            
+          
+            
+              
+              
+                
+                
+              
+            
+          
+            
+          
+            
+          
+            
+              
+              
+                
+                
+              
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
           
           
             
@@ -1266,6 +1784,40 @@
           
             
           
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
           
         
           
@@ -1295,20 +1847,6 @@
             
           
             
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-          
-        
-          
           
             
           
@@ -1354,11 +1892,290 @@
           
             
           
+            
+              
+              
+                
+                
+              
+            
+          
+            
+              
+              
+                
+                
+              
+            
+          
+            
+          
+            
+              
+              
+                
+                
+              
+            
+          
           
             
           
         
           
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+          
+        
+          
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+          
+        
+          
+          
+            
+              
+              
+                
+                
+                  
+                
+              
+            
+          
+            
+              
+              
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+              
+              
+                
+                
+              
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+              
+              
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+              
+              
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+          
+            
+          
+        
+          
+          
+            
+          
+            
+          
+            
           
             
           
@@ -1399,11 +2216,43 @@
           
             
           
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
           
             
           
         
           
+          
+            
+          
+            
           
             
           
@@ -1452,6 +2301,118 @@
           
             
           
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+          
+            
+          
+        
+          
+          
+            
+          
+            
+          
+            
+              
+              
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+              
+              
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
           
             
           
@@ -1465,11 +2426,6 @@
             
           
             
-              
-              
-            
-          
-            
           
             
           
@@ -1479,6 +2435,24 @@
             
           
             
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
               
               
             
@@ -1488,6 +2462,44 @@
             
           
             
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+          
+            
+          
+        
+          
           
             
           
@@ -1518,6 +2530,74 @@
             
           
             
+              
+              
+            
+          
+            
+          
+            
+              
+              
+            
+          
+            
+              
+              
+                
+                
+                  
+                
+              
+            
+          
+            
+              
+              
+                
+                
+              
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
           
           
             
@@ -1561,9 +2641,19 @@
           
             
           
+            
           
-        
+            
           
+            
+          
+            
+          
+            
+          
+            
+          
+            
           
             
           
@@ -1585,76 +2675,14 @@
             
           
             
-          
-            
-          
-            
-              
-              
-            
-          
-            
-              
-              
-            
-          
-            
               
               
             
           
             
           
-            
           
             
-          
-            
-          
-            
-          
-          
-            
-          
-        
-          
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
-            
-          
           
         
         
@@ -1662,25 +2690,118 @@
           
           <div class="pulse-cell">
             <div class="pt-label th-monetary ev-theme-pill" style="width:fit-content"><span class="l-en">Fed</span><span class="l-zh">美联储</span></div>
-            <div class="pt-count">4</div>
+            <div class="pt-count">7</div>
+            
             <div class="pt-meta">
               <span class="l-en">headline</span><span class="l-zh">条头条</span>s
-               · <span class="l-en">max z</span><span class="l-zh">最高z</span> 
+              
+                · 
   
-    <span class="nov-high">
-      z=+5.9</span>
+    
+    
+    
+      
+    
+    <span class="nov-mid" data-tip-en="z=+1.39" data-tip-zh="z=+1.39">
+      <span class="l-en">Notable</span><span class="l-zh">值得注意</span></span>
   
 
+              
             </div>
             
-            <div class="pt-bar" style="width:20%"></div>
+            <div class="pt-bar" style="width:35%"></div>
+          </div>
+          
+          <div class="pulse-cell">
+            <div class="pt-label th-inflation ev-theme-pill" style="width:fit-content"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></div>
+            <div class="pt-count">5</div>
+            
+            <div class="pt-meta">
+              <span class="l-en">headline</span><span class="l-zh">条头条</span>s
+              
+                · 
+  
+    
+    
+    
+      
+    
+    <span class="nov-high" data-tip-en="z=+2.06" data-tip-zh="z=+2.06">
+      <span class="l-en">Unusual</span><span class="l-zh">罕见</span></span>
+  
+
+              
+            </div>
+            
+            <div class="pt-bar" style="width:25%"></div>
+          </div>
+          
+          <div class="pulse-cell">
+            <div class="pt-label th-earnings ev-theme-pill" style="width:fit-content"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></div>
+            <div class="pt-count">5</div>
+            
+            <div class="pt-meta">
+              <span class="l-en">headline</span><span class="l-zh">条头条</span>s
+              
+                · 
+  
+    
+    
+    
+      
+    
+    <span class="nov-high" data-tip-en="z=+10.70" data-tip-zh="z=+10.70">
+      <span class="l-en">Unusual</span><span class="l-zh">罕见</span></span>
+  
+
+              
+            </div>
+            
+            <div class="pt-bar" style="width:25%"></div>
           </div>
           
           <div class="pulse-cell">
             <div class="pt-label th-stocks ev-theme-pill" style="width:fit-content"><span class="l-en">Stocks</span><span class="l-zh">个股</span></div>
-            <div class="pt-count">4</div>
+            <div class="pt-count">5</div>
+            
             <div class="pt-meta">
               <span class="l-en">headline</span><span class="l-zh">条头条</span>s
+              
+                · 
+  
+    
+    
+    
+      
+    
+    <span class="nov-low" data-tip-en="z=-0.37" data-tip-zh="z=-0.37">
+      <span class="l-en">Routine</span><span class="l-zh">常规</span></span>
+  
+
+              
+            </div>
+            
+            <div class="pt-bar" style="width:25%"></div>
+          </div>
+          
+          <div class="pulse-cell">
+            <div class="pt-label th-growth ev-theme-pill" style="width:fit-content"><span class="l-en">Growth</span><span class="l-zh">增长</span></div>
+            <div class="pt-count">4</div>
+            
+            <div class="pt-meta">
+              <span class="l-en">headline</span><span class="l-zh">条头条</span>s
+              
+                · 
+  
+    
+    
+    
+      
+    
+    <span class="nov-high" data-tip-en="z=+1.60" data-tip-zh="z=+1.60">
+      <span class="l-en">Unusual</span><span class="l-zh">罕见</span></span>
+  
+
               
             </div>
             
@@ -1688,88 +2809,69 @@
           </div>
           
           <div class="pulse-cell">
-            <div class="pt-label th-deals ev-theme-pill" style="width:fit-content"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></div>
-            <div class="pt-count">3</div>
-            <div class="pt-meta">
-              <span class="l-en">headline</span><span class="l-zh">条头条</span>s
-               · <span class="l-en">max z</span><span class="l-zh">最高z</span> 
-  
-    <span class="nov-low">
-      z=-0.4</span>
-  
-
-            </div>
-            
-            <div class="pt-bar" style="width:15%"></div>
-          </div>
-          
-          <div class="pulse-cell">
-            <div class="pt-label th-inflation ev-theme-pill" style="width:fit-content"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></div>
-            <div class="pt-count">2</div>
-            <div class="pt-meta">
-              <span class="l-en">headline</span><span class="l-zh">条头条</span>s
-               · <span class="l-en">max z</span><span class="l-zh">最高z</span> 
-  
-    <span class="nov-mid">
-      z=+1.3</span>
-  
-
-            </div>
-            
-            <div class="pt-bar" style="width:10%"></div>
-          </div>
-          
-          <div class="pulse-cell">
             <div class="pt-label th-analyst ev-theme-pill" style="width:fit-content"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></div>
             <div class="pt-count">2</div>
+            
             <div class="pt-meta">
               <span class="l-en">headline</span><span class="l-zh">条头条</span>s
-               · <span class="l-en">max z</span><span class="l-zh">最高z</span> 
+              
+                · 
   
-    <span class="nov-low">
-      z=-0.4</span>
+    
+    
+    
+      
+    
+    <span class="nov-low" data-tip-en="z=-0.37" data-tip-zh="z=-0.37">
+      <span class="l-en">Routine</span><span class="l-zh">常规</span></span>
   
 
+              
             </div>
             
             <div class="pt-bar" style="width:10%"></div>
           </div>
           
           <div class="pulse-cell">
-            <div class="pt-label th-growth ev-theme-pill" style="width:fit-content"><span class="l-en">Growth</span><span class="l-zh">增长</span></div>
-            <div class="pt-count">1</div>
+            <div class="pt-label th-deals ev-theme-pill" style="width:fit-content"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></div>
+            <div class="pt-count">2</div>
+            
             <div class="pt-meta">
-              <span class="l-en">headline</span><span class="l-zh">条头条</span>
-               · <span class="l-en">max z</span><span class="l-zh">最高z</span> 
-  
-    <span class="nov-mid">
-      z=+1.3</span>
-  
-
+              <span class="l-en">headline</span><span class="l-zh">条头条</span>s
+              
             </div>
             
-            <div class="pt-bar" style="width:5%"></div>
+            <div class="pt-bar" style="width:10%"></div>
           </div>
           
           <div class="pulse-cell">
-            <div class="pt-label th-earnings ev-theme-pill" style="width:fit-content"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></div>
-            <div class="pt-count">1</div>
+            <div class="pt-label th-capital_return ev-theme-pill" style="width:fit-content"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></div>
+            <div class="pt-count">2</div>
+            
             <div class="pt-meta">
-              <span class="l-en">headline</span><span class="l-zh">条头条</span>
-               · <span class="l-en">max z</span><span class="l-zh">最高z</span> 
-  
-    <span class="nov-low">
-      z=-0.4</span>
-  
-
+              <span class="l-en">headline</span><span class="l-zh">条头条</span>s
+              
             </div>
             
-            <div class="pt-bar" style="width:5%"></div>
+            <div class="pt-bar" style="width:10%"></div>
+          </div>
+          
+          <div class="pulse-cell">
+            <div class="pt-label th-macro ev-theme-pill" style="width:fit-content"><span class="l-en">Macro</span><span class="l-zh">宏观</span></div>
+            <div class="pt-count">2</div>
+            
+            <div class="pt-meta">
+              <span class="l-en">headline</span><span class="l-zh">条头条</span>s
+              
+            </div>
+            
+            <div class="pt-bar" style="width:10%"></div>
           </div>
           
           <div class="pulse-cell">
             <div class="pt-label th-guidance ev-theme-pill" style="width:fit-content"><span class="l-en">Guidance</span><span class="l-zh">指引</span></div>
             <div class="pt-count">1</div>
+            
             <div class="pt-meta">
               <span class="l-en">headline</span><span class="l-zh">条头条</span>
               
@@ -1786,18 +2888,72 @@
       
       
       
+      
       <details class="board board-toggle" id="nxContextSection">
         <summary class="board-head">
-          <h2><span class="l-en">Context Headlines</span><span class="l-zh">背景头条</span></h2>
-          <span class="board-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅背景</span></span>
-          <span class="board-count">14 <span class="l-en">items</span><span class="l-zh">条目</span></span>
+          
+          <h2><span class="l-en">Other macro headlines</span><span class="l-zh">其他宏观头条</span></h2>
+          <span class="board-count">30 <span class="l-en">items</span><span class="l-zh">条目</span></span>
           <span class="bh-arrow">▾</span>
         </summary>
+        
         <div class="board-note">
-          <span class="l-en">Kept headlines without a detected event class — macro-relevant background, not actionable deltas. Collapsed by default.</span>
-          <span class="l-zh">无检测到事件类型的保留头条 — 宏观相关背景，非可操作变化。默认折叠。</span>
+          <span class="l-en">Macro-relevant background without a detected event — a reference read, not a trading cue. Official releases are kept up to ~45 days; wire items ~5 days.</span>
+          <span class="l-zh">无检测事件的宏观相关背景 — 参考阅读，非交易提示。官方发布最长保留约45天，快讯约5天。</span>
         </div>
         
+        <div class="board-stance">
+          <span class="l-en">Background read — don't chase these headlines.</span>
+          <span class="l-zh">背景阅读 — 不必追随这些头条。</span>
+        </div>
+        
+        
+          
+          <details class="na-item"
+            data-theme="capital_return"
+            data-search="home bancshares signals november mountain commerce conversion with $5.5m annual cost saves, while stepping up buybacks seekingalpha.com seeking alpha - market currents capital_return">
+            <summary class="na-sum">
+              <span class="na-theme th-capital_return"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="na-htitle"><span class="l-en">Home BancShares signals November Mountain Commerce conversion with $5.5M annual cost saves, while stepping up buybacks</span><span class="l-zh">Home BancShares 表示将于11月完成Mountain Commerce转换，年度成本节省550万美元，同时加大股票回购力度</span></span>
+              <span class="na-right">
+                <span class="na-src">Seeking Alpha - Market Currents</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="na-pill"><span class="l-en">buybacks & dividends</span><span class="l-zh">回购与分红</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://seekingalpha.com/news/4614735-home-bancshares-signals-november-mountain-commerce-conversion-with-5_5m-annual-cost-saves?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T23:47:06+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="earnings"
+            data-search="netflix stock falls as earnings forecast disappoints, company says it will give fewer engagement updates cnbc.com cnbc - stock blog earnings">
+            <summary class="na-sum">
+              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="na-htitle"><span class="l-en">Netflix stock falls as earnings forecast disappoints, company says it will give fewer engagement updates</span><span class="l-zh">Netflix股价下跌，因盈利预测不及预期，公司表示将减少参与度更新</span></span>
+              <span class="na-right">
+                <span class="na-src">CNBC - Stock Blog</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">single stocks</span><span class="l-zh">个股</span></span><span class="na-pill"><span class="l-en">earnings</span><span class="l-zh">业绩</span></span><span class="na-pill"><span class="l-en">guidance</span><span class="l-zh">业绩指引</span></span>
+                <span class="na-pill tk">NFLX</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.cnbc.com/2026/07/16/netflix-nflx-earnings-q2-2026.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T21:53:56+00:00"></span>
+              </div>
+            </div>
+          </details>
           
           <details class="na-item"
             data-theme="guidance"
@@ -1812,45 +2968,22 @@
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                <span class="na-pill">guidance</span><span class="na-pill">analyst</span>
+                <span class="na-pill"><span class="l-en">guidance</span><span class="l-zh">业绩指引</span></span><span class="na-pill"><span class="l-en">analyst views</span><span class="l-zh">分析师观点</span></span>
                 <span class="na-pill tk">GLD</span><span class="na-pill tk">GS</span>
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
                 <a class="na-read" href="https://www.cnbc.com/2026/07/14/were-raising-our-price-target-on-goldman-sachs-after-a-blowout-quarter.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-14T18:49:51+00:00"></span>
+                <span class="na-when rel-time" data-ts="2026-07-16T12:55:56+00:00"></span>
               </div>
             </div>
           </details>
           
           <details class="na-item"
             data-theme="stocks"
-            data-search="oil stockpiles running dangerously low as hormuz shuts again, traders warn seekingalpha.com seeking alpha - market currents stocks">
+            data-search="softbank sinks 8% as asia chip stocks track wall street ai sell-off cnbc.com cnbc - tech stocks">
             <summary class="na-sum">
               <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">Oil stockpiles running dangerously low as Hormuz shuts again, traders warn</span><span class="l-zh">Oil stockpiles running dangerously low as Hormuz shuts again, traders warn</span></span>
-              <span class="na-right">
-                <span class="na-src">Seeking Alpha - Market Currents</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <div class="na-tags">
-                <span class="na-pill">fiscal trade</span><span class="na-pill">energy</span>
-                <span class="na-pill tk">USO</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://seekingalpha.com/news/4614322-oil-stockpiles-close-to-running-on-empty-as-hormuz-shuts-again-traders-warn?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-15T23:55:50+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="deals"
-            data-search="spacex stock sinks below $135 ipo price for the first time cnbc.com cnbc - tech deals">
-            <summary class="na-sum">
-              <span class="na-theme th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="na-htitle"><span class="l-en">SpaceX stock sinks below $135 IPO price for the first time</span><span class="l-zh">SpaceX stock sinks below $135 IPO price for the first time</span></span>
+              <span class="na-htitle"><span class="l-en">SoftBank sinks 8% as Asia chip stocks track Wall Street AI sell-off</span><span class="l-zh">软银下跌8%，亚洲芯片股追随华尔街AI抛售潮</span></span>
               <span class="na-right">
                 <span class="na-src">CNBC - Tech</span>
                 <span class="na-chev">▾</span>
@@ -1858,81 +2991,12 @@
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                <span class="na-pill">equities</span><span class="na-pill">deals</span>
-                
+                <span class="na-pill"><span class="l-en">credit</span><span class="l-zh">信贷</span></span>
+                <span class="na-pill tk">SPY</span><span class="na-pill tk">QQQ</span><span class="na-pill tk">XLF</span><span class="na-pill tk">XLK</span>
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://www.cnbc.com/2026/07/15/spacex-spcx-stock-ipo-price.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-15T20:20:10+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="inflation"
-            data-search="inflation cools, morgan stanley earnings, ibm&#39;s bad day and more in morning squawk cnbc.com cnbc - tech inflation">
-            <summary class="na-sum">
-              <span class="na-theme th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-              <span class="na-htitle"><span class="l-en">Inflation cools, Morgan Stanley earnings, IBM&#39;s bad day and more in Morning Squawk</span><span class="l-zh">Inflation cools, Morgan Stanley earnings, IBM&#39;s bad day and more in Morning Squawk</span></span>
-              <span class="na-right">
-                <span class="na-src">CNBC - Tech</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <div class="na-tags">
-                <span class="na-pill">inflation</span><span class="na-pill">earnings</span>
-                <span class="na-pill tk">MS</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://www.cnbc.com/2026/07/15/5-things-to-know-before-the-stock-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-15T12:39:26+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="earnings"
-            data-search="as bank earnings approach, a market anomaly emerges cnbc.com cnbc - investing earnings">
-            <summary class="na-sum">
-              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="na-htitle"><span class="l-en">As bank earnings approach, a market anomaly emerges</span><span class="l-zh">银行财报季临近，市场出现反常现象</span></span>
-              <span class="na-right">
-                <span class="na-src">CNBC - Investing</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <div class="na-tags">
-                <span class="na-pill">credit</span><span class="na-pill">earnings</span>
-                <span class="na-pill tk">XLF</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://www.cnbc.com/2026/07/10/as-bank-earnings-approach-a-market-anomaly-emerges.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-10T17:18:36+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="earnings"
-            data-search="as bank earnings approach, a market anomaly emerges cnbc.com cnbc - investing earnings">
-            <summary class="na-sum">
-              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="na-htitle"><span class="l-en">As bank earnings approach, a market anomaly emerges</span><span class="l-zh">银行财报季临近，市场出现反常现象</span></span>
-              <span class="na-right">
-                <span class="na-src">CNBC - Investing</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <div class="na-tags">
-                <span class="na-pill">credit</span><span class="na-pill">earnings</span>
-                <span class="na-pill tk">XLF</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://www.cnbc.com/2026/07/10/as-bank-earnings-approach-a-market-anomaly-emerges.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-10T17:18:36+00:00"></span>
+                <a class="na-read" href="https://www.cnbc.com/2026/07/17/softbank-chip-stocks-asia-wall-street-ai-rout.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T01:55:49+00:00"></span>
               </div>
             </div>
           </details>
@@ -1950,7 +3014,7 @@
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                <span class="na-pill">growth</span><span class="na-pill">credit</span>
+                <span class="na-pill"><span class="l-en">growth</span><span class="l-zh">增长</span></span><span class="na-pill"><span class="l-en">credit</span><span class="l-zh">信贷</span></span>
                 <span class="na-pill tk">KRE</span><span class="na-pill tk">XLF</span>
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -1962,10 +3026,10 @@
           
           <details class="na-item"
             data-theme="stocks"
-            data-search="eos energy surges after winning golden dome contract from pentagon seekingalpha.com seeking alpha - market currents stocks">
+            data-search="constellation energy to invest in nuclear technology developer blue energy seekingalpha.com seeking alpha - market currents stocks">
             <summary class="na-sum">
               <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">Eos Energy surges after winning Golden Dome contract from Pentagon</span><span class="l-zh">Eos Energy surges after winning Golden Dome contract from Pentagon</span></span>
+              <span class="na-htitle"><span class="l-en">Constellation Energy to invest in nuclear technology developer Blue Energy</span><span class="l-zh">Constellation Energy将投资核电技术开发商Blue Energy</span></span>
               <span class="na-right">
                 <span class="na-src">Seeking Alpha - Market Currents</span>
                 <span class="na-chev">▾</span>
@@ -1973,114 +3037,114 @@
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                <span class="na-pill">energy</span>
-                <span class="na-pill tk">GLD</span><span class="na-pill tk">USO</span><span class="na-pill tk">XLE</span>
+                <span class="na-pill"><span class="l-en">energy</span><span class="l-zh">能源</span></span>
+                <span class="na-pill tk">USO</span><span class="na-pill tk">XLE</span><span class="na-pill tk">XLK</span>
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://seekingalpha.com/news/4614316-eos-energy-surges-after-winning-golden-dome-contract-from-pentagon?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-15T22:02:34+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="stocks"
-            data-search="j.b. hunt outlines 1,000 to 1,200 new gross truck sales target as intermodal posts 578,000-load record seekingalpha.com seeking alpha - market currents stocks">
-            <summary class="na-sum">
-              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">J.B. Hunt outlines 1,000 to 1,200 new gross truck sales target as intermodal posts 578,000-load record</span><span class="l-zh">J.B. Hunt outlines 1,000 to 1,200 new gross truck sales target as intermodal posts 578,000-load record</span></span>
-              <span class="na-right">
-                <span class="na-src">Seeking Alpha - Market Currents</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <div class="na-tags">
-                <span class="na-pill">stocks</span>
-                
-              </div>
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://seekingalpha.com/news/4614323-j-b-hunt-outlines-1000-to-1200-new-gross-truck-sales-target-as-intermodal-posts-578000-load?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-15T23:28:38+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="stocks"
-            data-search="trump calls out general dynamics on submarines amid push on defense contractors seekingalpha.com seeking alpha - market currents stocks">
-            <summary class="na-sum">
-              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">Trump calls out General Dynamics on submarines amid push on defense contractors</span><span class="l-zh">Trump calls out General Dynamics on submarines amid push on defense contractors</span></span>
-              <span class="na-right">
-                <span class="na-src">Seeking Alpha - Market Currents</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <div class="na-tags">
-                <span class="na-pill">stocks</span>
-                
-              </div>
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://seekingalpha.com/news/4614320-trump-calls-out-general-dynamics-on-submarines-amid-push-on-defense-contractors?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-15T22:45:37+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="monetary"
-            data-search="federal reserve board announces that results from its annual bank stress test will be released on wednesday, june 24, at 4 p.m. edt. federalreserve.gov federal reserve - all press monetary">
-            <summary class="na-sum">
-              <span class="na-theme th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="na-htitle"><span class="l-en">Federal Reserve Board announces that results from its annual bank stress test will be released on Wednesday, June 24, at 4 p.m. EDT.</span><span class="l-zh">美联储宣布年度银行压力测试结果将于美国东部时间6月24日周三下午4点公布</span></span>
-              <span class="na-right">
-                <span class="na-src">Federal Reserve - All Press</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <div class="na-tags">
-                <span class="na-pill">credit</span>
-                <span class="na-pill tk">KRE</span><span class="na-pill tk">XLF</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260609a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-06-09T20:00:00+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="analyst"
-            data-search="morgan stanley raises its price target on alnylam (alny) yahoo.com yahoo finance - top stories analyst">
-            <summary class="na-sum">
-              <span class="na-theme th-analyst"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-              <span class="na-htitle"><span class="l-en">Morgan Stanley Raises its Price Target on Alnylam (ALNY)</span><span class="l-zh">Morgan Stanley Raises its Price Target on Alnylam (ALNY)</span></span>
-              <span class="na-right">
-                <span class="na-src">NPR - Economy</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <div class="na-tags">
-                <span class="na-pill">analyst</span>
-                <span class="na-pill tk">MS</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/morgan-stanley-raises-price-target-160956965.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-14T16:09:56Z"></span>
+                <a class="na-read" href="https://seekingalpha.com/news/4614732-constellation-energy-to-invest-in-nuclear-technology-developer-blue-energy?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T00:08:44+00:00"></span>
               </div>
             </div>
           </details>
           
           <details class="na-item"
             data-theme="deals"
-            data-search="exclusive-data center firm switch taps banks for ipo that could value it up to $80 billion, sources say yahoo.com yahoo finance - top stories deals">
+            data-search="as spacex’s stock notches first close below ipo price, the company is gearing up for a crucial launch marketwatch.com marketwatch - top stories deals">
             <summary class="na-sum">
               <span class="na-theme th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="na-htitle"><span class="l-en">Exclusive-Data center firm Switch taps banks for IPO that could value it up to $80 billion, sources say</span><span class="l-zh">Exclusive-Data center firm Switch taps banks for IPO that could value it up to $80 billion, sources say</span></span>
+              <span class="na-htitle"><span class="l-en">As SpaceX’s stock notches first close below IPO price, the company is gearing up for a crucial launch</span><span class="l-zh">SpaceX股价首次跌破IPO发行价，公司正备战关键发射</span></span>
+              <span class="na-right">
+                <span class="na-src">MarketWatch - Top Stories</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="na-pill"><span class="l-en">deals & IPOs</span><span class="l-zh">并购/IPO</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.marketwatch.com/story/spacexs-starship-is-set-for-takeoff-and-its-floundering-stock-could-use-the-lift-ec5629d5?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T23:36:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks"
+            data-search="oil pipelines bypassing strait of hormuz would not end threat to middle east crude exports seekingalpha.com seeking alpha - market currents stocks">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Oil pipelines bypassing Strait of Hormuz would not end threat to Middle East crude exports</span><span class="l-zh">绕过霍尔木兹海峡的石油管道无法消除中东原油出口面临的威胁</span></span>
+              <span class="na-right">
+                <span class="na-src">Seeking Alpha - Market Currents</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">energy</span><span class="l-zh">能源</span></span>
+                <span class="na-pill tk">USO</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://seekingalpha.com/news/4614734-oil-pipelines-bypassing-strait-of-hormuz-would-not-end-threat-to-middle-east-crude-exports?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T23:55:48+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks"
+            data-search="great southern outlines $4.4m-$4.8m expense savings beginning q4 2026 as 9 banking centers consolidate seekingalpha.com seeking alpha - market currents stocks">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Great Southern outlines $4.4M-$4.8M expense savings beginning Q4 2026 as 9 banking centers consolidate</span><span class="l-zh">Great Southern概述2026年第四季度起将节省440万至480万美元费用，合并9家银行中心</span></span>
+              <span class="na-right">
+                <span class="na-src">Seeking Alpha - Market Currents</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">credit</span><span class="l-zh">信贷</span></span>
+                <span class="na-pill tk">XLF</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://seekingalpha.com/news/4614733-great-southern-outlines-4_4m-4_8m-expense-savings-beginning-q4-2026-as-9-banking-centers?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T22:47:36+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks"
+            data-search="alphabet’s stock falls as gemini delays suggest google is struggling to keep up in the ai race marketwatch.com marketwatch - top stories stocks">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Alphabet’s stock falls as Gemini delays suggest Google is struggling to keep up in the AI race</span><span class="l-zh">Alphabet股价下跌，Gemini延迟暗示谷歌在AI竞赛中挣扎追进</span></span>
+              <span class="na-right">
+                <span class="na-src">MarketWatch - Top Stories</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">single stocks</span><span class="l-zh">个股</span></span>
+                <span class="na-pill tk">QQQ</span><span class="na-pill tk">GOOGL</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.marketwatch.com/story/alphabets-stock-falls-as-gemini-delays-suggest-google-is-struggling-to-keep-up-in-the-ai-race-4d821205?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T21:32:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="capital_return"
+            data-search="3 market-beating dividend kings for generations of income yahoo.com yahoo finance - top stories capital_return">
+            <summary class="na-sum">
+              <span class="na-theme th-capital_return"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="na-htitle"><span class="l-en">3 Market-Beating Dividend Kings for Generations of Income</span><span class="l-zh">三只超越市场的股息王股票，可提供世代收入</span></span>
               <span class="na-right">
                 <span class="na-src">Yahoo Finance - Top Stories</span>
                 <span class="na-chev">▾</span>
@@ -2088,12 +3152,58 @@
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                <span class="na-pill">credit</span><span class="na-pill">equities</span><span class="na-pill">deals</span>
-                <span class="na-pill tk">XLF</span>
+                <span class="na-pill"><span class="l-en">buybacks & dividends</span><span class="l-zh">回购与分红</span></span>
+                
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://finance.yahoo.com/technology/articles/exclusive-data-center-firm-switch-152221299.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-14T15:22:21Z"></span>
+                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/3-market-beating-dividend-kings-140645760.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-15T14:06:45Z"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="analyst"
+            data-search="bank of america securities maintains buy rating for beam therapeutics (beam) yahoo.com yahoo finance - top stories analyst">
+            <summary class="na-sum">
+              <span class="na-theme th-analyst"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+              <span class="na-htitle"><span class="l-en">Bank of America Securities Maintains Buy Rating for Beam Therapeutics (BEAM)</span><span class="l-zh">美银证券维持Beam Therapeutics买入评级</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">credit</span><span class="l-zh">信贷</span></span><span class="na-pill"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="na-pill"><span class="l-en">analyst views</span><span class="l-zh">分析师观点</span></span>
+                <span class="na-pill tk">XLF</span><span class="na-pill tk">BAC</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://finance.yahoo.com/healthcare/articles/bank-america-securities-maintains-buy-140153544.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-15T14:01:53Z"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="monetary"
+            data-search="here&#39;s why the latest inflation data was good news for fed chair kevin warsh and the stock market yahoo.com yahoo finance - top stories monetary">
+            <summary class="na-sum">
+              <span class="na-theme th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="na-htitle"><span class="l-en">Here&#39;s Why the Latest Inflation Data Was Good News for Fed Chair Kevin Warsh and the Stock Market</span><span class="l-zh">最新通胀数据为何对美联储主席Kevin Warsh和股市是好消息</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">rates</span><span class="l-zh">利率</span></span><span class="na-pill"><span class="l-en">inflation</span><span class="l-zh">通胀</span></span>
+                <span class="na-pill tk">SPY</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://finance.yahoo.com/economy/policy/articles/heres-why-latest-inflation-data-135700565.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-15T13:57:00Z"></span>
               </div>
             </div>
           </details>
@@ -2103,7 +3213,7 @@
             data-search="in first congressional testimony, new fed chief warsh vows to fight inflation npr.org npr - economy inflation">
             <summary class="na-sum">
               <span class="na-theme th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-              <span class="na-htitle"><span class="l-en">In first Congressional testimony, new Fed Chief Warsh vows to fight inflation</span><span class="l-zh">In first Congressional testimony, new Fed Chief Warsh vows to fight inflation</span></span>
+              <span class="na-htitle"><span class="l-en">In first Congressional testimony, new Fed Chief Warsh vows to fight inflation</span><span class="l-zh">新任美联储主席Warsh在首次国会听证中誓言抗击通胀</span></span>
               <span class="na-right">
                 <span class="na-src">NPR - Economy</span>
                 <span class="na-chev">▾</span>
@@ -2111,12 +3221,58 @@
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                <span class="na-pill">rates</span><span class="na-pill">inflation</span>
+                <span class="na-pill"><span class="l-en">rates</span><span class="l-zh">利率</span></span><span class="na-pill"><span class="l-en">inflation</span><span class="l-zh">通胀</span></span>
                 
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
                 <a class="na-read" href="https://www.npr.org/2026/07/15/nx-s1-5894712/in-first-congressional-testimony-new-fed-chief-warsh-vows-to-fight-inflation" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
                 <span class="na-when rel-time" data-ts="2026-07-15T22:04:05+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="earnings"
+            data-search="tango therapeutics (tngx) to benefit from vopimetostat + kras inhibitors combined revenues yahoo.com yahoo finance - top stories earnings">
+            <summary class="na-sum">
+              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="na-htitle"><span class="l-en">Tango Therapeutics (TNGX) to Benefit From Vopimetostat + KRAS Inhibitors Combined Revenues</span><span class="l-zh">Tango Therapeutics将受益于Vopimetostat及KRAS抑制剂组合收入</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">earnings</span><span class="l-zh">业绩</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://finance.yahoo.com/healthcare/articles/tango-therapeutics-tngx-benefit-vopimetostat-140154913.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-15T14:01:54Z"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="inflation"
+            data-search="you are missing the bond deal of the decade — and it is guaranteed to beat inflation marketwatch.com marketwatch - top stories inflation">
+            <summary class="na-sum">
+              <span class="na-theme th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
+              <span class="na-htitle"><span class="l-en">You are missing the bond deal of the decade — and it is guaranteed to beat inflation</span><span class="l-zh">你错过了十年一遇的债券交易——它保证跑赢通胀</span></span>
+              <span class="na-right">
+                <span class="na-src">MarketWatch - Top Stories</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">inflation</span><span class="l-zh">通胀</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.marketwatch.com/story/you-are-missing-the-bond-deal-of-the-decade-and-it-is-guaranteed-to-beat-inflation-0f1d6cf8?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T21:17:00+00:00"></span>
               </div>
             </div>
           </details>
@@ -2134,7 +3290,7 @@
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                <span class="na-pill">rates</span><span class="na-pill">growth</span><span class="na-pill">earnings</span><span class="na-pill">consumer</span>
+                <span class="na-pill"><span class="l-en">rates</span><span class="l-zh">利率</span></span><span class="na-pill"><span class="l-en">growth</span><span class="l-zh">增长</span></span><span class="na-pill"><span class="l-en">earnings</span><span class="l-zh">业绩</span></span><span class="na-pill"><span class="l-en">consumer</span><span class="l-zh">消费</span></span>
                 
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -2146,46 +3302,299 @@
           
           <details class="na-item"
             data-theme="inflation"
-            data-search="you are missing the bond deal of the decade — and it is guaranteed to beat inflation marketwatch.com marketwatch - top stories inflation">
+            data-search="inflation slowed sharply -- but it may not last npr.org npr - business inflation">
             <summary class="na-sum">
               <span class="na-theme th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-              <span class="na-htitle"><span class="l-en">You are missing the bond deal of the decade — and it is guaranteed to beat inflation</span><span class="l-zh">You are missing the bond deal of the decade — and it is guaranteed to beat inflation</span></span>
+              <span class="na-htitle"><span class="l-en">Inflation slowed sharply -- but it may not last</span><span class="l-zh">通胀大幅放缓——但可能不会持久</span></span>
               <span class="na-right">
-                <span class="na-src">MarketWatch - Top Stories</span>
+                <span class="na-src">NPR - Business</span>
                 <span class="na-chev">▾</span>
               </span>
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                <span class="na-pill">inflation</span>
+                <span class="na-pill"><span class="l-en">inflation</span><span class="l-zh">通胀</span></span>
                 
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://www.marketwatch.com/story/you-are-missing-the-bond-deal-of-the-decade-and-it-is-guaranteed-to-beat-inflation-0f1d6cf8?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-15T22:21:00+00:00"></span>
+                <a class="na-read" href="https://www.npr.org/2026/07/14/nx-s1-5893379/inflation-economy-consumer-prices-federal-reserve" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-14T14:40:20+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="monetary"
+            data-search="federal reserve board requests comment on a proposal to amend its requirements for banks to maintain anti-money laundering programs federalreserve.gov federal reserve - all press monetary">
+            <summary class="na-sum">
+              <span class="na-theme th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="na-htitle"><span class="l-en">Federal Reserve Board requests comment on a proposal to amend its requirements for banks to maintain anti-money laundering programs</span><span class="l-zh">美联储理事会就修订银行反洗钱计划要求征求意见</span></span>
+              <span class="na-right">
+                <span class="na-src">Federal Reserve - All Press</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">credit</span><span class="l-zh">信贷</span></span>
+                <span class="na-pill tk">XLF</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260707a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-07T19:00:00+00:00"></span>
               </div>
             </div>
           </details>
           
           <details class="na-item"
             data-theme="inflation"
-            data-search="stocks rally on fed-friendly cpi report yahoo.com yahoo finance - top stories inflation">
+            data-search="inflation has been creeping up. how are americans coping? npr.org npr - economy inflation">
             <summary class="na-sum">
               <span class="na-theme th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-              <span class="na-htitle"><span class="l-en">Stocks Rally on Fed-Friendly CPI Report</span><span class="l-zh">Stocks Rally on Fed-Friendly CPI Report</span></span>
+              <span class="na-htitle"><span class="l-en">Inflation has been creeping up. How are Americans coping?</span><span class="l-zh">通胀持续攀升，美国人如何应对？</span></span>
               <span class="na-right">
-                <span class="na-src">BEA - News Releases</span>
+                <span class="na-src">NPR - Economy</span>
                 <span class="na-chev">▾</span>
               </span>
             </summary>
             <div class="na-body">
               <div class="na-tags">
-                <span class="na-pill">rates</span><span class="na-pill">inflation</span>
+                <span class="na-pill"><span class="l-en">inflation</span><span class="l-zh">通胀</span></span>
                 
               </div>
               <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/stocks-rally-fed-friendly-cpi-141304766.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-14T14:13:04Z"></span>
+                <a class="na-read" href="https://www.npr.org/2026/07/13/nx-s1-5872428/inflation-has-been-creeping-up-how-are-americans-coping" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-13T20:00:49+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="monetary"
+            data-search="federal reserve announces the leadership and objectives of its task forces to advance the conduct of monetary policy federalreserve.gov federal reserve - monetary policy monetary">
+            <summary class="na-sum">
+              <span class="na-theme th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="na-htitle"><span class="l-en">Federal Reserve announces the leadership and objectives of its task forces to advance the conduct of monetary policy</span><span class="l-zh">美联储宣布货币政策工作组领导层及目标，以推进货币政策实施</span></span>
+              <span class="na-right">
+                <span class="na-src">Federal Reserve - Monetary Policy</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">Fed & rates</span><span class="l-zh">美联储与利率</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20260709a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-09T19:00:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="earnings"
+            data-search="sec, cftc seek public comment on the harmonization of portfolio margining frameworks sec.gov sec - press releases earnings">
+            <summary class="na-sum">
+              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="na-htitle"><span class="l-en">SEC, CFTC Seek Public Comment on the Harmonization of Portfolio Margining Frameworks</span><span class="l-zh">SEC与CFTC就投资组合保证金框架协调征求意见</span></span>
+              <span class="na-right">
+                <span class="na-src">SEC - Press Releases</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="na-pill"><span class="l-en">earnings</span><span class="l-zh">业绩</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.sec.gov/newsroom/press-releases/2026-59-sec-cftc-seek-public-comment-harmonization-portfolio-margining-frameworks" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-26T12:58:32+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="inflation"
+            data-search="real personal consumption expenditures by state and real personal income by state, 2024 bea.gov bea - current releases inflation">
+            <summary class="na-sum">
+              <span class="na-theme th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
+              <span class="na-htitle"><span class="l-en">Real Personal Consumption Expenditures by State and Real Personal Income by State, 2024</span><span class="l-zh">2024年各州实际个人消费支出与实际个人收入</span></span>
+              <span class="na-right">
+                <span class="na-src">BEA - Current Releases</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">consumer</span><span class="l-zh">消费</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.bea.gov/news/2026/real-personal-consumption-expenditures-state-and-real-personal-income-state-2024" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="monetary"
+            data-search="how to shrink the fed’s $7trn balance-sheet economist.com the economist - finance &amp; economics monetary">
+            <summary class="na-sum">
+              <span class="na-theme th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="na-htitle"><span class="l-en">How to shrink the Fed’s $7trn balance-sheet</span><span class="l-zh">如何缩减美联储7万亿美元资产负债表</span></span>
+              <span class="na-right">
+                <span class="na-src">The Economist - Finance &amp; Economics</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">rates</span><span class="l-zh">利率</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.economist.com/finance-and-economics/2026/07/16/how-to-shrink-the-feds-7trn-balance-sheet" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T09:06:46+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="monetary"
+            data-search="can kevin warsh’s fed force 5 reimagine monetary policymaking? economist.com the economist - finance &amp; economics monetary">
+            <summary class="na-sum">
+              <span class="na-theme th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="na-htitle"><span class="l-en">Can Kevin Warsh’s Fed force 5 reimagine monetary policymaking?</span><span class="l-zh">凯文·沃什的美联储能否重新构想货币政策制定？</span></span>
+              <span class="na-right">
+                <span class="na-src">The Economist - Finance &amp; Economics</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">rates</span><span class="l-zh">利率</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.economist.com/finance-and-economics/2026/07/16/can-kevin-warshs-fed-force-5-reimagine-monetary-policymaking" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T09:02:38+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="macro"
+            data-search="china’s trade gap is narrowing. and other surprises economist.com the economist - finance &amp; economics macro">
+            <summary class="na-sum">
+              <span class="na-theme th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+              <span class="na-htitle"><span class="l-en">China’s trade gap is narrowing. And other surprises</span><span class="l-zh">中国贸易逆差收窄及其他意外变化</span></span>
+              <span class="na-right">
+                <span class="na-src">The Economist - Finance &amp; Economics</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.economist.com/finance-and-economics/2026/07/15/chinas-trade-gap-is-narrowing-and-other-surprises" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-15T17:55:22+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="growth"
+            data-search="budget and performance bea.gov bea - current releases growth">
+            <summary class="na-sum">
+              <span class="na-theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="na-htitle"><span class="l-en">Budget and Performance</span><span class="l-zh">预算与绩效</span></span>
+              <span class="na-right">
+                <span class="na-src">BEA - Current Releases</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.bea.gov/about/budget-and-performance" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="growth"
+            data-search="advance u.s. international trade in goods census.gov census - economic indicators growth">
+            <summary class="na-sum">
+              <span class="na-theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="na-htitle"><span class="l-en">Advance U.S. International Trade in Goods</span><span class="l-zh">美国国际商品贸易初值</span></span>
+              <span class="na-right">
+                <span class="na-src">Census - Economic Indicators</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.census.gov/econ/indicators/index.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-26T12:30:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="macro"
+            data-search="america’s hormuz brinkmanship is worsening a global fuel crunch economist.com the economist - finance &amp; economics macro">
+            <summary class="na-sum">
+              <span class="na-theme th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+              <span class="na-htitle"><span class="l-en">America’s Hormuz brinkmanship is worsening a global fuel crunch</span><span class="l-zh">美国在霍尔木兹海峡的边缘政策加剧全球燃料短缺</span></span>
+              <span class="na-right">
+                <span class="na-src">The Economist - Finance &amp; Economics</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.economist.com/finance-and-economics/2026/07/14/americas-hormuz-brinkmanship-is-worsening-a-global-fuel-crunch" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-14T18:22:01+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="growth"
+            data-search="quarterly services survey census.gov census - economic indicators growth">
+            <summary class="na-sum">
+              <span class="na-theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="na-htitle"><span class="l-en">Quarterly Services Survey</span><span class="l-zh">季度服务业调查</span></span>
+              <span class="na-right">
+                <span class="na-src">Census - Economic Indicators</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill"><span class="l-en">growth</span><span class="l-zh">增长</span></span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.census.gov/services/index.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-11T14:00:00+00:00"></span>
               </div>
             </div>
           </details>
@@ -2201,15 +3610,256 @@
         <summary class="board-head">
           <h2><span class="l-en">Reject Log</span><span class="l-zh">筛出日志</span></h2>
           <span class="board-badge"><span class="l-en">AUDIT</span><span class="l-zh">审计</span></span>
-          <span class="board-count">24 <span class="l-en">filtered out</span><span class="l-zh">已筛出</span></span>
+          <span class="board-count">72 <span class="l-en">filtered out</span><span class="l-zh">已筛出</span></span>
           <span class="bh-arrow">▾</span>
         </summary>
         
+        
         <div class="board-note">
-          <span class="l-en">Headlines dropped across all feeds (macro / financial / RSS), grouped by reject reason. Capped at 50 display rows.</span>
-          <span class="l-zh">所有信源（宏观/财经/RSS）中已筛出的头条，按筛出原因分组。最多展示50条。</span>
+          <span class="l-en">Headlines dropped across all feeds, grouped by reason.</span>
+          <span class="l-zh">所有信源中已筛出的头条，按原因分组。</span>
         </div>
         
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
+        
+          
+          
+          
+          
         
           
           
@@ -2336,7 +3986,9 @@
           
           <div class="rej-group">
             <div class="rej-group-head">
-              <span class="rej-reason">macro release stub</span>
+              
+              
+              <span class="rej-reason"><span class="l-en">Bare release title</span><span class="l-zh">无正文的数据发布</span></span>
               <span class="rej-group-count">9 <span class="l-en">items</span><span class="l-zh">条</span></span>
             </div>
             <table class="rej-table">
@@ -2365,22 +4017,6 @@
               
                 
                 <tr>
-                  <td>Monthly Wholesale Trade: Sales and Inventories</td>
-                  <td class="rt-dom">census.gov</td>
-                </tr>
-                
-                
-              
-                
-                <tr>
-                  <td>U.S. International Trade in Goods and Services</td>
-                  <td class="rt-dom">census.gov</td>
-                </tr>
-                
-                
-              
-                
-                <tr>
                   <td>Manufacturing and Trade Inventories and Sales</td>
                   <td class="rt-dom">census.gov</td>
                 </tr>
@@ -2390,6 +4026,22 @@
                 
                 <tr>
                   <td>Advance Monthly Sales for Retail and Food Services</td>
+                  <td class="rt-dom">census.gov</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Monthly Wholesale Trade: Sales and Inventories</td>
+                  <td class="rt-dom">census.gov</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>U.S. International Trade in Goods and Services</td>
                   <td class="rt-dom">census.gov</td>
                 </tr>
                 
@@ -2429,8 +4081,10 @@
           
           <div class="rej-group">
             <div class="rej-group-head">
-              <span class="rej-reason">stock pick roundup</span>
-              <span class="rej-group-count">1 <span class="l-en">items</span><span class="l-zh">条</span></span>
+              
+              
+              <span class="rej-reason"><span class="l-en">Stock pick list</span><span class="l-zh">选股清单</span></span>
+              <span class="rej-group-count">23 <span class="l-en">items</span><span class="l-zh">条</span></span>
             </div>
             <table class="rej-table">
               <thead><tr>
@@ -2448,6 +4102,145 @@
                 
                 
               
+                
+                <tr>
+                  <td>The &#34;Magnificent Seven&#34; Are at Their Lowest Relative Valuations in a Decade. My 3 Favorite Mag 7 Stocks to Buy.</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>1 Unstoppable Stock to Buy Before It Joins Micron and Broadcom in the $1 Trillion Club</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>The Best Dividend ETF to Buy With $1,000 Right Now</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>The Smartest Dividend Stocks to Buy With $1,000 in July and Never Sell</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>These 3 AI ETFs Are the Best Ways to Play the Memory Boom</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>These 3 Social Media Stocks Are Among the Best Bargains in the Market</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Nvidia vs. AMD vs. Cerebras: Which Is the Best AI Inference Stock to Buy Today?</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>8 Undervalued Stocks That Fit Warren Buffett’s Value Investing Playbook</td>
+                  <td class="rt-dom">investing.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>3 Hypergrowth Tech Stocks to Load Up On Now</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+              </tbody>
+            </table>
+            
+            <div class="rej-cap-note"><span class="l-en">... and 13 more</span><span class="l-zh">...及另13条</span></div>
+            
+            
+          </div>
+          
+        
+          
+          <div class="rej-group">
+            <div class="rej-group-head">
+              
+              
+              <span class="rej-reason"><span class="l-en">Morning aggregator</span><span class="l-zh">早间汇总</span></span>
+              <span class="rej-group-count">2 <span class="l-en">items</span><span class="l-zh">条</span></span>
+            </div>
+            <table class="rej-table">
+              <thead><tr>
+                <th><span class="l-en">Title</span><span class="l-zh">标题</span></th>
+                <th><span class="l-en">Domain</span><span class="l-zh">域名</span></th>
+              </tr></thead>
+              <tbody>
+              
+              
+                
+                <tr>
+                  <td>Grocery sales, United earnings, Anthropic&#39;s IPO prep and more in Morning Squawk</td>
+                  <td class="rt-dom">cnbc.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Inflation cools, Morgan Stanley earnings, IBM&#39;s bad day and more in Morning Squawk</td>
+                  <td class="rt-dom">cnbc.com</td>
+                </tr>
+                
+                
+              
               </tbody>
             </table>
             
@@ -2458,7 +4251,9 @@
           
           <div class="rej-group">
             <div class="rej-group-head">
-              <span class="rej-reason">calendar preview</span>
+              
+              
+              <span class="rej-reason"><span class="l-en">Calendar preview</span><span class="l-zh">日历预览</span></span>
               <span class="rej-group-count">13 <span class="l-en">items</span><span class="l-zh">条</span></span>
             </div>
             <table class="rej-table">
@@ -2519,7 +4314,7 @@
               
                 
                 <tr>
-                  <td>Uniswap (UNI) Price Prediction: 2025, 2026, 2030</td>
+                  <td>Bittensor (TAO) Price Prediction: 2025, 2026, 2030</td>
                   <td class="rt-dom">benzinga.com</td>
                 </tr>
                 
@@ -2527,7 +4322,7 @@
               
                 
                 <tr>
-                  <td>Bittensor (TAO) Price Prediction: 2025, 2026, 2030</td>
+                  <td>Uniswap (UNI) Price Prediction: 2025, 2026, 2030</td>
                   <td class="rt-dom">benzinga.com</td>
                 </tr>
                 
@@ -2567,7 +4362,9 @@
           
           <div class="rej-group">
             <div class="rej-group-head">
-              <span class="rej-reason">personal finance advice</span>
+              
+              
+              <span class="rej-reason"><span class="l-en">Personal finance advice</span><span class="l-zh">个人理财建议</span></span>
               <span class="rej-group-count">1 <span class="l-en">items</span><span class="l-zh">条</span></span>
             </div>
             <table class="rej-table">
@@ -2593,6 +4390,139 @@
           </div>
           
         
+          
+          <div class="rej-group">
+            <div class="rej-group-head">
+              
+              
+              <span class="rej-reason">Single Stock Advertorial</span>
+              <span class="rej-group-count">24 <span class="l-en">items</span><span class="l-zh">条</span></span>
+            </div>
+            <table class="rej-table">
+              <thead><tr>
+                <th><span class="l-en">Title</span><span class="l-zh">标题</span></th>
+                <th><span class="l-en">Domain</span><span class="l-zh">域名</span></th>
+              </tr></thead>
+              <tbody>
+              
+              
+                
+                <tr>
+                  <td>Should You Buy Coca-Cola Stock Before July 28?</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Is IBM&#39;s Crash Really a Buying Opportunity?</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Better Growth ETF: Vanguard&#39;s VOOG Targeting the S&amp;P 500 vs. State Street&#39;s Small Cap-Focused SLYG</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Prediction: This AI Stock Will Double by 2031 -- Here&#39;s the Math</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Better Buy: Amazon Stock or Shopify Stock?</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Prediction: Dutch Bros Will Hit $130 by 2031 for This Obvious Reason</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Prediction: Apple Will Soon Surpass Nvidia&#39;s $5 Trillion Market Cap to Become the World&#39;s Most Valuable Company. The Reason Is Hiding in Plain Sight.</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Is Johnson &amp; Johnson a Buy After Its Latest Earnings Report?</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Prediction: Microsoft Stock Will Skyrocket After July 29</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+                <tr>
+                  <td>Prediction: AMD Stock Will Soar After Aug. 4. The Reason Is Hiding in Plain Sight</td>
+                  <td class="rt-dom">fool.com</td>
+                </tr>
+                
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+                
+              
+              </tbody>
+            </table>
+            
+            <div class="rej-cap-note"><span class="l-en">... and 14 more</span><span class="l-zh">...及另14条</span></div>
+            
+            
+          </div>
+          
+        
         
       </details>
 
@@ -2602,15 +4532,26 @@
       
       <details class="board board-toggle" id="nxCalibrationBoard">
         <summary class="board-head">
-          <h2><span class="l-en">Event Class Calibration</span><span class="l-zh">事件类别校准</span></h2>
+          
+          <h2><span class="l-en">Event Class Calibration</span><span class="l-zh">事件类别校准</span>
+            <span class="help-tip"
+              data-tip-en="How verdicts work: fewer than 30 graded events → still gathering; Wilson lower bound above 50% → shows a pattern; Wilson upper bound below 50% → no pattern found; otherwise context-only. Wilson interval is a confidence-adjusted hit-rate bound. Nothing here drives any signal until an authority gate is passed (not live yet)."
+              data-tip-zh="裁决规则：少于30条已评级事件 → 仍在积累；Wilson下界超50% → 显示规律；Wilson上界低于50% → 未发现规律；否则为背景层。Wilson区间为置信度调整后的命中率边界。本处任何结果均不进入信号，直到获取授权（尚未上线）。">?</span>
+          </h2>
           <span class="board-badge"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
-          <span class="board-count">14 <span class="l-en">classes</span><span class="l-zh">类别</span></span>
+          <span class="board-count">15 <span class="l-en">classes</span><span class="l-zh">类别</span></span>
           <span class="bh-arrow">▾</span>
         </summary>
         
+        
         <div class="board-note">
-          <span class="l-en">Forward-return hit-rates by event class. Verdict rules: n_graded &lt; 30 → insufficient; wilson_low_5d &gt; 0.50 → candidate edge; wilson_high_5d &lt; 0.50 → no edge; else context_only. All results are DISPLAY-ONLY — the earned-authority gate (not yet live) is required before any class can feed a signal.</span>
-          <span class="l-zh">按事件类别的前向收益命中率。裁决规则：n_graded &lt; 30 → 不足；wilson_low_5d &gt; 0.50 → 候选边际；wilson_high_5d &lt; 0.50 → 无优势；否则 context_only。所有结果均为仅展示 — 需要获得授权通道（尚未上线）方可进入信号。</span>
+          <span class="l-en">Tracking whether each event type actually moves prices — still gathering data; nothing here drives any signal yet.</span>
+          <span class="l-zh">追踪各事件类别是否真正影响价格 — 仍在积累数据；此处任何结果均不驱动信号。</span>
+        </div>
+        
+        <div class="board-stance">
+          <span class="l-en">Still gathering evidence — nothing here drives a signal yet.</span>
+          <span class="l-zh">仍在收集证据 — 此处尚无信号驱动。</span>
         </div>
         <div class="calib-grid">
           
@@ -2620,11 +4561,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>1 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">1 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>bullish</span>
+              
+              
+                <span><span class="l-en">↑ Upside</span><span class="l-zh">↑ 利多</span></span>
+                
+              
             </div>
           </div>
           
@@ -2634,11 +4579,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>8 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">10 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>mixed</span>
+              
+              
+                <span><span class="l-en">Mixed</span><span class="l-zh">分歧</span></span>
+                
+              
             </div>
           </div>
           
@@ -2648,11 +4597,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>bearish</span>
+              
+              
+                <span><span class="l-en">↓ Downside</span><span class="l-zh">↓ 利空</span></span>
+                
+              
             </div>
           </div>
           
@@ -2662,11 +4615,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>2 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">4 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>bearish</span>
+              
+              
+                <span><span class="l-en">↓ Downside</span><span class="l-zh">↓ 利空</span></span>
+                
+              
             </div>
           </div>
           
@@ -2676,11 +4633,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">5 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>bullish</span>
+              
+              
+                <span><span class="l-en">↑ Upside</span><span class="l-zh">↑ 利多</span></span>
+                
+              
             </div>
           </div>
           
@@ -2690,11 +4651,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>33 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">42 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>bearish</span>
+              
+              
+                <span><span class="l-en">↓ Downside</span><span class="l-zh">↓ 利空</span></span>
+                
+              
             </div>
           </div>
           
@@ -2704,11 +4669,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>informational</span>
+              
+              
+                <span><span class="l-en">Informational</span><span class="l-zh">信息</span></span>
+                
+              
             </div>
           </div>
           
@@ -2718,11 +4687,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>mixed</span>
+              
+              
+                <span><span class="l-en">Mixed</span><span class="l-zh">分歧</span></span>
+                
+              
             </div>
           </div>
           
@@ -2732,11 +4705,33 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>2 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">5 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>bullish</span>
+              
+              
+                <span><span class="l-en">↑ Upside</span><span class="l-zh">↑ 利多</span></span>
+                
+              
+            </div>
+          </div>
+          
+          
+          <div class="calib-cell">
+            <div class="cc-event">Mna Rumor</div>
+            
+              <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
+            
+            <div class="cc-n">1 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-row">
+              
+              
+              
+              
+                <span><span class="l-en">↑ Upside</span><span class="l-zh">↑ 利多</span></span>
+                
+              
             </div>
           </div>
           
@@ -2746,11 +4741,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>4 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">4 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>mixed</span>
+              
+              
+                <span><span class="l-en">Mixed</span><span class="l-zh">分歧</span></span>
+                
+              
             </div>
           </div>
           
@@ -2760,11 +4759,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>1 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">1 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>bearish</span>
+              
+              
+                <span><span class="l-en">↓ Downside</span><span class="l-zh">↓ 利空</span></span>
+                
+              
             </div>
           </div>
           
@@ -2774,11 +4777,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>bullish</span>
+              
+              
+                <span><span class="l-en">↑ Upside</span><span class="l-zh">↑ 利多</span></span>
+                
+              
             </div>
           </div>
           
@@ -2788,11 +4795,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>2 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>mixed</span>
+              
+              
+                <span><span class="l-en">Mixed</span><span class="l-zh">分歧</span></span>
+                
+              
             </div>
           </div>
           
@@ -2802,11 +4813,15 @@
             
               <span class="cc-verdict vd-insuf"><span class="l-en">accruing (n=0)</span><span class="l-zh">积累中(n=0)</span></span>
             
-            <div class="cc-n"><span class="l-en">n=</span><span class="l-zh">n=</span>3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
+            <div class="cc-n">3 <span class="l-en">logged</span><span class="l-zh">已记录</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></div>
             <div class="cc-row">
               
               
-              <span>bearish</span>
+              
+              
+                <span><span class="l-en">↓ Downside</span><span class="l-zh">↓ 利空</span></span>
+                
+              
             </div>
           </div>
           
@@ -2815,12 +4830,474 @@
           
           
           <div class="board-note" style="border-top:1px solid var(--line)">
-            <span class="l-en">Reject audit: 177 sampled · 0 graded
+            <span class="l-en">Reject audit: 213 sampled · 0 graded
               
             </span>
-            <span class="l-zh">筛出审计：177 已抽样 · 0 已评级</span>
+            <span class="l-zh">筛出审计：213 已抽样 · 0 已评级</span>
           </div>
         
+        
+      </details>
+
+      
+      
+      
+      
+      
+      <details class="board board-toggle" id="nxWiresBoard">
+        <summary class="board-head">
+          <h2><span class="l-en">Company &amp; market wires</span><span class="l-zh">公司与市场快讯</span></h2>
+          <span class="board-badge"><span class="l-en">WIRES</span><span class="l-zh">快讯</span></span>
+          <span class="board-count">18 <span class="l-en">items</span><span class="l-zh">条目</span></span>
+          <span class="bh-arrow">▾</span>
+        </summary>
+        
+        <div class="board-stance">
+          <span class="l-en">Background read — don't chase these headlines.</span>
+          <span class="l-zh">背景阅读 — 不必追随这些快讯。</span>
+        </div>
+        
+        
+        
+        
+        <div class="mag7-row">
+          
+            
+              
+              
+              <span class="mag7-chip">
+                <span class="m7t">AAPL</span>
+                <span class="m7n">6</span>
+              </span>
+              
+            
+          
+            
+              
+              
+              <span class="mag7-chip">
+                <span class="m7t">MSFT</span>
+                <span class="m7n">6</span>
+              </span>
+              
+            
+          
+            
+              
+              
+              <span class="mag7-chip">
+                <span class="m7t">NVDA</span>
+                <span class="m7n">6</span>
+              </span>
+              
+            
+          
+            
+              
+              
+              <span class="mag7-chip">
+                <span class="m7t">AMZN</span>
+                <span class="m7n">6</span>
+              </span>
+              
+            
+          
+            
+              
+              
+              <span class="mag7-chip">
+                <span class="m7t">GOOGL</span>
+                <span class="m7n">6</span>
+              </span>
+              
+            
+          
+            
+              
+              
+              <span class="mag7-chip">
+                <span class="m7t">META</span>
+                <span class="m7n">6</span>
+              </span>
+              
+            
+          
+            
+              
+              
+              <span class="mag7-chip">
+                <span class="m7t">TSLA</span>
+                <span class="m7n">6</span>
+              </span>
+              
+            
+          
+        </div>
+        
+        
+        
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Seven &amp; i shares jump 3% on report of stake talks with Polish convenience chain Zabka</span>
+              <span class="na-right">
+                <span class="na-src">cnbc.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.cnbc.com/2026/07/17/seven-i-zabka-investment-poland.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T03:27:25+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">India Chemical Shares Surge on Hormuz Disruption, Better Pricing</span>
+              <span class="na-right">
+                <span class="na-src">bloomberg.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.bloomberg.com/news/newsletters/2026-07-17/india-chemical-shares-surge-on-hormuz-disruption-better-pricing" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T02:46:21+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">SoftBank sinks over 9% as Asia chip stocks track Wall Street AI sell-off</span>
+              <span class="na-right">
+                <span class="na-src">cnbc.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.cnbc.com/2026/07/17/softbank-chip-stocks-asia-wall-street-ai-rout.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T02:33:44+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Industrial Metals Decline as Traders Weigh Fed Rate Outlook</span>
+              <span class="na-right">
+                <span class="na-src">bloomberg.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.bloomberg.com/news/articles/2026-07-17/industrial-metals-decline-as-traders-weigh-fed-rate-outlook" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T02:21:21+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">HDFC Bank, ICICI Bank Eye FX Deposits For Margin Boost</span>
+              <span class="na-right">
+                <span class="na-src">bloomberg.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.bloomberg.com/news/articles/2026-07-17/hdfc-bank-icici-bank-eye-fx-deposits-for-margin-boost" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T02:05:07+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Oil rises as Iran threatens retaliation if Trump targets country&#39;s critical infrastructure</span>
+              <span class="na-right">
+                <span class="na-src">cnbc.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.cnbc.com/2026/07/17/oil-price-today-brent-wti.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T01:51:48+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Stocks stumble, oil set for weekly gain on renewed Gulf hostilities</span>
+              <span class="na-right">
+                <span class="na-src">Reuters</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://news.google.com/rss/articles/CBMigwFBVV95cUxNVTBUX2ZaNk9EY2M2SU5BaEw4VkRFXzF6OE1MeENrcVRwT1hnd2gtbzVDODJ3VUh2ZXdOYi03b2ZobHhhdlMzSE1fOWM0b3lWTlh1Q2VENEFFdHlKWmNuOVltd0R4X254aFM0SmNjZ3RIWVNqREU3OXlHSFNsUGtBUXYyUQ?oc=5" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T01:16:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">China Chip Stock Pullback Drives Investor Fear to Four-Year High</span>
+              <span class="na-right">
+                <span class="na-src">bloomberg.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.bloomberg.com/news/articles/2026-07-17/china-chip-stock-pullback-drives-investor-fear-to-four-year-high" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T01:13:27+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Elon Musk&#39;s Memphis AI empire is the epicenter of the data center backlash</span>
+              <span class="na-right">
+                <span class="na-src">cnbc.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.cnbc.com/2026/07/16/elon-musk-memphis-ai-colossus-data-center.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T00:49:45+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Fed may need to hike rates if inflation does not ease soon, Jefferson says</span>
+              <span class="na-right">
+                <span class="na-src">Reuters</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://news.google.com/rss/articles/CBMitgFBVV95cUxNVlVCN2o4V0dUNDZlUTZfb1pNVjhwWEZ0TUtCSGlsVDAyQ3pvNkhjWm1KbkRBN1F0WmVXY19TcV9fWHFwTl9xRDRJUjl2VDRUd2l3LTBjek00T2YwU0xralkzaUVrV3ZXTk1vR2FxZzJjd1BoMlFZa1VOMGFlSU8zSWhCRzBJUjNrVnh1dmF1emR2dVFpbEp4TlpXZWpvOGF1UE4xNXFldFI5bUxRWVFxUkVDWTZnZw?oc=5" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T23:05:43+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Netflix earnings forecast disappoints Wall Street, shares tumble</span>
+              <span class="na-right">
+                <span class="na-src">Reuters</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill tk">NFLX</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://news.google.com/rss/articles/CBMizgFBVV95cUxPaElBaG14Wm9OcTNhcTdGWVdBUWRnN0NqY2pBOUhkajZ0V3Jnb2FsbkUyd3J5bUY2TG9kM2gzanFkODEtdVZpR3UxZmNyeU9VYjBwTGtzd0c0R0Y0ZEpqd0k5WEtnRWpCT3pEaURUNzFmZmt2bDVyQUsxX2poOVFiVFg2OG9wQzR1bDBUQ3lNMDZ1SUJNenBOQmdod1N0LVpJM3RodzhKelhDTXVtTVJfM2dldmZVMFVfYUZSaGpKajNrN1djdW10T1NfSjhGUQ?oc=5" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T22:20:36+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Brookfield-backed Csquare valued at $3.2 billion in NYSE debut</span>
+              <span class="na-right">
+                <span class="na-src">Reuters</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://news.google.com/rss/articles/CBMisgFBVV95cUxNRUxKTllJeXFmbGJGT3Z1UlBhU2I4c2EtT3RWZzdyelhnSW9ZMEdhaFNWY01tdEhaaEU3ZmM4dV8zLU5CVlZBbDRUVXVFRUQ4b0tpR093cDRIdjE1SlRlV01Ya1FzNzMwYmx2cFdjRjhsMTN4bGFqaEFJek10bjczS2dXbFhMUnpUVmlwYmJqYTJkaFRPalZXUTN0WUs4dmhfc19sMGx4bDdRdFdUWEdHRkl3?oc=5" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T20:38:15+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Why Trading Day 137 Marks the Start of the S&amp;P 500’s Cruelest Season</span>
+              <span class="na-right">
+                <span class="na-src">Barron&#39;s</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill tk">S</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://news.google.com/rss/articles/CBMilgFBVV95cUxNVm9vUkU3eW1tOHNNMjBWVnJiT29nbDB2ejNMWUJqdW92d3I1Yzk4d2IxcEVDRGloLVJ6aHU5bzhnNnhPR2Q3S0NfRU5aeVI5dXAteWtpdm8yc1F4eEZSalc3cFBYbXAyOGhlNXR3R1U3ak5iT1VMbE5GRGdNLVpBcERFWmtNOHVVTlVQNlE4dGNCbGJ2aHc?oc=5" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T19:01:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">How to shrink the Fed’s $7trn balance-sheet</span>
+              <span class="na-right">
+                <span class="na-src">economist.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.economist.com/finance-and-economics/2026/07/16/how-to-shrink-the-feds-7trn-balance-sheet" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-16T09:06:46+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Futures Fall, Netflix Dives; SpaceX Starship Launch Scrubbed</span>
+              <span class="na-right">
+                <span class="na-src">Investor&#39;s Business Daily</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill tk">NFLX</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://news.google.com/rss/articles/CBMizgFBVV95cUxObmhVaW5WYU5ZckFzendEYTNsVW13LWplckpJNU0tcFUzeG5OMVIzVUF2SnRqZEtYMGg0aUFwcDZtdzZjMVNHTmQzSmVzWFRnZ0hDMmVXd2o5ZnlHU1ROaVZBNzg1V19OSjBNcWg1amg2UHpOZmtybi1pNDBrZWJvTFNGVTlSUUNLa2RsYXBscm5DanI1dFo5dGRBY29jcVJvS0pwSkJtS2dVYl81Q3Ezb1Z3OFhZNlBmam1ranM0OENnWUltbEFlU0VCLVBsQQ?oc=5" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T03:03:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Micron has turned into ‘the most important stock in the market.’ So is it time to worry?</span>
+              <span class="na-right">
+                <span class="na-src">marketwatch.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                <span class="na-pill tk">MU</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.marketwatch.com/story/micron-has-turned-into-the-most-important-stock-in-the-market-so-is-it-time-to-worry-71e335bf?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T02:11:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">From Gift Nifty, US chip stocks selloff to oil prices: 10 key things that changed for Indian stock market overnight</span>
+              <span class="na-right">
+                <span class="na-src">livemint.com</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://news.google.com/rss/articles/CBMikAJBVV95cUxNdTBBVWwyYjVmTmJYM3BFeHlBQzFCR2FXZlJxZjhjdFBSZTAxOU8xZ2tVVEhxNVFrdGFhR1c4Qm9UdHZFd1AtY05yRHhyRUF2NkExRm5Ga1JXSW9MWU01LU5OcndvNVR1ekllSU03SXJJRllUQl9tSWhXODU1RHAta0VRVEtDQnFtcFBXQWRrdDlrRGtBNlpsZVpWWmJiOTFpWGc3VmI2Q2VBMjlkM1NfUzFJMmhxS2Q1ay1CcDAtd3YzVC1WSVhTUFN4ZVlob1dMTFl0Nm9yWVJkNXY0SEpkdDVlTUcwV1FWQmJUZm16RmNvWEd2Y2c4ZTNYcFRFdHh4UEJzOHItSEVZeHNXYXhtWNIBlgJBVV95cUxPU3E5STRwQmV5eFZVNER6el9NajJJY0NFdHBRYWRpeTh1U2xCVVZjS1pVVjBtdTM4Z2t3X3FLT2hEN0dGeGtGUkZ3Q09oQ0JBUFliLWVSSjlRNkh6OExmV2twUUhmTW5TNENGZDNjRHhNRUNwNFZmcmxCd2h6eHZsVWZ3X1NxVENnUzh3LVV5dVoyUzljdmNCM1ozYkh5cWdTREFrS0d1akMxa3FwRDBLZlRKalFrMHQ0ZU9ETXJpcGxIS2ZFMmxmNGdBcEpYRkpmcmk1QnBCZldPT2x1ejA1alJLZlhIdkpZdDJtRHVYNTdwR0x2eDY5WFluV1hnVWxYRnVKNnNHZmloMHFPQ2JyVWVwaklkdw?oc=5" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T01:48:02+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Wire</span><span class="l-zh">快讯</span></span>
+              <span class="na-htitle">Axios House D.C.: AI is reshaping America&#39;s industrial future</span>
+              <span class="na-right">
+                <span class="na-src">Axios</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <div class="na-tags">
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <a class="na-read" href="https://news.google.com/rss/articles/CBMikAFBVV95cUxQZFo4dElnVWpFVUxRS1ZHSmxZU2NsZVlGTkRCbHE5MFhaRVVScy1qSXZUV3M2SzJfUkRZRjlZVko0OHdmbXBRZWFZckd2cG1PMUlId1hab1BuNmlycWtLYjZiWm14amlXOER6NVlNMFFGcjJDWVJUekhaeTV4djVNNVFGVThLVDNvLXBPU01TWGo?oc=5" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-17T01:22:23+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          
         
       </details>
 
@@ -2830,11 +5307,6 @@
     <aside class="rail">
       <section class="rail-card">
         <h2><span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化</span></h2>
-        
-        <div class="rail-line">
-          <div class="rail-date">2026-07-15<br>08:30 ET</div>
-          <div class="rail-main"><span class="rail-tag">PPI</span><span class="l-en">PPI (producer prices)</span><span class="l-zh">生产者物价指数（PPI）</span></div>
-        </div>
         
         <div class="rail-line">
           <div class="rail-date">2026-07-16<br>08:30 ET</div>
@@ -2866,19 +5338,34 @@
           <div class="rail-main"><span class="rail-tag">FOMC</span><span class="l-en">FOMC rate decision</span><span class="l-zh">美联储议息会议</span></div>
         </div>
         
+        <div class="rail-line">
+          <div class="rail-date">2026-07-30<br>08:30 ET</div>
+          <div class="rail-main"><span class="rail-tag">GDP</span><span class="l-en">GDP (BEA estimate)</span><span class="l-zh">GDP 数据</span></div>
+        </div>
+        
+        <div class="rail-line">
+          <div class="rail-date">2026-07-30<br>08:30 ET</div>
+          <div class="rail-main"><span class="rail-tag">PCE</span><span class="l-en">PCE / personal income (BEA)</span><span class="l-zh">PCE 物价指数</span></div>
+        </div>
+        
       </section>
 
       <section class="rail-card">
         <h2><span class="l-en">High-impact calendar</span><span class="l-zh">高影响日程</span></h2>
         
         <div class="rail-line">
-          <div class="rail-date">Wed Jul 15<br>08:30 ET</div>
-          <div class="rail-main"><span class="rail-tag">PPI</span><span class="l-en">PPI (producer prices)</span><span class="l-zh">生产者物价指数（PPI）</span></div>
+          <div class="rail-date">Wed Jul 29<br>14:00 ET</div>
+          <div class="rail-main"><span class="rail-tag">FOMC</span><span class="l-en">FOMC rate decision</span><span class="l-zh">美联储议息会议</span></div>
         </div>
         
         <div class="rail-line">
-          <div class="rail-date">Wed Jul 29<br>14:00 ET</div>
-          <div class="rail-main"><span class="rail-tag">FOMC</span><span class="l-en">FOMC rate decision</span><span class="l-zh">美联储议息会议</span></div>
+          <div class="rail-date">Thu Jul 30<br>08:30 ET</div>
+          <div class="rail-main"><span class="rail-tag">GDP</span><span class="l-en">GDP (BEA estimate)</span><span class="l-zh">GDP 数据</span></div>
+        </div>
+        
+        <div class="rail-line">
+          <div class="rail-date">Thu Jul 30<br>08:30 ET</div>
+          <div class="rail-main"><span class="rail-tag">PCE</span><span class="l-en">PCE / personal income (BEA)</span><span class="l-zh">PCE 物价指数</span></div>
         </div>
         
       </section>
@@ -2890,29 +5377,29 @@
         <div class="rail-line" style="display:block">
           <div class="rail-main" style="font-weight:700;margin-bottom:4px"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></div>
           
-          <div class="odds-row"><span class="o">No change</span><b>64.5%</b><span class="r-neg">-12.0</span></div>
+          <div class="odds-row"><span class="o">No change</span><b>95.9%</b><span class="r-pos">+31.4</span></div>
           
-          <div class="odds-row"><span class="o">25 bps increase</span><b>35.5%</b><span class="r-pos">+13.2</span></div>
+          <div class="odds-row"><span class="o">25 bps increase</span><b>3.7%</b><span class="r-neg">-31.8</span></div>
           
-          <div class="odds-row"><span class="o">50+ bps increase</span><b>0.7%</b><span class="r-pos">+0.1</span></div>
+          <div class="odds-row"><span class="o">25 bps decrease</span><b>0.4%</b><span class="r-neg">-0.1</span></div>
           
         </div>
         
         <div class="rail-line" style="display:block">
           <div class="rail-main" style="font-weight:700;margin-bottom:4px"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></div>
           
-          <div class="odds-row"><span class="o">0 (0 bps)</span><b>80.2%</b><span class="r-pos">+2.0</span></div>
+          <div class="odds-row"><span class="o">0 (0 bps)</span><b>82.3%</b><span class="r-pos">+2.2</span></div>
           
-          <div class="odds-row"><span class="o">1 (25 bps)</span><b>13.5%</b><span class="r-neg">-1.0</span></div>
+          <div class="odds-row"><span class="o">1 (25 bps)</span><b>12.5%</b><span class="r-neg">-1.0</span></div>
           
-          <div class="odds-row"><span class="o">2 (50 bps)</span><b>4.5%</b><span class="r-pos">+0.3</span></div>
+          <div class="odds-row"><span class="o">2 (50 bps)</span><b>2.5%</b><span class="r-neg">-1.9</span></div>
           
         </div>
         
         <div class="rail-line" style="display:block">
           <div class="rail-main" style="font-weight:700;margin-bottom:4px"><span class="l-en">US recession</span><span class="l-zh">美国衰退</span></div>
           
-          <div class="odds-row"><span class="o">US recession by end of 2026?</span><b>10.5%</b><span></span></div>
+          <div class="odds-row"><span class="o">US recession by end of 2026?</span><b>10.0%</b><span class="r-neg">-0.5</span></div>
           
         </div>
         
@@ -2922,14 +5409,14 @@
 
       <section class="rail-card">
         <h2><span class="l-en">Feed intelligence</span><span class="l-zh">新闻情报</span></h2>
-        <div class="rail-line"><div class="rail-date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="rail-main"><span class="l-en">6 high-impact items; dominant channel credit; sources stock wire 7, official releases 5, tier-1 press 3</span><span class="l-zh">6 条高影响信息；主导渠道：信贷；来源：个股快讯 7、官方发布 5、一线媒体 3</span></div></div>
+        <div class="rail-line"><div class="rail-date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="rail-main"><span class="l-en">6 high-impact items; dominant channel earnings; sources tier-1 press 14, official releases 11, stock wire 6</span><span class="l-zh">6 条高影响信息；主导渠道：业绩；来源：一线媒体 14、官方发布 11、个股快讯 6</span></div></div>
         <div class="rail-line">
           <div class="rail-date"><span class="l-en">Channels</span><span class="l-zh">通道</span></div>
-          <div class="rail-main"><span class="rail-tag"><span class="l-en">credit</span><span class="l-zh">信贷</span></span><span class="rail-tag"><span class="l-en">rates</span><span class="l-zh">利率</span></span><span class="rail-tag"><span class="l-en">analyst views</span><span class="l-zh">分析师观点</span></span><span class="rail-tag"><span class="l-en">deals & IPOs</span><span class="l-zh">并购/IPO</span></span><span class="rail-tag"><span class="l-en">earnings</span><span class="l-zh">业绩</span></span></div>
+          <div class="rail-main"><span class="rail-tag"><span class="l-en">earnings</span><span class="l-zh">业绩</span></span><span class="rail-tag"><span class="l-en">rates</span><span class="l-zh">利率</span></span><span class="rail-tag"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="rail-tag"><span class="l-en">credit</span><span class="l-zh">信贷</span></span><span class="rail-tag"><span class="l-en">inflation</span><span class="l-zh">通胀</span></span></div>
         </div>
         <div class="rail-line">
           <div class="rail-date"><span class="l-en">Tickers</span><span class="l-zh">标的</span></div>
-          <div class="rail-main"><span class="rail-tag">XLF</span><span class="rail-tag">GLD</span><span class="rail-tag">USO</span><span class="rail-tag">MS</span><span class="rail-tag">KRE</span><span class="rail-tag">GS</span></div>
+          <div class="rail-main"><span class="rail-tag">XLF</span><span class="rail-tag">SPY</span><span class="rail-tag">QQQ</span><span class="rail-tag">XLK</span><span class="rail-tag">USO</span><span class="rail-tag">NFLX</span></div>
         </div>
         
         <div class="rail-line">
@@ -2940,13 +5427,51 @@
       </section>
 
       
+      
       <section class="rail-card">
         <h2><span class="l-en">Narrative texture</span><span class="l-zh">叙事纹理</span></h2>
-        <div class="rail-line"><div class="rail-date">NDI</div><div class="rail-main"><b>63.9/100</b> <span class="mut">(<span class="l-en">display-only</span><span class="l-zh">仅展示</span>)</span></div></div>
         
-        <div class="rail-line"><div class="rail-date">EPU</div><div class="rail-main">90.5<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
-        <div class="rail-line"><div class="rail-date">GPR</div><div class="rail-main">68.9<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
-        <div class="rail-line"><div class="rail-date">VIX</div><div class="rail-main">32.3<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
+        <div class="rail-line">
+          <div class="rail-date"><span class="l-en">Index</span><span class="l-zh">指数</span></div>
+          <div class="rail-main">
+            <b data-tip-en="Narrative-Dominance Index: composite of policy uncertainty, geopolitical risk and market volatility text signals (0–100)" data-tip-zh="叙事主导指数：政策不确定性、地缘风险与市场波动文本信号的综合（0–100）">69.7/100</b>
+            <span class="mut"> · <span class="l-en">a texture read, not a signal</span><span class="l-zh">纹理参考，非信号</span></span>
+          </div>
+        </div>
+        
+        
+        
+        <div class="rail-line">
+          <div class="rail-date"><span class="l-en">Policy</span><span class="l-zh">政策</span></div>
+          <div class="rail-main"
+               data-tip-en="Economic Policy Uncertainty index — how much news discussion is uncertainty-laden"
+               data-tip-zh="经济政策不确定性指数 — 新闻中的政策不确定性程度">
+            
+            
+            <b><span class="l-en">Very high (top ~2%)</span><span class="l-zh">非常高（前~2%）</span></b>
+          </div>
+        </div>
+        
+        
+        <div class="rail-line">
+          <div class="rail-date"><span class="l-en">Geo risk</span><span class="l-zh">地缘</span></div>
+          <div class="rail-main"
+               data-tip-en="Geopolitical Risk index — frequency of conflict-threat language in global media"
+               data-tip-zh="地缘政治风险指数 — 全球媒体中冲突威胁词频">
+            
+            <b><span class="l-en">Moderate (~68 pct)</span><span class="l-zh">适中（~68 百分位）</span></b>
+          </div>
+        </div>
+        
+        
+        <div class="rail-line">
+          <div class="rail-date">VIX</div>
+          <div class="rail-main">
+            
+            <b><span class="l-en">Moderate (~42 pct)</span><span class="l-zh">适中（~42 百分位）</span></b>
+          </div>
+        </div>
+        
       </section>
       
 
@@ -2978,8 +5503,25 @@
       el.textContent=(el.classList.contains('na-when')?'':(isZh?'更新于 ':'Updated '))+r;
     });
   }
+  // NEWS-DD-02: aged chip — mark event cards older than 5 days
+  function markAged(){
+    var isZh=document.documentElement.getAttribute('data-lang')==='zh';
+    var cutoff=Date.now()-5*24*60*60*1000;
+    document.querySelectorAll('.ev-card[data-seendate]').forEach(function(card){
+      var ts=card.getAttribute('data-seendate'); if(!ts) return;
+      var d=new Date(ts); if(isNaN(d)) return;
+      var chip=card.querySelector('.ev-aged');
+      if(!chip) return;
+      if(d.getTime()<cutoff){
+        chip.textContent=isZh?chip.getAttribute('data-aged-zh'):chip.getAttribute('data-aged-en');
+        chip.style.display='inline';
+      }
+    });
+  }
   document.addEventListener('langchange', stamps);
+  document.addEventListener('langchange', markAged);
   stamps();
+  markAged();
 })();
 </script>
 

@@ -30,6 +30,32 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 _CROSSWALK_PATH = _REPO_ROOT / "config" / "theme_crosswalk.yml"
 _REGISTRY_PATH = _REPO_ROOT / "config" / "theme_thesis_registry.yml"
 
+# Artifacts run_stage() reads/writes, copied into the tmp scaffold so the
+# "live repo" tests exercise real artifacts WITHOUT advancing the real
+# theme-thesis forward ledger (nightly is the sole advancer).
+_LIVE_COPY_RELPATHS = (
+    "config/theme_thesis_registry.yml",
+    "config/theme_crosswalk.yml",
+    "site/basketdata/foresight_cascade.json",
+    "data/neuralweb/theme_state.json",
+    "data/neuralweb/theme_thesis_ledger.jsonl",
+    "data/neuralweb/theme_thesis_ledger.jsonl.envelope.json",
+)
+
+
+def _scaffold_live_copy(tmp_path: Path) -> Path:
+    """Copy the real run_stage() input artifacts (when present) into tmp_path."""
+    import shutil
+
+    for rel in _LIVE_COPY_RELPATHS:
+        src = _REPO_ROOT / rel
+        if not src.exists():
+            continue
+        dst = tmp_path / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dst)
+    return tmp_path
+
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -793,12 +819,17 @@ class TestAppendOnlyIdempotence:
         h2 = engine_mod._content_hash({"b": 2, "a": 1})
         assert h1 == h2, "Content hash must use sort_keys=True for stability"
 
-    def test_run_stage_completes_on_live_repo(self, engine_mod):
-        """run_stage() against real repo root exits without exception."""
-        # This exercises the full pipeline on real artifacts
-        engine_mod.run_stage(_REPO_ROOT)
+    def test_run_stage_completes_on_live_repo(self, engine_mod, tmp_path):
+        """run_stage() against real (copied) repo artifacts exits without exception.
+
+        Runs in a tmp scaffold seeded with the REAL registry + source
+        artifacts: run_stage(_REPO_ROOT) directly would append to the real
+        data/neuralweb theme-thesis forward ledger + envelope (nightly is the
+        sole advancer)."""
+        root = _scaffold_live_copy(tmp_path)
+        engine_mod.run_stage(root)
         # Site projection must exist after run
-        site_path = _REPO_ROOT / "site" / "neuralwebdata" / "theme_thesis.json"
+        site_path = root / "site" / "neuralwebdata" / "theme_thesis.json"
         assert site_path.exists(), "run_stage must write site/neuralwebdata/theme_thesis.json"
 
 
@@ -1049,11 +1080,14 @@ theses:
         assert len(rows) == 1
         assert rows[0]["thesis_id"] == "ai_semiconductors.v1"
 
-    def test_run_stage_idempotent_on_real_repo(self, engine_mod):
-        """run_stage twice on real repo appends no new rows on second call."""
+    def test_run_stage_idempotent_on_real_repo(self, engine_mod, tmp_path):
+        """run_stage twice on real (copied) artifacts appends no new rows on
+        the second call — tmp scaffold so the REAL forward ledger is never
+        advanced by the test."""
+        root = _scaffold_live_copy(tmp_path)
         # Run once to establish a baseline
-        engine_mod.run_stage(_REPO_ROOT)
-        ledger_path = _REPO_ROOT / "data" / "neuralweb" / "theme_thesis_ledger.jsonl"
+        engine_mod.run_stage(root)
+        ledger_path = root / "data" / "neuralweb" / "theme_thesis_ledger.jsonl"
         if not ledger_path.exists():
             pytest.skip("ledger not created — likely no registry on disk")
 
@@ -1061,7 +1095,7 @@ theses:
         n_before = len(rows_before)
 
         # Run again — same data, same day → no new rows
-        engine_mod.run_stage(_REPO_ROOT)
+        engine_mod.run_stage(root)
         rows_after = engine_mod._read_ledger(ledger_path)
         n_after = len(rows_after)
 

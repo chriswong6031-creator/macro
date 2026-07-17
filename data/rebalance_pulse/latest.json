@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-14",
+  "date": "2026-07-16",
   "class": "quiet",
   "market_vol_ratio": null,
   "up_share": null,
@@ -8,7 +8,7 @@
   "megacap_rvol": {},
   "calendar": {
     "is_quarter_end": false,
-    "td_to_quarter_end": -9,
+    "td_to_quarter_end": -11,
     "in_qtr_end_window": false,
     "is_russell_recon_session": false,
     "in_recon_week": false,

@@ -2906,7 +2906,12 @@
     cur = el;
   }
   document.addEventListener('pointerover', function (e) {
+    // Touch devices: a tap fires pointerover BEFORE click, so pre-showing here would
+    // let the click handler immediately toggle it back off (flash-and-vanish) and the
+    // tip would never persist. On touch, let the click handler own show/hide entirely.
+    if (window.matchMedia && window.matchMedia('(hover: none)').matches) return;
     if (!e.target || !e.target.closest) return;
+    var _h = e.target.closest('span.help:not([data-tip-en])'); if (_h) upgradeOne(_h);  // JIT-upgrade client-rendered icons
     var t = e.target.closest('[data-tip-en]');
     if (t) { if (t !== cur) show(t); return; }
     if (pop && pop.style.display === 'block' && pop.contains(e.target)) return; // keep while over the pop
@@ -2922,8 +2927,17 @@
   document.addEventListener('click', function (e) {
     if (!window.matchMedia || !window.matchMedia('(hover: none)').matches) return;
     if (!e.target || !e.target.closest) return;
+    var _h = e.target.closest('span.help:not([data-tip-en])'); if (_h) upgradeOne(_h);  // JIT-upgrade client-rendered icons
     var t = e.target.closest('[data-tip-en]');
     if (t) {
+      // If the tap landed on an interactive control NESTED INSIDE the tip
+      // container (a button/link/field that is a descendant of t — e.g. the
+      // Grid/Table view toggle, whose wrapper carries the data-tip), let the
+      // control activate instead of hijacking the tap for the tooltip. When t
+      // IS the interactive element (or its ancestor), the tap-to-tip behaviour
+      // for tiny chips is preserved (ctrl === t, or ctrl contains t).
+      var ctrl = e.target.closest('button, a, input, select, textarea, label, [role="button"]');
+      if (ctrl && ctrl !== t && t.contains(ctrl)) { if (cur) hide(); return; }
       e.preventDefault(); e.stopPropagation();
       if (cur === t) { hide(); } else { show(t); }
     } else if (!(pop && pop.contains(e.target))) {
@@ -2932,4 +2946,63 @@
   }, true);
   window.addEventListener('scroll', function () { if (cur) hide(); }, true);
   window.addEventListener('resize', function () { if (cur) hide(); });
+
+  /* Upgrade the legacy help() icons site-wide to this same popover system.
+     The old help() macro renders EXACTLY
+       <span class="help">?<span class="tip"><span class="l-en">…</span><span class="l-zh">…</span></span></span>
+     with a CSS :hover tooltip that (a) doesn't persist on tap, (b) bleeds off-screen
+     on mobile, and (c) looks different from the Mag7 / Leadership icons. Rather than
+     rewrite ~34 per-page macros + re-render every page, lift each icon's nested .tip
+     text into data-tip-en / data-tip-zh so the delegated handler above drives it
+     (viewport-clamped popover + tap-to-toggle), and mark it .help-upgraded so CSS can
+     suppress the old nested tooltip and apply the new pill look.
+
+     IMPORTANT: the bare `help` class is ALSO reused on non-icon CONTENT elements whose
+     tooltips are RICH — market-state factor labels (`f-name help`), the seasonality
+     cell (`help` with an SVG chart + table in its .tip), the anticipation index badge
+     (`idxbadge … help`). Upgrading those would flatten/delete their content and paint a
+     stray pill. So upgradeOne only touches a CANONICAL help() icon: class is EXACTLY
+     "help" (single class) AND its direct .tip contains nothing but .l-en / .l-zh.
+     Everything else is left completely untouched (keeps its own tooltip + styling). */
+  function upgradeOne(el) {
+    if (el.hasAttribute('data-tip-en')) return false;
+    if (!(el.classList.length === 1 && el.classList.contains('help'))) return false;
+    // A canonical help() icon is EXACTLY a "?" text node + a single .tip element child.
+    // Content reuses (e.g. the seasonality value cell) carry an extra element child — a
+    // value span — alongside their tip, so requiring exactly one element child filters
+    // them out even when their tip is a plain l-en/l-zh pair (the low-history fallback).
+    var tip = null, tkids, i, c, en = null, zh = null;
+    if (el.children.length !== 1) return false;
+    tip = el.children[0];
+    if (!tip.classList.contains('tip')) return false;
+    tkids = tip.children;
+    if (tkids.length < 1 || tkids.length > 2) return false;   // canonical tip = l-en (+ l-zh), nothing else
+    for (i = 0; i < tkids.length; i++) {
+      c = tkids[i];
+      // l-en / l-zh must be PLAIN TEXT. A few help() icons pack rich markup (tables, <b>
+      // separators) inside their bilingual spans — the popover renders via textContent,
+      // which would flatten that to an unreadable run-on, so leave those on their original
+      // formatted :hover tooltip rather than upgrading.
+      if (c.children.length) return false;
+      if (c.classList.contains('l-en')) en = (c.textContent || '').trim();
+      else if (c.classList.contains('l-zh')) zh = (c.textContent || '').trim();
+      else return false;                                      // any other child → not an icon; leave it
+    }
+    if (!en) return false;
+    el.setAttribute('data-tip-en', en);
+    el.setAttribute('data-tip-zh', zh || en);
+    el.classList.add('help-upgraded');
+    return true;
+  }
+  function upgradeHelpIcons(root) {
+    var icons = (root || document).querySelectorAll('span.help:not([data-tip-en])');
+    for (var i = 0; i < icons.length; i++) upgradeOne(icons[i]);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { upgradeHelpIcons(); });
+  } else {
+    upgradeHelpIcons();
+  }
+  window.upgradeHelpIcons = upgradeHelpIcons;   // exposed for client-rendered content
+  window._upgradeHelpIcon = upgradeOne;         // JIT hook used by the pointerover/click handlers
 })();

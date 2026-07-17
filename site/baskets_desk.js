@@ -384,14 +384,43 @@ function renderActNow(){
       <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}</span>
       <span class="ansc">${x.score}</span></a>`;};
   const buys=a.buy||[], wait=a.add_on_pullback||[], red=a.reduce||[];
+  // MLC-W2b: conflicted shelf — in favour on own read, but sector view says Reduce.
+  const conflicted=a.conflicted||[];
+  // rowConflicted mirrors rowWait shape: muted verb + honest reason (de-escalation only).
+  const rowConflicted=x=>{const ac=actColor(x.action);
+    return `<a class="anrow" href="${(window.BASKET_BASE||'basket/')}${x.id}.html">
+      <span class="anverb" style="color:${ac[2]};border-color:${ac[2]};opacity:.72">${L(ac[0],ac[1])}</span>
+      <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
+      <span class="anwhy muted sm">${x.reason_en?L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)):esc((x.reasons||[]).join(' · '))}</span>
+      <span class="ansc">${x.score}</span></a>`;};
   const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
   const anCol=(cls,head,arr,empty,rowFn)=>`<div class="ancol lst-wrap"><h4 class="anh ${cls}">${head} <span class="muted sm">(${arr.length})</span></h4>${arr.length?`<div class="anlist lst-collapse is-collapsed">${arr.map(rowFn||row).join('')}</div>${moreBtn(arr.length)}`:`<div class="muted sm" style="padding:10px 2px">${empty}</div>`}</div>`;
   const pulseBar = actNowPulseBar(THEME.themes||[]);
-  document.getElementById('actnow').innerHTML=pulseBar+`<div class="anwrap three">
+  // MLC-W2b: 4 columns when conflicted list is non-empty; otherwise stay at 3.
+  const wrapCls=conflicted.length?'four':'three';
+  const conflictedCol=conflicted.length?anCol('wait',`⚠ ${L('Conflicted','观点冲突')}`,conflicted,L('none','无'),rowConflicted):'';
+  document.getElementById('actnow').innerHTML=pulseBar+`<div class="anwrap ${wrapCls}">
     ${anCol('buy',`✅ ${L('Buy now (clean entry)','立即买入（干净入场）')}`,buys,L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。'))}
     ${anCol('wait',`⏳ ${L('In favour — no clean entry, wait for a pullback','看好 — 无干净入场点，等待回调')}`,wait,L('none','无'),rowWait)}
     ${anCol('red',`🔻 ${L('Reduce / avoid','减仓 / 回避')}`,red,L('none','无'),rowReduce)}
+    ${conflictedCol}
   </div>`;
+  // MLC-W2b footnote: merge one sentence into the existing footnote (never stack a new one).
+  // The footnote element is written by the Jinja host; we append here.
+  // note is already an L() output (a bilingual l-en/l-zh span pair) — append it directly
+  // inside a plain wrapper; do NOT esc() the span pair or re-wrap with L().
+  try{
+    const fn=document.getElementById('actnow-footnote');
+    if(fn&&conflicted.length){
+      const note=L(
+        'Conflicted = in favour on its own read, but its sector view says Reduce.',
+        '观点冲突 = 自身信号看好，但所属板块评级为减配。'
+      );
+      if(!fn.innerHTML.includes('actnow-conflict-note')){
+        fn.insertAdjacentHTML('beforeend',`<span class="actnow-conflict-note">${note}</span>`);
+      }
+    }
+  }catch(e){}
 }
 // sleeve-size chip (validated drawdown-control channel; payload-gated so only markets that
 // publish BASKETS.sleeve_chip — e.g. the curated China overview — render anything).
@@ -549,7 +578,48 @@ function renderBell(){
   document.addEventListener('click',e=>{ if(!wrap.contains(e.target)) menu.classList.remove('open'); });
 }
 
+// MLC-W2b: inject split-view / mixed-reads chips on theme-desk tcards.
+// Fetches stance_matrix.json once (client-side, after render); fail-silent on any error.
+// Chip text ≤2 words per language per DESIGN_DOCTRINE word budget law.
+// stance_matrix.json is a US-only artifact; non-US pages (basket_hk/, basket_canada/,
+// basket_intl/) return early with no fetch.
+function renderStanceChips(){
+  const base=typeof BASKET_BASE!=='undefined'?window.BASKET_BASE||'basket/':'basket/';
+  // Only the US page has base ending in 'basket/' (no slash variant) or unset.
+  // Non-US pages set BASKET_BASE to 'basket_hk/', 'basket_canada/', 'basket_intl/' etc.
+  if(base!=='basket/'&&base!=='basket'){return;}
+  const matrixUrl='mlcdata/stance_matrix.json';
+  fetch(matrixUrl).then(r=>r.ok?r.json():null).then(data=>{
+    if(!data||!data.rows) return;
+    const byId={};
+    data.rows.forEach(r=>{ if(r&&r.id) byId[r.id]=r; });
+    document.querySelectorAll('.tcard').forEach(card=>{
+      const id=card.id.replace(/^theme-/,'');
+      const row=byId[id];
+      if(!row||!row.agreement) return;
+      const ag=row.agreement;
+      if(ag!=='mixed'&&ag!=='split') return;
+      // reuse .m7-split-chip idiom (existing CSS; data-tip-en/zh for Tier-2 receipt)
+      if(card.querySelector('.mlc-stance-chip')) return; // already injected
+      const chipEn=ag==='split'?'split view':'mixed reads';
+      const chipZh=ag==='split'?'严重分歧':'观点分歧';
+      const tipEn=esc(row.tip_en||'');
+      const tipZh=esc(row.tip_zh||'');
+      const chip=document.createElement('div');
+      chip.className='m7-split-chip mlc-stance-chip';
+      chip.setAttribute('data-tip-en',tipEn);
+      chip.setAttribute('data-tip-zh',tipZh);
+      chip.innerHTML=`<span class="l-en">${esc(chipEn)}</span><span class="l-zh">${esc(chipZh)}</span>`;
+      // insert after the top row (before the subrow)
+      const top=card.querySelector('.top');
+      if(top&&top.nextSibling) card.insertBefore(chip,top.nextSibling);
+      else card.appendChild(chip);
+    });
+  }).catch(function(){/* absent file or fetch error — no chip, no console spam */});
+}
+
 function deskBoot(){ try{ renderSleeveChip(); }catch(e){} try{ renderActNow(); }catch(e){}
   try{ renderMacroCtx(); }catch(e){}
   try{ renderThemeDesk(); }catch(e){} try{ renderConcentration(); }catch(e){}
-  try{ renderRotation(); }catch(e){} try{ renderScorecards(); }catch(e){} try{ renderBell(); }catch(e){} }
+  try{ renderRotation(); }catch(e){} try{ renderScorecards(); }catch(e){} try{ renderBell(); }catch(e){}
+  try{ renderStanceChips(); }catch(e){} }

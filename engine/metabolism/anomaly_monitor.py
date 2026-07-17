@@ -29,7 +29,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from engine.metabolism.insight_bus import build_row, append_row, run_all_emitters  # noqa: F401
+from engine.metabolism.insight_bus import (  # noqa: F401
+    artifact_age_hours, build_row, append_row, run_all_emitters)
 
 log = logging.getLogger(__name__)
 
@@ -293,8 +294,10 @@ def check_staleness_sla(root: Path, config: dict, cycle_id: str | None = None) -
             if not p.exists():
                 continue
             try:
-                age_h = (now - p.stat().st_mtime) / 3600.0
-                if age_h > float(sla_h):
+                # Content stamp first, mtime fallback (committed artifacts get
+                # mtime = checkout time on CI/fresh worktrees — #2690 class).
+                age_h = artifact_age_hours(p, now)
+                if age_h is not None and age_h > float(sla_h):
                     rows.append(build_row(
                         emitter="anomaly_monitor.staleness_sla",
                         kind="freshness_sla_breach",
@@ -305,7 +308,7 @@ def check_staleness_sla(root: Path, config: dict, cycle_id: str | None = None) -
                         cycle_id=cycle_id,
                     ))
             except Exception as exc:  # noqa: BLE001
-                log.warning("check_staleness_sla: stat for %s failed — %s", p, exc)
+                log.warning("check_staleness_sla: age check for %s failed — %s", p, exc)
                 continue
         return rows
     except Exception as exc:  # noqa: BLE001

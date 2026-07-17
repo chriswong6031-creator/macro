@@ -159,8 +159,15 @@ def test_cor_vol_fetch_is_strict_per_series(monkeypatch):
 
 
 def _fake_store(monkeypatch, tmp_path, frames: dict):
-    """Point the parquet store at tmp_path and seed data/cboe/<name>.parquet frames."""
+    """Point the parquet store at tmp_path and seed data/cboe/<name>.parquet frames.
+
+    Also redirects config.ROOT: store.write_status/read_status resolve
+    data/run_status.json off ROOT (no root= param), and the freshness
+    tripwire writes that surface — unredirected it dirties the REAL
+    data/run_status.json."""
     from lib import config as _config
+    _config.load()  # warm the lru cache before ROOT is patched
+    monkeypatch.setattr(_config, "ROOT", tmp_path)
     monkeypatch.setattr(_config, "data_dir", lambda: tmp_path)
     (tmp_path / "cboe").mkdir(parents=True, exist_ok=True)
     for name, df in frames.items():

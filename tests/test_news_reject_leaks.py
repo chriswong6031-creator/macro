@@ -23,6 +23,24 @@ DROP_CASES = [
     ("‘I claimed Social Security at 62’: At 76, I'm working at Walmart. "
      "Why do I still owe payroll taxes?",
      "personal_finance_advice"),
+    # MN-05 (2026-07-16 news-system audit): single-stock advertorials that dodge the
+    # LIST-framed roundup patterns and were polluting news_vector's theme counts.
+    ("Prediction: This Will Be Nvidia Stock Price Next Year (Hint: The Time to Buy Is Now)",
+     "single_stock_advertorial"),
+    ("Is Silo Pharma an AI Opportunity",
+     "single_stock_advertorial"),
+    ("Is Nvidia Stock a Buy?",
+     "single_stock_advertorial"),
+    ("Better AI Stock: Nvidia vs. Palantir",
+     "single_stock_advertorial"),
+    ("Should You Buy Palantir Stock Before July 30?",
+     "single_stock_advertorial"),
+    ("Where Will Nvidia Stock Be in 5 Years?",
+     "single_stock_advertorial"),
+    ("1 Millionaire-Maker Artificial Intelligence Stock Down 70%",
+     "single_stock_advertorial"),
+    ("This Week in the Stock Market: CPI, Earnings Season",
+     "calendar_preview"),
 ]
 
 # Real stories the reject families must leave alone.
@@ -33,6 +51,12 @@ KEEP_CASES = [
     "Social Security trust fund projected to deplete by 2033, trustees say",
     "Netflix raises streaming prices across US plans",
     "Micron's earnings are a must-watch event this week",
+    # single_stock_advertorial precision guards: question/comparison words in REAL
+    # stories must not trigger the advertorial frames.
+    "Prediction markets surge ahead of the November election",
+    "Is the Fed behind the curve on rate cuts? Economists weigh in",
+    "Berkshire sees opportunity in Japan trading houses, raises stakes",
+    "Nvidia announces new data center chip partnership with OpenAI",
 ]
 
 

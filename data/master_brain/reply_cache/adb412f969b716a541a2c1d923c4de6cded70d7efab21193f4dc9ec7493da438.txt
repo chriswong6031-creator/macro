@@ -1,0 +1,53 @@
+{
+  "summary": "Goldilocks backdrop weakening with crypto liquidity as the focal driver, but BTC's internal model signals distribution and negative momentum; rising USD and real rates act as headwinds, entry quality narrow — a fragile risk-on tape with conflicting cross-asset reads.",
+  "regime_read": "The macro quad is Q1 (Goldilocks) with expanding liquidity, but the transition state is WEAKENING and the primary market driver is crypto liquidity (Bitcoin +0.9σ, Ether +1.0σ) per the deterministic cross-asset attribution. However, the BTC desk reads DISTRIBUTE with high risk and negative momentum (-0.36), a direct conflict within the price_regime tape. Meanwhile, the USD is strengthening (US growth premium), which is a headwind for Bitcoin, gold, equities, and EM; real 10y yields are restrictive and rising at 2.33%, and the yield curve is a bear steepener favoring value over growth and pressuring duration. Credit is tight (HY OAS 2.72) and systemic stress is calm, suggesting no impending credit event. Risk appetite is risk-on (RORO 0.82), but entry-quality breadth reveals narrow leadership (only 36% take-quality entries, 23% long bias) despite trend breadth broad-up — a flag that the risk-on regime lacks broad participation and conviction. The stock-bond correlation has broken down (0.57), bonds are not hedging, and the Fed remains hawkish (policy_text: on_hold, market ≈ Fed), anchoring restrictive rates. This is a fragile risk-on environment where crypto carries the momentum but faces internal contradiction, while tightening conditions via USD and real rates pressure the rest of the tape.",
+  "conflicts": [
+    "Market drivers identifies crypto liquidity as the primary driver (BTC +0.9σ, ETH +1.0σ), but BTC desk reads DISTRIBUTE, high risk, negative momentum — a conflict within the price_regime tape decomposition; suggests crypto strength may be ETH-led or a recent surge that has not shifted BTC's momentum, weakening the driver conviction.",
+    "Risk-on macro posture (RORO, VIX term contango) vs narrow entry-quality breadth (36% take-quality entries, 23% long bias) — signals rotation/leadership narrow, not broad conviction; the risk-on regime is fragile.",
+    "USD strengthening (US growth premium) acts as a headwind for Bitcoin, gold, and equities, contradicting the risk-on asset class leadership of crypto; if USD strength persists, it should eventually cap crypto upside per transmission correlation (-0.26 for BTC), creating a tension point.",
+    "Rate/inflation transmission shows rising real rates (2.33%) as a headwind for SPY, XLK, QQQ, while the yield curve (bear steepener) pressures growth/tech and favors value — this conflicts with the risk-on equity regime's typical leadership (growth) though AI semis theme is re-rating, indicating sector rotation within equities, not broad growth expansion.",
+    "Policy intel thesis posits a structural push for lower real yields post-midterm, but current Fed stance is hawkish and the OIS path implies a 1bp net hike; the stagflationary split (oil spike + labor crack) adds uncertainty — the PRIOR hasn't been validated, so trade the hawkish tape, not the narrative."
+  ],
+  "rotation_check": "The working thesis (US large-cap semis → software/growth → ex-US → crypto as liquidity expands) is not tracking cleanly. China (stagflation, contracting liquidity) and Hong Kong (weak-side peg, outflow) are not receiving rotation; they are in a de-risking phase. US risk-on is narrow and value-leaning, driven by financials and energy (bear steepener), not by growth/software leadership — AI semis are re-rating, but that's a concentrated thematic, not a broad growth rotation. Crypto is surging per the driver, but BTC's distribute state and negative momentum suggest the surge may be Ethereum-led or a late-stage impulse, not a uniform crypto liquidity wave. The sequence from semis to crypto appears fractured, and the ex-US leg is missing entirely.",
+  "transmission": [
+    "USD strengthening → headwind for gold (corr -0.75), copper (-0.66), and Bitcoin (-0.26) — watch for the dollar to cap commodity and crypto upside even if risk-on persists.",
+    "Bear steepener & rising real yields → pressure long-duration equities (QQQ, XLK) and support financials/energy/value; if 10y continues rising, it could force rotation OUT of duration-sensitive themes, potentially undercutting the AI semis re-rating.",
+    "Crypto-liquidity driver fades if BTC momentum does not flip positive and the BTC desk's DISTRIBUTE state leads to a breakdown below 63k → would remove the primary market driver, leaving the tape without a clear catalyst, possibly opening drawdown risk.",
+    "Policy intel's stagflationary split (Iran re-escalation oil spike + labor crack) — if labor data (claims 7/16, next payroll) weakens further while inflation stays sticky, a September hike could paradoxically tighten into weakness, flipping the Goldilocks quad to stagflation risk globally, with negative spillover for equities and credit."
+  ],
+  "watch_items": [
+    "BTC price action and composite state shift — if BTC breaks higher (e.g., >65k) and its momentum turns positive, it would resolve the driver conflict upward; if it breaks below 62k, it invalidates the crypto-liquidity driver.",
+    "US claims data (7/16) and the FOMC (7/29) — any signal of labor deceleration or dovish shift would challenge the hawkish rate regime and could alter the stagflation narrative.",
+    "USD Index (DXY) trajectory — sustained break above recent ranges (e.g., above 101) would intensify headwinds for gold, copper, and EM, potentially triggering a broader risk-off shift despite the current risk-on posture.",
+    "Entry-quality breadth improvement — a rise in take-quality entries above 50% and long-bias above 40% would confirm broad risk-on conviction; failure to do so on a pullback could flag a stealth distribution."
+  ],
+  "confidence": "low",
+  "theses": [],
+  "forward_watch": [
+    {
+      "date": "2026-07-16",
+      "label": "claims",
+      "kind": "release (benchmark_only)",
+      "note": "Initial claims benchmark naive prior 215k; tests labor crack narrative."
+    },
+    {
+      "date": "2026-07-29",
+      "label": "FOMC rate decision",
+      "kind": "FOMC",
+      "note": "Priced on hold; hawkish hold risk given recent signals."
+    },
+    {
+      "date": "2026-07-30",
+      "label": "GDP (BEA estimate)",
+      "kind": "GDP",
+      "note": "Q2 advance read; will frame growth leg of Goldilocks."
+    },
+    {
+      "date": "2026-07-30",
+      "label": "PCE / personal income (BEA)",
+      "kind": "PCE",
+      "note": "Model sees 79% chance of cold print, point +0.34% m/m; could ease stagflation fears."
+    }
+  ],
+  "forward_read": "A cluttered near-term calendar: initial claims today (benchmark 215k) test the labor crack; FOMC on 7/29 is priced for a hold but the hawkish backdrop keeps upward skew alive; GDP and PCE on 7/30 are critical, with the PCE model leaning heavily cold (79%), which if realized could dampen stagflation concerns. All three events land within the next two weeks and will reshape the rate and risk narrative."
+}

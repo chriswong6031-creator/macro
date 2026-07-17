@@ -187,7 +187,13 @@ def test_brain_reconcile_clamps():
     assert t3["action"] == "ACCUMULATE" and "clamped" not in t3       # legitimate buy untouched
 
 
-def test_brain_synthesize_mocked():
+def test_brain_synthesize_mocked(tmp_path, monkeypatch):
+    # synthesize emits article3 governance events via append_event(root=None)
+    # → config.data_dir(); redirect so they land in tmp, not the real
+    # data/neuralweb/governance.jsonl.
+    from lib import config
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
+
     state = {"as_of": "2026-06-19", "n_clusters": 1, "clusters": [
         {"ticker": "AAA", "weighted_score": 1.5, "channels": ["x"], "rs_vs_spy_60d": 5,
          "extended": False, "scorable": True}]}
@@ -202,7 +208,10 @@ def test_brain_synthesize_mocked():
     assert th["second_order"] == ["S1"]
 
 
-def test_brain_no_call_degrades():
+def test_brain_no_call_degrades(tmp_path, monkeypatch):
+    from lib import config
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
+
     brief = B.synthesize({"as_of": "x", "n_clusters": 0, "clusters": []}, call=None)
     assert brief["degraded_reason"] == "no_client_or_token" and brief["theses"] == []
 

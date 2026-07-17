@@ -1,23 +1,23 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-15",
-  "scored_total": 4,
-  "open": 103,
-  "unscored_neutral": 69,
+  "as_of": "2026-07-17",
+  "scored_total": 12,
+  "open": 94,
+  "unscored_neutral": 71,
   "overall": {
-    "n": 4,
-    "hits": 1,
-    "misses": 3,
-    "hit_rate": 0.25,
-    "dir_accuracy": 0.0
+    "n": 12,
+    "hits": 6,
+    "misses": 6,
+    "hit_rate": 0.5,
+    "dir_accuracy": 0.25
   },
   "by_lean": {
     "constructive": {
-      "n": 0,
-      "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "n": 4,
+      "hits": 1,
+      "misses": 3,
+      "hit_rate": 0.25,
+      "dir_accuracy": 0.0
     },
     "neutral": {
       "n": 0,
@@ -27,11 +27,11 @@
       "dir_accuracy": null
     },
     "cautious": {
-      "n": 4,
-      "hits": 1,
+      "n": 8,
+      "hits": 5,
       "misses": 3,
-      "hit_rate": 0.25,
-      "dir_accuracy": 0.0
+      "hit_rate": 0.625,
+      "dir_accuracy": 0.375
     },
     "avoid": {
       "n": 0,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 4,
-      "hits": 1,
-      "misses": 3,
-      "hit_rate": 0.25,
-      "dir_accuracy": 0.0
+      "n": 12,
+      "hits": 6,
+      "misses": 6,
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.25
     },
     "medium": {
       "n": 0,
@@ -64,8 +64,80 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "4 leans scored, hit-rate 0.25 (directional accuracy 0.0). Small sample \u2014 treat conviction as provisional; the prior remains no validated forward edge (this layer is accountability, not alpha).",
+  "calibration_note": "12 leans scored, hit-rate 0.5 (directional accuracy 0.25). Small sample \u2014 treat conviction as provisional; the prior remains no validated forward edge (this layer is accountability, not alpha).",
   "recent": [
+    {
+      "id": "2026-06-17-CASY-1",
+      "ticker": "CASY",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0685,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-06-17-CSCO-2",
+      "ticker": "CSCO",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0661,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-06-17-ECG-3",
+      "ticker": "ECG",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.1211,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-06-17-MCY-4",
+      "ticker": "MCY",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0194,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-06-17-HWM-5",
+      "ticker": "HWM",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0328,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-06-17-CW-6",
+      "ticker": "CW",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0271,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-06-24-EW-4",
+      "ticker": "EW",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0561,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-07-01-BSY-4",
+      "ticker": "BSY",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0038,
+      "check_by": "2026-07-15"
+    },
     {
       "id": "2026-06-18-WT-2",
       "ticker": "WT",

@@ -1,0 +1,27 @@
+**TREND-RIDER DESK NOTE — Hong Kong Thematic Detector**
+*2026-07-16 | Region: HK | Benchmark: Hang Seng*
+**Assessment: fiduciary, display-only, no position sizes, no trades**
+
+### The prevailing durable theme
+**Tech Hardware & Semis (科技硬件与半导体)**
+- **Rank** 1 (score 2.075, momentum lens only — rank-IC ~0 on clean sector universes; not a return forecast).
+- **Durability bar** 0.74 — well above the 0.5 demarcation, signalling persistent trend health.
+- **Hurst tag** “trend” — the absolute-trend gate (the *only* validated edge, a drawdown-control regime filter) is intact.
+- **Crowding** not flagged (z = 0.22) — no reflexive over-extension signal; no cap required.
+- **One-narrative dominant** — absorption 0.55, concentration risk is already contained by the discipline’s gate, not by a rotation call.
+
+The strongest honest case for staying with this theme is simply that **the trend gate has not broken**. The detector’s multi-decade sector backtests show no reliable edge in rotating early, calling tops, or fading the leader on crowding flags. The documented edge is avoiding severe drawdowns by staying with durable trends while they persist and exiting only when the absolute-trend filter flips. Here, durability 0.74 + “trend” tag + absence of crowding means the theme remains firmly inside the gate. With `gate_helps = true`, this same discipline has historically reduced volatility and tail risk in this market. Therefore, the disciplined action is to remain with the leader, not to anticipate a handoff to Miners (challenger, score 0.682, but durability bar 0.33, not in a durable trend) or any other laggard.
+
+### Falsifiable conditional (not a forecast)
+**IF** by the next weekly review the Hurst tag for Tech Hardware & Semis shifts from “trend” to “mean-revert” or the durability bar falls decisively below 0.5 (the approximate demarcation of trend health), **THEN** the absolute-trend gate would signal a de-risk. Until that materialises, the discipline holds.
+
+**Check-by horizon:** 2026-07-23 (next weekly scan), or on any sharp deterioration in the durability bar (e.g., a drop >0.2 in a single week).
+
+### Guardrails honoured
+- Not reading momentum rank as a return forecast or a buy list.
+- Not treating the absence of crowding as a “buy more” signal — merely no cap required.
+- Not fading the dominant theme; the leader stays until the trend gate breaks.
+- Not predicting the next narrative (rotation-timing has no validated edge).
+- Not using thematic inflows or macro headlines as triggers (they are coincident, per macro_narrative note).
+
+**Bottom-line desk view:** The one durable theme is Tech Hardware & Semis. The discipline’s edge is staying with it until the absolute-trend gate says otherwise. That gate remains open.

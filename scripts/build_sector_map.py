@@ -35,6 +35,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -599,23 +600,21 @@ def build(force: bool = False) -> pd.DataFrame:
     """
     from lib import config  # noqa: PLC0415
     out_path = config.data_dir() / "breadth" / "ticker_sectors.parquet"
+    meta_path = config.data_dir() / "breadth" / "ticker_sectors_meta.json"
 
-    # Check freshness (idempotent on daily re-runs)
+    # Same-day skip (idempotent on daily re-runs), keyed off the committed
+    # sidecar's build date — never source-vs-output mtime ordering. On CI
+    # runners a checkout rewrites every file with mtime = checkout time, so
+    # the old make-style comparison read "sources not newer" and silently
+    # skipped rebuilds against newer committed sources (the polygon-universe
+    # frozen-cache class, #2690). Missing/unreadable stamp ⇒ rebuild.
     if not force and out_path.exists():
         try:
-            existing = pd.read_parquet(out_path)
-            # Rebuild if source files are newer
-            import os  # noqa: PLC0415
-            src_files = [
-                config.data_dir() / "breadth" / "constituents.parquet",
-                config.data_dir() / "midcap_breadth" / "constituents.parquet",
-                config.data_dir() / "smallcap_breadth" / "constituents.parquet",
-                config.data_dir() / "profile" / "profiles.parquet",
-                config.data_dir() / "edgar" / "cik_sic.json",
-            ]
-            out_mtime = out_path.stat().st_mtime
-            if all(not p.exists() or p.stat().st_mtime <= out_mtime for p in src_files):
-                log.info("ticker_sectors.parquet is up to date (%d tickers)", len(existing))
+            built = json.loads(meta_path.read_text()).get("built_asof")
+            if built == date.today().isoformat():
+                existing = pd.read_parquet(out_path)
+                log.info("ticker_sectors.parquet already built today (%d tickers)",
+                         len(existing))
                 return existing
         except Exception:  # noqa: BLE001
             pass
@@ -667,6 +666,10 @@ def build(force: bool = False) -> pd.DataFrame:
     # --- Write ---
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out_path, index=False)
+    # Committed build stamp — the content-truth freshness signal for the
+    # same-day skip above and for downstream as_of displays (#2690 class).
+    meta_path.write_text(json.dumps(
+        {"built_asof": date.today().isoformat(), "n_tickers": int(len(df))}))
     log.info("Written: %s (%d rows)", out_path, len(df))
     return df
 

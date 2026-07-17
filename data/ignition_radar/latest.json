@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-14",
+  "as_of": "2026-07-16",
   "state": "warming",
   "k_count": 1,
   "chips": [
@@ -54,8 +54,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "pct_above_50=66.2% (was 63.9% 10d ago)",
-      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=66.2%\uff0810\u65e5\u524d63.9%\uff09",
+      "detail_en": "pct_above_50=62.6% (was 62.2% 10d ago)",
+      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=62.6%\uff0810\u65e5\u524d62.2%\uff09",
       "source": "breadth"
     },
     {
@@ -65,8 +65,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "10d mean(nh-nl)=27.5 (was 18.9 10d ago)",
-      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=27.5\uff0810\u65e5\u524d18.9\uff09",
+      "detail_en": "10d mean(nh-nl)=26.4 (was 18.3 10d ago)",
+      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=26.4\uff0810\u65e5\u524d18.3\uff09",
       "source": "breadth"
     },
     {
@@ -75,9 +75,9 @@
       "label_zh": "\u7b49\u6743RS\uff08RSP/SPY\uff09",
       "lit": true,
       "fresh": true,
-      "since": "2026-07-13",
-      "detail_en": "20d log-RS slope=0.0071 (positive); turned positive 1bd ago",
-      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0071\uff08\u6b63\u5411\uff09\uff1b1\u65e5\u524d\u8f6c\u6b63",
+      "since": "2026-07-15",
+      "detail_en": "20d log-RS slope=0.0143 (positive); turned positive 1bd ago",
+      "detail_zh": "20\u65e5\u5bf9\u6570RS\u659c\u7387=0.0143\uff08\u6b63\u5411\uff09\uff1b1\u65e5\u524d\u8f6c\u6b63",
       "source": "yahoo/RSP,SPY"
     },
     {
@@ -93,8 +93,8 @@
     }
   ],
   "regime": {
-    "label_en": "Theme ignition \u2014 US Energy Complex, participation OK",
-    "label_zh": "\u4e3b\u9898\u70b9\u706b \u2014 US Energy Complex\uff0c\u53c2\u4e0e\u5ea6\u5c1a\u53ef",
+    "label_en": "Theme ignition \u2014 XLE, participation OK",
+    "label_zh": "\u4e3b\u9898\u70b9\u706b \u2014 XLE\uff0c\u53c2\u4e0e\u5ea6\u5c1a\u53ef",
     "fragile": false,
     "do_en": "Theme ignition with adequate participation. Evidence read, not a buy call \u2014 confluence with your own entry process.",
     "do_zh": "\u4e3b\u9898\u70b9\u706b\u4e14\u53c2\u4e0e\u5ea6\u5c1a\u53ef\u3002\u8bc1\u636e\u8bfb\u53d6\uff0c\u975e\u4e70\u5165\u4fe1\u53f7 \u2014 \u8bf7\u7ed3\u5408\u60a8\u7684\u5165\u573a\u6d41\u7a0b\u7efc\u5408\u5224\u65ad\u3002"
@@ -102,155 +102,17 @@
   "narrow": {
     "items": [
       {
-        "id": "energy_complex",
-        "ignition_score": 0.9804,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 1.0,
-          "breadth_n": [
-            2,
-            2
-          ],
-          "rs_slope_change": 0.951,
-          "rs_slope_raw": 0.07417,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "US Energy Complex",
-        "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
-        "category": "Energy & Power",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": true
-      },
-      {
-        "id": "XLU",
-        "ignition_score": 0.8775,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": null,
-          "breadth_n": [
-            0,
-            0
-          ],
-          "rs_slope_change": 0.8162,
-          "rs_slope_raw": 0.03728,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "XLU",
-        "name_zh": "XLU",
-        "category": "Sector ETF",
-        "type": "etf",
-        "rs_new_high": false,
-        "above_200d_rising": true
-      },
-      {
-        "id": "XLF",
-        "ignition_score": 0.7476,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": null,
-          "breadth_n": [
-            0,
-            0
-          ],
-          "rs_slope_change": 0.6214,
-          "rs_slope_raw": 0.01239,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "XLF",
-        "name_zh": "XLF",
-        "category": "Sector ETF",
-        "type": "etf",
-        "rs_new_high": false,
-        "above_200d_rising": true
-      },
-      {
-        "id": "us_sector_utilities",
-        "ignition_score": 0.6981,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.25,
-          "breadth_n": [
-            1,
-            4
-          ],
-          "rs_slope_change": 0.9952,
-          "rs_slope_raw": 0.13323,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "Utilities (Equal-Weight)",
-        "name_zh": "\u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09",
-        "category": "US Sectors (EW)",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": true
-      },
-      {
-        "id": "us_sector_comm",
-        "ignition_score": 0.6444,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.1111,
-          "breadth_n": [
-            1,
-            9
-          ],
-          "rs_slope_change": 1.0,
-          "rs_slope_raw": 0.42686,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "Communication Services (Equal-Weight)",
-        "name_zh": "\u901a\u4fe1\u670d\u52a1\uff08\u7b49\u6743\uff09",
-        "category": "US Sectors (EW)",
-        "type": "basket",
-        "rs_new_high": true,
-        "above_200d_rising": true
-      },
-      {
-        "id": "ai_software",
-        "ignition_score": 0.6363,
-        "state": "igniting",
-        "components": {
-          "breadth_thrust": 0.0909,
-          "breadth_n": [
-            1,
-            11
-          ],
-          "rs_slope_change": 0.9999,
-          "rs_slope_raw": 0.24689,
-          "mtf_confirm": 1.0,
-          "mtf_ok": true,
-          "commodity_flip": false
-        },
-        "name": "AI Software & Platforms",
-        "name_zh": "AI \u8f6f\u4ef6\u4e0e\u5e73\u53f0",
-        "category": "AI & Technology",
-        "type": "basket",
-        "rs_new_high": false,
-        "above_200d_rising": true
-      },
-      {
         "id": "XLE",
-        "ignition_score": 0.6005,
-        "state": "running",
+        "ignition_score": 0.9979,
+        "state": "igniting",
         "components": {
           "breadth_thrust": null,
           "breadth_n": [
             0,
             0
           ],
-          "rs_slope_change": 0.4008,
-          "rs_slope_raw": -0.01006,
+          "rs_slope_change": 0.9969,
+          "rs_slope_raw": 0.14405,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
@@ -263,42 +125,180 @@
         "above_200d_rising": true
       },
       {
-        "id": "defensives",
-        "ignition_score": 0.6,
+        "id": "XLC",
+        "ignition_score": 0.9421,
         "state": "igniting",
         "components": {
-          "breadth_thrust": 0.0,
+          "breadth_thrust": null,
           "breadth_n": [
             0,
-            5
+            0
           ],
-          "rs_slope_change": 1.0,
-          "rs_slope_raw": 0.39234,
+          "rs_slope_change": 0.9131,
+          "rs_slope_raw": 0.0588,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
         },
-        "name": "Defensives",
-        "name_zh": "\u9632\u5fa1\u677f\u5757",
-        "category": "Consumer Defensive",
+        "name": "XLC",
+        "name_zh": "XLC",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": false
+      },
+      {
+        "id": "XLP",
+        "ignition_score": 0.8459,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.7688,
+          "rs_slope_raw": 0.03004,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLP",
+        "name_zh": "XLP",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "XLV",
+        "ignition_score": 0.8299,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.7448,
+          "rs_slope_raw": 0.02678,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLV",
+        "name_zh": "XLV",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "energy_complex",
+        "ignition_score": 0.7997,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.5,
+          "breadth_n": [
+            1,
+            2
+          ],
+          "rs_slope_change": 0.9993,
+          "rs_slope_raw": 0.18279,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "US Energy Complex",
+        "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
+        "category": "Energy & Power",
         "type": "basket",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "XLF",
+        "ignition_score": 0.7389,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.6084,
+          "rs_slope_raw": 0.01101,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLF",
+        "name_zh": "XLF",
+        "category": "Sector ETF",
+        "type": "etf",
+        "rs_new_high": false,
+        "above_200d_rising": true
+      },
+      {
+        "id": "us_sector_comm",
+        "ignition_score": 0.7333,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": 0.3333,
+          "breadth_n": [
+            3,
+            9
+          ],
+          "rs_slope_change": 1.0,
+          "rs_slope_raw": 0.48222,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "Communication Services (Equal-Weight)",
+        "name_zh": "\u901a\u4fe1\u670d\u52a1\uff08\u7b49\u6743\uff09",
+        "category": "US Sectors (EW)",
+        "type": "basket",
+        "rs_new_high": true,
+        "above_200d_rising": true
+      },
+      {
+        "id": "XLU",
+        "ignition_score": 0.7107,
+        "state": "igniting",
+        "components": {
+          "breadth_thrust": null,
+          "breadth_n": [
+            0,
+            0
+          ],
+          "rs_slope_change": 0.566,
+          "rs_slope_raw": 0.00664,
+          "mtf_confirm": 1.0,
+          "mtf_ok": true,
+          "commodity_flip": false
+        },
+        "name": "XLU",
+        "name_zh": "XLU",
+        "category": "Sector ETF",
+        "type": "etf",
         "rs_new_high": false,
         "above_200d_rising": true
       }
     ],
-    "as_of": "2026-07-14"
+    "as_of": "2026-07-16"
   },
   "narrow_top": {
-    "basket_id": "energy_complex",
-    "name": "US Energy Complex",
-    "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
-    "score": 0.9804,
-    "streak_sessions": 1
+    "basket_id": "XLE",
+    "name": "XLE",
+    "name_zh": "XLE",
+    "score": 0.9979,
+    "streak_sessions": 2
   },
   "radar_xref": {
     "state": "caution",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.41
+  "_timing_s": 2.73
 }

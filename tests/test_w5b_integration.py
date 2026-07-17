@@ -224,11 +224,17 @@ def test_check_title_i18n_baskets_china_template():
 # --------------------------------------------------------------------------- #
 #  T10 — sleeve build smoke (sibling build intact)                             #
 # --------------------------------------------------------------------------- #
-def test_sleeve_build_smoke(tmp_path):
+def test_sleeve_build_smoke(tmp_path, monkeypatch):
     """build() completes without exception on a synthetic environment where the
     plane is unavailable — returns a dict and doesn't raise.  This proves the
     sibling build still works after the W5-B edits."""
+    from lib import config
     import scripts.build_cn_reversal_sleeve as builder
+
+    # Point data_dir at tmp: the plane really IS unavailable (matching the
+    # docstring), and compute() early-returns before the ledger append — so
+    # data/cn_reversal_sleeve_track/ is never written (MM_DATA_GUARD).
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
     result = builder.build(write=False, site=tmp_path)
     assert isinstance(result, dict)
     # the shadow/no_data status is fine when the plane is missing — the point is no exception

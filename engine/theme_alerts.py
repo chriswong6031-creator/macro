@@ -149,13 +149,22 @@ def compute_events(theme_intel: dict, prior: dict | None) -> list[dict]:
                               f"{nz} 进入「新兴」阶段 — 相对强度加速且尚未过度延展（评分 {c['score']}）。"))
         elif c["label"] == "fading" and p.get("label") == "dominant":
             labelled.add(tid)
+            # Honest-claim wording: the FADING read is calibrated as a pullback-RISK timer
+            # (elevated forward drawdown), NOT a directional top call — and it is a basket-level
+            # read that says nothing about the strongest members inside the theme. Keep the alert
+            # immediate (ratified risk-direction asymmetry); temper the claim, disclose the as-of.
+            _d = str(ts)[:10]
             events.append(_ev(tid, "theme_topping", ts, "high",
-                              f"⚠️ {nm} is topping out",
-                              f"{nm} rolled over from DOMINANT into FADING — strength fading off a high. "
-                              f"Recommendation now {c['reco'].upper()}.",
+                              f"⚠️ {nm}: strength fading off the high",
+                              f"{nm} dropped from DOMINANT to FADING as of the {_d} close — momentum "
+                              f"cooling at a high. Historically this read flags elevated pullback risk "
+                              f"over the next month, not a confirmed top — leaders inside the theme can "
+                              f"keep running. Recommendation now {c['reco'].upper()}.",
                               {"from": "dominant", "to": "fading", "reco": c["reco"]}, "fading",
-                              f"⚠️ {nz} 见顶回落",
-                              f"{nz} 自「主导」转入「退潮」 — 高位强度减弱，当前建议 {c['reco'].upper()}。"))
+                              f"⚠️ {nz}：高位动能减弱",
+                              f"{nz} 自「主导」转入「退潮」（截至 {_d} 收盘）— 高位动能降温。历史上该读数"
+                              f"指向未来约一个月的回撤风险上升，并非确认见顶 — 主题内的领涨股仍可能续涨。"
+                              f"当前建议 {c['reco'].upper()}。"))
         elif c["label"] == "deteriorating" and p.get("label") != "deteriorating":
             labelled.add(tid)
             events.append(_ev(tid, "theme_deteriorating", ts, "high",
@@ -203,6 +212,23 @@ def compute_events(theme_intel: dict, prior: dict | None) -> list[dict]:
 def _rank1_id(snap: dict) -> str | None:
     return next((tid for tid, t in snap.items()
                  if isinstance(t, dict) and t.get("rank") == 1), None)
+
+
+def _confirmed_emerging_event(tid: str, c: dict, frm: str, ts, held: int) -> dict:
+    """The deferred theme_emerging event, re-rendered at CONFIRM time so its ts/id reflects
+    the build that proved the flip is sustained (id schema unchanged)."""
+    nm, nz = c["name"], c["name_zh"]
+    return _ev(tid, "theme_emerging", ts, "medium",
+               f"🌱 {nm} is emerging",
+               f"{nm} entered the EMERGING lifecycle — accelerating relative strength "
+               f"before it is extended (score {c['score']}) — held {held} consecutive "
+               f"sessions (constructive label shifts are debounced; risk label shifts fire "
+               f"immediately).",
+               {"from": frm, "to": "emerging", "score": c["score"], "held_sessions": held},
+               "emerging",
+               f"🌱 {nz} 进入新兴阶段",
+               f"{nz} 进入「新兴」阶段 — 相对强度加速且尚未过度延展（评分 {c['score']}），"
+               f"已连续 {held} 个交易日确认（进取方向去抖，风险方向即时）。")
 
 
 def _confirmed_reco_event(tid: str, c: dict, frm: str, ts, held: int) -> dict:
@@ -258,20 +284,31 @@ def apply_debounce(events: list[dict], cur: dict, prior: dict, deb: dict | None,
     """
     deb = deb if isinstance(deb, dict) else {}
     prior_reco = {k: v for k, v in (deb.get("reco") or {}).items() if isinstance(v, dict)}
+    prior_label = {k: v for k, v in (deb.get("label") or {}).items() if isinstance(v, dict)}
     lead = deb.get("lead") if isinstance(deb.get("lead"), dict) else {}
     out: list[dict] = []
     next_reco: dict[str, dict] = {}
+    next_label: dict[str, dict] = {}
     try:
         bucket = pd.Timestamp(ts).strftime("%Y-%m-%d")   # session date of THIS build
     except Exception:  # noqa: BLE001
         bucket = None
 
-    # ---- reco: buffer constructive upgrades, pass risk direction straight through ----
+    # ---- label events: risk direction immediate; theme_emerging buffered (constructive) ----
     for e in events:
         if e.get("type") == "leadership_rotation":
             continue                      # regenerated below by the leadership machine
+        if e.get("type") == "theme_emerging":
+            # constructive label flip: buffer with N_STREAK=2, same as reco upgrades.
+            # The "from" label is preserved so the confirm event narrates correctly.
+            tid = e.get("asset")
+            frm = (e.get("context") or {}).get("from")
+            streak = prior_label.get(tid)
+            next_label[tid] = {"from": streak.get("from", frm) if streak else frm,
+                               "count": 1, "bucket": bucket}
+            continue
         if e.get("type") != "reco_change":
-            out.append(e)                 # label events (incl. topping/deteriorating): immediate
+            out.append(e)                 # topping/deteriorating: immediate
             continue
         tid = e.get("asset")
         ctx = e.get("context") or {}
@@ -312,6 +349,23 @@ def apply_debounce(events: list[dict], cur: dict, prior: dict, deb: dict | None,
         else:
             next_reco[tid] = {**streak, "count": held, "bucket": bucket}
 
+    # ---- advance held label streaks (theme_emerging that merely persists: no raw event) ----
+    for tid, streak in prior_label.items():
+        if tid in next_label:
+            continue                      # re-based this build
+        c = cur.get(tid)
+        if not isinstance(c, dict) or c.get("label") != "emerging":
+            continue                      # theme gone or label reverted -> streak dies silently
+        if bucket is not None and streak.get("bucket") == bucket:
+            # intraday double-build: same session date counts once, streak lives
+            next_label[tid] = streak
+            continue
+        held = int(streak.get("count", 0)) + 1
+        if held >= N_STREAK:
+            out.append(_confirmed_emerging_event(tid, c, streak.get("from", "?"), ts, held))
+        else:
+            next_label[tid] = {**streak, "count": held, "bucket": bucket}
+
     # ---- leadership: needs N_STREAK builds at #1 AND a decisive margin, same build ----
     cur_lead = _rank1_id(cur)
     displayed = lead.get("displayed") or _rank1_id(prior) or cur_lead
@@ -334,7 +388,7 @@ def apply_debounce(events: list[dict], cur: dict, prior: dict, deb: dict | None,
             # not confirmed yet: a photo-finish keeps counting sessions but never emits
             # until the lead is both persistent AND decisive on the same build.
             next_lead["pending"] = {"tid": cur_lead, "count": held, "bucket": bucket}
-    return out, {"reco": next_reco, "lead": next_lead}
+    return out, {"reco": next_reco, "label": next_label, "lead": next_lead}
 
 
 def load_events(region: str = "us") -> list[dict]:

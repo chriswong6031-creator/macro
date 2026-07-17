@@ -1,22 +1,22 @@
 {
-  "as_of": "2026-07-13",
+  "as_of": "2026-07-16",
   "regime": {
     "state": "us_exceptionalism_outflow",
     "label_en": "Capital favors the US — overseas headwind",
     "label_zh": "资本偏向美国——海外市场面临逆风",
     "guidance_en": "Money looks to be moving toward the US. Overseas and commodity-linked assets face a headwind; countries with big deficits are the ones to watch.",
     "guidance_zh": "资金似乎正在向美国转移。海外及大宗商品相关资产面临逆风；赤字较大的国家需要重点关注。",
-    "days_in_state": 38,
+    "days_in_state": 41,
     "raw_state": "us_exceptionalism_outflow",
     "legs": {
-      "spy_20d": 0.018082,
-      "row_20d": -0.011679,
-      "spy_63d": 0.102596,
-      "row_63d": 0.010058,
-      "usd_20d": 0.003224,
-      "usd_63d": 0.013877,
-      "emfx_63d": -0.018091,
-      "vix": 17.16
+      "spy_20d": 0.003097,
+      "row_20d": -0.023697,
+      "spy_63d": 0.072549,
+      "row_63d": 0.002406,
+      "usd_20d": 0.01047,
+      "usd_63d": 0.0181,
+      "emfx_63d": -0.019808,
+      "vix": 16.73
     },
     "hysteresis_pending": false
   },
@@ -24,11 +24,11 @@
     "europe": {
       "direction": "neutral",
       "strength": null,
-      "mean_z": -0.185,
+      "mean_z": 0.1295,
       "n_legs": 2,
       "legs": {
-        "rel_equity": -0.361,
-        "fx": -0.009,
+        "rel_equity": 0.099,
+        "fx": 0.16,
         "oas": null
       },
       "notes": []
@@ -36,23 +36,23 @@
     "japan": {
       "direction": "neutral",
       "strength": null,
-      "mean_z": -0.2525,
+      "mean_z": -0.3505,
       "n_legs": 2,
       "legs": {
-        "rel_equity": -0.24,
-        "fx": -0.265,
+        "rel_equity": -0.319,
+        "fx": -0.382,
         "oas": null
       },
       "notes": []
     },
     "commodity_dm": {
-      "direction": "outflow",
-      "strength": "mild",
-      "mean_z": -0.63,
+      "direction": "neutral",
+      "strength": null,
+      "mean_z": -0.2125,
       "n_legs": 2,
       "legs": {
-        "rel_equity": -0.56,
-        "fx": -0.7,
+        "rel_equity": -0.113,
+        "fx": -0.312,
         "oas": null
       },
       "notes": []
@@ -60,73 +60,73 @@
     "latam": {
       "direction": "neutral",
       "strength": null,
-      "mean_z": -0.2607,
+      "mean_z": -0.3763,
       "n_legs": 3,
       "legs": {
-        "rel_equity": -0.411,
-        "fx": -0.071,
-        "oas": -0.3
+        "rel_equity": -0.109,
+        "fx": -0.671,
+        "oas": -0.349
       },
       "notes": []
     },
     "em_asia": {
-      "direction": "neutral",
-      "strength": null,
-      "mean_z": -0.206,
+      "direction": "outflow",
+      "strength": "mild",
+      "mean_z": -0.6393,
       "n_legs": 3,
       "legs": {
-        "rel_equity": -0.544,
-        "fx": 0.178,
-        "oas": -0.252
+        "rel_equity": -0.882,
+        "fx": -0.483,
+        "oas": -0.553
       },
       "notes": []
     },
     "emea": {
       "direction": "outflow",
       "strength": "mild",
-      "mean_z": -0.555,
+      "mean_z": -0.7247,
       "n_legs": 3,
       "legs": {
-        "rel_equity": -1.058,
-        "fx": -0.584,
-        "oas": -0.023
+        "rel_equity": -1.321,
+        "fx": -0.695,
+        "oas": -0.158
       },
       "notes": []
     },
     "em_broad": {
       "direction": "outflow",
       "strength": "mild",
-      "mean_z": -0.7933,
+      "mean_z": -1.169,
       "n_legs": 3,
       "legs": {
-        "rel_equity": -1.893,
-        "fx": -0.276,
-        "oas": -0.211
+        "rel_equity": -2.165,
+        "fx": -1.054,
+        "oas": -0.288
       },
       "notes": []
     }
   },
   "emp_watch": [
     {
-      "country": "JP",
-      "etf": "EWJ",
-      "composite": 0.702,
+      "country": "CH",
+      "etf": "EWL",
+      "composite": 0.764,
       "legs": {
-        "fx_dep_z": 0.265,
-        "equity_under_z": 1.196,
-        "fxvol_z": 0.645
+        "fx_dep_z": 0.76,
+        "equity_under_z": 1.283,
+        "fxvol_z": 0.25
       },
       "flag": null,
       "missing": []
     },
     {
-      "country": "CA",
-      "etf": "EWC",
-      "composite": 0.667,
+      "country": "JP",
+      "etf": "EWJ",
+      "composite": 0.711,
       "legs": {
-        "fx_dep_z": 0.976,
-        "equity_under_z": 0.511,
-        "fxvol_z": 0.513
+        "fx_dep_z": 0.382,
+        "equity_under_z": 1.123,
+        "fxvol_z": 0.628
       },
       "flag": null,
       "missing": []
@@ -134,23 +134,11 @@
     {
       "country": "DE",
       "etf": "EWG",
-      "composite": 0.541,
+      "composite": 0.67,
       "legs": {
-        "fx_dep_z": 0.733,
-        "equity_under_z": 0.458,
-        "fxvol_z": 0.432
-      },
-      "flag": null,
-      "missing": []
-    },
-    {
-      "country": "CH",
-      "etf": "EWL",
-      "composite": 0.508,
-      "legs": {
-        "fx_dep_z": 0.715,
-        "equity_under_z": 0.654,
-        "fxvol_z": 0.155
+        "fx_dep_z": 0.693,
+        "equity_under_z": 0.767,
+        "fxvol_z": 0.549
       },
       "flag": null,
       "missing": []
@@ -158,47 +146,23 @@
     {
       "country": "TW",
       "etf": "EWT",
-      "composite": 0.439,
+      "composite": 0.657,
       "legs": {
-        "fx_dep_z": 0.729,
-        "equity_under_z": 0.76,
-        "fxvol_z": -0.171
+        "fx_dep_z": 0.992,
+        "equity_under_z": 1.261,
+        "fxvol_z": -0.281
       },
       "flag": null,
       "missing": []
     },
     {
-      "country": "ID",
-      "etf": "EIDO",
-      "composite": 0.346,
+      "country": "CA",
+      "etf": "EWC",
+      "composite": 0.581,
       "legs": {
-        "fx_dep_z": 0.396,
-        "equity_under_z": 0.69,
-        "fxvol_z": -0.048
-      },
-      "flag": null,
-      "missing": []
-    },
-    {
-      "country": "AU",
-      "etf": "EWA",
-      "composite": 0.215,
-      "legs": {
-        "fx_dep_z": 0.423,
-        "equity_under_z": 0.567,
-        "fxvol_z": -0.345
-      },
-      "flag": null,
-      "missing": []
-    },
-    {
-      "country": "MX",
-      "etf": "EWW",
-      "composite": 0.154,
-      "legs": {
-        "fx_dep_z": 0.254,
-        "equity_under_z": -0.097,
-        "fxvol_z": 0.306
+        "fx_dep_z": 0.132,
+        "equity_under_z": 0.697,
+        "fxvol_z": 0.915
       },
       "flag": null,
       "missing": []
@@ -206,23 +170,47 @@
     {
       "country": "GB",
       "etf": "EWU",
-      "composite": 0.105,
+      "composite": 0.477,
       "legs": {
-        "fx_dep_z": 0.008,
-        "equity_under_z": 0.544,
-        "fxvol_z": -0.238
+        "fx_dep_z": -0.412,
+        "equity_under_z": 0.96,
+        "fxvol_z": 0.882
       },
       "flag": null,
       "missing": []
     },
     {
-      "country": "ZA",
-      "etf": "EZA",
-      "composite": -0.082,
+      "country": "AU",
+      "etf": "EWA",
+      "composite": 0.409,
       "legs": {
-        "fx_dep_z": -0.319,
-        "equity_under_z": 0.113,
-        "fxvol_z": -0.04
+        "fx_dep_z": 0.492,
+        "equity_under_z": 0.943,
+        "fxvol_z": -0.207
+      },
+      "flag": null,
+      "missing": []
+    },
+    {
+      "country": "ID",
+      "etf": "EIDO",
+      "composite": 0.232,
+      "legs": {
+        "fx_dep_z": 0.931,
+        "equity_under_z": -0.073,
+        "fxvol_z": -0.163
+      },
+      "flag": null,
+      "missing": []
+    },
+    {
+      "country": "MX",
+      "etf": "EWW",
+      "composite": 0.208,
+      "legs": {
+        "fx_dep_z": 0.441,
+        "equity_under_z": 0.126,
+        "fxvol_z": 0.056
       },
       "flag": null,
       "missing": []
@@ -230,11 +218,11 @@
     {
       "country": "BR",
       "etf": "EWZ",
-      "composite": -0.19,
+      "composite": 0.193,
       "legs": {
-        "fx_dep_z": -0.507,
-        "equity_under_z": 0.793,
-        "fxvol_z": -0.856
+        "fx_dep_z": 0.174,
+        "equity_under_z": 1.254,
+        "fxvol_z": -0.85
       },
       "flag": null,
       "missing": []
@@ -242,11 +230,23 @@
     {
       "country": "IN",
       "etf": "INDA",
-      "composite": -0.203,
+      "composite": 0.188,
       "legs": {
-        "fx_dep_z": -0.821,
-        "equity_under_z": 1.449,
-        "fxvol_z": -1.237
+        "fx_dep_z": 1.102,
+        "equity_under_z": 0.705,
+        "fxvol_z": -1.244
+      },
+      "flag": null,
+      "missing": []
+    },
+    {
+      "country": "ZA",
+      "etf": "EZA",
+      "composite": 0.097,
+      "legs": {
+        "fx_dep_z": 0.404,
+        "equity_under_z": -0.021,
+        "fxvol_z": -0.092
       },
       "flag": null,
       "missing": []
@@ -254,11 +254,11 @@
     {
       "country": "KR",
       "etf": "EWY",
-      "composite": -1.025,
+      "composite": -0.854,
       "legs": {
-        "fx_dep_z": -1.017,
-        "equity_under_z": -1.595,
-        "fxvol_z": -0.463
+        "fx_dep_z": -1.093,
+        "equity_under_z": -0.882,
+        "fxvol_z": -0.588
       },
       "flag": null,
       "missing": []
@@ -295,147 +295,147 @@
   "coverage": {
     "SPY": {
       "first": "1993-01-29",
-      "last": "2026-07-13"
+      "last": "2026-07-16"
     },
     "etf/EWJ": {
       "first": "1996-03-18",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EWG": {
       "first": "1996-03-18",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EWU": {
       "first": "1996-03-18",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EWC": {
       "first": "1996-03-18",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EWA": {
       "first": "1996-03-18",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EWL": {
       "first": "1996-03-18",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EWZ": {
       "first": "2000-07-14",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EWW": {
       "first": "1996-03-18",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/INDA": {
       "first": "2012-02-03",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EIDO": {
       "first": "2010-05-07",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EZA": {
       "first": "2003-02-07",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EWY": {
       "first": "2000-05-12",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "etf/EEM": {
       "first": "2003-04-14",
-      "last": "2026-07-13"
+      "last": "2026-07-16"
     },
     "etf/EWT": {
       "first": "2000-06-23",
-      "last": "2026-07-13"
+      "last": "2026-07-15"
     },
     "fx/MXN": {
       "first": "2003-12-01",
-      "last": "2026-07-15"
+      "last": "2026-07-16"
     },
     "fx/BRL": {
       "first": "2003-12-01",
-      "last": "2026-07-15"
+      "last": "2026-07-16"
     },
     "fx/ZAR": {
       "first": "2003-12-01",
-      "last": "2026-07-15"
+      "last": "2026-07-17"
     },
     "fx/TRY": {
       "first": "2005-01-03",
-      "last": "2026-07-15"
+      "last": "2026-07-17"
     },
     "fx/IDR": {
       "first": "2001-06-28",
-      "last": "2026-07-15"
+      "last": "2026-07-17"
     },
     "fx/CLP": {
       "first": "2003-12-01",
-      "last": "2026-07-14"
+      "last": "2026-07-16"
     },
     "fx/PLN": {
       "first": "2003-12-01",
-      "last": "2026-07-15"
+      "last": "2026-07-17"
     },
     "fx/KRW": {
       "first": "2003-12-01",
-      "last": "2026-07-14"
+      "last": "2026-07-16"
     },
     "fx/INR": {
       "first": "2003-12-01",
-      "last": "2026-07-14"
+      "last": "2026-07-16"
     },
     "fx/TWD": {
       "first": "2004-03-24",
-      "last": "2026-07-14"
+      "last": "2026-07-16"
     },
     "fx/EUR": {
       "first": "2003-12-01",
-      "last": "2026-07-15"
+      "last": "2026-07-17"
     },
     "fx/GBP": {
       "first": "2003-12-01",
-      "last": "2026-07-15"
+      "last": "2026-07-17"
     },
     "fx/CHF": {
       "first": "2003-09-17",
-      "last": "2026-07-15"
+      "last": "2026-07-16"
     },
     "fx/JPY": {
       "first": "1996-10-30",
-      "last": "2026-07-15"
+      "last": "2026-07-17"
     },
     "fx/CAD": {
       "first": "2003-09-17",
-      "last": "2026-07-15"
+      "last": "2026-07-17"
     },
     "fx/AUD": {
       "first": "2006-05-16",
-      "last": "2026-07-15"
+      "last": "2026-07-17"
     },
     "fred/BAMLEMRLCRPILAOAS": {
       "first": "2023-07-11",
-      "last": "2026-07-10"
+      "last": "2026-07-14"
     },
     "fred/BAMLEMRACRPIASIAOAS": {
       "first": "2023-07-11",
-      "last": "2026-07-10"
+      "last": "2026-07-14"
     },
     "fred/BAMLEMRECRPIEMEAOAS": {
       "first": "2023-07-11",
-      "last": "2026-07-10"
+      "last": "2026-07-14"
     },
     "fred/BAMLEMCBPIOAS": {
       "first": "2023-06-13",
-      "last": "2026-07-10"
+      "last": "2026-07-14"
     },
     "fred/BAMLH0A0HYM2": {
       "first": "1996-12-31",
-      "last": "2026-07-10"
+      "last": "2026-07-14"
     },
     "fred/SWPT": {
       "first": "2002-12-18",

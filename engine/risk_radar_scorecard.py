@@ -9,10 +9,13 @@ DISPLAY-TIER CONTEXT ACCRUAL — NOT a promotion claim.  No gate changes here.
 Pure observation over already-graded rows.  No LLM, no signal origination.
 
 Frozen schema: scorecard.json
-  {schema, generated_at, markets: {us|cn|hk|ca: MARKET}}
+  {schema, generated_at, markets: {us + _INTL_MARKETS keys: MARKET}}
   MARKET = {asof_last_row, monitoring: {log_fresh, last_logged_days_ago,
              ungraded_backlog, graded_n},
             windows: {full: WINDOW, y1: WINDOW}}
+  Market keys are ADDITIVE-ONLY under risk_radar_scorecard.v1: consumers read
+  markets by key and must tolerate keys they don't know (never pattern-match
+  the exact key set).  Removing or renaming a key requires a schema bump.
   WINDOW = {alerts, watch_caution, calm, by_scare, recovery}
   Each sub-block uses hit_rate/rate=null when n<5 (min-n honesty floor).
 
@@ -31,6 +34,11 @@ from typing import Any
 log = logging.getLogger(__name__)
 
 _SCHEMA = "risk_radar_scorecard.v1"
+# Intl markets with a forward ledger at data/risk_radar_intl/<key>_forward_log.jsonl
+# (written/graded by engine/risk_radar_intl_audit.py).  Mirror of
+# engine/risk_radar_intl.PROFILES keys — not imported so this module stays
+# dependency-light and fail-soft.  Additive-only under risk_radar_scorecard.v1.
+_INTL_MARKETS = ("cn", "hk", "ca", "kr", "jp", "tw", "in", "au", "gb", "ez")
 _MIN_N = 5          # minimum rows before computing a rate (honesty floor)
 _ALERT_STATES = frozenset(("elevated", "risk-off"))
 _WATCH_CAUTION_STATES = frozenset(("watch", "caution"))
@@ -347,31 +355,27 @@ def _market_entry(
 def build(root=None) -> dict:
     """Build and return the scorecard dict. Never raises."""
     try:
-        us = _market_entry(
-            "us",
-            _us_forward_path(root),
-            _us_recovery_path(root),
-        )
-        cn = _market_entry("cn", _intl_forward_path("cn", root))
-        hk = _market_entry("hk", _intl_forward_path("hk", root))
-        ca = _market_entry("ca", _intl_forward_path("ca", root))
+        markets: dict[str, dict] = {
+            "us": _market_entry(
+                "us",
+                _us_forward_path(root),
+                _us_recovery_path(root),
+            ),
+        }
+        for mkt in _INTL_MARKETS:
+            markets[mkt] = _market_entry(mkt, _intl_forward_path(mkt, root))
 
         return {
             "schema": _SCHEMA,
             "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "markets": {
-                "us": us,
-                "cn": cn,
-                "hk": hk,
-                "ca": ca,
-            },
+            "markets": markets,
         }
     except Exception as e:  # noqa: BLE001
         log.warning("risk_radar_scorecard.build failed: %s", e)
         return {
             "schema": _SCHEMA,
             "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "markets": {"us": {}, "cn": {}, "hk": {}, "ca": {}},
+            "markets": {m: {} for m in ("us", *_INTL_MARKETS)},
         }
 
 
@@ -411,11 +415,11 @@ def write(root=None) -> dict:
         _atomic_write(_scorecard_data_path(root), payload)
         _atomic_write(_scorecard_site_path(root), payload)
         log.info(
-            "risk_radar_scorecard: wrote scorecard (us graded=%s, cn=%s, hk=%s, ca=%s)",
-            (sc.get("markets", {}).get("us", {}).get("monitoring", {}).get("graded_n")),
-            (sc.get("markets", {}).get("cn", {}).get("monitoring", {}).get("graded_n")),
-            (sc.get("markets", {}).get("hk", {}).get("monitoring", {}).get("graded_n")),
-            (sc.get("markets", {}).get("ca", {}).get("monitoring", {}).get("graded_n")),
+            "risk_radar_scorecard: wrote scorecard (graded_n: %s)",
+            ", ".join(
+                f"{m}={((sc.get('markets') or {}).get(m) or {}).get('monitoring', {}).get('graded_n')}"
+                for m in ("us", *_INTL_MARKETS)
+            ),
         )
         return sc
     except Exception as e:  # noqa: BLE001

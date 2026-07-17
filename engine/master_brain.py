@@ -1291,7 +1291,8 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
     model = cfg.get("llm_model", "deepseek-v4-pro")
     env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
     providers = [{"name": "deepseek", "env_var": env_var, "cred": "present",
-                  "client": client, "model": model}]
+                  "client": client, "model": model,
+                  "usage_lane": "master-brain"}]
 
     # content-hash cache check (graded producer theses land in a ledger)
     phash = _mb_prompt_hash(model, system, user)
@@ -1318,11 +1319,11 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
             resp = _client.messages.create(**kw)
         sr = getattr(resp, "stop_reason", None)
         if sr == "refusal":
-            return None, "stop_refusal"
+            return None, "stop_refusal", resp
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
         if not text:
-            return None, "empty_reply"
-        return text, ("truncated" if sr == "max_tokens" else None)
+            return None, "empty_reply", resp
+        return text, ("truncated" if sr == "max_tokens" else None), resp
 
     try:
         text, reason, _ = llm_auth.make_call(providers, _do_call, context="master_brain")

@@ -33,7 +33,8 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_hk")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-          "charts.js", "tablesort.js", "stocktable.js", "aibrief.js", "stockview.js")
+          "charts.js", "tablesort.js", "stocktable.js", "aibrief.js", "stockview.js",
+          "heatmap.js")
 
 
 def _range_selector() -> dict:
@@ -608,6 +609,44 @@ def _hk_alloc_card() -> dict:
         return {"present": False}
 
 
+def _hk_index_health() -> list[dict]:
+    """Health snapshot for the major HK indexes — price, % off 52-week high,
+    50/200d trend, RSI(14). HK analog of _china_index_health in build_china.py.
+    HSI (main benchmark) + HSCEI (H-shares) + HSTECH (HK tech) + SHCOMP (mainland context)."""
+    from engine.technicals import rsi
+    out = []
+    for tkr, label, label_zh, key in [
+        ("^HSI",  "Hang Seng Index",   "恒生指数",   "hk"),
+        ("^HSCE", "H-Shares",          "H股指数",    "hk"),
+        ("^HSCC", "HK Tech",           "港股科技",   "hk"),
+        ("000001.SS", "Shanghai Comp", "上证综指",   "china"),
+    ]:
+        df = store.read(key, tkr)
+        if df is None or df.empty or "close" not in df.columns:
+            continue
+        c = df["close"].astype(float).dropna()
+        if len(c) < 60:
+            continue
+        px = float(c.iloc[-1])
+        hi52 = float(c.tail(252).max())
+        ma50 = float(c.tail(50).mean())
+        ma200 = float(c.tail(200).mean()) if len(c) >= 200 else float("nan")
+        try:
+            r = float(rsi(c).iloc[-1])
+        except Exception:  # noqa: BLE001
+            r = float("nan")
+        out.append({
+            "ticker": tkr, "label": label, "label_zh": label_zh,
+            "price": round(px, 2),
+            "chg": round(100 * (px / float(c.iloc[-2]) - 1), 2) if len(c) >= 2 else 0.0,
+            "dd": round(100 * (px / hi52 - 1), 1),
+            "above50": bool(px >= ma50),
+            "above200": (bool(px >= ma200) if ma200 == ma200 else None),
+            "rsi": round(r) if r == r else None,
+        })
+    return out
+
+
 def _hk_track_record_vm() -> dict | None:
     """W6 track-record panel (§7.4) — the standout-board forward scorecard, rendered
     honestly in its 'accruing' state (or with graded hit-rates + rank-IC once the
@@ -723,6 +762,9 @@ def main() -> int:
             "valuation": _hk_valuation_vm(),            # PE/PB market-median band
             "ah_official": _hk_ah_official_vm(),        # official ~190-pair A/H index
             "sb_channels": _hk_southbound_channels_vm(),  # per-channel southbound split
+            "index_health": _hk_index_health(),         # macro-page index-health strip (mx5 hero)
+            "ms_history": None,                          # populated below after market_state runs
+            "top_setups": [],                            # populated below from hk_standouts
         }
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)
@@ -769,11 +811,20 @@ def main() -> int:
             latest["risk_radar"] = _rri.snapshot(_rri.HK_PROFILE)
             # forward-grade self-audit + bounded auto-tune (vs realized HSI path); hard-forces the
             # verdict only once HK's own log validates (can_force). Display-only until then.
+            # Ledger/tuner advance ONLY on the nightly lane (house law: nightly is the sole
+            # advancer); re-render lanes take the read-only scorecard fast-path.
             try:
-                from engine import risk_radar_intl_audit as _rra, risk_radar_intl_tune as _rrt
-                latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.HK_PROFILE)
-                latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
-                _rrt.tune(_rri.HK_PROFILE)
+                from engine import risk_radar_intl_audit as _rra
+                if _rra.ledger_lane_armed():
+                    from engine import risk_radar_intl_tune as _rrt
+                    latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.HK_PROFILE)
+                    latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
+                    _rrt.tune(_rri.HK_PROFILE)
+                else:
+                    # Read-only fast-path: snapshot still renders; ledger/tuner do not advance.
+                    _sc = _rra.scorecard(_rri.HK_PROFILE.key, log_governance=False)
+                    latest["risk_radar"]["forward_log"] = _sc
+                    latest["risk_radar"]["can_force"] = bool(_sc.get("can_force"))
             except Exception as _e:  # noqa: BLE001
                 log.warning("hk risk-radar audit/tune failed (%s); skipping", _e)
             # Write the scorecard immediately after the HK ledger is updated so the
@@ -788,6 +839,59 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal
             log.error("hk market_state failed (%s); skipping", e)
             vm["market_state"] = None
+
+        # ms_history: 11-session score-log for the hero path chart. Mirrors the
+        # China score-log (data/china_market_state/score_log.parquet). The READ is
+        # unconditional — any render (incl. HK_FAST_RENDER dev renders and nights
+        # where the snapshot degrades) draws the path from the committed log; only
+        # the APPEND is gated so off-lane renders never advance the ledger. Never
+        # fatal — hero degrades to "Building score history…" when < 2 rows exist.
+        try:
+            import os as _osenv  # noqa: PLC0415 — local import mirrors build_china.py:1049
+            _sl_path = config.data_dir() / "hk_market_state" / "score_log.parquet"
+            _ms_obj = vm.get("market_state")
+            _ms_score = _ms_obj.get("score") if _ms_obj is not None else None
+            if _osenv.environ.get("HK_FAST_RENDER"):
+                pass                       # dev re-render: read-only, never append
+            elif _ms_score is None:
+                log.warning("hk score_log: market_state score unavailable — no append "
+                            "(path renders from the committed log)")
+            else:
+                _ms_date = latest.get("date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                _sl_path.parent.mkdir(parents=True, exist_ok=True)
+                _new_row = pd.DataFrame([{"date": _ms_date, "score": float(_ms_score)}])
+                if _sl_path.exists():
+                    _existing = pd.read_parquet(_sl_path)
+                    # deduplicate: drop any existing row for today's date
+                    _existing = _existing[_existing["date"].astype(str) != str(_ms_date)]
+                    _combined = pd.concat([_existing, _new_row], ignore_index=True)
+                else:
+                    _combined = _new_row
+                _combined.to_parquet(_sl_path, index=False)
+            if _sl_path.exists():
+                _all = pd.read_parquet(_sl_path).sort_values("date")
+                _hist = _all.tail(11)
+                vm["ms_history"] = _hist.to_dict(orient="records")
+                log.info("hk score_log: last %d of %d rows -> ms_history",
+                         len(_hist), len(_all))
+        except Exception as _msh_e:  # noqa: BLE001
+            log.warning("hk ms_history build failed (%s); skipping", _msh_e)
+            vm.setdefault("ms_history", None)
+
+        # ── china_brief: shared AI summary from the China brief pipeline ────────
+        # The HK AI Summary card + dialog reuse site/china_brief.json (same file
+        # the China page loads).  Mirrors build_china.py:1101-1113.  Never fatal.
+        try:
+            _cb_path = site / "china_brief.json"
+            if _cb_path.exists():
+                import json as _json_cb  # noqa: PLC0415
+                vm["china_brief"] = _json_cb.loads(_cb_path.read_text())
+            else:
+                vm["china_brief"] = None
+                log.debug("china_brief.json not found; hk aibrief card will degrade")
+        except Exception as _cb_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("hk china_brief load failed (%s); skipping", _cb_e)
+            vm["china_brief"] = None
 
         # HK / US / China macro release calendar — display-only scheduling context
         # (pure date arithmetic; no news API). None-safe.
@@ -979,6 +1083,16 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk standouts build failed (%s); skipping", e)
             vm["setups"] = None
+        # top_setups: top 5 standout names for the mx5 "Stocks Worth Watching" card.
+        # Runs after vm["setups"] is built so we read the real standout data.
+        try:
+            _su = vm.get("setups") or {}
+            _buys = (_su.get("buy") or [])[:5]
+            vm["top_setups"] = _buys
+            log.info("hk top_setups: %d entries", len(_buys))
+        except Exception as _ts_e:  # noqa: BLE001
+            log.warning("hk top_setups enrich failed (%s); skipping", _ts_e)
+            vm["top_setups"] = []
         try:
             if vm.get("hk_scoreboard"):
                 (site / "factordata").mkdir(parents=True, exist_ok=True)
@@ -1076,6 +1190,19 @@ def main() -> int:
         # `mode` flag (macro / stocks) that selects which sections show. No data is
         # recomputed and the heavy page CSS lives in exactly one template.
         tmpl = env.get_template("hk.html.j2")
+        # DEV-ONLY: dump the fully-built view-model so scripts/render_hk_fast.py can
+        # re-render hk.html / hk_stocks.html in ~1s without re-running collectors +
+        # engine. Env-gated (HK_VM_DUMP=1); never fires on the nightly/commit path.
+        import os as _os
+        if _os.environ.get("HK_VM_DUMP"):
+            try:
+                import pickle as _pkl
+                _vm_cache = config.data_dir() / "_dev_hk_vm.pkl"
+                with open(_vm_cache, "wb") as _fh:
+                    _pkl.dump(vm, _fh)
+                log.info("HK_VM_DUMP: wrote %s", _vm_cache)
+            except Exception as _e:  # noqa: BLE001 — dev-only, never fatal
+                log.error("HK_VM_DUMP failed (%s)", _e)
         html = tmpl.render(**vm, mode="macro")
         write_page(site / "hk.html", html)
         for a in ASSETS:

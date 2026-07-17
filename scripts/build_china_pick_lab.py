@@ -290,57 +290,6 @@ def _load_ticker_raw_closes(ticker: str, raw_dir: Path) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def _exec_price_cn(
-    ticker: str,
-    fire_date: pd.Timestamp,
-    date_index: pd.DatetimeIndex,
-    raw_dir: Path,
-) -> tuple[Optional[float], str]:
-    """Return (exec_price, fill_basis) for a CN fire.
-
-    CNPL-R4:
-      exec_date  = next trading session AFTER fire_date (from date_index)
-      fill price = (H+L)/2 from data/china_stocks_raw/<ticker>.parquet (fill_basis='hl2')
-      fallback   = exec-session close from same file (fill_basis='close')
-      fallback2  = None when raw file absent (fill_basis='unavailable')
-    """
-    future = date_index[date_index > fire_date]
-    if len(future) == 0:
-        return None, "unavailable"
-    exec_date = future[0]
-
-    raw = _load_ticker_raw_closes(ticker, raw_dir)
-    if raw.empty:
-        return None, "unavailable"
-
-    raw_index = pd.DatetimeIndex(raw.index)
-    if exec_date not in raw_index:
-        return None, "unavailable"
-
-    row = raw.loc[exec_date]
-    h = row.get("high") if hasattr(row, "get") else row["high"] if "high" in raw.columns else None
-    lo = row.get("low") if hasattr(row, "get") else row["low"] if "low" in raw.columns else None
-    cl = row.get("close") if hasattr(row, "get") else row["close"] if "close" in raw.columns else None
-
-    try:
-        h_f = float(h) if h is not None and not pd.isna(h) else None
-        lo_f = float(lo) if lo is not None and not pd.isna(lo) else None
-    except (TypeError, ValueError):
-        h_f = lo_f = None
-
-    if h_f is not None and lo_f is not None:
-        return round((h_f + lo_f) / 2.0, 4), "hl2"
-
-    try:
-        cl_f = float(cl) if cl is not None and not pd.isna(cl) else None
-    except (TypeError, ValueError):
-        cl_f = None
-
-    if cl_f is not None:
-        return cl_f, "close"
-
-    return None, "unavailable"
-
 
 # ------------------------------------------------------------------ fire pass ---
 
@@ -501,26 +450,84 @@ def _fire_all_cn_books(
 # ------------------------------------------------------------------ grade pass ---
 
 
+def _build_cn_close_panel(
+    csi300: Optional[pd.Series],
+    raw_by_ticker: dict[str, pd.DataFrame],
+) -> tuple[pd.DataFrame, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+    """Build close/high/low panels indexed on the CSI 300 benchmark calendar.
+
+    Returned DataFrames share the CSI 300 date index.  Each fired ticker is a
+    column (NaN on sessions where raw OHLC is absent — null-honest for halts).
+    The benchmark column (_CSI300_TICKER) is always present when csi300 is not None.
+
+    Returns (close_panel, high_panel, low_panel).  high/low panels are None when
+    no ticker carries those columns (should not happen for CN OHLC stores, but
+    guards against future store-format changes).
+    """
+    # CSI 300 calendar is the authoritative session index for CN
+    if csi300 is not None and not csi300.empty:
+        date_index: pd.DatetimeIndex = pd.DatetimeIndex(csi300.index).sort_values()
+    else:
+        # Fall back to union of raw dates when benchmark unavailable
+        all_dates: set[pd.Timestamp] = set()
+        for df in raw_by_ticker.values():
+            all_dates.update(df.index)
+        date_index = pd.DatetimeIndex(sorted(all_dates))
+
+    if len(date_index) == 0:
+        empty = pd.DataFrame(index=pd.DatetimeIndex([]))
+        return empty, None, None
+
+    close_cols: dict[str, pd.Series] = {}
+    high_cols: dict[str, pd.Series] = {}
+    low_cols: dict[str, pd.Series] = {}
+    has_hl = False
+
+    for ticker, raw_df in raw_by_ticker.items():
+        if "close" in raw_df.columns:
+            close_cols[ticker] = raw_df["close"].reindex(date_index)
+        if "high" in raw_df.columns and "low" in raw_df.columns:
+            high_cols[ticker] = raw_df["high"].reindex(date_index)
+            low_cols[ticker] = raw_df["low"].reindex(date_index)
+            has_hl = True
+
+    # Benchmark column
+    if csi300 is not None:
+        close_cols[_CSI300_TICKER] = csi300.reindex(date_index)
+
+    close_panel = pd.DataFrame(close_cols, index=date_index)
+    high_panel = pd.DataFrame(high_cols, index=date_index) if has_hl else None
+    low_panel = pd.DataFrame(low_cols, index=date_index) if has_hl else None
+
+    return close_panel, high_panel, low_panel
+
+
 def _cn_grade_pass(
     fires: list[dict],
     grades_existing: list[dict],
     asof: str,
     raw_dir: Path,
 ) -> int:
-    """Grade matured CN fires per CNPL-R4.
+    """Grade matured CN fires via the shared grade_fires() engine (CNPL-R4).
 
-    Only loads raw OHLC for FIRED tickers (never full-universe scan).
-    fill_basis stamped per fire (hl2 or close).
-    CSI 300 benchmark loaded via CN_PROFILE.benchmark_loader.
-    Absolute return recorded alongside CSI 300 excess.
+    Routes all CN fires through engine.pick_lab.grade.grade_fires() with a panel
+    indexed on the CSI 300 benchmark calendar so horizon windows are comparable
+    across all tickers in the same book (halted tickers have NaN on blocked
+    sessions — null-honest per grade.py spec §4).
 
+    High/low panels are wired for path-row MFE/MAE (CN raw OHLC carries H+L).
+    Sector-relative excess is null (CN has no GICS ETF map; ret_rel_sector=null-honest).
+
+    CNPL-R4 fill price: (H+L)/2 from raw nominal OHLC store (fill_basis='hl2'),
+    falling back to close when raw OHLC is absent (fill_basis='close').
+    fill_basis and benchmark_ticker are stamped on each row post-processing.
     Returns count of new grade rows written.
     """
     if not _IS_ASIA_LANE:
         log.info("cn_pick_lab: CN_LANE!='asia' — grade pass is a no-op (CNPL-R8)")
         return 0
 
-    from engine.pick_lab.grade import ENTRY_HORIZONS, _NOT_YET_ELAPSED
+    from engine.pick_lab.grade import grade_fires
     from engine.pick_lab.ledger import GRADE_KEY, append_grades
     from engine.pick_lab.profile import CN_PROFILE
 
@@ -533,12 +540,12 @@ def _cn_grade_pass(
     except Exception as exc:
         log.warning("cn_pick_lab: CSI 300 benchmark load failed (%s) — excess returns will be null", exc)
 
-    # Build existing-grade key set for keep-first dedup
+    # Build existing-grade key set for keep-first dedup (5-tuple per GRADE_KEY)
     already_graded: set[tuple] = {
         tuple(g.get(f) for f in GRADE_KEY) for g in grades_existing
     }
 
-    # Fired tickers — load raw OHLC only for them
+    # Load raw OHLC only for fired tickers (never full-universe scan)
     fired_tickers = {f.get("ticker", "") for f in fires if f.get("ticker")}
     raw_by_ticker: dict[str, pd.DataFrame] = {}
     for ticker in fired_tickers:
@@ -547,111 +554,74 @@ def _cn_grade_pass(
             raw.index = pd.DatetimeIndex(raw.index)
             raw_by_ticker[ticker] = raw
 
-    # Build a unified date index from all available raw OHLC dates
-    all_dates: set[pd.Timestamp] = set()
-    for df in raw_by_ticker.values():
-        all_dates.update(df.index)
-    if csi300 is not None:
-        all_dates.update(csi300.index)
-    date_index = pd.DatetimeIndex(sorted(all_dates))
+    # Build panels indexed on CSI 300 calendar
+    close_panel, high_panel, low_panel = _build_cn_close_panel(csi300, raw_by_ticker)
 
-    graded_at = datetime.now(tz=timezone.utc).isoformat()
-    new_grades: list[dict] = []
+    if close_panel.empty:
+        log.info("cn_pick_lab: close panel empty — no grades this run")
+        return 0
 
-    for fire in fires:
-        engine_id = fire.get("engine_id", "")
-        ticker = str(fire.get("ticker", ""))
-        fire_date_raw = fire.get("fire_date")
+    spy_closes = csi300 if csi300 is not None else pd.Series(dtype=float)
+
+    # CNPL-R4 exec_price_fn: (H+L)/2 from raw nominal store, fallback to close.
+    # Records which basis was actually used per (ticker, exec_date_str) for post-stamp.
+    _fill_basis_record: dict[tuple, str] = {}
+
+    def _exec_price_fn_cn(ticker: str, exec_date: pd.Timestamp) -> Optional[float]:
+        """Return hl2 exec price from raw OHLC; record fill_basis."""
+        raw_df = raw_by_ticker.get(ticker)
+        if raw_df is None or raw_df.empty:
+            _fill_basis_record[(ticker, str(exec_date.date()))] = "close"
+            return None  # fall back to panel close
+
+        raw_index = pd.DatetimeIndex(raw_df.index)
+        if exec_date not in raw_index:
+            _fill_basis_record[(ticker, str(exec_date.date()))] = "close"
+            return None  # fall back to panel close
+
+        row = raw_df.loc[exec_date]
+        h_col = row.get("high") if hasattr(row, "get") else (row["high"] if "high" in raw_df.columns else None)
+        lo_col = row.get("low") if hasattr(row, "get") else (row["low"] if "low" in raw_df.columns else None)
 
         try:
-            fire_date = pd.Timestamp(fire_date_raw)
-        except Exception:
-            continue
+            h_f = float(h_col) if h_col is not None and not pd.isna(h_col) else None
+            lo_f = float(lo_col) if lo_col is not None and not pd.isna(lo_col) else None
+        except (TypeError, ValueError):
+            h_f = lo_f = None
 
-        # Exec date = next trading session after fire_date
-        future = date_index[date_index > fire_date]
-        if len(future) == 0:
-            continue
-        exec_date = future[0]
+        if h_f is not None and lo_f is not None:
+            _fill_basis_record[(ticker, str(exec_date.date()))] = "hl2"
+            return round((h_f + lo_f) / 2.0, 4)
 
-        # exec_price via hl2 fill (CNPL-R4)
-        exec_price: Optional[float] = None
-        fill_basis: str = "unavailable"
+        # H or L absent — fall back to close (grade_fires will use panel close)
+        _fill_basis_record[(ticker, str(exec_date.date()))] = "close"
+        return None
 
-        raw_df = raw_by_ticker.get(ticker)
-        if raw_df is not None and not raw_df.empty:
-            exec_price, fill_basis = _exec_price_cn(ticker, fire_date, date_index, raw_dir)
+    new_grade_rows, n_ung = grade_fires(
+        fires,
+        close_panel,
+        spy_closes,
+        sector_closes=None,   # CN has no GICS ETF map; ret_rel_sector stays null
+        hold_thesis=False,
+        already_graded=already_graded,
+        high_panel=high_panel,
+        low_panel=low_panel,
+        exec_price_fn=_exec_price_fn_cn,
+    )
 
-        if exec_price is None:
-            log.debug("cn_pick_lab: grade — %s/%s no exec_price at %s; skip", engine_id, ticker, exec_date)
-            continue
+    if n_ung:
+        log.info("cn_pick_lab: %d fires ungradeable (ticker absent/halted in panel)", n_ung)
 
-        # Use the ticker's own trading calendar for horizon counting so that
-        # halts/gaps in other tickers don't misalign the 'h sessions' count.
-        ticker_index = raw_df.index if raw_df is not None and not raw_df.empty else date_index
+    # Post-process: stamp CN-specific schema fields grade.py does not emit.
+    # fill_basis is determined per-row from _fill_basis_record; rows where the
+    # raw OHLC was absent or H/L unavailable fall back to 'close'.
+    for row in new_grade_rows:
+        key = (row.get("ticker", ""), row.get("exec_date", ""))
+        row["fill_basis"] = _fill_basis_record.get(key, "close")
+        row["benchmark_ticker"] = _CSI300_TICKER
 
-        for h in ENTRY_HORIZONS:
-            grade_key = (engine_id, ticker, str(fire_date.date()), h)
-            if grade_key in already_graded:
-                continue
-
-            # Price at exec + h sessions (counted on this ticker's own session calendar)
-            if raw_df is None or raw_df.empty:
-                continue
-
-            exec_pos_arr = ticker_index.searchsorted(exec_date, side="left")
-            exec_pos = int(exec_pos_arr)
-            target_pos = exec_pos + h
-            if target_pos >= len(ticker_index):
-                continue  # not yet elapsed
-
-            target_date = ticker_index[target_pos]
-            close_h: Optional[float] = None
-            if "close" in raw_df.columns and target_date in raw_df.index:
-                try:
-                    val = raw_df.at[target_date, "close"]
-                    close_h = float(val) if not pd.isna(val) else None
-                except Exception:
-                    pass
-
-            if close_h is None:
-                continue  # elapsed but price unavailable
-
-            ret_abs = (close_h - exec_price) / exec_price
-
-            # CSI 300 excess
-            ret_excess: Optional[float] = None
-            if csi300 is not None:
-                try:
-                    if exec_date in csi300.index and target_date in csi300.index:
-                        csi_exec = float(csi300[exec_date])
-                        csi_h = float(csi300[target_date])
-                        if csi_exec and csi_h:
-                            ret_excess = ret_abs - (csi_h - csi_exec) / csi_exec
-                except Exception:
-                    pass
-
-            row: dict = {
-                "engine_id": engine_id,
-                "ticker": ticker,
-                "fire_date": str(fire_date.date()),
-                "horizon": h,
-                "exec_date": str(exec_date.date()),
-                "exec_price": round(exec_price, 4),
-                "fill_basis": fill_basis,
-                "ret_abs": round(ret_abs, 6),
-                "ret_excess_spy": round(ret_excess, 6) if ret_excess is not None else None,
-                "benchmark_ticker": _CSI300_TICKER,
-                "matured": True,
-                "graded_at": graded_at,
-                "authority": "display_only",
-            }
-            new_grades.append(row)
-            already_graded.add(grade_key)
-
-    if new_grades:
-        from engine.pick_lab.profile import CN_PROFILE
-        written = append_grades(new_grades, hold_thesis=False, profile=CN_PROFILE)
+    if new_grade_rows:
+        written = append_grades(new_grade_rows, hold_thesis=False, profile=CN_PROFILE)
         log.info("cn_pick_lab: wrote %d new grade rows", written)
         return written
 
@@ -677,6 +647,8 @@ def _build_recent_fires_with_grades(
 
     grade_map: dict[tuple, dict] = {}
     for g in grades:
+        if g.get("kind") == "path":
+            continue  # path rows carry path metrics, not ret — skip
         if g.get("engine_id") != engine_id:
             continue
         k = (g.get("ticker"), g.get("fire_date"))

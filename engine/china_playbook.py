@@ -17,12 +17,24 @@ the framework-preferred sectors with live tape agreement, and confirmed leaders 
 from __future__ import annotations
 
 import logging
+import re
 
 import pandas as pd
 
 from lib import config
 
 log = logging.getLogger(__name__)
+
+
+def _strip_internal_ids(s: str) -> str:
+    """Remove parentheticals containing internal ruling IDs (§, SS prefix) from
+    user-facing reason strings.  Engine-side log strings are left untouched.
+
+    Examples stripped:
+        '(§W6-CN: triple-count collapse)' → ''
+        '(SS-CN Fix 5)'                   → ''
+    """
+    return re.sub(r'\s*\((§|SS)[^)]*\)', '', s)
 
 QUAD_MEANING_CN = {
     "Q1": ("Goldilocks — growth firming while price pressure eases. Historically the "
@@ -110,22 +122,24 @@ def _dial(latest: dict, internals: dict) -> dict:
     if _n_avail > 0 and _positive > _negative:
         score += 1
         _all_agree = _positive == _n_avail
-        reasons.append(("+", (
+        _en_str = (
             "PBoC monetary conditions easing — M2 accelerating, scissors positive, credit impulse rising "
             f"({_positive}/{_n_avail} legs agree). ONE monetary-conditions vote "
             "(§W6-CN: collapsed from three co-moving legs to prevent triple-count)."
             if _all_agree else
             f"PBoC monetary conditions tilting easing ({_positive}/{_n_avail} legs). "
             "ONE monetary-conditions vote (§W6-CN: triple-count collapse)."
-        ), (
+        )
+        reasons.append(("+", _strip_internal_ids(_en_str), (
             f"央行货币条件趋宽（{_positive}/{_n_avail}项指标同意）— 综合M2/剪刀差/社融的单次货币投票。"
         )))
     elif _n_avail > 0 and _negative > _positive:
         score -= 1
-        reasons.append(("-", (
+        _en_str = (
             f"PBoC monetary conditions tightening ({_negative}/{_n_avail} legs agree). "
             "ONE monetary-conditions vote (§W6-CN: triple-count collapse)."
-        ), (
+        )
+        reasons.append(("-", _strip_internal_ids(_en_str), (
             f"央行货币条件趋紧（{_negative}/{_n_avail}项指标同意）— 综合M2/剪刀差/社融的单次货币投票。"
         )))
     else:
@@ -204,9 +218,16 @@ def build(latest: dict, hist: pd.DataFrame | None, sectors: list[dict], internal
 
     pref = latest.get("preference_check") or {}
     names = config.load()["china"]["yahoo"]["sector_etfs"]
-    ranks = pref.get("actual_ranks") or {}
-    pb["preferred"] = [{"ticker": t, "name": (names.get(t) or [t])[0], "rank": ranks.get(t)}
-                       for t in pref.get("preferred", [])]
+    # Use rotation rank from the passed `sectors` list (now set by score_and_rank)
+    # so there is ONE rank system page-wide.  Fallback to pref.actual_ranks (60d RS)
+    # only when sectors is empty or the ticker is absent.
+    _sector_rank_by_ticker = {s["ticker"]: s.get("rank") for s in (sectors or [])}
+    _old_ranks = pref.get("actual_ranks") or {}
+    pb["preferred"] = [
+        {"ticker": t, "name": (names.get(t) or [t])[0],
+         "rank": _sector_rank_by_ticker.get(t, _old_ranks.get(t))}
+        for t in pref.get("preferred", [])
+    ]
     pb["pref_agreement"] = pref.get("agreement")
     pb["pref_disagree"] = pref.get("disagreement_flag")
 

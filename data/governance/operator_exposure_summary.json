@@ -1,8 +1,8 @@
 {
   "schema": "operator_exposure_summary.v1",
-  "generated_at": "2026-07-15T10:55:11.798935+00:00",
+  "generated_at": "2026-07-16T09:13:38.828984+00:00",
   "window_days": 90,
-  "n_rows_in_window": 314,
+  "n_rows_in_window": 312,
   "by_day": [
     {
       "as_of": "2026-07-09",
@@ -17,14 +17,14 @@
       }
     },
     {
-      "as_of": "2026-07-14",
+      "as_of": "2026-07-15",
       "counts": {
-        "board_buy": 30,
+        "board_buy": 28,
         "board_watch": 24
       }
     },
     {
-      "as_of": "2026-07-15",
+      "as_of": "2026-07-16",
       "counts": {
         "experiment": 256
       }

@@ -50,7 +50,7 @@ def _make_standouts(rows):
         "as_of": "2026-07-10",
         "buy": rows,
         "eligible": len(rows),
-        "rank_by": "bottoming-alignment",
+        "rank_by": "confluence",
     }
 
 

@@ -99,18 +99,90 @@ _FALLBACK_ADVICE_PATTERNS = [
 # Key waterfall + client
 # ---------------------------------------------------------------------------
 
-def _resolve_key() -> tuple[str | None, str | None, str | None]:
-    """(kind, credential, env_name) — CORTEX key → Claude Code OAuth → Anthropic key."""
+def _discover_pool_candidates() -> list[tuple[str, str, str]]:
+    """Return [(kind, credential, cap_id)] for each present+enabled pool key.
+
+    Ordered by window_load ascending (cooling keys last).  Tries
+    engine.neuralweb.key_pool first; falls back to direct env presence checks
+    of CLAUDE_CODE_OAUTH_TOKEN_1..7 filtered by METAB_KEYS_ENABLED.
+    NEVER raises.  Returns only oauth (Bearer) entries.
+    """
+    try:
+        from engine.neuralweb.key_pool import (  # noqa: PLC0415
+            discover_present_keys, get_secret_ref, is_cooling, window_load,
+        )
+        present = discover_present_keys()
+        out: list[tuple[str, str, str]] = []
+        for cap_id in present:
+            ref = None
+            try:
+                ref = get_secret_ref(cap_id)
+            except Exception:  # noqa: BLE001
+                pass
+            if not ref:
+                suffix = cap_id.split("_")[-1]
+                ref = f"CLAUDE_CODE_OAUTH_TOKEN_{suffix}" if suffix.isdigit() else None
+            if not ref:
+                continue
+            val = os.environ.get(ref, "").strip()
+            if val:
+                out.append((cap_id, val, ref))
+        # sort: non-cooling first (by load), cooling last
+        cool = {cap_id: bool(is_cooling(cap_id)) for cap_id, _, _ in out}
+        load = {cap_id: int(window_load(cap_id)) for cap_id, _, _ in out}
+        out.sort(key=lambda c: (cool[c[0]], load[c[0]]))
+        return out
+    except Exception as exc:  # noqa: BLE001
+        log.debug("orchestrator_chat: key_pool import failed (%s) — direct env fallback", exc)
+
+    # Fallback: direct env presence checks filtered by METAB_KEYS_ENABLED
+    try:
+        raw = os.environ.get("METAB_KEYS_ENABLED", "").strip()
+        if raw:
+            enabled_nums = {s.strip() for s in raw.split(",") if s.strip().isdigit()}
+        else:
+            enabled_nums = {str(i) for i in range(1, 8)}
+    except Exception:  # noqa: BLE001
+        enabled_nums = {str(i) for i in range(1, 8)}
+    out2: list[tuple[str, str, str]] = []
+    for i in range(1, 8):
+        if str(i) not in enabled_nums:
+            continue
+        env_name = f"CLAUDE_CODE_OAUTH_TOKEN_{i}"
+        val = os.environ.get(env_name, "").strip()
+        if val:
+            cap_id = f"claude_code_oauth_{i}"
+            out2.append((cap_id, val, env_name))
+    return out2
+
+
+def _resolve_candidates() -> list[tuple[str, str, str, str]]:
+    """Return [(kind, credential, ref_name, cap_id)] for all usable keys, in order.
+
+    Waterfall: CORTEX_ANTHROPIC_API_KEY → pool keys (enabled+present, cooling-aware)
+    → ANTHROPIC_API_KEY.  Legacy CLAUDE_CODE_OAUTH_TOKEN is removed.
+    """
+    out: list[tuple[str, str, str, str]] = []
     k = os.environ.get("CORTEX_ANTHROPIC_API_KEY", "").strip()
     if k:
-        return "api_key", k, "CORTEX_ANTHROPIC_API_KEY"
-    k = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "").strip()
-    if k:
-        return "oauth", k, "CLAUDE_CODE_OAUTH_TOKEN"
+        out.append(("api_key", k, "CORTEX_ANTHROPIC_API_KEY", "cortex_api_key"))
+    for cap_id, val, ref in _discover_pool_candidates():
+        out.append(("oauth", val, ref, cap_id))
     k = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if k:
-        return "api_key", k, "ANTHROPIC_API_KEY"
-    return None, None, None
+        out.append(("api_key", k, "ANTHROPIC_API_KEY", "anthropic_api_key"))
+    return out
+
+
+def _resolve_key() -> tuple[str | None, str | None, str | None]:
+    """(kind, credential, cap_id) — first available key from the pool waterfall.
+    Returns (None, None, None) when no key is available.
+    """
+    cands = _resolve_candidates()
+    if not cands:
+        return None, None, None
+    kind, cred, _ref, cap_id = cands[0]
+    return kind, cred, cap_id
 
 
 def _build_client(kind: str, cred: str):
@@ -350,13 +422,17 @@ def _sanitize_history(history) -> list[dict]:
     return turns
 
 
-def _run_loop(messages: list[dict], client, repo: Path) -> tuple[str, dict, str]:
-    """Bounded read-only tool loop. Returns (answer, tool_call_census, model_used).
-    First failed call downgrades opus → sonnet once; a second failure raises."""
+def _run_loop(messages: list[dict], client, repo: Path) -> tuple[str, dict, str, dict]:
+    """Bounded read-only tool loop. Returns (answer, tool_call_census, model_used, usage).
+    First failed call downgrades opus → sonnet once; a second failure raises.
+    usage = {input_tokens, output_tokens} accumulated across all tool rounds.
+    """
     census: dict[str, int] = {}
     answer = ""
     model = _MODEL
     calls = 0
+    total_input = 0
+    total_output = 0
     while calls < _MAX_TOOL_CALLS:
         try:
             resp = client.messages.create(model=model, max_tokens=_MAX_TOKENS,
@@ -368,9 +444,18 @@ def _run_loop(messages: list[dict], client, repo: Path) -> tuple[str, dict, str]
                          _MODEL, exc, _FALLBACK_MODEL)
                 model = _FALLBACK_MODEL
                 continue
+            # Partial-answer semantics: once any answer text has been produced in
+            # an earlier tool-round, a later-round 401/429 returns the partial
+            # answer rather than re-running on the next key.  Key failover (outer
+            # waterfall in chat()) applies only to failures before first output.
             if answer:
                 break
             raise
+        # Accumulate token usage across tool rounds.
+        usage = getattr(resp, "usage", None)
+        if usage is not None:
+            total_input += int(getattr(usage, "input_tokens", 0) or 0)
+            total_output += int(getattr(usage, "output_tokens", 0) or 0)
         messages.append({"role": "assistant", "content": resp.content})
         for block in resp.content:
             if getattr(block, "type", "") == "text":
@@ -391,7 +476,75 @@ def _run_loop(messages: list[dict], client, repo: Path) -> tuple[str, dict, str]
         if not tool_results:
             break
         messages.append({"role": "user", "content": tool_results})
-    return answer, census, model
+    return answer, census, model, {"input_tokens": total_input, "output_tokens": total_output}
+
+
+# ---------------------------------------------------------------------------
+# Usage logging helpers (NEVER-RAISE)
+# ---------------------------------------------------------------------------
+
+_CHAT_LOG_REL = "data/neuralweb/orchestrator_chat_log.jsonl"
+
+
+def _estimate_chat_cost(model: str, input_tokens: int, output_tokens: int,
+                         repo: Path) -> float | None:
+    """Estimate cost using lib.ai_costs.estimate_cost_usd; fail-soft to None."""
+    try:
+        import sys as _sys  # noqa: PLC0415
+        import importlib as _il  # noqa: PLC0415
+        _r = str(repo)
+        if _r not in _sys.path:
+            _sys.path.insert(0, _r)
+        _m = _il.import_module("lib.ai_costs")
+        return _m.estimate_cost_usd(model, input_tokens, output_tokens, root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("orchestrator_chat._estimate_chat_cost: %s", exc)
+        return None
+
+
+def _append_chat_log(repo: Path, *, model: str, key_source: str | None,
+                     input_tokens: int, output_tokens: int,
+                     est_cost_usd: float | None, degraded: bool,
+                     tool_call_census: dict) -> None:
+    """Append one row to data/neuralweb/orchestrator_chat_log.jsonl.  NEVER-RAISE."""
+    try:
+        row = {
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "model": model,
+            "key_source": key_source,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "est_cost_usd": est_cost_usd,
+            "degraded": degraded,
+            "tool_call_census": tool_call_census,
+        }
+        p = repo / _CHAT_LOG_REL
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, default=str) + "\n")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("orchestrator_chat._append_chat_log: %s", exc)
+
+
+def _record_ai_costs(repo: Path, *, lane: str, provider: str, model: str,
+                     key_id: str | None, input_tokens: int, output_tokens: int,
+                     cost_basis: str, est_cost_usd: float | None) -> None:
+    """Call lib.ai_costs.record_usage for the orchestrator-chat lane.  NEVER-RAISE."""
+    try:
+        import sys as _sys  # noqa: PLC0415
+        import importlib as _il  # noqa: PLC0415
+        _r = str(repo)
+        if _r not in _sys.path:
+            _sys.path.insert(0, _r)
+        _m = _il.import_module("lib.ai_costs")
+        _m.record_usage(
+            lane=lane, provider=provider, model=model, key_id=key_id,
+            input_tokens=input_tokens, output_tokens=output_tokens,
+            cost_basis=cost_basis, est_cost_usd=est_cost_usd,
+            root=repo,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("orchestrator_chat._record_ai_costs: %s", exc)
 
 
 # ---------------------------------------------------------------------------
@@ -410,38 +563,96 @@ def chat(message: str, history=None, root=None) -> dict:
     if len(msg) > _MAX_MESSAGE_CHARS:
         return {"ok": False, "error": f"message too long ({len(msg)} chars, max {_MAX_MESSAGE_CHARS})"}
 
-    kind, cred, env_name = _resolve_key()
-    if not cred:
+    candidates = _resolve_candidates()
+    if not candidates:
         return {"ok": True, "reply": _degraded_reply(repo, "no LLM key"),
                 "degraded": True, "mode": "degraded"}
     if not _rate_ok():
         return {"ok": True,
                 "reply": _degraded_reply(repo, f"rate cap {_RATE_MAX_PER_HOUR} messages/hour reached"),
                 "degraded": True, "mode": "degraded"}
-    client = _build_client(kind, cred)
-    if client is None:
-        return {"ok": True, "reply": _degraded_reply(repo, "anthropic SDK unavailable"),
-                "degraded": True, "mode": "degraded"}
 
-    messages = _sanitize_history(history)
-    if messages and messages[-1]["role"] == "user":
-        messages[-1]["content"] += "\n\n" + msg
+    messages_base = _sanitize_history(history)
+    if messages_base and messages_base[-1]["role"] == "user":
+        messages_base[-1]["content"] += "\n\n" + msg
     else:
-        messages.append({"role": "user", "content": msg})
+        messages_base.append({"role": "user", "content": msg})
 
-    try:
-        answer, census, model = _run_loop(messages, client, repo)
-    except Exception as exc:  # noqa: BLE001
-        log.warning("orchestrator_chat: live loop failed (%s) — degraded reply", exc)
-        return {"ok": True, "reply": _degraded_reply(repo, f"model error: {exc}"),
+    # Try each candidate in waterfall order; advance on 401/403/429.
+    answer = ""
+    census: dict = {}
+    model = _MODEL
+    usage: dict = {"input_tokens": 0, "output_tokens": 0}
+    kind = "api_key"
+    cap_id = None
+    last_exc: BaseException | None = None
+
+    for _kind, _cred, _ref, _cap_id in candidates:
+        client = _build_client(_kind, _cred)
+        if client is None:
+            continue
+        # Fresh copy of messages for each attempt (avoid list mutation across retries)
+        import copy as _copy  # noqa: PLC0415
+        _messages = _copy.deepcopy(messages_base)
+        try:
+            answer, census, model, usage = _run_loop(_messages, client, repo)
+            kind = _kind
+            cap_id = _cap_id
+            last_exc = None
+            break
+        except Exception as exc:  # noqa: BLE001
+            msg_lower = str(exc).lower()
+            is_auth = ("401" in msg_lower or "403" in msg_lower or
+                       "authentication" in msg_lower or "forbidden" in msg_lower or
+                       "invalid bearer" in msg_lower)
+            is_rate = ("429" in msg_lower or "rate_limit" in msg_lower or
+                       "rate limit" in msg_lower or "usage limit" in msg_lower or
+                       "quota" in msg_lower or "529" in msg_lower or
+                       "overloaded" in msg_lower)
+            if is_auth or is_rate:
+                log.warning(
+                    "orchestrator_chat: key %s (%s) returned %s — trying next candidate",
+                    _cap_id, _ref, "auth error" if is_auth else "rate limit",
+                )
+                last_exc = exc
+                continue
+            # Non-auth, non-rate error: stop here, degraded reply
+            log.warning("orchestrator_chat: live loop failed (%s) — degraded reply", exc)
+            return {"ok": True, "reply": _degraded_reply(repo, f"model error: {exc}"),
+                    "degraded": True, "mode": "degraded"}
+
+    if last_exc is not None and not answer:
+        log.warning("orchestrator_chat: all candidates exhausted (%s) — degraded reply", last_exc)
+        return {"ok": True, "reply": _degraded_reply(repo, f"model error: {last_exc}"),
                 "degraded": True, "mode": "degraded"}
+
     if not answer:
         return {"ok": True, "reply": _degraded_reply(repo, "empty model answer"),
                 "degraded": True, "mode": "degraded"}
     answer, was_filtered = _advice_filter(answer)
+
+    input_tok = usage.get("input_tokens", 0)
+    output_tok = usage.get("output_tokens", 0)
+    est_cost = _estimate_chat_cost(model, input_tok, output_tok, repo)
+    provider = "claude_oauth" if kind == "oauth" else "claude_api"
+    cost_basis = "subscription" if kind == "oauth" else "metered"
+    # key_source = capability id (never the token value)
+    key_source = cap_id
+
+    _append_chat_log(repo, model=model, key_source=key_source,
+                     input_tokens=input_tok, output_tokens=output_tok,
+                     est_cost_usd=est_cost, degraded=False,
+                     tool_call_census=census)
+    _record_ai_costs(repo, lane="orchestrator-chat", provider=provider,
+                     model=model, key_id=key_source,
+                     input_tokens=input_tok, output_tokens=output_tok,
+                     cost_basis=cost_basis, est_cost_usd=est_cost)
+
     return {"ok": True, "reply": answer, "degraded": False, "filtered": was_filtered,
-            "mode": "live", "model": model, "key_source": env_name,
-            "tool_call_census": census}
+            "mode": "live", "model": model, "key_source": key_source,
+            "tool_call_census": census,
+            "input_tokens": input_tok, "output_tokens": output_tok,
+            "est_cost_usd": est_cost}
 
 
 _WAKE_CMD = ["gh", "workflow", "run", "daily.yml", "-R", "chriswong6031-creator/macro"]

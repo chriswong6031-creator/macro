@@ -622,6 +622,10 @@ def _build_session_cmd(task_prompt: str) -> list[str]:
     The binary is resolved via preflight's resolve_claude_bin(): the runner
     daemon's launchd PATH omits per-user bin dirs, so a bare "claude" fails
     even when the CLI is installed.
+
+    --output-format json is used so the CLI result envelope (which carries
+    usage/cost fields) is parseable by _parse_cli_usage.  The prompt contract
+    is unchanged: -p still delivers the task text.
     """
     try:
         from scripts.preflight_claude_auth import resolve_claude_bin  # noqa: PLC0415
@@ -636,10 +640,40 @@ def _build_session_cmd(task_prompt: str) -> list[str]:
         "metabolism-build",
         _claude_bin,
         "--model", _BUILD_SESSION_MODEL,
-        "--print",           # non-interactive: print final answer only
+        "--output-format", "json",  # structured result; allows usage/cost capture
         "--dangerously-skip-permissions",  # headless build — no interactive prompts
         "-p", task_prompt,
     ]
+
+
+def _parse_cli_usage(stdout: str) -> dict[str, Any]:
+    """Parse usage/cost fields from the claude CLI's --output-format json stdout.
+
+    The JSON envelope contains fields like total_cost_usd and may have a usage
+    sub-object.  Returns a dict with extracted fields; returns {} when parsing
+    fails or fields are absent.  NEVER raises.
+    """
+    try:
+        if not stdout or not stdout.strip():
+            return {}
+        blob = json.loads(stdout.strip())
+        if not isinstance(blob, dict):
+            return {}
+        out: dict[str, Any] = {}
+        # total_cost_usd is a top-level field in the CLI JSON result
+        if "total_cost_usd" in blob:
+            out["total_cost_usd"] = float(blob["total_cost_usd"] or 0.0)
+        # usage sub-object (input/output token counts)
+        usage = blob.get("usage") or {}
+        if usage:
+            out["input_tokens"] = int(usage.get("input_tokens") or 0)
+            out["output_tokens"] = int(usage.get("output_tokens") or 0)
+            out["cache_read_tokens"] = int(usage.get("cache_read_input_tokens") or 0)
+            out["cache_creation_tokens"] = int(usage.get("cache_creation_input_tokens") or 0)
+        return out
+    except Exception as exc:  # noqa: BLE001
+        log.debug("BUILD: _parse_cli_usage: %s", exc)
+        return {}
 
 
 def _classify_key_failure(run_result: dict) -> str | None:
@@ -1465,6 +1499,74 @@ def _dispatch_build_session(
             if returncode == 0:
                 # Record success AFTER confirmed completion (R-V5-3: ok only post-success)
                 _record_key_session(cap_id, cycle_id, outcome="ok", root=root)
+                # Capture real cost/usage from the CLI JSON result (best-effort)
+                _cli_usage = _parse_cli_usage(run_result.get("stdout", ""))
+                _est_cost_cli = _cli_usage.get("total_cost_usd")
+                _input_tok_cli = _cli_usage.get("input_tokens", 0)
+                _output_tok_cli = _cli_usage.get("output_tokens", 0)
+                _cache_read_cli = _cli_usage.get("cache_read_tokens", 0)
+                _cache_create_cli = _cli_usage.get("cache_creation_tokens", 0)
+                # Documented per-build fallback when CLI does not report usage
+                _EST_BUILD_TOKENS = 60_000
+                _real_build_tokens = (
+                    _input_tok_cli + _output_tok_cli
+                    if (_input_tok_cli or _output_tok_cli) else _EST_BUILD_TOKENS
+                )
+                _build_cost_basis = (
+                    "subscription" if _est_cost_cli is None else "subscription"
+                )
+                # If no cost from CLI, estimate from token count
+                if _est_cost_cli is None:
+                    try:
+                        from lib.ai_costs import estimate_cost_usd as _est_fn  # noqa: PLC0415
+                        _est_cost_cli = _est_fn(
+                            _BUILD_SESSION_MODEL,
+                            _input_tok_cli, _output_tok_cli,
+                            _cache_read_cli, _cache_create_cli,
+                            root=root,
+                        )
+                    except Exception:  # noqa: BLE001
+                        pass
+                try:
+                    from lib.ai_costs import record_usage as _rec_usage  # noqa: PLC0415
+                    _rec_usage(
+                        lane="metabolism-build",
+                        provider="claude_cli",
+                        model=_BUILD_SESSION_MODEL,
+                        key_id=cap_id,  # capability_id string only — never the value
+                        input_tokens=_input_tok_cli,
+                        output_tokens=_output_tok_cli,
+                        cache_read_tokens=_cache_read_cli,
+                        cache_creation_tokens=_cache_create_cli,
+                        cost_basis=(
+                            "subscription" if not (_input_tok_cli or _output_tok_cli)
+                            else "estimated"
+                        ),
+                        cycle_id=cycle_id or "",
+                        stage="build",
+                        note=(
+                            f"pid={pid} cli_json={'yes' if _cli_usage else 'no'}"
+                        ),
+                        est_cost_usd=_est_cost_cli,
+                        root=root,
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
+                # Post-completion key session row with real token count
+                try:
+                    from engine.neuralweb.key_pool import record_session  # noqa: PLC0415
+                    record_session(
+                        cap_id, est_tokens=_real_build_tokens,
+                        cycle_id=cycle_id, stage="build_complete",
+                        outcome="ok", root=root,
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
+                # Surface usage metadata so run_build_lane can pass to achievements
+                result["dispatched"] = True
+                result["_build_tokens"] = _real_build_tokens
+                if _est_cost_cli is not None:
+                    result["_build_est_cost_usd"] = _est_cost_cli
                 break
 
             _record_key_session(cap_id, cycle_id, outcome="error", root=root)
@@ -1518,6 +1620,9 @@ def _dispatch_build_session(
         changed_files = _diff_worktree_files(wt_path)
         if changed_files is None:
             # diff failed — fail-closed: cannot verify containment
+            # Reset the Step-6 optimistic dispatched=True: this is an abort, and
+            # dispatched=True must be reachable ONLY after Step 8's containment pass.
+            result["dispatched"] = False
             result["reason"] = "foreign_file_check_failed: git diff returned None"
             if cycle_id:
                 _journal_dispatch(cycle_id, pid, {"status": "diff_error"}, root=root)
@@ -1537,6 +1642,11 @@ def _dispatch_build_session(
         if foreign:
             reason = f"FOREIGN_FILE_ABORT: session changed files outside target_files + data/metabolism/: {foreign}"
             log.warning("BUILD: %s proposal=%s", reason, pid)
+            # Reset the Step-6 optimistic dispatched=True: a foreign-file abort is
+            # NOT a dispatch. Leaving it True made run_build_lane record the aborted
+            # session as a successful "pr_opened" — the inverse of the containment
+            # contract. dispatched=True is legitimate only after Step 8 passes.
+            result["dispatched"] = False
             result["reason"] = reason
             result["foreign_files"] = foreign
             # Clean up worktree (best-effort)
@@ -1952,6 +2062,17 @@ def run_build_lane(
                 else None
             ) if pr else None
             _pr_url = pr.get("url") if pr else None
+            # Extract usage metadata surfaced by _dispatch_build_session on success
+            _build_usage_meta: "dict | None" = None
+            if session:
+                _b_tok = session.get("_build_tokens")
+                _b_cost = session.get("_build_est_cost_usd")
+                if _b_tok is not None or _b_cost is not None:
+                    _build_usage_meta = {}
+                    if _b_tok is not None:
+                        _build_usage_meta["tokens"] = _b_tok
+                    if _b_cost is not None:
+                        _build_usage_meta["est_cost_usd"] = _b_cost
             if not dry_run:
                 _append_achievements_build(
                     cycle_id, pid,
@@ -1960,6 +2081,7 @@ def run_build_lane(
                     ),
                     pr_number=_pr_number,
                     pr_url=_pr_url,
+                    usage_meta=_build_usage_meta,
                     root=root,
                 )
 
@@ -2015,11 +2137,14 @@ def _append_achievements_build(
     status: str,
     pr_number: int | None = None,
     pr_url: str | None = None,
+    usage_meta: "dict | None" = None,
     root: Path | None = None,
 ) -> None:
     """Append a builds[] row to journal achievements key (FROZEN CONTRACT).
 
     status: "pr_opened" | "build_failed" | "skipped"
+    usage_meta: optional {tokens, est_cost_usd} from the build session —
+    written into the row when present (backward compatible).
     Read-modify-write the journal JSON, idempotent per proposal_id.
     NEVER raises.
     """
@@ -2040,6 +2165,14 @@ def _append_achievements_build(
                 row["pr_number"] = pr_number
             if pr_url is not None:
                 row["pr_url"] = pr_url
+            # Optional cost fields — written when known, absent otherwise
+            if usage_meta:
+                _b_tokens = usage_meta.get("tokens")
+                _b_cost = usage_meta.get("est_cost_usd")
+                if _b_tokens is not None:
+                    row["tokens"] = int(_b_tokens)
+                if _b_cost is not None:
+                    row["est_cost_usd"] = float(_b_cost)
             existing_builds.append(row)
             achievements["builds"] = existing_builds
             j["achievements"] = achievements

@@ -1,0 +1,30 @@
+NARRATIVE-EMERGENCE SCOUT DESK NOTE  
+2026-07-15 · China A‑shares (CSI 300)  
+Role: Scout (display‑only, never sized; track‑record n=0)
+
+**Context**  
+The detector is trust‑graded. Momentum rank‑IC ≈ 0 on this market, rotation timing has no validated edge, and the absolute‑trend gate **did not reduce drawdown here** (gate_helps=false). Any thematic emergence note is a fallible, falsifiable conditional, not a prediction.
+
+**Early‑Hypothesis – FORMING leadership candidate**
+
+**Theme**: Brokers & Securities (`cn_brokers`)  
+**Why forming**:  
+- Rank #7 (score 0.055) – not yet a leader, but underlying structure looks durable.  
+- Durability_bar 0.81 (hurst “trend”) – a persistent trend signal.  
+- Breadth 0.933 – exceptionally broad participation for a non‑leader.  
+- Crowding moderate (z=0.48) – no reflexive‑overextension flag.  
+
+This pattern (low momentum score + high breadth + durable trend) often precedes leadership transitions when the tape’s narrow leaders lose steam. It is **not** a prediction of a handoff; it’s a “watch this space” hypothesis.
+
+**Kill‑criterion**  
+The forming hypothesis is void if, by **end‑Q3 2026** (next 6‑8 weeks), **either**  
+- durability_bar drops ≤0.6, **or**  
+- breadth falls ≤0.7.
+
+**Caution**  
+- The theme’s score is near zero; it may never challenge.  
+- Emergence reads late, and any subsequent attention/inflow spike would be a caution, not a confirmation.  
+- The absolute‑trend gate’s failure on this mean‑reverting market means even a durable breadth signal can be a slow grind that never translates into outsized returns.  
+
+**Falsifiability & accountability**  
+This note is a single, falsifiable conditional. I will update the outcome after the check‑by horizon, win or lose. No size, no position, no directional certainty.

@@ -1,13 +1,13 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-07-16T04:31:10+00:00",
+  "generated_at": "2026-07-17T07:11:19+00:00",
   "markets": {
     "us": {
-      "asof_last_row": "2026-07-13",
+      "asof_last_row": "2026-07-16",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 2,
-        "ungraded_backlog": 10,
+        "last_logged_days_ago": 1,
+        "ungraded_backlog": 12,
         "graded_n": 0
       },
       "windows": {
@@ -58,11 +58,11 @@
       }
     },
     "cn": {
-      "asof_last_row": "2026-07-15",
+      "asof_last_row": "2026-07-16",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 0,
-        "ungraded_backlog": 6,
+        "last_logged_days_ago": 1,
+        "ungraded_backlog": 7,
         "graded_n": 0
       },
       "windows": {
@@ -113,11 +113,11 @@
       }
     },
     "hk": {
-      "asof_last_row": "2026-07-15",
+      "asof_last_row": "2026-07-16",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 0,
-        "ungraded_backlog": 5,
+        "last_logged_days_ago": 1,
+        "ungraded_backlog": 6,
         "graded_n": 0
       },
       "windows": {
@@ -168,11 +168,396 @@
       }
     },
     "ca": {
-      "asof_last_row": "2026-07-13",
+      "asof_last_row": "2026-07-15",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
-        "ungraded_backlog": 5,
+        "ungraded_backlog": 6,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "kr": {
+      "asof_last_row": "2026-07-16",
+      "monitoring": {
+        "log_fresh": true,
+        "last_logged_days_ago": 1,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "jp": {
+      "asof_last_row": "2026-07-16",
+      "monitoring": {
+        "log_fresh": true,
+        "last_logged_days_ago": 1,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "tw": {
+      "asof_last_row": "2026-07-16",
+      "monitoring": {
+        "log_fresh": true,
+        "last_logged_days_ago": 1,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "in": {
+      "asof_last_row": "2026-07-16",
+      "monitoring": {
+        "log_fresh": true,
+        "last_logged_days_ago": 1,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "au": {
+      "asof_last_row": "2026-07-16",
+      "monitoring": {
+        "log_fresh": true,
+        "last_logged_days_ago": 1,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "gb": {
+      "asof_last_row": "2026-07-15",
+      "monitoring": {
+        "log_fresh": true,
+        "last_logged_days_ago": 2,
+        "ungraded_backlog": 0,
+        "graded_n": 0
+      },
+      "windows": {
+        "full": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        },
+        "y1": {
+          "alerts": {
+            "n": 0,
+            "tp": 0,
+            "fp": 0,
+            "hit_rate": null
+          },
+          "watch_caution": {
+            "n": 0,
+            "tp": 0,
+            "tn": 0,
+            "precursor_rate": null
+          },
+          "calm": {
+            "n": 0,
+            "dd_missed": 0,
+            "quiet": 0,
+            "quiet_rate": null
+          },
+          "by_scare": {},
+          "recovery": null
+        }
+      }
+    },
+    "ez": {
+      "asof_last_row": "2026-07-15",
+      "monitoring": {
+        "log_fresh": true,
+        "last_logged_days_ago": 2,
+        "ungraded_backlog": 0,
         "graded_n": 0
       },
       "windows": {

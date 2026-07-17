@@ -2928,55 +2928,42 @@ def _compute_capture_health(
 
     health["past_due_unscored_count"] = len(health["past_due_unscored"])
 
-    # Enricher staleness: check Kalshi snapshot and Cleveland nowcast asof
-    try:
-        kalshi_path = root / "data" / "prediction_markets" / "kalshi_releases.parquet"
-        if kalshi_path.exists():
-            import stat as _stat
-            mtime = kalshi_path.stat().st_mtime
-            health["enricher_staleness"]["kalshi_releases_mtime"] = datetime.fromtimestamp(
-                mtime, tz=timezone.utc
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
-    except Exception:
-        pass
-
-    try:
-        cleveland_path = root / "data" / "cleveland_nowcast" / "nowcast.parquet"
-        if cleveland_path.exists():
-            import stat as _stat
-            mtime = cleveland_path.stat().st_mtime
-            health["enricher_staleness"]["cleveland_nowcast_mtime"] = datetime.fromtimestamp(
-                mtime, tz=timezone.utc
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
-    except Exception:
-        pass
-
-    # W11-G task 5: extend enricher staleness with new W11-E sources
-    try:
-        ws_path = root / "data" / "bls_work_stoppages" / "stoppages.parquet"
-        if ws_path.exists():
-            mtime = ws_path.stat().st_mtime
-            health["enricher_staleness"]["work_stoppages_mtime"] = datetime.fromtimestamp(
-                mtime, tz=timezone.utc
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
-        else:
-            health["enricher_staleness"]["work_stoppages_mtime"] = None
-    except Exception:
-        pass
-
-    try:
-        integrity_path = root / "data" / "bls_print_integrity" / "integrity.parquet"
-        if integrity_path.exists():
-            mtime = integrity_path.stat().st_mtime
-            health["enricher_staleness"]["print_integrity_mtime"] = datetime.fromtimestamp(
-                mtime, tz=timezone.utc
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
-        else:
-            health["enricher_staleness"]["print_integrity_mtime"] = None
-    except Exception:
-        pass
+    # Enricher staleness — the newest CONTENT date in each enricher's store,
+    # never file mtime (on CI runners a checkout rewrites files with
+    # mtime = checkout time, so a frozen enricher reported "fresh" forever —
+    # the polygon-universe frozen-cache class, #2690). None ⇒ file absent or
+    # stamp unreadable.
+    for key, rel_path, column in (
+        ("kalshi_releases_asof", ("prediction_markets", "kalshi_releases.parquet"), "asof_date"),
+        ("cleveland_nowcast_asof", ("cleveland_nowcast", "nowcast.parquet"), "first_seen_asof"),
+        # W11-G task 5 sources: neither table carries a fetch stamp, so the
+        # stamp is the newest record's own date/period (content truth).
+        ("work_stoppages_asof", ("bls_work_stoppages", "stoppages.parquet"), "start_date"),
+        ("print_integrity_asof", ("bls_print_integrity", "integrity.parquet"), "period_key"),
+    ):
+        p = root / "data" / Path(*rel_path)
+        health["enricher_staleness"][key] = (
+            _newest_content_stamp(p, column) if p.exists() else None
+        )
 
     return health
+
+
+def _newest_content_stamp(path: Path, column: str) -> str | None:
+    """Newest value of `column` in the parquet at `path`, as an ISO date string
+    (or the raw max string when the column is not date-like, e.g. a year
+    period_key). Content stamps replace file mtime for committed artifacts
+    (#2690 class). Unreadable file/column or all-null ⇒ None (= unknown)."""
+    try:
+        vals = pd.read_parquet(path, columns=[column])[column].dropna()
+        if vals.empty:
+            return None
+        ts = pd.to_datetime(vals, errors="coerce").dropna()
+        if not ts.empty:
+            return ts.max().date().isoformat()
+        return str(vals.astype(str).max())
+    except Exception:  # noqa: BLE001
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -3033,14 +3020,21 @@ def _run_snapshot_gc(snapshots_dir: Path, existing_ledger: list[dict], today: da
             # Keep permanently-protected files
             if snap_file.name in permanent_refs:
                 continue
-            # GC files older than 30 days
+            # GC files older than 30 days, judged from the snapshot's embedded
+            # `asof` date — never file mtime (snapshots are committed; a CI
+            # checkout rewrites them with mtime = checkout time, deferring GC
+            # indefinitely on fresh clones — #2690 class). Stamp-less or
+            # unreadable snapshots are KEPT: deletion is destructive, so the
+            # fail-safe direction inverts here.
             try:
-                mtime_date = date.fromtimestamp(snap_file.stat().st_mtime)
-                if mtime_date < cutoff_date:
+                asof_d = date.fromisoformat(
+                    str(json.loads(snap_file.read_text()).get("asof"))[:10])
+                if asof_d < cutoff_date:
                     snap_file.unlink()
                     deleted += 1
             except Exception as exc_inner:
-                log.debug("snapshot GC: failed to delete %s: %s", snap_file.name, exc_inner)
+                log.debug("snapshot GC: keeping %s (no readable asof): %s",
+                          snap_file.name, exc_inner)
     except Exception as exc:
         log.debug("snapshot GC scan failed: %s", exc)
 

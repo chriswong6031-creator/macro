@@ -11,6 +11,9 @@ ETag) means unchanged files aren't re-uploaded — most daily runs push only the
 
 Resilient by design: no-op (exit 0) when the R2_* creds are absent, like the other
 builders. Reads: R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
+A single file's terminal upload failure (after boto's own retries) is logged and
+counted instead of aborting the run — the md5/ETag delta pass self-heals it next
+run; the process still exits 1 (plus a ::warning line) so lanes see the miss.
 
 Partial-tree invocations MUST pass --no-manifest: the manifest is rebuilt from the
 local tree, so a checkout holding only a dir's few git-committed files (the heavy
@@ -126,8 +129,14 @@ def _client():
         return None
     import boto3
     from botocore.config import Config
+    # 10/adaptive: bulk lanes (60 GB thetadata_eod) must ride out minutes-long
+    # network blips — 4/standard exhausted mid-run 2026-07-16 and killed the sync.
+    # connect_timeout 15s (vs botocore's 60s default) bounds the flip side: a
+    # hard-down endpoint costs ~11 x 15s + backoff (~5 min/call), not ~13 min —
+    # publish lists its dirs SERIALLY inside daily.yml's 150-min engine job.
     kw = dict(region_name="auto", signature_version="s3v4",
-              max_pool_connections=64, retries={"max_attempts": 4, "mode": "standard"})
+              max_pool_connections=64, retries={"max_attempts": 10, "mode": "adaptive"},
+              connect_timeout=15, read_timeout=60)
     try:  # newer botocore: keep R2 happy (it rejects the default CRC32 trailer)
         cfg = Config(**kw, request_checksum_calculation="when_required",
                      response_checksum_validation="when_required")
@@ -232,14 +241,22 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
     from lib import config
     bucket = os.environ["R2_BUCKET"]
     site = config.ROOT / config.load()["storage"]["site_dir"]
-    up = skip = 0
+    up = skip = failed = 0
     data = config.ROOT / config.load()["storage"]["data_dir"]
-    # Per-dir store-path overrides: env vars let the ops host publish stores that live
-    # outside the repo checkout (e.g. THETADATA_STORE for the theta-ops worktree).
-    # If the env var is absent, the default repo-relative data/<dir> path is used.
+    # Per-dir store-path overrides: let the ops host publish stores that live
+    # outside the repo checkout (e.g. the theta-ops worktree).
+    # WP-RESOLVER: thetadata_eod routes through the canonical resolver
+    # (THETADATA_STORE env → data_dir()/thetadata_eod → ops-wt, content-checked).
+    # Publish semantics are unchanged: absent dirs are skipped below and the
+    # _data_dir_syncable shrink guard still gates the sync; when nothing
+    # resolves the default repo-relative data/thetadata_eod path is used (and
+    # skipped as absent, exactly as before).
     _store_overrides: dict[str, Path] = {}
-    if ts := os.environ.get("THETADATA_STORE"):
-        _store_overrides["thetadata_eod"] = Path(ts)
+    if "thetadata_eod" in dirs:  # resolve only when actually publishing that dir
+        from engine.thetadata_store import resolve_thetadata_store  # noqa: PLC0415
+        _theta = resolve_thetadata_store(required=False, purpose="publish_r2 thetadata_eod")
+        if _theta is not None:
+            _store_overrides["thetadata_eod"] = _theta
     if ts := os.environ.get("ATTENTION_STORE"):
         _store_overrides["attention"] = Path(ts)
     for d in dirs:
@@ -285,12 +302,23 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
 
         def _up(pk):
             p, key = pk
-            s3.upload_file(str(p), bucket, key,
-                           ExtraArgs={"ContentType": _CT.get(p.suffix, "application/octet-stream")})
+            try:
+                s3.upload_file(str(p), bucket, key,
+                               ExtraArgs={"ContentType": _CT.get(p.suffix, "application/octet-stream")})
+                return None
+            except Exception as e:  # noqa: BLE001 — one bad file must not kill the run
+                log.warning("%s: upload failed (%s) — the md5 delta retries it next run",
+                            key, e)
+                return key
 
         with ThreadPoolExecutor(max_workers=workers) as ex:
-            list(ex.map(_up, todo))
-        up += len(todo)
+            failures = [k for k in ex.map(_up, todo) if k]
+        failed += len(failures)
+        up += len(todo) - len(failures)
+        if failures:
+            print(f"::warning title=publish_r2 upload failures::{d}: {len(failures)} of "
+                  f"{len(todo)} changed file(s) failed to upload — left for the next "
+                  "run's delta pass", flush=True)
         # Manifest goes up LAST, after every file it lists is in place. The public
         # r2.dev host has no LIST endpoint, so bulk mirrors (e.g. the Mastermind bot's
         # vendored-feed R2 leg) need an authoritative name list to sync and prune against.
@@ -303,6 +331,10 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
         if guarded:
             log.info("%s: manifest untouched (append-only guard tripped — this local "
                      "tree is not authoritative for the store)", d)
+            continue
+        if failures:
+            log.info("%s: manifest untouched (%d upload failure(s) — every file it "
+                     "lists must be in place first)", d, len(failures))
             continue
         names = sorted(p.relative_to(base).as_posix() for p in files)
         ok, why = (True, "forced") if force_manifest else \
@@ -318,8 +350,9 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
         s3.put_object(Bucket=bucket, Key=f"{d}/_manifest.json",
                       Body=json.dumps(_manifest_doc(d, base, names)).encode(),
                       ContentType="application/json")
-    log.info("R2 publish done: %d uploaded, %d unchanged (bucket=%s)", up, skip, bucket)
-    return 0
+    log.info("R2 publish done: %d uploaded, %d unchanged, %d failed (bucket=%s)",
+             up, skip, failed, bucket)
+    return 1 if failed else 0
 
 
 def main() -> int:

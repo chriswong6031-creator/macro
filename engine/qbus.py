@@ -440,6 +440,68 @@ def echo_stats(event_key: str, df=None, asof=None) -> dict | None:
         return None
 
 
+# --------------------------------------------------------------------------- #
+# event_key lookup for a NON-ingested headline — shingled-title match
+# --------------------------------------------------------------------------- #
+def event_key_for_title(title: str, asof, df=None, lang: str = "auto",
+                        thresh: float = 0.6, window_days: int = 3) -> str | None:
+    """Best-effort event_key for a headline that was never written into the store
+    (e.g. macro_news emits no qbus rows). Matches by the SAME primitive
+    assign_event_keys clusters on — shingled-title Jaccard ≥ `thresh` — against
+    stored rows whose seendate (fallback _crawled_at) day is within
+    ±`window_days` of `asof`. Returns the best-matching row's event_key, or None.
+
+    Subject-sharing is deliberately NOT required here: it is a scoping heuristic
+    inside assign_event_keys, and desk theme vocabularies differ (the reason
+    macro_news carries _MACRO_THEME_TO_QBUS). Title Jaccard ≥ thresh inside a
+    3-day window is the identity test itself.
+
+    Deterministic: `asof` is REQUIRED (no clock); ties break like the cluster
+    representative (lowest source_tier, earliest _crawled_at, item_id).
+    Display-tier read. Never raises."""
+    try:
+        if not (title or "").strip():
+            return None
+        if df is None:
+            df = read_items()
+        if df is None or len(df) == 0:
+            return None
+        a = _asof_date(asof)
+        if a is None:
+            return None
+        import pandas as pd
+        day = pd.to_datetime(df["seendate"], errors="coerce", format="mixed", utc=True)
+        day = day.fillna(pd.to_datetime(df["_crawled_at"], errors="coerce",
+                                        format="mixed", utc=True))
+        day = day.map(lambda ts: ts.date() if pd.notna(ts) else None)
+        in_window = [d is not None and abs((d - a).days) <= window_days for d in day]
+        cand = df[[w and bool(k) for w, k in zip(in_window, df["event_key"].tolist())]]
+        if len(cand) == 0:
+            return None
+        target = qkernel.shingles(title, lang)
+        best: tuple | None = None   # (-sim, tier, crawled_at, item_id, event_key)
+        # NB: itertuples renames underscore-leading columns (_crawled_at) — zip lists.
+        for c_title, c_lang, c_tier, c_crawl, c_iid, c_key in zip(
+                cand["title"].tolist(), cand["lang"].tolist(),
+                cand["source_tier"].tolist(), cand["_crawled_at"].tolist(),
+                cand["item_id"].tolist(), cand["event_key"].tolist()):
+            sim = qkernel.jaccard(target, qkernel.shingles(str(c_title or ""),
+                                                           str(c_lang or "auto")))
+            if sim < thresh:
+                continue
+            try:
+                tier = int(c_tier)
+            except (TypeError, ValueError):
+                tier = 9
+            rank = (-sim, tier, str(c_crawl or ""), str(c_iid or ""), str(c_key))
+            if best is None or rank < best:
+                best = rank
+        return best[4] if best else None
+    except Exception as e:  # noqa: BLE001
+        log.debug("qbus.event_key_for_title failed (%s)", e)
+        return None
+
+
 # thin ISO-now helper for callers that need to stamp _crawled_at at the ingest
 # boundary (NOT called anywhere in library logic — the caller owns the clock).
 def now_iso() -> str:

@@ -1,8 +1,8 @@
 {
   "schema": "edgar_phrase_velocity.v1",
   "vocab_version": 1,
-  "as_of": "2026-07-14",
-  "generated_at": "2026-07-15T06:52:39.614696+00:00",
+  "as_of": "2026-07-16",
+  "generated_at": "2026-07-17T02:01:04.036867+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -29,17 +29,7 @@
     "ai_semiconductors": {
       "theme_id": "ai_semiconductors",
       "ticker_count": 26,
-      "top_accelerating": [
-        {
-          "phrase": "on allocation",
-          "recent_count": 2,
-          "prior_count": 1,
-          "recent_filers": 2,
-          "prior_filers": 1,
-          "velocity_z": 1.0,
-          "is_affinity_phrase": true
-        }
-      ],
+      "top_accelerating": [],
       "coverage_note": "26 basket tickers; 30d/60d PIT windows.",
       "coverage_note_zh": "篮子成员26个；PIT窗口30天/60天。"
     },
@@ -155,15 +145,6 @@
           "prior_filers": 1,
           "velocity_z": 1.0,
           "is_affinity_phrase": false
-        },
-        {
-          "phrase": "on allocation",
-          "recent_count": 5,
-          "prior_count": 4,
-          "recent_filers": 4,
-          "prior_filers": 4,
-          "velocity_z": 0.25,
-          "is_affinity_phrase": false
         }
       ],
       "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
@@ -197,15 +178,6 @@
           "prior_filers": 1,
           "velocity_z": 1.0,
           "is_affinity_phrase": false
-        },
-        {
-          "phrase": "on allocation",
-          "recent_count": 5,
-          "prior_count": 4,
-          "recent_filers": 4,
-          "prior_filers": 4,
-          "velocity_z": 0.25,
-          "is_affinity_phrase": false
         }
       ],
       "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
@@ -231,15 +203,6 @@
           "recent_filers": 2,
           "prior_filers": 1,
           "velocity_z": 1.0,
-          "is_affinity_phrase": false
-        },
-        {
-          "phrase": "on allocation",
-          "recent_count": 5,
-          "prior_count": 4,
-          "recent_filers": 4,
-          "prior_filers": 4,
-          "velocity_z": 0.25,
           "is_affinity_phrase": false
         }
       ],

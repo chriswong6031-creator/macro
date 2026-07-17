@@ -8,7 +8,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ t(d.market_en + ' Narrative Rotation — where to allocate across themes', d.market_zh + '主题轮动 — 主题间配置去向') }}</title>
+<title>{{ d.market_en }} Narrative Rotation — where to allocate across themes</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -321,8 +321,8 @@ fetch('policy_lever.json',{cache:'no-cache'})
     <div class="lead">{{ t('Prevailing narrative — current best place to allocate', '主导叙事 — 当前最佳配置去向') }}</div>
     <!-- FT-R11 horizon label: honest framing of the strategic construction (SKIP_D=21, 63/126/252d ensemble) -->
     <div style="font-size:11px;color:var(--muted);margin:2px 0 4px;font-style:italic">{{ t(
-      'Strategic horizon (3–12m): skip-month momentum by construction — this view is deliberately slow. See the Tape strip for the current session.',
-      '战略视角（3–12个月）：结构上使用跳月动量 — 此视图有意放慢。当前交易状态请参阅快速行情区。') }}</div>
+      'A slow book — ranked on 3–12 month trends with the most recent month deliberately excluded. It reacts over months, not days; scores refresh nightly.',
+      '慢速账本 — 基于3–12个月趋势排名（刻意剔除最近一个月）。它以月为单位反应，而非以日；评分每晚更新。') }}</div>
     <div class="name">{{ t(H.name, H.name_zh) }}</div>
     <div class="wt">{{ t('Suggested weight', '建议权重') }} <b>{{ (H.weight*100)|round|int }}%</b>
       · {{ t('cash', '现金') }} {{ (H.cash*100)|round|int }}%</div>
@@ -523,7 +523,7 @@ fetch('{{ {"us":"basketdata","china":"chinabasketdata","hk":"hkbasketdata","cana
 <div class="panel">
   <div class="alloc">
     {% for w in d.allocation.weights %}
-    <div class="arow">
+    <div class="arow" data-sid="{{ w.id }}">
       <span class="nm">#{{ w.rank }} {{ t(w.name, w.name_zh) }}
         {% if w.crowded %}<span class="chip hot" style="margin-left:4px">{{ t('crowded', '拥挤') }}</span>{% endif %}
         {% if w.val_upgrade %}<span class="chip" style="margin-left:4px;color:var(--up);border-color:var(--up)" title="real-activity radar: independent activity is running ahead of price — promoted one slot earlier">🛰️ {{ t('activity ahead ⬆', '活动领先 ⬆') }}</span>{% endif %}</span>
@@ -836,7 +836,36 @@ function renderRotAlerts(){
   el.innerHTML=`<div style="display:flex;justify-content:flex-end"><a href="alerts.html" class="muted" style="font-size:11px;text-decoration:underline">${L('Alert Center →','警报中心 →')}</a></div>`+
     evs.map(e=>`<div class="palert"><span class="pdt">${esc((e.ts||'').slice(0,10))}</span><span class="sev-${esc(e.severity)}">${L(esc(e.headline),esc(e.headline_zh||e.headline))}</span></div>`).join('');
 }
-(function(){ function go(){ renderEntries(); renderRiskTime(); renderRotAlerts(); }
+// MLC-W2b: inject mixed-reads / split-view chips on allocation position rows.
+// Fetches stance_matrix.json once; appends a bilingual chip warn to rows whose id matches
+// and agreement is mixed or split. Fail-silent on any fetch/parse error.
+// Chip text ≤2 words per language per DESIGN_DOCTRINE word budget law.
+function renderAllocStanceChips(){
+  fetch('mlcdata/stance_matrix.json').then(function(r){ return r.ok?r.json():null; }).then(function(data){
+    if(!data||!data.rows) return;
+    const byId={};
+    data.rows.forEach(function(r){ if(r&&r.id) byId[r.id]=r; });
+    document.querySelectorAll('.arow[data-sid]').forEach(function(row){
+      const sid=row.getAttribute('data-sid');
+      const entry=byId[sid];
+      if(!entry||!entry.agreement) return;
+      const ag=entry.agreement;
+      if(ag!=='mixed'&&ag!=='split') return;
+      if(row.querySelector('.mlc-stance-chip')) return;
+      const chipEn=ag==='split'?'split view':'mixed reads';
+      const chipZh=ag==='split'?'严重分歧':'观点分歧';
+      const chip=document.createElement('span');
+      chip.className='chip warn mlc-stance-chip';
+      chip.style.marginLeft='4px';
+      chip.setAttribute('data-tip-en',esc(entry.tip_en||''));
+      chip.setAttribute('data-tip-zh',esc(entry.tip_zh||''));
+      chip.innerHTML=`<span class="l-en">${esc(chipEn)}</span><span class="l-zh">${esc(chipZh)}</span>`;
+      const nm=row.querySelector('.nm');
+      if(nm) nm.appendChild(chip); else row.appendChild(chip);
+    });
+  }).catch(function(){/* absent file or fetch error — no chip */});
+}
+(function(){ function go(){ renderEntries(); renderRiskTime(); renderRotAlerts(); try{ renderAllocStanceChips(); }catch(e){} }
   if(document.readyState!=='loading') go(); else document.addEventListener('DOMContentLoaded',go); })();
 </script>
 <script src="ai_desk_thematic.js"></script>

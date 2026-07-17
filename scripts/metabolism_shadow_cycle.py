@@ -530,6 +530,8 @@ def _run_agenda(shadow_root: Path, real_root: Path, cycle_id: str, use_llm: bool
                     "provider_order": ["oauth", "anthropic"],
                     "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
                     "api_key_env": "ANTHROPIC_API_KEY",
+                    "oauth_pool_lane": "metabolism-shadow",
+                    "usage_lane": "metabolism-shadow",
                 }
                 providers = build_providers(cfg, opus_model="claude-opus-4-8")
             except Exception as _pe:  # noqa: BLE001

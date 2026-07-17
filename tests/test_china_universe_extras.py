@@ -85,8 +85,11 @@ def test_enrich_seed_only_if_empty(monkeypatch):
 def test_fetch_unions_extra_tickers(monkeypatch, tmp_path):
     _no_network(monkeypatch)
     ad = cu.ChinaUniverseAdapter()
-    ad.dir, ad.closes_path, ad.members_path = (
-        tmp_path, tmp_path / "closes.parquet", tmp_path / "members.parquet")
+    # Redirect EVERY path attr — a missed one (dropped_path, historically) makes
+    # fetch() write the repo's real data/china_search/ tree (MM_DATA_GUARD).
+    ad.dir, ad.closes_path, ad.members_path, ad.dropped_path = (
+        tmp_path, tmp_path / "closes.parquet", tmp_path / "members.parquet",
+        tmp_path / "dropped.parquet")
 
     sina = pd.DataFrame({"name_zh": ["Big A", "Big B"], "mktcap_yi": [1000.0, 900.0]},
                         index=pd.Index(["600000.SS", "000001.SZ"], name="ticker"))

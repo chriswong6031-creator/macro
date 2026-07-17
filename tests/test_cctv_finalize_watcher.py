@@ -451,18 +451,21 @@ class TestGitignoreMutation:
 
 
 # ---------------------------------------------------------------------------
-# 6. Monthly top-up mtime gate
+# 6. Monthly top-up content gate (was mtime-gated — #2690 class)
 # ---------------------------------------------------------------------------
 
 class TestMonthlyTopup:
     def test_topup_skipped_when_fresh(self, tmp_path):
+        """Content-fresh tone history (newest observation ≈ today) ⇒ skip.
+        Freshness is the parquet's own newest index date, never file mtime
+        (mtime = checkout time on CI — #2690 class)."""
         import scripts.cctv_finalize_watcher as watcher
-        import os, time as _t
         china_news = tmp_path / "china_news"
         china_news.mkdir()
         tone = china_news / "cctv_tone_history.parquet"
-        # Write a dummy parquet and set mtime to NOW (0 days old)
-        pd.DataFrame({"tone": [0.1]}).to_parquet(tone)
+        pd.DataFrame({"tone": [0.1] * 5},
+                     index=pd.date_range(end=pd.Timestamp.today(), periods=5)
+                     ).to_parquet(tone)
 
         with (
             mock.patch.object(watcher, "TONE_HISTORY_PATH", tone),
@@ -478,10 +481,14 @@ class TestMonthlyTopup:
         china_news = tmp_path / "china_news"
         china_news.mkdir()
         tone = china_news / "cctv_tone_history.parquet"
-        pd.DataFrame({"tone": [0.1], "n_items": [3], "n_stub": [0]}).to_parquet(tone)
-        # Backdate by 35 days
-        old = (datetime.now(timezone.utc) - timedelta(days=35)).timestamp()
-        os.utime(tone, (old, old))
+        # Newest observation 35 days ago — content-stale; give the FILE a
+        # fresh (checkout-time) mtime to pin the #2690 regression.
+        pd.DataFrame({"tone": [0.1] * 5, "n_items": [3] * 5, "n_stub": [0] * 5},
+                     index=pd.date_range(
+                         end=pd.Timestamp.today() - pd.Timedelta(days=35), periods=5)
+                     ).to_parquet(tone)
+        now = datetime.now(timezone.utc).timestamp()
+        os.utime(tone, (now, now))
 
         mock_df = pd.DataFrame({"tone": [0.1] * 100, "n_items": [3] * 100, "n_stub": [0] * 100},
                                 index=pd.date_range("2024-01-01", periods=100))

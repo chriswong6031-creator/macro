@@ -12,20 +12,20 @@
      "peak_date": "2026-06-22",
      "runup_pct": 0.314,
      "runup_z": 0.77,
-     "drawdown_pct": 0.1288,
+     "drawdown_pct": 0.1346,
      "qualified_by": "abs_runup"
     },
     "turn": {
      "low_date": "2026-06-25",
-     "off_low_pct": 0.0987,
+     "off_low_pct": 0.1315,
      "reclaimed": true
     },
     "ratio": {
-     "ratio_chg_10s": 0.0841,
+     "ratio_chg_10s": 0.1643,
      "inflected": false,
      "ratio_20s_high": true
     },
-    "asof": "2026-07-13"
+    "asof": "2026-07-15"
    }
   },
   "xlk:semicap->mag7": {
@@ -34,7 +34,7 @@
    "from_leg": "semicap",
    "to_leg": "mag7",
    "started": "2026-07-02",
-   "lapse_count": 2,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",
@@ -62,7 +62,7 @@
    "from_leg": "semicap",
    "to_leg": "ai_software",
    "started": "2026-07-06",
-   "lapse_count": 2,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",
@@ -90,7 +90,7 @@
    "from_leg": "semicap",
    "to_leg": "software",
    "started": "2026-07-02",
-   "lapse_count": 2,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",
@@ -118,7 +118,7 @@
    "from_leg": "software",
    "to_leg": "mag7",
    "started": "2026-07-10",
-   "lapse_count": 2,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-04",
@@ -146,7 +146,7 @@
    "from_leg": "software",
    "to_leg": "ai_software",
    "started": "2026-07-06",
-   "lapse_count": 2,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-04",

@@ -51,6 +51,41 @@ def _filing_dates_path():
     return config.data_dir() / "edgar" / "eps_filing_dates.parquet"
 
 
+def _built_age_days(cache_path) -> float | None:
+    """Age of a weekly cache in days, from its sidecar meta's `built` stamp
+    (<name>_meta.json next to the parquet) — NEVER file mtime. On CI runners a
+    checkout rewrites files with mtime = checkout time, so a committed
+    months-old cache always looks brand-new by mtime and the refresh
+    short-circuits forever (the polygon-universe frozen-cache class, #2690;
+    eps_quarterly.parquet froze at its 2026-06-14 fill the same way). The meta
+    is written only when a GOOD pass lands a new cache, so a partial/aborted
+    pass keeps retrying nightly instead of freezing for a week. Missing or
+    unreadable meta returns None — callers treat that as stale."""
+    meta_p = cache_path.with_name(cache_path.stem + "_meta.json")
+    try:
+        import json
+        built = json.loads(meta_p.read_text()).get("built")
+        if not built:
+            return None
+        built_dt = datetime.fromisoformat(str(built))
+        if built_dt.tzinfo is None:
+            built_dt = built_dt.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - built_dt).total_seconds() / 86400.0
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _write_built_meta(cache_path, n_rows: int) -> None:
+    """Stamp the sidecar meta after a successful cache write (fetch-date stamp)."""
+    import json
+    meta_p = cache_path.with_name(cache_path.stem + "_meta.json")
+    try:
+        meta_p.write_text(json.dumps(
+            {"built": datetime.now(timezone.utc).isoformat(), "rows": int(n_rows)}))
+    except Exception as e:  # noqa: BLE001
+        log.warning("edgar_eps: cannot write %s (%s)", meta_p, e)
+
+
 def _fd_frame(rows: list[tuple[str, str, str]]) -> pd.DataFrame:
     fd = pd.DataFrame(rows, columns=["ticker", "period_end", "filed_date"])
     fd["period_end"] = pd.to_datetime(fd["period_end"], errors="coerce")
@@ -69,7 +104,8 @@ def fetch_eps_filing_dates(cik2tic: dict[int, str], *, max_age_days: int = 7,
     as-of (the date the surprise became public) in place of the synthetic period_end + lag
     — sharpening the PEAD-freshness decay in engine.stock_score.
 
-    Weekly-cached to data/edgar/eps_filing_dates.parquet (mtime convention). HARDENED for
+    Weekly-cached to data/edgar/eps_filing_dates.parquet (freshness judged from the
+    sidecar meta's built stamp, never mtime — see _built_age_days). HARDENED for
     CI (runs inside the time-boxed engine job): a `max_seconds` wall-clock BUDGET bounds the
     ~1100-CIK pass so an SEC 429/throttle episode (whose per-call backoff could otherwise
     run ~85min) can never blow the job timeout — on a budget hit we keep what we have and
@@ -79,8 +115,8 @@ def fetch_eps_filing_dates(cik2tic: dict[int, str], *, max_age_days: int = 7,
     the synthetic lag). Columns: ticker, period_end, filed_date."""
     p = _filing_dates_path()
     if not force and p.exists():
-        age_d = (datetime.now(timezone.utc).timestamp() - p.stat().st_mtime) / 86400.0
-        if age_d < max_age_days:
+        age_d = _built_age_days(p)
+        if age_d is not None and age_d < max_age_days:
             log.info("eps_filing_dates cache fresh (%.1fd) — skip fetch", age_d)
             return pd.read_parquet(p)
     host = _cfg()["base_url"].split("/api/")[0]            # https://data.sec.gov
@@ -128,6 +164,7 @@ def fetch_eps_filing_dates(cik2tic: dict[int, str], *, max_age_days: int = 7,
     fd = _fd_frame(rows)
     p.parent.mkdir(parents=True, exist_ok=True)
     fd.to_parquet(p)
+    _write_built_meta(p, len(fd))
     log.info("eps_filing_dates: %d (ticker,quarter) rows from %d/%d CIKs (%.0f%% coverage)",
              len(fd), n_ok, len(cik2tic), 100 * coverage)
     return fd
@@ -159,8 +196,8 @@ def build_eps_panel(start_year: int = 2008, end_year: int | None = None,
     the ~72 frames, so the daily build only recomputes the factor ranks."""
     p = eps_panel_path()
     if not force and p.exists():
-        age_d = (datetime.now(timezone.utc).timestamp() - p.stat().st_mtime) / 86400.0
-        if age_d < max_age_days:
+        age_d = _built_age_days(p)
+        if age_d is not None and age_d < max_age_days:
             log.info("eps_quarterly cache fresh (%.1fd) — skip fetch", age_d)
             return pd.read_parquet(p)
     if end_year is None:
@@ -169,6 +206,12 @@ def build_eps_panel(start_year: int = 2008, end_year: int | None = None,
         else int(_cfg().get("quarterly_lag_days", 60))
     universe = _universe_tickers()
     if not universe:
+        # no-regress: a lane without breadth caches (re-render / fresh clone)
+        # returns the prior panel rather than raising — same fallback shape as
+        # the sibling collectors (finra/sec_insider). Raise only cold-start.
+        if p.exists():
+            log.warning("eps_quarterly: no breadth close caches — retaining prior panel")
+            return pd.read_parquet(p)
         raise RuntimeError("no breadth close caches — run breadth collectors first")
     tic_cik = _ticker_cik_map(universe, end_year - 1)
     cik2tic: dict[int, str] = {}
@@ -184,6 +227,11 @@ def build_eps_panel(start_year: int = 2008, end_year: int | None = None,
                 if t and end:
                     rows.append((t, end, float(eps)))
     if not rows:
+        # no-regress: an SEC outage keeps the prior panel (meta NOT bumped, so the
+        # next build retries); raise only when there is nothing to fall back to.
+        if p.exists():
+            log.warning("eps_quarterly: no frames returned (SEC unreachable?) — retaining prior panel")
+            return pd.read_parquet(p)
         raise RuntimeError("no quarterly EPS frames returned (SEC unreachable?)")
     df = pd.DataFrame(rows, columns=["ticker", "period_end", "eps_q"])
     df["period_end"] = pd.to_datetime(df["period_end"], errors="coerce")
@@ -201,6 +249,7 @@ def build_eps_panel(start_year: int = 2008, end_year: int | None = None,
     p = eps_panel_path()
     p.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(p)
+    _write_built_meta(p, len(df))
     log.info("eps_quarterly: %d rows, %d tickers, %s..%s", len(df), df["ticker"].nunique(),
              df["period_end"].min().date(), df["period_end"].max().date())
     return df

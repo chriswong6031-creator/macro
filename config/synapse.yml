@@ -664,6 +664,9 @@ artifacts:
       Frozen cross-builder scorecard contract (schema risk_radar_scorecard.v1).
       100% deterministic math over already-graded forward-ledger rows — no LLM,
       no model scores. hit_rate=null when graded_n < 5 (honest-null floor).
+      Covers markets: us, cn, hk, ca, kr, jp, tw, in, au, gb, ez (market keys
+      are additive-only under v1 — consumers read by key and must tolerate
+      unknown keys).
       Display/context only: nothing here may gate, rank, size, or escalate.
       The word 'validated' is banned from all emitted copy.
 
@@ -693,9 +696,11 @@ artifacts:
       Frozen cross-builder scorecard contract (schema risk_radar_scorecard.v1).
       100% deterministic math over already-graded forward-ledger rows — no LLM,
       no model scores. hit_rate=null when graded_n < 5 (honest-null floor).
-      Covers markets: us, cn, hk, ca. US data sourced from
-      data/risk_radar/forward_log.jsonl + recovery_log.jsonl; intl from
-      data/risk_radar_intl/<market>_forward_log.jsonl.
+      Covers markets: us, cn, hk, ca, kr, jp, tw, in, au, gb, ez (market keys
+      are additive-only under v1 — consumers must tolerate unknown keys; the
+      mastermind lobe distils only us/cn/hk/ca and ignores the rest by design).
+      US data sourced from data/risk_radar/forward_log.jsonl + recovery_log.jsonl;
+      intl from data/risk_radar_intl/<market>_forward_log.jsonl.
       Display/context only: nothing here may gate, rank, size, or escalate.
       The word 'validated' is banned from all emitted copy.
 
@@ -804,6 +809,35 @@ artifacts:
     notes: >
       CDN-facing copy of data/mag7_regime/latest.json written in the same
       engine/mag7_regime.snapshot() call.
+
+  # XSR-R2: US fast-sector rotation artifact.
+  us-sector-rotation-latest:
+    path: data/us_sector_rotation/latest.json
+    format: json
+    producer: engine/us_sector_rotation.py
+    known_extra_writers: []
+    owner_program: XSR
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: us_sector_rotation.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/sector_central.py
+      - scripts/build_site.py
+    external_consumers: []
+    notes: >
+      XSR W1 (XSR-R2) display-tier fast rotation score for the 11 SPDR sector
+      ETFs and named US thematic baskets. Produced by
+      scripts/build_us_sector_rotation.py (thin wrapper around
+      engine/us_sector_rotation.compute_and_write()). Runs AFTER the parallel
+      band barrier and BEFORE build_sector_central, which reads this artifact to
+      re-order the conviction board by rotation rank. DISPLAY-ONLY; feeds no
+      gate, size, score, or calibrated key.
 
   # M7C-R2/R3: Mag-7 Regime daily ledger — idempotent by date.
   mag7-regime-ledger:
@@ -8467,7 +8501,7 @@ artifacts:
     cadence: intraday
     storage: git
     asof_field: as_of
-    freshness_sla_hours: 30
+    freshness_sla_hours: 48
     schema: treasury_watch.v1
     tier: display
     horizon_role: context
@@ -8491,6 +8525,11 @@ artifacts:
       brain/treasury_context.py (fail-soft reader; MASTERMIND_TREASURY_CONTEXT, dark-shipped
       default OFF) as a Neural Web context layer; vendored via the site tree. cadence
       intraday: written by the whitehouse-sentinel workflow (hourly best-effort).
+      SLA 48h (not 30): as_of is the last tga.parquet date and the Treasury DTS
+      API publishes each business day T+1 ~20:00 UTC, so at morning build time
+      the inner as_of is structurally ~2 calendar days back; the sentinel
+      advances it every evening post-publish. staleness_from: produced_at is
+      NOT an option here — the artifact carries no produced_at field.
 
   # --- RLT-R2: Rebalance Pulse (display/context, append-only ledger) ---
   rebalance-pulse-events:
@@ -12091,7 +12130,7 @@ artifacts:
     storage: git
     asof_field: as_of
     freshness_sla_hours: 30
-    schema: leader_radar.v1
+    schema: leader_radar.v2
     tier: display
     horizon_role: context
     weights: none
@@ -12101,11 +12140,14 @@ artifacts:
       - scripts/build_site.py
     external_consumers: []
     notes: >
-      LR W2a. Leader Radar nightly artifact: per-name lifecycle states (raw + confirmed
-      hysteresis), fire_precipice / fire_onset flags, regime, handoff pairs, rerating watch.
-      Schema leader_radar.v1. Coverage: mag7 + AI baskets + Dow-30 + NDX intersection
-      with ohlcv. Stale flag when prices lag NYSE calendar >2 sessions. Display-only;
-      fire flags consumed by plab_leader_precipice / plab_leader_onset Pick Lab books.
+      LR W2a + PR-A truth layer. Leader Radar nightly artifact: per-name lifecycle
+      states (raw + confirmed hysteresis), fire_precipice / fire_onset flags, regime,
+      handoff pairs, rerating watch, freshness block, degraded list, changed_today,
+      near_trigger, fire_history. Schema leader_radar.v2 (as_of = price data-through
+      ISO date; built_at = UTC wall-clock; freshness block; degraded list for banner).
+      Coverage: mag7 + AI baskets + Dow-30 + NDX intersection with ohlcv. Stale flag
+      when prices lag NYSE calendar >2 sessions. Display-only; fire flags consumed by
+      plab_leader_precipice / plab_leader_onset Pick Lab books.
       Nothing here feeds any authority surface (CONST-ART2).
       authority.may_rank/gate/size/escalate=false.
       LRV-R1e (2026-07-12): analyst_saturated chip fed by
@@ -12113,6 +12155,39 @@ artifacts:
       consensus_pct (buy-share LEVEL vs frozen 85 threshold); null-honest
       (uncovered/stale-period names → null chip), coverage.analyst_* keys +
       young-data tag (finnhub store live since 2026-06-20).
+      LR PR-A (2026-07-16): Zweig canonical ZBT transition test; as_of = data date;
+      top5_share restricted to NDX slice; hysteresis session-contiguity guard;
+      freshness/degraded/history_gaps/changed_today/near_trigger/fire_history added.
+
+  site-stance-matrix:
+    path: site/mlcdata/stance_matrix.json
+    format: json
+    producer: scripts/build_stance_matrix.py
+    known_extra_writers: []
+    owner_program: mlc
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: mlc.stance_matrix.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/baskets.html.j2
+      - templates/baskets_desk.js
+      - templates/allocation.html.j2
+      - templates/_leadership_board.html.j2
+    external_consumers: []
+    notes: >
+      MLC-W2b. Per-basket stance matrix: sector/theme/confluence/allocation/m7c
+      verdicts each mapped to a signed tier (-2..+2). Spread and agreement
+      (aligned/mixed/split) derived from the tier spread. bilingual tip_en/tip_zh
+      receipts for Tier-2 hovers. Absent inputs yield null fields (fail-soft).
+      Display-only; de-escalation only; nothing here ranks, gates, sizes, or
+      escalates. CONST-ART2 authority: false.
+      authority.may_rank/gate/size/escalate=false.
 
   leader-radar-state-history:
     path: data/leader_radar/state_history.parquet
@@ -13010,3 +13085,79 @@ artifacts:
       by future grader. Nightly-lane only (COLLECT_LANE=='nightly' guard mirrors
       engine/ownership_ledger.py:79-82). Interim TLT/IEF series never emit
       (display-only, R6 removability). Authority all-false. Non-fatal (CCW-R16).
+
+# ============================================================
+# SECTOR CENTRAL SITE PAYLOADS — load-bearing display artifacts
+# (US + China site JSONs; the calls ledgers are registered above
+#  as sector-central-calls / china-sector-central-calls)
+# ============================================================
+
+  site-sector-central:
+    path: site/sectordata/sector_central.json
+    format: json
+    producer: scripts/build_sector_central.py
+    known_extra_writers: []
+    owner_program: institutional-sector-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+      - scripts/build_stance_matrix.py
+      - engine/theme_scoring.py
+      - engine/group_context.py
+    external_consumers: []
+    notes: >
+      Sector Central US site payload: per-sector conviction verdicts
+      (conviction.label_en/zh + score + dir), momentum RS ranks
+      (momentum.rs_rank/lead), cycle position, forward trend gate, heat,
+      market regime block, grader scorecard. Composed by engine/sector_central.py;
+      build_sector_central.py is the runner that writes this JSON plus the
+      sector_central_data.js twin (window.SECTOR_CENTRAL, read client-side by
+      sector_central.html). Sole writer — build_site.py runs BEFORE the producer
+      in the nightly DAG, so all build_site-lane reads see the last-committed
+      copy (T-1 / RLT-R6 semantics). Declared readers: scripts/build_site.py
+      (RLT-R6 sector-stance chip join onto buy-board cards + MLC-W1
+      leadership-board sector-RS strip); engine/theme_scoring.py (MLC-W2b
+      sector-conflict demotion — T-1 read, de-escalation only, <=5d freshness
+      gate, fail-open); scripts/build_stance_matrix.py (MLC-W2b sector verdict
+      organ — T-1 read); engine/group_context.py (READER_CONTRACT leadership
+      backbone, weight 0.45). Display-only; de-escalation only; nothing here
+      ranks, gates, sizes, or escalates. CONST-ART2 authority: false.
+      authority.may_rank/gate/size/escalate=false.
+
+  site-china-sector-central:
+    path: site/chinasectordata/sector_central.json
+    format: json
+    producer: scripts/build_china_sector_central.py
+    known_extra_writers: []
+    owner_program: institutional-sector-intelligence
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Sector Central China site payload (CN twin of site-sector-central):
+      per-sector verdicts, market regime block, sleeve-size chip
+      (engine/risk_radar_intl.cn_sleeve_chip), grader scorecard. Composed by
+      engine/china_sector_central.py; build_china_sector_central.py is the
+      runner that writes this JSON plus the sector_central_china_data.js twin
+      (window.SECTOR_CENTRAL, read client-side by sector_central_china.html).
+      Sole writer. No Python readers today — registered for read-gate coverage
+      before consumers arrive (census 2026-07-16: zero engine/scripts/collectors
+      or template reads; CN act-now/stance surfaces read other stores).
+      Display-only; nothing here ranks, gates, sizes, or escalates.
+      CONST-ART2 authority: false. authority.may_rank/gate/size/escalate=false.

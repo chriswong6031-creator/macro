@@ -303,13 +303,21 @@ def _lobe_record(art_id: str, art: dict, root: Path) -> dict:
             age_h = _iso_hours_ago(as_of) if as_of else _mtime_hours_ago(full_path)
         rec["age_hours"] = age_h
 
-        # Check self-reported degraded/gaps
+        # Check self-reported degraded/gaps.  Two self-report shapes: boolean
+        # flags, or a status enum whose value starts with 'degraded' (e.g.
+        # causal_llm_lane.json status='degraded_pack_only').
         gaps = []
         degraded_self = False
         if obj and isinstance(obj, dict):
-            if obj.get("degraded") or obj.get("is_degraded"):
+            status_self = str(obj.get("status") or "")
+            if obj.get("degraded") or obj.get("is_degraded") or status_self.startswith("degraded"):
                 degraded_self = True
-                reason = obj.get("degradation_reason") or obj.get("degraded_reason") or "self-reported"
+                reason = (
+                    obj.get("degradation_reason")
+                    or obj.get("degraded_reason")
+                    or obj.get("reason")
+                    or "self-reported"
+                )
                 gaps.append(f"degraded: {reason}")
             raw_gaps = obj.get("gaps") or []
             if isinstance(raw_gaps, list):

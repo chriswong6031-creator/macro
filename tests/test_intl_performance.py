@@ -159,7 +159,11 @@ def test_global_read_is_bilingual_text():
                {"cc": "GB", "name": "United Kingdom", "name_zh": "英国", "quad_name": "Reflation"}]
     gr = P.global_read(records, board, None, None)
     assert gr["en"] and gr["zh"]
-    assert "Goldilocks" in gr["en"]
+    # quad label is plain-worded at composition (Design Doctrine Law 2; ITR W1) —
+    # the raw "Goldilocks" token must NOT reach the glance tier
+    assert "Goldilocks" not in gr["en"]
+    assert "growth OK, inflation calm" in gr["en"]
+    assert "增长尚可、通胀温和" in gr["zh"]
 
 
 def test_performance_panel_smoke():

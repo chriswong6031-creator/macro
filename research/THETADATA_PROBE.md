@@ -298,3 +298,18 @@ contract per trading day (OHLCV + all greek orders + IV).
 | 2026-07-04 | Initial calibration: n=3 (INVALID — single deep-ITM 580 strike, spot was ~747). |
 | 2026-07-04 | Review fixes B1/M1/M2/m1-m4 applied: ATM dynamic resolution, window filter, MIN_N_TRADES gate, range-fetch, all-order greeks. |
 | 2026-07-04 | First valid calibration: n=16,366 trades, 15 contracts, agreement=0.8848, recovery=0.80 — BOTH bars PASS. |
+
+---
+
+## v3 capability probe — 2026-07-16 (12:04–12:17 PDT, mid-RTH, terminal 20260702:79baa88, Options PROFESSIONAL, 8-concurrent)
+
+Headline: (a) intraday chain greeks at 15m are obtainable retroactively but PER-EXPIRATION, not per-root-day; history floor ~2017. (b) Full Trade Stream websocket infra is present but ZERO trades flow: upstream FPSS login fails INVALID_CREDENTIALS in an endless retry loop (operator credential fix; account tier is sufficient). (c) Optionable universe = 15,636 roots (12,730 clean A-Z).
+
+- /v3/option/list/symbols: 200, 0.549s, 15,636 roots — 12,730 clean ^[A-Z]{1,6}$, 83 digit-prefixed adjusted, 2,823 dotted/suffixed.
+- /v3/option/history/greeks/{first,second,third}_order: interval=15m accepted (ivl= → HTTP 410 "ivl -> interval"). expiration=* REJECTED (400 "Cannot specify '*' for the date"); comma lists rejected; strike=* fine → one request per active expiration (SPY: 34 active; WDC: 17). Measured: SPY 20260717 @15m = 11.43s / 2.15 MB / 13,447 rows (499 contracts × 28 bars); @1m = 18.4s / 31.1 MB / 194,719 rows; WDC @15m = 17.0s. second_order returns gamma,vanna,charm,vomma,veta (200, 0.32s); third_order speed,zomma,color,ultima. Multi-day: single-expiration 30d @15m accepted (docs cap 1 month; ~118 KB/s stream rate). History depth bisected: 2026/2024/2020/2019/2018/2017-07-19 all exist; 2016-07-13 = HTTP 472 (same-day EOD control returned 673 rows) → intraday-greeks floor between 2016-07-13 and 2017-07-19. Deep-history full-chain pulls can exceed 120s/expiration.
+- /v3/option/snapshot/greeks/first_order?symbol=SPY&expiration=*&strike=*: 200, 0.955s, 14,065 rows, live timestamps; second_order 0.833s; snapshot/open_interest 0.207s / 13,731 rows (OI stamped 06:30 ET). Wildcard expiration IS allowed on snapshots.
+- ws://127.0.0.1:25520/v1/events: connects; STATUS:DISCONNECTED at 1/s. STREAM_BULK OPTION TRADE subscribe accepted silently (no entitlement rejection) but 75s mid-RTH capture = 0 TRADE messages. Root cause in ~/theta/terminal_v3.log: FPSS connects lazily on first subscribe → "[FPSS] Attempting login as longr2512@gmail.com" → "Disconnected from server: INVALID_CREDENTIALS", retrying every ~2.4s; loop persists after client disconnect (terminal restart clears it). config.toml: [fpss] enable=true, fpss_queue_depth=1000000, ws_port=25520, nj-a/nj-b.thetadata.us:20000-20001.
+- Same-day EOD mid-session: /v3/option/history/eod without expiration → 400 "Cannot fetch current-day data without specifying an expiration"; with expiration → 472 No data (measured 15:10 ET). Evening lane must run post-close; availability time not yet measured.
+- Host: disk / = 1.8Ti, 283Gi available.
+
+Consequences for lane design are adjudicated in research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md §5.

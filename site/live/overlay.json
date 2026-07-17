@@ -1,7 +1,7 @@
 {
   "schema": "live.overlay.v2",
-  "built": "2026-07-15 22:28:12 UTC",
-  "quote_ts_max": "2026-07-15T22:28:09+00:00",
+  "built": "2026-07-16 21:56:03 UTC",
+  "quote_ts_max": "2026-07-16T21:55:58+00:00",
   "stale_after_min": 20.0,
   "max_chg_pct": 35.0,
   "delayed_min": 15,
@@ -17,64 +17,64 @@
     "us": {
       "region": "us",
       "open": false,
-      "local_time": "2026-07-15 18:28 EDT"
+      "local_time": "2026-07-16 17:56 EDT"
     },
     "cn": {
       "region": "cn",
       "open": false,
-      "local_time": "2026-07-16 06:28 CST"
+      "local_time": "2026-07-17 05:56 CST"
     },
     "hk": {
       "region": "hk",
       "open": false,
-      "local_time": "2026-07-16 06:28 HKT"
+      "local_time": "2026-07-17 05:56 HKT"
     },
     "ca": {
       "region": "ca",
       "open": false,
-      "local_time": "2026-07-15 18:28 EDT"
+      "local_time": "2026-07-16 17:56 EDT"
     },
     "jp": {
       "region": "jp",
       "open": false,
-      "local_time": "2026-07-16 07:28 JST"
+      "local_time": "2026-07-17 06:56 JST"
     },
     "kr": {
       "region": "kr",
       "open": false,
-      "local_time": "2026-07-16 07:28 KST"
+      "local_time": "2026-07-17 06:56 KST"
     },
     "tw": {
       "region": "tw",
       "open": false,
-      "local_time": "2026-07-16 06:28 CST"
+      "local_time": "2026-07-17 05:56 CST"
     },
     "gb": {
       "region": "gb",
       "open": false,
-      "local_time": "2026-07-15 23:28 BST"
+      "local_time": "2026-07-16 22:56 BST"
     },
     "eu": {
       "region": "eu",
       "open": false,
-      "local_time": "2026-07-16 00:28 CEST"
+      "local_time": "2026-07-16 23:56 CEST"
     }
   },
   "market": {
     "SPY": {
-      "price": 749.17,
+      "price": 750.72,
       "chg_pct": null,
       "stale": true,
       "source": "yahoo"
     },
     "QQQ": {
-      "price": 711.74,
+      "price": 705.94,
       "chg_pct": null,
       "stale": true,
       "source": "yahoo"
     },
     "VIX": {
-      "price": 17.16,
+      "price": 16.73,
       "chg_pct": null,
       "stale": true,
       "source": "yahoo",
@@ -82,30 +82,30 @@
     }
   },
   "n": 9,
-  "n_fresh": 3,
+  "n_fresh": 1,
   "n_quotes": 20,
   "tickers": {
     "SPY": {
       "ticker": "SPY",
       "region": "us",
       "session_open": false,
-      "price": 749.17,
+      "price": 750.72,
       "source": "yahoo",
-      "quote_ts": "2026-07-15T20:00:00+00:00",
+      "quote_ts": "2026-07-16T20:00:00+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 148.2,
+      "age_min": 116.1,
       "stale_reason": "market closed",
-      "baseline_asof": "2026-07-13",
+      "baseline_asof": "2026-07-16",
       "tech": {
-        "price": 749.17,
+        "price": 750.72,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 1.1,
+        "pct_vs_50dma": 1.0,
         "pct_vs_200dma": 8.1,
         "rsi14": 55.0,
         "macd_pos": true,
-        "off_52w_high_pct": -1.1
+        "off_52w_high_pct": -0.9
       },
       "divergence": {
         "flag": "no_quote",
@@ -118,23 +118,23 @@
       "ticker": "QQQ",
       "region": "us",
       "session_open": false,
-      "price": 711.74,
+      "price": 705.94,
       "source": "yahoo",
-      "quote_ts": "2026-07-15T20:00:00+00:00",
+      "quote_ts": "2026-07-16T20:00:01+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 148.2,
+      "age_min": 116.0,
       "stale_reason": "market closed",
-      "baseline_asof": "2026-07-13",
+      "baseline_asof": "2026-07-16",
       "tech": {
-        "price": 711.74,
+        "price": 705.94,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -0.6,
-        "pct_vs_200dma": 11.6,
-        "rsi14": 48.0,
+        "pct_vs_50dma": -1.7,
+        "pct_vs_200dma": 10.4,
+        "rsi14": 46.0,
         "macd_pos": false,
-        "off_52w_high_pct": -4.5
+        "off_52w_high_pct": -5.3
       },
       "divergence": {
         "flag": "no_quote",
@@ -147,23 +147,23 @@
       "ticker": "IEF",
       "region": "us",
       "session_open": false,
-      "price": 93.29,
+      "price": 93.72,
       "source": "yahoo",
-      "quote_ts": "2026-07-15T20:00:01+00:00",
+      "quote_ts": "2026-07-16T20:00:01+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 148.2,
+      "age_min": 116.0,
       "stale_reason": "market closed",
-      "baseline_asof": "2026-07-13",
+      "baseline_asof": "2026-07-16",
       "tech": {
-        "price": 93.29,
+        "price": 93.72,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -0.7,
-        "pct_vs_200dma": -1.3,
-        "rsi14": 40.0,
+        "pct_vs_50dma": -0.2,
+        "pct_vs_200dma": -0.9,
+        "rsi14": 47.0,
         "macd_pos": false,
-        "off_52w_high_pct": -3.6
+        "off_52w_high_pct": -3.1
       },
       "divergence": {
         "flag": "no_quote",
@@ -176,23 +176,23 @@
       "ticker": "TLT",
       "region": "us",
       "session_open": false,
-      "price": 83.97,
+      "price": 84.21,
       "source": "yahoo",
-      "quote_ts": "2026-07-15T20:00:00+00:00",
+      "quote_ts": "2026-07-16T20:00:00+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 148.2,
+      "age_min": 116.1,
       "stale_reason": "market closed",
-      "baseline_asof": "2026-07-13",
+      "baseline_asof": "2026-07-16",
       "tech": {
-        "price": 83.97,
+        "price": 84.21,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -1.3,
-        "pct_vs_200dma": -2.7,
-        "rsi14": 35.0,
+        "pct_vs_50dma": -1.0,
+        "pct_vs_200dma": -2.4,
+        "rsi14": 39.0,
         "macd_pos": false,
-        "off_52w_high_pct": -6.2
+        "off_52w_high_pct": -5.9
       },
       "divergence": {
         "flag": "no_quote",
@@ -205,23 +205,23 @@
       "ticker": "LQD",
       "region": "us",
       "session_open": false,
-      "price": 106.96,
+      "price": 107.5,
       "source": "yahoo",
-      "quote_ts": "2026-07-15T20:00:00+00:00",
+      "quote_ts": "2026-07-16T20:00:00+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 148.2,
+      "age_min": 116.1,
       "stale_reason": "market closed",
-      "baseline_asof": "2026-07-13",
+      "baseline_asof": "2026-07-16",
       "tech": {
-        "price": 106.96,
+        "price": 107.5,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -1.2,
-        "pct_vs_200dma": -1.3,
-        "rsi14": 33.0,
+        "pct_vs_50dma": -0.7,
+        "pct_vs_200dma": -0.8,
+        "rsi14": 42.0,
         "macd_pos": false,
-        "off_52w_high_pct": -2.8
+        "off_52w_high_pct": -2.3
       },
       "divergence": {
         "flag": "no_quote",
@@ -234,23 +234,23 @@
       "ticker": "HYG",
       "region": "us",
       "session_open": false,
-      "price": 79.52,
+      "price": 79.8,
       "source": "yahoo",
-      "quote_ts": "2026-07-15T20:00:00+00:00",
+      "quote_ts": "2026-07-16T20:00:00+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 148.2,
+      "age_min": 116.1,
       "stale_reason": "market closed",
-      "baseline_asof": "2026-07-13",
+      "baseline_asof": "2026-07-16",
       "tech": {
-        "price": 79.52,
-        "above50": false,
+        "price": 79.8,
+        "above50": true,
         "above200": true,
-        "pct_vs_50dma": -0.0,
-        "pct_vs_200dma": 1.0,
-        "rsi14": 48.0,
-        "macd_pos": false,
-        "off_52w_high_pct": -0.5
+        "pct_vs_50dma": 0.3,
+        "pct_vs_200dma": 1.3,
+        "rsi14": 56.0,
+        "macd_pos": true,
+        "off_52w_high_pct": -0.1
       },
       "divergence": {
         "flag": "no_quote",
@@ -263,122 +263,92 @@
       "ticker": "GC=F",
       "region": "us",
       "session_open": false,
-      "price": 4069.5,
+      "price": 3979.9,
       "source": "yahoo",
-      "quote_ts": "2026-07-15T22:18:11+00:00",
+      "quote_ts": "2026-07-16T20:59:57+00:00",
       "price_basis": "regular",
-      "delay_min": 10.0,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 10.0,
-      "baseline_asof": "2026-07-15",
-      "baseline_age_days": 0,
-      "baseline_stale": false,
-      "prev_close": 4036.1,
-      "chg_pct": 0.83,
+      "stale": true,
+      "age_min": 56.1,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-16",
       "tech": {
-        "price": 4069.5,
+        "price": 3979.9,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -5.6,
-        "pct_vs_200dma": -9.2,
-        "rsi14": 43.0,
+        "pct_vs_50dma": -7.3,
+        "pct_vs_200dma": -11.2,
+        "rsi14": 38.0,
         "macd_pos": true,
-        "off_52w_high_pct": -23.5
+        "off_52w_high_pct": -25.2
       },
       "divergence": {
-        "flag": "within_band",
-        "severity": "none",
-        "detail": "live move inside the nightly 1-day band",
-        "chg_pct": 0.83,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [],
-        "rsi_from": 41.0,
-        "rsi_to": 43.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "HG=F": {
       "ticker": "HG=F",
       "region": "us",
       "session_open": false,
-      "price": 6.383,
+      "price": 6.28,
       "source": "yahoo",
-      "quote_ts": "2026-07-15T22:17:09+00:00",
+      "quote_ts": "2026-07-16T20:59:58+00:00",
       "price_basis": "regular",
-      "delay_min": 11.1,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 11.1,
-      "baseline_asof": "2026-07-15",
-      "baseline_age_days": 0,
-      "baseline_stale": false,
-      "prev_close": 6.35,
-      "chg_pct": 0.52,
+      "stale": true,
+      "age_min": 56.1,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-16",
       "tech": {
-        "price": 6.38,
-        "above50": true,
+        "price": 6.28,
+        "above50": false,
         "above200": true,
-        "pct_vs_50dma": 1.1,
-        "pct_vs_200dma": 11.2,
-        "rsi14": 58.0,
+        "pct_vs_50dma": -0.4,
+        "pct_vs_200dma": 9.4,
+        "rsi14": 53.0,
         "macd_pos": true,
-        "off_52w_high_pct": -4.0
+        "off_52w_high_pct": -5.5
       },
       "divergence": {
-        "flag": "within_band",
-        "severity": "none",
-        "detail": "live move inside the nightly 1-day band",
-        "chg_pct": 0.52,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [],
-        "rsi_from": 56.0,
-        "rsi_to": 58.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "BTC-USD": {
       "ticker": "BTC-USD",
       "region": "us",
       "session_open": false,
-      "price": 64849.94,
+      "price": 64117.91,
       "source": "yahoo",
-      "quote_ts": "2026-07-15T22:28:09+00:00",
+      "quote_ts": "2026-07-16T21:55:58+00:00",
       "price_basis": "regular",
       "delay_min": 0.1,
       "currency": "USD",
       "stale": false,
       "age_min": 0.1,
-      "baseline_asof": "2026-07-15",
+      "baseline_asof": "2026-07-16",
       "baseline_age_days": 0,
       "baseline_stale": false,
-      "prev_close": 64773.7,
-      "chg_pct": 0.12,
+      "prev_close": 64144.59,
+      "chg_pct": -0.04,
       "tech": {
-        "price": 64849.94,
+        "price": 64117.91,
         "above50": true,
         "above200": false,
-        "pct_vs_50dma": 1.1,
-        "pct_vs_200dma": -11.8,
-        "rsi14": 56.0,
+        "pct_vs_50dma": 0.3,
+        "pct_vs_200dma": -12.6,
+        "rsi14": 53.0,
         "macd_pos": true,
-        "off_52w_high_pct": -38.8
+        "off_52w_high_pct": -39.5
       },
       "divergence": {
         "flag": "within_band",
         "severity": "none",
         "detail": "live move inside the nightly 1-day band",
-        "chg_pct": 0.12,
+        "chg_pct": -0.04,
         "band": [
           null,
           null
@@ -387,19 +357,19 @@
         "horizon": "1d",
         "extreme": false,
         "crossings": [],
-        "rsi_from": 55.0,
-        "rsi_to": 56.0
+        "rsi_from": 53.0,
+        "rsi_to": 53.0
       }
     }
   },
   "allocations": {
     "us": {
-      "built": "2026-07-15 08:42 UTC",
+      "built": "2026-07-16 07:32 UTC",
       "cards": [
         {
           "key": "mm_conservative",
           "name": "Mastermind \u2014 Conservative",
-          "asof": "2026-07-13",
+          "asof": "2026-07-15",
           "alloc": [
             {
               "asset": "SPY",
@@ -441,17 +411,17 @@
               "asset": "HG=F",
               "label_en": "Copper",
               "label_zh": "\u94dc",
-              "weight": 11.6,
-              "live_price": 6.383,
-              "chg_pct": 0.66,
-              "stale": false
+              "weight": 11.7,
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             }
           ]
         },
         {
           "key": "mm_moderate",
           "name": "Mastermind \u2014 Moderate",
-          "asof": "2026-07-13",
+          "asof": "2026-07-15",
           "alloc": [
             {
               "asset": "SPY",
@@ -484,7 +454,7 @@
               "asset": "QQQ",
               "label_en": "Nasdaq 100",
               "label_zh": "\u7eb3\u6307100",
-              "weight": 18.8,
+              "weight": 18.9,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -493,23 +463,23 @@
               "asset": "HG=F",
               "label_en": "Copper",
               "label_zh": "\u94dc",
-              "weight": 17.4,
-              "live_price": 6.383,
-              "chg_pct": 0.66,
-              "stale": false
+              "weight": 17.5,
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             }
           ]
         },
         {
           "key": "mm_aggressive",
           "name": "Mastermind \u2014 Aggressive",
-          "asof": "2026-07-13",
+          "asof": "2026-07-15",
           "alloc": [
             {
               "asset": "SPY",
               "label_en": "S&P 500",
               "label_zh": "\u6807\u666e500",
-              "weight": 54.9,
+              "weight": 54.8,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -518,7 +488,7 @@
               "asset": "LQD",
               "label_en": "IG credit",
               "label_zh": "\u6295\u8d44\u7ea7\u4fe1\u7528",
-              "weight": 54.9,
+              "weight": 54.8,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -527,7 +497,7 @@
               "asset": "HYG",
               "label_en": "High-yield credit",
               "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-              "weight": 54.9,
+              "weight": 54.8,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -536,7 +506,7 @@
               "asset": "QQQ",
               "label_en": "Nasdaq 100",
               "label_zh": "\u7eb3\u6307100",
-              "weight": 30.8,
+              "weight": 31.0,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -545,37 +515,28 @@
               "asset": "HG=F",
               "label_en": "Copper",
               "label_zh": "\u94dc",
-              "weight": 28.5,
-              "live_price": 6.383,
-              "chg_pct": 0.66,
-              "stale": false
+              "weight": 28.7,
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             }
           ]
         }
       ]
     },
     "china": {
-      "built": "2026-07-15 11:30 UTC",
+      "built": "2026-07-16 09:51 UTC",
       "cards": [
         {
           "key": "cnmm_conservative",
           "name": "China Mastermind \u2014 Conservative",
-          "asof": "2026-07-15",
+          "asof": "2026-07-16",
           "alloc": [
             {
               "asset": "511010.SS",
               "label_en": "China 5y Govt Bond",
               "label_zh": "5\u5e74\u56fd\u503a",
-              "weight": 25.6,
-              "live_price": null,
-              "chg_pct": null,
-              "stale": true
-            },
-            {
-              "asset": "518880.SS",
-              "label_en": "Gold (onshore)",
-              "label_zh": "\u9ec4\u91d1",
-              "weight": 5.6,
+              "weight": 26.1,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -584,7 +545,16 @@
               "asset": "510880.SS",
               "label_en": "SSE Dividend",
               "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-              "weight": 5.0,
+              "weight": 14.6,
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
+            },
+            {
+              "asset": "518880.SS",
+              "label_en": "Gold (onshore)",
+              "label_zh": "\u9ec4\u91d1",
+              "weight": 9.7,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -593,16 +563,7 @@
               "asset": "159915.SZ",
               "label_en": "ChiNext (growth)",
               "label_zh": "\u521b\u4e1a\u677f\uff08\u6210\u957f\uff09",
-              "weight": 1.2,
-              "live_price": null,
-              "chg_pct": null,
-              "stale": true
-            },
-            {
-              "asset": "510300.SS",
-              "label_en": "CSI 300",
-              "label_zh": "\u6caa\u6df1300",
-              "weight": 0.7,
+              "weight": 1.1,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -612,22 +573,13 @@
         {
           "key": "cnmm_moderate",
           "name": "China Mastermind \u2014 Moderate",
-          "asof": "2026-07-15",
+          "asof": "2026-07-16",
           "alloc": [
             {
               "asset": "511010.SS",
               "label_en": "China 5y Govt Bond",
               "label_zh": "5\u5e74\u56fd\u503a",
-              "weight": 50.9,
-              "live_price": null,
-              "chg_pct": null,
-              "stale": true
-            },
-            {
-              "asset": "518880.SS",
-              "label_en": "Gold (onshore)",
-              "label_zh": "\u9ec4\u91d1",
-              "weight": 9.8,
+              "weight": 51.8,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -636,7 +588,16 @@
               "asset": "510880.SS",
               "label_en": "SSE Dividend",
               "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-              "weight": 8.7,
+              "weight": 25.4,
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
+            },
+            {
+              "asset": "518880.SS",
+              "label_en": "Gold (onshore)",
+              "label_zh": "\u9ec4\u91d1",
+              "weight": 16.9,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -645,16 +606,7 @@
               "asset": "159915.SZ",
               "label_en": "ChiNext (growth)",
               "label_zh": "\u521b\u4e1a\u677f\uff08\u6210\u957f\uff09",
-              "weight": 2.1,
-              "live_price": null,
-              "chg_pct": null,
-              "stale": true
-            },
-            {
-              "asset": "510300.SS",
-              "label_en": "CSI 300",
-              "label_zh": "\u6caa\u6df1300",
-              "weight": 1.2,
+              "weight": 2.0,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -664,22 +616,13 @@
         {
           "key": "cnmm_aggressive",
           "name": "China Mastermind \u2014 Aggressive",
-          "asof": "2026-07-15",
+          "asof": "2026-07-16",
           "alloc": [
             {
               "asset": "511010.SS",
               "label_en": "China 5y Govt Bond",
               "label_zh": "5\u5e74\u56fd\u503a",
-              "weight": 101.4,
-              "live_price": null,
-              "chg_pct": null,
-              "stale": true
-            },
-            {
-              "asset": "518880.SS",
-              "label_en": "Gold (onshore)",
-              "label_zh": "\u9ec4\u91d1",
-              "weight": 15.6,
+              "weight": 103.1,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -688,7 +631,16 @@
               "asset": "510880.SS",
               "label_en": "SSE Dividend",
               "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-              "weight": 13.9,
+              "weight": 40.5,
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
+            },
+            {
+              "asset": "518880.SS",
+              "label_en": "Gold (onshore)",
+              "label_zh": "\u9ec4\u91d1",
+              "weight": 26.9,
               "live_price": null,
               "chg_pct": null,
               "stale": true
@@ -697,16 +649,7 @@
               "asset": "159915.SZ",
               "label_en": "ChiNext (growth)",
               "label_zh": "\u521b\u4e1a\u677f\uff08\u6210\u957f\uff09",
-              "weight": 3.3,
-              "live_price": null,
-              "chg_pct": null,
-              "stale": true
-            },
-            {
-              "asset": "510300.SS",
-              "label_en": "CSI 300",
-              "label_zh": "\u6caa\u6df1300",
-              "weight": 2.0,
+              "weight": 3.1,
               "live_price": null,
               "chg_pct": null,
               "stale": true

@@ -242,16 +242,26 @@ def market_context() -> dict:
 def _rolling_over(now: dict) -> bool:
     """Fast-rollover detector. The slow 5-phase label (`phase`) is weekly-MACD-led, so a name
     that has dropped hard off a recent high can still read 'Trending/Expansion' for weeks after
-    it rolled — the label LAGS the move. When the oscillator slope is clearly DOWN, the daily
-    timing ladder is in decline, AND the canonical (detrended) position is stretched, the name is
-    topping/rolling regardless of a still-positive weekly MACD. Keys only off signals the cycle
-    record already carries (osc_slope / pos_v2 / timing_state) — no new data, no whipsaw on wiggles
-    (needs all three: falling + stretched + daily-decline)."""
+    it rolled — the label LAGS the move. Keys only off signals the cycle record already carries
+    (osc_slope / pos / pos_v2 / timing_state / signal / divergence) — no new data.
+
+    Two arms (2026-07 audit — the original single arm never fired on the June rollover):
+      • decline arm: oscillator falling + stretched + daily ladder still IN decline.
+      • post-roll arm: oscillator in COLLAPSE (≤ −10) off an elevated position with a SELL
+        turn signal / divergence / decline ladder. The original arm demanded pos ≥ 68 AND a
+        DECLINE-family ladder — but a name that already fell has pos < 68 and its ladder has
+        moved on to bottom-hunting (TURN SIGNALED), so XLK/AI-infra rolled −20/−30 osc points
+        with the chip stuck on the slow label. No whipsaw on wiggles: every arm still needs a
+        clearly falling oscillator plus stretch plus a confirming fast signal."""
     slope = now.get("osc_slope") or 0.0
     pv2 = now.get("pos_v2")
-    hi = (pv2 if pv2 is not None else (now.get("pos") or 0)) >= 68.0
+    pos_eff = pv2 if pv2 is not None else (now.get("pos") or 0)
     timing = (now.get("timing_state") or "").upper()
-    return bool(slope < -3.0 and hi and timing in ("DECLINE", "ROLLING OVER"))
+    hard_dn = timing in ("DECLINE", "ROLLING OVER")
+    if slope < -3.0 and pos_eff >= 68.0 and hard_dn:
+        return True
+    confirm = bool(now.get("signal") == "SELL" or now.get("divergence") or hard_dn)
+    return bool(slope <= -10.0 and pos_eff >= 50.0 and confirm)
 
 
 def _state_score(now: dict) -> tuple[float, dict]:
@@ -288,14 +298,22 @@ def _momentum_confirm(now: dict, n_peers: int) -> tuple[float, dict]:
     rank = now.get("rs_rank")
     above = now.get("above200d")
     rs63 = now.get("rs_63d")
+    rs21 = now.get("rs_21d")
+    rank21 = now.get("rs_21d_rank")
     pct = (1.0 - (rank - 1) / max(n_peers - 1, 1)) if rank else 0.5   # 1=leader
     c = (pct - 0.5) * 0.6                                              # ±0.3
     if above is False:
         c -= 0.1
     c = float(np.clip(c, -0.3, 0.3))
-    lead = ("leading" if (rank or 99) <= max(3, n_peers // 4) else
-            "lagging" if (rank or 0) >= n_peers - max(3, n_peers // 4) else "mid-pack")
-    return c, {"rs_rank": rank, "rs_63d": rs63, "above_200d": above, "lead": lead}
+    # the TAG reads the fast (21d) rank when stamped — the 63d rank kept XLK "leading"
+    # three weeks after its top (2026-07 audit); the capped score nudge above stays on
+    # the legacy 63d rank so graded conviction semantics don't shift mid-ledger.
+    rank_now = rank21 if rank21 is not None else rank
+    lead = ("leading" if (rank_now or 99) <= max(3, n_peers // 4) else
+            "lagging" if (rank_now or 0) >= n_peers - max(3, n_peers // 4) else "mid-pack")
+    fading = bool(rank and rank21 and rank <= max(3, n_peers // 4) and rank21 > n_peers // 2)
+    return c, {"rs_rank": rank, "rs_63d": rs63, "rs_21d": rs21, "rs_21d_rank": rank21,
+               "above_200d": above, "lead": lead, "fading": fading}
 
 
 def _crowd_for_members(members: list, crowd_by_ticker: dict) -> dict | None:
@@ -437,9 +455,9 @@ def _trace(state_d, fwd, mkt, mom_d, crowd, early, stretched, beta, heat) -> lis
             # the slow phase label lags; the fast signals say it has rolled over → surface that
             # instead of the stale 'Trending' read (keeps the board honest vs. a −20% pullback).
             t.append({"layer": "Cycle state", "tier": "validated", "stance": "bearish",
-                      "en": f"Rolling over — position {pos:.0f}/100 · oscillator falling, "
-                            "daily ladder in decline (slow phase label lags)",
-                      "zh": f"回落中 — 位置 {pos:.0f}/100 · 振荡指标下行、日线阶梯走弱（慢速阶段标签滞后）"})
+                      "en": f"Rolling over — position {pos:.0f}/100 · oscillator falling "
+                            "hard off a stretched read (slow phase label lags)",
+                      "zh": f"回落中 — 位置 {pos:.0f}/100 · 振荡指标自高位急跌（慢速阶段标签滞后）"})
         else:
             stance = "bullish" if pos <= 40 else "bearish" if pos >= 65 else "neutral"
             sig = state_d.get("signal")
@@ -474,10 +492,19 @@ def _trace(state_d, fwd, mkt, mom_d, crowd, early, stretched, beta, heat) -> lis
                     f"liquidity {mkt.get('liquidity') or '—'}) → gate ×{mkt.get('gate_factor')}{betatxt}",
               "zh": f"{mkt.get('gate_state_zh') or mkt.get('state_zh') or mkt.get('gate_state_en') or mkt.get('state_en')}（宏观风险 {mkt.get('derisk_blended')}，{quad_zh}）→ 门控 ×{mkt.get('gate_factor')}{betatxt_zh}"})
     lead = mom_d.get("lead")
-    t.append({"layer": "Momentum", "tier": "confirmer", "stance": lead,
-              "en": f"RS #{mom_d.get('rs_rank') or '—'} — {lead} (focus lens, not alpha)"
+    rk21, rk63 = mom_d.get("rs_21d_rank"), mom_d.get("rs_rank")
+    rk_en = (f"RS 21d #{rk21} · 63d #{rk63 or '—'}" if rk21 is not None
+             else f"RS #{rk63 or '—'}")
+    rk_zh = (f"相对强度 21日 #{rk21} · 63日 #{rk63 or '—'}" if rk21 is not None
+             else f"相对强度 #{rk63 or '—'}")
+    fading = mom_d.get("fading")
+    t.append({"layer": "Momentum", "tier": "confirmer",
+              "stance": ("caution" if fading else lead),
+              "en": f"{rk_en} — {lead} (focus lens, not alpha)"
+                    + (" · 63d leader fading on 21d" if fading else "")
                     + (" · early — not yet trend-confirmed" if early else ""),
-              "zh": f"相对强度 #{mom_d.get('rs_rank') or '—'} — {_LEAD_ZH.get(lead, lead)}（聚焦视角，非超额）"
+              "zh": f"{rk_zh} — {_LEAD_ZH.get(lead, lead)}（聚焦视角，非超额）"
+                    + (" · 63日领先、21日转弱" if fading else "")
                     + (" · 偏早 — 趋势尚未确认" if early else "")})
     if heat and heat.get("heat_1M") is not None:
         hstance = "bullish" if (heat.get("heat_1M") or 0) > 0 else "bearish"
@@ -524,6 +551,233 @@ def _trend_gates(closes, rotation) -> dict:
         gates["b-" + str(bid)] = {**(r.get("gate") or {}), "pass": r.get("eligible"),
                                   "source": "basket-ctx"}
     return gates
+
+
+# ---------------------------------------------------------------------------
+# XSR-R2 / XSR-R9 helpers — fast-rotation attach, board sort, split view
+# ---------------------------------------------------------------------------
+
+# Conviction label → tier integer (highest = most bullish)
+_CONVICTION_TIER: dict[str, int] = {
+    "Accumulate":   5,
+    "Constructive": 4,
+    "Neutral":      3,
+    "Cautious":     2,
+    "Reduce":       1,
+}
+
+# Plain-word copy for split_view (XSR-R9).  Banned vocab: governor, OB, MACD,
+# mom20, state names.  "fast tape" = the fast rotation lens; "slow clock" = the
+# gated-confluence conviction.
+_SPLIT_COPY_EN = {
+    "faster":  "Slow clock: {conv}. Fast tape: money rotating in — split view.",
+    "slower":  "Slow clock: {conv}. Fast tape: rotating out — split view.",
+}
+_SPLIT_COPY_ZH = {
+    "faster":  "慢时钟：{conv}。快线：资金流入中 — 分歧视角。",
+    "slower":  "慢时钟：{conv}。快线：资金流出 — 分歧视角。",
+}
+
+# Plain-word equivalents for the conviction labels in split copy
+_CONV_PLAIN_EN: dict[str, str] = {
+    "Accumulate":   "looking extended after the run",
+    "Constructive": "constructive on the trend",
+    "Neutral":      "neutral, no strong lean",
+    "Cautious":     "cautious",
+    "Reduce":       "risk looks elevated",
+}
+_CONV_PLAIN_ZH: dict[str, str] = {
+    "Accumulate":   "强势延伸后偏高位",
+    "Constructive": "趋势建设性",
+    "Neutral":      "中性，无明显倾向",
+    "Cautious":     "偏谨慎",
+    "Reduce":       "风险较高",
+}
+
+
+def _rotation_rank_bucket(rank: int, n_total: int) -> int:
+    """Map rotation_rank to a tier int 1–5 (5 = best) within its universe.
+
+    Per-kind: top ~18% → 5, then roughly quintile-ish buckets.
+    Documented thresholds (11 sectors example):
+        rank 1-2  → 5  (top 18%)
+        rank 3-4  → 4
+        rank 5-7  → 3
+        rank 8-9  → 2
+        rank 10-11 → 1
+    Generalised to any N with ceiling-division.
+    """
+    if rank is None or n_total is None or n_total < 1:
+        return 0  # unmatched / unknown
+    top18 = max(1, round(n_total * 0.18))
+    if rank <= top18:
+        return 5
+    # remaining N-top18 split into 4 roughly equal buckets
+    rem = n_total - top18
+    bucket_size = max(1, rem / 4.0)
+    pos_in_rem = rank - top18  # 1-indexed
+    if pos_in_rem <= bucket_size:
+        return 4
+    if pos_in_rem <= 2 * bucket_size:
+        return 3
+    if pos_in_rem <= 3 * bucket_size:
+        return 2
+    return 1
+
+
+def _load_rotation_artifact() -> dict:
+    """Load data/us_sector_rotation/latest.json.
+
+    Returns an empty dict on any error (fail-open: callers degrade gracefully).
+    """
+    import datetime as _dt
+    try:
+        p = config.data_dir() / "us_sector_rotation" / "latest.json"
+        if not p.exists():
+            log.debug("sector_central: rotation artifact absent — conviction sort retained")
+            return {}
+        raw = json.loads(p.read_text(encoding="utf-8"))
+        # Freshness guard: if artifact is >48h old, skip re-ordering
+        ts_str = raw.get("ts") or raw.get("asof")
+        if ts_str:
+            try:
+                from datetime import timezone as _tz
+                ts_dt = _dt.datetime.fromisoformat(str(ts_str))
+                # Treat naive datetimes as UTC
+                if ts_dt.tzinfo is None:
+                    ts_dt = ts_dt.replace(tzinfo=_tz.utc)
+                age_h = (_dt.datetime.now(_tz.utc) - ts_dt).total_seconds() / 3600
+                if age_h > 48:
+                    log.warning("sector_central: rotation artifact stale (%.1fh) — conviction sort retained", age_h)
+                    return {}
+            except Exception:
+                pass  # unparseable ts — accept the artifact anyway
+        return raw
+    except Exception as e:  # noqa: BLE001
+        log.warning("sector_central: rotation artifact load failed (%s) — conviction sort retained", e)
+        return {}
+
+
+def _attach_rotation(records: list[dict], rotation_raw: dict, kind: str) -> list[dict]:
+    """Attach rotation block to each record and re-sort by rotation_rank ascending.
+
+    If rotation_raw is empty or parsing fails, returns records in conviction order
+    (unchanged).  Unmatched records sort last (by conviction score descending as
+    tiebreaker among themselves).
+
+    Matching is kind-aware: a record with kind=='sector' may only match a rotation
+    instrument that also has kind=='sector'; a record with kind=='basket' may only
+    match a rotation instrument with kind=='basket'.  This prevents the 11
+    b-us_sector_* proxy-basket records from borrowing a sector's rank via ticker
+    match — those proxies now receive rotation=None and sort among unmatched by
+    conviction score.
+
+    Also sets split_view / split_copy_en / split_copy_zh (XSR-R9) when the
+    conviction tier and rotation tier diverge by ≥ 2.  Split-view tier math for
+    baskets is computed only over genuinely-matched basket records.
+    """
+    instruments_raw = rotation_raw.get("instruments") if rotation_raw else None
+    if not rotation_raw or not instruments_raw or not isinstance(instruments_raw, list):
+        # fail-open: no rotation data (or malformed) → conviction sort already applied
+        for rec in records:
+            rec["rotation"] = None
+        return records
+
+    # Build lookup: (kind, key) → rotation instrument record.
+    # Separate tables keyed by (kind, id), (kind, ticker), (kind, basket_id) so
+    # a sector record can never match a basket instrument and vice versa.
+    rot_by_id: dict[tuple[str, str], dict] = {}
+    rot_by_ticker: dict[tuple[str, str], dict] = {}
+    rot_by_basket: dict[tuple[str, str], dict] = {}
+    for inst in instruments_raw:
+        inst_kind = inst.get("kind") or ""
+        iid = inst.get("id") or inst.get("key") or ""
+        tk = (inst.get("ticker") or "").upper()
+        bid = inst.get("basket_id") or ""
+        if iid:
+            rot_by_id[(inst_kind, iid)] = inst
+        if tk:
+            rot_by_ticker[(inst_kind, tk)] = inst
+        if bid:
+            rot_by_basket[(inst_kind, bid)] = inst
+
+    # First pass: match records to rotation instruments (kind-aware)
+    matched_pairs: list[tuple[dict, dict]] = []  # (rec, inst)
+    unmatched: list[dict] = []
+
+    for rec in records:
+        rec_kind = rec.get("kind") or ""
+        rid = rec.get("id") or ""
+        ticker = (rec.get("ticker") or "").upper()
+        basket_id = rec.get("id") or ""  # sector_central uses id as basket_id
+
+        inst = (
+            rot_by_id.get((rec_kind, rid))
+            or rot_by_id.get((rec_kind, rid.lstrip("b-")))
+            or rot_by_ticker.get((rec_kind, ticker))
+            or rot_by_basket.get((rec_kind, basket_id))
+            or rot_by_basket.get((rec_kind, "b-" + basket_id))
+        )
+
+        if inst is None:
+            rec["rotation"] = None
+            unmatched.append(rec)
+        else:
+            matched_pairs.append((rec, inst))
+
+    # Sort matched pairs by global rotation_rank (score tiebreak) — determines
+    # per-kind display order and the per-kind ordinal rank for split-tier math.
+    matched_pairs.sort(key=lambda t: (t[1].get("rotation_rank") or 9999,
+                                      -(t[1].get("rotation_score") or 0.0)))
+
+    # Per-kind ordinal rank: position in the sorted matched list (1-indexed).
+    # This is semantically correct for _rotation_rank_bucket — the bucket function
+    # measures where this instrument sits among its own kind (sectors or baskets),
+    # not in the global mixed-kind ranking.
+    n_total = len(matched_pairs) if matched_pairs else 1
+
+    matched: list[dict] = []
+    for per_kind_ordinal, (rec, inst) in enumerate(matched_pairs, 1):
+        rrank = inst.get("rotation_rank")   # global rank (stored; for display/hover)
+        rscore = inst.get("rotation_score")
+        state = inst.get("state_used")
+        components = inst.get("components") or {}
+        stale = bool(inst.get("stale_flags"))
+
+        rec["rotation"] = {
+            "rank":       rrank,         # global rank (shown in chip)
+            "score":      rscore,
+            "state":      state,
+            "components": components,
+            "stale":      stale,
+        }
+
+        # XSR-R9: split view.  Use per-kind ordinal position for bucket math so
+        # the tier comparison is within-universe (11 sectors vs 11 sectors, not
+        # sector #7 of 46 instruments).
+        conv_label = (rec.get("conviction") or {}).get("label_en", "")
+        conv_tier = _CONVICTION_TIER.get(conv_label, 0)
+        rot_tier = _rotation_rank_bucket(per_kind_ordinal, n_total)
+
+        diff = rot_tier - conv_tier  # positive = faster than conviction
+        if abs(diff) >= 2 and conv_tier > 0 and rot_tier > 0:
+            direction = "faster" if diff > 0 else "slower"
+            plain_en = _CONV_PLAIN_EN.get(conv_label, conv_label.lower())
+            plain_zh = _CONV_PLAIN_ZH.get(conv_label, conv_label)
+            rec["split_view"] = True
+            rec["split_copy_en"] = _SPLIT_COPY_EN[direction].format(conv=plain_en)
+            rec["split_copy_zh"] = _SPLIT_COPY_ZH[direction].format(conv=plain_zh)
+        else:
+            rec["split_view"] = False
+            rec["split_copy_en"] = None
+            rec["split_copy_zh"] = None
+
+        matched.append(rec)
+
+    # Unmatched sort by conviction score descending (preserve their relative order)
+    unmatched.sort(key=lambda x: -(x.get("conviction") or {}).get("score", 0))
+
+    return matched + unmatched
 
 
 def compute() -> dict | None:
@@ -583,19 +837,32 @@ def compute() -> dict | None:
                       members=memb.get(bid, []))
         baskets.append({**carried, **fused})
 
+    # XSR-R2: primary sort is conviction score (will be replaced by rotation rank below).
+    # This establishes the fallback order used when rotation artifact is absent.
     sectors.sort(key=lambda x: -x["conviction"]["score"])
     baskets.sort(key=lambda x: -x["conviction"]["score"])
+
+    # XSR-R2/R9: load rotation artifact and re-sort by fast-rotation rank.
+    # Fail-open: if artifact missing/stale/unparseable, conviction sort is kept and
+    # rotation fields are null on all records.
+    rotation_raw = _load_rotation_artifact()
+    sectors = _attach_rotation(sectors, rotation_raw, kind="sector")
+    baskets = _attach_rotation(baskets, rotation_raw, kind="basket")
+
     n_above = sum(1 for s in sectors if (s.get("forward") or {}).get("trend_pass") is True)
     mkt.pop("_crowd_by_ticker", None)
     mkt["n_above_trend"] = n_above
     mkt["n_sectors"] = len(sectors)
+    rotation_armed = bool(rotation_raw and rotation_raw.get("instruments"))
+    mkt["rotation_board_order"] = "fast-lens" if rotation_armed else "conviction"
 
     return {
         "as_of": cyc["meta"]["asOf"],
         "meta": {"n_sectors": len(sectors), "n_baskets": len(baskets),
                  "region": "us", "experimental": True,
                  "method": "gated-confluence (trend gate validated_risk_control, "
-                           "data/strategies/thematic_rotation_phase0.json)"},
+                           "data/strategies/thematic_rotation_phase0.json)",
+                 "board_order": "fast-lens (XSR-R2)" if rotation_armed else "conviction"},
         "market": mkt,
         "sectors": sectors,
         "baskets": baskets,
@@ -623,5 +890,6 @@ def _carry(rec: dict) -> dict:
         "group": rec.get("group"), "group_zh": rec.get("group_zh"), "accent": rec.get("accent"),
         "cycle": {"phase": now.get("phase"), "phaseLabel": phase_label,
                   "pos": now.get("pos"), "proj": rec.get("proj"),
-                  "rs_rank": now.get("rs_rank"), "above200d": now.get("above200d")},
+                  "rs_rank": now.get("rs_rank"), "rs_21d_rank": now.get("rs_21d_rank"),
+                  "above200d": now.get("above200d")},
     }

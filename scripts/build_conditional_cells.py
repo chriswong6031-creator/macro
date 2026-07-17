@@ -78,9 +78,16 @@ def derive_phase(pos_osc: float, direction: str) -> str:
     """Map (pos_osc, direction) → one of the 5 D1 ontology phases.
 
     Uses ZONE_EHI (68) / ZONE_ELO (32) from cycle_ontology, with direction
-    (up-leg = rising) as the disambiguation signal — consistent with
+    (up-leg = rising) as the disambiguation signal, approximating
     cycle_ontology.classify_phase() §2.1. MTF MACD votes are not available
     in the monthly panel; direction is the causal substitute.
+
+    KNOWN DIVERGENCE (#2697 port): classify_phase now labels high+rising "Peak"
+    only with confirmed weekly/3D deceleration (full thrust → "Expansion"); this
+    labeler cannot see MTF state, so it keeps the unconditional high+rising →
+    "Peak" cut. Training-panel "Peak" cohorts are therefore a superset of live
+    phase_v2 "Peak" stamps on the stretched-leader margin. The lattice output is
+    display_only, so this is a disclosed approximation, not a promotion input.
     """
     rising = direction == "up"
     if pos_osc >= ZONE_EHI:

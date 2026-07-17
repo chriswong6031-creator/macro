@@ -115,6 +115,48 @@ def _conviction(ticker: str, stockdata_dir: str, cache: dict) -> dict | None:
     return val
 
 
+# region -> member_context artifact filename under site/basketdata/
+# intl has no member_context build; absent file → empty index (graceful).
+_MC_FILES = {
+    "us":     "member_context.json",
+    "china":  "member_context_cn.json",
+    "hk":     "member_context_hk.json",
+    "canada": "member_context_ca.json",
+}
+
+
+def member_context_index(region: str = "us") -> dict[str, dict[str, dict]]:
+    """{basket_id -> {ticker -> member_ctx_record}} from the within-basket artifact.
+
+    Returns a two-level dict keyed first by basket_id then by ticker, so the detail
+    page can look up each member's band WITHIN its own basket (not cross-basket).
+    The record carries: band, band_en, band_zh, tone, parabolic, ext, ext_rel, rs_rank.
+    Absent file or parse error → {} (additive, fail-open).
+    """
+    fname = _MC_FILES.get(region)
+    if not fname:
+        return {}
+    p = config.ROOT / "site" / "basketdata" / fname
+    if not p.exists():
+        return {}
+    try:
+        data = json.loads(p.read_text())
+        out: dict[str, dict[str, dict]] = {}
+        for theme in (data.get("themes") or []):
+            bid = theme.get("id")
+            if not bid:
+                continue
+            basket_map: dict[str, dict] = {}
+            for m in (theme.get("members") or []):
+                t = m.get("ticker")
+                if t:
+                    basket_map[t] = m
+            out[bid] = basket_map
+        return out
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return {}
+
+
 def standout_index(region: str = "us") -> dict[str, dict]:
     """{ticker -> {score, dir}} from a market's standout BUY board, the cross-reference that
     lets a theme page flag which of its members are CURRENTLY on the standout board (and which
@@ -149,11 +191,14 @@ def build_detail_pages(data: dict, site: Path, env, region: str = "us") -> int:
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     cache: dict = {}
     board = standout_index(region)          # ticker -> {score, dir} from the standout buy board
+    mctx = member_context_index(region)     # basket_id -> {ticker -> within-basket ctx}
     n = 0
     for b in data.get("baskets", []):
         bid = b["id"]
+        basket_ctx = mctx.get(bid) or {}    # {ticker -> ctx} for THIS basket only
         members = [{**m, "conviction": _conviction(m["symbol"], sd_dir, cache),
-                    "on_board": m["symbol"] in board} for m in b.get("members", [])]
+                    "on_board": m["symbol"] in board,
+                    "member_ctx": basket_ctx.get(m["symbol"])} for m in b.get("members", [])]
         th = {**tmap.get(bid, {}), "weights": ti.get("weights")}   # weights for the composition bar
         detail = {
             "basket": b, "members": members, "theme": th,

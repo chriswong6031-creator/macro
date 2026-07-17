@@ -169,10 +169,13 @@ class TestIntradayGuard:
         """build_intraday must not write to data/reflexes/ (PS-R7)."""
         from lib import config
 
-        # Patch config.data_dir to a tmp path
+        # Patch config.data_dir + ROOT to tmp so neither the fixture write below
+        # nor build_intraday's shock_state write touches the repo's real site/.
+        config.load()  # warm the lru_cache before ROOT moves
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        monkeypatch.setattr(config, "ROOT", tmp_path)
 
-        # Provide a minimal market_drivers.json in site/live/
+        # Provide a minimal market_drivers.json in (tmp) site/live/
         site = config.ROOT / config.load()["storage"]["site_dir"]
         live_dir = site / "live"
         live_dir.mkdir(parents=True, exist_ok=True)
@@ -199,7 +202,9 @@ class TestIntradayGuard:
 class TestNightlyBuild:
     def test_nightly_shock_writes_firing(self, tmp_path, monkeypatch):
         from lib import config
+        config.load()  # warm the lru_cache before ROOT moves
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        monkeypatch.setattr(config, "ROOT", tmp_path)  # shock_state write → tmp site/
 
         snap = _make_snap(asof="2026-07-07", state="SHOCK", score=75, flip=30)
         result = sd.build_nightly(snap=snap)
@@ -214,7 +219,9 @@ class TestNightlyBuild:
 
     def test_nightly_no_trigger_does_not_write(self, tmp_path, monkeypatch):
         from lib import config
+        config.load()  # warm the lru_cache before ROOT moves
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        monkeypatch.setattr(config, "ROOT", tmp_path)  # shock_state write → tmp site/
 
         snap = _make_snap(asof="2026-07-08", state="QUIET", score=10, flip=0)
         result = sd.build_nightly(snap=snap)
@@ -225,7 +232,9 @@ class TestNightlyBuild:
 
     def test_nightly_keep_first_on_second_call(self, tmp_path, monkeypatch):
         from lib import config
+        config.load()  # warm the lru_cache before ROOT moves
         monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+        monkeypatch.setattr(config, "ROOT", tmp_path)  # shock_state write → tmp site/
 
         snap = _make_snap(asof="2026-07-07", state="SHOCK", score=75, flip=30)
         sd.build_nightly(snap=snap)

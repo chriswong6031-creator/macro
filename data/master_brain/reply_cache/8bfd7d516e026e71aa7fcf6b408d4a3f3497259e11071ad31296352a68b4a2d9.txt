@@ -1,0 +1,47 @@
+**DESK NOTE — Macro-Regime Analyst**  
+**China A-shares (CSI 300) | 2026-07-15**  
+**Regime call: Risk‑on exposure NOT broadly supported — lean smaller size / more cash**
+
+---
+
+**1. Regime at a glance**  
+- **Breadth of rotation:** narrowing (8 of 22 themes eligible, 36%). Only a small pocket of themes is in uptrends — the market is not enjoying broad participation.  
+- **Absorption:** 0.35 (low). The leader (AI Compute & Optics) is not absorbing the tape; no single narrative is drawing all capital toward it.  
+- **One‑narrative structure:** false. No monolithic theme is dominating flows, so there is no clear “ride the leader” backdrop.  
+- **Gate helps:** **false**. On this market’s history, the absolute‑trend gate did **not** reduce drawdown — the tape is mean‑reverting and whipsaws the gate. The detector’s only validated edge (drawdown avoidance) is absent here.  
+- **Headline cash:** 0.0 (no systematic cash signal from the headline theme itself, but the macro‑regime overlay argues for restraint).
+
+**Conclusion:** The regime does **not** support broad risk‑on theme exposure. The narrowing rotation, low absorption, absent gate edge, and high unscheduled‑news share (see below) all point toward a cautious posture — smaller position sizes, outright cash if trends break.
+
+---
+
+**2. Rotation structure & durability**  
+- **Leader:** AI Compute & Optics (durability_bar 0.70, Hurst “trend”, breadth 0.53, crowded false).  
+- **Challenger:** Semiconductors (durability 0.84, breadth 0.77, not crowded).  
+The gap between leader and challenger is modest (0.22), and the overall directional flag is false — no confirmed handoff, but also no runaway leadership.  
+- **Durability caveat:** Breadth in the leader is only 0.53, implying the trend is fairly narrow within the theme itself. Combined with narrow overall eligible‑universe breadth, this looks like a “pockets of strength” environment, not a robust thematic bull run.
+
+---
+
+**3. Macro‑narrative backdrop (coincident risk‑appetite reading)**  
+- Dominant flows: **ai_tech (274)** heavily represented in headlines, followed by geopolitics (105) and markets (71).  
+- Unscheduled/surprise share: **0.70** — exceptionally high. This means the news flow is dominated by unpredictable events, which historically correlates with choppy, mean‑reverting behaviour and undermines trend persistence.  
+- This backdrop reinforces the caution flagged by the failed gate: the tape is likely to continue whipsawing, making trend‑following signals fragile.
+
+---
+
+**4. Falsifiable conditional lean**  
+*(Not a forecast, not a trigger — a hypothesis to check against reality.)*  
+
+**Lean:** *The AI Compute & Optics trend is not yet broken but is fragile. If, by the 2‑week check (2026‑07‑29), the leader’s breadth falls below 0.45 and the overall eligible‑universe fraction drops further (say below 0.30), the regime would argue for outright cash. Conversely, if breadth holds >0.50, absorption rises above 0.50, and the unscheduled‑share reverts toward 0.40, the environment could support smaller, tightly‑sized exposure to the leader only — but no broadening of risk at this stage.*
+
+**Check‑by horizon:** 2 weeks (2026‑07‑29) — re‑evaluate breadth, absorption, and unscheduled‑share.
+
+---
+
+**5. Guardrails honoured**  
+- No buy/sell/weight recommendation.  
+- No fading the leader (it isn’t crowded).  
+- No predicting the next theme.  
+- No treating the momentum rank as a return forecast.  
+- The detector remains display‑only; this note is a fallible, falsifiable regime read — not edge.

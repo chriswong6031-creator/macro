@@ -91,12 +91,35 @@ def _universe() -> set[str]:
     return out
 
 
+def _built_age_days(meta_p) -> float | None:
+    """Age of the insider cache in days, from _meta.json's `built` stamp —
+    NEVER file mtime. On CI runners a checkout rewrites files with
+    mtime = checkout time, so a committed months-old cache always looks
+    brand-new by mtime and the refresh short-circuits forever (the
+    polygon-universe frozen-cache class, #2690; this cache froze at its
+    2026-06-14 fill the same way). _meta.json is written only on a
+    successful fetch, so it IS the fetch-date stamp. Missing/unreadable
+    meta returns None — the caller treats that as stale and refetches."""
+    try:
+        built = json.loads(meta_p.read_text()).get("built")
+        if not built:
+            return None
+        built_dt = datetime.fromisoformat(str(built))
+        if built_dt.tzinfo is None:
+            built_dt = built_dt.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - built_dt).total_seconds() / 86400.0
+    except Exception as e:  # noqa: BLE001
+        log.warning("sec insider: cannot read built stamp from %s (%s) — treating as stale",
+                    meta_p, e)
+        return None
+
+
 def fetch_insider(force: bool = False, max_age_days: int = 7) -> pd.DataFrame | None:
     cache = config.data_dir() / "sec_insider" / "insider.parquet"
     cache.parent.mkdir(parents=True, exist_ok=True)
     if not force and cache.exists():
-        age = (datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime) / 86400.0
-        if age < max_age_days:
+        age = _built_age_days(cache.parent / "_meta.json")
+        if age is not None and age < max_age_days:
             log.info("insider cache fresh (%.1fd)", age)
             return pd.read_parquet(cache)
 

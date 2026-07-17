@@ -68,7 +68,13 @@ def test_detrended_osc_bounded_and_tracks_cycle():
 def test_classify_phase_buckets():
     up_w, up3 = {"macd_pos": True}, {"macd_pos": True}
     dn_w, dn3 = {"macd_pos": False}, {"macd_pos": False}
-    assert sc._classify_phase(85, +5, up_w, up3, True)[0] == "Peak"        # high + rising = topping
+    # 2026-07 rollover-lag fix: high + rising WITHOUT deceleration evidence is a leader
+    # in full thrust — Trending (extended), not Topping (XLV read Topping at breadth 81%)
+    assert sc._classify_phase(85, +5, up_w, up3, True)[0] == "Expansion"
+    # high + rising WITH confirmed deceleration (3D negative / weekly fading) = true Topping
+    assert sc._classify_phase(85, +5, up_w, dn3, True)[0] == "Peak"
+    assert sc._classify_phase(85, +5, {"macd_pos": True, "macd_approaching_dn": True},
+                              up3, True)[0] == "Peak"
     assert sc._classify_phase(85, -5, dn_w, dn3, True)[0] == "Downturn"    # high + falling = rolling over
     assert sc._classify_phase(50, +5, up_w, up3, True)[0] == "Expansion"   # mid + rising
     assert sc._classify_phase(20, +5, up_w, up3, True)[0] == "Recovery"    # low + rising
@@ -78,6 +84,24 @@ def test_classify_phase_buckets():
         for sl in (-8, 8):
             ph, lab = sc._classify_phase(pos, sl, up_w, dn3, True)
             assert ph in sc.PHASES and isinstance(lab, str) and lab
+
+
+def test_classify_phase_anticipates_rollover():
+    """2026-07 sector-central audit: the weekly histogram holds positive for weeks after
+    a real top, so the pre-cross deceleration window must flip the direction vote —
+    XLK's exact stamp (weekly still positive but approaching its cross, 3D negative,
+    oscillator collapsing) must read Rolling over, not Topping/Trending."""
+    w_fading = {"macd_pos": True, "macd_approaching_dn": True}
+    dn3 = {"macd_pos": False}
+    # stretched (XLK 2026-07-16: pos 70.2, slope −20.7) → Downturn / Rolling over
+    assert sc._classify_phase(70.2, -20.7, w_fading, dn3, True) == ("Downturn", "Rolling over")
+    # mid position (ai_infra: pos 60.1, slope −30.4) → also Rolling over
+    assert sc._classify_phase(60.1, -30.4, w_fading, dn3, True)[0] == "Downturn"
+    # direction TIES break to the FASTER 3D clock, not the stale weekly sign
+    # (weekly pos, 3D negative, slope down: votes 2−1−1=0 → 3D decides → falling)
+    assert sc._classify_phase(60.0, -5.0, {"macd_pos": True}, dn3, True)[0] == "Downturn"
+    # ... and the monthly kernel (t3={}) keeps the legacy weekly-sign tiebreak
+    assert sc._classify_phase(60.0, -5.0, {"macd_pos": True}, {}, True)[0] == "Expansion"
 
 
 # ── projection ───────────────────────────────────────────────────────────────

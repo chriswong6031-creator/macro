@@ -1,0 +1,22 @@
+**Desk Note — Narrative-Emergence Scout**
+2026-07-16 | China A-shares | CSI 300
+
+**Context.**  
+Thematic detector shows AI Compute & Optics as the clear leader (score 2.58, durability 0.66, not crowded). Semiconductors is the only serious challenger (2.10). Rotation breadth is narrowing (7 eligible of 22 themes), absorption 0.35 — no one-narrative dominance. The guardrails explicitly forbid predicting the next leader or fading the top theme. The absolute-trend gate has no validated drawdown edge in this market (gate_helps = false), so the regime is experimental/display-only. *Theme_candidates* is null, so we must mine the existing ranks for a conditional watch-hypothesis.
+
+**Watch-Hypothesis (FADING).**  
+Innovative Pharma & CXO (cn_pharma_cxo, rank 3) may be in the late stages of its leadership, despite still-scorable trend strength.  
+- **Why plausible:** durability_bar = 0.95 (extreme persistence), breadth = 1.0 (full participation), and crowding z = 1.45 (>1, “crowded”). In other markets, such combinations often coincide with attention/inflow spikes that mark tops. Absorption is only 0.35, so this theme is not the single absorbing narrative — money could rotate away without broad market stress.  
+- **Caveat:** crowding alone is not a sell signal (reflexivity can run further); this is a watch-hypothesis, not a fade call.
+
+**Kill-Criterion (falsification).**  
+The fade-hypothesis is disproved if, by the next monthly detector run (≈ 2026-08-16), *both* conditions hold:
+1. Breadth remains ≥ 0.9, **and**  
+2. Durability_bar stays ≥ 0.90.  
+If those persist, the theme’s internal trend structure is still intact, and the crowding flag is not yet biting. If either breaks — breadth drops below 0.8 or durability degrades below 0.8 — that shifts the hypothesis from “watch” to “potential leadership break,” requiring a reassessment.
+
+**Track-record note.**  
+The scout function has no recorded hits/misses (n = 0). This is the first explicit hypothesis logged; it should be tracked in the emerging_watch ledger with a predefined review date.
+
+**Restating the contract.**  
+This is a fallible, conditional observation — not a position, not a weight, not a trade. The detector’s only validated edge is drawdown avoidance via the absolute-trend gate, which itself is unreliable in this mean‑reverting A‑share tape. The momentum lens adds no alpha (rank‑IC ~ 0). I am merely naming a theme whose leadership *may* be fading, and providing a clean kill‑switch to avoid narrative drift.

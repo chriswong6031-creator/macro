@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_canada")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-          "charts.js", "tablesort.js", "stockview.js", "stocktable.js")
+          "charts.js", "tablesort.js", "stockview.js", "stocktable.js", "heatmap.js")
 
 
 def _range_selector() -> dict:
@@ -151,55 +151,62 @@ def _lifespan_rows(quad: pd.Series) -> list[dict]:
     return rows
 
 
+def _drilldown_closes() -> tuple[pd.DataFrame, str | None]:
+    """Close matrix for the per-sector drill-down holdings cards.
+
+    Source of record is the curated breadth cache (canada_breadth/_closes_cache.parquet,
+    written by the collect lane). It is gitignored rebuild-only, so on the re-render
+    lanes (build_vector -> build_canada with no collectors) and in fresh worktrees it is
+    absent; there we fall back to the COMMITTED broad S&P/TSX Composite panel
+    (canada_search/closes.parquet, ~218 iShares-XIC names) which carries 73/74 curated
+    constituents with deep history. Curated cache is tried FIRST so the nightly lane's
+    drill-down is unchanged; the fallback only rescues lanes that lack the cache. Same
+    two sources as engine.board_ledger._load_ca_wide(). Returns (df, source_label);
+    (empty, None) when neither source is usable."""
+    dd = config.data_dir()
+    sources = [
+        (dd / "canada_breadth" / "_closes_cache.parquet", "canada_breadth"),
+        (dd / "canada_search" / "closes.parquet", "canada_search"),
+    ]
+    for path, label in sources:
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_parquet(path)
+        except Exception as exc:  # noqa: BLE001
+            log.error("HKCA-13: canada drill-down panel %s unreadable: %s", label, exc)
+            continue
+        if df.empty or df.shape[1] == 0:
+            continue
+        return df, label
+    return pd.DataFrame(), None
+
+
 def _check_closes_cache() -> dict | None:
-    """HKCA-13: canada_breadth/_closes_cache.parquet is gitignored rebuild-only.
-    In a fresh worktree (or after any worktree wipe) it is absent, which makes
-    the per-sector drill-down pages render with zero stock-level cards -- silently.
-    This check makes the absence VISIBLE in the health table at build time.
-    DO NOT rebuild the cache here; that belongs in the collect lane (canada_breadth)."""
-    cache = config.data_dir() / "canada_breadth" / "_closes_cache.parquet"
-    if not cache.exists():
+    """HKCA-13: surface a TRULY empty per-sector drill-down in the health table.
+
+    The drill-down holdings read _drilldown_closes() -- the curated breadth cache
+    (gitignored, rebuilt only by the collect lane) with a fallback to the committed
+    canada_search Composite panel. A warning row is emitted ONLY when NEITHER source
+    yields usable closes, i.e. the drill-down would genuinely ship with zero stock
+    cards. DO NOT rebuild the cache here; that belongs in the collect lane."""
+    df, label = _drilldown_closes()
+    if df.empty:
         log.error(
-            "HKCA-13: canada_breadth/_closes_cache.parquet is MISSING -- "
-            "sector drill-down pages will ship with empty stock-level cards.  "
-            "Fix: run scripts/collect.py --only canada_breadth to rebuild it."
+            "HKCA-13: no canada drill-down close panel (neither canada_breadth cache "
+            "nor canada_search) -- sector pages will ship with empty stock-level cards.  "
+            "Fix: run scripts/collect.py --only canada_breadth (or canada_universe)."
         )
         return {
-            "en": "Sector drill-down cache (MISSING -- run canada_breadth collector)",
-            "zh": "板块下钻缓存（缺失 -- 请运行 canada_breadth 收集器）",
+            "en": "Sector drill-down data (MISSING -- run canada_breadth collector)",
+            "zh": "板块下钻数据（缺失 -- 请运行 canada_breadth 收集器）",
             "status": "MISSING",
             "rows": 0,
             "last": "—",
         }
-    try:
-        df = pd.read_parquet(cache)
-    except Exception as exc:  # noqa: BLE001
-        log.error("HKCA-13: canada_breadth/_closes_cache.parquet unreadable: %s", exc)
-        return {
-            "en": "Sector drill-down cache (UNREADABLE -- see build log)",
-            "zh": "板块下钻缓存（不可读 -- 查看构建日志）",
-            "status": "ERROR",
-            "rows": 0,
-            "last": "—",
-        }
-    if df.empty or df.shape[1] == 0:
-        log.error(
-            "HKCA-13: canada_breadth/_closes_cache.parquet exists but is empty "
-            "(%s) -- sector drill-down pages will ship hollow.  "
-            "Fix: run scripts/collect.py --only canada_breadth to rebuild it.",
-            cache,
-        )
-        return {
-            "en": "Sector drill-down cache (EMPTY -- run canada_breadth collector)",
-            "zh": "板块下钻缓存（为空 -- 请运行 canada_breadth 收集器）",
-            "status": "EMPTY",
-            "rows": 0,
-            "last": "—",
-        }
     last_date = df.index.max().date() if hasattr(df.index, "max") else "?"
-    n_names = df.shape[1]
-    log.info("canada_breadth/_closes_cache.parquet: %d names, last=%s", n_names, last_date)
-    return None   # None = healthy; no warning row needed
+    log.info("canada drill-down panel: %s (%d names, last=%s)", label, df.shape[1], last_date)
+    return None   # None = healthy; drill-down has a usable close panel
 
 
 def _health_rows() -> list[dict]:
@@ -265,7 +272,7 @@ def _action_board(sectors: list[dict]) -> dict:
 def _sector_cards(latest: dict) -> list[dict]:
     """Merge the RS-rank table (from the regime run) with per-sector cycle analysis."""
     from engine.canada_inputs import canada_closes
-    from engine.cycles import analyze
+    from engine.cycles import analyze, STATE_DISPLAY as _STATE_DISPLAY_MAP
     names = config.load()["canada"]["yahoo"]["sector_etfs"]
     closes = canada_closes()
     rs_by = {r["ticker"]: r for r in latest.get("sector_rs", [])}
@@ -289,6 +296,7 @@ def _sector_cards(latest: dict) -> list[dict]:
             "mom60": rs.get("mom_60d_pct"), "above200": rs.get("above_200d_trend"),
             "pctile": rs.get("pctile_252d"),
             "state": lad.get("state"), "label": lad.get("label"),
+            "label_zh": _STATE_DISPLAY_MAP.get(lad.get("state") or "", {}).get("label_zh"),
             "action": lad.get("action"), "dir": lad.get("dir"),
             "entry": lad.get("entry"),
             "age_short": lad.get("age_short"), "age_short_zh": lad.get("age_short_zh"),
@@ -390,8 +398,7 @@ def _build_sector_pages(env) -> int:
                   "Real Estate": "Real Estate", "Consumer Staples": "Staples",
                   "Consumer Discretionary": "Discretionary", "Communication Services": "Communication"}
     closes = canada_closes()
-    cache = config.data_dir() / "canada_breadth" / "_closes_cache.parquet"
-    ccloses = pd.read_parquet(cache) if cache.exists() else pd.DataFrame()
+    ccloses, _ = _drilldown_closes()
     outdir = Path(config.load()["storage"]["site_dir"]) / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
     built = 0
@@ -638,11 +645,20 @@ def main() -> int:
             latest["risk_radar"] = _rri.snapshot(_rri.CA_PROFILE)
             # forward-grade self-audit + bounded auto-tune (vs realized TSX path); hard-forces the
             # verdict only once Canada's own log validates (can_force). Display-only until then.
+            # Ledger/tuner advance ONLY on the nightly lane (house law: nightly is the sole
+            # advancer); re-render lanes take the read-only scorecard fast-path.
             try:
-                from engine import risk_radar_intl_audit as _rra, risk_radar_intl_tune as _rrt
-                latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.CA_PROFILE)
-                latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
-                _rrt.tune(_rri.CA_PROFILE)
+                from engine import risk_radar_intl_audit as _rra
+                if _rra.ledger_lane_armed():
+                    from engine import risk_radar_intl_tune as _rrt
+                    latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.CA_PROFILE)
+                    latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
+                    _rrt.tune(_rri.CA_PROFILE)
+                else:
+                    # Read-only fast-path: snapshot still renders; ledger/tuner do not advance.
+                    _sc = _rra.scorecard(_rri.CA_PROFILE.key, log_governance=False)
+                    latest["risk_radar"]["forward_log"] = _sc
+                    latest["risk_radar"]["can_force"] = bool(_sc.get("can_force"))
             except Exception as _e:  # noqa: BLE001
                 log.warning("canada risk-radar audit/tune failed (%s); skipping", _e)
             # Write the scorecard immediately after the CA ledger is updated so the
@@ -657,6 +673,49 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal
             log.error("canada market_state failed (%s); skipping", e)
             vm["market_state"] = None
+
+        # ── ms_history: score_log forward ledger ─────────────────────────────
+        # Appended nightly; deduped by date.  Never fatal.  The READ is
+        # unconditional — every render (incl. CANADA_FAST_RENDER dev renders and
+        # nights where the snapshot degrades) draws the path from the committed
+        # log; only the APPEND is gated so off-lane renders never advance the
+        # ledger (house law: nightly is the sole advancer).
+        try:
+            import os as _osenv
+            _score_log_path = config.data_dir() / "canada_market_state" / "score_log.parquet"
+            _ms_snap = vm.get("market_state")
+            _ms_sc = _ms_snap.get("score") if _ms_snap else None
+            if _osenv.environ.get("CANADA_FAST_RENDER"):
+                pass                       # dev re-render: read-only, never append
+            elif _ms_sc is None:
+                log.warning("canada score_log: market_state score unavailable — no append "
+                            "(path renders from the committed log)")
+            else:
+                _score_log_path.parent.mkdir(parents=True, exist_ok=True)
+                _new_row = pd.DataFrame([{
+                    "date": latest.get("date"),
+                    "score": int(_ms_sc),
+                    "verdict": _ms_snap.get("verdict", ""),
+                    "color": _ms_snap.get("color", ""),
+                }])
+                if _score_log_path.exists():
+                    _existing = pd.read_parquet(_score_log_path)
+                    _combined = pd.concat([_existing, _new_row], ignore_index=True)
+                    _combined = _combined.drop_duplicates(subset=["date"], keep="last")
+                else:
+                    _combined = _new_row
+                _combined = _combined.sort_values("date").reset_index(drop=True)
+                _combined.to_parquet(_score_log_path, index=False)
+            # Expose last 11 rows as vm['ms_history'] for the hero path chart
+            if _score_log_path.exists():
+                _all = pd.read_parquet(_score_log_path).sort_values("date")
+                _hist = _all.tail(11).copy()
+                vm["ms_history"] = _hist.to_dict(orient="records")
+                log.info("canada score_log: last %d of %d rows -> ms_history",
+                         len(_hist), len(_all))
+        except Exception as _msh_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("canada ms_history build failed (%s); skipping", _msh_e)
+            vm.setdefault("ms_history", None)
 
         # regime history -> Time Machine JSON + lifespan base rates
         hist = store.read("canada_regime", "regime_history")
@@ -695,6 +754,23 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("canada standouts enrich failed (%s); using raw setups", e)
 
+        # ── top_setups: top-5 buy rows for the glance card ───────────────────
+        # MUST run AFTER vm["setups"] is assigned + standouts-enriched above
+        # (the first cut ran before it → vm.get("setups") was None → the card
+        # said "No active setups" while 10 buys existed). Never fatal.
+        try:
+            _su = vm.get("setups") or {}
+            _buys = list((_su.get("buy") or []))
+            for _row in _buys:
+                if not isinstance(_row, dict):
+                    continue
+                if not _row.get("industry"):
+                    _row["industry"] = _row.get("sub_industry") or _row.get("sector") or ""
+            vm["top_setups"] = _buys[:5]
+        except Exception as _ts_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("canada top_setups enrich failed (%s); skipping", _ts_e)
+            vm["top_setups"] = []
+
         # ── BRANCH-B board ledger (masterplan §5.4) + hard freshness gate (§2.6) ──
         # This is the board's SCOREBOARD: log the ranked board each render, grade it
         # nightly. Fail-open-LOUD: a ledger failure surfaces a health row, never a crash.
@@ -728,6 +804,19 @@ def main() -> int:
         # TSX Stock Dashboard — the same canada.html.j2 is rendered twice with a `mode`
         # flag (macro / stocks) that selects which sections show. Mirrors China / HK.
         tmpl = env.get_template("canada.html.j2")
+        # DEV-ONLY: dump the fully-built view-model so scripts/render_canada_fast.py
+        # can re-render canada.html / canada_stocks.html in ~1s without re-running
+        # collectors + engine. Env-gated (CANADA_VM_DUMP=1); never fires nightly.
+        import os as _os
+        if _os.environ.get("CANADA_VM_DUMP"):
+            try:
+                import pickle as _pkl
+                _vm_cache = config.data_dir() / "_dev_canada_vm.pkl"
+                with open(_vm_cache, "wb") as _fh:
+                    _pkl.dump(vm, _fh)
+                log.info("CANADA_VM_DUMP: wrote %s", _vm_cache)
+            except Exception as _e:  # noqa: BLE001 — dev-only, never fatal
+                log.error("CANADA_VM_DUMP failed (%s)", _e)
         html = tmpl.render(**vm, mode="macro")
         write_page(site / "canada.html", html)
         for a in ASSETS:

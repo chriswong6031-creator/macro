@@ -1,16 +1,16 @@
 {
-  "date": "2026-07-13",
+  "date": "2026-07-16",
   "window_band": "OPEN",
-  "ipo_5y": -0.01862283684321875,
-  "spy_5y": 0.12914314934762117,
-  "gap_5y": -0.14776598619083992,
-  "priced_90d": 115,
-  "spac_pct_90d": 49,
-  "upcoming_n": 4,
+  "ipo_5y": -0.024074915658553353,
+  "spy_5y": 0.1318272679609429,
+  "gap_5y": -0.15590218361949626,
+  "priced_90d": 110,
+  "spac_pct_90d": 51,
+  "upcoming_n": 3,
   "verdict": "trails",
   "lockups_approaching": 24,
-  "lockups_just_expired": 6,
+  "lockups_just_expired": 3,
   "next_lockup": "BTGO",
   "next_lockup_date": "2026-07-21",
-  "built": "2026-07-15 08:42 UTC"
+  "built": "2026-07-17 03:39 UTC"
 }

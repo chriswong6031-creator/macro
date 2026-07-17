@@ -86,12 +86,12 @@ def _engine_read(name: str, phase: str, pos: float, above200: bool,
     # RS context (optional — omit if not computed)
     if rs_63d is not None and rs_rank is not None:
         sign = "+" if rs_63d >= 0 else ""
-        rs_en = f" RS vs SPY: {sign}{rs_63d:.1f}% (rank #{rs_rank})."
-        rs_zh = f"相对标普RS：{sign}{rs_63d:.1f}%（排名第{rs_rank}）。"
+        rs_en = f" RS vs SPY (63d): {sign}{rs_63d:.1f}% (rank #{rs_rank})."
+        rs_zh = f"相对标普RS（63日）：{sign}{rs_63d:.1f}%（排名第{rs_rank}）。"
     elif rs_63d is not None:
         sign = "+" if rs_63d >= 0 else ""
-        rs_en = f" RS vs SPY: {sign}{rs_63d:.1f}%."
-        rs_zh = f"相对标普RS：{sign}{rs_63d:.1f}%。"
+        rs_en = f" RS vs SPY (63d): {sign}{rs_63d:.1f}%."
+        rs_zh = f"相对标普RS（63日）：{sign}{rs_63d:.1f}%。"
     else:
         rs_en = rs_zh = ""
 
@@ -290,22 +290,48 @@ def _classify_phase(pos: float, slope: float, w: dict, t3: dict,
     rolling-over / bottoming / recovering — NOT the daily timing ladder.
 
     pos high + rising = topping; high + falling = rolling over; mid + rising =
-    expanding; mid/low + falling = rolling/bottoming; low + rising = early recovery."""
+    expanding; mid/low + falling = rolling/bottoming; low + rising = early recovery.
+
+    2026-07 rollover-lag fix (sector-central audit): the weekly histogram can hold
+    positive for WEEKS after a real top (XLK read Topping through a −20 oscillator
+    collapse and a 5-week histogram fade; AI-infra read Trending at a −23% median-
+    member drawdown), so (a) a weekly histogram decelerating toward its cross
+    (macd_approaching_dn, ETA ≤ ~6 bars) votes down like a fresh cross/curl,
+    (b) direction TIES break to the FASTER 3D clock, not the stale weekly sign, and
+    (c) stretched-and-rising is "Topping" only with confirmed deceleration — a leader
+    in full thrust (3D up, weekly not fading, oscillator rising) stays Trending."""
     # weekly is primary (×2), 3-day secondary (×1), oscillator slope is the tiebreaker
     votes = (2 if w.get("macd_pos") else -2) + (1 if t3.get("macd_pos") else -1)
     if slope > 3:
         votes += 1
     elif slope < -3:
         votes -= 1
-    # fresh weekly roll-over / turn-up nudges the call early
-    if w.get("macd_cross_dn") or w.get("macd_curl_dn"):
+    # fresh weekly roll-over / turn-up nudges the call early; "approaching" = the
+    # histogram 3-bars-decelerating with the zero-cross ≤ ~6 bars out — the pre-cross
+    # window the one-shot cross/curl flags miss
+    w_decel = bool(w.get("macd_cross_dn") or w.get("macd_curl_dn")
+                   or w.get("macd_approaching_dn"))
+    w_accel = bool(w.get("macd_cross_up") or w.get("macd_curl_up")
+                   or w.get("macd_approaching_up"))
+    if w_decel:
         votes -= 1
-    if w.get("macd_cross_up") or w.get("macd_curl_up"):
+    if w_accel:
         votes += 1
-    rising = votes > 0 or (votes == 0 and bool(w.get("macd_pos")))
-    falling = not rising
+    if votes:
+        rising = votes > 0
+    else:
+        # tie → the faster clock decides (the monthly kernel passes t3={} and keeps
+        # the legacy weekly-sign tiebreak)
+        rising = bool(t3.get("macd_pos")) if t3 else bool(w.get("macd_pos"))
     if pos >= 68:
-        return ("Peak", "Topping") if rising else ("Downturn", "Rolling over")
+        if not rising:
+            return ("Downturn", "Rolling over")
+        # stretched + rising: Topping needs CONFIRMED deceleration (weekly fading
+        # toward its cross / 3D negative / oscillator slope down). curl_dn alone is
+        # a 1-bar downtick — it nudges the vote above but can't flip the label.
+        decel = bool(w.get("macd_cross_dn") or w.get("macd_approaching_dn")
+                     or (t3 and not t3.get("macd_pos")) or slope < -3)
+        return ("Peak", "Topping") if decel else ("Expansion", "Trending")
     if pos <= 32:
         # bottomed AND turning up = the actionable buy window; still falling = bottoming
         return ("Recovery", "Prime entry") if rising else ("Trough", "Bottoming")
@@ -401,10 +427,14 @@ def _leadership(close_full: pd.DataFrame, ticker: str, bench: str = "SPY",
         log.warning("_leadership: %s has only %d RS rows (< 210 min) — thin_history flagged",
                     ticker, len(rs))
         return {"thin_history": True, "rs_rows": len(rs)}
+    m21 = float(rs.pct_change(21).iloc[-1] * 100)
     m63 = float(rs.pct_change(63).iloc[-1] * 100)
     m126 = float(rs.pct_change(126).iloc[-1] * 100)
     ma200 = float(rs.rolling(200).mean().iloc[-1])
-    return {"rs_63d": round(m63, 1), "rs_126d": round(m126, 1),
+    # rs_21d = the fast "who leads NOW" leg (2026-07 audit: a 63d window still spanned
+    # the June melt-up three weeks after the top, so XLK ranked #1 leading through its
+    # own rollover). 63d stays the quarter lens; 21d is the month lens.
+    return {"rs_21d": round(m21, 1), "rs_63d": round(m63, 1), "rs_126d": round(m126, 1),
             "rs_above_trend": bool(rs.iloc[-1] > ma200), "thin_history": False}
 
 
@@ -869,6 +899,7 @@ def _set_engine_read(rec: dict) -> None:
 def _apply_leadership(rec: dict, lead: dict) -> None:
     """Fold RS-vs-SPY leadership into the record's `now` + a tailwind/headwind tilt."""
     nw = rec["now"]
+    nw["rs_21d"] = lead.get("rs_21d")
     nw["rs_63d"] = lead.get("rs_63d")
     nw["rs_126d"] = lead.get("rs_126d")
     nw["rs_above_trend"] = lead.get("rs_above_trend")
@@ -1001,7 +1032,8 @@ def _basket_rs(full: pd.Series, spy: pd.Series | None) -> dict:
     rs = (full / spy.reindex(full.index).ffill()).dropna()
     if len(rs) < 210:
         return {}
-    return {"rs_63d": round(float(rs.pct_change(63).iloc[-1] * 100), 1),
+    return {"rs_21d": round(float(rs.pct_change(21).iloc[-1] * 100), 1),
+            "rs_63d": round(float(rs.pct_change(63).iloc[-1] * 100), 1),
             "rs_126d": round(float(rs.pct_change(126).iloc[-1] * 100), 1),
             "rs_above_trend": bool(rs.iloc[-1] > rs.rolling(200).mean().iloc[-1])}
 
@@ -1041,7 +1073,8 @@ def build_basket(bid: str, bmeta: dict, win_start: pd.Timestamp, last_ts: pd.Tim
                 "theme": bmeta.get("theme"), "theme_zh": bmeta.get("theme_zh"),
                 "etf_proxy": bmeta.get("etf_proxy"),
                 "coverage": (cmeta or {}).get("coverage_pct"),
-                "n_members": (cmeta or {}).get("n_live")})
+                "n_members": (cmeta or {}).get("n_live"),
+                "n_stale_members": (cmeta or {}).get("n_stale_tail")})
     _apply_leadership(rec, _basket_rs(full, spy))
     _set_engine_read(rec)    # W0.3: populate engine-owned read after RS is available
     _stamp_hazard(rec, family="basket")   # W4.3: now['hazard'] P(turn ≤ 1m/3m/6m)
@@ -1126,11 +1159,19 @@ def build_amalgam_family(ns: str, win_start: pd.Timestamp, last_ts: pd.Timestamp
         rec["group"] = fam["label"]
         rec["group_zh"] = fam["label_zh"]
         out.append(rec)
-    ranked = sorted([b for b in out if b["now"].get("rs_63d") is not None],
-                    key=lambda b: b["now"]["rs_63d"], reverse=True)
-    for n, b in enumerate(ranked, 1):
-        b["now"]["rs_rank"] = n
+    _stamp_rs_ranks(out)
     return out
+
+
+def _stamp_rs_ranks(recs: list[dict]) -> None:
+    """Leadership ranks onto each record's `now`: rs_rank (63d, the quarter lens —
+    the legacy rank every consumer already reads) + rs_21d_rank (the fast month lens
+    the 2026-07 audit added, so a rolled-over former leader stops reading #1)."""
+    for key, field in (("rs_63d", "rs_rank"), ("rs_21d", "rs_21d_rank")):
+        ranked = sorted([r for r in recs if r["now"].get(key) is not None],
+                        key=lambda r: r["now"][key], reverse=True)
+        for n, r in enumerate(ranked, 1):
+            r["now"][field] = n
 
 
 def compute(asof: str | None = None) -> dict | None:
@@ -1178,11 +1219,8 @@ def compute(asof: str | None = None) -> dict | None:
     if not sectors:
         return None
 
-    # leadership rank (best 63d RS = 1) for the "who leads" read
-    ranked = sorted([s for s in sectors if s["now"].get("rs_63d") is not None],
-                    key=lambda s: s["now"]["rs_63d"], reverse=True)
-    for n, s in enumerate(ranked, 1):
-        s["now"]["rs_rank"] = n
+    # leadership ranks (63d legacy + fast 21d) for the "who leads" read
+    _stamp_rs_ranks(sectors)
 
     # --- thematic baskets (Phase 2): same machinery off the equal-weight member index;
     #     OFF by default in the UI, the user toggles individual baskets onto the chart ---
@@ -1199,10 +1237,7 @@ def compute(asof: str | None = None) -> dict | None:
             rec = None
         if rec:
             baskets.append(rec)
-    branked = sorted([b for b in baskets if b["now"].get("rs_63d") is not None],
-                     key=lambda b: b["now"]["rs_63d"], reverse=True)
-    for n, b in enumerate(branked, 1):
-        b["now"]["rs_rank"] = n
+    _stamp_rs_ranks(baskets)
     baskets.sort(key=lambda b: (b.get("group") or "", b["name"]))   # grouped for the chip rail
 
     # --- index amalgamation families (Nasdaq-100 / Russell-2000 complexes) ---

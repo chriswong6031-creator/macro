@@ -1,0 +1,30 @@
+{
+  "stance": "The dominant cluster (Consumer Discretionary, Real Estate, Financials, Health Care) is broad and genuine (low HHI, broad breadth), with Health Care leading on relative strength. Separately, Industrials–Materials correlation (0.83) points to a supply-chain spread where Industrials holds the momentum lead.",
+  "candidates": [
+    {
+      "subject": "Health Care",
+      "lean": "overweight",
+      "rationale": "Genuine leader of the risk-on cluster: highest relative strength (rs_pctile 0.925), broad low-HHI participation, though cohesion is fragile.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "overweight",
+      "rationale": "Leader of the supply-chain pair with Materials; higher momentum rank (rs_pctile 0.679) in a broad, low-HHI move.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Materials",
+      "lean": "avoid",
+      "rationale": "Laggard in the Industrials-Materials pair; low relative strength and not cohering internally, likely riding industrial demand rather than self-leading.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Consumer Discretionary",
+      "lean": "underweight",
+      "rationale": "Cluster member but rs_pctile only 0.23 and cohesion false; not driving the rotation, likely a drag on cluster performance.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "A sharp, single-stock-driven shock in Health Care (e.g., a top leader like Moderna reversing on binary news) could fracture the fragile cohesion and dissolve the cluster leadership signal."
+}

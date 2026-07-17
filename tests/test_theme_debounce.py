@@ -209,3 +209,121 @@ def test_risk_downgrade_immediate_even_from_old_format_state(tmp_path, monkeypat
               "name": "X", "name_zh": "x"}}))
     fired = ta.rebuild(_intel([_theme("x", reco="avoid", rank=1, score=30)], "2026-06-19"))
     assert len(fired) == 1 and fired[0]["context"]["to"] == "avoid"
+
+
+# ============================= theme_emerging debounce (new) =============================
+
+# ---------------------------------------- (a) suppressed on first sighting, fires on 2nd
+def test_theme_emerging_suppressed_first_build_fires_on_second(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    # seed: x is neutral
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="neutral", rank=2)],
+                             "2026-06-18")) == []
+    # build 2: x transitions neutral -> emerging — constructive, should be BUFFERED
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2, score=60)],
+                             "2026-06-19")) == []
+    # build 3: x still emerging — streak now 2, should FIRE
+    fired = ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2, score=62)],
+                              "2026-06-20"))
+    assert len(fired) == 1
+    assert fired[0]["type"] == "theme_emerging"
+    assert fired[0]["asset"] == "x"
+    assert fired[0]["context"]["from"] == "neutral"
+    assert fired[0]["context"]["to"] == "emerging"
+    assert fired[0]["context"]["held_sessions"] == 2
+    assert fired[0]["id"] == "themes:x:theme_emerging:2026-06-20:emerging"
+    # build 4: steady state — no re-fire
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2, score=62)],
+                             "2026-06-21")) == []
+    assert len([e for e in ta.load_events() if e["type"] == "theme_emerging"]) == 1
+
+
+# --------------------------------------- (b) streak reset when emerging label breaks
+def test_theme_emerging_streak_reset_on_label_change(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="neutral", rank=2)],
+                             "2026-06-18")) == []  # seed
+    # build 2: x goes emerging (buffered)
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2)],
+                             "2026-06-19")) == []
+    # build 3: x drops back to neutral — streak dies, nothing fires
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="neutral", rank=2)],
+                             "2026-06-20")) == []
+    # build 4: x goes emerging again — fresh streak start, still buffered
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2)],
+                             "2026-06-21")) == []
+    # build 5: confirmed on the second consecutive emerging build
+    fired = ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2, score=65)],
+                              "2026-06-22"))
+    assert len(fired) == 1 and fired[0]["type"] == "theme_emerging"
+    assert fired[0]["context"]["held_sessions"] == 2
+    assert ta.load_events() != []
+
+
+# ---------------------------------------- (c) theme_topping is still immediate
+def test_theme_topping_still_fires_immediately(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="dominant", reco="accumulate",
+                                            rank=2, score=70)], "2026-06-18")) == []
+    fired = ta.rebuild(_intel([_ld(), _theme("x", label="fading", reco="trim",
+                                             rank=2, score=60)], "2026-06-19"))
+    # must fire on the FIRST build with no buffering
+    types = [e["type"] for e in fired]
+    assert "theme_topping" in types
+    topping = [e for e in fired if e["type"] == "theme_topping"][0]
+    assert topping["severity"] == "high"
+    # and only one build later the event already exists in the feed
+    assert len([e for e in ta.load_events() if e["type"] == "theme_topping"]) == 1
+
+
+# ------- (d) old-format state file without the "label" key must not crash ---------------
+def test_old_format_state_without_label_key_does_not_crash(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    p = tmp_path / "themes" / "state.json"
+    p.parent.mkdir(parents=True)
+    # pre-label-debounce state.json: has _debounce but only "reco" and "lead" — no "label"
+    p.write_text(json.dumps({
+        "ld": {"label": "dominant", "reco": "hold", "rank": 1, "score": 90,
+               "name": "LD", "name_zh": "ld"},
+        "x": {"label": "neutral", "reco": "hold", "rank": 2, "score": 50,
+              "name": "X", "name_zh": "x"},
+        "_debounce": {
+            "reco": {},
+            "lead": {"displayed": "ld", "pending": None}
+            # no "label" key — this is the old format
+        },
+    }))
+    # must not raise; theme_emerging is buffered (fresh streak start)
+    result = ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2, score=55)],
+                                "2026-06-19"))
+    assert result == []
+    # state now has the label key
+    state = json.loads(p.read_text())
+    assert "label" in state["_debounce"]
+    assert state["_debounce"]["label"]["x"]["count"] == 1
+    # and confirms on the next build normally
+    fired = ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2, score=55)],
+                               "2026-06-20"))
+    assert len(fired) == 1 and fired[0]["type"] == "theme_emerging"
+
+
+# ---------- (e) dominant->emerging churn: 4 builds of oscillation produce one alert -----
+def test_dominant_to_emerging_churn_fires_only_after_two_consecutive(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    # seed with dominant
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="dominant", rank=2, score=70)],
+                             "2026-06-18")) == []
+    # build 2: dominant -> emerging (buffered)
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2, score=65)],
+                             "2026-06-19")) == []
+    # build 3: reverts to dominant — streak dies silently
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="dominant", rank=2, score=72)],
+                             "2026-06-20")) == []
+    # build 4: emerging again (new streak, count=1, buffered)
+    assert ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2, score=64)],
+                             "2026-06-21")) == []
+    # build 5: emerging again — count=2, CONFIRM fires
+    fired = ta.rebuild(_intel([_ld(), _theme("x", label="emerging", rank=2, score=66)],
+                              "2026-06-22"))
+    assert len(fired) == 1 and fired[0]["type"] == "theme_emerging"
+    assert len(ta.load_events()) == 1   # exactly one alert despite 4 oscillation builds

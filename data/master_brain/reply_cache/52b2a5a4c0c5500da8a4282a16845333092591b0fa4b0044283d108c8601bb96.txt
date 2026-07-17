@@ -1,0 +1,42 @@
+{
+  "stance": "Flow concentration is broad with no elevated VIX. A cluster of Health Care, Real Estate, Financials, and Consumer Discretionary is co-moving, but only Health Care and Real Estate combine confirmed/quiet stages with cohering and above-median relative strength, while Industrials and Information Technology are cooling and non-cohering. The fragile relief snap provides no support for fading fear or chasing a bounce.",
+  "candidates": [
+    {
+      "subject": "Health Care",
+      "lean": "overweight",
+      "rationale": "Confirmed stage, highest relative strength (rs_pctile 0.925), cohering, and part of the dominant cluster, suggesting internal participation.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Real Estate",
+      "lean": "overweight",
+      "rationale": "Cohering with above-median relative strength (0.524) and cohesion of 0.405, aligning with the dominant cluster.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "underweight",
+      "rationale": "Cooling stage, negative flow score, not cohering, and flow is concentrating away despite moderate relative strength.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "rationale": "Cooling stage, most negative flow score (-1.55), not cohering, and high relative strength looks vulnerable to mean reversion under flow dispersion.",
+      "strength": "weak"
+    },
+    {
+      "subject": "Consumer Discretionary",
+      "lean": "avoid",
+      "rationale": "Part of dominant cluster but lowest relative strength (0.23) and not cohering, making it a weak participant in the cluster move.",
+      "strength": "weak"
+    },
+    {
+      "subject": "VIX",
+      "lean": "none",
+      "rationale": "Low VIX (15.7, pctile 0.196) with fear rebuilding and no washout; the fragile relief snap provides no basis to fade fear.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "A sudden risk-on re-rotation into Cyclicals and Tech driven by an exogenous macro catalyst (not reflected in current flow) would break the cohesion-based overweight on Health Care/Real Estate and the underweight on Industrials/Tech, as the fragile regime snap could flip to risk-seeking and lift the non-cohering sectors."
+}

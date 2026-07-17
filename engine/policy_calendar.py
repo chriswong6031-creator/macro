@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -411,7 +412,15 @@ def _append_ledger(themes: dict, asof: str) -> None:
 
     Deduped on (theme, asof) — idempotent across same-day re-runs.
     Only themes with days_to_next_comment_close != None are considered a claim.
+
+    Gate: COLLECT_LANE=nightly (US_LANE legacy alias) — nightly is the sole
+    advancer of forward ledgers; this appender was the one missed by the
+    #2598 gating sweep.
     """
+    lane = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    if lane != "nightly":
+        log.debug("policy_calendar._append_ledger: skipped (COLLECT_LANE != nightly)")
+        return
     try:
         from lib import config  # type: ignore[import]
         d = config.data_dir() / "foresight"

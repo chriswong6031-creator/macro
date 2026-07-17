@@ -1,8 +1,9 @@
 """Sector-ignition forward ledger — per-market snapshot + deterministic grading.
 
 The sibling of engine/risk_radar_intl_audit.py, for the sector-ignition strip
-(engine/sector_ignition.py). Every render APPENDS one row per basket to
-data/ignition_log/<market>_ignition.jsonl (idempotent by (as-of, basket)). Once an entry's
+(engine/sector_ignition.py). Ledger-advancing renders APPEND one row per basket to
+data/ignition_log/<market>_ignition.jsonl (idempotent by (as-of, basket); every writer
+self-gates on ledger_lane_armed(), so off-lane renders are read-only). Once an entry's
 horizon matures it is GRADED against the basket's OWN realized forward excess return vs the
 market benchmark: 4-week (h20) and 8-week (h40) basket-minus-benchmark return from the as-of
 close. An "igniting"/"running" call is a true-positive when its forward excess is positive.
@@ -25,6 +26,24 @@ log = logging.getLogger(__name__)
 
 HORIZONS = {"h20": 20, "h40": 40}          # 4-week / 8-week business-day forward windows
 ALERT_STATES = ("igniting", "running")     # the loud tiers — the ones a scoreboard grades
+
+
+def ledger_lane_armed() -> bool:
+    """True only on a ledger-advancing collect lane (COLLECT_LANE=nightly, legacy
+    alias US_LANE). House law: nightly is the SOLE advancer of data/ forward
+    ledgers. The ignition call sites also run on closing-bell (whose contract,
+    closing-bell.yml, is that every ledger writer self-gates on COLLECT_LANE) and
+    the engine-render/render re-render lanes; there the strip still renders and
+    snapshot_and_grade degrades to a pure scorecard read, but log/grade must not
+    advance — appends are idempotent-by-(asof, basket) with FIRST-WRITER-WINS, so
+    a mid-session off-lane append would permanently displace the nightly row.
+    The HK arm's advancing lane is asia-close (the Asia chain's nightly, commits
+    data/), which arms this gate inline on its build_baskets_hk invocation only
+    (guarded by tests/test_ignition_lane_gate.py). Sibling gate:
+    engine/intl_run._ledger_lane_armed (#2684)."""
+    import os
+    lane = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
+    return lane.lower() == "nightly"
 
 
 def _path(market: str, root=None) -> Path:
@@ -76,8 +95,12 @@ def _entries_from_snapshot(ign: dict, market: str) -> list[dict]:
 
 
 def log_snapshot(ign: dict, market: str, root=None) -> int:
-    """Append today's ignition strip to the market's forward log (idempotent by (asof, basket))."""
+    """Append today's ignition strip to the market's forward log (idempotent by (asof, basket)).
+    Ledger-advancing lanes only (ledger_lane_armed): off-lane calls no-op, returning 0."""
     try:
+        if not ledger_lane_armed():
+            log.debug("ignition_audit log(%s) skipped: lane not armed", market)
+            return 0
         entries = _entries_from_snapshot(ign, market)
         if not entries:
             return 0
@@ -137,8 +160,14 @@ def grade_log(market: str, level_of, bench_series, root=None) -> int:
 
     level_of      callable(basket_id) -> that basket's level Series (or None)
     bench_series  the benchmark level Series
+
+    Ledger-advancing lanes only (ledger_lane_armed): grades are keep-first-permanent,
+    so an off-lane grade computed from a mid-session store would stick — no-op, 0.
     """
     try:
+        if not ledger_lane_armed():
+            log.debug("ignition_audit grade(%s) skipped: lane not armed", market)
+            return 0
         p = _path(market, root)
         rows = _read(p)
         if not rows or bench_series is None:
@@ -202,7 +231,11 @@ def scorecard(market: str, root=None) -> dict:
 
 
 def snapshot_and_grade(ign: dict, market: str, level_of, bench_series, root=None) -> dict:
-    """Log today's ignition strip, grade matured entries, return the scorecard."""
+    """Log today's ignition strip, grade matured entries, return the scorecard.
+
+    Off-lane (ledger_lane_armed() False) the log/grade legs no-op and this is a
+    pure scorecard read — the scoreboard display stays populated on the
+    closing-bell / engine-render / render lanes without advancing the ledger."""
     n_logged = log_snapshot(ign, market, root=root)
     grade_log(market, level_of, bench_series, root=root)
     sc = scorecard(market, root=root)
@@ -252,11 +285,15 @@ def log_us_snapshot(ig: dict, root=None) -> int:
 
     One line per day with: as_of, broad_state, k_count, chips lit/fresh,
     regime.fragile, top narrow items with scores/states.
-    Idempotent by as_of (one row per day).
+    Idempotent by as_of (one row per day). Ledger-advancing lanes only
+    (ledger_lane_armed): off-lane calls no-op, returning 0.
 
     Returns the number of rows added (0 = already logged).
     """
     try:
+        if not ledger_lane_armed():
+            log.debug("ignition_audit log_us_snapshot skipped: lane not armed")
+            return 0
         if not ig or not ig.get("as_of"):
             return 0
         asof = str(ig["as_of"])
@@ -423,8 +460,14 @@ def grade_us_log(spy_series, root=None) -> int:
 
     spy_series: SPY close Series.
     Returns number of entries newly graded.
+
+    Ledger-advancing lanes only (ledger_lane_armed): grades are keep-first-permanent,
+    so an off-lane grade computed from a mid-session store would stick — no-op, 0.
     """
     try:
+        if not ledger_lane_armed():
+            log.debug("ignition_audit grade_us_log skipped: lane not armed")
+            return 0
         p = _us_path(root)
         rows = _us_read(p)
         if not rows or spy_series is None:
@@ -491,7 +534,9 @@ def us_snapshot_and_grade(ig: dict, spy_series, root=None) -> dict:
 
     ig          output of engine.ignition_radar.snapshot()
     spy_series  SPY close Series (load once in caller and reuse)
-    """
+
+    Off-lane (ledger_lane_armed() False) the log/grade legs no-op and this is a
+    pure scorecard read — closing-bell/engine-render still get the display payload."""
     log_us_snapshot(ig, root=root)
     grade_us_log(spy_series, root=root)
     sc = us_scorecard(root=root)

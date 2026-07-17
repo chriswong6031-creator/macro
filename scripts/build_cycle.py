@@ -34,9 +34,13 @@ Data flow (all script-tag data — NEVER fetch, ruling A11):
 Build-time discipline:
   • TOLERANCE ASSERTION (doctrine #1): where a hand-typed ``now.pos`` exists for a MEASURED
     band, the |hand − engine| gap is LOGGED (warn) and carried onto the card as a visible
-    delta note.  The build FAILS only on STRUCTURAL errors (a MEASURED tape missing / stale,
-    a stale registry) — never on an opinion-vs-engine gap.
-  • The staleness gate is ``registry_report(strict=True)`` (raises on a stale MEASURED tape).
+    delta note.  The build FAILS only on STRUCTURAL errors (a MEASURED tape entirely
+    missing / unresolvable) — never on an opinion-vs-engine gap.
+  • STALENESS degrades PER-BAND, never the page (house law: a null never blocks building).
+    ``registry_report(strict=True)`` raises only on structural errors; a stale tape marks
+    its own band (``rec["stale"]``) and the card renders from the last data with a visible
+    plain-word stale chip while every other card renders fresh.  One late G.17 release
+    must never again freeze all 24 cards (the 2026-07-16/17 INDPRO freeze).
 
 Respecting the ~67-min render budget: the tapes are tiny (~20 measured series × ~56 ms +
 parquet I/O), so this stays in the seconds-to-low-minutes range; the wall-time is reported.
@@ -286,13 +290,18 @@ def _regime_disagreement(meta: dict, by_id: dict) -> dict | None:
 def compute(root: Path) -> dict:
     """Build the whole ``window.CYCLE_ENGINE`` payload + a tolerance ledger.
 
-    Structural errors (a MEASURED tape missing / stale, or a stale registry) propagate as
-    exceptions (the build FAILS — doctrine #7).  Opinion-vs-engine gaps do NOT fail the
-    build — they are logged + carried onto the card (doctrine #1)."""
+    STRUCTURAL errors (a MEASURED tape entirely missing / unresolvable) propagate as
+    exceptions (the build FAILS — doctrine #7).  A STALE tape degrades only its own band:
+    the record is still computed from the last data and carries ``rec["stale"]`` for the
+    card chip (house law: a null never blocks building).  Opinion-vs-engine gaps do NOT
+    fail the build — they are logged + carried onto the card (doctrine #1)."""
     from engine import cycle_proxies as cp
 
-    # 1 · staleness / structural gate — raises on a stale or missing MEASURED tape.
+    # 1 · structural gate — raises ONLY on a missing/unresolvable MEASURED tape.
+    #     Stale tapes come back in health["stale"] and degrade per-band below.
     health = cp.registry_report(strict=True)
+    for _stale_msg in health.get("stale") or []:
+        log.warning("build_cycle: %s — rendering band from last data", _stale_msg)
 
     # 2 · fitness verdicts (proxy timing) — read the W3.1 artifact if present, else recompute.
     fit_path = root / "data" / "cycle_ontology" / "proxy_fitness.json"
@@ -339,7 +348,14 @@ def compute(root: Path) -> dict:
                 if band.get("proxy") and cid in fitness:
                     rec["fitness"] = fitness[cid]
                 # attach the W3.1 health row (rows / first / last / stale_days)
-                rec["health"] = (health.get("bands") or {}).get(f"{cid}.{band['band']}")
+                hrow = (health.get("bands") or {}).get(f"{cid}.{band['band']}")
+                rec["health"] = hrow
+                # stale tape → degrade THIS band only: keep the last-data record and
+                # flag it for the card's plain-word stale chip (EN/ZH in cycle_app.js).
+                if hrow and hrow.get("found") and not hrow.get("ok"):
+                    rec["stale"] = {"days": hrow.get("stale_days"),
+                                    "limit": hrow.get("stale_limit"),
+                                    "last": hrow.get("last")}
                 bands_out.append(rec)
                 card_tier = "measured"
                 # tolerance assertion (doctrine #1) — hand vs engine position gap
@@ -397,6 +413,8 @@ def compute(root: Path) -> dict:
                    "measured_cards": sum(1 for c in engine.values() if c["card_tier"] == "measured"),
                    "frame_cards": sum(1 for c in engine.values() if c["card_tier"] == "frame"),
                    "dual_cards": sum(1 for c in engine.values() if c["dual"]),
+                   "stale_bands": sum(
+                       sum(1 for b in c["bands"] if b.get("stale")) for c in engine.values()),
                    "tripwires_total": sum(len(c.get("tripwires") or []) for c in engine.values()),
                    "tripwires_fired": sum(
                        sum(1 for tw in (c.get("tripwires") or []) if tw.get("state") == "FIRED")
@@ -441,10 +459,11 @@ def main() -> int:
     # 1b · compute the engine payload (raises on structural / staleness errors) ──
     payload = compute(root)
     _write_engine_js(site, payload)
-    log.info("cycle_engine.js: %d cards (%d measured, %d frame, %d dual); %d tolerance gaps",
+    log.info("cycle_engine.js: %d cards (%d measured, %d frame, %d dual); "
+             "%d stale bands (degraded, not fatal); %d tolerance gaps",
              payload["census"]["cards"], payload["census"]["measured_cards"],
              payload["census"]["frame_cards"], payload["census"]["dual_cards"],
-             len(payload["tolerance_ledger"]))
+             payload["census"]["stale_bands"], len(payload["tolerance_ledger"]))
     rd = payload.get("regime_disagreement")
     if rd:
         log.warning("regime disagreement: %s (%d claims, %s)",

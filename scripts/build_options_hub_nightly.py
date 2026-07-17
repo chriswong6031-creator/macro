@@ -48,6 +48,7 @@ from engine.options_hub import (
     build_tickers_ctx,
     build_oi_confirmed,
 )
+from engine.levels_publish import levels_payload_from_gex, LEVELS_PREFIX
 
 log = logging.getLogger(__name__)
 
@@ -450,6 +451,31 @@ def _gex_publish_decision(
         return True, gex_payload, False
 
 
+def _gex_history_relpath(root: str, gex_payload: dict) -> str | None:
+    """Relative path for the dated per-strike GEX snapshot, or None to skip.
+
+    WP-GEX-SNAPSHOTS (research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md §7):
+    gex/{ROOT}.json is overwritten in place every night, so per-strike
+    topology is lost as point-in-time data. Retaining the same payload under
+    a dated key gives the Exposure-by-Strike scrubber and S-TOPO-SIGMA a
+    point-in-time per-strike topology history to read from.
+
+    Key date = the payload's own as-of/session date (NEVER wall clock — a
+    delayed or manual re-run must land on the session it describes, not the
+    day it happened to run).
+
+    Returns None (skip the dated write) when:
+      - the payload has no by_strike rows (never write empty history), or
+      - the payload carries no asof date to key by.
+    """
+    if not gex_payload.get("by_strike"):
+        return None
+    asof = gex_payload.get("asof")
+    if not asof:
+        return None
+    return f"gex_history/{root}/{asof}.json"
+
+
 # --------------------------------------------------------------------------- #
 # CLI entry point
 # --------------------------------------------------------------------------- #
@@ -490,32 +516,31 @@ def main() -> None:
     tape_flow_dir = data_root / _TAPE_FLOW_SUBDIR
     live_flow_out_dir = data_root / "live_flow_out"  # poller archive root
 
-    # Item 5 — THETADATA_STORE env: explicit override wins over all auto-detect paths.
-    # Priority: --theta-store CLI > THETADATA_STORE env > data/thetadata_eod default.
-    _theta_store_env = os.environ.get("THETADATA_STORE")
+    # WP-RESOLVER — store resolution is canonical: --theta-store CLI wins, then
+    # engine.thetadata_store.resolve_thetadata_store (THETADATA_STORE env →
+    # data_dir()/thetadata_eod → ops-wt), every candidate content-checked.
+    # Fail-loud contract: this builder PUBLISHES artifacts, so when no store
+    # resolves it exits nonzero instead of building/publishing empty payloads
+    # (the options_witness 0/18 empty-store incident shape).
+    from engine.thetadata_store import _has_store_content, resolve_thetadata_store
     if args.theta_store:
         theta_store = Path(args.theta_store)
-    elif _theta_store_env:
-        theta_store = Path(_theta_store_env)
-        log.info("options_hub_builder: THETADATA_STORE env → %s", theta_store)
-    else:
-        theta_store = data_root / "thetadata_eod"
-
-    # If the configured store has no eod/ or greeks/ subdirectories, fall back to the
-    # canonical Mac ops-wt path (the brief: "T1 store via symlink data/thetadata_eod ->
-    # /Users/chriswong/theta-ops-wt/data/thetadata_eod (create if missing)").
-    # This convenience auto-detect ONLY fires when neither --theta-store nor
-    # THETADATA_STORE env are set (guarded by the else branch above).
-    if not args.theta_store and not _theta_store_env:
-        _OPS_WT_STORE = Path("/Users/chriswong/theta-ops-wt/data/thetadata_eod")
-        if (not (theta_store / "eod").exists() and
-                not (theta_store / "greeks").exists() and
-                _OPS_WT_STORE.exists()):
-            log.info(
-                "options_hub_builder: %s has no eod/greeks subdirs — falling back to %s",
-                theta_store, _OPS_WT_STORE,
+        if not _has_store_content(theta_store):
+            log.error(
+                "options_hub_builder: --theta-store %s is missing or contains none "
+                "of eod/oi/greeks — refusing to build/publish from an empty store",
+                theta_store,
             )
-            theta_store = _OPS_WT_STORE
+            sys.exit(1)
+    else:
+        theta_store = resolve_thetadata_store(
+            required=False, purpose="build_options_hub_nightly")
+        if theta_store is None:
+            log.error(
+                "options_hub_builder: no ThetaData store resolves — exiting "
+                "nonzero WITHOUT writing/publishing empty artifacts "
+                "(set THETADATA_STORE or pass --theta-store)")
+            sys.exit(1)
 
     # ── resolve roots ─────────────────────────────────────────────────────────
     if args.roots:
@@ -610,6 +635,51 @@ def main() -> None:
                 _upload_r2(s3, bucket, vol_path, f"{R2_PREFIX}vol/{root}.json")
                 if gex_publish:
                     _upload_r2(s3, bucket, gex_path, f"{R2_PREFIX}gex/{root}.json")
+
+            # ── WP-GEX-SNAPSHOTS: dated per-strike GEX snapshot ────────────────
+            # gex/{root}.json above stays overwrite-in-place (consumers depend
+            # on that key — UNCHANGED). Additionally retain the same payload
+            # under a DATED key so per-strike topology survives as
+            # point-in-time history for the Exposure-by-Strike scrubber +
+            # S-TOPO-SIGMA (research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md §7
+            # WP-GEX-SNAPSHOTS). Date = payload asof (session date), never
+            # wall clock. Empty payloads (no by_strike rows) are never
+            # written. INERT per root, like everything else in this loop.
+            try:
+                _hist_rel = _gex_history_relpath(root, gex_payload)
+                if _hist_rel:
+                    hist_path = out_dir / _hist_rel
+                    _write_json(hist_path, gex_payload)
+                    if s3 and bucket and gex_publish:
+                        _upload_r2(s3, bucket, hist_path, f"{R2_PREFIX}{_hist_rel}")
+            except Exception as _hist_err:  # noqa: BLE001
+                log.warning(
+                    "options_hub_builder: gex_history dated snapshot failed for %s — %s",
+                    root, _hist_err,
+                )
+
+            # ── WP-A2.5: levels.v1 (named gamma-level board) ───────────────────
+            # Translate the SAME gex payload into the named-level board — Anchor,
+            # Call/Put walls, Flip, Cluster, Counter, Void, Trapdoor, Launchpad,
+            # Stack — with the sticky/slippery color law and a plain-English note
+            # per node, and publish levels/{root}.json for the Terminal Levels
+            # board (Voltick Gamma-Levels program, WP-A2.5). This is a pure
+            # downstream transform of gex_payload: the gex key above is unchanged
+            # and this is INERT per root like everything else in this loop. Empty
+            # boards (no by_strike rows) are never written.
+            try:
+                levels_payload = levels_payload_from_gex(gex_payload)
+                if levels_payload is not None:
+                    levels_path = out_dir / "levels" / f"{root}.json"
+                    _write_json(levels_path, levels_payload)
+                    if s3 and bucket and gex_publish:
+                        _upload_r2(s3, bucket, levels_path,
+                                   f"{LEVELS_PREFIX}{root}.json")
+            except Exception as _lv_err:  # noqa: BLE001
+                log.warning(
+                    "options_hub_builder: levels publish failed for %s — %s",
+                    root, _lv_err,
+                )
 
             roots_ok.append(root)
             log.info(

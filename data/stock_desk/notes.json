@@ -1,173 +1,174 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-14",
-  "generated_at": "2026-07-15T09:08:38.781340+00:00",
+  "as_of": "2026-07-15",
+  "generated_at": "2026-07-17T04:09:45.012670+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-14-MS-1",
-      "ticker": "MS",
+      "id": "2026-07-15-TGT-1",
+      "ticker": "TGT",
       "name": null,
       "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "The residual-alpha selection axis (SUE, revisions, momentum) shows a meaningful earnings/insider edge, combined with a strong entry axis\u2014validated legs support an edge. However, the verdict's 'earnings imminent' risk tax and the binary event ahead force low conviction and a shortened horizon; the lean is constructive only if the report doesn\u2019t derail the setup.",
-      "evidence": [
-        "Selection axis z=1.12 (pct 67), with SUE z=1.2 (validated, 44d fresh), revisions z=1.08, momentum z=1.14",
-        "Entry axis z=1.25 (pct 69), not blocked, with urgency 'imminent' and off-high -2.6%",
-        "Verdict: 'Leader \u00b7 earnings imminent \u2014 wait or size down' \u2013 respected as a risk control, not an overrule",
-        "Cycle not blocked, mixed regime"
-      ],
-      "dissent": "The event-edge driver (SUE) is at the edge of freshness (44d) and could mean-revert; a negative earnings surprise would crush the momentum leg and turn the residual-alpha selection negative.",
-      "falsifier": {
-        "text": "If MS reports earnings that miss consensus EPS by more than 5% and management guides 2027 revenue below the current analyst range, the constructive lean is invalid.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MS",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 10
-        }
-      },
-      "check_by": "2026-07-28",
-      "engine_verdict": "Leader \u00b7 earnings imminent \u2014 wait or size down"
-    },
-    {
-      "id": "2026-07-14-NWE-2",
-      "ticker": "NWE",
-      "name": null,
-      "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "No clear edge: the selection axis is flat (z -0.05), with a negative validated SUE (z -1.11) offsetting a modest momentum z-score. The 'TURN SIGNALED' board state with 'caution' urgency supports a neutral stance, as the risk controls point neither to outperformance nor underperformance relative to the S&P 500.",
+      "thesis": "TGT is building a base with a constructive event-edge (insider buying context, revisions) and a modest pullback, though the deteriorating Consumer Staples basket tempers conviction.",
       "evidence": [
-        "Selection axis z=-0.05 (pct 49), SUE z=-1.11 (validated), revisions z=-0.19",
-        "Entry axis z=0.59 (pct 59), not blocked, but no strong pressure",
-        "Verdict: 'Neutral \u2014 no clear edge'",
-        "Tailwind axis near zero (z=0.04), accounting clean"
+        "verdict 'Constructive \u2014 building a base'",
+        "selection axes: revisions z=0.82, momentum z=1.62",
+        "entry not blocked, off-high only -2.1%",
+        "caution: Consumer Staples Equal-Weight basket deteriorating"
       ],
-      "dissent": "The 'TURN SIGNALED' regime might capture an early reversal if the positive momentum leg (z=0.86) regains traction, and the stock is only 0.3% off its high\u2014a breakout could render neutral too cautious.",
+      "dissent": "Negative SUE signal (z=-0.75) and a deteriorating sector basket could undermine the base-building.",
       "falsifier": {
-        "text": "If NWE closes above $73.5 (a new 52-week high) on above-average volume, the neutral lean is likely wrong and would need to be reassessed.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-08-11",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-14-JCI-3",
-      "ticker": "JCI",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "The verdict 'Constructive \u2014 building a base' is supported by a positive selection axis driven by modest earnings-surprise and revision legs, plus a momentum z of 0.83. The entry axis confirms a pullback within an uptrend (off-high -2.9%, 'RALLY ON' state), allowing a low-conviction constructive lean while the base develops.",
-      "evidence": [
-        "Verdict: 'Constructive \u2014 building a base' (engine risk control)",
-        "Selection axis z=0.43 (pct 57): SUE z=0.17, revisions z=0.31, momentum z=0.83",
-        "Entry axis z=0.30 (pct 55), pullback/extended flags present, rsi and trend-quality constructive",
-        "Cycle not blocked, mixed regime, accounting clean"
-      ],
-      "dissent": "The base may break down if the SUE leg (only 0.17) proves too weak and the recent rally fails; a shift to broader risk-off could undercut the building pattern.",
-      "falsifier": {
-        "text": "If JCI closes below $138 (the approximate swing low of the last two weeks) on increased volume, the building-base thesis collapses and the constructive lean would be invalid.",
+        "text": "If TGT breaks below its recent base low of ~135, the constructive lean is invalid.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "JCI",
+          "subject_ticker": "TGT",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 30
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-08-25",
+      "check_by": "2026-08-12",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-07-14-TR-4",
-      "ticker": "TR",
+      "id": "2026-07-15-HST-2",
+      "ticker": "HST",
       "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "The verdict 'Neutral \u2014 no clear edge' is reinforced by a thin selection axis (only residual momentum z=0.66) and an earnings binary event in 8 days. The 'BOTTOM WATCH' state with deep off-high -15.2% and 'later' urgency keeps the risk-control reading neutral; no validated edge warrants a directional lean ahead of the report.",
-      "evidence": [
-        "Verdict: 'Neutral \u2014 no clear edge'",
-        "Selection axis z=0.21 (pct 53), only alpha/momentum leg present (z=0.66, context tier)",
-        "Caution: 'earnings in 8d \u2014 binary event, size down'",
-        "Entry axis z=0.06 (neutral), vol-squeeze present, tailwind negative (z=-0.32)",
-        "Board state 'BOTTOM WATCH', dir down"
-      ],
-      "dissent": "If the stock is indeed forming a bottom and the upcoming earnings surprise strongly to the upside, the neutral stance would miss a sharp re-rating from deeply oversold levels.",
-      "falsifier": {
-        "text": "If TR reports a beat (SUE > 1.5) and the price closes above $44.8 (the peak before the -15.2% decline) within two days post-earnings, the neutral lean would be disproven.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-07-28",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-14-NWN-5",
-      "ticker": "NWN",
-      "name": null,
-      "lean": "neutral",
+      "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The deterministic verdict 'Neutral \u2014 no clear edge' is appropriate given a negative selection axis (z -0.48) driven by sharply negative revisions (z -1.15) and only a modest momentum z. The 'TURN SIGNALED' board with 'now' urgency suggests an attempted reversal, but the selection drag and accounting-watch flag keep the lean neutral until evidence of fundamental improvement solidifies.",
+      "thesis": "HST shows a strong SUE (z=1.52) and momentum (z=1.23) on a constructive base setup, although the deteriorating Real Estate basket warrants caution.",
       "evidence": [
-        "Verdict: 'Neutral \u2014 no clear edge'",
-        "Selection axis z=-0.48 (pct 43): revisions z=-1.15 (literature), momentum z=0.65",
-        "Cautions: accounting watch",
-        "Entry axis z=0.67 (pct 60), off-high -7.3%, vol-squeeze flag",
-        "Tailwind near zero (z=0.04)"
+        "verdict 'Constructive \u2014 building a base'",
+        "SUE z=1.52, momentum z=1.23",
+        "entry not blocked, off-high -1.7%",
+        "caution: Real Estate Equal-Weight basket deteriorating"
       ],
-      "dissent": "The 'TURN SIGNALED' regime with entry-axis pressure could transform into a genuine trend if the fundamental picture stabilizes and the -7.3% drawdown attracts buyers; neutral may underappreciate the turning potential.",
+      "dissent": "Sector headwinds and a stale SUE (47d old) could cap upside.",
       "falsifier": {
-        "text": "If NWN closes above $55 (breaking the sequence of lower highs off the -7.3% peak) on above-average volume, the neutral lean would be too conservative.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-08-11",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-14-BKH-6",
-      "ticker": "BKH",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The verdict 'Lagging \u2014 relative weakness' is backed by a deeply negative selection axis (z -1.18, pct 32) with SUE -1.22 and revisions -2.14. Despite a nearby 'TURN SIGNALED' board state, the fundamental momentum vacuum and accounting-watch flag justify a cautious lean relative to the S&P 500; the risk is that relative weakness persists.",
-      "evidence": [
-        "Verdict: 'Lagging \u2014 relative weakness' (deterministic engine call)",
-        "Selection axis z=-1.18 (pct 32): SUE z=-1.22 (validated), revisions z=-2.14 (literature), momentum z=0.63",
-        "Cautions: accounting watch",
-        "Entry axis z=0.59 (pct 59), 'TURN SIGNALED' with 'now' urgency, but off-high only -0.4% (near highs)",
-        "Tailwind near zero"
-      ],
-      "dissent": "The 'TURN SIGNALED' state so close to the 52-week high could be the start of a breakout rather than a fake-out; if the accounting watch proves benign and relative fundamentals improve, the cautious lean will underperform.",
-      "falsifier": {
-        "text": "If BKH closes above $76.2 (a new 52-week high) on volume at least 1.5x the 20-day average, the relative-weakness tag is invalid and the cautious lean would be wrong.",
+        "text": "If HST fails to hold its recent base support at ~23.30, the constructive lean is broken.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "BKH",
+          "subject_ticker": "HST",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-12",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-15-NJR-3",
+      "ticker": "NJR",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The engine finds no clear edge: earnings signals are weak (SUE z=-0.04, revisions z=-1.14) despite an attractive entry setup, warranting a neutral stance.",
+      "evidence": [
+        "verdict 'Neutral \u2014 no clear edge'",
+        "selection z -0.41 with negative revisions",
+        "entry z=0.67 not blocked but insufficient to overcome lack of edge",
+        "no cautions"
+      ],
+      "dissent": "The fresh buy signal and oversold conditions could trigger a bounce, but no earnings tailwind.",
+      "falsifier": {
+        "text": "If NJR breaks above $60 on above-average volume and positive revisions emerge, the neutral call would be too cautious.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-12",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-15-STAA-4",
+      "ticker": "STAA",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "medium",
+      "horizon_d": 20,
+      "thesis": "STAA carries strong earnings and insider edge but is flagged 'accounting watch'; the deep 14.5% pullback off highs offers a potential base, yet the accounting risk demands confirmation before committing, hence cautious.",
+      "evidence": [
+        "verdict 'Leader \u00b7 accounting watch \u2014 confirm before adding'",
+        "SUE z=1.85, insider z=1.5, revisions z=2.24",
+        "entry not blocked but caution flag",
+        "off-high -14.5%",
+        "accounting watch flag"
+      ],
+      "dissent": "If the accounting watch is resolved benignly, the strong earnings momentum could fuel a sharp rally.",
+      "falsifier": {
+        "text": "If STAA falls below $26 (recent support) or if an accounting issue materializes, the cautious lean is justified; if it clears accounting concerns and breaks out above $32, the cautious lean is proven wrong.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "STAA",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
           "horizon_d": 20
         }
       },
-      "check_by": "2026-08-11",
-      "engine_verdict": "Lagging \u2014 relative weakness"
+      "check_by": "2026-08-12",
+      "engine_verdict": "Leader \u00b7 accounting watch \u2014 confirm before adding"
+    },
+    {
+      "id": "2026-07-15-KMT-5",
+      "ticker": "KMT",
+      "name": null,
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "KMT exhibits a turn signal with a compelling earnings edge (SUE z=1.79) and deep pullback (-19.2%), forming a base; no obvious cautions.",
+      "evidence": [
+        "verdict 'Constructive \u2014 building a base'",
+        "SUE z=1.79, revisions z=0.85",
+        "entry signal 'TURN SIGNALED' urgency now, off-high -19.2%",
+        "no cautions"
+      ],
+      "dissent": "The deep pullback might indicate underlying deterioration not captured, and the optimistic turn signal could fail if earnings momentum stalls.",
+      "falsifier": {
+        "text": "If KMT reverses and closes below $33, the turn signal fails and the constructive lean is wrong.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "KMT",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-12",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-15-TR-6",
+      "ticker": "TR",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "TR lacks a discernible edge (only residual momentum) and faces an earnings binary event in 7 days, making a neutral stance prudent.",
+      "evidence": [
+        "verdict 'Neutral \u2014 no clear edge'",
+        "selection only momentum z=0.65, no SUE or revision edge",
+        "caution: earnings in 7d \u2014 binary event"
+      ],
+      "dissent": "A strong earnings beat could propel the stock higher, but that is speculative.",
+      "falsifier": {
+        "text": "If TR rallies post-earnings and sustains above $42, then the neutral lean would have been too timid.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-12",
+      "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."

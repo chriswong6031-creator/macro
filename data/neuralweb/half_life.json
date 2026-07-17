@@ -97,21 +97,47 @@
       "staleness_half_life": null,
       "staleness_half_life_mae": null,
       "t_stat": null,
-      "mean_by_delay": null,
-      "mae_by_delay": null,
-      "n_by_delay": null,
-      "reason_null": "unmeasured (replay_delay.parquet absent — CI runner or pre-sweep)",
-      "coverage_years": [],
-      "coverage_families": []
+      "mean_by_delay": {
+        "1": 0.025749337038935446,
+        "2": 0.025759566706036994,
+        "3": 0.025619833536313998,
+        "4": 0.02532020050389844,
+        "5": 0.024360866833322937
+      },
+      "mae_by_delay": {
+        "1": 0.05477264035764425,
+        "2": 0.054279319940825764,
+        "3": 0.05376483712424434,
+        "4": 0.05336750600520696,
+        "5": 0.053331371549365736
+      },
+      "n_by_delay": {
+        "1": 28525,
+        "2": 28443,
+        "3": 28369,
+        "4": 28269,
+        "5": 28175
+      },
+      "reason_null": "staleness_non_decaying (fwd_ret_21 not monotone-decreasing by delay_n)",
+      "coverage_years": [
+        2022,
+        2023,
+        2024,
+        2025,
+        2026
+      ],
+      "coverage_families": [
+        "__fires__"
+      ]
     }
   },
-  "staleness_measured": false,
-  "staleness_note": "UNMEASURED (replay_delay.parquet absent — CI runner or pre-sweep). Staleness half-life unblocked by nwqs-d Item D; re-run write_half_lives() after replay_delay.parquet accrues.",
+  "staleness_measured": true,
+  "staleness_note": "MEASURED from replay_delay.parquet (years=[2022, 2023, 2024, 2025, 2026], n_rows=150690, n_eligible=147787). Gate: HAC-t on log-linear slope of mean fwd_ret_21 vs delay_n; monotone-decrease pre-gate. Null = honest null (W2 pattern).",
   "status": "fit_ran",
   "notes": "W2 re-scoped to holding-horizon decay (B1: no age-at-fire column in spine). Staleness half-life: measured when replay_delay.parquet is present (nwqs-d); unmeasured on CI runners (Mac-local artifact, EI R9). Conservative defaults: family_floor=200, curve_floor=3, cell_floor=12, bootstrap=90pct event-block 200 resamples. Expected outcome: horizon families mostly null (track_record IC rises; radar/us_board < 3 horizons). family_half_life naming recommendation: the 'half_life' column is a family-level constant broadcast to rows; future consumers should not read it as a per-signal value.",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/half_life.py",
-  "produced_at": "2026-07-15T08:55:29Z",
-  "inputs_hash": "sha256:9795ab794aab5ba0b778b130870d4157fa115bf19af5174864618da4175f12f6",
+  "produced_at": "2026-07-17T03:53:19Z",
+  "inputs_hash": "sha256:42d6f5f12d11719749d1c0137441f37015e8739af5394cf79cf9126b0b6a8d5e",
   "tier": "infrastructure"
 }

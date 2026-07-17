@@ -1,15 +1,15 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-07-15",
-  "scored_total": 0,
-  "open": 86,
-  "unscored_soft": 9,
+  "as_of": "2026-07-17",
+  "scored_total": 2,
+  "open": 91,
+  "unscored_soft": 11,
   "overall": {
-    "n": 0,
-    "hits": 0,
-    "misses": 0,
-    "hit_rate": null,
-    "dir_accuracy": null
+    "n": 2,
+    "hits": 1,
+    "misses": 1,
+    "hit_rate": 0.5,
+    "dir_accuracy": 0.0
   },
   "by_market": {
     "us": {
@@ -20,18 +20,18 @@
       "dir_accuracy": null
     },
     "china": {
-      "n": 0,
+      "n": 1,
       "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "misses": 1,
+      "hit_rate": 0.0,
+      "dir_accuracy": 0.0
     },
     "hk": {
-      "n": 0,
-      "hits": 0,
+      "n": 1,
+      "hits": 1,
       "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "hit_rate": 1.0,
+      "dir_accuracy": 0.0
     },
     "canada": {
       "n": 0,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 0,
-      "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "n": 2,
+      "hits": 1,
+      "misses": 1,
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.0
     },
     "medium": {
       "n": 0,
@@ -64,6 +64,27 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "No thematic theses scored yet \u2014 the track record begins once the first check-by dates pass. Until then every lean is a provisional hypothesis.",
-  "recent": []
+  "calibration_note": "2 scored, hit-rate 0.5 (directional accuracy 0.0). Sample is small \u2014 treat conviction as provisional; the honest expectation is no exploitable forward edge (display-only).",
+  "recent": [
+    {
+      "id": "hk-2026-06-18-3",
+      "market": "hk",
+      "subject": "China Tech & Internet",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.007,
+      "check_by": "2026-07-16"
+    },
+    {
+      "id": "china-2026-07-02-1",
+      "market": "china",
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0816,
+      "check_by": "2026-07-16"
+    }
+  ]
 }

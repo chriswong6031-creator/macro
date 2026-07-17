@@ -121,6 +121,10 @@ def _write_lane_status(
             "asof": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "reason": reason,
         }
+        if status.startswith("degraded"):
+            # Explicit flag so health.py's lobe check treats the artifact as a
+            # degraded self-report regardless of status-enum spelling.
+            doc["degraded"] = True
         lane_path.write_text(json.dumps(doc, indent=2), encoding="utf-8")
     except Exception as exc:  # noqa: BLE001
         log.warning("run_causal_brainstorm: could not write lane status (%s)", exc)
@@ -138,12 +142,14 @@ def _build_scheduled_providers(cfg: dict) -> list[dict]:
     OAuth identity. The ANTHROPIC_API_KEY and deepseek providers are explicitly
     EXCLUDED from the scheduled path — the operator directed "don't use api
     key, use oauth". A missing/invalid OAuth token degrades to pack-only mode.
+    Pool keys are the same oauth class — expanding the oauth slot is compliant.
     """
     from engine import llm_auth  # noqa: PLC0415
 
     model = cfg.get("model_roles", {}).get("generator", "claude-sonnet-4-6")
+    cfg_aug = {**cfg, "oauth_pool_lane": "causal-brainstorm", "usage_lane": "causal-brainstorm"}
     try:
-        providers = llm_auth.build_providers(cfg, opus_model=model)
+        providers = llm_auth.build_providers(cfg_aug, opus_model=model)
     except Exception as exc:  # noqa: BLE001
         log.warning("run_causal_brainstorm: provider build failed (%s)", exc)
         return []
@@ -154,7 +160,8 @@ def _build_operator_providers(cfg: dict, model_override: str | None = None) -> l
     """For operator trigger: full waterfall (oauth → anthropic → deepseek)."""
     from engine import llm_auth  # noqa: PLC0415
     model = model_override or cfg.get("model_roles", {}).get("generator", "claude-sonnet-4-6")
-    return llm_auth.build_providers(cfg, opus_model=model)
+    cfg_aug = {**cfg, "oauth_pool_lane": "causal-brainstorm", "usage_lane": "causal-brainstorm"}
+    return llm_auth.build_providers(cfg_aug, opus_model=model)
 
 
 def _build_providers_for_model(
@@ -237,7 +244,7 @@ def _llm_call(
 
     token_counts: dict = {}
 
-    def _call_fn(client, model: str) -> tuple[str | None, str | None]:
+    def _call_fn(client, model: str) -> tuple:
         resp = client.messages.create(
             model=model,
             max_tokens=max_tokens,
@@ -252,7 +259,7 @@ def _llm_call(
         if usage is not None:
             token_counts["input_tokens"] = getattr(usage, "input_tokens", None)
             token_counts["output_tokens"] = getattr(usage, "output_tokens", None)
-        return text, None
+        return text, None, resp
 
     text, reason, provider = llm_auth.make_call(providers, _call_fn, context=context)
     return text, reason, provider, token_counts

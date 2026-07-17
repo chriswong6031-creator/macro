@@ -190,6 +190,9 @@ _SCHEMA = [
     # W0 Stage B-c additions
     "species_id", "archetype",
     "own_market_regime", "own_market_regime_note",
+    # Inclusion-gate versioning: allows Q4/W7 grading to split pre/post gate-swap samples.
+    # "cascade_v1" = confluence cascade (signal_gate T1-T4, HK ratified 2026-07-16); None = prior.
+    "gate_ver",
     *_US_STAMP_COLS,
     *_SPINE_COLS,
 ]
@@ -210,7 +213,7 @@ _GATE_STAMPS = ("placement_flag",)
 # legacy parquet happened to be typed.
 _OBJECT_COLS = (
     "primary_rejection_reason", "block_reason", "knife_demoted",
-    "species_id", "archetype", "own_market_regime", "own_market_regime_note",
+    "species_id", "archetype", "own_market_regime", "own_market_regime_note", "gate_ver",
     "us_rate_pressure", "us_quad_hard_label", "us_fused_risk_label",
     "us_vol_regime", "us_risk_radar_state", "us_regime_vector_degraded",
     "vector_asof",
@@ -363,6 +366,10 @@ def append_board(
                              if c.get("block_reason") else None),
             "knife_demoted": _bool_or_none(c.get("knife_demoted")),
             "knife_z": _float_or_none(c.get("knife_z")),
+            # 2026-07-16 HK INCLUDE gate swap (masterplan §5.0 amendment): nullable
+            # provenance stamp so W7/Q4 grading splits pre/post-swap samples. CN/CA
+            # callers don't stamp it yet — their rows stay None (back-compatible).
+            "gate_ver": (str(c.get("gate_ver")) if c.get("gate_ver") else None),
             # W0 Stage B-c: species/archetype — always null (documented; no registry binding)
             "species_id": None,
             "archetype": None,

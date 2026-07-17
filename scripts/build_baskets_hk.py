@@ -29,7 +29,12 @@ STALE_TRADING_DAYS = 3     # §5.2 hard freshness gate: warn when basket prices 
 
 
 def _hk_ignition(data: dict) -> dict:
-    """Sector-ignition strip (engine.sector_ignition) + forward ledger log/grade. Never fatal."""
+    """Sector-ignition strip (engine.sector_ignition) + forward ledger log/grade. Never fatal.
+
+    The ledger legs self-gate on ignition_audit.ledger_lane_armed() (COLLECT_LANE=nightly —
+    asia-close, this ledger's advancing lane, arms it inline on this module's invocation;
+    daily.yml's build_vector hook is armed job-wide). Off-lane (closing-bell / engine-render /
+    render) snapshot_and_grade is a pure scorecard read, so the scoreboard still renders."""
     try:
         from engine.sector_ignition import compute_ignition
         from engine.baskets_hk import _closes, member_closes_getter

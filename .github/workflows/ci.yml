@@ -21,7 +21,15 @@ on:
       # hub-a11y guard: five static a11y regressions on globe-deck pages.
       - "scripts/check_hub_a11y.py"
       - "tests/test_check_hub_a11y.py"
+      # font-ui guard: body-level var(--font-ui) must resolve (theme.css or local def) — #2647.
+      - "scripts/check_font_ui_defined.py"
+      - "tests/test_check_font_ui_defined.py"
       - "site/theme.js"
+      # analytics identity capture — registered-visitor email attribution (server reads the
+      # shared Supabase session cookie off the beacon) + read-side coalescing.
+      - "app/main.py"
+      - "admin/analytics_first_party.py"
+      - "tests/test_collect_identity.py"
       # title-i18n guard: bilingual/CJK text must never sit in a title= attribute.
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
@@ -128,6 +136,10 @@ on:
       # VSB W6: corr_floor_break + ai_breadth_divergence Tier-B legs + corr alert
       - "tests/test_vsb_radar_alert.py"
       - "engine/risk_radar.py"
+      # intl 7-market radar profiles (KR/JP/TW/IN/AU/GB/EZ) + frozen cn/hk/ca guard
+      - "tests/test_risk_radar_intl_profiles.py"
+      - "engine/risk_radar_intl.py"
+      - "engine/intl_run.py"
       - "engine/alerts.py"
       - "templates/_risk_radar_card.html.j2"
       - "templates/_risk_radar_card.css.j2"
@@ -156,6 +168,17 @@ on:
       # MLC-W1 Leadership Board: template partial + build_site view + radar builder.
       - "templates/_leadership_board.html.j2"
       - "tests/test_leadership_board.py"
+      # MLC-W2b stance matrix + conflicted shelf: builder, theme_scoring demotion, templates.
+      - "scripts/build_stance_matrix.py"
+      - "engine/theme_scoring.py"
+      - "templates/baskets.html.j2"
+      - "templates/baskets_desk.js"
+      - "templates/allocation.html.j2"
+      - "tests/test_stance_matrix.py"
+      - "tests/test_theme_scoring_conflicted.py"
+      # MLC-W4: histogram-fade leg in rollover_risk + cooling demotion.
+      - "engine/basket_score.py"
+      - "tests/test_basket_score_rollover_w4.py"
       # FL-D FC-R5: cohort flow chips on turn surfaces + cohort_flow.v1 forward ledger.
       - "engine/basket_turn_watch.py"
       - "templates/basket_detail.html.j2"
@@ -518,6 +541,11 @@ on:
       # need explicit paths so a test-only or script-only change still re-runs.
       - "scripts/backfill_edgar_quarterly.py"
       - "tests/test_edgar_quarterly_tags.py"
+      # ITR-W1: per-market turn state machine + fast rotation re-rank
+      - "engine/intl_market_state.py"
+      - "engine/intl_rotation.py"
+      - "tests/test_intl_market_state.py"
+      - "tests/test_intl_rotation.py"
       # IRD-W2 engines: EM stress, contagion/DY spillover, CB desk
       - "engine/intl_risk.py"
       - "engine/contagion.py"
@@ -591,6 +619,11 @@ on:
       - "admin/site_gate.py"
       - "tests/test_site_gate.py"
       - "tests/test_admin_site_gate.py"
+      # Pick Lab liquidity gate: candidates module + liquidity regression test.
+      # Any change to candidates.py or the liquidity test file re-proves the
+      # NaN.ge() regression fix (null-adv rows must pass with liq_unknown=True).
+      - "engine/pick_lab/candidates.py"
+      - "tests/test_pick_lab_liquidity.py"
   workflow_dispatch:
 
 permissions:
@@ -728,11 +761,16 @@ jobs:
     # languages mashed together. This scans template SOURCE for CJK, t() calls, or
     # zh-variable interpolations inside title attributes (the fix is data-tip-en/
     # data-tip-zh + the theme.js popover, an English-only title, or no title).
+    # Same class, different door (#2705): <title> is RCDATA, so a t()/td() in a
+    # template <title>/{% block title %} — or a '<span' in a rendered page title —
+    # ships literal markup as the browser-tab text; the sweep covers site/ too.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: no translated text in title attributes
-        run: python3 scripts/check_title_i18n.py templates
+      - name: guard self-test (known-bad flagged, known-good clean)
+        run: python3 scripts/check_title_i18n.py --self-test
+      - name: no translated text in title attributes or markup in <title> RCDATA
+        run: python3 scripts/check_title_i18n.py templates site
 
   signal-contract:
     # HARD pre-merge gate for the signal→chart §7 contract (research/signal_engine/SCHEMA.json,
@@ -879,6 +917,7 @@ jobs:
           tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
           tests/test_risk_radar_scorecard.py
           tests/test_vsb_radar_alert.py
+          tests/test_risk_radar_intl_profiles.py
           tests/test_risk_state_live_copy_sync.py
           tests/test_build_china_risk_state.py
           tests/test_canon.py tests/test_whitehouse_w5.py
@@ -894,6 +933,9 @@ jobs:
           tests/test_ignition_persistence.py
           tests/test_mag7_panel.py
           tests/test_leadership_board.py
+          tests/test_stance_matrix.py
+          tests/test_theme_scoring_conflicted.py
+          tests/test_basket_score_rollover_w4.py
           tests/test_index_momentum.py
           tests/test_cohort_flow_chips.py
           tests/test_statement_tape.py
@@ -906,6 +948,7 @@ jobs:
           tests/test_altdata_hygiene.py
           tests/test_china_news_engine.py
           tests/test_china_library_limited.py
+          tests/test_china_standouts_serialization.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
@@ -1716,6 +1759,29 @@ jobs:
       - name: hub a11y guard unit tests (violating + passing fixtures per check)
         run: python -m pytest tests/test_check_hub_a11y.py -q
 
+  font-ui-defined:
+    # Font-UI definition guard (PR #2647 recurrence tripwire): any template whose
+    # body-level CSS sets the page font via var(--font-ui) must either link
+    # theme.css (<link rel="stylesheet"> href attribute — never the bare string,
+    # CSS comments mention theme.css) or define --font-ui: locally (+ warning if
+    # the _interfonts.html.j2 include is missing). An undefined custom property
+    # makes font-family invalid-at-computed-value -> unset, so the whole page
+    # renders in the browser default serif (Times) — the #2195 sweep broke 6
+    # standalone page families this way. Partials only warn (token resolves at
+    # host-page level). Pure stdlib / re — no browser, no extra deps.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: font-ui definition guard (body-level var(--font-ui) coverage)
+        run: python -m scripts.check_font_ui_defined templates
+      - name: font-ui guard unit tests (violating + passing fixtures per check)
+        run: python -m pytest tests/test_check_font_ui_defined.py -q
+
   ratio-lens:
     # Ratio Lens W1 (RL-R1..R16): AUTHORITY block, forbidden-key walk,
     # ledger gate, idempotency, builder exit-0, state-signature isolation,
@@ -1884,6 +1950,22 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2 plotly
       - name: IRD substrate + engines test suite
         run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py tests/test_ird_velocity.py tests/test_ird_wiring.py -q
+
+  itr-turn-rotation:
+    # ITR-W1 (research/INTL_TURN_ROTATION_REVAMP.md): per-market turn state
+    # machine (crash/breaking/topping/... incl. KOSPI replay goldens on the
+    # committed _KS11 store) + fast rotation re-rank + ITR-R6 benchmark
+    # freshness fallback. Store-reading tests skip gracefully when absent.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2
+      - name: ITR turn state machine + rotation test suite
+        run: python -m pytest tests/test_intl_market_state.py tests/test_intl_rotation.py -q
 
   altdata-brain-govern:
     # altdata-brain PR-B: de-escalation-only law enforcement + false Wilson de-dup
@@ -2233,3 +2315,43 @@ jobs:
         run: python -m pytest tests/test_site_gate.py -v
       - name: admin site-gate unit + HTTP tests (admin/site_gate.py)
         run: python -m pytest tests/test_admin_site_gate.py -v
+
+  pick-lab-liquidity:
+    # Pick Lab liquidity gate regression (P0 fix):
+    # On float64, NaN.ge(threshold) returns False — not NA — so the old
+    # fillna(True) was a no-op and null-adv rows were silently excluded
+    # (86.7% of snapshot rows, ~1475 of 1702 names).  Spec §3 says missing
+    # dollar_adv_20d must PASS with liq_unknown=True.
+    # Fix: adv.isna() | adv.ge(_LIQ_ADV_MIN) in _apply_liquidity().
+    # Two suites:
+    #   test_pick_lab_liquidity.py — four required cases (null-adv pass,
+    #                                below-threshold excluded, above-threshold
+    #                                pass, close<5+null-adv excluded) plus
+    #                                boundary / multi-row regression pins.
+    #   test_pick_lab_core.py      — full core suite must not regress.
+    # Network-free; no data/ writes.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: pick lab liquidity gate regression tests
+        run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py -q
+
+  collect-identity:
+    # Registered-visitor identity capture (app/main.py /api/collect): Supabase session-cookie
+    # parsing (single + chunked base64url), secretless cached token verification (monkeypatched),
+    # and the EO-Client-IP real-IP precedence. Imports app.main, so fastapi is installed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest fastapi
+      - name: identity capture unit tests
+        run: python -m pytest tests/test_collect_identity.py -v

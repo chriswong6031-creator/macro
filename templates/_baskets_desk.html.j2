@@ -157,7 +157,9 @@
   /* ---- what to act on now ---- */
   .anwrap { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
   .anwrap.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  @media (max-width:980px){ .anwrap.three{ grid-template-columns:1fr; } }
+  .anwrap.four  { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  @media (max-width:1200px){ .anwrap.four{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:980px){ .anwrap.three,.anwrap.four{ grid-template-columns:1fr; } }
   @media (max-width:680px){ .anwrap{ grid-template-columns:1fr; } }
   .ancol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; min-width:0; }
   .anh { margin:0 0 4px; font-size:13px; } .anh.buy { color:var(--up); } .anh.red { color:var(--down); }

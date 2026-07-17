@@ -40,8 +40,12 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
     tree = json.loads(tree_path.read_text())
     snap = json.loads(perf_path.read_text())
 
-    # as-of = the day the snapshot was captured (file mtime), kept offline-safe.
-    asof = datetime.fromtimestamp(perf_path.stat().st_mtime, timezone.utc).strftime("%Y-%m-%d")
+    # as-of = the snapshot's embedded capture date. Never trust file mtime here:
+    # on CI runners a checkout rewrites files with mtime = checkout time, so a
+    # frozen snapshot would display today's date (#2690 class). mtime remains
+    # only as an offline-safe fallback for legacy snapshots without the field.
+    asof = snap.get("asof") or datetime.fromtimestamp(
+        perf_path.stat().st_mtime, timezone.utc).strftime("%Y-%m-%d")
     generated_utc = generated_utc or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
     payload = th.build_themes_heatmap(

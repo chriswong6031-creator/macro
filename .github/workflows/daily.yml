@@ -54,7 +54,14 @@ jobs:
     # 2026-07-14 split: the 98.5m spike basis included shadow-importance (~14m), which
     # moved to collect_tail — 150m is now ≥1.7× the residual spike and is deliberately
     # kept: an undersized cap costs a whole night's collections (bitten twice).
-    timeout-minutes: 150
+    # 2026-07-17: bitten a THIRD time — the first 18:30-ET (22:30 UTC) Build B run's
+    # collect ran 150.4m and was cancelled AT the final "commit data" step, seconds from
+    # landing ~148m of freshly-pulled collections (run 29542087837; downstream engine/
+    # publish all green but the day's collector data never committed). Runtime grew
+    # ~115m→~148m after the schedule moved 02:00 UTC → 22:30 UTC — suspected early-
+    # evening source retry loops (under forensics). 185m buys survival at the observed
+    # pace + commit headroom while the growth is root-caused.
+    timeout-minutes: 185
     steps:
       - uses: actions/checkout@v4
       - name: python 3.12 (Homebrew venv — self-hosted runner)
@@ -191,8 +198,10 @@ jobs:
         run: |
           python scripts/collect_zori.py \
             || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
-      - name: commit data
+      - name: commit data (local checkpoint — no network ops in this step)
+        id: commitdata
         run: |
+          echo "committed=false" >> "$GITHUB_OUTPUT"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # site/qledger: the qledger grader (scripts/collect.py -> grade_qledger)
@@ -218,6 +227,18 @@ jobs:
           git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
           if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+      # COMMIT/PUSH SPLIT (2026-07-17, run 29542087837 postmortem): the local commit above
+      # is atomic and integrity-complete (fully-staged tree, asia paths reset out, empty-
+      # guarded) — everything below is pure network publish. It lives in a SEPARATE
+      # always()-guarded step so a job-timeout cancel during the push can never again
+      # discard an already-committed night of collections (a hung git push ate 57m and
+      # the 150m cap killed the step mid-publish; the commit existed only on the runner).
+      # Every git network op is alarm-bounded (macOS runners have no GNU timeout;
+      # perl alarm survives execve — SIGALRM kills a hung op, the loop retries).
+      - name: push data (survives a job-cap cancel; alarm-bounded git ops)
+        if: always() && steps.commitdata.outputs.committed == 'true'
+        run: |
           # best-effort push: losing a race with a concurrent push must NOT fail the
           # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
           # preferring our freshly-collected data on any conflict.
@@ -232,17 +253,28 @@ jobs:
             # intersection (runner-local stores and caches are untouched).
             # (Asia paths unstaged above: when newly tracked on main, deleting the local stale
             # copy lets the rebase materialize asia-close's fresh commit — the W0b intent.)
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed data on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
             echo "data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push collected data after 5 attempts (non-fatal)"
+      # Last-ditch publish if the job was CANCELLED mid-push (cap timeout): one bounded
+      # attempt inside the post-cancel grace window. The commit already exists locally;
+      # losing it costs the whole night's collections (2026-07-16 incident).
+      - name: salvage push (job cancelled mid-publish — one bounded attempt)
+        if: cancelled() && steps.commitdata.outputs.committed == 'true'
+        run: |
+          perl -e 'alarm 90; exec @ARGV or die' -- git fetch origin main || true
+          perl -e 'alarm 180; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || true
+          perl -e 'alarm 120; exec @ARGV or die' -- git push \
+            && echo "salvage push landed the collections" \
+            || echo "::warning::salvage push failed — tonight's collections stay uncommitted"
       - name: publish attention store back to R2 (gated on the restore)
         # The day's upserted increments ride back to R2 so tomorrow's restore (and the
         # engine job's render-side restore) reads a CURRENT deep store — a frozen R2
@@ -568,11 +600,11 @@ jobs:
           # data on any conflict; losing all 5 races is non-fatal (the stores
           # are state-resumable and re-accrue next night).
           for i in 1 2 3 4 5; do
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed tail data on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -772,6 +804,13 @@ jobs:
           # needs the DeepSeek key here too — not only on the master_brain step below.
           # No-op (degrades to neutral) when the secret is absent.
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          # NWS-01 (#2658) moved build_news INTO this step (pre-build_site) from the
+          # parallel cluster below — the financial_news polygon/finnhub legs need the
+          # provider keys HERE now, or the keyed nightly itself would ship a dark feed
+          # (and after 36h the never-darken guard would lapse into permanent darkness).
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
           # Live intraday layer: set repo VARIABLE LIVE_QUOTES_WORKER_URL (Settings ->
           # Secrets and variables -> Actions -> Variables) to your deployed Cloudflare
           # quotes-worker URL to turn ON browser live prices — build_site bakes it into
@@ -832,6 +871,16 @@ jobs:
           # Reads CL=F via yahoo store + data/whitehouse/alerts.jsonl (READ ONLY).
           # Non-fatal: main() always returns 0; a missing artifact degrades gracefully on the page.
           run_py "policy-lever card (build_policy_lever)" scripts.build_policy_lever
+          # NWS-01 fix: build_news must run BEFORE build_site so that build_site
+          # renders news.html against the CURRENT macro_releases.json (not the
+          # previous run's artifact).  build_news is display-tier/leaf (context-only);
+          # it adds ~1-3 min serial wall-time here (FRED fetches cached 12h; LLM
+          # enrichment ~20-60s with DeepSeek; worst-case cold ~3-4 min).  The
+          # site no longer ships a desync'd board.
+          # news_calib (grade_news_events) runs immediately after — it writes
+          # site/news/calibration.json which build_site also reads (W3 side-artifact).
+          run_py "news suite (build_news)" scripts.build_news
+          run_py "news event calibration (grade_news_events)" scripts.grade_news_events
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           # Index Leadership rotation board — DEAD-WIRE FIX 2026-07-16: this builder had NO
           # workflow caller since its 2026-07-01 hand-run, so site/marketdata/index_leadership.json
@@ -855,12 +904,20 @@ jobs:
           # writes site/flowleaders/leaders.json + renders site/flow_leaders.html.
           # Display-only; exit 0 always; never breaks the render.
           run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders
-          # Leader Radar — LR W2a. AFTER build_flow_leaders (independent stores), BEFORE
-          # build_pick_lab (plab_leader_precipice/plab_leader_onset consume radar.json).
+          # L3 dispersion regime lens — NW Rails W2 PR-4 (§5). Emits data/dispersion/regime.json
+          # from the breadth close caches (same panel as build_stock_library). Display-only;
+          # gross_mult_live clamped 1.0. Seconds; never fatal.
+          # ORDERING NOTE: moved BEFORE build_leader_radar (LR PR-A Item 8) so that
+          # regime.json is same-night data when build_leader_radar reads it.
+          # build_dispersion_regime reads only breadth close caches (no dependency on
+          # any intervening step between its original position and here).
+          run_py "L3 dispersion regime lens (build_dispersion_regime)" scripts.build_dispersion_regime
+          # Leader Radar — LR W2a. AFTER build_flow_leaders + build_dispersion_regime
+          # (plab_leader_precipice/plab_leader_onset consume radar.json).
           # Resolves universe (mag7+AI+Dow-30+NDX ∩ ohlcv); builds/appends
           # data/rs_series/<T>.parquet (full-history backfill on first run);
           # persists data/leader_radar/state_history.parquet + revisions_history.parquet;
-          # writes site/leaderradar/radar.json (schema leader_radar.v1).
+          # writes site/leaderradar/radar.json (schema leader_radar.v2).
           # Absent stores → honest nulls. Always exits 0; never breaks the render.
           run_py "leader radar (build_leader_radar)" scripts.build_leader_radar
           # Pick Lab nightly runner — AFTER build_stock_board_v2 (producer-core snapshot already
@@ -881,10 +938,6 @@ jobs:
           # (engine.run, above). Reactive early-ignition momentum screen; display/context only.
           # Reads only committed/cached data; returns 0 on error so it can never break the site.
           run_py "impulse tracker (build_impulse)" scripts.build_impulse
-          # L3 dispersion regime lens — NW Rails W2 PR-4 (§5). Emits data/dispersion/regime.json
-          # from the breadth close caches (same panel as build_stock_library). Display-only;
-          # gross_mult_live clamped 1.0. Seconds; never fatal.
-          run_py "L3 dispersion regime lens (build_dispersion_regime)" scripts.build_dispersion_regime
           # DT-NW-1: aggregate per-ticker dt_contra chip state into data/neuralweb/dt_contra_state.json.
           # AFTER build_site (which calls build_stock_library to write site/stockdata/*.json).
           # Display-only NW artifact; degrades gracefully if stockdata absent. Seconds; never fatal.
@@ -974,7 +1027,7 @@ jobs:
         # a stable order AFTER the barrier (never interleaved) and per-builder wall-times go
         # to the step summary. Builders read build_site's output (spine, above) + the
         # collect job's data; the only cross-builder reads are kept INSIDE one cluster
-        # (news after baskets; crossasset/transmission after commodity/forex/bonds;
+        # (crossasset/transmission after commodity/forex/bonds;
         # policy_watch after policy_intent). special_situations stays IN this job (not a
         # sibling job like factor_series) because it writes a PAGE + hub card that must be
         # in THIS run's deploy artifact — it is event-driven, so a one-run lag is wrong.
@@ -985,6 +1038,14 @@ jobs:
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           MASSIVE_S3_ENDPOINT: ${{ secrets.MASSIVE_S3_ENDPOINT }}
           MASSIVE_S3_ACCESS_KEY_ID: ${{ secrets.MASSIVE_S3_ACCESS_KEY_ID }}
           MASSIVE_S3_SECRET_ACCESS_KEY: ${{ secrets.MASSIVE_S3_SECRET_ACCESS_KEY }}
@@ -1047,9 +1108,7 @@ jobs:
             brun rotation_events "Rotation Command W1 — rotation events + sector fragmentation (build_rotation_events)" scripts.build_rotation_events
             # RLT-R2 Rebalance Pulse: mechanical volume day-classifier (display/context, off render path)
             brun rebalance_pulse "RLT-R2 rebalance pulse — calendar × volume classifier (build_rebalance_pulse)" scripts.build_rebalance_pulse
-            brun news        "news suite (build_news)"                 scripts.build_news
-            # output: data/news/event_log.parquet + site/news/calibration.json — both covered by the git add data/ site/ commit step
-            brun news_calib  "news event calibration (grade_news_events)" scripts.grade_news_events
+            # build_news + news_calib moved BEFORE build_site (NWS-01 fix — see above)
             brun methodology "methodology page (build_methodology)"    scripts.build_methodology
             brun nasdaq_internals "nasdaq-100 archetype-group internals (build_nasdaq_internals)" scripts.build_nasdaq_internals
           }
@@ -1060,6 +1119,11 @@ jobs:
             brun cycle         "cycle intelligence page (build_cycle)"        scripts.build_cycle
             brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
             brun countrycyc    "country cycle intelligence (build_country_cycles)" scripts.build_country_cycles
+            # markets_engine.js is a pure splice of country_cycles.json, so it must re-run
+            # whenever countrycyc does — otherwise markets.html freezes on the previous
+            # vintage and the cycle-consistency PR gate fails on same-tape pos/phase skew
+            # (render.yml already pairs them; cl_misc is sequential so ordering holds).
+            brun markets       "global market cycles shell (build_markets)"    scripts.build_markets
             brun measurement   "cycle measurement hub (build_measurement)"    scripts.build_measurement
             brun sync_gauge    "sync gauge appender (append_sync_gauge)"      scripts.append_sync_gauge
             brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
@@ -1082,7 +1146,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse news methodology nasdaq_internals seasonality reports measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -1099,6 +1163,36 @@ jobs:
             fi
           done
           exit 0
+      - name: builder fail-streak escalation (consecutive-night freeze detector)
+        # brun() (above) BY DESIGN never aborts on a broken builder — but that makes a
+        # builder failing MANY CONSECUTIVE nightlies look identical to a one-off at a
+        # glance (2026-07-16/17: build_cycle aborted two nights running, cycle.html
+        # silently froze at the 07-13 render while the run stayed green — PR #2732 fixed
+        # the builder; this step fixes the visibility gap). Reads the band's per-builder
+        # scratch rc files ($RUNNER_TEMP/band/<slug>.rc), advances a per-builder streak
+        # ledger (data/ci/builder_failstreaks.json — covered by 'git add data/' in
+        # 'commit engine outputs' below), and at streak >=2 escalates loudly: a distinct
+        # ::error:: per frozen page + step-summary section + one W6b ops alert
+        # (engine/alert_triage.push_ops_alert, dispatch-always — same spine as the
+        # nw_health streak escalation, PR #2621 precedent). --lane nightly gates the
+        # ledger WRITE (nightly = sole advancer); future closing-bell/asia-close ports
+        # must pass their own lane and stay report-only. rc==0 resets a streak; a >4-day
+        # gap (nightly itself dead) starts a fresh streak. Resilient: always exits 0 —
+        # never blocks the deploy, never changes brun()'s never-abort semantics.
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m scripts.check_builder_failstreaks --art-dir "$RUNNER_TEMP/band" --lane nightly || echo "::warning::builder fail-streak check failed (non-fatal)"
+      - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
+        # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
+        # named US thematic baskets. Ported from China #2634. Reads sector_cycles
+        # forward_log.parquet (written by build_sector_cycles in the parallel band above) so
+        # it MUST be a serial step AFTER the band wait barrier.  Writes
+        # data/us_sector_rotation/latest.json, which build_sector_central reads immediately
+        # after to re-order the conviction board by fast-rotation rank.
+        # Additive (always exits 0 — never breaks the deploy).
+        run: python -m scripts.build_us_sector_rotation || echo "::warning::build_us_sector_rotation non-fatal failure"
       - name: US sector central intelligence (build_sector_central)
         # The US Sector Central hub fuses the cycle spine + baskets + narrative rotation + heatmap.
         # It reads baskets.json (cl_baskets) + sector_cycles_data.js (cl_misc → sectorcyc) + the
@@ -1107,6 +1201,14 @@ jobs:
         # which could run inside cl_china only because both its deps lived in that one cluster).
         # Additive (the builder returns 0 on any failure), so it can never break the deploy.
         run: python -m scripts.build_sector_central
+      - name: MLC W2b stance matrix (build_stance_matrix)
+        # MLC-W2b coherence layer: per-basket stance matrix collecting sector/theme/confluence/
+        # allocation/m7c verdicts mapped to a signed tier scale (-2..+2). Reads
+        # baskets.json (build_baskets), sector_central.json (build_sector_central above),
+        # basket_confluence.json, allocation.json, and mag7_regime latest.json.
+        # Output site/mlcdata/stance_matrix.json rides the existing `git add data/ site/` commit.
+        # Additive (always exits 0 — never breaks the deploy).
+        run: python -m scripts.build_stance_matrix || echo "::warning::build_stance_matrix non-fatal failure"
       - name: FTR W9 grading pack (basket_turn.v1 cohort claims + tape_disagreement.v1)
         # basket_turn.v1: one qledger claim per IGNITION-day cohort (equal-weight basket EW vs
         # SPY, 21d horizon, expected-NULL forward meter per FT-R9). Reads
@@ -1128,9 +1230,13 @@ jobs:
         # Builds data/polygon_universe/reference.parquet — ticker → GICS sector + USD market cap.
         # Consumed by the charting-app's ingest/build_universe.py when it rebuilds the
         # heatmap manifest (~8.7k rows); enriches US names with real sector + cap sizing.
-        # Cache is weekly (exits immediately if fresh); checkpoint survives interruption.
+        # Refreshes NIGHTLY, judged from the parquet's asof column (never mtime — CI
+        # checkouts reset mtime, which froze the cache at its 2026-07-09 first fill).
+        # ~2 min of rate-limited fetches for ~500 names; same-day re-runs exit
+        # immediately. Checkpoint is same-day resume state only (gitignored).
         # Non-fatal: a failed run leaves the previous cache in place (charting-app degrades
-        # gracefully to OTHER/no-mcap for names not in cache).
+        # gracefully to OTHER/no-mcap for names not in cache). Output committed via
+        # 'git add data/' in 'commit engine outputs' below.
         continue-on-error: true
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
@@ -1272,6 +1378,14 @@ jobs:
         # NO-OP unless narrative_brain.enabled AND a token is set. Context-only; never aborts.
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set +e
@@ -1288,6 +1402,14 @@ jobs:
         # risk_brain.enabled AND a token is set. Context-only; never aborts.
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set +e
@@ -1303,6 +1425,14 @@ jobs:
         # risk_radar_review.enabled AND a token is set AND >=30 calls graded. Never aborts.
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set +e
@@ -1487,6 +1617,14 @@ jobs:
         # AND a token is set. A hard CODE clamp blocks ACCUMULATE on an extended name; never aborts.
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set +e
@@ -1968,6 +2106,7 @@ jobs:
           # standout_audit_us job (which reads committed stores only, SA-R15).
           git add data/pick_lab/fires.jsonl 2>/dev/null || true
           git add data/pick_lab/grades.jsonl 2>/dev/null || true
+          git add data/pick_lab/etf_closes.parquet 2>/dev/null || true
           # m1 fix: long-hold ledgers written by engine/pick_lab/profile.py:186-190
           git add data/pick_lab/lh_fires.jsonl 2>/dev/null || true
           git add data/pick_lab/lh_grades.jsonl 2>/dev/null || true
@@ -2017,11 +2156,11 @@ jobs:
             # intersection (runner-local stores and caches are untouched).
             # (Asia paths unstaged above: when newly tracked on main, deleting the local stale
             # copy lets the rebase materialize asia-close's fresh commit — the W0b intent.)
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
               # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
@@ -2040,7 +2179,7 @@ jobs:
                 git add site/ && git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
               fi
-              if git push; then echo "pushed engine outputs on attempt $i"; exit 0; fi
+              if perl -e 'alarm 420; exec @ARGV or die' -- git push; then echo "pushed engine outputs on attempt $i"; exit 0; fi
             fi
             git rebase --abort 2>/dev/null || true
             echo "engine push attempt $i lost a race; re-syncing"; sleep $((i * 7))
@@ -2156,11 +2295,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed factor series on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2257,11 +2396,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed factor intelligence outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2381,11 +2520,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed oracle Time Machine feed on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2458,11 +2597,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed tech-lab artifacts on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2514,11 +2653,11 @@ jobs:
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)
           for i in 1 2 3 4 5; do
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed standout audit US artifacts on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2600,11 +2739,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed stock briefs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2636,6 +2775,14 @@ jobs:
     timeout-minutes: 30
     env:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+      CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+      CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+      CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+      CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+      CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+      CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+      METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       # Dedicated metered API key for the cortex job — decouples deliberation from
       # the shared OAuth session quota (root cause of 429 rate_limit_error runs).
@@ -2801,7 +2948,7 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
@@ -2809,7 +2956,7 @@ jobs:
             # on shared JSONL paths (trial_ledger, governance, machine_registry)
             # surfaces as a conflict → the retry re-runs cleanly instead of
             # silently dropping the causal job's committed rows.
-            if git pull --rebase --autostash origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed cortex outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2903,6 +3050,14 @@ jobs:
         # Non-fatal (exits 0 even if LLM chain fails — pack-only degradation is expected).
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
         run: |
           set +e
           if [ "$(date +%u)" = "2" ]; then
@@ -2941,11 +3096,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed causal outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -2984,11 +3139,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed sf forward outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -3037,11 +3192,11 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
               echo "pushed active build map on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true

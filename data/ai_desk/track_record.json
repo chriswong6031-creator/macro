@@ -1,16 +1,16 @@
 {
   "schema": "ai_desk_track_record.v1",
-  "as_of": "2026-07-15",
-  "scored_total": 3,
-  "open": 31,
+  "as_of": "2026-07-16",
+  "scored_total": 10,
+  "open": 30,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 3,
-    "hits": 2,
-    "misses": 1,
-    "hit_rate": 0.667,
-    "dir_accuracy": 0.667
+    "n": 10,
+    "hits": 8,
+    "misses": 2,
+    "hit_rate": 0.8,
+    "dir_accuracy": 0.9
   },
   "by_conviction": {
     "high": {
@@ -28,32 +28,103 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 3,
-      "hits": 2,
-      "misses": 1,
-      "hit_rate": 0.667,
-      "dir_accuracy": 0.667
+      "n": 10,
+      "hits": 8,
+      "misses": 2,
+      "hit_rate": 0.8,
+      "dir_accuracy": 0.9
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 2,
-      "hits": 2,
+      "n": 8,
+      "hits": 8,
       "misses": 0,
       "hit_rate": 1.0,
       "dir_accuracy": 1.0
     },
     "level": {
-      "n": 1,
+      "n": 2,
       "hits": 0,
-      "misses": 1,
+      "misses": 2,
       "hit_rate": 0.0,
-      "dir_accuracy": 0.0
+      "dir_accuracy": 0.5
     }
   },
-  "by_regime": {},
-  "calibration_note": "3 scored, hit-rate 0.667 (directional accuracy 0.667). Sample is tiny \u2014 treat conviction as provisional and lean low.",
+  "by_regime": {
+    "Goldilocks": {
+      "n": 3,
+      "hits": 3,
+      "misses": 0,
+      "hit_rate": 1.0,
+      "dir_accuracy": 1.0
+    }
+  },
+  "calibration_note": "10 scored, hit-rate 0.8 (directional accuracy 0.9).",
   "recent": [
+    {
+      "id": "2026-06-18-3",
+      "subject": "Materials",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0231,
+      "check_by": "2026-07-16"
+    },
+    {
+      "id": "2026-06-18-2",
+      "subject": "Industrials",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0095,
+      "check_by": "2026-07-16"
+    },
+    {
+      "id": "2026-06-18-1",
+      "subject": "Consumer Discretionary",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0038,
+      "check_by": "2026-07-16"
+    },
+    {
+      "id": "2026-06-17-3",
+      "subject": "Industrials",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0161,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-06-17-2",
+      "subject": "Consumer Discretionary",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0056,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-06-17-1",
+      "subject": "VIX",
+      "lean": "fade-fear",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": 0.0569,
+      "check_by": "2026-07-15"
+    },
+    {
+      "id": "2026-06-16-1",
+      "subject": "Consumer Discretionary",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0236,
+      "check_by": "2026-07-14"
+    },
     {
       "id": "2026-06-15-1",
       "subject": "Information Technology",
@@ -82,5 +153,5 @@
       "check_by": "2026-06-24"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 3 \u6761\uff0c\u547d\u4e2d\u7387 0.667\uff08\u65b9\u5411\u51c6\u786e\u7387 0.667\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5c06\u7f6e\u4fe1\u89c6\u4e3a\u6682\u5b9a\u5e76\u4fdd\u6301\u504f\u4f4e\u3002"
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 10 \u6761\uff0c\u547d\u4e2d\u7387 0.8\uff08\u65b9\u5411\u51c6\u786e\u7387 0.9\uff09\u3002"
 }

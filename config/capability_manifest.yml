@@ -26,16 +26,37 @@ capabilities:
     secret_ref: CLAUDE_CODE_OAUTH_TOKEN
     scope: >
       Anthropic Claude API access via OAuth token.  Used by whitehouse-sentinel,
-      asia-close, and future metabolism PROPOSE/ADJUDICATE stages.
+      asia-close, cortex, and future metabolism PROPOSE/ADJUDICATE stages.
     storage_locus: gh-secret
     allowed_lanes:
       - whitehouse-sentinel
       - asia-close
       - metabolism-propose     # Phase A — not yet armed
       - metabolism-adjudicate  # Phase A — not yet armed
+      - metabolism-agenda
+      - metabolism-attention
+      - metabolism-dream
+      - metabolism-audit
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
     allowed_tiers:
       - T0
       - T1
+      - T2
     rotation_state: active
     kill_state: active
     notes: >
@@ -82,11 +103,28 @@ capabilities:
     allowed_lanes:
       - metabolism-dispatch
       - metabolism-agenda
+      - metabolism-attention
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
-      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-audit       # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
     allowed_tiers:
       - T0
       - T1
@@ -94,7 +132,7 @@ capabilities:
     rotation_state: active
     kill_state: active
     notes: >
-      V2-B pool key 1 of 3. Pool works with 1 key present (degrades gracefully).
+      V2-B pool key 1 of 7. Pool works with 1 key present (degrades gracefully).
       key_pool.py tracks session counts + est-tokens in data/metabolism/key_ledger.jsonl
       (belief-state only; quota is unobservable). 429/usage-limit error triggers
       mark_cooling(cool_kind=window|weekly); dispatcher skips cooling keys.
@@ -109,11 +147,28 @@ capabilities:
     allowed_lanes:
       - metabolism-dispatch
       - metabolism-agenda
+      - metabolism-attention
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
-      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-audit       # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
     allowed_tiers:
       - T0
       - T1
@@ -121,7 +176,7 @@ capabilities:
     rotation_state: active
     kill_state: active
     notes: >
-      V2-B pool key 2 of 3. Optional — pool works with only _1 present.
+      V2-B pool key 2 of 7. Optional — pool works with only _1 present.
       Same ledger / cooling semantics as claude_code_oauth_1.
 
   - capability_id: claude_code_oauth_3
@@ -134,11 +189,28 @@ capabilities:
     allowed_lanes:
       - metabolism-dispatch
       - metabolism-agenda
+      - metabolism-attention
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
-      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-audit       # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
     allowed_tiers:
       - T0
       - T1
@@ -159,11 +231,28 @@ capabilities:
     allowed_lanes:
       - metabolism-dispatch
       - metabolism-agenda
+      - metabolism-attention
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
-      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-audit       # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
     allowed_tiers:
       - T0
       - T1
@@ -184,11 +273,28 @@ capabilities:
     allowed_lanes:
       - metabolism-dispatch
       - metabolism-agenda
+      - metabolism-attention
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
-      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-audit       # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
     allowed_tiers:
       - T0
       - T1
@@ -209,11 +315,28 @@ capabilities:
     allowed_lanes:
       - metabolism-dispatch
       - metabolism-agenda
+      - metabolism-attention
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
-      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-audit       # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
     allowed_tiers:
       - T0
       - T1
@@ -234,11 +357,28 @@ capabilities:
     allowed_lanes:
       - metabolism-dispatch
       - metabolism-agenda
+      - metabolism-attention
       - metabolism-propose
       - metabolism-adjudicate
       - metabolism-build
       - metabolism-dream
-      - metabolism-audit     # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-audit       # V7 (R-V7-2): adversarial Opus code review lane
+      - metabolism-shadow
+      - metabolism-standout
+      - cortex
+      - whitehouse
+      - causal-brainstorm
+      - signal-foundry
+      - extraction-drift
+      - commodity-news
+      - risk-brain
+      - risk-radar-review
+      - influence-extract
+      - narrative-brain
+      - altdata-brain
+      - news-llm
+      - ask-brain
+      - orchestrator-chat
     allowed_tiers:
       - T0
       - T1

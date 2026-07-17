@@ -26,6 +26,7 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 
 from engine import live_overlay, live_quotes, technicals
 from lib import config
@@ -231,10 +232,14 @@ def write_live_config(site_dir) -> None:
 
 # ------------------------------------------------------------------ build ----
 
-def build(offline: bool = False, limit: int | None = None) -> dict:
+def build(offline: bool = False, limit: int | None = None,
+          site_dir: Path | None = None) -> dict:
+    """site_dir overrides the output root (tests); default = the real site/ tree.
+    Reads (stockdata baselines, universe) always come from the repo tree."""
     cfg = config.load().get("live") or {}
     now = datetime.now(timezone.utc)
-    site = config.ROOT / config.load()["storage"]["site_dir"]
+    site = Path(site_dir) if site_dir is not None \
+        else config.ROOT / config.load()["storage"]["site_dir"]
     write_live_config(site)
 
     if not cfg.get("enabled", True):

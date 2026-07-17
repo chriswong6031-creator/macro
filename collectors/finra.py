@@ -119,12 +119,31 @@ def _universe_tickers() -> set[str]:
     return out
 
 
+def _cache_age_days(p) -> float | None:
+    """Age of the short-interest cache in days, from its embedded `asof`
+    (fetch-date) column — NEVER file mtime. On CI runners a checkout rewrites
+    files with mtime = checkout time, so a committed months-old cache always
+    looks brand-new by mtime and the refresh short-circuits forever (the
+    polygon-universe frozen-cache class, #2690; this cache froze at its
+    2026-06-13 fill the same way). Unreadable or asof-less caches return
+    None — the caller treats that as stale and refetches."""
+    try:
+        asof = pd.read_parquet(p, columns=["asof"])["asof"].dropna()
+        if asof.empty:
+            return None
+        newest = max(date.fromisoformat(str(v)) for v in asof.unique())
+        return float((date.today() - newest).days)
+    except Exception as e:  # noqa: BLE001
+        log.warning("finra: cannot read asof from %s (%s) — treating as stale", p, e)
+        return None
+
+
 def fetch_short_interest(force: bool = False, max_age_days: int = 4) -> pd.DataFrame | None:
     cache = config.data_dir() / "finra" / "short_interest.parquet"
     cache.parent.mkdir(parents=True, exist_ok=True)
     if not force and cache.exists():
-        age = (datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime) / 86400.0
-        if age < max_age_days:
+        age = _cache_age_days(cache)
+        if age is not None and age < max_age_days:
             log.info("finra short-interest cache fresh (%.1fd)", age)
             return pd.read_parquet(cache)
 
@@ -138,6 +157,8 @@ def fetch_short_interest(force: bool = False, max_age_days: int = 4) -> pd.DataF
     universe = _universe_tickers()
     if universe:
         snap = snap[snap.index.isin(universe)]
+    # embedded fetch-date stamp — the freshness gate reads THIS, never mtime (#2690 class)
+    snap["asof"] = date.today().isoformat()
     snap.to_parquet(cache)
     log.info("finra short interest: %d universe names, settlement %s", len(snap), settlement)
 
@@ -159,7 +180,7 @@ def fetch_short_interest(force: bool = False, max_age_days: int = 4) -> pd.DataF
     # Contrast: collectors/finra_short_volume.py uses (date, ticker) safely because
     # daily short-volume data is never revised by FINRA.
     hist_p = cache.parent / "short_interest_history.parquet"
-    hist_snap = snap.copy()
+    hist_snap = snap.drop(columns=["asof"]).copy()   # history keeps its own capture_date; no asof stamp
     capture_date = pd.Timestamp.now("UTC").normalize().tz_localize(None)
     hist_snap["capture_date"] = capture_date
     hist_snap = hist_snap.reset_index()   # ticker becomes a column

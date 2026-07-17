@@ -257,6 +257,11 @@ jobs:
           LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
           RENDER_NO_DRIP: "1"
           CLOSINGBELL: "1"
+          # Sole exception to this step's "no LLM" rule: the build_news title_zh cache
+          # fill (engine/news_translate.py). INERT unless config news_translation.
+          # render_lanes is true (default off) — the RENDER_NO_DRIP=1 sentinel gates the
+          # call in code, so nothing here talks to an LLM until the operator opts in.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           run_py() {
@@ -502,11 +507,13 @@ jobs:
             # but tracked on origin/main is a throwaway local write — origin/main is authoritative.
             # Gitignored files and untracked paths origin/main doesn't track never enter the
             # intersection (runner-local stores and caches are untouched).
-            git fetch origin main || true
+            # git network ops alarm-bounded (2026-07-17: a hung push ate 57m in the daily's
+            # collect job; macOS runners have no GNU timeout — perl alarm survives execve)
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
               python -m scripts.check_template_site_sync --fix || true
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete"
@@ -514,7 +521,7 @@ jobs:
                 git add site/ && git commit -m "render-sync: post-rebase guards (closingbell)" \
                   || echo "::warning::render-sync commit failed (non-fatal)"
               fi
-              if git push; then echo "pushed closingbell rendered site on attempt $i"; exit 0; fi
+              if perl -e 'alarm 420; exec @ARGV or die' -- git push; then echo "pushed closingbell rendered site on attempt $i"; exit 0; fi
             fi
             git rebase --abort 2>/dev/null || true
             echo "closingbell push attempt $i failed (rebase/race); re-syncing"; sleep $((i * 7))

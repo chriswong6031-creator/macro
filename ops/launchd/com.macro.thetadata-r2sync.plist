@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.thetadata-r2sync.plist — launchd agent for the nightly offsite sync
+  of the deep ThetaData EOD store to Cloudflare R2.
+
+  The store (/Users/chriswong/theta-ops-wt/data/thetadata_eod — ~60 GB,
+  ~13k parquets, 380 roots x 2012-2026) is the foundation of all options
+  research and exists ONLY on this host. This job is its sole automated
+  offsite copy: python -m scripts.publish_r2 --dirs thetadata_eod.
+
+  Runs daily at 22:00 local (01:00 ET next day) — the empty overnight window:
+    * the backfill refresh pass (com.macro.thetadata-backfill) gates open at
+      13:10 local and its ~47-root refresh settles by ~15:00 local;
+    * the live-flow poller window (09:25-16:05 ET) is long closed;
+    * deliberately far from the 16:00/16:30-local heavy EOD-store readers
+      (options-matrix, unusual-baseline).
+  Weekend runs are cheap md5-delta no-ops and double as catch-up if a weekday
+  run was missed.
+
+  Delta semantics (scripts/publish_r2.py): local md5 vs R2 ETag — unchanged
+  files are skipped, so the FIRST run uploads the full ~60 GB (hours; safe to
+  interrupt, the next run resumes where it left off) and steady-state nightly
+  runs push only the ~47 refreshed roots (~141 files, ~1.7 GB). The
+  _DATA_DIR_MIN_FILES guard refuses partial checkouts; the manifest shrink
+  guard refuses list-clobbering syncs.
+
+  INSTALL (as the mac user who runs Theta Terminal — not root):
+    cp ops/launchd/com.macro.thetadata-r2sync.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.macro.thetadata-r2sync.plist
+
+  UNINSTALL:
+    launchctl unload ~/Library/LaunchAgents/com.macro.thetadata-r2sync.plist
+    rm ~/Library/LaunchAgents/com.macro.thetadata-r2sync.plist
+
+  DO NOT load this plist directly from the repo. Copy first — the repo path
+  may not match the deployment path, and launchd requires the exact plist path
+  when unloading.
+
+  ENV FILE:
+    R2 credentials and THETADATA_STORE are sourced from
+    /Users/chriswong/flow-ops-wt/.env via ops/launchd/run_with_env.sh.
+    NEVER inline secrets in EnvironmentVariables — use the wrapper.
+
+    Required env vars:
+      R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+      THETADATA_STORE=/Users/chriswong/theta-ops-wt/data/thetadata_eod
+
+  LOG TAILING:
+    tail -f /tmp/thetadata_r2sync.stdout.log /tmp/thetadata_r2sync.stderr.log
+
+  MANUAL RUN (smoke — reports the delta, uploads nothing):
+    set -a
+    source '/Users/chriswong/flow-ops-wt/.env'
+    set +a
+    cd '/Users/chriswong/flow-ops-wt'
+    python -m scripts.publish_r2 --dirs thetadata_eod --dry-run
+
+  MANUAL RUN (real sync):
+    python -m scripts.publish_r2 --dirs thetadata_eod
+
+  See ops/THETADATA_R2_SYNC_RUNBOOK.md for verification and restore.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.macro.thetadata-r2sync</string>
+
+  <!--
+    run_with_env.sh sources the .env file before executing the publisher.
+    Args: <env_file> <python_bin> -m <module> [flags...]
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/chriswong/flow-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/flow-ops-wt/.env</string>
+    <string>/opt/homebrew/Caskroom/miniconda/base/bin/python</string>
+    <string>-m</string>
+    <string>scripts.publish_r2</string>
+    <string>--dirs</string>
+    <string>thetadata_eod</string>
+  </array>
+
+  <!-- Working directory must be flow-ops-wt (avoids ~/Documents TCC denial). -->
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/flow-ops-wt</string>
+
+  <!--
+    22:00 local daily (01:00 ET next day) — empty overnight window, after the
+    backfill refresh writes settle. No Weekday key = fires every day; weekend
+    runs are md5-delta no-ops.
+  -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>22</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/Users/chriswong/flow-ops-wt</string>
+    <!--
+      R2_* creds and THETADATA_STORE are sourced from .env via run_with_env.sh
+      above. Do NOT set them here to avoid duplication / stale override.
+    -->
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/thetadata_r2sync.stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/thetadata_r2sync.stderr.log</string>
+
+  <key>KeepAlive</key>
+  <false/>
+
+  <!-- Throttle: if the job exits in under 10s, wait 60s before retrying. -->
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+  <!--
+    launchd agents inherit macOS's 256-fd soft limit. publish_r2's 32 upload
+    threads x s3transfer's ~10 concurrent multipart part-readers on GB-class
+    greeks parquets (+ 64 pooled sockets) exceed that — the first sync
+    (2026-07-16) died EMFILE on greeks/SPY/2022.parquet. 4096 is ~8x headroom.
+  -->
+  <key>SoftResourceLimits</key>
+  <dict>
+    <key>NumberOfFiles</key>
+    <integer>4096</integer>
+  </dict>
+
+</dict>
+</plist>

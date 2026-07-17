@@ -3546,13 +3546,13 @@
       },
       {
         "date": "2026-07-31",
-        "sync": 0.182,
-        "n": 99,
+        "sync": 0.1766,
+        "n": 121,
         "frac": {
           "trough": 0.182,
-          "advance": 0.333,
-          "peak": 0.303,
-          "decline": 0.182
+          "advance": 0.339,
+          "peak": 0.289,
+          "decline": 0.19
         }
       }
     ],
@@ -7453,13 +7453,13 @@
       },
       {
         "date": "2026-07-31",
-        "sync": 0.1264,
-        "n": 216,
+        "sync": 0.1274,
+        "n": 264,
         "frac": {
           "trough": 0.333,
-          "advance": 0.222,
+          "advance": 0.22,
           "peak": 0.227,
-          "decline": 0.218
+          "decline": 0.22
         }
       }
     ],
@@ -10766,17 +10766,17 @@
       },
       {
         "date": "2026-07-31",
-        "sync": 0.8194,
-        "n": 248,
+        "sync": 0.8089,
+        "n": 310,
         "frac": {
-          "trough": 0.831,
-          "advance": 0.04,
-          "peak": 0.02,
-          "decline": 0.109
+          "trough": 0.839,
+          "advance": 0.032,
+          "peak": 0.032,
+          "decline": 0.097
         }
       }
     ]
   },
   "definition": "sync = 1 \u2212 circ_var(2\u03c0\u00b7pos/100); mean resultant length of phase angles",
-  "updated_at": "2026-07-15T07:40:53Z"
+  "updated_at": "2026-07-17T02:39:16Z"
 }

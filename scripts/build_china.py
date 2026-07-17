@@ -339,6 +339,38 @@ def _leaderboard() -> dict | None:
                         sorted(sb, key=lambda x: (x.get("NET_BUY_AMT") or 0))[:4]]}
 
 
+def _drilldown_closes() -> tuple[pd.DataFrame, str | None]:
+    """Constituent close matrix for the per-sector drill-down holdings cards.
+
+    Source of record is the curated breadth cache (china_breadth/_closes_cache.parquet,
+    written by the collect lane). It is gitignored rebuild-only, so on the re-render
+    lanes (build_vector -> build_china, no collectors) and in fresh worktrees it can be
+    absent; there we fall back to the COMMITTED broad A-share search panel
+    (china_search/closes.parquet, ~1560 top-mcap names) which carries 76/82 curated
+    constituents with deep history. Curated cache is tried FIRST so the nightly lane's
+    drill-down is byte-unchanged; the fallback only rescues lanes that lack the cache --
+    the same china_search-first precedence build_china_library.universe() already uses,
+    and mirrors scripts/build_canada.py::_drilldown_closes() (HKCA-13). Returns
+    (df, source_label); (empty, None) when neither source is usable."""
+    dd = config.data_dir()
+    sources = [
+        (dd / "china_breadth" / "_closes_cache.parquet", "china_breadth"),
+        (dd / "china_search" / "closes.parquet", "china_search"),
+    ]
+    for path, label in sources:
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_parquet(path)
+        except Exception as exc:  # noqa: BLE001 — corrupt committed parquet must not break the build
+            log.error("china drill-down panel %s unreadable: %s", label, exc)
+            continue
+        if df.empty or df.shape[1] == 0:
+            continue
+        return df, label
+    return pd.DataFrame(), None
+
+
 def _build_sector_pages(env) -> int:
     """Per-sector drill-down: the ETF's own cycle + each curated constituent analyzed.
     Output site/sectors/<FUND>.html (e.g. site/sectors/512690.SS.html)."""
@@ -349,8 +381,10 @@ def _build_sector_pages(env) -> int:
     names = cfg["yahoo"]["sector_etfs"]
     constituents = cfg["constituents"]
     closes = china_closes()
-    cache = config.data_dir() / "china_breadth" / "_closes_cache.parquet"
-    ccloses = pd.read_parquet(cache) if cache.exists() else pd.DataFrame()
+    ccloses, _dd_src = _drilldown_closes()
+    if not ccloses.empty:
+        log.info("china sector drill-down: constituent panel = %s (%d names)",
+                 _dd_src, ccloses.shape[1])
     outdir = Path(config.load()["storage"]["site_dir"]) / "sectors"
     outdir.mkdir(parents=True, exist_ok=True)
     built = 0
@@ -458,7 +492,7 @@ def _build_history(env, latest: dict, generated: str) -> None:
 def _sector_cards(latest: dict) -> list[dict]:
     """Merge the RS-rank table (from the regime run) with per-sector cycle analysis."""
     from engine.china_inputs import china_closes
-    from engine.cycles import analyze
+    from engine.cycles import analyze, STATE_DISPLAY as _STATE_DISPLAY_MAP
     names = config.load()["china"]["yahoo"]["sector_etfs"]
     closes = china_closes()
     rs_by = {r["ticker"]: r for r in latest.get("sector_rs", [])}
@@ -482,6 +516,7 @@ def _sector_cards(latest: dict) -> list[dict]:
             "mom60": rs.get("mom_60d_pct"), "above200": rs.get("above_200d_trend"),
             "pctile": rs.get("pctile_252d"),
             "state": lad.get("state"), "label": lad.get("label"),
+            "label_zh": _STATE_DISPLAY_MAP.get(lad.get("state") or "", {}).get("label_zh"),
             "action": lad.get("action"), "dir": lad.get("dir"),
             "entry": lad.get("entry"),     # cycle-entry call -> action board buckets
             "age_short": lad.get("age_short"), "age_short_zh": lad.get("age_short_zh"),
@@ -493,8 +528,21 @@ def _sector_cards(latest: dict) -> list[dict]:
             "mtf_json": json.dumps(a["mtf"]),
             "price": round(float(close.iloc[-1]), 3),
         })
-    # rank order (best RS first); unranked sectors fall to the end
-    cards.sort(key=lambda c: (c["rank"] is None, c["rank"] or 999))
+    # Apply rotation re-rank (replaces the simple 60d RS sort).
+    # score_and_rank:
+    #   - augments each card with rotation_rank, rotation_score, oscillator
+    #     readings and fast-RS momentum (mom5, mom10)
+    #   - preserves the old 60d RS rank as card["rank60"]
+    #   - overwrites card["rank"] with the rotation_rank so downstream
+    #     consumers (template, pb_sector) see the new unified order
+    #   - returns the list sorted by rotation_rank ascending (1 = best)
+    from engine.china_sector_rotation import score_and_rank
+    bench = config.load()["china"]["engine"]["rs_ranking"]["benchmark"]
+    try:
+        cards = score_and_rank(cards, closes, bench)
+    except Exception as e:  # noqa: BLE001 — rotation is display-only; degrade gracefully
+        log.warning("china_sector_rotation.score_and_rank failed (%s); falling back to 60d RS sort", e)
+        cards.sort(key=lambda c: (c["rank"] is None, c["rank"] or 999))
     return cards
 
 
@@ -825,11 +873,20 @@ def main() -> int:
             # forward-grade self-audit + bounded auto-tune: log+grade today's call against the
             # realized SHCOMP path, attach the scorecard, and let the radar hard-force the verdict
             # ONLY once its own log validates (can_force). Display-only until then. Never fatal.
+            # Ledger/tuner advance ONLY on the nightly lane (house law: nightly is the sole
+            # advancer); re-render lanes take the read-only scorecard fast-path.
             try:
-                from engine import risk_radar_intl_audit as _rra, risk_radar_intl_tune as _rrt
-                latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.CN_PROFILE)
-                latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
-                _rrt.tune(_rri.CN_PROFILE)
+                from engine import risk_radar_intl_audit as _rra
+                if _rra.ledger_lane_armed():
+                    from engine import risk_radar_intl_tune as _rrt
+                    latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.CN_PROFILE)
+                    latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
+                    _rrt.tune(_rri.CN_PROFILE)
+                else:
+                    # Read-only fast-path: snapshot still renders; ledger/tuner do not advance.
+                    _sc = _rra.scorecard(_rri.CN_PROFILE.key, log_governance=False)
+                    latest["risk_radar"]["forward_log"] = _sc
+                    latest["risk_radar"]["can_force"] = bool(_sc.get("can_force"))
             except Exception as _e:  # noqa: BLE001
                 log.warning("china risk-radar audit/tune failed (%s); skipping", _e)
             # Write the scorecard immediately after the CN ledger is updated so the
@@ -909,7 +966,11 @@ def main() -> int:
             from scripts import build_china_library
             setups = build_china_library.main(alpha=alpha)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china stock library build failed (%s); skipping", e)
+            # exc_info: this fallback silently served a stale china_standouts.json for
+            # 3 sessions (07-13→07-16) because the one-line message gave no traceback
+            # to locate the crash. Full traceback or the outage is invisible in CI.
+            log.error("china stock library build failed (%s); skipping — will fall back "
+                      "to the persisted (possibly STALE) china_standouts.json", e, exc_info=True)
         vm["setups"] = setups
         # W8-R7: populate mtf_upturn_cn from in-memory setups result (written by library
         # during the call above).  Reading here — AFTER build_china_library.main() — ensures
@@ -1033,38 +1094,64 @@ def main() -> int:
             log.error("china stocks: reversion_desk load failed (%s); skipping", _rd_e)
             vm["reversion_desk"] = None
 
-        # ── MX5 hero: 11-session score path log ──────────────────────────────
-        # Appended nightly; deduped by date.  Never fatal.  Intraday lanes that
-        # call build_china outside the nightly path must NOT call this — the
-        # log is a forward ledger (house law: nightly is the sole advancer).
-        # Guard: only append when market_state is populated AND we are in the
-        # nightly/primary call (not a fast-render from pickled VM).
+        # W-FCT: ticker → "EN / ZH" display-name map for panels whose artifacts
+        # don't carry names (Turn Setups / mtf_upturn_cn). data/china_search/
+        # members.parquet is COMMITTED, so this resolves on re-render lanes too.
+        # Never fatal; the template degrades to ticker-only for missing names.
         try:
+            _nm_syms = set((((vm.get("mtf_upturn_cn") or {}).get("members")) or {}).keys())
+            _nm_map = {}
+            if _nm_syms:
+                _mem = pd.read_parquet(
+                    config.data_dir() / "china_search" / "members.parquet",
+                    columns=["name"])
+                _all_names = {str(k): str(v) for k, v in _mem["name"].items()}
+                _nm_map = {s: _all_names[s] for s in _nm_syms if s in _all_names}
+            vm["cn_name_by_ticker"] = _nm_map
+        except Exception as _nm_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("cn_name_by_ticker map failed (%s); Turn Setups names "
+                        "degrade to ticker-only", _nm_e)
+            vm["cn_name_by_ticker"] = {}
+
+        # ── MX5 hero: 11-session score path log ──────────────────────────────
+        # Appended nightly; deduped by date.  Never fatal.  The READ is
+        # unconditional — every render (incl. CHINA_FAST_RENDER dev renders and
+        # nights where the snapshot degrades) draws the path from the committed
+        # log; only the APPEND is gated so off-lane renders never advance the
+        # ledger (house law: nightly is the sole advancer).
+        try:
+            import os as _osenv
+            _score_log_path = config.data_dir() / "china_market_state" / "score_log.parquet"
             _ms_snap = vm.get("market_state")
-            if _ms_snap and _ms_snap.get("score") is not None:
-                import os as _osenv
-                if not _osenv.environ.get("CHINA_FAST_RENDER"):
-                    _score_log_dir = config.data_dir() / "china_market_state"
-                    _score_log_dir.mkdir(parents=True, exist_ok=True)
-                    _score_log_path = _score_log_dir / "score_log.parquet"
-                    _new_row = pd.DataFrame([{
-                        "date": latest.get("date"),
-                        "score": int(_ms_snap["score"]),
-                        "verdict": _ms_snap.get("verdict", ""),
-                        "color": _ms_snap.get("color", ""),
-                    }])
-                    if _score_log_path.exists():
-                        _existing = pd.read_parquet(_score_log_path)
-                        _combined = pd.concat([_existing, _new_row], ignore_index=True)
-                        _combined = _combined.drop_duplicates(subset=["date"], keep="last")
-                    else:
-                        _combined = _new_row
-                    _combined = _combined.sort_values("date").reset_index(drop=True)
-                    _combined.to_parquet(_score_log_path, index=False)
-                    # Expose last 11 rows as vm['ms_history'] for the hero path chart
-                    _hist = _combined.tail(11).copy()
-                    vm["ms_history"] = _hist.to_dict(orient="records")
-                    log.info("china score_log: %d rows, last 11 -> ms_history", len(_combined))
+            _ms_sc = _ms_snap.get("score") if _ms_snap else None
+            if _osenv.environ.get("CHINA_FAST_RENDER"):
+                pass                       # dev re-render: read-only, never append
+            elif _ms_sc is None:
+                log.warning("china score_log: market_state score unavailable — no append "
+                            "(path renders from the committed log)")
+            else:
+                _score_log_path.parent.mkdir(parents=True, exist_ok=True)
+                _new_row = pd.DataFrame([{
+                    "date": latest.get("date"),
+                    "score": int(_ms_sc),
+                    "verdict": _ms_snap.get("verdict", ""),
+                    "color": _ms_snap.get("color", ""),
+                }])
+                if _score_log_path.exists():
+                    _existing = pd.read_parquet(_score_log_path)
+                    _combined = pd.concat([_existing, _new_row], ignore_index=True)
+                    _combined = _combined.drop_duplicates(subset=["date"], keep="last")
+                else:
+                    _combined = _new_row
+                _combined = _combined.sort_values("date").reset_index(drop=True)
+                _combined.to_parquet(_score_log_path, index=False)
+            # Expose last 11 rows as vm['ms_history'] for the hero path chart
+            if _score_log_path.exists():
+                _all = pd.read_parquet(_score_log_path).sort_values("date")
+                _hist = _all.tail(11).copy()
+                vm["ms_history"] = _hist.to_dict(orient="records")
+                log.info("china score_log: last %d of %d rows -> ms_history",
+                         len(_hist), len(_all))
         except Exception as _msh_e:  # noqa: BLE001 — additive, never fatal
             log.warning("china ms_history build failed (%s); skipping", _msh_e)
             vm.setdefault("ms_history", None)

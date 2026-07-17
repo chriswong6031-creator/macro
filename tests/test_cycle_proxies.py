@@ -309,3 +309,67 @@ def test_hazard_features_on_flagship_stamp():
         assert k in hf, f"hazard_features missing {k}"
     assert hf["family"] == "flagship" and hf["freq"] == "D"
     assert rec["now"]["freq"] == "D"
+
+
+# ── (6) STALENESS SEMANTICS — per-band degrade, structural fatal ─────────────
+# House law: one stale tape degrades its own band (ok=False + report['stale']);
+# it NEVER aborts the page.  Only STRUCTURAL failures (unresolvable/missing tape)
+# raise under strict.  Regression for the 2026-07-16/17 INDPRO freeze: the G.17
+# release calendar makes a 75d monthly limit trip 1-2 days/month, and one trip
+# froze all 24 cycle.html cards for days.
+
+def _fake_tape(days_old: int, n: int = 400) -> pd.Series:
+    """A synthetic tape whose LAST stamp is exactly `days_old` calendar days behind
+    the same UTC-normalized 'today' registry_report uses.  Index freq is irrelevant —
+    the staleness gate only reads index.max()."""
+    today = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()
+    idx = pd.date_range(end=today - pd.Timedelta(days=days_old), periods=n, freq="D")
+    s = pd.Series(np.linspace(90.0, 110.0, n), index=idx)
+    s.attrs["ref"] = "test:FAKE"
+    return s
+
+
+def test_stale_band_degrades_never_raises(monkeypatch):
+    """A stale monthly tape is flagged (ok=False, report['stale']) but strict
+    registry_report does NOT raise — staleness is not a structural error."""
+    monkeypatch.setattr(cp, "load_series",
+                        lambda band: _fake_tape(400 if band["freq"] == "M" else 0))
+    rep = cp.registry_report(strict=True)          # must not raise
+    assert rep["errors"] == []
+    assert rep["stale"], "a 400d-old monthly tape must be flagged stale"
+    biz = rep["bands"]["business.intermediate"]
+    assert biz["found"] is True and biz["ok"] is False
+    assert biz["stale_days"] == 400
+    # fresh daily bands are untouched by the stale monthly one
+    assert rep["bands"]["semis.intermediate"]["ok"] is True
+
+
+def test_per_band_stale_limit_override(monkeypatch):
+    """business/INDPRO declares stale_limit_days=85: an 80d-old tape (which the old
+    75d monthly default aborted the whole page on) is now healthy.  The override is
+    per-band — it does not loosen any other band's limit."""
+    monkeypatch.setattr(cp, "load_series",
+                        lambda band: _fake_tape(80 if band["freq"] == "M" else 0))
+    rep = cp.registry_report(strict=True)
+    biz = rep["bands"]["business.intermediate"]
+    assert biz["stale_limit"] == 85
+    assert biz["ok"] is True
+    assert rep["stale"] == [] and rep["errors"] == []
+    # every non-override band still carries the freq default
+    for key, e in rep["bands"].items():
+        if key != "business.intermediate":
+            assert e["stale_limit"] == (cp._STALE_MAX_M if e["freq"] == "M"
+                                        else cp._STALE_MAX_D), key
+
+
+def test_missing_tape_still_structural_fatal(monkeypatch):
+    """An unresolvable tape remains a STRUCTURAL error: strict raises; non-strict
+    records it under report['errors'] (not report['stale'])."""
+    def _boom(band):
+        raise cp.ProxyMissing("no data on disk (simulated)")
+    monkeypatch.setattr(cp, "load_series", _boom)
+    with pytest.raises(cp.ProxyMissing, match="structural"):
+        cp.registry_report(strict=True)
+    rep = cp.registry_report(strict=False)
+    assert rep["errors"] and rep["stale"] == []
+    assert all(e["found"] is False for e in rep["bands"].values())

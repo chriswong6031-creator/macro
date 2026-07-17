@@ -1375,7 +1375,9 @@ class TestLoopDriverForceFlag:
                                 "ok": True, "action": "dry_run", "detail": "", "n_admitted": 0, "n_rejected": 0,
                             }):
                                 import scripts.codex_research_loop as loop
-                                ret = loop._main(["--lane", "cases", "--force"])
+                                # --root: bare _main resolves the REAL repo root and
+                                # writes data/codex_lane/ journal + usage state there
+                                ret = loop._main(["--root", str(root), "--lane", "cases", "--force"])
 
         # Should have run (not no-op)
         assert len(cases_called) >= 1
@@ -1402,7 +1404,9 @@ class TestLoopDriverForceFlag:
                             "ok": True, "action": "dry_run", "detail": "", "n_admitted": 0, "n_rejected": 0,
                         }):
                             import scripts.codex_research_loop as loop
-                            ret = loop._main(["--lane", "cases"])
+                            # --root: bare _main resolves the REAL repo root and
+                            # writes data/codex_lane/ journal + usage state there
+                            ret = loop._main(["--root", str(root), "--lane", "cases"])
 
         assert len(cases_called) >= 1
 
