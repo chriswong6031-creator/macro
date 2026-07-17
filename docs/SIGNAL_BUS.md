@@ -769,7 +769,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| opex-risk-snapshot | `site/vol/regime.json` | json | daily-engine | display | 2 | 1 |
+| opex-risk-snapshot | `site/vol/regime.json` | json | daily-engine | display | 3 | 1 |
 | options-surface-index-etf | `data/options_surface/index_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |
 | options-surface-industry-etf | `data/options_surface/industry_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |
 | options-surface-sector-etf | `data/options_surface/sector_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |

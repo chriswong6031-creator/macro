@@ -4809,6 +4809,9 @@ artifacts:
     consumers:
       - scripts/build_site.py
       - scripts/build_intraday_flow.py
+      # build_stock_library reads site/vol/regime.json for the co-located vol_regime
+      # block; the shared path makes it a reader of this embedded artifact too.
+      - scripts/build_stock_library.py
     external_consumers:
       - mastermind:context
     notes: >
