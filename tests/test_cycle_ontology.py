@@ -914,11 +914,44 @@ def test_classify_phase_returns_valid_phase():
 
 
 def test_classify_phase_high_pos_peak_downturn():
-    """pos ≥ 68 → Peak (rising) or Downturn (falling)."""
-    r_up   = classify_phase(80.0, 5.0, _bullish_mtf(), {"macd_pos": True})
+    """pos ≥ 68 → Peak (rising + confirmed decel), Expansion (full thrust) or
+    Downturn (falling).
+
+    INTENTIONAL CHANGE (#2697 rollover-lag port): a stretched name in full thrust
+    (weekly not fading, 3D up, oscillator rising) previously pinned "Peak"; it now
+    reads Expansion — "Peak" requires confirmed deceleration evidence."""
+    # full thrust: no decel evidence anywhere → Expansion (was Peak pre-#2697-port)
+    r_thrust = classify_phase(80.0, 5.0, _bullish_mtf(), {"macd_pos": True})
+    assert r_thrust["phase"] == "Expansion", f"Expected Expansion, got {r_thrust['phase']}"
+    # rising overall but weekly fading toward its cross → confirmed decel → Peak
+    w_fading = {"macd_pos": True, "macd_approaching_dn": True}
+    r_up = classify_phase(80.0, 5.0, w_fading, {"macd_pos": True})
+    assert r_up["phase"] == "Peak", f"Expected Peak, got {r_up['phase']}"
     r_down = classify_phase(80.0, -5.0, _bearish_mtf(), {"macd_pos": False})
-    assert r_up["phase"]   == "Peak",     f"Expected Peak, got {r_up['phase']}"
     assert r_down["phase"] == "Downturn", f"Expected Downturn, got {r_down['phase']}"
+
+
+def test_classify_phase_anticipates_rollover_port():
+    """#2697 port parity: the ontology classifier must pin the same reads as
+    sector_cycles._classify_phase (tests/test_sector_cycles.py::
+    test_classify_phase_anticipates_rollover) — XLK's exact stamp (weekly still
+    positive but approaching its cross, 3D negative, oscillator collapsing) reads
+    Downturn, not Peak/Expansion."""
+    w_fading = {"macd_pos": True, "macd_approaching_dn": True}
+    dn3 = {"macd_pos": False}
+    # stretched (XLK 2026-07-16: pos 70.2, slope −20.7) → Downturn
+    assert classify_phase(70.2, -20.7, w_fading, dn3)["phase"] == "Downturn"
+    # mid position (ai_infra: pos 60.1, slope −30.4) → also Downturn
+    assert classify_phase(60.1, -30.4, w_fading, dn3)["phase"] == "Downturn"
+    # direction TIES break to the FASTER 3D clock, not the stale weekly sign
+    # (weekly pos, 3D negative, slope down: votes 2−1−1=0 → 3D decides → falling)
+    assert classify_phase(60.0, -5.0, {"macd_pos": True}, dn3)["phase"] == "Downturn"
+    # ... and the monthly kernel (t3={}) keeps the legacy weekly-sign tiebreak
+    assert classify_phase(60.0, -5.0, {"macd_pos": True}, {})["phase"] == "Expansion"
+    # healthy leader in full thrust (XLV 2026-07-16: 3D up, osc slope +31) → Expansion
+    r = classify_phase(75.0, 31.0, {"macd_pos": True}, {"macd_pos": True})
+    assert r["phase"] == "Expansion", f"Expected Expansion, got {r['phase']}"
+    assert r["phase_dir"] == "rising"
 
 
 def test_classify_phase_low_pos_recovery_trough():
