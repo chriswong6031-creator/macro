@@ -123,7 +123,7 @@ def _load_attempted_episodes(root: Path) -> set[str]:
     Episodes with only 'skipped' rows below the 3-attempt bound are NOT excluded,
     so transient failures (e.g. codex not installed, timeout) are retryable.
     """
-    _TERMINAL_STATUSES = {"pr_opened", "audit_failed", "generated"}
+    _TERMINAL_STATUSES = {"pr_opened", "audit_failed", "generated", "pr_exists_closed"}
     # episode -> list of statuses
     ep_rows: dict[str, list[str]] = {}
     path = root / _ATTEMPTS_REL
@@ -228,7 +228,7 @@ def _ls_remote_case_keys(root: Path) -> set[str]:
             # Last segment is the year (4 digits), everything before is the ticker
             dash_parts = tail.rsplit("-", 1)
             if len(dash_parts) == 2 and dash_parts[1].isdigit() and len(dash_parts[1]) == 4:
-                ticker_part = dash_parts[0].upper().replace("-", "")
+                ticker_part = dash_parts[0].upper()
                 year_part = dash_parts[1]
                 keys.add(f"{ticker_part}_{year_part}")
     except Exception as exc:  # noqa: BLE001
@@ -901,18 +901,34 @@ def _open_pr(root: Path, ticker: str, year: int, case_path: Path, audit_summary:
 
         # 8. Open the PR via gh (run with cwd=tmpdir)
         try:
-            # FIX 5(a): check for an existing open PR before creating
+            # FIX A(c): check for an existing open PR before creating (using token fallback env)
+            _gh_env_base = dict(os.environ)
+            _gh_fallback = os.environ.get("GH_TOKEN_FALLBACK", "")
             try:
                 reuse_r = subprocess.run(  # noqa: S603
                     ["gh", "pr", "list", "--head", branch, "--state", "open", "--json", "url", "--jq", ".[0].url"],
                     cwd=str(root),
                     capture_output=True, text=True, timeout=30,
+                    env=_gh_env_base,
                 )
                 existing_url = reuse_r.stdout.strip()
                 if existing_url and existing_url.startswith("https://"):
                     log.info("codex_case_lane: PR already exists at %s; skipping create", existing_url)
                     pr_url = existing_url
                     return pr_url  # skip push+create
+                # Also try with fallback token if present
+                if reuse_r.returncode != 0 and _gh_fallback and _gh_fallback != _gh_env_base.get("GH_TOKEN", ""):
+                    reuse_r2 = subprocess.run(  # noqa: S603
+                        ["gh", "pr", "list", "--head", branch, "--state", "open", "--json", "url", "--jq", ".[0].url"],
+                        cwd=str(root),
+                        capture_output=True, text=True, timeout=30,
+                        env={**_gh_env_base, "GH_TOKEN": _gh_fallback},
+                    )
+                    existing_url2 = reuse_r2.stdout.strip()
+                    if existing_url2 and existing_url2.startswith("https://"):
+                        log.info("codex_case_lane: PR already exists at %s (found via fallback token); skipping create", existing_url2)
+                        pr_url = existing_url2
+                        return pr_url
             except Exception as exc:  # noqa: BLE001
                 log.warning("codex_case_lane: PR existence check failed (%s); proceeding with create", exc)
 
@@ -932,13 +948,40 @@ def _open_pr(root: Path, ticker: str, year: int, case_path: Path, audit_summary:
             if draft:
                 gh_cmd.append("--draft")
 
+            # FIX A(a): attempt 1 — primary token
             result = subprocess.run(  # noqa: S603
                 gh_cmd,
                 cwd=tmpdir,
                 capture_output=True,
                 text=True,
+                env=_gh_env_base,
             )
-            # Extract PR URL from output
+            if result.returncode != 0:
+                log.warning(
+                    "codex_case_lane: gh pr create failed rc=%d: %s",
+                    result.returncode,
+                    (result.stderr + result.stdout)[-500:],
+                )
+                # FIX A(b): attempt 2 — fallback token if present and different
+                if _gh_fallback and _gh_fallback != _gh_env_base.get("GH_TOKEN", ""):
+                    log.info("codex_case_lane: retrying gh pr create with GH_TOKEN_FALLBACK")
+                    result2 = subprocess.run(  # noqa: S603
+                        gh_cmd,
+                        cwd=tmpdir,
+                        capture_output=True,
+                        text=True,
+                        env={**_gh_env_base, "GH_TOKEN": _gh_fallback},
+                    )
+                    if result2.returncode == 0:
+                        log.info("codex_case_lane: gh pr create succeeded on fallback token attempt")
+                        result = result2
+                    else:
+                        log.warning(
+                            "codex_case_lane: gh pr create fallback attempt also failed rc=%d: %s",
+                            result2.returncode,
+                            (result2.stderr + result2.stdout)[-500:],
+                        )
+            # Extract PR URL from whichever attempt succeeded
             for line in (result.stdout + result.stderr).splitlines():
                 line = line.strip()
                 if line.startswith("https://github.com") and "/pull/" in line:
@@ -980,6 +1023,231 @@ def _open_pr(root: Path, ticker: str, year: int, case_path: Path, audit_summary:
 # ---------------------------------------------------------------------------
 # Main run_once
 # ---------------------------------------------------------------------------
+
+def _gh_pr_list_head(branch: str, root: Path, fallback_token: str | None = None) -> str | None:
+    """Run `gh pr list --head <branch> --state all` and return the first URL or None.
+
+    Tries primary GH_TOKEN first; if fallback_token is set and differs, retries with it.
+    NEVER raises.
+    """
+    url, _state = _gh_pr_list_head_with_state(branch, root, fallback_token=fallback_token)
+    return url
+
+
+def _gh_pr_list_head_with_state(branch: str, root: Path, fallback_token: str | None = None) -> tuple[str | None, str | None]:
+    """Run `gh pr list --head <branch> --state all` and return (url, state) of the first PR, or (None, None).
+
+    state is one of "OPEN", "MERGED", "CLOSED" (GitHub GraphQL enum values) or None if no PR.
+    Tries primary GH_TOKEN first; if fallback_token is set and differs, retries with it.
+    NEVER raises.
+    """
+    cmd = ["gh", "pr", "list", "--head", branch, "--state", "all", "--json", "url,state"]
+    _env_base = dict(os.environ)
+    for attempt_env in ([_env_base] + ([{**_env_base, "GH_TOKEN": fallback_token}] if fallback_token and fallback_token != _env_base.get("GH_TOKEN", "") else [])):
+        try:
+            r = subprocess.run(  # noqa: S603
+                cmd, cwd=str(root), capture_output=True, text=True, timeout=30, env=attempt_env,
+            )
+            raw = r.stdout.strip()
+            if raw:
+                try:
+                    items = json.loads(raw)
+                    if items:
+                        first = items[0]
+                        url = first.get("url", "")
+                        state = first.get("state", "")
+                        if url and url.startswith("https://"):
+                            return url, state or None
+                except Exception:  # noqa: BLE001
+                    # jq-style plain URL fallback (old gh versions)
+                    if raw.startswith("https://"):
+                        return raw, None
+        except Exception as exc:  # noqa: BLE001
+            log.warning("codex_case_lane: _gh_pr_list_head_with_state failed (%s)", exc)
+    return None, None
+
+
+def _pr_recovery_sweep(root: Path, cfg: dict) -> None:
+    """FIX B — Recovery sweep: for each remote codex/case-* branch with no pr_opened row,
+    attempt gh pr create (capped at 3 branches per run). NEVER raises.
+
+    Three sub-cases for each stranded branch:
+    (a) gh pr list finds an existing PR (open/merged/closed) but ledger lacks a pr_opened-with-url row
+        → append a backfill row (detail "ledger backfill from existing PR"), no create call.
+    (b) gh pr list finds nothing → attempt gh pr create, append pr_opened on success.
+    (c) Any failure → log and continue.
+    """
+    try:
+        _fallback = os.environ.get("GH_TOKEN_FALLBACK", "") or None
+
+        # Load ledger: track pr_opened-with-url episodes, pr_exists_closed episodes,
+        # and total row counts per episode (for the cross-run bound).
+        _pr_opened_with_url: set[str] = set()
+        _pr_exists_closed: set[str] = set()
+        _ep_row_counts: dict[str, int] = {}
+        path = root / _ATTEMPTS_REL
+        if path.exists():
+            try:
+                with path.open(encoding="utf-8") as fh:
+                    for line in fh:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            row = json.loads(line)
+                            ep = row.get("episode")
+                            if not ep:
+                                continue
+                            _ep_row_counts[ep] = _ep_row_counts.get(ep, 0) + 1
+                            status = row.get("status", "")
+                            if status == "pr_opened" and row.get("pr_url"):
+                                _pr_opened_with_url.add(ep)
+                            if status == "pr_exists_closed":
+                                _pr_exists_closed.add(ep)
+                        except Exception:
+                            continue
+            except OSError:
+                pass
+
+        # List remote codex/case-* branches
+        ls_r = subprocess.run(  # noqa: S603
+            ["git", "ls-remote", "--heads", "origin", "codex/case-*"],
+            cwd=str(root), capture_output=True, text=True, timeout=30, check=False,
+        )
+        if ls_r.returncode != 0:
+            log.warning("codex_case_lane: recovery sweep ls-remote failed (rc=%d)", ls_r.returncode)
+            return
+
+        branches: list[str] = []
+        for line in ls_r.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split("\t", 1)
+            if len(parts) < 2:
+                continue
+            ref = parts[1].strip()
+            prefix = "refs/heads/"
+            if ref.startswith(prefix):
+                branches.append(ref[len(prefix):])
+
+        draft = cfg.get("case_pr_mode", "draft") == "draft"
+        sweep_count = 0
+
+        for branch in branches:
+            if sweep_count >= 3:
+                break
+
+            # Derive episode key from branch name: codex/case-nvda-2023 -> NVDA_2023
+            branch_tail = branch
+            if branch_tail.startswith("codex/case-"):
+                branch_tail = branch_tail[len("codex/case-"):]
+            dash_parts = branch_tail.rsplit("-", 1)
+            if len(dash_parts) != 2 or not dash_parts[1].isdigit() or len(dash_parts[1]) != 4:
+                continue
+            ticker_raw = dash_parts[0].upper()
+            year_raw = int(dash_parts[1])
+            episode_key = f"{ticker_raw}_{year_raw}"
+
+            # Skip if already have a good pr_opened row or operator-rejected (pr_exists_closed)
+            if episode_key in _pr_opened_with_url or episode_key in _pr_exists_closed:
+                continue
+
+            # Finding 3: skip if episode has >= 3 ledger rows (cross-run bound)
+            if _ep_row_counts.get(episode_key, 0) >= 3:
+                log.info("codex_case_lane: recovery sweep: episode %s has >= 3 ledger rows; skipping", episode_key)
+                continue
+
+            sweep_count += 1
+
+            # Check if a PR already exists for this branch (with state, for Finding 4)
+            existing_url, pr_state = _gh_pr_list_head_with_state(branch, root, fallback_token=_fallback)
+
+            if existing_url:
+                # Finding 4: differentiate CLOSED (operator-rejected) from OPEN/MERGED
+                if pr_state and pr_state.upper() == "CLOSED":
+                    log.info(
+                        "codex_case_lane: recovery sweep: PR for %s is CLOSED (operator-rejected) at %s; "
+                        "marking terminal", branch, existing_url,
+                    )
+                    _append_attempt(
+                        root, episode_key, "pr_exists_closed", None,
+                        f"operator-rejected PR at {existing_url}",
+                    )
+                    _pr_exists_closed.add(episode_key)
+                else:
+                    # OPEN or MERGED — backfill the ledger
+                    state_note = f" (state={pr_state})" if pr_state else ""
+                    log.info(
+                        "codex_case_lane: recovery sweep: PR exists for %s at %s%s; backfilling ledger",
+                        branch, existing_url, state_note,
+                    )
+                    _append_attempt(
+                        root, episode_key, "pr_opened", existing_url,
+                        f"ledger backfill from existing PR{state_note}",
+                    )
+                    _pr_opened_with_url.add(episode_key)
+                continue
+
+            # No existing PR — try to create one
+            log.info("codex_case_lane: recovery sweep: no PR found for %s; attempting gh pr create", branch)
+            gh_cmd = [
+                "gh", "pr", "create",
+                "--title", f"feat(case): winner autopsy {ticker_raw} {year_raw}",
+                "--body", f"## Winner autopsy: {ticker_raw} {year_raw}\n\nRecovered by PR sweep in `codex_case_lane` (branch was pushed but PR was not opened).\n\n**Merge authority: operator / babysitter only (CRX-R6).**",
+                "--head", branch,
+                "--base", "main",
+            ]
+            if draft:
+                gh_cmd.append("--draft")
+
+            _env_base = dict(os.environ)
+            _envs = [_env_base]
+            if _fallback and _fallback != _env_base.get("GH_TOKEN", ""):
+                _envs.append({**_env_base, "GH_TOKEN": _fallback})
+
+            created_url: str | None = None
+            create_failed = False
+            for attempt_env in _envs:
+                try:
+                    cr = subprocess.run(  # noqa: S603
+                        gh_cmd, cwd=str(root), capture_output=True, text=True, timeout=60, env=attempt_env,
+                    )
+                    if cr.returncode == 0:
+                        url_candidate = ""
+                        for out_line in (cr.stdout + cr.stderr).splitlines():
+                            out_line = out_line.strip()
+                            if out_line.startswith("https://github.com") and "/pull/" in out_line:
+                                url_candidate = out_line
+                                break
+                        if not url_candidate and cr.returncode == 0:
+                            url_candidate = cr.stdout.strip()
+                        if url_candidate and url_candidate.startswith("https://"):
+                            created_url = url_candidate
+                            log.info("codex_case_lane: recovery sweep: created PR %s for %s", created_url, branch)
+                            break
+                    else:
+                        create_failed = True
+                        log.warning("codex_case_lane: recovery sweep: gh pr create failed rc=%d for %s: %s",
+                                    cr.returncode, branch, (cr.stderr + cr.stdout)[-300:])
+                except Exception as exc:  # noqa: BLE001
+                    create_failed = True
+                    log.warning("codex_case_lane: recovery sweep: gh pr create exception for %s: %s", branch, exc)
+
+            if created_url:
+                _append_attempt(root, episode_key, "pr_opened", created_url, "recovered by PR sweep")
+                _pr_opened_with_url.add(episode_key)
+            elif create_failed:
+                # Finding 3: record failure so cross-run bound accrues
+                _append_attempt(
+                    root, episode_key, "pr_create_failed", None,
+                    "recovery sweep create failed",
+                )
+                _ep_row_counts[episode_key] = _ep_row_counts.get(episode_key, 0) + 1
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("codex_case_lane: _pr_recovery_sweep unexpected error (%s); continuing", exc)
+
 
 def _count_pr_opened(root: Path) -> int:
     """Count case_attempts.jsonl rows with status='pr_opened'. NEVER raises."""
@@ -1033,6 +1301,10 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
     try:
         r = _resolve_root(root)
         cfg = _load_cfg(r)
+
+        # FIX B — PR recovery sweep (before queue build; skip in dry_run)
+        if not dry_run:
+            _pr_recovery_sweep(r, cfg)
 
         # FIX 10 — track cadence
         pr_opened_count = _count_pr_opened(r)
@@ -1176,6 +1448,9 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
 
         if not gen_run.get("ok"):
             err = gen_run.get("error_kind", "error")
+            # FIX C — log raw_tail so failure diagnostics are visible in the runner log
+            _raw_tail_gen = (gen_run.get("raw_tail") or "")[-500:]
+            log.warning("codex_case_lane: gen run failed error_kind=%s raw_tail=%r", err, _raw_tail_gen)
             _append_attempt(r, episode_key, "skipped", None, f"gen run failed: {err}{_wt_violations_detail}")
             return {"ok": False, "action": "error", "detail": f"gen run failed: {err}", "episode": episode_key, "pr_url": None}
 
@@ -1206,6 +1481,10 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
 
         audit_run = _run_codex_audit(case_text, ticker, year, cfg, r)
         _note_result(audit_run, r)
+        # FIX C — log raw_tail on audit failures
+        if not audit_run.get("ok"):
+            _raw_tail_audit = (audit_run.get("raw_tail") or "")[-500:]
+            log.warning("codex_case_lane: audit run failed error_kind=%s raw_tail=%r", audit_run.get("error_kind", "error"), _raw_tail_audit)
 
         verdict, findings = _parse_audit_verdict(audit_run.get("final_message", ""))
 
@@ -1235,6 +1514,10 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
                         log.warning("codex_case_lane: worktree_guard.restore (fix) failed (%s)", exc)
 
                 _note_result(fix_run, r)
+                # FIX C — log raw_tail on fix run failures
+                if not fix_run.get("ok"):
+                    _raw_tail_fix = (fix_run.get("raw_tail") or "")[-500:]
+                    log.warning("codex_case_lane: fix run failed error_kind=%s raw_tail=%r", fix_run.get("error_kind", "error"), _raw_tail_fix)
 
                 # Re-read case file (may have been rewritten by fix)
                 if case_path.exists():
@@ -1273,6 +1556,19 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
         audit_summary = "Deterministic audit: PASS. Codex audit: PASS."
         draft = cfg.get("case_pr_mode", "draft") == "draft"
         pr_url = _open_pr(r, ticker, year, case_path, audit_summary, draft=draft)
+
+        # FIX B(a): distinguish pr_create_failed (retryable) from pr_opened (terminal)
+        if pr_url is None:
+            detail_fail = f"gh pr create returned no URL for branch codex/case-{ticker.lower()}-{year}{_wt_violations_detail}"
+            log.warning("codex_case_lane: %s", detail_fail)
+            _append_attempt(r, episode_key, "pr_create_failed", None, detail_fail)
+            return {
+                "ok": False,
+                "action": "pr_create_failed",
+                "detail": detail_fail,
+                "episode": episode_key,
+                "pr_url": None,
+            }
 
         _append_attempt(r, episode_key, "pr_opened", pr_url, f"PR opened: {pr_url}{_wt_violations_detail}")
         return {
