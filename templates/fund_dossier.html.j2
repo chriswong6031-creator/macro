@@ -19,7 +19,7 @@
   no cross-axis blends; descriptive framing everywhere — never a forecast.
 #}
 
-{% block title %}{{ (bf or {}).get('name') or (lb_row or {}).get('name') or t('Fund','基金') }} — {{ t('Fund Dossier — 13F Ownership Context','基金档案 — 13F 持仓背景') }}{% endblock %}
+{% block title %}{{ (bf or {}).get('name') or (lb_row or {}).get('name') or 'Fund' }} — Fund Dossier — 13F Ownership Context{% endblock %}
 
 {% block base_css %}
 /* ---- core tokens (mirrors the desk page so the visual language matches) ---- */

@@ -9,7 +9,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% if mode == 'stocks' %}{{ t('Hong Kong Stock & Exposure Board', '香港个股与敞口看板') }}{% else %}{{ t('Hong Kong Regime', '香港周期') }}{% endif %} — {{ latest.date }}</title>
+<title>{% if mode == 'stocks' %}Hong Kong Stock & Exposure Board{% else %}Hong Kong Regime{% endif %} — {{ latest.date }}</title>
 {% if mode == 'stocks' %}{% set seo_title = 'Hong Kong Stock and Exposure Board | Mastermind' %}{% set seo_desc = 'Hong Kong single-stock signals and factor exposures — HSI names, sectors and regime context, updated daily.' %}{% set seo_path = 'hk_stocks.html' %}{% else %}{% set seo_title = 'Hong Kong Market Dashboard — HSI Regime, Sectors and Flows | Mastermind' %}{% set seo_desc = 'Track the Hong Kong market regime — HSI sector rotation, southbound flows, drawdown risk and cycle position.' %}{% set seo_path = 'hk.html' %}{% endif %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
