@@ -7,28 +7,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Special Situations — event-driven filings desk</title>
+<title>Special Situations — event-driven desk</title>
 {% include "_interfonts.html.j2" %}
 <style>
 :root{
-  /* Inter loads via the _interfonts @font-face partial; the token mirrors
-     theme.css --font-ui (this standalone page does not link theme.css). */
   --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
     "Noto Sans CJK SC", sans-serif;
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}};
-  --text:{{C.text}}; --muted:{{C.muted}}; --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}};
+  --text:{{C.text}}; --muted:{{C.muted}}; --faint:{{C.faint}};
+  --red:{{C.red}}; --amber:{{C.amber}};
   --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}}; --green:#1FA971;
+  /* glass surface tokens (vector-family) */
+  --surface: color-mix(in srgb, var(--card) 72%, transparent);
+  --surface-brd: color-mix(in srgb, var(--ink) 12%, transparent);
+  --surface-shadow: 0 14px 36px -20px rgba(20,32,64,.22), 0 4px 12px -6px rgba(20,32,64,.12), inset 0 1px 0 rgba(255,255,255,.72);
+  --surface-shadow-hover: 0 20px 44px -18px rgba(20,32,64,.30), 0 6px 16px -8px rgba(20,32,64,.18);
 }
 *{box-sizing:border-box}
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+html[data-theme="dark"]{
+  --bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;
+  --surface: color-mix(in srgb, var(--card) 80%, transparent);
+  --surface-brd: color-mix(in srgb, var(--text) 13%, transparent);
+  --surface-shadow: 0 20px 52px -22px rgba(3,7,18,.66), 0 6px 18px -10px rgba(3,7,18,.44), inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent);
+  --surface-shadow-hover: 0 26px 60px -20px rgba(3,7,18,.80), 0 8px 22px -12px rgba(3,7,18,.55);
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-top:18px}
+
+/* ---- layout ---- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 72px}
+
+/* ---- inline nav (topbar style) ---- */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:30}
 .nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
-/* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
 .site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
 .site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
 .site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
@@ -36,6 +50,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);
 @media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
 a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
 a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
 .nav-dd{position:relative;display:inline-flex}
 .nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
 .nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
@@ -45,8 +60,10 @@ a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
 .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
 .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
 .nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
 .nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
 .lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+html[data-theme="dark"] .lang-toggle{background:#222732}
 .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
 html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
 .lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
@@ -57,50 +74,187 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
 .ai-brief-link.terminal-link{border-color:var(--blue);color:var(--blue)}
 .ai-brief-link.terminal-link:hover{background:var(--blue);border-color:var(--blue);color:#fff}
 .theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+html[data-theme="dark"] .theme-switch{background:#222732}
 .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
 .theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
 .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
 .theme-switch .knob::before{content:"☀️"}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
-html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
-html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
-html[data-theme="dark"] .lang-toggle{background:#222732}
-html[data-theme="dark"] .theme-switch{background:#222732}
 html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
 html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
-.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:30px 4px 12px;display:flex;align-items:center;gap:8px}
-.section-title .cnt{font-size:11px;font-weight:700;color:var(--faint);background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:1px 8px}
-.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
-.sub{color:var(--muted);font-size:13px} .faint{color:var(--faint)}
-.tag{display:inline-block;background:#FFF4E0;color:#8a5a00;border-radius:8px;padding:3px 10px;font-size:12.5px;font-weight:700}
-html[data-theme="dark"] .tag{background:#2a2410;color:#e8c15a}
-.note{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:14px 0;color:var(--text);font-size:13.5px}
-.note.b{border-color:var(--blue)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}
-@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
-.stat{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:16px;text-align:center}
-.stat .v{font-size:28px;font-weight:800;color:var(--ink);line-height:1}
-.stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.03em;margin-top:6px}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:6px 18px;margin-bottom:6px}
-.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
-.tbl td,.tbl th{padding:9px 8px;border-bottom:1px solid var(--grid);text-align:left;vertical-align:top}
-.tbl tr:last-child td{border-bottom:none}
-.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
-.tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums}
-.tkr{font-weight:700;color:var(--ink)}
-.co{color:var(--text)}
-.chip{display:inline-block;padding:3px 9px;border-radius:8px;font-weight:700;font-size:11.5px;border:1px solid var(--grid);color:var(--muted);white-space:nowrap}
-.xb{display:inline-block;margin-left:6px;font-size:11px;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:0 5px;font-weight:700}
-.live{display:inline-block;margin-left:6px;font-size:10.5px;color:var(--green);border:1px solid var(--green);border-radius:6px;padding:0 5px;font-weight:700}
-.summ{margin-top:5px;color:var(--muted);font-size:12.5px;line-height:1.5;max-width:620px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.formtag{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
-.heur{color:var(--amber);font-weight:700;cursor:help;font-size:12px}
-.arb{margin-top:5px;display:inline-block;font-size:11.5px;font-weight:600;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:1px 7px;font-variant-numeric:tabular-nums;cursor:help}
-.amend{font-size:10px;color:var(--faint);cursor:help;font-variant-numeric:tabular-nums}
-.prior{margin-top:5px;display:inline-block;margin-left:6px;font-size:10.5px;color:var(--muted);cursor:help;font-variant-numeric:tabular-nums}
-a.src{color:var(--blue);text-decoration:none;font-size:12px;font-weight:600}
-a.src:hover{text-decoration:underline}
-.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+
+/* ---- hero ---- */
+@keyframes ss-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ss-breathe{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--blue) 0%,transparent),0 0 0 0 color-mix(in srgb,#8b5cf6 0%,transparent)}50%{box-shadow:0 0 44px 6px color-mix(in srgb,var(--blue) 14%,transparent),0 0 28px 4px color-mix(in srgb,#8b5cf6 10%,transparent)}}
+.hero{position:relative;overflow:hidden;border-radius:20px;padding:32px 32px 28px;margin-bottom:28px;
+  background:var(--surface);
+  border:1px solid var(--surface-brd);
+  box-shadow:var(--surface-shadow);
+  -webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);
+  animation:ss-rise .5s cubic-bezier(.2,.8,.3,1) both, ss-breathe 6s ease-in-out 1s infinite;}
+@media(prefers-reduced-motion:reduce){.hero{animation:none}}
+.hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(620px 320px at 80% -20%,color-mix(in srgb,#8b5cf6 12%,transparent),transparent 70%),
+             radial-gradient(480px 280px at -10% 110%,color-mix(in srgb,var(--blue) 11%,transparent),transparent 70%);}
+html[data-theme="dark"] .hero::before{background:radial-gradient(620px 320px at 80% -20%,color-mix(in srgb,#8b5cf6 22%,transparent),transparent 70%),radial-gradient(480px 280px at -10% 110%,color-mix(in srgb,var(--blue) 20%,transparent),transparent 70%);}
+.hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--blue);text-transform:uppercase;margin-bottom:10px;position:relative}
+.hero-h1{font-size:28px;font-weight:800;color:var(--ink);letter-spacing:-.025em;line-height:1.15;margin:0 0 10px;position:relative}
+.hero-sub{color:var(--muted);font-size:13.5px;line-height:1.5;max-width:680px;position:relative;margin-bottom:8px}
+.hero-glance{color:var(--faint);font-size:12px;line-height:1.5;position:relative;margin-bottom:18px}
+.hero-stats{display:flex;flex-wrap:wrap;gap:14px;position:relative}
+.hero-stat{background:color-mix(in srgb,var(--card) 60%,transparent);border:1px solid var(--grid);border-radius:14px;padding:14px 20px;min-width:110px;text-align:center;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.hero-stat .v{font-size:26px;font-weight:800;color:var(--ink);line-height:1}
+.hero-stat .k{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:5px}
+.hero-stat.accent .v{color:var(--blue)}
+.hero-stat.green .v{color:var(--green)}
+
+/* ---- top setups strip ---- */
+.setups-strip-label{font-size:11px;font-weight:700;letter-spacing:.09em;color:var(--blue);text-transform:uppercase;margin:28px 2px 10px;display:flex;align-items:center;gap:8px}
+.setups-strip-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--grid),transparent)}
+.setups-strip{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.setups-strip::-webkit-scrollbar{display:none}
+.setup-chip{flex:none;min-width:180px;max-width:230px;background:var(--surface);border:1px solid var(--surface-brd);border-radius:16px;padding:14px 16px;cursor:default;
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  box-shadow:var(--surface-shadow);
+  transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease}
+.setup-chip:hover{transform:translateY(-3px);box-shadow:var(--surface-shadow-hover);border-color:color-mix(in srgb,var(--blue) 40%,var(--surface-brd))}
+.setup-chip-tkr{font-size:13px;font-weight:800;color:var(--ink);letter-spacing:.01em}
+.setup-chip-co{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px;margin-top:2px}
+.setup-chip-row{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap}
+.grade-badge{display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:800;letter-spacing:0;flex:none}
+.grade-badge .grade-letter{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;flex:none}
+.grade-A .grade-letter{background:color-mix(in srgb,var(--blue) 18%,transparent);color:var(--blue);border:1.5px solid color-mix(in srgb,var(--blue) 45%,transparent)}
+.grade-A{color:var(--blue)}
+.grade-B .grade-letter{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green);border:1.5px solid color-mix(in srgb,var(--green) 40%,transparent)}
+.grade-B{color:var(--green)}
+.grade-C .grade-letter{background:color-mix(in srgb,var(--amber) 15%,transparent);color:var(--amber);border:1.5px solid color-mix(in srgb,var(--amber) 40%,transparent)}
+.grade-C{color:var(--amber)}
+.setup-chip-why{margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ---- filter bar (sticky glass) ---- */
+.filter-bar{position:sticky;top:57px;z-index:20;background:var(--bg);padding:12px 0 8px;margin:0 -20px 12px;padding-left:20px;padding-right:20px;border-bottom:1px solid var(--grid)}
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.filter-row:last-child{margin-bottom:0}
+.filter-bar input[type=text]{flex:1;min-width:140px;max-width:240px;padding:8px 14px;border-radius:10px;border:1px solid var(--grid);background:var(--card);color:var(--text);font:inherit;font-size:13px;outline:none;transition:border-color .18s;min-height:36px}
+.filter-bar input[type=text]:focus{border-color:var(--blue)}
+.filter-bar input::placeholder{color:var(--faint)}
+.filter-sel{padding:7px 12px;border-radius:10px;border:1px solid var(--grid);background:var(--card);color:var(--text);font:inherit;font-size:12.5px;outline:none;cursor:pointer;transition:border-color .18s;min-height:36px}
+.filter-sel:focus{border-color:var(--blue)}
+/* category chip bar */
+.cat-chip-bar{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;align-items:center;flex-wrap:nowrap}
+.cat-chip-bar::-webkit-scrollbar{display:none}
+.cat-chip-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:9px;border:1px solid var(--grid);background:var(--card);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s;min-height:32px}
+.cat-chip-btn:hover{border-color:var(--blue);color:var(--blue)}
+.cat-chip-btn.active{background:color-mix(in srgb,var(--blue) 12%,transparent);border-color:var(--blue);color:var(--blue)}
+.cat-chip-btn .cnt{font-size:10.5px;color:var(--faint);font-weight:500}
+.cat-chip-btn.active .cnt{color:color-mix(in srgb,var(--blue) 70%,var(--muted))}
+/* more dropdown */
+.more-dd{position:relative;display:inline-flex}
+.more-dd-menu{position:absolute;top:calc(100% + 4px);left:0;min-width:200px;background:var(--card);border:1px solid var(--grid);border-radius:12px;box-shadow:0 10px 28px rgba(16,24,40,.16);padding:5px;opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .16s ease,transform .16s ease,visibility .16s;z-index:80}
+.more-dd:hover>.more-dd-menu,.more-dd:focus-within>.more-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.more-dd-menu .cat-chip-btn{display:flex;width:100%;border-radius:8px;border:none;background:none;padding:7px 10px}
+.more-dd-menu .cat-chip-btn:hover{background:#eef1f6}
+html[data-theme="dark"] .more-dd-menu .cat-chip-btn:hover{background:#222732}
+/* tech filter chips */
+.tech-chip-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tech-chip-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;border:1px solid var(--grid);background:var(--card);color:var(--muted);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s;min-height:30px}
+.tech-chip-btn:hover{border-color:var(--blue);color:var(--blue)}
+.tech-chip-btn.active{background:color-mix(in srgb,var(--blue) 10%,transparent);border-color:var(--blue);color:var(--blue)}
+/* count + sort + clear */
+.filter-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.filter-count{font-size:12px;color:var(--muted)}
+.filter-clear{font-size:12px;color:var(--blue);cursor:pointer;text-decoration:underline;white-space:nowrap;background:none;border:none;padding:0;font:inherit;min-height:28px}
+.sort-sel{padding:5px 10px;border-radius:8px;border:1px solid var(--grid);background:var(--card);color:var(--text);font:inherit;font-size:12px;outline:none;cursor:pointer}
+
+/* ---- show more button ---- */
+.show-more-wrap{text-align:center;margin:16px 0}
+.show-more-btn{padding:8px 22px;border-radius:10px;border:1px solid var(--grid);background:var(--card);color:var(--blue);font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
+.show-more-btn:hover{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 6%,var(--card))}
+
+/* ---- flat row cards ---- */
+#ss-feed{margin-top:4px}
+.ss-row-card{
+  background:var(--surface);
+  border:1px solid var(--surface-brd);
+  border-radius:16px;
+  margin-bottom:8px;
+  overflow:hidden;
+  -webkit-backdrop-filter:saturate(160%) blur(18px);backdrop-filter:saturate(160%) blur(18px);
+  box-shadow:var(--surface-shadow);
+  animation:ss-rise .28s cubic-bezier(.2,.8,.3,1) both;
+  transition:box-shadow .2s ease,border-color .2s ease;
+}
+@media(prefers-reduced-motion:reduce){.ss-row-card{animation:none}}
+.ss-row-card:hover{box-shadow:var(--surface-shadow-hover);border-color:color-mix(in srgb,var(--blue) 22%,var(--surface-brd))}
+.ss-row-card[data-hidden]{display:none}
+/* main row grid */
+.rc-main{display:grid;grid-template-columns:minmax(0,2.5fr) minmax(0,3fr) minmax(0,1.6fr);gap:0;cursor:pointer;padding:0}
+@media(max-width:560px){.rc-main{grid-template-columns:1fr}}
+.rc-col{padding:14px 16px}
+.rc-col-mid{border-left:1px solid var(--grid);border-right:1px solid var(--grid)}
+@media(max-width:560px){.rc-col-mid{border-left:none;border-right:none;border-top:1px solid var(--grid)}}
+@media(max-width:560px){.rc-col:last-child{border-top:1px solid var(--grid)}}
+/* left col */
+.rc-ticker{font-weight:800;font-size:15px;color:var(--ink);text-decoration:none;letter-spacing:.01em}
+.rc-ticker:hover{color:var(--blue)}
+.rc-company{font-size:12.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.rc-mc{font-size:11.5px;color:var(--faint);margin-top:4px}
+/* middle col */
+.rc-cat-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;border:1px solid;margin-bottom:6px}
+.rc-stage{font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:4px}
+.rc-summ{font-size:12px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* right col */
+.rc-right{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.rc-chips{display:flex;flex-wrap:wrap;gap:5px}
+.rc-date{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums;margin-top:2px}
+.rc-src{font-size:11.5px;color:var(--blue);text-decoration:none;font-weight:600}
+.rc-src:hover{text-decoration:underline}
+
+/* inline context chips */
+.ichip{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:6px;border:1px solid;white-space:nowrap}
+.ichip-w{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 38%,transparent);background:color-mix(in srgb,var(--amber) 8%,transparent)}
+.ichip-m{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 35%,transparent);background:color-mix(in srgb,var(--blue) 8%,transparent)}
+.ichip-s{color:var(--green);border-color:color-mix(in srgb,var(--green) 35%,transparent);background:color-mix(in srgb,var(--green) 8%,transparent)}
+.ichip-so{color:#9333ea;border-color:color-mix(in srgb,#9333ea 35%,transparent);background:color-mix(in srgb,#9333ea 8%,transparent)}
+.ichip-tier{color:var(--indigo);border-color:color-mix(in srgb,var(--indigo) 30%,transparent);background:color-mix(in srgb,var(--indigo) 8%,transparent)}
+.ichip-acc{color:var(--green);border-color:color-mix(in srgb,var(--green) 35%,transparent);background:color-mix(in srgb,var(--green) 8%,transparent)}
+.ichip-con{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,transparent);background:color-mix(in srgb,var(--blue) 7%,transparent)}
+
+/* ---- detail panel ---- */
+.rc-detail{display:none;border-top:1px solid var(--grid);padding:18px 20px;background:color-mix(in srgb,var(--card) 55%,transparent)}
+.ss-row-card.open .rc-detail{display:block}
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
+@media(max-width:560px){.det-grid{grid-template-columns:1fr}}
+.det-label{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.det-val{font-size:13px;color:var(--text);line-height:1.5}
+.det-sep{grid-column:1/-1;border:none;border-top:1px solid var(--grid);margin:4px 0}
+.arb-line{display:inline-block;font-size:12px;font-weight:600;color:var(--blue);border:1px solid color-mix(in srgb,var(--blue) 40%,transparent);border-radius:7px;padding:3px 9px;font-variant-numeric:tabular-nums;margin-top:4px}
+.prior-sentence{font-size:13px;color:var(--muted);line-height:1.5}
+.prior-receipt{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums;margin-top:3px}
+.heur-mark{color:var(--amber);font-weight:700;cursor:help;font-size:12px}
+.amend-mark{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+.xb-mark{font-size:10.5px;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:0 5px;font-weight:700;margin-left:4px}
+.live-mark{font-size:10.5px;color:var(--green);border:1px solid var(--green);border-radius:6px;padding:0 5px;font-weight:700;margin-left:4px}
+
+/* ---- coverage section ---- */
+.section-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:28px 2px 12px;display:flex;align-items:center;gap:8px}
+.cov-card{background:var(--surface);border:1px solid var(--surface-brd);border-radius:16px;padding:20px 22px;margin-bottom:8px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--surface-shadow)}
+.cov-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:14px}
+.cov-item{text-align:center;background:color-mix(in srgb,var(--card) 55%,transparent);border:1px solid var(--grid);border-radius:12px;padding:12px}
+.cov-item .v{font-size:22px;font-weight:800;color:var(--ink);line-height:1}
+.cov-item .k{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:5px}
+
+/* ---- footer ---- */
+.foot{margin-top:38px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+
+/* ---- mobile responsive ---- */
+@media(max-width:560px){
+  .filter-bar{padding:10px 16px 8px;margin:0 -20px 10px;padding-left:16px;padding-right:16px}
+  .cat-chip-bar{flex-wrap:nowrap;overflow-x:auto}
+  .rc-company{max-width:160px}
+  .det-grid{grid-template-columns:1fr}
+  .hero{padding:22px 18px 20px}
+  .hero-h1{font-size:22px}
+}
 </style>
 </head>
 <body>
@@ -108,9 +262,9 @@ a.src:hover{text-decoration:underline}
   <div class="topbar">
     {% include "_navlinks.html.j2" %}
     <div class="nav-ctrls">
-      <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
-      <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <a class="ai-brief-link" href="mastermind.html">&#x1F916; {{ t('Mastermind', '操盘大脑') }}</a>
+      <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">&#x1F5A5; {{ t('Terminal', '终端') }}</a>
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">&#x2600;&#xFE0F;</span><span class="ic moon">&#x1F319;</span><span class="knob"></span></button>
       <div class="lang-toggle" role="group" aria-label="Language">
         <span class="pill"></span>
         <span class="opt en-opt" data-l="en">EN</span>
@@ -119,76 +273,675 @@ a.src:hover{text-decoration:underline}
     </div>
   </div>
 
-  <div class="section-title">{{ t('Special Situations · event-driven filings','特殊事件 · 事件驱动申报') }}</div>
-  <div class="h1">{{ t('What corporate events are in play right now','当前正在发生的公司事件') }}</div>
-  <div class="sub" style="margin-bottom:6px">{{ t('Activist campaigns, M&A, spin-offs, going-private, tenders, divestitures & restructurings from SEC filings','来自 SEC 申报的维权、并购、分拆、私有化、要约、剥离与重组') }} · {{ t('built','生成于') }} {{ built }}</div>
-  <div class="tag">{{ t('Display-only · public-filing event tracker, never a buy signal or sizing input','仅供展示 · 公开申报事件追踪，绝非买入信号或仓位输入') }}</div>
-
-  <div class="note b">{{ t(
-    'This week\'s curated situations (with summaries) merged with our own live EDGAR detections. A ✓ live badge means our pipeline independently confirmed the situation from a primary filing; entries without it are ahead of — or beyond the US scope of — our detector. Event-discovery context for research & the trading brain, not advice.',
-    '本周精选事件（含摘要）与我方实时 EDGAR 检测合并。✓ 实时 表示我方流程已从原始申报独立确认该事件；无此标记者领先于我方检测器、或超出其美国范围。供研究与交易大脑使用的事件发现背景，而非建议。') }}</div>
-
-  <div class="stats">
-    <div class="stat"><div class="v">{{ total }}</div><div class="k">{{ t('situations','事件') }}</div></div>
-    <div class="stat"><div class="v">{{ n_cats }}</div><div class="k">{{ t('categories','类别') }}</div></div>
-    <div class="stat"><div class="v">{{ coverage.cross_border }}</div><div class="k">{{ t('cross-border','跨境') }}</div></div>
-    <div class="stat"><div class="v">${{ coverage.floor_musd|int }}M+</div><div class="k">{{ t('market-cap floor','市值下限') }}</div></div>
+  {# ---- hero ---- #}
+  <div class="hero">
+    <div class="hero-eyebrow">{{ t('Special Situations · Event-Driven Desk', '特殊事件 · 事件驱动交易台') }}</div>
+    <div class="hero-h1">{{ t('Corporate events in play right now', '当前正在进行中的公司事件') }}</div>
+    <div class="hero-sub">{{ t(
+      'Activist campaigns, M&A, spin-offs, going-private, tenders, divestitures & restructurings — drawn from SEC filings, digest monitoring, and global sources.',
+      '来自 SEC 申报、信息摘要监控与全球来源的维权、并购、分拆、私有化、要约、剥离与重组事件。') }}
+      <span style="color:var(--faint);margin-left:8px;font-size:12px">{{ t('built','生成于') }} {{ built }}</span>
+    </div>
+    <div class="hero-glance">{{ t(
+      'Event tracking with context ranking — not buy signals or advice.',
+      '事件追踪与背景排序 — 并非买入信号或建议。') }}</div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="v">{{ total }}</div>
+        <div class="k">{{ t('Situations', '事件') }}</div>
+      </div>
+      <div class="hero-stat">
+        <div class="v">{{ n_cats }}</div>
+        <div class="k">{{ t('Categories', '类别') }}</div>
+      </div>
+      <div class="hero-stat">
+        <div class="v">{{ coverage.cross_border }}</div>
+        <div class="k">{{ t('Cross-border', '跨境') }}</div>
+      </div>
+      {% if grade_a %}
+      <div class="hero-stat accent">
+        <div class="v">{{ grade_a }}</div>
+        <div class="k">{{ t('Strong setups', '强力设置') }}</div>
+      </div>
+      {% endif %}
+      {% if new_today %}
+      <div class="hero-stat green">
+        <div class="v">{{ new_today }}</div>
+        <div class="k">{{ t('New today', '今日新增') }}</div>
+      </div>
+      {% endif %}
+      {% if coverage.floor_musd %}
+      <div class="hero-stat">
+        <div class="v">${{ coverage.floor_musd|int }}M+</div>
+        <div class="k">{{ t('Mkt cap floor', '市值下限') }}</div>
+      </div>
+      {% endif %}
+    </div>
   </div>
 
-  {% for g in groups %}
-  <div class="section-title">
-    <span style="color:{{ g.color }}">{{ t(g.cat, g.cat_zh) }}</span>
-    <span class="cnt">{{ g.n }}</span>
+  {# ---- top setups strip ---- #}
+  {% if top_setups %}
+  <div class="setups-strip-label">{{ t('Top setups', '精选设置') }}</div>
+  <div class="setups-strip">
+    {% for s in top_setups %}
+    <div class="setup-chip">
+      <div class="setup-chip-tkr">{{ s.ticker }}</div>
+      <div class="setup-chip-co">{{ s.company }}</div>
+      <div class="setup-chip-row">
+        {% if s.grade %}
+        <span class="grade-badge grade-{{ s.grade }}" title="{{ s.grade }} · {{ s.grade_word }}">
+          <span class="grade-letter">{{ s.grade }}</span>
+          <span class="l-en">{{ s.grade_word }}</span>
+          <span class="l-zh">{{ s.grade_word_zh }}</span>
+        </span>
+        {% endif %}
+        {% if s.tier_word %}
+        <span class="ichip ichip-tier" data-tip="{{ s.tier }} — context only">
+          <span class="l-en">{{ s.tier_word }}</span>
+          <span class="l-zh">{{ s.tier_word_zh }}</span>
+        </span>
+        {% endif %}
+        {% if s.momentum_state == 'crossed' %}
+        <span class="ichip ichip-m" data-tip="{{ s.momentum_tip }}">
+          <span class="l-en">Momentum turned up</span>
+          <span class="l-zh">周线动能转强</span>
+        </span>
+        {% elif s.momentum_state == 'near' %}
+        <span class="ichip ichip-m" data-tip="{{ s.momentum_tip }}">
+          <span class="l-en">Momentum turning</span>
+          <span class="l-zh">动能趋转</span>
+        </span>
+        {% endif %}
+        {% if s.oversold %}
+        <span class="ichip ichip-w" data-tip="{{ s.oversold_tip }}">
+          <span class="l-en">Deeply oversold</span>
+          <span class="l-zh">深度超卖</span>
+        </span>
+        {% endif %}
+      </div>
+      {% if s.why %}
+      <div class="setup-chip-why">
+        <span class="l-en">{{ s.why[0] if s.why }}</span>
+        <span class="l-zh">{{ s.why_zh[0] if s.why_zh else (s.why[0] if s.why) }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
   </div>
-  <div class="card">
-    <table class="tbl">
-      <tr>
-        <th>{{ t('Company','公司') }}</th>
-        <th>{{ t('Stage','阶段') }}</th>
-        <th>{{ t('Filing','申报') }}</th>
-        <th class="n">{{ t('Mkt cap','市值') }}</th>
-        <th class="n">{{ t('Filed','申报日') }}</th>
-        <th class="n">{{ t('Source','来源') }}</th>
-      </tr>
-      {% for r in g.rows %}
-      <tr>
-        <td>
-          <span class="tkr">{{ r.ticker }}</span> <span class="co">{{ r.company }}</span>
-          {% if r.cross_border %}<span class="xb" title="cross-border">🌐</span>{% endif %}
-          {% if r.live %}<span class="live" title="confirmed live in our EDGAR feed">✓ {{ t('live','实时') }}</span>{% endif %}
-          {% if r.summary %}<div class="summ" title="{{ r.summary }}">{{ r.summary }}</div>{% endif %}
-          {% if r.arb %}<div class="arb" title="merger-arb: deal price vs live price (context only)">⚖ {{ r.arb }}</div>{% endif %}
-          {% if r.prior %}<span class="prior" title="historical forward-return of this category × stage in our backtest — context, not a forecast">📊 {{ r.prior }}</span>{% endif %}
-        </td>
-        <td><span class="chip" style="border-color:{{ g.color }};color:{{ g.color }}">{{ t(r.stage, r.stage_zh) }}</span>{% if r.n_amend %} <span class="amend" title="amendments tracked in this deal's filing timeline">{{ r.n_amend }}×/A</span>{% endif %}</td>
-        <td><span class="formtag">{{ r.form }}</span>{% if r.low_conf %} <span class="heur" title="keyword-heuristic detection — unverified; the LLM/digest lane upgrades it">~</span>{% endif %}</td>
-        <td class="n">{{ r.mc }}</td>
-        <td class="n faint">{{ r.date }}</td>
-        <td class="n">{% if r.url %}<a class="src" href="{{ r.url }}" target="_blank" rel="noopener">{{ t('filing →','文件 →') }}</a>{% else %}—{% endif %}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  </div>
-  {% endfor %}
+  {% endif %}
 
+  {# ---- filter bar (sticky) ---- #}
+  <div class="filter-bar" id="ss-filter-bar">
+    {# row 1: search + category chips ---- #}
+    <div class="filter-row">
+      <input type="text" id="ss-search"
+             data-ph-en="Search ticker / company…"
+             data-ph-zh="搜索股票代码 / 公司名…"
+             placeholder="Search ticker / company…" autocomplete="off">
+      <div class="cat-chip-bar" id="ss-cat-chips">
+        <button class="cat-chip-btn active" data-cat="" id="cat-btn-all">
+          <span class="l-en">All</span><span class="l-zh">全部</span>
+          <span class="cnt">({{ total }})</span>
+        </button>
+        {% for c in cat_chips %}
+        <button class="cat-chip-btn" data-cat="{{ c.cat }}" style="--cc:{{ c.color }}"
+                data-cat-en="{{ c.cat }}" data-cat-zh="{{ c.cat_zh }}">
+          <span class="l-en">{{ c.cat }}</span>
+          <span class="l-zh">{{ c.cat_zh }}</span>
+          <span class="cnt">({{ c.n }})</span>
+        </button>
+        {% endfor %}
+        {% if cat_chips_more %}
+        <div class="more-dd">
+          <button class="cat-chip-btn" id="ss-more-btn">
+            <span class="l-en">More ▾</span><span class="l-zh">更多 ▾</span>
+          </button>
+          <div class="more-dd-menu" id="ss-more-menu">
+            {% for c in cat_chips_more %}
+            <button class="cat-chip-btn" data-cat="{{ c.cat }}"
+                    data-cat-en="{{ c.cat }}" data-cat-zh="{{ c.cat_zh }}">
+              <span class="l-en">{{ c.cat }}</span>
+              <span class="l-zh">{{ c.cat_zh }}</span>
+              <span class="cnt">({{ c.n }})</span>
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {# row 2: date / size / sector / theme / grade selects ---- #}
+    <div class="filter-row">
+      <select class="filter-sel" id="ss-date-filter">
+        <option value="" data-en="Date: All" data-zh="日期：全部">Date: All</option>
+        <option value="0" data-en="Today" data-zh="今日">Today</option>
+        <option value="3" data-en="Last 3 days" data-zh="最近3天">Last 3 days</option>
+        <option value="7" data-en="Last 7 days" data-zh="最近7天">Last 7 days</option>
+        <option value="14" data-en="Last 14 days" data-zh="最近14天">Last 14 days</option>
+        <option value="30" data-en="Last 30 days" data-zh="最近30天">Last 30 days</option>
+      </select>
+      <select class="filter-sel" id="ss-mc-filter">
+        <option value="" data-en="Size: All" data-zh="规模：全部">Size: All</option>
+        <option value="large" data-en="Large cap" data-zh="大盘">Large cap</option>
+        <option value="mid" data-en="Mid cap" data-zh="中盘">Mid cap</option>
+        <option value="small" data-en="Small cap" data-zh="小盘">Small cap</option>
+        <option value="micro" data-en="Micro cap" data-zh="微盘">Micro cap</option>
+        <option value="unknown" data-en="Unknown" data-zh="未知">Unknown</option>
+      </select>
+      {% if sector_opts %}
+      <select class="filter-sel" id="ss-sector-filter">
+        <option value="" data-en="Sector: All" data-zh="行业：全部">Sector: All</option>
+        {% for s in sector_opts %}
+        <option value="{{ s.v }}" data-en="{{ s.v }} ({{ s.n }})" data-zh="{{ s.v }} ({{ s.n }})">{{ s.v }} ({{ s.n }})</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      {% if theme_opts %}
+      <select class="filter-sel" id="ss-theme-filter">
+        <option value="" data-en="Theme: All" data-zh="主题：全部">Theme: All</option>
+        {% for th in theme_opts %}
+        <option value="{{ th.v }}" data-en="{{ th.v }} ({{ th.n }})" data-zh="{{ th.v }} ({{ th.n }})">{{ th.v }} ({{ th.n }})</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      <select class="filter-sel" id="ss-grade-filter">
+        <option value="" data-en="Grade: Any" data-zh="评级：全部">Grade: Any</option>
+        <option value="A" data-en="Strong setup (A)" data-zh="布局成熟 (A)">Strong setup (A)</option>
+        <option value="B" data-en="Building (B)" data-zh="布局中 (B)">Building (B)</option>
+        <option value="C" data-en="Early (C)" data-zh="早期 (C)">Early (C)</option>
+      </select>
+      <select class="filter-sel" id="ss-sort-sel">
+        <option value="score" data-en="Best setups" data-zh="最佳设置">Best setups</option>
+        <option value="date" data-en="Newest" data-zh="最新">Newest</option>
+        <option value="mc" data-en="Largest" data-zh="市值最大">Largest</option>
+      </select>
+    </div>
+    {# row 3: tech chips + count + clear ---- #}
+    <div class="filter-row">
+      <div class="tech-chip-bar" id="ss-tech-chips">
+        <button class="tech-chip-btn" data-tok="live"
+                data-tip-en="Entry-tier T1 or T2 — technical confluence signals active setup"
+                data-tip-zh="技术面 T1/T2 买入窗口已开">
+          <span class="l-en">Buy setup live</span><span class="l-zh">买点已现</span>
+        </button>
+        <button class="tech-chip-btn" data-tok="forming"
+                data-tip-en="T3 setup forming — momentum approaching but not yet confirmed"
+                data-tip-zh="T3 设置成形中">
+          <span class="l-en">Setup forming</span><span class="l-zh">设置成形中</span>
+        </button>
+        <button class="tech-chip-btn" data-tok="oversold"
+                data-tip-en="2-week StochRSI ≤ 35 or monthly RSI deeply oversold"
+                data-tip-zh="2周 StochRSI ≤ 35 或月线 RSI 深度超卖">
+          <span class="l-en">Deeply oversold</span><span class="l-zh">深度超卖</span>
+        </button>
+        <button class="tech-chip-btn" data-tok="momup"
+                data-tip-en="Weekly MACD or StochRSI crossed bullish"
+                data-tip-zh="周线 MACD 或 StochRSI 金叉">
+          <span class="l-en">Momentum turned up</span><span class="l-zh">周线动能转强</span>
+        </button>
+        <button class="tech-chip-btn" data-tok="turning"
+                data-tip-en="Weekly MACD or StochRSI approaching bullish cross"
+                data-tip-zh="周线 MACD 或 StochRSI 趋近金叉">
+          <span class="l-en">Momentum turning</span><span class="l-zh">动能趋转</span>
+        </button>
+      </div>
+      <div class="filter-meta">
+        <span class="filter-count" id="ss-count"></span>
+        <button class="filter-clear" id="ss-clear">{{ t('Clear filters', '清除筛选') }}</button>
+      </div>
+    </div>
+  </div>
+
+  {# ---- flat feed ---- #}
+  <div id="ss-feed">
+    {% for r in rows %}
+    <div class="ss-row-card"
+         data-ticker="{{ r.ticker | lower }}"
+         data-company="{{ r.company | lower }}"
+         data-cat="{{ r.cat }}"
+         data-grade="{{ r.grade or '' }}"
+         data-mc="{{ r.mc_bucket }}"
+         data-sector="{{ r.sector }}"
+         data-themes="{{ r.themes | join(',') }}"
+         data-age="{{ r.age_days if r.age_days is not none else '' }}"
+         data-tokens="{{ r.tech_tokens | join(',') }}"
+         data-score="{{ r.score or 0 }}"
+         data-date="{{ r.date }}"
+         data-mcval="{{ r.mc }}"
+    >
+      {# main row (click to expand) #}
+      <div class="rc-main" onclick="ssToggle(this.closest('.ss-row-card'))">
+        {# left: ticker + company + mc #}
+        <div class="rc-col">
+          <a class="rc-ticker"
+             href="https://app.mastermind-x.com/terminal?sym={{ r.ticker }}&from=macro"
+             target="_blank" rel="noopener"
+             onclick="event.stopPropagation()">{{ r.ticker }}</a>
+          {% if r.cross_border %}<span class="xb-mark" title="Cross-border / ADR / foreign issuer">&#x1F310;</span>{% endif %}
+          {% if r.live %}<span class="live-mark" title="Confirmed in our EDGAR feed">&#x2713; {{ t('live','实时') }}</span>{% endif %}
+          <div class="rc-company">{{ r.company }}</div>
+          <div class="rc-mc">{{ r.mc }}</div>
+        </div>
+        {# middle: category chip + stage + summary #}
+        <div class="rc-col rc-col-mid">
+          <div>
+            <span class="rc-cat-chip" style="color:{{ r.cat_color }};border-color:color-mix(in srgb,{{ r.cat_color }} 40%,transparent);background:color-mix(in srgb,{{ r.cat_color }} 9%,transparent)">
+              <span class="l-en">{{ r.cat }}</span>
+              <span class="l-zh">{{ r.cat_zh }}</span>
+            </span>
+          </div>
+          <div class="rc-stage">
+            <span class="l-en">{{ r.stage }}</span>
+            <span class="l-zh">{{ r.stage_zh }}</span>
+          </div>
+          {% if r.summary_short %}
+          <div class="rc-summ">{{ r.summary_short }}</div>
+          {% endif %}
+        </div>
+        {# right: grade badge + context chips + date + filing link #}
+        <div class="rc-col">
+          <div class="rc-right">
+            {% if r.grade %}
+            <span class="grade-badge grade-{{ r.grade }}">
+              <span class="grade-letter">{{ r.grade }}</span>
+              <span class="l-en">{{ r.grade_word }}</span>
+              <span class="l-zh">{{ r.grade_word_zh }}</span>
+            </span>
+            {% endif %}
+            <div class="rc-chips">
+              {# tier chip (plain word, no raw T1/T2/T3 visible) #}
+              {% if r.tier_word %}
+              <span class="ichip ichip-tier"
+                    data-tip="{{ r.tier }} — context only; not an entry signal">
+                <span class="l-en">{{ r.tier_word }}</span>
+                <span class="l-zh">{{ r.tier_word_zh }}</span>
+              </span>
+              {% endif %}
+              {# oversold: ONE chip (specifics in data-tip) #}
+              {% if r.oversold %}
+              <span class="ichip ichip-w"
+                    data-tip="{{ r.oversold_tip }}">
+                <span class="l-en">Deeply oversold</span>
+                <span class="l-zh">深度超卖</span>
+              </span>
+              {% endif %}
+              {# momentum: ONE merged chip, no MACD/Stoch visible at rest #}
+              {% if r.momentum_state == 'crossed' %}
+              <span class="ichip ichip-m"
+                    data-tip="{{ r.momentum_tip }}">
+                <span class="l-en">Momentum turned up</span>
+                <span class="l-zh">周线动能转强</span>
+              </span>
+              {% elif r.momentum_state == 'near' %}
+              <span class="ichip ichip-m"
+                    data-tip="{{ r.momentum_tip }}">
+                <span class="l-en">Momentum turning</span>
+                <span class="l-zh">动能趋转</span>
+              </span>
+              {% endif %}
+              {# sector stance: ONLY Accumulate->Sector favored / Constructive->Sector supportive #}
+              {% if r.sector_stance == 'Accumulate' %}
+              <span class="ichip ichip-acc"
+                    data-tip="Sector stance: Accumulate — from rotation model, context only">
+                <span class="l-en">Sector favored</span>
+                <span class="l-zh">板块获看好</span>
+              </span>
+              {% elif r.sector_stance == 'Constructive' %}
+              <span class="ichip ichip-con"
+                    data-tip="Sector stance: Constructive — from rotation model, context only">
+                <span class="l-en">Sector supportive</span>
+                <span class="l-zh">板块偏支持</span>
+              </span>
+              {% endif %}
+              {# standout: plain 'On buy list', never raw buy_now/partial #}
+              {% if r.standout in ('buy_now', 'partial') %}
+              <span class="ichip ichip-so"
+                    data-tip="On current buy list (display context — not a recommendation)">
+                <span class="l-en">On buy list</span>
+                <span class="l-zh">已在买入名单</span>
+              </span>
+              {% endif %}
+            </div>
+            <div class="rc-date">{{ r.date }}</div>
+            {% if r.url %}
+            <a class="rc-src" href="{{ r.url }}" target="_blank" rel="noopener"
+               onclick="event.stopPropagation()">
+              {{ t('SEC ↗', 'SEC ↗') }}
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# expandable detail panel (Tier 2/3 — jargon allowed) #}
+      <div class="rc-detail">
+        <div class="det-grid">
+          {# full summary #}
+          {% if r.summary %}
+          <div style="grid-column:1/-1">
+            <div class="det-label">{{ t('Summary', '摘要') }}</div>
+            <div class="det-val">{{ r.summary }}</div>
+          </div>
+          {% endif %}
+          {# arb line (spread numbers OK in detail) #}
+          {% if r.arb %}
+          <div style="grid-column:1/-1">
+            <div class="det-label">{{ t('Deal / arb context', '交易套利背景') }}</div>
+            <div><span class="arb-line" title="Merger-arb context only — not a sizing input">&#x2696; {{ r.arb }}</span></div>
+          </div>
+          {% endif %}
+          {# prior: plain sentence only — compact stats string (n=) in data-tip/title only #}
+          {% if r.prior_plain %}
+          <div style="grid-column:1/-1">
+            <div class="det-label">{{ t('Historical context', '历史参考') }}</div>
+            <div class="prior-sentence">
+              <span class="l-en">{{ r.prior_plain }}</span>
+              <span class="l-zh">{{ r.prior_plain_zh }}</span>
+              {% if r.prior %}
+              <span class="prior-receipt"
+                    data-tip="{{ r.prior }}"
+                    title="{{ r.prior }}"
+                    style="cursor:help;margin-left:6px;font-size:11px;color:var(--faint)">[?]</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          <hr class="det-sep">
+          {# form + filing info #}
+          <div>
+            <div class="det-label">{{ t('Form', '申报表') }}</div>
+            <div class="det-val">{{ r.form }}
+              {% if r.low_conf %}<span class="heur-mark" title="Keyword-heuristic detection — unverified; LLM/digest lane upgrades it">~</span>{% endif %}
+              {% if r.n_amend %}<span class="amend-mark" title="Amendments tracked">{{ r.n_amend }}× /A</span>{% endif %}
+            </div>
+          </div>
+          <div>
+            <div class="det-label">{{ t('Filed', '申报日') }}</div>
+            <div class="det-val">{{ r.date }}</div>
+          </div>
+          {# tech tier (raw ID here) #}
+          {% if r.tier %}
+          <div>
+            <div class="det-label">{{ t('Entry tier', '入场层级') }}</div>
+            <div class="det-val">{{ r.tier }}
+              {% if r.tier_word %}— <span class="l-en">{{ r.tier_word }}</span><span class="l-zh">{{ r.tier_word_zh }}</span>{% endif %}
+            </div>
+          </div>
+          {% endif %}
+          {# momentum with indicator names visible here #}
+          {% if r.momentum_tip %}
+          <div>
+            <div class="det-label">{{ t('Momentum', '动能') }}</div>
+            <div class="det-val">{{ r.momentum_tip }}</div>
+          </div>
+          {% endif %}
+          {# oversold detail #}
+          {% if r.oversold %}
+          <div>
+            <div class="det-label">{{ t('Oversold', '超卖') }}</div>
+            <div class="det-val">{{ r.oversold_tip }}</div>
+          </div>
+          {% endif %}
+          {# sector/source/confidence #}
+          {% if r.sector %}
+          <div>
+            <div class="det-label">{{ t('Sector', '行业') }}</div>
+            <div class="det-val">{{ r.sector }}</div>
+          </div>
+          {% endif %}
+          {% if r.source_lane %}
+          <div>
+            <div class="det-label">{{ t('Source lane', '数据来源') }}</div>
+            <div class="det-val">{{ r.source_lane }}</div>
+          </div>
+          {% endif %}
+          {% if r.confidence %}
+          <div>
+            <div class="det-label">{{ t('Confidence', '置信度') }}</div>
+            <div class="det-val">{{ r.confidence }}</div>
+          </div>
+          {% endif %}
+          {# setup why lines #}
+          {% if r.why %}
+          <div style="grid-column:1/-1">
+            <div class="det-label">{{ t('Setup notes', '设置说明') }}</div>
+            <div class="det-val">
+              <span class="l-en">{% for w in r.why %}<div>• {{ w }}</div>{% endfor %}</span>
+              <span class="l-zh">{% for w in (r.why_zh or r.why) %}<div>• {{ w }}</div>{% endfor %}</span>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# show-more button (JS populates) #}
+  <div class="show-more-wrap" id="ss-show-more-wrap" style="display:none">
+    <button class="show-more-btn" id="ss-show-more" onclick="ssShowMore()">
+      {{ t('Show more', '显示更多') }}
+    </button>
+  </div>
+
+  {# ---- coverage & honesty ---- #}
   <div class="section-title">{{ t('Coverage & honesty','覆盖与诚实') }}</div>
-  <div class="card" style="padding:18px">
-    <div class="sub" style="color:var(--text)">{{ t(
-      'Structured forms (SC 13D activist, SC TO tenders, SC 13E-3 / merger proxies, Form 25 delistings) classify with high precision. Acquisitions, divestitures, spin-offs, strategic reviews and capital returns are read from 8-K filing text and are higher-recall but noisier. Schedule 13G (passive) and routine officer-change 8-Ks are excluded; non-operating filers (ABS / ETF / exchange shells) are filtered out.',
-      '结构化申报（SC 13D 维权、SC TO 要约、SC 13E-3／并购代理、Form 25 退市）以高精度归类。并购、剥离、分拆、战略评估与资本回报读自 8-K 正文，召回更高但更嘈杂。被动的 13G 与例行高管变动 8-K 已排除；非经营性申报人（ABS／ETF／交易所壳）已过滤。') }}</div>
-    <div class="sub faint" style="margin-top:8px;font-size:12px">
-      {{ t('Digest situations','摘要事件') }}: {{ coverage.digest_situations }} ·
-      {{ t('confirmed by our EDGAR pipeline','我方EDGAR确认') }}: {{ coverage.edgar_confirmed }} ·
-      {{ t('ahead of next digest (EDGAR-only)','领先下期（仅EDGAR）') }}: {{ coverage.edgar_only }} ·
-      {{ t('with summary','含摘要') }}: {{ coverage.with_summary }}
+  <div class="cov-card">
+    <div style="color:var(--text);font-size:13.5px;line-height:1.6">{{ t(
+      'Structured forms (SC 13D activist, SC TO tenders, SC 13E-3 / merger proxies, Form 25 delistings) classify with high precision. Acquisitions, divestitures, spin-offs, strategic reviews and capital returns are read from 8-K filing text — higher recall but noisier. Schedule 13G (passive) and routine officer-change 8-Ks are excluded; non-operating filers (ABS / ETF / exchange shells) are filtered out.',
+      '结构化申报（SC 13D 维权、SC TO 要约、SC 13E-3/并购代理、Form 25 退市）以高精度归类。并购、剥离、分拆、战略评估与资本回报读自 8-K 正文，召回率更高但更嘈杂。被动 13G 及例行高管变动 8-K 已排除；非经营性申报人（ABS/ETF/交易所壳）已过滤。') }}</div>
+    <div class="cov-grid">
+      {% if coverage.digest_situations is not none %}<div class="cov-item"><div class="v">{{ coverage.digest_situations }}</div><div class="k">{{ t('Digest situations','摘要事件') }}</div></div>{% endif %}
+      {% if coverage.edgar_confirmed is not none %}<div class="cov-item"><div class="v">{{ coverage.edgar_confirmed }}</div><div class="k">{{ t('EDGAR confirmed','EDGAR确认') }}</div></div>{% endif %}
+      {% if coverage.edgar_only is not none %}<div class="cov-item"><div class="v">{{ coverage.edgar_only }}</div><div class="k">{{ t('EDGAR-only','仅EDGAR') }}</div></div>{% endif %}
+      {% if coverage.with_summary is not none %}<div class="cov-item"><div class="v">{{ coverage.with_summary }}</div><div class="k">{{ t('With summary','含摘要') }}</div></div>{% endif %}
+      {% if intel_cov.covered is not none %}<div class="cov-item"><div class="v">{{ intel_cov.covered }}</div><div class="k">{{ t('Price data','价格数据') }}</div></div>{% endif %}
+      {% if intel_cov.graded is not none %}<div class="cov-item"><div class="v">{{ intel_cov.graded }}</div><div class="k">{{ t('Graded setups','已评级设置') }}</div></div>{% endif %}
     </div>
   </div>
 
   <div class="foot">
     {{ t(
-      'Display-only, never scored. Source: SEC EDGAR daily dissemination index + full-text search (form type, 8-K items, business location) — public filings only. US-registered filers, which includes cross-listed ADRs / foreign private issuers (the 🌐 cross-border tag). Categories are deterministic; nothing here is investment advice or a sizing input. Built',
-      '仅供展示，从不计分。来源：SEC EDGAR 每日披露索引 + 全文检索（申报表类型、8-K 条目、营业地）—— 仅公开申报。美国注册申报人，含跨境上市 ADR／外国私人发行人（🌐 跨境标记）。类别为确定性归类；此处任何内容均非投资建议或仓位输入。生成于') }} {{ built }}.
+      'Display-only context feed. Source: SEC EDGAR daily index + full-text search (form type, 8-K items) — public filings only. US-registered filers including cross-listed ADRs / foreign private issuers (&#x1F310; cross-border). Categories are deterministic. Setup grades are display context only — never investment advice or a sizing input. Built',
+      '仅供展示的背景信息流。来源：SEC EDGAR 每日索引 + 全文检索 — 仅公开申报。含跨境 ADR/外国私人发行人（&#x1F310; 跨境）。类别为确定性归类。设置评级仅为展示背景，绝非投资建议或仓位输入。生成于') }} {{ built }}.
   </div>
 </div>
+
 <script src="theme.js"></script>
+<script>
+(function(){
+  /* === constants === */
+  var PAGE_SIZE = 80;
+  var _allCards = Array.from(document.querySelectorAll('.ss-row-card'));
+  var _visible = _allCards.slice(); /* current filtered+sorted list */
+  var _shown = 0;                   /* how many are actually shown */
+
+  /* === state === */
+  var _q = '', _cat = '', _date = '', _mc = '', _sector = '', _theme = '', _grade = '';
+  var _techToks = new Set();
+  var _sort = 'score';
+
+  /* === DOM refs === */
+  var searchEl   = document.getElementById('ss-search');
+  var dateSel    = document.getElementById('ss-date-filter');
+  var mcSel      = document.getElementById('ss-mc-filter');
+  var sectorSel  = document.getElementById('ss-sector-filter');
+  var themeSel   = document.getElementById('ss-theme-filter');
+  var gradeSel   = document.getElementById('ss-grade-filter');
+  var sortSel    = document.getElementById('ss-sort-sel');
+  var countEl    = document.getElementById('ss-count');
+  var clearBtn   = document.getElementById('ss-clear');
+  var showMoreWrap = document.getElementById('ss-show-more-wrap');
+  var feed       = document.getElementById('ss-feed');
+
+  /* === category chip handling === */
+  document.querySelectorAll('.cat-chip-btn[data-cat]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      /* deactivate all, activate clicked */
+      document.querySelectorAll('.cat-chip-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      _cat = btn.dataset.cat || '';
+      applyFilters();
+    });
+  });
+
+  /* === tech chip handling === */
+  document.querySelectorAll('.tech-chip-btn[data-tok]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var tok = btn.dataset.tok;
+      if(_techToks.has(tok)){ _techToks.delete(tok); btn.classList.remove('active'); }
+      else { _techToks.add(tok); btn.classList.add('active'); }
+      applyFilters();
+    });
+  });
+
+  /* === select / search listeners === */
+  if(searchEl) searchEl.addEventListener('input', function(){ _q = (searchEl.value||'').toLowerCase().trim(); applyFilters(); });
+  if(dateSel)  dateSel.addEventListener('change',  function(){ _date  = dateSel.value;  applyFilters(); });
+  if(mcSel)    mcSel.addEventListener('change',    function(){ _mc    = mcSel.value;    applyFilters(); });
+  if(sectorSel) sectorSel.addEventListener('change',function(){ _sector= sectorSel.value; applyFilters(); });
+  if(themeSel)  themeSel.addEventListener('change', function(){ _theme = themeSel.value; applyFilters(); });
+  if(gradeSel) gradeSel.addEventListener('change',  function(){ _grade = gradeSel.value; applyFilters(); });
+  if(sortSel)  sortSel.addEventListener('change',   function(){ _sort  = sortSel.value; applyFilters(); });
+  if(clearBtn) clearBtn.addEventListener('click', clearFilters);
+
+  function clearFilters(){
+    _q=''; _cat=''; _date=''; _mc=''; _sector=''; _theme=''; _grade=''; _techToks.clear(); _sort='score';
+    if(searchEl) searchEl.value='';
+    if(dateSel)  dateSel.value='';
+    if(mcSel)    mcSel.value='';
+    if(sectorSel) sectorSel.value='';
+    if(themeSel)  themeSel.value='';
+    if(gradeSel) gradeSel.value='';
+    if(sortSel)  sortSel.value='score';
+    document.querySelectorAll('.cat-chip-btn').forEach(function(b){ b.classList.remove('active'); });
+    var allBtn = document.getElementById('cat-btn-all');
+    if(allBtn) allBtn.classList.add('active');
+    document.querySelectorAll('.tech-chip-btn').forEach(function(b){ b.classList.remove('active'); });
+    applyFilters();
+  }
+
+  function cardMatches(c){
+    var d = c.dataset;
+    if(_q){
+      var tk = d.ticker||''; var co = d.company||'';
+      if(!tk.includes(_q) && !co.includes(_q)) return false;
+    }
+    if(_cat && d.cat !== _cat) return false;
+    if(_grade && d.grade !== _grade) return false;
+    if(_mc && d.mc !== _mc) return false;
+    if(_sector && (d.sector||'') !== _sector) return false;
+    if(_theme && !(d.themes||'').split(',').includes(_theme)) return false;
+    if(_date !== '' && _date !== undefined){
+      var age = parseInt(d.age, 10);
+      if(isNaN(age)) return false;
+      if(age > parseInt(_date, 10)) return false;
+    }
+    if(_techToks.size > 0){
+      var toks = (d.tokens||'').split(',');
+      var ok = false;
+      _techToks.forEach(function(tk){ if(toks.includes(tk)) ok = true; });
+      if(!ok) return false;
+    }
+    return true;
+  }
+
+  function sortCards(cards){
+    return cards.slice().sort(function(a, b){
+      if(_sort === 'date'){
+        return (b.dataset.date||'').localeCompare(a.dataset.date||'');
+      }
+      if(_sort === 'mc'){
+        /* mc display string like "$1.2B" or "$450M" — compare numeric */
+        return mcNum(b.dataset.mcval) - mcNum(a.dataset.mcval);
+      }
+      /* default: score desc, ties date desc */
+      var sa = parseFloat(a.dataset.score||'0'), sb = parseFloat(b.dataset.score||'0');
+      if(sb !== sa) return sb - sa;
+      return (b.dataset.date||'').localeCompare(a.dataset.date||'');
+    });
+  }
+
+  function mcNum(s){
+    if(!s || s === '—') return 0;
+    var m = s.match(/([\d.]+)([BM])/);
+    if(!m) return 0;
+    return parseFloat(m[1]) * (m[2]==='B' ? 1000 : 1);
+  }
+
+  function applyFilters(){
+    var matched = _allCards.filter(cardMatches);
+    _visible = sortCards(matched);
+    _shown = 0;
+    /* hide all first */
+    _allCards.forEach(function(c){ c.setAttribute('data-hidden',''); });
+    showBatch();
+    /* update count */
+    var total = {{ total }};
+    if(_q||_cat||_date||_mc||_sector||_theme||_grade||_techToks.size){
+      countEl.textContent = 'Showing ' + _visible.length + ' of ' + total;
+    } else {
+      countEl.textContent = '';
+    }
+  }
+
+  function showBatch(){
+    var end = Math.min(_shown + PAGE_SIZE, _visible.length);
+    /* re-append in sorted order for the batch being revealed */
+    for(var i = _shown; i < end; i++){
+      var c = _visible[i];
+      c.removeAttribute('data-hidden');
+      feed.appendChild(c); /* re-order in DOM */
+    }
+    _shown = end;
+    if(_shown < _visible.length){
+      showMoreWrap.style.display = '';
+      document.getElementById('ss-show-more').textContent =
+        'Show more (' + (_visible.length - _shown) + ' remaining)';
+    } else {
+      showMoreWrap.style.display = 'none';
+    }
+  }
+
+  window.ssShowMore = function(){
+    showBatch();
+  };
+
+  /* === expand / collapse detail panel === */
+  window.ssToggle = function(card){
+    if(!card) return;
+    card.classList.toggle('open');
+  };
+
+  /* === i18n relabel for selects and search placeholder === */
+  function relabelAll(){
+    var zh = document.documentElement.getAttribute('data-lang') === 'zh';
+    /* search placeholder */
+    if(searchEl){
+      searchEl.placeholder = zh ? (searchEl.dataset.phZh||'') : (searchEl.dataset.phEn||'');
+    }
+    /* select relabel: every <option> carries data-en / data-zh (dual-span
+       markup is invisible inside native <option>, so we swap textContent) */
+    document.querySelectorAll('select.filter-sel option[data-en]').forEach(function(opt){
+      opt.textContent = zh ? (opt.dataset.zh || opt.dataset.en) : opt.dataset.en;
+    });
+  }
+
+  /* observe data-lang changes on <html> */
+  var obs = new MutationObserver(function(muts){
+    muts.forEach(function(m){ if(m.attributeName==='data-lang') relabelAll(); });
+  });
+  obs.observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
+  relabelAll(); /* run at boot */
+
+  /* === tooltip (data-tip) for ichips — basic title= fallback === */
+  document.querySelectorAll('[data-tip]').forEach(function(el){
+    el.title = el.dataset.tip;
+  });
+
+  /* === initial render === */
+  applyFilters();
+})();
+</script>
+{% include "_vector_polish.html.j2" %}
 </body></html>

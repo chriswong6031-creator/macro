@@ -75,7 +75,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | sector-pulse | 3 |
 | setup-species | 6 |
 | short-side | 1 |
-| signal-commons | 9 |
+| signal-commons | 10 |
 | signal-foundry | 4 |
 | standout-accountability | 8 |
 | stock-personality | 5 |
@@ -94,7 +94,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 306 |
+| display | 307 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 70 |
@@ -103,7 +103,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 453 |
+| git | 454 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -858,6 +858,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| special-sits-context-latest | `data/special_situations/context/latest.json` | json | daily-engine | display | 2 | 1 |
 | event-priors-clinicaltrials | `data/special_situations/event_priors/clinicaltrials.json` | json | weekly | display | 2 | 0 |
 | event-priors-earnings | `data/special_situations/event_priors/earnings.json` | json | weekly | display | 2 | 0 |
 | event-priors-ipo-lockup | `data/special_situations/event_priors/ipo_lockup.json` | json | weekly | display | 2 | 0 |

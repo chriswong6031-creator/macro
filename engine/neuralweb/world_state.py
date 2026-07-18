@@ -1812,6 +1812,51 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         return null_out
 
 
+def _compose_special_situations(root: "Path | str | None" = None) -> "dict | None":
+    """Compose special_situations block from data/special_situations/context/latest.json.
+
+    Display-only context feed (special_sits_context.v1). Returns None when file
+    absent or unreadable so the caller can skip the lobe cleanly (fail-open).
+
+    Emitted dict: {asof, counts, setups_display (cap 6, each trimmed to
+    ticker/company/category/stage/grade/score/why), changes (cap 8 items),
+    risk_arb_top (cap 3), display_only: True}
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "special_situations" / "context" / "latest.json"
+
+    raw = _read_json(path)
+    if raw is None:
+        return None
+
+    try:
+        _SETUP_KEEP = {"ticker", "company", "category", "stage", "grade", "score", "why"}
+        top_setups_raw = raw.get("top_setups") or []
+        top_setups = [
+            {k: v for k, v in s.items() if k in _SETUP_KEEP}
+            for s in top_setups_raw[:6]
+            if isinstance(s, dict)
+        ]
+
+        changes_raw = (raw.get("changes") or {}).get("items") or []
+        changes = changes_raw[:8] if isinstance(changes_raw, list) else []
+
+        risk_arb_raw = raw.get("risk_arb_top") or []
+        risk_arb_top = risk_arb_raw[:3] if isinstance(risk_arb_raw, list) else []
+
+        return {
+            "asof": raw.get("asof"),
+            "counts": raw.get("counts"),
+            "setups_display": top_setups,
+            "changes": changes,
+            "risk_arb_top": risk_arb_top,
+            "display_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: special_situations compose failed — %s", exc)
+        return None
+
+
 def _compose_intl_risk(root: "Path | str | None" = None) -> dict:
     """Compose intl_risk lobe from data/intl_risk/latest.json (IRD-W2).
 
@@ -3386,6 +3431,16 @@ def build_world_state(
     if not _fx_path.exists():
         gaps.append("data/forex/latest.json: missing or unreadable")
 
+    # special_situations context (SS-NW-W1) — fail-open: None when file absent
+    _ss_path = data_dir / "special_situations" / "context" / "latest.json"
+    special_situations_block: "dict | None" = None
+    try:
+        special_situations_block = _compose_special_situations(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: special_situations lobe failed — %s", exc)
+        gaps.append(f"special_situations: {exc}")
+    # No sources entry: file is absent until first nightly run — that's expected
+
     # rates_credit
     _bonds_path = data_dir / "bonds" / "bond_health.json"
     try:
@@ -3596,6 +3651,7 @@ def build_world_state(
         "contradictions": contradictions_block,
         "intl_risk": intl_risk_block,  # IRD-W2 display-only lobe
         "contagion_regime": contagion_regime_block,  # CSP-W1 display-only lobe
+        "special_situations": special_situations_block,  # SS-NW-W1 display-only lobe (None until first nightly run)
         "gaps": gaps,
         "sources": sources,
     }
