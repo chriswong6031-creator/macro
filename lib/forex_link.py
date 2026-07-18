@@ -60,6 +60,49 @@ def _latest() -> dict:
         return {}
 
 
+def stance() -> dict:
+    """Return the latest.json `stance` block, or {} if absent.
+
+    B3 spec item 1: consumers (commodities, bonds, etc.) surface the plain-word
+    dollar stance produced by build_forex. Degrades to {} when the key is absent
+    (first nightly before build_forex lands the key, or stale store). Never raises.
+    """
+    try:
+        return _latest().get("stance") or {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def dollar_day() -> dict | None:
+    """Return the latest.json `dollar_day` block {z, flag, dir}, or None if absent.
+
+    B3 spec item 1: consumers read this for the daily dollar-move context chip.
+    Degrades to None when the key is absent. Never raises.
+    """
+    try:
+        raw = _latest().get("dollar_day")
+        if not isinstance(raw, dict):
+            return None
+        return raw
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def transmission_asset(key: str) -> dict | None:
+    """Return the per-asset transmission block from latest.json `transmission.assets[key]`.
+
+    Returns {corr_fast, corr_slow, effect, stability} or None if absent.
+    B3 spec item 2/3: consumers read effect/stability for plain-word display chips.
+    """
+    try:
+        raw = _latest()
+        assets = (raw.get("transmission") or {}).get("assets") or {}
+        val = assets.get(key)
+        return val if isinstance(val, dict) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def dollar_lean(fx: dict | None = None) -> dict | None:
     """Return the dollar_desk block from latest.json, or None if absent.
 

@@ -438,7 +438,12 @@ def _build_macro_nodes(world_state: dict | None, gaps: list[str]) -> list[dict]:
                     "asof": fx.get("asof"),
                     "display_only": True,
                     "source_lobe": "fx_dollar",
-                    # MSX-1 additions (payload fields only; no edge semantics changed)
+                    # B2 additive fields (ours)
+                    "smile_regime": ((fx.get("dollar_desk") or {}).get("smile_decomp") or {}).get("regime"),
+                    "dollar_day_flag": (fx.get("dollar_day") or {}).get("flag"),
+                    "regime_radar_dominant": (fx.get("regime_radar") or {}).get("dominant"),
+                    "stance_word": (fx.get("stance") or {}).get("word_en"),
+                    # MSX-1 additions (main)
                     "dominant_scenario": _dom_sc.get("key"),
                     "days_in_regime": _smile_sc.get("days_in_state"),
                 },

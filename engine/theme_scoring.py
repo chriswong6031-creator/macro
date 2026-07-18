@@ -309,6 +309,11 @@ def _macro_context(region: str = "us") -> dict:
     else:
         reg = _read_json(f"{region}_regime", "latest.json")
         bonds, fx = {}, {}
+    # B3 item 7: for all regions (incl. cn/hk/ca), read the global dollar regime + stance
+    # word from forex/latest.json for the DISPLAY sub-dict only. The numeric scoring state
+    # (state dict) is untouched — these fields never enter the composite score.
+    # Fail-open: absent file → both stay None.
+    _fx_display = _read_json("forex", "latest.json") if region != "us" else fx
     cond = reg.get("conditions") or {}
     fc = cond.get("financial_conditions") or {}
     ra = cond.get("risk_appetite") or {}
@@ -361,13 +366,18 @@ def _macro_context(region: str = "us") -> dict:
     summary_zh = (f"{reg.get('quad_name') or quad} · {reg.get('cycle_tag') or '—'}周期 · "
                   f"美联储{ {'easing':'宽松','hiking':'紧缩','on hold':'按兵不动'}.get(fed_dir, fed_dir) } · "
                   f"NFCI {nfci_state or '—'} · 债券{bonds.get('cycle_phase') or '—'}")
+    # B3 item 7: dollar_regime + stance word from forex latest (display-only for all regions)
+    _fx_stance = (_fx_display.get("stance") or {}) if _fx_display else {}
     return {
         "state": state, "sector_rs": sector_rs,
         "display": {
             "quad": quad, "quad_name": reg.get("quad_name"), "cycle": reg.get("cycle_tag"),
             "growth_score": _r(growth, 2), "inflation_score": _r(inflation, 2),
             "fed_dir": fed_dir, "nfci_state": nfci_state, "nfci_trend": nfci_trend,
-            "dollar_regime": fx.get("regime"), "bond_cycle": bonds.get("cycle_phase"),
+            "dollar_regime": (_fx_display.get("regime") if _fx_display else None) or fx.get("regime"),
+            "dollar_stance_word_en": _fx_stance.get("word_en") or None,  # B3
+            "dollar_stance_word_zh": _fx_stance.get("word_zh") or None,  # B3
+            "bond_cycle": bonds.get("cycle_phase"),
             "recession_band": rec.get("label"), "drawdown_band": dd.get("band"),
             "summary_en": summary_en, "summary_zh": summary_zh,
             "as_of": reg.get("date"),

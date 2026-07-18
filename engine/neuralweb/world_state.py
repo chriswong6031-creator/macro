@@ -1552,10 +1552,14 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         "dollar_desk": None,
         "transmission": None,
         "regime_radar": None,
+        # New fields (B2 additive — may be absent in earlier latest.json builds)
+        "dollar_day": None,
+        "em": None,
+        "stance": None,
+        # MSX-1 new keys
         "pairs": None,
         "scenario_intensity": None,
         "deltas": None,
-        # MSX-1 new keys — null until producer lane ships §2.1 keys
         "smile_decomp_regime": None,
         "safety_bid_today": None,
         "triple_red": None,
@@ -1573,6 +1577,10 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         dd_raw = raw.get("dollar_desk") or {}
         tx_raw = raw.get("transmission") or {}
         rr_raw = raw.get("regime_radar") or {}
+        em_raw = raw.get("em") or {}
+        st_raw = raw.get("stance") or {}
+        dd_raw_day = raw.get("dollar_day") or {}
+        smile_raw = dd_raw.get("smile_decomp") or {}
 
         dollar_desk = {
             "lean": _clean(dd_raw.get("lean")),
@@ -1581,6 +1589,11 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "trend": _clean(dd_raw.get("trend")),
             "fed_path_lean": _clean(dd_raw.get("fed_path_lean")),
             "liquidity_dir": _clean(dd_raw.get("liquidity_dir")),
+            # smile_decomp sub-block (B1 exports; None-safe until that lane lands)
+            "smile_decomp": {
+                "regime": _clean(smile_raw.get("regime")),
+                "safety_bid_today": _clean(smile_raw.get("safety_bid_today")),
+            } if smile_raw else None,
         }
 
         transmission = {
@@ -1590,10 +1603,62 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "unstable": _clean(tx_raw.get("unstable")),
         }
 
+        # regime_radar: existing fields + scenarios active/building summary (names only)
+        # scenarios may be a list [{"key": k, ...}] (MSX-1/main format)
+        # or a dict {"key": {...}} (B2/ours format); handle both.
+        _scenarios_raw_raw = rr_raw.get("scenarios")
+        if isinstance(_scenarios_raw_raw, list):
+            # MSX-1 list format — convert to dict keyed by "key"
+            scenarios_raw = {s["key"]: s for s in _scenarios_raw_raw if isinstance(s, dict) and s.get("key")}
+        elif isinstance(_scenarios_raw_raw, dict):
+            scenarios_raw = _scenarios_raw_raw
+        else:
+            scenarios_raw = {}
+        active_scenarios = [
+            k for k, v in scenarios_raw.items()
+            if isinstance(v, dict) and v.get("active")
+        ] if scenarios_raw else (rr_raw.get("active") or [])
+        building_scenarios = [
+            k for k, v in scenarios_raw.items()
+            if isinstance(v, dict) and not v.get("active")
+            and (v.get("intensity") or 0) >= 40
+        ] if scenarios_raw else []
+
         regime_radar = {
             "dominant": _clean(rr_raw.get("dominant")),
             "active": rr_raw.get("active"),
+            # New: derived summary from scenarios (names only, no stats)
+            "active_scenarios": active_scenarios,
+            "building_scenarios": building_scenarios,
         }
+
+        # New top-level blocks (all None-safe; absent when B1 lane hasn't landed yet)
+        dollar_day: dict | None = None
+        if dd_raw_day or raw.get("dollar_day") is not None:
+            dollar_day = {
+                "z": _clean(dd_raw_day.get("z")),
+                "flag": _clean(dd_raw_day.get("flag")),
+                "dir": _clean(dd_raw_day.get("dir")),
+            }
+
+        em: dict | None = None
+        if em_raw or raw.get("em") is not None:
+            em = {
+                "cnh_basis_state": _clean(em_raw.get("cnh_basis_state")),
+                "risk_off_composite": _clean(em_raw.get("risk_off_composite")),
+            }
+
+        stance: dict | None = None
+        if st_raw or raw.get("stance") is not None:
+            stance = {
+                "word_en": _clean(st_raw.get("word_en")),
+                "word_zh": _clean(st_raw.get("word_zh")),
+                "tone": _clean(st_raw.get("tone")),
+                "headline_en": _clean(st_raw.get("headline_en")),
+                "headline_zh": _clean(st_raw.get("headline_zh")),
+                "sentence_en": _clean(st_raw.get("sentence_en")),
+                "sentence_zh": _clean(st_raw.get("sentence_zh")),
+            }
 
         # v2: pairs — non-FLAT action, sorted by |score| desc, cap 5
         pairs_raw = raw.get("pairs") or {}
@@ -1726,12 +1791,17 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "dollar_desk": dollar_desk,
             "transmission": transmission,
             "regime_radar": regime_radar,
+            # B2 additive fields (ours)
+            "dollar_day": dollar_day,
+            "em": em,
+            "stance": stance,
+            # MSX-1 §2.1 additions (main)
             "pairs": pairs_out if pairs_out else None,
             "scenario_intensity": scenario_intensity if scenario_intensity else None,
             "deltas": deltas,
-            # MSX-1 §2.1 additions
             "smile_decomp_regime": smile_decomp_regime,
             "safety_bid_today": safety_bid_today,
+            # M4: triple_red lives at dollar_desk.triple_red (both sides agree)
             "triple_red": triple_red,
             "state_changes": state_changes,
             "regime_radar_dominant_scenario": regime_radar_dominant_scenario,

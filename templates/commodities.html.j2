@@ -928,6 +928,19 @@ html[data-lang="zh"] .l-en { display: none; }
         {% if cv.sub %}<div style="margin-top:5px;font-size:12px;color:var(--faint)">{{ t(cv.sub, cv.sub_zh) }}</div>{% endif %}
       </div>
       {% endif %}
+      {# M6: B3 USD-sensitivity chip — plain bilingual, one line, all fields guarded #}
+      {% if d.dollar_usd_dir is not none or d.dollar_effect is not none %}
+      <div style="margin-top:10px;font-size:12px;color:var(--mut)">
+        <span class="faint">{{ t('Dollar', '美元') }}:</span>
+        {% if d.dollar_usd_dir is not none %}
+          {% if d.dollar_usd_dir == 'up' %}{{ t('rising', '走强') }}{% elif d.dollar_usd_dir == 'down' %}{{ t('falling', '走软') }}{% else %}{{ t(d.dollar_usd_dir, d.dollar_usd_dir) }}{% endif %}
+        {% endif %}
+        {% if d.dollar_effect is not none and d.dollar_effect != 'neutral' %}
+          <span class="faint">·</span>
+          {% if d.dollar_effect == 'headwind' %}{{ t('headwind for this commodity', '对该品种形成压制') }}{% elif d.dollar_effect == 'tailwind' %}{{ t('tailwind for this commodity', '对该品种形成提振') }}{% endif %}
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
     <!-- right: MTF signals table — plain headers -->
     <div class="panel">

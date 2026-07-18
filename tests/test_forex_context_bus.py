@@ -7,7 +7,8 @@ Covers:
 - lane gating: off-lane → no file writes
 - _desk_latest includes smile_decomp
 - context_forward_log row shape + keep-first
-- forex_alerts new event types (smile_regime_flip, triple_red, scenario_active)
+- forex_alerts new event types (smile_regime_flip, triple_red; scenario events are
+  edge-detected in the canonical `scenario` family, covered in test_forex.py)
 
 Run: python3 -m pytest tests/test_forex_context_bus.py -x -q
 """
@@ -583,27 +584,20 @@ def test_triple_red_events_no_desk():
     assert FA.desk_triple_red_events(_dol_frame(), {}) == []
 
 
-def test_scenario_active_events():
-    """Active scenarios produce scenario_active events with correct fields."""
+def test_scenario_events_canonical_family():
+    """Reconciled semantics: scenario events are edge-detected via the canonical
+    scenario_events(regime, prev_active) family (collision-safe ids, deactivation
+    branch) — the per-active-day desk_scenario_events family was superseded."""
     from engine import forex_alerts as FA
 
     regime = _fake_regime(active_keys=["carry_unwind", "haven_flight_risk_off"])
-    evs = FA.desk_scenario_events(regime)
+    evs = FA.scenario_events(regime, prev_active=set())
     assert len(evs) == 2
-    keys = {e["context"]["key"] for e in evs}
-    assert "carry_unwind" in keys
-    assert "haven_flight_risk_off" in keys
-    for e in evs:
-        assert e["type"] == "scenario_active"
-        assert e["headline_zh"]
-        assert 0 <= e["context"]["intensity"] <= 100
-
-
-def test_scenario_events_empty_on_no_active():
-    from engine import forex_alerts as FA
-    assert FA.desk_scenario_events(_fake_regime(active_keys=[])) == []
-    assert FA.desk_scenario_events(None) == []
-    assert FA.desk_scenario_events({}) == []
+    assert {e["type"] for e in evs} == {"scenario"}
+    ids = {e["id"] for e in evs}
+    assert len(ids) == 2  # collision-safe: scenario key participates in the id
+    # steady state: no re-fire when the active set is unchanged
+    assert FA.scenario_events(regime, prev_active={"carry_unwind", "haven_flight_risk_off"}) == []
 
 
 def test_compute_all_events_additive(tmp_path, monkeypatch):
@@ -637,7 +631,7 @@ def test_compute_all_events_additive(tmp_path, monkeypatch):
     assert "smile_regime" in types            # existing dollar event
     assert "smile_regime_flip" in types       # MSX-1 new
     assert "triple_red" in types              # MSX-1 new
-    assert "scenario_active" in types         # MSX-1 new
+    assert "scenario" in types                # reconciled edge-detected family
 
 
 # ------------------------------------------- latest.json schema validation -
@@ -741,8 +735,7 @@ if __name__ == "__main__":
         test_triple_red_events_active,
         test_triple_red_events_clear,
         test_triple_red_events_no_desk,
-        test_scenario_active_events,
-        test_scenario_events_empty_on_no_active,
+        test_scenario_events_canonical_family,
         test_compute_all_events_additive,
         test_latest_schema_new_keys,
         test_pairs_enrichment_fields,

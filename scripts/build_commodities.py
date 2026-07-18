@@ -539,12 +539,41 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
 
     # dollar sensitivity (display-only, from the forex Dollar Desk transmission)
     vm["dollar_corr"], vm["dollar_stable"] = None, None
+    vm["dollar_usd_dir"] = None          # B3: broad-dollar direction (up/down/None)
+    vm["dollar_stance_sentence"] = None  # B3: plain ≤14-word dollar stance sentence
+    vm["dollar_effect"] = None           # B3: per-asset effect from transmission.assets
+    vm["dollar_stability"] = None        # B3: per-asset stability from transmission.assets
+    vm["dollar_real_rate_regime"] = None # B3: real-rate regime (gold only)
     try:
         from lib import forex_link
         _ck = {"gold": "GC=F", "copper": "HG=F", "oil": "CL=F"}.get(asset)
         _ac = forex_link.asset_corr(_ck) if _ck else None
         if _ac:
             vm["dollar_corr"], vm["dollar_stable"] = _ac["corr"], _ac["stable"]
+        # B3 m1: source usd_dir from transmission().usd_dir ("strengthening"/"weakening"
+        # direction words), not stance.tone (calm/watch/alert → was garbage for direction).
+        _tx = forex_link.transmission()
+        _usd_dir_raw = _tx.get("usd_dir") if _tx else None
+        if _usd_dir_raw:
+            vm["dollar_usd_dir"] = (
+                "up" if "strength" in _usd_dir_raw else
+                ("down" if "weak" in _usd_dir_raw else _usd_dir_raw)
+            )
+        _stance = forex_link.stance()
+        vm["dollar_stance_sentence"] = _stance.get("sentence_en") if _stance else None
+        # B3: per-asset effect/stability from transmission.assets
+        if _ck:
+            _ta = forex_link.transmission_asset(_ck)
+            if _ta:
+                vm["dollar_effect"] = _ta.get("effect")
+                vm["dollar_stability"] = _ta.get("stability")
+        # B3: gold-only real-rate regime (headwind/tailwind context)
+        if asset == "gold":
+            _dd_path = __import__("lib.config", fromlist=["config"]).data_dir() / "forex" / "latest.json"
+            if _dd_path.exists():
+                import json as _json
+                _dd = (_json.loads(_dd_path.read_text()).get("dollar_desk") or {})
+                vm["dollar_real_rate_regime"] = _dd.get("real_rate_regime") or None
     except Exception:  # noqa: BLE001 — additive, never fatal
         pass
     return vm
