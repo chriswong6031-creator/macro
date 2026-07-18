@@ -1236,6 +1236,62 @@ def _summarize_special_sits(repo: Path) -> tuple[dict, str | None]:
         return lobe, None
     except Exception as exc:  # noqa: BLE001
         return {}, f"special_sits summarize failed: {exc}"
+def _summarize_theme_rotation(repo: Path) -> tuple[dict, str | None]:
+    """Distil world_state.theme_rotation into the theme_rotation lobe.
+
+    Source: data/neuralweb/world_state.json (theme_rotation sub-block, composed
+    by world_state._compose_theme_rotation from site/basketdata/theme_context.json).
+    All fields are engine-originated, display_only=True, is_context_only=True.
+    LLM consumers read this — they never originate or escalate from it.
+    Fail-soft: absent world_state or absent theme_rotation sub-block → empty lobe
+    with gap note.
+
+    Standing laws:
+    - 100% deterministic re-projection of already-computed display-tier keys.
+    - No LLM-originated content; no invented scores.
+    - Nothing here may gate, rank, size, or escalate any authority surface.
+    - The word 'validated' is banned from all emitted text.
+    """
+    ws_path = repo / "data" / "neuralweb" / "world_state.json"
+    ws = _read_json(ws_path)
+    if ws is None:
+        return {}, "data/neuralweb/world_state.json absent or unreadable"
+
+    tr = (ws.get("theme_rotation") or {}) if isinstance(ws, dict) else {}
+    if not tr:
+        return {}, "world_state.theme_rotation absent (pre-theme-context build)"
+
+    tl = (tr.get("trailing_leader") or {}) if isinstance(tr.get("trailing_leader"), dict) else {}
+    strength = (tr.get("strength") or [])[:4]
+    migration = tr.get("migration") or {}
+    alignment = tr.get("alignment") or {}
+
+    lobe: dict = {
+        "is_context_only": True,
+        "display_only": True,
+        "as_of": tr.get("as_of"),
+        "leadership_state": tr.get("leadership_state"),
+        "days_in_state": tr.get("days_in_state"),
+        "stance_en": tr.get("stance_en"),
+        "stance_zh": tr.get("stance_zh"),
+        "trailing_leader_id": tl.get("id"),
+        "trailing_leader_name": tl.get("name"),
+        "trailing_leader_health": tl.get("health"),
+        "trailing_leader_breadth": tl.get("breadth"),
+        "trailing_leader_r10": tl.get("r10"),
+        "strength_names": [s.get("name") for s in strength if isinstance(s, dict)] or None,
+        "migration_absorbing": [
+            x.get("category") for x in (migration.get("absorbing") or [])
+            if isinstance(x, dict)
+        ] or None,
+        "migration_bleeding": [
+            x.get("category") for x in (migration.get("bleeding") or [])
+            if isinstance(x, dict)
+        ] or None,
+        "sector_rotation_agrees": alignment.get("sector_rotation_agrees"),
+        "honesty_note": "context only — display-tier leadership read, not a trade signal",
+    }
+    return lobe, None
 
 
 # Registry: ordered list of (lobe_name, summarizer_fn)
@@ -1256,6 +1312,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "contagion": _summarize_contagion,  # CSP-W1 contagion context lobe
     "fx_dollar": _summarize_fx_dollar,  # FX/dollar transmission context lobe
     "special_sits": _summarize_special_sits,  # SS-NW-W1 special-situations event context lobe
+    "theme_rotation": _summarize_theme_rotation,  # theme_context.v1 NW integration
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -1275,6 +1332,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "contagion": ["world-state"],  # CSP-W1: reads world_state.contagion_regime
     "fx_dollar": ["world-state"],  # reads world_state.fx_dollar (from data/forex/latest.json)
     "special_sits": ["special-sits-context-latest"],  # SS-NW-W1: reads context artifact directly
+    "theme_rotation": ["theme-context-latest"],  # reads world_state.theme_rotation
 }
 
 

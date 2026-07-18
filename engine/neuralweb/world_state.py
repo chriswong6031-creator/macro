@@ -2950,6 +2950,134 @@ def _compose_contagion_regime(root: "Path | str | None" = None) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Theme-rotation lobe (theme_context.v1 NW integration)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _compose_theme_rotation(root: "Path | str | None" = None) -> dict:
+    """Compose theme_rotation lobe from site/basketdata/theme_context.json.
+
+    Follows the _compose_cross_asset_flows / _compose_fx_dollar discipline:
+    - all IO inside this function
+    - _clean() on every value
+    - display_only=True ALWAYS including the null fallback dict
+    - absent artifact → null block, no raise
+
+    Fields exposed (per contract §Neural Web integration points):
+        as_of, leadership_state, days_in_state, stance_en, stance_zh,
+        trailing_leader {id, name, health, breadth, r10},
+        strength [{id, name}] (names only, max 4),
+        migration {absorbing, bleeding categories},
+        alignment.sector_rotation_agrees,
+        state_changes, display_only.
+
+    # TODO(synapse): register theme-context-latest post-#2854
+    """
+    repo = _repo_root(root)
+    path = repo / "site" / "basketdata" / "theme_context.json"
+
+    null_out: dict = {
+        "as_of": None,
+        "leadership_state": None,
+        "days_in_state": None,
+        "stance_en": None,
+        "stance_zh": None,
+        "trailing_leader": None,
+        "strength": None,
+        "migration": None,
+        "alignment": None,
+        "state_changes": None,
+        "display_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        leadership = raw.get("leadership") or {}
+        migration_raw = raw.get("migration") or {}
+        alignment_raw = raw.get("alignment") or {}
+        state_changes_raw = raw.get("state_changes") or {}
+
+        # Trailing leader — compact: id, name, health, breadth, r10
+        tl_raw = leadership.get("trailing_leader") or {}
+        trailing_leader: dict | None = None
+        if tl_raw and isinstance(tl_raw, dict):
+            trailing_leader = {
+                "id": _clean(tl_raw.get("id")),
+                "name": _clean(tl_raw.get("name")),
+                "health": _clean(tl_raw.get("health")),
+                "breadth": _clean(tl_raw.get("breadth")),
+                "r10": _clean(tl_raw.get("r10")),
+            }
+
+        # Strength list — id+name only, max 4
+        strength_raw = leadership.get("strength") or []
+        strength_out: list[dict] = []
+        for entry in strength_raw[:4]:
+            if not isinstance(entry, dict):
+                continue
+            strength_out.append({
+                "id": _clean(entry.get("id")),
+                "name": _clean(entry.get("name")),
+            })
+
+        # Migration — absorbing/bleeding category names + avg_breadth, capped
+        absorbing_raw = migration_raw.get("absorbing") or []
+        bleeding_raw = migration_raw.get("bleeding") or []
+        migration_out: dict | None = None
+        if absorbing_raw or bleeding_raw:
+            migration_out = {
+                "absorbing": [
+                    {
+                        "category": _clean(x.get("category")),
+                        "avg_breadth": _clean(x.get("avg_breadth")),
+                    }
+                    for x in absorbing_raw[:3]
+                    if isinstance(x, dict)
+                ],
+                "bleeding": [
+                    {
+                        "category": _clean(x.get("category")),
+                        "avg_breadth": _clean(x.get("avg_breadth")),
+                    }
+                    for x in bleeding_raw[:3]
+                    if isinstance(x, dict)
+                ],
+            }
+
+        # Alignment — sector_rotation_agrees flag only
+        alignment_out: dict | None = None
+        if alignment_raw and isinstance(alignment_raw, dict):
+            alignment_out = {
+                "sector_rotation_agrees": _clean(alignment_raw.get("sector_rotation_agrees")),
+            }
+
+        # State changes — clean each entry
+        state_changes_out: dict | None = None
+        if state_changes_raw:
+            state_changes_out = {
+                k: _clean_state_entry(v) for k, v in state_changes_raw.items()
+            }
+
+        return _display_only({
+            "as_of": _clean(raw.get("as_of")),
+            "leadership_state": _clean(leadership.get("state")),
+            "days_in_state": _clean(leadership.get("days_in_state")),
+            "stance_en": _clean(leadership.get("stance_en")),
+            "stance_zh": _clean(leadership.get("stance_zh")),
+            "trailing_leader": trailing_leader,
+            "strength": strength_out if strength_out else None,
+            "migration": migration_out,
+            "alignment": alignment_out,
+            "state_changes": state_changes_out,
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("theme_rotation: compose failed — %s", exc)
+        return null_out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Liquidity Plumbing lobe (neuralweb.liquidity_plumbing.v1)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -3610,6 +3738,26 @@ def build_world_state(
             "display_only": True, "is_context_only": True,
         }
 
+    # theme_rotation (theme_context.v1 NW integration — display-only, fail-open)
+    # TODO(synapse): register theme-context-latest post-#2854
+    _tc_path = repo / "site" / "basketdata" / "theme_context.json"
+    try:
+        theme_rotation_block: dict = _compose_theme_rotation(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: theme_rotation lobe failed — %s", exc)
+        gaps.append(f"theme_rotation: {exc}")
+        theme_rotation_block = {
+            "as_of": None, "leadership_state": None, "days_in_state": None,
+            "stance_en": None, "stance_zh": None, "trailing_leader": None,
+            "strength": None, "migration": None, "alignment": None,
+            "state_changes": None, "display_only": True,
+        }
+    sources[str(_tc_path.relative_to(repo))] = (theme_rotation_block or {}).get("as_of")
+    # Intentionally no gap appended when the artifact is absent: the null block
+    # already communicates absence via display_only=True + all fields None.
+    # theme_context.json is optional (produced by build_baskets); absence is expected
+    # until theme_context.v1 producer is wired. Matches the intl_risk pattern.
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "verdict": verdict_block,
@@ -3652,6 +3800,7 @@ def build_world_state(
         "intl_risk": intl_risk_block,  # IRD-W2 display-only lobe
         "contagion_regime": contagion_regime_block,  # CSP-W1 display-only lobe
         "special_situations": special_situations_block,  # SS-NW-W1 display-only lobe (None until first nightly run)
+        "theme_rotation": theme_rotation_block,  # theme_context.v1 NW integration (display-only)
         "gaps": gaps,
         "sources": sources,
     }

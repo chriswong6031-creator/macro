@@ -285,38 +285,6 @@ def main() -> int:
         for m in (b.get("members") or [])
         if m.get("symbol")
     })
-    html = env.get_template("baskets.html.j2").render(
-        baskets_json=json.dumps(data, separators=(",", ":")),
-        chart_json=json.dumps(chart, separators=(",", ":")),
-        theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
-        flow=flow,
-        risk_state=risk_state,
-        risk_radar=risk_radar,
-        factor_season=factor_season,
-        generated_utc=built,
-        basket_member_syms=_member_syms)
-    write_page(site / "baskets.html", html)
-    # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with
-    # theme_intel + members) and the env; chart already split off above. Additive.
-    try:
-        from scripts.build_theme_detail import build_detail_pages
-        build_detail_pages(data, site, env, "us")
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("theme detail pages failed: %s", e)
-    # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page
-    lwc = config.ROOT / "templates" / "lightweight-charts.js"
-    if lwc.exists():
-        (site / "lightweight-charts.js").write_text(lwc.read_text())
-    # ship the prevailing-narrative scorecard renderer (all baskets pages use it)
-    sc = config.ROOT / "templates" / "allocation_scorecard.js"
-    if sc.exists():
-        (site / "allocation_scorecard.js").write_text(sc.read_text())
-    # ship the Forming Narratives renderer (all baskets pages use it)
-    ne = config.ROOT / "templates" / "forming_narratives.js"
-    if ne.exists():
-        (site / "forming_narratives.js").write_text(ne.read_text())
-    log.info("wrote %s/baskets.html (%d baskets, %d categories, %d KB)",
-             site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
 
     # Thematic Narrative-Rotation pages (engine.narrative_rotation -> site/allocation*.html)
     # for ALL FOUR markets (US + China + HK + Canada). Built here off the same baskets
@@ -355,6 +323,69 @@ def main() -> int:
                                 if _alloc_stale else "ok"),
                      "stamped_at": datetime.now(timezone.utc).isoformat(timespec="seconds")},
                     separators=(",", ":")))
+
+    # THEME CONTEXT (theme_context.v1) — wired HERE so that allocation.json has already been
+    # written by build_allocation() above (PIT correctness: theme_context.as_of, the
+    # same-day idempotency check, and the context_history.jsonl ledger row all reflect the
+    # CURRENT build's allocation data, not the prior build's file).  Additive — a context
+    # failure never blocks the page build.  baskets.html is rendered below (after this block)
+    # so the Jinja var carries the fresh context.
+    _theme_context: dict | None = None
+    try:
+        from engine.theme_context import compute_theme_context, write_context as _write_ctx
+        _alloc_json_path = config.ROOT / "site" / "allocationdata" / "allocation.json"
+        if _alloc_json_path.exists() and data.get("theme_intel"):
+            _alloc_payload = json.loads(_alloc_json_path.read_text())
+            _theme_context = compute_theme_context(
+                alloc=_alloc_payload,
+                theme_intel=data["theme_intel"],
+                region="us",
+            )
+            if _theme_context:
+                _write_ctx(_theme_context)
+                log.info(
+                    "theme_context: state=%s leader=%s",
+                    _theme_context.get("leadership", {}).get("state"),
+                    (_theme_context.get("leadership", {}).get("trailing_leader") or {}).get("id"),
+                )
+    except Exception as _tc_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("theme_context hook failed: %s", _tc_exc)
+
+    # Render baskets.html — deferred to here so theme_context (above) is PIT-correct.
+    html = env.get_template("baskets.html.j2").render(
+        baskets_json=json.dumps(data, separators=(",", ":")),
+        chart_json=json.dumps(chart, separators=(",", ":")),
+        theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
+        flow=flow,
+        risk_state=risk_state,
+        risk_radar=risk_radar,
+        factor_season=factor_season,
+        generated_utc=built,
+        basket_member_syms=_member_syms,
+        theme_context=_theme_context)
+    write_page(site / "baskets.html", html)
+    # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with
+    # theme_intel + members) and the env; chart already split off above. Additive.
+    try:
+        from scripts.build_theme_detail import build_detail_pages
+        build_detail_pages(data, site, env, "us")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("theme detail pages failed: %s", e)
+    # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page
+    lwc = config.ROOT / "templates" / "lightweight-charts.js"
+    if lwc.exists():
+        (site / "lightweight-charts.js").write_text(lwc.read_text())
+    # ship the prevailing-narrative scorecard renderer (all baskets pages use it)
+    sc = config.ROOT / "templates" / "allocation_scorecard.js"
+    if sc.exists():
+        (site / "allocation_scorecard.js").write_text(sc.read_text())
+    # ship the Forming Narratives renderer (all baskets pages use it)
+    ne = config.ROOT / "templates" / "forming_narratives.js"
+    if ne.exists():
+        (site / "forming_narratives.js").write_text(ne.read_text())
+    log.info("wrote %s/baskets.html (%d baskets, %d categories, %d KB)",
+             site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
+
     try:
         from scripts.build_anticipation import main as _build_anticipation
         _build_anticipation()                             # anticipation.html + per-ticker cones
