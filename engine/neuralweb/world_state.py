@@ -2204,11 +2204,15 @@ def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
         "regime": None,
         "breadth": None,
         "correlation": None,
+        "dominant_cluster": None,
+        "absorption_dir": None,
         "intermarket": None,
         "carry_summary": None,
         "leadlag": None,
         "global_liquidity_dir": None,
         "funding_state": None,
+        "confirm": None,
+        "shadow": None,
         "display_only": True,
         "stale": True,
     }
@@ -2220,15 +2224,36 @@ def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
     try:
         flows = raw.get("flows") or {}
 
-        # correlation sub-block
+        # correlation sub-block (v2 additive: dominant_cluster, absorption_dir)
         corr_raw = flows.get("correlation") or {}
         corr_block: dict | None = None
+        dominant_cluster: list | None = None
+        absorption_dir: str | None = None
         if isinstance(corr_raw, dict) and corr_raw.get("verdict"):
             corr_block = {
                 "verdict": _clean(corr_raw.get("verdict")),
                 "absorption_pctile": _clean(corr_raw.get("absorption_pctile")),
                 "n_markets": _clean(corr_raw.get("n_markets")),
             }
+            # dominant_cluster: list of market names (flows.v2 optional)
+            dc_raw = corr_raw.get("dominant_cluster")
+            if isinstance(dc_raw, list) and dc_raw:
+                dominant_cluster = [_clean(v) for v in dc_raw if v is not None][:6]
+            # absorption_dir: compare current vs ~13-weeks-earlier spark_w value
+            spark_w = corr_raw.get("spark_w")
+            if isinstance(spark_w, list) and len(spark_w) >= 14:
+                try:
+                    latest_val = float(spark_w[-1])
+                    earlier_val = float(spark_w[-14])
+                    diff = latest_val - earlier_val
+                    if diff > 0.01:
+                        absorption_dir = "rising"
+                    elif diff < -0.01:
+                        absorption_dir = "falling"
+                    else:
+                        absorption_dir = "flat"
+                except (TypeError, ValueError):
+                    absorption_dir = None
 
         # intermarket: top 4 entries
         intermarket_raw = flows.get("intermarket") or []
@@ -2270,6 +2295,25 @@ def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
         fund_raw = flows.get("funding_stress") or {}
         funding_state_val: str | None = _clean(fund_raw.get("state")) if isinstance(fund_raw, dict) else None
 
+        # confirm sub-block (flows.v2 optional — from flows.confirm or data/regime/latest.json
+        # cross_asset_confirm, whichever is present; treat as display context only)
+        confirm_block: dict | None = None
+        confirm_raw = flows.get("confirm") or {}
+        if isinstance(confirm_raw, dict) and confirm_raw.get("verdict"):
+            confirm_block = {
+                "verdict": _clean(confirm_raw.get("verdict")),
+                "n_blind_flags": _clean(confirm_raw.get("n_blind_flags")),
+            }
+
+        # shadow sub-block (flows.v2 optional)
+        shadow_block: dict | None = None
+        shadow_raw = flows.get("shadow") or {}
+        if isinstance(shadow_raw, dict) and shadow_raw.get("pressure_pctile") is not None:
+            shadow_block = {
+                "escalated": bool(shadow_raw.get("escalated")),
+                "pressure_pctile": _clean(shadow_raw.get("pressure_pctile")),
+            }
+
         asof = _to_iso(raw.get("asof") or raw.get("date"))
 
         return _display_only({
@@ -2278,11 +2322,15 @@ def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
             "regime": _clean(raw.get("regime")),
             "breadth": _clean(raw.get("breadth")),
             "correlation": corr_block,
+            "dominant_cluster": dominant_cluster,
+            "absorption_dir": absorption_dir,
             "intermarket": intermarket_out if intermarket_out else None,
             "carry_summary": carry_summary,
             "leadlag": leadlag_block,
             "global_liquidity_dir": global_liq_dir,
             "funding_state": funding_state_val,
+            "confirm": confirm_block,
+            "shadow": shadow_block,
             "stale": asof is None,
         })
     except Exception as exc:  # noqa: BLE001

@@ -462,7 +462,7 @@ def _make_transitions_jsonl(root: Path) -> None:
 
 
 def _make_crossasset(root: Path) -> dict:
-    """Write data/crossasset/latest.json with R6 flows block so the lobe gap is suppressed."""
+    """Write data/crossasset/latest.json with flows.v2 block so the lobe gap is suppressed."""
     d = {
         "date": "2026-07-05",
         "regime": "mixed / no clear trend",
@@ -471,16 +471,34 @@ def _make_crossasset(root: Path) -> dict:
         "correlation": "converging",
         "asof": "2026-07-05",
         "flows": {
-            "schema": "crossasset_flows.v1",
+            "schema": "crossasset_flows.v2",
             "display_only": True,
-            "correlation": {"verdict": "converging", "absorption_pctile": 0.55, "n_markets": 6},
+            "regime": "mixed / no clear trend",
+            "correlation": {
+                "verdict": "converging",
+                "absorption_pctile": 0.55,
+                "n_markets": 6,
+                "dominant_cluster": ["US", "Commodities", "Dollar"],
+                "spark_w": [0.5] * 14 + [0.62],  # 15 values; last > first → rising
+                "spark_asof": "2026-07-05",
+            },
             "breadth": 0.1,
             "trend_top": [{"asset": "equity_us", "trend": "up", "z": 0.5}],
+            "trend_summary": {"n": 1, "n_up": 1, "n_down": 0},
             "intermarket": [{"pair": "copper_gold", "ratio": 0.22, "trend": "mid"}],
             "carry": None,
-            "leadlag": {"verdict": "contemporaneous", "links": []},
+            "leadlag": {
+                "verdict": "contemporaneous",
+                "links": [],
+                "stable": None,
+                "lead_asset": None,
+                "n_significant": 0,
+                "n_tested": 6,
+            },
             "global_liquidity": None,
             "funding_stress": None,
+            "confirm": {"verdict": "aligned", "n_blind_flags": 2, "asof": "2026-07-05"},
+            "shadow": {"pressure_pctile": 0.72, "incumbent_state": "watch", "shadow_state": "caution", "escalated": False},
             "note": "display-only regime read",
         },
     }

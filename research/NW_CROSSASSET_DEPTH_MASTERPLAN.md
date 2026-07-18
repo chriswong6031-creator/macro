@@ -68,3 +68,34 @@ Every sub-field is None/[] when its source snapshot is absent (fail-open); no fi
 
 ## §6. Docket (recorded, NOT built)
 - **Cross-Asset Conditioning study:** "does correlation-concentration / absorption / breadth / fast-family lead-lag condition forward signal reliability beyond existing regime/drawdown gauges?" → registered under `fdr_family='macro_context'`, episode-clustered, basis-split, nulls printed, ≥60d pit_live accrual. Unblocked only after this wave + accrual. (Mirrors R5 §9 Atlas discipline.)
+
+---
+
+## §7. Wave-3 — Cross-Asset Utility (2026-07-18, Fable main-loop adjudication)
+
+**Status:** ACTIVE build wave. Operator directive: make the cross-asset/forex layer genuinely useful — richer features, deeper NW integration, consumption by other engines' calculations, and a doctrine-compliant page revamp. Census 2026-07-18 (6-lane + opus-verified) is the evidence base.
+
+### §7.1 Rulings
+
+- **CA-W3-R1 (calculation-tier = shadow + confluence, never instant authority).** "Used in calculations" is granted through the house's proven lawful forms, not by voiding RUL-CA-1: (a) context/confluence attaches to non-Article-2 engines (free at display tier); (b) a **shadow escalator** mirroring CGL-R4 mechanics exactly (see §7.3); (c) pit_live accrual feeding the §6 conditioning study. RUL-CA-1's evidence base (three phase-0 nulls) still stands; overturning it without new graded evidence would be laundering. Promotion of the shadow lane to live radar authority requires **≥30 graded shadow rows + do-no-harm vs incumbent**, earliest review **2026-10-17** (shared RSR-R2 clock), and an explicit operator ruling.
+- **CA-W3-R2 (escalator construction).** The shadow pressure gauge is the **continuous absorption percentile** (Kritzman-Page one-bet fragility, `absorption_pctile_5y`) — a single continuous gauge, deliberately NOT a K-of-N flip-count (RSR-R6a/b killed the count-conjunction class). Escalation condition mirrors CGL verbatim: `pressure ≥ 0.90 AND incumbent ≥ watch → shadow = incumbent + 1 band` (capped at risk-off; never a new origin scare). US market only in W3; intl extension needs its own wave.
+- **CA-W3-R3 (accrual is free; nulls print).** `data/crossasset/history.jsonl` (nightly-lane-gated, single writer build_crossasset per RUL-CA-3) accrues the pit_live rows the §6 study requires. Building accrual is never blocked by the display-only status (house epistemics: a null never blocks building or accrual).
+- **CA-W3-R4 (flows.v2 additive).** `flows` schema bumps to `crossasset_flows.v2`, strictly additive over v1; the 5 legacy top-level keys stay byte-compatible (RUL-CA-2 unchanged). New: correlation numerics + weekly absorption spark, compact `confirm`, compact `dollar`, enriched `leadlag`, liquidity impulse, `regime` inside flows.
+- **CA-W3-R5 (trend universe globalizes; concentration universe frozen).** Trend board adds EFA / EEM / TLT legs (display regime read; breadth renormalizes by n). The 6-market **concentration** universe is FROZEN — its 5y absorption percentile history defines the shadow pressure gauge; membership churn would silently reset the ruler.
+- **CA-W3-R6 (page port to doctrine).** crossasset.html is rebuilt under DESIGN_DOCTRINE: stance on every panel, plain words at rest, all statistics (HAC t, FDR q, DSR, permutation p) demoted to Tier-2 receipts. Honesty survives translation: the TSMOM/lead-lag/confirm nulls are stated in plain words on Tier 1 with technical receipts on hover.
+
+### §7.2 Build map (one branch, one squash PR, source-only)
+
+W3-A build_crossasset flows.v2 + history + hero composition · W3-B `engine/crossasset_shadow.py` + forward log · W3-C NW/consumer wiring (confluence node `macro:cross_asset_flows`, world_state/mastermind additive fields, fx_dollar stress read, build_site US-radar context attach beside the CGL chip, vector hub one-bet line) · W3-D template rebuild · W3-E registration/reconciliation (synapse entries + consumers, SIGNAL_BUS regen, conformance + authority walls).
+
+### §7.3 Shadow lane spec
+
+Module `engine/crossasset_shadow.py`, invoked from build_crossasset (runs post-`engine.run` same-night; COLLECT_LANE=nightly in the engine job). Artifact `data/crossasset_shadow/latest.json` `{asof, pressure_pctile, incumbent_state, shadow_state, escalated, display_only: true}`. Forward log `data/risk_radar/forward_log_crossasset.jsonl`, appended ONLY when the US audit ledger lane is armed (`engine/risk_radar_audit.ledger_lane_armed`), row schema mirroring CGL contagion rows (graded on the same ≥5%-drawdown h5/h10/h21 ruler). Fail-open everywhere; a missing radar state or absorption read logs a warning and writes nothing.
+
+### §7.4 Scope fences (Wave-3 does NOT)
+
+- No Article-2 surface reads any W3 output (`alert_triage, board_ordering, top_setups, attention_queue, push_floor`); alert_triage's pre-existing `cross_asset` read (pre-R6 leaf via regime/latest.json) is untouched.
+- No conditioning study runs (RUL-CA-4 stands; §6 docket unchanged); no recompute of any phase-0 verdict.
+- No change to the concentration market set, thresholds, or the incumbent US radar calibration; the shadow lane changes ZERO live states.
+- No new FX radar leg (RRI-S2 NO-GO respected — incumbent one-sided depreciation legs stand).
+- No positioning fusion (COT stays context-tier per Signal Commons).

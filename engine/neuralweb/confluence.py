@@ -500,6 +500,31 @@ def _build_macro_nodes(world_state: dict | None, gaps: list[str]) -> list[dict]:
                 },
             ))
 
+        # cross_asset_flows lobe — display-only structural node mirroring fx_dollar pattern
+        caf = world_state.get("cross_asset_flows")
+        if caf is not None:
+            has_any = True
+            _caf_corr = caf.get("correlation") or {}
+            _caf_state_text: str | None = None
+            if caf.get("regime"):
+                _caf_state_text = str(caf["regime"])
+            _caf_corr_verdict = _caf_corr.get("verdict") if isinstance(_caf_corr, dict) else None
+            nodes.append(_node(
+                nid="macro:cross_asset_flows",
+                ntype="macro",
+                label="Cross-asset flows",
+                meta={
+                    "subtype": "cross_asset_flows",
+                    "label_zh": "跨资产流",
+                    "regime": caf.get("regime"),
+                    "correlation_verdict": _caf_corr_verdict,
+                    "state_text": _caf_state_text,
+                    "asof": caf.get("asof"),
+                    "display_only": True,
+                    "source_lobe": "cross_asset_flows",
+                },
+            ))
+
         # global_regimes lobe — one node per market
         gr = world_state.get("global_regimes")
         if gr is not None:
