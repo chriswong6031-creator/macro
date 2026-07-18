@@ -3745,7 +3745,7 @@ artifacts:
     consumers: []
     external_consumers:
       - terminal:pull_macro_intel
-    notes: "Producer: scripts/build_site.py:3151 write_text."
+    notes: "Producer: scripts/build_site.py write_text. MSX-2: additive keys market_state_color (green/yellow/red), stances ({hero,liquidity,credit} stance pairs), fx (compact dollar-desk: dollar_desk, state_changes, regime_radar {dominant,active,intensity}, strength). Absent until first nightly post-merge; existing keys byte-compatible."
 
   # --- 2 consumers ---
   site-factors:

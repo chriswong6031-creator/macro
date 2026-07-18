@@ -584,17 +584,20 @@ def _render_fg_dashboard(fear_greed):
 
 
 def _render_fg_macro_signals(fear_greed):
-    """Extract and render the Fear/Greed detail section of macro_signals.html.j2."""
+    """Render the MSX-2 Mood panel (macro_signals.html.j2 §4) — the Fear/Greed
+    dial + legs moved into the mood card in the MSX-2 revamp."""
     from jinja2 import Environment, FileSystemLoader
     from engine import i18n
     src = (TEMPLATES / "macro_signals.html.j2").read_text()
     macros = src[: src.index("<!DOCTYPE")]
-    start = src.index("{# ===================== FEAR / GREED COMPOSITE")
-    end = src.index("{# ===================== FEAR <-> EUPHORIA (full)")
+    start = src.index("   §4  MOOD & POSITIONING")
+    start = src.rindex("{#", 0, start)
+    end = src.index("{# Positioning / crowd meter #}")
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
     return env.from_string(macros + src[start:end]).render(
         fear_greed=fear_greed,
+        fear_euphoria=None,
     )
 
 
@@ -622,20 +625,21 @@ def test_dashboard_young_tiles_render():
 
 
 def test_macro_signals_detail_renders():
-    """Fear/Greed full breakdown section renders in macro_signals.html.j2."""
+    """Fear/Greed mood panel renders in macro_signals.html.j2 (MSX-2 §4)."""
     html = _render_fg_macro_signals(_make_min_fg())
-    assert 'id="fear-greed-detail"' in html
-    assert "Fear / Greed composite" in html
-    assert "恐惧/贪婪合成" in html
+    assert 'id="mood"' in html
+    assert "Mood — Fear / Greed" in html
+    assert "情绪 — 恐惧/贪婪" in html
     assert "SPX momentum" in html                   # leg name appears
     assert "VIX level" in html
     assert "54" in html                             # dial
+    assert "Full breakdown ▸" in html               # legs table demoted to details
 
 
 def test_macro_signals_detail_absent_when_none():
-    """When fear_greed is None, the detail section does not render."""
+    """When fear_greed is None, the mood panel does not render."""
     html = _render_fg_macro_signals(None)
-    assert 'id="fear-greed-detail"' not in html
+    assert 'id="mood"' not in html
 
 
 def test_no_translated_text_in_title_attributes():
