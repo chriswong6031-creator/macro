@@ -15,6 +15,20 @@
 {% macro amt(r) -%}
 {% if r.amount_low is not none and r.amount_high is not none and r.amount_low != r.amount_high %}{{ money(r.amount_low) }}–{{ money(r.amount_high) }}{% else %}{{ money(r.amount_mid) }}{% endif %}
 {%- endmacro %}
+{# ZH twins for the builder's fixed engine-read timing strings (scripts/build_congress._engine_read) #}
+{% set TIMING_ZH = {
+  'engine-blocked — wait': '引擎否决 — 等待',
+  'downtrend — avoid the catch': '下行趋势 — 勿接飞刀',
+  'extended — wait for a base': '过度拉升 — 等待企稳',
+  'uptrend confirmed, sector leading': '上升趋势确认，板块领先',
+  'constructive pullback': '健康回调',
+  'mixed / unconfirmed': '信号混杂 / 未确认',
+} %}
+{# plain-word twins for engine enum slugs (doctrine Law 2 — no raw machine tokens in tips) #}
+{% set WASH_EN = {'now': 'washed out now', 'recent': 'washout lifted within ~10 days', 'near': 'approaching washout'} %}
+{% set WASH_ZH = {'now': '当前处于超跌区', 'recent': '约10天内刚脱离超跌区', 'near': '正接近超跌区'} %}
+{% set MKIND_EN = {'rsi_macd': 'RSI-MACD', 'price': 'price MACD', 'both': 'both MACD variants'} %}
+{% set MKIND_ZH = {'rsi_macd': 'RSI-MACD', 'price': '价格MACD', 'both': '两种MACD口径'} %}
 
 {% block title %}Congressional Trades — Macro Dashboard{% endblock %}
 
@@ -23,7 +37,7 @@
   .cg-hero h1 { font-size:26px; margin:6px 0 4px; }
   .cg-sub { color:var(--muted); font-size:13px; max-width:820px; }
   .cg-meta { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px; }
-  .cg-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-width:1060px; margin:16px auto 4px; }
+  .cg-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; max-width:1060px; margin:16px auto 4px; }
   @media (max-width:680px){ .cg-stats { grid-template-columns:repeat(2,1fr); } }
   .cg-stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
   .cg-stat .k { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
@@ -61,19 +75,53 @@
   html[data-theme="dark"] .cg-flag.gate-t2 { color:#60a5fa; }
   html[data-theme="dark"] .cg-flag.gate-t3 { color:#34d399; }
   .cg-flag.t0 { background:#0ea5e922; color:#0284c7; font-weight:800; } html[data-theme="dark"] .cg-flag.t0 { color:#38bdf8; }
+  /* entry chips */
+  .cg-flag.wash  { background:#0891b222; color:#0369a1; } html[data-theme="dark"] .cg-flag.wash { color:#38bdf8; }
+  .cg-flag.wash-dual { background:#7c3aed22; color:#6d28d9; font-weight:800; } html[data-theme="dark"] .cg-flag.wash-dual { color:#a78bfa; }
+  .cg-flag.wmacd { background:#10b98122; color:#059669; } html[data-theme="dark"] .cg-flag.wmacd { color:#34d399; }
+  .cg-flag.wstoch { background:#6366f122; color:#4338ca; } html[data-theme="dark"] .cg-flag.wstoch { color:#818cf8; }
+  /* member chips */
   .cg-mem { display:inline-block; font-size:10.5px; color:var(--muted); padding:0 5px; border:1px solid var(--line); border-radius:5px; margin:1px 2px 1px 0; white-space:nowrap; }
   .cg-mem.D { border-color:#5b8def88; } .cg-mem.R { border-color:#d23f3f88; }
+  /* skill-tier member chip classes (replace inline member-chip span) */
+  .cg-mem.sk-proven { border-color:#1f9a5566; color:#1f9a55; }
+  .cg-mem.sk-watch  { border-color:#e0973a66; color:#c77a1f; }
+  .cg-mem.sk-lim    { color:var(--muted); }
+  html[data-theme="dark"] .cg-mem.sk-proven { color:#3fc07e; }
+  html[data-theme="dark"] .cg-mem.sk-watch  { color:#e0973a; }
   .side-chip { display:inline-block; padding:1px 7px; border-radius:5px; font-size:10.5px; font-weight:700; }
   .side-chip.buy  { background:#1f9a5522; color:#1f9a55; } html[data-theme="dark"] .side-chip.buy { color:#3fc07e; }
   .side-chip.sell { background:#d23f3f22; color:#d23f3f; } html[data-theme="dark"] .side-chip.sell { color:#ef6a6a; }
+  .arrow-buy  { color:#1f9a55; } html[data-theme="dark"] .arrow-buy  { color:#3fc07e; }
+  .arrow-sell { color:#d23f3f; } html[data-theme="dark"] .arrow-sell { color:#ef6a6a; }
   .feedlink { font-size:11.5px; }
   .mb-tier-proven { color:#1f9a55; font-weight:700; } html[data-theme="dark"] .mb-tier-proven { color:#3fc07e; }
   .mb-tier-watch  { color:#5b8def; font-weight:600; }
   .mb-tier-limited{ color:var(--muted); }
-  .member-chip { display:inline-block; font-size:9.5px; padding:1px 5px; border-radius:4px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); white-space:nowrap; margin-left:3px; }
-  .member-chip.proven { border-color:#1f9a5544; color:#1f9a55; background:#1f9a5511; }
-  .member-chip.watch  { border-color:#5b8def44; color:#5b8def; }
-  html[data-theme="dark"] .member-chip.proven { color:#3fc07e; }
+  /* front-line row accent */
+  tr.fl { border-left:3px solid #f59e0b; background:rgba(245,158,11,0.04); }
+  html[data-theme="dark"] tr.fl { background:rgba(245,158,11,0.07); }
+  tr.fl td:first-child { padding-left:5px; }
+  /* filter bar */
+  .cg-filter-bar { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:10px 0 8px; }
+  .cg-fchip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); font-size:11px; font-weight:600; cursor:pointer; transition:background .15s,color .15s,border-color .15s,box-shadow .15s; white-space:nowrap; }
+  .cg-fchip:hover { border-color:var(--link); color:var(--text); }
+  .cg-fchip[aria-pressed="true"] { color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.08); }
+  .cg-fchip.fp-prime[aria-pressed="true"]  { background:#d97706; border-color:#d97706; }
+  .cg-fchip.fp-setup[aria-pressed="true"]  { background:#2563eb; border-color:#2563eb; }
+  .cg-fchip.fp-w2w[aria-pressed="true"]    { background:#0369a1; border-color:#0369a1; }
+  .cg-fchip.fp-w1m[aria-pressed="true"]    { background:#0369a1; border-color:#0369a1; }
+  .cg-fchip.fp-dual[aria-pressed="true"]   { background:#6d28d9; border-color:#6d28d9; }
+  .cg-fchip.fp-wmacd[aria-pressed="true"]  { background:#059669; border-color:#059669; }
+  .cg-fchip.fp-wstoch[aria-pressed="true"] { background:#4338ca; border-color:#4338ca; }
+  .cg-fchip.fp-fresh[aria-pressed="true"]  { background:#475569; border-color:#475569; }
+  .cg-fchip .fc-cnt { font-size:9.5px; opacity:.75; }
+  .cg-recency { display:inline-flex; border:1px solid var(--line); border-radius:20px; overflow:hidden; }
+  .cg-recency button { padding:3px 10px; font-size:11px; font-weight:600; background:var(--panel2); color:var(--muted); border:none; cursor:pointer; transition:background .15s,color .15s; }
+  .cg-recency button.active { background:var(--link); color:#fff; }
+  .cg-filter-count { font-size:11px; color:var(--muted); margin-left:4px; }
+  .cg-filter-reset { font-size:11px; color:var(--link); cursor:pointer; text-decoration:underline; display:none; }
+  .cg-hide { display:none !important; }
 {% endblock %}
 
 {% block content %}
@@ -97,52 +145,198 @@
   <div class="cg-stat"><div class="k">{{ t('Important', '重点') }}</div><div class="v">{{ summary.n_important }}</div></div>
   <div class="cg-stat"><div class="k">{{ t('Bipartisan', '两党') }}</div><div class="v">{{ summary.n_bipartisan }}</div></div>
   <div class="cg-stat"><div class="k">{{ t('Act-now', '现在可买') }}</div><div class="v">{{ summary.n_act_now }}</div></div>
+  <div class="cg-stat"><div class="k">{{ t('Entry setups', '入场信号') }}</div><div class="v">{{ summary.n_front_line | default(0) }}</div></div>
 </div>
 
 {# ---------------- the scored watchlist ---------------- #}
 <div class="cg-card">
   <h2>🎯 {{ t('Watchlist — ranked copy candidates', '观察清单 — 跟单候选排名') }}
-      <span class="h-note">— {{ t('composite = ', '综合分 = ') }}{{ (weights.cluster*100)|round|int }}% {{ t('cluster','集群') }} · {{ (weights.technical*100)|round|int }}% {{ t('technical','技术面') }} · {{ (weights.zone*100)|round|int }}% {{ t('zone','区间') }}</span></h2>
+      <span class="h-note">— {{ t('composite = ', '综合分 = ') }}{{ (weights.cluster*100)|round|int }}% {{ t('cluster','集群') }} · {{ (weights.technical*100)|round|int }}% {{ t('technical','技术面') }} · {{ (weights.zone*100)|round|int }}% {{ t('zone','区间') }} · {{ (weights.entry*100)|round|int if weights.entry is defined else 30 }}% {{ t('entry timing','入场时机') }}</span></h2>
+
+  {# ---- filter bar ---- #}
   {% if items %}
-  <table class="ad"><thead><tr>
+  <div class="cg-filter-bar" id="cgFilterBar">
+    <button class="cg-fchip fp-prime" aria-pressed="false" data-filter="prime"
+      data-tip-en="Signal-gate T1/T2 — the momentum stack just fired; receipts on each row chip"
+      data-tip-zh="信号门 T1/T2 — 动量信号刚触发；详情见各行芯片">⚡ <span class="l-en">Prime entry</span><span class="l-zh">优质入场</span> <span class="fc-cnt" data-fcount="prime"></span></button>
+    <button class="cg-fchip fp-setup" aria-pressed="false" data-filter="setup"
+      data-tip-en="Cross projected within days — gate T3 or weekly momentum approaching"
+      data-tip-zh="预计数日内上穿 — T3 门或周线动量接近">⏳ <span class="l-en">Setting up</span><span class="l-zh">蓄势中</span> <span class="fc-cnt" data-fcount="setup"></span></button>
+    <button class="cg-fchip fp-w2w" aria-pressed="false" data-filter="w2w"
+      data-tip-en="2-week Stochastic RSI washed out — deeply oversold on the short-term frame"
+      data-tip-zh="两周随机RSI超跌 — 短期深度超卖">🌊 <span class="l-en">Washed out · 2W</span><span class="l-zh">超跌 · 两周</span> <span class="fc-cnt" data-fcount="w2w"></span></button>
+    <button class="cg-fchip fp-w1m" aria-pressed="false" data-filter="w1m"
+      data-tip-en="Monthly Stochastic RSI washed out — deeply oversold on the medium-term frame"
+      data-tip-zh="月线随机RSI超跌 — 中期深度超卖">🌊 <span class="l-en">Washed out · 1M</span><span class="l-zh">超跌 · 月线</span> <span class="fc-cnt" data-fcount="w1m"></span></button>
+    <button class="cg-fchip fp-dual" aria-pressed="false" data-filter="dual"
+      data-tip-en="2-week AND monthly deeply oversold — rare, the strongest reset signal"
+      data-tip-zh="两周且月线均深度超卖 — 罕见，最强重置信号">💎 <span class="l-en">Deep washout · both</span><span class="l-zh">双重超跌</span> <span class="fc-cnt" data-fcount="dual"></span></button>
+    <button class="cg-fchip fp-wmacd" aria-pressed="false" data-filter="wmacd"
+      data-tip-en="Weekly MACD just crossed or approaching a cross — momentum turning on the weekly frame"
+      data-tip-zh="周线MACD刚上穿或即将上穿 — 周线动量转向">📈 <span class="l-en">Weekly MACD turn</span><span class="l-zh">周线MACD转向</span> <span class="fc-cnt" data-fcount="wmacd"></span></button>
+    <button class="cg-fchip fp-wstoch" aria-pressed="false" data-filter="wstoch"
+      data-tip-en="Weekly Stochastic just crossed or approaching a cross — oversold momentum recovering on the weekly frame"
+      data-tip-zh="周线随机指标刚上穿或即将上穿 — 周线超卖动量恢复">〰️ <span class="l-en">Weekly Stoch turn</span><span class="l-zh">周线Stoch转向</span> <span class="fc-cnt" data-fcount="wstoch"></span></button>
+    <button class="cg-fchip fp-fresh" aria-pressed="false" data-filter="fresh"
+      data-tip-en="Signal fired within the last 10 days — still fresh"
+      data-tip-zh="信号在最近10天内触发 — 仍然新鲜">🕐 <span class="l-en">Fresh ≤10d</span><span class="l-zh">新鲜 ≤10天</span> <span class="fc-cnt" data-fcount="fresh"></span></button>
+    <span style="margin-left:4px;color:var(--line)">|</span>
+    <div class="cg-recency" id="cgRecency">
+      <button class="active" data-days="0"><span class="l-en">Any</span><span class="l-zh">全部</span></button>
+      <button data-days="7">≤7d</button>
+      <button data-days="14">≤14d</button>
+      <button data-days="30">≤30d</button>
+      <button data-days="90">≤90d</button>
+    </div>
+    <span class="cg-filter-count" id="cgFilterCount"></span>
+    <span class="cg-filter-reset" id="cgFilterReset" role="button" tabindex="0"><span class="l-en">Reset filters</span><span class="l-zh">重置筛选</span></span>
+  </div>
+
+  <table class="ad" id="cgWatchTable"><thead><tr>
     <th>#</th>
     <th>{{ t('Ticker','标的') }}</th>
     <th class="num">{{ t('Composite','综合分') }}</th>
     <th class="num">{{ t('Cluster','集群') }}</th>
     <th class="num">{{ t('Tech','技术') }}</th>
     <th class="num">{{ t('Zone','区间') }}</th>
+    <th class="num">{{ t('Entry','入场') }}</th>
     <th class="num">{{ t('Net','净') }}</th>
     <th>{{ t('Members + Skill','议员+技能') }}</th>
     <th>{{ t('Provenance','来源信息') }}</th>
     <th>{{ t('Engine read','引擎研判') }}</th>
   </tr></thead><tbody>
   {% for it in items %}
-    <tr>
+    {# resolve entry dict defensively #}
+    {%- set ent = it.entry if it.entry is defined else {} -%}
+    {%- set ent_covered   = ent.covered if ent.covered is defined else false -%}
+    {%- set ent_score     = ent.score if ent.score is defined else 0 -%}
+    {%- set is_fl         = ent.front_line if ent.front_line is defined else false -%}
+    {%- set is_prime      = ent.prime if ent.prime is defined else false -%}
+    {%- set is_setup      = ent.setting_up if ent.setting_up is defined else false -%}
+    {%- set w2w_hit       = ent.wash_2w_hit if ent.wash_2w_hit is defined else false -%}
+    {%- set w1m_hit       = ent.wash_1m_hit if ent.wash_1m_hit is defined else false -%}
+    {%- set dual_wash     = ent.dual_washout if ent.dual_washout is defined else false -%}
+    {%- set is_fresh      = ent.fresh_10d if ent.fresh_10d is defined else false -%}
+    {%- set wmacd_state   = ent.w_macd.state if ent.w_macd is defined and ent.w_macd.state is defined else 'none' -%}
+    {%- set wstoch_state  = ent.w_stoch.state if ent.w_stoch is defined and ent.w_stoch.state is defined else 'none' -%}
+    {%- set tx_age_attr   = it.latest_tx_age if it.latest_tx_age is not none else '' -%}
+    <tr class="{{ 'fl' if is_fl else '' }}"
+      data-prime="{{ '1' if is_prime else '' }}"
+      data-setup="{{ '1' if is_setup else '' }}"
+      data-w2w="{{ '1' if w2w_hit else '' }}"
+      data-w1m="{{ '1' if w1m_hit else '' }}"
+      data-dual="{{ '1' if dual_wash else '' }}"
+      data-fresh="{{ '1' if is_fresh else '' }}"
+      data-fl="{{ '1' if is_fl else '' }}"
+      data-wmacd="{{ wmacd_state if wmacd_state not in ('none','') else '' }}"
+      data-wstoch="{{ wstoch_state if wstoch_state not in ('none','') else '' }}"
+      data-txage="{{ tx_age_attr }}">
       <td class="mut2">{{ loop.index }}</td>
       <td>
         <span class="tk"><a href="stock.html#{{ it.ticker }}">{{ it.ticker }}</a></span>
         {% if it.gate_tier %}<span class="cg-flag gate-{{ it.gate_tier|lower }}" data-tip-en="⚡ Prime entry — signal gate {{ it.gate_tier }}" data-tip-zh="⚡ 优质入场 — 信号门 {{ it.gate_tier }}">⚡ {{ it.gate_tier }}</span>{% endif %}
         {% if it.t0 %}<span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI {{ it.t0_d3k }}) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>{% endif %}
+        {# washout chips #}
+        {%- if dual_wash -%}
+          {%- set w2w_k = ent.wash_2w.k if ent.wash_2w is defined and ent.wash_2w.k is not none else none -%}
+          {%- set w1m_k = ent.wash_1m.k if ent.wash_1m is defined and ent.wash_1m.k is not none else none -%}
+          {%- set w2w_st = ent.wash_2w.state if ent.wash_2w is defined and ent.wash_2w.state is defined else '' -%}
+          {%- set w1m_st = ent.wash_1m.state if ent.wash_1m is defined and ent.wash_1m.state is defined else '' -%}
+          <span class="cg-flag wash-dual"
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K={{ w2w_k|round|int if w2w_k is not none else '—' }}, {{ WASH_EN.get(w2w_st, w2w_st) }}) AND monthly StochRSI (K={{ w1m_k|round|int if w1m_k is not none else '—' }}, {{ WASH_EN.get(w1m_st, w1m_st) }}) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K={{ w2w_k|round|int if w2w_k is not none else '—' }}，{{ WASH_ZH.get(w2w_st, w2w_st) }}）且月线（K={{ w1m_k|round|int if w1m_k is not none else '—' }}，{{ WASH_ZH.get(w1m_st, w1m_st) }}）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span>
+        {%- else -%}
+          {%- if w2w_hit -%}
+            {%- set w2w_k = ent.wash_2w.k if ent.wash_2w is defined and ent.wash_2w.k is not none else none -%}
+            {%- set w2w_st = ent.wash_2w.state if ent.wash_2w is defined and ent.wash_2w.state is defined else '' -%}
+            <span class="cg-flag wash"
+              data-tip-en="🌊 2-week StochRSI washed out — K={{ w2w_k|round|int if w2w_k is not none else '—' }} (under 20 = deeply oversold); {{ WASH_EN.get(w2w_st, w2w_st) }}."
+              data-tip-zh="🌊 两周随机RSI超跌 — K={{ w2w_k|round|int if w2w_k is not none else '—' }}（低于20=深度超卖）；{{ WASH_ZH.get(w2w_st, w2w_st) }}。">🌊2W</span>
+          {%- endif -%}
+          {%- if w1m_hit -%}
+            {%- set w1m_k = ent.wash_1m.k if ent.wash_1m is defined and ent.wash_1m.k is not none else none -%}
+            {%- set w1m_st = ent.wash_1m.state if ent.wash_1m is defined and ent.wash_1m.state is defined else '' -%}
+            <span class="cg-flag wash"
+              data-tip-en="🌊 Monthly StochRSI washed out — K={{ w1m_k|round|int if w1m_k is not none else '—' }} (under 20 = deeply oversold); {{ WASH_EN.get(w1m_st, w1m_st) }}."
+              data-tip-zh="🌊 月线随机RSI超跌 — K={{ w1m_k|round|int if w1m_k is not none else '—' }}（低于20=深度超卖）；{{ WASH_ZH.get(w1m_st, w1m_st) }}。">🌊1M</span>
+          {%- endif -%}
+        {%- endif -%}
+        {# MACD chip #}
+        {%- if wmacd_state in ('crossed', 'approaching') -%}
+          {%- set mc = ent.w_macd if ent.w_macd is defined else {} -%}
+          {%- set mc_kind = mc.kind if mc.kind is defined and mc.kind is not none else '' -%}
+          {%- set mc_bars = mc.bars_since if mc.bars_since is defined and mc.bars_since is not none else none -%}
+          {%- set mc_eta  = mc.eta_bars if mc.eta_bars is defined and mc.eta_bars is not none else none -%}
+          {%- if wmacd_state == 'crossed' -%}
+            {%- set mc_label = '📈W✚' -%}
+            {%- set mc_tip_en = '📈 Weekly MACD crossed up' ~ (' (' ~ MKIND_EN.get(mc_kind, mc_kind) ~ ')' if mc_kind else '') ~ (', ' ~ mc_bars ~ ' week(s) ago' if mc_bars is not none else '') ~ '. Momentum turned on the weekly frame — early but directional.' -%}
+            {%- set mc_tip_zh = '📈 周线MACD已上穿' ~ ('（' ~ MKIND_ZH.get(mc_kind, mc_kind) ~ '）' if mc_kind else '') ~ ('，' ~ mc_bars ~ '周前' if mc_bars is not none else '') ~ '。周线动量已转向——早期方向性信号。' -%}
+          {%- else -%}
+            {%- set mc_label = '📈W≈' -%}
+            {# eta_bars is already in WEEKLY bars (contract) — never rescale #}
+            {%- set mc_tip_en = '📈 Weekly MACD approaching cross' ~ (' (' ~ MKIND_EN.get(mc_kind, mc_kind) ~ ')' if mc_kind else '') ~ (', ETA ~' ~ mc_eta|round(1) ~ ' week(s)' if mc_eta is not none else '') ~ '. Cross projected — not fired yet.' -%}
+            {%- set mc_tip_zh = '📈 周线MACD即将上穿' ~ ('（' ~ MKIND_ZH.get(mc_kind, mc_kind) ~ '）' if mc_kind else '') ~ ('，预计约' ~ mc_eta|round(1) ~ '周内' if mc_eta is not none else '') ~ '。尚未触发，为预估。' -%}
+          {%- endif -%}
+          <span class="cg-flag wmacd" data-tip-en="{{ mc_tip_en }}" data-tip-zh="{{ mc_tip_zh }}">{{ mc_label }}</span>
+        {%- endif -%}
+        {# Stoch chip #}
+        {%- if wstoch_state in ('crossed', 'approaching') -%}
+          {%- set sc = ent.w_stoch if ent.w_stoch is defined else {} -%}
+          {%- set sc_k   = sc.k if sc.k is defined and sc.k is not none else none -%}
+          {%- set sc_d   = sc.d if sc.d is defined and sc.d is not none else none -%}
+          {%- set sc_dax = sc.d_at_cross if sc.d_at_cross is defined and sc.d_at_cross is not none else none -%}
+          {%- set sc_fw  = sc.from_washout if sc.from_washout is defined else false -%}
+          {%- set sc_bars= sc.bars_since if sc.bars_since is defined and sc.bars_since is not none else none -%}
+          {%- if wstoch_state == 'crossed' -%}
+            {%- set sc_label = '〰️W✚' -%}
+            {%- set sc_tip_en = '〰️ Weekly Stochastic crossed up' ~ (', K=' ~ sc_k|round(1) ~ ' D=' ~ sc_d|round(1) if sc_k is not none and sc_d is not none else '') ~ (', D at cross=' ~ sc_dax|round(1) if sc_dax is not none else '') ~ (', ' ~ sc_bars ~ ' bar(s) ago' if sc_bars is not none else '') ~ ('; came from washout — stronger reset' if sc_fw else '') ~ '.' -%}
+            {%- set sc_tip_zh = '〰️ 周线随机指标已上穿' ~ ('，K=' ~ sc_k|round(1) ~ ' D=' ~ sc_d|round(1) if sc_k is not none and sc_d is not none else '') ~ ('，穿越时D=' ~ sc_dax|round(1) if sc_dax is not none else '') ~ ('，' ~ sc_bars ~ '根K线前' if sc_bars is not none else '') ~ ('；来自超跌区间——更强重置' if sc_fw else '') ~ '。' -%}
+          {%- else -%}
+            {%- set sc_label = '〰️W≈' -%}
+            {%- set sc_tip_en = '〰️ Weekly Stochastic approaching cross' ~ (', K=' ~ sc_k|round(1) ~ ' D=' ~ sc_d|round(1) if sc_k is not none and sc_d is not none else '') ~ ('; came from washout — stronger setup' if sc_fw else '') ~ '. Cross projected within days.' -%}
+            {%- set sc_tip_zh = '〰️ 周线随机指标即将上穿' ~ ('，K=' ~ sc_k|round(1) ~ ' D=' ~ sc_d|round(1) if sc_k is not none and sc_d is not none else '') ~ ('；来自超跌——更强蓄势' if sc_fw else '') ~ '。预计数日内上穿。' -%}
+          {%- endif -%}
+          <span class="cg-flag wstoch" data-tip-en="{{ sc_tip_en }}" data-tip-zh="{{ sc_tip_zh }}">{{ sc_label }}</span>
+        {%- endif -%}
         {% if it.name %}<div class="mut2" style="font-size:10.5px">{{ it.name[:26] }}</div>{% endif %}
       </td>
       <td>{{ bar(it.composite) }}</td>
       <td class="num">{{ num(it.cluster_score) }}</td>
       <td class="num">{{ num(it.technical_score) }}</td>
       <td class="num">{{ num(it.zone_score) }}</td>
+      <td class="num">
+        {%- if ent_covered and ent_score > 0 -%}
+          {{ num(ent_score) }}
+        {%- elif it.gate_tier is not none and ent_score > 0 -%}
+          {{ num(ent_score) }}
+        {%- else -%}
+          <span class="mut2">—</span>
+        {%- endif -%}
+      </td>
       <td class="num"><span class="r-pos">{{ it.n_buys }}B</span>{% if it.n_sells %} / <span class="r-neg">{{ it.n_sells }}S</span>{% endif %}</td>
       <td>
         <b class="cg-num">{{ it.n_distinct_members }}</b>
         {% for m in it.member_detail[:3] %}
-          {%- set tip_en = m.chamber ~ ' · ' ~ m.n ~ ' disclosure(s)' -%}
+          {%- set m_party_word_en = 'Democrat' if m.party == 'D' else ('Republican' if m.party == 'R' else 'Independent') -%}
+          {%- set m_party_word_zh = '民主党' if m.party == 'D' else ('共和党' if m.party == 'R' else '独立') -%}
+          {%- set m_chamber_zh = '众议院' if m.chamber == 'House' else ('参议院' if m.chamber == 'Senate' else m.chamber) -%}
+          {%- set m_tier_en = 'proven' if m.member_tier == 'proven' else ('watch' if m.member_tier == 'watch' else 'limited') -%}
+          {%- set m_tier_zh = '往绩较佳' if m.member_tier == 'proven' else ('观察中' if m.member_tier == 'watch' else '样本不足') -%}
+          {%- set m_last_en = ('bought' if m.last_side == 'buy' else ('sold' if m.last_side == 'sell' else '—')) -%}
+          {%- set m_last_zh = ('买入' if m.last_side == 'buy' else ('卖出' if m.last_side == 'sell' else '—')) -%}
+          {# tips built by ~-concatenation with explicit ' · ' joins — set-block whitespace
+             control was eating the space before the middots (review 07-18) #}
+          {%- set m_tip_extra_en = '' -%}
+          {%- set m_tip_extra_zh = '' -%}
           {%- if m.member_tier and m.member_n_eff is not none and m.member_n_eff >= 3 -%}
             {%- set hit_pct = (m.member_shrunk_hit * 100)|round|int -%}
-            {%- set tip_en = tip_en ~ ' · hit ' ~ hit_pct ~ '% (n=' ~ m.member_n_eff ~ ', shrunk) · ' ~ m.member_tier -%}
+            {%- set m_tip_extra_en = ' · hit ' ~ hit_pct ~ '% (n=' ~ m.member_n_eff ~ ', shrunk) · ' ~ m_tier_en -%}
+            {%- set m_tip_extra_zh = ' · 胜率 ' ~ hit_pct ~ '%（n=' ~ m.member_n_eff ~ '，收缩后）· ' ~ m_tier_zh -%}
           {%- endif -%}
-          <span class="cg-mem {{ m.party }}" data-tip-en="{{ tip_en }}">{{ m.representative }}{% if m.last_side=='buy' %} ▲{% elif m.last_side=='sell' %} ▼{% endif %}</span>
-          {%- if m.member_tier in ('proven', 'watch') and m.member_n_eff is not none and m.member_n_eff >= 3 %}
-            {%- set hit_pct2 = (m.member_shrunk_hit * 100)|round|int %}
-            <span class="member-chip {{ m.member_tier }}">{{ hit_pct2 }}% · n={{ m.member_n_eff }} · {{ m.member_tier }}</span>
-          {% endif %}
+          {%- set m_tip_en = m.chamber ~ ' · ' ~ m_party_word_en ~ ' · ' ~ m.n ~ ' disclosure(s)' ~ m_tip_extra_en ~ ' · last: ' ~ m_last_en -%}
+          {%- set m_tip_zh = m_chamber_zh ~ ' · ' ~ m_party_word_zh ~ ' · 披露 ' ~ m.n ~ ' 笔' ~ m_tip_extra_zh ~ ' · 最近：' ~ m_last_zh -%}
+          {%- set sk_class = 'sk-proven' if m.member_tier == 'proven' else ('sk-watch' if m.member_tier == 'watch' else 'sk-lim') -%}
+          <span class="cg-mem {{ sk_class }}" data-tip-en="{{ m_tip_en }}" data-tip-zh="{{ m_tip_zh }}">{{ m.representative }}{% if m.last_side == 'buy' %} <span class="arrow-buy">▲</span>{% elif m.last_side == 'sell' %} <span class="arrow-sell">▼</span>{% endif %}</span>
         {% endfor %}
         {% if it.member_detail|length > 3 %}<span class="mut2" style="font-size:10.5px">+{{ it.member_detail|length - 3 }}</span>{% endif %}
       </td>
@@ -158,7 +352,7 @@
         {% if it.any_late_filing %}<span class="cg-flag late" data-tip-en="At least one filing exceeded the 45-day STOCK Act deadline" data-tip-zh="至少一笔申报超过 STOCK 法案 45 天截止日">late ⚠️</span>{% endif %}
       </td>
       <td class="mut2" style="font-size:11.5px">
-        {{ it.timing or '—' }}{% if not it.covered %} <span style="font-size:10px">({{ t('no engine coverage','无引擎覆盖') }})</span>{% endif %}
+        {% if it.timing %}{{ t(it.timing, TIMING_ZH.get(it.timing, it.timing)) }}{% else %}—{% endif %}{% if not it.covered %} <span style="font-size:10px">({{ t('no engine coverage','无引擎覆盖') }})</span>{% endif %}
         {% if it.latest_tx_age is not none %}<div style="font-size:10px;color:var(--muted)">{{ t('Tx age:','交易年龄:') }} {{ it.latest_tx_age }}d
           {%- if it.median_lag_days is not none %} · {{ t('lag:','滞后:') }} {{ it.median_lag_days }}d{% endif %}
         </div>{% endif %}
@@ -167,8 +361,8 @@
   {% endfor %}
   </tbody></table>
   <p class="mut2" style="font-size:11px;margin-top:9px">{{ t(
-    'Cluster = distinct members · recency-weighted net-buy · disclosed size · freshness (decay on transaction date, bipartisan bonus). Technical &amp; Zone are read from each name\'s own conviction + sector/theme signals; a hard engine veto (cycle-blocked / parabolic) floors the technical score and removes "act now". ⚡ = prime-entry signal gate (T1/T2/T3). ETF/1-member/stale/late ⚠️ chips are provenance — reduced weight, not removal. Showing the top ' ~ n_shown ~ ' of ' ~ summary.n_tickers ~ ' in-window names.',
-    '集群 = 不同议员数 · 时间加权（交易日）净买入 · 披露规模 · 新鲜度（两党加成）。技术面与区间取自各标的信念与板块/主题信号；引擎硬否决压低技术分并取消"现在可买"。⚡ = 优质入场信号（T1/T2/T3）。ETF/1议员/陈旧/晚报 ⚠️ 为来源提示——权重降低，不删除。显示窗口内前 ' ~ n_shown ~ ' 个（共 ' ~ summary.n_tickers ~ ' 个）。') }}</p>
+    'Cluster = distinct members · recency-weighted net-buy · disclosed size · freshness (decay on transaction date, bipartisan bonus). Technical &amp; Zone are read from each name\'s own conviction + sector/theme signals; a hard engine veto (cycle-blocked / parabolic) floors the technical score and removes "act now". Composite = 30% cluster · 25% technical · 15% zone · 30% entry timing. ⚡ = prime-entry signal gate (T1/T2/T3); front-line rows (amber left border) have at least one entry timing signal firing. ETF/1-member/stale/late ⚠️ chips are provenance — reduced weight, not removal. Showing the top ' ~ n_shown ~ ' of ' ~ summary.n_tickers ~ ' in-window names. Entry timing (washouts, weekly momentum turns, ⚡ gate) pulls names to the front of the line for better entries — timing aids with receipts on hover, not proof a stock works out; the same washout signals tested null as standalone buy signals. Timing signals are scanned for the ~400 most-clustered names plus every ⚡-gated name, not the full window. Member name color = track record (green proven · amber watch · gray limited — hover for win rate and party). ▲▼ = that member\'s last action.',
+    '集群 = 不同议员数 · 时间加权（交易日）净买入 · 披露规模 · 新鲜度（两党加成）。技术面与区间取自各标的信念与板块/主题信号；引擎硬否决压低技术分并取消"现在可买"。综合分 = 30%集群 · 25%技术面 · 15%区间 · 30%入场时机。⚡ = 优质入场信号（T1/T2/T3）；前线行（左侧琥珀色边框）至少有一个入场信号触发。ETF/1议员/陈旧/晚报 ⚠️ 为来源提示——权重降低，不删除。显示窗口内前 ' ~ n_shown ~ ' 个（共 ' ~ summary.n_tickers ~ ' 个）。入场时机（超跌、周线动量转向、⚡门）将标的提前排序以便更好入场——时机辅助附数据悬浮提示，非股票必涨证明；相同超跌信号作为独立买入信号经测试无效。时机信号仅扫描集群度最高的约400个标的及所有⚡门标的，非全窗口。议员姓名颜色 = 历史记录（绿色往绩较佳 · 琥珀色观察中 · 灰色样本不足——悬停查看胜率与党派）。▲▼ = 该议员最近操作。') }}</p>
   {% else %}<p class="mut2">{{ t('No congressional disclosures in the current window.', '当前窗口无国会披露。') }}</p>{% endif %}
 </div>
 
@@ -290,3 +484,137 @@
   {% else %}<p class="mut2">{{ t('No disclosures yet.', '暂无披露。') }}</p>{% endif %}
 </div>
 {% endblock %}
+
+{% block body_scripts %}
+<script>
+(function(){
+  'use strict';
+  var table   = document.getElementById('cgWatchTable');
+  var bar     = document.getElementById('cgFilterBar');
+  var countEl = document.getElementById('cgFilterCount');
+  var resetEl = document.getElementById('cgFilterReset');
+  var recency = document.getElementById('cgRecency');
+  if (!table || !bar) return;
+
+  var rows = Array.from(table.querySelectorAll('tbody tr'));
+  var total = rows.length;
+
+  // chip state: multi-select for indicator chips, single for recency
+  var activeChips = new Set();
+  var activeDays  = 0; // 0 = Any
+
+  // --- count helpers ---
+  function rowMatches(tr, chips, days) {
+    if (days > 0) {
+      // unknown transaction age passes only the "Any" window
+      var age = tr.getAttribute('data-txage');
+      if (age === '' || age === null || parseInt(age, 10) > days) return false;
+    }
+    if (chips.size === 0) return true;
+    // OR logic: pass if any active chip matches
+    for (var chip of chips) {
+      if (chip === 'prime'  && tr.getAttribute('data-prime')  === '1') return true;
+      if (chip === 'setup'  && tr.getAttribute('data-setup')  === '1') return true;
+      if (chip === 'w2w'    && tr.getAttribute('data-w2w')    === '1') return true;
+      if (chip === 'w1m'    && tr.getAttribute('data-w1m')    === '1') return true;
+      if (chip === 'dual'   && tr.getAttribute('data-dual')   === '1') return true;
+      if (chip === 'fresh'  && tr.getAttribute('data-fresh')  === '1') return true;
+      if (chip === 'wmacd') {
+        var wm = tr.getAttribute('data-wmacd');
+        if (wm === 'crossed' || wm === 'approaching') return true;
+      }
+      if (chip === 'wstoch') {
+        var ws = tr.getAttribute('data-wstoch');
+        if (ws === 'crossed' || ws === 'approaching') return true;
+      }
+    }
+    return false;
+  }
+
+  function countFor(chip) {
+    var n = 0;
+    rows.forEach(function(tr) {
+      var testSet = new Set(activeChips);
+      testSet.add(chip);
+      if (rowMatches(tr, testSet, activeDays)) n++;
+    });
+    return n;
+  }
+
+  function updateCounts() {
+    bar.querySelectorAll('[data-fcount]').forEach(function(el) {
+      var key = el.getAttribute('data-fcount');
+      el.textContent = '(' + countFor(key) + ')';
+    });
+  }
+
+  function applyFilters() {
+    var visible = 0;
+    rows.forEach(function(tr) {
+      var show = rowMatches(tr, activeChips, activeDays);
+      tr.classList.toggle('cg-hide', !show);
+      if (show) visible++;
+    });
+    var hasFilter = activeChips.size > 0 || activeDays > 0;
+    if (countEl) {
+      countEl.textContent = hasFilter
+        ? ('showing ' + visible + ' of ' + total)
+        : '';
+    }
+    if (resetEl) {
+      resetEl.style.display = hasFilter ? 'inline' : 'none';
+    }
+    updateCounts();
+  }
+
+  // indicator chip toggles
+  bar.querySelectorAll('[data-filter]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var key = btn.getAttribute('data-filter');
+      if (activeChips.has(key)) {
+        activeChips.delete(key);
+        btn.setAttribute('aria-pressed', 'false');
+      } else {
+        activeChips.add(key);
+        btn.setAttribute('aria-pressed', 'true');
+      }
+      applyFilters();
+    });
+    // native <button> handles Enter/Space itself — an extra keydown handler would double-toggle
+  });
+
+  // recency buttons
+  if (recency) {
+    recency.querySelectorAll('button').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        activeDays = parseInt(btn.getAttribute('data-days'), 10) || 0;
+        recency.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        applyFilters();
+      });
+    });
+  }
+
+  // reset
+  if (resetEl) {
+    resetEl.addEventListener('click', function() {
+      activeChips.clear();
+      activeDays = 0;
+      bar.querySelectorAll('[data-filter]').forEach(function(b) { b.setAttribute('aria-pressed','false'); });
+      if (recency) {
+        recency.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+        var firstBtn = recency.querySelector('button');
+        if (firstBtn) firstBtn.classList.add('active');
+      }
+      applyFilters();
+    });
+    resetEl.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resetEl.click(); }
+    });
+  }
+
+  // initial counts
+  updateCounts();
+})();
+</script>
+{% endblock body_scripts %}
