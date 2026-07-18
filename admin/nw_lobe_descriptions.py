@@ -317,6 +317,11 @@ LOBE_DESCRIPTIONS = {
         "full": "The health escalation checker appends one row per nightly engine run. Each row records the run date, degraded flag, produced_at timestamp, and reasons count. Keying by run date rather than data vintage means a frozen as_of across consecutive degraded nights counts correctly as distinct run records. The escalation checker reads this file to measure the streak of consecutive degraded runs with a calendar-adjacency guard before deciding whether to dispatch an alert.",
         "src_fp": "71bdaa94919c4ae4",
     },
+    "opex-risk-snapshot": {
+        "short": "Options-expiration window risk read embedded in the vol regime page payload — plain-word level, display only.",
+        "full": "The vol regime builder embeds a nightly options-expiration risk snapshot in the site regime payload: how many risk states are running hot out of those applicable, a plain-word level (quiet, elevated, or heavy), bilingual glance copy, the per-state stack, and where we are in the expiration window. It is context only — it is never read by the risk computation, never feeds any scare channel, and never sizes or gates anything, per the standing rates-and-inflation program rulings. Sole writer is the nightly vol regime builder.",
+        "src_fp": "a7a507365de425c3",
+    },
     "ops-push-basket-freeze": {
         "short": "Deduplication log for basket-freeze churn alerts, preventing repeat notifications for the same event.",
         "full": "When the basket-freeze process detects excessive churn and dispatches an alert, a record is appended here to prevent the same alert from firing again. The log is written only by the basket-freeze process and only when the feature is enabled. If disabled, the dedup check is skipped but the alert still fires. This feature was enabled by an operator authorization event in mid-2026.",
@@ -429,8 +434,8 @@ LOBE_DESCRIPTIONS = {
     },
     "site-confluence-graph": {
         "short": "Site mirror of the confluence graph, fetched client-side by the committee page — display only.",
-        "full": "Copied by the site builder from the data copy in the daily-engine step. Read by the committee page typed-graph panel and the AI brief context sidebar. SLA mirrors the data-side entry at 30 hours on the daily-engine cadence. Display only — no authority.",
-        "src_fp": "4c809c1126e2966d",
+        "full": "Copied by the site builder from the data copy in the daily-engine step. Read by the committee page typed-graph panel and the AI brief context sidebar. SLA mirrors the data-side entry at 30 hours on the daily-engine cadence, and freshness is judged on when the mirror was produced rather than the content date: the nightly health build runs before the same night's site copy, so the mirror always trails the data side by one cycle at judgment time by design. Display only — no authority.",
+        "src_fp": "c137fab4b565cdf3",
     },
     "site-context-risk": {
         "short": "Site mirror of the board composition risk lens, written atomically alongside the data copy — display only.",

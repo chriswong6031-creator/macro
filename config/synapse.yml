@@ -8042,6 +8042,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 30
+    staleness_from: produced_at
     schema: neuralweb.confluence_graph.v1
     tier: display
     horizon_role: context
@@ -8055,6 +8056,11 @@ artifacts:
       client-side fetch. Copied by scripts/build_site.py in the daily-engine step.
       Read by committee.html typed-graph panel and aibrief.js context sidebar.
       SLA mirrors the data-side entry (30h, daily-engine cadence).
+      staleness_from=produced_at because the engine-job health build runs BEFORE
+      the same night's build_site copy, so the mirror always trails the data side
+      by one engine cycle at judgment time — its content as_of (date-only, event
+      dates) reads ~48-52h then. produced_at answers the real freshness question:
+      is the mirror mechanism alive (first post-#2747 nightly, 2026-07-18).
 
   site-kernel-families:
     path: site/neuralwebdata/kernel_families.json
