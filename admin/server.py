@@ -421,6 +421,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(marketing.experiments())
             if path == "/api/marketing/lobes":
                 return self._json(marketing.lobes())
+            if path == "/api/marketing/content":
+                return self._json(marketing.content())
+            if path == "/api/marketing/department":
+                dept_id = (q.get("id") or [None])[0]
+                return self._json(marketing.department(dept_id=dept_id))
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)

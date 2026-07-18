@@ -73,7 +73,8 @@ def test_ten_departments():
 def test_department_required_fields():
     from engine.marketing.departments import DEPARTMENT_CHARTERS
     required_keys = {
-        "id", "name", "director_model", "primary_outcome", "non_goals",
+        "id", "name", "formal_name", "tagline", "icon",
+        "director_model", "primary_outcome", "non_goals",
         "engines", "authority_level", "lifecycle_state", "budget",
         "model_mix", "clock", "retirement_test", "scorecard", "wave",
     }
@@ -86,6 +87,91 @@ def test_department_required_fields():
         sc_keys = {"primary_metric", "leading", "trust_health",
                    "experiment_velocity", "learning_quality", "authority_level"}
         assert sc_keys.issubset(set(sc.keys())), f"dept {dept.id} scorecard missing: {sc_keys - set(sc.keys())}"
+
+
+def test_department_short_names():
+    """Departments must have the spec §1.1 short names."""
+    from engine.marketing.departments import _DEPT_BY_ID
+    expected = {
+        "office_cmo": "Command",
+        "growth_os": "Engine Room",
+        "intelligence": "Radar",
+        "products": "Workshop",
+        "studio": "Studio",
+        "distribution": "Broadcast",
+        "lifecycle": "Funnel",
+        "ecosystem": "Allies",
+        "growth_science": "Lab",
+        "trust_office": "Sentinel",
+    }
+    for dept_id, expected_name in expected.items():
+        dept = _DEPT_BY_ID[dept_id]
+        assert dept.name == expected_name, (
+            f"dept {dept_id}: expected name {expected_name!r}, got {dept.name!r}"
+        )
+
+
+def test_department_icons():
+    """Departments must have the spec §1.1 icon slugs."""
+    from engine.marketing.departments import _DEPT_BY_ID
+    expected_icons = {
+        "office_cmo": "command",
+        "growth_os": "engine_room",
+        "intelligence": "radar",
+        "products": "workshop",
+        "studio": "studio",
+        "distribution": "broadcast",
+        "lifecycle": "funnel",
+        "ecosystem": "allies",
+        "growth_science": "lab",
+        "trust_office": "sentinel",
+    }
+    for dept_id, expected_icon in expected_icons.items():
+        dept = _DEPT_BY_ID[dept_id]
+        assert dept.icon == expected_icon, (
+            f"dept {dept_id}: expected icon {expected_icon!r}, got {dept.icon!r}"
+        )
+
+
+def test_department_formal_names_non_empty():
+    """All departments must have non-empty formal_name and tagline."""
+    from engine.marketing.departments import DEPARTMENT_CHARTERS
+    for dept in DEPARTMENT_CHARTERS:
+        assert dept.formal_name, f"dept {dept.id} has empty formal_name"
+        assert dept.tagline, f"dept {dept.id} has empty tagline"
+
+
+def test_engines_are_dicts_with_id_name_does():
+    """All engines must be dicts with id, name, does keys."""
+    from engine.marketing.departments import DEPARTMENT_CHARTERS
+    for dept in DEPARTMENT_CHARTERS:
+        for engine in dept.engines:
+            assert isinstance(engine, dict), (
+                f"dept {dept.id}: engine is not a dict: {engine!r}"
+            )
+            for key in ("id", "name", "does"):
+                assert key in engine, (
+                    f"dept {dept.id} engine {engine.get('id', '?')} missing key: {key}"
+                )
+            # ≤3 meaningful words (& connector words excluded, per spec §1.2 naming)
+            meaningful = [w for w in engine["name"].split()
+                          if w.lower() not in ("&", "the", "of", "a", "an")]
+            assert len(meaningful) <= 3, (
+                f"dept {dept.id} engine {engine['id']} name too long: {engine['name']!r}"
+            )
+            assert len(engine["does"]) > 10, (
+                f"dept {dept.id} engine {engine['id']} does too short: {engine['does']!r}"
+            )
+
+
+def test_content_studio_engine_in_distribution():
+    """content_studio engine must exist in the distribution department."""
+    from engine.marketing.departments import _DEPT_BY_ID
+    dist = _DEPT_BY_ID["distribution"]
+    engine_ids = [e["id"] for e in dist.engines]
+    assert "content_studio" in engine_ids, (
+        f"content_studio engine missing from distribution; found: {engine_ids}"
+    )
 
 
 def test_office_cmo_director_model_is_fable():
