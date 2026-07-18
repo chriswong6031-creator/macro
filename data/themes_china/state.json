@@ -96,9 +96,9 @@
     "label": "deteriorating",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
-    "rank": 22,
+    "rank": 21,
     "reco": "avoid",
-    "score": 19
+    "score": 23
   },
   "cn_food_bev": {
     "label": "emerging",
@@ -152,7 +152,7 @@
     "label": "deteriorating",
     "name": "Rare Earth & Magnets",
     "name_zh": "\u7a00\u571f\u6c38\u78c1",
-    "rank": 21,
+    "rank": 22,
     "reco": "avoid",
     "score": 22
   },

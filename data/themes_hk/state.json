@@ -29,9 +29,9 @@
     "label": "neutral",
     "name": "Biotech, Pharma & CXO",
     "name_zh": "\u751f\u7269\u533b\u836f\u4e0eCXO",
-    "rank": 3,
+    "rank": 4,
     "reco": "hold",
-    "score": 54
+    "score": 53
   },
   "hk_china_tech": {
     "label": "deteriorating",
@@ -53,7 +53,7 @@
     "label": "emerging",
     "name": "China Consumer Brands",
     "name_zh": "\u4e2d\u8d44\u6d88\u8d39\u54c1\u724c",
-    "rank": 4,
+    "rank": 3,
     "reco": "hold",
     "score": 53
   },
