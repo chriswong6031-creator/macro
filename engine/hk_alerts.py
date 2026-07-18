@@ -518,6 +518,8 @@ _DEFAULT_META = {
     "anchor": "",
 }
 
+# `anchor` must match an id= in templates/hk.html.j2 (test-enforced; the mx5 page
+# exposes its panels as hkx-dlg-* dialogs). Empty anchor = plain text, no jump link.
 ALERT_META: dict[str, dict] = {
     "hk_regime_transition": {
         "icon": "🧭",
@@ -528,28 +530,28 @@ ALERT_META: dict[str, dict] = {
                    "re-check your tilt before it confirms.",
         "what_zh": "增长／通胀象限需「待定」读数持续一周才翻转标签。证据正在累积指向新的象限 —"
                    "在确认前重新检视配置。",
-        "anchor": "regime-radar"},
+        "anchor": "hkx-dlg-read"},
     "hk_regime_confidence_floor": {
         "icon": "🎚️", "plain_en": "Regime read got muddy — trust the quad less",
         "plain_zh": "周期信号变浑浊 — 降低对象限的信任",
         "what_en": "Confidence (how strongly the indicators agree on the quad) fell below "
                    "a usable threshold. Size down and lean on the conditions lens.",
         "what_zh": "置信度（指标对象限的认同程度）跌破可用阈值。缩小仓位，更依赖条件透镜。",
-        "anchor": "regime-radar"},
+        "anchor": "hkx-dlg-read"},
     "hk_growth_confidence_floor": {
         "icon": "🎚️", "plain_en": "Growth read got muddy — trust the quad less",
         "plain_zh": "增长信号变浑浊 — 降低对象限的信任",
         "what_en": "The growth dial's indicators stopped agreeing. The growth half of the "
                    "quad is now mixed — size down.",
         "what_zh": "增长刻度盘的指标停止一致。象限的增长一侧现已混杂 — 缩小仓位。",
-        "anchor": "regime-radar"},
+        "anchor": "hkx-dlg-read"},
     "hk_inflation_confidence_floor": {
         "icon": "🎚️", "plain_en": "Inflation read got muddy — trust the quad less",
         "plain_zh": "通胀信号变浑浊 — 降低对象限的信任",
         "what_en": "The inflation dial's indicators stopped agreeing. The inflation half "
                    "of the quad is now mixed — size down.",
         "what_zh": "通胀刻度盘的指标停止一致。象限的通胀一侧现已混杂 — 缩小仓位。",
-        "anchor": "regime-radar"},
+        "anchor": "hkx-dlg-read"},
     "hk_risk_on": {
         "icon": "🟢", "plain_en": "Global risk overlay flipped RISK-ON",
         "plain_zh": "全球风险开关转「开」",
@@ -558,7 +560,7 @@ ALERT_META: dict[str, dict] = {
                    "constructive backdrop for HK. A concurrent state, not a forecast.",
         "what_zh": "香港最主要的高频驱动是全球风险开关（美元、VIX、标普、铜金比、新兴市场）。"
                    "它刚上穿进入「偏好风险」— 对香港是积极背景。这是同步状态，并非预测。",
-        "anchor": "global-risk"},
+        "anchor": "hkx-dlg-risk"},
     "hk_risk_off": {
         "icon": "🔴", "plain_en": "Global risk overlay flipped RISK-OFF",
         "plain_zh": "全球风险开关转「关」",
@@ -567,7 +569,7 @@ ALERT_META: dict[str, dict] = {
                    "forecast.",
         "what_zh": "香港主驱动（全球风险综合指标）刚下穿进入「避险」— 对香港是防御背景。"
                    "同步状态，并非预测。",
-        "anchor": "global-risk"},
+        "anchor": "hkx-dlg-risk"},
     "hk_peg_weak_side": {
         "icon": "🪝", "plain_en": "HKD pushed toward the 7.85 weak side",
         "plain_zh": "港元逼近 7.85 弱方",
@@ -576,7 +578,7 @@ ALERT_META: dict[str, dict] = {
                    "Aggregate Balance and tightens HK funding — a real HSI headwind.",
         "what_zh": "港元在 7.75–7.85 兑换区间交易。趋向 7.85 = 资本外流；金管局买入港元护盘，"
                    "抽走总结余、收紧香港资金面 — 是恒指的实质逆风。",
-        "anchor": "peg-funding"},
+        "anchor": "hkx-dlg-policy"},
     "hk_peg_strong_side": {
         "icon": "🪝", "plain_en": "HKD pushed toward the 7.75 strong side",
         "plain_zh": "港元逼近 7.75 强方",
@@ -584,7 +586,7 @@ ALERT_META: dict[str, dict] = {
                    "liquidity, an HK funding tailwind. A concurrent flow state.",
         "what_zh": "趋向 7.75 强方 = 资本流入；金管局注入港元流动性，是香港资金面顺风。"
                    "同步的资金状态。",
-        "anchor": "peg-funding"},
+        "anchor": "hkx-dlg-policy"},
     "hibor_spike": {
         "icon": "⚡", "plain_en": "Overnight HIBOR spiked — funding squeeze",
         "plain_zh": "隔夜 HIBOR 飙升 — 资金挤压",
@@ -593,7 +595,7 @@ ALERT_META: dict[str, dict] = {
                    "rate-sensitive HK names.",
         "what_zh": "HIBOR 是香港银行同业拆息（经联汇跟随美联储）。隔夜急升预示资金挤压，"
                    "挤压杠杆与利率敏感的港股。",
-        "anchor": "peg-funding"},
+        "anchor": "hkx-dlg-policy"},
     "southbound_surge": {
         "icon": "🐉", "plain_en": "Southbound smart money surged in",
         "plain_zh": "南向资金大举流入",
@@ -602,14 +604,14 @@ ALERT_META: dict[str, dict] = {
                    "confirm against price.",
         "what_zh": "南向资金是内地资金通过港股通买入香港 — 受关注的聪明钱指标。净买入刚飙升"
                    "至极值；请与价格印证。",
-        "anchor": "southbound"},
+        "anchor": "hkx-dlg-flows"},
     "southbound_exodus": {
         "icon": "🐉", "plain_en": "Southbound smart money rushed out",
         "plain_zh": "南向资金大举流出",
         "what_en": "Mainland smart-money buying of HK just swung to an extreme net OUTFLOW "
                    "— risk appetite fading; confirm against price.",
         "what_zh": "内地聪明钱买入香港刚摆向极端净流出 — 风险偏好消退；请与价格印证。",
-        "anchor": "southbound"},
+        "anchor": "hkx-dlg-flows"},
     "hk_roro_flip_on": {
         "icon": "🟢", "plain_en": "Cross-asset risk appetite turned ON",
         "plain_zh": "跨资产风险偏好转「开」",
@@ -618,14 +620,14 @@ ALERT_META: dict[str, dict] = {
                    "read of the tape's mood, never scored.",
         "what_zh": "RORO 综合指标把全球风险、中国外溢与香港本地分腿融合为一个风险开关读数。"
                    "它刚上穿进入「偏好风险」。盘面情绪的区制解读，从不评分。",
-        "anchor": "fear-euphoria"},
+        "anchor": "hkx-dlg-sentiment"},
     "hk_roro_flip_off": {
         "icon": "🔴", "plain_en": "Cross-asset risk appetite turned OFF",
         "plain_zh": "跨资产风险偏好转「关」",
         "what_en": "The RORO composite just crossed into risk-OFF — HK's cross-asset mood "
                    "turned defensive. A regime read, never scored.",
         "what_zh": "RORO 综合指标刚下穿进入「避险」— 香港跨资产情绪转向防御。区制解读，从不评分。",
-        "anchor": "fear-euphoria"},
+        "anchor": "hkx-dlg-sentiment"},
     "vhsi_spike": {
         "icon": "⚡", "plain_en": "HK fear gauge (VHSI) spiked",
         "plain_zh": "港股恐慌指标（VHSI）骤升",
@@ -634,7 +636,7 @@ ALERT_META: dict[str, dict] = {
                    "protection — expect bigger swings.",
         "what_zh": "VHSI 是恒指隐含波动率／恐慌指标（港版 VIX）。急升或冲入前十分位意味着"
                    "交易者在为保护付高价 — 预期波动加大。",
-        "anchor": "fear-euphoria"},
+        "anchor": "hkx-dlg-sentiment"},
     "fear_euphoria_extreme": {
         "icon": "🥵", "plain_en": "Sentiment hit EUPHORIA — caution",
         "plain_zh": "情绪触及「欣喜」— 警惕",
@@ -643,14 +645,14 @@ ALERT_META: dict[str, dict] = {
                    "positioning is one-sided. Describes crowding, doesn't forecast a top.",
         "what_zh": "恐惧↔欣喜指标把跨资产情绪映射到 0-100。现处于欣喜区 — 历史上的警惕地带，"
                    "持仓一边倒。描述拥挤，并不预测顶部。",
-        "anchor": "fear-euphoria"},
+        "anchor": "hkx-dlg-sentiment"},
     "fear_euphoria_capitulation": {
         "icon": "🥶", "plain_en": "Sentiment hit PANIC — contrarian zone",
         "plain_zh": "情绪触及「恐慌」— 逆向区",
         "what_en": "The Fear<->Euphoria gauge is now in the panic band — historically a "
                    "contrarian capitulation zone. Describes fear, doesn't forecast a bottom.",
         "what_zh": "恐惧↔欣喜指标现处于恐慌区 — 历史上的逆向投降地带。描述恐慌，并不预测底部。",
-        "anchor": "fear-euphoria"},
+        "anchor": "hkx-dlg-sentiment"},
     "ah_premium_wide": {
         "icon": "⚖️", "plain_en": "A/H premium widened — HK is the cheaper twin",
         "plain_zh": "AH 溢价走阔 — 港股是更便宜的同股",
@@ -659,14 +661,14 @@ ALERT_META: dict[str, dict] = {
                    "the same company — a rotation context, not a timing signal.",
         "what_zh": "许多内地公司同时上市 A 股（人民币）与 H 股（香港）。AH 溢价走阔意味着"
                    "港股 H 是更便宜的同股敞口 — 轮动背景，而非择时信号。",
-        "anchor": "ah-premium"},
+        "anchor": "hkx-dlg-flows"},
     "ah_premium_narrow": {
         "icon": "⚖️", "plain_en": "A/H premium narrowed",
         "plain_zh": "AH 溢价收窄",
         "what_en": "The A/H premium compressed — the H/HK discount to the mainland A-share "
                    "has shrunk. A rotation context, not a timing signal.",
         "what_zh": "AH 溢价压缩 — 港股 H 相对 A 股的折让收窄。轮动背景，而非择时信号。",
-        "anchor": "ah-premium"},
+        "anchor": "hkx-dlg-flows"},
     "hk_drawdown_elevated": {
         "icon": "⚠️", "plain_en": "Drawdown-risk gauge rose into elevated",
         "plain_zh": "回撤风险指标升入偏高区",
@@ -677,7 +679,7 @@ ALERT_META: dict[str, dict] = {
         "what_zh": "回撤风险指标把香港压力因子（放缓、VHSI、联汇压力、HIBOR、宽度）叠加为 "
                    "0-100 读数。它刚上穿进入偏高区。重要：未校准（香港历史短且全球化）— "
                    "作为关注信号，绝非预测。",
-        "anchor": "hk-risk"},
+        "anchor": "hkx-dlg-risk"},
     "market_driver_clear": {
         "icon": "🎯", "plain_en": "One macro driver is dominating the tape",
         "plain_zh": "单一宏观驱动主导盘面",
@@ -686,7 +688,7 @@ ALERT_META: dict[str, dict] = {
                    "confidence). Deterministic attribution, never a scored signal.",
         "what_zh": "市场驱动叶子把今日的跨资产波动分解为相互竞争的宏观指纹。今日单一驱动"
                    "明显主导（高置信）。确定性归因，绝非评分信号。",
-        "anchor": "market-drivers"},
+        "anchor": "hkx-dlg-read"},
     "hk_circuit_breaker": {
         "icon": "🔌", "plain_en": "An HK data source went dark",
         "plain_zh": "某香港数据源中断",
