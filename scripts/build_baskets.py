@@ -234,6 +234,46 @@ def main() -> int:
             risk_radar = rr
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("baskets risk-state read failed: %s", e)
+    # B4: seasonal-climate chip (display-only page furniture; read committed artifact).
+    factor_season = None
+    try:
+        _seas_path = site / "factordata" / "factor_seasonality.json"
+        if _seas_path.exists():
+            _seas_raw = json.loads(_seas_path.read_text(encoding="utf-8"))
+            _seas_now = _seas_raw.get("now") if isinstance(_seas_raw, dict) else None
+            if (
+                isinstance(_seas_raw, dict)
+                and _seas_raw.get("schema") == "factor_seasonality.v2"
+                and isinstance(_seas_now, dict)
+                and _seas_now.get("chip_en")
+            ):
+                _factor_list = _seas_now.get("factors") or []
+                _mom = next((f for f in _factor_list if f.get("key") == "momentum"), None)
+                _any_non_neutral = (
+                    (_mom and _mom.get("verdict") != "neutral")
+                    or any(f.get("verdict") != "neutral" for f in _factor_list if f.get("key") != "momentum")
+                )
+                if _any_non_neutral:
+                    _mom_verdict = (_mom or {}).get("verdict", "neutral")
+                    _tone = _mom_verdict if _mom_verdict != "neutral" else next(
+                        (f.get("verdict") for f in _factor_list if f.get("verdict") != "neutral"),
+                        "neutral",
+                    )
+                    factor_season = {
+                        "chip_en": _seas_now.get("chip_en"),
+                        "chip_zh": _seas_now.get("chip_zh"),
+                        "tip_en": (
+                            (_seas_now.get("headline_en") or "")
+                            + (" " + _seas_now.get("stance_en") if _seas_now.get("stance_en") else "")
+                        ).strip(),
+                        "tip_zh": (
+                            (_seas_now.get("headline_zh") or "")
+                            + (" " + _seas_now.get("stance_zh") if _seas_now.get("stance_zh") else "")
+                        ).strip(),
+                        "tone": _tone,
+                    }
+    except Exception as _fse:  # noqa: BLE001 — additive display chip, never fatal
+        log.warning("factor_season chip read failed: %s", _fse)
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     # Collect flat sorted unique member symbols for W2a hidden live-span scrape expansion.
     # The scraper (build_live_quotes.scrape_site_symbols) reads site/*.html for data-sym attrs;
@@ -252,6 +292,7 @@ def main() -> int:
         flow=flow,
         risk_state=risk_state,
         risk_radar=risk_radar,
+        factor_season=factor_season,
         generated_utc=built,
         basket_member_syms=_member_syms)
     write_page(site / "baskets.html", html)

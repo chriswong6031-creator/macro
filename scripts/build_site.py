@@ -2636,12 +2636,31 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     breadth = _load_breadth()                  # market-member breadth context (degrade-never-raise)
     series = _load_factor_series()             # factor portfolio return series (degrade-never-raise)
     nw_state = _load_nw_factor_state()         # NW factor intelligence state (RUL-NW7/NW8, fail-open)
+    # Factor seasonality v2 (fail-open: absent French data → None → panel hides)
+    try:
+        from engine import factor_seasonality as _fse
+        seas = _fse.compute_factor_seasonality()
+    except Exception as _e:  # noqa: BLE001
+        log.warning("factor_seasonality engine failed: %s", _e)
+        seas = None
+    # Momentum display (fail-open, display-only, UNSCORED)
+    try:
+        from engine import momentum_display as _mde
+        momo = _mde.compute_momentum_display()
+    except Exception as _e:  # noqa: BLE001
+        log.warning("momentum_display engine failed: %s", _e)
+        momo = None
+    if momo is not None:
+        (fdir / "momentum_display.json").write_text(
+            json.dumps(momo, separators=(",", ":"), default=str))
     html = env.get_template("factors.html.j2").render(
         fac=fac, ic=ic, breadth=breadth, series=series,
-        nw_state=nw_state, generated_utc=generated)
+        nw_state=nw_state, seas=seas, momo=momo, generated_utc=generated)
     write_page(site / "factors.html", html)
-    log.info("wrote factors.html (%d names, FY%s, ic=%s, nw_state=%s)", fac.get("n"), fac.get("fy"),
-             "yes" if ic else "no", "yes" if nw_state else "no")
+    log.info("wrote factors.html (%d names, FY%s, ic=%s, nw_state=%s, seas=%s, momo=%s)",
+             fac.get("n"), fac.get("fy"),
+             "yes" if ic else "no", "yes" if nw_state else "no",
+             "yes" if seas else "no", "yes" if momo else "no")
     return fac
 
 
@@ -4124,6 +4143,52 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — additive, never break the build
         pass
 
+    # B4: seasonal-climate chip for us_stocks + baskets pages (display-only, page furniture).
+    # Reads the committed site artifact — no recompute here. Fail-open: None hides the chip.
+    # One-build lag by design: build_site runs before the seasonality builder in the nightly,
+    # so the chip reflects the PRIOR night's now-block (at a month boundary the old month can
+    # show for one build; heals on the next).
+    factor_season: "dict | None" = None
+    try:
+        _seas_path = site / "factordata" / "factor_seasonality.json"
+        if _seas_path.exists():
+            _seas_raw = json.loads(_seas_path.read_text(encoding="utf-8"))
+            _seas_now = _seas_raw.get("now") if isinstance(_seas_raw, dict) else None
+            if (
+                isinstance(_seas_raw, dict)
+                and _seas_raw.get("schema") == "factor_seasonality.v2"
+                and isinstance(_seas_now, dict)
+                and _seas_now.get("chip_en")  # only when non-neutral chip is present
+            ):
+                # Only emit chip when momentum OR another factor is non-neutral
+                _factor_list = _seas_now.get("factors") or []
+                _mom = next((f for f in _factor_list if f.get("key") == "momentum"), None)
+                _any_non_neutral = (
+                    (_mom and _mom.get("verdict") != "neutral")
+                    or any(f.get("verdict") != "neutral" for f in _factor_list if f.get("key") != "momentum")
+                )
+                if _any_non_neutral:
+                    _mom_verdict = (_mom or {}).get("verdict", "neutral")
+                    _tone = _mom_verdict if _mom_verdict != "neutral" else next(
+                        (f.get("verdict") for f in _factor_list if f.get("verdict") != "neutral"),
+                        "neutral",
+                    )
+                    factor_season = {
+                        "chip_en": _seas_now.get("chip_en"),
+                        "chip_zh": _seas_now.get("chip_zh"),
+                        "tip_en": (
+                            (_seas_now.get("headline_en") or "")
+                            + (" " + _seas_now.get("stance_en") if _seas_now.get("stance_en") else "")
+                        ).strip(),
+                        "tip_zh": (
+                            (_seas_now.get("headline_zh") or "")
+                            + (" " + _seas_now.get("stance_zh") if _seas_now.get("stance_zh") else "")
+                        ).strip(),
+                        "tone": _tone,
+                    }
+    except Exception as _fse:  # noqa: BLE001 — additive display chip, never fatal
+        log.warning("factor_season chip read failed: %s", _fse)
+
     vm = dict(
         latest=latest,
         mtf=mtf_data,
@@ -4201,6 +4266,7 @@ def main() -> int:
         global_leg_lag_days=_global_leg_lag_days,  # B1d: ETF parquet lag vs radar asof in business days (display-only)
         leadership_crack=_leadership_crack,  # RSR-R2/R4: AI-hardware cohort velocity+carnage state (display-only)
         det_cascade=_det_cascade,            # RSR-R5: intl deterioration speed state (display-only)
+        factor_season=factor_season,         # B4: seasonal-climate chip (display-only, page furniture)
         **_master_brief_vm(),
     )
 

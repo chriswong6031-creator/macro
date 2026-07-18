@@ -1046,6 +1046,53 @@ def _compose_context_risk(
         return dict(_null)
 
 
+def _read_seasonal_climate(repo: "Path") -> "dict | None":
+    """Read the seasonal-climate sub-key from site/factordata/factor_seasonality.json.
+
+    Returns a compact dict for embedding into factor_weather:
+      {month, seasonality_as_of, verdicts: {factor_key: verdict}, headline_en,
+       stance_en, display_only: True}
+    or None on any failure (absent file, schema < v2, missing 'now' block).
+
+    Fail-open: never raises; returns None on any problem so callers can omit
+    the key silently rather than blocking the lobe.
+
+    Does NOT couple to factor_state_as_of (known circular-staleness trap #1589).
+    Carries its own seasonality_as_of stamp so consumers can assess freshness.
+    """
+    path = repo / "site" / "factordata" / "factor_seasonality.json"
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return None
+        # Schema guard: require v2 (has "now" key)
+        if raw.get("schema") != "factor_seasonality.v2":
+            return None
+        now = raw.get("now")
+        if not isinstance(now, dict):
+            return None
+
+        # Verdicts: {factor_key: verdict} from now.factors list
+        verdicts: dict[str, str] = {}
+        for f in (now.get("factors") or []):
+            if isinstance(f, dict) and f.get("key") and f.get("verdict"):
+                verdicts[_clean(f["key"])] = _clean(f["verdict"])
+
+        return {
+            "month": _clean(now.get("month")),
+            "seasonality_as_of": _clean(raw.get("as_of")),
+            "verdicts": verdicts,
+            "headline_en": _clean(now.get("headline_en")),
+            "stance_en": _clean(now.get("stance_en")),
+            "display_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("seasonal_climate: read failed — %s", exc)
+        return None
+
+
 def _compose_factor_weather(
     root: "Path | str | None" = None,
     prefer_artifact: bool = True,
@@ -1124,6 +1171,9 @@ def _compose_factor_weather(
                         out["factor_state_as_of"] = _artifact_as_of
                         # Ensure display_only is always True regardless of artifact content.
                         out["display_only"] = True
+                        # Seasonal climate sub-key (B4 task): independent as_of stamp,
+                        # no coupling to factor_state_as_of (trap #1589).
+                        out["seasonal_climate"] = _read_seasonal_climate(repo)
                         log.info(
                             "factor_weather: canonical artifact path (RUL-NW2) — as_of=%s",
                             _artifact_as_of,
@@ -1370,6 +1420,9 @@ def _compose_factor_weather(
         "ratio_iwm_spy_20d": _clean(ratio_iwm_spy),
         "display_only": True,
         "factor_state_as_of": None,  # null on legacy fallback path (RUL-NW2)
+        # Seasonal climate sub-key (B4 task): independent as_of stamp,
+        # no coupling to factor_state_as_of (trap #1589).
+        "seasonal_climate": _read_seasonal_climate(repo),
     }
 
 
