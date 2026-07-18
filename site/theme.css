@@ -57,7 +57,7 @@
      are re-tuned per theme in the light block below. The self-contained vector
      family (no theme.css) mirrors these values inline in _vector_polish.html.j2
      and theme.js, so keep the three in sync if you retune the glass. */
-  --glass-bg: color-mix(in srgb, var(--panel) 75%, transparent);
+  --glass-bg: color-mix(in srgb, var(--panel) 86%, transparent);
   --glass-brd: color-mix(in srgb, var(--text) 14%, transparent);
   --glass-blur: saturate(180%) blur(22px);
   --glass-shadow: 0 24px 64px -22px rgba(3,7,18,.74), 0 10px 26px -12px rgba(3,7,18,.55),
@@ -83,7 +83,7 @@ html[data-theme="light"] {
   /* light glass: brighter fill (white reads thin when too transparent) + an airy
      soft shadow with a crisp white top-edge sheen instead of the dark theme's
      heavy drop. */
-  --glass-bg: color-mix(in srgb, var(--panel) 64%, transparent);
+  --glass-bg: color-mix(in srgb, var(--panel) 90%, transparent);
   --glass-brd: color-mix(in srgb, #1c2430 9%, transparent);
   --glass-shadow: 0 20px 54px -24px rgba(20,32,64,.34), 0 10px 24px -14px rgba(20,32,64,.20),
     inset 0 1px 0 rgba(255,255,255,.85);
@@ -408,8 +408,7 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
 .site-nav .nav-dd-menu a { display: block; padding: 9px 12px; border-radius: 9px; font-size: 13.5px;
   font-weight: 600; color: var(--muted); text-decoration: none; white-space: nowrap;
   transition: color .18s, background .18s; }
-.site-nav .nav-dd-menu a:hover { color: var(--text);
-  background: color-mix(in srgb, var(--link) 12%, var(--panel2)); }
+.site-nav .nav-dd-menu a:hover { color: var(--text); }
 
 /* US Macro submenu — CSS-only dropdown (hover + focus-within for keyboard), shared
    across every .site-nav page. Houses the factor/index lab (factors, baskets,
@@ -429,7 +428,7 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
 .nav-dd-menu a { display: block; padding: 8px 11px; border-radius: 9px; font-size: 13px; font-weight: 500;
   color: var(--text); text-decoration: none; white-space: nowrap; transition: background .15s, color .15s; }
 .nav-dd-menu a .d { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 1px; }
-.nav-dd-menu a:hover, .nav-dd-menu a.active { background: color-mix(in srgb, var(--link) 12%, var(--panel2)); }
+.nav-dd-menu a:hover, .nav-dd-menu a.active { color: var(--text); }
 /* 3rd tier: a .nav-dd nested inside a .nav-dd-menu (Other Assets ▸ Bitcoin
    Vector / Commodities). On desktop the child menu flies out to the right of
    its row; ::after bridges the gap so the cursor can cross into it. */
@@ -442,8 +441,17 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
    emoji exactly like the leaf links. */
 .nav-dd-menu .nav-sub > a.nav-sub-trig { display: flex; align-items: flex-start; gap: .3em; }
 .nav-dd-menu .nav-sub > a.nav-sub-trig .caret-r { margin-left: auto; padding-left: 12px; font-size: 10px;
-  opacity: .55; flex: none; align-self: center; transition: transform .2s; }
-.nav-dd-menu .nav-sub:hover > a.nav-sub-trig .caret-r { opacity: .9; transform: translateX(2px); }
+  opacity: .55; flex: none; align-self: center; transition: transform .2s, color .2s, opacity .2s, filter .2s; }
+/* breathe only while the dropdown is open (hover/focus) and only on hover-capable
+   devices with motion allowed — never on hidden carets (perf), and never on the
+   mobile accordion where a running animation's transform would clobber theme.js's
+   rotate(90deg) open-state. The .nav-sub:hover glow below wins by source order. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .nav-dd:hover .nav-sub > a.nav-sub-trig .caret-r,
+  .nav-dd:focus-within .nav-sub > a.nav-sub-trig .caret-r { animation: navCaretBreath 2.6s ease-in-out infinite; } }
+.nav-dd-menu .nav-sub:hover > a.nav-sub-trig .caret-r { animation: none; opacity: 1; transform: translateX(3px);
+  color: var(--link, var(--blue, #5b9dff));
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--link, var(--blue, #5b9dff)) 65%, transparent)); }
 /* nav-sub-text: emoji+title+description column inside the flex .nav-sub-trig row
    — makes fly-out triggers visually identical to leaf links while the flex
    layout keeps the ▸ caret right-aligned. */
@@ -455,6 +463,41 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
      Give it a denser near-opaque fill so it matches the 2nd tier's frosted density. */
   background: color-mix(in srgb, var(--panel) 96%, transparent); }
 .nav-dd-menu .nav-sub::after { content: ""; position: absolute; top: 0; left: 100%; width: 12px; height: 100%; }
+
+/* ── Aurora-glass hover ───────────────────────────────────────────────────────
+   Animated frosted hover for dropdown items: a soft blue→violet aurora wash
+   (::before, opacity-faded) plus a luminous left accent bar (::after) and a 2px
+   glide. Excludes the Research mega cards (.nm-feat / .nav-mega-item) — they keep
+   their own hover. Accent falls back --link → --blue → #5b9dff so the identical
+   rule serves the macro family (this file) and the self-contained vector family
+   (mirrored in _vector_polish.html.j2). .active = the current-page item, lit the
+   same way. The old flat hover fill was removed above so only this wash paints. */
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item) { position: relative; isolation: isolate;
+  transition: transform .24s cubic-bezier(.2,.7,.3,1), color .18s; }
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; opacity: 0;
+  transition: opacity .3s ease;
+  background:
+    radial-gradient(130% 150% at 0% 50%, color-mix(in srgb, var(--link, var(--blue, #5b9dff)) 30%, transparent), transparent 62%),
+    linear-gradient(90deg, color-mix(in srgb, var(--link, var(--blue, #5b9dff)) 17%, transparent), color-mix(in srgb, #9b8cff 12%, transparent) 70%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent); }
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after {
+  content: ""; position: absolute; left: 3px; top: 50%; transform: translateY(-50%);
+  height: 0; width: 2.5px; border-radius: 3px; z-index: -1; opacity: 0;
+  background: linear-gradient(color-mix(in srgb, var(--link, var(--blue, #5b9dff)) 90%, #fff), #9b8cff);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--link, var(--blue, #5b9dff)) 70%, transparent);
+  transition: height .3s cubic-bezier(.2,.7,.3,1), opacity .3s ease; }
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover { transform: translateX(2px); }
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::before,
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::before { opacity: 1; }
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::after,
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::after { height: 56%; opacity: 1; }
+@keyframes navCaretBreath { 0%,100% { opacity: .45; transform: translateX(0); } 50% { opacity: .9; transform: translateX(2px); } }
+@media (prefers-reduced-motion: reduce) {
+  .nav-dd-menu .nav-sub > a.nav-sub-trig .caret-r { animation: none; }
+  .nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover { transform: none; }
+  .nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after { transition: none; } }
+
 @media (max-width: 560px) {   /* no hover on touch — render the submenu inline-expanded */
   .nav-dd { display: block; }
   .nav-dd > a.nav-link .caret { display: none; }
