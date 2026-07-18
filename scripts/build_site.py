@@ -5492,6 +5492,15 @@ def main() -> int:
     except Exception as _sot_e:  # noqa: BLE001 — additive; never break main build
         log.warning("state_of_themes.html render failed (%s); page skipped", _sot_e)
 
+    # MSP Wave 2 — Market Structure context page (display_only; never breaks main build)
+    try:
+        import scripts.build_market_structure_page as _msp
+        _msp_html = _msp.render(config.ROOT)
+        write_page(site / "market_structure.html", _msp_html)
+        log.info("wrote %s", site / "market_structure.html")
+    except Exception as _msp_e:  # noqa: BLE001 — additive; never break main build
+        log.warning("market_structure.html render failed (%s); page skipped", _msp_e)
+
     return 0
 
 

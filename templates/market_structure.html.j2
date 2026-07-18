@@ -1,0 +1,672 @@
+{# ===========================================================================
+   Market Structure — MSP Wave 2 page template
+   market_structure.html.j2  →  site/market_structure.html
+   Data source: data/market_structure/latest.json  (schema market_structure_context.v1)
+   All blocks are null-guarded; absent artifact renders honest "warming up" state.
+   =========================================================================== #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% include "_interfonts.html.j2" %}
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<title>Market Structure</title>
+{% set seo_title = 'Market Structure — Dealer Positioning, Machine Flows & Dispersion | Mastermind' %}
+{% set seo_desc = 'Shock absorber state, machine money flows, stock-picker conditions, and weekly expected range — all in plain words.' %}
+{% set seo_path = 'market_structure.html' %}
+{% include "_seo_head.html.j2" %}
+<style>
+:root{--bg:#0a0e16;--panel:#111826;--panel2:#0e1420;--line:#1d2740;--line2:#27324e;--tx:#e3e9f2;--mut:#8a97ac;--faint:#5b6b83;--up:#37d07f;--dn:#ff6a6a;--amb:#f2b24d;--gold:#d6ab5c;--blue:#5d8bff;--pur:#9b8cff;--ink:#e3e9f2;--font-ui:Inter,-apple-system,'Segoe UI',Roboto,sans-serif;--glass-bg:rgba(16,22,30,.55);--glass-border:rgba(255,255,255,.10);--glass-hi:rgba(255,255,255,.06)}
+[data-theme='light']:root,[data-theme='light']{--bg:#f7f8fa;--panel:#ffffff;--panel2:#f0f2f5;--line:#e1e7ef;--line2:#c8d0dc;--tx:#1a2133;--mut:#5c6b80;--faint:#8b96a8;--up:#1a7f43;--dn:#c0392b;--amb:#9a6800;--gold:#a07820;--blue:#285fff;--pur:#6c5ce7;--ink:#1a2133;--glass-bg:rgba(255,255,255,.75);--glass-border:rgba(0,0,0,.10);--glass-hi:rgba(255,255,255,.90)}
+html[data-lang="zh"] .zh-flip.up{color:var(--dn)!important}
+html[data-lang="zh"] .zh-flip.dn{color:var(--up)!important}
+*,*::before,*::after{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;padding-top:22px;background:var(--bg);color:var(--tx);font:14px/1.45 var(--font-ui);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 72px;position:relative;z-index:1}
+.kick{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 6px}
+.mut{color:var(--mut)}.faint{color:var(--faint)}.up{color:var(--up)}.dn{color:var(--dn)}.amb{color:var(--amb)}
+/* ── aurora ── */
+.aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.aurora::before{content:"";position:absolute;top:-160px;left:6%;width:760px;height:520px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(93,139,255,.09) 0%,transparent 70%);animation:au-drift-a 30s ease-in-out infinite alternate}
+.aurora::after{content:"";position:absolute;bottom:-60px;right:-40px;width:640px;height:520px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(93,139,255,.06) 0%,transparent 70%);animation:au-drift-b 38s ease-in-out infinite alternate}
+.aurora .au-a3{position:absolute;top:42%;left:54%;transform:translate(-50%,-50%);width:560px;height:460px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(55,208,127,.05) 0%,transparent 70%);animation:au-breathe 24s ease-in-out infinite}
+.aurora.au-long::before{background:radial-gradient(ellipse,rgba(55,208,127,.10) 0%,transparent 70%)}
+.aurora.au-long .au-a3{background:radial-gradient(ellipse,rgba(55,208,127,.06) 0%,transparent 70%)}
+.aurora.au-short::before{background:radial-gradient(ellipse,rgba(255,106,106,.10) 0%,transparent 70%)}
+.aurora.au-short .au-a3{background:radial-gradient(ellipse,rgba(255,106,106,.06) 0%,transparent 70%)}
+[data-theme='light'] .aurora::before{background:radial-gradient(ellipse,rgba(93,139,255,.04) 0%,transparent 70%)}
+[data-theme='light'] .aurora.au-long::before{background:radial-gradient(ellipse,rgba(55,208,127,.04) 0%,transparent 70%)}
+[data-theme='light'] .aurora.au-short::before{background:radial-gradient(ellipse,rgba(192,57,43,.04) 0%,transparent 70%)}
+@keyframes au-drift-a{from{transform:translate(0,0)}to{transform:translate(38px,26px)}}
+@keyframes au-drift-b{from{transform:translate(0,0)}to{transform:translate(-30px,-22px)}}
+@keyframes au-breathe{0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
+@media(prefers-reduced-motion:reduce){.aurora::before,.aurora::after,.aurora .au-a3{animation:none}}
+/* ── glass / panel ── */
+.glass{background:var(--glass-bg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--glass-border);border-radius:18px;padding:24px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:16px}
+.panel-sm{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+/* ── hero ── */
+.hero-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--faint);margin-bottom:8px}
+.hero-state{font-size:28px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:0 0 6px}
+.hero-state.tone-long{color:var(--up);text-shadow:0 0 28px color-mix(in srgb,var(--up) 30%,transparent)}
+.hero-state.tone-short{color:var(--dn);text-shadow:0 0 28px color-mix(in srgb,var(--dn) 30%,transparent)}
+.hero-state.tone-null{color:var(--mut)}
+.hero-sub{font-size:14px;color:var(--mut);margin:4px 0 12px;line-height:1.55}
+.hero-meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}
+.hmeta{font-size:12px;color:var(--mut)}.hmeta b{display:block;font-size:16px;color:var(--ink);font-weight:700;line-height:1.2}
+.hmeta small{font-size:11px;color:var(--faint)}
+.stance-chip{display:inline-block;padding:4px 14px;border-radius:999px;font-size:12.5px;font-weight:700;margin-top:10px;margin-right:6px}
+.stance-chip.watch{background:rgba(242,178,77,.16);color:var(--amb)}
+.stance-chip.act{background:rgba(55,208,127,.16);color:var(--up)}
+.stance-chip.caution{background:rgba(255,106,106,.14);color:var(--dn)}
+.stance-chip.neutral{background:var(--panel2);color:var(--mut);border:1px solid var(--line)}
+/* ── help tooltip ── */
+.help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--faint);color:var(--faint);font-size:9.5px;font-weight:700;cursor:help;position:relative;vertical-align:middle;margin-left:5px}
+.help:hover{color:var(--tx);border-color:var(--tx)}
+.help .tip{display:none;position:absolute;top:130%;left:50%;transform:translateX(-50%);min-width:240px;max-width:300px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 13px;z-index:80;font-size:12px;line-height:1.5;color:var(--tx);font-weight:400;box-shadow:0 8px 28px rgba(0,0,0,.28);pointer-events:auto;cursor:auto;white-space:normal}
+.help:hover .tip{display:block}
+.help:hover::before{content:'';position:absolute;top:100%;left:-20px;right:-20px;height:10px}
+/* ── section head ── */
+.sec-head{display:flex;align-items:center;gap:8px;margin:28px 0 12px;flex-wrap:wrap}
+.sec-head h2{margin:0;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.sec-head .eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--blue)}
+.sec-foot{font-size:11px;color:var(--faint);margin-top:8px}
+/* ── range buttons ── */
+.range-btns{display:flex;gap:5px;flex-wrap:wrap}
+.rbtn{padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:600;color:var(--mut);background:var(--panel2);border:1px solid var(--line);cursor:pointer}
+.rbtn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* ── state change strip ── */
+.sc-strip{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px}
+.sc-chip{padding:5px 13px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--panel2);color:var(--tx)}
+.sc-chip.changed{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 12%,transparent)}
+/* ── regime chips ── */
+.rc{display:inline-block;padding:3px 10px;border-radius:7px;font-size:11.5px;font-weight:700;border:1px solid var(--line)}
+.rc.long{color:var(--up);border-color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}
+.rc.short{color:var(--dn);border-color:var(--dn);background:color-mix(in srgb,var(--dn) 12%,transparent)}
+.rc.dispersion,.rc.adding,.rc.calm{color:var(--up);border-color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}
+.rc.elevated,.rc.cutting{color:var(--dn);border-color:var(--dn);background:color-mix(in srgb,var(--dn) 12%,transparent)}
+.rc.normal,.rc.pausing{color:var(--mut)}
+.rc.stress{color:var(--amb);border-color:var(--amb);background:color-mix(in srgb,var(--amb) 12%,transparent)}
+/* ── agreement banner ── */
+.agree{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);font-size:13px;font-weight:700;margin:12px 0}
+.agree.aligned_adding{border-color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up)}
+.agree.aligned_cutting{border-color:var(--dn);background:color-mix(in srgb,var(--dn) 10%,transparent);color:var(--dn)}
+.agree.split{border-color:var(--amb);color:var(--amb)}
+/* ── badge stack ── */
+.badge-stack{display:flex;flex-direction:column;gap:4px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--panel2);color:var(--tx)}
+.badge.up{border-color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up)}
+.badge.dn{border-color:var(--dn);background:color-mix(in srgb,var(--dn) 12%,transparent);color:var(--dn)}
+/* ── kpi row ── */
+.kpi-row{display:flex;gap:14px 22px;flex-wrap:wrap;margin:12px 0}
+.kpi{font-size:12px;color:var(--mut)}.kpi b{display:block;font-size:18px;color:var(--ink);font-weight:700;line-height:1.2}
+.kpi small{font-size:11px;color:var(--faint)}
+/* ── chart wrappers ── */
+.chart-wrap{position:relative;width:100%;margin:12px 0 4px;overflow:hidden}
+.chart-wrap svg{display:block;width:100%}
+/* ── VIX curve nodes ── */
+.vix-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.vix-node{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);min-width:52px;text-align:center}
+.vix-node .vt{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase}
+.vix-node .vv{font-size:17px;font-weight:700;color:var(--ink)}
+/* ── week map ── */
+.wm-wrap{position:relative;padding:28px 0 38px;margin:12px 0}
+/* ── grid ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+/* ── warm-up ── */
+.warmup{padding:40px 24px;text-align:center;color:var(--faint);font-size:14px;border:1px dashed var(--line);border-radius:14px;margin:20px 0}
+.warmup b{display:block;font-size:17px;color:var(--mut);font-weight:700;margin-bottom:8px}
+/* ── responsive ── */
+@media(max-width:760px){.hero-state{font-size:22px}.glass{padding:18px}.panel{padding:16px}}
+</style>
+</head>
+<body class="page-msp">
+
+{# Convenience vars with full null-guarding #}
+{% set gamma = (msp.gamma) if (msp is defined and msp is not none and msp.gamma is not none) else none %}
+{% set gamma_regime = gamma.regime if (gamma is not none and gamma.regime is not none) else none %}
+{% set sys = (msp.systematic) if (msp is defined and msp is not none and msp.systematic is not none) else none %}
+{% set vc = (sys.vc) if (sys is not none and sys.vc is not none) else none %}
+{% set cta = (sys.cta) if (sys is not none and sys.cta is not none) else none %}
+{% set agree = sys.agreement if (sys is not none and sys.agreement is not none) else none %}
+{% set disp = (msp.dispersion) if (msp is defined and msp is not none and msp.dispersion is not none) else none %}
+{% set vol = (msp.vol) if (msp is defined and msp is not none and msp.vol is not none) else none %}
+{% set wm = (msp.week_map) if (msp is defined and msp is not none and msp.week_map is defined and msp.week_map is not none) else none %}
+{% set sc = (msp.state_changes) if (msp is defined and msp is not none and msp.state_changes is not none) else none %}
+
+<div class="aurora{% if gamma_regime == 'long' %} au-long{% elif gamma_regime == 'short' %} au-short{% endif %}">
+  <div class="au-a3"></div>
+</div>
+
+{% include "_site_nav.html.j2" %}
+
+<div class="wrap">
+
+{# ── Page header ── #}
+<div style="margin:4px 0 18px">
+  <div class="kick">{{ t('Market Structure', '市场结构') }}</div>
+  <h1 style="margin:0;font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.02em">
+    {{ t('How the market is built right now', '当前市场的底层结构') }}
+  </h1>
+  <p style="margin:4px 0 0;font-size:13px;color:var(--mut)">
+    {{ t('Shock absorbers · machine money · stock-picker conditions · the range options paid for', '缓冲机制 · 机器资金 · 选股行情 · 期权定价区间') }}
+  </p>
+</div>
+
+{# ── State changes strip ── #}
+{% set sc_items = sc['items'] if (sc is not none and 'items' in sc) else none %}
+{% if sc is not none and sc_items is not none and sc_items | length > 0 %}
+<div class="sc-strip">
+  {% for item in sc_items[:6] %}
+  <span class="sc-chip{% if item.from is not none and item.to is not none and item.from != item.to %} changed{% endif %}">
+    <span class="l-en">{{ item.label_en if item.label_en is not none else '' }}</span>
+    <span class="l-zh">{{ item.label_zh if item.label_zh is not none else (item.label_en if item.label_en is not none else '') }}</span>
+  </span>
+  {% endfor %}
+  {% if sc.vs_asof is not none %}<span class="sc-chip" style="color:var(--faint)">{{ t('vs', '对比') }} {{ sc.vs_asof }}</span>{% endif %}
+</div>
+{% endif %}
+
+{# ────────────────────── PANEL 1 — HERO ────────────────────── #}
+{% if gamma is not none %}
+<div class="glass" style="margin:18px 0 20px">
+  <div class="hero-eyebrow">{{ t('Shock Absorbers', '缓冲机制') }}</div>
+
+  {% if gamma_regime == 'long' %}
+  <div class="hero-state tone-long">
+    <span class="l-en">Dealers absorbing moves</span>
+    <span class="l-zh">做市商正在吸收波动</span>
+  </div>
+  <p class="hero-sub">
+    <span class="l-en">Hedging flows tend to push dips back up — range-bound, buy-the-dip backdrop</span>
+    <span class="l-zh">对冲资金倾向于压低回档 — 区间震荡、逢低买入的背景</span>
+  </p>
+  <span class="stance-chip watch">{{ t('Watch — no forced action', '观望 — 无需主动出击') }}</span>
+  {% elif gamma_regime == 'short' %}
+  <div class="hero-state tone-short">
+    <span class="l-en">Dealers amplifying moves</span>
+    <span class="l-zh">做市商正在放大波动</span>
+  </div>
+  <p class="hero-sub">
+    <span class="l-en">Swings can run further than usual — hedging flows add fuel, not brakes</span>
+    <span class="l-zh">波动可能超出正常幅度 — 对冲资金火上浇油而非降速</span>
+  </p>
+  <span class="stance-chip caution">{{ t('Protect gains — wider swings expected', '保护利润 — 波动幅度可能放大') }}</span>
+  {% else %}
+  <div class="hero-state tone-null">
+    <span class="l-en">Regime unclear</span><span class="l-zh">制度方向不明</span>
+  </div>
+  <p class="hero-sub">
+    <span class="l-en">Dealer positioning near the flip level — absorb/amplify balance is uncertain</span>
+    <span class="l-zh">做市商持仓接近翻转点 — 吸收/放大力量暂时持平</span>
+  </p>
+  <span class="stance-chip neutral">{{ t('Stand aside — watch for flip', '旁观 — 等待翻转信号') }}</span>
+  {% endif %}
+
+  <div class="hero-meta">
+    {% if gamma.dist_to_flip_pct is not none and gamma.gamma_flip is not none and gamma.spot is not none %}
+    <div class="hmeta">
+      <b>
+        {{ t('about', '约') }} {{ '%.1f'|format(gamma.dist_to_flip_pct|float|abs) }}%
+        {% if gamma.spot|float > gamma.gamma_flip|float %}{{ t('above', '高于') }}{% else %}{{ t('below', '低于') }}{% endif %}
+        {{ t('the flip level', '翻转点') }}
+      </b>
+      <small>SPX {{ '%.0f'|format(gamma.spot|float) }} · {{ t('flip', '翻转点') }} {{ '%.0f'|format(gamma.gamma_flip|float) }}</small>
+    </div>
+    {% endif %}
+    {% if gamma.days_in_regime is not none %}
+    <div class="hmeta"><b>{{ gamma.days_in_regime }} {{ t('day in this state' if gamma.days_in_regime|int == 1 else 'days in this state', '天处于此状态') }}</b></div>
+    {% endif %}
+    {% if gamma.net_gex_bn is not none %}
+    <div class="hmeta">
+      <b>{% if gamma.net_gex_bn|float >= 0 %}+{% endif %}{{ '%.1f'|format(gamma.net_gex_bn|float) }}B{% if gamma.net_gex_pctile is not none %} <small>({{ '%.0f'|format(gamma.net_gex_pctile|float) }}th)</small>{% endif %}</b>
+      <span class="l-en">net dealer exposure</span><span class="l-zh">做市商净敞口</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <span class="help">?<span class="tip">
+    <span class="l-en"><b>How shock absorbers work</b><br>When dealer net GEX is positive (long gamma), they sold options and hedge by buying dips / selling rips — damping moves. When negative (short gamma), hedging requires buying rallies and selling dips — amplifying moves.<br><br>Net GEX today: {{ '%.1f'|format(gamma.net_gex_bn|float if gamma.net_gex_bn is not none else 0) }}B ({{ '%.0f'|format(gamma.net_gex_pctile|float if gamma.net_gex_pctile is not none else 0) }}th pctile since {{ gamma.series_start if gamma.series_start is not none else 'inception' }}).<br><br><em>Model estimate only — actual dealer books are unobservable. 70/30 SPX/SPY blend reconstruction.</em></span>
+    <span class="l-zh"><b>缓冲机制原理</b><br>当做市商净GEX为正（多伽马）时，他们卖出期权，通过逢低买/逢高卖对冲——抑制波动。当GEX为负（空伽马）时，对冲需要追涨杀跌——放大波动。<br><br>当前净GEX：{{ '%.1f'|format(gamma.net_gex_bn|float if gamma.net_gex_bn is not none else 0) }}B（自{{ gamma.series_start if gamma.series_start is not none else '首日' }}以来{{ '%.0f'|format(gamma.net_gex_pctile|float if gamma.net_gex_pctile is not none else 0) }}百分位）。<br><br><em>仅为模型估算——做市商实际账簿不可观测，为SPX/SPY 70/30混合重建。</em></span>
+  </span></span>
+
+  {% if gamma.series_start is not none or (msp is defined and msp is not none and msp.asof is not none) %}
+  <div class="sec-foot" style="margin-top:14px">
+    {% if gamma.series_start is not none %}{{ t('GEX series from', 'GEX数据自') }} {{ gamma.series_start }}{% endif %}
+    {% if msp is defined and msp is not none and msp.asof is not none %} · {{ t('as of', '截至') }} {{ msp.asof }}{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="warmup"><b><span class="l-en">Data warming up</span><span class="l-zh">数据预热中</span></b><span class="l-en">First nightly run hasn't completed yet.</span><span class="l-zh">首次夜间运行尚未完成。</span></div>
+{% endif %}
+
+{# ────────────────────── PANEL 2 — GEX HISTORY ────────────────────── #}
+{% if gamma is not none and gamma.history is not none and gamma.history | length > 0 %}
+<div class="sec-head">
+  <span class="eyebrow">2</span>
+  <h2>{{ t('Dealer exposure history', '做市商敞口历史') }}</h2>
+  <span class="help">?<span class="tip">
+    <span class="l-en">Net GEX bars (green = absorbing, red = amplifying). Grey/blue line: SPX vs daily gamma flip. Toggle the time window. Series from {{ gamma.series_start if gamma.series_start is not none else 'inception' }}.</span>
+    <span class="l-zh">净GEX柱状图（绿=吸收，红=放大）。灰/蓝线：标普500 vs 每日翻转点。可切换时间窗口。数据自{{ gamma.series_start if gamma.series_start is not none else '首日' }}起。</span>
+  </span></span>
+  <div class="range-btns" id="gex-range-btns" style="margin-left:auto">
+    <button class="rbtn" data-range="21">1M</button>
+    <button class="rbtn" data-range="63">3M</button>
+    <button class="rbtn on" data-range="126">6M</button>
+    <button class="rbtn" data-range="252">1Y</button>
+    <button class="rbtn" data-range="9999">{{ t('All', '全部') }}</button>
+  </div>
+</div>
+<div class="panel">
+  <div class="chart-wrap" style="height:160px"><svg id="gex-chart" viewBox="0 0 800 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div class="chart-wrap" style="height:110px;margin-top:6px"><svg id="spx-flip-chart" viewBox="0 0 800 110" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div class="sec-foot">{{ t('GEX bars coloured by dealer regime · SPX line vs gamma flip (amber dashed)', 'GEX柱图按做市商制度着色 · 标普500线 vs 伽马翻转点（琥珀色虚线）') }}{% if gamma.series_start is not none %} · {{ t('series from', '数据自') }} {{ gamma.series_start }}{% endif %}</div>
+</div>
+{% else %}
+<div class="warmup"><b><span class="l-en">History warming up</span><span class="l-zh">历史数据预热中</span></b><span class="l-en">GEX history appears after the first nightly run.</span><span class="l-zh">首次夜间运行后显示。</span></div>
+{% endif %}
+
+{# ────────────────────── PANEL 3 — SYSTEMATIC FLOWS ────────────────────── #}
+<div class="sec-head">
+  <span class="eyebrow">3</span>
+  <h2>{{ t('Machine money flows', '机器资金动向') }}</h2>
+  <span class="help">?<span class="tip">
+    <span class="l-en"><b>What these are</b><br>Volatility-control funds (VC): target ~{{ vc.aum_bn if vc is not none and vc.aum_bn is not none else '300' }}B AUM; hold SPX at fraction min(1, 10% / max(RV21,RV63)). Pure price arithmetic — full backcast.<br><br>Trend-following funds (CTA): 20/50/100/200d trend z-score; flow estimated from positioning change.<br><br><em>Representative model estimates of mechanical fund behavior — NOT audited positions or actual AUM data.</em></span>
+    <span class="l-zh"><b>说明</b><br>波动率控制基金（VC）：目标约{{ vc.aum_bn if vc is not none and vc.aum_bn is not none else '300' }}亿美元规模；持仓比例 min(1, 10%/max(RV21,RV63))，纯价格计算，可全程回测。<br><br>趋势跟踪基金（CTA）：20/50/100/200日趋势Z分数；持仓变化估算资金流。<br><br><em>代表性机械基金行为的模型估算，非实际基金审计持仓。</em></span>
+  </span></span>
+  {% if sys is not none and sys.history is not none and sys.history | length > 0 %}
+  <div class="range-btns" id="sys-range-btns" style="margin-left:auto">
+    <button class="rbtn" data-range="63">3M</button>
+    <button class="rbtn on" data-range="252">1Y</button>
+    <button class="rbtn" data-range="9999">{{ t('All', '全部') }}</button>
+  </div>
+  {% endif %}
+</div>
+
+{% if sys is not none %}
+<div class="agree {{ agree if agree is not none else '' }}">
+  {% if agree == 'aligned_adding' %}<span class="l-en">Machine money: aligned · both adding</span><span class="l-zh">机器资金：一致 · 两路同步加仓</span>
+  {% elif agree == 'aligned_cutting' %}<span class="l-en">Machine money: aligned · both cutting</span><span class="l-zh">机器资金：一致 · 两路同步减仓</span>
+  {% elif agree == 'split' %}<span class="l-en">Machine money: split — signals disagree</span><span class="l-zh">机器资金：分歧 — 信号不一致</span>
+  {% elif agree == 'paused' %}<span class="l-en">Machine money: paused</span><span class="l-zh">机器资金：暂停</span>
+  {% else %}<span class="l-en">Agreement: {{ agree if agree is not none else 'unknown' }}</span><span class="l-zh">共识：{{ agree if agree is not none else '未知' }}</span>
+  {% endif %}
+</div>
+
+<div class="grid-2" style="margin-bottom:16px">
+  {# VC block #}
+  <div class="panel">
+    <div class="kick">{{ t('Volatility-control funds', '波动率控制基金') }}</div>
+    {% if vc is not none %}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+      {% if vc.alloc_bn is not none %}<div style="font-size:17px;font-weight:800;color:var(--ink)">${{ '%.0f'|format(vc.alloc_bn|float) }}B</div>{% endif %}
+      {% if vc.state is not none %}<span class="rc {{ vc.state }}">{% if vc.state=='adding' %}<span class="l-en">Adding</span><span class="l-zh">加仓中</span>{% elif vc.state=='cutting' %}<span class="l-en">Cutting</span><span class="l-zh">减仓中</span>{% else %}<span class="l-en">Pausing</span><span class="l-zh">暂停</span>{% endif %}</span>{% endif %}
+    </div>
+    <div class="badge-stack">
+      {% if vc.flow_1d_bn is not none %}<span class="badge {{ 'up' if vc.flow_1d_bn|float >= 0 else 'dn' }}">{% if vc.flow_1d_bn|float >= 0 %}▲{% else %}▼{% endif %} ${{ '%.1f'|format(vc.flow_1d_bn|float|abs) }}B {{ t('today', '今日') }}</span>{% endif %}
+      {% if vc.flow_5d_bn is not none %}<span class="badge {{ 'up' if vc.flow_5d_bn|float >= 0 else 'dn' }}">{% if vc.flow_5d_bn|float >= 0 %}▲{% else %}▼{% endif %} ${{ '%.1f'|format(vc.flow_5d_bn|float|abs) }}B {{ t('over 5 days', '5日累计') }}</span>{% endif %}
+    </div>
+    {% if vc.alloc_frac is not none %}<div class="kpi-row" style="margin-top:10px"><div class="kpi"><b>{{ '%.0f'|format(vc.alloc_frac|float * 100) }}%</b>{{ t('of target allocation deployed', '目标仓位已部署') }}</div></div>{% endif %}
+    {% else %}<span class="faint">{{ t('No data', '暂无数据') }}</span>{% endif %}
+  </div>
+
+  {# CTA block #}
+  <div class="panel">
+    <div class="kick">{{ t('Trend-following funds', '趋势跟踪基金') }}</div>
+    {% if cta is not none %}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+      {% if cta.score is not none %}<div style="font-size:17px;font-weight:800;color:var(--ink)">{% if cta.score|float >= 0 %}+{% endif %}{{ '%.2f'|format(cta.score|float) }} <small style="font-size:12px;font-weight:500;color:var(--faint)">{{ t('trend score', '趋势分数') }}</small></div>{% endif %}
+      {% if cta.score is not none %}{% set _cs = cta.score|float %}<span class="rc {{ 'adding' if _cs > 0.15 else ('cutting' if _cs < -0.15 else 'pausing') }}">{% if _cs > 0.15 %}<span class="l-en">Positioned long</span><span class="l-zh">持多仓</span>{% elif _cs < -0.15 %}<span class="l-en">Positioned short</span><span class="l-zh">持空仓</span>{% else %}<span class="l-en">Near flat</span><span class="l-zh">接近空仓</span>{% endif %}</span>{% endif %}
+      {% if cta.state is not none %}<span class="rc {{ cta.state }}">{% if cta.state=='adding' %}<span class="l-en">adding exposure</span><span class="l-zh">加仓中</span>{% elif cta.state=='cutting' %}<span class="l-en">trimming exposure</span><span class="l-zh">减仓中</span>{% else %}<span class="l-en">holding steady</span><span class="l-zh">持稳</span>{% endif %}</span>{% endif %}
+    </div>
+    {% if cta.z is not none %}{% set _cz = cta.z|float %}<div style="font-size:12px;color:var(--mut);margin-bottom:6px">{% if _cz <= -0.3 %}<span class="l-en">Lighter than their 1-year norm ({{ '%.1f'|format(_cz) }})</span><span class="l-zh">仓位低于近一年常态（{{ '%.1f'|format(_cz) }}）</span>{% elif _cz >= 0.3 %}<span class="l-en">Heavier than their 1-year norm (+{{ '%.1f'|format(_cz) }})</span><span class="l-zh">仓位高于近一年常态（+{{ '%.1f'|format(_cz) }}）</span>{% else %}<span class="l-en">Near their 1-year norm</span><span class="l-zh">接近近一年常态</span>{% endif %}</div>{% endif %}
+    <div class="badge-stack">
+      {% if cta.flow_1d is not none %}<span class="badge {{ 'up' if cta.flow_1d|float >= 0 else 'dn' }}">{% if cta.flow_1d|float >= 0 %}▲{% else %}▼{% endif %} {{ '%.1f'|format(cta.flow_1d|float|abs) }} {{ t('today', '今日') }}</span>{% endif %}
+      {% if cta.flow_5d is not none %}<span class="badge {{ 'up' if cta.flow_5d|float >= 0 else 'dn' }}">{% if cta.flow_5d|float >= 0 %}▲{% else %}▼{% endif %} {{ '%.1f'|format(cta.flow_5d|float|abs) }} {{ t('over 5 days', '5日累计') }}</span>{% endif %}
+    </div>
+    {% else %}<span class="faint">{{ t('No data', '暂无数据') }}</span>{% endif %}
+  </div>
+</div>
+
+{% if sys.history is not none and sys.history | length > 0 %}
+<div class="panel">
+  <div style="font-size:12px;color:var(--mut);margin-bottom:8px">{{ t('Vol-target fund exposure ($B) vs S&P 500 — toggle above to change window', '波动率目标基金敞口（十亿美元）vs 标普500 — 切换上方按钮调整窗口') }}</div>
+  <div class="chart-wrap" style="height:160px"><svg id="sys-chart" viewBox="0 0 800 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div class="sec-foot">{{ t('Blue line = vol-target fund exposure · grey line = S&P 500 · model estimates, not audited fund data', '蓝线=波动率目标基金敞口 · 灰线=标普500 · 模型估算，非审计基金数据') }}</div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="warmup"><b><span class="l-en">Data warming up</span><span class="l-zh">数据预热中</span></b><span class="l-en">Systematic flows data will appear after the first nightly run.</span><span class="l-zh">首次夜间运行后显示。</span></div>
+{% endif %}
+
+{# ────────────────────── PANEL 4 — DISPERSION ────────────────────── #}
+<div class="sec-head">
+  <span class="eyebrow">4</span>
+  <h2>{{ t('Stock-picker conditions', '选股行情') }}</h2>
+  <span class="help">?<span class="tip">
+    <span class="l-en"><b>What this measures</b><br>Implied correlation (COR1M): average pairwise correlation implied by SPX options vs single-stock options. Low = stocks moving on their own stories (stock-picker's market). High = one-market tape (macro dominates). Series from 2006. DSPX: CBOE dispersion index.</span>
+    <span class="l-zh"><b>指标说明</b><br>隐含相关性（COR1M）：标普指数期权与个股期权隐含的平均两两相关系数。低值=个股独立走势（选股行情）；高值=一体化走势（宏观主导）。数据自2006年。DSPX：CBOE离散度指数。</span>
+  </span></span>
+  {% if disp is not none and disp.history is not none and disp.history | length > 0 %}
+  <div class="range-btns" id="cor-range-btns" style="margin-left:auto">
+    <button class="rbtn" data-range="63">3M</button>
+    <button class="rbtn on" data-range="252">1Y</button>
+    <button class="rbtn" data-range="9999">{{ t('All', '全部') }}</button>
+  </div>
+  {% endif %}
+</div>
+
+{% if disp is not none %}
+<div class="panel">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+    {% if disp.cor1m_regime is not none %}
+    <span class="rc {{ disp.cor1m_regime }}">
+      {% if disp.cor1m_regime == 'dispersion' %}<span class="l-en">Dispersion</span><span class="l-zh">离散</span>
+      {% elif disp.cor1m_regime == 'elevated' %}<span class="l-en">Elevated correlation</span><span class="l-zh">相关性偏高</span>
+      {% else %}<span class="l-en">Normal</span><span class="l-zh">正常</span>{% endif %}
+    </span>
+    {% endif %}
+    <p style="margin:0;font-size:13.5px;line-height:1.5;color:var(--tx);flex:1;min-width:200px">
+      {% if disp.cor1m_regime == 'dispersion' %}<span class="l-en">A stock-picker's market — stocks moving on their own stories</span><span class="l-zh">选股行情 — 个股各自走势独立</span>
+      {% elif disp.cor1m_regime == 'elevated' %}<span class="l-en">One-market tape — stocks moving together, macro dominates</span><span class="l-zh">一体化走势 — 个股同步涨跌，宏观叙事主导</span>
+      {% else %}<span class="l-en">Normal correlation — mix of macro and stock-specific moves</span><span class="l-zh">正常相关性 — 宏观与个股因素交织</span>{% endif %}
+    </p>
+  </div>
+  <div class="kpi-row">
+    {% if disp.cor1m is not none %}<div class="kpi"><b>{{ '%.2f'|format(disp.cor1m|float) }}</b>{{ t('implied correlation (1M)', '隐含相关性（1个月）') }}</div>{% endif %}
+    {% if disp.cor1m_1y_delta is not none %}<div class="kpi"><b class="{{ 'up' if disp.cor1m_1y_delta|float < 0 else 'dn' }}">{% if disp.cor1m_1y_delta|float >= 0 %}+{% endif %}{{ '%.2f'|format(disp.cor1m_1y_delta|float) }}</b>{{ t('vs 1 year ago', '较一年前') }}</div>{% endif %}
+    {% if disp.cor1m_pctile_2y is not none %}<div class="kpi"><b>{{ '%.0f'|format(disp.cor1m_pctile_2y|float) }}th</b>{{ t('percentile (2-year)', '百分位（2年）') }}</div>{% endif %}
+    {% if disp.cor3m is not none %}<div class="kpi"><b>{{ '%.2f'|format(disp.cor3m|float) }}</b>{{ t('3-month corr', '3个月相关性') }}</div>{% endif %}
+    {% if disp.dspx is not none %}<div class="kpi"><b>{{ '%.1f'|format(disp.dspx|float) }}</b>{{ t('CBOE dispersion', 'CBOE离散度') }}</div>{% endif %}
+  </div>
+  {% if disp.history is not none and disp.history | length > 0 %}
+  <div class="chart-wrap" style="height:130px;margin-top:12px"><svg id="cor-chart" viewBox="0 0 800 130" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  {% endif %}
+  <div class="sec-foot">{{ t('COR1M area chart — dashed line = dispersion threshold · source: CBOE, series from 2006', 'COR1M面积图 — 虚线=离散阈值 · 来源：CBOE，数据自2006年起') }}</div>
+</div>
+{% else %}
+<div class="warmup"><b><span class="l-en">Data warming up</span><span class="l-zh">数据预热中</span></b><span class="l-en">Correlation data will appear after the first nightly run.</span><span class="l-zh">首次夜间运行后显示。</span></div>
+{% endif %}
+
+{# ────────────────────── PANEL 5 — VOL WEATHER ────────────────────── #}
+<div class="sec-head">
+  <span class="eyebrow">5</span>
+  <h2>{{ t('Vol weather', '波动率天气') }}</h2>
+  <span class="help">?<span class="tip">
+    <span class="l-en">RV21: 1-month realized vol. RV63: 3-month. When RV21 &gt; RV63, fast vol above slow baseline = "stress building". VIX curve slope = M6 − M1 (positive = contango; negative = backwardation/stress). The gauntleted vol read lives on Options Desk (gex.html) — this panel is context only.</span>
+    <span class="l-zh">RV21：1个月已实现波动率。RV63：3个月版本。RV21&gt;RV63时，短期超长期=压力积累。VIX曲线斜率=M6−M1（正值=期货升水；负值=现货升水/压力）。经验证的波动率读数在期权台（gex.html），本面板仅为参考。</span>
+  </span></span>
+</div>
+
+{% if vol is not none %}
+<div class="grid-2">
+  <div class="panel">
+    <div class="kick">{{ t('Realized vol crossover', '已实现波动率交叉') }}</div>
+    {% if vol.rv_cross_state is not none %}
+    <span class="rc {{ vol.rv_cross_state }}" style="margin-bottom:8px;display:inline-block">
+      {% if vol.rv_cross_state == 'stress' %}<span class="l-en">Fast vol above slow — stress building</span><span class="l-zh">短期波动率超越长期 — 压力积累</span>
+      {% else %}<span class="l-en">Fast vol below slow — calming</span><span class="l-zh">短期波动率低于长期 — 趋于平静</span>{% endif %}
+    </span>
+    {% endif %}
+    <div class="kpi-row">
+      {% if vol.rv21 is not none %}<div class="kpi"><b>{{ '%.1f'|format(vol.rv21|float * 100) }}%</b>{{ t('1-month vol', '1个月波动率') }}</div>{% endif %}
+      {% if vol.rv63 is not none %}<div class="kpi"><b>{{ '%.1f'|format(vol.rv63|float * 100) }}%</b>{{ t('3-month vol', '3个月波动率') }}</div>{% endif %}
+    </div>
+    <div class="sec-foot" style="margin-top:8px"><a href="gex.html">{{ t('Options Desk → Market Weather for full vol read', '期权台 → 市场天气查看完整波动率读数') }}</a></div>
+  </div>
+
+  <div class="panel">
+    <div class="kick">{{ t('VIX futures curve', 'VIX期货曲线') }}{% if vol.series_start_curve is not none %} <span style="font-size:10px;color:var(--faint)">· {{ t('from', '自') }} {{ vol.series_start_curve }}</span>{% endif %}</div>
+    {% if vol.vix_curve is not none and vol.vix_curve | length > 0 %}
+    <div class="vix-row">
+      {% for node in vol.vix_curve %}
+      {% if node.tenor is not none and node.settle is not none %}
+      <div class="vix-node">
+        <span class="vt">{{ node.tenor }}</span>
+        <span class="vv">{{ '%.1f'|format(node.settle|float) }}</span>
+        {% if node.dte is not none %}<span style="font-size:9px;color:var(--faint)">{{ node.dte }}d</span>{% endif %}
+      </div>
+      {% endif %}{% endfor %}
+    </div>
+    {% if vol.vix_curve_slope is not none %}
+    <div class="kpi-row" style="margin-top:10px">
+      <div class="kpi">
+        <b class="{{ 'up' if vol.vix_curve_slope|float >= 0 else 'dn' }}">{% if vol.vix_curve_slope|float >= 0 %}+{% endif %}{{ '%.1f'|format(vol.vix_curve_slope|float) }}</b>
+        {{ t('curve slope (M6−M1)', '曲线斜率（M6-M1）') }}
+        ({% if vol.vix_curve_slope|float >= 0 %}<span class="l-en">contango</span><span class="l-zh">期货升水</span>{% else %}<span class="l-en">backwardation</span><span class="l-zh">现货升水</span>{% endif %})
+      </div>
+    </div>
+    {% endif %}
+    {% if vol.series_start_curve is not none %}<div class="sec-foot">{{ t('Young curve feed — limited history from', '曲线数据较新，自') }} {{ vol.series_start_curve }}</div>{% endif %}
+    {% else %}<span class="faint">{{ t('No curve data', '暂无曲线数据') }}</span>{% endif %}
+  </div>
+</div>
+{% else %}
+<div class="warmup"><b><span class="l-en">Data warming up</span><span class="l-zh">数据预热中</span></b><span class="l-en">Vol weather data will appear after the first nightly run.</span><span class="l-zh">首次夜间运行后显示。</span></div>
+{% endif %}
+
+{# ────────────────────── PANEL 6 — WEEK MAP ────────────────────── #}
+<div class="sec-head">
+  <span class="eyebrow">6</span>
+  <h2>{{ t('Weekly range', '本周区间') }}</h2>
+  <span class="help">?<span class="tip">
+    <span class="l-en">The range options paid for at Friday's close, held through the week. ±1σ = 68% of outcomes; ±2σ = 95%. Gamma flip line: where the dealer regime changes. Locked at Friday's close, fixed through the week, resets each weekend.</span>
+    <span class="l-zh">周五收盘时期权定价的本周区间，持有至本周末。±1σ=68%概率；±2σ=95%。伽马翻转线：做市商机制变化位置。周五收盘锁定，本周内保持不变，每周末重置。</span>
+  </span></span>
+</div>
+
+{% if wm is not none and wm.locked_close is not none and wm.band_1sigma_lo is not none and wm.band_1sigma_hi is not none %}
+<div class="panel">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <div><div class="kick">{{ t('Locked Friday close', '锁定周五收盘价') }}</div>
+    <div style="font-size:22px;font-weight:800;color:var(--ink)">{{ '%.1f'|format(wm.locked_close|float) }}</div></div>
+    {% if wm.implied_weekly_pct is not none %}<div class="kpi" style="margin-left:8px"><b>±{{ '%.2f'|format(wm.implied_weekly_pct|float) }}%</b>{{ t('weekly implied move', '隐含周度涨跌幅') }}</div>{% endif %}
+    {% if wm.locked_at is not none %}<div class="sec-foot" style="margin:0 0 0 auto">{{ t('Locked', '锁定于') }} {{ wm.locked_at[:10] }} · {{ t('held through week', '持有至本周') }}</div>{% endif %}
+  </div>
+
+  {# SVG band visual — build price range from 2sigma or expand from 1sigma #}
+  {% set lo2 = wm.band_2sigma_lo if (wm.band_2sigma_lo is not none) else (wm.band_1sigma_lo|float * 0.975) %}
+  {% set hi2 = wm.band_2sigma_hi if (wm.band_2sigma_hi is not none) else (wm.band_1sigma_hi|float * 1.025) %}
+  {% set lo1 = wm.band_1sigma_lo|float %}
+  {% set hi1 = wm.band_1sigma_hi|float %}
+  {% set wm_spot = gamma.spot if (gamma is not none and gamma.spot is not none) else wm.locked_close|float %}
+  {% set wm_flip = wm.gamma_flip if wm.gamma_flip is not none else none %}
+  {% set pr_lo = lo2|float %}
+  {% set pr_hi = hi2|float %}
+  {% set pr_r = pr_hi - pr_lo %}
+  {% if pr_r > 0 %}
+  {% set p_lo1 = ((lo1 - pr_lo) / pr_r * 100)|round(1) %}
+  {% set p_hi1 = ((hi1 - pr_lo) / pr_r * 100)|round(1) %}
+  {% set p_spot = ((wm_spot|float - pr_lo) / pr_r * 100)|round(1) %}
+  {% set p_flip = ((wm_flip|float - pr_lo) / pr_r * 100)|round(1) if wm_flip is not none else none %}
+  <div style="position:relative;padding:30px 0 40px">
+    <svg viewBox="0 0 600 56" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+      {# 2σ background #}
+      <rect x="0" y="18" width="600" height="20" rx="5" fill="var(--blue)" opacity=".09"/>
+      {# 1σ band #}
+      <rect x="{{ p_lo1 * 6 }}" y="20" width="{{ (p_hi1 - p_lo1) * 6 }}" height="16" rx="4" fill="var(--blue)" opacity=".21"/>
+      {# Flip line #}
+      {% if p_flip is not none and p_flip >= 0 and p_flip <= 100 %}
+      <line x1="{{ p_flip * 6 }}" y1="12" x2="{{ p_flip * 6 }}" y2="44" stroke="var(--amb)" stroke-width="2" stroke-dasharray="3,2"/>
+      {% endif %}
+      {# Spot #}
+      <line x1="{{ p_spot * 6 }}" y1="10" x2="{{ p_spot * 6 }}" y2="46" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    {# HTML labels over SVG (avoids svg-span-breakout trap) #}
+    <div style="position:absolute;top:0;left:0;right:0;pointer-events:none;font-size:10.5px;color:var(--mut)">
+      <span style="position:absolute;left:0;top:2px">{{ '%.0f'|format(pr_lo) }}</span>
+      <span style="position:absolute;left:{{ p_lo1 }}%;top:2px">{{ '%.0f'|format(lo1) }}</span>
+      <span style="position:absolute;left:{{ p_hi1 }}%;top:2px;transform:translateX(-100%)">{{ '%.0f'|format(hi1) }}</span>
+      <span style="position:absolute;right:0;top:2px">{{ '%.0f'|format(pr_hi) }}</span>
+      <span style="position:absolute;left:{{ p_spot }}%;top:62px;transform:translateX(-50%);font-weight:700;color:var(--blue)">{{ '%.0f'|format(wm_spot|float) }}</span>
+      {% if p_flip is not none and p_flip >= 5 and p_flip <= 95 %}<span style="position:absolute;left:{{ p_flip }}%;top:-18px;transform:translateX(-50%);color:var(--amb)">{{ t('Flip', '翻转') }} {{ '%.0f'|format(wm_flip|float) }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="kpi-row" style="margin-top:8px">
+    <div class="kpi"><b>{{ '%.0f'|format(lo1) }} – {{ '%.0f'|format(hi1) }}</b>{{ t('±1σ range (68%)', '±1σ区间（68%）') }}</div>
+    <div class="kpi"><b>{{ '%.0f'|format(pr_lo) }} – {{ '%.0f'|format(pr_hi) }}</b>{{ t('±2σ range (95%)', '±2σ区间（95%）') }}</div>
+    {% if wm_flip is not none %}<div class="kpi"><b class="amb">{{ '%.0f'|format(wm_flip|float) }}</b>{{ t('gamma flip', '伽马翻转位') }}</div>{% endif %}
+  </div>
+  {% endif %}
+  <div class="sec-foot" style="margin-top:10px">{{ t('Bands from Friday IV · held through week · resets each weekend · source:', '区间由周五IV确定 · 本周持有 · 每周末重置 · 来源：') }} {{ wm.source if wm.source is not none else 'iv_derived_atm_weekly' }}</div>
+</div>
+{% else %}
+<div class="warmup"><b><span class="l-en">Week map warming up</span><span class="l-zh">周度图预热中</span></b><span class="l-en">The weekly expected-move bands appear after tonight's data run.</span><span class="l-zh">本周期权定价区间将在今晚数据更新后显示。</span></div>
+{% endif %}
+
+{# ── Footer ── #}
+<div style="margin-top:36px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)">
+  <span class="l-en">Context for expectations and sizing — not buy or sell signals. Machine-flow figures are model estimates, not audited fund positions. Shock-absorber series from {{ gamma.series_start if gamma is not none and gamma.series_start is not none else 'inception' }}; correlation series from 2006.</span>
+  <span class="l-zh">仅供把握市场环境与仓位预期 — 并非买卖信号。机器资金数据为模型估算，非审计持仓。缓冲机制数据自{{ gamma.series_start if gamma is not none and gamma.series_start is not none else '首日' }}起，相关性数据自2006年起。</span>
+  {% if msp is defined and msp is not none and msp.built_at is not none %} · {{ t('Built', '构建于') }} {{ msp.built_at[:10] }}{% endif %}
+</div>
+
+</div>{# /wrap #}
+
+{# ── Chart data embedded at render time ── #}
+{% if gamma is not none and gamma.history is not none and gamma.history | length > 0 %}
+<script>var MSP_GAMMA_HIST={{ gamma.history | tojson }};</script>
+{% endif %}
+{% if sys is not none and sys.history is not none and sys.history | length > 0 %}
+<script>var MSP_SYS_HIST={{ sys.history | tojson }};</script>
+{% endif %}
+{% if disp is not none and disp.history is not none and disp.history | length > 0 %}
+<script>var MSP_COR_HIST={{ disp.history | tojson }};</script>
+{% endif %}
+
+<script>
+(function(){'use strict';
+function qs(s){return document.querySelector(s)}
+function getRange(k,d){try{return parseInt(localStorage.getItem(k)||d,10)}catch(e){return d}}
+function setRange(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function vr(n){return'var('+n+')'}
+var UP=vr('--up'),DN=vr('--dn'),MUT=vr('--mut'),BLUE=vr('--blue'),AMB=vr('--amb'),LINE=vr('--line');
+
+function polyline(pts,stroke,sw,fill,op){
+  var d='M '+pts.map(function(p){return p[0]+','+p[1]}).join(' L ');
+  var el=document.createElementNS('http://www.w3.org/2000/svg','path');
+  el.setAttribute('d',d);el.setAttribute('fill',fill||'none');
+  el.setAttribute('stroke',stroke||MUT);el.setAttribute('stroke-width',sw||'1.5');
+  if(op)el.setAttribute('opacity',op);return el;
+}
+function rect(x,y,w,h,fill,rx){
+  var el=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  el.setAttribute('x',x);el.setAttribute('y',y);el.setAttribute('width',w);el.setAttribute('height',h);
+  el.setAttribute('fill',fill);if(rx)el.setAttribute('rx',rx);return el;
+}
+function line(x1,y1,x2,y2,s,sw,da){
+  var el=document.createElementNS('http://www.w3.org/2000/svg','line');
+  el.setAttribute('x1',x1);el.setAttribute('y1',y1);el.setAttribute('x2',x2);el.setAttribute('y2',y2);
+  el.setAttribute('stroke',s);el.setAttribute('stroke-width',sw||1);
+  if(da)el.setAttribute('stroke-dasharray',da);return el;
+}
+function sliceTail(arr,n){if(!arr||!arr.length)return [];return n>=9000?arr:arr.slice(-n)}
+function clearSVG(el){while(el&&el.firstChild)el.removeChild(el.firstChild)}
+
+function drawGex(n){
+  if(typeof MSP_GAMMA_HIST==='undefined'||!MSP_GAMMA_HIST.length)return;
+  var data=sliceTail(MSP_GAMMA_HIST,n);
+  var g=qs('#gex-chart'),s=qs('#spx-flip-chart');
+  if(!g||!s)return;
+  clearSVG(g);clearSVG(s);
+  var W=800,H=160,P=6;
+  var gv=data.map(function(d){return d.net_gex_bn||0});
+  var ma=Math.max(Math.abs(Math.min.apply(null,gv)),Math.abs(Math.max.apply(null,gv)),0.1);
+  var bw=Math.max(0.5,(W-2*P)/data.length);
+  data.forEach(function(row,i){
+    var gx=row.net_gex_bn||0;var x=P+i*bw;var midY=H/2;
+    var h=Math.abs(gx)/ma*(H/2-8);var y=gx>=0?midY-h:midY;
+    var r=rect(x,y,Math.max(0.3,bw-0.4),Math.max(0.3,h),row.regime==='long'?UP:DN,0);
+    r.setAttribute('opacity','0.75');g.appendChild(r);
+  });
+  g.appendChild(line(P,H/2,W-P,H/2,LINE,1));
+  var W2=800,H2=110,P2=6;
+  var sp=data.map(function(d){return d.spot||0}),fl=data.map(function(d){return d.flip||0});
+  var all=sp.concat(fl),mn=Math.min.apply(null,all),mx=Math.max.apply(null,all);
+  var pr=mx-mn||1;
+  function ty2(v){return H2-P2-(v-mn)/pr*(H2-P2*2)}
+  function tx2(i){return P2+i/(data.length-1||1)*(W2-P2*2)}
+  var spts=data.map(function(d,i){return[tx2(i),ty2(d.spot||0)]});
+  var fpts=data.map(function(d,i){return[tx2(i),ty2(d.flip||0)]});
+  if(spts.length>1)s.appendChild(polyline(spts,BLUE,'1.5'));
+  if(fpts.length>1)s.appendChild(polyline(fpts,AMB,'1',null,'.45'));
+}
+
+function drawSys(n){
+  if(typeof MSP_SYS_HIST==='undefined'||!MSP_SYS_HIST.length)return;
+  var data=sliceTail(MSP_SYS_HIST,n);
+  var sv=qs('#sys-chart');if(!sv)return;clearSVG(sv);
+  var W=800,H=160,P=6;
+  var vc=data.map(function(d){return d.vc_alloc_bn||0}),sp=data.map(function(d){return d.spx_close||0});
+  var mvc=Math.min.apply(null,vc),xvc=Math.max.apply(null,vc);
+  var msp2=Math.min.apply(null,sp),xsp=Math.max.apply(null,sp);
+  var vcr=xvc-mvc||1,spr=xsp-msp2||1;
+  function tyvc(v){return H-P-(v-mvc)/vcr*(H-P*2)}
+  function tysp(v){return H-P-(v-msp2)/spr*(H-P*2)}
+  function tx(i){return P+i/(data.length-1||1)*(W-P*2)}
+  var sppts=data.map(function(d,i){return[tx(i),tysp(d.spx_close||0)]});
+  var vcpts=data.map(function(d,i){return[tx(i),tyvc(d.vc_alloc_bn||0)]});
+  if(sppts.length>1)sv.appendChild(polyline(sppts,MUT,'1.5',null,'.45'));
+  if(vcpts.length>1)sv.appendChild(polyline(vcpts,BLUE,'2'));
+}
+
+function drawCor(n){
+  if(typeof MSP_COR_HIST==='undefined'||!MSP_COR_HIST.length)return;
+  var data=sliceTail(MSP_COR_HIST,n);
+  var sv=qs('#cor-chart');if(!sv)return;clearSVG(sv);
+  var W=800,H=130,P=6;
+  var vals=data.map(function(d){return d.cor1m||0});
+  var mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);
+  var vr2=mx-mn||0.01;
+  var DT=0.35;
+  function ty(v){return H-P-(v-mn)/vr2*(H-P*2)}
+  function tx(i){return P+i/(data.length-1||1)*(W-P*2)}
+  var pts=data.map(function(d,i){return[tx(i),ty(d.cor1m||0)]});
+  if(pts.length>1){
+    var ad='M '+pts[0][0]+','+(H-P)+' L '+pts.map(function(p){return p[0]+','+p[1]}).join(' L ')+' L '+pts[pts.length-1][0]+','+(H-P)+' Z';
+    var area=document.createElementNS('http://www.w3.org/2000/svg','path');
+    area.setAttribute('d',ad);area.setAttribute('fill',UP);area.setAttribute('opacity','0.10');
+    sv.appendChild(area);
+    var thr=ty(DT);
+    sv.appendChild(line(P,thr,W-P,thr,UP,1,'4,3'));
+    sv.appendChild(polyline(pts,BLUE,'1.5'));
+  }
+}
+
+function wireRange(sel,key,def,fn){
+  var c=qs(sel);if(!c)return;
+  var n=getRange(key,def);
+  c.querySelectorAll('.rbtn').forEach(function(b){
+    b.classList.toggle('on',parseInt(b.dataset.range,10)===n);
+    b.addEventListener('click',function(){
+      c.querySelectorAll('.rbtn').forEach(function(x){x.classList.remove('on')});
+      b.classList.add('on');setRange(key,parseInt(b.dataset.range,10));
+      fn(parseInt(b.dataset.range,10));
+    });
+  });
+  fn(n);
+}
+
+function init(){
+  wireRange('#gex-range-btns','msp-gex-range',126,drawGex);
+  wireRange('#sys-range-btns','msp-sys-range',252,drawSys);
+  wireRange('#cor-range-btns','msp-cor-range',252,drawCor);
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init)}else{init()}
+})();
+</script>
+</body>
+</html>
