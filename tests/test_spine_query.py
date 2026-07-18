@@ -1154,3 +1154,60 @@ def test_stamp_personality_directional_before_asof_absent(tmp_path):
         f"{prod_asof.date()}) got personality_basis={basis!r} instead of 'absent'. "
         f"Pre-fix code used abs() gap and leaked the snapshot backwards into history."
     )
+
+
+# ---------------------------------------------------------------------------
+# (21) [SPINE-FREEZE REGRESSION] _stamp_personality — PIT date dtype mismatch
+# ---------------------------------------------------------------------------
+
+def test_stamp_personality_survives_pit_date_dtype_mismatch(tmp_path):
+    """[REGRESSION 2026-07-07 spine freeze] _stamp_personality must not raise when
+    the PIT parquet's date column and the spine as_of carry different datetime
+    resolutions.
+
+    personality_pit_labels.date is datetime64[ms] (since #1886, 2026-07-07) while
+    the spine's as_of parses to datetime64[us]. The Pass-A backward merge_asof then
+    raised `incompatible merge keys dtype('<M8[us]') and dtype('<M8[ms]')`; because
+    the merge was unguarded, the error propagated out of write_index and froze the
+    ENTIRE neural-web spine build (build_spine_index exit 1, wrapped non-fatal in
+    daily.yml → green nightly) for 11 days — committee.html Kernel Family Estimates
+    "last fired" stuck in late June.
+
+    Pre-fix: this raises MergeError. Post-fix: keys normalise to ns → no raise, and
+    the deep-name row receives its PIT label.
+    """
+    (tmp_path / "data" / "research").mkdir(parents=True, exist_ok=True)
+
+    # PIT parquet with a ms-resolution date column (the #1886 dtype) and one deep name.
+    pit = pd.DataFrame({
+        "ticker": ["AAPL", "AAPL"],
+        "date": pd.to_datetime(["2026-07-01", "2026-07-08"]).astype("datetime64[ms]"),
+        "chart_primary": ["steady_compounder", "steady_compounder"],
+        "micro_primary": ["tight_spread", "tight_spread"],
+    })
+    pit.to_parquet(
+        tmp_path / "data" / "research" / "personality_pit_labels.parquet", index=False,
+    )
+    assert str(pit["date"].dtype) == "datetime64[ms]"  # guard the fixture's intent
+
+    # Spine slice: as_of as a us-resolution datetime column (mirrors the real spine).
+    df = pd.DataFrame({
+        "symbol": ["AAPL"],
+        "as_of": pd.to_datetime(["2026-07-09"]).astype("datetime64[us]"),
+        "signal_id": ["spine:aapl:5"],
+        "engine": ["track_record"],
+        "ledger": ["spine"],
+        "personality_basis": [None],
+        "chart_primary": [None],
+        "micro_primary": [None],
+    })
+
+    # Must not raise (this is the freeze that was swallowed as non-fatal).
+    stamped = Q._stamp_personality(df.copy(), root=tmp_path)
+
+    row = stamped[stamped["symbol"] == "AAPL"].iloc[0]
+    assert row["personality_basis"] == "pit_labels", (
+        "deep-name AAPL should receive its PIT label from the backward merge_asof; "
+        f"got personality_basis={row['personality_basis']!r}"
+    )
+    assert row["chart_primary"] == "steady_compounder"

@@ -1251,7 +1251,14 @@ def _stamp_personality(df: pd.DataFrame, root: Path | str | None = None) -> pd.D
         # Pre-process PIT parquet: ensure date column is datetime
         pit_labels = pit_labels.copy()
         if "date" in pit_labels.columns:
-            pit_labels["_dt"] = pd.to_datetime(pit_labels["date"], errors="coerce")
+            # DTYPE LAW: normalise to ns. personality_pit_labels.date is written as
+            # datetime64[ms] (since #1886) while the spine as_of parses to us; the
+            # Pass-A backward merge_asof below raises on differing datetime resolutions
+            # ("incompatible merge keys us vs ms"). Unguarded, that froze the whole
+            # spine build for 11 days (2026-07-07 incident). Match units at the source.
+            pit_labels["_dt"] = (
+                pd.to_datetime(pit_labels["date"], errors="coerce").astype("datetime64[ns]")
+            )
         else:
             pit_labels = None  # cannot proceed without a date column
             log.warning("_stamp_personality: personality_pit_labels.parquet missing 'date' column")
@@ -1291,7 +1298,11 @@ def _stamp_personality(df: pd.DataFrame, root: Path | str | None = None) -> pd.D
         return df
 
     work = df.loc[needs_stamp, ["symbol", "as_of"]].copy()
-    work["_as_of_dt"] = pd.to_datetime(work["as_of"], errors="coerce")
+    # DTYPE LAW: match _dt's ns resolution (see PIT preprocessing above) so the
+    # Pass-A backward merge_asof keys share a datetime unit.
+    work["_as_of_dt"] = (
+        pd.to_datetime(work["as_of"], errors="coerce").astype("datetime64[ns]")
+    )
 
     # --- Pass A: PIT parquet join for deep names ---
     if pit_labels is not None and not pit_labels.empty:
@@ -1306,13 +1317,24 @@ def _stamp_personality(df: pd.DataFrame, root: Path | str | None = None) -> pd.D
                     continue
                 ticker_pit_sorted = ticker_pit.dropna(subset=["_dt"]).sort_values("_dt")
 
-                merged = pd.merge_asof(
-                    ticker_group.sort_values("_as_of_dt"),
-                    ticker_pit_sorted[["_dt", "chart_primary", "micro_primary"]],
-                    left_on="_as_of_dt",
-                    right_on="_dt",
-                    direction="backward",
-                )
+                # Fail-open (restores the docstring's "deterministic, build-time,
+                # fail-open" contract): a personality stamp must never take down the
+                # shared spine build. Any merge failure on one ticker skips that
+                # ticker's labels, not the whole index.
+                try:
+                    merged = pd.merge_asof(
+                        ticker_group.sort_values("_as_of_dt"),
+                        ticker_pit_sorted[["_dt", "chart_primary", "micro_primary"]],
+                        left_on="_as_of_dt",
+                        right_on="_dt",
+                        direction="backward",
+                    )
+                except Exception as e:  # noqa: BLE001
+                    log.warning(
+                        "_stamp_personality: merge_asof failed for %s (%s) — skipped",
+                        ticker_val, e,
+                    )
+                    continue
                 merged.index = ticker_group.index
 
                 # Apply to main df for rows where a match was found (chart_primary not null)
