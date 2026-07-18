@@ -680,7 +680,7 @@ function render(){
   // W2a: per-member nb-chg span so live.js can paint live price changes on the holdings table.
   // data-mkt="us" assumed for US basket detail pages (CN/HK detail pages use their own builders).
   const rows=sortMembers(mem).map(m=>{const c=m.conviction;
-    const star=m.on_board?` <a class="sb-star" href="${SB?'../us_stocks.html':'#'}" title="On the US standout buy board right now">★</a>`:'';
+    const star=m.on_board?` <a class="sb-star" href="${SB?'../us_stocks.html':'#'}" title="On the US Prophet buy board right now">★</a>`:'';
     // Hidden live-chg span: live.js writes the changePct here; aria-hidden to avoid screen reader noise.
     const liveSym=m.symbol?`<span class="nb-chg" data-sym="${esc(m.symbol)}" data-mkt="us" aria-hidden="true" style="display:none"></span>`:'';
     return `<tr>
@@ -691,12 +691,12 @@ function render(){
       <td class="num hold-20d ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
     </tr>`;}).join('');
   const nBoard=mem.filter(m=>m.on_board).length;
-  h+=`<h2><span class="idx">04</span>${L('Holdings — own-it conviction + entry timing','成分股 — 持有信念 + 入场择时')} <span class="chip">${mem.length} ${L('names','只')}</span>${nBoard?` <span class="chip sb-chip" title="Members currently on the US standout buy board">★ ${nBoard} ${L('on standout board','在精选榜')}</span>`:''}</h2>
+  h+=`<h2><span class="idx">04</span>${L('Holdings — own-it conviction + entry timing','成分股 — 持有信念 + 入场择时')} <span class="chip">${mem.length} ${L('names','只')}</span>${nBoard?` <span class="chip sb-chip" title="Members currently on the US Prophet buy board">★ ${nBoard} ${L('on Prophet board','在先知榜')}</span>`:''}</h2>
   <div class="panel"><div class="ts"><table id="hold">
     <colgroup><col class="hold-stock"><col class="hold-potential"><col class="hold-verdict"><col class="hold-entry"><col class="hold-20d"></colgroup>
     <thead><tr><th>${L('Stock','个股')}</th><th class="num hold-potential" data-s="recommend" title="Default sort surfaces fresh T1–T4 confluence names first, then blends verdict quality, Potential, entry timing, and cycle blocks.">${L('Potential','潜力')}</th><th>${L('Verdict','结论')}</th><th class="hold-entry">${L('Entry now','入场时机')}</th><th class="num hold-20d" data-s="r20">20d</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <div class="disc">${L('Potential ranks buy readiness: room to run, turning up now, and enough quality to survive. The default order blends Potential with the Verdict and entry timing, while pushing cycle-blocked names down. Names with a fresh T1–T4 confluence cross (MACD-2D × StochRSI-3D — the same gate the standout board ranks by) carry a tier badge and are surfaced to the top, strongest tier first (T3* is provisional and may repaint). ⚠ means the cycle blocks a buy.','潜力衡量买入就绪度：仍有空间、当前转强、且质量足以支撑。默认排序会把潜力、结论与入场时机结合，并把周期阻断的个股下调。出现新的 T1–T4 共振交叉（2日MACD × 3日StochRSI，与精选榜相同的门槛）的个股会带有层级标签并被置顶，层级越强越靠前（T3* 为暂定、可能重绘）。⚠ 表示周期阻止买入。')}</div>
+    <div class="disc">${L('Potential ranks buy readiness: room to run, turning up now, and enough quality to survive. The default order blends Potential with the Verdict and entry timing, while pushing cycle-blocked names down. Names with a fresh T1–T4 confluence cross (MACD-2D × StochRSI-3D — the same gate the Prophet board ranks by) carry a tier badge and are surfaced to the top, strongest tier first (T3* is provisional and may repaint). ⚠ means the cycle blocks a buy.','潜力衡量买入就绪度：仍有空间、当前转强、且质量足以支撑。默认排序会把潜力、结论与入场时机结合，并把周期阻断的个股下调。出现新的 T1–T4 共振交叉（2日MACD × 3日StochRSI，与先知榜相同的门槛）的个股会带有层级标签并被置顶，层级越强越靠前（T3* 为暂定、可能重绘）。⚠ 表示周期阻止买入。')}</div>
     <div class="disc" style="margin-top:4px">${L('Conviction score = earnings/flow edge, not trend leadership — a rotation leader can score low here.','信念评分＝盈利/资金面优势，非趋势领涨度 — 轮动领涨股在此可能低分。')}</div>
   </div>`;
 

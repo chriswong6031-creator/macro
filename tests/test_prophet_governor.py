@@ -448,3 +448,56 @@ class TestNeverRaises:
         import engine.neuralweb.prophet_governor as pg
         result = pg.build_suggestions({})
         assert isinstance(result, list)
+
+
+# ---------------------------------------------------------------------------
+# PR-R2 Amendment 1: engine_label / engine_label_zh in every market block
+# ---------------------------------------------------------------------------
+
+class TestEngineLabelRebrand:
+    """All five per-market blocks must carry engine_label and engine_label_zh
+    (PR-R2 Amendment 1 operator order 2026-07-18)."""
+
+    def test_all_five_blocks_carry_engine_label(self, tmp_path):
+        """build_status emits engine_label + engine_label_zh for all five markets."""
+        import engine.neuralweb.prophet_governor as pg
+
+        status = pg.build_status(root=tmp_path)
+        markets = status.get("markets", {})
+
+        expected_markets = {"us", "cn", "hk", "ca", "intl"}
+        assert set(markets.keys()) == expected_markets, (
+            f"Expected markets {expected_markets}, got {set(markets.keys())}"
+        )
+
+        for mkt, blk in markets.items():
+            assert "engine_label" in blk, (
+                f"Market '{mkt}' block missing 'engine_label' key"
+            )
+            assert "engine_label_zh" in blk, (
+                f"Market '{mkt}' block missing 'engine_label_zh' key"
+            )
+            assert isinstance(blk["engine_label"], str) and blk["engine_label"], (
+                f"Market '{mkt}' engine_label must be a non-empty string"
+            )
+            assert isinstance(blk["engine_label_zh"], str) and blk["engine_label_zh"], (
+                f"Market '{mkt}' engine_label_zh must be a non-empty string"
+            )
+
+    def test_engine_labels_match_constant(self, tmp_path):
+        """engine_label values match _PROPHET_MARKET_LABEL constant exactly."""
+        import engine.neuralweb.prophet_governor as pg
+
+        status = pg.build_status(root=tmp_path)
+        markets = status.get("markets", {})
+
+        for mkt, blk in markets.items():
+            expected_en, expected_zh = pg._PROPHET_MARKET_LABEL[mkt]
+            assert blk["engine_label"] == expected_en, (
+                f"Market '{mkt}' engine_label={blk['engine_label']!r}, "
+                f"expected {expected_en!r}"
+            )
+            assert blk["engine_label_zh"] == expected_zh, (
+                f"Market '{mkt}' engine_label_zh={blk['engine_label_zh']!r}, "
+                f"expected {expected_zh!r}"
+            )

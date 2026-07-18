@@ -201,7 +201,7 @@ def gather_evidence(root=None) -> dict | None:
         ev.append({"id": "E6", "text": f"Narrative rotation: {json.dumps(rk, default=str)[:400]}."})
     if standouts:
         buys = [b.get("ticker") if isinstance(b, dict) else b for b in (standouts.get("buy") or [])][:10]
-        ev.append({"id": "E7", "text": f"Standout buy board (gate_go={standouts.get('gate_go')}): "
+        ev.append({"id": "E7", "text": f"Prophet buy board (gate_go={standouts.get('gate_go')}): "
                                        f"{', '.join(str(x) for x in buys) or 'none'}."})
     dl = latest.get("dislocation") or {}
     tp = latest.get("turning_point") or {}

@@ -301,7 +301,7 @@
     <span style="flex:1"></span>
     <span class="muted small">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }}</span>
   </div>
-  <p class="muted small" style="margin:6px 0 0">{{ t('Standout names from major non-US markets, ranked within their own market. Search any name above.', '主要非美市场精选个股，按各自市场内部排序。可在上方搜索。') }}
+  <p class="muted small" style="margin:6px 0 0">{{ t('Prophet signals from major non-US markets, ranked within their own market. Search any name above.', '主要非美市场先知选股，按各自市场内部排序。可在上方搜索。') }}
     <a href="intl.html" style="color:var(--link);font-weight:600">← {{ t('Macro comparison', '宏观对比') }}</a></p>
 </div>
 {% endif %}
@@ -1639,7 +1639,7 @@
 
 <!-- ===== Standout stocks ===== -->
 <div class="panel">
-  <h2>{{ t('Standout individual stocks', '个股精选') }} {{ help('Stocks showing stronger momentum than peers in their own market and sector. Not a forecast.', '相对本市场、本板块更强的个股。非预测。') }}</h2>
+  <h2>{{ t('Prophet Stock Signals', '先知选股') }} {{ help('Stocks showing stronger momentum than peers in their own market and sector. Not a forecast.', '相对本市场、本板块更强的个股。非预测。') }}</h2>
   {% set buys = (setups.buy if setups else []) %}
   {% if buys %}
   {# shared progressive "See more" — theme.js initShowMore inserts the .sm-bar
@@ -1670,7 +1670,7 @@
     {% endfor %}
   </div>
   <p class="caveat" style="margin-top:10px">{{ t('Each card is ranked against its own market. Click for details.', '每张卡片都相对自身市场排序。点击查看详情。') }}</p>
-  {% else %}<p class="muted small">{{ t('Standouts unavailable — universe still building.', '精选不可用 — 个股库构建中。') }}</p>{% endif %}
+  {% else %}<p class="muted small">{{ t('Prophet signals unavailable — universe still building.', '先知选股不可用 — 个股库构建中。') }}</p>{% endif %}
 </div>
 
 {% endif %}

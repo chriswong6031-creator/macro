@@ -124,7 +124,7 @@ LOBE_DESCRIPTIONS = {
     },
     "context-risk": {
         "short": "Board composition risk lens: archetype ratios, regime-conditional tail, and crowding flags — display only, never ranks.",
-        "full": "The context risk builder reads the current US standouts list, the stock personality store, and the regime timeline to profile the board's archetype composition versus the full universe. It produces a weighted risk profile from personality field-guide fingerprints, a regime-conditional P10 tail using the current regime quadrant crossed with a liquidity cell (cells with fewer than 887 observations print insufficient_n), and three flags: tinderbox, negative-gamma, and event-window. All numbers carry observation counts and a survivorship watermark. The artifact annotates only — it may never rank, size, gate, or raise attention floors. Read by the world state engine.",
+        "full": "The context risk builder reads the current US Prophet board list, the stock personality store, and the regime timeline to profile the board's archetype composition versus the full universe. It produces a weighted risk profile from personality field-guide fingerprints, a regime-conditional P10 tail using the current regime quadrant crossed with a liquidity cell (cells with fewer than 887 observations print insufficient_n), and three flags: tinderbox, negative-gamma, and event-window. All numbers carry observation counts and a survivorship watermark. The artifact annotates only — it may never rank, size, gate, or raise attention floors. Read by the world state engine.",
         "src_fp": "7d32806c54260d63",
     },
     "cortex-attention-firings": {
@@ -289,7 +289,7 @@ LOBE_DESCRIPTIONS = {
     },
     "neuralweb-mastermind-context": {
         "short": "The daily bridge feed packaging Neural Web context for the Terminal product — context only, no authority.",
-        "full": "Each day this feed assembles a curated package of Neural Web context — market state, reliability summaries, detected contradictions, bottom-sensor readings, options-entry context, and the AI reviewer note — formatted for the Terminal product to read. Its candidate list draws from US standouts, alternative data, and radar tickers, capped at 250 rows. All five authority switches are off: this is context only. The Terminal product stays the decision-maker.",
+        "full": "Each day this feed assembles a curated package of Neural Web context — market state, reliability summaries, detected contradictions, bottom-sensor readings, options-entry context, and the AI reviewer note — formatted for the Terminal product to read. Its candidate list draws from the US Prophet board, alternative data, and radar tickers, capped at 250 rows. All five authority switches are off: this is context only. The Terminal product stays the decision-maker.",
         "src_fp": "af9df5338e5c1483",
     },
     "neuralweb-orchestrator-runlog": {
@@ -354,12 +354,12 @@ LOBE_DESCRIPTIONS = {
     },
     "prophet-pick-autopsies": {
         "short": "One postmortem file per selected pick, written after the pick matures, naming what drove the outcome and whether a better process could have changed it.",
-        "full": "After a standout pick matures, the audit lane selects a subset for individual review — favouring the biggest winners, the worst losers, any picks that were held back by a data problem, and any that barely missed the board. For each selected pick, one artifact records the deterministic performance numbers alongside a plain-language postmortem: what drove the result, whether it was a process misstep or simply unforeseeable, which signals performed well and which were late, and what a future board should keep in mind. The verdict falls into one of five closed categories ranging from a correctable process fault to a result that was simply outside anyone's control. These files accrue as picks mature and are read by the Prophet governor when compiling the cross-market health report.",
+        "full": "After a Prophet pick matures, the audit lane selects a subset for individual review — favouring the biggest winners, the worst losers, any picks that were held back by a data problem, and any that barely missed the board. For each selected pick, one artifact records the deterministic performance numbers alongside a plain-language postmortem: what drove the result, whether it was a process misstep or simply unforeseeable, which signals performed well and which were late, and what a future board should keep in mind. The verdict falls into one of five closed categories ranging from a correctable process fault to a result that was simply outside anyone's control. These files accrue as picks mature and are read by the Prophet governor when compiling the cross-market health report.",
         "src_fp": "0ac50e4ed40f3d3c",
     },
     "prophet-status": {
-        "short": "Cross-market accountability summary: what each standout board has accrued, which inputs are healthy, and how the whole system is holding up.",
-        "full": "This artifact is the Prophet lobe's nightly health report for the entire standout system. It reads the committed records for every market — US, China, Hong Kong, Canada, and the international dashboard — and compiles a single document that captures how many picks have matured and been graded in each market, which artifacts are fresh or overdue, how many data gaps exist per market, and what the overall process-fault picture looks like. Importantly, each market's numbers stay in its own block: the US and Canada boards fill at a different price than the China board, and those fill conventions are never mixed together. The cross-market section shows counts and coverage only. A separate section records the freshness of every monitored artifact against its stated deadline and flags anything that has fallen behind.",
+        "short": "Cross-market accountability summary: what each Prophet board has accrued, which inputs are healthy, and how the whole system is holding up.",
+        "full": "This artifact is the Prophet lobe's nightly health report for the entire Prophet board system. It reads the committed records for every market — US, China, Hong Kong, Canada, and the international dashboard — and compiles a single document that captures how many picks have matured and been graded in each market, which artifacts are fresh or overdue, how many data gaps exist per market, and what the overall process-fault picture looks like. Importantly, each market's numbers stay in its own block: the US and Canada boards fill at a different price than the China board, and those fill conventions are never mixed together. The cross-market section shows counts and coverage only. A separate section records the freshness of every monitored artifact against its stated deadline and flags anything that has fallen behind.",
         "src_fp": "5e741d080da14380",
     },
     "prophet-suggestions": {
@@ -443,8 +443,8 @@ LOBE_DESCRIPTIONS = {
         "src_fp": "f6b3de953945780c",
     },
     "site-china-standouts": {
-        "short": "China standouts list with three lifecycle zones: ready, basing, and falling — display only, no scored path surface on zone keys.",
-        "full": "The China library builder writes this site-published standout list. It carries three zone keys beyond the existing buy shelf: ripening (ready and basing, cap 32), ripening-falling (falling sink, cap 8), and the existing buy shelf. Zone assignment follows a hard precedence cascade: falling veto first (five-day return at or below negative eight percent, or daily MACD histogram negative with falling trend), then ready (directional evidence live), then basing. Ordering within each zone uses MACD bars to cross ascending as the primary key. The zone keys carry no scored path surface and are not wired to alert triage, board ordering, or push floor. Read by the China builder, the signal contracts exporter, the stock open backfiller, and the mastermind context builder.",
+        "short": "China Prophet list (the artifact keeps its historical standouts name) with three lifecycle zones: ready, basing, and falling — display only, no scored path surface on zone keys.",
+        "full": "The China library builder writes this site-published China Prophet list (the artifact keeps its historical standouts name). It carries three zone keys beyond the existing buy shelf: ripening (ready and basing, cap 32), ripening-falling (falling sink, cap 8), and the existing buy shelf. Zone assignment follows a hard precedence cascade: falling veto first (five-day return at or below negative eight percent, or daily MACD histogram negative with falling trend), then ready (directional evidence live), then basing. Ordering within each zone uses MACD bars to cross ascending as the primary key. The zone keys carry no scored path surface and are not wired to alert triage, board ordering, or push floor. Read by the China builder, the signal contracts exporter, the stock open backfiller, and the mastermind context builder.",
         "src_fp": "a31ab7fc6382db26",
     },
     "site-confluence-graph": {
@@ -573,9 +573,14 @@ LOBE_DESCRIPTIONS = {
         "src_fp": "2655c4c92f392a60",
     },
     "site-us-standouts": {
-        "short": "Daily list of US stock standouts published to the public site and read by the Terminal screener.",
-        "full": "Each day the engine scores US stocks and writes the resulting standout list to the public site. This feed is the anchor contract for the Terminal product's stock screener — any downstream tool that reads standout data relies on it. It has 16 consumers, making it one of the most widely read feeds in the system.",
+        "short": "Daily US Prophet board published to the public site and read by the Terminal screener (the artifact keeps its historical standouts name).",
+        "full": "Each day the engine scores US stocks and writes the resulting Prophet board to the public site (the artifact keeps its historical standouts name). This feed is the anchor contract for the Terminal product's stock screener — any downstream tool that reads this data relies on it. It has 16 consumers, making it one of the most widely read feeds in the system.",
         "src_fp": "257c11198cf0dda2",
+    },
+    "special-sits-context-latest": {
+        "short": "",
+        "full": "",
+        "src_fp": "f646afda96a036a5",
     },
     "spine-index": {
         "short": "The master searchable table joining every engine's recent signal history, rebuilt fresh each night.",

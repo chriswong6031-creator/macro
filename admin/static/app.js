@@ -2742,7 +2742,7 @@ RENDER.prophet = async () => {
          const gaps = (blk.data_gaps || []);
          const sb   = blk.audit_scoreboard || {};
          return `<div class="card">
-           <h3>${esc(mk.toUpperCase())} <span class="statpill ${mktCls(blk.maturity_state)}">${esc(blk.maturity_state || "unknown")}</span></h3>
+           <h3>${esc(blk.engine_label || mk.toUpperCase())} <span class="statpill ${mktCls(blk.maturity_state)}">${esc(blk.maturity_state || "unknown")}</span></h3>
            <div class="kv"><span>Fill basis</span><b>${esc(blk.fill_basis || "—")}</b></div>
            <div class="kv"><span>Benchmark</span><b>${esc(blk.benchmark || "—")}</b></div>
            ${sb.win_rate != null ? `<div class="kv"><span>Win rate</span><b>${(sb.win_rate * 100).toFixed(1)}%</b></div>` : ""}

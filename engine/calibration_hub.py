@@ -49,8 +49,8 @@ _DESKS = (
 # it.  We store the parquet path and let _standout_track_row detect the .parquet
 # extension and read it directly (pandas, never-raise).
 _STANDOUT_TRACKS = (
-    ("US Buy Board (v1)", "site/factordata/us_board_track.json", "US"),
-    ("CN Standout Track", "data/china_standout_track/board.parquet", "CN"),
+    ("Prophet US — board track", "site/factordata/us_board_track.json", "US"),
+    ("Prophet China — board track", "data/china_standout_track/board.parquet", "CN"),
 )
 
 

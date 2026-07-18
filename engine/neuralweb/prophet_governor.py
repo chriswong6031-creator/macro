@@ -52,6 +52,16 @@ _SUGGESTIONS_PATH = Path("data") / "neuralweb" / "prophet_suggestions.json"
 # Insight bus emitter id
 _EMITTER = "prophet_governor"
 
+# Public display labels per market (en, zh).
+# Internal keys (us/cn/hk/ca/intl) and all file paths are UNCHANGED.
+_PROPHET_MARKET_LABEL: dict[str, tuple[str, str]] = {
+    "us":   ("Prophet US",    "先知美股"),
+    "cn":   ("Prophet China", "先知A股"),
+    "hk":   ("Prophet HK",   "先知港股"),
+    "ca":   ("Prophet CA",   "先知加股"),
+    "intl": ("Prophet Intl", "先知国际"),
+}
+
 # Suggestion constraints (mirrors mastermind_feedback.py)
 _MAX_SUGGESTIONS = 10
 _DETAIL_MAX_CHARS = 160
@@ -458,7 +468,7 @@ def _build_intl_block(repo: Path) -> dict:
         "data_gaps": [],
         "maturity_state": "no_stock_ledger",
         "disclosure": (
-            "International standout scores are a context read, not a graded ranker "
+            "Prophet Intl signals are a context read, not a graded ranker "
             "— no forward ledger accrues for this board yet."
         ),
     }
@@ -854,13 +864,18 @@ def build_status(root: Path | None = None) -> dict:
         ("intl", _build_intl_block),
     ]:
         try:
-            market_blocks[market] = builder(repo)
+            blk = builder(repo)
         except Exception as exc:  # noqa: BLE001
             log.warning("prophet_governor: %s block failed: %s", market, exc)
-            market_blocks[market] = {
+            blk = {
                 "market": market,
                 "data_gaps": [_data_gap("block_error", f"block builder raised: {exc}")],
             }
+        # Inject public display labels (PR-R2 Amendment 1 rebrand)
+        en_label, zh_label = _PROPHET_MARKET_LABEL.get(market, (market.upper(), market.upper()))
+        blk["engine_label"] = en_label
+        blk["engine_label_zh"] = zh_label
+        market_blocks[market] = blk
 
     cross_market = _build_cross_market(market_blocks)
 

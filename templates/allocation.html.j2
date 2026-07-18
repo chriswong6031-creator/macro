@@ -775,7 +775,7 @@ const buyColor=()=>isZh()?'#ef4444':'#16a34a';
 // zh 红涨绿跌: swap avoid-verb red (#ef4444) to green in zh mode (amber TRIM left unchanged)
 const sellColor=c=>isZh()&&c==='#ef4444'?'#16a34a':c;
 // ★N badge: how many individual standouts back this theme (the allocation→stock bridge)
-const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge" title="${n} member(s) on the US standout buy board">★${n}</span>`:''; };
+const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge" title="${n} member(s) on the US Prophet buy board">★${n}</span>`:''; };
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const bid = s => /^[a-z0-9_-]+$/i.test(s||'') ? s : '';

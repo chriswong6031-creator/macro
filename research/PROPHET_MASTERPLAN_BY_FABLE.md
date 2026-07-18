@@ -266,3 +266,52 @@ into pick context at entry).
   in plain words (PR-R9).
 - Quarterly review of the Fable grant spend vs value: first due 2026-10-15,
   alongside the lane-(ii) re-audit clock.
+
+## PR-R2 Amendment 1 (2026-07-18, operator order)
+
+Public rebrand initiated by operator order 2026-07-18. The original PR-R2 refusal
+("No public rebrand this program") is superseded for branding surfaces only;
+internal identifiers are fully unchanged (see below).
+
+### Naming table
+
+| Surface | EN short | EN full | ZH short | ZH full |
+|---|---|---|---|---|
+| Brand | Prophet | Prophet Stock Signals | 先知 | 先知选股信号 |
+| Board headers | Prophet | — | 先知选股 | — |
+
+#### Per-market display labels (engine_label / engine_label_zh)
+
+| Internal key | EN display | ZH display |
+|---|---|---|
+| us | Prophet US | 先知美股 |
+| cn | Prophet China | 先知A股 |
+| hk | Prophet HK | 先知港股 |
+| ca | Prophet CA | 先知加股 |
+| intl | Prophet Intl | 先知国际 |
+
+### Internal identifiers — UNCHANGED
+
+All of the following are NOT renamed and must never be renamed:
+- File paths: us_standouts.json, china_standouts.json, canada_standouts.json,
+  hk_standouts.json, intl_setups.json, us_standouts_v2.json
+- Synapse ids: site-us-standouts, site-china-standouts, prophet-*
+- Engine/module/role names: standout_audit, standout_auditor, standout_review
+- CSS ids/classes: #standouts, #us-standouts, sb-*, .fac-standout
+- Jinja/JS variable names, payload field keys: standouts.buy, standout_label,
+  r.standout, schema strings, ledger paths, config keys
+- Research doc titles: STANDOUT_ACCOUNTABILITY masterplan name stays
+
+### Generic-adjective exemption
+
+"standout" used as a plain English adjective is NOT the brand and stays:
+- engine/stock_score.py:1012,1025 ("Relative-strength standout — screen, not a
+  validated pick")
+- dashboard.html.j2 SUE chip tooltip (~:13130, :13227 "Standout on the shallow
+  recent window...")
+
+### Site copies
+
+Site copies of edited templates (site/*.html) are RENDER-OWNED and heal on the
+next nightly/asia render. Only source templates were edited; no site/*.html were
+hand-edited (per source-only law, check_template_site_sync).
