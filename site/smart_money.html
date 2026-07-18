@@ -317,6 +317,34 @@ details.fullboard > summary:hover { color:var(--text); }
              cursor:pointer; }
 .wire-more:hover { border-color:var(--info); }
 
+/* ---- Follow Desk (sec-follow) ---- */
+.ftier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+         letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); }
+.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
+.ftier.watch  { color:var(--muted); background:var(--panel2); }
+.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
+.ftier.insufficient,.ftier.low-data { color:var(--muted); background:transparent; border-style:dashed; }
+.fsc-bar { display:inline-block; width:48px; height:5px; border-radius:3px;
+           background:var(--panel2); vertical-align:middle; position:relative; overflow:hidden; }
+.fsc-bar i { position:absolute; left:0; top:0; height:100%; border-radius:3px; background:var(--info); }
+.cap-chip { font:600 9px/1 var(--numf); padding:2px 5px; border-radius:4px; text-transform:uppercase;
+            letter-spacing:.04em; border:1px solid var(--line); color:var(--muted); }
+.cap-chip.large { color:#5b9bf0; border-color:#5b9bf055; }
+.cap-chip.mid   { color:#c9a24a; border-color:#c9a24a55; }
+.cap-chip.small { color:#45b873; border-color:#45b87355; }
+.cap-chip.off_index { color:var(--muted); border-style:dashed; }
+.fboard-row-accent td { background:color-mix(in srgb, var(--info) 4%, transparent); }
+.follow-banner { font-size:11.5px; color:var(--muted); background:var(--panel2);
+                 border:1px solid var(--line); border-left:3px solid var(--up);
+                 border-radius:9px; padding:8px 12px; margin:8px 0 4px; line-height:1.55; }
+.follow-empty { font-size:12px; color:var(--muted); padding:18px 4px; text-align:center; }
+.sm-2half { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:10px; }
+@media(max-width:820px){ .sm-2half { grid-template-columns:1fr; } }
+.sm-2half > * { min-width:0; overflow-x:auto; }
+.frozen-chip { font:600 9px/1 var(--numf); padding:2px 6px; border-radius:4px;
+               letter-spacing:.05em; text-transform:uppercase;
+               color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
+
 /* ---- v3: reliability chip + fund links + inline fund-list details ---- */
 .rely { font:600 9.5px/1.4 var(--numf); padding:2px 7px; border-radius:5px; letter-spacing:.03em;
         text-transform:uppercase; border:1px solid var(--line); }
@@ -645,6 +673,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 
 
 
+
 <div class="sm">
 
 
@@ -914,10 +943,12 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 
 
 
+
 <nav class="sm-rail" aria-label="Sections">
   <a href="#sec-wire"><span class="l-en">Wire</span><span class="l-zh">播报</span></a>
   <a href="#sec-insider"><span class="l-en">Insider</span><span class="l-zh">内部人</span></a>
   <a href="#sec-managers"><span class="l-en">Managers</span><span class="l-zh">经理台</span></a>
+  <a href="#sec-follow"><span class="l-en">Follow Desk</span><span class="l-zh">跟随台</span></a>
   <a href="#sec-flow"><span class="l-en">Flow</span><span class="l-zh">资金流</span></a>
   <a href="#sec-portfolio"><span class="l-en">Portfolio</span><span class="l-zh">总组合</span></a>
   <a href="#sec-crowding"><span class="l-en">Crowding</span><span class="l-zh">拥挤度</span></a>
@@ -4506,115 +4537,115 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
-      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span>
-      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
-    </li>
-  
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    <li data-axis="13fa" data-fold="1">
-      <span class="wd num">2026-06-30</span>
-      <span class="axis-tag axis-13f">13F/A</span>
-      <span class="wtk num"></span>
-      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span>
-      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
-    </li>
-  
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    <li data-axis="13fa" data-fold="1">
-      <span class="wd num">2026-06-30</span>
-      <span class="axis-tag axis-13f">13F/A</span>
-      <span class="wtk num"></span>
-      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span>
-      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
-    </li>
-  
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    <li data-axis="13fa" data-fold="1">
-      <span class="wd num">2026-06-30</span>
-      <span class="axis-tag axis-13f">13F/A</span>
-      <span class="wtk num"></span>
-      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span>
-      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
-    </li>
-  
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    <li data-axis="13fa" data-fold="1">
-      <span class="wd num">2026-06-30</span>
-      <span class="axis-tag axis-13f">13F/A</span>
-      <span class="wtk num"></span>
       <span class="wdesc">JANA Partners Management files amendment</span>
+      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
+    </li>
+  
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    <li data-axis="13fa" data-fold="1">
+      <span class="wd num">2026-06-30</span>
+      <span class="axis-tag axis-13f">13F/A</span>
+      <span class="wtk num"></span>
+      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span>
+      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
+    </li>
+  
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    <li data-axis="13fa" data-fold="1">
+      <span class="wd num">2026-06-30</span>
+      <span class="axis-tag axis-13f">13F/A</span>
+      <span class="wtk num"></span>
+      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span>
+      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
+    </li>
+  
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    <li data-axis="13fa" data-fold="1">
+      <span class="wd num">2026-06-30</span>
+      <span class="axis-tag axis-13f">13F/A</span>
+      <span class="wtk num"></span>
+      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span>
+      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
+    </li>
+  
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    <li data-axis="13fa" data-fold="1">
+      <span class="wd num">2026-06-30</span>
+      <span class="axis-tag axis-13f">13F/A</span>
+      <span class="wtk num"></span>
+      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span>
       <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
     </li>
   
@@ -7413,6 +7444,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     <th class="l">#</th>
     <th class="l"><span class="l-en">Fund</span><span class="l-zh">基金</span></th>
     <th><span class="l-en">Grade</span><span class="l-zh">评级</span></th>
+    <th><span class="l-en">Follow</span><span class="l-zh">跟随</span></th>
     <th><span class="l-en">Median excess</span><span class="l-zh">中位超额</span></th>
     <th><span class="l-en">Sell skill</span><span class="l-zh">卖出能力</span></th>
     <th><span class="l-en">Hit</span><span class="l-zh">胜率</span></th>
@@ -7435,6 +7467,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 34.8" data-tip-zh="观察 分34.8"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-pos">+15%</span></b></td>
       <td><span class="num r-neg">-22%</span></td>
       <td class="num">63%</td>
@@ -7483,6 +7516,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 15.6" data-tip-zh="观察 分15.6"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-pos">+10%</span></b></td>
       <td><span class="num r-neg">-32%</span></td>
       <td class="num">68%</td>
@@ -7531,6 +7565,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 25.0" data-tip-zh="观察 分25.0"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-pos">+9%</span></b></td>
       <td><span class="num r-neg">-182%</span></td>
       <td class="num">67%</td>
@@ -7574,6 +7609,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier follow" data-tip-en="FOLLOW score 73.8" data-tip-zh="跟随 分73.8"><span class="l-en">FOLLOW</span><span class="l-zh">跟随</span></span></td>
       <td><b><span class="num r-pos">+6%</span></b></td>
       <td><span class="num r-neg">-9%</span></td>
       <td class="num">52%</td>
@@ -7622,6 +7658,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 28.7" data-tip-zh="观察 分28.7"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-pos">+4%</span></b></td>
       <td><span class="num r-neg">-8%</span></td>
       <td class="num">51%</td>
@@ -7670,6 +7707,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 50.4" data-tip-zh="观察 分50.4"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-pos">+4%</span></b></td>
       <td><span class="num r-neg">-37%</span></td>
       <td class="num">52%</td>
@@ -7718,6 +7756,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 39.1" data-tip-zh="观察 分39.1"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-pos">+3%</span></b></td>
       <td><span class="num r-neg">-22%</span></td>
       <td class="num">57%</td>
@@ -7766,6 +7805,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 19.9" data-tip-zh="观察 分19.9"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-pos">+3%</span></b></td>
       <td><span class="num r-neg">-8%</span></td>
       <td class="num">56%</td>
@@ -7814,6 +7854,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 25.5" data-tip-zh="观察 分25.5"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-pos">+2%</span></b></td>
       <td><span class="num r-neg">-2%</span></td>
       <td class="num">56%</td>
@@ -7862,6 +7903,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 16.4" data-tip-zh="观察 分16.4"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-0%</span></b></td>
       <td><span class="num r-neg">-37%</span></td>
       <td class="num">47%</td>
@@ -7910,6 +7952,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 57.6" data-tip-zh="观察 分57.6"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-1%</span></b></td>
       <td><span class="num r-neg">-20%</span></td>
       <td class="num">50%</td>
@@ -7958,6 +8001,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 8.9" data-tip-zh="观察 分8.9"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-2%</span></b></td>
       <td><span class="num r-neg">-28%</span></td>
       <td class="num">48%</td>
@@ -8006,6 +8050,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier fade" data-tip-en="FADE score 53.8" data-tip-zh="淡出 分53.8"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
       <td><b><span class="num r-neg">-3%</span></b></td>
       <td><span class="num r-pos">+4%</span></td>
       <td class="num">42%</td>
@@ -8054,6 +8099,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 20.0" data-tip-zh="观察 分20.0"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-3%</span></b></td>
       <td><span class="num r-neg">-5%</span></td>
       <td class="num">46%</td>
@@ -8102,6 +8148,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier fade" data-tip-en="FADE score 54.8" data-tip-zh="淡出 分54.8"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
       <td><b><span class="num r-neg">-4%</span></b></td>
       <td><span class="num r-neg">-18%</span></td>
       <td class="num">45%</td>
@@ -8150,6 +8197,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade A">A</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 28.6" data-tip-zh="观察 分28.6"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-6%</span></b></td>
       <td><span class="num r-pos">+2%</span></td>
       <td class="num">43%</td>
@@ -8198,6 +8246,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 43.6" data-tip-zh="观察 分43.6"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-7%</span></b></td>
       <td><span class="num r-pos">+18%</span></td>
       <td class="num">38%</td>
@@ -8246,6 +8295,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 37.5" data-tip-zh="观察 分37.5"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-8%</span></b></td>
       <td><span class="num r-neg">-11%</span></td>
       <td class="num">33%</td>
@@ -8294,6 +8344,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 43.2" data-tip-zh="观察 分43.2"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-8%</span></b></td>
       <td><span class="num r-neg">-3%</span></td>
       <td class="num">37%</td>
@@ -8342,6 +8393,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 44.6" data-tip-zh="观察 分44.6"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-10%</span></b></td>
       <td><span class="num r-pos">+1%</span></td>
       <td class="num">36%</td>
@@ -8390,6 +8442,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 50.3" data-tip-zh="观察 分50.3"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-10%</span></b></td>
       <td><span class="num r-neg">-29%</span></td>
       <td class="num">40%</td>
@@ -8438,6 +8491,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier fade" data-tip-en="FADE score 40.2" data-tip-zh="淡出 分40.2"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
       <td><b><span class="num r-neg">-10%</span></b></td>
       <td><span class="num r-neg">-11%</span></td>
       <td class="num">36%</td>
@@ -8486,6 +8540,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier follow" data-tip-en="FOLLOW score 86.0" data-tip-zh="跟随 分86.0"><span class="l-en">FOLLOW</span><span class="l-zh">跟随</span></span></td>
       <td><b><span class="num r-neg">-10%</span></b></td>
       <td><span class="num r-pos">+15%</span></td>
       <td class="num">43%</td>
@@ -8534,6 +8589,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier follow" data-tip-en="FOLLOW score 68.8" data-tip-zh="跟随 分68.8"><span class="l-en">FOLLOW</span><span class="l-zh">跟随</span></span></td>
       <td><b><span class="num r-neg">-11%</span></b></td>
       <td><span class="num r-neg">-25%</span></td>
       <td class="num">36%</td>
@@ -8582,6 +8638,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 19.1" data-tip-zh="观察 分19.1"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-12%</span></b></td>
       <td><span class="num r-pos">+12%</span></td>
       <td class="num">36%</td>
@@ -8630,6 +8687,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 60.5" data-tip-zh="观察 分60.5"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-12%</span></b></td>
       <td><span class="num r-pos">+2%</span></td>
       <td class="num">44%</td>
@@ -8678,6 +8736,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 17.4" data-tip-zh="观察 分17.4"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-12%</span></b></td>
       <td><span class="num r-neg">-11%</span></td>
       <td class="num">35%</td>
@@ -8726,6 +8785,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade B">B</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 29.7" data-tip-zh="观察 分29.7"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-13%</span></b></td>
       <td><span class="num r-neg">-14%</span></td>
       <td class="num">36%</td>
@@ -8774,6 +8834,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade C">C</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 27.6" data-tip-zh="观察 分27.6"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-14%</span></b></td>
       <td><span class="num r-pos">+7%</span></td>
       <td class="num">33%</td>
@@ -8822,6 +8883,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade C">C</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 40.6" data-tip-zh="观察 分40.6"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-15%</span></b></td>
       <td><span class="num r-pos">+19%</span></td>
       <td class="num">28%</td>
@@ -8870,6 +8932,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade C">C</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 59.3" data-tip-zh="观察 分59.3"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-17%</span></b></td>
       <td><span class="num r-pos">+3%</span></td>
       <td class="num">33%</td>
@@ -8918,6 +8981,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade C">C</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 23.2" data-tip-zh="观察 分23.2"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-18%</span></b></td>
       <td><span class="num r-pos">+25%</span></td>
       <td class="num">41%</td>
@@ -8966,6 +9030,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade C">C</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 17.8" data-tip-zh="观察 分17.8"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-19%</span></b></td>
       <td><span class="num r-pos">+12%</span></td>
       <td class="num">28%</td>
@@ -9014,6 +9079,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade C">C</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 15.1" data-tip-zh="观察 分15.1"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-19%</span></b></td>
       <td><span class="num r-neg">-1%</span></td>
       <td class="num">36%</td>
@@ -9062,6 +9128,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade C">C</span></td>
+      <td><span class="ftier fade" data-tip-en="FADE score 25.3" data-tip-zh="淡出 分25.3"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
       <td><b><span class="num r-neg">-20%</span></b></td>
       <td><span class="num r-pos">+14%</span></td>
       <td class="num">6%</td>
@@ -9110,6 +9177,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade C">C</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 10.1" data-tip-zh="观察 分10.1"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-20%</span></b></td>
       <td><span class="num r-neg">-5%</span></td>
       <td class="num">35%</td>
@@ -9158,6 +9226,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         <span class="chip-fresh" style="margin-left:4px"><span class="l-en">closed</span><span class="l-zh">已关闭</span></span>
       </td>
       <td><span class="grade C">C</span></td>
+      <td><span class="ftier fade" data-tip-en="FADE score 14.4" data-tip-zh="淡出 分14.4"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
       <td><b><span class="num r-neg">-20%</span></b></td>
       <td><span class="num r-neg">-8%</span></td>
       <td class="num">36%</td>
@@ -9206,6 +9275,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 35.8" data-tip-zh="观察 分35.8"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-21%</span></b></td>
       <td><span class="num r-neg">-172%</span></td>
       <td class="num">22%</td>
@@ -9246,6 +9316,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier fade" data-tip-en="FADE score 27.6" data-tip-zh="淡出 分27.6"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
       <td><b><span class="num r-neg">-24%</span></b></td>
       <td><span class="num r-pos">+13%</span></td>
       <td class="num">26%</td>
@@ -9294,6 +9365,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 14.4" data-tip-zh="观察 分14.4"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-26%</span></b></td>
       <td><span class="num r-pos">+5%</span></td>
       <td class="num">0%</td>
@@ -9337,6 +9409,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 26.0" data-tip-zh="观察 分26.0"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-27%</span></b></td>
       <td><span class="num r-pos">+36%</span></td>
       <td class="num">42%</td>
@@ -9385,6 +9458,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier fade" data-tip-en="FADE score 22.6" data-tip-zh="淡出 分22.6"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
       <td><b><span class="num r-neg">-28%</span></b></td>
       <td><span class="num r-pos">+38%</span></td>
       <td class="num">14%</td>
@@ -9433,6 +9507,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 20.0" data-tip-zh="观察 分20.0"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-31%</span></b></td>
       <td><span class="num r-pos">+24%</span></td>
       <td class="num">29%</td>
@@ -9481,6 +9556,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 23.3" data-tip-zh="观察 分23.3"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-34%</span></b></td>
       <td><span class="num r-neg">-8%</span></td>
       <td class="num">25%</td>
@@ -9529,6 +9605,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 24.8" data-tip-zh="观察 分24.8"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-34%</span></b></td>
       <td><span class="num r-pos">+30%</span></td>
       <td class="num">24%</td>
@@ -9577,6 +9654,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 6.0" data-tip-zh="观察 分6.0"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-38%</span></b></td>
       <td><span class="num r-neg">-11%</span></td>
       <td class="num">36%</td>
@@ -9625,6 +9703,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 43.6" data-tip-zh="观察 分43.6"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-38%</span></b></td>
       <td><span class="num r-pos">+11%</span></td>
       <td class="num">23%</td>
@@ -9673,6 +9752,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 10.4" data-tip-zh="观察 分10.4"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-43%</span></b></td>
       <td><span class="num r-pos">+40%</span></td>
       <td class="num">0%</td>
@@ -9716,6 +9796,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade D">D</span></td>
+      <td><span class="ftier watch" data-tip-en="WATCH score 29.2" data-tip-zh="观察 分29.2"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
       <td><b><span class="num r-neg">-49%</span></b></td>
       <td><span class="num r-pos">+27%</span></td>
       <td class="num">14%</td>
@@ -9759,6 +9840,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade na">—</span></td>
+      <td><span class="ftier insufficient" data-tip-en="LOW DATA" data-tip-zh="数据不足"><span class="l-en">LOW DATA</span><span class="l-zh">数据不足</span></span></td>
       <td><b><span class="num r-neg">-21%</span></b></td>
       <td><span class="num r-pos">+7%</span></td>
       <td class="num">0%</td>
@@ -9799,6 +9881,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         
       </td>
       <td><span class="grade na">—</span></td>
+      <td><span class="ftier insufficient" data-tip-en="LOW DATA" data-tip-zh="数据不足"><span class="l-en">LOW DATA</span><span class="l-zh">数据不足</span></span></td>
       <td><b><span class="num r-neg">-27%</span></b></td>
       <td><span class="num r-neg">-32%</span></td>
       <td class="num">0%</td>
@@ -14571,6 +14654,1753 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     </div>
   </details>
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sm-sec" id="sec-follow">
+  <h2><span class="l-en">Follow Desk</span><span class="l-zh">跟随台</span></h2>
+  <span class="h-note"><span class="l-en">ranked by follow-worthiness — where to research first, not a buy list</span><span class="l-zh">按跟随价值排序——优先研究对象，非买入清单</span></span>
+</div>
+
+<div class="follow-banner"><span class="l-en">Ranked by follow-worthiness — where to research first, NOT a buy list. 13F positions are ~45 days stale; historically 13F crowding warns more than it confirms. Scores are descriptive with n printed.</span><span class="l-zh">按跟随价值排序——优先研究对象，非买入清单。13F持仓约有45天滞后；历史上13F聚集更多起警示作用而非确认。分数为描述性指标，附样本量。</span></div>
+
+
+
+
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">#</th>
+    <th class="l"><span class="l-en">Fund</span><span class="l-zh">基金</span></th>
+    <th><span class="l-en">Tier</span><span class="l-zh">层级</span></th>
+    <th><span class="l-en">Follow score</span><span class="l-zh">跟随分</span></th>
+    <th><span class="l-en">New sleeve</span><span class="l-zh">新建仓</span></th>
+    <th><span class="l-en">Add sleeve</span><span class="l-zh">加仓</span></th>
+    <th><span class="l-en">Rotation IQ</span><span class="l-zh">轮动IQ</span></th>
+    <th><span class="l-en">Front-run</span><span class="l-zh">领先跑</span></th>
+    <th><span class="l-en">Streak</span><span class="l-zh">连跌</span></th>
+  </tr></thead>
+  <tbody><tr >
+      <td class="l rk num">1</td>
+      <td class="l"><a class="fund-link" href="fund_tigerglobal.html">tigerglobal</a>
+      </td>
+      <td><span class="ftier follow"><span class="l-en">FOLLOW</span><span class="l-zh">跟随</span></span></td>
+      <td><span class="fsc-bar"><i style="width:86.0%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 98.8 · consistency 33.3 · durability 99.3 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 98.8 · 一致性 33.3 · 持久性 99.3 · 卖出 100.0 · n惩罚 1.0">86.0</span></td>
+      <td><span class="num r-pos">+5%</span> <span class="sub">n 31</span></td>
+      <td><span class="num r-pos">+1%</span> <span class="sub">n 325</span></td>
+      <td><span class="num" data-tip-en="hit rate 34% · n 33 calls across 11 quarters" data-tip-zh="方向胜率 34% · 33 次调仓 / 11 个季度">14.5</span></td>
+      <td><span class="num" data-tip-en="n 56 new positions tracked · median next-q excess +5%" data-tip-zh="56 个新仓被追踪 · 下季中位超额 +5%">12%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">2</td>
+      <td class="l"><a class="fund-link" href="fund_whalerock.html">whalerock</a>
+      </td>
+      <td><span class="ftier follow"><span class="l-en">FOLLOW</span><span class="l-zh">跟随</span></span></td>
+      <td><span class="fsc-bar"><i style="width:73.8%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 93.8 · consistency 58.3 · durability 98.5 · sell 0.1 · n penalty 1.0" data-tip-zh="优势 93.8 · 一致性 58.3 · 持久性 98.5 · 卖出 0.1 · n惩罚 1.0">73.8</span></td>
+      <td><span class="num r-neg">-4%</span> <span class="sub">n 48</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 219</span></td>
+      <td><span class="num" data-tip-en="hit rate 61% · n 31 calls across 11 quarters" data-tip-zh="方向胜率 61% · 31 次调仓 / 11 个季度">52.5</span></td>
+      <td><span class="num" data-tip-en="n 94 new positions tracked · median next-q excess -4%" data-tip-zh="94 个新仓被追踪 · 下季中位超额 -4%">18%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">3</td>
+      <td class="l"><a class="fund-link" href="fund_appaloosa.html">appaloosa</a>
+      </td>
+      <td><span class="ftier follow"><span class="l-en">FOLLOW</span><span class="l-zh">跟随</span></span></td>
+      <td><span class="fsc-bar"><i style="width:68.8%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 99.2 · consistency 25.0 · durability 96.4 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 99.2 · 一致性 25.0 · 持久性 96.4 · 卖出 0.0 · n惩罚 1.0">68.8</span></td>
+      <td><span class="num r-pos">+7%</span> <span class="sub">n 42</span></td>
+      <td><span class="num r-pos">+1%</span> <span class="sub">n 240</span></td>
+      <td><span class="num" data-tip-en="hit rate 58% · n 49 calls across 11 quarters" data-tip-zh="方向胜率 58% · 49 次调仓 / 11 个季度">81.6</span></td>
+      <td><span class="num" data-tip-en="n 69 new positions tracked · median next-q excess +7%" data-tip-zh="69 个新仓被追踪 · 下季中位超额 +7%">26%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">4</td>
+      <td class="l"><a class="fund-link" href="fund_gates.html">gates</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:60.5%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 71.3 · consistency 50.0 · durability 36.9 · sell 84.8 · n penalty 1.0" data-tip-zh="优势 71.3 · 一致性 50.0 · 持久性 36.9 · 卖出 84.8 · n惩罚 1.0">60.5</span></td>
+      <td><span class="num r-pos">+1%</span> <span class="sub">n 41</span></td>
+      <td><span class="num r-neg">-5%</span> <span class="sub">n 102</span></td>
+      <td><span class="num" data-tip-en="hit rate 55% · n 23 calls across 10 quarters" data-tip-zh="方向胜率 55% · 23 次调仓 / 10 个季度">66.0</span></td>
+      <td><span class="num" data-tip-en="n 56 new positions tracked · median next-q excess +1%" data-tip-zh="56 个新仓被追踪 · 下季中位超额 +1%">14%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">5</td>
+      <td class="l"><a class="fund-link" href="fund_icahn.html">icahn</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:59.3%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 99.7 · consistency 50.0 · durability 60.3 · sell 93.8 · n penalty 0.75" data-tip-zh="优势 99.7 · 一致性 50.0 · 持久性 60.3 · 卖出 93.8 · n惩罚 0.75">59.3</span></td>
+      <td><span class="num r-pos">+11%</span> <span class="sub">n 1</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 27</span></td>
+      <td><span class="num" data-tip-en="hit rate 52% · n 26 calls across 9 quarters" data-tip-zh="方向胜率 52% · 26 次调仓 / 9 个季度">55.4</span></td>
+      <td><span class="num" data-tip-en="n 7 new positions tracked · median next-q excess +11%" data-tip-zh="7 个新仓被追踪 · 下季中位超额 +11%">0%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">6</td>
+      <td class="l"><a class="fund-link" href="fund_lightstreet.html">lightstreet</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:57.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 94.0 · consistency 41.7 · durability 46.4 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 94.0 · 一致性 41.7 · 持久性 46.4 · 卖出 0.0 · n惩罚 1.0">57.6</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 46</span></td>
+      <td><span class="num r-pos">+3%</span> <span class="sub">n 109</span></td>
+      <td><span class="num" data-tip-en="hit rate 32% · n 35 calls across 11 quarters" data-tip-zh="方向胜率 32% · 35 次调仓 / 11 个季度">6.3</span></td>
+      <td><span class="num" data-tip-en="n 71 new positions tracked · median next-q excess +2%" data-tip-zh="71 个新仓被追踪 · 下季中位超额 +2%">21%</span></td>
+      <td></td>
+    </tr><tr style=&#34;opacity:.6&#34;>
+      <td class="l rk num">7</td>
+      <td class="l"><a class="fund-link" href="fund_altimeter.html">altimeter</a> <span class="sub">(<span class="l-en">excluded from boards</span><span class="l-zh">已排除出榜</span>)</span>
+      </td>
+      <td><span class="ftier fade"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
+      <td><span class="fsc-bar"><i style="width:54.8%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 66.4 · consistency 27.3 · durability 91.2 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 66.4 · 一致性 27.3 · 持久性 91.2 · 卖出 0.0 · n惩罚 1.0">54.8</span></td>
+      <td><span class="num r-pos">+3%</span> <span class="sub">n 35</span></td>
+      <td><span class="num r-neg">-0%</span> <span class="sub">n 117</span></td>
+      <td><span class="num" data-tip-en="hit rate 48% · n 32 calls across 10 quarters" data-tip-zh="方向胜率 48% · 32 次调仓 / 10 个季度">49.6</span></td>
+      <td><span class="num" data-tip-en="n 51 new positions tracked · median next-q excess +3%" data-tip-zh="51 个新仓被追踪 · 下季中位超额 +3%">29%</span></td>
+      <td><span class="num" style="color:var(--down)">5</span></td>
+    </tr><tr style=&#34;opacity:.6&#34;>
+      <td class="l rk num">8</td>
+      <td class="l"><a class="fund-link" href="fund_corvex.html">corvex</a> <span class="sub">(<span class="l-en">excluded from boards</span><span class="l-zh">已排除出榜</span>)</span>
+      </td>
+      <td><span class="ftier fade"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
+      <td><span class="fsc-bar"><i style="width:53.8%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 53.8 · consistency 27.3 · durability 49.4 · sell 96.3 · n penalty 1.0" data-tip-zh="优势 53.8 · 一致性 27.3 · 持久性 49.4 · 卖出 96.3 · n惩罚 1.0">53.8</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 25</span></td>
+      <td><span class="num r-pos">+1%</span> <span class="sub">n 108</span></td>
+      <td><span class="num" data-tip-en="hit rate 47% · n 70 calls across 11 quarters" data-tip-zh="方向胜率 47% · 70 次调仓 / 11 个季度">47.7</span></td>
+      <td><span class="num" data-tip-en="n 67 new positions tracked · median next-q excess +0%" data-tip-zh="67 个新仓被追踪 · 下季中位超额 +0%">8%</span></td>
+      <td><span class="num" style="color:var(--down)">4</span></td>
+    </tr><tr >
+      <td class="l rk num">9</td>
+      <td class="l"><a class="fund-link" href="fund_duquesne.html">duquesne</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:50.4%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 50.0 · consistency 41.7 · durability 88.2 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 50.0 · 一致性 41.7 · 持久性 88.2 · 卖出 0.0 · n惩罚 1.0">50.4</span></td>
+      <td><span class="num r-neg">-0%</span> <span class="sub">n 114</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 147</span></td>
+      <td><span class="num" data-tip-en="hit rate 46% · n 84 calls across 11 quarters" data-tip-zh="方向胜率 46% · 84 次调仓 / 11 个季度">37.0</span></td>
+      <td><span class="num" data-tip-en="n 280 new positions tracked · median next-q excess -0%" data-tip-zh="280 个新仓被追踪 · 下季中位超额 -0%">15%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">10</td>
+      <td class="l"><a class="fund-link" href="fund_giverny.html">giverny</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:50.3%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 64.6 · consistency 36.4 · durability 68.7 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 64.6 · 一致性 36.4 · 持久性 68.7 · 卖出 0.0 · n惩罚 1.0">50.3</span></td>
+      <td><span class="num r-pos">+3%</span> <span class="sub">n 15</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 293</span></td>
+      <td><span class="num" data-tip-en="hit rate 65% · n 39 calls across 11 quarters" data-tip-zh="方向胜率 65% · 39 次调仓 / 11 个季度">59.1</span></td>
+      <td><span class="num" data-tip-en="n 36 new positions tracked · median next-q excess +3%" data-tip-zh="36 个新仓被追踪 · 下季中位超额 +3%">17%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">11</td>
+      <td class="l"><a class="fund-link" href="fund_egerton.html">egerton</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:44.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 22.3 · consistency 16.7 · durability 84.4 · sell 75.1 · n penalty 1.0" data-tip-zh="优势 22.3 · 一致性 16.7 · 持久性 84.4 · 卖出 75.1 · n惩罚 1.0">44.6</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 23</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 129</span></td>
+      <td><span class="num" data-tip-en="hit rate 47% · n 70 calls across 11 quarters" data-tip-zh="方向胜率 47% · 70 次调仓 / 11 个季度">38.9</span></td>
+      <td><span class="num" data-tip-en="n 52 new positions tracked · median next-q excess +2%" data-tip-zh="52 个新仓被追踪 · 下季中位超额 +2%">15%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">12</td>
+      <td class="l"><a class="fund-link" href="fund_pershing.html">pershing</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:43.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 29.3 · consistency 50.0 · durability 27.7 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 29.3 · 一致性 50.0 · 持久性 27.7 · 卖出 100.0 · n惩罚 1.0">43.6</span></td>
+      <td><span class="num r-neg">-9%</span> <span class="sub">n 4</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 53</span></td>
+      <td><span class="num" data-tip-en="hit rate 61% · n 37 calls across 11 quarters" data-tip-zh="方向胜率 61% · 37 次调仓 / 11 个季度">56.9</span></td>
+      <td><span class="num" data-tip-en="n 10 new positions tracked · median next-q excess -9%" data-tip-zh="10 个新仓被追踪 · 下季中位超额 -9%">30%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">13</td>
+      <td class="l"><a class="fund-link" href="fund_dragoneer.html">dragoneer</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:43.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 18.7 · consistency 8.3 · durability 77.8 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 18.7 · 一致性 8.3 · 持久性 77.8 · 卖出 100.0 · n惩罚 1.0">43.6</span></td>
+      <td><span class="num r-neg">-0%</span> <span class="sub">n 22</span></td>
+      <td><span class="num r-neg">-0%</span> <span class="sub">n 117</span></td>
+      <td><span class="num" data-tip-en="hit rate 47% · n 41 calls across 11 quarters" data-tip-zh="方向胜率 47% · 41 次调仓 / 11 个季度">61.8</span></td>
+      <td><span class="num" data-tip-en="n 43 new positions tracked · median next-q excess -0%" data-tip-zh="43 个新仓被追踪 · 下季中位超额 -0%">19%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">14</td>
+      <td class="l"><a class="fund-link" href="fund_d1capital.html">d1capital</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:43.2%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 58.5 · consistency 16.7 · durability 62.0 · sell 6.5 · n penalty 1.0" data-tip-zh="优势 58.5 · 一致性 16.7 · 持久性 62.0 · 卖出 6.5 · n惩罚 1.0">43.2</span></td>
+      <td><span class="num r-pos">+1%</span> <span class="sub">n 64</span></td>
+      <td><span class="num r-neg">-2%</span> <span class="sub">n 133</span></td>
+      <td><span class="num" data-tip-en="hit rate 49% · n 76 calls across 11 quarters" data-tip-zh="方向胜率 49% · 76 次调仓 / 11 个季度">44.9</span></td>
+      <td><span class="num" data-tip-en="n 130 new positions tracked · median next-q excess +1%" data-tip-zh="130 个新仓被追踪 · 下季中位超额 +1%">21%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">15</td>
+      <td class="l"><a class="fund-link" href="fund_valueact.html">valueact</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:40.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 53.0 · consistency 10.0 · durability 9.7 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 53.0 · 一致性 10.0 · 持久性 9.7 · 卖出 100.0 · n惩罚 1.0">40.6</span></td>
+      <td><span class="num r-pos">+6%</span> <span class="sub">n 12</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 59</span></td>
+      <td><span class="num" data-tip-en="hit rate 32% · n 48 calls across 11 quarters" data-tip-zh="方向胜率 32% · 48 次调仓 / 11 个季度">20.6</span></td>
+      <td><span class="num" data-tip-en="n 27 new positions tracked · median next-q excess +6%" data-tip-zh="27 个新仓被追踪 · 下季中位超额 +6%">18%</span></td>
+      <td></td>
+    </tr><tr style=&#34;opacity:.6&#34;>
+      <td class="l rk num">16</td>
+      <td class="l"><a class="fund-link" href="fund_lonepine.html">lonepine</a> <span class="sub">(<span class="l-en">excluded from boards</span><span class="l-zh">已排除出榜</span>)</span>
+      </td>
+      <td><span class="ftier fade"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
+      <td><span class="fsc-bar"><i style="width:40.2%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 55.2 · consistency 8.3 · durability 65.8 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 55.2 · 一致性 8.3 · 持久性 65.8 · 卖出 0.0 · n惩罚 1.0">40.2</span></td>
+      <td><span class="num r-neg">-4%</span> <span class="sub">n 45</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 157</span></td>
+      <td><span class="num" data-tip-en="hit rate 56% · n 67 calls across 11 quarters" data-tip-zh="方向胜率 56% · 67 次调仓 / 11 个季度">58.7</span></td>
+      <td><span class="num" data-tip-en="n 68 new positions tracked · median next-q excess -4%" data-tip-zh="68 个新仓被追踪 · 下季中位超额 -4%">21%</span></td>
+      <td><span class="num" style="color:var(--down)">8</span></td>
+    </tr><tr >
+      <td class="l rk num">17</td>
+      <td class="l"><a class="fund-link" href="fund_elliott.html">elliott</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:39.1%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 43.2 · consistency 58.3 · durability 40.7 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 43.2 · 一致性 58.3 · 持久性 40.7 · 卖出 0.0 · n惩罚 1.0">39.1</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 49</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 141</span></td>
+      <td><span class="num" data-tip-en="hit rate 41% · n 65 calls across 11 quarters" data-tip-zh="方向胜率 41% · 65 次调仓 / 11 个季度">19.0</span></td>
+      <td><span class="num" data-tip-en="n 93 new positions tracked · median next-q excess +0%" data-tip-zh="93 个新仓被追踪 · 下季中位超额 +0%">20%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">18</td>
+      <td class="l"><a class="fund-link" href="fund_oaktree.html">oaktree</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:37.5%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 50.0 · consistency 25.0 · durability 50.0 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 50.0 · 一致性 25.0 · 持久性 50.0 · 卖出 0.0 · n惩罚 1.0">37.5</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 32</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 80</span></td>
+      <td><span class="num" data-tip-en="hit rate 48% · n 69 calls across 11 quarters" data-tip-zh="方向胜率 48% · 69 次调仓 / 11 个季度">27.3</span></td>
+      <td><span class="num" data-tip-en="n 88 new positions tracked · median next-q excess +2%" data-tip-zh="88 个新仓被追踪 · 下季中位超额 +2%">9%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">19</td>
+      <td class="l"><a class="fund-link" href="fund_pabrai.html">pabrai</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:35.8%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 32.9 · consistency 50.0 · durability 98.4 · sell 0.0 · n penalty 0.75" data-tip-zh="优势 32.9 · 一致性 50.0 · 持久性 98.4 · 卖出 0.0 · n惩罚 0.75">35.8</span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="num" data-tip-en="hit rate 28% · n 13 calls across 5 quarters" data-tip-zh="方向胜率 28% · 13 次调仓 / 5 个季度">6.9</span></td>
+      <td><span class="num" data-tip-en="n 7 new positions tracked · median next-q excess —" data-tip-zh="7 个新仓被追踪 · 下季中位超额 —">0%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">20</td>
+      <td class="l"><a class="fund-link" href="fund_bakerbros.html">bakerbros</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:34.8%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 53.2 · consistency 66.7 · durability 0.6 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 53.2 · 一致性 66.7 · 持久性 0.6 · 卖出 0.0 · n惩罚 1.0">34.8</span></td>
+      <td><span class="num r-neg">-25%</span> <span class="sub">n 3</span></td>
+      <td><span class="num r-pos">+1%</span> <span class="sub">n 22</span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="num" data-tip-en="n 97 new positions tracked · median next-q excess -25%" data-tip-zh="97 个新仓被追踪 · 下季中位超额 -25%">12%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">21</td>
+      <td class="l"><a class="fund-link" href="fund_thirdpoint.html">thirdpoint</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:29.7%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 54.6 · consistency 8.3 · durability 24.9 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 54.6 · 一致性 8.3 · 持久性 24.9 · 卖出 0.0 · n惩罚 1.0">29.7</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 52</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 128</span></td>
+      <td><span class="num" data-tip-en="hit rate 49% · n 71 calls across 11 quarters" data-tip-zh="方向胜率 49% · 71 次调仓 / 11 个季度">65.4</span></td>
+      <td><span class="num" data-tip-en="n 120 new positions tracked · median next-q excess +0%" data-tip-zh="120 个新仓被追踪 · 下季中位超额 +0%">21%</span></td>
+      <td><span class="num" style="color:var(--down)">2</span></td>
+    </tr><tr >
+      <td class="l rk num">22</td>
+      <td class="l"><a class="fund-link" href="fund_kimmeridge.html">kimmeridge</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:29.2%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.0 · consistency 50.0 · durability 100.0 · sell 100.0 · n penalty 0.583" data-tip-zh="优势 0.0 · 一致性 50.0 · 持久性 100.0 · 卖出 100.0 · n惩罚 0.583">29.2</span></td>
+      <td><span class="num r-pos">+22%</span> <span class="sub">n 1</span></td>
+      <td><span class="num r-pos">+5%</span> <span class="sub">n 1</span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="num" data-tip-en="n 4 new positions tracked · median next-q excess +22%" data-tip-zh="4 个新仓被追踪 · 下季中位超额 +22%">0%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">23</td>
+      <td class="l"><a class="fund-link" href="fund_baupost.html">baupost</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:28.7%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 2.3 · consistency 54.5 · durability 67.3 · sell 0.2 · n penalty 1.0" data-tip-zh="优势 2.3 · 一致性 54.5 · 持久性 67.3 · 卖出 0.2 · n惩罚 1.0">28.7</span></td>
+      <td><span class="num r-neg">-10%</span> <span class="sub">n 11</span></td>
+      <td><span class="num r-pos">+3%</span> <span class="sub">n 45</span></td>
+      <td><span class="num" data-tip-en="hit rate 39% · n 67 calls across 11 quarters" data-tip-zh="方向胜率 39% · 67 次调仓 / 11 个季度">29.8</span></td>
+      <td><span class="num" data-tip-en="n 47 new positions tracked · median next-q excess -10%" data-tip-zh="47 个新仓被追踪 · 下季中位超额 -10%">17%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">24</td>
+      <td class="l"><a class="fund-link" href="fund_starboard.html">starboard</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:28.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 24.5 · consistency 30.0 · durability 2.6 · sell 81.5 · n penalty 1.0" data-tip-zh="优势 24.5 · 一致性 30.0 · 持久性 2.6 · 卖出 81.5 · n惩罚 1.0">28.6</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 9</span></td>
+      <td><span class="num r-neg">-0%</span> <span class="sub">n 65</span></td>
+      <td><span class="num" data-tip-en="hit rate 37% · n 50 calls across 11 quarters" data-tip-zh="方向胜率 37% · 50 次调仓 / 11 个季度">32.0</span></td>
+      <td><span class="num" data-tip-en="n 26 new positions tracked · median next-q excess -1%" data-tip-zh="26 个新仓被追踪 · 下季中位超额 -1%">12%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">25</td>
+      <td class="l"><a class="fund-link" href="fund_viking.html">viking</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:27.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 21.6 · consistency 8.3 · durability 9.3 · sell 99.6 · n penalty 1.0" data-tip-zh="优势 21.6 · 一致性 8.3 · 持久性 9.3 · 卖出 99.6 · n惩罚 1.0">27.6</span></td>
+      <td><span class="num r-neg">-2%</span> <span class="sub">n 117</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 301</span></td>
+      <td><span class="num" data-tip-en="hit rate 54% · n 62 calls across 11 quarters" data-tip-zh="方向胜率 54% · 62 次调仓 / 11 个季度">70.7</span></td>
+      <td><span class="num" data-tip-en="n 234 new positions tracked · median next-q excess -2%" data-tip-zh="234 个新仓被追踪 · 下季中位超额 -2%">17%</span></td>
+      <td></td>
+    </tr><tr style=&#34;opacity:.6&#34;>
+      <td class="l rk num">26</td>
+      <td class="l"><a class="fund-link" href="fund_dorsey.html">dorsey</a> <span class="sub">(<span class="l-en">excluded from boards</span><span class="l-zh">已排除出榜</span>)</span>
+      </td>
+      <td><span class="ftier fade"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
+      <td><span class="fsc-bar"><i style="width:27.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 20.4 · consistency 20.0 · durability 1.5 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 20.4 · 一致性 20.0 · 持久性 1.5 · 卖出 100.0 · n惩罚 1.0">27.6</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 4</span></td>
+      <td><span class="num r-neg">-2%</span> <span class="sub">n 50</span></td>
+      <td><span class="num" data-tip-en="hit rate 37% · n 43 calls across 11 quarters" data-tip-zh="方向胜率 37% · 43 次调仓 / 11 个季度">48.2</span></td>
+      <td><span class="num" data-tip-en="n 13 new positions tracked · median next-q excess +2%" data-tip-zh="13 个新仓被追踪 · 下季中位超额 +2%">15%</span></td>
+      <td><span class="num" style="color:var(--down)">4</span></td>
+    </tr><tr >
+      <td class="l rk num">27</td>
+      <td class="l"><a class="fund-link" href="fund_engaged.html">engaged</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:26.0%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.5 · consistency 50.0 · durability 3.3 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 0.5 · 一致性 50.0 · 持久性 3.3 · 卖出 100.0 · n惩罚 1.0">26.0</span></td>
+      <td><span class="num r-pos">+31%</span> <span class="sub">n 2</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 1</span></td>
+      <td><span class="num" data-tip-en="hit rate 45% · n 43 calls across 11 quarters" data-tip-zh="方向胜率 45% · 43 次调仓 / 11 个季度">55.1</span></td>
+      <td><span class="num" data-tip-en="n 16 new positions tracked · median next-q excess +31%" data-tip-zh="16 个新仓被追踪 · 下季中位超额 +31%">6%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">28</td>
+      <td class="l"><a class="fund-link" href="fund_basswood.html">basswood</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:25.5%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 9.4 · consistency 41.7 · durability 41.1 · sell 20.6 · n penalty 1.0" data-tip-zh="优势 9.4 · 一致性 41.7 · 持久性 41.1 · 卖出 20.6 · n惩罚 1.0">25.5</span></td>
+      <td><span class="num r-neg">-3%</span> <span class="sub">n 16</span></td>
+      <td><span class="num r-neg">-2%</span> <span class="sub">n 177</span></td>
+      <td><span class="num" data-tip-en="hit rate 60% · n 20 calls across 10 quarters" data-tip-zh="方向胜率 60% · 20 次调仓 / 10 个季度">49.9</span></td>
+      <td><span class="num" data-tip-en="n 115 new positions tracked · median next-q excess -3%" data-tip-zh="115 个新仓被追踪 · 下季中位超额 -3%">4%</span></td>
+      <td></td>
+    </tr><tr style=&#34;opacity:.6&#34;>
+      <td class="l rk num">29</td>
+      <td class="l"><a class="fund-link" href="fund_altarock.html">altarock</a> <span class="sub">(<span class="l-en">excluded from boards</span><span class="l-zh">已排除出榜</span>)</span>
+      </td>
+      <td><span class="ftier fade"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
+      <td><span class="fsc-bar"><i style="width:25.3%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 23.1 · consistency 0.0 · durability 4.1 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 23.1 · 一致性 0.0 · 持久性 4.1 · 卖出 100.0 · n惩罚 1.0">25.3</span></td>
+      <td><span class="num r-pos">+9%</span> <span class="sub">n 2</span></td>
+      <td><span class="num r-neg">-2%</span> <span class="sub">n 82</span></td>
+      <td><span class="num" data-tip-en="hit rate 37% · n 39 calls across 11 quarters" data-tip-zh="方向胜率 37% · 39 次调仓 / 11 个季度">19.6</span></td>
+      <td><span class="num" data-tip-en="n 2 new positions tracked · median next-q excess +9%" data-tip-zh="2 个新仓被追踪 · 下季中位超额 +9%">0%</span></td>
+      <td><span class="num" style="color:var(--down)">6</span></td>
+    </tr><tr >
+      <td class="l rk num">30</td>
+      <td class="l"><a class="fund-link" href="fund_himalaya.html">himalaya</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:25.0%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 99.9 · consistency 50.0 · durability 0.0 · sell 0.0 · n penalty 0.5" data-tip-zh="优势 99.9 · 一致性 50.0 · 持久性 0.0 · 卖出 0.0 · n惩罚 0.5">25.0</span></td>
+      <td><span class="num r-pos">+12%</span> <span class="sub">n 1</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 46</span></td>
+      <td><span class="num" data-tip-en="hit rate 52% · n 30 calls across 11 quarters" data-tip-zh="方向胜率 52% · 30 次调仓 / 11 个季度">33.4</span></td>
+      <td><span class="num" data-tip-en="n 9 new positions tracked · median next-q excess +12%" data-tip-zh="9 个新仓被追踪 · 下季中位超额 +12%">11%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">31</td>
+      <td class="l"><a class="fund-link" href="fund_ako.html">ako</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:24.8%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 16.0 · consistency 16.7 · durability 0.0 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 16.0 · 一致性 16.7 · 持久性 0.0 · 卖出 100.0 · n惩罚 1.0">24.8</span></td>
+      <td><span class="num r-neg">-11%</span> <span class="sub">n 7</span></td>
+      <td><span class="num r-neg">-2%</span> <span class="sub">n 142</span></td>
+      <td><span class="num" data-tip-en="hit rate 46% · n 51 calls across 11 quarters" data-tip-zh="方向胜率 46% · 51 次调仓 / 11 个季度">60.8</span></td>
+      <td><span class="num" data-tip-en="n 23 new positions tracked · median next-q excess -11%" data-tip-zh="23 个新仓被追踪 · 下季中位超额 -11%">9%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">32</td>
+      <td class="l"><a class="fund-link" href="fund_greenlea.html">greenlea</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:23.3%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.0 · consistency 50.0 · durability 99.8 · sell 0.1 · n penalty 0.667" data-tip-zh="优势 0.0 · 一致性 50.0 · 持久性 99.8 · 卖出 0.1 · n惩罚 0.667">23.3</span></td>
+      <td><span class="num r-pos">+53%</span> <span class="sub">n 1</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 46</span></td>
+      <td><span class="num" data-tip-en="hit rate 45% · n 30 calls across 11 quarters" data-tip-zh="方向胜率 45% · 30 次调仓 / 11 个季度">46.7</span></td>
+      <td><span class="num" data-tip-en="n 5 new positions tracked · median next-q excess +53%" data-tip-zh="5 个新仓被追踪 · 下季中位超额 +53%">20%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">33</td>
+      <td class="l"><a class="fund-link" href="fund_durable.html">durable</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:23.2%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 7.8 · consistency 25.0 · durability 0.3 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 7.8 · 一致性 25.0 · 持久性 0.3 · 卖出 100.0 · n惩罚 1.0">23.2</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 29</span></td>
+      <td><span class="num r-neg">-4%</span> <span class="sub">n 195</span></td>
+      <td><span class="num" data-tip-en="hit rate 61% · n 39 calls across 11 quarters" data-tip-zh="方向胜率 61% · 39 次调仓 / 11 个季度">48.3</span></td>
+      <td><span class="num" data-tip-en="n 75 new positions tracked · median next-q excess +0%" data-tip-zh="75 个新仓被追踪 · 下季中位超额 +0%">25%</span></td>
+      <td></td>
+    </tr><tr style=&#34;opacity:.6&#34;>
+      <td class="l rk num">34</td>
+      <td class="l"><a class="fund-link" href="fund_jana.html">jana</a> <span class="sub">(<span class="l-en">excluded from boards</span><span class="l-zh">已排除出榜</span>)</span>
+      </td>
+      <td><span class="ftier fade"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
+      <td><span class="fsc-bar"><i style="width:22.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 3.7 · consistency 0.0 · durability 24.5 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 3.7 · 一致性 0.0 · 持久性 24.5 · 卖出 100.0 · n惩罚 1.0">22.6</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 4</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 27</span></td>
+      <td><span class="num" data-tip-en="hit rate 36% · n 38 calls across 9 quarters" data-tip-zh="方向胜率 36% · 38 次调仓 / 9 个季度">29.1</span></td>
+      <td><span class="num" data-tip-en="n 14 new positions tracked · median next-q excess -1%" data-tip-zh="14 个新仓被追踪 · 下季中位超额 -1%">21%</span></td>
+      <td><span class="num" style="color:var(--down)">6</span></td>
+    </tr><tr >
+      <td class="l rk num">35</td>
+      <td class="l"><a class="fund-link" href="fund_soros.html">soros</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:20.0%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 24.3 · consistency 16.7 · durability 26.1 · sell 2.4 · n penalty 1.0" data-tip-zh="优势 24.3 · 一致性 16.7 · 持久性 26.1 · 卖出 2.4 · n惩罚 1.0">20.0</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 224</span></td>
+      <td><span class="num r-neg">-0%</span> <span class="sub">n 379</span></td>
+      <td><span class="num" data-tip-en="hit rate 54% · n 68 calls across 11 quarters" data-tip-zh="方向胜率 54% · 68 次调仓 / 11 个季度">46.1</span></td>
+      <td><span class="num" data-tip-en="n 764 new positions tracked · median next-q excess -1%" data-tip-zh="764 个新仓被追踪 · 下季中位超额 -1%">10%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">36</td>
+      <td class="l"><a class="fund-link" href="fund_akre.html">akre</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:20.0%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.0 · consistency 25.0 · durability 0.0 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 0.0 · 一致性 25.0 · 持久性 0.0 · 卖出 100.0 · n惩罚 1.0">20.0</span></td>
+      <td><span class="num r-pos">+16%</span> <span class="sub">n 2</span></td>
+      <td><span class="num r-neg">-5%</span> <span class="sub">n 94</span></td>
+      <td><span class="num" data-tip-en="hit rate 45% · n 27 calls across 9 quarters" data-tip-zh="方向胜率 45% · 27 次调仓 / 9 个季度">58.0</span></td>
+      <td><span class="num" data-tip-en="n 9 new positions tracked · median next-q excess +16%" data-tip-zh="9 个新仓被追踪 · 下季中位超额 +16%">11%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">37</td>
+      <td class="l"><a class="fund-link" href="fund_fairholme.html">fairholme</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:19.9%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.8 · consistency 80.0 · durability 14.1 · sell 0.2 · n penalty 1.0" data-tip-zh="优势 0.8 · 一致性 80.0 · 持久性 14.1 · 卖出 0.2 · n惩罚 1.0">19.9</span></td>
+      <td><span class="num r-pos">+1%</span> <span class="sub">n 4</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 27</span></td>
+      <td><span class="num" data-tip-en="hit rate 27% · n 15 calls across 7 quarters" data-tip-zh="方向胜率 27% · 15 次调仓 / 7 个季度">20.1</span></td>
+      <td><span class="num" data-tip-en="n 17 new positions tracked · median next-q excess +1%" data-tip-zh="17 个新仓被追踪 · 下季中位超额 +1%">6%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">38</td>
+      <td class="l"><a class="fund-link" href="fund_polen.html">polen</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:19.1%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 6.0 · consistency 8.3 · durability 0.2 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 6.0 · 一致性 8.3 · 持久性 0.2 · 卖出 100.0 · n惩罚 1.0">19.1</span></td>
+      <td><span class="num r-pos">+0%</span> <span class="sub">n 96</span></td>
+      <td><span class="num r-neg">-4%</span> <span class="sub">n 517</span></td>
+      <td><span class="num" data-tip-en="hit rate 44% · n 34 calls across 11 quarters" data-tip-zh="方向胜率 44% · 34 次调仓 / 11 个季度">12.9</span></td>
+      <td><span class="num" data-tip-en="n 381 new positions tracked · median next-q excess +0%" data-tip-zh="381 个新仓被追踪 · 下季中位超额 +0%">7%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">39</td>
+      <td class="l"><a class="fund-link" href="fund_berkshire.html">berkshire</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:17.8%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.7 · consistency 12.5 · durability 0.0 · sell 100.0 · n penalty 1.0" data-tip-zh="优势 0.7 · 一致性 12.5 · 持久性 0.0 · 卖出 100.0 · n惩罚 1.0">17.8</span></td>
+      <td><span class="num r-pos">+3%</span> <span class="sub">n 9</span></td>
+      <td><span class="num r-neg">-2%</span> <span class="sub">n 205</span></td>
+      <td><span class="num" data-tip-en="hit rate 57% · n 28 calls across 11 quarters" data-tip-zh="方向胜率 57% · 28 次调仓 / 11 个季度">37.4</span></td>
+      <td><span class="num" data-tip-en="n 30 new positions tracked · median next-q excess +3%" data-tip-zh="30 个新仓被追踪 · 下季中位超额 +3%">3%</span></td>
+      <td><span class="num" style="color:var(--down)">2</span></td>
+    </tr><tr >
+      <td class="l rk num">40</td>
+      <td class="l"><a class="fund-link" href="fund_tci.html">tci</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:17.4%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 7.8 · consistency 60.0 · durability 8.9 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 7.8 · 一致性 60.0 · 持久性 8.9 · 卖出 0.0 · n惩罚 1.0">17.4</span></td>
+      <td><span class="num r-pos">+4%</span> <span class="sub">n 2</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 63</span></td>
+      <td><span class="num" data-tip-en="hit rate 33% · n 37 calls across 11 quarters" data-tip-zh="方向胜率 33% · 37 次调仓 / 11 个季度">30.0</span></td>
+      <td><span class="num" data-tip-en="n 4 new positions tracked · median next-q excess +4%" data-tip-zh="4 个新仓被追踪 · 下季中位超额 +4%">25%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">41</td>
+      <td class="l"><a class="fund-link" href="fund_sachem.html">sachem</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:16.4%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 3.9 · consistency 50.0 · durability 19.4 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 3.9 · 一致性 50.0 · 持久性 19.4 · 卖出 0.0 · n惩罚 1.0">16.4</span></td>
+      <td><span class="num r-neg">-5%</span> <span class="sub">n 18</span></td>
+      <td><span class="num r-pos">+2%</span> <span class="sub">n 57</span></td>
+      <td><span class="num" data-tip-en="hit rate 51% · n 64 calls across 11 quarters" data-tip-zh="方向胜率 51% · 64 次调仓 / 11 个季度">58.0</span></td>
+      <td><span class="num" data-tip-en="n 54 new positions tracked · median next-q excess -5%" data-tip-zh="54 个新仓被追踪 · 下季中位超额 -5%">26%</span></td>
+      <td><span class="num" style="color:var(--down)">2</span></td>
+    </tr><tr >
+      <td class="l rk num">42</td>
+      <td class="l"><a class="fund-link" href="fund_casdin.html">casdin</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:15.6%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.2 · consistency 77.8 · durability 0.0 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 0.2 · 一致性 77.8 · 持久性 0.0 · 卖出 0.0 · n惩罚 1.0">15.6</span></td>
+      <td><span class="num r-neg">-11%</span> <span class="sub">n 10</span></td>
+      <td><span class="num r-pos">+1%</span> <span class="sub">n 40</span></td>
+      <td><span class="num" data-tip-en="hit rate 57% · n 12 calls across 6 quarters" data-tip-zh="方向胜率 57% · 12 次调仓 / 6 个季度">56.0</span></td>
+      <td><span class="num" data-tip-en="n 51 new positions tracked · median next-q excess -11%" data-tip-zh="51 个新仓被追踪 · 下季中位超额 -11%">8%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">43</td>
+      <td class="l"><a class="fund-link" href="fund_coatue.html">coatue</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:15.1%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 16.0 · consistency 16.7 · durability 0.7 · sell 34.7 · n penalty 1.0" data-tip-zh="优势 16.0 · 一致性 16.7 · 持久性 0.7 · 卖出 34.7 · n惩罚 1.0">15.1</span></td>
+      <td><span class="num r-neg">-3%</span> <span class="sub">n 101</span></td>
+      <td><span class="num r-neg">-0%</span> <span class="sub">n 437</span></td>
+      <td><span class="num" data-tip-en="hit rate 48% · n 58 calls across 11 quarters" data-tip-zh="方向胜率 48% · 58 次调仓 / 11 个季度">33.6</span></td>
+      <td><span class="num" data-tip-en="n 195 new positions tracked · median next-q excess -3%" data-tip-zh="195 个新仓被追踪 · 下季中位超额 -3%">19%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">44</td>
+      <td class="l"><a class="fund-link" href="fund_trian.html">trian</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:14.4%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.0 · consistency 50.0 · durability 0.0 · sell 97.8 · n penalty 0.583" data-tip-zh="优势 0.0 · 一致性 50.0 · 持久性 0.0 · 卖出 97.8 · n惩罚 0.583">14.4</span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="num r-pos">+6%</span> <span class="sub">n 17</span></td>
+      <td><span class="num" data-tip-en="hit rate 44% · n 40 calls across 11 quarters" data-tip-zh="方向胜率 44% · 40 次调仓 / 11 个季度">42.4</span></td>
+      <td><span class="num" data-tip-en="n 6 new positions tracked · median next-q excess —" data-tip-zh="6 个新仓被追踪 · 下季中位超额 —">0%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr style=&#34;opacity:.6&#34;>
+      <td class="l rk num">45</td>
+      <td class="l"><a class="fund-link" href="fund_scion.html">scion</a> <span class="sub">(<span class="l-en">excluded from boards</span><span class="l-zh">已排除出榜</span>)</span>
+      </td>
+      <td><span class="ftier fade"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></td>
+      <td><span class="fsc-bar"><i style="width:14.4%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 8.9 · consistency 8.3 · durability 36.5 · sell 0.1 · n penalty 1.0" data-tip-zh="优势 8.9 · 一致性 8.3 · 持久性 36.5 · 卖出 0.1 · n惩罚 1.0">14.4</span></td>
+      <td><span class="num r-neg">-1%</span> <span class="sub">n 40</span></td>
+      <td><span class="num r-neg">-5%</span> <span class="sub">n 27</span></td>
+      <td><span class="num" data-tip-en="hit rate 38% · n 64 calls across 12 quarters" data-tip-zh="方向胜率 38% · 64 次调仓 / 12 个季度">29.8</span></td>
+      <td><span class="num" data-tip-en="n 99 new positions tracked · median next-q excess -1%" data-tip-zh="99 个新仓被追踪 · 下季中位超额 -1%">15%</span></td>
+      <td><span class="num" style="color:var(--down)">9</span></td>
+    </tr><tr >
+      <td class="l rk num">46</td>
+      <td class="l"><a class="fund-link" href="fund_punchcard.html">punchcard</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:10.4%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.0 · consistency 50.0 · durability 0.0 · sell 100.0 · n penalty 0.417" data-tip-zh="优势 0.0 · 一致性 50.0 · 持久性 0.0 · 卖出 100.0 · n惩罚 0.417">10.4</span></td>
+      <td><span class="num r-neg">-3%</span> <span class="sub">n 3</span></td>
+      <td><span class="num r-neg">-5%</span> <span class="sub">n 10</span></td>
+      <td><span class="num" data-tip-en="hit rate 57% · n 18 calls across 8 quarters" data-tip-zh="方向胜率 57% · 18 次调仓 / 8 个季度">51.4</span></td>
+      <td><span class="num" data-tip-en="n 5 new positions tracked · median next-q excess -3%" data-tip-zh="5 个新仓被追踪 · 下季中位超额 -3%">20%</span></td>
+      <td><span class="num" style="color:var(--down)">1</span></td>
+    </tr><tr >
+      <td class="l rk num">47</td>
+      <td class="l"><a class="fund-link" href="fund_rtw.html">rtw</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:10.1%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 5.4 · consistency 33.3 · durability 4.0 · sell 1.7 · n penalty 1.0" data-tip-zh="优势 5.4 · 一致性 33.3 · 持久性 4.0 · 卖出 1.7 · n惩罚 1.0">10.1</span></td>
+      <td><span class="num r-neg">-4%</span> <span class="sub">n 16</span></td>
+      <td><span class="num r-neg">-5%</span> <span class="sub">n 30</span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="num" data-tip-en="n 132 new positions tracked · median next-q excess -4%" data-tip-zh="132 个新仓被追踪 · 下季中位超额 -4%">8%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">48</td>
+      <td class="l"><a class="fund-link" href="fund_racapital.html">racapital</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:8.9%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.0 · consistency 44.4 · durability 0.0 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 0.0 · 一致性 44.4 · 持久性 0.0 · 卖出 0.0 · n惩罚 1.0">8.9</span></td>
+      <td><span class="num r-neg">-21%</span> <span class="sub">n 4</span></td>
+      <td><span class="num r-neg">-8%</span> <span class="sub">n 28</span></td>
+      <td><span class="num" data-tip-en="hit rate 32% · n 4 calls across 2 quarters" data-tip-zh="方向胜率 32% · 4 次调仓 / 2 个季度">75.1</span></td>
+      <td><span class="num" data-tip-en="n 146 new positions tracked · median next-q excess -21%" data-tip-zh="146 个新仓被追踪 · 下季中位超额 -21%">8%</span></td>
+      <td></td>
+    </tr><tr >
+      <td class="l rk num">49</td>
+      <td class="l"><a class="fund-link" href="fund_perceptive.html">perceptive</a>
+      </td>
+      <td><span class="ftier watch"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></td>
+      <td><span class="fsc-bar"><i style="width:6.0%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge 0.8 · consistency 25.0 · durability 2.8 · sell 0.0 · n penalty 1.0" data-tip-zh="优势 0.8 · 一致性 25.0 · 持久性 2.8 · 卖出 0.0 · n惩罚 1.0">6.0</span></td>
+      <td><span class="num r-neg">-11%</span> <span class="sub">n 22</span></td>
+      <td><span class="num r-neg">-5%</span> <span class="sub">n 54</span></td>
+      <td><span class="num" data-tip-en="hit rate 56% · n 14 calls across 8 quarters" data-tip-zh="方向胜率 56% · 14 次调仓 / 8 个季度">77.4</span></td>
+      <td><span class="num" data-tip-en="n 222 new positions tracked · median next-q excess -11%" data-tip-zh="222 个新仓被追踪 · 下季中位超额 -11%">10%</span></td>
+      <td></td>
+    </tr><tr>
+      <td class="l rk num">50</td>
+      <td class="l"><a class="fund-link" href="fund_aquamarine.html">aquamarine</a></td>
+      <td><span class="ftier insufficient"><span class="l-en">LOW DATA</span><span class="l-zh">数据不足</span></span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="num r-pos">+1%</span> <span class="sub">n 56</span></td>
+      <td><span class="num" data-tip-en="hit rate 47% · n 18 calls across 8 quarters" data-tip-zh="方向胜率 47% · 18 次调仓 / 8 个季度">29.4</span></td>
+      <td><span class="sub">—</span></td>
+      <td></td>
+    </tr><tr>
+      <td class="l rk num">51</td>
+      <td class="l"><a class="fund-link" href="fund_mudrick.html">mudrick</a></td>
+      <td><span class="ftier insufficient"><span class="l-en">LOW DATA</span><span class="l-zh">数据不足</span></span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="sub">—</span></td>
+      <td><span class="sub" data-tip-en="hit rate 0% · n 1 calls — insufficient for score" data-tip-zh="方向胜率 0% · 1 次调仓 — 样本不足">n 1</span></td>
+      <td><span class="sub">—</span></td>
+      <td></td>
+    </tr></tbody>
+</table>
+</div>
+
+
+
+<div class="sm-sec">
+  <h2 style="font-size:14px"><span class="l-en">Best Buys</span><span class="l-zh">最佳买入</span></h2>
+  <span class="h-note"><span class="l-en">top initiations weighted by conviction, quality, confluence, freshness — FADE funds excluded</span><span class="l-zh">按信念·质量·共识·新鲜度加权的最佳新建仓——已淡出基金排除</span></span>
+</div>
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">#</th>
+    <th class="l"><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+    <th class="l"><span class="l-en">Sector</span><span class="l-zh">行业</span></th>
+    <th><span class="l-en">Cap</span><span class="l-zh">市值</span></th>
+    <th><span class="l-en">Desk score</span><span class="l-zh">台面分</span></th>
+    <th class="l"><span class="l-en">Funds</span><span class="l-zh">基金</span></th>
+    <th><span class="l-en">Conviction</span><span class="l-zh">信念</span></th>
+    <th class="num"><span class="l-en">n</span><span class="l-zh">n</span></th>
+    <th><span class="l-en">Filed</span><span class="l-zh">申报</span></th>
+    <th><span class="l-en">Since filing</span><span class="l-zh">申报后</span></th>
+  </tr></thead>
+  <tbody><tr class="fboard-row-accent">
+      <td class="l rk num">1</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#META"><span class="tk">META</span></a>
+        <div class="sub">META PLATFORMS INC</div>
+      </td>
+      <td class="l sub">Communication Services</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:90.31%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.86 · confluence 1.0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.86 · 共识 1.0 · 新鲜度 0.45">90.3</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Third Point (Loeb) · <span class="act-pill new">new</span> 2.5%</span><span class="mchip ftier follow" style="font-size:9px">Tiger Global (Coleman) · <span class="act-pill add">add</span> 0.8%</span><span class="mchip ftier watch" style="font-size:9px">Viking Global (Halvorsen) · <span class="act-pill new">new</span> 1.7%</span><span class="mchip ftier watch" style="font-size:9px">Polen Capital Management · <span class="act-pill new">new</span> 1.9%</span><span class="mchip ftier watch" style="font-size:9px">Dragoneer Investment Group · <span class="act-pill new">new</span> 13.6%</span></td>
+      <td class="num" data-tip-en="max incr pct 13.58% · sum 20.48% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 13.58% · 合计 20.48% · 新建仓=占仓位%, 加仓=新增切片">13.6%</td>
+      <td class="num">5</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">2</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#TSM"><span class="tk">TSM</span></a>
+        <div class="sub">TAIWAN SEMICONDUCTOR MANUFAC</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:85.6%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.87 · quality 0.86 · confluence 1.0 · freshness 0.45" data-tip-zh="信念 0.87 · 质量 0.86 · 共识 1.0 · 新鲜度 0.45">85.6</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Appaloosa (Tepper) · <span class="act-pill add">add</span> 1.1%</span><span class="mchip ftier follow" style="font-size:9px">Tiger Global (Coleman) · <span class="act-pill add">add</span> 2.7%</span><span class="mchip ftier follow" style="font-size:9px">Whale Rock Capital · <span class="act-pill add">add</span> 1.0%</span><span class="mchip ftier watch" style="font-size:9px">Light Street Capital · <span class="act-pill add">add</span> 4.3%</span><span class="mchip ftier watch" style="font-size:9px">Soros Fund Management · <span class="act-pill add">add</span> 2.5%</span></td>
+      <td class="num" data-tip-en="max incr pct 4.33% · sum 11.68% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 4.33% · 合计 11.68% · 新建仓=占仓位%, 加仓=新增切片">4.3%</td>
+      <td class="num">5</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">3</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#AMZN"><span class="tk">AMZN</span></a>
+        <div class="sub">AMAZON COM INC</div>
+      </td>
+      <td class="l sub">Consumer Cyclical</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:85.15%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.69 · confluence 1.0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.69 · 共识 1.0 · 新鲜度 0.45">85.2</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Pershing Square (Ackman) · <span class="act-pill add">add</span> 2.8%</span><span class="mchip ftier follow" style="font-size:9px">Appaloosa (Tepper) · <span class="act-pill add">add</span> 7.5%</span><span class="mchip ftier watch" style="font-size:9px">Baupost Group (Klarman) · <span class="act-pill add">add</span> 4.1%</span><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill add">add</span> 0.9%</span><span class="mchip ftier watch" style="font-size:9px">Light Street Capital · <span class="act-pill add">add</span> 2.2%</span></td>
+      <td class="num" data-tip-en="max incr pct 7.51% · sum 17.40% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 7.51% · 合计 17.40% · 新建仓=占仓位%, 加仓=新增切片">7.5%</td>
+      <td class="num">5</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">4</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#CPNG"><span class="tk">CPNG</span></a>
+        <div class="sub">COUPANG INC</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:82.95%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.79 · quality 0.86 · confluence 1.0 · freshness 0.45" data-tip-zh="信念 0.79 · 质量 0.86 · 共识 1.0 · 新鲜度 0.45">83.0</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Tiger Global (Coleman) · <span class="act-pill add">add</span> 0.7%</span><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill new">new</span> 1.9%</span><span class="mchip ftier watch" style="font-size:9px">Dragoneer Investment Group · <span class="act-pill add">add</span> 3.9%</span><span class="mchip ftier watch" style="font-size:9px">Light Street Capital · <span class="act-pill new">new</span> 3.7%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.95% · sum 10.31% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.95% · 合计 10.31% · 新建仓=占仓位%, 加仓=新增切片">3.9%</td>
+      <td class="num">4</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">5</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#GOOGL"><span class="tk">GOOGL</span></a>
+        <div class="sub">ALPHABET INC</div>
+      </td>
+      <td class="l sub">Communication Services</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:79.5%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.8 · quality 0.74 · confluence 1.0 · freshness 0.45" data-tip-zh="信念 0.8 · 质量 0.74 · 共识 1.0 · 新鲜度 0.45">79.5</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Berkshire Hathaway (Buffett) · <span class="act-pill add">add</span> 4.0%</span><span class="mchip ftier watch" style="font-size:9px">Third Point (Loeb) · <span class="act-pill new">new</span> 2.4%</span><span class="mchip ftier watch" style="font-size:9px">TCI Fund Management · <span class="act-pill new">new</span> 1.6%</span><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill new">new</span> 1.2%</span><span class="mchip ftier follow" style="font-size:9px">Whale Rock Capital · <span class="act-pill add">add</span> 2.1%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.98% · sum 11.28% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.98% · 合计 11.28% · 新建仓=占仓位%, 加仓=新增切片">4.0%</td>
+      <td class="num">5</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">6</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#NVDA"><span class="tk">NVDA</span></a>
+        <div class="sub">NVIDIA CORPORATION</div>
+      </td>
+      <td class="l sub">Technology</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:77.89%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.45 · confluence 1.0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.45 · 共识 1.0 · 新鲜度 0.45">77.9</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Egerton Capital · <span class="act-pill new">new</span> 5.2%</span><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill add">add</span> 0.7%</span><span class="mchip ftier watch" style="font-size:9px">Dragoneer Investment Group · <span class="act-pill add">add</span> 6.3%</span><span class="mchip ftier watch" style="font-size:9px">Soros Fund Management · <span class="act-pill add">add</span> 1.0%</span></td>
+      <td class="num" data-tip-en="max incr pct 6.28% · sum 13.07% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 6.28% · 合计 13.07% · 新建仓=占仓位%, 加仓=新增切片">6.3%</td>
+      <td class="num">4</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">7</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#LIN"><span class="tk">LIN</span></a>
+        <div class="sub">LINDE PLC</div>
+      </td>
+      <td class="l sub">Basic Materials</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:73.3%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.45 · confluence 0.82 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.45 · 共识 0.82 · 新鲜度 0.45">73.3</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Egerton Capital · <span class="act-pill new">new</span> 5.9%</span><span class="mchip ftier watch" style="font-size:9px">AKO Capital · <span class="act-pill add">add</span> 1.2%</span><span class="mchip ftier watch" style="font-size:9px">Soros Fund Management · <span class="act-pill new">new</span> 1.8%</span></td>
+      <td class="num" data-tip-en="max incr pct 5.88% · sum 8.81% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 5.88% · 合计 8.81% · 新建仓=占仓位%, 加仓=新增切片">5.9%</td>
+      <td class="num">3</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">8</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#UBER"><span class="tk">UBER</span></a>
+        <div class="sub">UBER TECHNOLOGIES INC</div>
+      </td>
+      <td class="l sub">Technology</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:72.23%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.69 · confluence 0.48 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.69 · 共识 0.48 · 新鲜度 0.45">72.2</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Appaloosa (Tepper) · <span class="act-pill add">add</span> 5.4%</span><span class="mchip ftier watch" style="font-size:9px">Egerton Capital · <span class="act-pill add">add</span> 1.6%</span></td>
+      <td class="num" data-tip-en="max incr pct 5.44% · sum 7.01% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 5.44% · 合计 7.01% · 新建仓=占仓位%, 加仓=新增切片">5.4%</td>
+      <td class="num">2</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">9</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#V"><span class="tk">V</span></a>
+        <div class="sub">VISA INC</div>
+      </td>
+      <td class="l sub">Financial</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:71.87%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.83 · quality 0.45 · confluence 1.0 · freshness 0.45" data-tip-zh="信念 0.83 · 质量 0.45 · 共识 1.0 · 新鲜度 0.45">71.9</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Baupost Group (Klarman) · <span class="act-pill new">new</span> 4.1%</span><span class="mchip ftier watch" style="font-size:9px">Viking Global (Halvorsen) · <span class="act-pill add">add</span> 2.0%</span><span class="mchip ftier watch" style="font-size:9px">ValueAct Capital · <span class="act-pill add">add</span> 3.2%</span><span class="mchip ftier watch" style="font-size:9px">Egerton Capital · <span class="act-pill add">add</span> 2.8%</span></td>
+      <td class="num" data-tip-en="max incr pct 4.14% · sum 12.11% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 4.14% · 合计 12.11% · 新建仓=占仓位%, 加仓=新增切片">4.1%</td>
+      <td class="num">4</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">10</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#MKSI"><span class="tk">MKSI</span></a>
+        <div class="sub">MKS INC.</div>
+      </td>
+      <td class="l sub">Information Technology</td>
+      <td><span class="cap-chip mid" data-tip-en="mid cap" data-tip-zh="mid 市值">MID</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:69.65%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.88 · quality 0.74 · confluence 0.48 · freshness 0.45" data-tip-zh="信念 0.88 · 质量 0.74 · 共识 0.48 · 新鲜度 0.45">69.7</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Whale Rock Capital · <span class="act-pill new">new</span> 3.9%</span><span class="mchip ftier watch" style="font-size:9px">Light Street Capital · <span class="act-pill add">add</span> 4.4%</span></td>
+      <td class="num" data-tip-en="max incr pct 4.42% · sum 8.30% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 4.42% · 合计 8.30% · 新建仓=占仓位%, 加仓=新增切片">4.4%</td>
+      <td class="num">2</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">11</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#AVGO"><span class="tk">AVGO</span></a>
+        <div class="sub">Broadcom Inc</div>
+      </td>
+      <td class="l sub">Technology</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:63.32%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.36 · quality 0.86 · confluence 0.82 · freshness 0.45" data-tip-zh="信念 0.36 · 质量 0.86 · 共识 0.82 · 新鲜度 0.45">63.3</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Duquesne Family Office (Druckenmiller) · <span class="act-pill new">new</span> 1.8%</span><span class="mchip ftier follow" style="font-size:9px">Tiger Global (Coleman) · <span class="act-pill add">add</span> 1.0%</span><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill add">add</span> 1.7%</span></td>
+      <td class="num" data-tip-en="max incr pct 1.80% · sum 4.48% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 1.80% · 合计 4.48% · 新建仓=占仓位%, 加仓=新增切片">1.8%</td>
+      <td class="num">3</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">12</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#MELI"><span class="tk">MELI</span></a>
+        <div class="sub">MERCADOLIBRE INC</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:63.05%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.46 · quality 0.86 · confluence 0.67 · freshness 0.45" data-tip-zh="信念 0.46 · 质量 0.86 · 共识 0.67 · 新鲜度 0.45">63.0</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Tiger Global (Coleman) · <span class="act-pill new">new</span> 1.0%</span><span class="mchip ftier watch" style="font-size:9px">Durable Capital Partners · <span class="act-pill add">add</span> 0.8%</span><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill add">add</span> 2.3%</span></td>
+      <td class="num" data-tip-en="max incr pct 2.30% · sum 4.08% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 2.30% · 合计 4.08% · 新建仓=占仓位%, 加仓=新增切片">2.3%</td>
+      <td class="num">3</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">13</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#CVNA"><span class="tk">CVNA</span></a>
+        <div class="sub">CARVANA CO</div>
+      </td>
+      <td class="l sub">Consumer Cyclical</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:62.62%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.57 · quality 0.44 · confluence 1.0 · freshness 0.45" data-tip-zh="信念 0.57 · 质量 0.44 · 共识 1.0 · 新鲜度 0.45">62.6</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Viking Global (Halvorsen) · <span class="act-pill add">add</span> 1.5%</span><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill new">new</span> 1.9%</span><span class="mchip ftier watch" style="font-size:9px">Dragoneer Investment Group · <span class="act-pill add">add</span> 2.9%</span><span class="mchip ftier watch" style="font-size:9px">Sachem Head Capital · <span class="act-pill add">add</span> 1.2%</span></td>
+      <td class="num" data-tip-en="max incr pct 2.86% · sum 7.49% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 2.86% · 合计 7.49% · 新建仓=占仓位%, 加仓=新增切片">2.9%</td>
+      <td class="num">4</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">14</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#GOOG"><span class="tk">GOOG</span></a>
+        <div class="sub">ALPHABET INC</div>
+      </td>
+      <td class="l sub">Communication Services</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:61.22%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.45 · confluence 0.33 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.45 · 共识 0.33 · 新鲜度 0.45">61.2</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">TCI Fund Management · <span class="act-pill add">add</span> 0.8%</span><span class="mchip ftier watch" style="font-size:9px">Egerton Capital · <span class="act-pill add">add</span> 7.6%</span></td>
+      <td class="num" data-tip-en="max incr pct 7.58% · sum 8.37% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 7.58% · 合计 8.37% · 新建仓=占仓位%, 加仓=新增切片">7.6%</td>
+      <td class="num">2</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="">
+      <td class="l rk num">15</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#AEIS"><span class="tk">AEIS</span></a>
+        <div class="sub">ADVANCED ENERGY INDS</div>
+      </td>
+      <td class="l sub">Information Technology</td>
+      <td><span class="cap-chip mid" data-tip-en="mid cap" data-tip-zh="mid 市值">MID</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:60.22%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.85 · quality 0.74 · confluence 0.15 · freshness 0.45" data-tip-zh="信念 0.85 · 质量 0.74 · 共识 0.15 · 新鲜度 0.45">60.2</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Whale Rock Capital · <span class="act-pill new">new</span> 4.3%</span></td>
+      <td class="num" data-tip-en="max incr pct 4.26% · sum 4.26% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 4.26% · 合计 4.26% · 新建仓=占仓位%, 加仓=新增切片">4.3%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">16</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#SPOT"><span class="tk">SPOT</span></a>
+        <div class="sub">SPOTIFY TECHNOLOGY S A</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:59.92%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.61 · quality 0.86 · confluence 0.33 · freshness 0.45" data-tip-zh="信念 0.61 · 质量 0.86 · 共识 0.33 · 新鲜度 0.45">59.9</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Tiger Global (Coleman) · <span class="act-pill add">add</span> 0.7%</span><span class="mchip ftier watch" style="font-size:9px">ValueAct Capital · <span class="act-pill new">new</span> 3.0%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.04% · sum 3.72% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.04% · 合计 3.72% · 新建仓=占仓位%, 加仓=新增切片">3.0%</td>
+      <td class="num">2</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">17</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#LRCX"><span class="tk">LRCX</span></a>
+        <div class="sub">LAM RESEARCH CORP</div>
+      </td>
+      <td class="l sub">Technology</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:57.21%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.53 · quality 0.74 · confluence 0.48 · freshness 0.45" data-tip-zh="信念 0.53 · 质量 0.74 · 共识 0.48 · 新鲜度 0.45">57.2</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Polen Capital Management · <span class="act-pill new">new</span> 1.6%</span><span class="mchip ftier follow" style="font-size:9px">Whale Rock Capital · <span class="act-pill new">new</span> 2.6%</span></td>
+      <td class="num" data-tip-en="max incr pct 2.64% · sum 4.20% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 2.64% · 合计 4.20% · 新建仓=占仓位%, 加仓=新增切片">2.6%</td>
+      <td class="num">2</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="">
+      <td class="l rk num">18</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#MSFT"><span class="tk">MSFT</span></a>
+        <div class="sub">MICROSOFT CORP</div>
+      </td>
+      <td class="l sub">Technology</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:56.34%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.44 · confluence 0.15 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.44 · 共识 0.15 · 新鲜度 0.45">56.3</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Pershing Square (Ackman) · <span class="act-pill new">new</span> 15.3%</span></td>
+      <td class="num" data-tip-en="max incr pct 15.26% · sum 15.26% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 15.26% · 合计 15.26% · 新建仓=占仓位%, 加仓=新增切片">15.3%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent">
+      <td class="l rk num">19</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#MCO"><span class="tk">MCO</span></a>
+        <div class="sub">MOODYS CORP</div>
+      </td>
+      <td class="l sub">Financial</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:52.39%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.75 · quality 0.45 · confluence 0.33 · freshness 0.45" data-tip-zh="信念 0.75 · 质量 0.45 · 共识 0.33 · 新鲜度 0.45">52.4</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Himalaya Capital (Li Lu) · <span class="act-pill new">new</span> 1.6%</span><span class="mchip ftier watch" style="font-size:9px">Egerton Capital · <span class="act-pill add">add</span> 3.7%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.74% · sum 5.35% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.74% · 合计 5.35% · 新建仓=占仓位%, 加仓=新增切片">3.7%</td>
+      <td class="num">2</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="">
+      <td class="l rk num">20</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#LW"><span class="tk">LW</span></a>
+        <div class="sub">LAMB WESTON HLDGS INC</div>
+      </td>
+      <td class="l sub">Consumer Staples</td>
+      <td><span class="cap-chip small" data-tip-en="small cap" data-tip-zh="small 市值">SMALL</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:51.84%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.29 · confluence 0.15 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.29 · 共识 0.15 · 新鲜度 0.45">51.8</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Starboard Value · <span class="act-pill new">new</span> 5.7%</span></td>
+      <td class="num" data-tip-en="max incr pct 5.65% · sum 5.65% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 5.65% · 合计 5.65% · 新建仓=占仓位%, 加仓=新增切片">5.7%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="">
+      <td class="l rk num">21</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#KMX"><span class="tk">KMX</span></a>
+        <div class="sub">CARMAX INC</div>
+      </td>
+      <td class="l sub">Consumer Discretionary</td>
+      <td><span class="cap-chip small" data-tip-en="small cap" data-tip-zh="small 市值">SMALL</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:51.84%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.29 · confluence 0.15 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.29 · 共识 0.15 · 新鲜度 0.45">51.8</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Starboard Value · <span class="act-pill new">new</span> 5.6%</span></td>
+      <td class="num" data-tip-en="max incr pct 5.64% · sum 5.64% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 5.64% · 合计 5.64% · 新建仓=占仓位%, 加仓=新增切片">5.6%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="">
+      <td class="l rk num">22</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#KKR"><span class="tk">KKR</span></a>
+        <div class="sub">KKR &amp; CO INC</div>
+      </td>
+      <td class="l sub">Financial</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:51.69%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.41 · confluence 0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.41 · 共识 0 · 新鲜度 0.45">51.7</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">ValueAct Capital · <span class="act-pill new">new</span> 5.3%</span></td>
+      <td class="num" data-tip-en="max incr pct 5.31% · sum 5.31% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 5.31% · 合计 5.31% · 新建仓=占仓位%, 加仓=新增切片">5.3%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="">
+      <td class="l rk num">23</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#QQQ"><span class="tk">QQQ</span></a>
+        <div class="sub">INVESCO QQQ TRUST SERIES 1</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:50.76%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.38 · confluence 0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.38 · 共识 0 · 新鲜度 0.45">50.8</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Oaktree Capital Management · <span class="act-pill new">new</span> 7.0%</span></td>
+      <td class="num" data-tip-en="max incr pct 7.00% · sum 7.00% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 7.00% · 合计 7.00% · 新建仓=占仓位%, 加仓=新增切片">7.0%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="">
+      <td class="l rk num">24</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#SNDK"><span class="tk">SNDK</span></a>
+        <div class="sub">SANDISK CORP</div>
+      </td>
+      <td class="l sub">Technology</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:49.97%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.6 · quality 0.69 · confluence 0.15 · freshness 0.45" data-tip-zh="信念 0.6 · 质量 0.69 · 共识 0.15 · 新鲜度 0.45">50.0</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Appaloosa (Tepper) · <span class="act-pill new">new</span> 3.0%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.01% · sum 3.01% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.01% · 合计 3.01% · 新建仓=占仓位%, 加仓=新增切片">3.0%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="">
+      <td class="l rk num">25</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#CTRA"><span class="tk">CTRA</span></a>
+        <div class="sub">COTERRA ENERGY INC</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:48.27%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.29 · confluence 0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.29 · 共识 0 · 新鲜度 0.45">48.3</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Kimmeridge Energy Management · <span class="act-pill add">add</span> 26.3%</span></td>
+      <td class="num" data-tip-en="max incr pct 26.25% · sum 26.25% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 26.25% · 合计 26.25% · 新建仓=占仓位%, 加仓=新增切片">26.3%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent" data-fold=&#34;1&#34;>
+      <td class="l rk num">26</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#TMO"><span class="tk">TMO</span></a>
+        <div class="sub">THERMO FISHER SCIENTIFIC INC</div>
+      </td>
+      <td class="l sub">Healthcare</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:47.99%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.63 · quality 0.43 · confluence 0.33 · freshness 0.45" data-tip-zh="信念 0.63 · 质量 0.43 · 共识 0.33 · 新鲜度 0.45">48.0</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Viking Global (Halvorsen) · <span class="act-pill add">add</span> 1.2%</span><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill new">new</span> 3.2%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.17% · sum 4.37% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.17% · 合计 4.37% · 新建仓=占仓位%, 加仓=新增切片">3.2%</td>
+      <td class="num">2</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">27</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#AON"><span class="tk">AON</span></a>
+        <div class="sub">AON PLC</div>
+      </td>
+      <td class="l sub">Financial</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:46.97%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.97 · quality 0.29 · confluence 0 · freshness 0.44" data-tip-zh="信念 0.97 · 质量 0.29 · 共识 0 · 新鲜度 0.44">47.0</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Baupost Group (Klarman) · <span class="act-pill new">new</span> 4.8%</span></td>
+      <td class="num" data-tip-en="max incr pct 4.85% · sum 4.85% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 4.85% · 合计 4.85% · 新建仓=占仓位%, 加仓=新增切片">4.8%</td>
+      <td class="num">1</td>
+      <td class="sub num">65<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">28</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#SGOV"><span class="tk">SGOV</span></a>
+        <div class="sub">ISHARES TR</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:46.11%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.23 · confluence 0 · freshness 0.41" data-tip-zh="信念 1.0 · 质量 0.23 · 共识 0 · 新鲜度 0.41">46.1</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Greenlea Lane Capital · <span class="act-pill new">new</span> 11.2%</span></td>
+      <td class="num" data-tip-en="max incr pct 11.20% · sum 11.20% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 11.20% · 合计 11.20% · 新建仓=占仓位%, 加仓=新增切片">11.2%</td>
+      <td class="num">1</td>
+      <td class="sub num">68<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">29</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#NFLX"><span class="tk">NFLX</span></a>
+        <div class="sub">NETFLIX INC.</div>
+      </td>
+      <td class="l sub">Communication Services</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:46.11%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.23 · confluence 0 · freshness 0.41" data-tip-zh="信念 1.0 · 质量 0.23 · 共识 0 · 新鲜度 0.41">46.1</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Greenlea Lane Capital · <span class="act-pill new">new</span> 7.8%</span></td>
+      <td class="num" data-tip-en="max incr pct 7.80% · sum 7.80% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 7.80% · 合计 7.80% · 新建仓=占仓位%, 加仓=新增切片">7.8%</td>
+      <td class="num">1</td>
+      <td class="sub num">68<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">30</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#SPY"><span class="tk">SPY</span></a>
+        <div class="sub">STATE STR SPDR S&amp;P 500 ETF T</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:45.51%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.2 · confluence 0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.2 · 共识 0 · 新鲜度 0.45">45.5</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Soros Fund Management · <span class="act-pill add">add</span> 8.2%</span></td>
+      <td class="num" data-tip-en="max incr pct 8.15% · sum 8.15% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 8.15% · 合计 8.15% · 新建仓=占仓位%, 加仓=新增切片">8.2%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">31</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#ADP"><span class="tk">ADP</span></a>
+        <div class="sub">AUTOMATIC DATA PROC INC</div>
+      </td>
+      <td class="l sub">Industrials</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:45.19%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.62 · quality 0.5 · confluence 0.15 · freshness 0.45" data-tip-zh="信念 0.62 · 质量 0.5 · 共识 0.15 · 新鲜度 0.45">45.2</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Giverny Capital · <span class="act-pill new">new</span> 3.1%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.12% · sum 3.12% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.12% · 合计 3.12% · 新建仓=占仓位%, 加仓=新增切片">3.1%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">32</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#YPF"><span class="tk">YPF</span></a>
+        <div class="sub">Ypf Sociedad Anonima</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:44.82%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.72 · quality 0.5 · confluence 0 · freshness 0.45" data-tip-zh="信念 0.72 · 质量 0.5 · 共识 0 · 新鲜度 0.45">44.8</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Duquesne Family Office (Druckenmiller) · <span class="act-pill add">add</span> 3.6%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.60% · sum 3.60% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.60% · 合计 3.60% · 新建仓=占仓位%, 加仓=新增切片">3.6%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">33</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#PRMB"><span class="tk">PRMB</span></a>
+        <div class="sub">Primo Brands Corporation</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:44.43%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.16 · confluence 0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.16 · 共识 0 · 新鲜度 0.45">44.4</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Sachem Head Capital · <span class="act-pill new">new</span> 7.8%</span></td>
+      <td class="num" data-tip-en="max incr pct 7.75% · sum 7.75% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 7.75% · 合计 7.75% · 新建仓=占仓位%, 加仓=新增切片">7.8%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">34</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#WFRD"><span class="tk">WFRD</span></a>
+        <div class="sub">Weatherford Intl PLC</div>
+      </td>
+      <td class="l sub">Energy</td>
+      <td><span class="cap-chip mid" data-tip-en="mid cap" data-tip-zh="mid 市值">MID</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:44.43%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.16 · confluence 0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.16 · 共识 0 · 新鲜度 0.45">44.4</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Sachem Head Capital · <span class="act-pill new">new</span> 5.8%</span></td>
+      <td class="num" data-tip-en="max incr pct 5.75% · sum 5.75% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 5.75% · 合计 5.75% · 新建仓=占仓位%, 加仓=新增切片">5.8%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">35</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#GIL"><span class="tk">GIL</span></a>
+        <div class="sub">Gildan Activewear Inc</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:44.43%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 1.0 · quality 0.16 · confluence 0 · freshness 0.45" data-tip-zh="信念 1.0 · 质量 0.16 · 共识 0 · 新鲜度 0.45">44.4</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Sachem Head Capital · <span class="act-pill new">new</span> 5.5%</span></td>
+      <td class="num" data-tip-en="max incr pct 5.55% · sum 5.55% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 5.55% · 合计 5.55% · 新建仓=占仓位%, 加仓=新增切片">5.5%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">36</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#VST"><span class="tk">VST</span></a>
+        <div class="sub">VISTRA CORP</div>
+      </td>
+      <td class="l sub">Utilities</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:44.24%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.55 · quality 0.69 · confluence 0 · freshness 0.45" data-tip-zh="信念 0.55 · 质量 0.69 · 共识 0 · 新鲜度 0.45">44.2</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Appaloosa (Tepper) · <span class="act-pill add">add</span> 2.7%</span></td>
+      <td class="num" data-tip-en="max incr pct 2.73% · sum 2.73% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 2.73% · 合计 2.73% · 新建仓=占仓位%, 加仓=新增切片">2.7%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent" data-fold=&#34;1&#34;>
+      <td class="l rk num">37</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#BE"><span class="tk">BE</span></a>
+        <div class="sub">BLOOM ENERGY CORP</div>
+      </td>
+      <td class="l sub">—</td>
+      <td><span class="cap-chip off_index" data-tip-en="off-index: outside S&amp;P 1500, typically small/micro cap" data-tip-zh="指数外：标普1500以外，通常为小/微市值">OFF INDEX</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:43.94%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.26 · quality 0.74 · confluence 0.33 · freshness 0.45" data-tip-zh="信念 0.26 · 质量 0.74 · 共识 0.33 · 新鲜度 0.45">43.9</span>
+      </td>
+      <td class="l"><span class="mchip ftier follow" style="font-size:9px">Whale Rock Capital · <span class="act-pill add">add</span> 0.5%</span><span class="mchip ftier watch" style="font-size:9px">Light Street Capital · <span class="act-pill new">new</span> 1.3%</span></td>
+      <td class="num" data-tip-en="max incr pct 1.28% · sum 1.83% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 1.28% · 合计 1.83% · 新建仓=占仓位%, 加仓=新增切片">1.3%</td>
+      <td class="num">2</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">38</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#DVN"><span class="tk">DVN</span></a>
+        <div class="sub">DEVON ENERGY CORP NEW</div>
+      </td>
+      <td class="l sub">Energy</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:43.17%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.73 · quality 0.45 · confluence 0 · freshness 0.43" data-tip-zh="信念 0.73 · 质量 0.45 · 共识 0 · 新鲜度 0.43">43.2</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Egerton Capital · <span class="act-pill new">new</span> 3.6%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.64% · sum 3.64% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.64% · 合计 3.64% · 新建仓=占仓位%, 加仓=新增切片">3.6%</td>
+      <td class="num">1</td>
+      <td class="sub num">66<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="fboard-row-accent" data-fold=&#34;1&#34;>
+      <td class="l rk num">39</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#DASH"><span class="tk">DASH</span></a>
+        <div class="sub">DOORDASH INC</div>
+      </td>
+      <td class="l sub">Technology</td>
+      <td><span class="cap-chip large" data-tip-en="large cap" data-tip-zh="large 市值">LARGE</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:42.99%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.38 · quality 0.43 · confluence 0.48 · freshness 0.45" data-tip-zh="信念 0.38 · 质量 0.43 · 共识 0.48 · 新鲜度 0.45">43.0</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">Durable Capital Partners · <span class="act-pill add">add</span> 1.1%</span><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill new">new</span> 1.9%</span></td>
+      <td class="num" data-tip-en="max incr pct 1.92% · sum 3.00% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 1.92% · 合计 3.00% · 新建仓=占仓位%, 加仓=新增切片">1.9%</td>
+      <td class="num">2</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class="" data-fold=&#34;1&#34;>
+      <td class="l rk num">40</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#SGI"><span class="tk">SGI</span></a>
+        <div class="sub">SOMNIGROUP INTERNATIONAL INC</div>
+      </td>
+      <td class="l sub">Consumer Discretionary</td>
+      <td><span class="cap-chip mid" data-tip-en="mid cap" data-tip-zh="mid 市值">MID</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:42.85%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction 0.62 · quality 0.43 · confluence 0.15 · freshness 0.45" data-tip-zh="信念 0.62 · 质量 0.43 · 共识 0.15 · 新鲜度 0.45">42.9</span>
+      </td>
+      <td class="l"><span class="mchip ftier watch" style="font-size:9px">D1 Capital Partners · <span class="act-pill new">new</span> 3.1%</span></td>
+      <td class="num" data-tip-en="max incr pct 3.09% · sum 3.09% · new=book %, add=incremental slice added" data-tip-zh="最大增量% 3.09% · 合计 3.09% · 新建仓=占仓位%, 加仓=新增切片">3.1%</td>
+      <td class="num">1</td>
+      <td class="sub num">64<span class="l-en">d ago</span><span class="l-zh">天前</span></td>
+      <td><span class="mut">—</span></td>
+    </tr></tbody>
+</table>
+
+<div class="wire-more-row">
+  <button class="wire-more" onclick="this.closest('.sm-card').querySelectorAll('tr[data-fold]').forEach(r=>r.removeAttribute('data-fold'));this.remove()"><span class="l-en">See more</span><span class="l-zh">查看更多</span> (15 <span class="l-en">more</span><span class="l-zh">更多</span>)</button>
+</div>
+
+</div>
+
+
+
+
+<div class="sm-sec">
+  <h2 style="font-size:14px"><span class="l-en">Asymmetric Small/Mid</span><span class="l-zh">非对称小中型股</span></h2>
+  <span class="h-note"><span class="l-en">high-conviction small/mid + off-index names — incr pct ≥ 1.5 pp, at least one FOLLOW/55+ fund</span><span class="l-zh">高信念小中型及指数外标的——增量占仓≥1.5pp，至少一只跟随/55+评分基金</span></span>
+</div>
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">#</th>
+    <th class="l"><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+    <th class="l"><span class="l-en">Cap</span><span class="l-zh">市值</span></th>
+    <th><span class="l-en">Desk score</span><span class="l-zh">台面分</span></th>
+    <th class="l"><span class="l-en">Why</span><span class="l-zh">原因</span></th>
+    <th><span class="l-en">Since filing</span><span class="l-zh">申报后</span></th>
+  </tr></thead>
+  <tbody><tr class=&#34;fboard-row-accent&#34;>
+      <td class="l rk num">1</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#TSM"><span class="tk">TSM</span></a>
+        <div class="sub">TAIWAN SEMICONDUCTOR MANUFAC</div>
+      </td>
+      <td>
+        <span class="cap-chip off_index" data-tip-en=&#34;outside S&amp;P 1500, typically small/micro cap&#34; data-tip-zh=&#34;标普1500以外，通常为小/微市值&#34;>OFF INDEX</span>
+        <span class="cap-chip off_index" style="margin-left:3px">OFF-INDEX</span>
+      </td>
+      <td class="num">85.6</td>
+      <td class="l sub" style="max-width:260px;white-space:normal">bucket=off_index incr_max=4.33pp | appaloosa:1.13pp/follow, tigerglobal:2.72pp/follow, whalerock:0.99pp/follow</td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class=&#34;fboard-row-accent&#34;>
+      <td class="l rk num">2</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#CPNG"><span class="tk">CPNG</span></a>
+        <div class="sub">COUPANG INC</div>
+      </td>
+      <td>
+        <span class="cap-chip off_index" data-tip-en=&#34;outside S&amp;P 1500, typically small/micro cap&#34; data-tip-zh=&#34;标普1500以外，通常为小/微市值&#34;>OFF INDEX</span>
+        <span class="cap-chip off_index" style="margin-left:3px">OFF-INDEX</span>
+      </td>
+      <td class="num">83.0</td>
+      <td class="l sub" style="max-width:260px;white-space:normal">bucket=off_index incr_max=3.95pp | tigerglobal:0.69pp/follow, lightstreet:3.72pp/watch</td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class=&#34;fboard-row-accent&#34;>
+      <td class="l rk num">3</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#MKSI"><span class="tk">MKSI</span></a>
+        <div class="sub">MKS INC.</div>
+      </td>
+      <td>
+        <span class="cap-chip mid" >MID</span>
+        
+      </td>
+      <td class="num">69.7</td>
+      <td class="l sub" style="max-width:260px;white-space:normal">bucket=mid incr_max=4.42pp | whalerock:3.88pp/follow, lightstreet:4.42pp/watch</td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class=&#34;fboard-row-accent&#34;>
+      <td class="l rk num">4</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#MELI"><span class="tk">MELI</span></a>
+        <div class="sub">MERCADOLIBRE INC</div>
+      </td>
+      <td>
+        <span class="cap-chip off_index" data-tip-en=&#34;outside S&amp;P 1500, typically small/micro cap&#34; data-tip-zh=&#34;标普1500以外，通常为小/微市值&#34;>OFF INDEX</span>
+        <span class="cap-chip off_index" style="margin-left:3px">OFF-INDEX</span>
+      </td>
+      <td class="num">63.0</td>
+      <td class="l sub" style="max-width:260px;white-space:normal">bucket=off_index incr_max=2.30pp | tigerglobal:1.02pp/follow</td>
+      <td><span class="mut">—</span></td>
+    </tr><tr >
+      <td class="l rk num">5</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#AEIS"><span class="tk">AEIS</span></a>
+        <div class="sub">ADVANCED ENERGY INDS</div>
+      </td>
+      <td>
+        <span class="cap-chip mid" >MID</span>
+        
+      </td>
+      <td class="num">60.2</td>
+      <td class="l sub" style="max-width:260px;white-space:normal">bucket=mid incr_max=4.26pp | whalerock:4.26pp/follow</td>
+      <td><span class="mut">—</span></td>
+    </tr><tr class=&#34;fboard-row-accent&#34;>
+      <td class="l rk num">6</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#SPOT"><span class="tk">SPOT</span></a>
+        <div class="sub">SPOTIFY TECHNOLOGY S A</div>
+      </td>
+      <td>
+        <span class="cap-chip off_index" data-tip-en=&#34;outside S&amp;P 1500, typically small/micro cap&#34; data-tip-zh=&#34;标普1500以外，通常为小/微市值&#34;>OFF INDEX</span>
+        <span class="cap-chip off_index" style="margin-left:3px">OFF-INDEX</span>
+      </td>
+      <td class="num">59.9</td>
+      <td class="l sub" style="max-width:260px;white-space:normal">bucket=off_index incr_max=3.04pp | tigerglobal:0.68pp/follow</td>
+      <td><span class="mut">—</span></td>
+    </tr></tbody>
+</table>
+</div>
+
+
+
+<div class="sm-2half">
+
+  
+  <div class="sm-card">
+    <div class="board-h">
+      <span class="bt"><span class="l-en">Sector Rotation Consensus</span><span class="l-zh">板块轮动共识</span></span>
+      <span class="chip-fresh">n 16 <span class="l-en">proven rotators</span><span class="l-zh">经验证轮动者</span> · 7 <span class="l-en">fade excluded</span><span class="l-zh">淡出排除</span></span>
+      
+    </div>
+    <div class="board-note"><span class="l-en">IQ-weighted sector delta (pp). Descriptive screen — n printed, not a forecast.</span><span class="l-zh">IQ加权板块变化（百分点）。描述性筛选——样本量已打印，非预测。</span></div>
+    <ul class="rotbars">
+      <li data-tip-en="breadth: 6 up / 4 down · top buys: —" data-tip-zh="广度：6 上升 / 4 下降 · 主要买入：—">
+          <span class="rb-lab">Technology</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:33.8%"></i></span>
+          <span class="rb-val num r-pos">+8.9pp</span>
+          <span class="sub num">6/4</span>
+        </li>
+      <li data-tip-en="breadth: 4 up / 0 down · top buys: —" data-tip-zh="广度：4 上升 / 0 下降 · 主要买入：—">
+          <span class="rb-lab">Energy</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:31.6%"></i></span>
+          <span class="rb-val num r-pos">+8.3pp</span>
+          <span class="sub num">4/0</span>
+        </li>
+      <li data-tip-en="breadth: 5 up / 3 down · top buys: —" data-tip-zh="广度：5 上升 / 3 下降 · 主要买入：—">
+          <span class="rb-lab">Industrials</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:26.9%"></i></span>
+          <span class="rb-val num r-pos">+7.0pp</span>
+          <span class="sub num">5/3</span>
+        </li>
+      <li data-tip-en="breadth: 2 up / 1 down · top buys: —" data-tip-zh="广度：2 上升 / 1 下降 · 主要买入：—">
+          <span class="rb-lab">Information Technology</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:14.4%"></i></span>
+          <span class="rb-val num r-pos">+3.8pp</span>
+          <span class="sub num">2/1</span>
+        </li>
+      <li data-tip-en="breadth: 3 up / 1 down · top buys: —" data-tip-zh="广度：3 上升 / 1 下降 · 主要买入：—">
+          <span class="rb-lab">Utilities</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:8.8%"></i></span>
+          <span class="rb-val num r-pos">+2.3pp</span>
+          <span class="sub num">3/1</span>
+        </li>
+      <li data-tip-en="breadth: 3 up / 0 down · top buys: —" data-tip-zh="广度：3 上升 / 0 下降 · 主要买入：—">
+          <span class="rb-lab">Basic Materials</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:8.1%"></i></span>
+          <span class="rb-val num r-pos">+2.1pp</span>
+          <span class="sub num">3/0</span>
+        </li>
+      <li data-tip-en="breadth: 2 up / 6 down · top buys: —" data-tip-zh="广度：2 上升 / 6 下降 · 主要买入：—">
+          <span class="rb-lab">Consumer Cyclical</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:4.8%"></i></span>
+          <span class="rb-val num r-pos">+1.3pp</span>
+          <span class="sub num">2/6</span>
+        </li>
+      <li data-tip-en="breadth: 2 up / 2 down · top buys: —" data-tip-zh="广度：2 上升 / 2 下降 · 主要买入：—">
+          <span class="rb-lab">Financials</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:3.5%"></i></span>
+          <span class="rb-val num r-pos">+0.9pp</span>
+          <span class="sub num">2/2</span>
+        </li>
+      <li data-tip-en="breadth: 3 up / 1 down · top buys: —" data-tip-zh="广度：3 上升 / 1 下降 · 主要买入：—">
+          <span class="rb-lab">Consumer Defensive</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:1.7%"></i></span>
+          <span class="rb-val num r-pos">+0.4pp</span>
+          <span class="sub num">3/1</span>
+        </li>
+      <li data-tip-en="breadth: 0 up / 0 down · top buys: —" data-tip-zh="广度：0 上升 / 0 下降 · 主要买入：—">
+          <span class="rb-lab">Materials</span>
+          <span class="rb-track"><i class="rb-fill pos" style="width:0.1%"></i></span>
+          <span class="rb-val num r-pos">+0.0pp</span>
+          <span class="sub num">0/0</span>
+        </li>
+      <li data-tip-en="breadth: 0 up / 0 down · top buys: —" data-tip-zh="广度：0 上升 / 0 下降 · 主要买入：—">
+          <span class="rb-lab">Consumer Staples</span>
+          <span class="rb-track"><i class="rb-fill neg" style="width:0.4%"></i></span>
+          <span class="rb-val num r-neg">-0.1pp</span>
+          <span class="sub num">0/0</span>
+        </li>
+      <li data-tip-en="breadth: 0 up / 1 down · top buys: —" data-tip-zh="广度：0 上升 / 1 下降 · 主要买入：—">
+          <span class="rb-lab">Real Estate</span>
+          <span class="rb-track"><i class="rb-fill neg" style="width:2.0%"></i></span>
+          <span class="rb-val num r-neg">-0.5pp</span>
+          <span class="sub num">0/1</span>
+        </li>
+      <li data-tip-en="breadth: 7 up / 6 down · top buys: —" data-tip-zh="广度：7 上升 / 6 下降 · 主要买入：—">
+          <span class="rb-lab">Unclassified</span>
+          <span class="rb-track"><i class="rb-fill neg" style="width:5.1%"></i></span>
+          <span class="rb-val num r-neg">-1.3pp</span>
+          <span class="sub num">7/6</span>
+        </li>
+      <li data-tip-en="breadth: 4 up / 3 down · top buys: —" data-tip-zh="广度：4 上升 / 3 下降 · 主要买入：—">
+          <span class="rb-lab">Consumer Discretionary</span>
+          <span class="rb-track"><i class="rb-fill neg" style="width:6.2%"></i></span>
+          <span class="rb-val num r-neg">-1.6pp</span>
+          <span class="sub num">4/3</span>
+        </li>
+      <li data-tip-en="breadth: 0 up / 1 down · top buys: —" data-tip-zh="广度：0 上升 / 1 下降 · 主要买入：—">
+          <span class="rb-lab">Health Care</span>
+          <span class="rb-track"><i class="rb-fill neg" style="width:14.5%"></i></span>
+          <span class="rb-val num r-neg">-3.8pp</span>
+          <span class="sub num">0/1</span>
+        </li>
+      <li data-tip-en="breadth: 2 up / 5 down · top buys: —" data-tip-zh="广度：2 上升 / 5 下降 · 主要买入：—">
+          <span class="rb-lab">Financial</span>
+          <span class="rb-track"><i class="rb-fill neg" style="width:26.5%"></i></span>
+          <span class="rb-val num r-neg">-7.0pp</span>
+          <span class="sub num">2/5</span>
+        </li>
+      <li data-tip-en="breadth: 1 up / 5 down · top buys: —" data-tip-zh="广度：1 上升 / 5 下降 · 主要买入：—">
+          <span class="rb-lab">Healthcare</span>
+          <span class="rb-track"><i class="rb-fill neg" style="width:29.0%"></i></span>
+          <span class="rb-val num r-neg">-7.6pp</span>
+          <span class="sub num">1/5</span>
+        </li>
+      <li data-tip-en="breadth: 4 up / 4 down · top buys: —" data-tip-zh="广度：4 上升 / 4 下降 · 主要买入：—">
+          <span class="rb-lab">Communication Services</span>
+          <span class="rb-track"><i class="rb-fill neg" style="width:50.0%"></i></span>
+          <span class="rb-val num r-neg">-13.1pp</span>
+          <span class="sub num">4/4</span>
+        </li>
+      
+      </ul>
+    
+  </div>
+
+  
+  <div class="sm-card">
+    <div class="board-h">
+      <span class="bt"><span class="l-en">Grade-A Report Card</span><span class="l-zh">A级成绩单</span></span>
+      
+        <span class="frozen-chip"><span class="l-en">FROZEN</span><span class="l-zh">已冻结</span></span>
+        <span class="chip-fresh"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-17</span>
+      
+    </div>
+    <div class="board-note"><span class="l-en">One cohort, one quarter — receipts, not a base rate. Decision-weighted 60d excess vs SPY from the common anchor date.</span><span class="l-zh">一个队列，一个季度——凭证而非基准利率。自公共锚定日起60日决策加权超额对标标普。</span></div>
+    
+      <table class="sm-t" style="margin-top:6px">
+        <thead><tr>
+          <th class="l"><span class="l-en">Fund</span><span class="l-zh">基金</span></th>
+          <th><span class="l-en">n</span><span class="l-zh">n</span></th>
+          <th><span class="l-en">60d DW excess</span><span class="l-zh">60日DW超额</span></th>
+          <th><span class="l-en">New / Add · 60d excess</span><span class="l-zh">新建/加仓 · 60日超额</span></th>
+          <th><span class="l-en">Hit 60d</span><span class="l-zh">60日胜率</span></th>
+        </tr></thead>
+        <tbody><tr class=&#34;feat&#34;>
+            <td class="l">Casdin Capital</td>
+            <td class="num sub">15</td>
+            <td><span class="num r-pos">+42%</span></td>
+            <td class="sub"><span class="num r-pos">+29%</span> / <span class="num r-pos">+60%</span></td>
+            <td class="num">80%</td>
+          </tr><tr >
+            <td class="l">Starboard Value</td>
+            <td class="num sub">8</td>
+            <td><span class="num r-pos">+22%</span></td>
+            <td class="sub"><span class="num r-pos">+25%</span> / <span class="num r-neg">-0%</span></td>
+            <td class="num">88%</td>
+          </tr><tr >
+            <td class="l">Duquesne Family Office (Druckenmiller)</td>
+            <td class="num sub">39</td>
+            <td><span class="num r-pos">+13%</span></td>
+            <td class="sub"><span class="num r-pos">+7%</span> / <span class="num r-pos">+22%</span></td>
+            <td class="num">59%</td>
+          </tr><tr >
+            <td class="l">Himalaya Capital (Li Lu)</td>
+            <td class="num sub">6</td>
+            <td><span class="num r-pos">+11%</span></td>
+            <td class="sub"><span class="num r-pos">+9%</span> / <span class="num r-pos">+36%</span></td>
+            <td class="num">100%</td>
+          </tr><tr >
+            <td class="l">Fairholme Capital (Berkowitz)</td>
+            <td class="num sub">4</td>
+            <td><span class="num r-pos">+10%</span></td>
+            <td class="sub"><span class="num r-pos">+10%</span> / <span class="num r-pos">+11%</span></td>
+            <td class="num">100%</td>
+          </tr><tr >
+            <td class="l">Basswood Capital Management</td>
+            <td class="num sub">33</td>
+            <td><span class="num r-pos">+10%</span></td>
+            <td class="sub"><span class="num r-pos">+10%</span> / <span class="num r-pos">+10%</span></td>
+            <td class="num">97%</td>
+          </tr><tr >
+            <td class="l">Light Street Capital</td>
+            <td class="num sub">12</td>
+            <td><span class="num r-pos">+9%</span></td>
+            <td class="sub"><span class="num r-pos">+10%</span> / <span class="num r-pos">+9%</span></td>
+            <td class="num">67%</td>
+          </tr><tr >
+            <td class="l">Elliott Investment Management</td>
+            <td class="num sub">11</td>
+            <td><span class="num r-pos">+8%</span></td>
+            <td class="sub"><span class="num r-pos">+2%</span> / <span class="num r-pos">+23%</span></td>
+            <td class="num">64%</td>
+          </tr><tr >
+            <td class="l">Baker Bros. Advisors</td>
+            <td class="num sub">18</td>
+            <td><span class="num r-pos">+7%</span></td>
+            <td class="sub"><span class="num r-pos">+2%</span> / <span class="num r-pos">+8%</span></td>
+            <td class="num">61%</td>
+          </tr><tr >
+            <td class="l">Altimeter Capital</td>
+            <td class="num sub">7</td>
+            <td><span class="num r-pos">+6%</span></td>
+            <td class="sub"><span class="num r-pos">+33%</span> / <span class="num r-neg">-10%</span></td>
+            <td class="num">43%</td>
+          </tr><tr >
+            <td class="l">RA Capital Management</td>
+            <td class="num sub">35</td>
+            <td><span class="num r-pos">+6%</span></td>
+            <td class="sub"><span class="num r-pos">+3%</span> / <span class="num r-pos">+14%</span></td>
+            <td class="num">71%</td>
+          </tr><tr >
+            <td class="l">Baupost Group (Klarman)</td>
+            <td class="num sub">9</td>
+            <td><span class="num r-pos">+4%</span></td>
+            <td class="sub"><span class="num r-pos">+7%</span> / <span class="num r-neg">-3%</span></td>
+            <td class="num">78%</td>
+          </tr><tr >
+            <td class="l">Whale Rock Capital</td>
+            <td class="num sub">17</td>
+            <td><span class="num r-pos">+3%</span></td>
+            <td class="sub"><span class="num r-pos">+5%</span> / <span class="num r-neg">-3%</span></td>
+            <td class="num">53%</td>
+          </tr><tr >
+            <td class="l">Sachem Head Capital</td>
+            <td class="num sub">11</td>
+            <td><span class="num r-pos">+1%</span></td>
+            <td class="sub"><span class="num r-neg">-1%</span> / <span class="num r-pos">+9%</span></td>
+            <td class="num">45%</td>
+          </tr><tr >
+            <td class="l">Soros Fund Management</td>
+            <td class="num sub">121</td>
+            <td><span class="num r-pos">+0%</span></td>
+            <td class="sub"><span class="num r-pos">+2%</span> / <span class="num r-neg">-2%</span></td>
+            <td class="num">65%</td>
+          </tr><tr >
+            <td class="l">Corvex Management</td>
+            <td class="num sub">3</td>
+            <td><span class="num r-neg">-11%</span></td>
+            <td class="sub"><span class="num r-neg">-11%</span> / <span class="mut">—</span></td>
+            <td class="num">67%</td>
+          </tr></tbody>
+      </table>
+      <div class="hon-note" style="margin-top:8px"><span class="l-en">Frozen study — one cohort, one quarter. See research/ for the full memo.</span><span class="l-zh">冻结研究——一个队列，一个季度。详见 research/ 中的完整备忘录。</span></div>
+    
+  </div>
+
+</div>
+
+<p class="disc" style="margin-top:14px"><span class="l-en">Follow Desk — scan bounds: tracked funds only (n printed above), historical quarters in the store. 13F lag ~45 days. Scores are descriptive composites; not a forecast, not a buy signal.</span><span class="l-zh">跟随台——扫描范围：仅跟踪基金（样本量见上）及存储中的历史季度。13F约45天滞后。分数为描述性综合指标；非预测，非买入信号。</span></p>
+
 
 
 
@@ -29727,7 +31557,7 @@ inp.addEventListener('keydown',function(e){if(e.key==='Enter'){var v=inp.value.t
 
 
 <div class="disc"><span class="l-en">Track record of curated super-investor 13F trades. Each move is entered on the fund's PUBLIC filing date (look-ahead-free) and scored vs SPY. Funds are ranked on the MEDIAN trade excess (outlier-robust) — the realised 'since' mean uses a variable hold (older trades have run longer) so it is P&L, not skill; the 63-day excess is the fixed-horizon figure. Some off-index names (foreign ADRs, small-caps) cannot be priced and are dropped, so each fund's coverage % is shown. 13F-HR holdings: quarterly, ~45-day lag, long-only US equity stakes >= $100M. No shorts, options detail, or non-US positions. CUSIPs are name-matched to tickers, so some lines are hidden. Context on who holds a name, not a buy list or a real-time signal.</span><span class="l-zh">精选超级投资者 13F 交易的业绩记录。每笔操作以基金的公开申报日为入场点（无前视偏差），并以相对标普500的超额收益评分。基金按交易超额收益的中位数排名（抗异常值）——已实现的“自申报”均值采用可变持有期（较早的交易运行更久），因此是盈亏而非选股能力；63日超额收益为固定持有期口径。部分非指数成分（境外 ADR、小盘股）无法定价而被剔除，故每只基金均标注覆盖率。13F 持仓为季度披露、约45天滞后，仅含 ≥1亿美元的美股多头，不含空头、期权或非美持仓；为背景信息与业绩记录，并非买入建议或实时信号，且从不接入任何评分/配置。</span></div>
-<p class="sub" style="margin-top:8px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-18 09:58 UTC</p>
+<p class="sub" style="margin-top:8px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-18 11:26 UTC</p>
 
 </div>
 
