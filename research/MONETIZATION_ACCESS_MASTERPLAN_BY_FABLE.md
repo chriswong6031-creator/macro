@@ -4,6 +4,11 @@
 paid access with tiers, trial plan, Stripe integration, sign-up/sign-in/users process,
 Supabase assessment, Substack integration, research-report gating, premium gating, native
 LLM with per-tier token caps").
+**Amendment 1 (2026-07-18, operator ratification):** OD1 pricing set ($59/$89 monthly;
+$49/$69 per-month billed annually; annual shown by default with savings %), OD2 Substack →
+**Pro**, OD3 mirror **stays as-is** (leak risk accepted), OD4 Terminal **free for everyone
+incl. unregistered** with only its live-options surface gated (paid tiers + trial). §7 has the
+resolutions; MNZ-R2 and W1 amended accordingly.
 **Authority:** program charter + rulings MNZ-R1..R12. Waves land as separate PRs citing this doc.
 **Relationship to prior work:**
 - Supersedes the build slices (§5) of `research/SAAS_MVP_PLAN.md` (2026-06-27); inherits its
@@ -33,11 +38,12 @@ a **Plans page**, a **Substack→entitlement bridge** keyed on verified email, a
 285 pages for zero user-visible gain; the real gaps (production SMTP, email verification,
 mainland-China reachability) are fixed by config + a Caddy auth proxy, not by switching vendors.
 
-**Three hard blockers before anything is gated** (W1): the GitHub Pages mirror serves the full
-site publicly (from `daily.yml`/`weekly.yml`, not just `pages.yml`) and must be stubbed; email
-verification is currently OFF (Substack matching and billing identity both require verified
-emails); and the Terminal subdomain serves data on the shared SSO cookie with no entitlement
-check — a day-one paywall bypass unless closed first.
+**Blockers before anything is gated** (W1): email verification is currently OFF (Substack
+matching and billing identity both require verified emails), and EdgeOne premium cache-bypass
+rules must be verified live. Two formerly-listed blockers were resolved by Amendment 1: the
+GitHub Pages mirror **stays as-is by operator ruling** (the leak is a recorded, accepted risk —
+see §6), and the Terminal is **free by design** for everyone, so only its live-options surface
+needs an entitlement lane (paid + trial).
 
 Build: 7 waves + a parallel operator legal track. Rough order: harden → billing → wall →
 plans page → (Substack ∥ chat) → CN payments.
@@ -55,7 +61,7 @@ plans page → (Substack ∥ chat) → CN payments.
 | Billing | ❌ none | No Stripe code, no entitlement table anywhere. |
 | Gating | ⚠ wrong kind | `app/gate.py` is IP/country, deliberately fail-open, HTML-only. 3,570 JSON artifacts under `site/` are served ungated. |
 | LLM | ⚠ seed | `/api/ask` + `/api/ask/stream` behind `require_user` with **global** env-var quotas (`ASK_BRAIN_HOURLY_QUOTA=10`, `ASK_BRAIN_DAILY_QUOTA=200`) — not tier-aware. `lib/ai_costs.py` ledger exists (internal). |
-| Leaks | 🔴 three | (1) GitHub Pages mirror `chriswong6031-creator.github.io/macro` republishes the **entire site** on every nightly (deploy steps live in `daily.yml`/`weekly.yml`), ungated, and its origin is in the Supabase redirect allow-list. (2) `firewall-cloudflare.sh` grey-cloud escape hatch leaves :80/:443 open to the whole internet — direct hits still pass through Caddy so a cookie-based entitlement gate holds, but the `EO-*` geo/IP headers both gates trust are fully attacker-controlled on that path (spoofable) until Caddy strips them on non-CDN connections. (3) Terminal `app.mastermind-x.com` serves `/data/*` straight from disk with no gate and honors the shared SSO cookie with no entitlement concept. |
+| Leaks | ⚠ amended | (1) GitHub Pages mirror `chriswong6031-creator.github.io/macro` republishes the **entire site** on every nightly (deploy steps in `daily.yml`/`weekly.yml`) — **stays by Amendment 1; accepted risk** (§6). (2) `firewall-cloudflare.sh` grey-cloud escape hatch leaves :80/:443 open to the whole internet — direct hits still pass through Caddy so a cookie-based entitlement gate holds, but the `EO-*` geo/IP headers both gates trust are fully attacker-controlled on that path (spoofable) until Caddy strips them on non-CDN connections (W1). (3) Terminal `app.mastermind-x.com` is **public by design** (Amendment 1); only its live-options surface needs an entitlement check (W1 lane in the Terminal repo). |
 | Admin | ✅ live | admin console reads `auth.users` via Management-API PAT (`admin/users.py`) — subscriber views are one panel away. |
 
 The load-bearing conclusion: **the paywall is an extension of macro-api + Caddy + Supabase,
@@ -65,16 +71,18 @@ not a new system.** Every wave below is measured against that.
 
 ## 2. Product & tier design
 
-### 2.1 Tiers (recommended; names/prices are operator placeholders — MNZ-OD1)
+### 2.1 Tiers (prices RATIFIED by Amendment 1; names still operator-adjustable)
 
 | | **Free** (signed-in) | **Insider** — paid tier 1 | **Pro** — paid tier 2 |
 |---|---|---|---|
-| Price (placeholder) | $0 | ~$19.99/mo · ~$199/yr | ~$49.99/mo · ~$499/yr |
+| Price | $0 | **$59/mo**, or **$49/mo billed annually** ($588/yr — save 17%) | **$89/mo**, or **$69/mo billed annually** ($828/yr — save 22%) |
 | Dashboards | Glance tier: `macro.html`, `index.html`, news pages, `methodology.html`, one sample report | All markets, all desks, heatmaps, baskets, sector central, options/flow, smart money, cycle, vector… | Everything in Insider |
 | Research reports | 1 sample (`report_second_act.html` teaser or one full report) | All `report_*.html`, `reports.html`, `state_of_themes.html`, `intelligence_hub.html` | Everything |
 | Committee / NW / aibrief / track record | ✕ (teaser) | ✓ | ✓ |
-| Mastermind Chat | ~10 msgs/mo on **Haiku 4.5** (taste) | **Sonnet 4.6**, 2M tokens/mo | **Opus 4.8**, 2M tokens/mo + Sonnet 4.6, 5M tokens/mo |
+| Mastermind Chat | ~10 msgs/mo on **Haiku 4.5** (taste) | **Sonnet 4.6**, 2M tokens/mo | **Opus 4.8**, 1.5M tokens/mo + Sonnet 4.6, 3M tokens/mo (both config, MNZ-R12) |
 | Watchlist sync | ✓ (existing) | ✓ | ✓ |
+| Terminal (app.mastermind-x.com) | ✓ — public for everyone, even unregistered (Amendment 1) | ✓ | ✓ |
+| Terminal live options | ✕ | ✓ (incl. trial week) | ✓ (incl. trial week) |
 | Trial | — | 7-day card-required trial | 7-day card-required trial |
 
 Design rationale:
@@ -86,13 +94,20 @@ Design rationale:
 - **Free tier = glance, paid = depth** matches the design doctrine (glance tier answers
   "so what do I do"; depth desks are where the moat is) and matches SAAS_MVP_PLAN §9
   (the honest product is regime/risk context, and the free glance page IS that hook).
-- Chat cost at list prices (Opus 4.8 $5/$25 per MTok): full 2M Pro usage at a 75/25 in/out
-  split is **$20 raw**, and the honest worst case is higher — cold-cache first turns, tool-call
-  turns re-reading context, output-heavy sessions can push a maxed-out Pro user to ~$25–35/mo.
-  The $49 price still clears it, but the margin depends on prompt-cache hit rate — so the
-  initial Opus budget ships at **1.5M/mo** (config, MNZ-R12) and moves up once measured cache
-  economics land in the admin cost panel. Insider Sonnet 2M ≈ $12–18 worst case. Budgets are
-  per-calendar-month, no rollover.
+- Chat cost at list prices, one methodology for both tiers (raw = 75/25 in/out at list;
+  worst case = raw ×1.25–1.75 for cold-cache first turns, tool-call turns re-reading context,
+  output-heavy sessions): **Pro** = Opus 1.5M ($15 raw → $19–26 worst) + Sonnet 3M ($18 raw →
+  $23–32 worst) ⇒ a user who fully maxes BOTH budgets costs ~$42–58/mo — still under the $69
+  annual-equivalent, with typical usage far below cap and prompt caching pulling real costs
+  toward the raw floor. **Insider** = Sonnet 2M ($12 raw → $15–21 worst) against $49/$59.
+  Both clear; the fully-maxed-Pro margin is the thin edge, which is why both budgets are
+  config (MNZ-R12) and the admin cost panel watches measured cache economics before any budget
+  raise. Budgets are per-calendar-month, no rollover.
+- **Plans-page pricing display law (Amendment 1):** the billing-period toggle defaults to
+  **ANNUAL**; prices shown are the per-month-equivalents ($49/$69) with the annual total and a
+  savings badge computed from config — `round((monthly − annual_monthly) / monthly × 100)` ⇒
+  “save 17%” (Insider) / “save 22%” (Pro). Toggling to monthly shows $59/$89 with no badge.
+  Percentages are computed, never hardcoded (MNZ-R12), so repricing updates the badges for free.
 
 ### 2.2 Free/paid split by page family (from the full content census)
 
@@ -146,10 +161,15 @@ Hardening (W1, all config-or-small-code):
 Object model (2 products × 2 prices + features via **Stripe Entitlements**, GA):
 
 ```
-Product "Insider"  → features: site_full
-Product "Pro"      → features: site_full, chat_opus
-Prices: insider_monthly / insider_annual / pro_monthly / pro_annual (+ CN one-time annual, §3.6)
+Product "Insider"  → features: site_full, terminal_live_options
+Product "Pro"      → features: site_full, terminal_live_options, chat_opus
+Prices: insider_monthly $59 / insider_annual $588 ($49×12)
+        pro_monthly $89     / pro_annual $828 ($69×12)   (+ CN one-time annual, §3.6)
 ```
+
+`terminal_live_options` gates the Terminal's live-options surface only (Amendment 1: the rest
+of the Terminal is public, even to unregistered visitors). A `trialing` subscription carries
+its product's features, so trial users get live options for the trial week.
 
 Flow: `plans.html` → `POST /api/billing/checkout` (macro-api creates a Checkout Session,
 `customer_email` prefilled from the Supabase session, `client_reference_id = user_id`) →
@@ -244,11 +264,10 @@ Mechanism (opus red-team pass 2026-07-18 folded in — findings 1/2/4/5/9/12/18)
    ignores scheme; the 2026-07-11 `:80→:443` poisoning incident class applies — `no-store` from
    origin + explicit bypass rule + the `:80` mirror block covered; `Vary: Cookie` is NOT
    trusted). Also enable the real-client-IP header rule while in the console (known gap).
-6. **Leak closure (W1 blockers):** the mirror deploys live in **`daily.yml` / `weekly.yml`
-   deploy-pages steps** (not just `pages.yml`) — those steps switch to deploying the stub (or
-   free subset, MNZ-OD3); the Pages origin is **removed from Supabase redirect URLs**
-   (`ACCOUNTS_SETUP.md` allow-list) so auth can no longer round-trip through it; premium pages
-   `noindex` re-checked; sitemap regenerated free-only (SEO impact: see MNZ-OD7).
+6. **Leak posture (amended):** the GitHub Pages mirror (deployed from `daily.yml`/`weekly.yml`)
+   **stays as-is by Amendment 1** — the full-site leak is a recorded, operator-accepted risk
+   (§6; unadvertised URL, revisable later with a one-line workflow change). On the main domain:
+   premium pages `noindex` re-checked; sitemap regenerated free-only (SEO impact: see MNZ-OD7).
 
 Perf note: the gate adds one localhost round-trip per premium HTML/JSON request; the IP gate
 already pays this on HTML today and renders fine within budget. JSON fan-out pages (some fetch
@@ -287,8 +306,10 @@ bound to this specific link request** — for ALL accounts, not just pre-confirm
 attacker-registered accounts on victim emails exist by construction; MNZ-R4) → OTP pass +
 lookup in `substack_entitlements` (miss → live check via mechanism 1/2) + entitlement write
 happen in **one transaction** (no verify→relink TOCTOU) → hit ⇒ `user_entitlements` row with
-`source='substack'`, tier = **Insider** (operator may map annual/founding → Pro, MNZ-OD2),
-`current_period_end = paid_through`. Nightly sync extends or expires, and re-checks that the
+`source='substack'`, tier = **Pro** (Amendment 1: any paid Substack subscription maps to Pro —
+note this hands each Substack subscriber the Opus chat budget, so the operator owns keeping the
+Substack price above that marginal cost), `current_period_end = paid_through`. Nightly sync
+extends or expires, and re-checks that the
 linked email still belongs to the account (email changes unlink). Stripe-sourced rows always
 win over Substack-sourced rows for the same user (no double-grant; a user who upgrades to Pro
 on Stripe keeps Pro).
@@ -345,7 +366,7 @@ Build on the existing `/api/ask` seed, not beside it.
 | # | Ruling |
 |---|---|
 | MNZ-R1 | Premium gate is **fail-closed** at every layer — `app/paywall.py` is a distinct code path whose exception/unavailable default is deny, and the premium Caddy matcher's `handle_errors` serves the interstitial, never the file (today's forced-200 handler stays free-tier-only). Carve-out: **entitlement-store outage only** honors cached positive entitlements ≤24h — never rows in `past_due`/`canceled`, and never auth-token failures. CSP-R1 continues to govern free-tier availability. |
-| MNZ-R2 | **No content is gated until** (a) the **`daily.yml`/`weekly.yml` deploy-pages steps** (the real mirror publishers, not just `pages.yml`) ship the stub, (b) the Pages origin is removed from Supabase redirect URLs, and (c) EdgeOne premium-path cache-bypass rules are verified live on both schemes. W1 gates W3. |
+| MNZ-R2 | **No content is gated until** (a) email verification + custom SMTP are live and (b) EdgeOne premium-path cache-bypass rules are verified live on both schemes. W1 gates W3. *(Amendment 1 struck the original mirror-stub and redirect-removal clauses: the mirror stays by operator ruling; its full-site leak is an accepted risk recorded in §6.)* |
 | MNZ-R3 | `user_entitlements` is the **single source of authority** for access; written only by the Stripe webhook/reconciler, the Substack sync, and operator comps via admin. Nothing else writes it; LLMs never touch it. |
 | MNZ-R4 | Substack matching binds to **verified email only**. No verification, no link — regardless of what the entitlement table says about that address. |
 | MNZ-R5 | Mastermind Chat is a read/explain surface over calibrated artifacts. It may de-escalate/contextualize; it never originates signals, scores, escalations, or numeric confidence (restates CLAUDE.md §Epistemics + TI-R1/CHF-R14 family). |
@@ -366,11 +387,11 @@ Estimates assume the SAAS_MVP_PLAN calibration (verification against a 206k-LOC 
 
 | Wave | Scope | Acceptance | Est |
 |---|---|---|---|
-| **W1 — Foundation hardening** (blocker wave) | Stub the mirror **in `daily.yml`/`weekly.yml` deploy-pages steps** (marketing page or free-subset — MNZ-OD3) + remove the Pages origin from Supabase redirect URLs; Supabase → Pro + custom SMTP + email confirmation ON + CAPTCHA; Caddy auth-proxy route for CN + config repoint; Caddy strips `EO-*`/`CF-*`/`True-Client-IP` on non-EdgeOne connections; **interim tier-gate or feature-flag on `/api/ask*`**; **Terminal hole closed**: `app.mastermind-x.com` `/data/*` + premium routes firewalled or entitlement-checked (shared cookie must not unlock Terminal data the macro wall would refuse — the Terminal-repo lane is a hard dependency, not an option); fix Terminal account.js jsdelivr load + schedule its implicit-flow → PKCE fix; EdgeOne console: premium cache-bypass rule groups (both schemes) + real-IP header (ops checklist doc). | Mirror no longer serves premium HTML; Pages origin absent from redirect allow-list; new signup receives verification email via custom SMTP; auth works via proxied hostname from a CN vantage (or fallback decision recorded); direct-origin request with forged `EO-Client-IPCountry` does not alter gate behavior; Terminal `/data/*` refuses an unentitled session. | ~400–600k tok, 2 sessions + ops |
+| **W1 — Foundation hardening** (blocker wave) | *(Mirror untouched — Amendment 1.)* Supabase → Pro + custom SMTP + email confirmation ON + CAPTCHA; Caddy auth-proxy route for CN + config repoint; Caddy strips `EO-*`/`CF-*`/`True-Client-IP` on non-EdgeOne connections; **interim tier-gate or feature-flag on `/api/ask*`**; **Terminal live-options lane** (Terminal repo): the live-options surface checks `terminal_live_options` in `user_entitlements` (paid + trialing) — rest of the Terminal stays public by design, incl. unregistered visitors; fix Terminal account.js jsdelivr load + schedule its implicit-flow → PKCE fix (prerequisite for the paid feature riding the shared cookie); EdgeOne console: premium cache-bypass rule groups (both schemes) + real-IP header (ops checklist doc). | New signup receives verification email via custom SMTP; auth works via proxied hostname from a CN vantage (or fallback decision recorded); direct-origin request with forged `EO-Client-IPCountry` does not alter gate behavior; Terminal live-options refuses an unentitled session while the rest of the Terminal loads logged-out. | ~400–600k tok, 2 sessions + ops |
 | **W2 — Billing spine** | Stripe products/prices/features (scripted via API, idempotent); `app/billing.py` (checkout, webhook, portal, reconciler); `user_entitlements` + RLS migration; `/api/me` + `/api/account` on macro-api; admin Subscribers panel (join into existing users panel); Stripe Tax on. | Test-mode checkout → webhook → row appears → `/api/me` reflects tier; portal cancel → row downgrades; replay/idempotency test green. | ~400–700k, 1–2 sessions |
 | **W3 — The wall** | `write_page(tier=…)` HTML sweep + curated `config/gate_prefixes.yml` for JSON + merged `gate_manifest.json` + CI unmapped-prefix guard; `app/paywall.py` distinct fail-closed path (+ store-outage grace); Caddy premium routing snippet incl. premium-scoped `handle_errors` → interstitial; FastAPI entitlement dependency on premium `/api/*`; bilingual paywall interstitial; lock-state JSON contract + minimal client lock chrome; sitemap/noindex free-only (status code per MNZ-OD7). | Signed-out fetch of premium HTML **and** premium JSON → interstitial/lock JSON; free pages byte-identical + still edge-cached; entitled user passes; **macro-api-down drill: premium returns interstitial, not content**; **paywall-module-import-failure drill: same**; **scheme-crossed CDN poisoning probe** (`http://` fetch must not prime the `https://` cache) on 3 premium paths; unmapped-JSON CI guard red on a synthetic new prefix. | ~500–800k, 2 sessions |
-| **W4 — Plans page + account UX** | `plans.html` (doctrine pass: glance-tier plain words, bilingual, glass aesthetic, tier table, trial CTA, FAQ incl. disclaimer surface); nav + account-modal wiring (`account.js` upgrade card live); locked-panel CTAs; upgrade nudges. | Full journey clicks end-to-end in test mode: locked page → plans → checkout → unlocked on return. Design-doctrine review passes (banned-vocab lint). | ~300–500k, 1 session |
-| **W5 — Substack bridge** | Step 0 Stripe-account probe (operator, 1h, decides mechanism); sync lane (nightly on VPS cron, NOT on the render path); `substack_entitlements` + link-flow UI + OTP re-verify; admin panel + CSV-upload fallback. | A real paid-subscriber email links and unlocks Insider; lapse in source revokes on next sync; unverified email refused. | ~300–600k, 1–2 sessions |
+| **W4 — Plans page + account UX** | `plans.html` (doctrine pass: glance-tier plain words, bilingual, glass aesthetic, tier table, trial CTA, FAQ incl. disclaimer surface) with the **annual-default billing toggle + computed savings badges** (§2.1 display law); nav + account-modal wiring (`account.js` upgrade card live); locked-panel CTAs; upgrade nudges. | Full journey clicks end-to-end in test mode: locked page → plans → checkout → unlocked on return; page loads with ANNUAL selected showing $49/$69 + “save 17%/22%”, toggling shows $59/$89; badges recompute when config prices change. Design-doctrine review passes (banned-vocab lint). | ~300–500k, 1 session |
+| **W5 — Substack bridge** | Step 0 Stripe-account probe (operator, 1h, decides mechanism); sync lane (nightly on VPS cron, NOT on the render path); `substack_entitlements` + link-flow UI + OTP re-verify; admin panel + CSV-upload fallback. | A real paid-subscriber email links and unlocks **Pro**; lapse in source revokes on next sync; unverified email refused. | ~300–600k, 1–2 sessions |
 | **W6 — Mastermind Chat** | `/api/ask` v2: tier routing (Haiku/Sonnet/Opus), `user_token_usage` metering per MNZ-R10, prompt-cached context bundle, SSE; retrieval tools made tier-aware (gate manifest consulted; no service-role in the chat path); `chat.html` + nav dialog (budget meter, receipts, bilingual); ai_costs join + admin chat-cost panel; abuse rails (per-msg max_tokens, concurrency 1/user). | Budget exhaustion → 402 + CTA mid-month; usage row matches `response.usage` sums; Opus→Sonnet fallback fires at cap; cache-read verified >0 on second message; **exfiltration test: Free-tier chat cannot surface Insider-gated JSON content under adversarial prompting**. | ~500–800k, 2 sessions |
 | **W7 — CN payments + polish** | Annual one-time Alipay/WeChat price + webhook path; renewal T-30/T-7 emails; zh plans/paywall copy audit; analytics funnels (plans views → checkout → paid) on the first-party beacon. | Test Alipay flow provisions 365d; renewal email fires in staging clock. | ~200–400k, 1 session |
 | **W-LEGAL** (parallel, operator, non-code) | SAAS_MVP_PLAN §8 executed: vendor redistribution emails (Polygon/Tushare), securities-disclaimer + ToS/privacy review, business entity for Stripe live-mode, tax registrations. | **Gates Stripe live-mode**, not the build — all waves run in test mode until cleared. | $ + days, no tokens |
@@ -385,8 +406,9 @@ unchanged) + Stripe percentages + chat API spend (bounded by tier budgets ≈ co
 
 | Risk | Sev | Mitigation |
 |---|---|---|
-| Mirror or CDN cache leaks premium content post-gate | HIGH | MNZ-R2 blocker ordering (daily/weekly deploy steps + redirect allow-list named explicitly); W3 acceptance includes cold-cache AND scheme-crossed CDN probes |
-| Terminal shared-cookie hole (premium data on sibling subdomain, no entitlement check) | HIGH | W1 closes it (firewall or entitlement check on `/data/*` + app routes) before anything is gated; implicit-flow fixation risk on `account.js` fixed before Terminal joins a paid tier |
+| **Mirror leak — ACCEPTED (operator, Amendment 1 2026-07-18):** the full site, incl. all premium pages/JSON, remains publicly readable at the unadvertised `.github.io` URL after the paywall ships | HIGH (accepted) | Recorded, not mitigated. Anyone who finds the mirror URL bypasses the wall (and since build-time `noindex` rides the artifacts, the mirror confers no offsetting SEO benefit). Reversal is a one-line workflow change any time the operator reconsiders |
+| CDN cache leaks premium content post-gate | HIGH | `no-store` + EdgeOne bypass rules (MNZ-R2); W3 acceptance includes cold-cache AND scheme-crossed CDN probes |
+| Terminal live-options entitlement gap (paid feature on a public app riding the shared cookie) | MED | W1 Terminal-repo lane: `terminal_live_options` check (paid + trialing); implicit-flow → PKCE fix lands before the paid feature does |
 | Webhook loss → stale entitlements (paid user locked out) | HIGH | Idempotent webhook + nightly reconciler + on-403-with-active-cookie re-check path; support "refresh my access" button calling reconciler for self |
 | Revocation lag (cancel/downgrade/chargeback keeps premium open across devices) | MED | Negative-path cache-bust on `subscription.updated/deleted` + `charge.dispute.created` + `charge.refunded`; composite staleness bounded ≤ ~2 min; grace never applies to `past_due`/`canceled` |
 | Supabase outage locks out paying users | MED | MNZ-R1 grace cache (24h); entitlement cache is in-process at origin, not per-request Supabase |
@@ -399,15 +421,15 @@ unchanged) + Stripe percentages + chat API spend (bounded by tier budgets ≈ co
 
 ---
 
-## 7. Open operator decisions (MNZ-OD)
+## 7. Operator decisions (MNZ-OD)
 
-1. **OD1 — Pricing & names.** $19.99/$49.99 are placeholders; decide before W4 copy.
-2. **OD2 — Substack tier mapping.** Default: any paid Substack → Insider. Map founding/annual → Pro?
-3. **OD3 — Mirror fate.** Pure marketing stub vs free-tier subset on Pages (subset = SEO retained, more moving parts).
-4. **OD4 — Terminal (app.mastermind-x.com) tier placement.** Whether Terminal is an Insider or Pro feature is open; that it must be *gated* is NOT open — W1 closes the shared-cookie hole regardless (see W1 scope), and the Terminal's implicit-flow → PKCE fix is a prerequisite of bundling it into a paid tier.
-5. **OD5 — Merchant of record** (Paddle/LemonSqueezy) instead of Stripe if W-LEGAL tax burden proves heavy. Default: Stripe + Stripe Tax.
-6. **OD6 — Trial without card** as a later experiment (marketing-lobe "value-moment" preview idea) once baseline conversion is measured.
-7. **OD7 — Paywall HTTP status vs SEO.** The site was deliberately opened to indexing (robots + sitemap shipped); walling ~90% of pages behind hard 403s de-indexes them and burns existing backlinks. Options: hard 403 (clean, loses ranking) vs 200 soft-paywall with structured-data preview (Google flexible-sampling pattern, retains ranking, more build work). Default recommendation: 403 at W3, revisit with real traffic data.
+1. **OD1 — Pricing. ✅ RESOLVED (Amendment 1, 2026-07-18):** Insider $59/mo · $49/mo billed annually ($588/yr); Pro $89/mo · $69/mo billed annually ($828/yr). Plans page defaults to the ANNUAL view with computed savings badges (17% / 22%); monthly visible via toggle. Names still adjustable before W4 copy.
+2. **OD2 — Substack tier mapping. ✅ RESOLVED (Amendment 1):** any paid Substack subscription → **Pro** (incl. Opus chat budget; operator owns Substack-price ≥ marginal-cost).
+3. **OD3 — Mirror fate. ✅ RESOLVED (Amendment 1):** **leave the mirror as-is** — full site keeps deploying to GitHub Pages nightly. The paywall-bypass leak is a recorded, operator-accepted risk (§6); revisable later with a one-line workflow change.
+4. **OD4 — Terminal. ✅ RESOLVED (Amendment 1):** the Terminal is **free for everyone, including unregistered visitors**; only its **live-options** surface is gated — available to any paid tier and to trial users (`terminal_live_options` feature). The implicit-flow → PKCE fix remains a prerequisite for that paid feature riding the shared cookie.
+5. **OD5 — Merchant of record** (Paddle/LemonSqueezy) instead of Stripe if W-LEGAL tax burden proves heavy. Default: Stripe + Stripe Tax. *(open)*
+6. **OD6 — Trial without card** as a later experiment (marketing-lobe "value-moment" preview idea) once baseline conversion is measured. *(open)*
+7. **OD7 — Paywall HTTP status vs SEO.** The site was deliberately opened to indexing (robots + sitemap shipped); walling ~90% of pages behind hard 403s de-indexes them and burns existing backlinks. Options: hard 403 (clean, loses ranking) vs 200 soft-paywall with structured-data preview (Google flexible-sampling pattern, retains ranking, more build work). Default recommendation: 403 at W3, revisit with real traffic data. *(open — and note the mirror does NOT soften this: premium `noindex` is baked into the built pages, so the mirror's copies carry it too)*
 
 ---
 
