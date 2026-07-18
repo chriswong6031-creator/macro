@@ -17,6 +17,22 @@ from pathlib import Path
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _isolate_board_ledger_stores(tmp_path, monkeypatch):
+    """No governor test may touch the real data/board_ledger stores.
+
+    build_status(root=tmp_path) does NOT propagate to board_ledger._store_path
+    (repo-absolute), and scorecard() -> grade() is keep-FRESH with a parquet
+    write-back — unredirected, a governor test rewrites the committed CA/HK
+    stores (MM_DATA_GUARD catch on CI, 2026-07-18).
+    """
+    import engine.board_ledger as bl
+
+    monkeypatch.setattr(
+        bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
