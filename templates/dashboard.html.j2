@@ -2441,6 +2441,69 @@ body.page-macro .mxfs-k{flex:none;width:118px;font-size:10.5px;font-weight:700;l
 body.page-macro .mxfs-v{min-width:0}
 body.page-macro .mxfs-v b{font-weight:700;color:var(--text)}
 body.page-macro .mxfs-stance{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5;padding-top:4px;border-top:1px solid var(--line);margin-top:2px}
+/* ── Task 5: quad-map illustration inside the flipctx pop ── */
+body.page-macro .mxqm-glance{font-size:12px;line-height:1.55;color:var(--ink-2,rgba(255,255,255,.75));margin-bottom:8px}
+body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b)}
+body.page-macro .mxqm-wrap{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+body.page-macro .mxqm-svg-box{flex:none;width:150px;height:150px}
+body.page-macro .mxqm-svg-box svg{width:100%;height:100%}
+/* Quad fill classes — uses fixed hex values (SVG can't read var()); matches theme.css dark defaults */
+body.page-macro .mxqm-q1-fill{fill:#2e9e4f;opacity:.18}
+body.page-macro .mxqm-q2-fill{fill:#d4a017;opacity:.18}
+body.page-macro .mxqm-q3-fill{fill:#d04545;opacity:.18}
+body.page-macro .mxqm-q4-fill{fill:#3f78d8;opacity:.18}
+body.page-macro .mxqm-q1-fill.active{opacity:.48}
+body.page-macro .mxqm-q2-fill.active{opacity:.48}
+body.page-macro .mxqm-q3-fill.active{opacity:.48}
+body.page-macro .mxqm-q4-fill.active{opacity:.48}
+body.page-macro .mxqm-axis-line{stroke:rgba(255,255,255,.18);stroke-width:1}
+body.page-macro .mxqm-axis-label{fill:rgba(255,255,255,.38);font-size:8px;font-family:-apple-system,Inter,sans-serif}
+body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.55);font-size:7.5px;font-family:-apple-system,Inter,sans-serif;font-weight:600}
+body.page-macro .mxqm-dot{fill:var(--warn,#f59e0b);stroke:rgba(255,255,255,.9);stroke-width:1.5}
+body.page-macro .mxqm-arrow{stroke:var(--warn,#f59e0b);stroke-width:2;fill:none;marker-end:url(#mxqmArrowHead)}
+body.page-macro .mxqm-arrowhead{fill:var(--warn,#f59e0b)}
+/* P-bar strip */
+body.page-macro .mxqm-pbar-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;padding-top:4px}
+body.page-macro .mxqm-pbar-label{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+body.page-macro .mxqm-pbar-row{display:flex;align-items:center;gap:6px;font-size:10px}
+body.page-macro .mxqm-pbar-name{flex:none;width:60px;color:var(--ink-3,rgba(255,255,255,.45));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.page-macro .mxqm-pbar-track{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+body.page-macro .mxqm-pbar-fill-q1{height:100%;border-radius:4px;background:#2e9e4f}
+body.page-macro .mxqm-pbar-fill-q2{height:100%;border-radius:4px;background:#d4a017}
+body.page-macro .mxqm-pbar-fill-q3{height:100%;border-radius:4px;background:#d04545}
+body.page-macro .mxqm-pbar-fill-q4{height:100%;border-radius:4px;background:#3f78d8}
+body.page-macro .mxqm-pbar-pct{flex:none;width:28px;font-size:9.5px;color:var(--ink-3,rgba(255,255,255,.45));text-align:right}
+[data-theme="light"] body.page-macro .mxqm-q1-fill{fill:#1f8b41}
+[data-theme="light"] body.page-macro .mxqm-q2-fill{fill:#b07d05}
+[data-theme="light"] body.page-macro .mxqm-q3-fill{fill:#c12f2f}
+[data-theme="light"] body.page-macro .mxqm-q4-fill{fill:#2f63c4}
+[data-theme="light"] body.page-macro .mxqm-axis-line{stroke:rgba(0,0,0,.18)}
+[data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.38)}
+[data-theme="light"] body.page-macro .mxqm-quad-label{fill:rgba(0,0,0,.55)}
+[data-theme="light"] body.page-macro .mxqm-pbar-fill-q1{background:#1f8b41}
+[data-theme="light"] body.page-macro .mxqm-pbar-fill-q2{background:#b07d05}
+[data-theme="light"] body.page-macro .mxqm-pbar-fill-q3{background:#c12f2f}
+[data-theme="light"] body.page-macro .mxqm-pbar-fill-q4{background:#2f63c4}
+/* ── Task 6: leadership drawdown bar strip ── */
+body.page-macro .rsx-ldr-bars{margin:6px 0 4px;display:flex;flex-direction:column;gap:3px;position:relative}
+body.page-macro .rsx-ldr-bar-row{display:flex;align-items:center;gap:5px;font-size:10.5px;min-height:16px}
+body.page-macro .rsx-ldr-bar-ticker{flex:none;width:38px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.72));font-size:10px}
+body.page-macro .rsx-ldr-bar-track{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.06);position:relative;overflow:visible}
+body.page-macro .rsx-ldr-bar-fill{height:100%;border-radius:4px;background-color:var(--down,#ef4444);opacity:.75}
+body.page-macro .rsx-ldr-bar-pct{flex:none;font-size:10px;font-weight:700}
+/* index reference line — absolutely positioned over the track; drawn via inline style left:% */
+body.page-macro .rsx-ldr-idx-line{
+  position:absolute;top:0;bottom:0;width:1.5px;
+  background:rgba(255,255,255,.35);border-radius:1px;pointer-events:none;
+}
+body.page-macro .rsx-ldr-idx-label{
+  position:absolute;top:-12px;transform:translateX(-50%);
+  font-size:8.5px;color:var(--ink-3,rgba(255,255,255,.4));white-space:nowrap;
+}
+[data-theme="light"] body.page-macro .rsx-ldr-bar-ticker{color:rgba(0,0,0,.72)}
+[data-theme="light"] body.page-macro .rsx-ldr-bar-fill{background-color:#ef4444}
+[data-theme="light"] body.page-macro .rsx-ldr-idx-line{background:rgba(0,0,0,.3)}
+[data-theme="light"] body.page-macro .rsx-ldr-idx-label{color:rgba(0,0,0,.4)}
 @media(max-width:640px){body.page-macro .mxfs-row{flex-direction:column;gap:1px}body.page-macro .mxfs-k{width:auto}
 /* the longer honest-stance pill text ("… — not all-clear") must wrap on narrow
    phones instead of bleeding past the card edge (pill is nowrap on desktop; nowrap removed
@@ -5707,7 +5770,155 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {# Desktop: revealed on gauge-row hover/focus via CSS sibling selector.
          Mobile (≤700px): static block toggled by JS tap on gauge row.
          The ledger-view call at ~line 5076 is the sole other call site and stays untouched. #}
-      <div class="mx5-flipctx-pop" id="mx5FlipCtxPop" role="group" aria-label="What could change the regime call">{{ regime_flip_strip(latest) }}</div>
+      <div class="mx5-flipctx-pop" id="mx5FlipCtxPop" role="group" aria-label="What could change the regime call">
+        {# ── Task 5: quad-map illustration (grid-view only) ── #}
+        {# Resolve quad_vector data once; guard all downstream on _qvi available #}
+        {% set _qvi = latest.get('quad_vector') if latest.get('quad_vector') is mapping else {} %}
+        {% set _qvi_deg = _qvi.get('degraded', true) %}
+        {% set _qvi_tm = (_qvi.get('transition_momentum') or {}) if not _qvi_deg else {} %}
+        {% set _qvi_p = _qvi.get('p') or {} %}
+        {# _fs_quad map: same as regime_flip_strip — Q1=Goldilocks(strong growth/low infl),
+           Q2=Reflation(strong growth/high infl), Q3=Stagflation(weak/high),
+           Q4=Growth-scare(weak/low). Grid: growth→right, inflation→up. #}
+        {% set _qm_quad = {'Q1':['Goldilocks','理想增长'],'Q2':['Reflation','再通胀'],'Q3':['Stagflation','滞胀'],'Q4':['Growth-scare','增长恐慌']} %}
+        {# Current quad hard label and gaining quad #}
+        {% set _qm_hard = latest.get('quad') %}
+        {% set _qm_gain = _qvi_tm.get('gaining') %}
+        {# Glance line — bilingual: "drifting toward X" or stable #}
+        {% if _qm_hard %}
+        {% set _qm_hard_names = _qm_quad.get(_qm_hard, [_qm_hard, _qm_hard]) %}
+        {% set _qm_hard_en = _qm_hard_names[0] %}
+        {% set _qm_hard_zh = _qm_hard_names[1] %}
+        <div class="mxqm-glance">
+          {% if _qvi_deg or not _qm_gain %}
+          {# Degraded or no momentum data — stable read #}
+          <span class="l-en"><b>{{ _qm_hard_en }}</b> — stable read. Treat the label as backdrop, watch the risk score.</span>
+          <span class="l-zh"><b>{{ _qm_hard_zh }}</b> — 读数稳定。以周期标签为背景，关注风险评分。</span>
+          {% else %}
+          {% set _qm_gain_names = _qm_quad.get(_qm_gain, [_qm_gain, _qm_gain]) %}
+          {% if _qm_gain == _qm_hard %}
+          <span class="l-en"><b>{{ _qm_hard_en }}</b> now, odds firming — treat the label as backdrop, watch the risk score.</span>
+          <span class="l-zh"><b>{{ _qm_hard_zh }}</b>当前周期，概率正向巩固 — 以标签为背景，关注风险评分。</span>
+          {% else %}
+          <span class="l-en"><b>{{ _qm_hard_en }}</b> now, but drifting toward <b>{{ _qm_gain_names[0] }}</b> — treat the label as backdrop, watch the risk score.</span>
+          <span class="l-zh"><b>{{ _qm_hard_zh }}</b>当前周期，但正向<b>{{ _qm_gain_names[1] }}</b>漂移 — 以标签为背景，关注风险评分。</span>
+          {% endif %}
+          {% endif %}
+        </div>
+        {# 2×2 quad map SVG — 150×150, growth=X(right=strong), inflation=Y(up=high) #}
+        {# Quadrant positions (SVG coords, origin top-left):
+           Q2 Reflation   = top-right   (x:75–145, y:5–75)
+           Q3 Stagflation = top-left    (x:5–75,   y:5–75)
+           Q1 Goldilocks  = bottom-right(x:75–145, y:75–145)
+           Q4 Growth-scare= bottom-left (x:5–75,   y:75–145)
+           Axes: vertical divider x=75, horizontal divider y=75
+           Axis labels: growth→ (bottom), inflation↑ (left rotated)
+           growth_score range ≈ -1..+1; inflation_score same
+           Map: score 0 → center axis (75), +1 → right/top edge, -1 → left/bottom edge
+        #}
+        {% set _gs = latest.get('growth_score') %}
+        {% set _is = latest.get('inflation_score') %}
+        {# dot position — clamp to [10,140] range inside the 150px box #}
+        {% if _gs is not none and _gs is number %}
+        {% set _dot_x = ([10, [140, (75 + (_gs | float) * 65) | round | int] | min] | max) %}
+        {% else %}
+        {% set _dot_x = 75 %}
+        {% endif %}
+        {% if _is is not none and _is is number %}
+        {# inflation high = top = small y; so y = 75 - score*65 #}
+        {% set _dot_y = ([10, [140, (75 - (_is | float) * 65) | round | int] | min] | max) %}
+        {% else %}
+        {% set _dot_y = 75 %}
+        {% endif %}
+        {# Arrow target: center of gaining quadrant #}
+        {% if _qm_gain and not _qvi_deg %}
+        {% set _qm_centers = {'Q1':[112,112],'Q2':[112,38],'Q3':[38,38],'Q4':[38,112]} %}
+        {% set _qm_tc = _qm_centers.get(_qm_gain, [75,75]) %}
+        {% set _arr_tx = _qm_tc[0] %}
+        {% set _arr_ty = _qm_tc[1] %}
+        {# Shorten arrow by 10px from target to keep arrowhead clear of quad center #}
+        {% set _arr_dx = _arr_tx - _dot_x %}
+        {% set _arr_dy = _arr_ty - _dot_y %}
+        {% set _arr_len = ((_arr_dx * _arr_dx + _arr_dy * _arr_dy) ** 0.5) %}
+        {% if _arr_len > 0 %}
+        {% set _arr_scale = [0, (_arr_len - 10) / _arr_len] | max %}
+        {% set _arr_ex = (_dot_x + _arr_dx * _arr_scale) | round | int %}
+        {% set _arr_ey = (_dot_y + _arr_dy * _arr_scale) | round | int %}
+        {% else %}
+        {% set _arr_ex = _dot_x %}
+        {% set _arr_ey = _dot_y %}
+        {% endif %}
+        {% set _show_arrow = (_arr_len > 8) %}
+        {% else %}
+        {% set _show_arrow = false %}
+        {% endif %}
+        <div class="mxqm-wrap">
+          <div class="mxqm-svg-box">
+            <svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quad map — current regime position">
+              <defs>
+                <marker id="mxqmArrowHead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <polygon class="mxqm-arrowhead" points="0 0, 6 3, 0 6"/>
+                </marker>
+              </defs>
+              {# Quadrant fills — highlight current quad #}
+              {# Q3 Stagflation top-left #}
+              <rect class="mxqm-q3-fill{% if _qm_hard == 'Q3' %} active{% endif %}" x="5" y="5" width="70" height="70"/>
+              {# Q2 Reflation top-right #}
+              <rect class="mxqm-q2-fill{% if _qm_hard == 'Q2' %} active{% endif %}" x="75" y="5" width="70" height="70"/>
+              {# Q4 Growth-scare bottom-left #}
+              <rect class="mxqm-q4-fill{% if _qm_hard == 'Q4' %} active{% endif %}" x="5" y="75" width="70" height="70"/>
+              {# Q1 Goldilocks bottom-right #}
+              <rect class="mxqm-q1-fill{% if _qm_hard == 'Q1' %} active{% endif %}" x="75" y="75" width="70" height="70"/>
+              {# Axis lines #}
+              <line class="mxqm-axis-line" x1="75" y1="5" x2="75" y2="145"/>
+              <line class="mxqm-axis-line" x1="5" y1="75" x2="145" y2="75"/>
+              {# Quad labels #}
+              <text class="mxqm-quad-label" x="40" y="22" text-anchor="middle">Stagflation</text>
+              <text class="mxqm-quad-label" x="110" y="22" text-anchor="middle">Reflation</text>
+              <text class="mxqm-quad-label" x="110" y="140" text-anchor="middle">Goldilocks</text>
+              <text class="mxqm-quad-label" x="40" y="140" text-anchor="middle">Growth-scare</text>
+              {# Axis labels #}
+              <text class="mxqm-axis-label" x="75" y="153" text-anchor="middle">growth →</text>
+              <text class="mxqm-axis-label" x="1" y="75" dominant-baseline="middle" text-anchor="start" transform="rotate(-90 4 75)">infl ↑</text>
+              {# Arrow toward gaining quad (if present and not degraded) #}
+              {% if _show_arrow %}
+              <line class="mxqm-arrow" x1="{{ _dot_x }}" y1="{{ _dot_y }}" x2="{{ _arr_ex }}" y2="{{ _arr_ey }}"/>
+              {% endif %}
+              {# Current position dot #}
+              <circle class="mxqm-dot" cx="{{ _dot_x }}" cy="{{ _dot_y }}" r="5"/>
+            </svg>
+          </div>
+          {# P(quad) probability bar strip — guard on not degraded + p keys present #}
+          {% if not _qvi_deg and _qvi_p %}
+          {% set _pq_rows = [
+            ['Q1','Goldilocks','理想增长','q1'],
+            ['Q2','Reflation','再通胀','q2'],
+            ['Q3','Stagflation','滞胀','q3'],
+            ['Q4','Growth-scare','增长恐慌','q4']
+          ] %}
+          <div class="mxqm-pbar-wrap">
+            <div class="mxqm-pbar-label">{{ t('Odds / quad','各象限概率') }}</div>
+            {% for prow in _pq_rows %}
+            {% set _pv = _qvi_p.get(prow[0], 0) %}
+            {% set _pw = (_pv * 100) | round | int %}
+            <div class="mxqm-pbar-row">
+              <div class="mxqm-pbar-name">
+                <span class="l-en">{{ prow[1] }}</span>
+                <span class="l-zh">{{ prow[2] }}</span>
+              </div>
+              <div class="mxqm-pbar-track">
+                <div class="mxqm-pbar-fill-{{ prow[3] }}" style="width:{{ _pw }}%"></div>
+              </div>
+              <div class="mxqm-pbar-pct">{{ _pw }}%</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}{# /_qm_hard #}
+        {# Existing text rows below — unmodified #}
+        {{ regime_flip_strip(latest) }}
+      </div>
       </div>{# /mx5-flipctx-anchor #}
 
       {# Thesis line (from engine headline_en/zh) #}
@@ -9677,8 +9888,47 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             {% endif %}
           </div>
           {% if _lc.worst_members is defined and _lc.worst_members %}
+          {# ── Task 6B: drawdown bar strip (up to 5–6 worst members) ── #}
+          {# index_dd reference tick position: |index_dd| mapped to track width (max 60%) #}
+          {% set _lc_idx_dd = _lc.index_dd if (_lc.index_dd is defined and _lc.index_dd is not none) else none %}
+          {% set _lc_idx_pct = ((_lc_idx_dd * -100) | round | int) if _lc_idx_dd is not none else none %}
+          <div class="rsx-ldr-bars">
+            {% for wm in _lc.worst_members[:6] %}
+            {% set _wm_dd_pct = ((wm.dd * -100) | round | int) if (wm.dd is defined and wm.dd is not none) else none %}
+            <div class="rsx-ldr-bar-row">
+              <div class="rsx-ldr-bar-ticker">{{ wm.ticker }}</div>
+              <div class="rsx-ldr-bar-track">
+                {% if _wm_dd_pct is not none %}
+                <div class="rsx-ldr-bar-fill" style="width:{{ [_wm_dd_pct, 100] | min }}%"></div>
+                {% endif %}
+                {# Index reference tick at |index_dd|% of bar width — draw on first row only #}
+                {% if loop.first and _lc_idx_pct is not none %}
+                <div class="rsx-ldr-idx-line" style="left:{{ [_lc_idx_pct, 99] | min }}%">
+                  <div class="rsx-ldr-idx-label">
+                    <span class="l-en">index</span>
+                    <span class="l-zh">指数</span>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {# Colored percentage (price MOVE → var(--down) auto-flips red EN / green ZH) #}
+              {% if _wm_dd_pct is not none %}
+              <div class="rsx-ldr-bar-pct">
+                <span class="l-en" style="color:var(--down)">−{{ _wm_dd_pct }}%</span>
+                <span class="l-zh" style="color:var(--down)">−{{ _wm_dd_pct }}%</span>
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {# ── Task 6C: plain breadth line (counts, not raw fractions) ── #}
+          {% if _lc.share10 is defined and _lc.share10 is not none and _lc.share30 is defined and _lc.share30 is not none and _lc.n_total is defined %}
+          {% set _lc_n10 = (_lc.share10 * _lc.n_total) | round | int %}
+          {% set _lc_n30 = (_lc.share30 * _lc.n_total) | round | int %}
           <div class="rsx-leaders-sub">
-            {% for wm in _lc.worst_members[:3] %}{% if not loop.first %} · {% endif %}{{ wm.ticker }} {% if wm.dd is defined and wm.dd is not none %}{{ (wm.dd * 100)|round|int }}%{% endif %}{% endfor %}
+            <span class="l-en">{{ _lc_n10 }} of {{ _lc.n_total }} names 10%+ off their highs; {{ _lc_n30 }} are 30%+ off.</span>
+            <span class="l-zh">{{ _lc.n_total }}个成分中{{ _lc_n10 }}个较高点跌超10%；其中{{ _lc_n30 }}个跌超30%。</span>
           </div>
           {% endif %}
           {% if _lc.n_fresh is defined and _lc.n_total is defined %}
@@ -9705,10 +9955,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow">
           {{ t('Overseas','海外') }}
+          {{ help('Context only — does not move the US score. Tiles link to the full International page.','仅供背景参考——不影响美国评分。点击卡片可进入完整国际页面。') }}
           {% if intl_cascade is defined and intl_cascade and intl_cascade.asof is defined and intl_cascade.asof %}
           <span class="mx5-pop-asof">{{ intl_cascade.asof }}</span>
           {% endif %}
         </div>
+        {# ── plain-word maps reused from intl.html turn cards ── #}
+        {% set _OV_RD_STATE_EN = {'calm': 'Calm', 'watch': 'Watch', 'caution': 'Caution', 'elevated': 'Elevated', 'risk-off': 'Risk-off'} %}
+        {% set _OV_RD_STATE_ZH = {'calm': '平静', 'watch': '留意', 'caution': '谨慎', 'elevated': '偏高', 'risk-off': '避险'} %}
         {# Market grid from intl_cascade.rows — alert first #}
         {% if intl_cascade is defined and intl_cascade %}
           {# alert-first, then the calm markets — rows arrive in fixed dict order, only
@@ -9718,7 +9972,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-pop-intl-grid">
             {% for row in _iov_rows %}
             {% set _is_alert = (row.alert if row.alert is defined else false) or (row.state is defined and row.state in ('risk-off','elevated')) %}
-            <div class="mx5-pop-intl-tile{{ ' intl-alert' if _is_alert }}">
+            {# — per-tile turn profile (Task 7b) — #}
+            {% set _ov_prof = row.get('profile') if row.get is defined else none %}
+            {# Task 7b (1): tile is now an <a> linking to intl.html; (2): [data-rpop] wires the hover popover #}
+            <a href="intl.html" class="mx5-pop-intl-tile{{ ' intl-alert' if _is_alert }}" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot{{ ' intl-dot-alert' if _is_alert }}"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">{{ row.name_en if row.name_en is defined else (row.name if row.name is defined else row.ticker) }}</span>
@@ -9727,7 +9984,81 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {% if row.score is defined and row.score is not none %}
               <span class="mx5-intl-score{{ ' intl-score-alert' if _is_alert }}">{{ row.score|round|int }}</span>
               {% endif %}
-            </div>
+              {# — .rp-src payload cloned by theme.js row-pop engine on hover — #}
+              <span class="rp-src" hidden>
+                {# header: country name + risk-radar score #}
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">{{ row.name_en if row.name_en is defined else (row.name if row.name is defined else '') }}</span>
+                    <span class="l-zh">{{ row.name_zh if (row.name_zh is defined and row.name_zh) else (row.name_en if row.name_en is defined else '') }}</span>
+                  </span>
+                  {% if row.score is defined and row.score is not none %}
+                  <span class="row-pop-kind">{{ t('Risk score','风险评分') }} {{ row.score|round|int }}/100</span>
+                  {% endif %}
+                </div>
+                <div class="row-pop-div"></div>
+                {% if _ov_prof %}
+                {# turn state word + stance line from market_states() profile #}
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en"><b>{{ _ov_prof.state_en or '—' }}</b>{% if _ov_prof.stance_en %} — {{ _ov_prof.stance_en }}{% endif %}</span>
+                    <span class="l-zh"><b>{{ _ov_prof.state_zh or '—' }}</b>{% if _ov_prof.stance_zh %} — {{ _ov_prof.stance_zh }}{% endif %}</span>
+                  </li>
+                </ul>
+                {# 20d momentum + off-high metrics #}
+                <div class="row-pop-grid">
+                  {% if _ov_prof.mom20_pct is not none %}
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
+                    <span class="row-pop-val" style="color:{{ 'var(--up)' if _ov_prof.mom20_pct >= 0 else 'var(--down)' }}">{{ '%+.1f'|format(_ov_prof.mom20_pct) }}%</span>
+                  </div>
+                  {% endif %}
+                  {% if _ov_prof.dd_pct is not none %}
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
+                    <span class="row-pop-val"{% if _ov_prof.dd_pct < -2 %} style="color:var(--down)"{% endif %}>{{ '%.1f'|format(_ov_prof.dd_pct) }}%</span>
+                  </div>
+                  {% endif %}
+                </div>
+                {# Pullback risk from risk-radar rd_state + dd_h21 #}
+                {% set _ov_rd = row.get('rd_state') if row.get is defined else none %}
+                {% if _ov_rd and _ov_rd != 'calm' %}
+                <div class="row-pop-div"></div>
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en">Pullback risk: <b style="color:{{ 'var(--act,#ef4444)' if _ov_rd in ('elevated','risk-off') else 'var(--warn,#f59e0b)' }}">{{ _OV_RD_STATE_EN.get(_ov_rd, _ov_rd) }}</b>
+                    {% if row.get is defined and row.get('dominant_en') %} — {{ row.dominant_en }}{% endif %}</span>
+                    <span class="l-zh">回撤风险：<b style="color:{{ 'var(--act,#ef4444)' if _ov_rd in ('elevated','risk-off') else 'var(--warn,#f59e0b)' }}">{{ _OV_RD_STATE_ZH.get(_ov_rd, _ov_rd) }}</b>
+                    {% if row.get is defined and row.get('dominant_zh') %} — {{ row.dominant_zh }}{% endif %}</span>
+                  </li>
+                  {% if row.get is defined and row.get('dd_h21') is not none %}
+                  <li>
+                    <span class="l-en">≥5% dip within a month: ~{{ (row.dd_h21 * 100)|round|int }}%</span>
+                    <span class="l-zh">一个月内≥5%回撤：约{{ (row.dd_h21 * 100)|round|int }}%</span>
+                  </li>
+                  {% endif %}
+                </ul>
+                {% endif %}
+                {% else %}
+                {# No profile: show score + rd_state only #}
+                <div class="row-pop-grid">
+                  {% set _ov_rd2 = row.get('rd_state') if row.get is defined else none %}
+                  {% if _ov_rd2 %}
+                  <div class="row-pop-cell wide">
+                    <span class="row-pop-lbl">
+                      <span class="l-en">Pullback risk: {{ _OV_RD_STATE_EN.get(_ov_rd2, _ov_rd2) }}</span>
+                      <span class="l-zh">回撤风险：{{ _OV_RD_STATE_ZH.get(_ov_rd2, _ov_rd2) }}</span>
+                    </span>
+                  </div>
+                  {% endif %}
+                </div>
+                {% endif %}
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>{# end .rp-src #}
+            </a>
             {% endfor %}
           </div>
           {% endif %}
@@ -9743,11 +10074,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-zh"><b>正在扩散</b>——更多市场进入避险状态。</span>
           {% endif %}
           {% if det_cascade.immature is defined and det_cascade.immature %}
-          {# accrual honesty lives in the single section footer below — no per-row repeat #}
+          {# accrual honesty lives in the eyebrow help() tip — no per-row repeat #}
           {% endif %}
         </div>
         {% endif %}
-        {# US Transmission board #}
+        {# US Transmission board — Task 7c: add data-tip-en/zh per leg #}
         {% if intl_spillover is defined and intl_spillover and intl_spillover.legs is defined and intl_spillover.legs %}
         {% set _iov_hot = intl_spillover.hot_count if (intl_spillover.hot_count is defined and intl_spillover.hot_count is not none) else (intl_spillover.legs | selectattr('hot','equalto',true) | list | length) %}
         <div class="mx5-pop-intl-spill">
@@ -9761,7 +10092,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-pop-intl-legs">
             {% for leg in intl_spillover.legs %}
             {% set _lhot = leg.hot if leg.hot is defined else false %}
-            <span class="mx5-pop-intl-leg{{ ' leg-hot' if _lhot }}">
+            {% set _ltip_en = (leg.tip_en if (leg.tip_en is defined and leg.tip_en) else '') %}
+            {% set _ltip_zh = (leg.tip_zh if (leg.tip_zh is defined and leg.tip_zh) else _ltip_en) %}
+            <span class="mx5-pop-intl-leg{{ ' leg-hot' if _lhot }}"{% if _ltip_en %} data-tip-en="{{ _ltip_en }}" data-tip-zh="{{ _ltip_zh }}"{% endif %}>
               <span class="mx5-leg-dot{{ ' leg-dot-hot' if _lhot }}"></span>
               <span class="l-en">{{ leg.label_en if leg.label_en is defined else leg.key }}</span>
               <span class="l-zh">{{ leg.label_zh if (leg.label_zh is defined and leg.label_zh) else (leg.label_en if leg.label_en is defined else leg.key) }}</span>
@@ -9774,12 +10107,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
         </div>
         {% endif %}
-        {# Honesty footer + link #}
-        <div class="mx5-pop-intl-footer">
-          <span class="l-en">Context only — accruing; does not move the US score.</span>
-          <span class="l-zh">仅供背景参考——积累中；不影响美国评分。</span>
-          <br><a href="intl.html" class="mx5-pop-intl-link"><span class="l-en">Full international detail →</span><span class="l-zh">完整国际详情 →</span></a>
-        </div>
+        {# Task 8: footer removed — honesty now lives in the eyebrow help() tip above #}
         {% else %}
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow">{{ t('Overseas','海外') }}</div>
