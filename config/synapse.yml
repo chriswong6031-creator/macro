@@ -13935,3 +13935,100 @@ artifacts:
       runs. Pattern path — each file has a unique <market>/<pick_id> suffix; <ID> is
       stable across cycles for the same pick. SA-R14 one-grader law; SA-R15 absent => data_gap;
       SA-R16 never-raise.
+
+  # ---------------------------------------------------------------------------
+  # MSP W1 — Market Structure & Systematic Positioning data spine
+  # ---------------------------------------------------------------------------
+
+  market-structure-latest:
+    path: data/market_structure/latest.json
+    format: json
+    producer: scripts/build_market_structure.py
+    known_extra_writers: []
+    owner_program: market-structure
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: market_structure_context.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      MSP W1 market-structure context artifact. Carries four display-only blocks:
+      (1) gamma — dealer net GEX regime (long/short), flip level, distance to flip,
+      days in regime, percentile vs own stored history, up to 500 rows of history.
+      (2) systematic — vol-control proxy (alloc_bn, alloc_frac, flow_1d/5d, state)
+      and CTA proxy (score, z-score, flow_1d/5d, state), plus a categorical agreement
+      enum (aligned_adding / aligned_cutting / paused / split). MSP-R3: NO fused
+      numeric composite of VC+CTA is stored anywhere in this artifact.
+      (3) vol — rv21/rv63 (annualised), rv_cross_state (calm/stress), VIX futures
+      curve (M1–M6, settle + DTE), curve slope, series_start_curve.
+      (4) dispersion — COR1M close, percentile-based regime (dispersion/normal/elevated
+      vs trailing 2y — never a hardcoded threshold), 1y delta, pctile_2y, COR3M, DSPX,
+      up to 500 rows of COR1M history.
+      is_context_only=true, display_only=true — no score or ranking authority.
+      Forward ledger (data/market_structure/ledger.parquet) is lane-gated on
+      COLLECT_LANE=nightly (MSP-R10). History parquet (full backcast) recomputed
+      deterministically every run (MSP-R9). Change feed is same-day-idempotent.
+      Dedupe note: options_weather lobe = per-root entry-timing over 30 sector ETFs;
+      this lobe = market-level dealer/flow/dispersion. Disjoint jobs — do not merge.
+      MSP-R3 law (no fusion) is enforced by the no-fused-numeric-composite rule:
+      VC and CTA are shown side-by-side with a categorical agreement enum, never as
+      a blended z-score or composite index.
+
+  market-structure-history:
+    path: data/market_structure/history.parquet
+    format: parquet
+    producer: scripts/build_market_structure.py
+    known_extra_writers: []
+    owner_program: market-structure
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_market_structure.py
+    external_consumers: []
+    notes: >
+      MSP W1 full-backcast history parquet. Columns: date, spx_close, rv21, rv63,
+      vc_alloc_bn, vc_flow_bn, cta_score, cta_z, cta_flow. Deterministic full
+      recompute on every nightly run (MSP-R9 — full-history backcast at birth).
+      Not lane-gated (non-ledger artifact). Consumed by market_structure.html
+      charts (W2) for multi-decade backcast visualization.
+
+  market-structure-ledger:
+    path: data/market_structure/ledger.parquet
+    format: parquet
+    producer: scripts/build_market_structure.py
+    known_extra_writers: []
+    owner_program: market-structure
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      MSP W1 forward ledger (lane-gated per MSP-R10: COLLECT_LANE=nightly only).
+      Row types: gamma_regime_flip (when dealer gamma regime changes vs prior day),
+      systematic_state (daily: vc_state, cta_state, agreement, vc_alloc_bn, cta_score,
+      cta_z), em_breach (when |1d SPX return| exceeds prior-day IV30/sqrt(252) band;
+      records ret_1d, band, direction). Deduped on (date, type) keep-first.
+      Shadow/accrual only — not consumed by any display surface until a future
+      gauntlet prereg (MSP-R10 law). Off-lane runs write no rows.

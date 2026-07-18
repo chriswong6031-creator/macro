@@ -441,6 +441,11 @@ lanes:
           cl_gex:
             - scripts.build_gex_board
             - scripts.build_vol_regime
+            # MSP W1: market-structure data spine (VC/CTA systematic flows + gamma + dispersion).
+            # Runs AFTER build_gex_board (reads gex_SPX.parquet committed by the collect step;
+            # build_gex_board may refresh it but gex_SPX is committed nightly regardless).
+            # Cheap (<10s); lane-gated ledger; artifact data/market_structure/latest.json.
+            - scripts.build_market_structure
             # W4 EVW (RIC program, P3): event-window snapshot + forward-log stamp
             - scripts.build_event_windows
             - scripts.build_options_flow
