@@ -367,6 +367,87 @@ class TestArtifactSchema:
 
 
 # ---------------------------------------------------------------------------
+# Caption staleness + content correctness tests
+# ---------------------------------------------------------------------------
+
+class TestCaptionStaleness:
+    """Verify copy_as_of / copy_age_days / copy_stale stamping on built levers."""
+
+    def _build(self):
+        from scripts.build_policy_lever import build
+        return build()
+
+    def test_levers_have_copy_as_of(self):
+        """Every lever must have a non-empty copy_as_of string."""
+        artifact = self._build()
+        for lv in artifact["levers"]:
+            assert "copy_as_of" in lv, f"lever '{lv.get('name')}' missing copy_as_of"
+            assert isinstance(lv["copy_as_of"], str) and lv["copy_as_of"], (
+                f"lever '{lv.get('name')}' copy_as_of is empty"
+            )
+
+    def test_levers_have_copy_age_days(self):
+        """Every lever must have copy_age_days as a non-negative int."""
+        artifact = self._build()
+        for lv in artifact["levers"]:
+            assert "copy_age_days" in lv, f"lever '{lv.get('name')}' missing copy_age_days"
+            assert isinstance(lv["copy_age_days"], int), (
+                f"lever '{lv.get('name')}' copy_age_days is not int: {lv['copy_age_days']!r}"
+            )
+            assert lv["copy_age_days"] >= 0, (
+                f"lever '{lv.get('name')}' copy_age_days is negative"
+            )
+
+    def test_levers_have_copy_stale_bool(self):
+        """copy_stale must be a bool on every lever."""
+        artifact = self._build()
+        for lv in artifact["levers"]:
+            assert "copy_stale" in lv, f"lever '{lv.get('name')}' missing copy_stale"
+            assert isinstance(lv["copy_stale"], bool), (
+                f"lever '{lv.get('name')}' copy_stale is not bool"
+            )
+
+    def test_china_caption_no_90_day(self):
+        """China lever watch must not reference the stale '90-day' truce language."""
+        artifact = self._build()
+        china = next((lv for lv in artifact["levers"] if "China" in lv.get("name", "")), None)
+        assert china is not None, "China/tariffs lever not found"
+        assert "90-day" not in china["watch"], "China watch still contains stale '90-day' text"
+        assert "90-day" not in china.get("watch_zh", ""), (
+            "China watch_zh still contains stale '90天' / '90-day' text"
+        )
+
+    def test_iran_caption_no_hardcoded_date(self):
+        """Iran lever watch must not contain the stale hardcoded '2026-07-08' event date."""
+        artifact = self._build()
+        iran = next((lv for lv in artifact["levers"] if "Iran" in lv.get("name", "")), None)
+        assert iran is not None, "Iran/oil lever not found"
+        assert "2026-07-08" not in iran["watch"], (
+            "Iran watch still contains stale hardcoded date '2026-07-08'"
+        )
+
+    def test_captions_no_intent_word(self):
+        """PS-R1: neither lever watch caption may contain the word 'intent'."""
+        artifact = self._build()
+        for lv in artifact["levers"]:
+            watch = lv.get("watch", "")
+            assert "intent" not in watch.lower(), (
+                f"lever '{lv.get('name')}' watch contains forbidden word 'intent'"
+            )
+
+    def test_captions_no_probability_words(self):
+        """PS-R4: watch captions must not contain probability / percentage language."""
+        artifact = self._build()
+        forbidden = ["probability", "probable", "chance", "%"]
+        for lv in artifact["levers"]:
+            watch = lv.get("watch", "")
+            for word in forbidden:
+                assert word.lower() not in watch.lower(), (
+                    f"lever '{lv.get('name')}' watch contains forbidden word '{word}'"
+                )
+
+
+# ---------------------------------------------------------------------------
 # Template render smoke test with policy_lever fixture
 # ---------------------------------------------------------------------------
 
@@ -456,14 +537,20 @@ class TestTemplateRender:
                         "basing": False, "days_in_base": 25, "flatness": 0.1681,
                         "armed": False, "params": {"version": "v1.1"},
                     },
-                    "watch": "Re-escalation risk restated by 2026-07-08 strike.",
-                    "watch_zh": "2026年7月8日打击事件重申了再升级风险。",
+                    "watch": "Middle East escalation is the transmission channel to rate-cut repricing.",
+                    "watch_zh": "中东局势升级是向降息重定价传导的通道，石油是核心杠杆。",
+                    "copy_as_of": "2026-07-18",
+                    "copy_age_days": 0,
+                    "copy_stale": False,
                 },
                 {
                     "name": "China / tariffs", "name_zh": "中国/关税",
                     "asset": None, "arming": None,
-                    "watch": "Tariff truce fragility.",
-                    "watch_zh": "关税休战的脆弱性。",
+                    "watch": "US-China trade friction is the policy channel most directly tied to semis supply-chain margins.",
+                    "watch_zh": "中美贸易摩擦是与半导体供应链利润率关联最直接的政策渠道。",
+                    "copy_as_of": "2026-07-18",
+                    "copy_age_days": 0,
+                    "copy_stale": False,
                 },
             ],
             "state": state,

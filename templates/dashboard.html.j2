@@ -10485,6 +10485,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 <span class="l-zh">{{ (lv.watch_zh if lv.watch_zh is defined and lv.watch_zh else lv.watch) }}</span>
               </div>
               {% endif %}
+              {% if lv.copy_as_of is defined and lv.copy_as_of %}
+              <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px">
+                <span class="l-en">caption as of {{ lv.copy_as_of }}{% if lv.copy_stale is defined and lv.copy_stale %} — <em>review due</em>{% endif %}</span>
+                <span class="l-zh">文案更新于 {{ lv.copy_as_of }}{% if lv.copy_stale is defined and lv.copy_stale %} — <em>待复核</em>{% endif %}</span>
+              </div>
+              {% endif %}
             </div>
             <div class="plx-lever-status">
               <svg width="7" height="7" viewBox="0 0 7 7"><circle cx="3.5" cy="3.5" r="3.5" fill="{{ 'var(--down)' if _lv_armed else 'rgba(255,255,255,.22)' }}"/></svg>
