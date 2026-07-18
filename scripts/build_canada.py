@@ -875,7 +875,7 @@ def main() -> int:
         cadir.mkdir(parents=True, exist_ok=True)
         (cadir / "latest.json").write_text(json.dumps(
             {"date": latest.get("date", ""),
-             "label": (f"{_n} standout TSX names" if _n else "TSX standouts · alpha · setups"),
+             "label": (f"{_n} Prophet TSX signals" if _n else "Prophet TSX · alpha · setups"),
              "n_setups": _n}, indent=2))
 
         # TSX stock search shell (the per-ticker library was built above)

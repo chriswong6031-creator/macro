@@ -578,8 +578,8 @@ LOBE_DESCRIPTIONS = {
         "src_fp": "257c11198cf0dda2",
     },
     "special-sits-context-latest": {
-        "short": "",
-        "full": "",
+        "short": "Nightly context snapshot of US special-situation events — M&A, spin-offs, risk-arb, activist campaigns, clinical readouts, and index changes — display tier only, no score or ranking authority.",
+        "full": "Each night the special-situations builder scans the universe for active event-driven situations and writes a ranked context snapshot covering M&A deals, spin-offs and carve-outs, risk-arbitrage spreads, activist campaigns, binary clinical events, and index-change windows. Setups are graded A or B for display only; the artifact carries an explicit is_context_only flag and must never be used as a signal or position-sizing input. A same-day change-feed distinguishes new arrivals, stage transitions, and terminal outcomes from the prior state. Consumers fail-open when the file is absent, so the artifact is harmless until the builder first runs.",
         "src_fp": "f646afda96a036a5",
     },
     "spine-index": {

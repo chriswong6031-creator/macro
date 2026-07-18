@@ -310,6 +310,17 @@ All of the following are NOT renamed and must never be renamed:
 - dashboard.html.j2 SUE chip tooltip (~:13130, :13227 "Standout on the shallow
   recent window...")
 
+### Landing-hub card labels (found post-census)
+
+The landing-hub card label fields written to `data/us_stocks/latest.json`
+(`scripts/build_site.py`) and `data/canada_stocks/latest.json`
+(`scripts/build_canada.py`) were not caught in the initial census. Both are
+user-facing EN `label` strings consumed by the landing hub and fall within
+the rebrand scope of Amendment 1. Updated in the same PR:
+`build_site.py` → `"{n} Prophet stock signals" / "Prophet · sectors · flows"`;
+`build_canada.py` → `"{n} Prophet TSX signals" / "Prophet TSX · alpha · setups"`.
+The baked latest.json files heal on the next nightly render.
+
 ### Site copies
 
 Site copies of edited templates (site/*.html) are RENDER-OWNED and heal on the
