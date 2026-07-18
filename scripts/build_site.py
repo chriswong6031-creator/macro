@@ -3973,7 +3973,7 @@ def main() -> int:
             "n_alert": len(_irl_alerts),
             "n_total": len(_irl_rows),
             "alerts": _irl_alerts,
-            "rows": _irl_rows,  # full 10-market list for the rich dropdown (alert markets first)
+            "rows": _irl_rows,  # full 10-market list (fixed order; display re-sorts alert-first)
             "asof": max(_irl_asofs) if _irl_asofs else None,
         }
     except Exception as _ice:  # noqa: BLE001 — display-only, never fatal
