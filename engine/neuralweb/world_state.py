@@ -625,7 +625,7 @@ def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
         for evt in shown:
             if not isinstance(evt, dict):
                 continue
-            events_out.append({
+            row: dict = {
                 "sector": _clean(evt.get("sector")),
                 "from_leg": _leg_compact(evt.get("from_leg")),
                 "to_leg": _leg_compact(evt.get("to_leg")),
@@ -633,10 +633,52 @@ def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
                 "day_n": _clean(evt.get("day_n")),
                 "started": _clean(evt.get("started")),
                 "confirmed_tonight": _clean(evt.get("confirmed_tonight")),
-            })
+            }
+            # v2 additive fields — null-safe; v1 payloads that lack them compose
+            # identically (the keys are simply absent from the row).
+            _event_type = evt.get("event_type")
+            if _event_type is not None:
+                row["event_type"] = _clean(_event_type)
+            _to_sector = evt.get("to_sector")
+            if _to_sector is not None:
+                row["to_sector"] = _clean(_to_sector)
+            _from_sector = evt.get("from_sector")
+            if _from_sector is not None:
+                row["from_sector"] = _clean(_from_sector)
+            _sev_eff = evt.get("severity_effective")
+            if _sev_eff is not None:
+                row["severity_effective"] = _clean(_sev_eff)
+            _health = evt.get("health")
+            if isinstance(_health, dict):
+                # Pass through health.state only — compact; lobe consumers can
+                # use it for context without carrying the full health object.
+                _hstate = _health.get("state")
+                if _hstate is not None:
+                    row["health_state"] = _clean(_hstate)
+            events_out.append(row)
 
         out["events"] = events_out if events_out else None
         out["n_truncated"] = _clean(n_truncated)
+
+        # v2 top-level: compact contagion summary (n_breaks + up to 2 breaks)
+        _contagion_list = payload.get("contagion")
+        if isinstance(_contagion_list, list) and _contagion_list:
+            _breaks = [c for c in _contagion_list if isinstance(c, dict)]
+            _n_breaks = len(_breaks)
+            _break_rows: list[dict] = []
+            for _cb in _breaks[:2]:
+                _br: dict = {}
+                if _cb.get("complex") is not None:
+                    _br["complex"] = _clean(_cb.get("complex"))
+                if _cb.get("corr10_raw") is not None:
+                    _br["corr10_raw"] = _clean(_cb.get("corr10_raw"))
+                if _cb.get("root_cause") and isinstance(_cb["root_cause"], dict):
+                    _br["leader"] = _clean(_cb["root_cause"].get("leader"))
+                _break_rows.append(_br)
+            out["contagion_summary"] = {
+                "n_breaks": _clean(_n_breaks),
+                "breaks": _break_rows,
+            }
 
         # Ruler passthrough — modern-era census summary if present
         ruler = payload.get("ruler")

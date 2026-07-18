@@ -307,7 +307,7 @@
     var em=(_data.highlights.emerging||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,5);
     var fa=(_data.highlights.fading||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,4);
     el.innerHTML='<div class="srx-hd"><span>🌀 '+L('Subsector rotation','子行业轮动')
-      +'<i>'+L('Broad-universe · velocity','全市场 · 速度')+'</i></span>'
+      +'<i>'+L('Whole market · speed of relative strength','全市场 · 相对强度的变化速度')+'</i></span>'
       +'<a class="srx-more" href="'+PAGE_HREF+'">'+L('full rotation map','完整轮动图')+' →</a></div>'
       +'<div class="srx-cols">'
       +'<div class="srx-col"><span class="srx-lab up">▲ '+L('Emerging','升温')+'</span>'+em.map(chip).join('')+'</div>'
@@ -322,7 +322,8 @@
     function fpct(v){return v==null?'—':(v*100).toFixed(0)+'%';}
     function fic(v){return v==null?'—':(v>0?'+':'')+(+v).toFixed(3);}
     function ft(v){return v==null?'—':(+v).toFixed(1);}
-    var V={accruing:['Accruing','子样本累积中','--muted'],measuring:['Measuring','测量中','--warn'],validated:['Validated','已验证','--up']};
+    // D-7a: verdict display label map — key stays 'validated' (data); display → "Clears the bar"
+    var V={accruing:['Accruing','记录累积中','--muted'],measuring:['Still measuring','测量中','--warn'],validated:['Clears the bar','已达标','--up']};
     var vb=V[tr.verdict]||V.accruing;
     var hs=tr.horizons||{};
     var rows=Object.keys(hs).map(function(h){
@@ -333,8 +334,9 @@
         +'<td class="num">'+fic(e.score_ic)+'</td><td class="num">'+ft(e.score_ic_t_hac)
         +(prov?' <span class="sr-ok">✓</span>':'')+'</td></tr>';
     }).join('');
+    // D-10: replace title= with data-tip-en/zh per house law
     var misses=(tr.recent_misses||[]).slice(0,8).map(function(mi){
-      return '<span class="sr-miss" title="'+esc(mi.theme||'')+'"><b>'+esc(mi.name)+'</b> '
+      return '<span class="sr-miss" data-tip-en="'+_esc(mi.theme_en||mi.theme||'')+'" data-tip-zh="'+_esc(mi.theme_zh||mi.theme||'')+'"><b>'+_esc(mi.name)+'</b> '
         +'<i class="'+(mi.stage==='emerging'?'dn':'up')+'">'+(mi.fwd_rel>0?'+':'')+(mi.fwd_rel*100).toFixed(1)+'%</i></span>';
     }).join('');
     el.innerHTML=''
@@ -342,13 +344,26 @@
         +'<span class="sr-tr-q" style="color:var('+vb[2]+');border-color:var('+vb[2]+')">'+L(vb[0],vb[1])+'</span>'
         +'<span class="sr-tr-meta">'+(tr.n_days||0)+' '+L('days logged','天')+' · '+(tr.n_snapshots||0)+' '+L('calls logged','次记录')+'</span></div>'
       +'<div class="sr-tr-note">'+L(esc(tr.note||''),esc(tr.note_zh||tr.note||''))+'</div>'
-      +'<div class="sr-tr-body"><table class="sr-tr-tbl"><thead><tr>'
+      // D-6: plainify column headers; move jargon behind ? receipt on table caption
+      +'<div class="sr-tr-body"><table class="sr-tr-tbl"><caption style="text-align:left;padding:4px 8px;font-size:10px;color:var(--muted);">'
+        +'<span class="rcf-help" tabindex="0" role="button" style="cursor:help;"'
+        +' data-tip-en="Rank fit = information coefficient (how well the ranking lines up with what happened next). Reliability = HAC t-stat (higher = less likely to be noise; &#10003; = clears the bar for that horizon)."'
+        +' data-tip-zh="排序吻合 = 信息系数（排序与后续实际走势的吻合程度）。可靠度 = HAC t 统计量（越高越不像噪声；&#10003; = 该周期已达标）。"'
+        +'>?</span></caption><thead><tr>'
         +'<th>'+L('Horizon','周期')+'</th><th class="num">'+L('Matured','已到期')+'</th>'
         +'<th class="num">'+L('Emerging hit','升温命中')+'</th><th class="num">'+L('Fading hit','退潮命中')+'</th>'
-        +'<th class="num">'+L('Score IC','评分IC')+'</th><th class="num">'+L('HAC t','HAC t')+'</th></tr></thead>'
+        +'<th class="num">'+L('Rank fit','排序吻合')+'</th><th class="num">'+L('Reliability','可靠度')+'</th></tr></thead>'
         +'<tbody>'+rows+'</tbody></table></div>'
       +(misses?'<div class="sr-tr-misses"><span class="sr-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')+'</span>'+misses+'</div>':'')
-      +'<div class="sr-tr-disc">'+L(esc(tr.disclaimer||''),esc(tr.disclaimer_zh||tr.disclaimer||''))+'</div>';
+      // D-7b: plain at-rest sentence; raw disclaimer demoted to ? tip
+      +'<div class="sr-tr-disc">'
+        +L('A scorecard of this page\'s own calls, checked against what happened next. Until a time-window has enough history, it\'s still measuring — read it as "measuring", not proof.',
+           '本页自身判断的记分卡，对照后续实际走势检验。在某一周期积累足够历史前仍为「测量中」——请视为「测量」，而非定论。')
+        +' <span class="rcf-help" tabindex="0" role="button" style="cursor:help;"'
+        +' data-tip-en="'+_esc(tr.disclaimer||'')+'"'
+        +' data-tip-zh="'+_esc(tr.disclaimer_zh||tr.disclaimer||'')+'"'
+        +'>?</span>'
+        +'</div>';
   }
 
   // items() returns the active unit's array
@@ -386,11 +401,12 @@
           +sectorBtn
         +'</div>'
         +'<div class="sr-grow"></div>'
-        +'<div class="sr-meta">'+L('Broad-universe · multi-horizon velocity','全市场 · 多周期速度')+'</div>'
+        +'<div class="sr-meta">'+L('Whole market · speed of relative strength','全市场 · 相对强度的变化速度')+'</div>'
       +'</div>'
       +'<div class="sr-map-card"></div>'
       +'<div class="sr-versus-wrap"></div>'
       +'<div class="sr-table-wrap"></div>'
+      +'<div class="sr-vb-container"></div>'
       +'<div class="sr-tr-wrap"></div>';
 
     Array.prototype.forEach.call(root.querySelectorAll('.sr-toggle button'),function(b){
@@ -398,8 +414,9 @@
     });
     drawMapCard(root.querySelector('.sr-map-card'));
     drawVersus(root.querySelector('.sr-versus-wrap'));
-    drawTrackRecord(root.querySelector('.sr-tr-wrap'));
     drawTable(root.querySelector('.sr-table-wrap'));
+    drawVelocityBoard(root.querySelector('.sr-vb-container'));
+    drawTrackRecord(root.querySelector('.sr-tr-wrap'));
 
     document.removeEventListener('themechange',_rerender); document.removeEventListener('langchange',_rerender);
     _rerenderRoot=root;
@@ -680,12 +697,15 @@
       if(typeof va==='string')return _sortDir*va.localeCompare(vb);
       return _sortDir*(va-vb);
     });
-    var head=COLS.filter(function(c){return !(hideTCol&&c.k==='theme');}).map(function(c){
+    // Dead-end #2: prepend non-sortable # rank column
+    var rankHead='<th class="num" style="cursor:default;min-width:28px;">#</th>';
+    var head=rankHead+COLS.filter(function(c){return !(hideTCol&&c.k==='theme');}).map(function(c){
       var on=c.k===_sortKey?(' on '+(_sortDir<0?'desc':'asc')):'';
       return '<th class="'+(c.num?'num':'')+on+'" data-k="'+c.k+'">'+L(c.en,c.zh)+'</th>';
     }).join('');
-    var rows=its.map(function(d){
-      var tds=COLS.filter(function(c){return !(hideTCol&&c.k==='theme');}).map(function(c){
+    var rows=its.map(function(d,ri){
+      var rankTd='<td class="num" style="color:var(--muted);font-variant-numeric:tabular-nums;">'+(ri+1)+'</td>';
+      var tds=rankTd+COLS.filter(function(c){return !(hideTCol&&c.k==='theme');}).map(function(c){
         if(c.k==='quadrant'){var q=QUAD[d.quadrant];return '<td><span class="sr-q '+q.cls+'">'+(isZh()?q.zh:q.en)+'</span></td>';}
         var v=cellVal(d,c);
         if(c.perf)return '<td class="num '+pcCls(v)+'">'+fmtPc(v)+'</td>';
@@ -699,6 +719,7 @@
     el.innerHTML='<table class="sr-table"><thead><tr>'+head+'</tr></thead><tbody>'+rows+'</tbody></table>';
     Array.prototype.forEach.call(el.querySelectorAll('th'),function(th){
       th.addEventListener('click',function(){var k=th.getAttribute('data-k');
+        if(!k) return; // non-sortable column (e.g. rank #)
         if(k===_sortKey)_sortDir=-_sortDir; else {_sortKey=k; _sortDir=(k==='name'||k==='theme'||k==='quadrant')?1:-1;}
         drawTable(el);});
     });
@@ -708,6 +729,61 @@
     });
   }
   function sortVal(d){ var c=COLS.filter(function(x){return x.k===_sortKey;})[0]; if(!c)return d.emerging_score; return cellVal(d,c); }
+
+  /* ---------- velocity board (dead-end #1 wired, collapsed <details>) ---------- */
+  function drawVelocityBoard(el){
+    // graceful degrade: no velocity_board → hide
+    var vb=_data&&_data.velocity_board;
+    if(!vb||!Array.isArray(vb.rows)||!vb.rows.length){el.style.display='none';return;}
+    el.style.display='';
+    var rows=vb.rows;
+    function pc2(v){return v==null?'—':((v>0?'+':'')+(v*100).toFixed(1)+'%');}
+    function fz(v){return v==null?'—':((v>0?'+':'')+v.toFixed(1)+'σ');}
+    var trs=rows.map(function(r){
+      var rs=r.rs||{};
+      /* Engine emits rs.d5/d10/d20 and accel_sign 'pos'/'neg'/'flat' (R-M2 fix) */
+      var accelCls=r.accel_sign==='pos'?'up':(r.accel_sign==='neg'?'dn':'');
+      /* flow_5d_mn is already in $millions from engine (do NOT divide by 1e6) */
+      var flowCell=r.flow&&r.flow.flow_5d_mn!=null
+        ?'$'+(r.flow.flow_5d_mn).toFixed(0)+'M'+(r.flow.flow_asof?' <span style="font-size:9px;color:var(--muted);">('+_esc(r.flow.flow_asof)+')</span>':'')
+        :'—';
+      return '<tr>'
+        +'<td>'+_esc(isZh()?(r.label_zh||r.series):r.label_en||r.series)+'</td>'
+        +'<td class="num '+pcCls(rs.d5)+'">'+pc2(rs.d5)+'</td>'
+        +'<td class="num '+pcCls(rs.d10)+'">'+pc2(rs.d10)+'</td>'
+        +'<td class="num '+pcCls(rs.d20)+'">'+pc2(rs.d20)+'</td>'
+        +'<td class="num '+accelCls+'">'+fz(r.accel10)+'</td>'
+        +'<td class="num" style="color:var(--muted);">'+flowCell+'</td>'
+        +'</tr>';
+    }).join('');
+    var asof=vb.asof||(_data&&_data.as_of)||'';
+    el.innerHTML='<details class="sr-vb-wrap">'
+      +'<summary class="sr-vb-sum">'
+        +L('Momentum & flow board','动量与资金流速板')
+        +' <span style="font-size:10px;color:var(--muted);">'+L('context, not signals','参考，非信号')+'</span>'
+      +'</summary>'
+      +'<div class="sr-vb-inner">'
+        +(asof?'<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">as of '+_esc(asof)+'</div>':'')
+        +'<div style="overflow-x:auto;">'
+        +'<table class="sr-table" style="font-size:11px;">'
+        +'<thead><tr>'
+        +'<th>'+L('Series','序列')+'</th>'
+        +'<th class="num">5d RS</th>'
+        +'<th class="num">10d RS</th>'
+        +'<th class="num">20d RS</th>'
+        +'<th class="num">'+L('Accel (vs peers)','加速（对比同类）')+'</th>'
+        +'<th class="num">'+L('Flow 5d','5日资金')+'</th>'
+        +'</tr></thead>'
+        +'<tbody>'+trs+'</tbody>'
+        +'</table>'
+        +'</div>'
+        +'<div style="font-size:10px;color:var(--muted);margin-top:6px;">'
+          +L('Speed of money, per series — context, not signals.','各序列的资金速度——参考，非信号。')
+          +' '+L('Flow and options context: receipts only, not triggers.','资金与期权背景：仅为依据，非触发条件。')
+        +'</div>'
+      +'</div>'
+      +'</details>';
+  }
 
   /* ---------- tooltip ---------- */
   var _tip=null;
@@ -724,11 +800,27 @@
     if(_unit==='subsectors') secLine='<div class="sr-tip-th">'+esc(themeOf(d))+' · '+d.n_members+' '+L('names','只')+'</div>';
     else if(_unit==='sectors') secLine='<div class="sr-tip-th">'+L('Sector ETF','行业ETF')+'</div>';
     else secLine='<div class="sr-tip-th">'+d.n_subs+' '+L('subsectors','子行业')+'</div>';
+    // Dead-end #2: rank shown in tip
+    var rankLine=d.rank!=null
+      ?'<div class="sr-tip-th" style="font-variant-numeric:tabular-nums;">#'+d.rank+' '+L('of','of')+' '+(d.rank_total||'?')+' · '+L('vs peers','对比同类')+'</div>'
+      :'';
+    // Dead-end #3: multi-horizon RS row
+    var rs=d.rs||{};
+    var rsTf=['1W','1M','3M','6M','1Y'];
+    var rsRow=rsTf.map(function(h){var v=rs[h];return '<div class="sr-tsp"><span>'+h+'</span><b class="'+pcCls(v)+'">'+(v==null?'—':(v>0?'+':'')+v.toFixed(2))+'</b></div>';}).join('');
+    var rsLine=rsRow?'<div style="font-size:9.5px;color:var(--muted);margin:4px 0 1px;">'+L('relative strength','相对强度')+'</div><div class="sr-tsp-row">'+rsRow+'</div>':'';
+    // Dead-end #1: z_accel
+    var zAccelLine=d.z_accel!=null
+      ?'<span style="margin-left:8px;">'+L('accel vs peers','对比同类加速度')+' <b class="'+pcCls(d.z_accel)+'">'+(d.z_accel>0?'+':'')+d.z_accel.toFixed(1)+'σ</b></span>'
+      :'';
     el.innerHTML='<div class="sr-tip-hd"><b>'+esc(nameOf(d))+'</b><span class="sr-q '+q.cls+'">'+(isZh()?q.zh:q.en)+'</span></div>'
+      +rankLine
       +secLine
       +'<div class="sr-tsp-row">'+sp+'</div>'
-      +'<div class="sr-tip-mt">'+L('accel','加速')+' <b class="'+pcCls(d.accel)+'">'+(d.accel==null?'—':(d.accel>0?'+':'')+d.accel.toFixed(1))+'</b> · '
-        +L('RS','相对强度')+' <b>'+(d.rs_ratio>0?'+':'')+d.rs_ratio.toFixed(2)+'</b> · '+L('mom','动量')+' <b class="'+pcCls(d.rs_mom)+'">'+(d.rs_mom>0?'+':'')+d.rs_mom.toFixed(2)+'</b></div>'
+      +rsLine
+      +'<div class="sr-tip-mt">'+L('accel','加速')+' <b class="'+pcCls(d.accel)+'">'+(d.accel==null?'—':(d.accel>0?'+':'')+d.accel.toFixed(1))+'</b>'
+        +zAccelLine
+        +' · '+L('RS','相对强度')+' <b>'+(d.rs_ratio>0?'+':'')+d.rs_ratio.toFixed(2)+'</b> · '+L('mom','动量')+' <b class="'+pcCls(d.rs_mom)+'">'+(d.rs_mom>0?'+':'')+d.rs_mom.toFixed(2)+'</b></div>'
       +(mem?'<div class="sr-tip-mem">'+mem+'</div>':'')
       +(hasDetail()?'<div class="sr-tip-open">'+L('click to open →','点击查看详情 →')+'</div>':'');
     el.classList.add('on');
@@ -812,7 +904,14 @@
     +'.srx-col{display:flex;flex-wrap:wrap;align-items:center;gap:6px;} .srx-lab{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-right:2px;} .srx-lab.up{color:var(--up);} .srx-lab.dn{color:var(--down);}'
     +'.srx-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);} .srx-chip:hover{border-color:color-mix(in srgb,var(--link) 50%,var(--line));} .srx-chip b{font-size:12px;color:var(--text);} .srx-th{font-size:9.5px;color:var(--muted);} .srx-pc{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;}'
     +'.srx-q{width:7px;height:7px;border-radius:50%;flex:none;} .srx-q.q-lead{background:var(--up);} .srx-q.q-weak{background:var(--warn);} .srx-q.q-impr{background:var(--link);} .srx-q.q-lag{background:var(--down);}'
-    +'@media (prefers-reduced-motion:reduce){.sr-tip,.sr-dot{transition:none;} .sr-map,.sr-map.sr-zoomed{animation:none;}}';
+    +'@media (prefers-reduced-motion:reduce){.sr-tip,.sr-dot{transition:none;} .sr-map,.sr-map.sr-zoomed{animation:none;}}'
+    // Velocity board
+    +'.sr-vb-container{margin-top:14px;}'
+    +'.sr-vb-wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;}'
+    +'.sr-vb-sum{display:flex;align-items:center;gap:10px;padding:10px 14px;font-weight:700;font-size:13px;cursor:pointer;list-style:none;} .sr-vb-sum::-webkit-details-marker{display:none;} .sr-vb-sum::before{content:"▾";margin-right:4px;font-size:10px;color:var(--muted);} details[open] .sr-vb-sum::before{content:"▴";}'
+    +'.sr-vb-inner{padding:0 14px 12px;}'
+    // rcf-help utility (also used in .j2 inline, but OK to re-declare here — idempotent)
+    +'.rcf-help{display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:50%;width:16px;height:16px;cursor:help;flex:none;}';
     var st=document.createElement('style'); st.id='sr-style'; st.textContent=c; document.head.appendChild(st);
   }
 

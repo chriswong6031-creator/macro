@@ -383,7 +383,7 @@ jobs:
             CN_SLEEVE_LANE=asia brun reversal_sleeve "cn reversal sleeve (build_cn_reversal_sleeve)" scripts.build_cn_reversal_sleeve
             brun subsector_rot    "china subsector rotation data (build_subsector_rotation_china)"  scripts.build_subsector_rotation_china
             brun subsector_rot_pages "china subsector rotation pages (build_subsector_rotation_china_pages)" scripts.build_subsector_rotation_china_pages
-            brun rotation_events_cn "china rotation events (build_rotation_events_china)"  scripts.build_rotation_events_china  # RC-R14 display-tier, reads baskets.json in-process
+            COLLECT_LANE=nightly brun rotation_events_cn "china rotation events (build_rotation_events_china)"  scripts.build_rotation_events_china  # RC-R14 display-tier, reads baskets.json in-process
           }
           cl_hk() {
             brun hk               "build hong kong / hang seng (build_hk)"             scripts.build_hk
@@ -397,7 +397,7 @@ jobs:
             # armed from the same committed store (idempotent dedup / rescue if this band
             # dies). Guarded by tests/test_ignition_lane_gate.py.
             COLLECT_LANE=nightly brun baskets_hk "hong kong thematic baskets (build_baskets_hk)" scripts.build_baskets_hk
-            brun rotation_events_hk "hk rotation events (build_rotation_events_hk)"    scripts.build_rotation_events_hk  # RC-R14 display-tier, reads hkbasketdata/baskets.json in-process
+            COLLECT_LANE=nightly brun rotation_events_hk "hk rotation events (build_rotation_events_hk)"    scripts.build_rotation_events_hk  # RC-R14 display-tier, reads hkbasketdata/baskets.json in-process
           }
           # CN-SYS W5a Scope 2 intel chain head (behavior-preserving extraction from
           # build_china.py main(); order preserved). The chain's fan-in tail (intel_hub →

@@ -206,11 +206,21 @@
   // "aggregate not representative" chip when the sector's legs disagree hard. Both sit
   // beside the "clocks disagree" chip on the exact card that held Topping/SELL through the
   // miss. Display-only context — full receipt/copy in the hover title.
+  // v2: receiving card (to_sector) shows "money rotating in" copy variant;
+  //     severity class uses severity_effective when present (faltering events demote it).
   function rotationCardChip(s) {
     var evs = ROT_BY_SEC[s.id];
     if (!evs || !evs.length) return "";
-    var e = evs[0], sev = e.severity || "standard";       // events arrive severity-sorted
+    var e = evs[0];
+    // severity_effective (v2) takes precedence over severity for CSS class; v1 payloads
+    // that lack severity_effective fall through to severity gracefully.
+    var sev = e.severity_effective || e.severity || "standard";
     var tip = curLang() === "zh" ? (e.copy_zh || "") : (e.copy_en || "");
+    // v2: when this card is the RECEIVER of a cross-sector event, show the inbound copy.
+    if (e._is_receiver) {
+      return '<span class="cc-rot cc-rot-' + esc(sev) + '" title="' + esc(tip) + '">⟲ ' +
+        L("money rotating in", "资金流入") + (e.day_n != null ? " · d" + esc(e.day_n) : "") + '</span>';
+    }
     return '<span class="cc-rot cc-rot-' + esc(sev) + '" title="' + esc(tip) + '">⟲ ' +
       L("handoff active", "轮动进行中") + (e.day_n != null ? " · d" + esc(e.day_n) : "") + '</span>';
   }
@@ -1956,7 +1966,18 @@
     ]).then(function (res) {
       var ev = res[0], fr = res[1];
       ROT_BY_SEC = {};
-      ((ev && ev.active) || []).forEach(function (e) { (ROT_BY_SEC[e.sector] = ROT_BY_SEC[e.sector] || []).push(e); });
+      ((ev && ev.active) || []).forEach(function (e) {
+        // Index by donor sector (v1 path — always present)
+        (ROT_BY_SEC[e.sector] = ROT_BY_SEC[e.sector] || []).push(e);
+        // v2: also index by to_sector when present and different from donor sector,
+        // so cross-sector events chip the receiving card too (e.g. xlk->xlv chips XLV).
+        if (e.to_sector && e.to_sector !== e.sector) {
+          var _recv = ROT_BY_SEC[e.to_sector] = ROT_BY_SEC[e.to_sector] || [];
+          // Tag a copy with _is_receiver=true so the chip builder can vary the copy.
+          var _copy = Object.assign({}, e, { _is_receiver: true });
+          _recv.push(_copy);
+        }
+      });
       FRAG_BY_KEY = {};
       ((fr && fr.sectors) || []).forEach(function (r) { if (r.fragmented) FRAG_BY_KEY[r.key] = r; });
       if (Object.keys(ROT_BY_SEC).length || Object.keys(FRAG_BY_KEY).length) mountCards();
