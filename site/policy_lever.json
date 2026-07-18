@@ -59,16 +59,22 @@
           "version": "v1.1"
         }
       },
-      "watch": "Re-escalation risk restated by 2026-07-08 strike developments; oil is the transmission lever to rate-cut repricing. A rapid CL=F spike would widen breakevens and reprice fed-funds futures, reversing the conditions that have supported the semis recovery.",
-      "watch_zh": "2026\u5e747\u67088\u65e5\u6253\u51fb\u4e8b\u4ef6\u91cd\u7533\u4e86\u518d\u5347\u7ea7\u98ce\u9669\uff1b\u77f3\u6cb9\u662f\u5411\u964d\u606f\u91cd\u5b9a\u4ef7\u4f20\u5bfc\u7684\u6838\u5fc3\u6760\u6746\u3002CL=F\u5feb\u901f\u98d9\u5347\u5c06\u6269\u5927\u76c8\u4e8f\u5e73\u8861\u901a\u80c0\u9884\u671f\u5e76\u91cd\u5b9a\u4ef7\u8054\u90a6\u57fa\u91d1\u671f\u8d27\uff0c\u9006\u8f6c\u652f\u6491\u534a\u5bfc\u4f53\u590d\u82cf\u7684\u73b0\u6709\u6761\u4ef6\u3002"
+      "watch": "Middle East escalation is the transmission channel to rate-cut repricing, with oil as the lever. A rapid CL=F spike would widen breakevens and reprice fed-funds futures, reversing the conditions that have supported the semis recovery.",
+      "watch_zh": "\u4e2d\u4e1c\u5c40\u52bf\u5347\u7ea7\u662f\u5411\u964d\u606f\u91cd\u5b9a\u4ef7\u4f20\u5bfc\u7684\u901a\u9053\uff0c\u77f3\u6cb9\u662f\u6838\u5fc3\u6760\u6746\u3002CL=F\u5feb\u901f\u98d9\u5347\u5c06\u6269\u5927\u76c8\u4e8f\u5e73\u8861\u901a\u80c0\u9884\u671f\u5e76\u91cd\u5b9a\u4ef7\u8054\u90a6\u57fa\u91d1\u671f\u8d27\uff0c\u9006\u8f6c\u652f\u6491\u534a\u5bfc\u4f53\u590d\u82cf\u7684\u73b0\u6709\u6761\u4ef6\u3002",
+      "copy_as_of": "2026-07-18",
+      "copy_age_days": 0,
+      "copy_stale": false
     },
     {
       "name": "China / tariffs",
       "name_zh": "\u4e2d\u56fd/\u5173\u7a0e",
       "asset": null,
       "arming": null,
-      "watch": "Tariff truce fragility: any rollback of the 90-day pause or re-escalation in export controls would directly compress the semis supply chain margins that are priced into the current recovery.",
-      "watch_zh": "\u5173\u7a0e\u4f11\u6218\u7684\u8106\u5f31\u6027\uff1a90\u5929\u6682\u505c\u671f\u5185\u4efb\u4f55\u56de\u9000\u6216\u51fa\u53e3\u7ba1\u5236\u518d\u5347\u7ea7\uff0c\u5c06\u76f4\u63a5\u538b\u7f29\u5df2\u8ba1\u5165\u5f53\u524d\u590d\u82cf\u9884\u671f\u7684\u534a\u5bfc\u4f53\u4f9b\u5e94\u94fe\u5229\u6da6\u7387\u3002"
+      "watch": "US-China trade friction is the policy channel most directly tied to semis supply-chain margins: an escalation in tariffs or export controls would compress the margins priced into the current recovery.",
+      "watch_zh": "\u4e2d\u7f8e\u8d38\u6613\u6469\u64e6\u662f\u4e0e\u534a\u5bfc\u4f53\u4f9b\u5e94\u94fe\u5229\u6da6\u7387\u5173\u8054\u6700\u76f4\u63a5\u7684\u653f\u7b56\u6e20\u9053\uff1a\u5173\u7a0e\u6216\u51fa\u53e3\u7ba1\u5236\u7684\u4efb\u4f55\u5347\u7ea7\uff0c\u90fd\u4f1a\u538b\u7f29\u5df2\u8ba1\u5165\u5f53\u524d\u590d\u82cf\u9884\u671f\u7684\u5229\u6da6\u7387\u3002",
+      "copy_as_of": "2026-07-18",
+      "copy_age_days": 0,
+      "copy_stale": false
     }
   ],
   "state": "ELEVATED",
