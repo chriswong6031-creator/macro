@@ -143,15 +143,7 @@ _LEDGER_DIR = "basket_turn"
 _LEDGER_FILE = "ledger.jsonl"
 
 
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane.
-
-    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
-    parallel step (and mirroring the collect-job's lane sentinel).  US_LANE is
-    accepted as a legacy alias so existing tests continue to work.
-    """
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 def _ledger_path(data_root: Path | None = None) -> Path:

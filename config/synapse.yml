@@ -828,7 +828,6 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/sector_central.py
-      - scripts/build_site.py
     external_consumers: []
     notes: >
       XSR W1 (XSR-R2) display-tier fast rotation score for the 11 SPDR sector
@@ -3036,6 +3035,9 @@ artifacts:
       (live == backtest grading). See research/ORACLE_REVERSION_PROMOTION_PREREG.md
       for the frozen schema + live promotion floor. Path contains <compound_id>
       placeholder — one file per compound under data/oracle/reversion_forward/.
+      Wired nightly one indirection deep: daily.yml runs scripts/oracle_nightly.py,
+      whose Step 11b calls run_reversion_forward_ledger (non-fatal try/except) —
+      not visible to a workflow grep for the producer filename.
 
   # P1: display-tier sidecar (oracle_reversion_state.v1)
   oracle-reversion-state:
@@ -3189,6 +3191,9 @@ artifacts:
       Keep-first by compound_id. Promotion scan checks for requeue_at_n=2×n_at_kill
       and prints a REMINDER (never auto-rescreens — counted-trials law).
       Source: W4_SPEC.md §W4.b.
+      DORMANT-UNWIRED (2026-07-18 census): producer scripts/oracle_reversion_screen.py
+      is not wired into any .github/workflows/ file (grep confirms zero references) and
+      the artifact has never been produced. freshness_sla_hours already at 9999.
 
   # --- 3 consumers ---
   site-basket-flow:
@@ -5969,7 +5974,7 @@ artifacts:
     cadence: on-demand
     storage: git
     asof_field: fire_date
-    freshness_sla_hours: 8760
+    freshness_sla_hours: 9999
     schema: per_fire_sector_benchmark.v1
     tier: display
     horizon_role: hold_thesis
@@ -5997,6 +6002,10 @@ artifacts:
       survivorship_biased (era-proxy), era, coverage_stamp.
       FIREWALL: horizon_role=hold_thesis. MUST NOT feed entry-stack z-scores, board
       ordering, alert triage, top-setups gates, or push floor. fdr_family=long_hold (LH-R5).
+      DORMANT-UNWIRED (2026-07-18 census): producer scripts/research/build_per_fire_sector_benchmark.py
+      is not wired into any .github/workflows/ file (grep confirms zero references) and
+      the artifact has never been produced. freshness_sla_hours parked at 9999.
+      Restore when the producer is added to a workflow or run manually and produces the file.
 
   # --- Long-Hold LT-3a: Capital Allocation Delta block ---
   capital-allocation-delta:
@@ -7371,7 +7380,7 @@ artifacts:
     cadence: collect
     storage: git
     asof_field: as_of
-    freshness_sla_hours: 72
+    freshness_sla_hours: 9999
     schema: implicit
     tier: display
     horizon_role: context
@@ -7398,6 +7407,11 @@ artifacts:
       consensus recommendationKey label only — no strongBuy/buy/hold/sell
       rating-category counts, so no buy-share is derivable. That chip is fed
       by data/finnhub/recommendation.parquet instead.
+      DORMANT-UNWIRED (2026-07-18 census): producer collectors/yf_analyst.py
+      is not wired into any .github/workflows/ file (grep confirms zero references;
+      notes above confirm standalone scheduling — never on a GHA schedule) and the
+      artifact has never been produced. freshness_sla_hours parked at 9999.
+      Restore when collector is wired into a scheduled workflow.
 
   # --- Mastermind Feedback Contract W2 (FB-R7/R8/R14) ---
   # Reverse bridge: Mastermind → NW counts-only feedback reader.
@@ -12139,7 +12153,7 @@ artifacts:
     cadence: on-demand
     storage: git
     asof_field: ts
-    freshness_sla_hours: 2208
+    freshness_sla_hours: 9999
     schema: metabolism.authority_audit.v1
     tier: shadow
     horizon_role: context
@@ -12155,6 +12169,10 @@ artifacts:
       scored_path_surface_launders, summary}. Display-tier, no action — operator visibility
       only. Surfaced in the operator digest. Per R-V2-3 §6.2 (residual launder acceptance).
       Output: data/metabolism/authority_audit/<quarter>.json.
+      DORMANT-UNWIRED (2026-07-18 census): producer engine/metabolism/authority_audit.py
+      is not called from any .github/workflows/ file or other engine module (grep confirms
+      zero callers outside its own module) and the artifact has never been produced.
+      freshness_sla_hours parked at 9999. Restore when wired into a scheduled workflow.
 
   metabolism-lobe-charters:
     path: config/lobe_charters.yml

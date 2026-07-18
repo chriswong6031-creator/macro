@@ -41,6 +41,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("archive_context_snapshots")
 
 
+# Standalone copy; canonical definition lives in engine.ledger_lane.nightly_advance_enabled.
 def _ledger_advance_enabled() -> bool:
     """True only when running in the nightly engine lane.
 

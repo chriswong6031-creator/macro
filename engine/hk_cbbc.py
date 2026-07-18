@@ -75,13 +75,7 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Lane guard (same pattern as hk_adr_bridge)
-# ---------------------------------------------------------------------------
-
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the asia-close nightly lane (CN_LANE=asia)."""
-    return os.environ.get("CN_LANE", "").lower() == "asia"
+from engine.ledger_lane import asia_advance_enabled as _ledger_advance_enabled
 
 
 # ---------------------------------------------------------------------------

@@ -97,9 +97,7 @@ _LEDGER_FILE = "narrative_ledger.jsonl"
 _ORGAN_ID    = "hk_narrative"
 
 
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the asia-close nightly lane (CN_LANE=asia)."""
-    return os.environ.get("CN_LANE", "").lower() == "asia"
+from engine.ledger_lane import asia_advance_enabled as _ledger_advance_enabled
 
 
 # ---------------------------------------------------------------------------

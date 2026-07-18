@@ -72,7 +72,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -81,15 +80,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane.
-
-    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
-    env.  US_LANE is accepted as a legacy alias.
-    """
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,

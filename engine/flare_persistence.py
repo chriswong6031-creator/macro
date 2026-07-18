@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import time
 from datetime import date, timedelta
 from pathlib import Path
@@ -555,13 +554,7 @@ def _append_hist(
 # ---------------------------------------------------------------------------
 
 
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane.
-
-    Gate: COLLECT_LANE=nightly — mirrors mtf_upturn._ledger_advance_enabled exactly.
-    """
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 # ---------------------------------------------------------------------------
