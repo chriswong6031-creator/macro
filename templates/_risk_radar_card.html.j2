@@ -341,6 +341,47 @@
     {%- endif %}
   </div>
   {%- endif %}
+  {# ── FX context strip (MSX-1, 2026-07-18, Tier-2 placement inside radar dialog).
+     Source: rd.fx_context attached by build_china/build_hk post-transform (mirrors
+     CGL pattern). Guard: entire block absent when rd.fx_context is not present —
+     no data renders nothing. Two row-pairs: (1) CNH pressure plain-word; (2) dollar
+     direction chip. Dual-span l-en/l-zh idiom; never put translated text in title=.
+     Trap: jinja set-in-for is LOOP-LOCAL; never <svg><text> spans. #}
+  {%- if rd.fx_context is defined and rd.fx_context -%}
+  {%- set _fxc = rd.fx_context -%}
+  {#- CNH basis → plain-word map -#}
+  {%- set _cnh_st = _fxc.cnh_basis_state if _fxc.cnh_basis_state is defined else none -%}
+  {%- set _cnh_en = 'Offshore yuan: outflow pressure' if _cnh_st == 'outflow_stress' else ('Offshore yuan: inflow bid' if _cnh_st == 'inflow' else 'Offshore yuan: no unusual pressure') -%}
+  {%- set _cnh_zh = '离岸人民币：资金外流压力' if _cnh_st == 'outflow_stress' else ('离岸人民币：资金流入' if _cnh_st == 'inflow' else '离岸人民币：无异常压力') -%}
+  {%- set _cnh_chip = 'warn' if _cnh_st == 'outflow_stress' else ('caut' if _cnh_st == 'inflow' else 'ok') -%}
+  {%- set _cnh_chip_en = 'Stress' if _cnh_st == 'outflow_stress' else ('Inflow' if _cnh_st == 'inflow' else 'Normal') -%}
+  {%- set _cnh_chip_zh = '压力' if _cnh_st == 'outflow_stress' else ('流入' if _cnh_st == 'inflow' else '正常') -%}
+  {#- dollar direction → plain-word map -#}
+  {%- set _usd = _fxc.usd_dir if _fxc.usd_dir is defined else none -%}
+  {%- set _usd_en = 'Dollar rising — headwind for EM' if _usd == 'strengthening' else ('Dollar falling — tailwind for EM' if _usd == 'weakening' else 'Dollar: mixed') -%}
+  {%- set _usd_zh = '美元走强 — 新兴市场逆风' if _usd == 'strengthening' else ('美元走弱 — 新兴市场顺风' if _usd == 'weakening' else '美元：方向混乱') -%}
+  {%- set _usd_chip = 'warn' if _usd == 'strengthening' else ('ok' if _usd == 'weakening' else 'muted') -%}
+  {%- set _usd_chip_en = 'Rising' if _usd == 'strengthening' else ('Falling' if _usd == 'weakening' else 'Mixed') -%}
+  {%- set _usd_chip_zh = '走强' if _usd == 'strengthening' else ('走弱' if _usd == 'weakening' else '混合') -%}
+  {#- row 1: CNH pressure -#}
+  <div class="rrx-cyc rrx-fxc">
+    <span class="rrx-cyc-k">{{ t('Yuan pressure','人民币压力') }}</span>
+    <span class="chip {{ _cnh_chip }}" style="font-size:10px;padding:1px 6px;">{{ t(_cnh_chip_en, _cnh_chip_zh) }}</span>
+    <span class="l-en">{{ _cnh_en }}</span><span class="l-zh">{{ _cnh_zh }}</span>
+    {%- if _fxc.cnh_basis_bps is defined and _fxc.cnh_basis_bps is not none %}
+    <span class="rrx-rec-chip">{{ '%.0f'|format(_fxc.cnh_basis_bps) }}bp</span>
+    {%- endif %}
+    {%- if _fxc.stale is defined and _fxc.stale and _fxc.built_date is defined and _fxc.built_date %}
+    <span class="muted" style="font-size:9.5px;"><span class="l-en">as of {{ _fxc.built_date }}</span><span class="l-zh">截至 {{ _fxc.built_date }}</span></span>
+    {%- endif %}
+  </div>
+  {#- row 2: dollar direction -#}
+  <div class="rrx-cyc rrx-fxc">
+    <span class="rrx-cyc-k">{{ t('Dollar','美元') }}</span>
+    <span class="chip {{ _usd_chip }}" style="font-size:10px;padding:1px 6px;">{{ t(_usd_chip_en, _usd_chip_zh) }}</span>
+    <span class="l-en">{{ _usd_en }}</span><span class="l-zh">{{ _usd_zh }}</span>
+  </div>
+  {%- endif %}
 
   {% if rd.track is defined and rd.track %}
   {%- set trk = rd.track -%}

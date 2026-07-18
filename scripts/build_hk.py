@@ -871,6 +871,21 @@ def main() -> int:
                         vm["market_state"]["radar"]["contagion"] = _blk
             except Exception:  # noqa: BLE001 — additive, never fatal
                 pass
+            # MSX-1 FX context attach — post-transform, mirrors CGL pattern above.
+            # Reads data/forex/latest.json via lib.forex_link (fail-open).
+            # Absent forex data → no attach (never blocks the build).
+            # stale=True when forex asof predates the page's as_of (mirrors CGL staleness).
+            try:
+                if vm.get("market_state") and isinstance(
+                    (vm["market_state"] or {}).get("radar"), dict
+                ):
+                    from lib import forex_link as _fxl  # noqa: PLC0415
+                    _fxl.attach_fx_context(
+                        vm["market_state"]["radar"],
+                        page_asof=str(latest.get("date", "") or ""),
+                    )
+            except Exception:  # noqa: BLE001 — additive, never fatal
+                pass
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal
             log.error("hk market_state failed (%s); skipping", e)
             vm["market_state"] = None

@@ -127,6 +127,17 @@ def _clean(v: Any) -> Any:
 # Internal helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
+def _clean_state_entry(v: Any) -> Any:
+    """Recursively _clean() a state_changes entry dict or scalar.
+
+    MSX-1: state_changes values are {current, prev, changed_on, days_in_state}
+    dicts or None.  Pass through scalars via _clean().
+    """
+    if not isinstance(v, dict):
+        return _clean(v)
+    return {k2: _clean(v2) for k2, v2 in v.items()}
+
 def _read_json(p: Path) -> dict | None:
     """Read and parse JSON from *p*; return None on any failure."""
     try:
@@ -1491,6 +1502,13 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         "pairs": None,
         "scenario_intensity": None,
         "deltas": None,
+        # MSX-1 new keys — null until producer lane ships §2.1 keys
+        "smile_decomp_regime": None,
+        "safety_bid_today": None,
+        "triple_red": None,
+        "state_changes": None,
+        "regime_radar_dominant_scenario": None,
+        "strength_extremes": None,
         "display_only": True,
     }
 
@@ -1586,6 +1604,64 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             log.warning("fx_dollar: ledger deltas failed — %s", _de)
             deltas = None
 
+        # ── MSX-1 §2.1 new keys — null-tolerant; absent in old artifacts ─────
+        # smile_decomp fields (bug-fix: forwarded to unblock build_intl + flow_regime)
+        sd_raw = dd_raw.get("smile_decomp") or {}
+        smile_decomp_regime = _clean(sd_raw.get("regime"))
+        safety_bid_today = _clean(sd_raw.get("safety_bid_today"))
+
+        # triple_red lives INSIDE dollar_desk in the producer artifact
+        triple_red = _clean(dd_raw.get("triple_red"))
+        sc_raw = raw.get("state_changes") or {}
+        state_changes: dict | None = None
+        if sc_raw:
+            state_changes = {k: _clean_state_entry(v) for k, v in sc_raw.items()}
+
+        # regime_radar dominant scenario compact receipt
+        scenarios_raw = rr_raw.get("scenarios") or []
+        regime_radar_dominant_scenario: dict | None = None
+        if scenarios_raw:
+            dominant_key = _clean(rr_raw.get("dominant"))
+            for sc in scenarios_raw:
+                if not isinstance(sc, dict):
+                    continue
+                if sc.get("key") == dominant_key or sc.get("active"):
+                    prob = sc.get("prob") or {}
+                    regime_radar_dominant_scenario = {
+                        "key": _clean(sc.get("key")),
+                        "intensity": _clean(sc.get("intensity")),
+                        "prob_status": _clean(prob.get("status")),
+                        "p_cond": _clean(prob.get("p_cond")),
+                        "base_rate": _clean(prob.get("base_rate")),
+                    }
+                    break
+
+        # strength extremes from default horizon
+        strength_extremes: dict | None = None
+        st_raw = raw.get("strength") or {}
+        default_horizon = st_raw.get("default") or "1m"
+        horizons_raw = st_raw.get("horizons") or {}
+        horizon_list = horizons_raw.get(default_horizon) or []
+        if horizon_list and isinstance(horizon_list, list):
+            sorted_list = sorted(
+                [h for h in horizon_list if isinstance(h, dict) and h.get("strength") is not None],
+                key=lambda h: h.get("strength", 0),
+            )
+            if sorted_list:
+                weakest = sorted_list[0]
+                strongest = sorted_list[-1]
+                strength_extremes = {
+                    "strongest": {
+                        "ccy": _clean(strongest.get("ccy")),
+                        "strength": _clean(strongest.get("strength")),
+                    },
+                    "weakest": {
+                        "ccy": _clean(weakest.get("ccy")),
+                        "strength": _clean(weakest.get("strength")),
+                    },
+                    "horizon": _clean(default_horizon),
+                }
+
         # Prefer ISO asof; fall back to display-string date normalisation
         asof = _to_iso(raw.get("asof") or raw.get("date"))
 
@@ -1600,6 +1676,13 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "pairs": pairs_out if pairs_out else None,
             "scenario_intensity": scenario_intensity if scenario_intensity else None,
             "deltas": deltas,
+            # MSX-1 §2.1 additions
+            "smile_decomp_regime": smile_decomp_regime,
+            "safety_bid_today": safety_bid_today,
+            "triple_red": triple_red,
+            "state_changes": state_changes,
+            "regime_radar_dominant_scenario": regime_radar_dominant_scenario,
+            "strength_extremes": strength_extremes,
         })
     except Exception as exc:  # noqa: BLE001
         log.warning("fx_dollar: compose failed — %s", exc)
