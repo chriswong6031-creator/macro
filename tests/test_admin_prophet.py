@@ -326,29 +326,35 @@ def _exhausted_summary(model="claude-fable-5", tokens=3_000_000):
 
 
 def test_deliberation_model_disabled_returns_default():
-    """fable_enabled=False → deliberation_model returns the default.
+    """Never-raise + fallback contract: broken or prophet-less config → default.
 
-    Tests the never-raise + fallback contract: any config-read error → default.
-    The real fable_enabled=False path is exercised by test_deliberation_model_any_error.
+    Patches lib.config.load — the exact seam deliberation_model() reads first —
+    not yaml.safe_load: lib.config.load is lru_cached, so once any earlier test
+    primes it with the real config.yml (fable_enabled=true) a yaml patch never
+    fires and the test silently exercises the real config.
     """
-    # Config load broken → deliberation_model must return default, not raise
-    with patch("yaml.safe_load", side_effect=RuntimeError("no config")):
+    # Config read raises → deliberation_model must return default, not raise
+    with patch("lib.config.load", side_effect=RuntimeError("no config")):
         result = deliberation_model(default="claude-opus-4-8")
     assert result == "claude-opus-4-8"
 
-    # Config returns with fable_enabled absent (falsy default) → default
-    # Simulate by returning a minimal config without the prophet key
-    with patch("yaml.safe_load", return_value={}), \
-         patch("pathlib.Path.exists", return_value=True), \
-         patch("pathlib.Path.read_text", return_value="{}"):
+    # Config loads but has no prophet block → fable_enabled defaults falsy →
+    # default, even though a deliberation model is configured
+    cfg_no_prophet = {"llm_models": {"deliberation": "claude-fable-5"}}
+    with patch("lib.config.load", return_value=cfg_no_prophet):
         result2 = deliberation_model(default="claude-opus-4-8")
-    # With no prophet block → fable_enabled defaults falsy → return default
     assert result2 == "claude-opus-4-8"
 
 
 def test_deliberation_model_any_error_returns_default():
-    """Any error in deliberation_model() must return the default, never raise."""
-    with patch("yaml.safe_load", side_effect=RuntimeError("boom")):
+    """Any error in deliberation_model() must return the default, never raise.
+
+    lib.config.load is pinned to {} so the function falls through to the raw
+    config.yml read, where the patched yaml.safe_load raises — deterministic
+    regardless of lib.config's lru_cache state.
+    """
+    with patch("lib.config.load", return_value={}), \
+         patch("yaml.safe_load", side_effect=RuntimeError("boom")):
         result = deliberation_model(default="claude-opus-4-8")
     assert result == "claude-opus-4-8"
 
