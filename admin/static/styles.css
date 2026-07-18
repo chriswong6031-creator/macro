@@ -772,6 +772,12 @@ input:focus, select:focus {
 
 .kv:last-child { border-bottom: none; }
 
+/* Stacked label/value row (Marketing) — long wrapping text that reads badly space-between */
+.mkt-stack { padding: 5px 0; border-bottom: 1px solid var(--grid); }
+.mkt-stack:last-child { border-bottom: none; }
+.mkt-stack-lab { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.mkt-stack-val { font-size: 13px; margin-top: 2px; color: var(--text); line-height: 1.4; }
+
 .bar { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; margin-top: 6px; }
 .bar > i { display: block; height: 100%; background: var(--accent2); border-radius: 3px; }
 .bar > i.warn { background: var(--warn); }

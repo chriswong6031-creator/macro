@@ -31,6 +31,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, analytics_first_party, a
                content, context_lobe, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
                live_runs,
+               marketing,
                mastermind_proxy,
                metabolism_history,
                metabolism_panel,
@@ -95,6 +96,37 @@ def validate_prophet_setting(key, value) -> tuple[bool, str | None, object]:
     if not (lo <= value <= hi):
         return False, f"{key} must be between {lo} and {hi}", None
     return True, None, value
+
+
+# W-AI: Marketing lobe settings (read-only echo — config_store targets config.yml
+# and has no set_string; marketing settings live in config/marketing.yml with string
+# enum knobs, so no write path is wired; display only).
+_MARKETING_SETTINGS_SPEC = {
+    "trial_variant":      ("enum", ["7_trading_days", "14_calendar_days", "value_moment_limited"]),
+    "desk_network_stage": ("enum", ["A", "B", "C"]),
+    "paid_enabled":       ("bool", None),
+    "auditor_strict":     ("bool", None),
+}
+
+
+def validate_marketing_setting(key, value) -> tuple[bool, str | None, object]:
+    """Server-side validation for marketing settings (read-only; no POST route wired).
+    Returns (ok, error, coerced_value).  Provided for completeness and future use."""
+    spec = _MARKETING_SETTINGS_SPEC.get(key or "")
+    if not spec:
+        return False, (f"unknown marketing setting {key!r}; "
+                       f"allowed: {sorted(_MARKETING_SETTINGS_SPEC)}"), None
+    kind = spec[0]
+    if kind == "bool":
+        if not isinstance(value, bool):
+            return False, f"{key} must be a boolean", None
+        return True, None, value
+    if kind == "enum":
+        choices = spec[1]
+        if value not in choices:
+            return False, f"{key} must be one of {choices}", None
+        return True, None, value
+    return False, f"unsupported kind {kind!r}", None
 
 
 def validate_orchestrator_setting(key, value) -> tuple[bool, str | None, object]:
@@ -376,6 +408,19 @@ class Handler(BaseHTTPRequestHandler):
             # W-AI: Prophet NW lobe governor page
             if path == "/api/prophet":
                 return self._json(prophet.panel())
+            # Marketing lobe admin pages
+            if path == "/api/marketing/overview":
+                return self._json(marketing.overview())
+            if path == "/api/marketing/departments":
+                return self._json(marketing.departments())
+            if path == "/api/marketing/channels":
+                return self._json(marketing.channels())
+            if path == "/api/marketing/campaigns":
+                return self._json(marketing.campaigns())
+            if path == "/api/marketing/experiments":
+                return self._json(marketing.experiments())
+            if path == "/api/marketing/lobes":
+                return self._json(marketing.lobes())
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)

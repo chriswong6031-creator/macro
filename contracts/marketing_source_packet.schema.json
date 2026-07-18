@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_source_packet.v1",
+  "title": "Marketing Source Packet (marketing_source_packet.v1)",
+  "type": "object",
+  "properties": {
+    "packet_id": {"type": "string"},
+    "provenance_mode": {"type": "string", "enum": ["neural_web", "marketing_original", "hybrid"]},
+    "source_artifact_refs": {"type": "array", "items": {"type": "string"}},
+    "created_by": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "as_of": {"type": "string"},
+    "freshness": {"type": "string", "enum": ["fresh", "stale", "expired"]},
+    "evidence_class": {"type": "string"},
+    "claims": {"type": "array", "items": {"type": "string"}},
+    "counter_case": {"type": "string"},
+    "falsifier": {"type": "string"},
+    "horizon": {"type": "string"},
+    "allowed_attributions": {"type": "array", "items": {"type": "string"}},
+    "public_rights": {"type": "string"},
+    "sensitive_fields": {"type": "array", "items": {"type": "string"}},
+    "expiry": {"type": ["string", "null"]},
+    "correction_parent": {"type": ["string", "null"]}
+  },
+  "required": ["packet_id", "provenance_mode", "created_by", "created_at"]
+}

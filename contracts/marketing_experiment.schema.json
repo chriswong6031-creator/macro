@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_experiment.v1",
+  "title": "Marketing Experiment (marketing_experiment.v1)",
+  "type": "object",
+  "properties": {
+    "experiment_id": {"type": "string"},
+    "hypothesis": {"type": "string"},
+    "unit": {"type": "string", "enum": ["visitor", "cohort", "account", "geo"]},
+    "holdout": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+    "primary_metric": {"type": "string"},
+    "guardrails": {"type": "array", "items": {"type": "string"}},
+    "start_at": {"type": ["string", "null"]},
+    "stop_at": {"type": ["string", "null"]},
+    "result": {"type": ["object", "null"]},
+    "status": {"type": "string", "enum": ["planned", "running", "completed", "killed"]},
+    "trial_variant": {"type": ["string", "null"]},
+    "mode": {"type": "string", "enum": ["live", "shadow"]}
+  },
+  "required": ["experiment_id", "hypothesis", "unit", "primary_metric", "status"]
+}

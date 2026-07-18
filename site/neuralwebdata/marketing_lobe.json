@@ -1,0 +1,165 @@
+{
+  "schema": "marketing.lobe/v1",
+  "as_of": "2026-07-18",
+  "lobe": {
+    "id": "marketing",
+    "name": "Marketing",
+    "lifecycle_state": "chartered",
+    "mandate": {
+      "category": "Accountable AI market intelligence",
+      "promise": "Know what changed, why it matters, and what to watch next.",
+      "proof": "Every important conclusion carries evidence, invalidation, timestamp, and outcome history.",
+      "icp": "Self-directed, research-intensive swing/position investors following 10–100 names.",
+      "first_paid_job": "Continuously monitor what matters to my holdings/watchlist and tell me when the causal picture changes."
+    }
+  },
+  "north_star": {
+    "state": "accruing"
+  },
+  "departments": [
+    {
+      "id": "office_cmo",
+      "name": "Office of the Autonomous CMO",
+      "lifecycle_state": "chartered",
+      "wave": 0
+    },
+    {
+      "id": "growth_os",
+      "name": "Growth Operating System and Finance",
+      "lifecycle_state": "building",
+      "wave": 1
+    },
+    {
+      "id": "intelligence",
+      "name": "Market, Audience, and Opportunity Intelligence",
+      "lifecycle_state": "chartered",
+      "wave": 1
+    },
+    {
+      "id": "products",
+      "name": "Intelligence Products and Public Tools",
+      "lifecycle_state": "chartered",
+      "wave": 3
+    },
+    {
+      "id": "studio",
+      "name": "Editorial, Creative Studio, and Data Newsroom",
+      "lifecycle_state": "chartered",
+      "wave": 4
+    },
+    {
+      "id": "distribution",
+      "name": "Distribution Network",
+      "lifecycle_state": "chartered",
+      "wave": 4
+    },
+    {
+      "id": "lifecycle",
+      "name": "Lifecycle, Conversion, and Monetization",
+      "lifecycle_state": "chartered",
+      "wave": 2
+    },
+    {
+      "id": "ecosystem",
+      "name": "Creator, Partner, and Community Infrastructure",
+      "lifecycle_state": "chartered",
+      "wave": 5
+    },
+    {
+      "id": "growth_science",
+      "name": "Growth Science and Self-Improvement",
+      "lifecycle_state": "chartered",
+      "wave": 2
+    },
+    {
+      "id": "trust_office",
+      "name": "Autonomous Trust, Policy, and Red-Team Office",
+      "lifecycle_state": "chartered",
+      "wave": 0
+    }
+  ],
+  "waves": [
+    {
+      "id": "wave0",
+      "title": "Root charter and inventory",
+      "status": "active"
+    },
+    {
+      "id": "wave1",
+      "title": "Autonomous Growth OS",
+      "status": "planned"
+    },
+    {
+      "id": "wave2",
+      "title": "Commercial truth spine",
+      "status": "planned"
+    },
+    {
+      "id": "wave3",
+      "title": "Proof products",
+      "status": "planned"
+    },
+    {
+      "id": "wave4",
+      "title": "Owned media machine",
+      "status": "planned"
+    },
+    {
+      "id": "wave5",
+      "title": "Ecosystem distribution",
+      "status": "planned"
+    },
+    {
+      "id": "wave6",
+      "title": "Paid growth and autonomous scaling",
+      "status": "planned"
+    },
+    {
+      "id": "wave7",
+      "title": "Self-expanding institution",
+      "status": "planned"
+    }
+  ],
+  "channels_priority": {
+    "tier1": [
+      "public_what_changed",
+      "public_why_moving",
+      "public_receipts",
+      "email_newsletter",
+      "x_flagship_desk",
+      "x_chart_receipts_desk",
+      "youtube_chart_explainers",
+      "seo_intelligence_templates",
+      "on_site_activation_lifecycle",
+      "shareable_charts_dossiers"
+    ],
+    "tier2": [
+      "creator_copilot",
+      "reporter_newsletter_data_desk",
+      "discord_telegram_apps",
+      "embeds_widgets",
+      "cobranded_reports",
+      "partner_referral_dashboards",
+      "tiktok_instagram"
+    ],
+    "tier3": [
+      "stocktwits_authorized_lane",
+      "reddit_community_participation",
+      "expanded_account_network",
+      "nonstandard_performance_partnerships",
+      "international_multilingual_desks"
+    ],
+    "tier4": [
+      "retargeting",
+      "high_intent_search",
+      "paid_amplification_organic_creative",
+      "creator_paid_media",
+      "larger_automated_spend"
+    ]
+  },
+  "schema_version": 1,
+  "produced_by": "engine/neuralweb/marketing_governor.py",
+  "produced_at": "2026-07-18T18:02:02Z",
+  "inputs_hash": "sha256:649be1c3077733665290512c735c35c3977f88705fb72a771efcda585ba6c950",
+  "tier": "display"
+}

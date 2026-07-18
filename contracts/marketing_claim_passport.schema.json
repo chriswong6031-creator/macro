@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_claim_passport.v1",
+  "title": "Marketing Claim Passport (claim_passport.v1)",
+  "type": "object",
+  "properties": {
+    "claim_id": {"type": "string"},
+    "exact_claim": {"type": "string"},
+    "claim_type": {"type": "string", "enum": ["factual", "directional", "causal", "promotional"]},
+    "authoring_system": {"type": "string"},
+    "evidence_refs": {"type": "array", "items": {"type": "string"}},
+    "counterevidence_refs": {"type": "array", "items": {"type": "string"}},
+    "scope": {"type": "string"},
+    "horizon": {"type": "string"},
+    "jurisdiction": {"type": "string"},
+    "audience": {"type": "string"},
+    "disclosure_class": {"type": "string"},
+    "confidence_method": {"type": "string"},
+    "falsifier": {"type": "string"},
+    "check_by": {"type": ["string", "null"]},
+    "outcome_refs": {"type": "array", "items": {"type": "string"}},
+    "corrections": {"type": "array", "items": {"type": "string"}},
+    "derivative_asset_ids": {"type": "array", "items": {"type": "string"}},
+    "status": {"type": "string", "enum": ["open", "resolved", "corrected", "expired"]},
+    "mode": {"type": "string", "enum": ["live", "shadow"]}
+  },
+  "required": ["claim_id", "exact_claim", "claim_type", "authoring_system", "status"]
+}

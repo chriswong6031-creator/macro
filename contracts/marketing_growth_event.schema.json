@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_growth_event.v1",
+  "title": "Marketing Growth Event (growth_event.v1)",
+  "type": "object",
+  "properties": {
+    "event_id": {"type": "string"},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "anonymous_or_user_id": {"type": "string"},
+    "session_id": {"type": "string"},
+    "event_name": {
+      "type": "string",
+      "enum": [
+        "landing_view", "public_object_view", "source_opened",
+        "dossier_generated", "why_moving_run", "share_generated",
+        "share_opened", "embed_view", "bot_command", "creator_asset_used",
+        "account_created", "watchlist_saved", "preview_started",
+        "first_value_reached", "second_session_value", "alert_opened",
+        "report_viewed", "checkout_started", "subscription_created",
+        "invoice_paid", "renewal", "cancel_requested", "cancellation",
+        "refund", "chargeback", "referral_created", "referral_converted"
+      ]
+    },
+    "object_type": {"type": "string"},
+    "object_id": {"type": "string"},
+    "campaign_id": {"type": ["string", "null"]},
+    "publication_id": {"type": ["string", "null"]},
+    "partner_id": {"type": ["string", "null"]},
+    "experiment_cell": {"type": ["string", "null"]},
+    "properties": {"type": "object"},
+    "consent_state": {"type": "string"},
+    "mode": {"type": "string", "enum": ["live", "shadow"]}
+  },
+  "required": ["event_id", "occurred_at", "event_name", "session_id"]
+}

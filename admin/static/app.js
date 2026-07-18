@@ -143,10 +143,18 @@ const ICONS = {
   mastermind_ai: NAV_ICO('<rect x="5" y="7" width="14" height="12" rx="2.5"/><circle cx="9.5" cy="12.5" r="1.2"/><circle cx="14.5" cy="12.5" r="1.2"/><path d="M12 7V4M12 4h.01M9 16h6"/>'),
   prophet:       NAV_ICO('<ellipse cx="12" cy="12" rx="5" ry="7.5"/><path d="M12 4.5a7.5 5 0 0 1 0 15M12 4.5a7.5 5 0 0 0 0 15"/><circle cx="12" cy="12" r="2"/>'),
   site_gate:     NAV_ICO('<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/>'),
+  /* Marketing lobe icons */
+  marketing_overview:    NAV_ICO('<path d="M3 17V8l5-3 4 2 5-3v9l-5 3-4-2-5 3Z"/><path d="M8 5v9M12 7v9M17 4v9"/>'),
+  marketing_departments: NAV_ICO('<rect x="9" y="3" width="6" height="4" rx="1"/><rect x="2" y="15" width="5" height="4" rx="1"/><rect x="9" y="15" width="5" height="4" rx="1"/><rect x="17" y="15" width="5" height="4" rx="1"/><path d="M12 7v4M4.5 15v-3h15v3"/>'),
+  marketing_channels:    NAV_ICO('<path d="M5.5 14.5a2 2 0 1 0 0-5 2 2 0 0 0 0 5z"/><path d="M18.5 9.5a2 2 0 1 0 0-5 2 2 0 0 0 0 5z"/><path d="M18.5 19.5a2 2 0 1 0 0-5 2 2 0 0 0 0 5z"/><path d="M7.4 13.4l9.1-3.9M7.4 10.6l9.1 3.9"/>'),
+  marketing_campaigns:   NAV_ICO('<path d="M3 12a9 9 0 1 0 18 0M12 3v5M12 3l-3 3M12 3l3 3M7 8.5l1.5 1.5M17 8.5l-1.5 1.5M12 8v4l3 3"/>'),
+  marketing_experiments: NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/><circle cx="10.5" cy="16.5" r="1"/><circle cx="14" cy="15" r="1"/>'),
+  marketing_lobes:       NAV_ICO('<rect x="3" y="3" width="5" height="5" rx="1.2"/><rect x="10" y="3" width="5" height="5" rx="1.2"/><rect x="17" y="3" width="4" height="5" rx="1.2"/><rect x="3" y="10" width="5" height="5" rx="1.2"/><rect x="10" y="10" width="5" height="5" rx="1.2"/><path d="M5.5 15v2a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -2875,6 +2883,435 @@ RENDER.prophet = async () => {
     if (r.ok) { inp.dataset.prev = String(r.new); toast(`${inp.dataset.prophset} → ${r.new}`); }
     else { inp.value = inp.dataset.prev; toast(r.error || "failed", true); }
   });
+};
+
+/* ---- MARKETING LOBE -------------------------------------------------------- */
+
+/* Shared Marketing helpers */
+const MKT_LIFECYCLE_CLS = { chartered: "s-mut", building: "s-warn", growing: "s-ok", scaling: "s-ok", mature: "s-ok", sunset: "s-bad" };
+const MKT_AUTH_CLS = { G0: "s-mut", G1: "s-mut", G2: "s-warn", G3: "s-warn", G4: "s-ok", G5: "s-ok", G6: "s-ok", G7: "s-ok" };
+const MKT_STAGE_CLS = { A: "s-mut", B: "s-warn", C: "s-ok" };
+function mktLifecyclePill(lc) { return `<span class="statpill ${MKT_LIFECYCLE_CLS[lc] || "s-mut"}">${esc(lc || "chartered")}</span>`; }
+function mktAuthPill(auth) { return `<span class="statpill ${MKT_AUTH_CLS[auth] || "s-mut"}">${esc(auth || "G1")}</span>`; }
+/* Stacked label/value row — for long wrapping text that reads badly in a space-between .kv. */
+function mktStack(label, value) {
+  return `<div class="mkt-stack"><div class="mkt-stack-lab">${esc(label)}</div><div class="mkt-stack-val">${esc(value != null && value !== "" ? value : "—")}</div></div>`;
+}
+
+/* ---- CMO OFFICE ----------------------------------------------------------- */
+RENDER.marketing_overview = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/overview");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("CMO Office unavailable", (d && d.error) || "panel error"); return; }
+
+  if (d.note && !d.lobe) {
+    v.innerHTML = nwEmpty("Marketing lobe — accruing", d.note); return;
+  }
+
+  const lobe   = d.lobe || {};
+  const ns     = d.north_star || {};
+  const cmo    = d.cmo || {};
+  const mandate = d.mandate || {};
+  const port   = cmo.portfolio || {};
+  const si     = cmo.self_improvement || {};
+  const gr     = cmo.guardrails || {};
+  const waves  = d.waves || [];
+
+  /* Hero strip */
+  const heroHtml = `
+    <div class="section">CMO Office
+      <span class="cnt">as_of ${esc(d.as_of || "—")}</span>
+      ${mktLifecyclePill(lobe.lifecycle_state)}
+      ${mktAuthPill(lobe.authority_level)}
+    </div>
+    <div class="grid">
+      ${card("Lobe mandate", `
+        ${mktStack("Category", mandate.category)}
+        ${mktStack("Promise", mandate.promise)}
+        ${mktStack("Ideal customer", mandate.icp)}
+        ${mktStack("First paid job", mandate.first_paid_job)}
+        <div class="note muted" style="margin-top:6px">${esc(mandate.proof || "")}</div>`)}
+      ${card("North star", `
+        <div class="big" style="color:var(--accent-cyan)">${esc(ns.metric || "—")}</div>
+        <div class="sub">${ns.value != null ? String(ns.value) : "—"}</div>
+        <div class="kv"><span>State</span><span class="statpill ${ns.state === "accruing" ? "s-mut" : "s-ok"}">${esc(ns.state || "accruing")}</span></div>
+        ${ns.note ? `<div class="note muted">${esc(ns.note)}</div>` : ""}`)}
+      ${card("Portfolio", `
+        <div class="kv"><span>Envelope</span><b>$${Number(port.total_envelope_usd || 0).toLocaleString()}</b></div>
+        <div class="kv"><span>Departments</span><b>${(port.allocations || []).length}</b></div>
+        <div class="kv"><span>Opp queue depth</span><b>${Number(cmo.opportunity_queue_depth || 0)}</b></div>
+        <div class="kv"><span>Director</span><b>${esc(cmo.director || "Fable")}</b></div>`)}
+    </div>`;
+
+  /* Allocations table */
+  const allocs = port.allocations || [];
+  const allocHtml = `<div class="section">Department portfolio <span class="cnt">${allocs.length} depts</span></div>`
+    + (allocs.length
+      ? `<table><thead><tr><th>#</th><th>Department</th><th>Weight</th></tr></thead><tbody>
+         ${allocs.map(a => `<tr>
+           <td class="mono">${Number(a.rank || 0)}</td>
+           <td class="sub"><b>${esc(a.department || "—")}</b></td>
+           <td class="sub">${a.weight != null ? (a.weight * 100).toFixed(1) + "%" : "—"}</td>
+         </tr>`).join("")}
+         </tbody></table>`
+      : nwEmpty("No allocations yet", "Portfolio accrues after first governor run."));
+
+  /* Self-improvement loop */
+  const hyps = si.open_hypotheses || [];
+  const selfImpHtml = `<div class="section">Self-improvement loop</div>
+    <div class="card">
+      <div class="kv"><span>Loop state</span><span class="statpill ${si.loop_state === "observing" ? "s-mut" : "s-warn"}">${esc(si.loop_state || "observing")}</span></div>
+      <div class="kv"><span>Last review</span><b>${esc(si.last_review || "—")}</b></div>
+      <div class="kv"><span>Next review</span><b>${esc(si.next_review || "—")}</b></div>
+      <div class="kv"><span>Open hypotheses</span><b>${hyps.length}</b></div>
+      ${hyps.length ? `<div style="margin-top:6px">${hyps.map(h => `<div class="row" style="margin-bottom:4px">
+        <span class="statpill ${h.status === "open" ? "s-warn" : "s-ok"}" style="margin-right:8px">${esc(h.status || "open")}</span>
+        <span class="sub">${esc(h.text || h.id || "")}</span></div>`).join("")}</div>` : ""}
+    </div>`;
+
+  /* Guardrail checklist */
+  const checks = (gr.self_deception_checks || []);
+  const guardrailHtml = `<div class="section">Self-deception guardrails <span class="cnt">${checks.length} checks</span></div>`
+    + (checks.length
+      ? `<table><thead><tr><th>Check</th><th>Status</th><th>Note</th></tr></thead><tbody>
+         ${checks.map(c => `<tr>
+           <td class="sub"><b>${esc(c.name || "—")}</b></td>
+           <td><span class="statpill ${c.status === "enforced" ? "s-ok" : c.status === "warning" ? "s-warn" : "s-bad"}">${esc(c.status || "—")}</span></td>
+           <td class="sub">${esc(c.note || "")}</td>
+         </tr>`).join("")}
+         </tbody></table>`
+      : nwEmpty("Guardrails accruing", "Self-deception checks populate after first build."));
+
+  /* Wave timeline */
+  const waveHtml = waves.length
+    ? `<div class="section">Wave roadmap <span class="cnt">${waves.length} waves</span></div>
+       <div class="grid">
+       ${waves.map(w => `<div class="card">
+         <h3>${esc(w.title || w.id)} <span class="statpill ${w.status === "active" ? "s-ok" : w.status === "done" ? "s-mut" : "s-warn"}">${esc(w.status || "planned")}</span></h3>
+         <div class="note muted">${esc(w.goal || "")}</div>
+       </div>`).join("")}
+       </div>`
+    : "";
+
+  /* Settings (read-only display) */
+  const settingsData = await api("/api/marketing/overview").catch(() => null);
+  const cfgData = await api("/api/marketing/experiments").catch(() => ({}));
+  const activeVariant = (cfgData && cfgData.active_trial_variant) || "7_trading_days";
+  const settingsHtml = `<div class="section">Settings <span class="cnt">config/marketing.yml · read-only</span></div>
+    <div class="note muted" style="margin-bottom:8px">Settings are read-only in v1. Edit <code>config/marketing.yml</code> directly to change knobs.</div>
+    <div class="row"><div class="lab" style="min-width:220px">Trial variant</div>
+      <span class="statpill s-mut">${esc(activeVariant)}</span>
+      <div class="note" style="margin-left:8px">Active trial measurement window.</div></div>`;
+
+  v.innerHTML = heroHtml + allocHtml + selfImpHtml + guardrailHtml + waveHtml + settingsHtml;
+};
+
+/* ---- DEPARTMENTS ---------------------------------------------------------- */
+RENDER.marketing_departments = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/departments");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Departments unavailable", (d && d.error) || "panel error"); return; }
+
+  if (d.note && !d.departments.length) {
+    v.innerHTML = nwEmpty("Departments — accruing", d.note); return;
+  }
+
+  const depts  = d.departments || [];
+  const ladder = d.authority_ladder || [];
+
+  /* Authority ladder table */
+  const ladderHtml = `<div class="section">Growth authority ladder</div>
+    <table><thead><tr><th>Level</th><th>Name</th><th>Description</th></tr></thead><tbody>
+    ${ladder.map(rung => `<tr>
+      <td><span class="statpill ${MKT_AUTH_CLS[rung.level] || "s-mut"}">${esc(rung.level)}</span></td>
+      <td class="sub"><b>${esc(rung.name || "")}</b></td>
+      <td class="sub">${esc(rung.desc || "")}</td>
+    </tr>`).join("")}
+    </tbody></table>`;
+
+  /* Department cards */
+  const deptsHtml = `<div class="section">Departments <span class="cnt">${depts.length}</span></div>
+    <div class="grid">
+    ${depts.map(dept => {
+      const sc = dept.scorecard || {};
+      const budget = dept.budget || {};
+      const clock = dept.clock || {};
+      const engines = dept.engines || [];
+      return `<div class="card">
+        <h3>${esc(dept.name || dept.id)}
+          <span class="statpill ${dept.director_model === "fable" ? "s-ok" : "s-warn"}" style="font-size:10px">${esc(dept.director_model || "opus")}</span>
+          ${mktLifecyclePill(dept.lifecycle_state)}
+          ${mktAuthPill(dept.authority_level)}
+        </h3>
+        ${mktStack("Primary outcome", dept.primary_outcome)}
+        <div class="kv"><span>Wave</span><b>${esc(String(dept.wave || "—"))}</b></div>
+        <div class="kv"><span>Trust health</span><span class="statpill ${sc.trust_health === "clean" ? "s-ok" : "s-warn"}">${esc(sc.trust_health || "seeding")}</span></div>
+        <div class="kv"><span>Exp velocity</span><b>${Number(sc.experiment_velocity || 0)}</b></div>
+        <div class="kv"><span>Learning quality</span><b>${esc(sc.learning_quality || "seeding")}</b></div>
+        <div class="kv"><span>Budget envelope</span><b>$${Number(budget.envelope_usd || 0).toLocaleString()}</b></div>
+        ${engines.length ? `<div class="note muted" style="margin-top:4px">Engines: ${engines.map(e => esc(e)).join(", ")}</div>` : ""}
+        ${dept.retirement_test ? `<div class="note muted">Retirement: ${esc(dept.retirement_test)}</div>` : ""}
+      </div>`;
+    }).join("")}
+    </div>`;
+
+  v.innerHTML = ladderHtml + deptsHtml;
+};
+
+/* ---- CAMPAIGNS ------------------------------------------------------------ */
+RENDER.marketing_campaigns = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/campaigns");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Campaigns unavailable", (d && d.error) || "panel error"); return; }
+
+  if (d.note && !d.pipeline) {
+    v.innerHTML = nwEmpty("Campaigns — accruing", d.note); return;
+  }
+
+  const opps    = (d.opportunities || {});
+  const cmpgns  = (d.campaigns || {});
+  const oppList = opps.newest || [];
+  const cmpList = cmpgns.newest || [];
+
+  /* 13-step campaign loop strip */
+  const CAMPAIGN_LOOP_STEPS = [
+    "Problem sensing", "Opportunity scoring", "Audience selection", "Promise drafting",
+    "Channel mapping", "Content production", "Distribution scheduling", "Activation",
+    "Signal capture", "Attribution", "Experiment evaluation", "Learning integration",
+    "Opportunity queue update",
+  ];
+  const loopHtml = `<div class="section">13-step campaign loop</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
+    ${CAMPAIGN_LOOP_STEPS.map((step, i) => `
+      <div style="display:flex;align-items:center;gap:3px">
+        <span style="font-size:10px;color:var(--accent);font-weight:600">${i + 1}</span>
+        <span class="statpill s-mut" style="font-size:10px">${esc(step)}</span>
+        ${i < CAMPAIGN_LOOP_STEPS.length - 1 ? `<span style="color:var(--faint);font-size:10px">›</span>` : ""}
+      </div>`).join("")}
+    </div>`;
+
+  /* Opportunity bus */
+  const oppHtml = `<div class="section">Opportunity queue
+    <span class="cnt">${Number(opps.open || 0)} open · ${Number(opps.scored || 0)} scored</span></div>`
+    + (oppList.length
+      ? `<table><thead><tr><th>Problem / desire</th><th>EV</th><th>Score</th><th>Half-life</th><th>Status</th></tr></thead><tbody>
+         ${oppList.map(o => `<tr>
+           <td class="sub" style="max-width:260px">${esc(o.problem_or_desire || "—")}</td>
+           <td class="sub r">${o.expected_value != null ? Number(o.expected_value).toFixed(2) : "—"}</td>
+           <td class="sub r mono">${o.score != null ? Number(o.score).toFixed(3) : "—"}</td>
+           <td><span class="statpill s-mut">${esc(o.half_life_class || "—")}</span></td>
+           <td><span class="statpill ${o.status === "active" ? "s-ok" : o.status === "scored" ? "s-warn" : "s-mut"}">${esc(o.status || "open")}</span></td>
+         </tr>`).join("")}
+         </tbody></table>`
+      : nwEmpty("No opportunities scored yet", "Opportunity bus populates after first nightly run."));
+
+  /* Campaigns */
+  const cmpHtml = `<div class="section">Campaigns
+    <span class="cnt">${Number(cmpgns.active || 0)} active · ${Number(cmpgns.shadow || 0)} shadow</span></div>`
+    + (cmpList.length
+      ? `<table><thead><tr><th>Objective</th><th>Audience</th><th>Promise</th><th>Channels</th><th>Authority</th><th>Status</th></tr></thead><tbody>
+         ${cmpList.map(c => `<tr>
+           <td class="sub" style="max-width:180px">${esc(c.objective || "—")}</td>
+           <td class="sub">${esc(c.audience || "—")}</td>
+           <td class="sub" style="max-width:180px">${esc(c.promise || "—")}</td>
+           <td class="sub mono">${esc((c.channels || []).join(", ") || "—")}</td>
+           <td>${mktAuthPill(c.authority_level)}</td>
+           <td><span class="statpill ${c.status === "active" ? "s-ok" : c.status === "shadow" ? "s-mut" : "s-warn"}">${esc(c.status || "—")}</span></td>
+         </tr>`).join("")}
+         </tbody></table>`
+      : nwEmpty("No campaigns yet", "Campaigns compile after opportunities are scored."));
+
+  v.innerHTML = loopHtml + oppHtml + cmpHtml;
+};
+
+/* ---- CHANNELS & DESKS ----------------------------------------------------- */
+RENDER.marketing_channels = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/channels");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Channels unavailable", (d && d.error) || "panel error"); return; }
+
+  if (d.note && !d.desk_network) {
+    v.innerHTML = nwEmpty("Channels & Desks — accruing", d.note); return;
+  }
+
+  const dn       = d.desk_network || {};
+  const accts    = dn.accounts || [];
+  const dist     = dn.distinctness || {};
+  const actuation = dn.actuation || {};
+  const pubs     = d.publications || {};
+  const pubList  = pubs.newest || [];
+
+  /* Network hero */
+  const simPct = Math.round((dist.max_similarity || 0) * 100);
+  const heroHtml = `<div class="section">Desk network
+    <span class="cnt">${accts.length} accounts</span>
+    <span class="statpill ${MKT_STAGE_CLS[dn.stage] || "s-mut"}">Stage ${esc(dn.stage || "A")}</span>
+  </div>
+  <div class="grid">
+    ${card("Actuation path", `
+      <div class="kv"><span>Path</span><b>${esc(actuation.path || "human_in_loop")}</b></div>
+      <div class="kv"><span>API eligible</span><b>${actuation.api_eligible ? "Yes" : "No"}</b></div>
+      <div class="kv"><span>Control loop</span><b>${esc(actuation.control_loop || "drafted")}</b></div>`)}
+    ${card("Distinctness", `
+      ${meter("Max variant similarity", simPct, simPct + "%", simPct >= 70 ? "bad" : simPct >= 50 ? "warn" : "")}
+      <div class="kv"><span>Flagged pairs</span><b>${Number(dist.flags || 0)}</b></div>
+      <div class="note muted">Pairs above 0.7 Jaccard similarity are flagged.</div>`)}
+    ${card("Publications", `
+      <div class="kv"><span>Total</span><b>${Number(pubs.total || 0)}</b></div>
+      <div class="kv"><span>Receipts</span><b>${Number(pubs.receipts || 0)}</b></div>
+      <div class="kv"><span>Corrections</span><b style="color:${Number(d.corrections || 0) > 0 ? "var(--warn)" : "var(--ok)"}">${Number(d.corrections || 0)}</b></div>`)}
+  </div>`;
+
+  /* Account cards */
+  const acctHtml = `<div class="section">Accounts <span class="cnt">${accts.length}</span></div>
+    <div class="grid">
+    ${accts.map(a => {
+      const health = a.health || {};
+      return `<div class="card">
+        <h3>${esc(a.id || "—")}
+          <span class="statpill ${a.kind === "branded" ? "s-ok" : "s-mut"}">${esc(a.kind || "generic")}</span>
+          <span class="statpill ${MKT_STAGE_CLS[a.stage] || "s-mut"}">Stage ${esc(a.stage || "A")}</span>
+        </h3>
+        <div class="kv"><span>Beat</span><b style="max-width:220px">${esc(a.beat || "—")}</b></div>
+        <div class="kv"><span>Voice</span><b>${esc(a.voice || "—")}</b></div>
+        <div class="kv"><span>Corpus</span><b>${esc(a.corpus || "—")}</b></div>
+        <div class="kv"><span>Status</span><span class="statpill ${a.status === "warming" ? "s-warn" : a.status === "live" ? "s-ok" : "s-mut"}">${esc(a.status || "warming")}</span></div>
+        <div class="kv"><span>Authority</span>${mktAuthPill(a.authority)}</div>
+        ${health.warnings > 0 ? `<div class="note muted" style="color:var(--warn)">${Number(health.warnings)} health warning${health.warnings > 1 ? "s" : ""}</div>` : ""}
+        ${health.followers != null ? `<div class="kv"><span>Followers</span><b>${Number(health.followers).toLocaleString()}</b></div>` : ""}
+      </div>`;
+    }).join("")}
+    </div>`;
+
+  /* Publication ledger */
+  const pubLedgerHtml = `<div class="section">Recent publications <span class="cnt">${Number(pubs.total || 0)} total</span></div>`
+    + (pubList.length
+      ? `<table><thead><tr><th>Channel</th><th>Account</th><th>Status</th><th>Published</th></tr></thead><tbody>
+         ${pubList.map(p => `<tr>
+           <td class="sub">${esc(p.channel || "—")}</td>
+           <td class="mono">${esc(p.account || "—")}</td>
+           <td><span class="statpill ${p.status === "published" ? "s-ok" : "s-mut"}">${esc(p.status || "—")}</span></td>
+           <td class="sub mono">${esc((p.published_at || "—").slice(0, 10))}</td>
+         </tr>`).join("")}
+         </tbody></table>`
+      : nwEmpty("No publications yet", "Publication ledger populates after first distribution."));
+
+  v.innerHTML = heroHtml + acctHtml + pubLedgerHtml;
+};
+
+/* ---- EXPERIMENTS ---------------------------------------------------------- */
+RENDER.marketing_experiments = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/experiments");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Experiments unavailable", (d && d.error) || "panel error"); return; }
+
+  if (d.note && !d.experiments) {
+    v.innerHTML = nwEmpty("Experiments — accruing", d.note); return;
+  }
+
+  const exps    = d.experiments || {};
+  const expList = exps.newest || [];
+  const ns      = d.north_star || {};
+  const variants = d.trial_variants || ["7_trading_days", "14_calendar_days", "value_moment_limited"];
+  const active  = d.active_trial_variant || "7_trading_days";
+
+  /* North star */
+  const nsHtml = `<div class="section">North star</div>
+    <div class="card">
+      <div class="big" style="color:var(--accent-cyan)">${esc(ns.metric || "—")}</div>
+      <div class="kv"><span>Value</span><b>${ns.value != null ? String(ns.value) : "accruing"}</b></div>
+      <div class="kv"><span>State</span><span class="statpill ${ns.state === "accruing" ? "s-mut" : "s-ok"}">${esc(ns.state || "accruing")}</span></div>
+      ${ns.note ? `<div class="note muted">${esc(ns.note)}</div>` : ""}
+    </div>`;
+
+  /* Trial variant selector (display only) */
+  const variantHtml = `<div class="section">Trial variant <span class="cnt">read-only · config/marketing.yml</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    ${variants.map(vr => `
+      <div class="card" style="padding:10px 14px;${vr === active ? "border:1px solid var(--accent);background:rgba(106,141,255,.08)" : "opacity:.6"}">
+        <div style="display:flex;align-items:center;gap:8px">
+          ${vr === active ? `<span style="color:var(--accent);font-size:14px">●</span>` : `<span style="color:var(--faint);font-size:14px">○</span>`}
+          <span class="sub"><b>${esc(vr.replace(/_/g, " "))}</b></span>
+          ${vr === active ? `<span class="statpill s-ok">active</span>` : ""}
+        </div>
+      </div>`).join("")}
+    </div>`;
+
+  /* Experiments table */
+  const expHtml = `<div class="section">Experiments
+    <span class="cnt">${Number(exps.running || 0)} running</span></div>`
+    + (expList.length
+      ? `<table><thead><tr><th>Hypothesis</th><th>Metric</th><th>Status</th></tr></thead><tbody>
+         ${expList.map(e => `<tr>
+           <td class="sub" style="max-width:320px">${esc(e.hypothesis || "—")}</td>
+           <td class="sub">${esc(e.primary_metric || "—")}</td>
+           <td><span class="statpill ${e.status === "running" ? "s-ok" : e.status === "completed" ? "s-mut" : "s-warn"}">${esc(e.status || "—")}</span></td>
+         </tr>`).join("")}
+         </tbody></table>`
+      : nwEmpty("No experiments yet", "Experiment registry populates after first shadow run."));
+
+  v.innerHTML = nsHtml + variantHtml + expHtml;
+};
+
+/* ---- ENGINES (LOBES) ------------------------------------------------------ */
+RENDER.marketing_lobes = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/lobes");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Engines unavailable", (d && d.error) || "panel error"); return; }
+
+  if (d.note && !d.engines_by_department.length && !d.provenance) {
+    v.innerHTML = nwEmpty("Engines — accruing", d.note); return;
+  }
+
+  const engsByDept = d.engines_by_department || [];
+  const prov = d.provenance || {};
+  const claims = prov.claims || {};
+  const ge = d.growth_events || {};
+  const geNames = ge.instrumented || [];
+
+  /* Provenance hero */
+  const provHtml = `<div class="section">Provenance</div>
+    <div class="grid">
+      ${card("Modes", prov.modes ? prov.modes.map(m => `<span class="statpill s-mut" style="margin-right:4px">${esc(m)}</span>`).join("") : nwEmpty("", ""))}
+      ${card("Claims", `
+        <div class="kv"><span>Total</span><b>${Number(claims.total || 0)}</b></div>
+        <div class="kv"><span>Open</span><b style="color:${Number(claims.open || 0) > 0 ? "var(--warn)" : "var(--ok)"}">${Number(claims.open || 0)}</b></div>
+        <div class="kv"><span>Resolved</span><b>${Number(claims.resolved || 0)}</b></div>`)}
+      ${card("Growth events", `
+        <div class="kv"><span>Instrumented</span><b>${geNames.length}</b></div>
+        <div class="kv"><span>Observed</span><b>${Number(ge.observed || 0)}</b></div>
+        <div class="note muted">Taxonomy: ${esc(geNames.slice(0, 4).join(", "))}${geNames.length > 4 ? ` + ${geNames.length - 4} more` : ""}</div>`)}
+    </div>`;
+
+  /* Growth events chip strip */
+  const geChipHtml = geNames.length
+    ? `<div class="section">Growth event taxonomy <span class="cnt">${geNames.length} events</span></div>
+       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
+       ${geNames.map(n => `<span class="statpill s-mut">${esc(n)}</span>`).join("")}
+       </div>`
+    : "";
+
+  /* Engines by department accordion */
+  const engsHtml = `<div class="section">Engines by department <span class="cnt">${engsByDept.reduce((s, d) => s + (d.engines || []).length, 0)} engines</span></div>
+    <div class="grid">
+    ${engsByDept.map(dept => `<div class="card">
+      <h3>${esc(dept.department_name || dept.department_id)}
+        ${mktLifecyclePill(dept.lifecycle_state)}
+        ${mktAuthPill(dept.authority_level)}
+      </h3>
+      ${dept.engines && dept.engines.length
+        ? dept.engines.map(e => `<div class="kv"><span class="mono">${esc(e)}</span></div>`).join("")
+        : `<div class="note muted">No engines registered yet.</div>`}
+    </div>`).join("")}
+    </div>`;
+
+  v.innerHTML = provHtml + geChipHtml + engsHtml;
 };
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */

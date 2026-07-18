@@ -2672,6 +2672,15 @@ jobs:
             echo "::warning title=prophet_governor::rc=$rc (prophet_status/suggestions may be stale)"
           fi
           exit 0
+      - name: Marketing — NW lobe governor
+        continue-on-error: true
+        run: |
+          set +e
+          python -m scripts.build_marketing; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=marketing_governor::rc=$rc (marketing_state/lobe may be stale)"
+          fi
+          exit 0
       - name: commit standout audit US artifacts
         run: |
           git config user.name "dashboard-bot"
@@ -2685,6 +2694,8 @@ jobs:
           git add site/us_track_record.html 2>/dev/null || true
           git add data/neuralweb/prophet_status.json 2>/dev/null || true
           git add data/neuralweb/prophet_suggestions.json 2>/dev/null || true
+          git add data/neuralweb/marketing_state.json 2>/dev/null || true
+          git add site/neuralwebdata/marketing_lobe.json 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)

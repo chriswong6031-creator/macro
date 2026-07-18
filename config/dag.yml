@@ -968,6 +968,13 @@ lanes:
           Never-raise contract (SA-R16): absent inputs emit data_gap sentinels (SA-R15).
           Cross-market honesty: no pooled return statistics (PR-R5).
           Arrow one-shot: hard_exit(0) at end.
+      - id: marketing_governor
+        module: scripts.build_marketing
+        note: >
+          Marketing lobe NW governor. Deterministic Growth-OS state snapshot; reads
+          config/marketing.yml + data/marketing/ seed ledgers. Writes:
+          data/neuralweb/marketing_state.json, site/neuralwebdata/marketing_lobe.json.
+          Never-raise; display-only; originates no market signal.
 
   # ── daily.yml / oracle_offrender ────────────────────────────────────────
   # Oracle off-render job: panel rebuild + episodes + Time Machine + Ratio Lens.

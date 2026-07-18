@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_department_change.v1",
+  "title": "Marketing Department Change (department_change.v1)",
+  "type": "object",
+  "properties": {
+    "change_id": {"type": "string"},
+    "department": {"type": "string"},
+    "prior_version": {"type": "object"},
+    "proposed_version": {"type": "object"},
+    "evidence": {"type": "string"},
+    "expected_effect": {"type": "string"},
+    "authority_change": {"type": "string"},
+    "approved_by_fable": {"type": "boolean"},
+    "auditor_result": {"type": "string"},
+    "effective_at": {"type": "string"},
+    "rollback_condition": {"type": "string"},
+    "mode": {"type": "string", "enum": ["live", "shadow"]}
+  },
+  "required": ["change_id", "department", "prior_version", "proposed_version", "evidence", "effective_at"]
+}

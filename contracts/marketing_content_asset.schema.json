@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_content_asset.v1",
+  "title": "Marketing Content Asset (content_asset.v1)",
+  "type": "object",
+  "properties": {
+    "asset_id": {"type": "string"},
+    "campaign_id": {"type": "string"},
+    "canonical_parent": {"type": ["string", "null"]},
+    "format": {"type": "string"},
+    "channel": {"type": "string"},
+    "locale": {"type": "string"},
+    "source_packet_ids": {"type": "array", "items": {"type": "string"}},
+    "claim_ids": {"type": "array", "items": {"type": "string"}},
+    "disclosure": {"type": "string"},
+    "rights": {"type": "string"},
+    "created_by": {"type": "string"},
+    "reviewed_by": {"type": ["string", "null"]},
+    "expires_at": {"type": ["string", "null"]},
+    "status": {"type": "string", "enum": ["draft", "approved", "published", "expired", "corrected"]}
+  },
+  "required": ["asset_id", "campaign_id", "format", "channel", "created_by", "status"]
+}
