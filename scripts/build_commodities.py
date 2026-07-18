@@ -1198,6 +1198,47 @@ def main() -> int:
                                     "action": (a.get("conviction") or {}).get("action"),
                                     "conviction": (a.get("conviction") or {}).get("score")}
                          for a in assets}}
+    # ratios block: copper_gold and gold_silver — reuse series already computed
+    # by complex_vm (cx already holds live gsr and copper_gold scalar values,
+    # but we need 20d pct-change; read from the underlying results frames directly).
+    try:
+        def _ratio_block(series_vals: "pd.Series") -> dict:
+            """Compute {value, chg_20d_pct, dir} for a ratio series (last row)."""
+            s = series_vals.dropna()
+            val = float(s.iloc[-1]) if len(s) >= 1 else None
+            chg = None
+            direction = "flat"
+            if val is not None and len(s) >= 21:
+                prev = float(s.iloc[-21])
+                if prev and prev != 0:
+                    chg = round(100.0 * (val - prev) / abs(prev), 2)
+                    if chg > 1.0:
+                        direction = "up"
+                    elif chg < -1.0:
+                        direction = "down"
+            return {"value": round(val, 4) if val is not None else None,
+                    "chg_20d_pct": chg, "dir": direction}
+
+        if "gold" not in results:
+            log.warning("commodity ratios block: gold series absent — ratios omitted")
+            raise KeyError("gold")
+        _gold_close = results["gold"]["close"]
+        _silver_close = results["silver"]["close"] if "silver" in results else None
+        _copper_close = results["copper"]["close"] if "copper" in results else None
+
+        ratios: dict = {}
+        if _copper_close is not None:
+            _cg = _copper_close / _gold_close
+            ratios["copper_gold"] = _ratio_block(_cg)
+        if _silver_close is not None:
+            _gs = _gold_close / _silver_close
+            ratios["gold_silver"] = _ratio_block(_gs)
+
+        if ratios:
+            latest["ratios"] = ratios
+    except Exception as _re:  # noqa: BLE001 — fail-open; block is additive
+        log.warning("commodity ratios block failed (%s) — omitted from latest.json", _re)
+
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str))
 
     # complex_latest.json — the commodity-complex quadrant + sector index + breadth,

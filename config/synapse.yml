@@ -10392,12 +10392,15 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/query.py
+      - engine/neuralweb/world_state.py
       - scripts/build_macro_context.py
     external_consumers: []
     notes: >
       R5 PR-C — macro context ledger parquet. One row per (asof, domain, field).
       Same-asof replace semantics on re-run (idempotent). Backward merge_asof source
       for spine stamp-join in _stamp_macro_context(). Display/context tier only.
+      v1.2: also consumed by engine/neuralweb/world_state._macro_ledger_deltas() for
+      FX+commodity streak/prev metadata (display-tier, fail-open).
 
   macro-transitions:
     path: data/macro_snapshots/transitions.jsonl
