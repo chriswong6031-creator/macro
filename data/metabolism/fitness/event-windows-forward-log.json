@@ -1,0 +1,44 @@
+{
+  "schema": "metabolism.generic_fitness.v1",
+  "as_of": "2026-07-18",
+  "lobe": "event-windows-forward-log",
+  "maturity": "accruing",
+  "sensors": {
+    "implied_vs_realized_coverage": {
+      "value": null,
+      "maturity": "accruing",
+      "store_present": false,
+      "store_asof": null,
+      "rows_accrued": null,
+      "note": "store absent: data/event_windows/forward_log.jsonl"
+    },
+    "phase_rv_coverage": {
+      "value": null,
+      "maturity": "accruing",
+      "store_present": false,
+      "store_asof": null,
+      "rows_accrued": null,
+      "note": "store absent: data/event_windows/forward_log.jsonl"
+    }
+  },
+  "composite": null,
+  "authority": {
+    "is_context_only": true,
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "tier": "shadow",
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "board_ordering",
+      "mastermind_arming",
+      "scored_path"
+    ]
+  },
+  "notes": "Generic fitness card for lobe 'event-windows-forward-log'. Sensors are accruing until their maturity_date. Values are display-context only; no signal-path authority. composite=null while any sensor is accruing — honesty law (R-V6-4). No LLM-originated values anywhere in this card."
+}
