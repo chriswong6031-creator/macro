@@ -53,3 +53,10 @@
 {"date": "2026-07-16", "pair_id": "power_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.026884, "leg_den_ret_1w": 0.051066, "state": "NO_ANCHOR", "kind": "basket"}
 {"date": "2026-07-16", "pair_id": "igv_vs_qqq", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.001919, "leg_den_ret_1w": -0.024266, "state": "NO_ANCHOR", "kind": "etf"}
 {"date": "2026-07-16", "pair_id": "qqq_vs_rsp", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.024266, "leg_den_ret_1w": 0.00728, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-17", "pair_id": "smh_vs_spy", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.093425, "leg_den_ret_1w": -0.015565, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-17", "pair_id": "igv_vs_smh", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.004211, "leg_den_ret_1w": -0.093425, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-17", "pair_id": "igv_vs_qqq", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.004211, "leg_den_ret_1w": -0.042488, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-17", "pair_id": "qqq_vs_rsp", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.042488, "leg_den_ret_1w": -0.004349, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-17", "pair_id": "smh_vs_rsp", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.093425, "leg_den_ret_1w": -0.004349, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-17", "pair_id": "software_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.030631, "leg_den_ret_1w": -0.148122, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-07-17", "pair_id": "mag7_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.011548, "leg_den_ret_1w": -0.148122, "state": "NO_ANCHOR", "kind": "basket"}
