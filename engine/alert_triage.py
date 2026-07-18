@@ -102,7 +102,8 @@ _DEMAND_TIER = {"demand_ahead": "context", "demand_at_risk": "context"}
 # Subsector-rotation flips (engine.subsector_rotation_alerts) ride Finviz's broad
 # numbers and carry no validated forward edge — a rotate-in is the loudest at
 # 'watch'; a leader rolling over is 'context'.
-_ROTATION_TIER = {"rotation_emerging": "watch", "rotation_fading": "context"}
+_ROTATION_TIER = {"rotation_emerging": "watch", "rotation_fading": "context",
+                  "rotation_event": "watch"}
 # Oracle rotation engine (engine.oracle.alerts) — onset/confirmed descriptive detections.
 # oracle_rollover and oracle_two_sided are high-severity at the source so they reach 'watch';
 # onset/confirmed are display_with_edge (onset secondary survived FDR — DISPLAY-WITH-EDGE per R4)
@@ -572,6 +573,7 @@ _CLUSTER = {
     ("themes", "theme_emerging"): "rotation", ("themes", "reco_change"): "rotation",
     ("themes", "leadership_rotation"): "rotation",
     ("rotation", "rotation_emerging"): "rotation", ("rotation", "rotation_fading"): "rotation",
+    ("rotation", "rotation_event"): "rotation",
     ("rotation", "entered_book"): "rotation", ("rotation", "left_book"): "rotation",
     ("oracle", "oracle_onset"): "rotation", ("oracle", "oracle_confirmed"): "rotation",
     ("oracle", "oracle_rollover"): "rotation", ("oracle", "oracle_two_sided"): "rotation",

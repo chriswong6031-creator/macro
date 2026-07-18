@@ -1326,3 +1326,80 @@ class TestIndependenceBlock:
         indep = graph["independence"]
         assert indep["same_bet_warning"] is not None, "Expected same_bet_warning to be non-null when active=True"
         assert indep["same_bet_warning"].get("active") is True
+
+
+# ===========================================================================
+# MSX-1 tests: fx_dollar node enrichment in confluence graph
+# ===========================================================================
+
+class TestFxDollarNodeEnrichment:
+    """Tests 31–33 in confluence: MSX-1 dominant_scenario + days_in_regime payload."""
+
+    def _write_world_state_with_fx(self, tmp: Path, fx_dollar: dict) -> None:
+        """Write a world_state.json containing an fx_dollar lobe."""
+        ws = {"fx_dollar": fx_dollar, "gaps": []}
+        _write_json(tmp / "data" / "neuralweb" / "world_state.json", ws)
+
+    def test_fx_dollar_node_msx_keys_forwarded(self, tmp_path):
+        """MSX-1 keys in fx_dollar lobe are forwarded into macro:fx_dollar node meta."""
+        _make_synapse(tmp_path)
+        self._write_world_state_with_fx(tmp_path, {
+            "regime": "dollar_bull",
+            "risk": "risk_on",
+            "asof": "2026-07-01",
+            "display_only": True,
+            "dollar_desk": {"trend": "declining"},
+            "regime_radar_dominant_scenario": {
+                "key": "carry_unwind",
+                "intensity": 0.72,
+                "prob_status": "active",
+                "p_cond": 0.45,
+                "base_rate": 0.18,
+            },
+            "state_changes": {
+                "smile_regime": {
+                    "current": "risk_on",
+                    "prev": "risk_off",
+                    "changed_on": "2026-06-20",
+                    "days_in_state": 11,
+                },
+            },
+        })
+        graph = build_graph(root=tmp_path, now=_NOW)
+        fx_nodes = [n for n in graph["nodes"] if n["id"] == "macro:fx_dollar"]
+        assert len(fx_nodes) == 1, "Expected exactly one macro:fx_dollar node"
+        meta = fx_nodes[0]["meta"]
+        assert meta.get("dominant_scenario") == "carry_unwind", (
+            f"Expected dominant_scenario='carry_unwind', got {meta.get('dominant_scenario')!r}"
+        )
+        assert meta.get("days_in_regime") == 11, (
+            f"Expected days_in_regime=11, got {meta.get('days_in_regime')!r}"
+        )
+
+    def test_fx_dollar_node_msx_keys_absent_null_tolerant(self, tmp_path):
+        """MSX-1 keys absent in fx_dollar lobe → dominant_scenario/days_in_regime are None."""
+        _make_synapse(tmp_path)
+        # Write a legacy-style lobe without MSX-1 keys
+        self._write_world_state_with_fx(tmp_path, {
+            "regime": "dollar_neutral",
+            "risk": "risk_off",
+            "asof": "2026-07-01",
+            "display_only": True,
+            "dollar_desk": {"trend": "flat"},
+        })
+        graph = build_graph(root=tmp_path, now=_NOW)
+        fx_nodes = [n for n in graph["nodes"] if n["id"] == "macro:fx_dollar"]
+        assert len(fx_nodes) == 1
+        meta = fx_nodes[0]["meta"]
+        # Both fields must be None (not missing key, not raising)
+        assert meta.get("dominant_scenario") is None
+        assert meta.get("days_in_regime") is None
+
+    def test_fx_dollar_node_absent_world_state_failopen(self, tmp_path):
+        """No world_state.json at all → no macro:fx_dollar node but no raise."""
+        _make_synapse(tmp_path)
+        # Do NOT write world_state.json
+        graph = build_graph(root=tmp_path, now=_NOW)
+        fx_nodes = [n for n in graph["nodes"] if n["id"] == "macro:fx_dollar"]
+        # No node is fine (lobe absent), just must not raise
+        assert isinstance(fx_nodes, list)

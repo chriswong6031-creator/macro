@@ -1325,6 +1325,20 @@
    "surfaces": [
     "sector_cycles"
    ]
+  },
+  {
+   "match": "validated:['clears the bar",
+   "backing": "subsector_rotation.js drawTrackRecord verdict label map — JS object key 'validated' is a DATA KEY (the engine-emitted verdict value; the display string was changed from 'Validated' to 'Clears the bar' in rotation-events-v2 UI overhaul per D-7a). This is a code token, not a user-facing claim. The 'validated' key is read-only inside the JS V={} literal and never rendered to the page; only the array value ('Clears the bar') is displayed. No track-record verdict is actually validated per the epistemic doctrine — the display string change enforces that.",
+   "surfaces": [
+    "subsector_rotation"
+   ]
+  },
+  {
+   "match": "key stays 'validated' (data)",
+   "backing": "Code comment in subsector_rotation.js labeling the JS object key 'validated' as a DATA KEY (the engine-emitted verdict value), not a user-facing claim. The comment explicitly annotates that the display string was changed away from 'Validated'. Part of D-7a rotation-events-v2 UI overhaul.",
+   "surfaces": [
+    "subsector_rotation"
+   ]
   }
  ]
 }

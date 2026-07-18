@@ -209,8 +209,13 @@ def test_read_tool_schemas_no_write_tools():
     assert "read_mechanism_pathways" in names
     # TIL W5 NW citizenship thematic state tool must also be present
     assert "read_theme_state" in names
-    # 7 original + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme (state/thesis/pathways) + 1 liquidity + 1 china-packet + 1 context-candidates? = 21 total read tools (see _ASK_READ_TOOLS)
-    assert len(names) == 21
+    # TIL page-wiring PR: 4 new read tools must also be present
+    assert "read_theme_asymmetry" in names
+    assert "read_theme_options_witness" in names
+    assert "read_theme_clinical" in names
+    assert "read_theme_trade_flows" in names
+    # 7 original + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme (state/thesis/pathways) + 1 liquidity + 1 china-packet + 4 TIL page-wiring = 25 total read tools (see _ASK_READ_TOOLS)
+    assert len(names) == 25
 
 
 def test_dispatch_refuses_write_tools():
@@ -1458,7 +1463,7 @@ def test_classify_question_factor_jargon_only_does_not_seed_explain_factor_conte
 # --- 15d. Schema count ---
 
 def test_read_tool_schemas_count_and_options_tools_present():
-    """_read_tool_schemas() returns exactly 17 tools (7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 1 theme-state)."""
+    """_read_tool_schemas() returns exactly 25 tools (7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme + 1 liquidity + 1 china-packet + 4 TIL page-wiring)."""
     schemas = ab._read_tool_schemas()
     names = {s["name"] for s in schemas}
     # All four options tools present
@@ -1475,9 +1480,12 @@ def test_read_tool_schemas_count_and_options_tools_present():
     assert "read_mechanism_pathways" in names
     # TIL W5 NW citizenship thematic-state read tool present
     assert "read_theme_state" in names
-    # Total count: 7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 1 theme = 17
-    assert len(schemas) == 21, (
-        f"Expected 21 read tools, got {len(schemas)}: {sorted(names)}"
+    # TIL page-wiring: 4 new tools present
+    for tool in ("read_theme_asymmetry", "read_theme_options_witness", "read_theme_clinical", "read_theme_trade_flows"):
+        assert tool in names, f"{tool} missing from _read_tool_schemas()"
+    # Total count: 7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme + 1 liquidity + 1 china-packet + 4 TIL page-wiring = 25
+    assert len(schemas) == 25, (
+        f"Expected 25 read tools, got {len(schemas)}: {sorted(names)}"
     )
     # Write tools absent
     for write_tool in ("flag_attention", "write_memo", "stake_hypothesis"):
@@ -1577,6 +1585,407 @@ def test_advice_filter_covers_options_path():
     filtered_zh2, was_filtered_zh2 = ab._post_filter_advice(answer_zh2, [])
     assert was_filtered_zh2, "Chinese 平仓 must be filtered (kill-list #6)"
     assert "cannot provide investment advice" in filtered_zh2
+
+
+# ---------------------------------------------------------------------------
+# 16. TIL page-wiring read tools (PR: wire 4 unread TI artifacts)
+#     read_theme_asymmetry, read_theme_options_witness,
+#     read_theme_clinical, read_theme_trade_flows
+# ---------------------------------------------------------------------------
+
+def _make_til_root(tmp_path: pathlib.Path) -> pathlib.Path:
+    """Create a minimal tmp root with TIL page-wiring fixture files.
+
+    File layout mirrors the actual site/ structure:
+      site/neuralwebdata/theme_asymmetry.json
+      site/basketdata/options_witness.json
+      site/basketdata/clinical_pipeline.json
+      site/basketdata/trade_flows.json (all-null / accruing)
+      site/basketdata/trade_flows_populated.json (for populated path)
+    """
+    nd = tmp_path / "site" / "neuralwebdata"
+    nd.mkdir(parents=True, exist_ok=True)
+    bd = tmp_path / "site" / "basketdata"
+    bd.mkdir(parents=True, exist_ok=True)
+
+    # theme_asymmetry.json — 2 themes; one with legs, one without
+    (nd / "theme_asymmetry.json").write_text(json.dumps({
+        "as_of": "2026-07-17",
+        "themes": [
+            {
+                "theme_id": "ai_infrastructure",
+                "name_en": "AI Infrastructure",
+                "legs": {
+                    "trend": {"band": "low", "value": 0.12},
+                    "momentum": {"band": "high", "value": 0.88},
+                },
+            },
+            {
+                "theme_id": "glp1_obesity",
+                "name_en": "GLP-1 / Obesity",
+                "legs": {},
+            },
+        ],
+    }), encoding="utf-8")
+
+    # options_witness.json — 2 themes: one with real bands, one suppressed
+    (bd / "options_witness.json").write_text(json.dumps({
+        "as_of": "2026-07-17",
+        "coverage_stats": {"themes_covered": 1, "themes_suppressed": 1},
+        "themes": {
+            "ai_infrastructure": {
+                "name_en": "AI Infrastructure",
+                "name_zh": "AI基础设施",
+                "leg_a_call_oi_hhi": {"band": "elevated", "value": 0.72, "value_z252": 2.1, "stale": False},
+                "leg_b_pcr": {"band": "complacency", "value": 0.65, "value_z252": -1.8, "stale": False, "pcr_collapse_into_strength": False},
+                "leg_c_iv_premium": {"band": "normal", "value": 0.08, "value_z252": 0.3, "stale": False},
+            },
+            "diagnostics_lifesci": {
+                "name_en": "Diagnostics / Life Sciences",
+                "name_zh": "诊断/生命科学",
+                "leg_a_call_oi_hhi": {"band": None, "value": None, "value_z252": None, "stale": None},
+                "leg_b_pcr": {"band": None, "value": None, "value_z252": None, "stale": None, "pcr_collapse_into_strength": False},
+                "leg_c_iv_premium": {"band": None, "value": None, "value_z252": None, "stale": None},
+            },
+        },
+    }), encoding="utf-8")
+
+    # clinical_pipeline.json — 2 themes with data, 1 without
+    (bd / "clinical_pipeline.json").write_text(json.dumps({
+        "as_of": "2026-07-17",
+        "coverage_stats": {"themes_with_data": 2},
+        "themes": {
+            "diagnostics_lifesci": {
+                "theme_registration_yoy_pct": -5.2,
+                "theme_registration_velocity_read": "decelerating",
+                "theme_registration_magnitude_band": "small",
+                "n_phase3_trailing12m": 3,
+                "n_studies_total": 42,
+            },
+            "glp1_obesity": {
+                "theme_registration_yoy_pct": 18.4,
+                "theme_registration_velocity_read": "accelerating",
+                "theme_registration_magnitude_band": "large",
+                "n_phase3_trailing12m": 8,
+                "n_studies_total": 91,
+            },
+        },
+    }), encoding="utf-8")
+
+    # trade_flows.json — all-null / accruing
+    (bd / "trade_flows.json").write_text(json.dumps({
+        "as_of": "2026-07-17",
+        "coverage_stats": {"themes_with_data": 0, "parquet_absent": True},
+        "themes": {},
+    }), encoding="utf-8")
+
+    return tmp_path
+
+
+def _make_til_root_with_trade_flows(tmp_path: pathlib.Path) -> pathlib.Path:
+    """Like _make_til_root but with populated trade_flows.json (themes_with_data > 0)."""
+    root = _make_til_root(tmp_path)
+    bd = root / "site" / "basketdata"
+    (bd / "trade_flows.json").write_text(json.dumps({
+        "as_of": "2026-07-17",
+        "coverage_stats": {"themes_with_data": 1},
+        "themes": {
+            "ai_infrastructure": {
+                "yoy_pct": 12.3,
+                "accel_3m_vs_12m": 2.1,
+                "confirmation": "confirms",
+                "magnitude_band": "moderate",
+                "is_mixed_direction": False,
+            },
+        },
+    }), encoding="utf-8")
+    return root
+
+
+# --- 16a. Classifier seeds for TIL tools ---
+
+def test_til_asymmetry_keyword_seeds_read_theme_asymmetry():
+    """'theme asymmetry' phrase triggers the thematic branch and seeds read_theme_asymmetry."""
+    budget, seeds = ab._classify_question("What is the theme asymmetry for AI infrastructure?", None)
+    assert "read_theme_asymmetry" in seeds, f"Expected read_theme_asymmetry in seeds; got {seeds}"
+
+
+def test_til_legs_keyword_seeds_read_theme_asymmetry():
+    """'legs' keyword inside thematic question seeds read_theme_asymmetry."""
+    budget, seeds = ab._classify_question("How many legs does the thematic state have?", None)
+    assert "read_theme_asymmetry" in seeds, f"Expected read_theme_asymmetry in seeds; got {seeds}"
+
+
+def test_til_crowding_keyword_seeds_read_theme_options_witness():
+    """'crowding' keyword inside a thematic state question seeds read_theme_options_witness."""
+    budget, seeds = ab._classify_question("Is there crowding in the thematic state right now?", None)
+    assert "read_theme_options_witness" in seeds, f"Expected options_witness in seeds; got {seeds}"
+
+
+def test_til_options_keyword_seeds_read_theme_options_witness():
+    """'options' keyword in thematic question seeds read_theme_options_witness."""
+    budget, seeds = ab._classify_question("What do the options say about the thematic state?", None)
+    assert "read_theme_options_witness" in seeds
+
+
+def test_til_clinical_keyword_seeds_read_theme_clinical():
+    """'clinical' keyword inside thematic question seeds read_theme_clinical."""
+    budget, seeds = ab._classify_question("What is the clinical pipeline read for themes crowded right now?", None)
+    assert "read_theme_clinical" in seeds
+
+
+def test_til_pipeline_keyword_seeds_read_theme_clinical():
+    """'pipeline' keyword inside thematic question seeds read_theme_clinical."""
+    budget, seeds = ab._classify_question("Is the drug pipeline accelerating for thematic state themes?", None)
+    assert "read_theme_clinical" in seeds
+
+
+def test_til_import_keyword_seeds_read_theme_trade_flows():
+    """'import' keyword inside thematic question seeds read_theme_trade_flows."""
+    budget, seeds = ab._classify_question("Are imports confirming the thematic state demand story?", None)
+    assert "read_theme_trade_flows" in seeds
+
+
+def test_til_trade_flow_keyword_seeds_read_theme_trade_flows():
+    """'trade flow' inside thematic question seeds read_theme_trade_flows."""
+    budget, seeds = ab._classify_question("What do the trade flows show for the thematic state?", None)
+    assert "read_theme_trade_flows" in seeds
+
+
+# --- 16b. read_theme_asymmetry dispatch ---
+
+def test_dispatch_read_theme_asymmetry_absent(tmp_path):
+    """read_theme_asymmetry with absent file returns available=False, not whitelist refusal."""
+    result = ab._dispatch_read_tool("read_theme_asymmetry", {}, tmp_path)
+    assert "not allowed" not in str(result.get("error", ""))
+    assert result.get("available") is False
+    assert result.get("is_context_only") is True
+
+
+def test_dispatch_read_theme_asymmetry_all_themes(tmp_path):
+    """read_theme_asymmetry with fixture returns available=True, is_context_only, leg data."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_asymmetry", {}, root)
+    assert result.get("available") is True, f"Unexpected: {result}"
+    assert result.get("is_context_only") is True
+    assert result.get("display_only") is True
+    themes = result.get("themes", [])
+    assert len(themes) == 2
+    ai = next(t for t in themes if t.get("theme_id") == "ai_infrastructure")
+    assert "trend" in ai.get("legs", {})
+    assert ai["legs"]["trend"]["band"] == "low"
+    # WA-R1 fence: no fused number
+    assert "note" in result
+    assert "WA-R1" in result["note"]
+
+
+def test_dispatch_read_theme_asymmetry_theme_id_filter(tmp_path):
+    """read_theme_asymmetry with theme_id param returns single theme."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_asymmetry", {"theme_id": "ai_infrastructure"}, root)
+    assert result.get("found") is True
+    assert result.get("theme_id") == "ai_infrastructure"
+    assert "asymmetry" in result
+    assert result["asymmetry"]["legs"]["trend"]["band"] == "low"
+
+
+def test_dispatch_read_theme_asymmetry_theme_id_not_found(tmp_path):
+    """read_theme_asymmetry with unknown theme_id returns found=False."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_asymmetry", {"theme_id": "nonexistent_theme"}, root)
+    assert result.get("available") is True
+    assert result.get("found") is False
+    assert result.get("is_context_only") is True
+
+
+# --- 16c. read_theme_options_witness dispatch ---
+
+def test_dispatch_read_theme_options_witness_absent(tmp_path):
+    """read_theme_options_witness with absent file returns available=False."""
+    result = ab._dispatch_read_tool("read_theme_options_witness", {}, tmp_path)
+    assert "not allowed" not in str(result.get("error", ""))
+    assert result.get("available") is False
+    assert result.get("is_context_only") is True
+
+
+def test_dispatch_read_theme_options_witness_all_themes(tmp_path):
+    """read_theme_options_witness returns leg bands for covered themes."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_options_witness", {}, root)
+    assert result.get("available") is True
+    assert result.get("is_context_only") is True
+    themes = result.get("themes", [])
+    assert len(themes) == 2
+    ai = next(t for t in themes if t.get("theme_id") == "ai_infrastructure")
+    assert ai["leg_a_call_oi_hhi"]["band"] == "elevated"
+    assert ai["leg_b_pcr"]["band"] == "complacency"
+    assert ai["leg_c_iv_premium"]["band"] == "normal"
+    # Suppressed theme: all None bands
+    diag = next(t for t in themes if t.get("theme_id") == "diagnostics_lifesci")
+    assert diag["leg_a_call_oi_hhi"]["band"] is None
+    # Hazard note: R-TIL-3/WA-R1
+    assert "R-TIL-3" in result["note"] or "crowding-hazard" in result["note"]
+
+
+def test_dispatch_read_theme_options_witness_theme_id_filter(tmp_path):
+    """read_theme_options_witness with theme_id returns single theme witness."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_options_witness", {"theme_id": "ai_infrastructure"}, root)
+    assert result.get("found") is True
+    assert result.get("theme_id") == "ai_infrastructure"
+    assert "witness" in result
+    assert result["witness"]["leg_a_call_oi_hhi"]["band"] == "elevated"
+
+
+def test_dispatch_read_theme_options_witness_theme_id_not_found(tmp_path):
+    """read_theme_options_witness with unknown theme_id returns found=False."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_options_witness", {"theme_id": "no_such_theme"}, root)
+    assert result.get("found") is False
+    assert result.get("available") is True
+
+
+# --- 16d. read_theme_clinical dispatch ---
+
+def test_dispatch_read_theme_clinical_absent(tmp_path):
+    """read_theme_clinical with absent file returns available=False."""
+    result = ab._dispatch_read_tool("read_theme_clinical", {}, tmp_path)
+    assert "not allowed" not in str(result.get("error", ""))
+    assert result.get("available") is False
+
+
+def test_dispatch_read_theme_clinical_all_themes(tmp_path):
+    """read_theme_clinical returns yoy, velocity_read, magnitude_band per covered theme."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_clinical", {}, root)
+    assert result.get("available") is True
+    assert result.get("is_context_only") is True
+    assert result.get("display_only") is True
+    themes = result.get("themes", [])
+    assert len(themes) == 2
+    # Negative yoy theme
+    diag = next(t for t in themes if t.get("theme_id") == "diagnostics_lifesci")
+    assert diag["yoy"] == pytest.approx(-5.2)
+    assert diag["velocity_read"] == "decelerating"
+    assert diag["n_phase3_trailing12m"] == 3
+    # Positive yoy theme
+    glp = next(t for t in themes if t.get("theme_id") == "glp1_obesity")
+    assert glp["velocity_read"] == "accelerating"
+    assert glp["n_studies_total"] == 91
+    # Authority note
+    assert "fused_obs_z" in result["note"]
+
+
+def test_dispatch_read_theme_clinical_theme_id_filter(tmp_path):
+    """read_theme_clinical with theme_id returns single theme's clinical data."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_clinical", {"theme_id": "glp1_obesity"}, root)
+    assert result.get("found") is True
+    assert result.get("theme_id") == "glp1_obesity"
+    assert "clinical" in result
+    assert result["clinical"]["velocity_read"] == "accelerating"
+
+
+def test_dispatch_read_theme_clinical_theme_id_not_found(tmp_path):
+    """read_theme_clinical with unknown theme_id returns found=False."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_clinical", {"theme_id": "not_a_theme"}, root)
+    assert result.get("found") is False
+    assert result.get("available") is True
+
+
+# --- 16e. read_theme_trade_flows dispatch (accruing + populated paths) ---
+
+def test_dispatch_read_theme_trade_flows_absent(tmp_path):
+    """read_theme_trade_flows with absent file returns available=False."""
+    result = ab._dispatch_read_tool("read_theme_trade_flows", {}, tmp_path)
+    assert "not allowed" not in str(result.get("error", ""))
+    assert result.get("available") is False
+    assert result.get("is_context_only") is True
+
+
+def test_dispatch_read_theme_trade_flows_accruing(tmp_path):
+    """read_theme_trade_flows with all-null file returns accruing=True."""
+    root = _make_til_root(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_trade_flows", {}, root)
+    assert result.get("available") is True
+    assert result.get("accruing") is True
+    assert result.get("themes_with_data") == 0
+    assert result.get("is_context_only") is True
+    assert result.get("display_only") is True
+    # Note must explain pending backfill
+    assert "accruing" in result["note"].lower() or "pending" in result["note"].lower()
+
+
+def test_dispatch_read_theme_trade_flows_populated(tmp_path):
+    """read_theme_trade_flows with populated file returns accruing=False and theme data."""
+    root = _make_til_root_with_trade_flows(tmp_path)
+    result = ab._dispatch_read_tool("read_theme_trade_flows", {}, root)
+    assert result.get("available") is True
+    assert result.get("accruing") is False
+    themes = result.get("themes", [])
+    assert len(themes) >= 1
+    ai = next(t for t in themes if t.get("theme_id") == "ai_infrastructure")
+    assert ai["confirmation"] == "confirms"
+    assert ai["yoy_pct"] == pytest.approx(12.3)
+
+
+def test_dispatch_read_theme_trade_flows_theme_id_filter_populated(tmp_path):
+    """read_theme_trade_flows with theme_id returns single theme's flow data."""
+    root = _make_til_root_with_trade_flows(tmp_path)
+    result = ab._dispatch_read_tool(
+        "read_theme_trade_flows", {"theme_id": "ai_infrastructure"}, root
+    )
+    assert result.get("found") is True
+    assert result.get("accruing") is False
+    assert "trade_flows" in result
+    assert result["trade_flows"]["confirmation"] == "confirms"
+
+
+def test_dispatch_read_theme_trade_flows_theme_id_not_found_populated(tmp_path):
+    """read_theme_trade_flows with unknown theme_id returns found=False."""
+    root = _make_til_root_with_trade_flows(tmp_path)
+    result = ab._dispatch_read_tool(
+        "read_theme_trade_flows", {"theme_id": "no_such_theme"}, root
+    )
+    assert result.get("found") is False
+    assert result.get("accruing") is False
+    assert result.get("available") is True
+
+
+# --- 16f. Context-only / display-only flags present across all tools ---
+
+def test_til_tools_all_return_context_only_flags(tmp_path):
+    """All 4 TIL tools carry is_context_only and display_only flags."""
+    root = _make_til_root(tmp_path)
+    for tool in (
+        "read_theme_asymmetry",
+        "read_theme_options_witness",
+        "read_theme_clinical",
+        "read_theme_trade_flows",
+    ):
+        result = ab._dispatch_read_tool(tool, {}, root)
+        assert result.get("is_context_only") is True, (
+            f"{tool}: expected is_context_only=True, got {result}"
+        )
+        assert result.get("display_only") is True, (
+            f"{tool}: expected display_only=True, got {result}"
+        )
+
+
+# --- 16g. Whitelist refuses write-shaped names ---
+
+def test_til_tools_refused_for_write_shaped_names(tmp_path):
+    """Write-shaped names are refused even if they match TIL tool prefixes."""
+    for write_name in (
+        "write_theme_asymmetry",
+        "write_theme_options_witness",
+        "update_theme_clinical",
+        "delete_theme_trade_flows",
+    ):
+        result = ab._dispatch_read_tool(write_name, {}, tmp_path)
+        assert "error" in result, f"{write_name} should be refused"
+        assert "not allowed" in result["error"], f"{write_name}: wrong error msg: {result['error']}"
 
 
 if __name__ == "__main__":

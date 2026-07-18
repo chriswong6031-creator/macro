@@ -460,7 +460,7 @@ def _stamp_context(
     try:
         from lib import forex_link as _fl
         _sm = _fl.stance()
-        _dd = (_fl._read_latest().get("dollar_desk") or {}).get("smile_decomp") or {}
+        _dd = (_fl._latest().get("dollar_desk") or {}).get("smile_decomp") or {}
         stamps["fx_regime_at_entry"] = _dd.get("regime") or None
         stamps["usd_stance_at_entry"] = _sm.get("word_en") or None
     except Exception as _fx_exc:  # noqa: BLE001

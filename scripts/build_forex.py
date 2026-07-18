@@ -495,7 +495,10 @@ def carry_table(pairs: list[dict]) -> list[dict]:
 TYPE_LABEL = {"residual_shock": "Shock", "risk_regime": "Risk", "trend_flip": "Trend",
               "momentum": "Momentum", "structure": "Structure", "positioning": "COT",
               "carry_flip": "Carry", "peg_approach": "Peg", "smile_regime": "Dollar",
-              "cnh_basis": "CNH"}
+              "cnh_basis": "CNH",
+              # MSX-1 additions
+              "smile_regime_flip": "Dollar Flip", "triple_red": "Triple-Red",
+              "scenario_active": "Scenario"}
 
 
 def _group_timeline(events: list[dict]) -> list[dict]:
@@ -567,17 +570,12 @@ def _desk_latest(desk: dict) -> dict:
     if lq:
         out.update(liquidity_dir=lq.get("dir"))
     out.update(smile_confidence=sm.get("confidence"), triple_red=sm.get("triple_red"))
-    # B1.1: attach smile_decomp (fixes silent None bug read by flow_regime + build_intl)
+    # BUG FIX (MSX-1): smile_decomp was omitted — build_intl.py:281 and
+    # flow_regime.py:1536 both read dollar_desk.smile_decomp and got null.
+    # Forward the full dict verbatim; it is already JSON-serializable (all floats/strings/bools/lists).
     sd = desk.get("smile_decomp")
-    if sd:
-        out["smile_decomp"] = {
-            "regime": sd.get("regime"),
-            "regime_60d": sd.get("regime_60d"),
-            "safety_bid_today": sd.get("safety_bid_today"),
-            "beta": _r(sd.get("beta"), 3),
-            "r2": _r(sd.get("r2"), 3),
-            "residual_20d_z": _r(sd.get("residual_20d_z"), 2),
-        }
+    if sd is not None:
+        out["smile_decomp"] = sd
     return out
 
 
@@ -689,6 +687,214 @@ def _stance(dollar_dir: str | None, active_scenarios: list[str],
         "headline_en": headline_en, "headline_zh": headline_zh,
         "sentence_en": sentence_en, "sentence_zh": sentence_zh,
     }
+
+
+# --------------------------------------------------------------------------- #
+# state_changes block (MSX-1 §2.1)
+# --------------------------------------------------------------------------- #
+_STATE_KEYS = ("smile_regime", "lean", "risk", "fed_path_lean", "liquidity_dir",
+               "trend", "triple_red", "cnh_basis_state", "regime_radar_dominant")
+
+
+def _state_history_path() -> "Path":
+    return config.data_dir() / "forex" / "state_history.jsonl"
+
+
+def _read_state_history() -> list[dict]:
+    p = _state_history_path()
+    if not p.exists():
+        return []
+    rows = []
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return rows
+
+
+def _state_changes(today_vals: dict, dol: "pd.DataFrame") -> dict:
+    """Compute state_changes block from state_history.jsonl + today's values.
+
+    Appends a row to state_history.jsonl ONLY when nightly_advance_enabled().
+    Keep-first by date: re-run on the same date is a no-op.
+    Off-lane: compute from existing history without appending (prev/changed_on/
+    days_in_state may be null if history is empty, but never raises).
+
+    For smile_regime we seed changed_on from the _dollar frame's smile_regime
+    series when history is shorter than the actual run length — the frame is
+    authoritative for that key.
+    """
+    from engine.ledger_lane import nightly_advance_enabled
+
+    today_date = today_vals.get("_date", "")
+    hist = _read_state_history()
+
+    if nightly_advance_enabled() and today_date:
+        existing_dates = {r["date"] for r in hist}
+        if today_date not in existing_dates:
+            row = {"date": today_date}
+            for k in _STATE_KEYS:
+                v = today_vals.get(k)
+                # JSON-safe: bools/strings/None all fine; convert to plain type
+                row[k] = bool(v) if isinstance(v, (bool, np.bool_)) else (
+                    str(v) if v is not None else None
+                )
+            try:
+                p = _state_history_path()
+                p.parent.mkdir(parents=True, exist_ok=True)
+                with open(p, "a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(row) + "\n")
+                hist = _read_state_history()
+            except Exception as e:  # noqa: BLE001
+                log.warning("state_history append failed (%s)", e)
+
+    hist_by_date = {r["date"]: r for r in hist}
+    sorted_dates = sorted(hist_by_date)
+
+    out: dict[str, dict] = {}
+    for k in _STATE_KEYS:
+        cur = today_vals.get(k)
+        if isinstance(cur, (bool, np.bool_)):
+            cur = bool(cur)
+        elif cur is not None:
+            cur = str(cur)
+
+        prev_val = None
+        changed_on = None
+        days_in = None
+
+        if sorted_dates:
+            # walk back to find the last different value
+            for d in reversed(sorted_dates):
+                row_val = hist_by_date[d].get(k)
+                if row_val != cur:
+                    prev_val = row_val
+                    changed_on = d
+                    break
+            # days_in_state: count from changed_on to today (inclusive of today_date).
+            # When no flip is found in history we report None (unknown ≠ log age).
+            if changed_on and today_date:
+                try:
+                    t0 = datetime.strptime(changed_on, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                    t1 = datetime.strptime(today_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                    days_in = max(1, (t1 - t0).days + 1)
+                except ValueError:
+                    days_in = None
+
+        # seed smile_regime changed_on from the _dollar frame when history is thin
+        if k == "smile_regime" and changed_on is None and dol is not None and not dol.empty:
+            if "smile_regime" in dol.columns:
+                sr = dol["smile_regime"].dropna()
+                if len(sr) >= 2:
+                    cur_r = sr.iloc[-1]
+                    transitions = sr[sr != sr.shift()]
+                    transitions = transitions[transitions != cur_r]
+                    if not transitions.empty:
+                        changed_on = transitions.index[-1].strftime("%Y-%m-%d")
+                        # prev: the value at the last non-current transition point
+                        # (i.e. the regime that existed before the current one took hold)
+                        prev_val = str(transitions.iloc[-1])
+                        if today_date and changed_on:
+                            try:
+                                t0 = datetime.strptime(changed_on, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                                t1 = datetime.strptime(today_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                                days_in = max(1, (t1 - t0).days + 1)
+                            except ValueError:
+                                pass
+
+        out[k] = {"current": cur, "prev": prev_val,
+                  "changed_on": changed_on, "days_in_state": days_in}
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# context_forward_log (MSX-1 §2.4)
+# --------------------------------------------------------------------------- #
+_FORWARD_LOG_KEYS = ("triple_red", "cnh_stress", "carry_unwind",
+                     "dollar_wrecking_ball", "smile_regime")
+
+
+def _context_forward_log_path() -> "Path":
+    return config.data_dir() / "forex" / "context_forward_log.jsonl"
+
+
+def _append_context_forward_log(asof: str, today_vals: dict, regime: dict) -> None:
+    """One row per key per nightly; keep-first by (asof, key).
+
+    intensity_pct from regime_radar intensity where applicable else null.
+    Lane-gated: off-lane is a no-op (no write).
+    """
+    from engine.ledger_lane import nightly_advance_enabled
+    if not nightly_advance_enabled():
+        return
+    if not asof:
+        return
+
+    try:
+        p = _context_forward_log_path()
+        p.parent.mkdir(parents=True, exist_ok=True)
+
+        existing: set[tuple[str, str]] = set()
+        if p.exists():
+            for line in p.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line:
+                    try:
+                        r = json.loads(line)
+                        existing.add((r.get("asof", ""), r.get("key", "")))
+                    except json.JSONDecodeError:
+                        continue
+
+        # intensity_pct lookup from regime_radar
+        intensity_map: dict[str, "float | None"] = {}
+        for s in (regime.get("scenarios") or []):
+            _s_key = s.get("key")
+            if not _s_key:
+                log.warning("_append_context_forward_log: scenario missing 'key'; skipping row")
+                continue
+            intensity_map[_s_key] = s.get("intensity_today")
+
+        rows_to_write = []
+        for key in _FORWARD_LOG_KEYS:
+            if (asof, key) in existing:
+                continue
+            if key == "smile_regime":
+                state = today_vals.get("smile_regime")
+                intensity_pct = None
+            elif key == "triple_red":
+                state = bool(today_vals.get("triple_red")) if today_vals.get("triple_red") is not None else None
+                intensity_pct = None
+            else:
+                # map log keys to regime scenario keys
+                scenario_key_map = {
+                    "cnh_stress": "em_crisis_capital_flight",
+                    "carry_unwind": "carry_unwind",
+                    "dollar_wrecking_ball": "dollar_wrecking_ball",
+                }
+                scen_key = scenario_key_map.get(key, key)
+                # state = whether the scenario is active
+                active_set = {s.get("key") for s in (regime.get("scenarios") or []) if s.get("active") and s.get("key")}
+                state = scen_key in active_set
+                intensity_pct = intensity_map.get(scen_key)
+
+            row = {
+                "asof": asof,
+                "key": key,
+                "state": bool(state) if isinstance(state, (bool, np.bool_)) else state,
+                "intensity_pct": round(float(intensity_pct), 1) if intensity_pct is not None else None,
+                "graded": None,
+            }
+            rows_to_write.append(row)
+
+        if rows_to_write:
+            with open(p, "a", encoding="utf-8") as fh:
+                for row in rows_to_write:
+                    fh.write(json.dumps(row) + "\n")
+    except Exception as e:  # noqa: BLE001
+        log.warning("context_forward_log append failed (%s)", e)
 
 
 # --------------------------------------------------------------------------- #
@@ -914,7 +1120,8 @@ def main() -> int:
     # F4: fx_state is assembled AFTER rebuild so changes_today has fresh events.
     try:
         all_events = forex_alerts.rebuild(
-            results, regime=regime, transmission=transmission,
+            results, desk=desk, regime=regime,
+            transmission=transmission,
             transmission_prev=_transmission_prev,
             scenario_prev_active=_scenario_prev_active)
     except Exception as e:  # noqa: BLE001 — timeline is optional, never break the page
@@ -985,40 +1192,129 @@ def main() -> int:
     outdir = config.data_dir() / "forex"
     outdir.mkdir(parents=True, exist_ok=True)
     _asof_raw = max((results[p].index.max() for p in order), default=dol.index.max())
-    # Legacy core (must never fail — consumers depend on these exact keys)
-    latest = {"date": as_of, "asof": _asof_raw.strftime("%Y-%m-%d"),
-              "regime": dollar["regime"], "favored": dollar["favored"],
-              "risk": dollar["risk_word"],
-              "pairs": {p["key"]: {"label": p["label"], "quote": p["quote"], "chg": p["chg"],
-                                   "action": (p.get("conviction") or {}).get("action"),
-                                   "score": (p.get("conviction") or {}).get("score"),
-                                   "reliable": p.get("reliable"),
-                                   "headline": p.get("headline"),
-                                   "headline_zh": p.get("headline_zh"),
-                                   }
-                        for p in pairs},
-              "dollar_desk": _desk_latest(desk),
-              "transmission": _tr_latest,
-              "regime_radar": ({"as_of": regime.get("as_of"), "dominant": regime.get("dominant"),
-                                "active": _active_scn,
-                                "intensity": {s["key"]: round(s.get("intensity_today") or 0, 1)
-                                              for s in regime.get("scenarios", [])},
-                                "scenarios": _scenarios_export}
-                               if regime else {}),
-              }
-    # m3: wrap the new additive export fields in try/except so a failure degrades to the
-    # legacy latest.json write rather than crashing the nightly; log a ::warning.
+    _asof_str = _asof_raw.strftime("%Y-%m-%d")
+
+    # ---- MSX-1: enrich pairs dict with conviction narratives + signal-frame fields ----
+    last_dol = dol.iloc[-1]
+    cnh_basis_state_today: "str | None" = None
+    _pairs_latest: dict[str, dict] = {}
+    for p in pairs:
+        pk = p["key"]
+        conv = p.get("conviction") or {}
+        df_p = results.get(pk)
+        last_p = df_p.iloc[-1] if df_p is not None and not df_p.empty else pd.Series(dtype=object)
+        prow: dict = {
+            "label": p["label"], "quote": p["quote"], "chg": p["chg"],
+            "action": conv.get("action"), "score": conv.get("score"),
+            # MSX-1 additions (additive-only):
+            "headline": conv.get("headline"), "head_zh": conv.get("headline_zh"),
+            "sub": conv.get("sub"), "sub_zh": conv.get("sub_zh"),
+            "shock_state": (last_p.get("shock_state") if pd.notna(last_p.get("shock_state", None)) else None),
+            "cycle_position": (conv.get("cycle") or {}).get("label"),
+        }
+        # B1.1 additive fields: reliable + plain-copy headlines
+        prow["reliable"] = conv.get("reliable", False)
+        prow["headline"] = conv.get("headline") or ""
+        prow["headline_zh"] = conv.get("headline_zh") or ""
+        if pk == "USDCNH":
+            cnh_bps = last_p.get("cnh_basis_bps")
+            cnh_st = last_p.get("cnh_basis_state")
+            prow["cnh_basis_bps"] = _r(cnh_bps, 0) if pd.notna(cnh_bps) else None
+            prow["cnh_basis_state"] = cnh_st if (cnh_st and pd.notna(cnh_st)) else None
+            cnh_basis_state_today = prow["cnh_basis_state"]
+        _pairs_latest[pk] = prow
+
+    # ---- MSX-1: state_changes block ----
+    smile = (desk.get("smile") or {})
+    fed_p = (desk.get("fed_path") or {})
+    liq = (desk.get("liquidity") or {})
+    trd = (desk.get("trend") or {})
+    _today_vals = {
+        "_date": _asof_str,
+        "smile_regime": last_dol.get("smile_regime"),
+        "lean": desk.get("lean"),
+        "risk": dollar.get("risk_word"),
+        "fed_path_lean": fed_p.get("lean"),
+        "liquidity_dir": liq.get("dir"),
+        "trend": trd.get("label"),
+        "triple_red": smile.get("triple_red"),
+        "cnh_basis_state": cnh_basis_state_today,
+        "regime_radar_dominant": regime.get("dominant") if regime else None,
+    }
+    try:
+        sc_block = _state_changes(_today_vals, dol)
+    except Exception as e:  # noqa: BLE001
+        log.warning("state_changes failed (%s)", e)
+        sc_block = {}
+
+    # ---- MSX-1: context_forward_log ----
+    try:
+        _append_context_forward_log(_asof_str, _today_vals, regime or {})
+    except Exception as e:  # noqa: BLE001
+        log.warning("context_forward_log failed (%s)", e)
+
+    # ---- MSX-1: regime_radar scenarios compact receipts ----
+    def _scenario_receipt(s: dict) -> dict:
+        p_raw = s.get("prob") or {}
+        return {
+            "key": s.get("key"),
+            "name_en": s.get("name_en"),
+            "name_zh": s.get("name_zh"),
+            "intensity": _r(s.get("intensity_today"), 1),
+            "active": bool(s.get("active")),
+            "illustrative": bool(s.get("illustrative")),
+            "prob": {
+                "status": p_raw.get("status"),
+                "p_cond": _r(p_raw.get("p_cond"), 4),
+                "base_rate": _r(p_raw.get("base_rate"), 4),
+                "wilson_lo": _r(p_raw.get("wilson_lo"), 4),
+                "wilson_hi": _r(p_raw.get("wilson_hi"), 4),
+                "n_raw": p_raw.get("n_raw"),
+                "n_eff": p_raw.get("n_eff"),
+                "N": p_raw.get("N"),
+            },
+        }
+
+    latest = {
+        "date": as_of, "asof": _asof_str,
+        "regime": dollar["regime"], "favored": dollar["favored"],
+        "risk": dollar["risk_word"],
+        "pairs": _pairs_latest,
+        # the deepened dollar read
+        "dollar_desk": _desk_latest(desk),
+        "transmission": _transmission_latest(transmission),
+        # MSX-1: strength meter forwarded verbatim (was display-dead-end)
+        "strength": strength if strength else {},
+        # MSX-1: regime_radar gains 'scenarios' compact receipts (additive)
+        "regime_radar": ({"as_of": regime.get("as_of"), "dominant": regime.get("dominant"),
+                          "active": [s["key"] for s in regime.get("scenarios", []) if s.get("active")],
+                          "intensity": {s["key"]: _r(s.get("intensity_today"), 1)
+                                        for s in regime.get("scenarios", [])},
+                          # MSX-1 addition: per-scenario probability receipts
+                          "scenarios": [_scenario_receipt(s) for s in regime.get("scenarios", [])]}
+                         if regime else {}),
+        # MSX-1: state_changes block
+        "state_changes": sc_block,
+        # MSX-1: additive-only warning for future editors
+        "schema_note": (
+            "MSX-1 additive-only enrichment: do not rename/remove existing keys. "
+            "new keys: dollar_desk.smile_decomp, strength, regime_radar.scenarios, "
+            "pairs.<KEY>.{headline,head_zh,sub,sub_zh,shock_state,cycle_position}, "
+            "pairs.USDCNH.{cnh_basis_bps,cnh_basis_state}, state_changes."
+        ),
+    }
+    # Additive exports (B1.1/B1.2 spec) — wrapped in try/except so any
+    # failure degrades to the MSX-1 latest.json rather than crashing the nightly.
     try:
         latest["dollar_day"] = dollar_day_block
         latest["em"] = em_block
-        latest["strength"] = _strength_export
         latest["stance"] = stance
         latest["fx_state"] = fx_state
-        # B1.1: inject DXY into pairs block
+        # B1.1: inject DXY into pairs block (quote-only entry)
         latest["pairs"]["DXY"] = pairs_dxy
     except Exception as _e_export:  # noqa: BLE001
         log.warning("::warning :: forex additive export assembly failed (%s) — "
-                    "writing legacy latest.json only", _e_export)
+                    "writing without dollar_day/em/stance/fx_state/DXY", _e_export)
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str))
     return 0
 

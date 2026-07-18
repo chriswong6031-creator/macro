@@ -127,6 +127,17 @@ def _clean(v: Any) -> Any:
 # Internal helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
+def _clean_state_entry(v: Any) -> Any:
+    """Recursively _clean() a state_changes entry dict or scalar.
+
+    MSX-1: state_changes values are {current, prev, changed_on, days_in_state}
+    dicts or None.  Pass through scalars via _clean().
+    """
+    if not isinstance(v, dict):
+        return _clean(v)
+    return {k2: _clean(v2) for k2, v2 in v.items()}
+
 def _read_json(p: Path) -> dict | None:
     """Read and parse JSON from *p*; return None on any failure."""
     try:
@@ -143,6 +154,137 @@ def _repo_root(root: Path | None) -> Path:
         return Path(root)
     # engine/neuralweb/world_state.py → ../../.. = repo root
     return Path(__file__).resolve().parent.parent.parent
+
+
+# Breadth bucket thresholds (twin of _commodity_breadth_bucket in
+# scripts/build_macro_snapshot.py — must stay in sync with that definition).
+_BREADTH_THRESHOLDS = (0.70, 0.40)  # broad ≥ 0.70; mixed ≥ 0.40; narrow else
+
+
+def _breadth_bucket(pct_up_trend: Any) -> str | None:
+    """Deterministic breadth bucket label from pct_up_trend float.
+
+    Returns 'broad' / 'mixed' / 'narrow', or None if not a valid number.
+    Twin of scripts/build_macro_snapshot._commodity_breadth_bucket.
+    """
+    try:
+        v = float(pct_up_trend)
+    except (TypeError, ValueError):
+        return None
+    if v >= _BREADTH_THRESHOLDS[0]:
+        return "broad"
+    if v >= _BREADTH_THRESHOLDS[1]:
+        return "mixed"
+    return "narrow"
+
+
+def _macro_ledger_deltas(
+    repo: Path,
+    domain: str,
+    fields: "list[str]",
+) -> "dict[str, dict | None]":
+    """Read ledger.parquet and return streak/prev metadata for each requested field.
+
+    Returns a dict keyed by field name; each entry is:
+        {value, prev, since, days_in_state}
+    where:
+        value         — latest value for this (domain, field) key
+        prev          — previous value (the run before the current consecutive run)
+        since         — ISO date of the first row in the current consecutive run
+        days_in_state — calendar days from since to latest asof (inclusive-start)
+
+    Absent parquet or missing pandas → all fields return None (fail-open, one
+    log.warning).  Field not found in ledger → None entry for that field.
+
+    Render-path IO: single parquet read, filtered by domain.  Cheap.
+    """
+    result: dict[str, dict | None] = {f: None for f in fields}
+    ledger_path = repo / "data" / "macro_snapshots" / "ledger.parquet"
+    if not ledger_path.exists():
+        log.warning("_macro_ledger_deltas: ledger.parquet absent (%s)", ledger_path)
+        return result
+    try:
+        import pandas as pd  # noqa: PLC0415 — only import when ledger exists
+        df = pd.read_parquet(ledger_path)
+        # Filter to requested domain
+        if df.empty or "domain" not in df.columns:
+            return result
+        df = df[df["domain"] == domain].copy()
+        if df.empty:
+            return result
+        # Sort by asof so rows are in chronological order
+        df = df.sort_values("asof")
+        # All domain asofs as sorted strings — used for gap detection: a field that is
+        # absent on an intermediate domain asof terminates the consecutive run.
+        all_domain_asofs = sorted(str(a) for a in df["asof"].unique())
+
+        # Normalise NaN/None strings to None for streak comparison.
+        # Defined once outside the field loop (avoids re-definition per iteration).
+        def _norm(v: Any) -> Any:  # noqa: ANN001
+            if v is None:
+                return None
+            sv = str(v)
+            if sv.lower() in ("nan", "none", ""):
+                return None
+            return sv
+
+        for field in fields:
+            fdf = df[df["field"] == field]
+            if fdf.empty:
+                result[field] = None
+                continue
+            # Latest row
+            latest_row = fdf.iloc[-1]
+            latest_val = latest_row["value"]
+            latest_asof = str(latest_row["asof"])
+            # Find start of current consecutive run (same value, working backwards).
+            # A gap on an intermediate domain asof terminates the run: if the field
+            # has no row for a domain asof that lies between since_asof and latest_asof,
+            # the run is considered broken at that point.
+            since_asof = latest_asof
+            prev_val = None
+            rows = fdf.to_dict("records")
+            # Build a set of asofs where this field actually has a row.
+            field_asofs_set = {str(r["asof"]) for r in rows}
+            curr_norm = _norm(latest_val)
+            for row in reversed(rows[:-1]):
+                row_asof = str(row["asof"])
+                # Check whether any domain asof between row_asof (exclusive)
+                # and since_asof (exclusive) is missing a field row — that is a gap.
+                try:
+                    idx_row = all_domain_asofs.index(row_asof)
+                    idx_since = all_domain_asofs.index(since_asof)
+                except ValueError:
+                    # asof not in domain list — treat as gap
+                    break
+                gap_found = any(
+                    all_domain_asofs[i] not in field_asofs_set
+                    for i in range(idx_row + 1, idx_since)
+                )
+                if gap_found:
+                    break
+                if _norm(row["value"]) == curr_norm:
+                    since_asof = row_asof
+                else:
+                    prev_val = _norm(row["value"])
+                    break
+            # days_in_state: calendar days from since to latest asof (inclusive start)
+            try:
+                since_dt = pd.Timestamp(since_asof)
+                latest_dt = pd.Timestamp(latest_asof)
+                days_in_state = (latest_dt - since_dt).days + 1
+            except Exception:  # noqa: BLE001
+                days_in_state = None
+            result[field] = {
+                "value": curr_norm,
+                "prev": prev_val,
+                "since": since_asof,
+                "days_in_state": days_in_state,
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("_macro_ledger_deltas: parquet read failed — %s", exc)
+        return result
+    return result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -625,7 +767,7 @@ def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
         for evt in shown:
             if not isinstance(evt, dict):
                 continue
-            events_out.append({
+            row: dict = {
                 "sector": _clean(evt.get("sector")),
                 "from_leg": _leg_compact(evt.get("from_leg")),
                 "to_leg": _leg_compact(evt.get("to_leg")),
@@ -633,10 +775,52 @@ def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
                 "day_n": _clean(evt.get("day_n")),
                 "started": _clean(evt.get("started")),
                 "confirmed_tonight": _clean(evt.get("confirmed_tonight")),
-            })
+            }
+            # v2 additive fields — null-safe; v1 payloads that lack them compose
+            # identically (the keys are simply absent from the row).
+            _event_type = evt.get("event_type")
+            if _event_type is not None:
+                row["event_type"] = _clean(_event_type)
+            _to_sector = evt.get("to_sector")
+            if _to_sector is not None:
+                row["to_sector"] = _clean(_to_sector)
+            _from_sector = evt.get("from_sector")
+            if _from_sector is not None:
+                row["from_sector"] = _clean(_from_sector)
+            _sev_eff = evt.get("severity_effective")
+            if _sev_eff is not None:
+                row["severity_effective"] = _clean(_sev_eff)
+            _health = evt.get("health")
+            if isinstance(_health, dict):
+                # Pass through health.state only — compact; lobe consumers can
+                # use it for context without carrying the full health object.
+                _hstate = _health.get("state")
+                if _hstate is not None:
+                    row["health_state"] = _clean(_hstate)
+            events_out.append(row)
 
         out["events"] = events_out if events_out else None
         out["n_truncated"] = _clean(n_truncated)
+
+        # v2 top-level: compact contagion summary (n_breaks + up to 2 breaks)
+        _contagion_list = payload.get("contagion")
+        if isinstance(_contagion_list, list) and _contagion_list:
+            _breaks = [c for c in _contagion_list if isinstance(c, dict)]
+            _n_breaks = len(_breaks)
+            _break_rows: list[dict] = []
+            for _cb in _breaks[:2]:
+                _br: dict = {}
+                if _cb.get("complex") is not None:
+                    _br["complex"] = _clean(_cb.get("complex"))
+                if _cb.get("corr10_raw") is not None:
+                    _br["corr10_raw"] = _clean(_cb.get("corr10_raw"))
+                if _cb.get("root_cause") and isinstance(_cb["root_cause"], dict):
+                    _br["leader"] = _clean(_cb["root_cause"].get("leader"))
+                _break_rows.append(_br)
+            out["contagion_summary"] = {
+                "n_breaks": _clean(_n_breaks),
+                "breaks": _break_rows,
+            }
 
         # Ruler passthrough — modern-era census summary if present
         ruler = payload.get("ruler")
@@ -1256,7 +1440,20 @@ def _compose_rates_transmission(root: "Path | str | None" = None) -> dict:
             },
         }
 
-        return _display_only({
+        # Additive pass-through: changes + dollar_channel_dir (Task 4 FX-TX program)
+        # All fail-open: missing keys → omit or None.
+        changes_raw = raw.get("changes") or {}
+        changes_items_raw = changes_raw.get("items") or []
+        changes_compact = [
+            {"key": item.get("key"), "en": item.get("en")}
+            for item in changes_items_raw[:6]
+            if isinstance(item, dict)
+        ]
+        changes_vs = changes_raw.get("vs_asof")
+        dollar_channel_dir = (raw.get("dollar_channel") or {}).get("usd_dir") \
+            if isinstance(raw.get("dollar_channel"), dict) else None
+
+        out = {
             "asof": _clean(raw.get("asof")),
             "scored_status": _clean(raw.get("scored_status")),
             "calibrated": _clean(raw.get("calibrated")),
@@ -1265,7 +1462,15 @@ def _compose_rates_transmission(root: "Path | str | None" = None) -> dict:
             "tailwinds": _hw_tw(raw.get("tailwinds") or []),
             "yield_curve": yc,
             "yield_curve_source": "transmission",
-        })
+        }
+        if changes_compact:
+            out["changes"] = changes_compact
+        if changes_vs is not None:
+            out["changes_vs"] = changes_vs
+        if dollar_channel_dir is not None:
+            out["dollar_channel_dir"] = dollar_channel_dir
+
+        return _display_only(out)
     except Exception as exc:  # noqa: BLE001
         log.warning("rates_transmission: compose failed — %s", exc)
         return null_out
@@ -1276,6 +1481,12 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
 
     Field list per §5.3 lobe 2 (census-verified).
     Uses _to_iso() to normalise the "Jul 02, 2026" display-string date.
+
+    v2 additions (cross-asset context, display_only):
+      pairs            — list of {pair, action, score} for non-FLAT pairs,
+                         sorted by |score| desc, capped at 5
+      scenario_intensity — top-2 entries from regime_radar.intensity
+      deltas           — _macro_ledger_deltas for all fx-domain fields
     """
     repo = _repo_root(root)
     path = repo / "data" / "forex" / "latest.json"
@@ -1292,7 +1503,16 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         "dollar_day": None,
         "em": None,
         "stance": None,
+        # MSX-1 new keys
+        "pairs": None,
+        "scenario_intensity": None,
+        "deltas": None,
+        "smile_decomp_regime": None,
+        "safety_bid_today": None,
         "triple_red": None,
+        "state_changes": None,
+        "regime_radar_dominant_scenario": None,
+        "strength_extremes": None,
         "display_only": True,
     }
 
@@ -1331,7 +1551,16 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         }
 
         # regime_radar: existing fields + scenarios active/building summary (names only)
-        scenarios_raw = rr_raw.get("scenarios") or {}
+        # scenarios may be a list [{"key": k, ...}] (MSX-1/main format)
+        # or a dict {"key": {...}} (B2/ours format); handle both.
+        _scenarios_raw_raw = rr_raw.get("scenarios")
+        if isinstance(_scenarios_raw_raw, list):
+            # MSX-1 list format — convert to dict keyed by "key"
+            scenarios_raw = {s["key"]: s for s in _scenarios_raw_raw if isinstance(s, dict) and s.get("key")}
+        elif isinstance(_scenarios_raw_raw, dict):
+            scenarios_raw = _scenarios_raw_raw
+        else:
+            scenarios_raw = {}
         active_scenarios = [
             k for k, v in scenarios_raw.items()
             if isinstance(v, dict) and v.get("active")
@@ -1378,6 +1607,126 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
                 "sentence_zh": _clean(st_raw.get("sentence_zh")),
             }
 
+        # v2: pairs — non-FLAT action, sorted by |score| desc, cap 5
+        pairs_raw = raw.get("pairs") or {}
+        pairs_out: list[dict] = []
+        if isinstance(pairs_raw, dict):
+            for pair_key, pair_val in pairs_raw.items():
+                if not isinstance(pair_val, dict):
+                    continue
+                action = _clean(pair_val.get("action"))
+                if action and str(action).upper() == "FLAT":
+                    continue
+                score = pair_val.get("score")
+                pairs_out.append({
+                    "pair": _clean(pair_key),
+                    "action": action,
+                    "score": _clean(score),
+                })
+            # sort by |score| descending (None scores last)
+            pairs_out.sort(
+                key=lambda x: abs(x["score"]) if isinstance(x["score"], (int, float)) else 0,
+                reverse=True,
+            )
+            pairs_out = pairs_out[:5]
+
+        # v2: scenario_intensity — top-2 of regime_radar.intensity
+        intensity_raw = rr_raw.get("intensity") or {}
+        scenario_intensity: list[dict] = []
+        if isinstance(intensity_raw, dict):
+            # sort by value descending
+            sorted_intens = sorted(
+                ((k, v) for k, v in intensity_raw.items() if v is not None),
+                key=lambda kv: kv[1] if isinstance(kv[1], (int, float)) else 0,
+                reverse=True,
+            )
+            scenario_intensity = [
+                {"name": _clean(k), "value": _clean(v)}
+                for k, v in sorted_intens[:2]
+            ]
+
+        # v2: deltas from ledger for all fx-domain fields (including new v1.2 fields)
+        # Per-pair fields are derived from the pairs actually present in the payload
+        # (keys of raw["pairs"]) so the list stays in sync with the active set without
+        # manual updates.  Fall back to the 9 live-active pairs when the payload is absent.
+        _ACTIVE_PAIRS_FALLBACK = [
+            "eurusd", "gbpusd", "usdjpy", "usdchf",
+            "audusd", "usdcad", "usdmxn", "usdbrl", "usdcnh",
+        ]
+        _pair_keys = (
+            [k.lower() for k in (raw.get("pairs") or {}).keys()]
+            if isinstance(raw.get("pairs"), dict) and raw["pairs"]
+            else _ACTIVE_PAIRS_FALLBACK
+        )
+        _fx_ledger_fields = [
+            "usd_trend", "usd_regime", "fx_risk", "real_rate_regime",
+            "fx_liquidity_dir", "fx_regime_radar",
+            "usd_valuation", "usd_positioning", "fed_path_lean",
+        ] + [f"fx_{p}_action" for p in _pair_keys]
+        try:
+            deltas = _macro_ledger_deltas(repo, "fx", _fx_ledger_fields)
+        except Exception as _de:  # noqa: BLE001
+            log.warning("fx_dollar: ledger deltas failed — %s", _de)
+            deltas = None
+
+        # ── MSX-1 §2.1 new keys — null-tolerant; absent in old artifacts ─────
+        # smile_decomp fields (bug-fix: forwarded to unblock build_intl + flow_regime)
+        sd_raw = dd_raw.get("smile_decomp") or {}
+        smile_decomp_regime = _clean(sd_raw.get("regime"))
+        safety_bid_today = _clean(sd_raw.get("safety_bid_today"))
+
+        # triple_red lives INSIDE dollar_desk in the producer artifact
+        triple_red = _clean(dd_raw.get("triple_red"))
+        sc_raw = raw.get("state_changes") or {}
+        state_changes: dict | None = None
+        if sc_raw:
+            state_changes = {k: _clean_state_entry(v) for k, v in sc_raw.items()}
+
+        # regime_radar dominant scenario compact receipt
+        scenarios_raw = rr_raw.get("scenarios") or []
+        regime_radar_dominant_scenario: dict | None = None
+        if scenarios_raw:
+            dominant_key = _clean(rr_raw.get("dominant"))
+            for sc in scenarios_raw:
+                if not isinstance(sc, dict):
+                    continue
+                if sc.get("key") == dominant_key or sc.get("active"):
+                    prob = sc.get("prob") or {}
+                    regime_radar_dominant_scenario = {
+                        "key": _clean(sc.get("key")),
+                        "intensity": _clean(sc.get("intensity")),
+                        "prob_status": _clean(prob.get("status")),
+                        "p_cond": _clean(prob.get("p_cond")),
+                        "base_rate": _clean(prob.get("base_rate")),
+                    }
+                    break
+
+        # strength extremes from default horizon
+        strength_extremes: dict | None = None
+        st_raw = raw.get("strength") or {}
+        default_horizon = st_raw.get("default") or "1m"
+        horizons_raw = st_raw.get("horizons") or {}
+        horizon_list = horizons_raw.get(default_horizon) or []
+        if horizon_list and isinstance(horizon_list, list):
+            sorted_list = sorted(
+                [h for h in horizon_list if isinstance(h, dict) and h.get("strength") is not None],
+                key=lambda h: h.get("strength", 0),
+            )
+            if sorted_list:
+                weakest = sorted_list[0]
+                strongest = sorted_list[-1]
+                strength_extremes = {
+                    "strongest": {
+                        "ccy": _clean(strongest.get("ccy")),
+                        "strength": _clean(strongest.get("strength")),
+                    },
+                    "weakest": {
+                        "ccy": _clean(weakest.get("ccy")),
+                        "strength": _clean(weakest.get("strength")),
+                    },
+                    "horizon": _clean(default_horizon),
+                }
+
         # Prefer ISO asof; fall back to display-string date normalisation
         asof = _to_iso(raw.get("asof") or raw.get("date"))
 
@@ -1389,12 +1738,21 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "dollar_desk": dollar_desk,
             "transmission": transmission,
             "regime_radar": regime_radar,
-            # New additive fields
+            # B2 additive fields (ours)
             "dollar_day": dollar_day,
             "em": em,
             "stance": stance,
-            # M4: triple_red lives at dollar_desk.triple_red, not at the top level
-            "triple_red": _clean((raw.get("dollar_desk") or {}).get("triple_red")),
+            # MSX-1 §2.1 additions (main)
+            "pairs": pairs_out if pairs_out else None,
+            "scenario_intensity": scenario_intensity if scenario_intensity else None,
+            "deltas": deltas,
+            "smile_decomp_regime": smile_decomp_regime,
+            "safety_bid_today": safety_bid_today,
+            # M4: triple_red lives at dollar_desk.triple_red (both sides agree)
+            "triple_red": triple_red,
+            "state_changes": state_changes,
+            "regime_radar_dominant_scenario": regime_radar_dominant_scenario,
+            "strength_extremes": strength_extremes,
         })
     except Exception as exc:  # noqa: BLE001
         log.warning("fx_dollar: compose failed — %s", exc)
@@ -1606,6 +1964,17 @@ def _compose_commodity_context(root: "Path | str | None" = None) -> dict:
     """Compose commodity_context lobe from data/commodity/latest.json.
 
     Field list per §5.3 lobe 5 (census-verified).
+
+    v2 additions (cross-asset context, display_only):
+      index      — {mtf_grade, ladder_state, shock_state, impulse, chg_1m_pct, headline}
+      breadth    — {n_members, n_up_trend, pct_up_trend, bucket}
+                   bucket uses same thresholds as _commodity_breadth_bucket in
+                   scripts/build_macro_snapshot.py (twin via _BREADTH_THRESHOLDS)
+      confluence — {index_state, standouts[:6]} where standouts = non-Neutral members
+                   each {name, label, state, score}
+      ratios     — pass-through from latest.json ratios block (copper_gold, gold_silver)
+      usd_sensitivity — from forex/latest.json transmission.corr cross-read (fail-open)
+      deltas     — _macro_ledger_deltas for all commodity-domain fields
     """
     repo = _repo_root(root)
     path = repo / "data" / "commodity" / "latest.json"
@@ -1615,6 +1984,12 @@ def _compose_commodity_context(root: "Path | str | None" = None) -> dict:
         "regime": None,
         "favored": None,
         "assets": None,
+        "index": None,
+        "breadth": None,
+        "confluence": None,
+        "ratios": None,
+        "usd_sensitivity": None,
+        "deltas": None,
         "display_only": True,
     }
 
@@ -1647,6 +2022,98 @@ def _compose_commodity_context(root: "Path | str | None" = None) -> dict:
                     "conviction": _clean(item.get("conviction")),
                 })
 
+        # v2: index sub-block
+        index_raw = raw.get("index") or {}
+        mtf_raw = index_raw.get("mtf") or {}
+        vel_raw = index_raw.get("velocity") or {}
+        index_block: dict | None = None
+        if index_raw:
+            index_block = {
+                "mtf_grade": _clean(mtf_raw.get("grade")),
+                "ladder_state": _clean(mtf_raw.get("ladder_state")),
+                "shock_state": _clean(index_raw.get("shock_state")),
+                "impulse": _clean(vel_raw.get("impulse")),
+                "chg_1m_pct": _clean(index_raw.get("chg_1m_pct")),
+                "headline": _clean(mtf_raw.get("headline")),
+            }
+
+        # v2: breadth sub-block
+        breadth_raw = raw.get("breadth") or {}
+        breadth_block: dict | None = None
+        if breadth_raw:
+            pct_up = breadth_raw.get("pct_up_trend")
+            breadth_block = {
+                "n_members": _clean(breadth_raw.get("n_members")),
+                "n_up_trend": _clean(breadth_raw.get("n_up_trend")),
+                "pct_up_trend": _clean(pct_up),
+                "bucket": _breadth_bucket(pct_up),
+            }
+
+        # v2: confluence sub-block — standouts are members with non-Neutral state
+        conf_raw = raw.get("confluence") or {}
+        conf_index_raw = conf_raw.get("index") or {}
+        conf_members_raw = conf_raw.get("members") or []
+        confluence_block: dict | None = None
+        if conf_raw:
+            standouts: list[dict] = []
+            for m in (conf_members_raw if isinstance(conf_members_raw, list) else []):
+                if not isinstance(m, dict):
+                    continue
+                m_state = m.get("state")
+                if m_state is None or str(m_state) in ("Neutral", "neutral", ""):
+                    continue
+                # pick the matching score side
+                m_state_str = str(m_state)
+                if m_state_str.lower() in ("top", "euphoric", "overbought"):
+                    score = m.get("top_score")
+                else:
+                    score = m.get("bottom_score")
+                standouts.append({
+                    "name": _clean(m.get("name")),
+                    "label": _clean(m.get("label")),
+                    "state": _clean(m_state),
+                    "score": _clean(score),
+                })
+                if len(standouts) >= 6:
+                    break
+            confluence_block = {
+                "index_state": _clean(conf_index_raw.get("state")),
+                "standouts": standouts,
+            }
+
+        # v2: ratios — pass-through from latest.json (written by build_commodities.py)
+        ratios_block = raw.get("ratios")  # None if absent (build_commodities may omit)
+
+        # v2: usd_sensitivity — cross-read forex/latest.json transmission.corr
+        usd_sensitivity: dict | None = None
+        try:
+            fx_path = repo / "data" / "forex" / "latest.json"
+            fx_raw = _read_json(fx_path)
+            if isinstance(fx_raw, dict):
+                fx_tx = fx_raw.get("transmission") or {}
+                corr = fx_tx.get("corr") or {}
+                usd_sensitivity = {
+                    "gold": _clean(corr.get("GC=F")),
+                    "oil": _clean(corr.get("CL=F")),
+                    "copper": _clean(corr.get("HG=F")),
+                    "usd_dir": _clean(fx_tx.get("usd_dir")),
+                }
+        except Exception as _ue:  # noqa: BLE001
+            log.warning("commodity_context: usd_sensitivity cross-read failed — %s", _ue)
+
+        # v2: deltas from ledger for all commodity-domain fields
+        _commodity_ledger_fields = [
+            "commodity_regime", "commodity_favored",
+            "commodity_mtf_grade", "commodity_ladder", "commodity_shock_state",
+            "commodity_confluence_state", "commodity_breadth_bucket",
+            "gold_action", "silver_action", "copper_action", "oil_action",
+        ]
+        try:
+            deltas = _macro_ledger_deltas(repo, "commodity", _commodity_ledger_fields)
+        except Exception as _de:  # noqa: BLE001
+            log.warning("commodity_context: ledger deltas failed — %s", _de)
+            deltas = None
+
         asof = _to_iso(raw.get("asof") or raw.get("date"))
 
         return _display_only({
@@ -1654,6 +2121,12 @@ def _compose_commodity_context(root: "Path | str | None" = None) -> dict:
             "regime": _clean(raw.get("regime")),
             "favored": raw.get("favored"),
             "assets": assets_out if assets_out else None,
+            "index": index_block,
+            "breadth": breadth_block,
+            "confluence": confluence_block,
+            "ratios": ratios_block,
+            "usd_sensitivity": usd_sensitivity,
+            "deltas": deltas,
         })
     except Exception as exc:  # noqa: BLE001
         log.warning("commodity_context: compose failed — %s", exc)

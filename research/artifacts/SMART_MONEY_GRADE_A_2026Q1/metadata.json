@@ -1,0 +1,42 @@
+{
+  "schema": "smart_money_grade_a_q1_2026.v1",
+  "tracker_built": "2026-07-18T07:02:48.855675+00:00",
+  "tracker_price_thru": "2026-07-17",
+  "cohort_rule": "grade == A in current smartmoney_tracker leaderboard",
+  "funds": [
+    "bakerbros",
+    "casdin",
+    "himalaya",
+    "whalerock",
+    "baupost",
+    "duquesne",
+    "elliott",
+    "fairholme",
+    "basswood",
+    "sachem",
+    "lightstreet",
+    "racapital",
+    "corvex",
+    "soros",
+    "altimeter",
+    "starboard"
+  ],
+  "report_period": "2026-03-31",
+  "previous_period": "2025-12-31",
+  "common_return_anchor": "2026-05-15",
+  "horizon_unit": "calendar_days_rolled_to_first_trading_close_on_or_after_target",
+  "horizons": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60
+  ],
+  "benchmark": "SPY",
+  "position_weight": "Q1 13F final reported book percentage",
+  "incremental_weight": "new=final book pct; add=final book pct * shares_added_pct / (100 + shares_added_pct)",
+  "n_resolved_common_equity_positions": 370,
+  "n_priced_positions": 349,
+  "n_excluded_or_unpriced": 27
+}

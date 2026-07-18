@@ -422,6 +422,10 @@ def _build_macro_nodes(world_state: dict | None, gaps: list[str]) -> list[dict]:
         fx = world_state.get("fx_dollar")
         if fx is not None:
             has_any = True
+            # MSX-1: dominant_scenario key + days_in_regime from state_changes
+            _sc = fx.get("state_changes") or {}
+            _smile_sc = _sc.get("smile_regime") or {}
+            _dom_sc = fx.get("regime_radar_dominant_scenario") or {}
             nodes.append(_node(
                 nid="macro:fx_dollar",
                 ntype="macro",
@@ -434,11 +438,14 @@ def _build_macro_nodes(world_state: dict | None, gaps: list[str]) -> list[dict]:
                     "asof": fx.get("asof"),
                     "display_only": True,
                     "source_lobe": "fx_dollar",
-                    # New additive fields (B2) — None when B1 lane not yet landed
+                    # B2 additive fields (ours)
                     "smile_regime": ((fx.get("dollar_desk") or {}).get("smile_decomp") or {}).get("regime"),
                     "dollar_day_flag": (fx.get("dollar_day") or {}).get("flag"),
                     "regime_radar_dominant": (fx.get("regime_radar") or {}).get("dominant"),
                     "stance_word": (fx.get("stance") or {}).get("word_en"),
+                    # MSX-1 additions (main)
+                    "dominant_scenario": _dom_sc.get("key"),
+                    "days_in_regime": _smile_sc.get("days_in_state"),
                 },
             ))
 

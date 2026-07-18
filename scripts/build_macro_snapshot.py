@@ -16,7 +16,7 @@ SAME-ASOF REPLACE (IDEMPOTENCY)
 Re-running on the same date replaces ledger rows and transitions for today.
 This is a BLOCKING requirement (§0.5 item 2): a nightly retry must be a no-op.
 
-LABEL VOCABULARY v1.1 (FROZEN — extending bumps schema minor)
+LABEL VOCABULARY v1.2 (FROZEN — extending bumps schema minor)
 --------------------------------------------------------------
 All values are verbatim strings from sources. NO derived numerics, NO banding.
 recession_risk ingests transmission's categorical yield_curve.recession.risk verbatim.
@@ -33,6 +33,20 @@ Added in v1.1 vs v1:
   intl domain   : intl_au_quad, intl_ez_quad, intl_gb_quad, intl_in_quad,
                   intl_jp_quad, intl_kr_quad, intl_tw_quad
   commodity     : bug fix — favored list now joined as "Gold, Copper"
+
+Added in v1.2 (cross-asset context deltas):
+  commodity domain (new fields):
+    commodity_mtf_grade       — index.mtf.grade
+    commodity_ladder          — index.mtf.ladder_state
+    commodity_shock_state     — index.shock_state
+    commodity_confluence_state — confluence.index.state
+    gold_action, silver_action, copper_action, oil_action — assets.<a>.action
+    commodity_breadth_bucket  — broad(≥0.7) / mixed(≥0.4) / narrow from breadth.pct_up_trend
+  fx domain (new fields):
+    usd_valuation             — dollar_desk.usd_valuation
+    usd_positioning           — dollar_desk.usd_pos_state
+    fed_path_lean             — dollar_desk.fed_path_lean
+    fx_eurusd_action … fx_usdbrl_action — pairs.<pair>.action (9 pairs)
 
 BIRTH-SUPPRESSION: transitions do NOT emit a record when a (domain, field) key
 did not exist in the prior ledger at all (field is new to the ledger). Only emits
@@ -282,6 +296,7 @@ def _extract_forex(forex: dict) -> tuple[dict, str | None]:
     """Extract FX/dollar labels from data/forex/latest.json."""
     dd = forex.get("dollar_desk") or {}
     rr = forex.get("regime_radar") or {}
+    pairs_raw = forex.get("pairs") or {}
     labels: dict[str, Any] = {
         "usd_trend": dd.get("trend"),
         "usd_regime": forex.get("regime"),
@@ -290,7 +305,16 @@ def _extract_forex(forex: dict) -> tuple[dict, str | None]:
         "fx_liquidity_dir": dd.get("liquidity_dir"),
         # v1.1 addition
         "fx_regime_radar": rr.get("dominant"),
+        # v1.2 additions
+        "usd_valuation": dd.get("usd_valuation"),
+        "usd_positioning": dd.get("usd_pos_state"),
+        "fed_path_lean": dd.get("fed_path_lean"),
     }
+    # v1.2: per-pair action labels for all 9 pairs (lowercase pair key)
+    for pair_key, pair_val in pairs_raw.items():
+        if isinstance(pair_val, dict):
+            field = f"fx_{pair_key.lower()}_action"
+            labels[field] = pair_val.get("action")
     # forex uses display date "Jul 05, 2026" — normalise
     asof = _to_iso(forex.get("date") or forex.get("asof"))
     return {"fx": {k: _norm_str(v) for k, v in labels.items()}}, asof
@@ -312,17 +336,66 @@ def _extract_bonds(bonds: dict) -> tuple[dict, str | None]:
     return {"bonds": {k: _norm_str(v) for k, v in labels.items()}}, asof
 
 
+def _commodity_breadth_bucket(pct_up_trend: Any) -> str | None:
+    """Deterministic breadth bucket from breadth.pct_up_trend float.
+
+    Thresholds (twin of _BREADTH_THRESHOLDS in engine/neuralweb/world_state.py):
+      broad  — pct_up_trend >= 0.70
+      mixed  — pct_up_trend >= 0.40
+      narrow — else
+
+    Returns None when pct_up_trend is not a valid number.
+    """
+    try:
+        v = float(pct_up_trend)
+    except (TypeError, ValueError):
+        return None
+    if v >= 0.70:
+        return "broad"
+    if v >= 0.40:
+        return "mixed"
+    return "narrow"
+
+
 def _extract_commodity(commodity: dict) -> tuple[dict, str | None]:
     """Extract commodity labels from data/commodity/latest.json.
 
     v1.1 bug fix: favored is a list ['Gold','Copper'] — joined as "Gold, Copper".
     Also handles re-runs on old data where favored may already be a stringified
     list "['Gold', 'Copper']" — parse-and-rejoin via ast.literal_eval.
+
+    v1.2 additions: mtf_grade, ladder_state, shock_state, confluence_state,
+    per-asset action labels (gold/silver/copper/oil), and breadth_bucket.
+    All via _norm_str; missing keys are fail-open (None).
     """
+    index_raw = (commodity.get("index") or {})
+    mtf_raw = (index_raw.get("mtf") or {})
+    breadth_raw = (commodity.get("breadth") or {})
+    confluence_raw = (commodity.get("confluence") or {})
+    conf_index_raw = (confluence_raw.get("index") or {})
+    assets_raw = (commodity.get("assets") or {})
+
     labels: dict[str, Any] = {
         "commodity_regime": _norm_str(commodity.get("regime")),
         "commodity_favored": _join_list_field(commodity.get("favored")),
+        # v1.2 additions
+        "commodity_mtf_grade": _norm_str(mtf_raw.get("grade")),
+        "commodity_ladder": _norm_str(mtf_raw.get("ladder_state")),
+        "commodity_shock_state": _norm_str(index_raw.get("shock_state")),
+        "commodity_confluence_state": _norm_str(conf_index_raw.get("state")),
+        # breadth bucket — deterministic bin, not float noise
+        "commodity_breadth_bucket": _commodity_breadth_bucket(
+            breadth_raw.get("pct_up_trend")
+        ),
     }
+
+    # Per-asset action labels: gold, silver, copper, oil (fail-open on missing keys)
+    for asset in ("gold", "silver", "copper", "oil"):
+        asset_block = assets_raw.get(asset) if isinstance(assets_raw, dict) else None
+        labels[f"{asset}_action"] = _norm_str(
+            asset_block.get("action") if isinstance(asset_block, dict) else None
+        )
+
     asof = _to_iso(commodity.get("date") or commodity.get("asof"))
     return {"commodity": labels}, asof
 
@@ -648,7 +721,7 @@ def build_snapshot(root: Path | None = None) -> dict:
     macro_context_id = _context_id(labels)
 
     snapshot: dict[str, Any] = {
-        "schema": "macro_snapshot.v1.1",
+        "schema": "macro_snapshot.v1.2",
         "asof": asof,
         "oldest_component_asof": oldest_component_asof,
         "macro_context_id": macro_context_id,

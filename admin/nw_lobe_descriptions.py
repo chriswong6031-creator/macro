@@ -30,7 +30,7 @@ LOBE_DESCRIPTIONS = {
     "bottom-sensors-parquet": {
         "short": "Daily per-stock sensor readings for the US board — shown for context only, ranks and gates nothing.",
         "full": "Each day this feed gathers sensor readings for each US stock on the board: distance from recent lows and highs, balance-sheet leverage ratios from regulatory filings, and other positioning metrics. It is display-only — it neither ranks stocks nor gates any alert or allocation. Leverage ratios need data still arriving through a weekly refresh, so many are null today. The thresholds defining sensor states are frozen; changing them needs a new record.",
-        "src_fp": "d3b2cbe35a292ef0",
+        "src_fp": "43fa427c4b716dd3",
     },
     "capability-audit": {
         "short": "Append-only audit tape of every capability broker call actually used in a pipeline run — no secret values, operator audit only.",
@@ -538,9 +538,9 @@ LOBE_DESCRIPTIONS = {
         "src_fp": "137b3586dd4d6c65",
     },
     "site-theme-asymmetry": {
-        "short": "Site mirror of the per-leg theme asymmetry panel — no fused score, display only, no in-repo reader yet.",
-        "full": "The thematic state builder writes this file as the site projection of the theme asymmetry data artifact. No in-repo reader has been wired to this site path as of the mid-2026 audit — it is a machine-readable mirror and a candidate for theme-page wiring. Display and context only.",
-        "src_fp": "94e6d98ab347d010",
+        "short": "Site mirror of the per-leg theme asymmetry panel — wired to the state-of-themes page drawer and ask-brain read tool.",
+        "full": "The thematic state builder writes this file as the site projection of the theme asymmetry data artifact. The state-of-themes page has read this file since TIL W4 (PR #2137) for the 7-dot Legs column and hover tips; the 2026-07-17 audit erroneously flagged it as having no reader because it checked consumers: rather than code. Wired 2026-07-18 to a new drawer expansion section (Setup legs plain-word rows) and the ask-brain read tool read_theme_asymmetry. Display and context only — no fused master number (WA-R1).",
+        "src_fp": "adcae6f5b3bf65a5",
     },
     "site-theme-pathways": {
         "short": "Site mirror of the theme beneficiary and loser pathway graph — display only, read by the ask-brain tool.",
@@ -569,8 +569,8 @@ LOBE_DESCRIPTIONS = {
     },
     "theme-asymmetry": {
         "short": "Per-leg asymmetry panel for each canonical theme — bottleneck, consensus gap, dislocation, crowding, and orthogonality — no fused score.",
-        "full": "The thematic state builder computes this internal data artifact for per-theme asymmetry. Seven legs are computed independently: bottleneck tightness, stale-consensus gap, cyclical dislocation, entry cleanliness, crowding hazard, falsifier clarity, and orthogonality. The ownership and attention legs are hazard context only. No fused master number is permitted. The hard caveat embedded in the artifact states explicitly that this is not a buy score and that no behavior-changing consumer is wired. No in-repo reader as of the mid-2026 audit — a candidate for theme-page wiring.",
-        "src_fp": "4fd1ab784386d3a3",
+        "full": "The thematic state builder computes this internal data artifact for per-theme asymmetry. Seven legs are computed independently: bottleneck tightness, stale-consensus gap, cyclical dislocation, entry cleanliness, crowding hazard, falsifier clarity, and orthogonality. The ownership and attention legs are hazard context only. No fused master number is permitted. The hard caveat embedded in the artifact states explicitly that this is not a buy score and that no behavior-changing consumer is wired. Read surface is the site projection (site-theme-asymmetry) — state_of_themes page and ask_brain read tools; data/ copy remains the primary artifact.",
+        "src_fp": "0ae4db926fb7644b",
     },
     "theme-pathways": {
         "short": "Theme beneficiary and loser pathway graph compiled from the curated pathway registry — display only, no runtime escalation.",

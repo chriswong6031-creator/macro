@@ -1,7 +1,15 @@
 """engine/neuralweb/bottom_sensors.py — Bottom-sensor envelope for the US board.
 
 Amendment 1, Lane B0, PR-1 (envelope + labels_v1) + PR-3 (sponsorship connector).
-Display-only — is_display_only=True.  labels_version=labels_v1.
+Display-only — is_display_only=True.  labels_version=labels_v2.
+
+labels_v2 (2026-07-18, operator-ratified): DEAD_MONEY_RISK binds hold.py's signed
+ret_since_anchor_pct instead of the maxup_pct proxy (deviation #4 retired).  The
+decision table and the |ret| < 4% threshold are UNCHANGED — this is a bind repair
+toward the frozen §C2 spec ("abs(ret since take) < 4%"), which the proxy could not
+honor for underwater names (maxup is the max FAVORABLE excursion, always ≳ 0, so a
+name down 30% since anchor read as "flat").  Version change logged in
+research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md.
 Ranks nothing, gates nothing, alerts nothing.
 
 Source-of-truth document: research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md §C2, §C3.
@@ -89,8 +97,9 @@ from engine.stock_fundamentals import (
 
 log = logging.getLogger(__name__)
 
-# ── Labels version (frozen in this PR) ────────────────────────────────────────
-LABELS_VERSION = "labels_v1"
+# ── Labels version (v2: DEAD_MONEY_RISK gate binds signed ret_since_anchor_pct;
+#    thresholds unchanged — see module docstring + amendment doc version log) ──
+LABELS_VERSION = "labels_v2"
 IS_DISPLAY_ONLY = True
 REGION = "US"
 
@@ -781,6 +790,9 @@ def _build_row(
     row["hold_state"] = hold_state_val
     row["hold_days_basing"] = hold_dict.get("days_basing") if hold_dict else None
     row["hold_maxup_pct"] = hold_dict.get("maxup_pct") if hold_dict else None
+    row["hold_ret_since_anchor_pct"] = (
+        hold_dict.get("ret_since_anchor_pct") if hold_dict else None
+    )
 
     # ── Entry quality band (source: conviction.potential.band in standout) ────
     conv = (standout_row or {}).get("conviction") or {}
@@ -829,26 +841,18 @@ def _build_row(
         overlays.append("STAR")
     row["overlay_flags"] = ",".join(overlays) if overlays else None
 
-    # ── State label (labels_v1 frozen decision table) ─────────────────────────
-    # hold_ret_since_take: approximate from maxup_pct when intact/basing.
-    # The spec says "abs(ret since take) < 4%".  maxup_pct (max FAVORABLE
-    # excursion since anchor, always >= 0) is used as a proxy because hold.py
-    # does not currently emit a signed ret_since_anchor field.
-    #
-    # Deviation note (deviation #4): this proxy is conservative ONLY for names
-    # that rallied (maxup > 0 → |ret| proxy is the upside max).  For names that
-    # are DOWN since anchor (intact but underwater), maxup ≈ 0 while true
-    # |ret_since_take| may be large, causing the proxy to under-detect real
-    # drawdown and potentially label a falling name DEAD_MONEY_RISK when it
-    # should not be.  Impact is bounded: only names already in hold["intact"]
-    # with days_basing 15-40 are eligible; the label is display-only.
-    # TODO: when hold.py emits ret_since_anchor (signed), bind it here instead.
-    hold_ret_proxy = row.get("hold_maxup_pct")
+    # ── State label (labels_v2 frozen decision table) ─────────────────────────
+    # DEAD_MONEY_RISK binds hold.py's SIGNED ret_since_anchor_pct (labels_v2;
+    # deviation #4 retired — the old maxup_pct proxy could not see underwater
+    # names).  When the field is absent (hold dict from a pre-v2 us_standouts
+    # bake), hold_ret is None and the gate degrades to not firing, per the
+    # §C2 binding law — never fall back to the maxup proxy.
+    hold_ret_signed = row.get("hold_ret_since_anchor_pct")
 
     row["bottom_state"] = _classify_labels_v1(
         hold_state=hold_state_val,
         hold_days_basing=row["hold_days_basing"],
-        hold_ret=hold_ret_proxy,
+        hold_ret=hold_ret_signed,
         trigger_tier=row["trigger_tier"],
         ticks=row["trigger_age_ticks"],
         coiled=row["coiled"],

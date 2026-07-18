@@ -48,7 +48,7 @@
    Replaces the old cramped "Pullback odds · 5d.. 10d.. 21d.." text run with an
    escalating odds ramp drawn against the normal base rate, a state-coloured header,
    compact threat meters + plain-English evidence, and the action line. #}
-{% macro risk_radar_card(rd, scares) -%}
+{% macro risk_radar_card(rd, scares=none, show_threats=true) -%}
 {%- set rc = 'var(--act)' if rd.state=='risk-off' else ('var(--orange)' if rd.state=='elevated' else ('var(--warn)' if rd.state=='caution' else ('var(--info)' if rd.state=='watch' else 'var(--ok)'))) -%}
 {#- icon ladder (RRX2 WA-1): 👀 retired; watch shows 🌤️ when recovery panel is receding else 📡.
    Truthiness-only on rd.recovery.receding — never `is not none` (crashes on missing keys, Jinja codebase law). -#}
@@ -210,6 +210,7 @@
   </div>
   {% endif %}
   {% if scares %}
+  {% if show_threats %}
   <div class="rrx-threats">
     {% for s in scares %}{% if s.score is not none %}
     {%- set sb = 'var(--act)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else ('var(--info)' if s.band=='watch' else 'var(--muted)'))) -%}
@@ -222,6 +223,8 @@
     </span>
     {% endif %}{% endfor %}
   </div>
+  {% endif %}{# /show_threats — the chip strip only; the Leading-evidence line below
+     stays visible even when the host dedupes the strip against its own scare ladder #}
   {% for s in scares %}{% if s.label_en == rd.label_en and s.firing_legs %}
   <div class="rrx-ev"><span class="rrx-ev-k">{{ t('Leading','领先信号') }}</span>{% for l in s.firing_legs[:2] %}{% if not loop.first %} · {% endif %}{{ rr_leg(l.leg) }} <span class="rrx-ev-p">{{ (l.pctile*100)|round|int }}th{% if l.confirmed %} ✓{% endif %}</span>{% endfor %}</div>
   {% endif %}{% endfor %}
@@ -336,6 +339,47 @@
     {%- if _cgl_blk.stale is defined and _cgl_blk.stale and _cgl_blk.built_date is defined and _cgl_blk.built_date %}
     <span class="muted" style="font-size:9.5px;"><span class="l-en">as of {{ _cgl_blk.built_date }}</span><span class="l-zh">截至 {{ _cgl_blk.built_date }}</span></span>
     {%- endif %}
+  </div>
+  {%- endif %}
+  {# ── FX context strip (MSX-1, 2026-07-18, Tier-2 placement inside radar dialog).
+     Source: rd.fx_context attached by build_china/build_hk post-transform (mirrors
+     CGL pattern). Guard: entire block absent when rd.fx_context is not present —
+     no data renders nothing. Two row-pairs: (1) CNH pressure plain-word; (2) dollar
+     direction chip. Dual-span l-en/l-zh idiom; never put translated text in title=.
+     Trap: jinja set-in-for is LOOP-LOCAL; never <svg><text> spans. #}
+  {%- if rd.fx_context is defined and rd.fx_context -%}
+  {%- set _fxc = rd.fx_context -%}
+  {#- CNH basis → plain-word map -#}
+  {%- set _cnh_st = _fxc.cnh_basis_state if _fxc.cnh_basis_state is defined else none -%}
+  {%- set _cnh_en = 'Offshore yuan: outflow pressure' if _cnh_st == 'outflow_stress' else ('Offshore yuan: inflow bid' if _cnh_st == 'inflow' else 'Offshore yuan: no unusual pressure') -%}
+  {%- set _cnh_zh = '离岸人民币：资金外流压力' if _cnh_st == 'outflow_stress' else ('离岸人民币：资金流入' if _cnh_st == 'inflow' else '离岸人民币：无异常压力') -%}
+  {%- set _cnh_chip = 'warn' if _cnh_st == 'outflow_stress' else ('caut' if _cnh_st == 'inflow' else 'ok') -%}
+  {%- set _cnh_chip_en = 'Stress' if _cnh_st == 'outflow_stress' else ('Inflow' if _cnh_st == 'inflow' else 'Normal') -%}
+  {%- set _cnh_chip_zh = '压力' if _cnh_st == 'outflow_stress' else ('流入' if _cnh_st == 'inflow' else '正常') -%}
+  {#- dollar direction → plain-word map -#}
+  {%- set _usd = _fxc.usd_dir if _fxc.usd_dir is defined else none -%}
+  {%- set _usd_en = 'Dollar rising — headwind for EM' if _usd == 'strengthening' else ('Dollar falling — tailwind for EM' if _usd == 'weakening' else 'Dollar: mixed') -%}
+  {%- set _usd_zh = '美元走强 — 新兴市场逆风' if _usd == 'strengthening' else ('美元走弱 — 新兴市场顺风' if _usd == 'weakening' else '美元：方向混乱') -%}
+  {%- set _usd_chip = 'warn' if _usd == 'strengthening' else ('ok' if _usd == 'weakening' else 'muted') -%}
+  {%- set _usd_chip_en = 'Rising' if _usd == 'strengthening' else ('Falling' if _usd == 'weakening' else 'Mixed') -%}
+  {%- set _usd_chip_zh = '走强' if _usd == 'strengthening' else ('走弱' if _usd == 'weakening' else '混合') -%}
+  {#- row 1: CNH pressure -#}
+  <div class="rrx-cyc rrx-fxc">
+    <span class="rrx-cyc-k">{{ t('Yuan pressure','人民币压力') }}</span>
+    <span class="chip {{ _cnh_chip }}" style="font-size:10px;padding:1px 6px;">{{ t(_cnh_chip_en, _cnh_chip_zh) }}</span>
+    <span class="l-en">{{ _cnh_en }}</span><span class="l-zh">{{ _cnh_zh }}</span>
+    {%- if _fxc.cnh_basis_bps is defined and _fxc.cnh_basis_bps is not none %}
+    <span class="rrx-rec-chip">{{ '%.0f'|format(_fxc.cnh_basis_bps) }}bp</span>
+    {%- endif %}
+    {%- if _fxc.stale is defined and _fxc.stale and _fxc.built_date is defined and _fxc.built_date %}
+    <span class="muted" style="font-size:9.5px;"><span class="l-en">as of {{ _fxc.built_date }}</span><span class="l-zh">截至 {{ _fxc.built_date }}</span></span>
+    {%- endif %}
+  </div>
+  {#- row 2: dollar direction -#}
+  <div class="rrx-cyc rrx-fxc">
+    <span class="rrx-cyc-k">{{ t('Dollar','美元') }}</span>
+    <span class="chip {{ _usd_chip }}" style="font-size:10px;padding:1px 6px;">{{ t(_usd_chip_en, _usd_chip_zh) }}</span>
+    <span class="l-en">{{ _usd_en }}</span><span class="l-zh">{{ _usd_zh }}</span>
   </div>
   {%- endif %}
 

@@ -1704,3 +1704,203 @@ def test_fx_dollar_triple_red_from_dollar_desk(tmp_path):
     assert result3["triple_red"] is None, (
         "top-level triple_red must be ignored — only dollar_desk.triple_red counts"
     )
+
+
+
+# ---------------------------------------------------------------------------
+# Tests 37–39 (MSX-1): _compose_fx_dollar MSX-1 lobe enrichment (world_state.py)
+# ---------------------------------------------------------------------------
+
+def _make_forex_msx(root: Path) -> dict:
+    """Latest.json fixture WITH MSX-1 §2.1 keys for forward-pass tests."""
+    fx = {
+        "date": "Jul 01, 2026",
+        "regime": "dollar_bull",
+        "risk": "risk_on",
+        "favored": ["EUR", "JPY"],
+        "dollar_desk": {
+            "lean": "neutral",
+            "triple_red": True,
+            "real_rate_regime": "positive",
+            "usd_valuation": "overvalued",
+            "trend": "declining",
+            "fed_path_lean": "hawkish",
+            "liquidity_dir": "tightening",
+            "smile_decomp": {
+                "regime": "risk_on",
+                "regime_60d": "risk_on",
+                "residual_20d_z": -0.4,
+                "beta": 0.7,
+                "r2": 0.55,
+                "safety_bid_today": False,
+                "gaps": [],
+                "display_only": True,
+            },
+        },
+        "transmission": {
+            "usd_dir": "down",
+            "headwind_for": ["EM", "Gold"],
+            "tailwind_for": ["USD assets"],
+            "unstable": False,
+        },
+        "regime_radar": {
+            "as_of": "2026-07-01",
+            "dominant": "carry_unwind",
+            "active": ["carry_unwind"],
+            "scenarios": [
+                {
+                    "key": "carry_unwind",
+                    "name_en": "Carry Unwind",
+                    "name_zh": "套息平仓",
+                    "intensity": 0.72,
+                    "active": True,
+                    "illustrative": False,
+                    "prob": {
+                        "status": "active",
+                        "p_cond": 0.45,
+                        "base_rate": 0.18,
+                        "wilson_lo": 0.12,
+                        "wilson_hi": 0.26,
+                        "n_raw": 40,
+                        "n_eff": 38,
+                        "N": 210,
+                    },
+                },
+                {
+                    "key": "dollar_wrecking_ball",
+                    "name_en": "Dollar Wrecking Ball",
+                    "name_zh": "美元破坏球",
+                    "intensity": 0.3,
+                    "active": False,
+                    "illustrative": False,
+                    "prob": {
+                        "status": "inactive",
+                        "p_cond": 0.1,
+                        "base_rate": 0.08,
+                        "wilson_lo": 0.04,
+                        "wilson_hi": 0.16,
+                        "n_raw": 16,
+                        "n_eff": 16,
+                        "N": 210,
+                    },
+                },
+            ],
+        },
+        "strength": {
+            "default": "1m",
+            "order": ["JPY", "EUR", "GBP"],
+            "horizons": {
+                "1w": [],
+                "1m": [
+                    {"ccy": "JPY", "ccy_zh": "日元", "strength": 0.82, "vs_usd_pct": 1.5, "em": False},
+                    {"ccy": "EUR", "ccy_zh": "欧元", "strength": 0.55, "vs_usd_pct": 0.3, "em": False},
+                    {"ccy": "BRL", "ccy_zh": "巴西雷亚尔", "strength": -0.3, "vs_usd_pct": -2.1, "em": True},
+                ],
+                "3m": [],
+            },
+        },
+        "state_changes": {
+            "smile_regime": {
+                "current": "risk_on",
+                "prev": "risk_off",
+                "changed_on": "2026-06-20",
+                "days_in_state": 11,
+            },
+            "lean": {
+                "current": "neutral",
+                "prev": "bearish",
+                "changed_on": "2026-06-25",
+                "days_in_state": 6,
+            },
+            "triple_red": {
+                "current": True,
+                "prev": False,
+                "changed_on": "2026-07-01",
+                "days_in_state": 0,
+            },
+        },
+    }
+    _write_json(root / "data" / "forex" / "latest.json", fx)
+    return fx
+
+
+def test_fx_dollar_msx_keys_forwarded(tmp_path):
+    """Test 32: MSX-1 keys present in latest.json are forwarded into the lobe."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+    _make_forex_msx(tmp_path)
+    lobe = _compose_fx_dollar(root=tmp_path)
+
+    # Core keys still present
+    assert lobe["regime"] == "dollar_bull"
+    assert lobe["display_only"] is True
+
+    # smile_decomp regime and safety_bid_today forwarded
+    assert lobe["smile_decomp_regime"] == "risk_on"
+    assert lobe["safety_bid_today"] is False
+
+    # triple_red forwarded
+    assert lobe["triple_red"] is True
+
+    # state_changes forwarded and _clean()-ed
+    sc = lobe["state_changes"]
+    assert isinstance(sc, dict)
+    assert sc["smile_regime"]["current"] == "risk_on"
+    assert sc["smile_regime"]["days_in_state"] == 11
+    assert sc["lean"]["days_in_state"] == 6
+
+    # dominant scenario receipt (carry_unwind is active)
+    dom = lobe["regime_radar_dominant_scenario"]
+    assert dom is not None
+    assert dom["key"] == "carry_unwind"
+    assert dom["intensity"] == 0.72
+    assert dom["p_cond"] == 0.45
+    assert dom["base_rate"] == 0.18
+
+    # strength extremes from default horizon (1m)
+    ext = lobe["strength_extremes"]
+    assert ext is not None
+    assert ext["horizon"] == "1m"
+    assert ext["strongest"]["ccy"] == "JPY"
+    assert ext["weakest"]["ccy"] == "BRL"
+
+
+def test_fx_dollar_msx_keys_absent_null_tolerant(tmp_path):
+    """Test 33: old latest.json WITHOUT MSX-1 keys degrades to None, never raises."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+    # Write a minimal legacy fixture without any MSX-1 keys
+    _write_json(tmp_path / "data" / "forex" / "latest.json", {
+        "date": "Jul 01, 2026",
+        "regime": "dollar_neutral",
+        "risk": "risk_off",
+        "favored": [],
+        "dollar_desk": {"lean": "neutral", "trend": "flat"},
+        "transmission": {"usd_dir": "flat"},
+        "regime_radar": {"dominant": "carry_unwind", "active": ["carry_unwind"]},
+    })
+    lobe = _compose_fx_dollar(root=tmp_path)
+
+    assert lobe["display_only"] is True
+    assert lobe["regime"] == "dollar_neutral"
+    # All MSX-1 keys must be None when absent in source
+    assert lobe["smile_decomp_regime"] is None
+    assert lobe["safety_bid_today"] is None
+    assert lobe["triple_red"] is None
+    assert lobe["state_changes"] is None
+    assert lobe["regime_radar_dominant_scenario"] is None
+    assert lobe["strength_extremes"] is None
+
+
+def test_fx_dollar_msx_file_absent_null_tolerant(tmp_path):
+    """Test 34: missing latest.json → null_out with all MSX-1 keys None, no raise."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+    # Do NOT write any file
+    lobe = _compose_fx_dollar(root=tmp_path)
+
+    assert lobe["display_only"] is True
+    assert lobe["regime"] is None
+    assert lobe["smile_decomp_regime"] is None
+    assert lobe["safety_bid_today"] is None
+    assert lobe["triple_red"] is None
+    assert lobe["state_changes"] is None
+    assert lobe["regime_radar_dominant_scenario"] is None
+    assert lobe["strength_extremes"] is None

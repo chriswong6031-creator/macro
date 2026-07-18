@@ -5347,7 +5347,7 @@ artifacts:
     storage: git
     asof_field: as_of
     freshness_sla_hours: 30
-    schema: bottom_sensors.labels_v1
+    schema: bottom_sensors.labels_v2
     tier: display
     horizon_role: tactical_entry
     weights: none
@@ -5358,8 +5358,13 @@ artifacts:
     notes: >
       Amendment 1, Lane B0, PR-1. Bottom-sensor envelope for the US board.
       is_display_only=true — ranks nothing, gates nothing, alerts nothing.
-      labels_version=labels_v1 (frozen thresholds; any change = new version logged
-      in research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md).
+      labels_version=labels_v2 (frozen thresholds; any change = new version logged
+      in research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md). v2 2026-07-18
+      (operator-ratified): DEAD_MONEY_RISK binds hold.py's signed ret_since_anchor_pct
+      — the labels_v1 maxup_pct proxy (max favorable excursion) could not see
+      underwater names and mislabeled them as flat; decision table and the |ret|<4%
+      threshold unchanged. Per-row labels_version stamp is the epoch marker for any
+      cross-version study of the git-history label series.
       Bind-first: fields from signal_gate.json / us_standouts.json / hold.py outputs.
       Two new rolling columns (dist_21d_low_pct, dist_126d_high_pct) are the only
       new price computations. rs_repair_state and sponsorship_state are unavailable
@@ -5372,7 +5377,7 @@ artifacts:
       any future UI surface MUST carry a proxy label for this ratio.
       net_debt_to_ebitda requires D&A (DepreciationDepletionAndAmortization) which
       accrues via the collectors/edgar_facts.py weekly drip — mostly None until drip runs.
-      Amendment-3 structural descriptors (additive; labels_v1 decision table UNCHANGED):
+      Amendment-3 structural descriptors (additive; decision table UNCHANGED):
         decline_herf / decline_geometry (family E, DISPLAY-CANDIDATE) — latest trailing-63-bar
           loss-Herfindahl bound from engine.entry_primitives.decline_concentration_series, plus its
           current-day cross-sectional tercile label flush/mixed/grind. A decline-SHAPE read, NOT an
@@ -5394,7 +5399,7 @@ artifacts:
     storage: git
     asof_field: as_of
     freshness_sla_hours: 30
-    schema: bottom_sensors.labels_v1
+    schema: bottom_sensors.labels_v2
     tier: display
     horizon_role: tactical_entry
     weights: none
@@ -8445,7 +8450,8 @@ artifacts:
       clarity, orthogonality). Ownership/attention legs are hazard context
       only (NEXTL-U13). hard_caveat: not a buy score; no behavior-changing
       consumer.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      Read surface is the site projection (site-theme-asymmetry) — state_of_themes
+      page + ask_brain read tools; data/ copy remains the primary artifact.
 
   site-theme-asymmetry:
     path: site/neuralwebdata/theme_asymmetry.json
@@ -8462,11 +8468,18 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_state_of_themes.py
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       Site projection of theme_asymmetry.json. Display/context only.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      The page reader (scripts/build_state_of_themes.py) has existed since TIL W4 (PR #2137)
+      and renders the 7-dot Legs column + hover tips in the matrix; the 2026-07-17 audit
+      erroneously flagged it as having no reader because it checked consumers: not code.
+      Wired 2026-07-18: state_of_themes drawer "Setup legs" expansion section
+      (build_state_of_themes) + cortex read tool read_theme_asymmetry in ask_brain
+      (TIL page-wiring PR).
 
   foresight-earliness-grades:
     path: data/foresight/earliness_grades.json
@@ -10099,8 +10112,13 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/world_state.py
+      - engine/neuralweb/mastermind_context.py
+      - engine/master_brain.py
+      - engine/neuralweb/confluence.py
       - scripts/build_site.py
       - scripts/build_macro_snapshot.py
+      - scripts/build_intl.py
+      - engine/flow_regime.py
     notes: >
       FX regime/pairs snapshot. Current dollar regime (strong/weak/neutral), favored
       pairs with entry context, and dollar_desk narrative. Written by scripts/build_forex.py
@@ -10108,6 +10126,12 @@ artifacts:
       scripts/build_site.py (macro page FX panel), and scripts/build_macro_snapshot.py;
       the cortex/ask_brain see FX state only transitively via world_state.json.
       is_context_only=true, display_only=true — no score or ranking authority.
+      MSX-1 additive keys (§2.1): dollar_desk.smile_decomp (bug-fix — unblocks
+      build_intl.py:281 + flow_regime.py:1536), strength (horizons/extremes),
+      regime_radar.scenarios (per-scenario prob receipts), pairs.<KEY>.headline/sub/
+      shock_state/cycle_position (USDCNH also cnh_basis_bps/cnh_basis_state),
+      state_changes (current/prev/changed_on/days_in_state per key, nightly-lane-gated),
+      schema_note. Never rename/remove existing keys — additive-only contract.
 
   transmission-latest:
     path: data/transmission/latest.json
@@ -10379,12 +10403,15 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/query.py
+      - engine/neuralweb/world_state.py
       - scripts/build_macro_context.py
     external_consumers: []
     notes: >
       R5 PR-C — macro context ledger parquet. One row per (asof, domain, field).
       Same-asof replace semantics on re-run (idempotent). Backward merge_asof source
       for spine stamp-join in _stamp_macro_context(). Display/context tier only.
+      v1.2: also consumed by engine/neuralweb/world_state._macro_ledger_deltas() for
+      FX+commodity streak/prev metadata (display-tier, fail-open).
 
   macro-transitions:
     path: data/macro_snapshots/transitions.jsonl
@@ -11496,7 +11523,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_state_of_themes.py
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       TIL W8 (PR-W8) site projection of theme import-flow rollups (compact).
@@ -11511,7 +11540,9 @@ artifacts:
       pends key email-activation; honest null with fresh as_of until then).
       Off render path (collect-lane step or standalone CLI).
       Honest null (all metrics null) when CENSUS_API_KEY not set.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      Wired 2026-07-18: state_of_themes page-level accrual note + per-theme drawer section
+      (build_state_of_themes) + cortex read tool read_theme_trade_flows in ask_brain
+      (TIL page-wiring PR).
 
   # --- TIL W10 (PR-W10) — ClinicalTrials.gov theme-level pipeline density ---
 
@@ -11570,7 +11601,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_state_of_themes.py
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       TIL W10 (PR-W10) site projection of theme clinical-pipeline rollups
@@ -11581,7 +11614,9 @@ artifacts:
       Authority: all may_* false; is_context_only=true.
       Off render path (collect-lane step or standalone CLI).
       Honest null when modality_monthly.parquet absent.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      Wired 2026-07-18: state_of_themes drawer "Clinical pipeline" section
+      (build_state_of_themes) + cortex read tool read_theme_clinical in ask_brain
+      (TIL page-wiring PR).
 
   # --- TIL W11 (PR-W11) — Options-tape crowding-hazard witness ---
 
@@ -11647,7 +11682,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_state_of_themes.py
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       TIL W11 (PR-W11) site projection of theme options-tape crowding-hazard witness
@@ -11659,7 +11696,9 @@ artifacts:
       real legs are newer than 6d — see neuralweb-theme-options-witness
       notes for the real-data path).
       Honest null when ThetaData store absent.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      Wired 2026-07-18: state_of_themes drawer "Options crowding check" section
+      (build_state_of_themes) + cortex read tool read_theme_options_witness in ask_brain
+      (TIL page-wiring PR).
 
   # ── Metabolism Phase 0 (F3 capability broker) ────────────────────────────
 
@@ -12755,12 +12794,22 @@ artifacts:
       - engine/neuralweb/world_state.py
     external_consumers: []
     notes: >
-      Rotation Command RC-R1/R2. Active inter-subsector rotation events detected by
-      engine/rotation_events.py — blowoff_crash × turn_reclaim × ratio-reversal
-      three-way AND detector. Fields: schema, ok, as_of, generated_utc, authority,
-      params, n_pairs_scanned, active (list of events), created_tonight,
-      closed_tonight, coldstart, fragmented_sectors, ruler (modern-era census
-      summary). Display-only; authority.may_rank/gate/size/escalate=false.
+      Rotation Command RC-R1/R2 + Rotation Events v2 (ROTATION_EVENTS_V2_MASTERPLAN).
+      Active inter-subsector rotation events detected by engine/rotation_events.py —
+      v1 blowoff_crash × turn_reclaim × ratio-reversal three-way AND detector, plus
+      v2 cross-sector families (into_strength, cross_handoff, correlation_break;
+      config/rotation_universe.json registry). Schema stays rotation_events.v1,
+      ADDITIVE-ONLY (consumers iterate, never pattern-match the key set). v1 fields:
+      schema, ok, as_of, generated_utc, authority, params, n_pairs_scanned, active,
+      created_tonight, closed_tonight, coldstart, fragmented_sectors, ruler. v2
+      additive fields: per-event event_type/to_sector/from_sector/donor_signature/
+      severity_effective/health/flow_receipts; top-level params_v2,
+      n_cross_pairs_scanned, contagion (root_cause attribution), velocity_board
+      (receipt-only flow/options context — never a trigger), closed_recent.
+      Ledger append lane-gated on COLLECT_LANE=nightly (asia-close arms cn/hk
+      inline); coldstart replay seeds data/rotation_events/coldstart_seed.jsonl
+      (EXCLUDED from the graded census — see ROTATION_UNIVERSE_EXTENSION_PREREG).
+      Display-only; authority.may_rank/gate/size/escalate=false.
 
   data-rotation-events-ledger:
     path: data/rotation_events/events.jsonl
@@ -13031,6 +13080,31 @@ artifacts:
       SA-W1 evidence packs: one JSON row per matured US pick with identity, entry-time context
       stamps (regime, sector, rank, gate/tier cols), outcome numbers, and both attribution axes.
       Append-only, keep-first on (as_of, ticker, lane). Future consumer: SA-W5 lab templates.
+
+  us-track-history:
+    path: site/factordata/us_track_history.json
+    format: json
+    producer: scripts/build_track_record_page.py
+    known_extra_writers: []
+    owner_program: prophet
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: us_track_history/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [site/us_track_record.html]
+    external_consumers: []
+    notes: >
+      Prophet W1 track record rollup. Cohort win-rate series (weekly entry cohorts,
+      per horizon 5/10/21/63d matured rows), return distribution bins, board-size series,
+      failure-mode mix. Every cell carries raw_n AND effective_n (non-overlapping 21d
+      windows, session-ordinal — mirrors standout_audit convention SA-R10). Per-block
+      accruing/data_gap flags. Single writer (SA-R14 one-grader law). Never raises on
+      missing input — absent inputs emit data_gap sentinels (SA-R16).
 
   us-audit-scoreboard:
     path: site/factordata/us_audit_scoreboard.json

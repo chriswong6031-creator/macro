@@ -61,9 +61,11 @@ a { text-decoration:none; color:var(--link); }
 .legend-row { display:flex; flex-wrap:wrap; gap:12px 20px; margin-bottom:14px; font-size:11.5px; color:var(--muted); align-items:center; }
 .leg-item { display:flex; align-items:center; gap:5px; }
 .dot { display:inline-block; width:11px; height:11px; border-radius:50%; flex:none; }
-.dot.low { background:color-mix(in srgb,var(--up) 60%,transparent); border:1px solid color-mix(in srgb,var(--up) 80%,transparent); }
-.dot.med { background:color-mix(in srgb,var(--warn) 70%,transparent); border:1px solid color-mix(in srgb,var(--warn) 80%,transparent); }
-.dot.high { background:color-mix(in srgb,var(--down) 70%,transparent); border:1px solid color-mix(in srgb,var(--down) 80%,transparent); }
+/* Valence-based dot classes (polarity-correct per leg) */
+.dot.fav  { background:color-mix(in srgb,var(--up) 60%,transparent); border:1px solid color-mix(in srgb,var(--up) 80%,transparent); }
+.dot.mid  { background:color-mix(in srgb,var(--warn) 70%,transparent); border:1px solid color-mix(in srgb,var(--warn) 80%,transparent); }
+.dot.caut { background:color-mix(in srgb,var(--down) 70%,transparent); border:1px solid color-mix(in srgb,var(--down) 80%,transparent); }
+.dot.neut { background:color-mix(in srgb,var(--muted) 35%,transparent); border:1px solid color-mix(in srgb,var(--muted) 50%,transparent); }
 .dot.null { background:transparent; border:1.5px dashed var(--muted); opacity:.55; }
 .stage-pill { display:inline-block; padding:1px 7px; border-radius:8px; font-size:10.5px; font-weight:700; letter-spacing:.03em; }
 
@@ -154,6 +156,18 @@ a { text-decoration:none; color:var(--link); }
 /* ── Collision footnote ── */
 .collision-note { font-size:11.5px; color:var(--muted); margin-top:14px; padding-top:10px; border-top:1px solid var(--line); line-height:1.6; }
 
+/* ── Context drawer sections ── */
+.ctx-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:3px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 30%,transparent); font-size:12.5px; line-height:1.5; }
+.ctx-row:last-child { border-bottom:none; }
+.ctx-row-label { color:var(--muted); flex:0 0 auto; max-width:55%; }
+.ctx-row-value { font-weight:600; text-align:right; }
+.ctx-stance { font-size:12.5px; color:var(--text); margin:0 0 6px; padding:4px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent); font-weight:600; }
+.ctx-plain { font-size:12.5px; color:var(--text); margin:0; line-height:1.6; }
+.ctx-page-note { font-size:11.5px; color:var(--muted); margin-top:10px; padding-top:10px; border-top:1px solid var(--line); line-height:1.6; font-style:italic; }
+.ctx-h4-wrap { display:flex; align-items:center; gap:6px; margin:0 0 5px; }
+.ctx-h4-wrap h4 { margin:0; }
+.ctx-tip-icon { font-size:11px; color:var(--muted); cursor:default; border:1px solid var(--line); border-radius:50%; width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; flex:none; }
+
 /* ── Bilingual toggle ── */
 [data-lang="zh"] .l-en { display:none; }
 [data-lang="zh"] .l-zh { display:inline; }
@@ -229,10 +243,11 @@ a { text-decoration:none; color:var(--link); }
 {# ── Legend ── #}
 <div class="legend-row">
   <strong style="font-size:11px;color:var(--muted);">{{ t('Legs:', '数据腿：') }}</strong>
-  <span class="leg-item"><span class="dot low"></span> {{ t('Low / favorable', '低/有利') }}</span>
-  <span class="leg-item"><span class="dot med"></span> {{ t('Medium', '中等') }}</span>
-  <span class="leg-item"><span class="dot high"></span> {{ t('High / caution', '高/谨慎') }}</span>
-  <span class="leg-item"><span class="dot null"></span> {{ t('Accruing / no data', '累积中/无数据') }}</span>
+  <span class="leg-item"><span class="dot fav"></span> {{ t('favorable', '有利') }}</span>
+  <span class="leg-item"><span class="dot mid"></span> {{ t('middling', '中等') }}</span>
+  <span class="leg-item"><span class="dot caut"></span> {{ t('caution', '谨慎') }}</span>
+  <span class="leg-item"><span class="dot neut"></span> {{ t('not present', '无支持') }}</span>
+  <span class="leg-item"><span class="dot null"></span> {{ t('accruing / no data', '累积中/无数据') }}</span>
   <span style="margin-left:6px; padding-left:6px; border-left:1px solid var(--line);">
     <strong style="font-size:11px;color:var(--muted);">{{ t('Leg order:', '数据腿顺序：') }}</strong>
     {{ t('btl&nbsp;·&nbsp;gap&nbsp;·&nbsp;dis&nbsp;·&nbsp;cln&nbsp;·&nbsp;crw&nbsp;·&nbsp;fal&nbsp;·&nbsp;ort', 'btl·gap·dis·cln·crw·fal·ort') }}
@@ -300,7 +315,7 @@ a { text-decoration:none; color:var(--link); }
       <td>
         <div class="legs-row">
           {% for leg in th.legs_ordered %}
-          <span class="dot {{ leg.band }}"
+          <span class="dot {{ leg.dot_valence }}"
                 data-tip-en="{{ leg.tip_en }}"
                 data-tip-zh="{{ leg.tip_zh }}"></span>
           {% endfor %}
@@ -386,6 +401,144 @@ a { text-decoration:none; color:var(--link); }
               </ul>
             </div>
             {% endif %}
+
+            {# ── Setup legs (asymmetry leg expansion) ── #}
+            {% if th.asym_legs_section %}
+            <div class="drawer-sec">
+              <h4>{{ t('Setup legs', '结构腿') }}</h4>
+              {% for leg in th.asym_legs_section %}
+              <div class="ctx-row"
+                   data-tip-en="{{ leg.tip_en }}"
+                   data-tip-zh="{{ leg.tip_zh }}">
+                <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
+                  <span class="dot {{ leg.valence_class }}"></span>
+                  <span class="l-en">{{ leg.name_en }}</span>
+                  <span class="l-zh">{{ leg.name_zh }}</span>
+                </span>
+                <span class="ctx-row-value">
+                  <span class="l-en">{{ leg.word_en }}</span>
+                  <span class="l-zh">{{ leg.word_zh }}</span>
+                </span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            {# ── Options crowding check ── #}
+            {% if th.ow_section and th.ow_section.available %}
+            <div class="drawer-sec">
+              <div class="ctx-h4-wrap">
+                <h4>{{ t('Options crowding check', '期权拥挤度检查') }}</h4>
+                <span class="ctx-tip-icon"
+                      data-tip-en="{{ th.ow_section.h4_tip_en }}"
+                      data-tip-zh="{{ th.ow_section.h4_tip_zh }}">?</span>
+              </div>
+              {% if th.ow_section.covered %}
+              <p class="ctx-stance">
+                <span class="l-en">{{ th.ow_section.stance_en }}</span>
+                <span class="l-zh">{{ th.ow_section.stance_zh }}</span>
+              </p>
+              <div class="ctx-row"
+                   data-tip-en="{{ th.ow_section.leg_a.note_en }}"
+                   data-tip-zh="{{ th.ow_section.leg_a.note_zh or th.ow_section.leg_a.note_en }}">
+                <span class="ctx-row-label">
+                  <span class="l-en">Bets concentrated in few names?</span>
+                  <span class="l-zh">押注是否集中于少数标的？</span>
+                </span>
+                <span class="ctx-row-value">
+                  <span class="l-en">{{ th.ow_section.leg_a.word_en }}</span>
+                  <span class="l-zh">{{ th.ow_section.leg_a.word_zh }}</span>
+                </span>
+              </div>
+              <div class="ctx-row"
+                   data-tip-en="{{ th.ow_section.leg_b.note_en }}"
+                   data-tip-zh="{{ th.ow_section.leg_b.note_zh or th.ow_section.leg_b.note_en }}">
+                <span class="ctx-row-label">
+                  <span class="l-en">Hedging vs chasing</span>
+                  <span class="l-zh">对冲还是追涨</span>
+                </span>
+                <span class="ctx-row-value">
+                  <span class="l-en">{{ th.ow_section.leg_b.word_en }}</span>
+                  <span class="l-zh">{{ th.ow_section.leg_b.word_zh }}</span>
+                </span>
+              </div>
+              <div class="ctx-row"
+                   data-tip-en="{{ th.ow_section.leg_c.note_en }}"
+                   data-tip-zh="{{ th.ow_section.leg_c.note_zh or th.ow_section.leg_c.note_en }}">
+                <span class="ctx-row-label">
+                  <span class="l-en">Options priced rich?</span>
+                  <span class="l-zh">期权定价是否偏贵？</span>
+                </span>
+                <span class="ctx-row-value">
+                  <span class="l-en">{{ th.ow_section.leg_c.word_en }}</span>
+                  <span class="l-zh">{{ th.ow_section.leg_c.word_zh }}</span>
+                </span>
+              </div>
+              {% else %}
+              <p class="ctx-plain">
+                <span class="l-en">Not enough option coverage to read crowding.</span>
+                <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
+              </p>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {# ── Clinical pipeline ── #}
+            {% if th.cp_section and th.cp_section.available %}
+            <div class="drawer-sec">
+              <div class="ctx-h4-wrap">
+                <h4>{{ t('Clinical pipeline', '临床管线') }}</h4>
+                <span class="ctx-tip-icon"
+                      data-tip-en="{{ th.cp_section.h4_tip_en }}"
+                      data-tip-zh="{{ th.cp_section.h4_tip_zh }}">?</span>
+              </div>
+              <p class="ctx-stance">
+                <span class="l-en">Background evidence — informs the thesis, not a buy trigger.</span>
+                <span class="l-zh">背景证据——辅助论点判断，非买入信号。</span>
+              </p>
+              <p class="ctx-plain">
+                <span class="l-en">{{ th.cp_section.line1_en }}</span>
+                <span class="l-zh">{{ th.cp_section.line1_zh }}</span>
+              </p>
+            </div>
+            {% endif %}
+
+            {# ── Import flows (per-theme — only when data exists) ── #}
+            {% if th.tf_section and th.tf_section.available %}
+            <div class="drawer-sec">
+              <div class="ctx-h4-wrap">
+                <h4>{{ t('Import flows', '进口流量') }}</h4>
+                <span class="ctx-tip-icon"
+                      data-tip-en="{{ th.tf_section.h4_tip_en }}"
+                      data-tip-zh="{{ th.tf_section.h4_tip_zh }}">?</span>
+              </div>
+              <p class="ctx-stance">
+                <span class="l-en">Background evidence — a physical-demand check, not a buy trigger.</span>
+                <span class="l-zh">背景证据——实物需求核对，非买入信号。</span>
+              </p>
+              <p class="ctx-plain">
+                <span class="l-en">{{ th.tf_section.line_en }}</span>
+                <span class="l-zh">{{ th.tf_section.line_zh }}</span>
+              </p>
+              {# Mixed-direction: render one compact row per direction leg #}
+              {% if th.tf_section.is_mixed and th.tf_section.direction_leg_rows %}
+              {% for dl in th.tf_section.direction_leg_rows %}
+              <div class="ctx-row"
+                   {% if dl.cov_tip_en %}data-tip-en="{{ dl.cov_tip_en }}" data-tip-zh="{{ dl.cov_tip_zh }}"{% endif %}>
+                <span class="ctx-row-label" style="font-size:11.5px;">
+                  <span class="l-en">{{ dl.direction }}</span>
+                  <span class="l-zh">{{ dl.direction }}</span>
+                </span>
+                <span class="ctx-row-value">
+                  <span class="l-en">{{ dl.line_en }}</span>
+                  <span class="l-zh">{{ dl.line_zh }}</span>
+                </span>
+              </div>
+              {% endfor %}
+              {% endif %}
+            </div>
+            {% endif %}
+
           </div>
         </div>
       </td>
@@ -406,6 +559,14 @@ a { text-decoration:none; color:var(--link); }
 <div class="collision-note">
   <span class="l-en">{{ collision_note_en }}</span>
   <span class="l-zh">{{ collision_note_zh or collision_note_en }}</span>
+</div>
+{% endif %}
+
+{# ── Trade-flows page-level accrual note (shown when all-null, once) ── #}
+{% if trade_flows_page_note_en %}
+<div class="ctx-page-note">
+  <span class="l-en">{{ trade_flows_page_note_en }}</span>
+  <span class="l-zh">{{ trade_flows_page_note_zh or trade_flows_page_note_en }}</span>
 </div>
 {% endif %}
 

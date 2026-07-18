@@ -289,6 +289,65 @@ def dollar_events(dollar: pd.DataFrame | None) -> list[dict]:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# MSX-1 desk-level event types (additive)
+# --------------------------------------------------------------------------- #
+
+def desk_smile_regime_events(dollar: pd.DataFrame | None) -> list[dict]:
+    """Smile-regime flip events — rebuilt historically from the full _dollar frame
+    (same as dollar_events but under type 'smile_regime_flip' for downstream routing).
+    Kept separate from the existing 'smile_regime' type to avoid id collisions."""
+    if dollar is None or dollar.empty or "smile_regime" not in dollar.columns:
+        return []
+    out = []
+    for ts, frm, to in _transitions(dollar["smile_regime"]):
+        out.append(_ev(None, "smile_regime_flip", ts, "high",
+                       f"Dollar smile flipped: {frm} → {to}",
+                       f"The dollar-smile decomposition regime changed: {frm} → {to}. "
+                       f"This shifts the structural USD bias — "
+                       f"{'safe-haven bid active' if to == 'Risk-off haven bid' else 'see dollar desk for context'}.",
+                       {"from": frm, "to": to}, to,
+                       headline_zh=f"美元微笑翻转：{_z(frm)} → {_z(to)}",
+                       detail_zh=f"美元微笑分解格局变化：{_z(frm)} → {_z(to)}。"
+                       f"{'避险买盘启动。' if to == 'Risk-off haven bid' else '详见美元总台。'}"))
+    return out
+
+
+def desk_triple_red_events(dollar: pd.DataFrame | None, desk: dict | None) -> list[dict]:
+    """Triple-red onset/clear: USD + equities + Treasuries all falling simultaneously.
+
+    triple_red is a scalar snapshot (no historical series), so only emit for the
+    current session and rely on dedup-by-id for idempotency.
+    """
+    if not desk:
+        return []
+    sm = desk.get("smile") or {}
+    triple_red = sm.get("triple_red")
+    if triple_red is None:
+        return []
+    # Use today's date as the event timestamp (scalar snapshot, not historical series)
+    ts = pd.Timestamp.now(tz="UTC").normalize()
+    to = "active" if triple_red else "clear"
+    if triple_red:
+        return [_ev(None, "triple_red", ts, "high",
+                    "Triple-red: USD, equities, and Treasuries all declining",
+                    "The dollar is not acting as a safe haven: USD, S&P 500, and "
+                    "Treasuries (prices) have all fallen over the past month. "
+                    "This is a potential stress-selling signal — watch for forced deleveraging.",
+                    {"triple_red": True}, to,
+                    headline_zh="三重下跌：美元、股市、国债同步下行",
+                    detail_zh="美元未发挥避险功能：美元、标普500及美债（价格）过去一月均下跌。"
+                    "警惕强制去杠杆风险。")]
+    else:
+        return [_ev(None, "triple_red", ts, "info",
+                    "Triple-red cleared: safe-haven function may be restoring",
+                    "The dollar, equities, and Treasuries are no longer all declining together. "
+                    "The acute co-movement stress has eased.",
+                    {"triple_red": False}, to,
+                    headline_zh="三重下跌解除：避险功能可能恢复",
+                    detail_zh="美元、股市、国债不再同步下跌，极端同向压力已缓解。")]
+
+
 def _path():
     return config.data_dir() / "forex" / "alerts.jsonl"
 
@@ -436,21 +495,28 @@ def dollar_flash_events(dollar: pd.DataFrame | None) -> list[dict]:
     return out
 
 
+
 def compute_all_events(results: dict, cfg: dict | None = None,
+                       desk: dict | None = None,
                        regime: dict | None = None,
                        transmission: dict | None = None,
                        transmission_prev: dict | None = None,
                        scenario_prev_active: set | None = None) -> list[dict]:
-    """Compute all events; merges with existing store (idempotent by id).
+    """Compute all FX alert events from signal frames + optional desk/regime context.
 
-    New B1.2 families:
-    - scenario: from regime radar active transitions
-    - transmission_shift: effect/stability changes vs prior day
-    - dollar_flash: broad-dollar day z >= 2
+    Union signature: all params are optional/None-safe so existing callers without
+    desk/transmission/scenario args continue to work unchanged.
 
-    M3: scenario_prev_active is the set of active scenario keys from the prior
-    latest.json regime_radar.active — wired from build_forex (same pattern as
-    transmission_prev) so scenario_events only fires on edges.
+    Event families:
+    - pair-level: residual_shock, risk_regime, trend_flip, momentum, structure,
+                  positioning, carry_flip, peg_approach, cnh_basis
+    - dollar-level: smile_regime (existing historical transitions)
+    - MSX-1 desk-level: smile_regime_flip, triple_red (main's vetted forms)
+    - B1.2 families: dollar_flash, scenario (edge-detected only — M3), transmission_shift
+
+    M3: scenario_events uses edge detection (inactive→active / active→inactive) so
+    it does NOT emit for every day a scenario remains active.  desk_scenario_events
+    (per-active-day) is intentionally omitted — superseded by scenario_events.
     """
     cfg = cfg or config.load()["forex"]
     labels = _labels(cfg)
@@ -461,7 +527,10 @@ def compute_all_events(results: dict, cfg: dict | None = None,
         out += _pair_events(pair, df, labels.get(pair, {"label": pair, "base": pair}))
     dol = results.get("_dollar")
     out += dollar_events(dol)
-    # B1.2 new families
+    # MSX-1: desk-level event types (main's vetted forms, kept verbatim)
+    out += desk_smile_regime_events(dol)
+    out += desk_triple_red_events(dol, desk)
+    # B1.2 new families (edge-detected / threshold-based; no per-day-active firing)
     out += dollar_flash_events(dol)
     if regime:
         out += scenario_events(regime, prev_active=scenario_prev_active)
@@ -498,11 +567,17 @@ def load_events() -> list[dict]:
     return out
 
 
-def rebuild(results: dict, regime: dict | None = None,
+def rebuild(results: dict, desk: dict | None = None, regime: dict | None = None,
             transmission: dict | None = None,
             transmission_prev: dict | None = None,
             scenario_prev_active: set | None = None) -> list[dict]:
-    events = compute_all_events(results, regime=regime,
+    """Rebuild alerts.jsonl deterministically from signal frames.
+
+    Union signature: desk and regime are optional (MSX-1); transmission/
+    transmission_prev/scenario_prev_active are optional (B1.2 edge detection).
+    Existing callers without any optional args continue to work unchanged.
+    """
+    events = compute_all_events(results, desk=desk, regime=regime,
                                 transmission=transmission,
                                 transmission_prev=transmission_prev,
                                 scenario_prev_active=scenario_prev_active)
