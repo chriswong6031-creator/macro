@@ -1202,7 +1202,7 @@ def main() -> int:
     # by complex_vm (cx already holds live gsr and copper_gold scalar values,
     # but we need 20d pct-change; read from the underlying results frames directly).
     try:
-        def _ratio_block(series_vals: "pd.Series", label: str) -> dict:
+        def _ratio_block(series_vals: "pd.Series") -> dict:
             """Compute {value, chg_20d_pct, dir} for a ratio series (last row)."""
             s = series_vals.dropna()
             val = float(s.iloc[-1]) if len(s) >= 1 else None
@@ -1219,6 +1219,9 @@ def main() -> int:
             return {"value": round(val, 4) if val is not None else None,
                     "chg_20d_pct": chg, "dir": direction}
 
+        if "gold" not in results:
+            log.warning("commodity ratios block: gold series absent — ratios omitted")
+            raise KeyError("gold")
         _gold_close = results["gold"]["close"]
         _silver_close = results["silver"]["close"] if "silver" in results else None
         _copper_close = results["copper"]["close"] if "copper" in results else None
@@ -1226,10 +1229,10 @@ def main() -> int:
         ratios: dict = {}
         if _copper_close is not None:
             _cg = _copper_close / _gold_close
-            ratios["copper_gold"] = _ratio_block(_cg, "copper_gold")
+            ratios["copper_gold"] = _ratio_block(_cg)
         if _silver_close is not None:
             _gs = _gold_close / _silver_close
-            ratios["gold_silver"] = _ratio_block(_gs, "gold_silver")
+            ratios["gold_silver"] = _ratio_block(_gs)
 
         if ratios:
             latest["ratios"] = ratios

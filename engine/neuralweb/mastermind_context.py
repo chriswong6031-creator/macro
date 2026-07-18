@@ -510,6 +510,7 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
             "headwind_for": (tx_ws.get("headwind_for") or [])[:5],
             "tailwind_for": (tx_ws.get("tailwind_for") or [])[:5],
             # v2 compact delta fields for LLM context
+            # calendar days from streak start to latest ledger asof (inclusive)
             "usd_trend_days": (fx_deltas.get("usd_trend") or {}).get("days_in_state"),
             "regime_since": (fx_deltas.get("usd_regime") or {}).get("since"),
             "top_scenario": (

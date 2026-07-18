@@ -735,8 +735,8 @@ def _block_cross_asset_context(ws: dict | None) -> dict | None:
 
     if usd_regime and usd_trend_days is not None:
         delta_lines.append(
-            f"USD {fx_ws.get('dollar_desk', {}).get('trend', 'trend unknown')}, "
-            f"day {usd_trend_days}; regime '{usd_regime}'"
+            f"USD {(fx_ws.get('dollar_desk') or {}).get('trend', 'trend unknown')}, "
+            f"since {usd_trend_entry.get('since', '?')}; regime '{usd_regime}'"
             + (f" since {regime_since}" if regime_since else "")
         )
     elif usd_regime:

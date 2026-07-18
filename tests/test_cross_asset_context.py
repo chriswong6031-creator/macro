@@ -86,8 +86,8 @@ def _minimal_forex_payload(*, with_pairs: bool = True, with_dd: bool = True) -> 
             "usdcad": {"action": "SHORT", "score": -0.3},
             "audusd": {"action": "FLAT", "score": 0.0},
             "usdchf": {"action": "LONG", "score": 0.9},
-            "nzdusd": {"action": "SHORT", "score": -0.2},
-            "usdsgd": {"action": "LONG", "score": 0.4},
+            "usdmxn": {"action": "SHORT", "score": -0.2},
+            "usdcnh": {"action": "LONG", "score": 0.4},
             "usdbrl": {"action": "LONG", "score": 0.5},
         }
     payload["regime_radar"] = {
@@ -196,6 +196,48 @@ def test_ledger_deltas_prev_value(tmp_path: Path) -> None:
     assert entry is not None
     assert entry["value"] == "US growth premium"
     assert entry["prev"] == "neutral", f"Expected prev='neutral', got {entry['prev']!r}"
+
+
+def test_ledger_deltas_gap_breaks_streak(tmp_path: Path) -> None:
+    """A gap on an intermediate domain asof terminates the consecutive run.
+
+    Scenario:
+      Domain asofs: 2026-07-01, 2026-07-05, 2026-07-08, 2026-07-10
+      Field 'usd_trend' rows: 07-01 (downtrend), 07-08 (uptrend), 07-10 (uptrend)
+      The field is ABSENT on 07-05 (a domain asof) even though two adjacent field
+      rows (07-08, 07-10) agree.  The streak must restart at 07-08, not 07-01.
+    """
+    # Rows for 'usd_trend' — intentionally skipping 2026-07-05
+    trend_rows = [
+        {"asof": "2026-07-01", "domain": "fx", "field": "usd_trend", "value": "downtrend",
+         "source_asof": "2026-07-01", "macro_context_id": "a"},
+        {"asof": "2026-07-08", "domain": "fx", "field": "usd_trend", "value": "uptrend",
+         "source_asof": "2026-07-08", "macro_context_id": "b"},
+        {"asof": "2026-07-10", "domain": "fx", "field": "usd_trend", "value": "uptrend",
+         "source_asof": "2026-07-10", "macro_context_id": "c"},
+    ]
+    # Rows for 'usd_regime' — present on all four domain asofs (so domain includes 07-05)
+    regime_rows = [
+        {"asof": "2026-07-01", "domain": "fx", "field": "usd_regime", "value": "neutral",
+         "source_asof": "2026-07-01", "macro_context_id": "a"},
+        {"asof": "2026-07-05", "domain": "fx", "field": "usd_regime", "value": "neutral",
+         "source_asof": "2026-07-05", "macro_context_id": "x"},
+        {"asof": "2026-07-08", "domain": "fx", "field": "usd_regime", "value": "growth",
+         "source_asof": "2026-07-08", "macro_context_id": "b"},
+        {"asof": "2026-07-10", "domain": "fx", "field": "usd_regime", "value": "growth",
+         "source_asof": "2026-07-10", "macro_context_id": "c"},
+    ]
+    _make_ledger(tmp_path, trend_rows + regime_rows)
+    result = _macro_ledger_deltas(tmp_path, "fx", ["usd_trend"])
+    entry = result.get("usd_trend")
+    assert entry is not None, "Expected entry for usd_trend"
+    assert entry["value"] == "uptrend"
+    # Gap on 07-05 must break the streak — since must be 07-08, not 07-01
+    assert entry["since"] == "2026-07-08", (
+        f"Expected since=2026-07-08 (gap breaks streak), got {entry['since']!r}"
+    )
+    # days = 2026-07-10 - 2026-07-08 + 1 = 3
+    assert entry["days_in_state"] == 3, f"Expected 3 days (gap restart), got {entry['days_in_state']}"
 
 
 def test_ledger_deltas_missing_parquet(tmp_path: Path) -> None:
@@ -323,7 +365,7 @@ def test_compose_fx_dollar_pairs_non_flat_sorted(tmp_path: Path) -> None:
     # Must be sorted by |score| desc
     scores = [abs(p["score"]) for p in pairs if p["score"] is not None]
     assert scores == sorted(scores, reverse=True), f"pairs not sorted by |score|: {pairs}"
-    # Cap 5 non-FLAT pairs (we have 7 non-FLAT: eurusd, usdjpy, usdcad, usdchf, nzdusd, usdsgd, usdbrl)
+    # Cap 5 non-FLAT pairs (we have 7 non-FLAT: eurusd, usdjpy, usdcad, usdchf, usdmxn, usdcnh, usdbrl)
     assert len(pairs) <= 5
 
 
@@ -349,6 +391,39 @@ def test_compose_fx_dollar_deltas_none_when_ledger_absent(tmp_path: Path) -> Non
         assert isinstance(deltas, dict), f"deltas should be dict or None, got {type(deltas)}"
         for v in deltas.values():
             assert v is None, f"All delta entries should be None when ledger absent; got {v!r}"
+
+
+def test_compose_fx_dollar_delta_fields_match_payload_pairs(tmp_path: Path) -> None:
+    """Regression: delta keys for per-pair fields must exactly mirror the pairs in the payload.
+
+    Prevents fixture-masking: if nzdusd/usdsgd were in the fixture but not the live
+    payload (or vice versa) the deltas dict would silently contain dead/missing keys.
+    """
+    from engine.neuralweb.world_state import _compose_fx_dollar
+
+    # Build a ledger with per-pair action fields for the 9 real active pairs
+    active_pairs = ["eurusd", "gbpusd", "usdjpy", "usdchf",
+                    "audusd", "usdcad", "usdmxn", "usdbrl", "usdcnh"]
+    ledger_rows = []
+    for p in active_pairs:
+        ledger_rows.append(
+            {"asof": "2026-07-10", "domain": "fx",
+             "field": f"fx_{p}_action", "value": "LONG",
+             "source_asof": "2026-07-10", "macro_context_id": "test"}
+        )
+    _make_ledger(tmp_path, ledger_rows)
+    _write_json(tmp_path / "data" / "forex" / "latest.json", _minimal_forex_payload())
+    result = _compose_fx_dollar(root=tmp_path)
+
+    deltas = result.get("deltas") or {}
+    # Every pair in the payload must have a delta key; no dead pairs allowed
+    payload_pairs = list(_minimal_forex_payload()["pairs"].keys())
+    for p in payload_pairs:
+        key = f"fx_{p}_action"
+        assert key in deltas, f"Delta key {key!r} missing; got keys: {sorted(deltas)}"
+    # No nzdusd/usdsgd (old wrong set) in the delta keys
+    assert "fx_nzdusd_action" not in deltas, "fx_nzdusd_action must not be queried (not active)"
+    assert "fx_usdsgd_action" not in deltas, "fx_usdsgd_action must not be queried (not active)"
 
 
 def test_compose_fx_dollar_display_only_always(tmp_path: Path) -> None:
@@ -520,10 +595,10 @@ def test_block_cross_asset_context_delta_lines(tmp_path: Path) -> None:
     assert result.get("display_only") is True
     lines = result.get("delta_lines") or []
     assert len(lines) >= 1, f"Expected at least 1 delta line, got: {lines}"
-    # First line should mention USD and day count
+    # First line should mention USD and an ISO since-date (format: "since YYYY-MM-DD")
     first = lines[0]
     assert "USD" in first or "usd" in first.lower(), f"Expected USD mention, got: {first!r}"
-    assert "day 6" in first or "day" in first, f"Expected day count, got: {first!r}"
+    assert "since" in first, f"Expected 'since <date>' in USD streak line, got: {first!r}"
 
 
 def test_block_cross_asset_context_returns_none_when_ws_none() -> None:

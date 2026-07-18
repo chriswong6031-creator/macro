@@ -203,6 +203,20 @@ def _macro_ledger_deltas(
             return result
         # Sort by asof so rows are in chronological order
         df = df.sort_values("asof")
+        # All domain asofs as sorted strings — used for gap detection: a field that is
+        # absent on an intermediate domain asof terminates the consecutive run.
+        all_domain_asofs = sorted(str(a) for a in df["asof"].unique())
+
+        # Normalise NaN/None strings to None for streak comparison.
+        # Defined once outside the field loop (avoids re-definition per iteration).
+        def _norm(v: Any) -> Any:  # noqa: ANN001
+            if v is None:
+                return None
+            sv = str(v)
+            if sv.lower() in ("nan", "none", ""):
+                return None
+            return sv
+
         for field in fields:
             fdf = df[df["field"] == field]
             if fdf.empty:
@@ -212,22 +226,34 @@ def _macro_ledger_deltas(
             latest_row = fdf.iloc[-1]
             latest_val = latest_row["value"]
             latest_asof = str(latest_row["asof"])
-            # Find start of current consecutive run (same value, working backwards)
+            # Find start of current consecutive run (same value, working backwards).
+            # A gap on an intermediate domain asof terminates the run: if the field
+            # has no row for a domain asof that lies between since_asof and latest_asof,
+            # the run is considered broken at that point.
             since_asof = latest_asof
             prev_val = None
             rows = fdf.to_dict("records")
-            # Normalise NaN strings to None for comparison
-            def _norm(v: Any) -> Any:
-                if v is None:
-                    return None
-                sv = str(v)
-                if sv.lower() in ("nan", "none", ""):
-                    return None
-                return sv
+            # Build a set of asofs where this field actually has a row.
+            field_asofs_set = {str(r["asof"]) for r in rows}
             curr_norm = _norm(latest_val)
             for row in reversed(rows[:-1]):
+                row_asof = str(row["asof"])
+                # Check whether any domain asof between row_asof (exclusive)
+                # and since_asof (exclusive) is missing a field row — that is a gap.
+                try:
+                    idx_row = all_domain_asofs.index(row_asof)
+                    idx_since = all_domain_asofs.index(since_asof)
+                except ValueError:
+                    # asof not in domain list — treat as gap
+                    break
+                gap_found = any(
+                    all_domain_asofs[i] not in field_asofs_set
+                    for i in range(idx_row + 1, idx_since)
+                )
+                if gap_found:
+                    break
                 if _norm(row["value"]) == curr_norm:
-                    since_asof = str(row["asof"])
+                    since_asof = row_asof
                 else:
                     prev_val = _norm(row["value"])
                     break
@@ -1474,14 +1500,23 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             ]
 
         # v2: deltas from ledger for all fx-domain fields (including new v1.2 fields)
+        # Per-pair fields are derived from the pairs actually present in the payload
+        # (keys of raw["pairs"]) so the list stays in sync with the active set without
+        # manual updates.  Fall back to the 9 live-active pairs when the payload is absent.
+        _ACTIVE_PAIRS_FALLBACK = [
+            "eurusd", "gbpusd", "usdjpy", "usdchf",
+            "audusd", "usdcad", "usdmxn", "usdbrl", "usdcnh",
+        ]
+        _pair_keys = (
+            [k.lower() for k in (raw.get("pairs") or {}).keys()]
+            if isinstance(raw.get("pairs"), dict) and raw["pairs"]
+            else _ACTIVE_PAIRS_FALLBACK
+        )
         _fx_ledger_fields = [
             "usd_trend", "usd_regime", "fx_risk", "real_rate_regime",
             "fx_liquidity_dir", "fx_regime_radar",
             "usd_valuation", "usd_positioning", "fed_path_lean",
-            "fx_eurusd_action", "fx_usdjpy_action", "fx_gbpusd_action",
-            "fx_usdcad_action", "fx_audusd_action", "fx_usdchf_action",
-            "fx_nzdusd_action", "fx_usdsgd_action", "fx_usdbrl_action",
-        ]
+        ] + [f"fx_{p}_action" for p in _pair_keys]
         try:
             deltas = _macro_ledger_deltas(repo, "fx", _fx_ledger_fields)
         except Exception as _de:  # noqa: BLE001
