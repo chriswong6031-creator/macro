@@ -153,6 +153,54 @@ def test_audit_writes_json(tmp_path):
     assert "any_dark" in doc
 
 
+def test_stale_series_in_ok_group_warns(tmp_path, capsys, caplog):
+    """Per-series tripwire: a single frozen series in an otherwise-healthy group
+    (the IR3TIB01GBM156N case — 8/9 fresh, group OK, staleness invisible for 6
+    months) must emit a WARNING + ::warning:: annotation and set any_stale_series,
+    while the 50% group gate still passes."""
+    import logging
+    fred_dir = tmp_path / "fred"
+    fred_dir.mkdir()
+    _make_parquet(fred_dir / "LIVE1.parquet")
+    _make_parquet(fred_dir / "LIVE2.parquet")
+    _make_parquet(fred_dir / "FROZEN.parquet",
+                  last_obs=date.today() - timedelta(days=STALE_DAYS + 200))
+
+    cfg = _minimal_cfg({"grp": {"LIVE1": "a", "LIVE2": "b", "FROZEN": "c"}})
+    with caplog.at_level(logging.WARNING, logger="audit.fred_groups"):
+        doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), out_dir=tmp_path / "q_out")
+
+    g = doc["groups"][0]
+    assert g["dark"] is False                       # 2/3 = 67% — group gate passes...
+    assert doc["any_dark"] is False
+    assert g["missing"] == ["FROZEN"]
+    assert doc["any_stale_series"] is True          # ...but the tripwire fires
+    assert any("FROZEN" in r.message for r in caplog.records)
+    assert "::warning::" in capsys.readouterr().out # CI annotation emitted
+
+
+def test_discontinued_upstream_counts_present_no_warning(tmp_path, capsys, monkeypatch):
+    """An allowlisted DISCONTINUED_UPSTREAM series is expected-frozen (engine has a
+    spliced substitute): counted present, listed under 'discontinued', no warning."""
+    from scripts import audit_fred_groups as afg
+    fred_dir = tmp_path / "fred"
+    fred_dir.mkdir()
+    _make_parquet(fred_dir / "LIVE.parquet")
+    _make_parquet(fred_dir / "DEAD.parquet",
+                  last_obs=date.today() - timedelta(days=STALE_DAYS + 200))
+    monkeypatch.setattr(afg, "DISCONTINUED_UPSTREAM", {"DEAD": "test allowlist"})
+
+    cfg = _minimal_cfg({"grp": {"LIVE": "a", "DEAD": "b"}})
+    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), out_dir=tmp_path / "q_out")
+
+    g = doc["groups"][0]
+    assert g["n_present"] == 2                      # DEAD counted present
+    assert g["missing"] == []
+    assert g["discontinued"] == ["DEAD"]
+    assert doc["any_stale_series"] is False
+    assert "::warning::" not in capsys.readouterr().out
+
+
 def test_empty_group_skipped(tmp_path):
     """A group with no series (empty dict) is skipped and doesn't appear in output."""
     fred_dir = tmp_path / "fred"

@@ -350,7 +350,11 @@ fred:
       ECBMRRFR: ez_mrr
       IRSTCI01JPM156N: jp_short   # Japan immediate/call rate (monthly)
       IR3TIB01AUM156N: au_short   # 3m interbank (monthly)
-      IR3TIB01GBM156N: gb_short
+      IR3TIB01GBM156N: gb_short   # DISCONTINUED upstream: OECD MEI UK leg frozen at 2026-01 (AU/CA/CH
+                                  # siblings still update). Retained for carry-history splice only —
+                                  # live GBP leg is gb_sonia below (audit_fred_groups allowlists this id).
+      IUDSOIA: gb_sonia           # BoE SONIA O/N (daily, live) — GBP carry leg from 2026-02; spliced
+                                  # onto gb_short history (GBPUSD short_rate_hist/short_rate_splice).
       IR3TIB01CAM156N: ca_short
       IR3TIB01CHM156N: ch_short
     fx_rates_long:                # 10y govt yields -> term/real-rate differential (Phase 3)
@@ -4227,7 +4231,11 @@ forex:
     EURUSD: {yahoo: "EURUSD=X", fred: DEXUSEU, cot: cot_euro_fx, archetype: major,           base: EUR, invert: false, short_rate: ez_short, long_rate: ez_10y, reer: reer_ez}
     USDJPY: {yahoo: "USDJPY=X", fred: DEXJPUS, cot: cot_yen,     archetype: haven-funder,     base: JPY, invert: true,  short_rate: jp_short, long_rate: jp_10y, reer: reer_jp, peg: {kind: intervention, watch: [150, 162]}}
     AUDUSD: {yahoo: "AUDUSD=X", fred: DEXUSAL, cot: cot_aussie,  archetype: commodity-dollar, base: AUD, invert: false, short_rate: au_short, long_rate: au_10y, reer: reer_au, commodity: ["HG=F", "GC=F"]}
-    GBPUSD: {yahoo: "GBPUSD=X", fred: DEXUSUK, cot: cot_pound,   archetype: major,            base: GBP, invert: false, short_rate: gb_short, long_rate: gb_10y, reer: reer_gb}
+    # GBP short_rate: live leg = SONIA O/N (gb_sonia); history ≤ splice date = the discontinued
+    # OECD 3m interbank (gb_short, frozen upstream 2026-01). Level splice — same precedent as
+    # JPY, whose carry leg is already an overnight rate (IRSTCI01JPM156N). Displayed GBPUSD
+    # carry_diff steps a few bp at the splice (3m-vs-O/N tenor basis) — honest, not a bug.
+    GBPUSD: {yahoo: "GBPUSD=X", fred: DEXUSUK, cot: cot_pound,   archetype: major,            base: GBP, invert: false, short_rate: gb_sonia, short_rate_hist: gb_short, short_rate_splice: "2026-01-01", long_rate: gb_10y, reer: reer_gb}
     USDCAD: {yahoo: "USDCAD=X", fred: DEXCAUS, cot: cot_cad,     archetype: commodity-dollar, base: CAD, invert: true,  short_rate: ca_short, long_rate: ca_10y, reer: reer_ca, commodity: ["CL=F"]}
     USDCHF: {yahoo: "USDCHF=X", fred: DEXSZUS, cot: cot_swiss,   archetype: haven-funder,     base: CHF, invert: true,  short_rate: ch_short, long_rate: ch_10y, reer: reer_ch, peg: {kind: snb}}
     USDMXN: {yahoo: "USDMXN=X", fred: DEXMXUS, cot: cot_peso,    archetype: em,               base: MXN, invert: true,  carry: context, reer: reer_mx}
@@ -6088,6 +6096,11 @@ intl:
         - {product_id: "251796", file_name: MIDD, suffix: ".L", slug: "ishares-ftse-250-ucits-etf"}
       fred:
         yield_10y: IRLTLT01GBM156N
+        # IR3TIB01GBM156N (OECD MEI 3m interbank) frozen upstream at 2026-01 — intl_inputs
+        # ffill_limit=130 means GB short_3m/curve went NaN ~2026-05 and dropped from scoring
+        # (honest degrade). Candidate live substitute: IUDSOIA (BoE SONIA O/N, already collected
+        # for the forex carry leg) — held back here only because this display is labelled 3m
+        # (tenor semantics), not for data reasons.
         short_3m: IR3TIB01GBM156N
         cpi_yoy: CPALTT01GBM659N
         unemployment: LRHUTTTTGBM156S

@@ -272,11 +272,30 @@ def liquidity(fed_bs: pd.Series | None, on_rrp: pd.Series | None,
 _SMILE_WEIGHTS_2Y = {
     "eur": 0.693,   # ez_aaa_2y from sovereign store
     "jpy": 0.164,   # jgb_2y from sovereign store
-    "gbp": 0.143,   # IR3TIB01GBM156N (monthly) from fred store — forward-filled
+    "gbp": 0.143,   # IR3TIB01GBM156N history spliced to IUDSOIA (SONIA) — see _SMILE_GBP_SPLICE
 }
+# IR3TIB01GBM156N (OECD MEI UK 3m interbank) froze upstream at 2026-01-01; with the
+# 40d ffill limit the NaN GBP leg nulled the whole basket and silently FROZE the
+# smile OLS at 2026-02-26. Live leg = IUDSOIA (BoE SONIA O/N, daily): history ≤
+# splice date from the old series, SONIA strictly after. The one diff_chg value
+# straddling the seam mixes 3m-interbank and O/N-SONIA levels (tenor basis) and is
+# masked in smile_decomp — flow_regime.py DXY/DTWEXBGS splice-masking precedent.
+_SMILE_GBP_SPLICE = "2026-01-01"
 _SMILE_OLS_WINDOW = 120   # 120 calendar-day rolling OLS (trading days ≈ 84d)
 _SMILE_RESID_WINDOW = 20  # cumulative residual lookback
 _SMILE_Z_WINDOW_DAYS = 252  # 1y for z-score of residual
+
+
+def _mask_seam_diff(diff: pd.Series, seam: pd.Timestamp) -> pd.Series:
+    """Null the ONE first-difference that straddles the GBP interbank→SONIA seam:
+    it differences a 3m-interbank level against an O/N-SONIA level (tenor basis,
+    not a market move) — flow_regime.py DXY/DTWEXBGS splice-masking precedent.
+    No-op when the seam is outside the series range."""
+    post = diff.index > seam
+    if post.any() and (~post).any():
+        diff = diff.copy()
+        diff.iloc[int(post.argmax())] = np.nan
+    return diff
 
 
 def _load_series_for_smile(store_obj) -> dict[str, pd.Series | None]:
@@ -290,12 +309,21 @@ def _load_series_for_smile(store_obj) -> dict[str, pd.Series | None]:
         s = df.iloc[:, 0].astype(float).dropna()
         return s if not s.empty else None
 
+    gbp_hist = _read_col("fred", "IR3TIB01GBM156N")      # frozen upstream 2026-01 — history leg
+    gbp_live = _read_col("fred", "IUDSOIA")              # BoE SONIA O/N (daily) — live leg
+    if gbp_hist is not None and gbp_live is not None:
+        seam = pd.Timestamp(_SMILE_GBP_SPLICE)
+        gbp2y = pd.concat([gbp_hist[gbp_hist.index <= seam],
+                           gbp_live[gbp_live.index > seam]]).sort_index()
+    else:
+        gbp2y = gbp_live if gbp_live is not None else gbp_hist  # fail-open: whichever exists
+
     return {
         "dxy": _read_col("yahoo", "DX-Y.NYB"),
         "us2y": _read_col("fred", "DGS2"),
         "eur2y": _read_col("sovereign", "ez_aaa_2y"),
         "jpy2y": _read_col("sovereign", "jgb_2y"),
-        "gbp2y": _read_col("fred", "IR3TIB01GBM156N"),   # monthly; forward-filled
+        "gbp2y": gbp2y,
     }
 
 
@@ -366,6 +394,7 @@ def smile_decomp() -> dict | None:
     # Daily changes
     dxy_ret = np.log(dxy_a / dxy_a.shift(1))       # DXY log return
     diff_chg = (us2y_a - basket_2y).diff(1)         # Δ(US 2y − basket 2y)
+    diff_chg = _mask_seam_diff(diff_chg, pd.Timestamp(_SMILE_GBP_SPLICE))
 
     # Align to intersection with both non-null
     common = dxy_ret.dropna().index.intersection(diff_chg.dropna().index)
