@@ -48,7 +48,7 @@
    Replaces the old cramped "Pullback odds · 5d.. 10d.. 21d.." text run with an
    escalating odds ramp drawn against the normal base rate, a state-coloured header,
    compact threat meters + plain-English evidence, and the action line. #}
-{% macro risk_radar_card(rd, scares) -%}
+{% macro risk_radar_card(rd, scares=none, show_threats=true) -%}
 {%- set rc = 'var(--act)' if rd.state=='risk-off' else ('var(--orange)' if rd.state=='elevated' else ('var(--warn)' if rd.state=='caution' else ('var(--info)' if rd.state=='watch' else 'var(--ok)'))) -%}
 {#- icon ladder (RRX2 WA-1): 👀 retired; watch shows 🌤️ when recovery panel is receding else 📡.
    Truthiness-only on rd.recovery.receding — never `is not none` (crashes on missing keys, Jinja codebase law). -#}
@@ -210,6 +210,7 @@
   </div>
   {% endif %}
   {% if scares %}
+  {% if show_threats %}
   <div class="rrx-threats">
     {% for s in scares %}{% if s.score is not none %}
     {%- set sb = 'var(--act)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else ('var(--info)' if s.band=='watch' else 'var(--muted)'))) -%}
@@ -222,6 +223,8 @@
     </span>
     {% endif %}{% endfor %}
   </div>
+  {% endif %}{# /show_threats — the chip strip only; the Leading-evidence line below
+     stays visible even when the host dedupes the strip against its own scare ladder #}
   {% for s in scares %}{% if s.label_en == rd.label_en and s.firing_legs %}
   <div class="rrx-ev"><span class="rrx-ev-k">{{ t('Leading','领先信号') }}</span>{% for l in s.firing_legs[:2] %}{% if not loop.first %} · {% endif %}{{ rr_leg(l.leg) }} <span class="rrx-ev-p">{{ (l.pctile*100)|round|int }}th{% if l.confirmed %} ✓{% endif %}</span>{% endfor %}</div>
   {% endif %}{% endfor %}
