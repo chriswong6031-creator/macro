@@ -97,10 +97,12 @@ _MISSION_BUDGET_BYTES = 2_000
 # Max postmortems to load for anti-repetition context
 _MAX_PRIOR_POSTMORTEMS = 3
 
-# Opus model (hard-law: auditor always uses Opus tier)
+# Opus model (hard-law: auditor always uses Opus tier as FALLBACK)
 _OPUS_MODEL = "claude-opus-4-8"
 
-# LLM config mirror from propose.py
+# LLM config mirror from propose.py.
+# NOTE: opus_model is set at call time via _get_deliberation_model() to allow
+# Fable deliberation (PR-R8) while preserving Opus as the fallback.
 _LLM_CFG: dict[str, Any] = {
     "provider_order": ["oauth", "anthropic", "deepseek"],
     "opus_model": _OPUS_MODEL,
@@ -110,6 +112,18 @@ _LLM_CFG: dict[str, Any] = {
     "oauth_pool_lane": "metabolism-standout",
     "usage_lane": "metabolism-standout",
 }
+
+
+def _get_deliberation_model() -> str:
+    """Return the active deliberation model (PR-R8).
+
+    Falls back to _OPUS_MODEL on any error or when budget is exhausted.
+    """
+    try:
+        from engine import llm_auth as _la  # noqa: PLC0415
+        return _la.deliberation_model(default=_OPUS_MODEL)
+    except Exception:  # noqa: BLE001
+        return _OPUS_MODEL
 
 # SA-R13 verbatim — LOOP-IMMUTABLE (do not modify without operator PR)
 _SA_R13_VERBATIM = (
@@ -814,7 +828,10 @@ def _invoke_auditor_llm(
                 return None, "injected_error"
 
         # Real LLM call via shared llm_auth waterfall
-        conf = {**_LLM_CFG, **(cfg or {})}
+        # PR-R8: use deliberation model (Fable) if enabled and within budget;
+        # fall back to _OPUS_MODEL on any error.
+        active_model = _get_deliberation_model()
+        conf = {**_LLM_CFG, **(cfg or {}), "opus_model": active_model}
         try:
             from engine import llm_auth  # type: ignore[import]
             providers = llm_auth.build_providers(
@@ -846,9 +863,53 @@ def _invoke_auditor_llm(
             text, reason, provider = llm_auth.make_call(
                 providers, _do_call, context="standout_auditor"
             )
+            # PR-R8: model-not-found fallback — retry ONCE with the Opus fallback
+            # when the deliberation model was requested but returned an error
+            # consistent with model-not-found (re-raised exception or no text).
+            if text is None and active_model != _OPUS_MODEL and reason not in (
+                "no_provider", "rate_limited_all", "auth_invalid_all"
+            ):
+                log.warning(
+                    "standout_auditor: model %r returned no text (reason=%r); "
+                    "retrying with fallback %r",
+                    active_model, reason, _OPUS_MODEL,
+                )
+                fallback_conf = {**conf, "opus_model": _OPUS_MODEL}
+                fallback_providers = llm_auth.build_providers(
+                    fallback_conf,
+                    opus_model=_OPUS_MODEL,
+                    deepseek_model=fallback_conf.get("deepseek_model"),
+                )
+                if fallback_providers:
+                    text, reason, provider = llm_auth.make_call(
+                        fallback_providers, _do_call, context="standout_auditor_fallback"
+                    )
+                    if text is not None:
+                        log.info("standout_auditor: fallback %r served", _OPUS_MODEL)
             return text, provider
         except Exception as exc:  # noqa: BLE001
             log.warning("standout_auditor: LLM invocation failed: %s", exc)
+            # PR-R8: on any exception with the deliberation model, retry once with Opus
+            if active_model != _OPUS_MODEL:
+                try:
+                    from engine import llm_auth as _la2  # noqa: PLC0415
+                    fb_conf = {**_LLM_CFG, **(cfg or {}), "opus_model": _OPUS_MODEL}
+                    fb_providers = _la2.build_providers(
+                        fb_conf, opus_model=_OPUS_MODEL,
+                        deepseek_model=fb_conf.get("deepseek_model"),
+                    )
+                    if fb_providers:
+                        text2, reason2, provider2 = _la2.make_call(
+                            fb_providers, _do_call, context="standout_auditor_fallback"
+                        )
+                        if text2 is not None:
+                            log.info(
+                                "standout_auditor: exception retry with %r succeeded",
+                                _OPUS_MODEL,
+                            )
+                            return text2, provider2
+                except Exception as exc2:  # noqa: BLE001
+                    log.warning("standout_auditor: fallback retry also failed: %s", exc2)
             return None, "llm_error"
 
     except Exception as exc:  # noqa: BLE001
@@ -1881,10 +1942,10 @@ def run_pick_autopsies(
             market, picks, cycle_id, model_caller, repo
         )
 
-        # Write artifacts
+        # Write artifacts — record which model actually served (PR-R8 traceability)
         written = _write_pick_autopsies(
             market, picks, llm_results, cycle_id,
-            model=_OPUS_MODEL,
+            model=_get_deliberation_model(),
             root=repo,
             dry_run=dry_run,
         )

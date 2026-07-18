@@ -96,6 +96,18 @@ _LLM_CFG: dict[str, Any] = {
     "max_tokens": 4000,
 }
 
+# Hard fallback for model-not-found retry (PR-R8)
+_OPUS_FALLBACK = "claude-opus-4-8"
+
+
+def _get_deliberation_model() -> str:
+    """Return the active deliberation model (PR-R8). Falls back to Opus on any error."""
+    try:
+        from engine import llm_auth as _la  # noqa: PLC0415
+        return _la.deliberation_model(default=_OPUS_FALLBACK)
+    except Exception:  # noqa: BLE001
+        return _OPUS_FALLBACK
+
 
 # ── Path / IO helpers ─────────────────────────────────────────────────────────
 
@@ -787,7 +799,9 @@ def _invoke_role_llm(
     None judgments = the role could not run (no provider / error) → callers must
     fail closed.  NEVER raises.  Tests patch this to inject judgments.
     """
-    conf = {**_LLM_CFG, **(cfg or {})}
+    # PR-R8: use deliberation model (Fable) if enabled and within budget
+    active_model = _get_deliberation_model()
+    conf = {**_LLM_CFG, **(cfg or {}), "opus_model": active_model}
     _usage: list[dict[str, Any]] = []  # mutable side-channel for resp.usage
     try:
         from engine import llm_auth  # type: ignore[import]
@@ -830,12 +844,58 @@ def _invoke_role_llm(
         text, reason, _provider = llm_auth.make_call(
             providers, _do_call, context=f"metabolism_adjudicate_{role}")
         usage_info = _usage[0] if _usage else {}
+
+        # PR-R8: model-not-found fallback — retry ONCE with Opus
+        if text is None and active_model != _OPUS_FALLBACK and reason not in (
+            "no_provider", "rate_limited_all", "auth_invalid_all"
+        ):
+            log.warning(
+                "adjudicate: model %r returned no text (reason=%r); retrying with %r",
+                active_model, reason, _OPUS_FALLBACK,
+            )
+            _usage.clear()
+            fb_conf = {**_LLM_CFG, **(cfg or {}), "opus_model": _OPUS_FALLBACK}
+            fb_providers = llm_auth.build_providers(
+                fb_conf, opus_model=_OPUS_FALLBACK,
+                deepseek_model=fb_conf.get("deepseek_model"),
+            )
+            if fb_providers:
+                text, reason, _provider = llm_auth.make_call(
+                    fb_providers, _do_call,
+                    context=f"metabolism_adjudicate_{role}_fallback")
+                usage_info = _usage[0] if _usage else {}
+                if text is not None:
+                    log.info("adjudicate: fallback %r served", _OPUS_FALLBACK)
+
         parsed = _parse_judgments(text or "")
         if parsed is None:
             return None, reason or "empty_or_unparseable_reply", usage_info
         return parsed, reason, usage_info
     except Exception as exc:  # noqa: BLE001
         log.warning("adjudicate: role LLM (%s) failed: %s", role, exc)
+        # PR-R8: on exception with deliberation model, retry with Opus
+        if active_model != _OPUS_FALLBACK:
+            try:
+                from engine import llm_auth as _la2  # noqa: PLC0415
+                fb_conf2 = {**_LLM_CFG, **(cfg or {}), "opus_model": _OPUS_FALLBACK}
+                fb_prov2 = _la2.build_providers(
+                    fb_conf2, opus_model=_OPUS_FALLBACK,
+                    deepseek_model=fb_conf2.get("deepseek_model"),
+                )
+                if fb_prov2:
+                    _usage.clear()  # discard any partial usage from the failed call
+                    text2, reason2, _prov2 = _la2.make_call(
+                        fb_prov2, _do_call,
+                        context=f"metabolism_adjudicate_{role}_fallback"
+                    )
+                    if text2 is not None:
+                        log.info("adjudicate: exception retry with %r succeeded", _OPUS_FALLBACK)
+                        usage_info2 = _usage[0] if _usage else {}
+                        parsed2 = _parse_judgments(text2 or "")
+                        if parsed2 is not None:
+                            return parsed2, reason2, usage_info2
+            except Exception as exc2:  # noqa: BLE001
+                log.warning("adjudicate: fallback retry also failed: %s", exc2)
         return None, "llm_error", {}
 
 

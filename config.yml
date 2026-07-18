@@ -16,9 +16,10 @@
 #                 Haiku or DeepSeek-Chat.
 # ---------------------------------------------------------------------------
 llm_models:
-  reasoning:  "claude-opus-4-8"                  # altdata_brain committee thesis
-  extraction: "claude-haiku-4-5"                 # qual_extraction.v1 8-K lane + catalyst_tone
-  classify:   "claude-haiku-4-5"                 # news_llm batch summaries + tag labels
+  reasoning:    "claude-opus-4-8"                # altdata_brain committee thesis
+  extraction:   "claude-haiku-4-5"               # qual_extraction.v1 8-K lane + catalyst_tone
+  classify:     "claude-haiku-4-5"               # news_llm batch summaries + tag labels
+  deliberation: "claude-fable-5"                 # PR-R8: Prophet/standout auditor deliberation (fallback=claude-opus-4-8)
 
 # ---------------------------------------------------------------------------
 # prophet — Prophet NW lobe governor config (PR-W2/PR-R3/PR-R8)
@@ -28,6 +29,13 @@ prophet:
   # K extremes-first winners + K losers + all gate_suppressed + all data_fault,
   # total hard-capped at this value per audit cycle.
   autopsy_cap_per_cycle: 12
+  # PR-R8: Fable deliberation grant for Prophet/standout-audit lanes.
+  # Set false to force all lanes back to claude-opus-4-8.
+  fable_enabled: true
+  # Daily deliberation token budget. When today's usage (by_model for the
+  # deliberation model prefix) reaches this cap, all lanes fall back to
+  # claude-opus-4-8 for the rest of the day.
+  deliberation_daily_token_cap: 2000000
 
 storage:
   data_dir: data

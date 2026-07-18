@@ -36,6 +36,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, analytics_first_party, a
                metabolism_panel,
                neural_web,
                orchestrator_chat,
+               prophet,
                services, settings, site_gate, system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
@@ -63,6 +64,37 @@ _ORCH_SETTINGS_SPEC = {
     "ingest_bot_feedback": ("bool", None, None),
     "brief_attention_nudges": ("bool", None, None),
 }
+
+# W-AI: Prophet settings editable from the Prophet admin page.
+# key → (kind, lo, hi); ints REJECTED (400) outside [lo, hi], never clamped.
+_PROPHET_SETTINGS_SPEC = {
+    "autopsy_cap_per_cycle":         ("int",  0,  50),
+    "fable_enabled":                 ("bool", None, None),
+    "deliberation_daily_token_cap":  ("int",  0,  5_000_000),
+}
+
+
+def validate_prophet_setting(key, value) -> tuple[bool, str | None, object]:
+    """Server-side validation for POST /api/prophet/settings.
+    Returns (ok, error, coerced_value)."""
+    spec = _PROPHET_SETTINGS_SPEC.get(key or "")
+    if not spec:
+        return False, (f"unknown prophet setting {key!r}; "
+                       f"allowed: {sorted(_PROPHET_SETTINGS_SPEC)}"), None
+    kind, lo, hi = spec
+    if kind == "bool":
+        if not isinstance(value, bool):
+            return False, f"{key} must be a boolean", None
+        return True, None, value
+    if isinstance(value, bool):
+        return False, f"{key} must be an integer", None
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    if not isinstance(value, int):
+        return False, f"{key} must be an integer", None
+    if not (lo <= value <= hi):
+        return False, f"{key} must be between {lo} and {hi}", None
+    return True, None, value
 
 
 def validate_orchestrator_setting(key, value) -> tuple[bool, str | None, object]:
@@ -341,6 +373,9 @@ class Handler(BaseHTTPRequestHandler):
             # W-AI: Master Brain (orchestrator) page + Mastermind AI bot proxy
             if path == "/api/orchestrator":
                 return self._json(neural_web.orchestrator_panel())
+            # W-AI: Prophet NW lobe governor page
+            if path == "/api/prophet":
+                return self._json(prophet.panel())
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)
@@ -522,6 +557,22 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"ok": False, "error": err}, 400)
                 dotted = f"orchestrator.{key}"
                 kind, lo, hi = _ORCH_SETTINGS_SPEC[key]
+                if kind == "bool":
+                    if settings.deployed():
+                        return self._json(github_config.set_bool(dotted, value))
+                    return self._json(config_store.set_bool(dotted, value))
+                if settings.deployed():
+                    return self._json(github_config.set_int(dotted, value, lo, hi))
+                return self._json(config_store.set_int(dotted, value, lo, hi))
+
+            # W-AI: Prophet NW lobe governor settings
+            if path == "/api/prophet/settings":
+                key = b.get("key")
+                ok, err, value = validate_prophet_setting(key, b.get("value"))
+                if not ok:
+                    return self._json({"ok": False, "error": err}, 400)
+                dotted = f"prophet.{key}"
+                kind, lo, hi = _PROPHET_SETTINGS_SPEC[key]
                 if kind == "bool":
                     if settings.deployed():
                         return self._json(github_config.set_bool(dotted, value))

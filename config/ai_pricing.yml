@@ -16,6 +16,10 @@ schema: ai_pricing.v1
 # Prefix-match is used for model resolution:
 #   "claude-haiku-4-5-20251001" matches prefix "claude-haiku-4-5"
 per_mtok:
+  # placeholder = opus rates; operator to update when official Fable pricing lands
+  claude-fable-5:
+    input: 5.00
+    output: 25.00
   claude-opus-4-8:
     input: 5.00
     output: 25.00
