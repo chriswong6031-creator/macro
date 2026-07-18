@@ -111,21 +111,30 @@ def _load_hk() -> tuple[pd.DataFrame, pd.DataFrame, dict, dict, dict]:
     # Merge so the fresh recent prints win and the deep history fills the rest —
     # the two stores are the same adjusted yfinance series (level-identical on
     # overlap), so the splice is seamless. This unlocks 3M/6M/YTD/1Y for HK.
-    breadth = pd.read_parquet(_data("hk_breadth", "_closes_cache.parquet")).sort_index()
-    breadth.index = pd.to_datetime(breadth.index)
-    breadth = breadth.loc[:, ~breadth.columns.duplicated()]
-    deep_p = _data("hk_search", "closes_deep.parquet")
-    if deep_p.exists():
+    # The breadth cache is runner-local (gitignored, actions/cache-ferried) — a
+    # runner that missed the restore still renders from the committed deep panel.
+    def _read_panel(p) -> pd.DataFrame | None:
+        if not p.exists():
+            return None
         try:
-            deep = pd.read_parquet(deep_p).sort_index()
-            deep.index = pd.to_datetime(deep.index)
-            deep = deep.loc[:, ~deep.columns.duplicated()]
-            closes = breadth.combine_first(deep).sort_index()
-        except Exception as e:  # noqa: BLE001 — deep store optional; fall back to breadth
-            log.warning("hk closes_deep unreadable (%s); using breadth cache only", e)
-            closes = breadth
-    else:
+            df = pd.read_parquet(p).sort_index()
+            df.index = pd.to_datetime(df.index)
+            return df.loc[:, ~df.columns.duplicated()]
+        except Exception as e:  # noqa: BLE001 — either store may be absent/corrupt
+            log.warning("hk close panel %s unreadable (%s)", p.name, e)
+            return None
+    breadth = _read_panel(_data("hk_breadth", "_closes_cache.parquet"))
+    deep = _read_panel(_data("hk_search", "closes_deep.parquet"))
+    if breadth is not None and deep is not None:
+        closes = breadth.combine_first(deep).sort_index()
+    elif breadth is not None:
         closes = breadth
+    elif deep is not None:
+        log.warning("hk heatmap: breadth cache missing — deep panel only")
+        closes = deep
+    else:
+        raise FileNotFoundError("hk close panels missing (hk_breadth/_closes_cache.parquet "
+                                "and hk_search/closes_deep.parquet)")
 
     # ADV$ from the per-name OHLC store (close × volume), averaged over the last
     # valid sessions. Tracks size/importance well (Tencent/Alibaba on top).

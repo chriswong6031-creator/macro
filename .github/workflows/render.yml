@@ -96,6 +96,19 @@ jobs:
           [ -x "$VENV/bin/python" ] || "$PYBIN" -m venv "$VENV"
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - name: zstd parity for actions/cache (breadth caches are macOS-saved)
+        run: |
+          # actions/cache versions include the compression method: the collect lanes
+          # (macOS) save the breadth close caches with zstd, so a runner WITHOUT zstd
+          # computes a different cache version and every restore silently misses —
+          # 2026-07-18: render-linux had no zstd, builders saw no close panel, and the
+          # HK standout board shipped 0 buys. Heal if passwordless sudo allows; warn
+          # loudly either way so the miss is never silent again.
+          if ! command -v zstd >/dev/null 2>&1; then
+            sudo -n apt-get install -y zstd >/dev/null 2>&1 || true
+            command -v zstd >/dev/null 2>&1 && echo "installed zstd" || \
+              echo "::warning::zstd missing on ${RUNNER_NAME:-this runner} — breadth-cache restores WILL miss (cache version mismatch vs macOS-saved entries). Install zstd in the runner distro."
+          fi
       - run: pip install -r requirements.txt
       - name: restore attention store from R2 (wiki chip reads it at render)
         # data/attention/*.parquet are git-ignored (R2 data plane; deep history 2015-07→,

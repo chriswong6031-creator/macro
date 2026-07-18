@@ -130,14 +130,19 @@ def compute_hk_global_betas() -> dict | None:
     cache = dd / "hk_breadth" / "_closes_cache.parquet"
     cons = dd / "hk_breadth" / "constituents.parquet"
     deep = dd / "hk_search" / "closes_deep.parquet"
-    if not (cache.exists() and cons.exists()):
-        log.warning("hk global-beta: breadth cache missing — skipped")
+    if not (cons.exists() and (cache.exists() or deep.exists())):
+        log.warning("hk global-beta: close stores missing — skipped")
         return None
     try:
-        closes_cache = pd.read_parquet(cache).sort_index()
+        closes_cache = pd.read_parquet(cache).sort_index() if cache.exists() else None
         deep_closes = pd.read_parquet(deep) if deep.exists() else None
         closes = hk_beta_close_panel(closes_cache, deep_closes)
-        if deep_closes is not None:
+        if closes is None:
+            log.warning("hk global-beta: close panel empty — skipped")
+            return None
+        if closes_cache is None:
+            log.warning("hk global-beta: breadth cache missing — deep panel only")
+        elif deep_closes is not None:
             _n_cache = closes_cache.loc[:, ~closes_cache.columns.duplicated()].shape[1]
             log.info("hk global-beta: close panel %d cols (cache %d + deep overlay)",
                      closes.shape[1], _n_cache)
@@ -176,14 +181,26 @@ def _closes_matrix() -> pd.DataFrame | None:
     the 63d/252d legs (bnrs, extension, washout_2w, dispersion) need."""
     cache = config.data_dir() / "hk_breadth" / "_closes_cache.parquet"
     deep = config.data_dir() / "hk_search" / "closes_deep.parquet"
-    if not cache.exists():
-        return None
+    df = deep_df = None
     try:
-        df = pd.read_parquet(cache)
-        deep_df = pd.read_parquet(deep) if deep.exists() else None
-        return hk_beta_close_panel(df, deep_df)
+        if cache.exists():
+            df = pd.read_parquet(cache)
+    except Exception:  # noqa: BLE001 — corrupt runner-local cache must not break the build
+        df = None
+    try:
+        if deep.exists():
+            deep_df = pd.read_parquet(deep)
     except Exception:  # noqa: BLE001
-        return None
+        deep_df = None
+    # The breadth cache is a runner-local gitignored store ferried between CI runs via
+    # actions/cache; a runner that misses the restore must NOT zero the board — the
+    # committed deep panel covers the whole universe, at worst one session staler on
+    # the tail (2026-07-18: render-linux lacked zstd, every macOS-saved cache entry
+    # was version-invisible, and the live board shipped 0 buys for hours).
+    if df is None and deep_df is not None:
+        log.warning("hk closes: breadth cache missing/unreadable — deep panel only "
+                    "(tail may lag one session)")
+    return hk_beta_close_panel(df, deep_df)
 
 
 def _factor_ret() -> pd.Series | None:
@@ -1289,11 +1306,23 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     elig = [e for e in ranked if hk_cascade_eligible(sig_verdict, e["ticker"])]
     _pre_health: list[dict] = []
     if not elig:
-        _pre_health.append({
-            "leg": "confluence",
-            "en": "No names show a fresh entry signal tonight — the board is intentionally thin, not broken.",
-            "zh": "今晚没有出现新入场信号的个股 —— 榜单有意精简，并非故障。",
-        })
+        # An empty board is only "intentionally thin" when the signals actually ran.
+        # With no close panel the cascade can never fire (date-less per-card series),
+        # so say the honest thing: data gap, not a signal read (2026-07-18 incident:
+        # the old copy claimed "not broken" while every name was gated out by a
+        # missing runner-local store).
+        if closes is None:
+            _pre_health.append({
+                "leg": "close_panel",
+                "en": "Price-history store unavailable this render — entry signals could not be computed, so the buy list is empty for data reasons, not by signal.",
+                "zh": "本次渲染无法读取价格历史 —— 入场信号无法计算，买入榜为空是数据缺失所致，并非信号判断。",
+            })
+        else:
+            _pre_health.append({
+                "leg": "confluence",
+                "en": "No names show a fresh entry signal tonight — the board is intentionally thin, not broken.",
+                "zh": "今晚没有出现新入场信号的个股 —— 榜单有意精简，并非故障。",
+            })
     buys = elig[:n_buy]
     for e in buys:
         e["align_tier"] = _atier(e)   # context badge — may be None; key always present
