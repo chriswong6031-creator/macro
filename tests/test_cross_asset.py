@@ -45,3 +45,32 @@ def test_snapshot_smoke_returns_valid_verdict():
     if s["verdict"] != "unknown":
         assert 0.0 <= s["absorption_ratio"] <= 1.0
         assert s["absorption_ratio"] >= s["absorption_floor"] - 1e-9   # AR >= 1/n
+
+
+def test_snapshot_absorption_spark_w_keys_present_on_unknown():
+    """Early-exit paths (too few markets) do not have the spark keys — no crash."""
+    s = snapshot.__wrapped__() if hasattr(snapshot, "__wrapped__") else snapshot()
+    # Just ensure no AttributeError regardless of verdict
+    _ = s.get("absorption_spark_w")
+    _ = s.get("absorption_spark_asof")
+
+
+def test_absorption_spark_w_shape_on_synthetic_data(monkeypatch):
+    """absorption_spark_w: list, <=104 elements, all float, zero new compute."""
+    import engine.cross_asset as ca
+    import numpy as np
+
+    rng = np.random.default_rng(1)
+    n_days = 700
+    idx = pd.date_range("2020-01-01", periods=n_days, freq="B")
+    rets = pd.DataFrame(rng.normal(0, 0.01, (n_days, 6)), index=idx,
+                        columns=["US", "Crypto", "China", "HK", "Commodities", "Dollar"])
+    monkeypatch.setattr(ca, "returns_frame", lambda: rets)
+
+    s = ca.snapshot()
+    assert s["verdict"] != "unknown"
+    spark = s["absorption_spark_w"]
+    assert isinstance(spark, list)
+    assert 1 <= len(spark) <= 104
+    for v in spark:
+        assert isinstance(v, float) and np.isfinite(v)

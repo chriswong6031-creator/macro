@@ -383,6 +383,43 @@
   </div>
   {%- endif %}
 
+  {# ── Cross-asset concentration chip (CA-W3 display lane).
+     Source: rd.cross_asset (set by build_site CA-W3 attach from data/regime/latest.json["cross_asset"]).
+     Only renders for verdict 'concentrated' or 'converging' — silent for diversified/unknown.
+     At rest: plain word only. Receipts (absorption pctile, cluster) in hover tooltip.
+     Shadow escalated: appended to hover only, never at rest.
+     Bilingual: l-en / l-zh via t() dual-span idiom. Display-only, never gates anything. #}
+  {%- set _cax_blk = rd.cross_asset if (rd.cross_asset is defined and rd.cross_asset) else none -%}
+  {%- set _cax_verdict = (_cax_blk.verdict if (_cax_blk and _cax_blk.verdict is defined) else none) -%}
+  {%- if _cax_blk and _cax_verdict in ['concentrated', 'converging'] -%}
+  {%- set _cax_en = 'Markets moving as one' if _cax_verdict == 'concentrated' else 'Markets syncing up' -%}
+  {%- set _cax_zh = '多市场同涨同跌' if _cax_verdict == 'concentrated' else '市场联动升温' -%}
+  {%- set _cax_pctile = _cax_blk.absorption_pctile if (_cax_blk.absorption_pctile is defined and _cax_blk.absorption_pctile is not none) else none -%}
+  {%- set _cax_cluster = _cax_blk.dominant_cluster if (_cax_blk.dominant_cluster is defined and _cax_blk.dominant_cluster) else [] -%}
+  {%- set _cax_shadow = _cax_blk.shadow_escalated if (_cax_blk.shadow_escalated is defined and _cax_blk.shadow_escalated) else false -%}
+  {#- Build Tier-2 hover tooltip with receipts -#}
+  {%- set _cax_tip_en = '' -%}
+  {%- set _cax_tip_zh = '' -%}
+  {%- if _cax_pctile is not none -%}
+    {%- set _cax_tip_en = 'Absorption ' ~ (_cax_pctile * 100) | round(0) | int | string ~ 'th pctile (5y)' -%}
+    {%- set _cax_tip_zh = '吸收率 ' ~ (_cax_pctile * 100) | round(0) | int | string ~ '分位（5年）' -%}
+  {%- endif -%}
+  {%- if _cax_cluster -%}
+    {%- set _cax_tip_en = _cax_tip_en ~ (' · ' if _cax_tip_en else '') ~ 'Cluster: ' ~ _cax_cluster | join(', ') -%}
+    {%- set _cax_tip_zh = _cax_tip_zh ~ ('；' if _cax_tip_zh else '') ~ '集群：' ~ _cax_cluster | join('、') -%}
+  {%- endif -%}
+  {%- if _cax_shadow -%}
+    {%- set _cax_tip_en = _cax_tip_en ~ (' · ' if _cax_tip_en else '') ~ 'fragility test lane armed' -%}
+    {%- set _cax_tip_zh = _cax_tip_zh ~ ('；' if _cax_tip_zh else '') ~ '脆弱性测试通道已触发' -%}
+  {%- endif -%}
+  <div class="rrx-cyc rrx-cax">
+    <span class="rrx-cyc-k"><span class="l-en">{{ _cax_en }}</span><span class="l-zh">{{ _cax_zh }}</span></span>
+    {%- if _cax_tip_en %}
+    {{ help(_cax_tip_en, _cax_tip_zh) }}
+    {%- endif %}
+  </div>
+  {%- endif %}
+
   {% if rd.track is defined and rd.track %}
   {%- set trk = rd.track -%}
   {%- set mon = trk.get('monitoring') if trk.get is defined else trk.monitoring if trk.monitoring is defined else {} -%}
