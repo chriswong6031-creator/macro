@@ -713,6 +713,14 @@ def grade(market: str) -> dict:
         if _row_is_unstamped(row):
             date_str = str(row["date"])
             stamp = _regime_stamp_for_date(date_str)
+            # Convergence guard: a null stamp (no PIT vector coverage for this
+            # date) leaves the row unstamped, so counting it as a backfill made
+            # EVERY grade() call rewrite the parquet forever — a no-op rewrite
+            # that is byte-identical under the nightly's pyarrow but git-dirty
+            # under any other pyarrow build. Only write when the stamp actually
+            # transitions the row out of the unstamped set.
+            if all(stamp.get(c) is None for c in us_cols):
+                continue
             for col, val in stamp.items():
                 df.at[idx, col] = val
             n_backfilled += 1

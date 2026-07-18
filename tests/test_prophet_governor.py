@@ -21,6 +21,22 @@ import pytest
 # Helpers
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(autouse=True)
+def _stub_board_ledger_scorecard(monkeypatch):
+    """board_ledger.scorecard() is NOT root-aware: it resolves the repo-real
+    parquet via config.data_dir() regardless of build_status(root=tmp_path),
+    and its grade() call writes spine/regime backfill back to the store
+    (keep-FRESH).  Unstubbed, every build_status test rewrote the real
+    data/board_ledger/ca_board.parquet — invisible when the rewriting pyarrow
+    matches the nightly's (byte-identical), an MM_DATA_GUARD exit-1 on fresh
+    CI installs whose newer pyarrow shifts the bytes (engine-render-guards
+    red, 2026-07-18).  Tests that patch scorecard themselves simply override.
+    """
+    import engine.board_ledger as bl
+
+    monkeypatch.setattr(bl, "scorecard", lambda m: {"status": "accruing", "n_matured": 0})
+
+
 def _make_status_fixture(tmp_path: Path, include_us_parquet: bool = False) -> dict:
     """Build a minimal repo tree and return build_status(root=tmp_path)."""
     import engine.neuralweb.prophet_governor as pg
