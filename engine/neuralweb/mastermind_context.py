@@ -1099,6 +1099,55 @@ def _summarize_contagion(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_fx_dollar(repo: Path) -> tuple[dict, str | None]:
+    """Distil world_state.fx_dollar into the fx_dollar lobe.
+
+    Source: data/neuralweb/world_state.json (fx_dollar sub-block, composed by
+    world_state._compose_fx_dollar from data/forex/latest.json).
+    All fields are engine-originated, is_context_only=True, display_only=True.
+    LLM consumers read this — they never originate or escalate from it.
+    Fail-soft: absent world_state or absent fx_dollar sub-block → empty lobe
+    with gap note.
+
+    Standing laws:
+    - 100% deterministic re-projection of already-computed RSR organs.
+    - No LLM-originated content; no invented scores.
+    - Nothing here may gate, rank, size, or escalate any authority surface.
+    - The word 'validated' is banned from all emitted text.
+    """
+    ws_path = repo / "data" / "neuralweb" / "world_state.json"
+    ws = _read_json(ws_path)
+    if ws is None:
+        return {}, "data/neuralweb/world_state.json absent or unreadable"
+
+    fx = (ws.get("fx_dollar") or {}) if isinstance(ws, dict) else {}
+    if not fx:
+        return {}, "world_state.fx_dollar absent (pre-FX-transmission build)"
+
+    tx  = (fx.get("transmission") or {}) if isinstance(fx.get("transmission"), dict) else {}
+    dd  = (fx.get("dollar_desk") or {}) if isinstance(fx.get("dollar_desk"), dict) else {}
+    rr  = (fx.get("regime_radar") or {}) if isinstance(fx.get("regime_radar"), dict) else {}
+    asof = fx.get("asof")
+
+    lobe: dict = {
+        "is_context_only":    True,
+        "display_only":       True,
+        "asof":               asof,
+        "usd_dir":            tx.get("usd_dir"),
+        "lean":               dd.get("lean"),
+        "real_rate_regime":   dd.get("real_rate_regime"),
+        "usd_valuation":      dd.get("usd_valuation"),
+        "trend":              dd.get("trend"),
+        "fed_path_lean":      dd.get("fed_path_lean"),
+        "liquidity_dir":      dd.get("liquidity_dir"),
+        "headwind_for":       (tx.get("headwind_for") or [])[:4],
+        "tailwind_for":       (tx.get("tailwind_for") or [])[:4],
+        "fx_stress_dominant": rr.get("dominant"),
+        "honesty_note":       "context only — measured correlations, not a trade signal",
+    }
+    return lobe, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -1115,6 +1164,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "mastermind_ai": _summarize_mastermind_ai,
     "risk_radar_reliability": _summarize_risk_radar_reliability,
     "contagion": _summarize_contagion,  # CSP-W1 contagion context lobe
+    "fx_dollar": _summarize_fx_dollar,  # FX/dollar transmission context lobe
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -1132,6 +1182,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "mastermind_ai": ["mastermind-feedback-summary"],
     "risk_radar_reliability": ["site-riskdata-scorecard"],
     "contagion": ["world-state"],  # CSP-W1: reads world_state.contagion_regime
+    "fx_dollar": ["world-state"],  # reads world_state.fx_dollar (from data/forex/latest.json)
 }
 
 
