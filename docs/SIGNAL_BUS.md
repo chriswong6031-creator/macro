@@ -64,6 +64,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | oracle | 29 |
 | pick-lab | 3 |
 | policy-shock | 5 |
+| prophet | 1 |
 | qualitative-intelligence | 23 |
 | rates-inflation-command | 7 |
 | research-factory | 3 |
@@ -93,7 +94,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 301 |
+| display | 302 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 70 |
@@ -102,7 +103,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 448 |
+| git | 449 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -736,6 +737,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flip-confirmation-snapshot | `site/flip_confirmation_data.json` | json | daily-engine | display | 1 | 0 |
 | shock-deescalation-firings | `data/reflexes/shock_deescalation/firings.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-policy-lever | `site/policy_lever.json` | json | daily-engine | display | 1 | 0 |
+
+### prophet
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| us-track-history | `site/factordata/us_track_history.json` | json | daily-engine | display | 1 | 0 |
 
 ### qualitative-intelligence
 

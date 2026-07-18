@@ -930,6 +930,21 @@ lanes:
           site/factordata/us_audit_scoreboard.json,
           data/metabolism/fitness/standouts_us.json.
           Non-fatal (exits 0 on error; writes data_gap sentinels).
+      - id: build_track_record_page
+        module: scripts.build_track_record_page
+        note: >
+          Prophet W1 — US track record sub-page. Read-only over data inputs
+          (no ledger writes, no network, no data/ mutations). Reads
+          data/us_board_ledger/retro_grades.parquet,
+          data/us_board_ledger/snapshots.jsonl,
+          site/factordata/us_board_track.json,
+          site/factordata/us_board_outcomes.json,
+          site/factordata/us_audit_scoreboard.json,
+          data/standout_audit/us_attribution.parquet (data_gap-safe).
+          Writes site/factordata/us_track_history.json,
+          site/us_track_record.html.
+          Never-raise contract (SA-R16): absent inputs emit data_gap sentinels.
+          Arrow one-shot: hard_exit(0) at end.
 
   # ── daily.yml / oracle_offrender ────────────────────────────────────────
   # Oracle off-render job: panel rebuild + episodes + Time Machine + Ratio Lens.

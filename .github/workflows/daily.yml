@@ -2652,6 +2652,14 @@ jobs:
             echo "::warning title=standout_audit_us::rc=$rc (attribution artifacts may be stale)"
           fi
           exit 0
+      - name: Prophet W1 — US track record page
+        run: |
+          set +e
+          python -m scripts.build_track_record_page; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=build_track_record_page::rc=$rc (track record page may be stale)"
+          fi
+          exit 0
       - name: commit standout audit US artifacts
         run: |
           git config user.name "dashboard-bot"
@@ -2661,6 +2669,8 @@ jobs:
           git add data/standout_audit/us_audit_state.json 2>/dev/null || true
           git add site/factordata/us_audit_scoreboard.json 2>/dev/null || true
           git add data/metabolism/fitness/standouts_us.json 2>/dev/null || true
+          git add site/factordata/us_track_history.json 2>/dev/null || true
+          git add site/us_track_record.html 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)
