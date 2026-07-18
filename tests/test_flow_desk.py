@@ -317,3 +317,43 @@ class TestTopMovers:
         ]
         result = build_top_movers(rows, n=1)
         assert result[0]["net_premium_mn"] == pytest.approx(123.5, abs=0.1)
+
+
+# ── flow-proxy wiring ─────────────────────────────────────────────────────────
+
+class TestProxyWiring:
+    """The sector proxy store froze for 16 days because rebuild() had no
+    production caller (reader wired in P1.7, writer never invoked). These
+    tests pin the wiring so it cannot silently drop out again."""
+
+    def test_sector_proxy_calls_engine_rebuild(self, monkeypatch):
+        import engine.etf_flows as ef
+        import scripts.build_flow_desk as bfd
+        calls = []
+        monkeypatch.setattr(ef, "rebuild", lambda *a, **k: calls.append(1) or None)
+        bfd._rebuild_sector_proxy()
+        assert calls, "_rebuild_sector_proxy() must invoke engine.etf_flows.rebuild()"
+
+    def test_sector_proxy_nonfatal_on_engine_error(self, monkeypatch):
+        import engine.etf_flows as ef
+        import scripts.build_flow_desk as bfd
+
+        def _boom(*a, **k):
+            raise RuntimeError("synthetic engine failure")
+
+        monkeypatch.setattr(ef, "rebuild", _boom)
+        bfd._rebuild_sector_proxy()  # must not raise
+
+    def test_build_rebuilds_proxies_before_flow_rows_gate(self):
+        import inspect
+        import scripts.build_flow_desk as bfd
+        src = inspect.getsource(bfd.build)
+        i_sector = src.index("_rebuild_sector_proxy()")
+        i_broad = src.index("_rebuild_broad_proxy()")
+        i_gate = src.index("_load_flow_index(")
+        i_tile = src.index("build_etf_tile(")
+        assert i_broad < i_gate and i_sector < i_gate, (
+            "proxy rebuilds must run before the empty-flow-rows early return "
+            "so the stores accrue even on nights with no options-flow index"
+        )
+        assert i_sector < i_tile, "sector proxy must rebuild before build_etf_tile reads it"
