@@ -701,12 +701,107 @@ def _block_contagion(ws: dict | None) -> dict | None:
     return block
 
 
+def _block_cross_asset_context(ws: dict | None) -> dict | None:
+    """Block 13: FX + commodity delta context from world_state lobes (display-tier).
+
+    Returns a compact block with 2-4 plain-text delta lines derived from the
+    fx_dollar and commodity_context lobes written by _compose_fx_dollar /
+    _compose_commodity_context in world_state.py.
+
+    Article-2 compliant: annotates, never ranks, gates, or escalates.
+    display_only=True always.  Returns None when fully absent (drops cleanly
+    without triggering the budget cap logic).
+    """
+    if ws is None:
+        return None
+
+    fx_ws = ws.get("fx_dollar") or {}
+    cc_ws = ws.get("commodity_context") or {}
+
+    # Nothing to say
+    if not fx_ws and not cc_ws:
+        return None
+
+    # Build compact delta lines (plain text for LLM context)
+    delta_lines: list[str] = []
+
+    # FX: USD trend streak + regime since
+    fx_deltas = fx_ws.get("deltas") or {}
+    usd_regime = fx_ws.get("regime")
+    usd_trend_entry = fx_deltas.get("usd_trend") or {}
+    usd_trend_days = usd_trend_entry.get("days_in_state")
+    regime_entry = fx_deltas.get("usd_regime") or {}
+    regime_since = regime_entry.get("since")
+
+    if usd_regime and usd_trend_days is not None:
+        delta_lines.append(
+            f"USD {fx_ws.get('dollar_desk', {}).get('trend', 'trend unknown')}, "
+            f"day {usd_trend_days}; regime '{usd_regime}'"
+            + (f" since {regime_since}" if regime_since else "")
+        )
+    elif usd_regime:
+        delta_lines.append(f"FX regime: {usd_regime}")
+
+    # Commodity: regime, shock state + days, breadth bucket
+    cc_regime = cc_ws.get("regime")
+    cc_index = cc_ws.get("index") or {}
+    cc_breadth = cc_ws.get("breadth") or {}
+    cc_deltas = cc_ws.get("deltas") or {}
+    shock_state = cc_index.get("shock_state")
+    shock_days_entry = cc_deltas.get("commodity_shock_state") or {}
+    shock_days = shock_days_entry.get("days_in_state")
+    regime_entry_cm = cc_deltas.get("commodity_regime") or {}
+    regime_since_cm = regime_entry_cm.get("since")
+    breadth_bucket = cc_breadth.get("bucket")
+    n_up = cc_breadth.get("n_up_trend")
+    n_members = cc_breadth.get("n_members")
+
+    if cc_regime:
+        parts = [f"Commodities: {cc_regime}"]
+        if regime_since_cm:
+            parts.append(f"since {regime_since_cm}")
+        if shock_state:
+            parts.append(
+                f"shock {shock_state}"
+                + (f" day {shock_days}" if shock_days is not None else "")
+            )
+        if n_up is not None and n_members:
+            parts.append(f"{n_up}/{n_members} in uptrend ({breadth_bucket or '?'})")
+        delta_lines.append("; ".join(parts))
+
+    # Ratios direction summary
+    ratios = cc_ws.get("ratios") or {}
+    cg_dir = (ratios.get("copper_gold") or {}).get("dir")
+    gs_dir = (ratios.get("gold_silver") or {}).get("dir")
+    if cg_dir or gs_dir:
+        ratio_parts = []
+        if cg_dir:
+            ratio_parts.append(f"copper/gold {cg_dir}")
+        if gs_dir:
+            ratio_parts.append(f"gold/silver {gs_dir}")
+        delta_lines.append("Ratios: " + ", ".join(ratio_parts))
+
+    if not delta_lines:
+        return None
+
+    fx_asof = fx_ws.get("asof")
+    return {
+        "display_only": True,
+        "_tape_family": "cross_asset",
+        "_lead_lag": "coincident",
+        "as_of": fx_asof,
+        "stale": _is_stale(fx_asof, "world_state"),
+        "delta_lines": delta_lines,
+    }
+
+
 # ---------------------------------------------------------------------------
 # macro_slice
 # ---------------------------------------------------------------------------
 
 # Drop order for budget enforcement: lowest-priority first
 _MACRO_DROP_ORDER = [
+    "cross_asset_context",  # 13 — new; lowest priority, drops first
     "causal_lab",        # 12
     "evidence_clock",    # 11
     "attention",         # 10
@@ -795,6 +890,11 @@ def _build_macro_slice(root: Path) -> dict:
     _contagion = _block_contagion(ws)
     if _contagion is not None:
         result["contagion"]     = _contagion
+    # Cross-asset context block (FX + commodity deltas, display-tier)
+    # None when fully absent — drops cleanly, no budget hit.
+    _ca_ctx = _block_cross_asset_context(ws)
+    if _ca_ctx is not None:
+        result["cross_asset_context"] = _ca_ctx
 
     # Enforce budget
     _enforce_budget(result, _MACRO_CAP, _MACRO_DROP_ORDER)

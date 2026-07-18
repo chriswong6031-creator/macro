@@ -503,11 +503,19 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
         # ── FX block from world_state fx_dollar lobe ──────────────────────────
         fx_ws = ws.get("fx_dollar") or {}
         tx_ws = fx_ws.get("transmission") or {}
+        fx_deltas = fx_ws.get("deltas") or {}
         fx_block = {
             "regime": fx_ws.get("regime"),
             "usd_trend": (fx_ws.get("dollar_desk") or {}).get("trend"),
             "headwind_for": (tx_ws.get("headwind_for") or [])[:5],
             "tailwind_for": (tx_ws.get("tailwind_for") or [])[:5],
+            # v2 compact delta fields for LLM context
+            "usd_trend_days": (fx_deltas.get("usd_trend") or {}).get("days_in_state"),
+            "regime_since": (fx_deltas.get("usd_regime") or {}).get("since"),
+            "top_scenario": (
+                (fx_ws.get("scenario_intensity") or [{}])[0].get("name")
+                if fx_ws.get("scenario_intensity") else None
+            ),
         }
 
         # ── Rates block from world_state rates_transmission + rates_credit ────
@@ -536,9 +544,23 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
 
         # ── Commodity block from commodity_context ────────────────────────────
         cc_ws = ws.get("commodity_context") or {}
+        cc_deltas = cc_ws.get("deltas") or {}
+        cc_conf = cc_ws.get("confluence") or {}
+        cc_breadth = cc_ws.get("breadth") or {}
+        cc_ratios = cc_ws.get("ratios") or {}
         commodity_block = {
             "regime": cc_ws.get("regime"),
             "favored": cc_ws.get("favored"),
+            # v2 compact fields for LLM context
+            "breadth_bucket": cc_breadth.get("bucket"),
+            "shock_state": (cc_ws.get("index") or {}).get("shock_state"),
+            "shock_state_days": (cc_deltas.get("commodity_shock_state") or {}).get("days_in_state"),
+            "confluence_standouts": [
+                {"name": s.get("name"), "state": s.get("state")}
+                for s in (cc_conf.get("standouts") or [])[:3]
+            ],
+            "copper_gold_dir": (cc_ratios.get("copper_gold") or {}).get("dir"),
+            "gold_silver_dir": (cc_ratios.get("gold_silver") or {}).get("dir"),
         }
 
         # ── Cross-asset block from cross_asset_flows (R6) ─────────────────────

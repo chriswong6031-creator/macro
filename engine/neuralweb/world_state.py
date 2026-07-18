@@ -145,6 +145,111 @@ def _repo_root(root: Path | None) -> Path:
     return Path(__file__).resolve().parent.parent.parent
 
 
+# Breadth bucket thresholds (twin of _commodity_breadth_bucket in
+# scripts/build_macro_snapshot.py — must stay in sync with that definition).
+_BREADTH_THRESHOLDS = (0.70, 0.40)  # broad ≥ 0.70; mixed ≥ 0.40; narrow else
+
+
+def _breadth_bucket(pct_up_trend: Any) -> str | None:
+    """Deterministic breadth bucket label from pct_up_trend float.
+
+    Returns 'broad' / 'mixed' / 'narrow', or None if not a valid number.
+    Twin of scripts/build_macro_snapshot._commodity_breadth_bucket.
+    """
+    try:
+        v = float(pct_up_trend)
+    except (TypeError, ValueError):
+        return None
+    if v >= _BREADTH_THRESHOLDS[0]:
+        return "broad"
+    if v >= _BREADTH_THRESHOLDS[1]:
+        return "mixed"
+    return "narrow"
+
+
+def _macro_ledger_deltas(
+    repo: Path,
+    domain: str,
+    fields: "list[str]",
+) -> "dict[str, dict | None]":
+    """Read ledger.parquet and return streak/prev metadata for each requested field.
+
+    Returns a dict keyed by field name; each entry is:
+        {value, prev, since, days_in_state}
+    where:
+        value         — latest value for this (domain, field) key
+        prev          — previous value (the run before the current consecutive run)
+        since         — ISO date of the first row in the current consecutive run
+        days_in_state — calendar days from since to latest asof (inclusive-start)
+
+    Absent parquet or missing pandas → all fields return None (fail-open, one
+    log.warning).  Field not found in ledger → None entry for that field.
+
+    Render-path IO: single parquet read, filtered by domain.  Cheap.
+    """
+    result: dict[str, dict | None] = {f: None for f in fields}
+    ledger_path = repo / "data" / "macro_snapshots" / "ledger.parquet"
+    if not ledger_path.exists():
+        log.warning("_macro_ledger_deltas: ledger.parquet absent (%s)", ledger_path)
+        return result
+    try:
+        import pandas as pd  # noqa: PLC0415 — only import when ledger exists
+        df = pd.read_parquet(ledger_path)
+        # Filter to requested domain
+        if df.empty or "domain" not in df.columns:
+            return result
+        df = df[df["domain"] == domain].copy()
+        if df.empty:
+            return result
+        # Sort by asof so rows are in chronological order
+        df = df.sort_values("asof")
+        for field in fields:
+            fdf = df[df["field"] == field]
+            if fdf.empty:
+                result[field] = None
+                continue
+            # Latest row
+            latest_row = fdf.iloc[-1]
+            latest_val = latest_row["value"]
+            latest_asof = str(latest_row["asof"])
+            # Find start of current consecutive run (same value, working backwards)
+            since_asof = latest_asof
+            prev_val = None
+            rows = fdf.to_dict("records")
+            # Normalise NaN strings to None for comparison
+            def _norm(v: Any) -> Any:
+                if v is None:
+                    return None
+                sv = str(v)
+                if sv.lower() in ("nan", "none", ""):
+                    return None
+                return sv
+            curr_norm = _norm(latest_val)
+            for row in reversed(rows[:-1]):
+                if _norm(row["value"]) == curr_norm:
+                    since_asof = str(row["asof"])
+                else:
+                    prev_val = _norm(row["value"])
+                    break
+            # days_in_state: calendar days from since to latest asof (inclusive start)
+            try:
+                since_dt = pd.Timestamp(since_asof)
+                latest_dt = pd.Timestamp(latest_asof)
+                days_in_state = (latest_dt - since_dt).days + 1
+            except Exception:  # noqa: BLE001
+                days_in_state = None
+            result[field] = {
+                "value": curr_norm,
+                "prev": prev_val,
+                "since": since_asof,
+                "days_in_state": days_in_state,
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("_macro_ledger_deltas: parquet read failed — %s", exc)
+        return result
+    return result
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Sub-block composers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1276,6 +1381,12 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
 
     Field list per §5.3 lobe 2 (census-verified).
     Uses _to_iso() to normalise the "Jul 02, 2026" display-string date.
+
+    v2 additions (cross-asset context, display_only):
+      pairs            — list of {pair, action, score} for non-FLAT pairs,
+                         sorted by |score| desc, capped at 5
+      scenario_intensity — top-2 entries from regime_radar.intensity
+      deltas           — _macro_ledger_deltas for all fx-domain fields
     """
     repo = _repo_root(root)
     path = repo / "data" / "forex" / "latest.json"
@@ -1288,6 +1399,9 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         "dollar_desk": None,
         "transmission": None,
         "regime_radar": None,
+        "pairs": None,
+        "scenario_intensity": None,
+        "deltas": None,
         "display_only": True,
     }
 
@@ -1321,6 +1435,59 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "active": rr_raw.get("active"),
         }
 
+        # v2: pairs — non-FLAT action, sorted by |score| desc, cap 5
+        pairs_raw = raw.get("pairs") or {}
+        pairs_out: list[dict] = []
+        if isinstance(pairs_raw, dict):
+            for pair_key, pair_val in pairs_raw.items():
+                if not isinstance(pair_val, dict):
+                    continue
+                action = _clean(pair_val.get("action"))
+                if action and str(action).upper() == "FLAT":
+                    continue
+                score = pair_val.get("score")
+                pairs_out.append({
+                    "pair": _clean(pair_key),
+                    "action": action,
+                    "score": _clean(score),
+                })
+            # sort by |score| descending (None scores last)
+            pairs_out.sort(
+                key=lambda x: abs(x["score"]) if isinstance(x["score"], (int, float)) else 0,
+                reverse=True,
+            )
+            pairs_out = pairs_out[:5]
+
+        # v2: scenario_intensity — top-2 of regime_radar.intensity
+        intensity_raw = rr_raw.get("intensity") or {}
+        scenario_intensity: list[dict] = []
+        if isinstance(intensity_raw, dict):
+            # sort by value descending
+            sorted_intens = sorted(
+                ((k, v) for k, v in intensity_raw.items() if v is not None),
+                key=lambda kv: kv[1] if isinstance(kv[1], (int, float)) else 0,
+                reverse=True,
+            )
+            scenario_intensity = [
+                {"name": _clean(k), "value": _clean(v)}
+                for k, v in sorted_intens[:2]
+            ]
+
+        # v2: deltas from ledger for all fx-domain fields (including new v1.2 fields)
+        _fx_ledger_fields = [
+            "usd_trend", "usd_regime", "fx_risk", "real_rate_regime",
+            "fx_liquidity_dir", "fx_regime_radar",
+            "usd_valuation", "usd_positioning", "fed_path_lean",
+            "fx_eurusd_action", "fx_usdjpy_action", "fx_gbpusd_action",
+            "fx_usdcad_action", "fx_audusd_action", "fx_usdchf_action",
+            "fx_nzdusd_action", "fx_usdsgd_action", "fx_usdbrl_action",
+        ]
+        try:
+            deltas = _macro_ledger_deltas(repo, "fx", _fx_ledger_fields)
+        except Exception as _de:  # noqa: BLE001
+            log.warning("fx_dollar: ledger deltas failed — %s", _de)
+            deltas = None
+
         # Prefer ISO asof; fall back to display-string date normalisation
         asof = _to_iso(raw.get("asof") or raw.get("date"))
 
@@ -1332,6 +1499,9 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "dollar_desk": dollar_desk,
             "transmission": transmission,
             "regime_radar": regime_radar,
+            "pairs": pairs_out if pairs_out else None,
+            "scenario_intensity": scenario_intensity if scenario_intensity else None,
+            "deltas": deltas,
         })
     except Exception as exc:  # noqa: BLE001
         log.warning("fx_dollar: compose failed — %s", exc)
@@ -1543,6 +1713,17 @@ def _compose_commodity_context(root: "Path | str | None" = None) -> dict:
     """Compose commodity_context lobe from data/commodity/latest.json.
 
     Field list per §5.3 lobe 5 (census-verified).
+
+    v2 additions (cross-asset context, display_only):
+      index      — {mtf_grade, ladder_state, shock_state, impulse, chg_1m_pct, headline}
+      breadth    — {n_members, n_up_trend, pct_up_trend, bucket}
+                   bucket uses same thresholds as _commodity_breadth_bucket in
+                   scripts/build_macro_snapshot.py (twin via _BREADTH_THRESHOLDS)
+      confluence — {index_state, standouts[:6]} where standouts = non-Neutral members
+                   each {name, label, state, score}
+      ratios     — pass-through from latest.json ratios block (copper_gold, gold_silver)
+      usd_sensitivity — from forex/latest.json transmission.corr cross-read (fail-open)
+      deltas     — _macro_ledger_deltas for all commodity-domain fields
     """
     repo = _repo_root(root)
     path = repo / "data" / "commodity" / "latest.json"
@@ -1552,6 +1733,12 @@ def _compose_commodity_context(root: "Path | str | None" = None) -> dict:
         "regime": None,
         "favored": None,
         "assets": None,
+        "index": None,
+        "breadth": None,
+        "confluence": None,
+        "ratios": None,
+        "usd_sensitivity": None,
+        "deltas": None,
         "display_only": True,
     }
 
@@ -1584,6 +1771,98 @@ def _compose_commodity_context(root: "Path | str | None" = None) -> dict:
                     "conviction": _clean(item.get("conviction")),
                 })
 
+        # v2: index sub-block
+        index_raw = raw.get("index") or {}
+        mtf_raw = index_raw.get("mtf") or {}
+        vel_raw = index_raw.get("velocity") or {}
+        index_block: dict | None = None
+        if index_raw:
+            index_block = {
+                "mtf_grade": _clean(mtf_raw.get("grade")),
+                "ladder_state": _clean(mtf_raw.get("ladder_state")),
+                "shock_state": _clean(index_raw.get("shock_state")),
+                "impulse": _clean(vel_raw.get("impulse")),
+                "chg_1m_pct": _clean(index_raw.get("chg_1m_pct")),
+                "headline": _clean(mtf_raw.get("headline")),
+            }
+
+        # v2: breadth sub-block
+        breadth_raw = raw.get("breadth") or {}
+        breadth_block: dict | None = None
+        if breadth_raw:
+            pct_up = breadth_raw.get("pct_up_trend")
+            breadth_block = {
+                "n_members": _clean(breadth_raw.get("n_members")),
+                "n_up_trend": _clean(breadth_raw.get("n_up_trend")),
+                "pct_up_trend": _clean(pct_up),
+                "bucket": _breadth_bucket(pct_up),
+            }
+
+        # v2: confluence sub-block — standouts are members with non-Neutral state
+        conf_raw = raw.get("confluence") or {}
+        conf_index_raw = conf_raw.get("index") or {}
+        conf_members_raw = conf_raw.get("members") or []
+        confluence_block: dict | None = None
+        if conf_raw:
+            standouts: list[dict] = []
+            for m in (conf_members_raw if isinstance(conf_members_raw, list) else []):
+                if not isinstance(m, dict):
+                    continue
+                m_state = m.get("state")
+                if m_state is None or str(m_state) in ("Neutral", "neutral", ""):
+                    continue
+                # pick the matching score side
+                m_state_str = str(m_state)
+                if m_state_str.lower() in ("top", "euphoric", "overbought"):
+                    score = m.get("top_score")
+                else:
+                    score = m.get("bottom_score")
+                standouts.append({
+                    "name": _clean(m.get("name")),
+                    "label": _clean(m.get("label")),
+                    "state": _clean(m_state),
+                    "score": _clean(score),
+                })
+                if len(standouts) >= 6:
+                    break
+            confluence_block = {
+                "index_state": _clean(conf_index_raw.get("state")),
+                "standouts": standouts,
+            }
+
+        # v2: ratios — pass-through from latest.json (written by build_commodities.py)
+        ratios_block = raw.get("ratios")  # None if absent (build_commodities may omit)
+
+        # v2: usd_sensitivity — cross-read forex/latest.json transmission.corr
+        usd_sensitivity: dict | None = None
+        try:
+            fx_path = repo / "data" / "forex" / "latest.json"
+            fx_raw = _read_json(fx_path)
+            if isinstance(fx_raw, dict):
+                fx_tx = fx_raw.get("transmission") or {}
+                corr = fx_tx.get("corr") or {}
+                usd_sensitivity = {
+                    "gold": _clean(corr.get("GC=F")),
+                    "oil": _clean(corr.get("CL=F")),
+                    "copper": _clean(corr.get("HG=F")),
+                    "usd_dir": _clean(fx_tx.get("usd_dir")),
+                }
+        except Exception as _ue:  # noqa: BLE001
+            log.warning("commodity_context: usd_sensitivity cross-read failed — %s", _ue)
+
+        # v2: deltas from ledger for all commodity-domain fields
+        _commodity_ledger_fields = [
+            "commodity_regime", "commodity_favored",
+            "commodity_mtf_grade", "commodity_ladder", "commodity_shock_state",
+            "commodity_confluence_state", "commodity_breadth_bucket",
+            "gold_action", "silver_action", "copper_action", "oil_action",
+        ]
+        try:
+            deltas = _macro_ledger_deltas(repo, "commodity", _commodity_ledger_fields)
+        except Exception as _de:  # noqa: BLE001
+            log.warning("commodity_context: ledger deltas failed — %s", _de)
+            deltas = None
+
         asof = _to_iso(raw.get("asof") or raw.get("date"))
 
         return _display_only({
@@ -1591,6 +1870,12 @@ def _compose_commodity_context(root: "Path | str | None" = None) -> dict:
             "regime": _clean(raw.get("regime")),
             "favored": raw.get("favored"),
             "assets": assets_out if assets_out else None,
+            "index": index_block,
+            "breadth": breadth_block,
+            "confluence": confluence_block,
+            "ratios": ratios_block,
+            "usd_sensitivity": usd_sensitivity,
+            "deltas": deltas,
         })
     except Exception as exc:  # noqa: BLE001
         log.warning("commodity_context: compose failed — %s", exc)
