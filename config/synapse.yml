@@ -12760,12 +12760,22 @@ artifacts:
       - engine/neuralweb/world_state.py
     external_consumers: []
     notes: >
-      Rotation Command RC-R1/R2. Active inter-subsector rotation events detected by
-      engine/rotation_events.py — blowoff_crash × turn_reclaim × ratio-reversal
-      three-way AND detector. Fields: schema, ok, as_of, generated_utc, authority,
-      params, n_pairs_scanned, active (list of events), created_tonight,
-      closed_tonight, coldstart, fragmented_sectors, ruler (modern-era census
-      summary). Display-only; authority.may_rank/gate/size/escalate=false.
+      Rotation Command RC-R1/R2 + Rotation Events v2 (ROTATION_EVENTS_V2_MASTERPLAN).
+      Active inter-subsector rotation events detected by engine/rotation_events.py —
+      v1 blowoff_crash × turn_reclaim × ratio-reversal three-way AND detector, plus
+      v2 cross-sector families (into_strength, cross_handoff, correlation_break;
+      config/rotation_universe.json registry). Schema stays rotation_events.v1,
+      ADDITIVE-ONLY (consumers iterate, never pattern-match the key set). v1 fields:
+      schema, ok, as_of, generated_utc, authority, params, n_pairs_scanned, active,
+      created_tonight, closed_tonight, coldstart, fragmented_sectors, ruler. v2
+      additive fields: per-event event_type/to_sector/from_sector/donor_signature/
+      severity_effective/health/flow_receipts; top-level params_v2,
+      n_cross_pairs_scanned, contagion (root_cause attribution), velocity_board
+      (receipt-only flow/options context — never a trigger), closed_recent.
+      Ledger append lane-gated on COLLECT_LANE=nightly (asia-close arms cn/hk
+      inline); coldstart replay seeds data/rotation_events/coldstart_seed.jsonl
+      (EXCLUDED from the graded census — see ROTATION_UNIVERSE_EXTENSION_PREREG).
+      Display-only; authority.may_rank/gate/size/escalate=false.
 
   data-rotation-events-ledger:
     path: data/rotation_events/events.jsonl

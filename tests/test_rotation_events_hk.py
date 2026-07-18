@@ -341,6 +341,43 @@ class TestHkBilingualCopy:
 # ─────────────────────────────────────────── build() southbound fail-open ────
 
 
+# ──────────────────────────── lane-gate tests (B1-TESTS) ─────────────────────
+
+
+def test_hk_lane_unarmed_state_written_no_ledger(tmp_path, monkeypatch):
+    """COLLECT_LANE unset → state.json IS written; events.jsonl is NOT appended.
+    The asia-close workflow arms the lane inline with COLLECT_LANE=nightly; off-lane
+    runs (re-renders, daily.yml) must never write the events ledger."""
+    monkeypatch.delenv("COLLECT_LANE", raising=False)
+    a, b = _aligned_pair()
+    sectors = _hk_sectors(a, b)
+    re_.run_nightly(sectors, tmp_path,
+                    generated_utc="test",
+                    data_subdir="rotation_events_hk")
+    state_p = tmp_path / "rotation_events_hk" / "state.json"
+    ledger_p = tmp_path / "rotation_events_hk" / "events.jsonl"
+    assert state_p.exists(), "state.json must be written even when lane is unarmed"
+    assert not ledger_p.exists(), (
+        "events.jsonl must NOT be written when COLLECT_LANE is unset (lane gate)"
+    )
+
+
+def test_hk_lane_armed_ledger_advances(tmp_path, monkeypatch):
+    """COLLECT_LANE=nightly → events.jsonl IS written/appended."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    a, b = _aligned_pair()
+    sectors = _hk_sectors(a, b)
+    re_.run_nightly(sectors, tmp_path,
+                    generated_utc="test",
+                    data_subdir="rotation_events_hk")
+    ledger_p = tmp_path / "rotation_events_hk" / "events.jsonl"
+    assert ledger_p.exists(), (
+        "events.jsonl must be written when COLLECT_LANE=nightly (lane armed)"
+    )
+    # ledger must contain at least one line (created or coldstart rows)
+    assert len(ledger_p.read_text().strip().splitlines()) > 0
+
+
 def test_build_southbound_absent_fails_open(tmp_path, monkeypatch):
     """build() with NO parquet stores present writes a valid payload with no
     southbound_ctx key and does not raise (review fix-list item: the parquet

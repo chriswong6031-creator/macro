@@ -321,8 +321,8 @@ def _summarize_market(repo: Path) -> tuple[dict, str | None]:
     lobe: dict = {}
     # liquidity_plumbing: RRP/TGA/netliq quality numbers so bot/ask surfaces
     # can cite them (already display-only labels upstream — no recompute here).
-    for key in ("verdict", "radar", "vol", "breadth", "rotation", "liquidity",
-                "liquidity_plumbing",
+    for key in ("verdict", "radar", "vol", "breadth", "rotation", "rotation_events",
+                "liquidity", "liquidity_plumbing",
                 "alerts", "data_health", "contradictions", "live_overlay", "sources"):
         v = ws.get(key)
         if v is not None:
