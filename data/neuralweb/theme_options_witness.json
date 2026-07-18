@@ -1,7 +1,7 @@
 {
   "schema": "theme_options_witness.v1",
-  "as_of": "2026-07-17",
-  "generated_at": "2026-07-17T00:15:07.245116+00:00",
+  "as_of": "2026-07-18",
+  "generated_at": "2026-07-18T00:15:05.426043+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -21,7 +21,7 @@
     "n_themes_suppressed": 3,
     "store_present": true,
     "store_path": "/Users/chriswong/theta-ops-wt/data/thetadata_eod",
-    "as_of": "2026-07-17"
+    "as_of": "2026-07-18"
   },
   "oi_timing_law": "OI[t] = positions as of EOD t-1 (OPRA reports ~06:30 ET). Leg B applies explicit shift(1) to the daily OI series (doi_series law). Leg A reads only the asof-date snapshot row, which per OPRA schedule already represents EOD t-1 positions — no additional shift required.",
   "banned_constructs": [
@@ -35,7 +35,7 @@
       "theme_id": "ai_semiconductors",
       "name_en": "AI Semiconductors",
       "name_zh": "AI半导体",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "NVDA",
         "AVGO",
@@ -70,8 +70,8 @@
         "label_zh": "看涨OI集中度（HHI）",
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.0356,
-        "value_z252": -0.805,
+        "value": 0.036,
+        "value_z252": -0.759,
         "band": "normal",
         "stale": false,
         "inputs": [
@@ -110,9 +110,9 @@
         "label_zh": "看跌/看涨OI比率（PCR）— EXIT-CROWD L3积累",
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.923,
-        "value_z252": -0.007,
-        "pcr_5d_chg": -0.0096,
+        "value": 0.9181,
+        "value_z252": -0.238,
+        "pcr_5d_chg": -0.0026,
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": false,
@@ -152,8 +152,8 @@
         "label_zh": "隐含波动率溢价 vs 实现波动率（事件溢价风险）",
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.1306,
-        "value_z252": 0.375,
+        "value": 0.1365,
+        "value_z252": 0.419,
         "band": "normal",
         "stale": false,
         "inputs": [
@@ -192,7 +192,7 @@
       "theme_id": "memory_storage",
       "name_en": "Memory, HBM & Storage",
       "name_zh": "存储与HBM",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "MU",
         "WDC",
@@ -205,8 +205,8 @@
         "label_zh": "看涨OI集中度（HHI）",
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": 0.0107,
-        "value_z252": -1.07,
+        "value": 0.0106,
+        "value_z252": -1.076,
         "band": "normal",
         "stale": false,
         "inputs": [
@@ -223,9 +223,9 @@
         "label_zh": "看跌/看涨OI比率（PCR）— EXIT-CROWD L3积累",
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": 1.2869,
-        "value_z252": 1.103,
-        "pcr_5d_chg": -0.058,
+        "value": 1.2896,
+        "value_z252": 1.132,
+        "pcr_5d_chg": -0.0447,
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": false,
@@ -243,8 +243,8 @@
         "label_zh": "隐含波动率溢价 vs 实现波动率（事件溢价风险）",
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": -0.0861,
-        "value_z252": -0.873,
+        "value": -0.0697,
+        "value_z252": -0.781,
         "band": "normal",
         "stale": false,
         "inputs": [
@@ -261,7 +261,7 @@
       "theme_id": "semicap_equipment",
       "name_en": "Semiconductor Equipment (WFE)",
       "name_zh": "半导体设备（WFE）",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "AMAT",
         "LRCX",
@@ -378,7 +378,7 @@
       "theme_id": "data_center_power",
       "name_en": "Data Center Power & Cooling",
       "name_zh": "数据中心电力与冷却",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "VRT",
         "ETN",
@@ -503,7 +503,7 @@
       "theme_id": "nuclear_power",
       "name_en": "Nuclear & SMR Power",
       "name_zh": "核能与小型模块堆",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "CEG",
         "VST",
@@ -629,7 +629,7 @@
       "theme_id": "grid_electrification",
       "name_en": "Grid & Electrification",
       "name_zh": "电网与电气化",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "GEV",
         "ETN",
@@ -778,7 +778,7 @@
       "theme_id": "cybersecurity",
       "name_en": "Cybersecurity",
       "name_zh": "网络安全",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "CRWD",
         "PANW",
@@ -871,7 +871,7 @@
       "theme_id": "defense_aerospace",
       "name_en": "Defense & Aerospace",
       "name_zh": "国防与航空航天",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "LMT",
         "RTX",
@@ -1008,7 +1008,7 @@
       "theme_id": "robotics_automation",
       "name_en": "Robotics & Automation",
       "name_zh": "机器人与自动化",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "ROK",
         "ISRG",
@@ -1109,7 +1109,7 @@
       "theme_id": "glp1_obesity",
       "name_en": "GLP-1 / Obesity",
       "name_zh": "GLP-1与肥胖",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "LLY",
         "NVO",
@@ -1215,7 +1215,7 @@
       "theme_id": "fintech_payments",
       "name_en": "Fintech & Payments",
       "name_zh": "金融科技与支付",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "V",
         "MA",
@@ -1245,8 +1245,8 @@
         "label_zh": "看涨OI集中度（HHI）",
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.0798,
-        "value_z252": 0.521,
+        "value": 0.0848,
+        "value_z252": 1.023,
         "band": "rising",
         "stale": false,
         "inputs": [
@@ -1272,18 +1272,18 @@
           "FLYW",
           "MQ"
         ],
-        "note_en": "Median call-OI HHI across 21/21 covered members. HHI=0.080 — call OI moderately concentrated.",
-        "note_zh": "21/21 个成员覆盖的看涨OI HHI中位数。HHI=0.080 — 看涨OI集中度中等。"
+        "note_en": "Median call-OI HHI across 21/21 covered members. HHI=0.085 — call OI moderately concentrated.",
+        "note_zh": "21/21 个成员覆盖的看涨OI HHI中位数。HHI=0.085 — 看涨OI集中度中等。"
       },
       "leg_b_pcr": {
         "label_en": "Put/Call OI Ratio (PCR) — EXIT-CROWD L3 accrual",
         "label_zh": "看跌/看涨OI比率（PCR）— EXIT-CROWD L3积累",
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.4658,
-        "value_z252": -2.714,
-        "pcr_5d_chg": -0.1065,
-        "pcr_collapse_into_strength": true,
+        "value": 0.5129,
+        "value_z252": -1.899,
+        "pcr_5d_chg": -0.0614,
+        "pcr_collapse_into_strength": false,
         "band": "complacency",
         "stale": false,
         "inputs": [
@@ -1309,16 +1309,16 @@
           "FLYW",
           "MQ"
         ],
-        "note_en": "Basket PCR across 21/21 covered members; collapse_into_strength=True (EXIT-CROWD-L3 accrual). Band: complacency.",
-        "note_zh": "21/21 个成员的篮子PCR比率; 下降进入强势=True (EXIT-CROWD-L3积累). 状态: complacency."
+        "note_en": "Basket PCR across 21/21 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: complacency.",
+        "note_zh": "21/21 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: complacency."
       },
       "leg_c_iv_premium": {
         "label_en": "IV Premium vs Realized (Event-Premium Hazard)",
         "label_zh": "隐含波动率溢价 vs 实现波动率（事件溢价风险）",
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.6148,
-        "value_z252": 1.818,
+        "value": 0.6316,
+        "value_z252": 1.879,
         "band": "elevated",
         "stale": false,
         "inputs": [
@@ -1352,7 +1352,7 @@
       "theme_id": "space_satellite",
       "name_en": "Space & Satellites",
       "name_zh": "太空与卫星",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "RKLB",
         "FLY",
@@ -1429,7 +1429,7 @@
       "theme_id": "rare_earth_critical_min",
       "name_en": "Rare Earth & Critical Minerals",
       "name_zh": "稀土与关键矿产",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "MP",
         "USAR",
@@ -1514,7 +1514,7 @@
       "theme_id": "copper_steel_electrify",
       "name_en": "Copper, Steel & Electrification",
       "name_zh": "铜、钢铁与电气化",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "ETN",
         "PH",
@@ -1680,7 +1680,7 @@
       "theme_id": "medical_devices",
       "name_en": "Medical Devices",
       "name_zh": "医疗器械",
-      "as_of": "2026-07-17",
+      "as_of": "2026-07-18",
       "members": [
         "UNH",
         "ELV",
