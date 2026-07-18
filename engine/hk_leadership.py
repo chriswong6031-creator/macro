@@ -79,13 +79,7 @@ BREADTH_CONFIRM_PCT = 35.0   # broad breadth confirming threshold (pct_above_50 
 THRUST_LOOKBACK     = 10     # number of sessions to look back for the cross
 REARM_SCAN_SESSIONS = 40     # trailing sessions scanned (dated) for the ledger re-arm gate
 
-# ---------------------------------------------------------------------------
-# Lane guard (mirrors hk_washout_watch._ledger_advance_enabled)
-# ---------------------------------------------------------------------------
-
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the asia-close nightly lane (CN_LANE=asia)."""
-    return os.environ.get("CN_LANE", "").lower() == "asia"
+from engine.ledger_lane import asia_advance_enabled as _ledger_advance_enabled
 
 
 # ---------------------------------------------------------------------------

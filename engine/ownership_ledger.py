@@ -36,7 +36,6 @@ HONESTY:
 from __future__ import annotations
 
 import logging
-import os
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -69,18 +68,7 @@ _L1_MIN_BOOK_PCT = 1.0
 _L4_TOP_N = 20
 
 
-# --------------------------------------------------------------------------- #
-# Nightly-only guard (mirrors engine/mtf_upturn._ledger_advance_enabled)       #
-# --------------------------------------------------------------------------- #
-
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane.
-
-    Gate: COLLECT_LANE=nightly — mirrors mtf_upturn._ledger_advance_enabled exactly.
-    Intraday lane: returns False → advance() is a no-op (nothing written to data/).
-    """
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 # --------------------------------------------------------------------------- #

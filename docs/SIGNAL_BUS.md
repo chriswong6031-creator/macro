@@ -112,7 +112,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| us-sector-rotation-latest | `data/us_sector_rotation/latest.json` | json | daily-engine | display | 2 | 0 |
+| us-sector-rotation-latest | `data/us_sector_rotation/latest.json` | json | daily-engine | display | 1 | 0 |
 
 ### active-build-map
 

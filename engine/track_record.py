@@ -66,18 +66,9 @@ from engine import regime_vector as _rv  # W0-stageB: vector stamping
 
 logger = logging.getLogger(__name__)
 
-import os as _os
 
 
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane.
-
-    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
-    env (and mirroring the collect-job's lane sentinel).  US_LANE is accepted as
-    a legacy alias so existing tests continue to pass.
-    """
-    val = _os.environ.get("COLLECT_LANE", "") or _os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 def _is_null(v: Any) -> bool:

@@ -56,21 +56,7 @@ from lib.hk_calendar import expected_last_session, is_session, last_session_on_o
 log = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Lane guard — only advance the ledger in the asia-close nightly lane.
-# House law: "nightly is the sole advancer of forward ledgers."
-# The asia-close.yml step sets CN_LANE=asia; weekly.yml does not.
-# ---------------------------------------------------------------------------
-
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the asia-close nightly lane.
-
-    Controlled by env var CN_LANE=asia (set in .github/workflows/asia-close.yml,
-    absent in weekly.yml). Snapshot/display JSON may be produced in any lane;
-    only the ledger APPEND (stamp/grade) is gated here.
-    Later organs that share this lane convention can reuse this helper.
-    """
-    return os.environ.get("CN_LANE", "").lower() == "asia"
+from engine.ledger_lane import asia_advance_enabled as _ledger_advance_enabled
 
 # ---------------------------------------------------------------------------
 # ADR → HK mapping

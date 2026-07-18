@@ -209,9 +209,9 @@ class TestL2AnchorDatedADV:
 
 class TestLedgerSummary:
     def test_empty_ledgers(self, tmp_path):
-        """ledger_summary returns all four cohorts even with empty stores."""
+        """ledger_summary returns all five cohorts even with empty stores (L5 added in #2457)."""
         summary = ol.ledger_summary(root=tmp_path)
-        assert set(summary.keys()) == {"L1", "L2", "L3", "L4"}
+        assert set(summary.keys()) == {"L1", "L2", "L3", "L4", "L5"}
         for cohort, s in summary.items():
             assert s["n_total"] == 0
             assert s["entry_asof"] is None
@@ -273,7 +273,7 @@ class TestAdvanceLedgersNightlyGuard:
         monkeypatch.delenv("US_LANE", raising=False)
         funds = {"alpha": {"name": "Alpha"}}
         result = ol.advance_ledgers(funds, sm_payload=None, root=tmp_path)
-        assert result == {"L1": 0, "L2": 0, "L3": 0, "L4": 0}
+        assert result == {"L1": 0, "L2": 0, "L3": 0, "L4": 0, "L5": 0}
         # No files should have been written
         ledger_dir = tmp_path / "data" / "smart_money" / "ledgers"
         assert not ledger_dir.exists() or not list(ledger_dir.glob("*.parquet"))
@@ -288,6 +288,7 @@ class TestAdvanceLedgersNightlyGuard:
         monkeypatch.setattr(ol, "_l2_entries", lambda sm, panel: [])
         monkeypatch.setattr(ol, "_l3_entries", lambda panel: [])
         monkeypatch.setattr(ol, "_l4_entries", lambda sm, panel: [])
+        monkeypatch.setattr(ol, "_l5_entries", lambda models, panel: [])
 
         # Also monkeypatch ClosePanel import inside advance_ledgers
         import engine.manager_trades as mt
@@ -298,7 +299,7 @@ class TestAdvanceLedgersNightlyGuard:
         funds = {"alpha": {"name": "Alpha"}}
         result = ol.advance_ledgers(funds, sm_payload={}, root=tmp_path)
         # Should have tried all cohorts (returned 0 since mocked to empty)
-        assert set(result.keys()) == {"L1", "L2", "L3", "L4"}
+        assert set(result.keys()) == {"L1", "L2", "L3", "L4", "L5"}
 
 
 # --------------------------------------------------------------------------- #

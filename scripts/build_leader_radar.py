@@ -40,7 +40,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone
@@ -455,16 +454,7 @@ def _ticker_state_history(
     return raw, conf
 
 
-# ── Nightly lane gate (HOUSE-U5) ─────────────────────────────────────────────
-
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly lane.
-
-    Mirrors build_intraday_flow._ledger_advance_enabled — gate: COLLECT_LANE=nightly
-    (or US_LANE=nightly for the US shard variant).
-    """
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 # ── Revisions history store ───────────────────────────────────────────────────

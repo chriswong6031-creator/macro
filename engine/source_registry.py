@@ -35,7 +35,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -96,14 +95,7 @@ _FAMILY_FLARE_STATE = "narrative_flare_state"
 _PRIMED_STATES = {"PRIMED", "ARMED", "CONFIRMED_CANDIDATE"}
 
 
-# ---------------------------------------------------------------------------
-# Lane gate (mirrors flare_persistence._ledger_advance_enabled exactly)
-# ---------------------------------------------------------------------------
-
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane (COLLECT_LANE=nightly)."""
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 # ---------------------------------------------------------------------------

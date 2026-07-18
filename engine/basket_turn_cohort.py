@@ -59,7 +59,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import tempfile
 from datetime import date
 from pathlib import Path
@@ -111,12 +110,7 @@ REGISTRATION_NOTE = (
     "Promotion question earliest 2027, n≥8 distinct shock episodes (PS-R8)."
 )
 
-# ── COLLECT_LANE gate ──────────────────────────────────────────────────────────
-
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane (FT-R5)."""
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 # ── ledger helpers ─────────────────────────────────────────────────────────────

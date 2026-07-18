@@ -1289,7 +1289,7 @@ RENDER.system = async () => {
     $("#upBoard").innerHTML = "<span class='muted'>probing…</span>";
     const u = await api("/api/uptime/all");
     $("#upBoard").innerHTML = (u.targets || []).map(t => `<div class="kv"><span>${esc(t.label)}</span>
-      <b style="color:${t.ok ? "var(--ok)" : "var(--bad)"}">${t.ok ? (t.status || "up") + " · " + t.ms + "ms" : (t.status || "down")}</b></div>`).join("");
+      <b style="color:${t.ok ? "var(--ok)" : "var(--bad)"}">${t.ok ? esc(t.status || "up") + " · " + t.ms + "ms" : esc(t.status || "down")}</b></div>`).join("");
   };
 };
 
@@ -1619,7 +1619,7 @@ RENDER.content = async () => {
   $("#upBtn2").onclick = async () => {
     $("#upBox").innerHTML = "<span class='muted'>probing…</span>"; const u = await api("/api/uptime");
     $("#upBox").innerHTML = u.ok ? `<div class="big" style="font-size:18px;color:var(--ok)">200 OK</div><div class="sub">${u.ms} ms · ${(u.bytes / 1024).toFixed(0)} KB</div>`
-      : `<div class="big" style="font-size:18px;color:var(--bad)">${u.status || "down"}</div><div class="sub">${esc(u.error || "")}</div>`;
+      : `<div class="big" style="font-size:18px;color:var(--bad)">${esc(u.status || "down")}</div><div class="sub">${esc(u.error || "")}</div>`;
   };
   $("#lkBtn").onclick = async () => {
     $("#lkBox").innerHTML = "<span class='muted'>scanning…</span>"; const l = await api("/api/content/links");

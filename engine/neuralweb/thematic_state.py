@@ -27,7 +27,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -37,14 +36,7 @@ import yaml
 log = logging.getLogger(__name__)
 
 
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane.
-
-    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
-    env.  US_LANE is accepted as a legacy alias.
-    """
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 # ---------------------------------------------------------------------------
 # Schema / authority constants

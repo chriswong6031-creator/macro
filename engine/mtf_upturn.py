@@ -110,13 +110,7 @@ _LEDGER_DIR = "mtf_upturn"
 _LEDGER_FILE = "ledger.jsonl"
 
 
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane.
-
-    Gate: COLLECT_LANE=nightly — mirrors basket_turn_watch.stamp_ledger pattern exactly.
-    """
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 def _ledger_path(data_root: Path | None = None) -> Path:

@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from datetime import date
 from pathlib import Path
 
@@ -43,14 +42,7 @@ from lib import config
 log = logging.getLogger("demand_ledger")
 
 
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane.
-
-    Gate: COLLECT_LANE=nightly — the same sentinel set by daily.yml's engine-job
-    env.  US_LANE is accepted as a legacy alias.
-    """
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 _BENCH = "SPY"
 _THRESH = 0.05          # ±5% relative-return falsification band (matches ai_desk)

@@ -108,12 +108,7 @@ REGISTRATION_NOTE = (
     "available; R-TIL-6 pattern)."
 )
 
-# ── COLLECT_LANE gate ──────────────────────────────────────────────────────────
-
-def _ledger_advance_enabled() -> bool:
-    """True only when running in the nightly engine lane (FT-R5)."""
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 # ── path helpers ───────────────────────────────────────────────────────────────

@@ -40,7 +40,6 @@ from __future__ import annotations
 import json
 import logging
 import math
-import os
 import time
 from collections import defaultdict
 from datetime import date, timedelta
@@ -118,15 +117,7 @@ WITNESS_HIST_COLS = [
     "join_confidence", "hazard_pctile", "channels_lit", "present",
 ]
 
-# ---------------------------------------------------------------------------
-# Lane gate (mirrors flare_persistence._ledger_advance_enabled)
-# ---------------------------------------------------------------------------
-
-
-def _ledger_advance_enabled() -> bool:
-    """True only in the nightly engine lane (COLLECT_LANE=nightly)."""
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 
 # ---------------------------------------------------------------------------
