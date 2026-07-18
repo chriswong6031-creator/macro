@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-07-18T07:15:22+00:00",
+  "checked_at": "2026-07-18T07:31:44+00:00",
   "expected_session": "2026-07-17",
   "stores": {
     "cache": {
-      "asof": "2026-07-17",
-      "lag_days": 0,
-      "state": "fresh"
+      "asof": null,
+      "lag_days": null,
+      "state": "dead"
     },
     "bellwether": {
       "asof": "2026-07-17",
@@ -37,9 +37,12 @@
   "regression": {
     "ok": true,
     "prev_cache_max": "2026-07-17",
-    "curr_cache_max": "2026-07-17",
+    "curr_cache_max": null,
     "note": null
   },
-  "verdict": "ok",
-  "banner_message": null
+  "verdict": "stale",
+  "banner_message": {
+    "en": "HK data stale \u2014 cache unknown sessions behind (last \u2014)",
+    "zh": "\u6e2f\u80a1\u6570\u636e\u5df2\u8fc7\u671f \u2014 \u4ef7\u683c\u7f13\u5b58\u843d\u540e \u2014 \u4e2a\u4ea4\u6613\u65e5\uff08\u6700\u540e \u2014\uff09"
+  }
 }
