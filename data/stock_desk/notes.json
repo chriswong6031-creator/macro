@@ -1,174 +1,169 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-15",
-  "generated_at": "2026-07-17T04:09:45.012670+00:00",
+  "as_of": "2026-07-17",
+  "generated_at": "2026-07-18T03:35:54.992865+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-15-TGT-1",
-      "ticker": "TGT",
+      "id": "2026-07-17-AMKR-1",
+      "ticker": "AMKR",
       "name": null,
-      "lean": "constructive",
+      "lean": "avoid",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "TGT is building a base with a constructive event-edge (insider buying context, revisions) and a modest pullback, though the deteriorating Consumer Staples basket tempers conviction.",
+      "thesis": "The deterministic cycle is blocked (downtrend) and board urgency is 'avoid'; the event-edge selection cannot overcome the negative tape.",
       "evidence": [
-        "verdict 'Constructive \u2014 building a base'",
-        "selection axes: revisions z=0.82, momentum z=1.62",
-        "entry not blocked, off-high only -2.1%",
-        "caution: Consumer Staples Equal-Weight basket deteriorating"
+        "cycle_blocked true",
+        "entry blocked (z -0.62)",
+        "board state DECLINE, off-high -32.7%"
       ],
-      "dissent": "Negative SUE signal (z=-0.75) and a deteriorating sector basket could undermine the base-building.",
+      "dissent": "A sharp industry-wide rebound in semiconductor demand could reverse the trend, but there is no sign yet.",
       "falsifier": {
-        "text": "If TGT breaks below its recent base low of ~135, the constructive lean is invalid.",
+        "text": "AMKR closes above its 50-day simple moving average on above-average volume.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "TGT",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-08-12",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-07-15-HST-2",
-      "ticker": "HST",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "HST shows a strong SUE (z=1.52) and momentum (z=1.23) on a constructive base setup, although the deteriorating Real Estate basket warrants caution.",
-      "evidence": [
-        "verdict 'Constructive \u2014 building a base'",
-        "SUE z=1.52, momentum z=1.23",
-        "entry not blocked, off-high -1.7%",
-        "caution: Real Estate Equal-Weight basket deteriorating"
-      ],
-      "dissent": "Sector headwinds and a stale SUE (47d old) could cap upside.",
-      "falsifier": {
-        "text": "If HST fails to hold its recent base support at ~23.30, the constructive lean is broken.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "HST",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-08-12",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-07-15-NJR-3",
-      "ticker": "NJR",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The engine finds no clear edge: earnings signals are weak (SUE z=-0.04, revisions z=-1.14) despite an attractive entry setup, warranting a neutral stance.",
-      "evidence": [
-        "verdict 'Neutral \u2014 no clear edge'",
-        "selection z -0.41 with negative revisions",
-        "entry z=0.67 not blocked but insufficient to overcome lack of edge",
-        "no cautions"
-      ],
-      "dissent": "The fresh buy signal and oversold conditions could trigger a bounce, but no earnings tailwind.",
-      "falsifier": {
-        "text": "If NJR breaks above $60 on above-average volume and positive revisions emerge, the neutral call would be too cautious.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-08-12",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-15-STAA-4",
-      "ticker": "STAA",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "STAA carries strong earnings and insider edge but is flagged 'accounting watch'; the deep 14.5% pullback off highs offers a potential base, yet the accounting risk demands confirmation before committing, hence cautious.",
-      "evidence": [
-        "verdict 'Leader \u00b7 accounting watch \u2014 confirm before adding'",
-        "SUE z=1.85, insider z=1.5, revisions z=2.24",
-        "entry not blocked but caution flag",
-        "off-high -14.5%",
-        "accounting watch flag"
-      ],
-      "dissent": "If the accounting watch is resolved benignly, the strong earnings momentum could fuel a sharp rally.",
-      "falsifier": {
-        "text": "If STAA falls below $26 (recent support) or if an accounting issue materializes, the cautious lean is justified; if it clears accounting concerns and breaks out above $32, the cautious lean is proven wrong.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "STAA",
+          "subject_ticker": "AMKR",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
           "horizon_d": 20
         }
       },
-      "check_by": "2026-08-12",
-      "engine_verdict": "Leader \u00b7 accounting watch \u2014 confirm before adding"
+      "check_by": "2026-08-14",
+      "engine_verdict": "Strong name \u00b7 wrong tape \u2014 wait for a base"
     },
     {
-      "id": "2026-07-15-KMT-5",
-      "ticker": "KMT",
+      "id": "2026-07-17-BG-2",
+      "ticker": "BG",
       "name": null,
-      "lean": "constructive",
+      "lean": "cautious",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "KMT exhibits a turn signal with a compelling earnings edge (SUE z=1.79) and deep pullback (-19.2%), forming a base; no obvious cautions.",
+      "thesis": "While selection factors (revisions, momentum) are supportive, the accounting warning and countertrend bounce introduce significant uncertainty; wait for clarification.",
       "evidence": [
-        "verdict 'Constructive \u2014 building a base'",
-        "SUE z=1.79, revisions z=0.85",
-        "entry signal 'TURN SIGNALED' urgency now, off-high -19.2%",
-        "no cautions"
+        "accounting flag warn",
+        "board dir 'caution', state COUNTERTREND BOUNCE",
+        "selection z 0.84 but SUE z -0.81"
       ],
-      "dissent": "The deep pullback might indicate underlying deterioration not captured, and the optimistic turn signal could fail if earnings momentum stalls.",
+      "dissent": "The accounting issue may be a false alarm or quickly resolved; a clean audit could quickly re-rate the stock.",
       "falsifier": {
-        "text": "If KMT reverses and closes below $33, the turn signal fails and the constructive lean is wrong.",
+        "text": "Company issues a statement that the accounting flag was due to a non-recurring item and the previous trend high is taken out.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "KMT",
+          "subject_ticker": "BG",
           "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
+          "op": ">",
+          "threshold": 0.05,
           "horizon_d": 20
         }
       },
-      "check_by": "2026-08-12",
-      "engine_verdict": "Constructive \u2014 building a base"
+      "check_by": "2026-08-14",
+      "engine_verdict": "Leader \u00b7 accounting warning \u2014 verify before buying"
     },
     {
-      "id": "2026-07-15-TR-6",
-      "ticker": "TR",
+      "id": "2026-07-17-GIII-3",
+      "ticker": "GIII",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "TR lacks a discernible edge (only residual momentum) and faces an earnings binary event in 7 days, making a neutral stance prudent.",
+      "thesis": "Strong earnings/revisions edge and high quality, but poor entry with extension; the risk of a pullback likely offsets the alpha, suggesting flat relative performance.",
       "evidence": [
-        "verdict 'Neutral \u2014 no clear edge'",
-        "selection only momentum z=0.65, no SUE or revision edge",
-        "caution: earnings in 7d \u2014 binary event"
+        "selection z 1.53 with SUE 1.33 fresh",
+        "quality z 1.04, accounting clean",
+        "entry: extension present, off-high -1.3%, urgency 'hold'"
       ],
-      "dissent": "A strong earnings beat could propel the stock higher, but that is speculative.",
+      "dissent": "If momentum persists, the stock could continue to run without correcting, defying the poor entry signal.",
       "falsifier": {
-        "text": "If TR rallies post-earnings and sustains above $42, then the neutral lean would have been too timid.",
+        "text": "GIII posts a new 20-day high on above-average volume without a prior 5% pullback.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-12",
+      "check_by": "2026-08-14",
+      "engine_verdict": "Leader \u00b7 poor entry \u2014 wait for a base"
+    },
+    {
+      "id": "2026-07-17-PLD-4",
+      "ticker": "PLD",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The verdict is 'no clear edge'; mixed selection, neutral tailwind, and cautious board state do not argue for outperformance.",
+      "evidence": [
+        "verdict: Neutral \u2014 no clear edge",
+        "selection z 0.35, revisions z -0.23",
+        "board state COUNTERTREND BOUNCE, urgency caution"
+      ],
+      "dissent": "If real-estate sentiment improves on macro tailwind, PLD could catch a bid, but there's no evidence yet.",
+      "falsifier": {
+        "text": "PLD rises above its last swing high ($150+) on an expansion in real-estate ETF flows.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-14",
       "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-17-HR-5",
+      "ticker": "HR",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The stock is extended (off-high 0%, HOLD \u2014 EXTENDED, urgency 'now') which historically leads to suboptimal entry; the strong selection edge is offset by near-term reversion risk.",
+      "evidence": [
+        "board state 'HOLD \u2014 EXTENDED', urgency 'now'",
+        "entry: extension present, off-high 0%",
+        "selection z 1.55, revisions z 2.23 (strong)"
+      ],
+      "dissent": "HR could be in a sustained uptrend where extension does not hinder further gains, but that's not the base case.",
+      "falsifier": {
+        "text": "HR pulls back to its 20-day moving average, clearing the extension risk and establishing a valid base.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "HR",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-14",
+      "engine_verdict": "Leader \u00b7 poor entry \u2014 wait for a base"
+    },
+    {
+      "id": "2026-07-17-AEIS-6",
+      "ticker": "AEIS",
+      "name": null,
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The name is in a downtrend (cycle blocked) with a deteriorating semiconductor equipment narrative; risk controls forbid entry.",
+      "evidence": [
+        "cycle_blocked true",
+        "entry blocked true",
+        "board state DECLINE, off-high -27%",
+        "cautions: narrative basket deteriorating"
+      ],
+      "dissent": "Semiconductor equipment demand could surprise to the upside due to new fab announcements, turning the trend.",
+      "falsifier": {
+        "text": "AEIS closes above its 50-day moving average and the Philadelphia Semiconductor Index (SOX) turns up.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "AEIS",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-14",
+      "engine_verdict": "Strong name \u00b7 wrong tape \u2014 wait for a base"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."
