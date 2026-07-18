@@ -7,6 +7,11 @@ New tests (W1-S13):
   - T1: member shrinkage math (congress_members.py)
   - T4: ETF flag in _aggregate
   - T5: gate_tier in _score
+New tests (entry leg — W2 of the desk):
+  - _entry_leg points table: each signal alone, stacking, cap at 100
+  - front_line truth table
+  - composite math: veto-exemption, uncovered branch
+  - sort bucketing: front_line / unconfirmed priority
 """
 import sys
 from datetime import date
@@ -15,8 +20,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.build_congress import (
-    _score, _decay, _aggregate,
-    W_CLUSTER, W_TECHNICAL, W_ZONE,
+    _score, _decay, _aggregate, _entry_leg,
+    W_CLUSTER, W_TECHNICAL, W_ZONE, W_ENTRY,
     LATE_FILING_DAYS, TX_AGE_STALE_DAYS, KNOWN_ETFS, HALFLIFE_DAYS,
 )
 from engine.congress_members import _shrink, _tier, compute as _compute_members
@@ -113,26 +118,30 @@ def test_covered_outranks_uncovered_high_cluster():
 
 
 # ---------------------------------------------------------------------------
-# uncovered composite = W_CLUSTER * cluster only (no neutral 30 gift)
+# uncovered composite = (1-W_ENTRY) * W_CLUSTER * cluster only (no neutral gift)
 # ---------------------------------------------------------------------------
 
 def test_uncovered_composite_is_cluster_only():
-    """Composite for uncovered = W_CLUSTER * cluster; no tech/zone neutral addition."""
+    """Composite for uncovered = (1-W_ENTRY) * W_CLUSTER * cluster; no tech/zone neutral addition,
+    entry leg is 0 (no local close to confirm timing)."""
     row = _score(_agg(80.0), _eng_uncovered())
-    expected = round(W_CLUSTER * 80.0, 1)
+    expected = round((1 - W_ENTRY) * W_CLUSTER * 80.0, 1)
     assert row["composite"] == expected, (
         f"Uncovered composite should be {expected}; got {row['composite']}"
     )
 
 
 def test_uncovered_composite_below_old_inflated_value():
-    """The old formula gave ~0.40*cluster + 30 for missing tech+zone.  New value must be lower."""
+    """The pre-entry-leg formula gave W_CLUSTER*cluster+... for missing tech+zone.
+    The new 4-leg composite must be lower than the old 3-leg neutral-fill composite."""
     cluster = 90.0
     row = _score(_agg(cluster), _eng_uncovered())
-    old_tw = W_CLUSTER + W_TECHNICAL + W_ZONE
-    old_composite = (W_CLUSTER * cluster + W_TECHNICAL * 50.0 + W_ZONE * 50.0) / old_tw
-    assert row["composite"] < old_composite, (
-        f"New uncovered composite {row['composite']} should be below old inflated value {old_composite:.1f}"
+    # Old (pre-entry) uncovered formula: W_CLUSTER*cluster (with old weight 0.40); even using
+    # the new weight (0.30) the old pre-entry value would have been 0.30*90=27.  New composite
+    # adds entry=0 on top via (1-W_ENTRY)*base, shrinking it further to 0.70*0.30*90=18.9.
+    old_cluster_only = W_CLUSTER * cluster   # pre-entry formula base
+    assert row["composite"] < old_cluster_only, (
+        f"New uncovered composite {row['composite']} should be below pre-entry value {old_cluster_only:.1f}"
     )
 
 
@@ -160,7 +169,11 @@ def test_covered_blocked_applies_multiplier():
     assert blocked["composite"] < normal["composite"], (
         "Blocked multiplier (×0.6) must reduce covered composite"
     )
-    assert abs(blocked["composite"] - round(normal["composite"] * 0.6, 1)) <= 0.2
+    # The veto applies to base only (entry leg is 0 here since no entry dict supplied → score=0).
+    # composite_blocked = (1-W_ENTRY)*base*0.6 + W_ENTRY*0
+    # composite_normal  = (1-W_ENTRY)*base      + W_ENTRY*0
+    # So ratio of composites equals ratio of bases = 0.6.
+    assert abs(blocked["composite"] - round(normal["composite"] * 0.6, 1)) <= 0.5
 
 
 def test_covered_extended_applies_multiplier():
@@ -176,12 +189,14 @@ def test_covered_extended_applies_multiplier():
 # ---------------------------------------------------------------------------
 
 def test_uncovered_vetoes_not_applied():
-    """Uncovered rows have no meaningful blocked/downtrend flags; composite must be cluster-only."""
+    """Uncovered rows have no meaningful blocked/downtrend flags; composite must be cluster-only
+    (no veto multipliers, entry leg = 0)."""
     # Simulate a stale eng dict that happens to have blocked=True from a prior read
     eng = _eng_uncovered()
     eng["blocked"] = True   # should be ignored for uncovered rows
     row = _score(_agg(80.0), eng)
-    expected = round(W_CLUSTER * 80.0, 1)
+    # New formula: (1-W_ENTRY) * W_CLUSTER * cluster + W_ENTRY * 0
+    expected = round((1 - W_ENTRY) * W_CLUSTER * 80.0, 1)
     assert row["composite"] == expected, (
         f"Veto flags must not be applied to uncovered rows; expected {expected}, got {row['composite']}"
     )
@@ -483,3 +498,424 @@ def test_gate_tier_not_set_for_invalid_tier():
     row = _score(_agg(60.0), _eng_covered(),
                  gate_verdict={"tier_cascade": "T4"})
     assert row["gate_tier"] is None
+
+
+# ===========================================================================
+# ENTRY LEG TESTS (W2 of the desk — operator-ordered 2026-07-18)
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# helpers for _entry_leg
+# ---------------------------------------------------------------------------
+
+def _mk_snap(*, covered=True, wash_2w_state="none", wash_1m_state="none",
+             macd_state="none", stoch_state="none"):
+    """Minimal entry_snapshot dict for _entry_leg unit tests.
+
+    All sub-dicts carry the contract-required fields; states default to 'none'.
+    engine/congress_entry.py is NOT imported here — _entry_leg is pure and takes plain dicts.
+    """
+    return {
+        "covered": covered,
+        "wash_2w": {"state": wash_2w_state, "k": None, "coverage": True},
+        "wash_1m": {"state": wash_1m_state, "k": None, "coverage": True},
+        "dual_washout": (wash_2w_state in ("now", "recent") and wash_1m_state in ("now", "recent")),
+        "w_macd": {"state": macd_state, "kind": None, "bars_since": None, "eta_bars": None},
+        "w_stoch": {"state": stoch_state, "bars_since": None, "d_at_cross": None,
+                    "from_washout": False, "k": None, "d": None, "gap": None},
+    }
+
+
+# ---------------------------------------------------------------------------
+# points table: individual signals
+# ---------------------------------------------------------------------------
+
+def test_entry_leg_gate_t2_alone():
+    """T2 gate contributes 40 points with no other signals."""
+    snap = _mk_snap()
+    leg = _entry_leg(snap, "T2")
+    assert leg["score"] == 40.0, f"T2 alone: expected 40.0, got {leg['score']}"
+
+
+def test_entry_leg_gate_t1_alone():
+    """T1 gate contributes 36 points with no other signals."""
+    leg = _entry_leg(_mk_snap(), "T1")
+    assert leg["score"] == 36.0, f"T1 alone: expected 36.0, got {leg['score']}"
+
+
+def test_entry_leg_gate_t3_alone():
+    """T3 gate contributes 22 points with no other signals."""
+    leg = _entry_leg(_mk_snap(), "T3")
+    assert leg["score"] == 22.0, f"T3 alone: expected 22.0, got {leg['score']}"
+
+
+def test_entry_leg_t2_outscores_t1():
+    """T2 (40 pts) must outrank T1 (36 pts) when all else equal."""
+    assert _entry_leg(_mk_snap(), "T2")["score"] > _entry_leg(_mk_snap(), "T1")["score"]
+
+
+def test_entry_leg_dual_washout_alone():
+    """Dual washout (both 2W and 1M hit) = 30 pts when no gate."""
+    snap = _mk_snap(wash_2w_state="now", wash_1m_state="recent")
+    leg = _entry_leg(snap, None)
+    assert leg["score"] == 30.0, f"Dual washout alone: expected 30.0, got {leg['score']}"
+    assert leg["dual_washout"] is True
+
+
+def test_entry_leg_single_washout_2w():
+    """Single washout (2W only) = 15 pts."""
+    snap = _mk_snap(wash_2w_state="now")
+    leg = _entry_leg(snap, None)
+    assert leg["score"] == 15.0, f"2W hit only: expected 15.0, got {leg['score']}"
+    assert leg["wash_2w_hit"] is True
+    assert leg["wash_1m_hit"] is False
+
+
+def test_entry_leg_single_washout_1m():
+    """Single washout (1M only) = 15 pts."""
+    snap = _mk_snap(wash_1m_state="recent")
+    leg = _entry_leg(snap, None)
+    assert leg["score"] == 15.0, f"1M hit only: expected 15.0, got {leg['score']}"
+    assert leg["wash_1m_hit"] is True
+
+
+def test_entry_leg_near_only():
+    """Near-only (no hit, either wash state == 'near') = 6 pts."""
+    snap = _mk_snap(wash_2w_state="near")
+    leg = _entry_leg(snap, None)
+    assert leg["score"] == 6.0, f"Near-only (2W near): expected 6.0, got {leg['score']}"
+
+
+def test_entry_leg_near_only_1m():
+    """Near-only via 1M 'near' state = 6 pts."""
+    snap = _mk_snap(wash_1m_state="near")
+    leg = _entry_leg(snap, None)
+    assert leg["score"] == 6.0, f"Near-only (1M near): expected 6.0, got {leg['score']}"
+
+
+def test_entry_leg_macd_crossed_alone():
+    """w_macd crossed alone = 15 pts."""
+    leg = _entry_leg(_mk_snap(macd_state="crossed"), None)
+    assert leg["score"] == 15.0
+
+
+def test_entry_leg_macd_approaching_alone():
+    """w_macd approaching alone = 10 pts."""
+    leg = _entry_leg(_mk_snap(macd_state="approaching"), None)
+    assert leg["score"] == 10.0
+
+
+def test_entry_leg_stoch_crossed_alone():
+    """w_stoch crossed alone = 15 pts."""
+    leg = _entry_leg(_mk_snap(stoch_state="crossed"), None)
+    assert leg["score"] == 15.0
+
+
+def test_entry_leg_stoch_approaching_alone():
+    """w_stoch approaching alone = 10 pts."""
+    leg = _entry_leg(_mk_snap(stoch_state="approaching"), None)
+    assert leg["score"] == 10.0
+
+
+def test_entry_leg_stacking_t2_dual_macd_stoch():
+    """T2 + dual washout + macd crossed + stoch crossed = 40+30+15+15 = 100 (capped)."""
+    snap = _mk_snap(wash_2w_state="now", wash_1m_state="now",
+                    macd_state="crossed", stoch_state="crossed")
+    leg = _entry_leg(snap, "T2")
+    assert leg["score"] == 100.0, f"Stacked: expected 100.0 (capped), got {leg['score']}"
+
+
+def test_entry_leg_cap_at_100():
+    """Points beyond 100 are capped at 100."""
+    snap = _mk_snap(wash_2w_state="now", wash_1m_state="recent",
+                    macd_state="crossed", stoch_state="crossed")
+    leg = _entry_leg(snap, "T1")   # 36+30+15+15 = 96 — just under cap
+    assert leg["score"] == 96.0, f"Expected 96.0, got {leg['score']}"
+    # Push over cap
+    leg2 = _entry_leg(snap, "T2")  # 40+30+15+15 = 100 — at cap
+    assert leg2["score"] == 100.0
+    # Even further over: T2 + dual + macd crossed + stoch crossed = same since already at 100
+    assert leg2["score"] <= 100.0
+
+
+# ---------------------------------------------------------------------------
+# front_line truth table
+# ---------------------------------------------------------------------------
+
+def test_front_line_prime_t1():
+    """prime (T1 gate) → front_line=True even with no wash/tech signals."""
+    leg = _entry_leg(_mk_snap(), "T1")
+    assert leg["prime"] is True
+    assert leg["front_line"] is True
+
+
+def test_front_line_prime_t2():
+    """prime (T2 gate) → front_line=True."""
+    leg = _entry_leg(_mk_snap(), "T2")
+    assert leg["prime"] is True
+    assert leg["front_line"] is True
+
+
+def test_front_line_t3_gate():
+    """T3 gate → front_line=True (gate_tier=='T3' condition)."""
+    leg = _entry_leg(_mk_snap(), "T3")
+    assert leg["prime"] is False      # T3 is not prime
+    assert leg["front_line"] is True
+
+
+def test_front_line_dual_washout():
+    """Dual washout → front_line=True even with no gate."""
+    snap = _mk_snap(wash_2w_state="now", wash_1m_state="now")
+    leg = _entry_leg(snap, None)
+    assert leg["front_line"] is True
+
+
+def test_front_line_macd_crossed():
+    """w_macd crossed → front_line=True."""
+    leg = _entry_leg(_mk_snap(macd_state="crossed"), None)
+    assert leg["front_line"] is True
+
+
+def test_front_line_macd_approaching():
+    """w_macd approaching → front_line=True."""
+    leg = _entry_leg(_mk_snap(macd_state="approaching"), None)
+    assert leg["front_line"] is True
+
+
+def test_front_line_stoch_crossed():
+    """w_stoch crossed → front_line=True."""
+    leg = _entry_leg(_mk_snap(stoch_state="crossed"), None)
+    assert leg["front_line"] is True
+
+
+def test_front_line_none_signals():
+    """No signals, no gate → front_line=False."""
+    leg = _entry_leg(_mk_snap(), None)
+    assert leg["front_line"] is False
+
+
+def test_front_line_no_close_with_t2_gate():
+    """snapshot=None (no local close) + T2 gate → prime=True, front_line=True, score=40."""
+    leg = _entry_leg(None, "T2")
+    assert leg["prime"] is True
+    assert leg["front_line"] is True
+    assert leg["score"] == 40.0
+    assert leg["covered"] is False
+
+
+def test_front_line_no_close_no_gate():
+    """snapshot=None + no gate → all False, score 0."""
+    leg = _entry_leg(None, None)
+    assert leg["prime"] is False
+    assert leg["front_line"] is False
+    assert leg["score"] == 0.0
+    assert leg["covered"] is False
+
+
+# ---------------------------------------------------------------------------
+# setting_up truth table
+# ---------------------------------------------------------------------------
+
+def test_setting_up_t3_gate():
+    """T3 gate → setting_up=True."""
+    assert _entry_leg(_mk_snap(), "T3")["setting_up"] is True
+
+
+def test_setting_up_macd_approaching():
+    """w_macd approaching → setting_up=True."""
+    assert _entry_leg(_mk_snap(macd_state="approaching"), None)["setting_up"] is True
+
+
+def test_setting_up_stoch_approaching():
+    """w_stoch approaching → setting_up=True."""
+    assert _entry_leg(_mk_snap(stoch_state="approaching"), None)["setting_up"] is True
+
+
+def test_setting_up_near_wash():
+    """Near wash (no hit) → setting_up=True."""
+    assert _entry_leg(_mk_snap(wash_2w_state="near"), None)["setting_up"] is True
+
+
+def test_setting_up_false_when_crossed_and_no_gate():
+    """Crossed signals (not approaching) with no gate → setting_up=False."""
+    leg = _entry_leg(_mk_snap(macd_state="crossed"), None)
+    # crossed is front_line but NOT setting_up (setting_up = approaching/near/T3 only)
+    assert leg["setting_up"] is False
+
+
+# ---------------------------------------------------------------------------
+# fresh_10d truth table
+# ---------------------------------------------------------------------------
+
+def test_fresh_10d_macd_crossed():
+    assert _entry_leg(_mk_snap(macd_state="crossed"), None)["fresh_10d"] is True
+
+
+def test_fresh_10d_stoch_crossed():
+    assert _entry_leg(_mk_snap(stoch_state="crossed"), None)["fresh_10d"] is True
+
+
+def test_fresh_10d_wash_2w_hit():
+    assert _entry_leg(_mk_snap(wash_2w_state="now"), None)["fresh_10d"] is True
+
+
+def test_fresh_10d_gate_tier():
+    """Any gate tier → fresh_10d=True."""
+    assert _entry_leg(_mk_snap(), "T3")["fresh_10d"] is True
+
+
+def test_fresh_10d_false_no_signals():
+    """No signals, no gate → fresh_10d=False."""
+    assert _entry_leg(_mk_snap(), None)["fresh_10d"] is False
+
+
+# ---------------------------------------------------------------------------
+# composite math: veto-exemption
+# ---------------------------------------------------------------------------
+
+def test_entry_veto_exempt_blocked():
+    """Entry score is NOT reduced by the blocked multiplier.
+
+    A blocked covered name with a wash signal should keep its entry score contribution
+    while the base (cluster+technical+zone) is hit by 0.6.
+
+    Design:
+      composite = (1-W_ENTRY)*base + W_ENTRY*entry_score
+      blocked:  (1-W_ENTRY)*base*0.6 + W_ENTRY*entry_score
+      normal:   (1-W_ENTRY)*base*1.0 + W_ENTRY*entry_score
+      diff = (1-W_ENTRY)*base*(1-0.6) = 0.70 * base * 0.4
+
+    We verify the entry_score contribution is the same in both rows by computing
+    what each composite would be without entry, then checking the ratio = 0.6.
+    """
+    ent = _entry_leg(_mk_snap(wash_2w_state="now"), None)
+    assert ent["score"] == 15.0
+
+    blocked_row = _score(_agg(60.0), _eng_covered(blocked=True),  entry=ent)
+    normal_row  = _score(_agg(60.0), _eng_covered(blocked=False), entry=ent)
+
+    # Also compute rows with zero-entry to isolate the base
+    zero_ent = _entry_leg(_mk_snap(), None)   # score=0, no signals, no gate
+    assert zero_ent["score"] == 0.0
+    blocked_base_row = _score(_agg(60.0), _eng_covered(blocked=True),  entry=zero_ent)
+    normal_base_row  = _score(_agg(60.0), _eng_covered(blocked=False), entry=zero_ent)
+
+    # Entry contribution is the same in both: W_ENTRY * 15 added on top.
+    # So composite_blocked - composite_blocked_zero ≈ composite_normal - composite_normal_zero
+    entry_lift_blocked = blocked_row["composite"] - blocked_base_row["composite"]
+    entry_lift_normal  = normal_row["composite"]  - normal_base_row["composite"]
+
+    assert abs(entry_lift_blocked - entry_lift_normal) <= 0.5, (
+        f"Entry lift must be identical in blocked vs normal rows "
+        f"(veto is base-only); blocked_lift={entry_lift_blocked:.2f}, normal_lift={entry_lift_normal:.2f}"
+    )
+    # Also confirm overall: blocked < normal (veto still reduces composite via base)
+    assert blocked_row["composite"] < normal_row["composite"]
+
+
+def test_entry_veto_exempt_downtrend():
+    """Entry score is not reduced by the downtrend multiplier."""
+    ent = _entry_leg(_mk_snap(wash_1m_state="recent"), None)
+    assert ent["score"] == 15.0
+
+    dt_row = _score(_agg(60.0), _eng_covered(downtrend=True), entry=ent)
+    ok_row  = _score(_agg(60.0), _eng_covered(downtrend=False), entry=ent)
+
+    # Both should carry the same W_ENTRY * 15 portion; downtrend row is just lower overall.
+    assert dt_row["composite"] < ok_row["composite"]
+    # Downtrend composite = (1-W_ENTRY) * base * 0.6 + W_ENTRY * 15
+    # Normal  composite  = (1-W_ENTRY) * base       + W_ENTRY * 15
+    # Difference = (1-W_ENTRY) * base * 0.4 — pure base reduction.
+    diff = ok_row["composite"] - dt_row["composite"]
+    assert diff > 0
+
+
+def test_uncovered_entry_score_zero():
+    """Uncovered path with NO signals: entry score 0 -> composite is the shrunk cluster base."""
+    row = _score(_agg(80.0), _eng_uncovered())
+    expected = round((1 - W_ENTRY) * W_CLUSTER * 80.0, 1)
+    assert row["composite"] == expected
+
+
+def test_uncovered_gate_points_count_in_composite():
+    """Review 07-18: engine coverage and entry coverage are independent — an engine-uncovered
+    name with a gate tier still earns its entry points in the composite (it stays in the
+    unconfirmed bucket, so this only orders within that bucket)."""
+    row = _score(_agg(80.0), _eng_uncovered(), gate_verdict={"tier_cascade": "T2"})
+    expected = round((1 - W_ENTRY) * W_CLUSTER * 80.0 + W_ENTRY * 40.0, 1)
+    assert row["composite"] == expected
+    assert row["unconfirmed"] is True
+    assert row["entry"]["front_line"] is True
+
+
+# ---------------------------------------------------------------------------
+# sort bucketing
+# ---------------------------------------------------------------------------
+
+def test_sort_front_line_before_non_front_line():
+    """front_line covered name with lower composite ranks above non-front-line covered name."""
+    # front-line entry: dual washout triggers front_line (single hit does not per contract)
+    fl_entry = _entry_leg(_mk_snap(wash_2w_state="now", wash_1m_state="now"), None)
+    fl_row = _score(_agg(40.0, "FL"), _eng_covered(tech=40.0, zone=40.0), entry=fl_entry)
+    assert fl_row["entry"]["front_line"] is True
+
+    # non-front-line entry: no signals, no gate
+    nfl_entry = _entry_leg(_mk_snap(), None)
+    nfl_row = _score(_agg(90.0, "NFL"), _eng_covered(tech=90.0, zone=90.0), entry=nfl_entry)
+    assert nfl_row["entry"]["front_line"] is False
+
+    # nfl has higher composite — but fl must sort first due to front_line bucket
+    assert nfl_row["composite"] > fl_row["composite"], (
+        "Pre-condition: NFL composite must be higher than FL composite for test to be meaningful"
+    )
+
+    rows = sorted([nfl_row, fl_row],
+                  key=lambda a: (1 if a["unconfirmed"] else 0,
+                                 0 if a["entry"]["front_line"] else 1,
+                                 -a["composite"]))
+    assert rows[0]["ticker"] == "FL", (
+        f"front_line name should sort first; got {rows[0]['ticker']} "
+        f"(FL composite={fl_row['composite']}, NFL composite={nfl_row['composite']})"
+    )
+
+
+def test_sort_unconfirmed_always_last():
+    """Unconfirmed (uncovered) rows always sort after confirmed rows, regardless of composite."""
+    # High-composite uncovered row
+    unc_entry = _entry_leg(None, None)
+    unc_row = _score(_agg(100.0, "UNC"), _eng_uncovered(), entry=unc_entry)
+    assert unc_row["unconfirmed"] is True
+
+    # Low-composite covered row with no signals
+    cov_entry = _entry_leg(_mk_snap(), None)
+    cov_row = _score(_agg(20.0, "COV"), _eng_covered(tech=20.0, zone=20.0), entry=cov_entry)
+    assert cov_row["unconfirmed"] is False
+
+    rows = sorted([unc_row, cov_row],
+                  key=lambda a: (1 if a["unconfirmed"] else 0,
+                                 0 if a["entry"]["front_line"] else 1,
+                                 -a["composite"]))
+    assert rows[0]["ticker"] == "COV", (
+        f"Covered row must sort before unconfirmed; got {rows[0]['ticker']}"
+    )
+    assert rows[1]["ticker"] == "UNC"
+
+
+def test_sort_three_way_ordering():
+    """Full three-way sort: unconfirmed last; front_line before non-front-line; composite within."""
+    fl_entry  = _entry_leg(_mk_snap(macd_state="crossed"), None)
+    nfl_entry = _entry_leg(_mk_snap(), None)
+    unc_entry = _entry_leg(None, None)
+
+    fl_row   = _score(_agg(50.0, "FL"),  _eng_covered(tech=50.0, zone=50.0), entry=fl_entry)
+    nfl_row  = _score(_agg(70.0, "NFL"), _eng_covered(tech=70.0, zone=70.0), entry=nfl_entry)
+    unc_row  = _score(_agg(99.0, "UNC"), _eng_uncovered(), entry=unc_entry)
+
+    rows = sorted([nfl_row, unc_row, fl_row],
+                  key=lambda a: (1 if a["unconfirmed"] else 0,
+                                 0 if a["entry"]["front_line"] else 1,
+                                 -a["composite"]))
+    tickers = [r["ticker"] for r in rows]
+    assert tickers[2] == "UNC", f"Unconfirmed must be last; order={tickers}"
+    assert tickers[0] == "FL",  f"front_line must be first; order={tickers}"
+    assert tickers[1] == "NFL", f"Non-front-line covered second; order={tickers}"

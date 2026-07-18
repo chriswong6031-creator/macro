@@ -9,7 +9,7 @@ Senate) and turns it into a COPY-SIGNAL watchlist:
     each new disclosure extends the timer.
   * IMPORTANCE — names disclosed by MORE (and bipartisan) members are flagged more important
     (distinct-member count in-window).
-  * SCORE — every name is ranked by a composite of three sub-scores:
+  * SCORE — every name is ranked by a composite of four sub-scores:
       1. CLUSTER  — the politician signal: distinct-member breadth, recency-weighted net-buy bias,
                     aggregate disclosed size, freshness, bipartisan bonus.
                     Freshness is now keyed on TransactionDate (the actual trade), NOT ReportDate
@@ -20,6 +20,13 @@ Senate) and turns it into a COPY-SIGNAL watchlist:
                     avoid bucket) floor it low.
       3. BUYABLE-ZONE ("act now?") — is the name's SECTOR (regime ``sector_rs``) and THEME
                     (allocation ``ranks``) leading, and is the trend constructive?
+      4. ENTRY-TIMING (W2 of this desk) — operator-ordered 2026-07-18. Display-tier re-rank
+                    toward better entries. Sources wash signals (2W/1M washout), MACD cross, and
+                    Stochastic cross from engine/congress_entry.py (entry_snapshot). Deliberately
+                    VETO-EXEMPT: a washed-out name in a downtrend is exactly when this leg must
+                    surface for entry-hunting. Gate tier (T1/T2/T3) contributes here, not as a
+                    badge only. Entry leg is 0 when local close is unavailable (uncovered path).
+                    Names with front_line=True are sorted to the front of each unconfirmed bucket.
 
 FRESHNESS FIX (W1-S13 T2): _decay now runs on TransactionDate. A filing_lag_days column
 (ReportDate − TransactionDate) is computed per trade; lags > 45 d are flagged "late ⚠️"
@@ -67,12 +74,18 @@ log = logging.getLogger("build_congress")
 ROLLOFF_DAYS = 182          # a ticker falls off ~half a year after its latest disclosure
 HALFLIFE_DAYS = 45          # disclosure weight halves every N days (recency decay — on TransactionDate)
 MIN_DISTINCT_MEMBERS = 2    # >= this many distinct members in-window → "important"
-W_CLUSTER, W_TECHNICAL, W_ZONE = 0.40, 0.35, 0.25     # composite weights
+W_CLUSTER, W_TECHNICAL, W_ZONE = 0.30, 0.25, 0.15     # composite weights (three-leg sum = 0.70)
+W_ENTRY = 0.30              # entry-timing leg (operator-ordered 2026-07-18) — display-tier re-rank
+                            # toward better entries; NOT hit by veto multipliers
 W_MEMBER_QUALITY = 0.05     # small additive boost to cluster for proven members (modest — 12mo of data only)
+ENTRY_COMPUTE_CAP = 400     # safety cap on per-ticker close loads
 MEMBERS_SATURATE_AT = 5
 AMOUNT_SATURATE_USD = 500_000.0
 ACT_MIN_ZONE, ACT_MIN_TECH = 55.0, 45.0
-WATCH_TABLE_CAP = 80        # rows rendered in the watchlist table
+WATCH_TABLE_CAP = 150       # rows rendered in the watchlist table (80→150 with the entry-timing
+                            # front-of-line bucket: the full front-lined block (~120 names in the
+                            # 2026-07 tape) plus ~30 high-cluster names without a fresh entry signal,
+                            # so the desk's core cluster read never disappears behind the bucket)
 FEED_CAP = 50               # rows rendered in the recent-disclosure feed
 LATE_FILING_DAYS = 45       # STOCK Act filing deadline; lag > this → ⚠️
 TX_AGE_STALE_DAYS = 90      # transaction age > this → "stale" provenance flag + downweight
@@ -243,6 +256,7 @@ def _f(x):
 
 
 _SD_CACHE: dict[str, dict] = {}
+_ENTRY_CACHE: dict[str, dict | None] = {}
 
 
 def _stockdata(ticker: str, site: Path) -> dict:
@@ -258,6 +272,148 @@ def _stockdata(ticker: str, site: Path) -> dict:
         d = {}
     _SD_CACHE[t] = d
     return d
+
+
+# ---------------------------------------------------------------------------
+# entry-timing helpers (W2 of this desk, operator-ordered 2026-07-18)
+# ---------------------------------------------------------------------------
+
+def _entry_read(ticker: str) -> "dict | None":
+    """Lazy-load entry_snapshot for a single ticker. Returns None on any failure.
+
+    Degrade-safe: a None return causes _entry_leg to produce a zero-score, gate-only entry
+    dict — the build continues unaffected. Cache is module-level to avoid redundant close reads.
+    """
+    t = ticker.upper()
+    if t in _ENTRY_CACHE:
+        return _ENTRY_CACHE[t]
+    result: "dict | None" = None
+    try:
+        from engine.mtf_upturn import _load_close  # type: ignore[import]
+        from engine.congress_entry import entry_snapshot  # type: ignore[import]
+        close = _load_close(t)
+        result = entry_snapshot(close)
+    except Exception:  # noqa: BLE001 — never break the build
+        result = None
+    _ENTRY_CACHE[t] = result
+    return result
+
+
+def _entry_leg(snapshot: "dict | None", gate_tier: "str | None") -> dict:
+    """Pure function: translate an entry_snapshot dict + gate_tier → entry leg dict.
+
+    Points table (capped at 100):
+      gate: T2=40, T1=36, T3=22 (mutually exclusive — highest tier wins)
+      washout: dual=30, single hit (2W xor 1M)=15, near-only (no hit, either=="near")=6
+      w_macd: crossed=15, approaching=10
+      w_stoch: crossed=15, approaching=10
+
+    When snapshot is None or snapshot["covered"] is False the close was unavailable;
+    gate-derived booleans (prime, setting_up, front_line, fresh_10d) still honour gate_tier
+    because the gate comes from signal_gate.json, independent of local close data.
+    Wash/w_macd/w_stoch sub-dicts carry contract-shaped null fields so the template can
+    always read them without guards.
+    """
+    _NULL_WASH = {"state": "none", "k": None, "coverage": False}
+    _NULL_MACD = {"state": "none", "kind": None, "bars_since": None, "eta_bars": None}
+    _NULL_STOCH = {"state": "none", "bars_since": None, "d_at_cross": None,
+                   "from_washout": False, "k": None, "d": None, "gap": None}
+
+    covered = bool(snapshot and snapshot.get("covered"))
+
+    # --- gate-tier-derived fields (independent of close availability) ---
+    prime = gate_tier in ("T1", "T2")
+    gate_pts = {"T2": 40, "T1": 36, "T3": 22}.get(gate_tier or "", 0)
+
+    if not covered:
+        # No local close: zero wash/technical signals; gate still contributes to booleans
+        setting_up = gate_tier == "T3"
+        front_line = prime or setting_up
+        fresh_10d = gate_tier is not None
+        return {
+            "covered": False,
+            "wash_2w": _NULL_WASH,
+            "wash_1m": _NULL_WASH,
+            "dual_washout": False,
+            "w_macd": _NULL_MACD,
+            "w_stoch": _NULL_STOCH,
+            "score": float(min(gate_pts, 100)),
+            "front_line": front_line,
+            "prime": prime,
+            "setting_up": setting_up,
+            "wash_2w_hit": False,
+            "wash_1m_hit": False,
+            "fresh_10d": fresh_10d,
+        }
+
+    # --- covered: extract sub-dicts ---
+    w2 = snapshot.get("wash_2w") or _NULL_WASH
+    w1 = snapshot.get("wash_1m") or _NULL_WASH
+    wm = snapshot.get("w_macd") or _NULL_MACD
+    ws = snapshot.get("w_stoch") or _NULL_STOCH
+
+    wash_2w_hit = w2.get("state") in ("now", "recent")
+    wash_1m_hit = w1.get("state") in ("now", "recent")
+    dual_washout = wash_2w_hit and wash_1m_hit
+    near_only = (not wash_2w_hit and not wash_1m_hit
+                 and (w2.get("state") == "near" or w1.get("state") == "near"))
+
+    macd_state = wm.get("state") or "none"
+    stoch_state = ws.get("state") or "none"
+
+    # --- points table ---
+    pts = gate_pts
+    if dual_washout:
+        pts += 30
+    elif wash_2w_hit or wash_1m_hit:
+        pts += 15
+    elif near_only:
+        pts += 6
+
+    if macd_state == "crossed":
+        pts += 15
+    elif macd_state == "approaching":
+        pts += 10
+
+    if stoch_state == "crossed":
+        pts += 15
+    elif stoch_state == "approaching":
+        pts += 10
+
+    score = float(min(pts, 100))
+
+    # --- booleans ---
+    setting_up = (gate_tier == "T3"
+                  or macd_state == "approaching"
+                  or stoch_state == "approaching"
+                  or (not wash_2w_hit and not wash_1m_hit
+                      and (w2.get("state") == "near" or w1.get("state") == "near")))
+    front_line = (prime
+                  or gate_tier == "T3"
+                  or dual_washout
+                  or macd_state in ("crossed", "approaching")
+                  or stoch_state in ("crossed", "approaching"))
+    fresh_10d = (macd_state == "crossed"
+                 or stoch_state == "crossed"
+                 or wash_2w_hit
+                 or wash_1m_hit
+                 or gate_tier is not None)
+
+    return {
+        "covered": True,
+        "wash_2w": w2,
+        "wash_1m": w1,
+        "dual_washout": dual_washout,
+        "w_macd": wm,
+        "w_stoch": ws,
+        "score": score,
+        "front_line": front_line,
+        "prime": prime,
+        "setting_up": setting_up,
+        "wash_2w_hit": wash_2w_hit,
+        "wash_1m_hit": wash_1m_hit,
+        "fresh_10d": fresh_10d,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -473,47 +629,69 @@ def _aggregate(ticker: str, trades: list, asof, member_stats: dict | None = None
     }
 
 
-def _score(agg: dict, eng: dict, gate_verdict: dict | None = None) -> dict:
+def _score(agg: dict, eng: dict, gate_verdict: dict | None = None,
+           entry: dict | None = None) -> dict:
     """Compute composite score and attach provenance / entry-badge fields.
 
     gate_verdict (T5): if not None, must be a signal_gate verdict dict; a T1/T2/T3 tier
     triggers the ⚡ prime-entry badge.
+
+    entry: output of _entry_leg().  The entry score (0-100) contributes W_ENTRY of the
+    final composite AFTER base is computed.  The entry leg is deliberately VETO-EXEMPT:
+    veto multipliers (blocked/downtrend/extended) apply to base only, never to the entry
+    leg — washed-out names in downtrends are exactly what the entry leg must surface.
     """
     cluster = agg["cluster_score"]
     tech, zone = eng.get("technical"), eng.get("zone")
     covered = eng.get("covered", False)
 
-    if covered:
-        # Full composite: cluster + technical + zone with neutral fill-ins for missing legs.
-        tw = W_CLUSTER + W_TECHNICAL + W_ZONE
-        composite = (W_CLUSTER * cluster + W_TECHNICAL * (tech if tech is not None else 50.0)
-                     + W_ZONE * (zone if zone is not None else 50.0)) / tw
-        # Apply blocked/downtrend/extended multiplier vetoes only for covered names; an uncovered
-        # name has no engine to veto it, so letting these multipliers fire on stale/absent signals
-        # would be misleading and was also bypassed entirely before (composite used neutral fill-ins
-        # that dodged the check).  Keeping them under the covered branch restores the intended guard.
-        if eng.get("blocked") or eng.get("downtrend"):
-            composite *= 0.6
-        elif eng.get("extended"):
-            composite *= 0.85
-        unconfirmed = False
-    else:
-        # Uncovered: no engine read → only the cluster signal is real.  Use cluster-only composite
-        # (W_CLUSTER weight normalised to 1.0) and skip all multiplier vetoes.  The neutral 50.0
-        # gift previously awarded for missing technical/zone inflated uncovered scores by ~30 points,
-        # letting them outrank vetoed covered names.  Audit finding: brief #4.
-        composite = W_CLUSTER * cluster          # = 0.40 × cluster; intentionally un-normalised
-        unconfirmed = True
-
-    act_now = bool(covered and tech is not None and zone is not None and zone >= ACT_MIN_ZONE
-                   and tech >= ACT_MIN_TECH and not (eng.get("blocked") or eng.get("downtrend") or eng.get("extended")))
-
-    # T5 — entry badge from signal_gate
+    # T5 — entry badge from signal_gate (needed before _entry_leg call for gate_tier)
     gate_tier = None
     if gate_verdict is not None:
         t = gate_verdict.get("tier_cascade")
         if t in ("T1", "T2", "T3"):
             gate_tier = t
+
+    # Resolve entry leg (may be pre-computed or None)
+    if entry is None:
+        entry = _entry_leg(None, gate_tier)
+
+    if covered:
+        # Full composite: cluster + technical + zone with neutral fill-ins for missing legs.
+        # Weight sum of the three legs = W_CLUSTER + W_TECHNICAL + W_ZONE = 0.70; normalise
+        # by that sum so the three legs together always contribute exactly (1 - W_ENTRY) = 0.70
+        # of the final weight budget.
+        tw = W_CLUSTER + W_TECHNICAL + W_ZONE   # = 0.70
+        base = (W_CLUSTER * cluster + W_TECHNICAL * (tech if tech is not None else 50.0)
+                + W_ZONE * (zone if zone is not None else 50.0)) / tw
+        # Apply blocked/downtrend/extended multiplier vetoes only for covered names; an uncovered
+        # name has no engine to veto it, so letting these multipliers fire on stale/absent signals
+        # would be misleading and was also bypassed entirely before (composite used neutral fill-ins
+        # that dodged the check).  Keeping them under the covered branch restores the intended guard.
+        # NOTE: veto multipliers are applied to base ONLY, not to the entry leg — deliberate design:
+        # a washed-out name in a downtrend must still surface via the entry leg.
+        if eng.get("blocked") or eng.get("downtrend"):
+            base *= 0.6
+        elif eng.get("extended"):
+            base *= 0.85
+        composite = (1 - W_ENTRY) * base + W_ENTRY * entry["score"]
+        unconfirmed = False
+    else:
+        # Uncovered: no engine read → only the cluster signal is real.  Use cluster-only composite
+        # (W_CLUSTER weight, intentionally sub-normalised = 0.30 × cluster) and skip all multiplier
+        # vetoes.  The neutral 50.0 gift previously awarded for missing technical/zone inflated
+        # uncovered scores by ~30 points, letting them outrank vetoed covered names.  Audit finding: brief #4.
+        base = W_CLUSTER * cluster          # = 0.30 × cluster; intentionally un-normalised
+        # Entry leg counts here too (review 07-18): engine coverage (published stockdata) and
+        # entry-signal coverage (local close / signal gate) are independent data sources — a
+        # gated or washed-out name without an engine read still earns its timing points.
+        # entry["score"] is already 0.0 when nothing fired, and unconfirmed rows always sort
+        # behind covered rows regardless, so this only orders WITHIN the unconfirmed bucket.
+        composite = (1 - W_ENTRY) * base + W_ENTRY * entry["score"]
+        unconfirmed = True
+
+    act_now = bool(covered and tech is not None and zone is not None and zone >= ACT_MIN_ZONE
+                   and tech >= ACT_MIN_TECH and not (eng.get("blocked") or eng.get("downtrend") or eng.get("extended")))
 
     return {**agg, "name": None, "composite": round(composite, 1), "act_now": act_now,
             "unconfirmed": unconfirmed,
@@ -522,8 +700,9 @@ def _score(agg: dict, eng: dict, gate_verdict: dict | None = None) -> dict:
             "sector_dir": eng.get("sector_dir"), "theme_dir": eng.get("theme_dir"),
             "trend_dir": eng.get("trend_dir"), "extended": eng.get("extended"),
             "downtrend": eng.get("downtrend"), "blocked": eng.get("blocked"), "price": eng.get("price"),
-            # T5 entry badge
+            # T5 entry badge + full entry leg
             "gate_tier": gate_tier,
+            "entry": entry,
             }
 
 
@@ -585,13 +764,55 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             log.warning("allocation ranks load failed (%s)", e)
 
-        items = []
+        # --- Phase 1: aggregate all tickers ---
+        staged: list[tuple[str, list, dict, dict, dict | None]] = []
         for tk, trades in by_ticker.items():
             agg = _aggregate(tk, trades, asof, member_stats=member_stats)
             sd = _stockdata(tk, site)
             eng = _engine_read(sd, sector_rs, alloc_ranks, n_themes)
             gate_v = gate_verdicts.get(tk)
-            row = _score(agg, eng, gate_verdict=gate_v)
+            staged.append((tk, trades, agg, eng, gate_v))
+
+        # --- Phase 2: determine which tickers get entry compute ---
+        # Sort by cluster_score descending so the top ENTRY_COMPUTE_CAP by cluster interest
+        # always get entry snapshots (plus any ticker with a gate tier, regardless of rank).
+        # HONESTY NOTE (review 07-18): front-of-line detection is therefore complete only
+        # within (top-ENTRY_COMPUTE_CAP-by-cluster ∪ gated); a low-cluster ungated name with
+        # a genuine washout/cross is not scanned. The page footnote discloses this bound.
+        staged.sort(key=lambda x: -x[2]["cluster_score"])
+        n_total_tickers = len(staged)
+        entry_snapshots_computed = 0
+        entry_snapshots_skipped = 0
+
+        if n_total_tickers > ENTRY_COMPUTE_CAP:
+            cap_set = set(range(ENTRY_COMPUTE_CAP))  # indices of top-N by cluster
+            # also include any ticker with a gate verdict tier regardless of cluster rank
+            gated_indices = {i for i, (_, _, _, _, gv) in enumerate(staged)
+                             if gv is not None and gv.get("tier_cascade") in ("T1", "T2", "T3")}
+            compute_indices = cap_set | gated_indices
+        else:
+            compute_indices = set(range(n_total_tickers))
+
+        # --- Phase 3: score all tickers ---
+        items = []
+        for i, (tk, trades, agg, eng, gate_v) in enumerate(staged):
+            # Resolve gate_tier for _entry_leg (duplicating the T5 logic for the cap path)
+            gate_tier_here = None
+            if gate_v is not None:
+                t5 = gate_v.get("tier_cascade")
+                if t5 in ("T1", "T2", "T3"):
+                    gate_tier_here = t5
+
+            if i in compute_indices:
+                ent_snapshot = _entry_read(tk)
+                entry_snapshots_computed += 1
+            else:
+                ent_snapshot = None
+                entry_snapshots_skipped += 1
+
+            ent = _entry_leg(ent_snapshot, gate_tier_here)
+            row = _score(agg, eng, gate_verdict=gate_v, entry=ent)
+            sd = _stockdata(tk, site)   # already cached
             row["name"] = sd.get("name")
             # T0 beta flag
             t0_match = t0_map.get(tk)
@@ -599,9 +820,15 @@ def main() -> int:
                 row["t0"] = True
                 row["t0_d3k"] = round(t0_match["d3_k"]) if t0_match.get("d3_k") is not None else None
             items.append(row)
-        # Covered rows always rank above unconfirmed (uncovered) rows; within each bucket sort by
-        # composite descending.  The template receives a single list and is unchanged.
-        items.sort(key=lambda a: (1 if a["unconfirmed"] else 0, -a["composite"]))
+
+        log.info("entry snapshots: %d computed / %d skipped (cap=%d)",
+                 entry_snapshots_computed, entry_snapshots_skipped, ENTRY_COMPUTE_CAP)
+
+        # Sort: unconfirmed always last; within confirmed bucket, front_line names first;
+        # within each sub-bucket sort by composite descending.
+        items.sort(key=lambda a: (1 if a["unconfirmed"] else 0,
+                                  0 if a["entry"]["front_line"] else 1,
+                                  -a["composite"]))
 
         # attach company names to the recent-disclosure feed too
         for r in feed[:FEED_CAP]:
@@ -621,6 +848,7 @@ def main() -> int:
             "n_important": sum(1 for a in items if a["important"]),
             "n_act_now": sum(1 for a in items if a["act_now"]),
             "n_bipartisan": sum(1 for a in items if a["bipartisan"]),
+            "n_front_line": sum(1 for a in items if a["entry"]["front_line"]),
             "as_of": (feed[0]["report_date"] if feed else asof.isoformat()),
         }
 
@@ -633,7 +861,8 @@ def main() -> int:
             surfaced = items[:WATCH_TABLE_CAP]
             rows = [{"ticker": a.get("ticker"), "rank": i + 1, "score": a.get("composite"),
                      "lean": 1, "gate_tier": a.get("gate_tier"), "covered": a.get("covered"),
-                     "unconfirmed": a.get("unconfirmed")}
+                     "unconfirmed": a.get("unconfirmed"),
+                     "front_line": a["entry"]["front_line"]}  # additive; desk_grader ignores unknown keys
                     for i, a in enumerate(surfaced)]
             rep = desk_grader.snapshot_desk("congress", rows, asof)
             grader = desk_grader.compute("congress", asof)
@@ -658,7 +887,7 @@ def main() -> int:
             html = env.get_template("congress_trades.html.j2").render(
                 summary=summary, items=items[:WATCH_TABLE_CAP], n_shown=min(len(items), WATCH_TABLE_CAP),
                 feed=feed[:FEED_CAP], window_days=ROLLOFF_DAYS, generated_utc=built,
-                weights={"cluster": W_CLUSTER, "technical": W_TECHNICAL, "zone": W_ZONE},
+                weights={"cluster": W_CLUSTER, "technical": W_TECHNICAL, "zone": W_ZONE, "entry": W_ENTRY},
                 member_leaderboard=member_leaderboard, desk_grader=grader,
                 t0_rows=t0_rows, t0_meta=t0_meta,
                 active_section="research", active_page="congress_trades",
