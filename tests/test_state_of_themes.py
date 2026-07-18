@@ -978,6 +978,16 @@ def test_mixed_direction_tf_per_leg_rows_compose(tmp_path):
     )
     # yoy_pct should appear
     assert "15" in rising["line_en"], f"yoy 15% missing; got: {rising['line_en']}"
+    # Raw direction keys never render at rest — plain-word labels do (Law 2)
+    assert "Demand-side products" in rising["line_en"], rising["line_en"]
+    assert "需求侧产品" in rising["line_zh"], rising["line_zh"]
+    assert "Substitution-side products" in falling["line_en"], falling["line_en"]
+    assert "替代侧产品" in falling["line_zh"], falling["line_zh"]
+    assert "rising_imports_confirms" not in rising["line_en"]
+    assert "rising imports confirms" not in rising["line_en"]
+    # Receipt hover falls back to the theme-level coverage note (never empty)
+    assert rising["cov_tip_en"], "direction-leg receipt tip should not be empty"
+    assert rising["cov_tip_zh"], "direction-leg receipt ZH tip should not be empty"
 
 
 def test_mixed_direction_tf_rows_in_html(tmp_path):
@@ -990,8 +1000,10 @@ def test_mixed_direction_tf_rows_in_html(tmp_path):
     assert "mixed" in html.lower() or "mixed picture" in html.lower(), (
         "mixed-direction top-line must appear in HTML"
     )
-    # Per-leg rows should appear
-    assert "rising" in html.lower(), "direction leg label must appear in HTML"
+    # Per-leg rows render the plain-word labels, never the raw slug
+    assert "Demand-side products" in html, "plain direction leg label must appear in HTML"
+    assert "Substitution-side products" in html, "plain direction leg label must appear in HTML"
+    assert "rising imports confirms" not in html, "raw direction slug must not render at rest"
     assert "confirm" in html.lower(), "per-leg confirmation word must appear in HTML"
 
 

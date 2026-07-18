@@ -203,6 +203,15 @@ _TF_CONFIRMATION_ZH = {
 }
 
 
+# Plain-word labels for the two engine direction-leg keys (sign convention:
+# rising imports = demand evidence; falling imports = domestic-substitution
+# evidence). Raw keys must never render at rest (Design Doctrine Law 2).
+_TF_DIRECTION_LABELS = {
+    "rising_imports_confirms": ("Demand-side products", "需求侧产品"),
+    "falling_imports_confirms": ("Substitution-side products", "替代侧产品"),
+}
+
+
 def _tf_confirmation_word_en(confirmation: str | None) -> str:
     return _TF_CONFIRMATION_EN.get(confirmation or "", "no clear read")
 
@@ -988,7 +997,13 @@ def compose(root: Path) -> dict[str, Any]:
                             continue
                         _dl_conf = _dl.get("confirmation")
                         _dl_yoy = _dl.get("yoy_pct")
-                        _dl_cov_note = _dl.get("coverage_note") or ""
+                        # direction_legs carry no per-leg coverage note; fall back
+                        # to the theme-level note so the receipt hover is never empty
+                        _dl_cov_note_en = (_dl.get("coverage_note")
+                                           or tf_th.get("coverage_note") or "")
+                        _dl_cov_note_zh = (_dl.get("coverage_note_zh")
+                                           or tf_th.get("coverage_note_zh")
+                                           or _dl_cov_note_en)
                         _dl_word_en = _tf_confirmation_word_en(_dl_conf)
                         _dl_word_zh = _tf_confirmation_word_zh(_dl_conf)
                         if _dl_yoy is not None:
@@ -998,15 +1013,17 @@ def compose(root: Path) -> dict[str, Any]:
                         else:
                             _dl_yoy_en = ""
                             _dl_yoy_zh = ""
-                        # Plain direction framing
-                        _dir_label_en = _dir.replace("_", " ")
-                        _dir_label_zh = _dir.replace("_", " ")
+                        # Plain direction framing (raw keys never render at rest;
+                        # prettified fallback only if an unknown key appears)
+                        _dir_label_en, _dir_label_zh = _TF_DIRECTION_LABELS.get(
+                            _dir, (_dir.replace("_", " "), _dir.replace("_", " "))
+                        )
                         tf_direction_leg_rows.append({
                             "direction": _dir,
                             "line_en": f"{_dir_label_en}: {_dl_word_en}{_dl_yoy_en}",
                             "line_zh": f"{_dir_label_zh}：{_dl_word_zh}{_dl_yoy_zh}",
-                            "cov_tip_en": _dl_cov_note,
-                            "cov_tip_zh": _dl_cov_note,
+                            "cov_tip_en": _dl_cov_note_en,
+                            "cov_tip_zh": _dl_cov_note_zh,
                         })
 
                 tf_section = {
