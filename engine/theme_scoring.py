@@ -135,6 +135,20 @@ _SECTOR_PROXY = {
     "memory_storage":    "SMH",   # HBM/DRAM within the semiconductor complex
     "data_center_power": "XLI",   # industrials ETF: Vertiv/Eaton/GE-Vernova are Electrical-Equipment Industrials (XLI), the coherent cyclical proxy for riskon 0.4
     "nuclear_power":     "XLU",   # utilities ETF: nuclear operators genuinely classify within XLU
+    # MLC-W2b coverage completion (2026-07-18): 11 equal-weight sector baskets mapped to their
+    # definitional SPDR — identity/definitional mapping, no degrees of freedom, not tuning.
+    # Each us_sector_<slug> basket IS the GICS sector; its demotion proxy is its own SPDR.
+    "us_sector_tech":          "XLK",
+    "us_sector_comm":          "XLC",
+    "us_sector_discretionary": "XLY",
+    "us_sector_financials":    "XLF",
+    "us_sector_industrials":   "XLI",
+    "us_sector_materials":     "XLB",
+    "us_sector_energy":        "XLE",
+    "us_sector_health":        "XLV",
+    "us_sector_staples":       "XLP",
+    "us_sector_utilities":     "XLU",
+    "us_sector_realestate":    "XLRE",
 }
 
 # Pre-registered-arbitrary (MLC-W2b; frozen — no tuning on observed cases).

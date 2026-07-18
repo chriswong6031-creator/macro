@@ -12208,9 +12208,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </a>
   {% endif %}{# /market_state B4 #}
   {% if action_board %}
-  <div class="panel span12">
+  <div class="panel span12" id="action-board">
     <h2>{{ t('What to act on now', '当前可操作') }}
       {{ help('Every sector and theme is sorted into five lanes by cycle position — the lane name is the action, and each lane explains itself below its title. Hover any row for full detail. Symbols: 🏛 sector fund · 🧩 theme group · ✓ tested sell-discipline gate (overrides the lane read when it fires) · ★ in the model book.', '所有板块与主题按周期位置分入五个泳道 — 泳道名称即操作建议，各泳道标题下有说明。悬停任意行查看完整详情。图例：🏛 板块基金 · 🧩 主题篮子 · ✓ 经回测的卖出纪律门槛（触发时覆盖泳道判读）· ★ 模型组合内。') }}
+      <a href="baskets.html#actnow-section" style="font-size:11px;color:var(--muted);font-weight:400;text-decoration:none;margin-left:8px"><span class="l-en">Theme reasons → baskets page</span><span class="l-zh">主题详情 → 主题篮子页</span></a>
     </h2>
     {# Policy-shock de-escalation fresh-entry caution chip (PS-R3: display de-escalation only —
        no reordering, no removal. Ranks computed on pre-shock data; this chip is the only change.) #}
@@ -12244,6 +12245,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
        V2 board switched every lane to ab_theme_row / ab_sector_row.) #}
     {# TS-R6 A2: two-reads chip for action-board sector rows (same ETF, two house reads disagree). #}
     {% macro ab_two_reads(x) -%}{% if x.get('two_reads_chip') %}{% set _abtr = x.two_reads_chip %}<span class="two-reads-chip" data-tip-en="Two house reads on {{ x.ticker }}: cycle timing = {{ _abtr.cycle_label_en }} (slow, cap-weighted); setup engine = {{ _abtr.setup_label_en }} (3-day tactical). Different instruments / different horizons — both shown, neither overrides." data-tip-zh="{{ x.ticker }} 两个本系统读数：周期 = {{ _abtr.cycle_label_en }}（慢速市值加权）；形态 = {{ _abtr.setup_label_en }}（3日战术）。不同工具／维度，同时显示。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _abtr.cycle_label_en }}</b> vs setup <b>{{ _abtr.setup_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _abtr.cycle_label_en }}</b> vs 形态 <b>{{ _abtr.setup_label_en }}</b></span></span>{% endif %}{%- endmacro %}
+    {# FIX 2: EW-vs-cycle disclosure chip for sector rows — fires when EW and cycle disagree (buy vs reduce) and gate_override did NOT fire. #}
+    {% macro ab_ew_two_reads(x) -%}{% if x.get('ew_two_reads') %}{% set _ewtr = x.ew_two_reads %}<span class="two-reads-chip" data-tip-en="Two reads on {{ x.ticker }}: cycle timing = {{ _ewtr.cycle_label_en }}; equal-weight basket = {{ _ewtr.ew_label_en }}. Different constructions — both shown for context." data-tip-zh="{{ x.ticker }} 两个读数：周期 = {{ _ewtr.cycle_label_zh }}；等权篮子 = {{ _ewtr.ew_label_zh }}。不同构建方式，同时显示供参考。"><span class="tr-sep">⇔</span><span class="l-en">two reads: cycle <b>{{ _ewtr.cycle_label_en }}</b> vs equal-weight <b>{{ _ewtr.ew_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _ewtr.cycle_label_zh }}</b> vs 等权 <b>{{ _ewtr.ew_label_zh }}</b></span></span>{% endif %}{%- endmacro %}
     {# ew_chip is inlined below each sector row for Jinja2 lexer compatibility. #}
     {#- V2 ACTION BOARD — new lane design (adjudicated 2026-07-10)
         Each lane: header (emoji + EN/ZH name + count + subtitle) + row list.
@@ -12314,7 +12317,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="row-pop-val">{{ x.season_str }}</span></div>
         {%- endif %}
       </div>
-      {%- if x.get('text') or x.get('text_zh') or x.get('two_reads_chip') %}
+      {%- if x.get('text') or x.get('text_zh') or x.get('two_reads_chip') or x.get('ew_two_reads') or x.get('conflict_reason_en') %}
       <ul class="row-pop-why">
         {%- if x.get('text') or x.get('text_zh') %}
         <li><span class="l-en">{{ x.get('text', '')|e }}</span><span class="l-zh">{{ x.get('text_zh', '')|e }}</span></li>
@@ -12322,6 +12325,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {%- if x.get('two_reads_chip') %}
         {%- set _tr2 = x.two_reads_chip %}
         <li><span class="l-en">Two reads: cycle <b>{{ _tr2.cycle_label_en }}</b> vs setup <b>{{ _tr2.setup_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _tr2.get('cycle_label_zh', _tr2.cycle_label_en) }}</b> vs 形态 <b>{{ _tr2.get('setup_label_zh', _tr2.setup_label_en) }}</b></span></li>
+        {%- endif %}
+        {%- if x.get('ew_two_reads') %}
+        {%- set _ewtr2 = x.ew_two_reads %}
+        <li><span class="l-en">Two reads: cycle <b>{{ _ewtr2.cycle_label_en }}</b> vs equal-weight <b>{{ _ewtr2.ew_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _ewtr2.get('cycle_label_zh', _ewtr2.cycle_label_en) }}</b> vs 等权 <b>{{ _ewtr2.get('ew_label_zh', _ewtr2.ew_label_en) }}</b></span></li>
+        {%- endif %}
+        {%- if x.get('conflict_reason_en') %}
+        <li><span class="l-en">{{ x.conflict_reason_en|e }}</span><span class="l-zh">{{ x.get('conflict_reason_zh', x.conflict_reason_en)|e }}</span></li>
         {%- endif %}
       </ul>
       {%- endif %}
@@ -12378,13 +12388,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="row-pop-val up"><span class="l-en">&#10003; Backtested absolute-trend gate</span><span class="l-zh">&#10003; 经回测绝对趋势门槛</span></span></div>
         {%- endif %}
       </div>
-      {%- if x.get('reco_why_en') or x.get('run_reason_en') %}
+      {%- if x.get('reco_why_en') or x.get('run_reason_en') or x.get('conflict_reason_en') %}
       <ul class="row-pop-why">
         {%- if x.get('reco_why_en') %}
         <li><span class="l-en">{{ x.reco_why_en|e }}</span><span class="l-zh">{{ x.get('reco_why_zh', x.reco_why_en)|e }}</span></li>
         {%- endif %}
-        {%- if x.get('run_reason_en') %}
+        {%- if x.get('run_reason_en') and not x.get('conflict_reason_en') %}
         <li><span class="l-en">{{ x.run_reason_en|e }}</span><span class="l-zh">{{ x.get('run_reason_zh', x.run_reason_en)|e }}</span></li>
+        {%- endif %}
+        {%- if x.get('conflict_reason_en') %}
+        <li><span class="l-en">&#9888; {{ x.conflict_reason_en|e }}</span><span class="l-zh">&#9888; {{ x.get('conflict_reason_zh', x.conflict_reason_en)|e }}</span></li>
         {%- endif %}
       </ul>
       {%- endif %}
@@ -12397,10 +12410,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="ai-bdg">🏛</span>
         <span class="act-row-name"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
       </span>
-      {%- if x.get('chip_en') or x.get('gate_override') %}
+      {%- if x.get('chip_en') or x.get('gate_override') or x.get('ew_two_reads') or x.get('conflict_chip_en') %}
       <span class="act-row-chips">
         {{- ab_chip(x.get('chip_en',''), x.get('chip_zh',''), x.get('chip_tone','muted')) -}}
         {{- ab_gate(x) -}}
+        {{- ab_ew_two_reads(x) -}}
+        {#- W2b/W4 demotion receipt lifted from the EW overlay (MLC-R7) -#}
+        {{- ab_chip(x.get('conflict_chip_en',''), x.get('conflict_chip_zh', x.get('conflict_chip_en','')), 'warn') -}}
       </span>
       {%- endif %}
       {%- if x.get('stat_en') %}<span class="act-row-stat"><span class="l-en">{{ x.stat_en }}</span><span class="l-zh">{{ x.get('stat_zh', x.stat_en) }}</span></span>{%- endif %}
@@ -12422,6 +12438,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="act-row-score{% if _sc >= 60 %} act-score-hi{% elif _sc >= 40 %} act-score-mid{% else %} act-score-lo{% endif %}">{{ '%.0f'|format(_sc) }}</span>
         {%- endif %}
       </span>
+      {#- FIX 1: conflict chip (warn tone) when theme was demoted from buy lanes -#}
+      {%- if x.get('conflict_chip_en') %}
+      <span class="act-row-chips">
+        {{- ab_chip(x.conflict_chip_en, x.get('conflict_chip_zh', x.conflict_chip_en), 'warn') -}}
+      </span>
+      {%- endif %}
       {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined %}
       <span class="act-row-stat"><span class="{{ 'up' if x.perf_20d_rel >= 0 else 'dn' }}">{{ '%+.1f'|format(x.perf_20d_rel * 100) }}%</span> <span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
       {%- endif %}
@@ -12434,6 +12456,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {%- set _run_cnt = action_board.get('on_the_run', []) | length -%}
     {%- set _tp_cnt = action_board.take_profits | length -%}
     {%- set _hold_cnt = (action_board.hold | length) + (action_board.avoid | length) -%}
+    {#- FIX 3: more-count helpers from basket_items; default 0 when absent -#}
+    {%- set _ab_more = action_board.get('more') or {} -%}
+    {%- set _more_bn = _ab_more.get('buy_now') or 0 -%}
+    {%- set _more_bs = _ab_more.get('buy_soon') or 0 -%}
+    {%- set _more_run = _ab_more.get('on_the_run') or 0 -%}
+    {%- set _more_tp = _ab_more.get('take_profits') or 0 -%}
+    {%- set _more_hold = (_ab_more.get('hold') or 0) + (_ab_more.get('avoid') or 0) -%}
     <div class="actiongrid">
       {#- ---- LANE 1: BUY NOW ---- -#}
       <div class="actcol act-buy">
@@ -12449,6 +12478,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% for x in action_board.buy_now %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
+          {%- if _more_bn > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_bn }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_bn }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
         {% if _bn_cnt > 6 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bn_cnt - 6 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -12466,6 +12496,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% for x in action_board.buy_soon %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
+          {%- if _more_bs > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_bs }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_bs }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
         {% if _bs_cnt > 6 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bs_cnt - 6 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -12483,6 +12514,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% for x in action_board.get('on_the_run', []) %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing extended right now.', '当前无过度延伸的标的。') }}</p>{% endfor %}
+          {%- if _more_run > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_run }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_run }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
         {% if _run_cnt > 6 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _run_cnt - 6 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -12500,6 +12532,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% for x in action_board.take_profits %}
             {% if x.kind == 'theme' %}{{ ab_theme_row(x) }}{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
+          {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
         {% if _tp_cnt > 5 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _tp_cnt - 5 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
@@ -12522,6 +12555,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% for x in action_board.avoid %}
             {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
           {% endfor %}
+          {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
         {% if _hold_cnt > 6 %}
         <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _hold_cnt - 6 }}) ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>

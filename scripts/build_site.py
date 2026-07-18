@@ -1604,7 +1604,9 @@ def basket_action_items(site) -> dict:
 
     buckets: dict = {"buy_now": [], "buy_soon": [], "on_the_run": [],
                      "take_profits": [], "hold": [], "avoid": [],
-                     "sector_overlay": {}}
+                     "sector_overlay": {},
+                     "more": {"buy_now": 0, "buy_soon": 0, "on_the_run": 0,
+                               "take_profits": 0, "hold": 0, "avoid": 0}}
     try:
         ti = (json.loads((site / "basketdata" / "baskets.json").read_text())
               .get("theme_intel") or {})
@@ -1619,6 +1621,31 @@ def basket_action_items(site) -> dict:
     act_now = ti.get("act_now") or {}
     act_now_buy_ids = {x["id"] for x in (act_now.get("buy") or [])}
     act_now_pullback_ids = {x["id"] for x in (act_now.get("add_on_pullback") or [])}
+
+    # FIX 1 — build conflicted lookup: id -> item (carries reason_en/zh + demotion type)
+    # Items in conflicted were demoted out of buy (sector-Reduce demotion or momentum cooling).
+    # They must NOT route to buy_now/buy_soon; instead they go to on_the_run with conflict chips.
+    _conflicted_items = act_now.get("conflicted") or []
+    _conflicted_lookup: dict[str, dict] = {
+        x["id"]: x for x in _conflicted_items if x.get("id")
+    }
+
+    def _conflict_chips(cf_item: dict) -> tuple[str, str, str, str]:
+        """Return (chip_en, chip_zh, reason_en, reason_zh) for a conflicted act_now item."""
+        if cf_item.get("cooling"):
+            return (
+                "momentum cooling",
+                "动能降温",
+                cf_item.get("reason_en") or "momentum cooling",
+                cf_item.get("reason_zh") or "动能降温",
+            )
+        # default: sector-Reduce demotion (W2b)
+        return (
+            "sector says Reduce",
+            "板块评级为减配",
+            cf_item.get("reason_en") or "sector view is Reduce",
+            cf_item.get("reason_zh") or "所属板块评级为减配",
+        )
 
     alloc, book_wt = {}, {}
     try:
@@ -1695,12 +1722,34 @@ def basket_action_items(site) -> dict:
                           "buy_soon" if (reco == "enter" and ce_flag) else "on_the_run")
             else:
                 ew_lane = reduce_bucket.get(reco, "avoid")
-            buckets["sector_overlay"][spdr] = dict(base_item, ew_lane=ew_lane)
+            sector_item = dict(base_item, ew_lane=ew_lane)
+            # FIX 1 — carry conflict chips onto sector_overlay entry when conflicted
+            _cf = _conflicted_lookup.get(tid)
+            if _cf:
+                _ce_n, _ce_zh, _cr_en, _cr_zh = _conflict_chips(_cf)
+                sector_item["conflict_chip_en"] = _ce_n
+                sector_item["conflict_chip_zh"] = _ce_zh
+                sector_item["conflict_reason_en"] = _cr_en
+                sector_item["conflict_reason_zh"] = _cr_zh
+            buckets["sector_overlay"][spdr] = sector_item
             continue
 
         # --- Narrative (non-us_sector_*) themes: route by reco + clean_entry ---
         if reco in ("accumulate", "enter"):
-            if reco == "accumulate" and ce_flag:
+            # FIX 1 — check conflicted BEFORE routing to buy lanes
+            _cf = _conflicted_lookup.get(tid)
+            if _cf:
+                # Demoted theme: goes to on_the_run regardless of ce_flag
+                bkt = "on_the_run"
+                _ce_n, _ce_zh, _cr_en, _cr_zh = _conflict_chips(_cf)
+                base_item["conflict_chip_en"] = _ce_n
+                base_item["conflict_chip_zh"] = _ce_zh
+                base_item["conflict_reason_en"] = _cr_en
+                base_item["conflict_reason_zh"] = _cr_zh
+                # Also set run_reason so the existing ⟳ glyph fires
+                base_item["run_reason_en"] = _cr_en
+                base_item["run_reason_zh"] = _cr_zh
+            elif reco == "accumulate" and ce_flag:
                 bkt = "buy_now"
             elif reco == "enter" and ce_flag:
                 bkt = "buy_soon"
@@ -1731,8 +1780,14 @@ def basket_action_items(site) -> dict:
     buckets["on_the_run"].sort(key=lambda x: -(x.get("score") or 0))
     buckets["take_profits"].sort(key=lambda x: (x.get("score") or 0))  # weakest first
     buckets["avoid"].sort(key=lambda x: (x.get("score") or 0))
+    # FIX 3 — raise per-bucket cap 8 → 12; record more_<bucket> counts for disclosure
+    _CAP = 12
+    more: dict[str, int] = {}
     for k in ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid"):
-        buckets[k] = buckets[k][:8]
+        full = buckets[k]
+        more[k] = max(0, len(full) - _CAP)
+        buckets[k] = full[:_CAP]
+    buckets["more"] = more
     return buckets
 
 
@@ -1933,6 +1988,13 @@ def action_board(sector_timing: dict, notable: list[dict],
         if ov:
             item["ew"] = ov
             item["ew_lane"] = ov.get("ew_lane")
+            # W2b/W4 demotion receipts travel on the overlay item — lift them to
+            # the rendered sector row so the sector-Reduce conflict is disclosed
+            # on the board itself, not buried inside the ew dict (MLC-R7).
+            for _ck in ("conflict_chip_en", "conflict_chip_zh",
+                        "conflict_reason_en", "conflict_reason_zh"):
+                if ov.get(_ck) and not item.get(_ck):
+                    item[_ck] = ov[_ck]
 
         # Reduce-side override: the backtested drawdown-control edge may not be hidden
         # behind a constructive cycle read.
@@ -1945,6 +2007,37 @@ def action_board(sector_timing: dict, notable: list[dict],
             elif ov_reco == "avoid" and cycle_lane in _BUY_LANES:
                 final_lane = "avoid"
                 item["gate_override"] = True
+
+        # FIX 2 — EW-vs-cycle disclosure chip (when gate_override did NOT fire).
+        # Fires when EW lane direction and final cycle lane direction disagree
+        # (buy-side vs reduce-side in either direction) and it's a pure disclosure
+        # — the gate_override path already handles the reduce override.
+        if ov and not item.get("gate_override"):
+            _ew_ln = ov.get("ew_lane") or ""
+            _BUY_SIDE = {"buy_now", "buy_soon", "on_the_run"}
+            _RED_SIDE = {"take_profits", "avoid"}
+            _cycle_buy = final_lane in _BUY_SIDE
+            _cycle_red = final_lane in _RED_SIDE
+            _ew_buy = _ew_ln in _BUY_SIDE
+            _ew_red = _ew_ln in _RED_SIDE
+            if (_cycle_buy and _ew_red) or (_cycle_red and _ew_buy):
+                # Use the reco label already on the EW overlay item for EW side
+                _ew_label_en = (ov.get("label") or _ew_ln.replace("_", " ")).upper()
+                _ew_label_zh = ov.get("label_zh") or _ew_label_en
+                # Cycle label: EN from the item; ZH via STATE_DISPLAY on the
+                # ladder state (sector items carry no label_zh — same idiom as
+                # the setup two_reads chip below; fail-open to EN).
+                from engine.cycles import STATE_DISPLAY as _EWSD
+                _cyc_label_en = (item.get("label")
+                                 or final_lane.replace("_", " ")).upper()
+                _cyc_label_zh = _EWSD.get(tm.get("state", ""), {}).get(
+                    "label_zh") or _cyc_label_en
+                item["ew_two_reads"] = {
+                    "cycle_label_en": _cyc_label_en,
+                    "cycle_label_zh": _cyc_label_zh,
+                    "ew_label_en": _ew_label_en,
+                    "ew_label_zh": _ew_label_zh,
+                }
 
         # Attach stat/chip display fields and text_zh per contract
         _action_board_stat_chip(final_lane, e, item)
@@ -2029,12 +2122,15 @@ def action_board(sector_timing: dict, notable: list[dict],
     # UNIFY: narrative baskets lead each lane (the resolution the user acts on), GICS
     # sectors follow. on_the_run: basket rows first (same 🧩-then-🏛 pattern), then sectors.
     bi = basket_items or {}
+    # FIX 3 — pass more counts from basket_items through to the VM
+    _bi_more = bi.get("more") or {}
     return {"buy_now": (bi.get("buy_now") or []) + buy_now,
             "buy_soon": (bi.get("buy_soon") or []) + buy_soon,
             "on_the_run": (bi.get("on_the_run") or []) + on_the_run,
             "take_profits": (bi.get("take_profits") or []) + take_profits,
             "hold": (bi.get("hold") or []) + hold,
             "avoid": (bi.get("avoid") or []) + avoid,
+            "more": _bi_more,
             "notable": notable_clean[:CAP]}
 
 

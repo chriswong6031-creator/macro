@@ -203,6 +203,102 @@ class TestSMHFallback:
         assert len(act_now["conflicted"]) == 1
 
 
+class TestUsSectorBasketDemotion:
+    """MLC-W2b coverage completion (2026-07-18): us_sector_* baskets must be demotable.
+
+    Each us_sector_<slug> basket maps directly to its own SPDR via the identity mapping
+    added to _SECTOR_PROXY.  These are definitional, not arbitrary — the basket IS the sector.
+    """
+
+    def test_us_sector_realestate_xlre_reduce_demotes(self, tmp_path):
+        """us_sector_realestate in buy + XLRE=Reduce -> moves to conflicted with sector_etf=XLRE."""
+        buy = [_make_buy_item("us_sector_realestate")]
+        sc = _make_sector_central("XLRE", "Reduce")
+        act_now, _ = _run_demotion(tmp_path, buy, sc)
+        assert len(act_now["conflicted"]) == 1, (
+            "us_sector_realestate must be demoted when XLRE=Reduce"
+        )
+        item = act_now["conflicted"][0]
+        assert item["id"] == "us_sector_realestate"
+        assert item.get("sector_etf") == "XLRE", (
+            f"sector_etf must be XLRE, got {item.get('sector_etf')!r}"
+        )
+        assert item.get("sector_stance") == "Reduce"
+        assert "Reduce" in item.get("reason_en", ""), (
+            f"reason_en must mention Reduce: {item.get('reason_en')!r}"
+        )
+        assert "减配" in item.get("reason_zh", ""), (
+            f"reason_zh must mention 减配: {item.get('reason_zh')!r}"
+        )
+        assert len(act_now["buy"]) == 0
+
+    def test_us_sector_financials_xlf_neutral_stays_in_buy(self, tmp_path):
+        """us_sector_financials in buy + XLF=Neutral -> stays in buy (not Reduce)."""
+        buy = [_make_buy_item("us_sector_financials")]
+        sc = _make_sector_central("XLF", "Neutral")
+        act_now, _ = _run_demotion(tmp_path, buy, sc)
+        assert len(act_now["conflicted"]) == 0
+        assert len(act_now["buy"]) == 1
+        assert act_now["buy"][0]["id"] == "us_sector_financials"
+
+    def test_us_sector_financials_xlf_cautious_stays_in_buy(self, tmp_path):
+        """us_sector_financials in buy + XLF=Cautious -> stays in buy (Cautious does not demote)."""
+        buy = [_make_buy_item("us_sector_financials")]
+        sc = _make_sector_central("XLF", "Cautious")
+        act_now, _ = _run_demotion(tmp_path, buy, sc)
+        assert len(act_now["conflicted"]) == 0
+        assert len(act_now["buy"]) == 1
+
+    def test_narrative_theme_behavior_unchanged_alongside_sector_basket(self, tmp_path):
+        """Existing narrative-theme demotion is unaffected when sector baskets are also present."""
+        buy = [
+            _make_buy_item("ai_infra"),          # SMH -> XLK fallback (existing behavior)
+            _make_buy_item("us_sector_realestate"),  # XLRE (new coverage)
+            _make_buy_item("regional_banks"),    # XLF -> Accumulate (stays in buy)
+        ]
+        sc = {
+            "as_of": date.today().isoformat(),
+            "sectors": [
+                {"ticker": "XLK",  "conviction": {"label_en": "Reduce"}},
+                {"ticker": "XLRE", "conviction": {"label_en": "Reduce"}},
+                {"ticker": "XLF",  "conviction": {"label_en": "Accumulate"}},
+            ],
+        }
+        act_now, original_count = _run_demotion(tmp_path, buy, sc)
+        assert len(act_now["conflicted"]) == 2
+        demoted_ids = {it["id"] for it in act_now["conflicted"]}
+        assert "ai_infra" in demoted_ids
+        assert "us_sector_realestate" in demoted_ids
+        assert len(act_now["buy"]) == 1
+        assert act_now["buy"][0]["id"] == "regional_banks"
+        # Conservation invariant
+        assert len(act_now["buy"]) + len(act_now["conflicted"]) == original_count
+
+    def test_all_us_sector_slugs_have_proxy_entry(self):
+        """All 11 us_sector_* slugs must appear in _SECTOR_PROXY."""
+        import engine.theme_scoring as ts
+        expected = {
+            "us_sector_tech":          "XLK",
+            "us_sector_comm":          "XLC",
+            "us_sector_discretionary": "XLY",
+            "us_sector_financials":    "XLF",
+            "us_sector_industrials":   "XLI",
+            "us_sector_materials":     "XLB",
+            "us_sector_energy":        "XLE",
+            "us_sector_health":        "XLV",
+            "us_sector_staples":       "XLP",
+            "us_sector_utilities":     "XLU",
+            "us_sector_realestate":    "XLRE",
+        }
+        for slug, spdr in expected.items():
+            assert slug in ts._SECTOR_PROXY, (
+                f"us_sector basket {slug!r} missing from _SECTOR_PROXY"
+            )
+            assert ts._SECTOR_PROXY[slug] == spdr, (
+                f"_SECTOR_PROXY[{slug!r}] = {ts._SECTOR_PROXY[slug]!r}, expected {spdr!r}"
+            )
+
+
 class TestCautiousDoesNotDemote:
     def test_cautious_sector_keeps_item_in_buy(self, tmp_path):
         """'Cautious' does NOT trigger demotion — only 'Reduce' does."""

@@ -113,9 +113,12 @@ def _china_block() -> str:
 
 
 def _canada_block() -> str:
+    # #2674 (canada mx5 port) renamed the section marker and dropped the old
+    # "/macro-only sections" end comment. The mode-gate {% if %}/{% endif %} pair
+    # stays OUTSIDE the slice so the extracted block is balanced Jinja.
     src = (ROOT / "templates" / "canada.html.j2").read_text()
-    start = src.index("<!-- ===== Action board =====")
-    end = src.index("{% endif %}{# /macro-only sections #}", start)
+    start = src.index("<!-- ===== What to act on now (sector entry-timing board")
+    end = src.index("\n{% endif %}\n\n{% if mode != 'stocks' %}", start)
     return src[start:end]
 
 
@@ -131,19 +134,25 @@ def _item(ticker: str) -> dict:
 
 def test_china_dlg_sector_leaders_dont_chase_not_green():
     """Redesign: sector 'act on now' moved into dlg-sector. The 'leaders' chips
-    must render as caution ('don't chase' / hot accent), never as a green buy."""
+    must render as caution (hot accent), never as a green buy. #2639 deliberately
+    dropped the 'don't chase' wording from the Leaders label (EN+ZH parity) —
+    the caution now lives in the hot accent + Leaders framing, not the verb."""
     pb = {"preferred": [{"name": "PPP", "rank": 3}], "leaders": [{"name": "RRR"}], "avoid": []}
     html = _env(_china_block()).get_template("blk").render(pb_obj=pb)
-    assert "勿追" in html                           # don't-chase copy present
+    assert "领先" in html                           # Leaders label present (#2639 copy)
     assert "RRR" in html
     assert "cnx-chip hot" in html                   # caution accent, not a buy/turn chip
+    assert '<span class="cnx-chip turn">RRR' not in html  # never a green buy/turn chip
 
 
 def test_china_dlg_sector_missing_lane_safe():
-    """A pb_obj missing the leaders/avoid keys must render, not crash."""
+    """A pb_obj missing the leaders/avoid keys must render, not crash.
+    (The dialog now renders only pb_obj.leaders — 'preferred' chips were dropped
+    in the mx5 redesign, so the old PPP-renders assertion no longer applies.)"""
     pb = {"preferred": [{"name": "PPP", "rank": 1}]}   # no 'leaders' / 'avoid'
     html = _env(_china_block()).get_template("blk").render(pb_obj=pb)
-    assert "PPP" in html and "RRR" not in html
+    assert 'id="cnx-dlg-sector"' in html               # dialog shell rendered
+    assert "领先" not in html and "RRR" not in html    # no leaders label/chips
 
 
 def test_canada_template_renders_on_the_run_lane():

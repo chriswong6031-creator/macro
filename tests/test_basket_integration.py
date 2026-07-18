@@ -178,9 +178,9 @@ def test_basket_action_items_clean_entry_routing(tmp_path):
 
 def test_basket_action_items_graceful_without_files(tmp_path):
     b = __import__("scripts.build_site", fromlist=["x"]).basket_action_items(tmp_path)
-    # 6 bucket keys + sector_overlay
+    # 6 bucket keys + sector_overlay + more (FIX 3: cap disclosure sub-dict)
     expected_keys = {"buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid",
-                     "sector_overlay"}
+                     "sector_overlay", "more"}
     assert set(b.keys()) == expected_keys
     for k in ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid"):
         assert b[k] == []
