@@ -319,6 +319,63 @@ def test_template_renders_with_populated_outcomes():
     assert not unrendered, f"Unrendered Jinja: {unrendered[:3]}"
 
 
+def test_chart_series_json_not_escaped():
+    """Chart series JSON must arrive in the baked page with real quotes, not &#34; entities.
+
+    Regression test for autoescape=True stripping: without |safe the Jinja env
+    HTML-escapes double-quotes → JS SyntaxError → both weekly win-rate charts silent.
+    """
+    from jinja2 import Environment, FileSystemLoader
+
+    env = Environment(
+        loader=FileSystemLoader(str(ROOT / "templates")),
+        autoescape=True,
+    )
+    series = [{"week": "2026-06-15/2026-06-21", "win_rate": 0.72, "raw_n": 305}]
+    series_json = json.dumps(series)
+
+    vm = {
+        "as_of": "2026-07-18",
+        "outcomes_as_of": "2026-07-18",
+        "sb_as_of": "2026-07-18",
+        "win_rate_pct": 72,
+        "avg_pct": 2.5,
+        "n_outcomes": 305,
+        "n_running": 100,
+        "n_stopped": 205,
+        "n_skipped": 0,
+        "horizon_ladder": [],
+        "chart_series_h5_json": series_json,
+        "chart_series_h10_json": series_json,
+        "board_series": [],
+        "board_series_accruing": True,
+        "outcomes_rows": [],
+        "failure_mix_data_gap": True,
+        "failure_mix": {},
+        "coverage_monitor": {},
+        "gate_suppressed": {},
+        "buy_lane_rows": 305,
+        "all_lanes_rows": 400,
+        "survivorship": {},
+        "cohort_accruing": False,
+        "track_history": {"schema": "us_track_history/v1", "as_of": "2026-07-18"},
+    }
+    html = env.get_template("us_track_record.html.j2").render(**vm)
+
+    # Escaped quotes must NOT appear inside the script block
+    assert "&#34;" not in html, (
+        "chart_series JSON is HTML-escaped (&#34;) — add |safe to "
+        "chart_series_h5_json and chart_series_h10_json in the template."
+    )
+    # Real quotes must survive so JS can parse the literal
+    assert 'var seriesH5 = [{"week"' in html, (
+        "seriesH5 literal not found with real double-quotes — |safe may be missing."
+    )
+    assert 'var seriesH10 = [{"week"' in html, (
+        "seriesH10 literal not found with real double-quotes — |safe may be missing."
+    )
+
+
 def test_no_validated_word_in_template():
     """The word 'validated' must not appear anywhere in the template (CI-guarded)."""
     tmpl = (ROOT / "templates" / "us_track_record.html.j2").read_text()

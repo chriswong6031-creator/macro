@@ -181,6 +181,9 @@
     </div>
     {% endif %}
   </div>
+  {% if win_rate_pct is not none %}
+  <p style="font-size:11.5px;color:var(--muted);margin:-12px 0 20px"><span class="l-en">Counts names still above their surfacing price — the 'vs S&amp;P 500' report cards below use a stricter ruler.</span><span class="l-zh">此处统计仍高于上榜价的标的数——下方"对比标普500"成绩单采用更严格的标准。</span></p>
+  {% endif %}
 
   <!-- ── Section 2: Record over time ── -->
   <div class="tr-section">
@@ -391,8 +394,8 @@
 // Inline sparkline charts from embedded JSON — no chart libraries.
 // Draws win-rate line + 50% reference on a small SVG canvas.
 (function(){
-  var seriesH5 = {{ chart_series_h5_json }};
-  var seriesH10 = {{ chart_series_h10_json }};
+  var seriesH5 = {{ chart_series_h5_json|safe }};
+  var seriesH10 = {{ chart_series_h10_json|safe }};
 
   function drawChart(svgId, series, color) {
     var svg = document.getElementById(svgId);

@@ -12710,7 +12710,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {% endif %}
       {# Track record glance chip — links to depth page (Prophet W1). #}
       <div class="board-track-glance" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span class="board-track-toggle" style="cursor:default">{% if _tr_ns.wr is not none and _tr_ns.avg is not none %}<span class="l-en">📊 Track record: {{ _tr_ns.wr }}% win · {{ '%+g'|format(_tr_ns.avg) }}% avg</span><span class="l-zh">📊 往绩：胜率 {{ _tr_ns.wr }}% · 平均 {{ '%+g'|format(_tr_ns.avg) }}%</span>{% else %}<span class="l-en">📊 Track record</span><span class="l-zh">📊 往绩</span>{% endif %}</span>
+        <span id="board-track-toggle" class="board-track-toggle" style="cursor:default">{% if _tr_ns.wr is not none and _tr_ns.avg is not none %}<span class="l-en">📊 Track record: {{ _tr_ns.wr }}% win · {{ '%+g'|format(_tr_ns.avg) }}% avg</span><span class="l-zh">📊 往绩：胜率 {{ _tr_ns.wr }}% · 平均 {{ '%+g'|format(_tr_ns.avg) }}%</span>{% else %}<span class="l-en">📊 Track record</span><span class="l-zh">📊 往绩</span>{% endif %}</span>
         {# Compact 2-row summary #}
         {% if _sm.get('n_running') is not none %}
         <span class="muted" style="font-size:11px">

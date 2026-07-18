@@ -160,6 +160,9 @@
     </div>
     
   </div>
+  
+  <p style="font-size:11.5px;color:var(--muted);margin:-12px 0 20px"><span class="l-en">Counts names still above their surfacing price — the 'vs S&amp;P 500' report cards below use a stricter ruler.</span><span class="l-zh">此处统计仍高于上榜价的标的数——下方"对比标普500"成绩单采用更严格的标准。</span></p>
+  
 
   <!-- ── Section 2: Record over time ── -->
   <div class="tr-section">
@@ -1141,8 +1144,8 @@
 // Inline sparkline charts from embedded JSON — no chart libraries.
 // Draws win-rate line + 50% reference on a small SVG canvas.
 (function(){
-  var seriesH5 = [{&#34;week&#34;: &#34;2026-06-15/2026-06-21&#34;, &#34;raw_n&#34;: 305, &#34;effective_n&#34;: 1, &#34;win_rate&#34;: 0.7246, &#34;avg_excess&#34;: 0.0317, &#34;med_excess&#34;: 0.0353}, {&#34;week&#34;: &#34;2026-06-22/2026-06-28&#34;, &#34;raw_n&#34;: 453, &#34;effective_n&#34;: 1, &#34;win_rate&#34;: 0.5386, &#34;avg_excess&#34;: 0.0054, &#34;med_excess&#34;: 0.0051}, {&#34;week&#34;: &#34;2026-06-29/2026-07-05&#34;, &#34;raw_n&#34;: 145, &#34;effective_n&#34;: 1, &#34;win_rate&#34;: 0.4, &#34;avg_excess&#34;: -0.0104, &#34;med_excess&#34;: -0.0105}, {&#34;week&#34;: &#34;2026-07-06/2026-07-12&#34;, &#34;raw_n&#34;: 171, &#34;effective_n&#34;: 1, &#34;win_rate&#34;: 0.5556, &#34;avg_excess&#34;: 0.0051, &#34;med_excess&#34;: 0.0077}];
-  var seriesH10 = [{&#34;week&#34;: &#34;2026-06-15/2026-06-21&#34;, &#34;raw_n&#34;: 192, &#34;effective_n&#34;: 1, &#34;win_rate&#34;: 0.5781, &#34;avg_excess&#34;: 0.011, &#34;med_excess&#34;: 0.0174}, {&#34;week&#34;: &#34;2026-06-29/2026-07-05&#34;, &#34;raw_n&#34;: 145, &#34;effective_n&#34;: 1, &#34;win_rate&#34;: 0.6759, &#34;avg_excess&#34;: 0.0151, &#34;med_excess&#34;: 0.0228}];
+  var seriesH5 = [{"week": "2026-06-15/2026-06-21", "raw_n": 305, "effective_n": 1, "win_rate": 0.7246, "avg_excess": 0.0317, "med_excess": 0.0353}, {"week": "2026-06-22/2026-06-28", "raw_n": 453, "effective_n": 1, "win_rate": 0.5386, "avg_excess": 0.0054, "med_excess": 0.0051}, {"week": "2026-06-29/2026-07-05", "raw_n": 145, "effective_n": 1, "win_rate": 0.4, "avg_excess": -0.0104, "med_excess": -0.0105}, {"week": "2026-07-06/2026-07-12", "raw_n": 171, "effective_n": 1, "win_rate": 0.5556, "avg_excess": 0.0051, "med_excess": 0.0077}];
+  var seriesH10 = [{"week": "2026-06-15/2026-06-21", "raw_n": 192, "effective_n": 1, "win_rate": 0.5781, "avg_excess": 0.011, "med_excess": 0.0174}, {"week": "2026-06-29/2026-07-05", "raw_n": 145, "effective_n": 1, "win_rate": 0.6759, "avg_excess": 0.0151, "med_excess": 0.0228}];
 
   function drawChart(svgId, series, color) {
     var svg = document.getElementById(svgId);
