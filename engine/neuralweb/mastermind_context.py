@@ -1193,6 +1193,51 @@ def _summarize_fx_dollar(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_special_sits(repo: Path) -> tuple[dict, str | None]:
+    """Distil special_situations context into the special_sits lobe.
+
+    Source: data/special_situations/context/latest.json (special_sits_context.v1).
+    Written by scripts/build_special_situations.py; absent until first nightly run.
+    Fail-soft: absent or unreadable artifact → empty lobe with gap note.
+
+    Standing laws:
+    - 100% deterministic re-projection; no LLM-originated content.
+    - Nothing here may gate, rank, size, or escalate any authority surface.
+    - The word 'validated' is banned from all emitted text.
+    - is_context_only=True always; display_only=True always.
+    """
+    ctx_path = repo / "data" / "special_situations" / "context" / "latest.json"
+    raw = _read_json(ctx_path)
+    if raw is None:
+        return {}, "data/special_situations/context/latest.json absent or unreadable"
+
+    try:
+        counts = raw.get("counts") or {}
+        top_raw = raw.get("top_setups") or []
+        arb_raw = raw.get("risk_arb_top") or []
+        changes = (raw.get("changes") or {}).get("items") or []
+
+        lobe: dict = {
+            "is_context_only": True,
+            "display_only": True,
+            "asof": raw.get("asof"),
+            "n_total": counts.get("total"),
+            "n_new_today": counts.get("new_today"),
+            "n_grade_a": counts.get("grade_a"),
+            "n_grade_b": counts.get("grade_b"),
+            "setups_display": [
+                {k: s.get(k) for k in ("ticker", "company", "category", "stage", "grade", "score", "why")}
+                for s in top_raw[:6] if isinstance(s, dict)
+            ],
+            "risk_arb_top": arb_raw[:3],
+            "n_changes": len(changes) if isinstance(changes, list) else 0,
+            "honesty_note": "context only — event tracking, never a signal or sizing input",
+        }
+        return lobe, None
+    except Exception as exc:  # noqa: BLE001
+        return {}, f"special_sits summarize failed: {exc}"
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -1210,6 +1255,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "risk_radar_reliability": _summarize_risk_radar_reliability,
     "contagion": _summarize_contagion,  # CSP-W1 contagion context lobe
     "fx_dollar": _summarize_fx_dollar,  # FX/dollar transmission context lobe
+    "special_sits": _summarize_special_sits,  # SS-NW-W1 special-situations event context lobe
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -1228,6 +1274,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "risk_radar_reliability": ["site-riskdata-scorecard"],
     "contagion": ["world-state"],  # CSP-W1: reads world_state.contagion_regime
     "fx_dollar": ["world-state"],  # reads world_state.fx_dollar (from data/forex/latest.json)
+    "special_sits": ["special-sits-context-latest"],  # SS-NW-W1: reads context artifact directly
 }
 
 

@@ -165,6 +165,17 @@ def pytest_runtest_teardown(item, nextitem):
 
 
 def pytest_sessionfinish(session, exitstatus):
+    # pytest>=9 installs an unraisable-exception hook for the whole process: a
+    # collectable cycle that survives to interpreter shutdown runs its __del__
+    # against torn-down module globals, raises, and silently flips the exit code
+    # to 1 AFTER the summary prints ("2067 passed" + exit 1, engine-render-guards
+    # 2026-07-18). Collecting here tears those cycles down inside the session,
+    # where destructors run against live globals and any genuine failure is
+    # reported as a visible PytestUnraisableExceptionWarning instead.
+    import gc
+
+    gc.collect()
+
     if _data_guard_mode() == "off" or hasattr(session.config, "workerinput"):
         return
     baseline = getattr(session.config, "_mm_data_guard_baseline", None)

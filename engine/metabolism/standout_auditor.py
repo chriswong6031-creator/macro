@@ -1422,3 +1422,493 @@ def run_audit(
             "note": f"run_audit failed: {exc}",
             "data_gaps": [],
         }
+
+
+# ---------------------------------------------------------------------------
+# PR-R3: Per-pick autopsy stage (Prophet W2)
+# ---------------------------------------------------------------------------
+
+# Closed enum for mitigation_verdict (PR-R3 spec)
+_MITIGATION_VERDICTS = frozenset({
+    "mitigable_process",
+    "mitigable_conditioning",
+    "external_unforeseeable",
+    "external_foreseeable_unpriced",
+    "not_a_failure",
+})
+
+SCHEMA_PICK_AUTOPSY = "prophet.pick_autopsy/v1"
+
+
+def _autopsy_cap_from_config(root: Path) -> int:
+    """Read prophet.autopsy_cap_per_cycle from config.yml, fail-soft to 12."""
+    try:
+        from lib import config as _cfg  # noqa: PLC0415
+        data = _cfg.load()
+        cap = data.get("prophet", {}).get("autopsy_cap_per_cycle", 12)
+        return int(cap)
+    except Exception:  # noqa: BLE001
+        return 12
+
+
+def _autopsy_dir(market: str, root: Path) -> Path:
+    """Return the per-market autopsy directory, creating it if needed."""
+    p = root / "data" / "standout_audit" / "pick_autopsies" / market
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except Exception:  # noqa: BLE001
+        pass
+    return p
+
+
+def select_autopsy_picks(
+    market: str,
+    attribution_df,  # pd.DataFrame
+    cap: int = 12,
+) -> list[dict]:
+    """Select picks for per-pick autopsy: extremes-first, capped.
+
+    Selection order (PR-R3):
+    1. ALL gate_suppressed rows
+    2. ALL data_fault rows
+    3. Top-K winners by excess_21d (highest excess first)
+    4. Bottom-K losers by excess_21d (lowest excess first)
+    K is derived from cap after mandatory rows are allocated.
+
+    Returns list of row dicts from the attribution frame.  NEVER raises.
+    """
+    try:
+        import pandas as pd  # noqa: PLC0415
+        if attribution_df is None or attribution_df.empty:
+            return []
+
+        df = attribution_df.copy()
+
+        # Identify process_fault column
+        pf_col = "process_fault"
+        if pf_col not in df.columns:
+            return []
+
+        # Mandatory rows
+        suppressed_mask = df[pf_col] == "gate_suppressed"
+        fault_mask = df[pf_col] == "data_fault"
+        mandatory_rows = df[suppressed_mask | fault_mask]
+
+        # Identify excess column for ranking
+        excess_col = None
+        for candidate in ("excess_spy", "excess_21d", "excess_sector"):
+            if candidate in df.columns:
+                excess_col = candidate
+                break
+
+        # Extremes from non-mandatory rows
+        non_mandatory = df[~(suppressed_mask | fault_mask)]
+        top_k_rows = []
+        bottom_k_rows = []
+        if excess_col and not non_mandatory.empty:
+            remaining_cap = max(0, cap - len(mandatory_rows))
+            k = max(1, remaining_cap // 2)
+            non_mandatory_sorted = non_mandatory.sort_values(excess_col, ascending=False)
+            top_k_rows = non_mandatory_sorted.head(k).to_dict("records")
+            bottom_k_rows = non_mandatory_sorted.tail(k).to_dict("records")
+
+        mandatory_list = mandatory_rows.to_dict("records")
+
+        # Combine: mandatory first, then extremes; deduplicate by pick identity
+        seen: set[tuple] = set()
+        result: list[dict] = []
+        for row in [*mandatory_list, *top_k_rows, *bottom_k_rows]:
+            key = (
+                str(row.get("ticker", "")),
+                str(row.get("as_of", row.get("entry_date", ""))),
+                str(row.get("lane", "")),
+            )
+            if key not in seen:
+                seen.add(key)
+                result.append(row)
+            if len(result) >= cap:
+                break
+        return result[:cap]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("standout_auditor: select_autopsy_picks(%s): %s", market, exc)
+        return []
+
+
+def _pick_id(row: dict) -> str:
+    """Build a stable pick identifier from the attribution row."""
+    ticker = str(row.get("ticker", "")).replace("/", "_").replace(" ", "_")
+    asof = str(row.get("as_of", row.get("entry_date", "unknown"))).split("T")[0]
+    lane = str(row.get("lane", "default"))
+    return f"{ticker}-{asof}-{lane}"
+
+
+def _invoke_autopsy_llm(
+    market: str,
+    picks: list[dict],
+    cycle_id: str,
+    model_caller: Callable | None,
+    root: Path,
+) -> list[dict]:
+    """Invoke LLM for per-pick autopsies in a single batched call.
+
+    Returns a list of parsed autopsy dicts (one per pick).
+    model_caller must be injected (dry_run contract).  NEVER raises.
+    """
+    if not picks or model_caller is None:
+        return []
+
+    try:
+        # Build the batch prompt
+        picks_summary = []
+        for i, pick in enumerate(picks):
+            picks_summary.append(
+                f"Pick {i+1}: {pick.get('ticker')} | "
+                f"date={pick.get('as_of', pick.get('entry_date', '?'))} | "
+                f"lane={pick.get('lane', '?')} | "
+                f"outcome_cause={pick.get('outcome_cause', '?')} | "
+                f"process_fault={pick.get('process_fault', '?')} | "
+                f"excess_spy={pick.get('excess_spy', '?')} | "
+                f"sector={pick.get('sector', '?')} | "
+                f"board_tenure_days={pick.get('board_tenure_days', '?')} | "
+                f"quad_hard_label={pick.get('quad_hard_label', '?')} | "
+                f"terminal_state={pick.get('terminal_state_clean8_21', '?')}"
+            )
+
+        picks_text = "\n".join(picks_summary)
+
+        prompt = f"""You are the Prophet standout-audit lobe for the {market.upper()} market.
+Analyze these {len(picks)} matured picks from audit cycle {cycle_id} and write
+a per-pick postmortem for each.
+
+SA-R13 VERBATIM (non-negotiable):
+{_SA_R13_VERBATIM}
+
+Operator cause taxonomy (Prophet §3):
+Failures: missed/late sector-rotation read; extended-sector rollover;
+fake breakout/failed cycle; external news/event (check ex-ante visibility);
+process faults (chased late, gate margin thin, stale data).
+Successes: rotation identified early; T1-T4 confluence timing; momentum preceding news;
+external re-rating with visible ex-ante accumulation.
+
+For EACH pick, you MUST produce:
+- root_cause: 1-3 sentences naming what drove the outcome (was it mitigable?)
+- mitigation_verdict: EXACTLY one of: mitigable_process | mitigable_conditioning |
+  external_unforeseeable | external_foreseeable_unpriced | not_a_failure
+- lesson: 1 sentence tagging which engines/books surfaced or missed this
+- engines_credit: 1 sentence naming which books/organs were role models or laggards
+
+DO NOT include any numbers, percentages, or scores in your prose — those come from
+the attribution system. Write ONLY prose + the closed enum verdict.
+
+Picks to analyze:
+{picks_text}
+
+Return a JSON array of objects, one per pick, in the SAME ORDER as the picks above.
+Each object must have exactly these keys:
+  pick_index (int, 1-based)
+  root_cause (str)
+  mitigation_verdict (str, must be exactly one of the closed enum values)
+  lesson (str)
+  engines_credit (str)
+"""
+
+        reply_text = None
+        try:
+            result = model_caller(prompt)
+            if isinstance(result, tuple):
+                reply_text = result[0]
+            else:
+                reply_text = str(result) if result else None
+        except Exception as exc:  # noqa: BLE001
+            log.warning("standout_auditor: autopsy LLM call failed: %s", exc)
+            return []
+
+        if not reply_text:
+            return []
+
+        # Parse JSON array
+        parsed: list[dict] = []
+        try:
+            # Find JSON array in the reply
+            import re  # noqa: PLC0415
+            match = re.search(r'\[.*\]', reply_text, re.DOTALL)
+            if match:
+                parsed = json.loads(match.group(0))
+        except Exception:  # noqa: BLE001
+            pass
+
+        if not isinstance(parsed, list):
+            return []
+
+        # Validate verdicts, normalize
+        result_list: list[dict] = []
+        for item in parsed:
+            if not isinstance(item, dict):
+                continue
+            verdict = str(item.get("mitigation_verdict", "")).strip()
+            row: dict = {
+                "pick_index": item.get("pick_index"),
+                "root_cause": str(item.get("root_cause", ""))[:500],
+                "lesson": str(item.get("lesson", ""))[:300],
+                "engines_credit": str(item.get("engines_credit", ""))[:300],
+            }
+            if verdict not in _MITIGATION_VERDICTS:
+                # Reject invalid enum value — record raw LLM string for diagnostics
+                row["mitigation_verdict"] = "invalid"
+                row["mitigation_verdict_raw"] = verdict[:200]
+            else:
+                row["mitigation_verdict"] = verdict
+            result_list.append(row)
+        return result_list
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("standout_auditor: _invoke_autopsy_llm: %s", exc)
+        return []
+
+
+def _write_pick_autopsies(
+    market: str,
+    picks: list[dict],
+    llm_results: list[dict],
+    cycle_id: str,
+    model: str,
+    root: Path,
+    dry_run: bool = False,
+) -> list[str]:
+    """Write per-pick autopsy artifacts.
+
+    One file per pick at data/standout_audit/pick_autopsies/<market>/<pick_id>.json.
+    Returns list of written file paths.  NEVER raises.
+    """
+    written: list[str] = []
+    ts = _now_utc()
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # Build LLM result map by pick_index
+    llm_by_idx: dict[int, dict] = {}
+    for r in llm_results:
+        idx = r.get("pick_index")
+        if idx is not None:
+            llm_by_idx[int(idx)] = r
+
+    try:
+        if dry_run:
+            autopsy_dir = _shadow_base(root, cycle_id) / "pick_autopsies" / market
+        else:
+            autopsy_dir = _autopsy_dir(market, root)
+        autopsy_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("standout_auditor: _write_pick_autopsies: mkdir failed: %s", exc)
+        return written
+
+    for i, pick in enumerate(picks, start=1):
+        pick_id = _pick_id(pick)
+        autopsy_path = autopsy_dir / f"{pick_id}.json"
+
+        # LLM block — _invoke_autopsy_llm has already validated/rejected the verdict:
+        # valid enum → mitigation_verdict holds the value (no mitigation_verdict_raw)
+        # invalid enum → mitigation_verdict = "invalid", mitigation_verdict_raw = original string
+        # missing → mitigation_verdict = "" (empty string)
+        llm_block = llm_by_idx.get(i) or {}
+        llm_doc: dict = {
+            "root_cause": llm_block.get("root_cause", ""),
+            "mitigation_verdict": llm_block.get("mitigation_verdict", ""),
+            "lesson": llm_block.get("lesson", ""),
+            "engines_credit": llm_block.get("engines_credit", ""),
+        }
+
+        # Validate verdict; applies when llm_block came directly from LLM without parse stage
+        # (e.g. constructed externally).  If already "invalid" with a raw, pass through.
+        verdict = llm_doc["mitigation_verdict"]
+        if "mitigation_verdict_raw" in llm_block:
+            # Already processed by _invoke_autopsy_llm — carry the raw value through
+            llm_doc["mitigation_verdict_raw"] = llm_block["mitigation_verdict_raw"]
+        elif verdict not in _MITIGATION_VERDICTS and verdict != "invalid":
+            # Direct construction: reject and record raw string
+            llm_doc["mitigation_verdict"] = "invalid" if verdict else ""
+            if verdict:
+                llm_doc["mitigation_verdict_raw"] = str(verdict)[:200]
+
+        doc = {
+            "schema": SCHEMA_PICK_AUTOPSY,
+            "market": market,
+            "pick_id": pick_id,
+            "ticker": pick.get("ticker"),
+            "entry_date": pick.get("as_of", pick.get("entry_date")),
+            "ledger_key": {
+                "ticker": pick.get("ticker"),
+                "as_of": pick.get("as_of", pick.get("entry_date")),
+                "lane": pick.get("lane"),
+                "horizon": pick.get("horizon"),
+            },
+            "attribution": {k: v for k, v in pick.items()
+                            if not k.startswith("_")},
+            "llm": llm_doc,
+            "model": model,
+            "cycle_id": cycle_id,
+            "asof": today,
+            "ts": ts,
+        }
+
+        try:
+            import tempfile as _tempfile  # noqa: PLC0415
+            tmp_fd, tmp_name = _tempfile.mkstemp(
+                dir=str(autopsy_dir), prefix=f".{pick_id}-", suffix=".tmp"
+            )
+            try:
+                with os.fdopen(tmp_fd, "w", encoding="utf-8") as fh:
+                    fh.write(json.dumps(doc, indent=2, default=str))
+                os.replace(tmp_name, str(autopsy_path))
+                written.append(str(autopsy_path))
+                log.debug("standout_auditor: pick autopsy → %s", autopsy_path)
+            except Exception:  # noqa: BLE001
+                try:
+                    os.unlink(tmp_name)
+                except Exception:  # noqa: BLE001
+                    pass
+                raise
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "standout_auditor: write pick autopsy %s: %s", autopsy_path, exc
+            )
+
+    log.info(
+        "standout_auditor: wrote %d/%d pick autopsies for %s/%s%s",
+        len(written), len(picks), market, cycle_id,
+        " [dry_run]" if dry_run else "",
+    )
+    return written
+
+
+def run_pick_autopsies(
+    market: str,
+    cycle_id: str,
+    model_caller: Callable | None = None,
+    root: Path | None = None,
+    dry_run: bool = False,
+) -> dict:
+    """Run per-pick autopsy stage for a given market and cycle.
+
+    Selects autopsy picks from the attribution parquet, invokes LLM in a single
+    batched call, writes per-pick artifacts.
+
+    dry_run=True: model_caller MUST be injected; writes go to shadow dir.
+    Armed run: AUTONOMY_PAUSED gate applies.
+
+    Cursor semantics: autopsies ride the same cycle as the cohort postmortem.
+    A crash before postmortem commit re-derives idempotently — the autopsy cursor
+    does NOT advance independently.
+
+    NEVER raises.  Returns status dict.
+    """
+    try:
+        repo = _repo_root(root)
+
+        if dry_run and model_caller is None:
+            return {
+                "schema": SCHEMA_PICK_AUTOPSY,
+                "market": market,
+                "cycle_id": cycle_id,
+                "status": "refused",
+                "note": "dry_run requires injected model_caller",
+                "written": [],
+            }
+
+        if not dry_run:
+            # AUTONOMY_PAUSED gate (mirrors run_audit)
+            try:
+                from scripts.metabolism_guard import is_paused  # type: ignore[import]
+                if is_paused():
+                    return {
+                        "schema": SCHEMA_PICK_AUTOPSY,
+                        "market": market,
+                        "cycle_id": cycle_id,
+                        "status": "paused",
+                        "note": "AUTONOMY_PAUSED — autopsy skipped",
+                        "written": [],
+                    }
+            except Exception:  # noqa: BLE001
+                if os.environ.get("AUTONOMY_PAUSED", "").strip().lower() != "false":
+                    return {
+                        "schema": SCHEMA_PICK_AUTOPSY,
+                        "market": market,
+                        "cycle_id": cycle_id,
+                        "status": "paused",
+                        "note": "guard unavailable, fail-closed",
+                        "written": [],
+                    }
+
+        # Read attribution parquet
+        attr_path = _attribution_path(market, repo)
+        if not attr_path.exists():
+            return {
+                "schema": SCHEMA_PICK_AUTOPSY,
+                "market": market,
+                "cycle_id": cycle_id,
+                "status": "data_gap",
+                "note": f"attribution parquet absent: {attr_path}",
+                "written": [],
+            }
+
+        try:
+            import pandas as pd  # noqa: PLC0415
+            attr_df = pd.read_parquet(str(attr_path))
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "schema": SCHEMA_PICK_AUTOPSY,
+                "market": market,
+                "cycle_id": cycle_id,
+                "status": "data_gap",
+                "note": f"attribution parquet read error: {exc}",
+                "written": [],
+            }
+
+        cap = _autopsy_cap_from_config(repo)
+        picks = select_autopsy_picks(market, attr_df, cap=cap)
+
+        if not picks:
+            return {
+                "schema": SCHEMA_PICK_AUTOPSY,
+                "market": market,
+                "cycle_id": cycle_id,
+                "status": "no_picks",
+                "note": "no picks selected for autopsy (attribution accruing)",
+                "written": [],
+            }
+
+        # LLM batch call
+        llm_results = _invoke_autopsy_llm(
+            market, picks, cycle_id, model_caller, repo
+        )
+
+        # Write artifacts
+        written = _write_pick_autopsies(
+            market, picks, llm_results, cycle_id,
+            model=_OPUS_MODEL,
+            root=repo,
+            dry_run=dry_run,
+        )
+
+        return {
+            "schema": SCHEMA_PICK_AUTOPSY,
+            "market": market,
+            "cycle_id": cycle_id,
+            "status": "ok" if written else "write_failed",
+            "note": (
+                f"{len(written)}/{len(picks)} autopsies written; "
+                f"{len(llm_results)} LLM results; dry_run={dry_run}"
+            ),
+            "written": written,
+        }
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("standout_auditor: run_pick_autopsies(%s, %s): %s",
+                    market, cycle_id, exc)
+        return {
+            "schema": SCHEMA_PICK_AUTOPSY,
+            "market": market,
+            "cycle_id": cycle_id,
+            "status": "error",
+            "note": f"run_pick_autopsies failed: {exc}",
+            "written": [],
+        }
