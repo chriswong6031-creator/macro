@@ -536,6 +536,10 @@ on:
       # taxonomy, effective-n math, keep-first sidecar, and never-raise contract.
       - "engine/standout_audit.py"
       - "tests/test_standout_audit.py"
+      # Prophet W1 track record page: cohort rollup, accruing/data-gap paths,
+      # never-raise contract (SA-R16).
+      - "scripts/build_track_record_page.py"
+      - "tests/test_track_record_page.py"
       # altdata-brain de-escalation law + false Wilson de-dup comment fix (PR-B):
       # any change to the brain module or either test file must re-prove the law holds.
       - "engine/altdata_brain.py"
@@ -966,6 +970,7 @@ jobs:
           tests/test_intraday_flow.py
           tests/test_intraday_flow_stance.py
           tests/test_standout_audit.py
+          tests/test_track_record_page.py
           tests/test_altdata_hygiene.py
           tests/test_china_news_engine.py
           tests/test_china_library_limited.py

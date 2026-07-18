@@ -13070,6 +13070,31 @@ artifacts:
       stamps (regime, sector, rank, gate/tier cols), outcome numbers, and both attribution axes.
       Append-only, keep-first on (as_of, ticker, lane). Future consumer: SA-W5 lab templates.
 
+  us-track-history:
+    path: site/factordata/us_track_history.json
+    format: json
+    producer: scripts/build_track_record_page.py
+    known_extra_writers: []
+    owner_program: prophet
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: us_track_history/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [site/us_track_record.html]
+    external_consumers: []
+    notes: >
+      Prophet W1 track record rollup. Cohort win-rate series (weekly entry cohorts,
+      per horizon 5/10/21/63d matured rows), return distribution bins, board-size series,
+      failure-mode mix. Every cell carries raw_n AND effective_n (non-overlapping 21d
+      windows, session-ordinal — mirrors standout_audit convention SA-R10). Per-block
+      accruing/data_gap flags. Single writer (SA-R14 one-grader law). Never raises on
+      missing input — absent inputs emit data_gap sentinels (SA-R16).
+
   us-audit-scoreboard:
     path: site/factordata/us_audit_scoreboard.json
     format: json
