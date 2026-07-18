@@ -16,7 +16,7 @@
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Commodities — {{ as_of }}</title>
 {% set seo_title = 'Commodities Sector Intelligence — Mastermind' %}
-{% set seo_desc = 'Live commodity sector read: sector stance, index breadth, bottoms & tops confluence board, trend-diversity heat grid, and per-commodity detail for all 17 members.' %}
+{% set seo_desc = 'Live commodity sector read: sector stance, index breadth, bottoms & tops early-warning board, trend-diversity heat grid, and per-commodity detail for all 17 members.' %}
 {% set seo_path = 'commodities.html' %}
 {% include "_seo_head.html.j2" %}
 {# Plotly deliberately NOT loaded: this page renders zero Plotly charts.
@@ -314,7 +314,7 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
   max-width: 100%; transition: width .7s ease-out;
 }
 .cell.c-up .chg-bar, .cell.c-flat.pos .chg-bar  { background: var(--up); }
-.cell.c-dn .chg-bar, .cell.c-wash .chg-bar { background: var(--dn); }
+.cell.c-dn .chg-bar, .cell.c-wash .chg-bar, .cell.c-flat.neg .chg-bar { background: var(--dn); }
 .grp { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
        color: var(--faint); margin: 16px 0 8px; }
 
@@ -446,9 +446,9 @@ html[data-lang="zh"] .l-en { display: none; }
 <body class="page-commod">
 {% include "_site_nav.html.j2" %}
 
-{# Aurora layer — class keyed to stance tone #}
+{# Aurora layer — class keyed to stance tone; protect=red wins, watch=amber, else blank #}
 {% if vm and vm.stance %}
-{% set _au = 'au-amber' if vm.stance.tone in ('watch','protect') else ('au-red' if vm.stance.tone == 'protect' else '') %}
+{% set _au = 'au-red' if vm.stance.tone == 'protect' else ('au-amber' if vm.stance.tone == 'watch' else '') %}
 {% else %}{% set _au = '' %}{% endif %}
 <div class="aurora {{ _au }}"><div class="au-a3"></div></div>
 
@@ -556,14 +556,14 @@ html[data-lang="zh"] .l-en { display: none; }
   {# 2 — breadth #}
   <div class="kpi-tile">
     <div class="kpi-lbl">{{ t('Breadth', '广度') }}</div>
-    <div class="kpi-val">{{ (br.n_up_trend or 0)|int }} {{ t('of','of') }} {{ (br.n_members or 17)|int }}</div>
+    <div class="kpi-val">{{ (br.n_up_trend or 0)|int }} {{ t('of','/') }} {{ (br.n_members or 17)|int }}</div>
     <div class="kpi-sub">{{ t('trending up', '趋势向上') }}</div>
   </div>
-  {# 3 — dominant cycle phase #}
+  {# 3 — dominant cycle phase (max-count entry pre-computed in build_commodities.py) #}
   <div class="kpi-tile">
     <div class="kpi-lbl">{{ t('Long cycle', '长周期') }}</div>
-    {% if vm.cycle_summary %}
-    {% set _dom = vm.cycle_summary | sort(attribute='names_en', reverse=true) | first %}
+    {% if vm.cycle_dominant %}
+    {% set _dom = vm.cycle_dominant %}
     <div class="kpi-val" style="font-size:15px;font-weight:700">
       <span class="l-en">{{ _dom.phase_en }}</span><span class="l-zh">{{ _dom.phase_zh }}</span>
     </div>
@@ -594,14 +594,14 @@ html[data-lang="zh"] .l-en { display: none; }
     ('HG=F', 'Copper', '铜',   'HG'),
     ('CL=F', 'Oil · WTI', '原油', 'CL'),
   ] %}
-  {# Build a price lookup from assets list (core-4) #}
+  {# Build a price lookup from assets list (core-4); price_fmt is pre-formatted Python-side #}
   {% set _price_map = {} %}
   {% set _chg_map = {} %}
   {% for a in assets %}
-    {% if a.key == 'gold'   %}{% if _price_map.update({'GC=F': a.price, 'GC=F_chg': a.chg}) %}{% endif %}{% endif %}
-    {% if a.key == 'silver' %}{% if _price_map.update({'SI=F': a.price, 'SI=F_chg': a.chg}) %}{% endif %}{% endif %}
-    {% if a.key == 'copper' %}{% if _price_map.update({'HG=F': a.price, 'HG=F_chg': a.chg}) %}{% endif %}{% endif %}
-    {% if a.key == 'oil'    %}{% if _price_map.update({'CL=F': a.price, 'CL=F_chg': a.chg}) %}{% endif %}{% endif %}
+    {% if a.key == 'gold'   %}{% if _price_map.update({'GC=F': a.price_fmt, 'GC=F_chg': a.chg}) %}{% endif %}{% endif %}
+    {% if a.key == 'silver' %}{% if _price_map.update({'SI=F': a.price_fmt, 'SI=F_chg': a.chg}) %}{% endif %}{% endif %}
+    {% if a.key == 'copper' %}{% if _price_map.update({'HG=F': a.price_fmt, 'HG=F_chg': a.chg}) %}{% endif %}{% endif %}
+    {% if a.key == 'oil'    %}{% if _price_map.update({'CL=F': a.price_fmt, 'CL=F_chg': a.chg}) %}{% endif %}{% endif %}
   {% endfor %}
   {% for sym, name_en, name_zh, abbr in _lp %}
   {% set _px  = _price_map.get(sym) %}
@@ -610,7 +610,7 @@ html[data-lang="zh"] .l-en { display: none; }
     <div class="lt-sym">{{ abbr }}</div>
     <div class="lt-name"><span class="l-en">{{ name_en }}</span><span class="l-zh">{{ name_zh }}</span></div>
     <div class="lt-px nb-px" data-sym="{{ sym }}" data-mkt="fut">
-      {% if _px is not none %}{{ '%.2f'|format(_px) }}{% else %}—{% endif %}
+      {% if _px is not none %}{{ _px }}{% else %}—{% endif %}
     </div>
     <div class="lt-chg nb-chg {{ 'up' if (_chg or 0) >= 0 else 'dn' }}" data-sym="{{ sym }}" data-mkt="fut">
       {% if _chg is not none %}{{ '%+.1f'|format(_chg) }}%{% else %}—{% endif %}
@@ -809,7 +809,7 @@ html[data-lang="zh"] .l-en { display: none; }
 <div class="grp"><span class="l-en">{{ grp.group_en }}</span><span class="l-zh">{{ grp.group_zh }}</span></div>
 <div class="hgrid">
   {% for m in grp.members %}
-  <div class="cell {{ m.tone or 'c-flat' }}">
+  <div class="cell {{ m.tone or 'c-flat' }} {{ m.chg_sign or '' }}">
     <div class="cn">
       <span class="cnm"><span class="l-en">{{ m.label_en }}</span><span class="l-zh">{{ m.label_zh }}</span></span>
       {% if m.chg_1m_pct is not none %}
@@ -993,8 +993,6 @@ html[data-lang="zh"] .l-en { display: none; }
   {% if catalysts %}
   <div class="cat-list">
     {% for c in catalysts %}
-    {% set _as_of_ts = as_of | replace(', ', '-') %}
-    {# Plain countdown computed from c.date relative to as_of #}
     <div class="cat-row">
       <span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}
       </span>
@@ -1003,6 +1001,17 @@ html[data-lang="zh"] .l-en { display: none; }
       </span>
       <span class="cat-label">{{ td(c.label) }}</span>
       <span class="faint" style="font-size:12px">{% for a in c.assets %}{{ td(a|capitalize) }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
+      {% if c.days_out is not none %}
+      <span class="faint" style="font-size:11px">
+        {%- if c.days_out == 0 -%}
+          <span class="l-en">today</span><span class="l-zh">今天</span>
+        {%- elif c.days_out == 1 -%}
+          <span class="l-en">tomorrow</span><span class="l-zh">明天</span>
+        {%- else -%}
+          <span class="l-en">in {{ c.days_out }} days</span><span class="l-zh">{{ c.days_out }}天后</span>
+        {%- endif -%}
+      </span>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
@@ -1066,7 +1075,7 @@ html[data-lang="zh"] .l-en { display: none; }
 </div>
 
 <div class="foot">
-  Commodities · {{ t('built','生成于') }} {{ built }} · {{ t('data as of','数据截至') }} {{ as_of }}<br>
+  {{ t('Commodities','大宗商品') }} · {{ t('built','生成于') }} {{ built }} · {{ t('data as of','数据截至') }} {{ as_of }}<br>
   <span style="font-size:11px">© 2026 Mastermind Inc</span>
 </div>
 </div>{# /wrap #}

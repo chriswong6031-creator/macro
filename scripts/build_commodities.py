@@ -449,7 +449,9 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
     risk_on = last.get("risk_regime") == "low_risk"
     vm = {
         "key": asset, "label": META[asset]["label"], "zh": META[asset]["zh"],
-        "unit": META[asset]["unit"], "price": _r(close.iloc[-1], 2), "chg": chg,
+        "unit": META[asset]["unit"], "price": _r(close.iloc[-1], 2),
+        "price_fmt": (f"{float(close.iloc[-1]):,.2f}" if close.iloc[-1] is not None else None),
+        "chg": chg,
         # canonical front-month futures symbol so live.js refreshes the price tile
         "sym": {"gold": "GC=F", "silver": "SI=F", "copper": "HG=F", "oil": "CL=F"}.get(asset),
         "alloc_pct": alloc_pct, "market_mode": last.get("market_mode", "—"),
@@ -817,9 +819,13 @@ def _build_sector_vm_inner(
         phase_en, phase_zh = _plain_cycle(phase)
         cycle_summary.append({
             "phase": phase, "phase_en": phase_en, "phase_zh": phase_zh,
+            "count": len(names),
             "names_en": [MEMBER_LABELS.get(n, (n.replace("_"," ").title(), n))[0] for n in names],
             "names_zh": [MEMBER_LABELS.get(n, (n.replace("_"," ").title(), n))[1] for n in names],
         })
+
+    # Dominant phase: entry with the most members (max count wins, not alphabetical)
+    cycle_dominant: dict | None = max(cycle_summary, key=lambda e: e["count"]) if cycle_summary else None
 
     # --- board (tops + bottoms) -----------------------------------------------
     top_states   = {"Blowing off — extended", "Extended — late cycle", "Euphoric top — rolling over"}
@@ -1036,13 +1042,14 @@ def _build_sector_vm_inner(
         detail.append(entry)
 
     return {
-        "stance":        stance,
-        "breadth":       breadth_vm,
-        "index":         index_vm,
-        "cycle_summary": cycle_summary,
-        "board":         board,
-        "grid":          grid,
-        "detail":        detail,
+        "stance":         stance,
+        "breadth":        breadth_vm,
+        "index":          index_vm,
+        "cycle_summary":  cycle_summary,
+        "cycle_dominant": cycle_dominant,
+        "board":          board,
+        "grid":           grid,
+        "detail":         detail,
     }
 
 
@@ -1224,12 +1231,19 @@ def main() -> int:
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
     env.filters["money"] = lambda v: ("—" if v is None else f"${v:,.2f}")
-    # Resolve catalyst type slugs to bilingual labels for the template
+    # Resolve catalyst type slugs to bilingual labels + days_out countdown for the template
+    from datetime import date as _date
+    _build_date = results["gold"].index.max().date()
     catalysts_resolved = []
     for _cat in (catalysts or []):
         _type = _cat.get("type", "")
         _bi = CATALYST_TYPE_LABELS.get(_type, (_type.replace("_", " "), _type.replace("_", " ")))
-        catalysts_resolved.append({**_cat, "type_en": _bi[0], "type_zh": _bi[1]})
+        try:
+            _cat_date = _date.fromisoformat(_cat["date"])
+            _days_out = (_cat_date - _build_date).days
+        except Exception:  # noqa: BLE001
+            _days_out = None
+        catalysts_resolved.append({**_cat, "type_en": _bi[0], "type_zh": _bi[1], "days_out": _days_out})
     try:
         html = env.get_template("commodities.html.j2").render(
             C=C, as_of=as_of, built=built, cal_span=cal_span, complex=cx,
