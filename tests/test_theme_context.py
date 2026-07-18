@@ -108,6 +108,7 @@ def _clear_env(monkeypatch):
     """Remove lane env vars before each test."""
     monkeypatch.delenv("COLLECT_LANE", raising=False)
     monkeypatch.delenv("US_LANE", raising=False)
+    monkeypatch.delenv("CN_LANE", raising=False)
 
 
 # ── Health classification tests ───────────────────────────────────────────────
@@ -240,10 +241,11 @@ def _run_compute(
     ti_themes: list[dict],
     as_of: str = "2026-07-17",
     root: Path | None = None,
+    region: str = "us",
 ) -> dict | None:
     alloc = _make_alloc(rank_rows, as_of)
     ti = _make_theme_intel(ti_themes, as_of)
-    return TC.compute_theme_context(alloc, ti, region="us", root=root)
+    return TC.compute_theme_context(alloc, ti, region=region, root=root)
 
 
 class TestComputeThemeContextBasic:
@@ -603,3 +605,203 @@ class TestAlignment:
         ctx = _run_compute(rows, themes, root=tmp_path)
         # cyber is in strength (confirmed); rotation event to_leg=cyber -> agrees
         assert ctx["alignment"]["sector_rotation_agrees"] is True
+
+
+# ── China regionization tests ─────────────────────────────────────────────────
+
+class TestChinaArtifactPathSeparation:
+    """A china run must NEVER touch US paths (CN contract item 1-2)."""
+
+    def test_china_write_uses_cn_path(self, tmp_path):
+        """write_context with region=china writes theme_context_cn.json, not theme_context.json."""
+        ctx = {
+            "schema": "theme_context.v1",
+            "as_of": "2026-07-17",
+            "region": "china",
+            "display_only": True,
+        }
+        TC.write_context(ctx, root=tmp_path)
+        cn_path = tmp_path / "site" / "basketdata" / "theme_context_cn.json"
+        us_path = tmp_path / "site" / "basketdata" / "theme_context.json"
+        assert cn_path.exists(), "theme_context_cn.json must be created for china"
+        assert not us_path.exists(), "theme_context.json (US) must NOT be touched by china write"
+
+    def test_us_write_does_not_touch_cn_path(self, tmp_path):
+        """write_context with region=us writes theme_context.json, not theme_context_cn.json."""
+        ctx = {
+            "schema": "theme_context.v1",
+            "as_of": "2026-07-17",
+            "region": "us",
+            "display_only": True,
+        }
+        TC.write_context(ctx, root=tmp_path)
+        us_path = tmp_path / "site" / "basketdata" / "theme_context.json"
+        cn_path = tmp_path / "site" / "basketdata" / "theme_context_cn.json"
+        assert us_path.exists(), "theme_context.json must be created for us"
+        assert not cn_path.exists(), "theme_context_cn.json must NOT be touched by us write"
+
+    def test_china_history_uses_cn_jsonl(self, tmp_path, monkeypatch):
+        """On CN_LANE=asia, history writes to context_history_cn.jsonl, not context_history.jsonl."""
+        monkeypatch.setenv("CN_LANE", "asia")
+        rows = [_make_rank_row("semi_cn", breadth=0.60, r10=0.02, rank=1)]
+        themes = [_make_ti_theme("semi_cn", label="dominant", reco="hold", score=65)]
+        _run_compute(rows, themes, root=tmp_path, region="china")
+        cn_hist = tmp_path / "data" / "themes" / "context_history_cn.jsonl"
+        us_hist = tmp_path / "data" / "themes" / "context_history.jsonl"
+        assert cn_hist.exists(), "context_history_cn.jsonl must be written for china on asia lane"
+        assert not us_hist.exists(), "context_history.jsonl (US) must NOT be touched by china run"
+
+    def test_china_history_lines_have_correct_asof(self, tmp_path, monkeypatch):
+        """china history row is readable and has correct asof."""
+        monkeypatch.setenv("CN_LANE", "asia")
+        rows = [_make_rank_row("tech_cn", breadth=0.70, r10=0.03, rank=1)]
+        themes = [_make_ti_theme("tech_cn", label="emerging", reco="enter", score=70)]
+        _run_compute(rows, themes, as_of="2026-07-17", root=tmp_path, region="china")
+        cn_hist = tmp_path / "data" / "themes" / "context_history_cn.jsonl"
+        lines = [l for l in cn_hist.read_text().splitlines() if l.strip()]
+        assert len(lines) == 1
+        row = json.loads(lines[0])
+        assert row["asof"] == "2026-07-17"
+
+
+class TestChinaAsiaLaneGate:
+    """CN_LANE=asia advances china; unset does not; COLLECT_LANE=nightly does NOT advance china."""
+
+    def test_no_lane_no_china_history_write(self, tmp_path):
+        """No env vars → china history file must NOT be created."""
+        rows = [_make_rank_row("fin_cn", breadth=0.65, r10=0.01, rank=1)]
+        themes = [_make_ti_theme("fin_cn", label="neutral", reco="hold", score=55)]
+        _run_compute(rows, themes, root=tmp_path, region="china")
+        cn_hist = tmp_path / "data" / "themes" / "context_history_cn.jsonl"
+        assert not cn_hist.exists(), "china history must not be written when no lane is armed"
+
+    def test_collect_lane_nightly_does_not_advance_china(self, tmp_path, monkeypatch):
+        """COLLECT_LANE=nightly is the US gate — must NOT advance china ledger."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        rows = [_make_rank_row("fin_cn", breadth=0.65, r10=0.01, rank=1)]
+        themes = [_make_ti_theme("fin_cn", label="neutral", reco="hold", score=55)]
+        _run_compute(rows, themes, root=tmp_path, region="china")
+        cn_hist = tmp_path / "data" / "themes" / "context_history_cn.jsonl"
+        assert not cn_hist.exists(), (
+            "COLLECT_LANE=nightly must NOT advance china history "
+            "(CN_LANE=asia is the correct gate)"
+        )
+
+    def test_cn_lane_asia_advances_china(self, tmp_path, monkeypatch):
+        """CN_LANE=asia must advance the china ledger."""
+        monkeypatch.setenv("CN_LANE", "asia")
+        rows = [_make_rank_row("cons_cn", breadth=0.55, r10=0.01, rank=1)]
+        themes = [_make_ti_theme("cons_cn", label="neutral", reco="hold", score=60)]
+        _run_compute(rows, themes, root=tmp_path, region="china")
+        cn_hist = tmp_path / "data" / "themes" / "context_history_cn.jsonl"
+        assert cn_hist.exists(), "CN_LANE=asia must write context_history_cn.jsonl"
+
+    def test_cn_lane_does_not_advance_us_history(self, tmp_path, monkeypatch):
+        """CN_LANE=asia must not write to the US history file (region isolation)."""
+        monkeypatch.setenv("CN_LANE", "asia")
+        rows = [_make_rank_row("cons_cn", breadth=0.55, r10=0.01, rank=1)]
+        themes = [_make_ti_theme("cons_cn", label="neutral", reco="hold", score=60)]
+        _run_compute(rows, themes, root=tmp_path, region="china")
+        us_hist = tmp_path / "data" / "themes" / "context_history.jsonl"
+        assert not us_hist.exists(), "CN_LANE=asia must not touch US history file"
+
+
+class TestChinaSeedPath:
+    """_seed_from_archive uses baskets_china.parquet for region='china'."""
+
+    def test_china_seed_path_does_not_error_on_absent_archive(self, tmp_path):
+        """Absent baskets_china.parquet should return empty list, not raise."""
+        result = TC._seed_from_archive(tmp_path, region="china")
+        assert result == []
+
+    def test_us_seed_path_does_not_error_on_absent_archive(self, tmp_path):
+        """Absent baskets.parquet should return empty list, not raise."""
+        result = TC._seed_from_archive(tmp_path, region="us")
+        assert result == []
+
+
+class TestChinaAlignmentPath:
+    """_alignment reads rotation_events_china.json for region='china'."""
+
+    def test_china_alignment_reads_cn_events(self, tmp_path):
+        """When rotation_events_china.json is present, china alignment reads it."""
+        re_dir = tmp_path / "site" / "marketdata"
+        re_dir.mkdir(parents=True, exist_ok=True)
+        cn_re_data = {
+            "schema": "rotation_events.v1",
+            "ok": True,
+            "as_of": "2026-07-17",
+            "active": [
+                {
+                    "id": "cn:tech->newautos",
+                    "from_leg": {"key": "cn_tech", "name_en": "CN Tech"},
+                    "to_leg": {"key": "cn_newautos", "name_en": "CN New Autos"},
+                    "severity": "minor",
+                }
+            ],
+        }
+        (re_dir / "rotation_events_china.json").write_text(json.dumps(cn_re_data))
+        result = TC._alignment(["cn_newautos"], tmp_path, region="china")
+        # cn_newautos is in strength_ids and matches the to_leg -> agrees
+        assert result["sector_rotation_agrees"] is True
+
+    def test_china_alignment_absent_cn_file_is_failopen(self, tmp_path):
+        """Missing rotation_events_china.json -> sector_rotation_agrees=None (fail-open)."""
+        result = TC._alignment(["cn_tech"], tmp_path, region="china")
+        assert result["sector_rotation_agrees"] is None
+
+    def test_china_alignment_does_not_read_us_events_file(self, tmp_path):
+        """Even when rotation_events.json exists, china alignment reads the CN file."""
+        re_dir = tmp_path / "site" / "marketdata"
+        re_dir.mkdir(parents=True, exist_ok=True)
+        # Write US file only — china should NOT read it
+        us_re_data = {
+            "schema": "rotation_events.v1",
+            "ok": True,
+            "active": [{"to_leg": {"key": "cn_tech"}}],
+        }
+        (re_dir / "rotation_events.json").write_text(json.dumps(us_re_data))
+        # cn file absent -> fail-open, not True from reading US file
+        result = TC._alignment(["cn_tech"], tmp_path, region="china")
+        assert result["sector_rotation_agrees"] is None
+
+
+class TestCATZHChinaCategories:
+    """_CAT_ZH covers all 7 China categories (CN contract item 6).
+    No raw-EN category name must leak into ZH migration notes for china themes."""
+
+    _CHINA_CATS = [
+        "Advanced Manufacturing",
+        "Consumer & Brands",
+        "Cyclicals & Resources",
+        "Financials & Value",
+        "New Energy & Autos",
+        "Technology & AI",
+    ]
+
+    @pytest.mark.parametrize("cat", _CHINA_CATS)
+    def test_china_cat_in_cat_zh(self, cat: str):
+        """Each china category must have a ZH translation in _CAT_ZH."""
+        assert cat in TC._CAT_ZH, f"Missing _CAT_ZH entry for china category '{cat}'"
+        assert TC._CAT_ZH[cat], f"Empty ZH translation for china category '{cat}'"
+
+    @pytest.mark.parametrize("cat", _CHINA_CATS)
+    def test_china_migration_note_zh_no_raw_en_leak(self, cat: str, tmp_path):
+        """Migration note_zh must not contain raw EN category name for a china category."""
+        # Build a rank row with this china category as the only absorbing band
+        rows = [
+            _make_rank_row("cn_basket", category=cat, breadth=0.90, r10=0.05, rank=1),
+        ]
+        themes = [_make_ti_theme("cn_basket", label="dominant", reco="hold", score=75)]
+        ctx = _run_compute(rows, themes, root=tmp_path, region="china")
+        assert ctx is not None
+        note_zh = ctx["migration"]["note_zh"]
+        assert cat not in note_zh, (
+            f"Raw EN category '{cat}' leaked into note_zh='{note_zh}'. "
+            "Add the ZH translation to _CAT_ZH."
+        )
+        # The ZH translation should be present instead
+        zh_name = TC._CAT_ZH[cat]
+        assert zh_name in note_zh, (
+            f"Expected ZH name '{zh_name}' in note_zh='{note_zh}'"
+        )

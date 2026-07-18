@@ -155,6 +155,72 @@
   .overlap-chip { display:inline-block; padding:1px 8px; border:1px solid var(--line); border-radius:7px;
     background:var(--panel2); font-size:11px; cursor:pointer; color:inherit; }
   .overlap-chip:hover { border-color:var(--muted); }
+
+  /* ── Theme Context Hero — aurora living-glass (ported from baskets.html.j2) ── */
+  #theme-context-hero { position:relative; overflow:hidden; border-radius:12px;
+    background:rgba(var(--panel-rgb,16,22,30),.55); border:1px solid rgba(255,255,255,.09);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    box-shadow:0 8px 28px rgba(0,0,0,.40),0 1.5px 0 rgba(255,255,255,.06) inset;
+    padding:16px 18px; margin-top:10px; }
+  [data-theme='light'] #theme-context-hero {
+    background:rgba(255,255,255,.78); border-color:rgba(0,0,0,.09);
+    box-shadow:0 4px 18px rgba(0,0,0,.08),0 1px 0 rgba(255,255,255,.9) inset; }
+  .tc-aurora { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .tc-aurora::before { content:""; position:absolute; top:-80px; left:-60px;
+    width:480px; height:380px; border-radius:50%; filter:blur(80px);
+    background:radial-gradient(ellipse,var(--tc-blob-a,rgba(74,222,128,.08)) 0%,transparent 70%);
+    animation:tc-drift-a 28s ease-in-out infinite alternate; }
+  .tc-aurora::after  { content:""; position:absolute; bottom:-60px; right:-40px;
+    width:380px; height:320px; border-radius:50%; filter:blur(80px);
+    background:radial-gradient(ellipse,rgba(93,139,255,.06) 0%,transparent 70%);
+    animation:tc-drift-b 34s ease-in-out infinite alternate; }
+  @keyframes tc-drift-a { from{transform:translate(0,0)} to{transform:translate(30px,20px)} }
+  @keyframes tc-drift-b { from{transform:translate(0,0)} to{transform:translate(-25px,18px)} }
+  @media(prefers-reduced-motion:reduce){
+    .tc-aurora,.tc-aurora::before,.tc-aurora::after{ animation:none; } }
+  #theme-context-hero.tc-rotating { --tc-blob-a:rgba(248,113,113,.09); }
+  #theme-context-hero.tc-strain   { --tc-blob-a:rgba(250,204,21,.08); }
+  #theme-context-hero.tc-steady   { --tc-blob-a:rgba(74,222,128,.08); }
+  [data-theme='light'] #theme-context-hero.tc-rotating { --tc-blob-a:rgba(192,57,43,.05); }
+  [data-theme='light'] #theme-context-hero.tc-strain   { --tc-blob-a:rgba(156,98,18,.05); }
+  [data-theme='light'] #theme-context-hero.tc-steady   { --tc-blob-a:rgba(34,197,94,.04); }
+  .tc-inner { position:relative; z-index:1; }
+  .tc-toprow { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; margin-bottom:8px; }
+  .tc-big-state { font-size:22px; font-weight:750; letter-spacing:-.01em; line-height:1.1; }
+  .tc-stance-sub { color:var(--muted); font-size:13px; line-height:1.5; margin:4px 0 10px; max-width:80ch; }
+  .tc-chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
+  .tc-chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; padding:3px 9px;
+    border-radius:20px; border:1px solid; white-space:nowrap; text-decoration:none; color:inherit; }
+  .tc-chip:hover { opacity:.85; }
+  .tc-chip.up  { background:rgba(74,222,128,.12); border-color:rgba(74,222,128,.35); color:var(--up); }
+  .tc-chip.dn  { background:rgba(248,113,113,.10); border-color:rgba(248,113,113,.30); color:var(--down); }
+  .tc-chip.was1{ font-size:9.5px; padding:0 5px; opacity:.75; border-radius:5px; margin-left:3px;
+                 background:rgba(248,113,113,.08); border-color:rgba(248,113,113,.25); color:var(--down); }
+  .tc-chip.mig { background:rgba(93,139,255,.10); border-color:rgba(93,139,255,.25); color:var(--link); }
+  .tc-chip.aln { background:rgba(74,222,128,.08); border-color:rgba(74,222,128,.25); color:var(--up); }
+  .tc-chip.rcpt{ background:var(--panel2); border-color:var(--line); color:var(--muted); }
+  .tc-receipt-tip { cursor:default; }
+  .tc-days  { font-size:11px; color:var(--muted); align-self:center; }
+  .tc-pb-link { display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--link);
+    border:1px solid var(--line); border-radius:20px; padding:3px 10px; margin-top:4px; text-decoration:none; }
+  .tc-pb-link:hover { border-color:var(--link); }
+  /* leg-toggle (All / None legend buttons) */
+  .leg-toggle { font-size:11px; padding:2px 8px; border:1px solid var(--line); border-radius:6px;
+    background:var(--panel2); color:var(--muted); cursor:pointer; margin-right:6px; }
+  .leg-toggle:hover { color:var(--text); border-color:var(--muted); }
+  /* ── zh 红涨绿跌: direction-coded chip TINTS swap with the text vars ── */
+  html[data-lang="zh"] .tc-chip.up,
+  html[data-lang="zh"] .tc-chip.aln { background:rgba(224,85,85,.10); border-color:rgba(224,85,85,.35); }
+  html[data-lang="zh"] .tc-chip.dn,
+  html[data-lang="zh"] .tc-chip.was1 { background:rgba(69,184,115,.10); border-color:rgba(69,184,115,.35); }
+  html[data-lang="zh"] #theme-context-hero.tc-steady   { --tc-blob-a:rgba(224,85,85,.08); }
+  html[data-lang="zh"] #theme-context-hero.tc-rotating { --tc-blob-a:rgba(69,184,115,.07); }
+  /* category filter chips for performance table */
+  .cat-filter-bar { display:flex; flex-wrap:wrap; gap:6px; margin:9px 0 4px; }
+  .cat-filter-bar button { border:1px solid var(--line); background:var(--panel); color:var(--muted);
+    border-radius:8px; padding:5px 9px; font-size:12px; cursor:pointer; }
+  .cat-filter-bar button.on { background:var(--panel2); color:var(--text); font-weight:650;
+    border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
 </style>
 </head>
 <body>
@@ -180,6 +246,120 @@
   </div>
 </nav>
 
+  {# ── Theme Context Hero (theme_context.v1, server-rendered) — cn edition ── #}
+  {# When theme_context is absent (off-lane / first run): plain header fallback. #}
+  {% if not lite and theme_context is defined and theme_context is not none %}
+  {% set _tc_lead = theme_context.leadership %}
+  {% set _tc_tl   = _tc_lead.trailing_leader %}
+  {% set _tc_st   = _tc_lead.state %}
+  {# Aurora tint class by state #}
+  {% set _tc_cls  = 'tc-rotating' if _tc_st == 'rotating' else ('tc-strain' if _tc_st == 'strain' else 'tc-steady') %}
+  <div id="theme-context-hero" class="{{ _tc_cls }}">
+    <div class="tc-aurora" aria-hidden="true"></div>
+    <div class="tc-inner">
+
+      {# ── Top row: H1 + as-of ── #}
+      <div class="tc-toprow">
+        <h1 style="font-size:21px;margin:0">🧺 {{ t('China thematic baskets', 'A股主题篮子') }}</h1>
+        <span class="asof" style="margin-left:auto"><span class="pfx">{{ t('as of', '截至') }} </span><span id="asof">—</span></span>
+      </div>
+      <p class="story" id="story" style="font-size:14.5px;margin:4px 0 8px;line-height:1.5"></p>
+      <p class="tagline" style="margin:2px 0 10px">{{ t(
+        'Equal-weight A-share theme baskets measured against CSI 300. Use them to see which China themes are leading or fading.',
+        '等权重 A 股主题篮子，对标沪深 300。用于观察哪些中国主题在走强或走弱。') }}
+        <a href="baskets_china_ths.html" style="white-space:nowrap">→ {{ t('同花顺 themes', '同花顺主题') }}</a></p>
+
+      {# ── Big state line ── #}
+      <div style="margin:6px 0 4px">
+        <div class="tc-big-state">
+          {% if _tc_st == 'rotating' %}{{ t('Money is rotating', '资金正在轮动') }}
+          {% elif _tc_st == 'strain' %}{{ t('Leadership under strain', '领涨承压') }}
+          {% else %}{{ t('Leadership steady', '领涨格局稳定') }}{% endif %}
+        </div>
+        <p class="tc-stance-sub">{{ t(_tc_lead.stance_en, _tc_lead.stance_zh) }}</p>
+      </div>
+
+      {# ── Days-in-state chip row (omit wrapper entirely when null to avoid empty gap) ── #}
+      {% if _tc_lead.days_in_state is not none %}
+      <div class="tc-chips">
+        <span class="tc-days">{{ t(_tc_lead.days_in_state|string + ' days', _tc_lead.days_in_state|string + ' 天') }}</span>
+      </div>
+      {% endif %}
+
+      {# ── Strength now: green glass chips — curated ids link to basket_china/<id>.html;
+           ths- ids are non-linkable (subsector pages live under a separate path) ── #}
+      {% if _tc_lead.strength %}
+      <div style="margin:6px 0 4px">
+        <span class="muted" style="font-size:11px">{{ t('Strength now', '当前强势') }}</span>
+        <div class="tc-chips" style="margin-top:4px">
+          {% for s in _tc_lead.strength %}
+          {% if s.id.startswith('ths-') or s.id.startswith('ths_') %}
+          <span class="tc-chip up"
+            {% if s.desk_score is defined and s.desk_score is not none %}data-tip-en="desk score {{ s.desk_score }}/100" data-tip-zh="评分 {{ s.desk_score }}/100"{% endif %}>
+            {{ t(s.name, s.name_zh) }}
+          </span>
+          {% else %}
+          <a class="tc-chip up" href="basket_china/{{ s.id }}.html"
+            {% if s.desk_score is defined and s.desk_score is not none %}data-tip-en="desk score {{ s.desk_score }}/100" data-tip-zh="评分 {{ s.desk_score }}/100"{% endif %}>
+            {{ t(s.name, s.name_zh) }}
+          </a>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      {# ── Empty-strength null line (contract: plain-word) ── #}
+      <p class="muted" style="font-size:12.5px;margin:6px 0 4px">{{ t(
+        'No theme is confirming strength right now — most groups are pulling back.',
+        '当前没有主题确认强势——多数板块正在回调。') }}</p>
+      {% endif %}
+
+      {# ── Breaking down: red chips; trailing-leader gets 'was #1' tag ── #}
+      {% if _tc_lead.breaking %}
+      <div style="margin:4px 0 6px">
+        <span class="muted" style="font-size:11px">{{ t('Breaking down', '走弱') }}</span>
+        <div class="tc-chips" style="margin-top:4px">
+          {% for b in _tc_lead.breaking %}
+          {% if b.id.startswith('ths-') or b.id.startswith('ths_') %}
+          <span class="tc-chip dn">
+            {{ t(b.name, b.name_zh) }}
+            {% if b.id == _tc_tl.id %}<span class="tc-chip was1">{{ t('was #1', '原第一') }}</span>{% endif %}
+          </span>
+          {% else %}
+          <a class="tc-chip dn" href="basket_china/{{ b.id }}.html">
+            {{ t(b.name, b.name_zh) }}
+            {% if b.id == _tc_tl.id %}<span class="tc-chip was1">{{ t('was #1', '原第一') }}</span>{% endif %}
+          </a>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# ── Migration sentence + alignment tick ── #}
+      {% if theme_context.migration is defined and theme_context.migration.note_en %}
+      <div class="tc-chips" style="margin-top:6px">
+        <span class="tc-chip mig">{{ t(theme_context.migration.note_en, theme_context.migration.note_zh) }}</span>
+        {% if theme_context.alignment is defined and theme_context.alignment.sector_rotation_agrees %}
+        <span class="tc-chip aln"
+              data-tip-en="{{ theme_context.alignment.note_en | e }}"
+              data-tip-zh="{{ theme_context.alignment.note_zh | e }}">✓ {{ t('rotation agrees', '轮动一致') }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# ── Receipt ⓘ chip + playbook link ── #}
+      <div class="tc-chips" style="margin-top:8px">
+        <span class="tc-chip rcpt tc-receipt-tip"
+              data-tip-en="Trailing-momentum rank names {{ _tc_tl.name | e }} first; skips the most recent ~3 weeks by construction; suggested weights unchanged. Shape read only — not a forecast."
+              data-tip-zh="趋势动量排名以{{ _tc_tl.name_zh | e }}居首；设计上跳过最近约3周数据；建议权重不变。仅为形态读数，非预测。">ⓘ {{ t('How this works', '原理说明') }}</span>
+        <a class="tc-pb-link" href="allocation_china.html">{{ t('Open the playbook →', '打开操盘手册 →') }}</a>
+      </div>
+
+    </div>{# /tc-inner #}
+  </div>
+  {% else %}
+  {# ── Plain header fallback when theme_context absent or lite variant ── #}
   <header>
     <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:12px">
       <h1>🧺 {{ t('China thematic baskets', 'A股主题篮子') }}{% if lite %} <span style="font-size:.62em;opacity:.75;font-weight:600">· {{ t('同花顺 themes', '同花顺主题') }}</span>{% endif %}</h1>
@@ -200,11 +380,9 @@
       <a href="baskets_china_ths.html" style="white-space:nowrap">→ {{ t('同花顺 themes', '同花顺主题') }}</a></p>
     {% endif %}
   </header>
+  {% endif %}
 
   {% if not lite %}
-  <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
-  <section id="nr-scorecard" data-alloc="allocation_china.json" data-page="allocation_china.html"></section>
-
   {% include "_baskets_desk.html.j2" %}
 
   {# Entry Radar — baskets in the washout/basing/turning/confirmed lifecycle ONLY (adjudicated 07-18); clean-entry shows as a chip, never as an admission #}
@@ -226,8 +404,9 @@
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "Sortable snapshot of every basket. Toggle between raw return, return versus CSI 300, and each basket's own z-score. Click a basket to see members.",
-        '所有篮子的可排序快照。可切换原始回报、相对沪深 300 回报和篮子自身 z 分数。点击篮子查看成分。') }}</p>
+        "Sortable snapshot of every basket. Toggle between raw return, return versus CSI 300, and each basket's own z-score. Filter by category. Click a basket to see members.",
+        '所有篮子的可排序快照。可切换原始回报、相对沪深 300 回报和篮子自身 z 分数。可按类别筛选。点击篮子查看成分。') }}</p>
+      <div class="cat-filter-bar" id="tbl-cat-filter"></div>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
       <div class="see-more-wrap"><button class="see-more" id="table-more" type="button"></button></div>
@@ -382,11 +561,16 @@ function filteredBaskets(){
 }
 function updateCount(){
   const el=document.getElementById('basket-count'); if(!el) return;
-  const n=filteredBaskets().length, total=(BASKETS.baskets||[]).length;
+  const n=tblFilteredBaskets().length, total=(BASKETS.baskets||[]).length;
   el.textContent = LANG()==='zh' ? `${n} / ${total} 个主题` : `${n} of ${total} themes`;
 }
 // bilingual span pair (local name — the non-lite page also loads baskets_desk.js, which owns `L`)
 const _bl    = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+// L alias for leg-toggle buttons — guarded so the non-lite page (which loads baskets_desk.js)
+// does not throw "Identifier 'L' has already been declared" (classic scripts share one lexical scope).
+window.L = window.L || ((en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`);
+// isZh() defined by baskets_desk.js on non-lite; guard for lite path
+if(typeof isZh==='undefined') window.isZh=function(){ return document.documentElement.getAttribute('data-lang')==='zh'; };
 const lastIdx = a => { for(let i=a.length-1;i>=0;i--) if(a[i]!=null) return i; return -1; };
 const hzLabel = c => c==='ytd'?'YTD':c;
 
@@ -419,12 +603,29 @@ function renderTabs(el, opts, active, cb){
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>{ el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); cb(b.dataset.v); });
 }
 
-// ---- 01 table -------------------------------------------------------------
+// ---- 01 table — category filter -------------------------------------------
 let btblMode = localStorage.getItem('cnfw-btbl-mode')||'rel';
 // Bumped key: cnfw-btbl-sort-v2 (adds score column — old prefs had no score col).
 let btblSort = JSON.parse(localStorage.getItem('cnfw-btbl-sort-v2')||'{"col":"20d","dir":-1}');
+let tblCatFilter = 'all'; // 'all' or a category string
+function renderTblCatFilter(){
+  const host=document.getElementById('tbl-cat-filter'); if(!host) return;
+  const zh=LANG()==='zh';
+  const cats=['all',...(BASKETS.categories||[])];
+  host.innerHTML=cats.map(c=>{
+    const lbl=c==='all'?(zh?'全部':'All'):esc(catLabel(c));
+    return `<button type="button" data-c="${esc(c)}" class="${c===tblCatFilter?'on':''}">${lbl}</button>`;
+  }).join('');
+  host.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    tblCatFilter=b.dataset.c; tableExpanded=false; renderTblCatFilter(); renderBTable(); updateCount();
+  });
+}
+function tblFilteredBaskets(){
+  const rows=filteredBaskets();
+  return tblCatFilter==='all' ? rows : rows.filter(b=>b.category===tblCatFilter);
+}
 function renderBTable(){
-  const allowed = new Set(filteredBaskets().map(b=>b.id));
+  const allowed = new Set(tblFilteredBaskets().map(b=>b.id));
   let rows = Object.entries(CHART.baskets).filter(([id])=>allowed.has(id)).map(([id,lv])=>{
     const b=(BASKETS.baskets||[]).find(x=>x.id===id); const rl=ratio(lv);
     const src = btblMode==='raw'?lv:rl;
@@ -470,7 +671,19 @@ function renderBTable(){
 }
 
 // ---- 02 chart -------------------------------------------------------------
-let chart=null, chartMode='rel', chartRange=252, hidden={};
+let chart=null, chartMode='rel', chartRange=parseInt(localStorage.getItem('cnfw-brange')||'252',10)||252, hidden={};
+// Crosshair floating tooltip
+let _xhTooltip=null;
+function _xhTip(){
+  if(!_xhTooltip){
+    _xhTooltip=document.createElement('div');
+    _xhTooltip.id='cn-ch-tip';
+    _xhTooltip.style.cssText='position:absolute;pointer-events:none;display:none;background:var(--panel2,#1e222a);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11.5px;white-space:nowrap;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+    const chartEl=document.getElementById('chart');
+    if(chartEl){ chartEl.style.position='relative'; chartEl.appendChild(_xhTooltip); }
+  }
+  return _xhTooltip;
+}
 function avgLevels(levelSets){
   const out=[];
   for(let i=0;i<CHART.dates.length;i++){
@@ -513,22 +726,49 @@ function renderChart(){
   (chart.__series||[]).forEach(s=>chart.removeSeries(s)); chart.__series=[];
   const start=rangeStart(CHART.dates);
   const sets=chartSets().filter(s=>!hidden[s.key]); const nVis=sets.length;
+  const seriesMeta=[];
   sets.forEach(set=>{
     let base=null; const data=[];
     for(let i=start;i<CHART.dates.length;i++){ const v=set.levels[i]; if(v==null) continue; if(base===null) base=v; data.push({time:CHART.dates[i], value:100*(v/base-1)}); }
     if(data.length<2) return;
     const s=chart.addLineSeries({ color:set.color, lineWidth:2, priceLineVisible:false, lastValueVisible:nVis<=4, title:nVis<=4?set.label:'',
       priceFormat:{type:'custom',minMove:0.01,formatter:v=>(v>=0?'+':'')+v.toFixed(1)+'%'} });
-    s.setData(data); chart.__series.push(s);
+    s.setData(data); chart.__series.push(s); seriesMeta.push({key:set.key,color:set.color,label:set.label,s,data});
   });
+  // Crosshair move — show nearest basket name + value (bilingual via isZh)
+  if(chart.__xhSub){ try{ chart.__xhSub.unsubscribe(); }catch(e){} }
+  const tip=_xhTip();
+  chart.__xhSub=chart.subscribeCrosshairMove(function(param){
+    if(!param||!param.point||!param.seriesData||!param.seriesData.size){tip.style.display='none';return;}
+    let best=null, bestDist=Infinity;
+    seriesMeta.forEach(m=>{
+      const d=param.seriesData.get(m.s);
+      if(d==null) return;
+      const pxY=m.s.priceToCoordinate?m.s.priceToCoordinate(d.value):null;
+      const dist=pxY!=null?Math.abs(pxY-(param.point.y||0)):Math.abs(d.value-(param.point.y||0));
+      if(dist<bestDist){bestDist=dist;best={...m,val:d.value};}
+    });
+    if(!best){tip.style.display='none';return;}
+    const v=best.val;
+    const nm=isZh()?(BASKETS.baskets||[]).find(b=>b.id===best.key)?.name_zh||best.label:best.label;
+    tip.innerHTML=`<span style="color:${best.color}">●</span> ${esc(nm)} <b style="color:${v>=0?'var(--up)':'var(--down)'}">${(v>=0?'+':'')+v.toFixed(1)}%</b>`;
+    const x=param.point.x, y=param.point.y;
+    tip.style.left=(x+12)+'px'; tip.style.top=(y-18)+'px'; tip.style.display='block';
+  });
+  // Guard: attach mouseleave once per element
+  if(!el._mlGuard){ el._mlGuard=true; el.addEventListener('mouseleave',()=>{tip.style.display='none';},{passive:true}); }
   chart.timeScale().fitContent(); renderChartLegend();
 }
 function renderChartLegend(){
   const el=document.getElementById('chart-legend'); const st=rangeStart(CHART.dates);
-  el.innerHTML=chartSets().map(s=>{ const li=lastIdx(s.levels); let base=null; for(let i=st;i<=li;i++){ if(s.levels[i]!=null){ base=s.levels[i]; break; } }
+  const chips=chartSets().map(s=>{ const li=lastIdx(s.levels); let base=null; for(let i=st;i<=li;i++){ if(s.levels[i]!=null){ base=s.levels[i]; break; } }
     const v=(base!=null&&s.levels[li]!=null)?100*(s.levels[li]/base-1):null;
     return `<span class="lchip ${hidden[s.key]?'off':''}" data-k="${s.key}"><span class="dot" style="background:${s.color}"></span>${esc(s.label)} <span class="lv">${v==null?'':(v>=0?'+':'')+v.toFixed(1)+'%'}</span></span>`;
   }).join('');
+  // All / None toggle buttons (leg-toggle idiom from baskets.html.j2)
+  const allBtn=`<button class="leg-toggle" onclick="Object.keys(hidden).forEach(k=>delete hidden[k]);renderChart()">${L('All','全选')}</button>`;
+  const noneBtn=`<button class="leg-toggle" onclick="chartSets().forEach(s=>hidden[s.key]=true);renderChart()">${L('None','全不选')}</button>`;
+  el.innerHTML=allBtn+noneBtn+chips;
   el.querySelectorAll('.lchip').forEach(c=>c.onclick=()=>{ hidden[c.dataset.k]=!hidden[c.dataset.k]; renderChart(); });
 }
 function initChartDefaults(){
@@ -743,7 +983,7 @@ function renderSemisChip(){
   </div>`;
 }
 
-function renderAll(){ renderStory(); renderModeTabs(); renderBTable(); renderChartCats(); renderChart(); renderCardSortTabs(); renderCards(); renderDetails(); renderEntryRadar(); updateCount(); }
+function renderAll(){ renderStory(); renderModeTabs(); renderTblCatFilter(); renderBTable(); renderChartCats(); renderChart(); renderCardSortTabs(); renderCards(); renderDetails(); renderEntryRadar(); updateCount(); }
 
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
@@ -755,11 +995,12 @@ function boot(){
     syncPh();
     document.addEventListener('langchange',syncPh);
   }
+  renderTblCatFilter();
   renderModeTabs();
   const rel=document.getElementById('chart-ranges');
   rel.innerHTML=RANGES.map(([lab,v])=>`<button data-v="${v}" class="${v===chartRange?'on':''}">${lab}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N days">`;
-  rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderChart(); });
-  rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
+  rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); localStorage.setItem('cnfw-brange',String(chartRange)); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderChart(); });
+  rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; localStorage.setItem('cnfw-brange',String(n)); rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cnfw-hz',v); renderCards(); renderDetails(); });
   renderCardSortTabs();
   initChartDefaults();
@@ -768,12 +1009,11 @@ function boot(){
   document.querySelectorAll('#actnow .anlist.lst-collapse').forEach(function(el){ el.classList.add('lst-cap4'); });{% endif %}
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);
   {% if not lite %}if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);{% endif %}
-  document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderAll(); });
+  document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderTblCatFilter(); renderAll(); });
   document.addEventListener('themechange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
 }
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 </script>
-{% if not lite %}<script src="allocation_scorecard.js"></script>{% endif %}
 <script src="theme.js"></script>
 </body>
 </html>

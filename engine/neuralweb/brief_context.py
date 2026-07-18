@@ -963,6 +963,35 @@ def _block_theme_rotation(ws: dict | None) -> dict | None:
     migration = tr.get("migration") or {}
     alignment = tr.get("alignment") or {}
 
+    # China compact sub-block — None when absent (no gap entry, drops cleanly)
+    cn = tr.get("china")
+    china_block: dict | None = None
+    if cn and isinstance(cn, dict):
+        cn_lead_state = cn.get("leadership_state")
+        cn_tl_raw = cn.get("trailing_leader") or {}
+        cn_tl = cn_tl_raw if isinstance(cn_tl_raw, dict) and cn_tl_raw else None
+        cn_strength = cn.get("strength") or []
+        cn_migration = cn.get("migration") or {}
+        cn_alignment = cn.get("alignment") or {}
+        if cn_lead_state is not None or cn.get("stance_en") is not None:
+            china_block = {
+                "leadership_state": cn_lead_state,
+                "stance_en": cn.get("stance_en"),
+                "stance_zh": cn.get("stance_zh"),
+                "as_of": cn.get("as_of"),
+                "trailing_leader": {
+                    "id": cn_tl.get("id"),
+                    "name": cn_tl.get("name"),
+                    "health": cn_tl.get("health"),
+                    "breadth": cn_tl.get("breadth"),
+                    "r10": cn_tl.get("r10"),
+                } if cn_tl else None,
+                "strength_names": [s.get("name") for s in (cn_strength[:4] if isinstance(cn_strength, list) else []) if isinstance(s, dict)] or None,
+                "migration_absorbing": [x.get("category") for x in (cn_migration.get("absorbing") or []) if isinstance(x, dict)] or None,
+                "migration_bleeding": [x.get("category") for x in (cn_migration.get("bleeding") or []) if isinstance(x, dict)] or None,
+                "sector_rotation_agrees": (cn_alignment or {}).get("sector_rotation_agrees"),
+            }
+
     return {
         "display_only": True,
         "is_context_only": True,
@@ -991,6 +1020,7 @@ def _block_theme_rotation(ws: dict | None) -> dict | None:
             if isinstance(x, dict)
         ] or None,
         "sector_rotation_agrees": alignment.get("sector_rotation_agrees"),
+        "china": china_block,
         "honesty_note": "context only — display-tier leadership read, not a trade signal",
     }
 

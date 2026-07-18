@@ -278,6 +278,27 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china theme desk failed: %s", e)
 
+    # THEME CONTEXT (leadership health hero) — reads allocation_china.json + theme_intel,
+    # produces site/basketdata/theme_context_cn.json and the theme_context Jinja var.
+    # MUST run after _attach_basket_intel so theme_intel is populated.
+    # Fail-open: absent alloc or engine failure → theme_context=None (page renders plain header).
+    theme_context = None
+    try:
+        from engine.theme_context import compute_theme_context, write_context as _write_tc
+        _alloc_cn_path = site / "allocationdata" / "allocation_china.json"
+        if _alloc_cn_path.exists():
+            _alloc_cn = json.loads(_alloc_cn_path.read_text())
+            _ti_for_tc = data.get("theme_intel") or {}
+            theme_context = compute_theme_context(_alloc_cn, _ti_for_tc, region="china")
+            if theme_context:
+                _write_tc(theme_context)
+                log.info("theme_context[china]: wrote theme_context_cn.json (state=%s)",
+                         (theme_context.get("leadership") or {}).get("state"))
+        else:
+            log.debug("theme_context[china]: allocation_china.json absent — skipping")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("theme_context[china] failed: %s", e)
+
     # 🔥 FORMING NARRATIVES (engine.narrative_emergence) — coherent, TIGHTENING A-share
     # groups not yet in a basket, with clean-entry recommended tickers. emergence_alerts
     # diffs vs prior + fires a "narrative_forming" event. Display-only, additive, noisy.
@@ -373,14 +394,19 @@ def main() -> int:
         just-written level series), so without the re-render the INLINED page
         payload would lack turn_state and the lifecycle chips / Entry Radar
         would silently never fire from turn states (us_stocks one-build-lag
-        class, cf. #2829)."""
+        class, cf. #2829).
+
+        #2886 double-render contract: theme_context= must be passed to EVERY
+        render call so the final page retains the hero. Both calls use the same
+        theme_context dict (computed once above, before the first render)."""
         _html = env.get_template("baskets_china.html.j2").render(
             baskets_json=json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
             chart_json=json.dumps(chart, separators=(",", ":")),
             theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
             bench_en="CSI 300", bench_zh="沪深300",
             generated_utc=built,
-            sleeve_stats=sleeve_stats)
+            sleeve_stats=sleeve_stats,
+            theme_context=theme_context)
         write_page(site / "baskets_china.html", _html)
         return len(_html)
 
