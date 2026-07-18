@@ -1,290 +1,979 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-17T01:58:58.630919+00:00",
+  "generated_at": "2026-07-18T01:07:15.632145+00:00",
   "base": {
-    "sha": "03599b704406ed3bb1199d5bd243c1928d706591"
+    "sha": "c2ee60009f7606cfbef18409e25e5ec04b1fcfaa"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
+      "number": 2810,
+      "title": "feat(case): winner autopsy ILMN 2025",
+      "head_ref": "codex/case-ilmn-2025",
+      "updated_at": "2026-07-18T00:53:36Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/ILMN_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2809,
+      "title": "feat(case): winner autopsy AMAT 2020",
+      "head_ref": "codex/case-amat-2020",
+      "updated_at": "2026-07-18T00:38:00Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/AMAT_2020.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2808,
+      "title": "feat(case): winner autopsy NVDA 2017",
+      "head_ref": "codex/case-nvda-2017",
+      "updated_at": "2026-07-18T00:20:28Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/NVDA_2017.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2807,
+      "title": "feat(case): winner autopsy APLD 2024",
+      "head_ref": "codex/case-apld-2024",
+      "updated_at": "2026-07-18T00:07:20Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/APLD_2024.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2806,
+      "title": "feat(case): winner autopsy LNG 2013",
+      "head_ref": "codex/case-lng-2013",
+      "updated_at": "2026-07-17T23:53:28Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/LNG_2013.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2805,
+      "title": "feat(case): winner autopsy TSM 2025",
+      "head_ref": "codex/case-tsm-2025",
+      "updated_at": "2026-07-17T23:38:55Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/TSM_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2804,
+      "title": "feat(case): winner autopsy MP 2025",
+      "head_ref": "codex/case-mp-2025",
+      "updated_at": "2026-07-17T23:22:22Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/MP_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2803,
+      "title": "feat(case): winner autopsy QBTS 2025",
+      "head_ref": "codex/case-qbts-2025",
+      "updated_at": "2026-07-17T22:05:58Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/QBTS_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2802,
+      "title": "feat(case): winner autopsy NRG 2017",
+      "head_ref": "codex/case-nrg-2017",
+      "updated_at": "2026-07-17T21:59:41Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/NRG_2017.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2801,
+      "title": "feat(case): winner autopsy SE 2024",
+      "head_ref": "codex/case-se-2024",
+      "updated_at": "2026-07-17T21:54:26Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/SE_2024.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2800,
+      "title": "feat(case): winner autopsy NVDA 2004",
+      "head_ref": "codex/case-nvda-2004",
+      "updated_at": "2026-07-17T21:49:03Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/NVDA_2004.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2799,
+      "title": "feat(case): winner autopsy NNE 2024",
+      "head_ref": "codex/case-nne-2024",
+      "updated_at": "2026-07-17T21:40:10Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/NNE_2024.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2798,
+      "title": "feat(case): winner autopsy CF 2021",
+      "head_ref": "codex/case-cf-2021",
+      "updated_at": "2026-07-17T21:35:15Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/CF_2021.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2797,
+      "title": "feat(case): winner autopsy TLN 2024",
+      "head_ref": "codex/case-tln-2024",
+      "updated_at": "2026-07-17T21:26:10Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/TLN_2024.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2796,
+      "title": "feat(case): winner autopsy CCJ 2025",
+      "head_ref": "codex/case-ccj-2025",
+      "updated_at": "2026-07-17T21:16:34Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/CCJ_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2795,
+      "title": "feat(case): winner autopsy SOUN 2024",
+      "head_ref": "codex/case-soun-2024",
+      "updated_at": "2026-07-17T20:22:58Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/SOUN_2024.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2794,
+      "title": "feat(case): winner autopsy ATI 2025",
+      "head_ref": "codex/case-ati-2025",
+      "updated_at": "2026-07-17T20:17:04Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/ATI_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2793,
+      "title": "feat(case): winner autopsy ILMN 2007",
+      "head_ref": "codex/case-ilmn-2007",
+      "updated_at": "2026-07-17T20:08:32Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/ILMN_2007.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2792,
+      "title": "feat(case): winner autopsy TAL 2017",
+      "head_ref": "codex/case-tal-2017",
+      "updated_at": "2026-07-17T19:55:39Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/TAL_2017.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2791,
+      "title": "feat(case): winner autopsy CLSK 2020",
+      "head_ref": "codex/case-clsk-2020",
+      "updated_at": "2026-07-17T19:49:58Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/CLSK_2020.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2790,
+      "title": "feat(case): winner autopsy FUTU 2024",
+      "head_ref": "codex/case-futu-2024",
+      "updated_at": "2026-07-17T17:51:54Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/FUTU_2024.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2789,
+      "title": "feat(case): winner autopsy XYZ 2017",
+      "head_ref": "codex/case-xyz-2017",
+      "updated_at": "2026-07-17T15:52:58Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/XYZ_2017.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2788,
+      "title": "feat(case): winner autopsy NXT 2025",
+      "head_ref": "codex/case-nxt-2025",
+      "updated_at": "2026-07-17T14:24:53Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/NXT_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2785,
+      "title": "feat(case): winner autopsy RIOT 2017",
+      "head_ref": "codex/case-riot-2017",
+      "updated_at": "2026-07-17T13:55:50Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/RIOT_2017.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2783,
+      "title": "feat(case): winner autopsy NVDA 2015",
+      "head_ref": "codex/case-nvda-2015",
+      "updated_at": "2026-07-17T13:55:53Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/NVDA_2015.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2782,
+      "title": "feat(case): winner autopsy AXON 2003",
+      "head_ref": "codex/case-axon-2003",
+      "updated_at": "2026-07-17T13:55:56Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/AXON_2003.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2779,
+      "title": "feat(case): winner autopsy PL 2025",
+      "head_ref": "codex/case-pl-2025",
+      "updated_at": "2026-07-17T13:55:59Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/PL_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2777,
+      "title": "feat(case): winner autopsy ALT 2020",
+      "head_ref": "codex/case-alt-2020",
+      "updated_at": "2026-07-17T13:56:02Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/ALT_2020.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2775,
+      "title": "feat(case): winner autopsy IREN 2025",
+      "head_ref": "codex/case-iren-2025",
+      "updated_at": "2026-07-17T13:56:04Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/IREN_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2774,
+      "title": "feat(case): winner autopsy STX 2025",
+      "head_ref": "codex/case-stx-2025",
+      "updated_at": "2026-07-17T13:56:07Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/STX_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2773,
+      "title": "feat(case): winner autopsy WDC 2025",
+      "head_ref": "codex/case-wdc-2025",
+      "updated_at": "2026-07-17T13:56:10Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/WDC_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2771,
+      "title": "ci(render): move render + engine-render to the render-linux runner (WSL2 PC)",
+      "head_ref": "render-to-linux",
+      "updated_at": "2026-07-17T11:40:17Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/engine-render.yml",
+        ".github/workflows/render.yml"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/engine-render.yml",
+        ".github/workflows/render.yml"
+      ]
+    },
+    {
+      "number": 2769,
+      "title": "feat(case): winner autopsy QUBT 2024",
+      "head_ref": "codex/case-qubt-2024",
+      "updated_at": "2026-07-17T13:56:13Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/QUBT_2024.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2767,
+      "title": "feat(case): winner autopsy LITE 2025",
+      "head_ref": "codex/case-lite-2025",
+      "updated_at": "2026-07-17T13:56:16Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/LITE_2025.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 2753,
+      "title": "feat(case): winner autopsy MARA 2020",
+      "head_ref": "codex/case-mara-2020",
+      "updated_at": "2026-07-17T13:56:20Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/winners/cases/MARA_2020.md"
+      ],
+      "protected_paths_touched": []
+    }
+  ],
+  "collisions": [],
+  "recent_merged": [
+    {
+      "number": 2787,
+      "title": "data(ric-w2): dealer-surface one-shot backfill 2017\u21922026 (20 roots, 47.5k rows)",
+      "merged_at": "2026-07-17T14:09:37Z"
+    },
+    {
+      "number": 2786,
+      "title": "fix(contracts): admit us_standouts staleness + pending_expired_count (heal repo-wide contract-drift red)",
+      "merged_at": "2026-07-17T13:55:33Z"
+    },
+    {
+      "number": 2784,
+      "title": "fix(contracts): declare CSP-W5 us_standouts fields \u2014 heal contract-drift red on every PR",
+      "merged_at": "2026-07-17T13:47:00Z"
+    },
+    {
+      "number": 2781,
+      "title": "feat(ric): W3 OPEXRISK \u2014 OPEX window risk read (n_hot/n_applicable), calendar level chips, forward ledger",
+      "merged_at": "2026-07-17T14:09:19Z"
+    },
+    {
+      "number": 2780,
+      "title": "feat(ric): W4 EVW \u2014 event-window engine, collision states, ex-ante release-risk read, forward ledger + dealer_load_extreme prereg",
+      "merged_at": "2026-07-17T14:52:16Z"
+    },
+    {
+      "number": 2778,
+      "title": "feat(vector): UI/UX revamp \u2014 living hero, glass surfaces, plain-language pass",
+      "merged_at": "2026-07-17T12:51:31Z"
+    },
+    {
+      "number": 2776,
+      "title": "feat(markets): add Australia / ASX 200 as the 11th curated market on markets.html",
+      "merged_at": "2026-07-17T12:46:16Z"
+    },
+    {
+      "number": 2772,
+      "title": "deploy(caddy): add scan.mastermind-x.com origin block (LookScanned :3200)",
+      "merged_at": "2026-07-17T11:45:19Z"
+    },
+    {
+      "number": 2770,
+      "title": "feat(xsr-w1b): fast-lens board rail \u2014 per-kind ordinal + plain-word state + build-order fix",
+      "merged_at": "2026-07-17T11:37:15Z"
+    },
+    {
+      "number": 2768,
+      "title": "feat(csp-w1): neural-web contagion context \u2014 display-tier re-projection of RSR organs",
+      "merged_at": "2026-07-17T11:34:12Z"
+    },
+    {
+      "number": 2766,
+      "title": "feat(csp-w5): US board staleness honesty + pending-buy expiry",
+      "merged_at": "2026-07-17T11:37:22Z"
+    },
+    {
+      "number": 2765,
+      "title": "feat(csp-w6): forward-ledger heartbeat \u2014 ledger freezes become same-night escalations",
+      "merged_at": "2026-07-17T11:34:15Z"
+    },
+    {
+      "number": 2764,
+      "title": "canada: heavy dashboard upgrade \u2014 hero parity + aurora, real prices, dialog depth, 2 bug fixes",
+      "merged_at": "2026-07-17T11:34:30Z"
+    },
+    {
+      "number": 2763,
+      "title": "hk: dashboard revamp to US grade \u2014 hero parity, chip relocation, dialog enrichment",
+      "merged_at": "2026-07-17T11:34:27Z"
+    },
+    {
+      "number": 2762,
+      "title": "china: state-keyed hero glow + US-size score/gauge + SVG path-chart fix",
+      "merged_at": "2026-07-17T11:34:24Z"
+    },
+    {
+      "number": 2761,
+      "title": "research: Contagion Sensing & Propagation masterplan (CSP) \u2014 chartered by operator order 2026-07-17",
+      "merged_at": "2026-07-17T11:34:09Z"
+    },
+    {
+      "number": 2760,
+      "title": "feat(cgl): directed cross-market contagion pressure \u2014 CGL W0 charter + W1 (engine + radar wiring + shadow ledgers)",
+      "merged_at": "2026-07-17T11:13:13Z"
+    },
+    {
+      "number": 2759,
+      "title": "feat(ric): W1 OVC \u2014 execute the W-OVC docket (options_entry_state columns, stamps, S-VANNA-RELIEF/S-FRONT-CHARM gate cells, family 22\u219228)",
+      "merged_at": "2026-07-17T11:29:35Z"
+    },
+    {
+      "number": 2758,
+      "title": "fix(crx): self-heal stale budget pauses + wrong-account plan_type tripwire",
+      "merged_at": "2026-07-17T10:48:54Z"
+    },
+    {
+      "number": 2757,
+      "title": "feat(ric): W2 SURFACE \u2014 coverage audit + whole-market dealer-surface history builder (theta-ops lane) + synapse/dag registration",
+      "merged_at": "2026-07-17T12:36:23Z"
+    },
+    {
+      "number": 2756,
+      "title": "fix(crx): PR-creation recovery + failure observability for the case lane",
+      "merged_at": "2026-07-17T10:32:13Z"
+    },
+    {
+      "number": 2755,
+      "title": "fix(china_mechanics): limit-chart panel stretch, falsifier jargon removal, honest event staleness",
+      "merged_at": "2026-07-17T10:22:18Z"
+    },
+    {
+      "number": 2754,
+      "title": "ui(nav): consolidate US options desks + Dark Pool into one Options & Flow submenu",
+      "merged_at": "2026-07-17T10:14:25Z"
+    },
+    {
+      "number": 2752,
+      "title": "feat(rsr): W2 leadership_crack + W3 deterioration_cascade organs \u2014 display-tier, forward-ledgered",
+      "merged_at": "2026-07-17T10:06:19Z"
+    },
+    {
+      "number": 2751,
+      "title": "fix(crx): pass CODEX_PRICE_STORE into the research loop env",
+      "merged_at": "2026-07-17T09:50:38Z"
+    },
+    {
+      "number": 2750,
+      "title": "feat(crx): autonomy hardening \u2014 Codex research lanes safe for unattended auto mode",
+      "merged_at": "2026-07-17T09:39:16Z"
+    },
+    {
+      "number": 2749,
+      "title": "research: Risk & Scoring Revamp masterplan (RSR) \u2014 chartered 2026-07-17",
+      "merged_at": "2026-07-17T09:20:39Z"
+    },
+    {
+      "number": 2748,
+      "title": "feat(macro): one-click Risk Radar \u2014 Elevated Risk button opens the full dialog directly",
+      "merged_at": "2026-07-17T09:00:55Z"
+    },
+    {
+      "number": 2747,
+      "title": "fix(admin+nw): full audit sweep \u2014 panel truth fixes, health rollup honesty, registry hygiene, 100% lobe prose",
+      "merged_at": "2026-07-17T08:58:37Z"
+    },
+    {
+      "number": 2746,
+      "title": "fix(deploy): restart admin console when cached engine/lib panel imports change",
+      "merged_at": "2026-07-17T08:50:14Z"
+    },
+    {
+      "number": 2745,
+      "title": "fix(registry): register check_builder_failstreaks \u2014 heal house-law-registry red on every PR",
+      "merged_at": "2026-07-17T08:19:50Z"
+    },
+    {
+      "number": 2744,
+      "title": "ops(asia-close): port builder fail-streak escalation \u2014 own CN/HK ledger, lane-bound writes",
+      "merged_at": "2026-07-17T08:51:54Z"
+    },
+    {
+      "number": 2743,
+      "title": "feat(pick-lab): P1 \u2014 book revivals, LH-2b control pair, context stamping, UI ladder/path stats, missing controls",
+      "merged_at": "2026-07-17T08:32:18Z"
+    },
+    {
+      "number": 2742,
+      "title": "feat(markets): add South Korea / KOSPI as the 10th curated market on markets.html",
+      "merged_at": "2026-07-17T08:32:48Z"
+    },
+    {
+      "number": 2741,
+      "title": "feat(admin): join Mastermind bot key events into Raw Key Usage panel",
+      "merged_at": "2026-07-17T08:32:25Z"
+    },
+    {
+      "number": 2740,
+      "title": "fix(dag): declare check_builder_failstreaks \u2014 heal dag-conformance red on every PR",
+      "merged_at": "2026-07-17T07:54:28Z"
+    },
+    {
+      "number": 2739,
+      "title": "feat(risk): overnight/Asia glance surfaces \u2014 live strip, intl cascade + spillover chips, stocks context strip",
+      "merged_at": "2026-07-17T08:32:32Z"
+    },
+    {
+      "number": 2738,
+      "title": "ops(nightly): consecutive-failure escalation for brun() builders \u2014 fail-streak ledger + W6b alert",
+      "merged_at": "2026-07-17T07:32:18Z"
+    },
+    {
+      "number": 2737,
+      "title": "fix(intl): 11-session path on china/hk heroes \u2014 git-history score backfill + unconditional ledger read",
+      "merged_at": "2026-07-17T07:33:55Z"
+    },
+    {
+      "number": 2736,
+      "title": "fix(neural-web): regen SIGNAL_BUS.md + bump pin 454\u2192455 (XSR us-sector-rotation-latest) \u2014 heal neural-web gate",
+      "merged_at": "2026-07-17T07:39:36Z"
+    },
+    {
+      "number": 2735,
+      "title": "feat(rri): Stage-B shadow accrual \u2014 3 ACCRUE variants on the intl nightly",
+      "merged_at": "2026-07-17T07:17:52Z"
+    },
+    {
+      "number": 2734,
+      "title": "feat(intl-bridge): declare RRI-S4 fast-global-leg claims (c3b/c3c, PENDING) \u2014 family 17\u219221",
+      "merged_at": "2026-07-17T07:10:48Z"
+    },
+    {
+      "number": 2733,
+      "title": "research(rri): Stage-A replay gauntlet \u2014 harness + results (3 ACCRUE / 5 NO-GO / 0 GO / 0 KILL)",
+      "merged_at": "2026-07-17T07:10:53Z"
+    },
+    {
+      "number": 2732,
+      "title": "fix(cycle): stale tape degrades its own band, never the page \u2014 INDPRO 75d gate froze all 24 cards",
+      "merged_at": "2026-07-17T07:11:01Z"
+    },
+    {
+      "number": 2731,
+      "title": "fix(ci): add missing brun slugs to replay ORDER lists (silent-failure gap)",
+      "merged_at": "2026-07-17T07:11:08Z"
+    },
+    {
+      "number": 2730,
+      "title": "feat(xsr): W1 US Fast Sector Lens \u2014 display re-rank of sector boards (#2634 port) + replay receipt",
+      "merged_at": "2026-07-17T06:51:51Z"
+    },
+    {
+      "number": 2729,
+      "title": "fix(freshness): second #2690 mtime-gate sweep \u2014 content stamps for the remaining committed-artifact gates",
+      "merged_at": "2026-07-17T07:04:33Z"
+    },
+    {
+      "number": 2728,
+      "title": "fix(pipeline): run build_markets in daily.yml after build_country_cycles \u2014 heal cycle-consistency gate",
+      "merged_at": "2026-07-17T07:30:11Z"
+    },
+    {
+      "number": 2727,
+      "title": "fix(china): plain-word ZH i18n on the mx5 hero \u2014 regime pill + live freshness word",
+      "merged_at": "2026-07-17T06:47:06Z"
+    },
+    {
+      "number": 2726,
+      "title": "fix(macro): glance-tier doctrine pass on the regime hero \u2014 honest stance, flip-context strip, vocab demotions",
+      "merged_at": "2026-07-17T06:52:22Z"
+    },
+    {
+      "number": 2725,
+      "title": "prereg(rri): crash-anti-fire scoring-tier study family \u2014 W0 cover + 4 frozen preregs (07-17 Asia crash follow-up)",
+      "merged_at": "2026-07-17T06:43:47Z"
+    },
+    {
+      "number": 2724,
+      "title": "guard(title-i18n): close the <title> RCDATA door \u2014 t()/td() in template titles, <span> in rendered titles",
+      "merged_at": "2026-07-17T07:08:23Z"
+    },
+    {
+      "number": 2723,
+      "title": "fix(market-state-tune): lane-gate the calibration/tune-log/governance writers (port of #2712 gate)",
+      "merged_at": "2026-07-17T07:07:55Z"
+    },
+    {
+      "number": 2722,
+      "title": "fix(tests): isolate ai_costs usage ledger in causal-llm-runner suite \u2014 causal-factory CI green",
+      "merged_at": "2026-07-17T07:09:11Z"
+    },
+    {
+      "number": 2721,
+      "title": "fix(canada): restore body top padding \u2014 nav-gap CI green again",
+      "merged_at": "2026-07-17T06:39:00Z"
+    },
+    {
+      "number": 2720,
+      "title": "fix(tests): stop causal LLM-runner mock writing real ai_costs ledger (causal-factory CI red)",
+      "merged_at": "2026-07-17T06:08:41Z"
+    },
+    {
+      "number": 2719,
+      "title": "feat(darkpool): interim Terminal Dark Pool pane artifact (site/darkpool_eod.json)",
+      "merged_at": "2026-07-17T06:08:13Z"
+    },
+    {
+      "number": 2718,
+      "title": "fix(risk-state-live): stale-feed guard \u2014 debounced display.verdict must not overpaint the nightly read",
+      "merged_at": "2026-07-17T06:30:02Z"
+    },
+    {
+      "number": 2717,
+      "title": "fix(metabolism): reset dispatched=False on foreign-file/diff aborts \u2014 containment inversion (#2682 regression)",
+      "merged_at": "2026-07-17T06:02:34Z"
+    },
+    {
+      "number": 2716,
+      "title": "fix(pick-lab): P0 measurement fixes before first grade maturation (Amendment 1)",
+      "merged_at": "2026-07-17T06:07:16Z"
+    },
+    {
+      "number": 2715,
+      "title": "feat(china-stocks): stage facet filter for the standout grid + Terminal links/names on Turn Setups & Reversion Desk",
+      "merged_at": "2026-07-17T06:02:43Z"
+    },
+    {
+      "number": 2714,
+      "title": "fix(freshness): sweep the #2690 mtime-gate bug class \u2014 content-stamp freshness for every committed-artifact gate",
+      "merged_at": "2026-07-17T06:02:55Z"
+    },
+    {
+      "number": 2713,
+      "title": "fix(baskets): probe-gate the deep-store tail-splice \u2014 index-only recency probe + full fallback chain + tests",
+      "merged_at": "2026-07-17T05:48:43Z"
+    },
+    {
+      "number": 2712,
+      "title": "fix(ledgers): lane-gate the US risk-radar/recovery/market-state forward-ledger writers (port of #2693 gate)",
+      "merged_at": "2026-07-17T06:03:02Z"
+    },
+    {
+      "number": 2711,
+      "title": "fix(publish_r2): 10/adaptive retries + per-file upload failure tolerance on the R2 sync",
+      "merged_at": "2026-07-17T05:54:55Z"
+    },
+    {
+      "number": 2710,
+      "title": "feat(options): levels.v1 publisher \u2014 nightly hub publishes the named-level board + standalone build_levels lane (Voltick Gamma-Levels WP-A2.5)",
+      "merged_at": "2026-07-17T05:44:47Z"
+    },
+    {
+      "number": 2709,
+      "title": "test(canada): refresh macro render-guard assertions gone stale after mx5 card revamp",
+      "merged_at": "2026-07-17T05:42:36Z"
+    },
+    {
+      "number": 2708,
+      "title": "fix(cycle-ontology): port #2697 rollover-lag semantics to classify_phase (phase_v2)",
+      "merged_at": "2026-07-17T06:03:06Z"
+    },
+    {
+      "number": 2707,
+      "title": "research(xsr): 07-16 defensive-rotation miss postmortem + system audit + XSR program charter (W0)",
+      "merged_at": "2026-07-17T05:37:48Z"
+    },
+    {
+      "number": 2706,
+      "title": "fix(china-sector-central): port #2697 two-arm _rolling_over \u2014 post-roll names no longer read 'Trending'",
+      "merged_at": "2026-07-17T06:03:11Z"
+    },
+    {
+      "number": 2705,
+      "title": "fix(i18n): plain-EN <title> site-wide \u2014 dual-span t()/td() markup showed as literal text in browser tabs",
+      "merged_at": "2026-07-17T05:33:12Z"
+    },
+    {
+      "number": 2704,
+      "title": "fix(daily): alarm-bound git network ops + commit/push split (57m hung-push postmortem)",
+      "merged_at": "2026-07-17T04:57:26Z"
+    },
+    {
+      "number": 2703,
+      "title": "fix(daily): collect timeout 150\u2192185 (first 18:30-ET run died at commit-data, 150.4m)",
+      "merged_at": "2026-07-17T04:39:46Z"
+    },
+    {
+      "number": 2702,
+      "title": "feat(pick-lab): per-portfolio fired-tickers drill-down on us_stocks_lab",
+      "merged_at": "2026-07-17T02:54:03Z"
+    },
+    {
+      "number": 2701,
+      "title": "feat(us-board): migrate standout inclusion gate to signal_gate cascade (CN/HK parity)",
+      "merged_at": "2026-07-17T02:54:00Z"
+    },
+    {
+      "number": 2700,
+      "title": "fix(smart_money): page/container bleed + bilingual markup leaking into attributes",
+      "merged_at": "2026-07-17T02:38:28Z"
+    },
+    {
+      "number": 2699,
+      "title": "masterplan: china standouts \u00d7 double-confluence \u2014 tailwind-blind gap audit + program charter",
+      "merged_at": "2026-07-17T02:30:40Z"
+    },
+    {
+      "number": 2698,
+      "title": "fix(baskets): restore membership coverage in nightly OHLCV pull + per-member staleness tripwire",
+      "merged_at": "2026-07-17T02:32:07Z"
+    },
+    {
+      "number": 2697,
+      "title": "fix(sector-central): rollover-lag audit \u2014 decel-aware phase votes, widened rolling-over detector, 21d RS fast lens, basket stale-tape guards",
+      "merged_at": "2026-07-17T02:16:18Z"
+    },
+    {
       "number": 2696,
       "title": "fix(hk-freshness): read MultiIndex date level \u2014 stop false \"southbound degraded\" banner",
-      "head_ref": "claude/ecstatic-keller-8eff00",
-      "updated_at": "2026-07-17T01:58:11Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "engine/hk_freshness.py",
-        "tests/test_hk_freshness.py"
-      ],
-      "protected_paths_touched": []
+      "merged_at": "2026-07-17T01:59:18Z"
     },
-    {
-      "number": 2692,
-      "title": "feat(intl): wire the #2684 pullback-risk radar into the ITR-W1 turn tiles",
-      "head_ref": "feat/intl-radar-turn-tiles",
-      "updated_at": "2026-07-17T01:12:02Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "scripts/build_intl.py",
-        "templates/intl.html.j2"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 2691,
-      "title": "fix(leader-radar): dual-span evidence lines + board chips \u2014 ZH survives any data-lang set path",
-      "head_ref": "claude/magical-chebyshev-bd4722",
-      "updated_at": "2026-07-17T01:31:54Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/ci.yml",
-        "templates/leader_radar.html.j2",
-        "tests/conftest.py",
-        "tests/test_build_leader_radar.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
-      "number": 2686,
-      "title": "fix(forex): theme-safe Broad USD line color (ink\u2192indigo, dark-mode visible)",
-      "head_ref": "claude/sleepy-pascal-281240",
-      "updated_at": "2026-07-17T01:00:58Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "scripts/build_forex.py",
-        "site/forex.html"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 2681,
-      "title": "fix(tests): ImportError-guard the autouse net \u2014 heal minimal-deps CI jobs",
-      "head_ref": "claude/conftest-minimal-deps-heal",
-      "updated_at": "2026-07-17T00:06:15Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 1,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "tests/conftest.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 2680,
-      "title": "feat(mlc): W4 \u2014 histogram-fade leg in rollover_risk + momentum-cooling demotion",
-      "head_ref": "claude/mlc-w4-fade",
-      "updated_at": "2026-07-17T00:03:45Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 6,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/ci.yml",
-        "engine/basket_score.py",
-        "engine/theme_scoring.py",
-        "scripts/retro_w4_fade_check.py",
-        "tests/test_basket_score_rollover_w4.py",
-        "tests/test_theme_scoring_conflicted.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
-      "number": 2677,
-      "title": "prereg(mlc): W6 \u2014 S-MLC-1/2/3 registered and frozen",
-      "head_ref": "claude/mlc-w6-preregs",
-      "updated_at": "2026-07-16T23:54:18Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "data/experiments/registry_seed.json",
-        "research/S_MLC_1_LEADERSHIP_CONTINUATION_PREREG.md",
-        "research/S_MLC_2_SUCTION_CONDITIONALITY_PREREG.md",
-        "research/S_MLC_3_WEEKLY_WAIT_COST_PREREG.md"
-      ],
-      "protected_paths_touched": [
-        "data/experiments/registry_seed.json"
-      ]
-    },
-    {
-      "number": 2675,
-      "title": "ops(thetadata-r2sync): raise launchd fd limit to 4096 \u2014 first sync died EMFILE",
-      "head_ref": "claude/thetadata-r2sync-fdlimit",
-      "updated_at": "2026-07-16T23:49:47Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 1,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "ops/launchd/com.macro.thetadata-r2sync.plist"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 2671,
-      "title": "fix(tests): tolerate missing engine deps in the breadth-divergence stamp fixture",
-      "head_ref": "ci-red-triage-0716",
-      "updated_at": "2026-07-17T00:11:54Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 2,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/ci.yml",
-        "tests/conftest.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    },
-    {
-      "number": 2610,
-      "title": "feat(site-gate): admin-managed IP/country blocking + bilingual coming-soon page",
-      "head_ref": "claude/ecstatic-proskuriakova-f61d7a",
-      "updated_at": "2026-07-16T06:10:16Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 17,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/ci.yml",
-        "admin/deploy/admin.service",
-        "admin/server.py",
-        "admin/site_gate.py",
-        "admin/static/app.js",
-        "admin/static/styles.css",
-        "app/deploy/Caddyfile",
-        "app/deploy/SITE_GATE.md",
-        "app/deploy/geoip-setup.sh",
-        "app/deploy/macro-api.service",
-        "app/deploy/setup.sh",
-        "app/gate.py",
-        "app/main.py",
-        "app/requirements.txt",
-        "site/coming-soon.html",
-        "tests/test_admin_site_gate.py",
-        "tests/test_site_gate.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml"
-      ]
-    }
-  ],
-  "collisions": [
-    {
-      "pr_a": 2691,
-      "pr_b": 2671,
-      "shared_files": [
-        ".github/workflows/ci.yml",
-        "tests/conftest.py"
-      ],
-      "shared_count": 2,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2691,
-      "pr_b": 2681,
-      "shared_files": [
-        "tests/conftest.py"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 2691,
-      "pr_b": 2680,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2691,
-      "pr_b": 2610,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2681,
-      "pr_b": 2671,
-      "shared_files": [
-        "tests/conftest.py"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 2680,
-      "pr_b": 2671,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2680,
-      "pr_b": 2610,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    },
-    {
-      "pr_a": 2671,
-      "pr_b": 2610,
-      "shared_files": [
-        ".github/workflows/ci.yml"
-      ],
-      "shared_count": 1,
-      "any_protected": true
-    }
-  ],
-  "recent_merged": [
     {
       "number": 2695,
       "title": "fix(baskets): explicit no-coverage disclosure on detail pages \u2014 stop silent member omission",
@@ -299,6 +988,16 @@
       "number": 2693,
       "title": "fix(ignition): lane-gate the sector-ignition forward-ledger writers (port of #2684 gate)",
       "merged_at": "2026-07-17T01:28:21Z"
+    },
+    {
+      "number": 2692,
+      "title": "feat(intl): wire the #2684 pullback-risk radar into the ITR-W1 turn tiles",
+      "merged_at": "2026-07-17T01:59:38Z"
+    },
+    {
+      "number": 2691,
+      "title": "fix(leader-radar): dual-span evidence lines + board chips \u2014 ZH survives any data-lang set path",
+      "merged_at": "2026-07-17T06:03:30Z"
     },
     {
       "number": 2690,
@@ -321,6 +1020,11 @@
       "merged_at": "2026-07-17T01:13:32Z"
     },
     {
+      "number": 2686,
+      "title": "fix(forex): theme-safe Broad USD line color (ink\u2192indigo, dark-mode visible)",
+      "merged_at": "2026-07-17T05:41:03Z"
+    },
+    {
       "number": 2685,
       "title": "feat(leader-radar): page overhaul \u2014 dated regime capsule + stance, freshness token, changed-tonight strip, near-trigger shelf, fire receipts",
       "merged_at": "2026-07-17T00:16:50Z"
@@ -341,6 +1045,16 @@
       "merged_at": "2026-07-17T00:11:35Z"
     },
     {
+      "number": 2681,
+      "title": "fix(tests): ImportError-guard the autouse net \u2014 heal minimal-deps CI jobs",
+      "merged_at": "2026-07-17T01:59:24Z"
+    },
+    {
+      "number": 2680,
+      "title": "feat(mlc): W4 \u2014 histogram-fade leg in rollover_risk + momentum-cooling demotion",
+      "merged_at": "2026-07-17T01:59:44Z"
+    },
+    {
       "number": 2679,
       "title": "fix(ci): provider keys for the relocated build_news step",
       "merged_at": "2026-07-17T00:02:22Z"
@@ -351,9 +1065,19 @@
       "merged_at": "2026-07-17T00:14:19Z"
     },
     {
+      "number": 2677,
+      "title": "prereg(mlc): W6 \u2014 S-MLC-1/2/3 registered and frozen",
+      "merged_at": "2026-07-17T01:59:51Z"
+    },
+    {
       "number": 2676,
       "title": "feat(intl): turns & rotation revamp \u2014 per-market turn state machine + fast re-rank + market-action-first page (ITR W1)",
       "merged_at": "2026-07-17T00:29:22Z"
+    },
+    {
+      "number": 2675,
+      "title": "ops(thetadata-r2sync): raise launchd fd limit to 4096 \u2014 first sync died EMFILE",
+      "merged_at": "2026-07-17T01:59:57Z"
     },
     {
       "number": 2674,
@@ -369,6 +1093,11 @@
       "number": 2672,
       "title": "feat(leader-radar): truth layer \u2014 canonical Zweig, data-through as_of, freshness/degraded, contiguity guard, delta keys (schema v2)",
       "merged_at": "2026-07-16T23:43:20Z"
+    },
+    {
+      "number": 2671,
+      "title": "fix(tests): tolerate missing engine deps in the breadth-divergence stamp fixture",
+      "merged_at": "2026-07-17T08:33:04Z"
     },
     {
       "number": 2670,
@@ -664,6 +1393,11 @@
       "number": 2611,
       "title": "feat(analytics): registered-visitor email identity + world-map backdrop + real-IP header",
       "merged_at": "2026-07-16T21:33:34Z"
+    },
+    {
+      "number": 2610,
+      "title": "feat(site-gate): admin-managed IP/country blocking + bilingual coming-soon page",
+      "merged_at": "2026-07-17T08:33:08Z"
     },
     {
       "number": 2609,
@@ -2339,451 +3073,6 @@
       "number": 2258,
       "title": "feat(metab-v4-w3): mission self-model + one kill-registry (R-V4-4/R-V4-5)",
       "merged_at": "2026-07-11T14:00:46Z"
-    },
-    {
-      "number": 2257,
-      "title": "feat(macro): v3 islands \u2014 3D container-island ledger + full tray content redesign",
-      "merged_at": "2026-07-11T14:01:40Z"
-    },
-    {
-      "number": 2256,
-      "title": "docs(metabolism): v4 First Breath masterplan \u2014 close the loop, wire the memory, deepen the eye (R-V4-1..12)",
-      "merged_at": "2026-07-11T13:02:06Z"
-    },
-    {
-      "number": 2255,
-      "title": "fix(workflows): port #2252 untracked-collision sweep to all 24 autostash retry sites",
-      "merged_at": "2026-07-11T12:31:48Z"
-    },
-    {
-      "number": 2254,
-      "title": "feat(reports): Haven Audition \u2014 TSLA encore anatomy + robot-run rhyme + magnet-control clock",
-      "merged_at": "2026-07-11T12:16:44Z"
-    },
-    {
-      "number": 2253,
-      "title": "data(tape-flow): first full-universe tape accrual (375/375) + connect-timeout fix on tape steps",
-      "merged_at": "2026-07-11T12:13:48Z"
-    },
-    {
-      "number": 2252,
-      "title": "fix(render): pre-sync untracked-collision sweep so push retries actually retry",
-      "merged_at": "2026-07-11T12:03:29Z"
-    },
-    {
-      "number": 2251,
-      "title": "feat(reports): Haven Audition \u2014 asymmetric-haven framework + lever stack + deal rubric + sovereignty catalyst",
-      "merged_at": "2026-07-11T11:00:00Z"
-    },
-    {
-      "number": 2250,
-      "title": "feat(leader-radar): W2b \u2014 leader_radar.html lifecycle board + handoff watch + regime banner + rerating watch",
-      "merged_at": "2026-07-11T10:17:53Z"
-    },
-    {
-      "number": 2249,
-      "title": "feat(macro): v2 full transition \u2014 one-screen row-ledger with press-to-expand depth",
-      "merged_at": "2026-07-11T10:00:10Z"
-    },
-    {
-      "number": 2248,
-      "title": "feat(leader-radar): W2a \u2014 nightly radar builder + rs_series/state-history + Pick Lab books 26-27",
-      "merged_at": "2026-07-11T09:52:19Z"
-    },
-    {
-      "number": 2247,
-      "title": "fix(notify): turn-event alert headlines, slugs, and leg jargon to plain words (doctrine Law 2)",
-      "merged_at": "2026-07-11T09:32:46Z"
-    },
-    {
-      "number": 2246,
-      "title": "fix(notify): turn-event alert copy to plain words (doctrine Law 2/3)",
-      "merged_at": "2026-07-11T08:52:44Z"
-    },
-    {
-      "number": 2244,
-      "title": "feat(reports): The Haven Audition \u2014 Meta rerating vs safe-haven adjudication into the midterms",
-      "merged_at": "2026-07-11T09:10:42Z"
-    },
-    {
-      "number": 2243,
-      "title": "feat(leader-radar): W1 \u2014 leader lifecycle engine + masterplan + field guide",
-      "merged_at": "2026-07-11T08:46:15Z"
-    },
-    {
-      "number": 2242,
-      "title": "fix(us-stocks): tape-band fade note to plain words \u2014 58% receipt demoted to ? tip (doctrine Law 2/3)",
-      "merged_at": "2026-07-11T08:56:04Z"
-    },
-    {
-      "number": 2241,
-      "title": "fix(basket-detail): bilingual why-this-score line in Score Anatomy (doctrine \u00a75 bilingual parity)",
-      "merged_at": "2026-07-11T08:44:18Z"
-    },
-    {
-      "number": 2240,
-      "title": "feat(ratio-lens): W1 \u2014 pair registry + ratio_lens organ + offrender step + synapse/ledger/tests (RL-R1..R16)",
-      "merged_at": "2026-07-11T08:29:24Z"
-    },
-    {
-      "number": 2239,
-      "title": "fix(china): user-first evidence copy \u2014 bilingual ripening chips + phase-card slug translation (doctrine \u00a77 #8 engine residual)",
-      "merged_at": "2026-07-11T08:15:00Z"
-    },
-    {
-      "number": 2238,
-      "title": "fix(deploy): close the port-80 empty-200 CDN poisoning class (china.html 2026-07-11)",
-      "merged_at": "2026-07-11T08:11:05Z"
-    },
-    {
-      "number": 2237,
-      "title": "docs(ratio-lens): Ratio Lens masterplan + registration (W0) \u2014 pairwise ratio intelligence & rotation localization (RL-R1..R16)",
-      "merged_at": "2026-07-11T08:09:46Z"
-    },
-    {
-      "number": 2236,
-      "title": "feat(baskets): re-port tape band to v3 two-column ranked idiom (#2227 supersedes chip strip)",
-      "merged_at": "2026-07-11T08:08:32Z"
-    },
-    {
-      "number": 2235,
-      "title": "fix(baskets): wire disagreement chip to theme_intel recos \u2014 BASKETS.baskets carries no reco (FTR W3 latent dead code)",
-      "merged_at": "2026-07-11T08:06:14Z"
-    },
-    {
-      "number": 2234,
-      "title": "fix(baskets): W8 anatomy \u2014 unterminated crowding style attr exploded orange fill over basket detail pages",
-      "merged_at": "2026-07-11T08:03:28Z"
-    },
-    {
-      "number": 2233,
-      "title": "docs(doctrine): mark \u00a77 census offenders #2/#4/#11 FIXED (#2232)",
-      "merged_at": "2026-07-11T07:52:06Z"
-    },
-    {
-      "number": 2232,
-      "title": "feat(baskets): user-first copy port to turn-watch surfaces + .dtp tape strip (doctrine \u00a77 #2/#4/#11)",
-      "merged_at": "2026-07-11T07:45:07Z"
-    },
-    {
-      "number": 2231,
-      "title": "feat(risk-radar): multi-channel receding evidence + drivers line + card icon/label fixes (RRX2 WA)",
-      "merged_at": "2026-07-11T08:09:07Z"
-    },
-    {
-      "number": 2230,
-      "title": "docs(doctrine): mark census offenders #3/#8 (china) fixed by #2228",
-      "merged_at": "2026-07-11T07:34:27Z"
-    },
-    {
-      "number": 2229,
-      "title": "feat(ignition-radar): risk-on ignition layer \u2014 broad thrust confluence + narrow theme ignition (IGN WB)",
-      "merged_at": "2026-07-11T08:02:17Z"
-    },
-    {
-      "number": 2228,
-      "title": "fix(china): user-first copy \u2014 context strip + ripening-shelf acronyms (doctrine \u00a77 offenders #3/#8)",
-      "merged_at": "2026-07-11T07:26:54Z"
-    },
-    {
-      "number": 2227,
-      "title": "feat(ts-u8): tape band v3 \u2014 two-column ranked session tape (operator-directed redo)",
-      "merged_at": "2026-07-11T07:24:16Z"
-    },
-    {
-      "number": 2226,
-      "title": "feat(us-stocks): conditions-card popover \u2014 real sector/theme content, shared engine, Lens row retired",
-      "merged_at": "2026-07-11T05:27:39Z"
-    },
-    {
-      "number": 2225,
-      "title": "feat(cn-hk-stocks): conditions-card payloads + View-all migration for china anv2 + HK boards",
-      "merged_at": "2026-07-11T05:28:08Z"
-    },
-    {
-      "number": 2224,
-      "title": "feat(flow-leaders): W2 \u2014 Flow Leaders desk page + nightly builder + Pick Lab books (23\u219225) + flow_desk badges + R2 publish",
-      "merged_at": "2026-07-11T07:16:54Z"
-    },
-    {
-      "number": 2223,
-      "title": "fix(edgar): junk-fact NULL lane for stock columns \u2014 MDT/FTI/MIR leading-edge wrong-fact rows nulled",
-      "merged_at": "2026-07-11T05:03:09Z"
-    },
-    {
-      "number": 2222,
-      "title": "feat(ui): list overlay ('View all' popup) + shared row-popover engine",
-      "merged_at": "2026-07-11T04:59:44Z"
-    },
-    {
-      "number": 2221,
-      "title": "fix(us-stocks): Turn Watch \u2192 'Early turn signs' user-first rewrite + user-first design doctrine (house law)",
-      "merged_at": "2026-07-11T04:44:09Z"
-    },
-    {
-      "number": 2220,
-      "title": "fix(news): novelty honesty + theme priority + RSS encoding + qbus subject map + GDELT client wiring (W1C)",
-      "merged_at": "2026-07-11T05:04:29Z"
-    },
-    {
-      "number": 2219,
-      "title": "fix(china-stocks): act-now v2 organ-rider rows \u2014 name/score enrichment, dedup, organ chip render",
-      "merged_at": "2026-07-11T04:53:30Z"
-    },
-    {
-      "number": 2218,
-      "title": "fix(news-vector): repair 3-week GDELT accrual stall \u2014 query rejected as too long, not rate limits",
-      "merged_at": "2026-07-11T04:39:33Z"
-    },
-    {
-      "number": 2217,
-      "title": "fix(tape-flow): forward accrual was dead \u2014 ThetaData Terminal never started in CI; budget enforcement + round-robin cursor + [timing]",
-      "merged_at": "2026-07-11T04:15:12Z"
-    },
-    {
-      "number": 2216,
-      "title": "feat(flow-leaders): W1 \u2014 Flow Leaders Desk masterplan + pure engine (K-of-N tri-state legs, 2W oscillator helpers)",
-      "merged_at": "2026-07-11T04:15:09Z"
-    },
-    {
-      "number": 2215,
-      "title": "fix(news-data): shared cross-process GDELT throttle client + tiered macro_releases lookback",
-      "merged_at": "2026-07-11T04:22:33Z"
-    },
-    {
-      "number": 2214,
-      "title": "fix(macro): true merge \u2014 the Market State board IS the hero",
-      "merged_at": "2026-07-11T04:01:58Z"
-    },
-    {
-      "number": 2213,
-      "title": "fix(edgar): stock-column unit-artifact detector + PIT-honest repair (panel heal: 5 rows/3 tickers)",
-      "merged_at": "2026-07-11T03:44:44Z"
-    },
-    {
-      "number": 2212,
-      "title": "fix(news-ui): event badge key/vocab reconciliation + tier labels + novelty null-safety",
-      "merged_at": "2026-07-11T04:22:30Z"
-    },
-    {
-      "number": 2211,
-      "title": "fix(news): W4 event ledger source_tier crash + wire calibration grader into nightly",
-      "merged_at": "2026-07-11T04:32:53Z"
-    },
-    {
-      "number": 2210,
-      "title": "fix(universe): tz-aware asof crashed membership ledger upsert \u2014 coerce to naive UTC day",
-      "merged_at": "2026-07-11T03:28:25Z"
-    },
-    {
-      "number": 2209,
-      "title": "ops(workflows): per-job $RUNNER_TEMP for fixed /tmp paths \u2014 kill cross-runner log collisions",
-      "merged_at": "2026-07-11T03:26:44Z"
-    },
-    {
-      "number": 2208,
-      "title": "fix(us-stocks): redesign action-board Live Basket Tape \u2014 single chip strip, display names, honest bars",
-      "merged_at": "2026-07-11T03:23:40Z"
-    },
-    {
-      "number": 2207,
-      "title": "chore(risk-state-live): remove dead patchCentral \u2014 #2201 cut its target elements",
-      "merged_at": "2026-07-11T03:22:32Z"
-    },
-    {
-      "number": 2206,
-      "title": "fix(us-stocks): action-board redesign \u2014 honest lanes, calm rows, hover detail popover",
-      "merged_at": "2026-07-11T03:51:31Z"
-    },
-    {
-      "number": 2205,
-      "title": "feat(nw): committee.html read-layer deep upgrade \u2014 synapse map fix, self-awareness panels, kernel+liquidity overhaul, market_plane export",
-      "merged_at": "2026-07-11T03:59:23Z"
-    },
-    {
-      "number": 2204,
-      "title": "test: heal 15 latent local-only reds \u2014 stale render pins, clock-rotting fixture, import-order pollution",
-      "merged_at": "2026-07-11T03:11:40Z"
-    },
-    {
-      "number": 2203,
-      "title": "feat(china-stocks): declutter + usable table \u2014 kill tag chips, fix Show More, single-language filters, fit-on-screen columns",
-      "merged_at": "2026-07-11T02:56:28Z"
-    },
-    {
-      "number": 2202,
-      "title": "feat(macro): deep-integration UI refresh \u2014 mx framework + retained ms-board/evidence/heatmap",
-      "merged_at": "2026-07-11T03:14:00Z"
-    },
-    {
-      "number": 2201,
-      "title": "perf(sector-central): split cycles data bundles + lazy hydration; trim regime banner",
-      "merged_at": "2026-07-11T02:42:30Z"
-    },
-    {
-      "number": 2200,
-      "title": "perf(asia-build): skip duplicate CN/HK library rebuild + [timing] section ticks + reversal memo",
-      "merged_at": "2026-07-11T02:33:54Z"
-    },
-    {
-      "number": 2199,
-      "title": "perf(collect): asia-lane runtime diet \u2014 us_scope tail gate, pure-REST pool moves, CNInfo timeout caps",
-      "merged_at": "2026-07-11T02:29:41Z"
-    },
-    {
-      "number": 2198,
-      "title": "fix(hub): rotation strip removal, compact tour popup, alerts UI fix, footer/CTA polish",
-      "merged_at": "2026-07-11T02:01:04Z"
-    },
-    {
-      "number": 2197,
-      "title": "test(w5): clock-independent as_of in world_state sp_summary fixtures",
-      "merged_at": "2026-07-11T01:43:47Z"
-    },
-    {
-      "number": 2196,
-      "title": "fix(ops): pyarrow ThreadPool exit deadlock \u2014 hard_exit() for parquet one-shots",
-      "merged_at": "2026-07-11T01:38:22Z"
-    },
-    {
-      "number": 2195,
-      "title": "feat(hub): follow-ups \u2014 live index sessions, ZH alert bodies, a11y guard, font partials",
-      "merged_at": "2026-07-11T01:23:58Z"
-    },
-    {
-      "number": 2194,
-      "title": "feat(china-news): persist wire_important in the PIT store + wider feed caps",
-      "merged_at": "2026-07-11T01:01:52Z"
-    },
-    {
-      "number": 2193,
-      "title": "fix(asia-close): raise job timeout 120m \u2192 165m \u2014 lane dead at the cap since 07-03",
-      "merged_at": "2026-07-11T00:57:30Z"
-    },
-    {
-      "number": 2192,
-      "title": "feat(smart-money): SM2 PR-2 \u2014 Ownership Intelligence Desk (engines, forward ledgers, command-deck page)",
-      "merged_at": "2026-07-10T21:52:31Z"
-    },
-    {
-      "number": 2191,
-      "title": "feat(smart-money): SM2 PR-1 \u2014 verified roster expansion (~54\u219251 funds), 13F-HR/A ingestion, 12q backfill",
-      "merged_at": "2026-07-10T20:44:43Z"
-    },
-    {
-      "number": 2190,
-      "title": "feat(metabolism): v3-W3 integration \u2014 wire memory/context into the loop + anti-repetition flag (R-V3-1/3/5/6)",
-      "merged_at": "2026-07-10T19:58:08Z"
-    },
-    {
-      "number": 2189,
-      "title": "feat(rrx-d): recovery panel Internals chips row (W1 UI)",
-      "merged_at": "2026-07-10T20:06:51Z"
-    },
-    {
-      "number": 2188,
-      "title": "feat(rrx): W3 \u2014 Tier-B phase-0 gauntlet (jpy_carry PASS, 2 honest nulls) + internals scare + jpy_carry leg (PR-C)",
-      "merged_at": "2026-07-10T20:06:44Z"
-    },
-    {
-      "number": 2187,
-      "title": "feat(rrx): W2 \u2014 market-wide up/down volume+points aggregate + ^COR1M/^COR3M collector (PR-B)",
-      "merged_at": "2026-07-10T20:06:37Z"
-    },
-    {
-      "number": 2186,
-      "title": "feat(rrx): W0+W1 \u2014 recovery-panel market-internal confirmation chips + rebound-ruler audit (PR-A)",
-      "merged_at": "2026-07-10T20:06:30Z"
-    },
-    {
-      "number": 2184,
-      "title": "docs(macro-refresh): macro.html UI-refresh docket \u2014 adjudicated mockups + design contract",
-      "merged_at": "2026-07-10T19:46:58Z"
-    },
-    {
-      "number": 2183,
-      "title": "fix(macro-context): heal post-merge CI reds \u2014 SIGNAL_BUS regen + nav top gap",
-      "merged_at": "2026-07-10T19:39:48Z"
-    },
-    {
-      "number": 2182,
-      "title": "feat(metabolism): v3-W2 context substrate \u2014 trajectory/strategic-gap + grounding validator (R-V3-4/5)",
-      "merged_at": "2026-07-10T19:25:28Z"
-    },
-    {
-      "number": 2181,
-      "title": "feat(metabolism): v3-W1 memory substrate \u2014 provenance stamping + relevance-ranked recall (R-V3-1/2)",
-      "merged_at": "2026-07-10T19:25:25Z"
-    },
-    {
-      "number": 2180,
-      "title": "feat(macro-context): Macro Weather Station v2 \u2014 command-deck revamp + snapshot registry v1.1",
-      "merged_at": "2026-07-10T19:13:24Z"
-    },
-    {
-      "number": 2179,
-      "title": "fix(edgar): flow-column unit-artifact detector + PIT-honest repair (panel heal: 102 rows/26 tickers)",
-      "merged_at": "2026-07-10T19:15:49Z"
-    },
-    {
-      "number": 2178,
-      "title": "docs(metabolism): v3 Memory & Context Intelligence masterplan (R-V3-1..6)",
-      "merged_at": "2026-07-10T18:51:54Z"
-    },
-    {
-      "number": 2177,
-      "title": "docs(ci): correct board-invariants coverage claims \u2014 render-lane self-check grades fresh renders, pages.yml twin is manual-only",
-      "merged_at": "2026-07-10T18:53:31Z"
-    },
-    {
-      "number": 2176,
-      "title": "docs(research): Day Trade Suite masterplan + rulings DTS-R1..R10",
-      "merged_at": "2026-07-10T18:47:22Z"
-    },
-    {
-      "number": 2175,
-      "title": "perf(path-personality): last-row fast path for features() \u2014 nightly personality pass ~1490s \u2192 ~14s",
-      "merged_at": "2026-07-10T18:49:56Z"
-    },
-    {
-      "number": 2174,
-      "title": "research(risk-radar): expansion masterplan \u2014 breadth thrusts, bottoming/topping signals adjudicated (RRX-R1..R10)",
-      "merged_at": "2026-07-10T18:44:34Z"
-    },
-    {
-      "number": 2173,
-      "title": "feat(stock): Intraday flow panel on the Terminal \u2014 per-ticker RVOL/VWAP/durability + ~options tape + K/7 confluence (IFT PR-B)",
-      "merged_at": "2026-07-10T18:25:22Z"
-    },
-    {
-      "number": 2172,
-      "title": "fix(stock_library): personality-pass skip observability \u2014 WARNING + n-skipped/n-total summary",
-      "merged_at": "2026-07-10T18:19:47Z"
-    },
-    {
-      "number": 2171,
-      "title": "fix(us-board): W8 alpha sort read the profile (no alpha key) \u2014 ticker-alphabetical board, invariant (d) latent red",
-      "merged_at": "2026-07-10T18:23:57Z"
-    },
-    {
-      "number": 2170,
-      "title": "feat(china-news): ZH\u2192EN toggle translations + vendor important-flag scoring",
-      "merged_at": "2026-07-10T18:10:41Z"
-    },
-    {
-      "number": 2169,
-      "title": "feat(metabolism): scout reads organism_state \u2014 flag thinly-covered domains",
-      "merged_at": "2026-07-10T18:00:23Z"
-    },
-    {
-      "number": 2168,
-      "title": "fix(china_stocks): drop description from Bottoming Watch washout alert",
-      "merged_at": "2026-07-10T17:46:10Z"
-    },
-    {
-      "number": 2167,
-      "title": "feat(intraday-flow): Intraday Flow Tracker \u2014 leaders board for washout\u2192continuation with live volume+options-flow velocity/durability (IFT-A)",
-      "merged_at": "2026-07-10T17:46:08Z"
     }
   ]
 }
