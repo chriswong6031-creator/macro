@@ -212,23 +212,72 @@ def _tf_confirmation_word_zh(confirmation: str | None) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Asymmetry leg band → plain-word map (for drawer "Setup legs" section)
+# Asymmetry leg valence table (single source of truth for Setup legs section
+# AND matrix dots).
+#
+# Each entry: (word_en, word_zh, valence_class)
+# valence_class ∈ {fav, mid, caut, neut, null}
+#   fav  = green  (good-when-present)
+#   mid  = amber  (partial / watch)
+#   caut = red    (unfavorable / risk)
+#   neut = gray solid  (not present — nothing alarming)
+#   null = gray dashed (no data yet / accruing)
+#
+# Polarity: "high" does NOT uniformly mean "caution" — each leg has its own
+# polarity (e.g. bottleneck_tightness high → fav, crowding_hazard high → caut).
 # ---------------------------------------------------------------------------
 
-_ASYM_BAND_EN = {
-    "low": "favorable",
-    "med": "middling",
-    "high": "caution",
-    None: "no data yet",
-    "null": "no data yet",
+_ASYM_LEG_TABLE: dict[str, dict[str, tuple[str, str, str]]] = {
+    # (word_en, word_zh, valence_class) keyed by band ∈ {high, med, low}
+    "bottleneck_tightness": {
+        "high": ("tight — supports the thesis", "紧张——支持论点", "fav"),
+        "med":  ("some tightness", "略有紧张", "mid"),
+        "low":  ("not tight — no support from supply", "不紧张——供应端无支持", "neut"),
+    },
+    "stale_consensus_gap": {
+        "high": ("consensus looks stale — room to re-rate", "共识滞后——存在重估空间", "fav"),
+        "med":  ("some gap", "存在一定差距", "mid"),
+        "low":  ("market already caught up", "市场已基本反映", "neut"),
+    },
+    "cyclical_dislocation": {
+        "high": ("deeply dislocated — long-term story at marked-down prices", "深度错位——长期故事处于折价", "fav"),
+        "med":  ("somewhat dislocated", "有所错位", "mid"),
+        "low":  ("prices near cycle norm", "价格接近周期常态", "neut"),
+    },
+    "entry_cleanliness": {
+        "high": ("clean entry", "入场条件良好", "fav"),
+        "med":  ("so-so entry", "入场条件一般", "mid"),
+        "low":  ("messy entry — stretched or overheated", "入场条件较差——超买或过热", "caut"),
+    },
+    "crowding_hazard": {
+        "low":  ("not crowded", "不拥挤", "fav"),
+        "med":  ("getting crowded", "趋于拥挤", "mid"),
+        "high": ("crowded — caution", "拥挤——需谨慎", "caut"),
+    },
+    "falsifier_clarity": {
+        "high": ("easy to test — clear tripwires", "易于检验——触发线清晰", "fav"),
+        "med":  ("partly testable", "部分可检验", "mid"),
+        "low":  ("hard to test — few clear tripwires", "难以检验——缺乏清晰触发线", "caut"),
+    },
+    "orthogonality": {
+        "high": ("moves on its own story", "走自身逻辑", "fav"),
+        "med":  ("partly market-driven", "部分随大盘", "mid"),
+        "low":  ("mostly moves with the market", "基本随大盘波动", "caut"),
+    },
 }
-_ASYM_BAND_ZH = {
-    "low": "有利",
-    "med": "中等",
-    "high": "谨慎",
-    None: "暂无数据",
-    "null": "暂无数据",
-}
+
+# Sentinel for null/missing band
+_ASYM_NULL_ENTRY: tuple[str, str, str] = ("no data yet", "暂无数据", "null")
+
+
+def _asym_leg_entry(leg_id: str, band: str | None) -> tuple[str, str, str]:
+    """Return (word_en, word_zh, valence_class) for a leg+band combination."""
+    if band is None or band == "null":
+        return _ASYM_NULL_ENTRY
+    leg_map = _ASYM_LEG_TABLE.get(leg_id)
+    if leg_map is None:
+        return _ASYM_NULL_ENTRY
+    return leg_map.get(band, _ASYM_NULL_ENTRY)
 
 
 # Stage sort order for column sort (higher = more actionable)
@@ -646,12 +695,16 @@ def compose(root: Path) -> dict[str, Any]:
                 note_zh = ""
             lbl = _LEG_LABELS.get(leg_id)
             abbr = lbl[0] if lbl else leg_id[:3]
+            # Valence class for the dot — polarity-correct per leg
+            band_key = band if band not in ("null", "") else None
+            _, _, dot_valence = _asym_leg_entry(leg_id, band_key)
             tip_en = f"{lbl[1] if lbl else leg_id} ({band}): {note_en[:120]}" if note_en else f"{lbl[1] if lbl else leg_id}: {band}"
             tip_zh = f"{lbl[2] if lbl else leg_id} ({band}): {note_zh[:120]}" if note_zh else tip_en
             legs_ordered.append({
                 "id": leg_id,
                 "abbr": abbr,
                 "band": band,
+                "dot_valence": dot_valence,  # CSS class for matrix dot
                 "tip_en": tip_en,
                 "tip_zh": tip_zh,
             })
@@ -703,28 +756,42 @@ def compose(root: Path) -> dict[str, Any]:
         evidence_refs = th_data.get("evidence_refs", []) or []
 
         # ── Asymmetry "Setup legs" drawer section ──
-        # Re-uses the same legs_ordered already computed above but maps band → plain word.
+        # Re-uses the same legs_ordered already computed above but maps band → plain word
+        # using the per-leg valence table (_ASYM_LEG_TABLE) so each leg gets a
+        # polarity-correct word and valence class (fav/mid/caut/neut/null).
         asym_legs_section: list[dict] = []
         for leg_id in _LEG_ORDER:
             leg_data = raw_legs.get(leg_id, {})
             if isinstance(leg_data, dict):
-                band = leg_data.get("band") or "null"
+                band_raw = leg_data.get("band") or "null"
                 note_en = leg_data.get("note_en", "")
                 note_zh = leg_data.get("note_zh", "")
             else:
-                band = "null"
+                band_raw = "null"
                 note_en = ""
                 note_zh = ""
             lbl = _LEG_LABELS.get(leg_id)
-            plain_en = _ASYM_BAND_EN.get(band, "no data yet")
-            plain_zh = _ASYM_BAND_ZH.get(band, "暂无数据")
+            name_en = lbl[1] if lbl else leg_id
+            name_zh = lbl[2] if lbl else leg_id
+            band_key = band_raw if band_raw not in ("null", "") else None
+            w_en, w_zh, v_cls = _asym_leg_entry(leg_id, band_key)
+            # Extended tip: "{Leg name} — {word_en} ({band} level): {note_en}"
+            if note_en:
+                tip_en = f"{name_en} — {w_en} ({band_raw} level): {note_en[:120]}"
+                tip_zh = f"{name_zh} — {w_zh}（{band_raw}级别）：{(note_zh or note_en)[:120]}"
+            else:
+                tip_en = f"{name_en} — {w_en} ({band_raw} level)"
+                tip_zh = f"{name_zh} — {w_zh}（{band_raw}级别）"
             asym_legs_section.append({
                 "id": leg_id,
-                "name_en": lbl[1] if lbl else leg_id,
-                "name_zh": lbl[2] if lbl else leg_id,
-                "band": band,
-                "word_en": plain_en,
-                "word_zh": plain_zh,
+                "name_en": name_en,
+                "name_zh": name_zh,
+                "band": band_raw,
+                "valence_class": v_cls,
+                "word_en": w_en,
+                "word_zh": w_zh,
+                "tip_en": tip_en,
+                "tip_zh": tip_zh,
                 "note_en": note_en,
                 "note_zh": note_zh,
             })
@@ -891,9 +958,11 @@ def compose(root: Path) -> dict[str, Any]:
             if tf_th is not None and (tf_th.get("n_codes_with_data") or 0) > 0:
                 yoy_pct = tf_th.get("yoy_pct")
                 conf = tf_th.get("confirmation")
+                is_mixed = bool(tf_th.get("is_mixed_direction"))
+                direction_legs = tf_th.get("direction_legs") or {}
                 conf_word_en = _tf_confirmation_word_en(conf)
                 conf_word_zh = _tf_confirmation_word_zh(conf)
-                if yoy_pct is not None:
+                if yoy_pct is not None and not is_mixed:
                     sign = "+" if yoy_pct >= 0 else ""
                     yoy_en = f" ({sign}{yoy_pct:.0f}% vs a year ago)"
                     yoy_zh = f"（同比{sign}{yoy_pct:.0f}%）"
@@ -910,10 +979,42 @@ def compose(root: Path) -> dict[str, Any]:
                     f"截止日期：{_tf_as_of}。"
                     + (tf_th.get("coverage_note_zh") or "")
                 )
+
+                # For mixed-direction themes, build per-direction-leg rows
+                tf_direction_leg_rows: list[dict] = []
+                if is_mixed and direction_legs:
+                    for _dir, _dl in direction_legs.items():
+                        if not isinstance(_dl, dict):
+                            continue
+                        _dl_conf = _dl.get("confirmation")
+                        _dl_yoy = _dl.get("yoy_pct")
+                        _dl_cov_note = _dl.get("coverage_note") or ""
+                        _dl_word_en = _tf_confirmation_word_en(_dl_conf)
+                        _dl_word_zh = _tf_confirmation_word_zh(_dl_conf)
+                        if _dl_yoy is not None:
+                            _s = "+" if _dl_yoy >= 0 else ""
+                            _dl_yoy_en = f" ({_s}{_dl_yoy:.0f}% vs a year ago)"
+                            _dl_yoy_zh = f"（同比{_s}{_dl_yoy:.0f}%）"
+                        else:
+                            _dl_yoy_en = ""
+                            _dl_yoy_zh = ""
+                        # Plain direction framing
+                        _dir_label_en = _dir.replace("_", " ")
+                        _dir_label_zh = _dir.replace("_", " ")
+                        tf_direction_leg_rows.append({
+                            "direction": _dir,
+                            "line_en": f"{_dir_label_en}: {_dl_word_en}{_dl_yoy_en}",
+                            "line_zh": f"{_dir_label_zh}：{_dl_word_zh}{_dl_yoy_zh}",
+                            "cov_tip_en": _dl_cov_note,
+                            "cov_tip_zh": _dl_cov_note,
+                        })
+
                 tf_section = {
                     "available": True,
+                    "is_mixed": is_mixed,
                     "line_en": f"Import flows: {conf_word_en}{yoy_en}.",
                     "line_zh": f"进口流量：{conf_word_zh}{yoy_zh}。",
+                    "direction_leg_rows": tf_direction_leg_rows,
                     "h4_tip_en": tf_cov_tip_en,
                     "h4_tip_zh": tf_cov_tip_zh,
                 }

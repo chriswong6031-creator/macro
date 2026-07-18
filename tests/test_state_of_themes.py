@@ -385,7 +385,10 @@ def _make_sot_root(
         ],
     }), encoding="utf-8")
 
-    # theme_asymmetry.json — minimal (1 theme with legs, 1 empty)
+    # theme_asymmetry.json — real leg ids for polarity tests
+    # ai_infrastructure: bottleneck_tightness=high (→fav), crowding_hazard=high (→caut),
+    #   entry_cleanliness=low (→caut), stale_consensus_gap=low (→neut),
+    #   orthogonality=high (→fav); memory_storage: entry_cleanliness=high (→fav)
     (nwd / "theme_asymmetry.json").write_text(json.dumps({
         "as_of": "2026-07-17",
         "themes": [
@@ -393,7 +396,13 @@ def _make_sot_root(
                 "theme_id": "ai_infrastructure",
                 "name_en": "AI Infrastructure",
                 "legs": {
-                    "trend": {"band": "low", "value": 0.12},
+                    "bottleneck_tightness": {"band": "high", "value": 0.85, "note_en": "chipmakers report supply constraints"},
+                    "stale_consensus_gap": {"band": "low", "value": 0.1},
+                    "cyclical_dislocation": {"band": "med", "value": 0.5},
+                    "entry_cleanliness": {"band": "low", "value": 0.2},
+                    "crowding_hazard": {"band": "high", "value": 0.9},
+                    "falsifier_clarity": {"band": "high", "value": 0.8},
+                    "orthogonality": {"band": "high", "value": 0.75},
                 },
             },
             {
@@ -729,3 +738,271 @@ def test_no_cjk_in_title_attrs_new_sections_all_populated(tmp_path):
     title_re = re.compile(r'title="([^"]*?)"', re.DOTALL)
     violations = [m.group(1)[:120] for m in title_re.finditer(html) if _CJK.search(m.group(1))]
     assert not violations, f"CJK found in title= attrs (all populated): {violations}"
+
+
+# ---------------------------------------------------------------------------
+# 16. Per-leg valence polarity tests (Fix 1 / Fix 2)
+# ---------------------------------------------------------------------------
+
+def test_asym_leg_valence_polarity_compose(tmp_path):
+    """compose() produces correct polarity words + valence_class for each leg.
+
+    Fixture: ai_infrastructure has:
+      bottleneck_tightness=high  → word contains 'supports the thesis', class=fav
+      crowding_hazard=high       → word contains 'crowded — caution', class=caut
+      entry_cleanliness=low      → word contains 'messy entry', class=caut
+      stale_consensus_gap=low    → class=neut (market already caught up)
+      orthogonality=high         → word contains 'moves on its own', class=fav
+    diagnostics_lifesci has no legs → all null, class=null.
+    """
+    root = _make_sot_root(tmp_path)
+    import scripts.build_state_of_themes as sot
+    ctx = sot.compose(root)
+    themes = {t["theme_id"]: t for t in ctx["themes"]}
+
+    ai_legs = {lg["id"]: lg for lg in themes["ai_infrastructure"]["asym_legs_section"]}
+
+    # bottleneck_tightness high → fav
+    btl = ai_legs["bottleneck_tightness"]
+    assert "supports the thesis" in btl["word_en"], (
+        f"bottleneck_tightness high should say 'supports the thesis'; got: {btl['word_en']}"
+    )
+    assert btl["valence_class"] == "fav", (
+        f"bottleneck_tightness high → fav; got: {btl['valence_class']}"
+    )
+
+    # crowding_hazard high → caut
+    crw = ai_legs["crowding_hazard"]
+    assert "crowded" in crw["word_en"].lower(), (
+        f"crowding_hazard high should mention 'crowded'; got: {crw['word_en']}"
+    )
+    assert crw["valence_class"] == "caut", (
+        f"crowding_hazard high → caut; got: {crw['valence_class']}"
+    )
+
+    # entry_cleanliness low → caut
+    cln = ai_legs["entry_cleanliness"]
+    assert "messy" in cln["word_en"].lower(), (
+        f"entry_cleanliness low should say 'messy entry'; got: {cln['word_en']}"
+    )
+    assert cln["valence_class"] == "caut", (
+        f"entry_cleanliness low → caut; got: {cln['valence_class']}"
+    )
+
+    # stale_consensus_gap low → neut
+    gap = ai_legs["stale_consensus_gap"]
+    assert gap["valence_class"] == "neut", (
+        f"stale_consensus_gap low → neut; got: {gap['valence_class']}"
+    )
+
+    # orthogonality high → fav
+    ort = ai_legs["orthogonality"]
+    assert "own story" in ort["word_en"].lower() or "own" in ort["word_en"].lower(), (
+        f"orthogonality high should mention own story; got: {ort['word_en']}"
+    )
+    assert ort["valence_class"] == "fav", (
+        f"orthogonality high → fav; got: {ort['valence_class']}"
+    )
+
+    # diagnostics_lifesci has no legs → all null
+    diag_legs = {lg["id"]: lg for lg in themes["diagnostics_lifesci"]["asym_legs_section"]}
+    for lg in diag_legs.values():
+        assert lg["valence_class"] == "null", (
+            f"missing leg {lg['id']} should have null class; got: {lg['valence_class']}"
+        )
+        assert lg["word_en"] == "no data yet", (
+            f"missing leg {lg['id']} should say 'no data yet'; got: {lg['word_en']}"
+        )
+
+
+def test_asym_leg_valence_in_rendered_html(tmp_path):
+    """Rendered HTML: polarity-correct words + valence dot classes present in page.
+
+    Asserts:
+      - 'supports the thesis' (bottleneck_tightness high, fav) in HTML
+      - 'crowded — caution' (crowding_hazard high, caut) in HTML
+      - 'messy entry' (entry_cleanliness low, caut) in HTML
+      - class='dot caut' (for the matrix dot) appears
+      - class='dot fav' appears
+      - legend contains 'favorable' and the Chinese 有利
+    """
+    root = _make_sot_root(tmp_path)
+    import scripts.build_state_of_themes as sot
+    html = sot.render(root)
+
+    assert "supports the thesis" in html, (
+        "bottleneck_tightness high → 'supports the thesis' must appear in HTML"
+    )
+    assert "crowded" in html.lower(), (
+        "crowding_hazard high → 'crowded' must appear in HTML"
+    )
+    assert "messy entry" in html.lower(), (
+        "entry_cleanliness low → 'messy entry' must appear in HTML"
+    )
+    # Valence dot classes in rendered HTML
+    assert 'class="dot caut"' in html or "dot caut" in html, (
+        "valence class 'caut' must appear in rendered HTML (matrix or drawer dots)"
+    )
+    assert 'class="dot fav"' in html or "dot fav" in html, (
+        "valence class 'fav' must appear in rendered HTML"
+    )
+    # Legend
+    assert "favorable" in html, "legend must contain 'favorable'"
+    assert "有利" in html, "legend must contain '有利'"
+
+
+def test_matrix_dots_use_valence_class_not_raw_band(tmp_path):
+    """Matrix dots use valence class (fav/caut/neut/null), not raw band (low/med/high).
+
+    crowding_hazard=high should produce class='dot caut' (not 'dot high').
+    bottleneck_tightness=high should produce class='dot fav' (not 'dot high').
+    """
+    root = _make_sot_root(tmp_path)
+    import scripts.build_state_of_themes as sot
+    ctx = sot.compose(root)
+    themes = {t["theme_id"]: t for t in ctx["themes"]}
+
+    ai_legs_ordered = {lg["id"]: lg for lg in themes["ai_infrastructure"]["legs_ordered"]}
+
+    crw_dot = ai_legs_ordered["crowding_hazard"]["dot_valence"]
+    assert crw_dot == "caut", f"crowding_hazard high dot_valence should be 'caut'; got: {crw_dot}"
+
+    btl_dot = ai_legs_ordered["bottleneck_tightness"]["dot_valence"]
+    assert btl_dot == "fav", f"bottleneck_tightness high dot_valence should be 'fav'; got: {btl_dot}"
+
+    # Raw band must NOT appear as a CSS class in the rendered HTML
+    html = sot.render(root)
+    assert 'class="dot high"' not in html, (
+        "raw band 'high' must not appear as a dot class in rendered HTML"
+    )
+    assert 'class="dot low"' not in html, (
+        "raw band 'low' must not appear as a dot class in rendered HTML"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 17. Clinical + import-flows stance lines (Fix 3)
+# ---------------------------------------------------------------------------
+
+def test_clinical_stance_line_renders(tmp_path):
+    """Clinical section renders the 'Background evidence' stance line."""
+    root = _make_sot_root(tmp_path)
+    import scripts.build_state_of_themes as sot
+    html = sot.render(root)
+    assert "Background evidence" in html, (
+        "clinical section must render 'Background evidence' stance line"
+    )
+    assert "非买入信号" in html, (
+        "clinical section must render ZH stance line '非买入信号'"
+    )
+
+
+def test_import_flows_stance_line_renders(tmp_path):
+    """Populated import-flows section renders the 'physical-demand check' stance line."""
+    root = _make_sot_root(tmp_path, trade_flows_populated=True)
+    import scripts.build_state_of_themes as sot
+    html = sot.render(root)
+    assert "physical-demand check" in html, (
+        "import-flows section must render 'physical-demand check' stance line"
+    )
+    assert "实物需求核对" in html, (
+        "import-flows section must render ZH stance '实物需求核对'"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 18. Mixed-direction trade-flow per-leg rows (Fix 4)
+# ---------------------------------------------------------------------------
+
+def _make_sot_root_mixed_tf(tmp_path: Path) -> Path:
+    """Like _make_sot_root but with a mixed-direction trade_flows fixture."""
+    root = _make_sot_root(tmp_path, include_trade_flows=False)
+    bkd = root / "site" / "basketdata"
+    bkd.mkdir(parents=True, exist_ok=True)
+    (bkd / "trade_flows.json").write_text(json.dumps({
+        "as_of": "2026-07-17",
+        "coverage_stats": {"themes_with_data": 1},
+        "themes": {
+            "ai_infrastructure": {
+                "n_codes_with_data": 3,
+                "confirmation": "mixed_direction",
+                "is_mixed_direction": True,
+                "yoy_pct": None,
+                "direction_legs": {
+                    "rising_imports_confirms": {
+                        "expected_direction": "rising_imports_confirms",
+                        "yoy_pct": 15.0,
+                        "confirmation": "confirms",
+                        "magnitude_band": "moderate",
+                    },
+                    "falling_imports_confirms": {
+                        "expected_direction": "falling_imports_confirms",
+                        "yoy_pct": -8.0,
+                        "confirmation": "contradicts",
+                        "magnitude_band": "small",
+                    },
+                },
+                "coverage_note": "3 of 4 HS codes have data",
+                "coverage_note_zh": "4个HS编码中3个有数据",
+            },
+        },
+    }), encoding="utf-8")
+    return root
+
+
+def test_mixed_direction_tf_per_leg_rows_compose(tmp_path):
+    """Mixed-direction trade_flows → tf_section has direction_leg_rows with per-leg data."""
+    root = _make_sot_root_mixed_tf(tmp_path)
+    import scripts.build_state_of_themes as sot
+    ctx = sot.compose(root)
+    themes = {t["theme_id"]: t for t in ctx["themes"]}
+
+    ai_tf = themes["ai_infrastructure"]["tf_section"]
+    assert ai_tf.get("available") is True
+    assert ai_tf.get("is_mixed") is True
+
+    rows = ai_tf.get("direction_leg_rows", [])
+    assert len(rows) == 2, f"expected 2 direction leg rows; got {len(rows)}"
+
+    row_by_dir = {r["direction"]: r for r in rows}
+    rising = row_by_dir["rising_imports_confirms"]
+    falling = row_by_dir["falling_imports_confirms"]
+
+    # Rising leg confirms → confirmation word present in line
+    assert "confirm" in rising["line_en"].lower(), (
+        f"rising leg should confirm; got: {rising['line_en']}"
+    )
+    # Falling leg contradicts
+    assert "contradict" in falling["line_en"].lower() or "against" in falling["line_en"].lower(), (
+        f"falling leg should contradict; got: {falling['line_en']}"
+    )
+    # yoy_pct should appear
+    assert "15" in rising["line_en"], f"yoy 15% missing; got: {rising['line_en']}"
+
+
+def test_mixed_direction_tf_rows_in_html(tmp_path):
+    """Mixed-direction trade_flows → per-leg direction rows rendered in HTML."""
+    root = _make_sot_root_mixed_tf(tmp_path)
+    import scripts.build_state_of_themes as sot
+    html = sot.render(root)
+
+    # The mixed-direction top-level line should appear
+    assert "mixed" in html.lower() or "mixed picture" in html.lower(), (
+        "mixed-direction top-line must appear in HTML"
+    )
+    # Per-leg rows should appear
+    assert "rising" in html.lower(), "direction leg label must appear in HTML"
+    assert "confirm" in html.lower(), "per-leg confirmation word must appear in HTML"
+
+
+def test_non_mixed_tf_single_line_form(tmp_path):
+    """Non-mixed populated trade_flows → single-line form (no direction_leg_rows)."""
+    root = _make_sot_root(tmp_path, trade_flows_populated=True)
+    import scripts.build_state_of_themes as sot
+    ctx = sot.compose(root)
+    themes = {t["theme_id"]: t for t in ctx["themes"]}
+    ai_tf = themes["ai_infrastructure"]["tf_section"]
+    assert not ai_tf.get("is_mixed"), "non-mixed theme should not be flagged is_mixed"
+    assert ai_tf.get("direction_leg_rows", []) == [], (
+        "non-mixed theme should have empty direction_leg_rows"
+    )
