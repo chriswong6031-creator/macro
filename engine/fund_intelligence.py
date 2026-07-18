@@ -95,6 +95,72 @@ CONVICTION_METHOD_ZH = ("信念分 = 组合占比分位（35）+ 前十大持仓
                         "并非预测。")
 
 # --------------------------------------------------------------------------- #
+# Source-6: curated theme-key -> sector inference map.                          #
+# 40 top-level Finviz theme keys; None = cross-sector, no inference made.       #
+# Sector vocabulary matches data/sp500_heatmap/industry_map.json (source 1).   #
+# --------------------------------------------------------------------------- #
+
+# Sector-dialect canon: source 1 (industry_map.json, finviz dialect) wins for S&P 500
+# names, so the page's majority dialect IS finviz. Sources 2/5/6 may speak GICS
+# ("Information Technology", "Health Care", ...). Everything is normalized to the
+# finviz dialect at the END of load_classifications so sector-weight math never
+# splits one sector across synonyms.
+_CANON_SECTOR: dict[str, str] = {
+    "Information Technology": "Technology",
+    "Health Care": "Healthcare",
+    "Financials": "Financial",
+    "Financial Services": "Financial",
+    "Consumer Discretionary": "Consumer Cyclical",
+    "Consumer Staples": "Consumer Defensive",
+    "Materials": "Basic Materials",
+    "Communications": "Communication Services",
+}
+
+_THEME_SECTOR: dict[str, str | None] = {
+    "Artificial Intelligence":        "Technology",
+    "Cloud Computing":                "Technology",
+    "Semiconductors":                 "Technology",
+    "Cybersecurity":                  "Technology",
+    "Software":                       "Technology",
+    "Hardware":                       "Technology",
+    "Quantum Computing":              "Technology",
+    "Virtual & Augmented Reality":    "Communication Services",
+    "Biometrics":                     "Technology",
+    "Big Data":                       "Technology",
+    "Electric Vehicles":              "Consumer Cyclical",
+    "Industrial Automation":          "Industrials",
+    "Defense & Aerospace":            "Industrials",
+    "Transportation & Logistics":     "Industrials",
+    "Space Tech":                     "Industrials",
+    "Robotics":                       "Industrials",
+    "Telecommunications":             "Communication Services",
+    "Nanotechnology":                 "Technology",
+    "Internet of Things":             "Technology",
+    "Autonomous Systems":             "Technology",
+    "E-commerce":                     "Consumer Cyclical",
+    "Social Media":                   "Communication Services",
+    "Digital Entertainment":          "Communication Services",
+    "Real Estate & REITs":            "Real Estate",
+    "Consumer Goods":                 "Consumer Cyclical",
+    "Smart Home":                     "Technology",
+    "Wearables":                      "Technology",
+    "Education Technology":           "Technology",
+    "Energy Renewable":               "Energy",
+    "Energy Traditional":             "Energy",
+    "Commodities Energy":             "Energy",
+    "Commodities Metals":             "Basic Materials",
+    "Commodities Agriculture":        "Basic Materials",
+    "Agriculture & FoodTech":         "Consumer Defensive",
+    "Environmental Sustainability":   None,   # cross-sector — no inference
+    "Healthcare & Biotech":           "Healthcare",
+    "Aging Population & Longevity":   "Healthcare",
+    "Healthy Food & Nutrition":       "Consumer Defensive",
+    "FinTech":                        "Financial",
+    "Crypto & Blockchain":            "Financial",
+}
+
+
+# --------------------------------------------------------------------------- #
 # Module caches (one-shot build process). _clear_caches() resets them for       #
 # tests or long-lived processes that need fresh maps/snapshots.                 #
 # --------------------------------------------------------------------------- #
@@ -131,8 +197,17 @@ def load_classifications() -> dict:
          members only (``removed`` is null).
       4. data/themes_heatmap/themes_tree.json — Finviz theme tree, INVERTED to
          per-ticker subsector tags (theme fallback when no basket covers it).
+      5. data/sector_overrides/fund_holdings_sectors.json — hand-curated sector
+         overrides for ADRs, Canadian listings, biotechs, and other names outside
+         the S&P 1500 universe.  NEVER overrides sources 1-4.  Schema:
+         ``{"TICKER": {"sector": "...", "note": "provenance string"}}``.
+      6. Theme->sector inference from ``_THEME_SECTOR`` (module-level map of the
+         40 Finviz theme keys to GICS-style sector names matching industry_map
+         vocabulary).  Applied ONLY to tickers still missing a sector after
+         sources 1-5.  Classified entries carry ``sector_inferred: True``.
 
-    Sector fallback order: industry_map -> membership.parquet -> None.
+    Sector fill order: industry_map -> membership.parquet -> sector_overrides
+                       -> theme inference -> None.
     Theme fallback order:  baskets -> finviz tree (applied by ``_themes_for``).
     Cached module-level; ``_clear_caches()`` resets.
     """
@@ -141,7 +216,8 @@ def load_classifications() -> dict:
         return _CLS_CACHE
 
     out: dict[str, dict] = {}
-    meta = {"industry_map": 0, "membership_sector_fill": 0, "baskets": 0, "finviz": 0}
+    meta: dict = {"industry_map": 0, "membership_sector_fill": 0, "baskets": 0, "finviz": 0,
+                  "sector_overrides_fill": 0, "theme_sector_inferred": 0}
 
     def ent(ticker: str) -> dict:
         return out.setdefault(ticker, {"sector": None, "sub_industry": None,
@@ -237,6 +313,85 @@ def load_classifications() -> dict:
     except Exception:  # noqa: BLE001
         log.warning("load_classifications: themes_tree.json unreadable — skipped",
                     exc_info=True)
+
+    # 5) Manual sector overrides — data/sector_overrides/fund_holdings_sectors.json.
+    #    NEVER overrides a sector already set by sources 1-4.  Curated for ADRs,
+    #    Canadian listings, biotechs, and other names outside the S&P 1500 universe.
+    #    Each entry: {"sector": "<name>", "note": "<provenance>"}.
+    try:
+        p = config.data_dir() / "sector_overrides" / "fund_holdings_sectors.json"
+        if p.exists():
+            ovr = json.loads(p.read_text()) or {}
+            n5 = 0
+            for t, rec in ovr.items():
+                if t == "_meta" or not isinstance(rec, dict):
+                    continue
+                tk = str(t).strip().upper()
+                sec = str(rec.get("sector") or "").strip()
+                if not tk or not sec:
+                    continue
+                e = ent(tk)
+                if not e["sector"]:           # fill only — never override existing
+                    e["sector"] = sec
+                    n5 += 1
+            meta["sector_overrides_fill"] = n5
+    except Exception:  # noqa: BLE001
+        log.warning("load_classifications: fund_holdings_sectors.json unreadable — skipped",
+                    exc_info=True)
+
+    # 6) Theme->sector inference from the Finviz themes_tree (source-4 already
+    #    built the finviz tags).  Walk ``_THEME_SECTOR`` for each ticker that
+    #    still lacks a sector; use the FIRST theme with a non-None mapping.
+    #    Marks classified entries with ``sector_inferred: True`` for transparency.
+    #    NEVER overrides a sector already set by sources 1-5.
+    try:
+        p = config.data_dir() / "themes_heatmap" / "themes_tree.json"
+        if p.exists():
+            tree_data = json.loads(p.read_text()) or []
+            # Build per-ticker -> ordered list of theme keys (preserves tree order)
+            ticker_themes: dict[str, list[str]] = {}
+            for theme in tree_data:
+                if not isinstance(theme, dict):
+                    continue
+                tkey = str(theme.get("key") or theme.get("theme") or "")
+                if not tkey:
+                    continue
+                for sub in theme.get("subsectors") or []:
+                    if not isinstance(sub, dict):
+                        continue
+                    for m in sub.get("members") or []:
+                        tk = str(m or "").strip().upper()
+                        if tk and tkey not in ticker_themes.get(tk, []):
+                            ticker_themes.setdefault(tk, []).append(tkey)
+            n6 = 0
+            for tk, tkeys in ticker_themes.items():
+                e = out.get(tk)
+                if e is None or e.get("sector"):
+                    continue                   # already classified — skip
+                for tkey in tkeys:
+                    inferred = _THEME_SECTOR.get(tkey)
+                    if inferred:
+                        e["sector"] = inferred
+                        e["sector_inferred"] = True
+                        n6 += 1
+                        break
+            meta["theme_sector_inferred"] = n6
+    except Exception:  # noqa: BLE001
+        log.warning("load_classifications: theme->sector inference failed — skipped",
+                    exc_info=True)
+
+    # Canonicalize sector dialect LAST (see _CANON_SECTOR doc-comment): sources speak
+    # finviz vs GICS names; without one canon, sector-weight math splits a sector
+    # across synonyms ("Technology" 210 + "Information Technology" 115 at fix time).
+    n_canon = 0
+    for _tk, _e in out.items():
+        if not isinstance(_e, dict):
+            continue
+        _canon = _CANON_SECTOR.get(_e.get("sector"))
+        if _canon:
+            _e["sector"] = _canon
+            n_canon += 1
+    meta["sector_canonicalized"] = n_canon
 
     meta["tickers"] = len(out)
     meta["with_sector"] = sum(1 for v in out.values() if v["sector"])
