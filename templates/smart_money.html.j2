@@ -284,6 +284,34 @@ details.fullboard > summary:hover { color:var(--text); }
              cursor:pointer; }
 .wire-more:hover { border-color:var(--info); }
 
+/* ---- Follow Desk (sec-follow) ---- */
+.ftier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+         letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); }
+.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
+.ftier.watch  { color:var(--muted); background:var(--panel2); }
+.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
+.ftier.insufficient,.ftier.low-data { color:var(--muted); background:transparent; border-style:dashed; }
+.fsc-bar { display:inline-block; width:48px; height:5px; border-radius:3px;
+           background:var(--panel2); vertical-align:middle; position:relative; overflow:hidden; }
+.fsc-bar i { position:absolute; left:0; top:0; height:100%; border-radius:3px; background:var(--info); }
+.cap-chip { font:600 9px/1 var(--numf); padding:2px 5px; border-radius:4px; text-transform:uppercase;
+            letter-spacing:.04em; border:1px solid var(--line); color:var(--muted); }
+.cap-chip.large { color:#5b9bf0; border-color:#5b9bf055; }
+.cap-chip.mid   { color:#c9a24a; border-color:#c9a24a55; }
+.cap-chip.small { color:#45b873; border-color:#45b87355; }
+.cap-chip.off_index { color:var(--muted); border-style:dashed; }
+.fboard-row-accent td { background:color-mix(in srgb, var(--info) 4%, transparent); }
+.follow-banner { font-size:11.5px; color:var(--muted); background:var(--panel2);
+                 border:1px solid var(--line); border-left:3px solid var(--up);
+                 border-radius:9px; padding:8px 12px; margin:8px 0 4px; line-height:1.55; }
+.follow-empty { font-size:12px; color:var(--muted); padding:18px 4px; text-align:center; }
+.sm-2half { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:10px; }
+@media(max-width:820px){ .sm-2half { grid-template-columns:1fr; } }
+.sm-2half > * { min-width:0; overflow-x:auto; }
+.frozen-chip { font:600 9px/1 var(--numf); padding:2px 6px; border-radius:4px;
+               letter-spacing:.05em; text-transform:uppercase;
+               color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
+
 /* ---- v3: reliability chip + fund links + inline fund-list details ---- */
 .rely { font:600 9.5px/1.4 var(--numf); padding:2px 7px; border-radius:5px; letter-spacing:.03em;
         text-transform:uppercase; border:1px solid var(--line); }
@@ -305,6 +333,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
   {%- else -%}<span class="num {{ 'r-pos' if v >= 0 else 'r-neg' }}">{{ "%+.{}f".format(dp) | format(v * 100) }}%</span>
   {%- endif -%}
 {%- endmacro %}
+{% macro exret_t(v, dp=0) -%}{%- if v is none -%}—{%- else -%}{{ "%+.{}f".format(dp) | format(v * 100) }}%{%- endif -%}{%- endmacro %}
 {% macro pctf(v, dp=1) -%}{%- if v is none -%}—{%- else -%}{{ "%.{}f".format(dp) | format(v) }}%{%- endif -%}{%- endmacro %}
 {% macro hit(v) -%}{%- if v is none -%}—{%- else -%}{{ "%.0f" | format(v * 100) }}%{%- endif -%}{%- endmacro %}
 {% macro gradeb(g) -%}<span class="grade {{ g if g in ['A','B','C','D'] else 'na' }}">{{ g if g != 'n/a' else '—' }}</span>{%- endmacro %}
@@ -408,11 +437,13 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 {# ---- v3: sticky section rail — pure CSS anchors, no JS ---- #}
 {% set _has_ii = (desk.get('insider_intel') or {}) | length > 0 %}
 {% set _has_flow = (desk.get('flow') or {}) | length > 0 %}
+{% set _has_follow = (desk.get('follow') or {}) | length > 0 %}
 {# aria-label is an attribute — t()'s <span> markup breaks the quote and leaks text; plain EN only #}
 <nav class="sm-rail" aria-label="Sections">
   <a href="#sec-wire">{{ t('Wire','播报') }}</a>
   {% if _has_ii %}<a href="#sec-insider">{{ t('Insider','内部人') }}</a>{% endif %}
   <a href="#sec-managers">{{ t('Managers','经理台') }}</a>
+  <a href="#sec-follow">{{ t('Follow Desk','跟随台') }}</a>
   {% if _has_flow %}<a href="#sec-flow">{{ t('Flow','资金流') }}</a>{% endif %}
   <a href="#sec-portfolio">{{ t('Portfolio','总组合') }}</a>
   <a href="#sec-crowding">{{ t('Crowding','拥挤度') }}</a>
@@ -744,6 +775,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     <th class="l">#</th>
     <th class="l">{{ t('Fund','基金') }}</th>
     <th>{{ t('Grade','评级') }}</th>
+    <th>{{ t('Follow','跟随') }}</th>
     <th>{{ t('Median excess','中位超额') }}</th>
     <th>{{ t('Sell skill','卖出能力') }}</th>
     <th>{{ t('Hit','胜率') }}</th>
@@ -766,6 +798,20 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
         {% if is_closed %}<span class="chip-fresh" style="margin-left:4px">{{ t('closed','已关闭') }}</span>{% endif %}
       </td>
       <td>{{ gradeb(r.grade) }}</td>
+      <td>
+        {%- set _fol_slug = r.get('slug') or '' -%}
+        {%- set _fol_entry = ((desk.get('follow') or {}).get('followability') or {}).get(_fol_slug) -%}
+        {%- if _fol_entry is not none -%}
+          {%- set _ft = _fol_entry.get('follow_tier') or 'insufficient' -%}
+          {%- set _fs = _fol_entry.get('follow_score') -%}
+          {%- if _ft == 'follow' -%}<span class="ftier follow" data-tip-en="FOLLOW score {{ _fs }}" data-tip-zh="跟随 分{{ _fs }}">{{ t('FOLLOW','跟随') }}</span>
+          {%- elif _ft == 'watch' -%}<span class="ftier watch" data-tip-en="WATCH score {{ _fs }}" data-tip-zh="观察 分{{ _fs }}">{{ t('WATCH','观察') }}</span>
+          {%- elif _ft == 'fade' -%}<span class="ftier fade" data-tip-en="FADE score {{ _fs }}" data-tip-zh="淡出 分{{ _fs }}">{{ t('FADE','淡出') }}</span>
+          {%- else -%}<span class="ftier insufficient" data-tip-en="LOW DATA" data-tip-zh="数据不足">{{ t('LOW DATA','数据不足') }}</span>
+          {%- endif -%}
+        {%- else -%}<span class="sub">—</span>
+        {%- endif -%}
+      </td>
       <td><b>{{ exret(r.median_buy_excess) }}</b></td>
       <td>{{ exret(r.sell_skill) }}</td>
       <td class="num">{{ hit(r.buy_hit_rate) }}</td>
@@ -870,6 +916,347 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
   </details>
   {% endif %}
 {% endfor %}
+
+{# ======================================================================== #}
+{# S2.3 FOLLOW DESK                                                          #}
+{# ======================================================================== #}
+{% set d_follow = desk.get('follow') or {} %}
+{% set d_fol_meta = d_follow.get('meta') or {} %}
+{% set d_followability = d_follow.get('followability') or {} %}
+{% set d_best_buys = d_follow.get('best_buys') or [] %}
+{% set d_small_mid = d_follow.get('small_mid') or [] %}
+{% set d_consensus = d_follow.get('sector_consensus') or [] %}
+{% set d_grade_a = d_follow.get('grade_a') %}
+
+<div class="sm-sec" id="sec-follow">
+  <h2>{{ t('Follow Desk','跟随台') }}</h2>
+  <span class="h-note">{{ t(
+    'ranked by follow-worthiness — where to research first, not a buy list',
+    '按跟随价值排序——优先研究对象，非买入清单'
+  ) }}</span>
+</div>
+
+<div class="follow-banner">{{ t(
+  'Ranked by follow-worthiness — where to research first, NOT a buy list. 13F positions are ~45 days stale; historically 13F crowding warns more than it confirms. Scores are descriptive with n printed.',
+  '按跟随价值排序——优先研究对象，非买入清单。13F持仓约有45天滞后；历史上13F聚集更多起警示作用而非确认。分数为描述性指标，附样本量。'
+) }}</div>
+
+{% if d_followability %}
+
+{# ---- A. WHO TO FOLLOW table ---- #}
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">#</th>
+    <th class="l">{{ t('Fund','基金') }}</th>
+    <th>{{ t('Tier','层级') }}</th>
+    <th>{{ t('Follow score','跟随分') }}</th>
+    <th>{{ t('New sleeve','新建仓') }}</th>
+    <th>{{ t('Add sleeve','加仓') }}</th>
+    <th>{{ t('Rotation IQ','轮动IQ') }}</th>
+    <th>{{ t('Front-run','领先跑') }}</th>
+    <th>{{ t('Streak','连跌') }}</th>
+  </tr></thead>
+  <tbody>
+  {#- Two-pass sort: (score, slug) pairs for scored, slug-only list for insufficient.
+      namespace is required because Jinja2 loop-scoped set does NOT propagate to outer scope. -#}
+  {%- set _fns = namespace(sc=[], un=[]) -%}
+  {%- for _s, _e in d_followability.items() -%}
+    {%- if _e.get('follow_score') is not none -%}
+      {%- set _fns.sc = _fns.sc + [(_e.get('follow_score'), _s)] -%}
+    {%- else -%}
+      {%- set _fns.un = _fns.un + [_s] -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- set _sc_srt = _fns.sc | sort(reverse=true) -%}
+  {%- set _fol_loop = namespace(i=0) -%}
+  {#- Render scored rows first, then unscored -#}
+  {%- for _fscore, _slug in _sc_srt -%}
+    {%- set _fe = d_followability[_slug] -%}
+    {%- set _ft = _fe.get('follow_tier') or 'insufficient' -%}
+    {%- set _fs = _fe.get('follow_score') -%}
+    {%- set _comp = _fe.get('components') or {} -%}
+    {%- set _slv = _fe.get('sleeves') or {} -%}
+    {%- set _riq = _fe.get('rotation_iq') or {} -%}
+    {%- set _fr = _fe.get('front_run') or {} -%}
+    {%- set _streak = _fe.get('loser_streak_q') or 0 -%}
+    {%- set _fade_row = (_ft == 'fade') -%}
+    {%- set _fol_loop.i = _fol_loop.i + 1 -%}
+    <tr {{ 'style="opacity:.6"' if _fade_row else '' }}>
+      <td class="l rk num">{{ _fol_loop.i }}</td>
+      <td class="l"><a class="fund-link" href="fund_{{ _slug }}.html">{{ _slug }}</a>
+        {%- if _fade_row %} <span class="sub">({{ t('excluded from boards','已排除出榜') }})</span>{% endif %}
+      </td>
+      <td>
+        {%- if _ft == 'follow' -%}<span class="ftier follow">{{ t('FOLLOW','跟随') }}</span>
+        {%- elif _ft == 'watch' -%}<span class="ftier watch">{{ t('WATCH','观察') }}</span>
+        {%- elif _ft == 'fade' -%}<span class="ftier fade">{{ t('FADE','淡出') }}</span>
+        {%- else -%}<span class="ftier insufficient">{{ t('LOW DATA','数据不足') }}</span>
+        {%- endif -%}
+      </td>
+      <td>
+        {%- if _fs is not none -%}
+          <span class="fsc-bar"><i style="width:{{ _fs }}%"></i></span>
+          <span class="num" style="margin-left:5px" data-tip-en="edge {{ _comp.get('edge') if _comp.get('edge') is not none else '—' }} · consistency {{ _comp.get('consistency') if _comp.get('consistency') is not none else '—' }} · durability {{ _comp.get('durability') if _comp.get('durability') is not none else '—' }} · sell {{ _comp.get('sell') if _comp.get('sell') is not none else '—' }} · n penalty {{ _comp.get('n_penalty') if _comp.get('n_penalty') is not none else '—' }}" data-tip-zh="优势 {{ _comp.get('edge') if _comp.get('edge') is not none else '—' }} · 一致性 {{ _comp.get('consistency') if _comp.get('consistency') is not none else '—' }} · 持久性 {{ _comp.get('durability') if _comp.get('durability') is not none else '—' }} · 卖出 {{ _comp.get('sell') if _comp.get('sell') is not none else '—' }} · n惩罚 {{ _comp.get('n_penalty') if _comp.get('n_penalty') is not none else '—' }}">{{ _fs }}</span>
+        {%- else -%}<span class="sub">—</span>{%- endif -%}
+      </td>
+      <td>
+        {%- set _sn = (_slv.get('new') or {}) -%}
+        {%- if _sn.get('median_excess') is not none -%}
+          {{ exret(_sn.get('median_excess')) }} <span class="sub">n {{ _sn.get('n') or 0 }}</span>
+        {%- else -%}<span class="sub">—</span>{%- endif -%}
+      </td>
+      <td>
+        {%- set _sa = (_slv.get('add') or {}) -%}
+        {%- if _sa.get('median_excess') is not none -%}
+          {{ exret(_sa.get('median_excess')) }} <span class="sub">n {{ _sa.get('n') or 0 }}</span>
+        {%- else -%}<span class="sub">—</span>{%- endif -%}
+      </td>
+      <td>
+        {%- if _riq.get('score') is not none -%}
+          <span class="num" data-tip-en="hit rate {{ hit(_riq.get('hit_rate')) }} · n {{ _riq.get('n_calls') or 0 }} calls across {{ _riq.get('n_quarters') or 0 }} quarters" data-tip-zh="方向胜率 {{ hit(_riq.get('hit_rate')) }} · {{ _riq.get('n_calls') or 0 }} 次调仓 / {{ _riq.get('n_quarters') or 0 }} 个季度">{{ _riq.get('score') }}</span>
+        {%- else -%}<span class="sub">—</span>{%- endif -%}
+      </td>
+      <td>
+        {%- if _fr.get('crowd_follow_rate') is not none -%}
+          {%- set _cfr = _fr.get('crowd_follow_rate') -%}
+          <span class="num" data-tip-en="n {{ _fr.get('n_new_tracked') or 0 }} new positions tracked · median next-q excess {{ exret_t(_fr.get('median_next_q_excess')) }}" data-tip-zh="{{ _fr.get('n_new_tracked') or 0 }} 个新仓被追踪 · 下季中位超额 {{ exret_t(_fr.get('median_next_q_excess')) }}">{{ pctf(_cfr * 100, 0) if _cfr is not none else '—' }}</span>
+        {%- else -%}<span class="sub">—</span>{%- endif -%}
+      </td>
+      <td>
+        {%- if _streak > 0 -%}<span class="num" style="color:var(--down)">{{ _streak }}</span>{%- endif -%}
+      </td>
+    </tr>
+  {%- endfor -%}
+  {#- Second pass: unscored (insufficient) funds -#}
+  {%- for _slug in _fns.un -%}
+    {%- set _fe = d_followability[_slug] -%}
+    {%- set _slv = _fe.get('sleeves') or {} -%}
+    {%- set _riq = _fe.get('rotation_iq') or {} -%}
+    {%- set _fr = _fe.get('front_run') or {} -%}
+    {%- set _streak = _fe.get('loser_streak_q') or 0 -%}
+    {%- set _fol_loop.i = _fol_loop.i + 1 -%}
+    <tr>
+      <td class="l rk num">{{ _fol_loop.i }}</td>
+      <td class="l"><a class="fund-link" href="fund_{{ _slug }}.html">{{ _slug }}</a></td>
+      <td><span class="ftier insufficient">{{ t('LOW DATA','数据不足') }}</span></td>
+      <td><span class="sub">—</span></td>
+      <td>
+        {%- set _sn = (_slv.get('new') or {}) -%}
+        {%- if _sn.get('median_excess') is not none -%}
+          {{ exret(_sn.get('median_excess')) }} <span class="sub">n {{ _sn.get('n') or 0 }}</span>
+        {%- else -%}<span class="sub">—</span>{%- endif -%}
+      </td>
+      <td>
+        {%- set _sa = (_slv.get('add') or {}) -%}
+        {%- if _sa.get('median_excess') is not none -%}
+          {{ exret(_sa.get('median_excess')) }} <span class="sub">n {{ _sa.get('n') or 0 }}</span>
+        {%- else -%}<span class="sub">—</span>{%- endif -%}
+      </td>
+      <td>
+        {%- if _riq.get('score') is not none -%}
+          <span class="num" data-tip-en="hit rate {{ hit(_riq.get('hit_rate')) }} · n {{ _riq.get('n_calls') or 0 }} calls across {{ _riq.get('n_quarters') or 0 }} quarters" data-tip-zh="方向胜率 {{ hit(_riq.get('hit_rate')) }} · {{ _riq.get('n_calls') or 0 }} 次调仓 / {{ _riq.get('n_quarters') or 0 }} 个季度">{{ _riq.get('score') }}</span>
+        {%- elif _riq.get('n_calls') -%}
+          <span class="sub" data-tip-en="hit rate {{ hit(_riq.get('hit_rate')) }} · n {{ _riq.get('n_calls') or 0 }} calls — insufficient for score" data-tip-zh="方向胜率 {{ hit(_riq.get('hit_rate')) }} · {{ _riq.get('n_calls') or 0 }} 次调仓 — 样本不足">n {{ _riq.get('n_calls') }}</span>
+        {%- else -%}<span class="sub">—</span>{%- endif -%}
+      </td>
+      <td><span class="sub">—</span></td>
+      <td>
+        {%- if _streak > 0 -%}<span class="num" style="color:var(--down)">{{ _streak }}</span>{%- endif -%}
+      </td>
+    </tr>
+  {%- endfor -%}
+  </tbody>
+</table>
+</div>
+
+{# ---- B. BEST BUYS board ---- #}
+{% if d_best_buys %}
+<div class="sm-sec">
+  <h2 style="font-size:14px">{{ t('Best Buys','最佳买入') }}</h2>
+  <span class="h-note">{{ t('top initiations weighted by conviction, quality, confluence, freshness — FADE funds excluded','按信念·质量·共识·新鲜度加权的最佳新建仓——已淡出基金排除') }}</span>
+</div>
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">#</th>
+    <th class="l">{{ t('Ticker','代码') }}</th>
+    <th class="l">{{ t('Sector','行业') }}</th>
+    <th>{{ t('Cap','市值') }}</th>
+    <th>{{ t('Desk score','台面分') }}</th>
+    <th class="l">{{ t('Funds','基金') }}</th>
+    <th>{{ t('Conviction','信念') }}</th>
+    <th class="num">{{ t('n','n') }}</th>
+    <th>{{ t('Filed','申报') }}</th>
+    <th>{{ t('Since filing','申报后') }}</th>
+  </tr></thead>
+  <tbody>
+  {%- set _bb_fold = namespace(n=0) -%}
+  {%- for _row in d_best_buys -%}
+    {%- set _bb_fold.n = _bb_fold.n + 1 -%}
+    {%- set _show = (_bb_fold.n <= 25) -%}
+    {%- set _nf = _row.get('n_funds') or 0 -%}
+    {%- set _score = _row.get('desk_rank_score') or 0 -%}
+    {%- set _comp = _row.get('components') or {} -%}
+    <tr class="{{ 'fboard-row-accent' if _nf >= 2 else '' }}"{{ ' data-fold="1"' if not _show else '' }}>
+      <td class="l rk num">{{ _bb_fold.n }}</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#{{ _row.get('ticker') or '' }}"><span class="tk">{{ _row.get('ticker') or '—' }}</span></a>
+        <div class="sub">{{ (_row.get('issuer') or '') | truncate(28, true, '…') }}</div>
+      </td>
+      <td class="l sub">{{ _row.get('sector') or '—' }}</td>
+      <td>
+        {%- set _cb = _row.get('cap_bucket') or 'off_index' -%}
+        <span class="cap-chip {{ _cb }}" data-tip-en="{{ 'off-index: outside S&P 1500, typically small/micro cap' if _cb == 'off_index' else _cb ~ ' cap' }}" data-tip-zh="{{ '指数外：标普1500以外，通常为小/微市值' if _cb == 'off_index' else _cb ~ ' 市值' }}">{{ _cb | upper | replace('_', ' ') }}</span>
+      </td>
+      <td>
+        <span class="fsc-bar"><i style="width:{{ _score }}%"></i></span>
+        <span class="num" style="margin-left:4px" data-tip-en="conviction {{ (_comp.get('conviction') or 0) | round(2) }} · quality {{ (_comp.get('quality') or 0) | round(2) }} · confluence {{ (_comp.get('confluence') or 0) | round(2) }} · freshness {{ (_comp.get('freshness') or 0) | round(2) }}" data-tip-zh="信念 {{ (_comp.get('conviction') or 0) | round(2) }} · 质量 {{ (_comp.get('quality') or 0) | round(2) }} · 共识 {{ (_comp.get('confluence') or 0) | round(2) }} · 新鲜度 {{ (_comp.get('freshness') or 0) | round(2) }}">{{ _score | round(1) }}</span>
+      </td>
+      <td class="l">
+        {%- for _fe in (_row.get('funds') or []) -%}
+          {%- set _fft = _fe.get('follow_tier') or 'insufficient' -%}
+          <span class="mchip ftier {{ _fft }}" style="font-size:9px">{{ _fe.get('name') or _fe.get('slug') or '—' }} · <span class="act-pill {{ _fe.get('action') or '' }}">{{ _fe.get('action') or '' }}</span> {{ pctf(_fe.get('incr_pct') or 0, 1) }}</span>
+        {%- endfor -%}
+      </td>
+      <td class="num" data-tip-en="max incr pct {{ pctf(_row.get('incr_pct_max') or 0, 2) }} · sum {{ pctf(_row.get('incr_pct_sum') or 0, 2) }} · new=book %, add=incremental slice added" data-tip-zh="最大增量% {{ pctf(_row.get('incr_pct_max') or 0, 2) }} · 合计 {{ pctf(_row.get('incr_pct_sum') or 0, 2) }} · 新建仓=占仓位%, 加仓=新增切片">{{ pctf(_row.get('incr_pct_max') or 0, 1) }}</td>
+      <td class="num">{{ _nf }}</td>
+      <td class="sub num">{{ (_row.get('freshness_d') or '—') }}{{ t('d ago','天前') }}</td>
+      <td>{{ exret(_row.get('since_excess_med')) }}</td>
+    </tr>
+  {%- endfor -%}
+  </tbody>
+</table>
+{% if d_best_buys | length > 25 %}
+<div class="wire-more-row">
+  <button class="wire-more" onclick="this.closest('.sm-card').querySelectorAll('tr[data-fold]').forEach(r=>r.removeAttribute('data-fold'));this.remove()">{{ t('See more','查看更多') }} ({{ d_best_buys | length - 25 }} {{ t('more','更多') }})</button>
+</div>
+{% endif %}
+</div>
+{% endif %}{# /best_buys #}
+
+{# ---- C. ASYMMETRIC SMALL/MID board ---- #}
+{% if d_small_mid %}
+<div class="sm-sec">
+  <h2 style="font-size:14px">{{ t('Asymmetric Small/Mid','非对称小中型股') }}</h2>
+  <span class="h-note">{{ t('high-conviction small/mid + off-index names — incr pct ≥ 1.5 pp, at least one FOLLOW/55+ fund','高信念小中型及指数外标的——增量占仓≥1.5pp，至少一只跟随/55+评分基金') }}</span>
+</div>
+<div class="sm-card">
+<table class="sm-t">
+  <thead><tr>
+    <th class="l">#</th>
+    <th class="l">{{ t('Ticker','代码') }}</th>
+    <th class="l">{{ t('Cap','市值') }}</th>
+    <th>{{ t('Desk score','台面分') }}</th>
+    <th class="l">{{ t('Why','原因') }}</th>
+    <th>{{ t('Since filing','申报后') }}</th>
+  </tr></thead>
+  <tbody>
+  {%- for _row in d_small_mid -%}
+    {%- set _cb = _row.get('cap_bucket') or 'off_index' -%}
+    <tr {{ 'class="fboard-row-accent"' if (_row.get('n_funds') or 0) >= 2 else '' }}>
+      <td class="l rk num">{{ loop.index }}</td>
+      <td class="l">
+        <a class="fund-link" href="stock.html#{{ _row.get('ticker') or '' }}"><span class="tk">{{ _row.get('ticker') or '—' }}</span></a>
+        <div class="sub">{{ (_row.get('issuer') or '') | truncate(28, true, '…') }}</div>
+      </td>
+      <td>
+        <span class="cap-chip {{ _cb }}" {{ 'data-tip-en="outside S&P 1500, typically small/micro cap" data-tip-zh="标普1500以外，通常为小/微市值"' if _cb == 'off_index' else '' }}>{{ _cb | upper | replace('_', ' ') }}</span>
+        {% if _row.get('off_index_note') %}<span class="cap-chip off_index" style="margin-left:3px">OFF-INDEX</span>{% endif %}
+      </td>
+      <td class="num">{{ (_row.get('desk_rank_score') or 0) | round(1) }}</td>
+      <td class="l sub" style="max-width:260px;white-space:normal">{{ _row.get('why') or '—' }}</td>
+      <td>{{ exret(_row.get('since_excess_med')) }}</td>
+    </tr>
+  {%- endfor -%}
+  </tbody>
+</table>
+</div>
+{% endif %}{# /small_mid #}
+
+{# ---- D. Two half-width cards: sector consensus + grade-A ---- #}
+<div class="sm-2half">
+
+  {# D1. Sector rotation consensus #}
+  <div class="sm-card">
+    <div class="board-h">
+      <span class="bt">{{ t('Sector Rotation Consensus','板块轮动共识') }}</span>
+      {% if d_consensus %}
+        {%- set _fol_meta = (desk.get('follow') or {}).get('meta') or {} -%}
+        {%- set _nc_pr = _fol_meta.get('n_proven_rotators') -%}
+        {%- set _nc_fd = (_fol_meta.get('n_fade') or 0) -%}
+        <span class="chip-fresh">n {{ _nc_pr if _nc_pr is not none else '—' }} {{ t('proven rotators','经验证轮动者') }} · {{ _nc_fd }} {{ t('fade excluded','淡出排除') }}</span>
+      {% endif %}
+    </div>
+    <div class="board-note">{{ t('IQ-weighted sector delta (pp). Descriptive screen — n printed, not a forecast.','IQ加权板块变化（百分点）。描述性筛选——样本量已打印，非预测。') }}</div>
+    {% if d_consensus %}
+      {%- set _cs_mx = namespace(v=0.0) -%}
+      {%- for _cr in d_consensus -%}{%- set _a = (_cr.get('iq_weighted_delta_pp') or 0) | abs -%}{%- if _a > _cs_mx.v -%}{%- set _cs_mx.v = _a -%}{%- endif -%}{%- endfor -%}
+      <ul class="rotbars">
+      {% for _cr in d_consensus %}
+        {%- set _npp = _cr.get('iq_weighted_delta_pp') or 0 -%}
+        {%- set _w = (((_npp | abs) / _cs_mx.v) * 50) | round(1) if _cs_mx.v > 0 else 0 -%}
+        {%- set _tb = (_cr.get('top_buys') or []) | map(attribute='ticker') | list -%}
+        <li data-tip-en="breadth: {{ _cr.get('breadth_up') or 0 }} up / {{ _cr.get('breadth_down') or 0 }} down · top buys: {{ _tb | join(', ') or '—' }}" data-tip-zh="广度：{{ _cr.get('breadth_up') or 0 }} 上升 / {{ _cr.get('breadth_down') or 0 }} 下降 · 主要买入：{{ _tb | join(', ') or '—' }}">
+          <span class="rb-lab">{{ _cr.get('sector') or '—' }}</span>
+          <span class="rb-track"><i class="rb-fill {{ 'pos' if _npp >= 0 else 'neg' }}" style="width:{{ _w }}%"></i></span>
+          <span class="rb-val num {{ 'r-pos' if _npp >= 0 else 'r-neg' }}">{{ "%+.1f" | format(_npp) }}pp</span>
+          <span class="sub num">{{ _cr.get('breadth_up') or 0 }}/{{ _cr.get('breadth_down') or 0 }}</span>
+        </li>
+      {% endfor %}
+      </ul>
+    {% else %}<p class="follow-empty">{{ t('Not computed this run.','本次未计算。') }}</p>{% endif %}
+  </div>
+
+  {# D2. Grade-A Q1 report card #}
+  <div class="sm-card">
+    <div class="board-h">
+      <span class="bt">{{ t('Grade-A Report Card','A级成绩单') }}</span>
+      {% if d_grade_a is not none and d_grade_a.get('as_of') %}
+        <span class="frozen-chip">{{ t('FROZEN','已冻结') }}</span>
+        <span class="chip-fresh">{{ t('as of','截至') }} {{ d_grade_a.get('as_of') or '—' }}</span>
+      {% endif %}
+    </div>
+    <div class="board-note">{{ t('One cohort, one quarter — receipts, not a base rate. Decision-weighted 60d excess vs SPY from the common anchor date.','一个队列，一个季度——凭证而非基准利率。自公共锚定日起60日决策加权超额对标标普。') }}</div>
+    {% if d_grade_a is not none and d_grade_a.get('rows') %}
+      <table class="sm-t" style="margin-top:6px">
+        <thead><tr>
+          <th class="l">{{ t('Fund','基金') }}</th>
+          <th>{{ t('n','n') }}</th>
+          <th>{{ t('60d DW excess','60日DW超额') }}</th>
+          <th>{{ t('New / Add · 60d excess','新建/加仓 · 60日超额') }}</th>
+          <th>{{ t('Hit 60d','60日胜率') }}</th>
+        </tr></thead>
+        <tbody>
+        {%- set _ga_rows = d_grade_a.get('rows') or [] -%}
+        {%- set _ga_best_ex = (_ga_rows[0].get('dw_excess_60d') if _ga_rows else none) -%}
+        {%- for _ga_r in _ga_rows -%}
+          {%- set _ga_ex = _ga_r.get('dw_excess_60d') -%}
+          {%- set _is_best = (_ga_ex is not none and _ga_best_ex is not none and _ga_ex == _ga_best_ex) -%}
+          <tr {{ 'class="feat"' if _is_best else '' }}>
+            <td class="l">{{ _ga_r.get('name') or _ga_r.get('fund') or '—' }}</td>
+            <td class="num sub">{{ _ga_r.get('n_priced') if _ga_r.get('n_priced') is not none else '—' }}</td>
+            <td>{{ exret(_ga_r.get('dw_excess_60d')) }}</td>
+            <td class="sub">{{ exret(_ga_r.get('new_dw_excess_60d')) }} / {{ exret(_ga_r.get('add_dw_excess_60d')) }}</td>
+            <td class="num">{{ hit(_ga_r.get('hit_60d')) }}</td>
+          </tr>
+        {%- endfor -%}
+        </tbody>
+      </table>
+      <div class="hon-note" style="margin-top:8px">{{ t('Frozen study — one cohort, one quarter. See research/ for the full memo.','冻结研究——一个队列，一个季度。详见 research/ 中的完整备忘录。') }}</div>
+    {% else %}<p class="follow-empty">{{ t('Grade-A card not available this run.','本次未获A级成绩单。') }}</p>{% endif %}
+  </div>
+
+</div>{# /sm-2half #}
+
+<p class="disc" style="margin-top:14px">{{ t(
+  'Follow Desk — scan bounds: tracked funds only (n printed above), historical quarters in the store. 13F lag ~45 days. Scores are descriptive composites; not a forecast, not a buy signal.',
+  '跟随台——扫描范围：仅跟踪基金（样本量见上）及存储中的历史季度。13F约45天滞后。分数为描述性综合指标；非预测，非买入信号。'
+) }}</p>
+
+{% else %}{# no followability data #}
+<div class="sm-card"><p class="follow-empty">{{ t('Follow Desk not computed this build — follow, best-buys, and consensus boards will appear on the next successful run.','本次构建未计算跟随台——跟随、最佳买入及共识看板将在下次成功构建时出现。') }}</p></div>
+{% endif %}{# /followability #}
 
 {# ======================================================================== #}
 {# S2.5 CONSENSUS FLOW (v3)                                                  #}
