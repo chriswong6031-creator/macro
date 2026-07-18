@@ -454,6 +454,20 @@ def _stamp_context(
     except Exception as exc:  # noqa: BLE001
         log.debug("pick_lab ctx_stamp: snapshot cols error for %s (%s)", ticker, exc)
 
+    # B3 item 9: FX regime stamps — added BEFORE any early return so they appear
+    # in all fire rows regardless of close_panel availability (instrumentation only).
+    # None-safe and never fatal; NEVER feed candidate logic (PL-R10).
+    try:
+        from lib import forex_link as _fl
+        _sm = _fl.stance()
+        _dd = (_fl._read_latest().get("dollar_desk") or {}).get("smile_decomp") or {}
+        stamps["fx_regime_at_entry"] = _dd.get("regime") or None
+        stamps["usd_stance_at_entry"] = _sm.get("word_en") or None
+    except Exception as _fx_exc:  # noqa: BLE001
+        log.debug("pick_lab ctx_stamp: fx regime stamp error (%s)", _fx_exc)
+        stamps.setdefault("fx_regime_at_entry", None)
+        stamps.setdefault("usd_stance_at_entry", None)
+
     # ── Close-panel stamps (need price history) ───────────────────────────────
     if close_panel is None or close_panel.empty or ticker not in close_panel.columns:
         stamps["pct_gain_60d_low"] = None

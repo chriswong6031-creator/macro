@@ -1310,9 +1310,35 @@ def main() -> int:
 
     # the 10y Treasury's contemporaneous correlation TO the dollar (the forex Dollar
     # Desk's view; complements this page's bonds→dollar leg). Display-only; None if absent.
+    # B3: enrich usd_link with usd_dir + real-rate regime clause + per-asset effect/stability.
     try:
         from lib import forex_link
+        # F5: keep usd_link=None when asset_corr returns None; only enrich a non-None dict.
+        # Setting usd_link={} when corr is absent makes it truthy, so bonds.html.j2:257
+        # ({% if usd_link %} then usd_link.corr<0) hits Jinja Undefined and crashes the render.
         usd_link = forex_link.asset_corr("UST10")
+        if usd_link is not None:
+            # B3 n1: usd_dir holds the DIRECTION WORD from transmission.usd_dir
+            # ("strengthening"/"weakening"), not the stance sentence (which was wrong here).
+            # The stance sentence goes into stance_sentence_en/zh.
+            _tx_b = forex_link.transmission()
+            usd_link["usd_dir"] = (_tx_b.get("usd_dir") or None) if _tx_b else None
+            _stance = forex_link.stance()
+            usd_link["stance_sentence_en"] = _stance.get("sentence_en") or None if _stance else None
+            usd_link["stance_sentence_zh"] = _stance.get("sentence_zh") or None if _stance else None
+            # B3: real-rate regime (directly relevant to bonds; headwind/tailwind context)
+            try:
+                import json as _bj
+                from lib import config as _bcfg
+                _dd = (_bj.loads((_bcfg.data_dir() / "forex" / "latest.json").read_text()).get("dollar_desk") or {})
+                usd_link["real_rate_regime"] = _dd.get("real_rate_regime") or None
+            except Exception:  # noqa: BLE001
+                usd_link["real_rate_regime"] = None
+            # B3: per-asset effect/stability from transmission.assets
+            _ta = forex_link.transmission_asset("UST10")
+            if _ta:
+                usd_link["effect"] = _ta.get("effect")
+                usd_link["stability"] = _ta.get("stability")
     except Exception:  # noqa: BLE001 — additive, never fatal
         usd_link = None
 

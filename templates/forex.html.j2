@@ -14,7 +14,6 @@
 <title>Forex Vector — {{ as_of }}</title>
 {% set seo_title = 'Forex Vector — US Dollar Regime and FX Transmission | Mastermind' %}{% set seo_desc = 'An FX hub tracking the US dollar regime, major currency crosses and how currency moves transmit into equities and macro.' %}{% set seo_path = 'forex.html' %}
 {% include "_seo_head.html.j2" %}
-{% include '_plotly_head.html.j2' %}
 <style>
 :root{
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r1:{{C.r1}}; --r2:{{C.r2}}; --r3:{{C.r3}};
@@ -33,119 +32,97 @@ html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1.05fr .95fr}.cols-3{grid-template-columns:repeat(3,1fr)}
 @media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
-.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
 .board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(328px,1fr));gap:18px}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;transition:transform 150ms,box-shadow 150ms}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.07)}
+html[data-theme="dark"] .card:hover{box-shadow:0 6px 24px rgba(0,0,0,.28)}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
 .brand .gn{color:var(--blue)}
 .lead{color:var(--muted);font-size:14px;margin:0 0 20px}
-.hero-state{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:6px 0 6px}
-.hero-meta{font-size:14px;color:var(--text)}.hero-meta b{color:var(--ink)}
 .sub{font-size:13px;color:var(--muted)}.faint{color:var(--faint)}
 .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#eef1f6;color:var(--ink);margin:2px 4px 2px 0}
 html[data-theme="dark"] .pill{background:#222732}
-.pill.fav{background:rgba(40,95,255,.10);color:var(--blue)}
 .kpis{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px}
 .kpi{font-size:13px;color:var(--muted)}.kpi b{display:block;font-size:18px;color:var(--ink);font-weight:700}
 .flag{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;margin-top:10px}
 .flag.warn{background:rgba(245,173,66,.14);color:#9a6a10}
 .flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
-.cnh-basis{margin:10px 0;padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.5;background:#eef1f6}
-html[data-theme="dark"] .cnh-basis{background:#222732}
-.cnh-basis b{color:var(--ink)}
-.cnh-basis.s-outflow_stress{background:rgba(211,11,11,.12)}
-.cnh-basis.s-inflow{background:rgba(26,127,67,.12)}
-/* per-pair card */
-.pair-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.pair-name{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
-.pair-arch{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.quote{font-size:24px;font-weight:800;color:var(--ink)}
-.chg.up{color:var(--green)}.chg.dn{color:var(--red)}
-.verdict-box{margin:14px 0;padding:14px;border-radius:12px;background:#f6f8fc;border:1px solid var(--grid)}
-html[data-theme="dark"] .verdict-box{background:#11151c}
-.rc-head{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px}
-.chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.01em}
-.chip.sbuy,.chip.buy{background:rgba(26,127,67,.13);color:var(--green)}
-.chip.hold{background:#eef1f6;color:var(--muted)}
-.chip.sell,.chip.ssell{background:rgba(211,11,11,.12);color:var(--red)}
-.score-n{font-size:13px;color:var(--muted);margin-left:8px}
-.framing{font-size:12px;color:var(--faint);margin-top:8px;font-style:italic}
-/* factor breakdown */
-.fgrp{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px}
-.frow{display:grid;grid-template-columns:124px 1fr 58px;align-items:center;gap:10px;margin:5px 0;font-size:12.5px}
-.flabel{color:var(--text)}.fwt{color:var(--faint);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.vg{font-weight:700;margin-left:4px;font-size:12px}
-.vg.confirmed{color:var(--green)}.vg.inverted{color:var(--indigo)}.vg.directional{color:#9a6a10}.vg.context,.vg.unmeasured{color:var(--faint)}
-.calbadge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;margin-left:6px}
-.calbadge.on{background:rgba(26,127,67,.12);color:var(--green)}
-.calbadge.soft{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .calbadge.soft{background:#222732}
-.fbar{position:relative;height:14px;background:#eef1f6;border-radius:7px;overflow:hidden}
-html[data-theme="dark"] .fbar{background:#222732}
-.fbar .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--faint);opacity:.5}
-.fbar .fill{position:absolute;top:0;bottom:0}
-.fbar .fill.pos{background:var(--green);border-radius:0 7px 7px 0}
-.fbar .fill.neg{background:var(--red);border-radius:7px 0 0 7px}
-.carry-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--grid)}
-.mtf{margin-top:12px;padding-top:12px;border-top:1px solid var(--grid)}
-.mtf-row{display:grid;grid-template-columns:1.3fr 1fr 1fr .8fr .8fr;gap:6px;font-size:12px;padding:3px 0;align-items:center;font-variant-numeric:tabular-nums}
-.mtf-head{color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
-.mtf-grade{color:var(--blue);font-weight:700}
-.macd-up,.tr-up,.macd-pos{color:var(--green)}.macd-down,.tr-down,.macd-neg{color:var(--red)}
-.timeline{margin-top:6px}
-.tl-day{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
-.tl-ev{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--grid);font-size:13px}
-.tl-type{flex:none;min-width:62px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
-.tl-asset{flex:none;min-width:66px;color:var(--muted);font-size:12px}
-.tl-head{color:var(--text)}
-.tl-ev.is-hidden,.tl-day.is-hidden{display:none}
-.tl-more{margin-top:10px;border:1px solid var(--grid);background:var(--panel);color:var(--text);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
-.sev-high .tl-type{color:var(--red)}.sev-medium .tl-type{color:#9a6a10}.sev-info .tl-type{color:var(--muted)}
-table.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
-table.tbl th,table.tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);text-align:right}
-table.tbl th:first-child,table.tbl td:first-child{text-align:left}
-table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
-.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
-.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
-.note{font-size:13px;color:var(--muted);line-height:1.6}
-.note b{color:var(--ink)}
-/* ===================== Dollar Desk ===================== */
-.section-h{display:flex;align-items:baseline;gap:8px;margin:30px 0 4px;flex-wrap:wrap}
-.section-h .sn{color:var(--blue);font-weight:800;font-size:13px}
+/* ---- section heads ---- */
+.section-h{display:flex;align-items:baseline;gap:8px;margin:28px 0 10px;flex-wrap:wrap}
 .section-h h2{margin:0;font-size:15px;font-weight:800;color:var(--ink);text-transform:none;letter-spacing:-.01em}
+.section-h .eyebrow{color:var(--blue);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
 .section-h .sh-sub{font-size:12px;color:var(--muted);margin-left:2px}
-.desk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:14px}
-.desk-tile{background:#f6f8fc;border:1px solid var(--grid);border-radius:12px;padding:12px 13px}
-html[data-theme="dark"] .desk-tile{background:#11151c}
-.dt-lab{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.dt-val{font-size:16px;font-weight:800;color:var(--ink);margin:4px 0 2px;line-height:1.25}
-.dt-sub{font-size:11.5px;color:var(--muted);line-height:1.45}
-.lead-tag{display:inline-block;margin-top:7px;padding:2px 7px;border-radius:6px;font-size:9.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
-.lead-tag.coincident{background:rgba(245,173,66,.14);color:#9a6a10}
-.lead-tag.context{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .lead-tag.context{background:#222732}
-.dt-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
-.dt-chip.up,.dt-chip.supportive,.dt-chip.rich{background:rgba(26,127,67,.13);color:var(--green)}
-.dt-chip.down,.dt-chip.soft,.dt-chip.cheap{background:rgba(211,11,11,.12);color:var(--red)}
-.dt-chip.mixed,.dt-chip.neutral,.dt-chip.fair,.dt-chip.steady{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .dt-chip.mixed,html[data-theme="dark"] .dt-chip.neutral,html[data-theme="dark"] .dt-chip.fair,html[data-theme="dark"] .dt-chip.steady{background:#222732}
-.hstack{display:flex;gap:3px;margin-top:7px}
-.hbar{flex:1;height:20px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;line-height:1}
-.hbar small{font-size:8px;opacity:.85;font-weight:600}
-.hbar.up{background:var(--green)}.hbar.down{background:var(--red)}
-.desk-lean{display:inline-block;margin-top:2px;padding:5px 14px;border-radius:999px;font-size:14px;font-weight:800}
-.desk-lean.supportive{background:rgba(26,127,67,.13);color:var(--green)}
-.desk-lean.soft{background:rgba(211,11,11,.12);color:var(--red)}
-.desk-lean.mixed{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .desk-lean.mixed{background:#222732}
-.tr-flag{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:700;background:rgba(211,11,11,.12);color:var(--red)}
-/* transmission */
-.stab{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.stab.stable{background:var(--green)}.stab.flipping{background:var(--amber)}.stab.decoupled{background:var(--faint)}
-.eff.headwind{color:var(--red);font-weight:700}.eff.tailwind{color:var(--green);font-weight:700}.eff.neutral{color:var(--muted)}
-.tnote{font-size:11.5px;color:var(--muted);margin-top:3px}
-/* currency strength meter */
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+/* ---- HERO glass card ---- */
+.hero-glass{background:rgba(255,255,255,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--grid);border-radius:20px;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,.06)}
+html[data-theme="dark"] .hero-glass{background:rgba(24,27,33,.82);box-shadow:0 8px 32px rgba(0,0,0,.28)}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
+.hero-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
+.hero-state{font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:0 0 8px}
+.hero-state.tone-usd_up{color:#285FFF;text-shadow:0 0 32px rgba(40,95,255,.22),0 0 8px rgba(40,95,255,.13)}
+.hero-state.tone-usd_dn{color:#D30B0B;text-shadow:0 0 32px rgba(211,11,11,.22),0 0 8px rgba(211,11,11,.13)}
+.hero-state.tone-mixed{color:#C8A53B;text-shadow:0 0 32px rgba(200,165,59,.22),0 0 8px rgba(200,165,59,.13)}
+html[data-theme="dark"] .hero-state.tone-usd_up{text-shadow:0 0 32px rgba(40,95,255,.38),0 0 8px rgba(40,95,255,.22)}
+html[data-theme="dark"] .hero-state.tone-usd_dn{text-shadow:0 0 32px rgba(211,11,11,.38),0 0 8px rgba(211,11,11,.22)}
+html[data-theme="dark"] .hero-state.tone-mixed{text-shadow:0 0 32px rgba(200,165,59,.38),0 0 8px rgba(200,165,59,.22)}
+.stance-chip{display:inline-block;padding:4px 14px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.01em;margin:0 6px 0 0}
+.stance-chip.calm{background:#eef1f6;color:var(--muted)}
+html[data-theme="dark"] .stance-chip.calm{background:#222732}
+.stance-chip.watch{background:rgba(245,173,66,.16);color:#9a6a10}
+.stance-chip.alert{background:rgba(211,11,11,.13);color:var(--red);animation:pulse-alert 2.4s ease-in-out infinite}
+@keyframes pulse-alert{0%,100%{opacity:.75}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.stance-chip.alert{animation:none}.smile-dot{animation:none!important}.smile-path{animation:none!important}}
+.hero-sentence{font-size:15px;color:var(--muted);margin:8px 0 0;line-height:1.5}
+.hero-kpi-row{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px}
+.hkpi{font-size:12.5px;color:var(--muted)}.hkpi b{display:block;font-size:17px;color:var(--ink);font-weight:700}
+.hero-badge{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;margin-top:8px;margin-right:6px}
+.hero-badge.flash{background:rgba(245,173,66,.14);color:#9a6a10}
+.hero-badge.triple{background:rgba(211,11,11,.12);color:var(--red)}
+/* ---- dollar smile arc ---- */
+.smile-wrap{position:relative}
+.smile-svg{width:100%;overflow:visible}
+.smile-path{stroke-dasharray:500;stroke-dashoffset:500;animation:draw-smile 1s ease-out forwards}
+@keyframes draw-smile{to{stroke-dashoffset:0}}
+.smile-dot{animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.55;r:5}50%{opacity:1;r:6.5}}
+.smile-labels{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none}
+.smile-lbl{position:absolute;font-size:11.5px;font-weight:700;color:var(--text);line-height:1.2;white-space:nowrap}
+.smile-zone-line{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
+/* ---- sparkline SVG ---- */
+.spark-wrap{position:relative}
+.spark-svg{width:100%;display:block;overflow:visible}
+.spark-legend{display:flex;gap:12px;margin-top:4px;font-size:11px;color:var(--muted)}
+.spark-legend span{display:flex;align-items:center;gap:4px}
+.spark-legend i{display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle}
+/* ---- why tiles rack ---- */
+.why-rack{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px}
+@media(max-width:700px){.why-rack{grid-template-columns:repeat(2,1fr)}}
+.why-tile{background:var(--card);border:1px solid var(--grid);border-radius:12px;padding:12px 13px;cursor:default}
+.why-tile:hover .tip-pop{opacity:1;pointer-events:auto;transform:translateY(0)}
+.wt-lab{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.wt-state{font-size:15px;font-weight:800;color:var(--ink);margin:4px 0 2px}
+.wt-state.up{color:var(--green)}.wt-state.down{color:var(--red)}.wt-state.flat{color:var(--muted)}
+.wt-q{display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--r1);color:var(--blue);font-size:10px;font-weight:800;text-align:center;line-height:16px;vertical-align:middle;margin-left:4px;cursor:help}
+/* ---- tooltip system (B1.6) ---- */
+[data-tip-en],[data-tip-zh]{position:relative}
+.tip-pop{position:absolute;z-index:99;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%) translateY(4px);background:var(--ink);color:#fff;font-size:11.5px;line-height:1.5;border-radius:8px;padding:7px 11px;min-width:180px;max-width:280px;white-space:normal;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;box-shadow:0 4px 16px rgba(0,0,0,.22)}
+[data-tip-en]:hover .tip-pop,[data-tip-en]:focus .tip-pop,
+[data-tip-zh]:hover .tip-pop,[data-tip-zh]:focus .tip-pop{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+/* ---- §2 transmission ---- */
+.trans-table{width:100%;border-collapse:collapse}
+.trans-table td,.trans-table th{padding:8px 6px;border-bottom:1px solid var(--grid);font-size:13px;vertical-align:middle}
+.trans-table th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:2px solid var(--grid)}
+.eff-chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.eff-chip.headwind{background:rgba(211,11,11,.12);color:var(--red)}
+.eff-chip.tailwind{background:rgba(26,127,67,.12);color:var(--green)}
+.eff-chip.neutral{background:#eef1f6;color:var(--muted)}
+html[data-theme="dark"] .eff-chip.neutral{background:#222732}
+.str-bar{height:8px;border-radius:4px;background:var(--grid);overflow:hidden;width:80px;display:inline-block;vertical-align:middle}
+.str-bar .fill{height:100%;border-radius:4px;background:var(--indigo)}
+.unstable-tag{font-size:10.5px;color:var(--amber);font-weight:700;margin-left:5px}
+/* strength meter */
 .seg-toggle{display:inline-flex;gap:4px}
 .seg-btn{padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:600;color:var(--muted);background:#eef1f6;border:1px solid var(--grid);cursor:pointer}
 .seg-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
@@ -153,7 +130,6 @@ html[data-theme="dark"] .seg-btn{background:#222732}
 .smeter[hidden]{display:none}
 .srow{display:grid;grid-template-columns:72px 1fr 60px;align-items:center;gap:12px;margin:6px 0}
 .sccy{font-weight:800;color:var(--ink);font-size:13.5px}
-.sccy .em{font-size:9px;color:var(--amber);font-weight:700;margin-left:4px;vertical-align:middle}
 .sbar{position:relative;height:16px;background:#eef1f6;border-radius:8px;overflow:hidden}
 html[data-theme="dark"] .sbar{background:#222732}
 .sbar .smid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--faint);opacity:.6}
@@ -161,11 +137,59 @@ html[data-theme="dark"] .sbar{background:#222732}
 .sbar .sfill.pos{background:var(--green);border-radius:0 8px 8px 0}
 .sbar .sfill.neg{background:var(--red);border-radius:8px 0 0 8px}
 .spct{text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)}
-/* scorecards */
+/* ---- §3 stress watch ---- */
+.stress-dot-strip{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}
+.stress-dot-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text);position:relative;cursor:default}
+.sdot{width:10px;height:10px;border-radius:50%;flex:none}
+.sdot.quiet{background:var(--faint)}
+.sdot.building{background:var(--amber);animation:pulse-dot 1.8s ease-in-out infinite}
+.sdot.active{background:var(--red);animation:pulse-dot 1.2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:.5}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.sdot.building,.sdot.active{animation:none}}
+.stress-card-active{border-color:var(--red)!important}
+.stress-stance{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(211,11,11,.12);color:var(--red);margin-bottom:8px}
+.cnh-chip{display:inline-block;padding:4px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:8px}
+.cnh-chip.outflow{background:rgba(211,11,11,.12);color:var(--red)}
+.cnh-chip.inflow{background:rgba(26,127,67,.12);color:var(--green)}
+/* ---- §4 pairs ---- */
+.pair-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pair-name{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.pair-nick{font-size:12px;color:var(--muted);margin:2px 0 6px;line-height:1.4;font-style:italic}
+.quote{font-size:22px;font-weight:800;color:var(--ink)}
+.chg.up{color:var(--green)}.chg.dn{color:var(--red)}
+.action-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.01em;cursor:default}
+.action-chip.higher{background:rgba(26,127,67,.13);color:var(--green)}
+.action-chip.lower{background:rgba(211,11,11,.12);color:var(--red)}
+.action-chip.flat{background:#eef1f6;color:var(--muted)}
+html[data-theme="dark"] .action-chip.flat{background:#222732}
+.less-tested{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10.5px;font-weight:700;background:rgba(245,173,66,.14);color:#9a6a10;margin-left:6px}
+.pair-headline{font-size:14px;font-weight:600;color:var(--ink);margin:8px 0 6px;line-height:1.4}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.mini-chip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600}
+.mini-chip.carry{background:rgba(26,127,67,.10);color:var(--green)}
+.mini-chip.value-cheap{background:rgba(40,95,255,.10);color:var(--blue)}
+.mini-chip.value-rich{background:rgba(211,11,11,.10);color:var(--red)}
+.mini-chip.value-fair{background:#eef1f6;color:var(--muted)}
+html[data-theme="dark"] .mini-chip.value-fair{background:#222732}
+.mini-chip.mtf{background:rgba(69,89,220,.10);color:var(--indigo)}
+.factor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.factor-cell{font-size:11.5px;padding:5px 7px;border-radius:8px;background:#f6f8fc;border:1px solid var(--grid)}
+html[data-theme="dark"] .factor-cell{background:#11151c}
+.factor-cell .fc-label{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
+.factor-cell .fc-dir{font-size:15px;font-weight:800}
+.fc-dir.for{color:var(--green)}.fc-dir.against{color:var(--red)}.fc-dir.flat{color:var(--muted)}
+.peg-note{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(245,173,66,.14);color:#9a6a10;margin-top:6px}
+.cnh-basis{margin:8px 0;padding:7px 10px;border-radius:8px;font-size:12.5px;background:#eef1f6}
+html[data-theme="dark"] .cnh-basis{background:#222732}
+.cnh-basis.s-outflow_stress{background:rgba(211,11,11,.10)}
+.cnh-basis.s-inflow{background:rgba(26,127,67,.10)}
+/* ---- §5 scoreboard & recent ---- */
 .sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(305px,1fr));gap:16px;margin-top:6px}
 .sc-card{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:18px}
 .sc-name{font-size:16px;font-weight:800;color:var(--ink)}
-.sc-thesis{font-size:12px;color:var(--muted);margin:4px 0 10px;line-height:1.5}
+.sc-verdict{font-size:13px;color:var(--text);margin:4px 0 8px;line-height:1.5}
+.sc-tilt{font-size:12px;color:var(--muted);margin-top:6px}
+/* legacy scorecard support */
 .sc-met{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0}
 .sc-met .m{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
 .sc-met .m b{display:block;font-size:16px;color:var(--ink);font-weight:800;margin-top:2px}
@@ -173,30 +197,49 @@ html[data-theme="dark"] .sbar{background:#222732}
 .sc-split .sr{display:grid;grid-template-columns:54px 1fr 1fr 1fr;gap:6px;padding:3px 0;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
 .sc-split .sr.h{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.03em;border:none}
 .sc-pos{color:var(--green);font-weight:700}.sc-neg{color:var(--red);font-weight:700}
-.sc-tilt{font-size:11.5px;color:var(--muted);margin-top:8px}
-/* zh 红涨绿跌 directional colour flips */
+/* timeline */
+.timeline{margin-top:6px}
+.tl-day{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
+.tl-ev{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--grid);font-size:13px}
+.tl-type{flex:none;min-width:62px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.tl-asset{flex:none;min-width:66px;color:var(--muted);font-size:12px}
+.tl-head{color:var(--text)}
+.tl-ev.is-hidden,.tl-day.is-hidden{display:none}
+.tl-more{margin-top:10px;border:1px solid var(--grid);background:var(--card);color:var(--text);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
+.tl-more .lbl-close{display:none}
+.tl-more.open .lbl-open{display:none}
+.tl-more.open .lbl-close{display:inline}
+.sev-high .tl-type{color:var(--red)}.sev-medium .tl-type{color:#9a6a10}.sev-info .tl-type{color:var(--muted)}
+/* tables */
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+table.tbl th,table.tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);text-align:right}
+table.tbl th:first-child,table.tbl td:first-child{text-align:left}
+table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+/* footer */
+.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
+.honesty-note{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:8px}
+.meta-foot{font-size:11.5px;color:var(--faint);margin-top:8px}
+/* sparkline color by chg sign (EN: up=green, dn=red; ZH flipped below) */
+.sp-up{color:var(--green)}.sp-dn{color:var(--red)}
+/* zh 红涨绿跌 */
 html[data-lang="zh"] .chg.up{color:var(--red)}
 html[data-lang="zh"] .chg.dn{color:var(--green)}
-html[data-lang="zh"] .chip.sbuy,html[data-lang="zh"] .chip.buy{background:rgba(211,11,11,.13);color:var(--red)}
-html[data-lang="zh"] .chip.sell,html[data-lang="zh"] .chip.ssell{background:rgba(26,127,67,.12);color:var(--green)}
-html[data-lang="zh"] .fbar .fill.pos{background:var(--red)}
-html[data-lang="zh"] .fbar .fill.neg{background:var(--green)}
-html[data-lang="zh"] .macd-up,html[data-lang="zh"] .tr-up,html[data-lang="zh"] .macd-pos{color:var(--red)}
-html[data-lang="zh"] .macd-down,html[data-lang="zh"] .tr-down,html[data-lang="zh"] .macd-neg{color:var(--green)}
-html[data-lang="zh"] .dt-chip.up,html[data-lang="zh"] .dt-chip.supportive,html[data-lang="zh"] .dt-chip.rich{background:rgba(211,11,11,.13);color:var(--red)}
-html[data-lang="zh"] .dt-chip.down,html[data-lang="zh"] .dt-chip.soft,html[data-lang="zh"] .dt-chip.cheap{background:rgba(26,127,67,.12);color:var(--green)}
-html[data-lang="zh"] .hbar.up{background:var(--red)}
-html[data-lang="zh"] .hbar.down{background:var(--green)}
-html[data-lang="zh"] .desk-lean.supportive{background:rgba(211,11,11,.13);color:var(--red)}
-html[data-lang="zh"] .desk-lean.soft{background:rgba(26,127,67,.12);color:var(--green)}
-html[data-lang="zh"] .eff.headwind{color:var(--green)}
-html[data-lang="zh"] .eff.tailwind{color:var(--red)}
+html[data-lang="zh"] .action-chip.higher{background:rgba(211,11,11,.13);color:var(--red)}
+html[data-lang="zh"] .action-chip.lower{background:rgba(26,127,67,.12);color:var(--green)}
+html[data-lang="zh"] .eff-chip.headwind{background:rgba(26,127,67,.12);color:var(--green)}
+html[data-lang="zh"] .eff-chip.tailwind{background:rgba(211,11,11,.12);color:var(--red)}
 html[data-lang="zh"] .sbar .sfill.pos{background:var(--red)}
 html[data-lang="zh"] .sbar .sfill.neg{background:var(--green)}
 html[data-lang="zh"] .sc-pos{color:var(--red)}
 html[data-lang="zh"] .sc-neg{color:var(--green)}
-html[data-lang="zh"] .cnh-basis.s-outflow_stress{background:rgba(26,127,67,.12)}
-html[data-lang="zh"] .cnh-basis.s-inflow{background:rgba(211,11,11,.12)}
+html[data-lang="zh"] .wt-state.up{color:var(--red)}
+html[data-lang="zh"] .wt-state.down{color:var(--green)}
+html[data-lang="zh"] .fc-dir.for{color:var(--red)}
+html[data-lang="zh"] .fc-dir.against{color:var(--green)}
+html[data-lang="zh"] .cnh-basis.s-outflow_stress{background:rgba(26,127,67,.10)}
+html[data-lang="zh"] .cnh-basis.s-inflow{background:rgba(211,11,11,.10)}
+html[data-lang="zh"] .sp-up{color:var(--red)}
+html[data-lang="zh"] .sp-dn{color:var(--green)}
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
@@ -224,295 +267,434 @@ html[data-lang="zh"] .cnh-basis.s-inflow{background:rgba(211,11,11,.12)}
 
 <div class="wrap">
   <div class="brand">💱 Forex <span class="gn">Vector</span></div>
-  <p class="lead">{{ t('Dollar-first FX context. Each pair is scored after removing shared dollar beta, so the board is not one repeated USD trade. Context only, not trade calls.', '美元优先的外汇背景。每个货币对先剥离共同美元贝塔再评分，因此不是重复押注美元。仅作背景，非交易建议。') }}
-  <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
+  <p class="lead">
+    <span class="l-en">How the dollar is moving and what it's pushing on — context, not trade calls.</span>
+    <span class="l-zh">美元走势及其连锁影响 — 仅作背景，非交易建议。</span>
+  </p>
 
-  {# state-word -> (en, zh) maps for the desk chips #}
-  {% set LEAN = {'supportive': ('USD-supportive','偏多美元'), 'soft': ('USD-soft','偏空美元'), 'neutral': ('Neutral','中性')} %}
-  {% set POSST = {'crowded_long': ('Crowded long','拥挤做多'), 'crowded_short': ('Crowded short','拥挤做空'), 'neutral': ('Neutral','中性')} %}
-  {% set VALL = {'rich': ('Rich','偏贵'), 'cheap': ('Cheap','偏便宜'), 'fair': ('Fair','合理')} %}
-  {% set CONF = {'high': ('High','高'), 'medium': ('Medium','中'), 'low': ('Low','低'), 'none': ('None','无')} %}
+  {# =====================================================================
+     HERO — "The dollar today"
+     ===================================================================== #}
+  {% set _stonce = stance if stance else {} %}
+  {% set _tone = _stonce.get('tone', 'calm') if _stonce else 'calm' %}
+  {# infer hero tone from dollar direction for glow color #}
+  {% set _hero_tone = 'usd_up' if (dollar.dollar_dir or '') in ('strengthening','up') else ('usd_dn' if (dollar.dollar_dir or '') in ('weakening','down') else 'mixed') %}
 
-  <!-- ===================== §01 · DOLLAR DESK ===================== -->
-  <div class="section-h"><span class="sn">§01</span><h2>{{ t('Dollar Desk — the master variable', '美元桌 · 主控变量') }}</h2>
-    <span class="sh-sub">{{ t('the dollar sets the backdrop for FX and risk assets', '美元为外汇与风险资产设定背景') }}</span></div>
-  <div class="grid cols-2" style="margin-bottom:14px">
-    <div class="card">
-      <h2>{{ t('Broad-dollar master · the dollar smile', '广义美元主控 · 美元微笑') }}</h2>
-      <div class="hero-state" style="color:{{ dollar.color }}">{{ t(dollar.regime, dollar.regime_zh) }}</div>
-      <div class="hero-meta">
-        {{ t('US dollar', '美元') }} <b>{{ t(dollar.dollar_dir, dollar.dollar_dir_zh) }}</b>
-        <span class="faint">({{ dollar.roc }}% / 63d)</span> ·
-        {{ t('risk', '风险') }} <b>{{ t(dollar.risk_word, dollar.risk_word_zh) }}</b>
-        <span class="faint">({{ dollar.risk_off }})</span>
-      </div>
-      {% if desk and desk.lean %}
-      {% set lc = 'supportive' if 'supportive' in desk.lean else ('soft' if 'soft' in desk.lean else 'mixed') %}
-      <div style="margin-top:10px"><span class="desk-lean {{ lc }}">{{ t(desk.lean, desk.lean_zh) }}</span>
-        <span class="sub faint" style="margin-left:6px">{{ t('context summary, not a score', '背景汇总，非评分') }}</span></div>
-      {% endif %}
-      <div style="margin-top:12px">
-        {% if dollar.favored %}<span class="sub">{{ t('Favored:', '受青睐：') }}</span>
-        {% for f in dollar.favored %}<span class="pill fav">{{ f }}</span>{% endfor %}
-        {% else %}<span class="sub faint">{{ t('No clear tailwind.', '无明显顺风。') }}</span>{% endif %}
-      </div>
-      <div class="kpis">
-        <div class="kpi">{{ t('Broad USD', '广义美元') }}<b>{{ dollar.broad }}</b></div>
-        <div class="kpi">DXY<b>{{ dollar.dxy }}</b></div>
-        <div class="kpi">{{ t('Advanced leg', '发达经济体') }}<b>{{ dollar.afe }}</b></div>
-        <div class="kpi">{{ t('EM leg', '新兴经济体') }}<b>{{ dollar.eme }}</b></div>
-      </div>
-      {% if dollar.dollar_day %}<span class="flag warn">⚑ {{ t('Dollar day — broad-$ move dominates; per-pair confidence is haircut.', '美元日 — 广义美元波动主导；各货币对信心已折减。') }}</span>{% endif %}
-      {% if desk and desk.smile and desk.smile.triple_red %}<span class="tr-flag">⚑ {{ t('Triple-red — USD, equities & Treasuries falling together: the dollar is NOT acting as a haven.', '三红 — 美元、股票与国债同步下跌：美元未发挥避险作用。') }}</span>{% endif %}
-      <div class="sub" style="margin-top:12px">{{ t('Dollar smile: USD can rise on US strength or global stress, and soften in calm synchronized growth.', '美元微笑：美元可因美国强势或全球压力而走强，在平静同步增长中走软。') }}</div>
-    </div>
-    <div class="card">
-      <h2>{{ t('Broad dollar & risk-off composite', '广义美元与避险综合') }}</h2>
-      {{ dollar.chart | safe }}
-      {% if real_rate_chart %}<div style="margin-top:8px">{{ real_rate_chart | safe }}</div>
-      <div class="sub faint">{{ t('US 10y real yield is the dollar anchor; coincident, not a forecast.', '美国10年实际收益率是美元锚；同步关系，非预测。') }}</div>{% endif %}
-    </div>
-  </div>
-
-  {% if desk %}
-  <div class="card" style="margin-bottom:18px">
-    <h2>{{ t('Dollar signal stack', '美元信号栈') }} <span class="faint">· {{ t('context only', '仅作背景') }}</span></h2>
-    <div class="desk-grid">
-      {% if desk.real_rate %}{% set r = desk.real_rate %}
-      <div class="desk-tile">
-        <div class="dt-lab">{{ t('Real-rate regime', '实际利率格局') }}</div>
-        <div class="dt-val">{{ t(r.regime, r.regime_zh) }}</div>
-        <div class="dt-sub">{{ t('10y real', '10年实际') }} <b>{{ r.real_yield }}%</b>{% if r.breakeven %} · {{ t('breakeven', '盈亏平衡') }} {{ r.breakeven }}%{% endif %}
-          · <span class="dt-chip {{ r.lean }}">{{ t(LEAN[r.lean][0], LEAN[r.lean][1]) }}</span></div>
-        <span class="lead-tag coincident">{{ t('coincident', '同步') }}</span>
-      </div>{% endif %}
-
-      {% if desk.fed_path %}{% set f = desk.fed_path %}
-      <div class="desk-tile">
-        <div class="dt-lab">{{ t('Fed policy path (US leg)', '美联储路径（美国端）') }}</div>
-        <div class="dt-val">{{ '%+g'|format(f.path_bps) }}bp <span style="font-size:11px;font-weight:600;color:var(--muted)">{{ t('priced to 12m', '12个月定价') }}</span></div>
-        <div class="dt-sub">{{ f.near_rate }}% → {{ f.far_rate }}% · <span class="dt-chip {{ 'up' if f.lean=='hawkish_repricing' else ('down' if f.lean=='dovish_repricing' else 'steady') }}">{{ t(f.lean_label, f.lean_zh) }}</span></div>
-        <span class="lead-tag coincident">{{ t('coincident', '同步') }}</span>
-      </div>{% endif %}
-
-      {% if desk.positioning %}{% set p = desk.positioning %}
-      <div class="desk-tile">
-        <div class="dt-lab">{{ t('USD positioning (COT)', '美元持仓（COT）') }}</div>
-        <div class="dt-val">{{ p.pctile|round|int }}<span style="font-size:11px">{{ t('th pctile', '百分位') }}</span></div>
-        <div class="dt-sub"><span class="dt-chip {{ 'up' if p.state=='crowded_long' else ('down' if p.state=='crowded_short' else 'neutral') }}">{{ t(POSST[p.state][0], POSST[p.state][1]) }}</span>{% if p.net_pct_oi is not none %} · {{ t('spec net', '投机净') }} {{ p.net_pct_oi }}% OI{% endif %}</div>
-        <span class="lead-tag context">{{ t('context · unmeasured', '背景 · 未测') }}</span>
-      </div>{% endif %}
-
-      {% if desk.valuation %}{% set v = desk.valuation %}
-      <div class="desk-tile">
-        <div class="dt-lab">{{ t('Valuation (REER)', '估值（REER）') }}</div>
-        <div class="dt-val">{{ '%+.1f'|format(v.gap_pct) }}% <span style="font-size:11px;font-weight:600;color:var(--muted)">{{ t('vs 5y mean', '相对5年均值') }}</span></div>
-        <div class="dt-sub"><span class="dt-chip {{ v.label }}">{{ t(VALL[v.label][0], VALL[v.label][1]) }}</span>{% if v.stretched %} · <b>{{ t('stretched', '偏离') }}</b>{% endif %}
-          {% if v.verdict %}<span class="vg {{ v.verdict|lower }}" title="Split-half forward-IC verdict for the dollar REER value factor (scripts.calibrate_forex). {{ v.verdict }}{% if v.ic_full is not none %} · IC {{ '%+.3f'|format(v.ic_full) }}{% endif %}{% if v.verdict == 'CONFIRMED' and not v.promotable %} — but fails the deflated-Sharpe gate, so display-only{% endif %}">{{ {'CONFIRMED':'✓','INVERTED':'⇄','DIRECTIONAL':'~','CONTEXT':'·','UNMEASURED':'–'}.get(v.verdict,'') }}</span>{% endif %}</div>
-        <span class="lead-tag context">{{ t('context · multi-year', '背景 · 多年') }}{% if v.verdict == 'CONFIRMED' %} · {{ t('forward-IC confirmed', '远期IC已确认') }}{% endif %}</span>
-      </div>{% endif %}
-
-      {% if desk.trend %}{% set trd = desk.trend %}
-      <div class="desk-tile">
-        <div class="dt-lab">{{ t('Trend stack (broad USD)', '趋势栈（广义美元）') }}</div>
-        <div class="dt-val">{{ trd.n_up }}/{{ trd.n_tot }} <span style="font-size:11px;font-weight:600;color:var(--muted)">{{ t('horizons up', '周期上行') }}</span></div>
-        <div class="hstack">{% for h in trd.horizons %}<div class="hbar {{ 'up' if h.up else 'down' }}">{{ h.d }}d<small>{{ '%+.1f'|format(h.roc_pct) }}%</small></div>{% endfor %}</div>
-        <span class="lead-tag context">{{ t('context · breadth', '背景 · 广度') }}</span>
-      </div>{% endif %}
-
-      {% if desk.liquidity %}{% set l = desk.liquidity %}
-      <div class="desk-tile">
-        <div class="dt-lab">{{ t('USD liquidity', '美元流动性') }}</div>
-        <div class="dt-val">{{ '%+g'|format(l.net_chg_bn) }}B <span style="font-size:11px;font-weight:600;color:var(--muted)">/ {{ l.window_d }}d</span></div>
-        <div class="dt-sub">{{ t('net Fed liquidity (WALCL−RRP)', '净美联储流动性（WALCL−RRP）') }} · <span class="dt-chip {{ l.dir }}">{{ t(LEAN[l.dir][0], LEAN[l.dir][1]) }}</span></div>
-        <span class="lead-tag context">{{ t('context · slow', '背景 · 缓慢') }}</span>
-      </div>{% endif %}
-
-      {% if desk.smile %}{% set s = desk.smile %}
-      <div class="desk-tile">
-        <div class="dt-lab">{{ t('Smile confirmation', '微笑确认') }}</div>
-        <div class="dt-val">{{ t(CONF[s.confidence][0], CONF[s.confidence][1]) }} <span style="font-size:11px;font-weight:600;color:var(--muted)">· {{ s.n_confirm }}/3 {{ t('legs', '项') }}</span></div>
-        <div class="dt-sub">{% if s.confirms %}{{ t('confirmed by', '确认于') }} {{ s.confirms|join(', ') }}{% else %}{{ t('no corroborating legs', '无佐证项') }}{% endif %}</div>
-        <span class="lead-tag coincident">{{ t('coincident', '同步') }}</span>
-      </div>{% endif %}
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ===================== §1.5 · FX STRESS & REGIME RADAR ===================== -->
-  {% if regime and regime.scenarios %}
-  <div class="section-h"><span class="sn">§1.5</span><h2>{{ t('FX Stress & Regime Radar', 'FX压力与格局雷达') }}</h2>
-    <span class="sh-sub">{{ t('currency speed + levels mapped to named stress setups', '货币速度与水平映射到压力情景') }}</span></div>
-  <div style="margin:2px 0 12px"><span class="lead-tag coincident">{{ t('coincident', '同步') }}</span>
-    <span class="lead-tag context">{{ t('empirical base rate · display-only / never scored', '经验基率 · 仅供展示/从不评分') }}</span>
-    {% if regime.dominant %}<span class="sub" style="margin-left:8px">{{ t('Dominant now:', '当前主导：') }}
-      <b>{% for s in regime.scenarios if s.key == regime.dominant %}{{ t(s.name_en, s.name_zh) }}{% endfor %}</b></span>
-    {% else %}<span class="sub faint" style="margin-left:8px">{{ t('No scenario active — currency moves are not configured like a known stress regime today.', '当前无激活情景 — 货币走势未呈现已知压力格局。') }}</span>{% endif %}
-  </div>
-  <div class="board-grid">
-  {% for s in regime.scenarios %}
-    {% set p = s.prob %}
-    {% set ic = (C.red if s.intensity_today >= 65 else (C.amber if s.intensity_today >= 40 else C.muted)) %}
-    <div class="card"{% if s.key == regime.dominant %} style="border-color:{{ C.red }}"{% endif %}>
-      <div class="pair-head">
-        <div>
-          <div class="pair-name" style="font-size:16px">{{ t(s.name_en, s.name_zh) }}</div>
-          <div class="pair-arch">{{ s.n_fired }}/{{ s.min_legs }}+ {{ t('legs firing', '腿触发') }}
-            {% if s.active %}· <span style="color:var(--red);font-weight:800">{{ t('ACTIVE', '激活') }}</span>{% endif %}
-            {% if s.key == regime.dominant %}· {{ t('dominant', '主导') }}{% endif %}</div>
+  <div class="hero-glass">
+    <div class="hero-grid">
+      {# Left: state + stance + KPIs #}
+      <div>
+        <div class="hero-eyebrow">{{ t('FOREX · ' ~ as_of, 'FOREX · ' ~ as_of) }}</div>
+        <div class="hero-state tone-{{ _hero_tone }}">
+          <span class="l-en">{{ _stonce.get('headline_en', dollar.regime) }}</span>
+          <span class="l-zh">{{ _stonce.get('headline_zh', dollar.regime_zh) }}</span>
         </div>
-        <div style="text-align:right">
-          <div class="hero-state" style="font-size:30px;color:{{ ic }}">{{ s.intensity_today|round|int }}<span style="font-size:12px;color:var(--muted)">/100</span></div>
-          <div class="sub faint">{{ t('stress intensity', '压力强度') }}</div>
+        <div style="margin:8px 0 0">
+          <span class="stance-chip {{ _tone }}">
+            <span class="l-en">{{ _stonce.get('word_en', 'Watch — don\'t chase') }}</span>
+            <span class="l-zh">{{ _stonce.get('word_zh', '观望，别追') }}</span>
+          </span>
         </div>
+        <p class="hero-sentence">
+          <span class="l-en">{{ _stonce.get('sentence_en', 'The dollar is quiet today.') }}</span>
+          <span class="l-zh">{{ _stonce.get('sentence_zh', '美元今日平静。') }}</span>
+        </p>
+        <div class="hero-kpi-row">
+          <div class="hkpi">{{ t('Broad USD', '广义美元') }}<b>{{ dollar.broad or '—' }}</b></div>
+          <div class="hkpi">DXY<b class="nb-px" data-sym="DX-Y.NYB" data-mkt="fx">{{ dollar.dxy or '—' }}</b></div>
+          <div class="hkpi">{{ t('63d move', '63日走势') }}<b>{{ (dollar.roc or 0)|round(1) }}%</b></div>
+          <div class="hkpi">{{ t('Risk mood', '风险情绪') }}<b>{{ t(dollar.risk_word, dollar.risk_word_zh) }}</b></div>
+        </div>
+        {% if dollar.dollar_day %}<span class="hero-badge flash">⚡ {{ t('Unusually big dollar move today', '美元今日异常大幅波动') }}</span>{% endif %}
+        {% if desk and desk.triple_red %}<span class="hero-badge triple">⚑ {{ t('Dollar not acting as a safe haven today', '美元今日未发挥避险作用') }}</span>{% endif %}
       </div>
 
-      {# probability block — past-tense empirical frequency, status-aware #}
-      <div class="verdict-box" style="margin:12px 0">
-        <div class="fgrp" style="margin-top:0">{{ t('Forward analogue from history', '历史远期类比') }}</div>
-        {% if p.status == 'ok' %}
-        {% set pc = (p.p_cond * 100)|round|int %}{% set br = (p.base_rate * 100)|round|int %}
-        <div class="sub">{{ t(
-          'On the %d days at least this stressed, %d%% saw the adverse move within %dd — vs a %d%% base rate.'|format(p.n_raw, pc, p.N, br),
-          '在%d个至少同等压力的历史日中，%d%%在%d天内出现不利走势 — 而无条件基率为%d%%。'|format(p.n_raw, pc, p.N, br)) }}</div>
-        <div class="sub faint" style="margin-top:5px">95% CI {{ (p.wilson_lo*100)|round|int }}–{{ (p.wilson_hi*100)|round|int }}%
-          · n={{ p.n_raw }} (n<sub>eff</sub>≈{{ p.n_eff|round(1) }}) · {{ t('lift', '提升') }} {{ '%+.0f'|format(p.abs_lift*100) }}pp
-          {% if p.ci_separated %}· <span style="color:var(--green)">{{ t('CIs separate', '区间分离') }}</span>{% else %}· {{ t('CIs overlap — lift not robust', '区间重叠 — 提升不稳健') }}{% endif %}</div>
-        {% elif p.status == 'insufficient' %}
-        <div class="sub faint">{{ t('Insufficient history at this stress level', '此压力水平历史样本不足') }} (n={{ p.n_raw }}, n<sub>eff</sub>≈{{ p.n_eff|round(1) }}).</div>
-        {% elif p.status == 'unprecedented' %}
-        <div class="sub faint">{{ t('Unprecedented in the available record', '可得历史中前所未见') }} (n={{ p.n_raw }}).</div>
-        {% else %}
-        <div class="sub faint">{{ t('Building — warm-up window not yet complete.', '积累中 — 预热窗口尚未完成。') }}</div>
+      {# Right: Dollar Smile arc + sparkline #}
+      <div>
+        {# Smile x mapping (B1.4): regime → x position in [0,1] #}
+        {% set _smile_x_map = {
+          'US growth premium': 0.13,
+          'US-specific stress': 0.34,
+          'Global reflation': 0.50,
+          'Neutral': 0.50,
+          'Risk-off haven bid': 0.87
+        } %}
+        {% set _sx = _smile_x_map.get(dollar.regime, 0.50) %}
+        {# U-shaped smile: P0=(0,20) CP=(220,190) P2=(440,20) in 440×210 viewBox
+           x(t)=440t, so t=_sx; y(t)=20+340*t*(1-t) #}
+        {% set _sw = 440 %}{% set _sh = 210 %}
+        {% set _t = _sx %}
+        {% set _dot_x = _t * _sw %}
+        {% set _dot_y = 20 + 340 * _t * (1 - _t) %}
+        <div class="smile-wrap" style="min-height:{{ _sh }}px;padding:18px 14px 24px">
+          <svg class="smile-svg" viewBox="0 0 {{ _sw }} {{ _sh }}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            {# U-shaped smile curve — quadratic bezier, endpoints top, vertex bottom #}
+            <path class="smile-path" d="M 0 20 Q 220 190 440 20"
+              fill="none" stroke="{{ C.indigo }}" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+            {# Zone endpoint dots: left (US boom, top-left), center (calm, bottom), right (world stress, top-right) #}
+            <circle cx="0" cy="20" r="5" fill="{{ C.blue }}" opacity="0.6"/>
+            <circle cx="220" cy="105" r="5" fill="{{ C.green }}" opacity="0.6"/>
+            <circle cx="440" cy="20" r="5" fill="{{ C.red }}" opacity="0.6"/>
+            {# State dot with breathing animation — sits ON the curve #}
+            <circle class="smile-dot" cx="{{ _dot_x|round(1) }}" cy="{{ _dot_y|round(1) }}"
+              r="7" fill="{{ C.indigo }}"
+              filter="drop-shadow(0 0 6px {{ C.indigo }}88)"/>
+          </svg>
+          {# Zone labels as absolute-positioned HTML overlays (NOT svg text — LETHAL) #}
+          <div class="smile-labels">
+            <div class="smile-lbl" style="left:14px;top:2px">
+              <span class="l-en">US booming</span><span class="l-zh">美国强势</span></div>
+            <div class="smile-lbl" style="left:50%;bottom:4px;transform:translateX(-50%);text-align:center">
+              <span class="l-en">Calm growth</span><span class="l-zh">平静增长</span></div>
+            <div class="smile-lbl" style="right:14px;top:2px;text-align:right">
+              <span class="l-en">World stressed</span><span class="l-zh">全球避险</span></div>
+          </div>
+        </div>
+        <div class="smile-zone-line">
+          {{ t('Why the dollar is here: ', '美元处于此位置的原因：') }}
+          <b><span class="l-en">{{ dollar.zone_en or dollar.regime }}</span><span class="l-zh">{{ dollar.zone_zh or dollar.regime_zh }}</span></b>
+        </div>
+
+        {# Dollar sparkline (126d, rebased 100) + risk-off series #}
+        {# F2: real polyline from hero_spark float arrays #}
+        {% set _hs = dollar.hero_spark if dollar and dollar.hero_spark else {} %}
+        {% if _hs and _hs.dollar_pts %}
+        <div class="spark-wrap" style="margin-top:12px">
+          <svg class="spark-svg" viewBox="0 0 {{ _hs.w or 440 }} {{ _hs.h or 60 }}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            {# riskoff as faint 1.5px line behind the dollar line #}
+            {% if _hs.riskoff_pts %}
+            <polyline points="{{ _hs.riskoff_pts }}" fill="none" stroke="{{ C.muted }}" stroke-width="1.5" opacity="0.45" stroke-linejoin="round" stroke-linecap="round"/>
+            {% endif %}
+            {# dollar line: 2px indigo #}
+            <polyline points="{{ _hs.dollar_pts }}" fill="none" stroke="{{ C.indigo }}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+          <div class="spark-legend">
+            <span><i style="background:{{ C.indigo }}"></i> {{ t('Broad USD', '广义美元') }}</span>
+            <span><i style="background:{{ C.muted }};opacity:.5"></i> {{ t('Risk-off', '避险') }}</span>
+          </div>
+        </div>
         {% endif %}
-        {% if p.base_rate is not none %}<div class="sub faint" style="margin-top:3px">{{ t('Defining outcome', '界定结果') }}: {{ t('adverse move over', '不利走势于') }} {{ p.N }}{{ t('d', '天') }}{% if p.i0_pctile is not none %} · {{ t('today’s stress is at the', '当前压力处于') }} {{ (p.i0_pctile*100)|round|int }}{{ t('th %ile of history', '历史百分位') }}{% endif %}.</div>{% endif %}
-        {% if s.illustrative %}<div class="sub faint" style="margin-top:3px">⚑ {{ t('Managed-regime / intervention truncates the distribution — illustrative only.', '受管理体制/干预会截断分布 — 仅供示意。') }}</div>{% endif %}
       </div>
-
-      {# leg readout — velocity + level + cross-currency + risk-driver #}
-      <div class="fgrp">{{ t('What’s firing', '触发因素') }}</div>
-      {% for leg in s.fired_legs %}
-      <div class="frow">
-        <span class="flabel">{{ t(leg.en, leg.zh) }}</span>
-        {% if leg.value is not none %}{{ fbar(leg.value) }}{% else %}<div class="fbar"><span class="mid"></span></div>{% endif %}
-        <span class="fwt">{% if leg.absent %}<span class="faint">n/a</span>{% elif leg.fired %}<span style="color:var(--red)">●</span>{% else %}<span class="faint">○</span>{% endif %}</span>
-      </div>
-      {% endfor %}
-      <div class="framing" style="margin-top:8px">{{ t(s.disc_en, s.disc_zh) }}</div>
     </div>
-  {% endfor %}
+
+    {# Why tiles rack (4 tiles) #}
+    {% if desk %}
+    <div class="why-rack">
+      {# Tile 1: Real rates — plain words (P4: "Restrictive..." → "High real rates") #}
+      {% set _rr = desk.real_rate or {} %}
+      {% if _rr.get('regime') %}
+        {% set _rr_raw = _rr.regime %}
+        {% if 'Restrictive' in _rr_raw or 'Rising' in _rr_raw %}
+          {% set _rr_en = 'High real rates' %}{% set _rr_zh = '实际利率偏高' %}
+        {% elif 'Easy' in _rr_raw or 'Falling' in _rr_raw %}
+          {% set _rr_en = 'Low real rates' %}{% set _rr_zh = '实际利率偏低' %}
+        {% else %}
+          {% set _rr_en = 'Real rates stable' %}{% set _rr_zh = '实际利率平稳' %}
+        {% endif %}
+      {% else %}
+        {% set _rr_en = '—' %}{% set _rr_zh = '—' %}
+      {% endif %}
+      <div class="why-tile" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="wt-lab">{{ t('Real rates', '实际利率') }}</div>
+        <div class="wt-state {{ 'up' if _rr.get('lean') == 'supportive' else ('down' if _rr.get('lean') == 'soft' else 'flat') }}">
+          <span class="l-en">{{ _rr_en }}</span><span class="l-zh">{{ _rr_zh }}</span>
+        </div>
+        <div class="tip-pop">
+          <div class="l-en">{{ _rr.get('regime', '—') }} — 10y real yield: {{ _rr.get('real_yield', '—') }}%{% if desk.fed_path %} · Fed path {{ desk.fed_path.get('path_bps', 0)|round|int }}bp priced to 12m{% endif %}{% if desk.positioning %} · Futures-market positioning {{ desk.positioning.get('state', '—').replace('_',' ') }}{% endif %}</div>
+          <div class="l-zh">{{ _rr.get('regime_zh', _rr.get('regime', '—')) }} — 10年实际收益率：{{ _rr.get('real_yield', '—') }}%{% if desk.fed_path %} · 美联储路径12个月定价{{ desk.fed_path.get('path_bps', 0)|round|int }}bp{% endif %}{% if desk.positioning %} · 期货市场持仓{{ desk.positioning.get('state', '').replace('crowded_long','拥挤做多').replace('crowded_short','拥挤做空').replace('neutral','中性') }}{% endif %}</div>
+        </div>
+      </div>
+      {# Tile 2: Trend — plain words from n_up/4 map (P4) #}
+      {% set _trd = desk.trend or {} %}
+      {% set _nup = _trd.get('n_up') %}
+      {% set _ntot = _trd.get('n_tot', 4) %}
+      {% if _nup is not none %}
+        {% if _nup == 4 %}{% set _trd_en = 'Rising on all horizons' %}{% set _trd_zh = '全线上行' %}
+        {% elif _nup == 3 %}{% set _trd_en = 'Mostly rising' %}{% set _trd_zh = '大多上行' %}
+        {% elif _nup == 2 %}{% set _trd_en = 'Mixed' %}{% set _trd_zh = '涨跌互现' %}
+        {% elif _nup == 1 %}{% set _trd_en = 'Mostly falling' %}{% set _trd_zh = '大多下行' %}
+        {% else %}{% set _trd_en = 'Falling on all horizons' %}{% set _trd_zh = '全线下行' %}
+        {% endif %}
+      {% else %}{% set _trd_en = '—' %}{% set _trd_zh = '—' %}{% endif %}
+      <div class="why-tile" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="wt-lab">{{ t('Trend', '趋势') }}</div>
+        <div class="wt-state {{ 'up' if (_nup or 0) >= 3 else ('down' if (_nup is not none and _nup <= 1) else 'flat') }}">
+          <span class="l-en">{{ _trd_en }}</span><span class="l-zh">{{ _trd_zh }}</span>
+        </div>
+        <div class="tip-pop">
+          <div class="l-en">{{ _nup or '—' }}/{{ _ntot }} trend horizons up. Broad-dollar trailing momentum at multiple lookbacks.</div>
+          <div class="l-zh">{{ _nup or '—' }}/{{ _ntot }}个趋势周期上行。广义美元多周期追踪动量。</div>
+        </div>
+      </div>
+      {# Tile 3: Value (REER) #}
+      {% set _va = desk.valuation or {} %}
+      <div class="why-tile" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="wt-lab">{{ t('Value', '估值') }}</div>
+        <div class="wt-state {{ 'down' if _va.get('label') == 'rich' else ('up' if _va.get('label') == 'cheap' else 'flat') }}">
+          {% if _va.get('label') == 'rich' %}{{ t('Rich vs history', '偏贵') }}
+          {% elif _va.get('label') == 'cheap' %}{{ t('Cheap vs history', '偏低') }}
+          {% elif _va.get('label') == 'fair' %}{{ t('Fair', '合理') }}
+          {% else %}{{ t('—', '—') }}{% endif %}
+        </div>
+        <div class="tip-pop">
+          <div class="l-en">REER gap {% if _va.get('gap_pct') is not none %}{{ '%+.1f'|format(_va.gap_pct) }}% vs 5y mean{% else %}unavailable{% endif %}. Rich = dollar stretched above fair value, historically mean-reverts slowly.</div>
+          <div class="l-zh">REER偏离{% if _va.get('gap_pct') is not none %}{{ '%+.1f'|format(_va.gap_pct) }}%（相对5年均值）{% else %}暂无数据{% endif %}。偏贵=美元高于公允价值，历史上缓慢回归。</div>
+        </div>
+      </div>
+      {# Tile 4: Liquidity — "Draining"→"Tightening" amber/neutral (P4) #}
+      {% set _lq = desk.liquidity or {} %}
+      <div class="why-tile" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="wt-lab">{{ t('Liquidity', '流动性') }}</div>
+        <div class="wt-state {{ 'up' if _lq.get('dir') == 'supportive' else 'flat' }}">
+          {% if _lq.get('dir') == 'supportive' %}{{ t('Adding', '净投放') }}
+          {% elif _lq.get('dir') in ('soft', 'draining') %}{{ t('Tightening', '净收紧') }}
+          {% elif _lq.get('dir') %}{{ t('Neutral', '中性') }}
+          {% else %}{{ t('—', '—') }}{% endif %}
+        </div>
+        <div class="tip-pop">
+          <div class="l-en">Net Fed liquidity falling — tends to support the dollar.{% if _lq.get('net_chg_bn') is not none %} Net change: {{ '%+g'|format(_lq.net_chg_bn) }}B / {{ _lq.get('window_d', '?') }}d.{% endif %}</div>
+          <div class="l-zh">美联储净流动性下降 — 往往支撑美元。{% if _lq.get('net_chg_bn') is not none %}净变化：{{ '%+g'|format(_lq.net_chg_bn) }}B / {{ _lq.get('window_d', '?') }}天。{% endif %}</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
 
-  {# per-currency move kinematics — literal move + velocity + acceleration #}
-  {% if kinematics and kinematics.rows %}
-  <div class="card" style="margin-top:18px">
-    <h2>{{ t('Currency move kinematics', '货币走势动力学') }} <span class="faint">· {{ t('literal move + velocity + acceleration', '实际走势 + 速度 + 加速度') }}</span></h2>
-    <table class="tbl">
-      <thead><tr>
-        <th>{{ t('Currency', '货币') }}</th>
-        <th>1d</th><th>5d</th><th>20d</th>
-        <th>{{ t('Velocity', '速度') }}</th>
-        <th>{{ t('Accel', '加速') }}</th>
-        <th>{{ t('Vol %ile', '波动百分位') }}</th>
-        <th>{{ t('Ex-$ 5d', '去美元5d') }}</th>
-        <th>{{ t('State', '状态') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for r in kinematics.rows %}
+  {# =====================================================================
+     §2 — What the dollar is pushing on
+     ===================================================================== #}
+  {% if transmission and transmission.rows %}
+  <div class="section-h">
+    <h2>{{ t('Dollar ripple effects', '美元连锁影响') }}</h2>
+  </div>
+  <p class="sub" style="margin:0 0 12px">{{ t('Moves together day to day — context, not a forecast.', '日内联动 — 背景参考，非预测。') }}</p>
+  <div class="card">
+    <table class="trans-table">
+      <thead>
         <tr>
-          <td><b>{{ r.ccy }}</b> <span class="faint">{{ t(r.label_en, r.label_zh) if r.label_en != r.ccy else '' }}</span></td>
-          <td class="{{ 'chg up' if (r.lit_1d_pct or 0) >= 0 else 'chg dn' }}">{{ '%+.1f'|format(r.lit_1d_pct) if r.lit_1d_pct is not none else '—' }}</td>
-          <td class="{{ 'chg up' if (r.lit_5d_pct or 0) >= 0 else 'chg dn' }}">{{ '%+.1f'|format(r.lit_5d_pct) if r.lit_5d_pct is not none else '—' }}</td>
-          <td class="{{ 'chg up' if (r.lit_20d_pct or 0) >= 0 else 'chg dn' }}">{{ '%+.1f'|format(r.lit_20d_pct) if r.lit_20d_pct is not none else '—' }}</td>
-          <td>{{ '%+.1f'|format(r.vel_z) if r.vel_z is not none else '—' }}</td>
-          <td>{{ '%+.1f'|format(r.accel_z) if r.accel_z is not none else '—' }}</td>
-          <td>{{ (r.rvol_pctile*100)|round|int if r.rvol_pctile is not none else '—' }}</td>
-          <td class="{{ 'chg up' if (r.resid_5d_pct or 0) >= 0 else 'chg dn' }}">{{ '%+.1f'|format(r.resid_5d_pct) if r.resid_5d_pct is not none else '—' }}</td>
-          <td>{{ t(r.state_en, r.state_zh) }}</td>
+          <th style="text-align:left">{{ t('Asset', '资产') }}</th>
+          <th>{{ t('If USD rises', '若美元上涨') }}</th>
+          <th>{{ t('Strength', '联动强度') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in transmission.rows %}
+        <tr>
+          <td style="font-weight:700;color:var(--ink)">
+            {# Plain asset names (B1.5) #}
+            {% set _anames = {'SPY': ('US stocks','美股'), 'EEM': ('EM stocks','新兴市场股票'),
+              'GC=F': ('Gold','黄金'), 'CL=F': ('Oil','原油'), 'HG=F': ('Copper','铜'),
+              'UST10': ('US bonds (10y)','美债(10年)'), 'BTC': ('Bitcoin','比特币')} %}
+            {% set _an = _anames.get(r.key, (r.label, r.get('label_zh', r.label))) %}
+            <span class="l-en">{{ _an[0] }}</span><span class="l-zh">{{ _an[1] }}</span>
+            {% if r.unstable %}<span class="unstable-tag">{{ t('less reliable lately', '近期不稳定') }}</span>{% endif %}
+          </td>
+          <td>
+            {% set _eff = r.effect or 'neutral' %}
+            <span class="eff-chip {{ _eff }}" tabindex="0"
+              data-tip-en="." data-tip-zh=".">
+              {% if _eff == 'headwind' %}{{ t('Leaning on it', '压制中') }}
+              {% elif _eff == 'tailwind' %}{{ t('Giving it a lift', '提振中') }}
+              {% else %}{{ t('Not linked now', '暂无联动') }}{% endif %}
+              <div class="tip-pop">
+                {# D7: plain EN tip — map stability enums to plain words #}
+                {% set _stab_en = {'stable':'steady','flipping':'flipping','decoupled':'decoupled'} %}
+                <div class="l-en">Moves together over {{ transmission.fast_d }} days: {{ '%+.2f'|format(r.corr_fast) if r.corr_fast is not none else '—' }} ({{ transmission.slow_d }} days: {{ '%+.2f'|format(r.corr_slow) if r.corr_slow is not none else '—' }}) · link: {{ _stab_en.get(r.stability, r.stability or '—') }}</div>
+                <div class="l-zh">{{ transmission.fast_d }}日相关：{{ '%+.2f'|format(r.corr_fast) if r.corr_fast is not none else '—' }} · {{ transmission.slow_d }}日：{{ '%+.2f'|format(r.corr_slow) if r.corr_slow is not none else '—' }} · 稳定性：{{ {'stable':'稳定','flipping':'翻转','decoupled':'脱钩'}.get(r.stability, r.stability or '—') }}</div>
+              </div>
+            </span>
+          </td>
+          <td>
+            <div class="str-bar" aria-hidden="true">
+              <div class="fill" style="width:{{ ((r.corr_fast or 0)|abs * 100)|round(0)|int }}%"></div>
+            </div>
+          </td>
+          <td></td>
         </tr>
       {% endfor %}
       </tbody>
     </table>
-    <div class="sub faint" style="margin-top:8px">{{ t('Literal % move (1/5/20d, vs USD), velocity = recent speed in σ-units, acceleration = change in velocity, realized-vol percentile, and the idiosyncratic (ex-dollar residual) 5d move. COINCIDENT and DESCRIPTIVE — a read of how fast each currency is moving, never a forecast or a buy list.', '实际百分比走势（1/5/20天，对美元）、速度=近端走势的σ单位、加速度=速度变化、实现波动率百分位，以及特异（剔除美元残差）的5天走势。同步且描述性 — 衡量每种货币移动速度，绝非预测或买入清单。') }}</div>
   </div>
-  {% endif %}
-  {% endif %}
 
-  <!-- ===================== §02 · DOLLAR TRANSMISSION ===================== -->
-  {% if transmission and transmission.rows %}
-  <div class="section-h"><span class="sn">§02</span><h2>{{ t('Dollar transmission — what a stronger/weaker USD pushes on', '美元传导 · 美元强弱推动了什么') }}</h2>
-    <span class="sh-sub">{{ t('contemporaneous co-movement, not a forecast', '同步共动，非预测') }}</span></div>
-  <div class="grid cols-2">
-    <div class="card">
-      <h2>{{ t('Cross-asset co-movement with the broad dollar', '与广义美元的跨资产共动') }}</h2>
-      <p class="sub" style="margin:2px 0 8px"><b>{{ t(transmission.read, transmission.read_zh) }}</b></p>
-      <table class="tbl">
-        <thead><tr>
-          <th>{{ t('Asset', '资产') }}</th>
-          <th>{{ transmission.fast_d }}d {{ t('corr', '相关') }}</th>
-          <th>{{ transmission.slow_d }}d</th>
-          <th>{{ t('If USD ↑', '若美元↑') }}</th>
-          <th>{{ t('Stability', '稳定性') }}</th>
-        </tr></thead>
-        <tbody>
-        {% for r in transmission.rows %}
-          <tr>
-            <td>{{ t(r.label, r.label_zh) }}{% if r.real_corr is defined %}<br><span class="tnote">{{ t('real-rate leg', '实际利率项') }} {{ '%+.2f'|format(r.real_corr) }} {{ t('vs Δreal-yield', '对Δ实际收益率') }}</span>{% endif %}{% if r.regime_split is defined %}<br><span class="tnote">{{ t('calm', '平静') }} {{ r.regime_split.get('calm','—') }} · {{ t('stress', '压力') }} {{ r.regime_split.get('stress','—') }}</span>{% endif %}</td>
-            <td>{{ '%+.2f'|format(r.corr_fast) if r.corr_fast is not none else '—' }}</td>
-            <td>{{ '%+.2f'|format(r.corr_slow) if r.corr_slow is not none else '—' }}</td>
-            <td><span class="eff {{ r.effect }}">{% if r.effect=='headwind' %}{{ t('headwind', '逆风') }}{% elif r.effect=='tailwind' %}{{ t('tailwind', '顺风') }}{% else %}{{ t('decoupled', '脱钩') }}{% endif %}</span></td>
-            <td><span class="stab {{ r.stability }}"></span>{% if r.stability=='stable' %}{{ t('stable', '稳定') }}{% elif r.stability=='flipping' %}{{ t('flipping', '翻转') }}{% else %}{{ t('decoupled', '脱钩') }}{% endif %}</td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h2>{{ t('Correlation to the broad dollar', '与广义美元的相关性') }} <span class="faint">· {{ transmission.fast_d }}d</span></h2>
-      {{ transmission.chart | safe }}
-      <div class="sub faint" style="margin-top:8px">{{ t('CONTEMPORANEOUS co-movement, not causation or a forecast. Dollar↔asset betas are regime-dependent and unstable — sign flips happen (the dollar move is often the same risk/tightening impulse). "If USD ↑" reads off today\'s sign and can reverse. The EM channel has a slow (~1–1.5y) financial-conditions lead in the literature; everything in this grid is daily and coincident.', '同步共动，非因果或预测。美元与各资产的贝塔随格局变化且不稳定 — 符号会翻转（美元波动往往就是同一个风险/紧缩脉冲）。"若美元↑"读取的是当前符号，可能反转。文献中新兴市场渠道存在约1–1.5年的金融条件领先；本表均为日频同步关系。') }}</div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ===================== §03 · CURRENCY STRENGTH METER ===================== -->
+  {# Currencies now — strength meter (collapsed sub-strip) #}
   {% if strength and strength.horizons %}
-  <div class="section-h"><span class="sn">§03</span><h2>{{ t('Currency strength meter', '货币强弱计') }}</h2>
-    <span class="sh-sub">{{ t('which currencies lead, independent of any single pair — descriptive trend, not a buy list', '哪些货币领先，独立于任一货币对 — 描述性趋势，非买入清单') }}</span></div>
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <h2 style="margin:0">{{ t('Trailing strength vs the average currency', '相对平均货币的近端强弱') }}</h2>
-      <div class="seg-toggle" id="strength-toggle">
+  <details style="margin-top:12px">
+    <summary style="cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px">
+      <span>▸</span> {{ t('Currencies now — relative strength', '当前货币强弱') }}
+      <div class="seg-toggle" id="strength-toggle" style="margin-left:auto" onclick="event.stopPropagation()">
         {% for hk in strength.order %}<button class="seg-btn {{ 'on' if hk==strength.default else '' }}" data-h="{{ hk }}">{{ hk }}</button>{% endfor %}
       </div>
+    </summary>
+    <div class="card" style="margin-top:8px">
+      {% for hk, rows in strength.horizons.items() %}
+      <div class="smeter" data-h="{{ hk }}" {% if hk != strength.default %}hidden{% endif %}>
+        {% for r in rows %}
+        <div class="srow">
+          <div class="sccy">{{ r.ccy }}</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill {{ 'pos' if r.strength>=0 else 'neg' }}" style="width:{{ (r.strength*50)|abs|round(1) }}%;{{ 'left:50%' if r.strength>=0 else 'right:50%' }}"></span></div>
+          <div class="spct">{{ '%+.1f'|format(r.vs_usd_pct) }}%</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      <div class="sub faint" style="margin-top:6px">{{ t('Trailing strength vs average currency. Green does not mean buy.', '相对平均货币的近端强弱。绿色不代表买入。') }}</div>
     </div>
-    {% for hk, rows in strength.horizons.items() %}
-    <div class="smeter" data-h="{{ hk }}" {% if hk != strength.default %}hidden{% endif %}>
-      {% for r in rows %}
-      <div class="srow">
-        <div class="sccy">{{ r.ccy }}{% if r.em %}<span class="em" title="EM / managed">{{ t('EM', '新兴') }}</span>{% endif %}</div>
-        <div class="sbar"><span class="smid"></span><span class="sfill {{ 'pos' if r.strength>=0 else 'neg' }}" style="width:{{ (r.strength*50)|abs|round(1) }}%;{{ 'left:50%' if r.strength>=0 else 'right:50%' }}"></span></div>
-        <div class="spct">{{ '%+.1f'|format(r.vs_usd_pct) }}%</div>
+  </details>
+  {% endif %}
+  {% endif %}
+
+  {# =====================================================================
+     §3 — Stress watch
+     ===================================================================== #}
+  {% if regime and regime.scenarios %}
+  <div class="section-h">
+    <h2>{{ t('Stress watch', '风险预警') }}</h2>
+  </div>
+  {% set _active_scns = regime.scenarios | selectattr('active') | list %}
+  {% set _building_scns = regime.scenarios | selectattr('intensity_today', 'ge', 40) | list %}
+
+  {% if not _active_scns %}
+  {# Quiet state — dot strip #}
+  <div class="card">
+    <p class="sub" style="margin:0 0 12px">{{ t('Nothing flashing — six stress patterns quiet.', '暂无预警 — 六种压力情景均平静。') }}</p>
+    <div class="stress-dot-strip">
+      {% for s in regime.scenarios %}
+      {% set _ds = 'active' if s.active else ('building' if s.intensity_today >= 40 else 'quiet') %}
+      {# Plain scenario names (B1.5) #}
+      {% set _sn_map = {
+        'carry_unwind': ('Carry-trade unwind','套息平仓'),
+        'dollar_wrecking_ball': ('Dollar squeeze','美元挤压'),
+        'em_crisis_capital_flight': ('EM outflows','新兴市场资金外流'),
+        'haven_flight_risk_off': ('Flight to safety','避险出逃'),
+        'reflation_risk_on': ('Risk-on rally','风险偏好回升'),
+        'intervention_risk': ('Intervention watch','干预关注')
+      } %}
+      {% set _sn = _sn_map.get(s.key, (s.name_en, s.name_zh)) %}
+      <div class="stress-dot-item" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <span class="sdot {{ _ds }}"></span>
+        <span><span class="l-en">{{ _sn[0] }}</span><span class="l-zh">{{ _sn[1] }}</span></span>
+        <div class="tip-pop">
+          {% set _p = s.prob or {} %}
+          {% if _p.status == 'ok' %}
+          {# D10: when rounded rate is 0, render "fewer than 1 in 10"/「不到一成」 #}
+          {% set _rate_n = (_p.p_cond * 10)|round|int if _p.p_cond is not none else none %}
+          {% set _rate_en = 'fewer than 1 in 10' if (_rate_n is not none and _rate_n == 0) else ('≈' ~ _rate_n ~ ' in 10' if _rate_n is not none else '?') %}
+          {% set _rate_zh = '不到一成' if (_rate_n is not none and _rate_n == 0) else ('约' ~ _rate_n ~ '/10' if _rate_n is not none else '?') %}
+          <div class="l-en">{{ _sn[0] }}: intensity {{ s.intensity_today|round|int }}%. In {{ _p.n_raw or 0 }} similar past days, {{ _rate_en }} saw the adverse move within {{ _p.N or '?' }}d (history is thin — wide uncertainty).{% if s.illustrative %} Pattern illustrative — managed market.{% endif %}</div>
+          <div class="l-zh">{{ _sn[1] }}：强度{{ s.intensity_today|round|int }}%。在{{ _p.n_raw or 0 }}个类似历史日中，{{ _rate_zh }}在{{ _p.N or '?' }}天内出现不利走势（历史样本薄，不确定性宽）。{% if s.illustrative %} 情景示意 — 受管理市场。{% endif %}</div>
+          {% else %}
+          <div class="l-en">{{ _sn[0] }}: intensity {{ s.intensity_today|round|int }}%. Insufficient past cases to estimate frequency.</div>
+          <div class="l-zh">{{ _sn[1] }}：强度{{ s.intensity_today|round|int }}%。历史案例不足，无法估计频率。</div>
+          {% endif %}
+        </div>
       </div>
       {% endfor %}
     </div>
-    {% endfor %}
-    <div class="sub faint" style="margin-top:8px">{{ t('Trailing strength vs other currencies and vs USD. Descriptive trend only; green does not mean buy.', '相对其他货币与美元的近端强弱。仅描述趋势；绿色不代表买入。') }}</div>
+    {# CNH basis chip when non-neutral #}
+    {% set _cnh_df = pairs | selectattr('key', 'eq', 'USDCNH') | first | default(none) %}
+    {% if _cnh_df and _cnh_df.cnh_state and _cnh_df.cnh_state != 'neutral' %}
+    <div class="cnh-chip {{ 'outflow' if _cnh_df.cnh_state == 'outflow_stress' else 'inflow' }}">
+      {% if _cnh_df.cnh_state == 'outflow_stress' %}
+        {{ t('Money pressure out of China: ' ~ (_cnh_df.cnh_basis|string) ~ ' bps offshore gap',
+             '资金流出中国压力：离岸价差 ' ~ (_cnh_df.cnh_basis|string) ~ ' 个基点') }}
+      {% else %}
+        {{ t('Money flowing into China: ' ~ (_cnh_df.cnh_basis|string) ~ ' bps offshore gap',
+             '资金流入中国：离岸价差 ' ~ (_cnh_df.cnh_basis|string) ~ ' 个基点') }}
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  {# Active state — expanded cards #}
+  <div class="board-grid">
+  {% for s in regime.scenarios %}
+  {% set _ds = 'active' if s.active else ('building' if s.intensity_today >= 40 else 'quiet') %}
+  {% set _sn_map = {
+    'carry_unwind': ('Carry-trade unwind','套息平仓'),
+    'dollar_wrecking_ball': ('Dollar squeeze','美元挤压'),
+    'em_crisis_capital_flight': ('EM outflows','新兴市场资金外流'),
+    'haven_flight_risk_off': ('Flight to safety','避险出逃'),
+    'reflation_risk_on': ('Risk-on rally','风险偏好回升'),
+    'intervention_risk': ('Intervention watch','干预关注')
+  } %}
+  {% set _sn = _sn_map.get(s.key, (s.name_en, s.name_zh)) %}
+  <div class="card {{ 'stress-card-active' if s.active else '' }}">
+    <div class="pair-head">
+      <div>
+        <span class="sdot {{ _ds }}" style="display:inline-block;margin-right:6px;vertical-align:middle"></span>
+        <span style="font-size:16px;font-weight:800;color:var(--ink)"><span class="l-en">{{ _sn[0] }}</span><span class="l-zh">{{ _sn[1] }}</span></span>
+      </div>
+      <div style="text-align:right;font-size:22px;font-weight:800;color:{{ C.red if s.intensity_today >= 65 else (C.amber if s.intensity_today >= 40 else C.muted) }}">
+        {{ s.intensity_today|round|int }}<span style="font-size:11px;color:var(--muted)">/100</span>
+      </div>
+    </div>
+    {% if s.active %}
+    <div style="margin:8px 0"><span class="stress-stance">{{ t('Get ready', '做好准备') }}</span></div>
+    {% endif %}
+    {% set _p = s.prob or {} %}
+    {% if _p.status == 'ok' %}
+    {# D10: when rounded rate is 0, render "fewer than 1 in 10"/「不到一成」 #}
+    {% set _rate_n2 = (_p.p_cond * 10)|round|int if _p.p_cond is not none else none %}
+    {% set _rate_en2 = 'fewer than 1 in 10' if (_rate_n2 is not none and _rate_n2 == 0) else ('≈' ~ _rate_n2 ~ ' in 10' if _rate_n2 is not none else '?') %}
+    {% set _rate_zh2 = '不到一成' if (_rate_n2 is not none and _rate_n2 == 0) else ('约' ~ _rate_n2 ~ '/10' if _rate_n2 is not none else '?') %}
+    <p class="sub" style="margin:8px 0">
+      <span class="l-en">In {{ _p.n_raw or 0 }} similar past days, {{ _rate_en2 }} saw the adverse move within {{ _p.N or '?' }}d (history is thin — wide uncertainty).</span>
+      <span class="l-zh">在{{ _p.n_raw or 0 }}个类似历史日中，{{ _rate_zh2 }}在{{ _p.N or '?' }}天内出现不利走势（历史样本薄，不确定性宽）。</span>
+    </p>
+    {% endif %}
+    {% if s.illustrative %}
+    <p class="sub faint" style="margin:4px 0">{{ t('Pattern illustrative — managed market.', '情景示意 — 受管理市场。') }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
   </div>
   {% endif %}
+  {% endif %}
 
-  <!-- ===================== §04 · PER-PAIR SIGNAL BOARD ===================== -->
-  <div class="section-h"><span class="sn">§04</span><h2>{{ t('Currency board — idiosyncratic (ex-dollar) signals', '货币面板 · 特异（剥离美元）信号') }}</h2>
-    <span class="sh-sub">{{ t('each pair scored on its move AFTER stripping the shared dollar beta — the only calibrated, scored leg', '每个货币对在剥离共同美元贝塔后评分 — 唯一经校准、参与评分的部分') }}</span></div>
+  {# =====================================================================
+     §4 — The pairs
+     ===================================================================== #}
+  <div class="section-h">
+    <h2>{{ t('The pairs', '货币对') }}</h2>
+    {# D6: subtitle #}
+    <span class="sh-sub"><span class="l-en">Leans are context, not trade calls.</span><span class="l-zh">倾向仅作背景，非交易建议。</span></span>
+  </div>
+  {# Pair nicknames (B1.5) #}
+  {% set _nick_map = {
+    'EURUSD': ("The world's most traded pair", '全球交易量最大货币对'),
+    'USDJPY': ('The funding currency — moves fast in panics', '融资货币 — 恐慌时波动剧烈'),
+    'GBPUSD': ('UK rates and fiscal mood', '英国利率与财政情绪'),
+    'USDCHF': ('The quiet haven', '低调避险'),
+    'AUDUSD': ('The China-growth barometer', '中国增长晴雨表'),
+    'USDCAD': ('The oil currency', '石油货币'),
+    'USDCNH': ('Beijing-managed — watched for stress', '北京管理 — 关注压力信号'),
+    'USDMXN': ('High-carry EM bellwether', '高息新兴市场风向标'),
+    'USDBRL': ('Commodity-linked carry', '商品挂钩套息')
+  } %}
+  {# Group labels #}
+  {% set _group_labels = {
+    'major': ('The majors', '主要货币对'),
+    'commodity-dollar': ('Commodity currencies', '商品货币'),
+    'haven-funder': ('Safe havens', '避险货币'),
+    'em': ('Emerging markets', '新兴市场')
+  } %}
   {% for sec in sections %}
-  <div class="sec-head">{{ t(sec.label, sec.zh) }} <span class="faint">· {{ sec.pairs|length }}</span></div>
+  {% set _gk = 'em' if sec.label == 'Emerging markets' else ('commodity-dollar' if 'Commodity' in sec.label else ('haven-funder' if 'Haven' in sec.label else 'major')) %}
+  {% set _gl = _group_labels.get(_gk, (sec.label, sec.zh)) %}
+  <div class="sec-head">
+    <span class="l-en">{{ _gl[0] }}</span><span class="l-zh">{{ _gl[1] }}</span>
+    <span class="faint"> · {{ sec.pairs|length }}</span>
+  </div>
   <div class="board-grid">
   {% for p in sec.pairs %}{% set c = p.conviction %}
     <div class="card">
       <div class="pair-head">
         <div>
           <div class="pair-name">{{ t(p.label, p.zh) }}</div>
-          <div class="pair-arch">{{ t(p.arch, p.arch_zh) }} · {{ t('signal on', '信号针对') }} {{ p.base }}</div>
+          {# Nickname line (replaces arch line) #}
+          {% set _nick = _nick_map.get(p.key, (p.arch, p.arch_zh)) %}
+          <div class="pair-nick"><em><span class="l-en">{{ _nick[0] }}</span><span class="l-zh">{{ _nick[1] }}</span></em></div>
         </div>
         <div style="text-align:right">
           <div class="quote nb-px" data-sym="{{ p.key }}=X" data-mkt="fx">{{ p.quote }}</div>
@@ -520,194 +702,272 @@ html[data-lang="zh"] .cnh-basis.s-inflow{background:rgba(211,11,11,.12)}
         </div>
       </div>
 
+      {# Plain action chip + less-tested tag #}
       {% if c %}
-      <div class="verdict-box">
-        <div class="rc-head"><span class="l-en">{{ c.headline }}</span><span class="l-zh">{{ c.headline_zh }}</span></div>
-        <span class="chip {{ c.action_css }}">{{ t(c.action, c.action_zh) }}</span>
-        <span class="score-n">{{ t('score', '评分') }} {{ '%+.0f'|format(c.score) }} · {{ t('confidence', '信心') }} {{ '%.0f'|format(c.confidence*100) }}%</span>
-        {% if c.reliable %}<span class="calbadge on" title="≥2 factors held sign in both halves">{{ t('measured', '已校准') }}</span>
-        {% elif c.calibrated %}<span class="calbadge soft" title="weights measured but <2 robust factors; confidence dampened">{{ t('measured signs · dampened', '已测符号 · 折减') }}</span>{% endif %}
-        <div class="sub" style="margin-top:8px"><span class="l-en">{{ c.sub }}</span><span class="l-zh">{{ c.sub_zh }}</span></div>
-        {% if c.peg %}<span class="flag warn">⚑ <span class="l-en">{{ c.peg.note[0] }}</span><span class="l-zh">{{ c.peg.note[1] }}</span></span>{% endif %}
-        <div class="framing"><span class="l-en">{{ c.framing }}</span><span class="l-zh">{{ c.framing_zh }}</span></div>
+      {% set _action_css = 'higher' if c.action in ('STRONG LONG','LONG') else ('lower' if c.action in ('SHORT','STRONG SHORT') else 'flat') %}
+      {% set _action_en = 'Leaning higher' if c.action in ('STRONG LONG','LONG') else ('Leaning lower' if c.action in ('SHORT','STRONG SHORT') else 'No clear lean') %}
+      {% set _action_zh = '倾向走高' if c.action in ('STRONG LONG','LONG') else ('倾向走低' if c.action in ('SHORT','STRONG SHORT') else '无明显倾向') %}
+      <div style="margin:8px 0">
+        <span class="action-chip {{ _action_css }}" tabindex="0" data-tip-en="." data-tip-zh=".">
+          <span class="l-en">{{ _action_en }}</span><span class="l-zh">{{ _action_zh }}</span>
+          <div class="tip-pop">
+            <div class="l-en">Model lean {{ c.score|round|int }} of ±100, confidence {{ (c.confidence*100)|round|int }}% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向{{ c.score|round|int }}（±100范围），信心{{ (c.confidence*100)|round|int }}% — 基于历史数据测算，仅作背景。</div>
+          </div>
+        </span>
+        {% if not (c.reliable | default(false)) %}<span class="less-tested"><span class="l-en">less tested</span><span class="l-zh">检验不足</span></span>{% endif %}
       </div>
 
-      {% for gname, rows in c.factors|groupby('group') %}
-        <div class="fgrp">{{ t(gname, tr(gname)) }}</div>
-        {% for r in rows %}
-        <div class="frow">
-          <span class="flabel">{{ t(r.label, r.label_zh) }}</span>
-          {{ fbar(r.value) }}
-          <span class="fwt">×{{ '%.2f'|format(r.weight) }}{% if r.verdict %}<span class="vg {{ r.verdict.split()[0]|lower }}" title="{{ r.verdict }}">{{ {'CONFIRMED':'✓','INVERTED':'⇄','DIRECTIONAL':'~','CONTEXT':'·','UNMEASURED':'–'}.get(r.verdict,'') }}</span>{% endif %}</span>
-        </div>
-        {% endfor %}
-      {% endfor %}
-      {% else %}
-      <div class="sub faint" style="margin:14px 0">{{ t('Conviction unavailable (insufficient data).', '暂无信心评分（数据不足）。') }}</div>
       {% endif %}
 
+      {# SVG sparkline (126d) — F2: real polyline from spark_pts; color by 1mo chg sign #}
+      {% if p.spark_pts %}
+      {% set _sp_cls = 'sp-up' if (p.chg or 0) >= 0 else 'sp-dn' %}
+      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="{{ _sp_cls }}">
+        <polyline points="{{ p.spark_pts }}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      {% endif %}
+
+      {# Compact chips row: carry, value, MTF grade #}
+      {% if c %}
+      <div class="chip-row">
+        {# carry chip (if available and not context) #}
+        {% if not p.carry_context and p.carry_diff is not none %}
+          {# D1: drop the manual '+' sign — '%+.1f' already carries the sign; double-plus was a bug #}
+          <span class="mini-chip carry" tabindex="0" data-tip-en="." data-tip-zh=".">
+            {{ t('Paid to hold: ' ~ '%+.1f'|format(p.carry_diff) ~ '%/yr',
+                 '持有有息：' ~ '%+.1f'|format(p.carry_diff) ~ '%/年') }}
+            <div class="tip-pop">
+              <div class="l-en">Interest-rate edge (carry): {{ '%+.2f'|format(p.carry_diff) }}% annualised. Carry/vol: {{ p.carry_to_vol or '—' }}.</div>
+              <div class="l-zh">利差优势（套息）：{{ '%+.2f'|format(p.carry_diff) }}%年化。套息/波动：{{ p.carry_to_vol or '—' }}。</div>
+            </div>
+          </span>
+        {% endif %}
+        {# value chip from REER gap #}
+        {% if p.reer_gap is not none %}
+          {% set _val_class = 'value-cheap' if p.reer_gap < -5 else ('value-rich' if p.reer_gap > 5 else 'value-fair') %}
+          {% set _val_en = 'Cheap vs history' if p.reer_gap < -5 else ('Rich' if p.reer_gap > 5 else 'Fair') %}
+          {% set _val_zh = '相对历史偏低' if p.reer_gap < -5 else ('偏高' if p.reer_gap > 5 else '合理') %}
+          <span class="mini-chip {{ _val_class }}" tabindex="0" data-tip-en="." data-tip-zh=".">
+            <span class="l-en">{{ _val_en }}</span><span class="l-zh">{{ _val_zh }}</span>
+            <div class="tip-pop">
+              <div class="l-en">Cheap or rich vs 5y REER history: {{ '%+.1f'|format(p.reer_gap) }}% gap.</div>
+              <div class="l-zh">相对5年REER历史的估值偏离：{{ '%+.1f'|format(p.reer_gap) }}%。</div>
+            </div>
+          </span>
+        {% endif %}
+        {# MTF grade #}
+        {% if p.verdict and p.verdict.grade %}
+          {# D3: map raw grade enums to sentence-case plain words for the chip label #}
+          {% set _grade_plain = {
+            'CAUTION': 'Caution', 'AVOID': 'Avoid',
+            'BUY-THE-DIP': 'Buy the dip', 'TREND-FOLLOW': 'Follow the trend'
+          } %}
+          {% set _grade_display = _grade_plain.get(p.verdict.grade, p.verdict.grade) %}
+          <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
+            <span class="l-en">{{ _grade_display }}</span><span class="l-zh">{{ p.verdict.grade_zh or p.verdict.grade }}</span>
+            <div class="tip-pop">
+              <div class="l-en">Multi-timeframe grade: {{ p.verdict.grade }}{% if p.verdict.headline %} — {{ p.verdict.headline }}{% endif %}. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：{{ p.verdict.grade_zh or p.verdict.grade }}{% if p.verdict.headline_zh %} — {{ p.verdict.headline_zh }}{% endif %}。仅为技术择时叠加，非经收益验证。</div>
+            </div>
+          </span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# CNH basis line on the CNH card #}
       {% if p.cnh_basis is not none %}
       <div class="cnh-basis s-{{ p.cnh_state or 'neutral' }}">
         <b>{{ t('Offshore–onshore CNH basis', '离岸–在岸人民币基差') }}:</b> {{ '%+.0f'|format(p.cnh_basis) }} bps —
-        {% if p.cnh_state == 'outflow_stress' %}{{ t('offshore yuan notably weaker than the onshore fix — depreciation / capital-outflow pressure.', '离岸人民币明显弱于在岸中间价 — 贬值/资金外流压力。') }}
-        {% elif p.cnh_state == 'inflow' %}{{ t('offshore yuan stronger than onshore — inflow / risk-on.', '离岸人民币强于在岸 — 资金流入/偏好风险。') }}
+        {% if p.cnh_state == 'outflow_stress' %}{{ t('offshore yuan notably weaker than the onshore fix.', '离岸人民币明显弱于在岸中间价。') }}
+        {% elif p.cnh_state == 'inflow' %}{{ t('offshore yuan stronger than onshore — inflow signal.', '离岸人民币强于在岸 — 资金流入信号。') }}
         {% else %}{{ t('broadly aligned with the onshore fix.', '与在岸中间价大体一致。') }}{% endif %}
       </div>
       {% endif %}
 
-      <div class="carry-row">
-        <div class="kpi">{{ t('Carry (rate diff)', '套息（利差）') }}<b>{% if p.carry_context %}—{% else %}{{ '%+.2f'|format(p.carry_diff) }}%{% endif %}</b></div>
-        <div class="kpi">{{ t('Carry / vol', '套息/波动') }}<b>{% if p.carry_context %}—{% else %}{{ p.carry_to_vol }}{% endif %}</b></div>
-        <div class="kpi">{{ t('$ beta', '美元贝塔') }}<b>{{ p.dollar_beta }}</b></div>
-        <div class="kpi">{{ t('Risk idx', '风险指数') }}<b>{{ p.risk_index }}</b></div>
-      </div>
-      {% if p.carry_context %}<div class="sub faint" style="margin-top:6px">{{ t('Carry is CONTEXT-only — no clean free front-end rate for this currency.', '套息仅作背景 — 该货币无可靠的免费短端利率。') }}</div>{% endif %}
-
-      {% if p.mtf_rows %}
-      <div class="mtf">
-        <div class="fgrp">{{ t('Multi-timeframe (technical)', '多周期（技术面）') }}{% if p.verdict.grade %} · <span class="mtf-grade">{{ t(p.verdict.grade, p.verdict.grade_zh) }}</span>{% endif %}</div>
-        <div class="mtf-row mtf-head"><span>{{ t('TF', '周期') }}</span><span>RSI</span><span>Stoch</span><span>MACD</span><span>{{ t('Trend', '趋势') }}</span></div>
-        {% for m in p.mtf_rows %}
-        <div class="mtf-row">
-          <span>{{ t(m.label, m.label_zh) }}</span>
-          <span>{{ m.rsi14 if m.rsi14 is not none else '—' }}</span>
-          <span>{{ m.stoch if m.stoch is not none else '—' }}</span>
-          <span class="macd-{{ m.macd }}">{{ {'up':'↑','down':'↓','pos':'+','neg':'−'}.get(m.macd,'·') }}</span>
-          <span class="tr-{{ m.trend }}">{{ {'up':'▲','down':'▼','flat':'—'}.get(m.trend,'—') }}</span>
+      {# Factor reads as a 3-col mini-grid (B1.4) #}
+      {% if c and c.factors %}
+      <div class="factor-grid">
+      {# Plain factor labels (B1.5) #}
+      {% set _flbl = {
+        'trend': ('Its own trend','自身趋势'),
+        'structure': ('Chart structure','形态结构'),
+        'carry': ('Interest-rate edge','利差优势'),
+        'rates': ('Long-rate gap','长端利差'),
+        'value': ('Cheap or rich','估值高低'),
+        'riskoff': ('Risk mood','风险情绪'),
+        'positioning': ('Trader crowding','持仓拥挤度'),
+        'risk': ('Choppiness','波动风险'),
+        'shock': ('Sudden shocks','突发冲击')
+      } %}
+      {% for r in c.factors %}
+      {% set _fl = _flbl.get(r.key, (r.label, r.get('label_zh', r.label))) %}
+      {% set _dir = 'for' if r.value > 0.1 else ('against' if r.value < -0.1 else 'flat') %}
+      {% set _glyph = '●' if _dir == 'for' else ('○' if _dir == 'against' else '−') %}
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">{{ _fl[0] }}</span><span class="l-zh">{{ _fl[1] }}</span></div>
+        <div class="fc-dir {{ _dir }}">{{ _glyph }}</div>
+        <div class="tip-pop">
+          {# D4: show signed CONTRIBUTION (r.contribution), not raw coefficient weight #}
+          <div class="l-en">{{ _fl[0] }}: {{ 'for' if _dir == 'for' else ('against' if _dir == 'against' else 'flat/neutral') }}. Pull on the score: {{ '%+.2f'|format(r.contribution) if r.contribution is defined else '—' }}.</div>
+          <div class="l-zh">{{ _fl[1] }}：{{ '利多' if _dir == 'for' else ('利空' if _dir == 'against' else '中性') }}。对评分的拉动：{{ '%+.2f'|format(r.contribution) if r.contribution is defined else '—' }}。</div>
         </div>
-        {% endfor %}
-        {% if p.verdict.headline %}<div class="sub" style="margin-top:6px"><span class="l-en">{{ p.verdict.headline }}</span><span class="l-zh">{{ p.verdict.headline_zh }}</span></div>{% endif %}
-        <div class="sub faint" style="margin-top:4px">{{ t('Technical timing overlay only; not return-validated alpha.', '仅为技术择时叠加，非经收益验证的阿尔法。') }}</div>
+      </div>
+      {% endfor %}
       </div>
       {% endif %}
 
-      <div style="margin-top:14px">{{ p.chart | safe }}</div>
+      {# Peg flag #}
+      {% if c and c.peg %}<span class="peg-note">⚑ <span class="l-en">{{ c.peg.note[0] }}</span><span class="l-zh">{{ c.peg.note[1] }}</span></span>{% endif %}
     </div>
   {% endfor %}
   </div>
   {% endfor %}
 
-  <!-- ===================== §05 · CARRY & VALUATION TABLE ===================== -->
-  <div class="section-h"><span class="sn">§05</span><h2>{{ t('Carry & valuation — cross-pair', '套息与估值 · 跨货币对') }}</h2></div>
-  <div class="card">
-    <h2>{{ t('Carry & valuation — cross-pair', '套息与估值 · 跨货币对') }}</h2>
-    <table class="tbl">
-      <thead><tr>
-        <th>{{ t('Pair', '货币对') }}</th>
-        <th>{{ t('Carry %', '套息 %') }}</th>
-        <th>{{ t('Carry/vol', '套息/波动') }}</th>
-        <th>{{ t('10y diff', '10年利差') }}</th>
-        <th>{{ t('REER gap %', 'REER偏离 %') }}</th>
-        <th>{{ t('$ beta', '美元贝塔') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for r in carry_table %}
-        <tr>
-          <td>{{ r.label }}</td>
-          <td>{% if r.carry is none %}<span class="faint">—</span>{% else %}{{ '%+.2f'|format(r.carry) }}{% endif %}</td>
-          <td>{% if r.ctv is none %}<span class="faint">—</span>{% else %}{{ '%+.2f'|format(r.ctv) }}{% endif %}</td>
-          <td>{% if r.rate10 is none %}<span class="faint">—</span>{% else %}{{ '%+.2f'|format(r.rate10) }}{% endif %}</td>
-          <td>{% if r.reer_gap is none %}<span class="faint">—</span>{% else %}{{ '%+.1f'|format(r.reer_gap) }}{% endif %}</td>
-          <td>{{ r.beta }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    <div class="sub faint" style="margin-top:8px">{{ t('Carry is foreign minus US short rates. REER gap shows rich/cheap vs 5y history. Carry can crash in stress.', '套息为外币减美国短端利率。REER偏离显示相对5年历史的贵/便宜。套息在压力期可能崩盘。') }}</div>
+  {# =====================================================================
+     §5 — Do these styles work? / Scorecards + Recent shifts
+     ===================================================================== #}
+  <div class="section-h">
+    <h2>{{ t('Do these styles work?', '这些策略有效吗') }}</h2>
   </div>
-
-  <!-- ===================== §06 · INTERNATIONAL SCORECARDS ===================== -->
   {% if scorecards %}
   {% macro scrow(seg, m) %}<div class="sr"><span>{{ seg }}</span>
     <span class="{{ 'sc-pos' if (m.cagr or 0)>=0 else 'sc-neg' }}">{{ '%+.1f'|format(m.cagr) if m.cagr is not none else '—' }}%</span>
     <span>{{ '%.2f'|format(m.sharpe) if m.sharpe is not none else '—' }}</span>
     <span class="sc-neg">{{ '%.0f'|format(m.maxdd) if m.maxdd is not none else '—' }}%</span></div>{% endmacro %}
-  <div class="section-h"><span class="sn">§06</span><h2>{{ t('International scorecards', '国际记分卡') }}</h2>
-    <span class="sh-sub">{{ t('PIT backtests of risky premia, not free alpha', '风险溢价的时点回测，非免费阿尔法') }}</span></div>
   <div class="sc-grid">
     {% for c in scorecards %}
     <div class="sc-card">
+      {# P5: at rest — name, one-line verdict, tilt, ? only. Metrics table inside tip-pop. #}
       {% if c.key == 'carry' %}
         <div class="sc-name">{{ t('G10 carry basket', 'G10套息篮子') }}</div>
-        <div class="sc-thesis">{{ t('Long high-carry G10, short low-carry. Real premium, but risk-off crashes matter more than Sharpe.', '做多高套息G10、做空低套息。是真实溢价，但避险崩盘比夏普更重要。') }}</div>
+        {% set _sharpe = c.metrics.full.sharpe %}
+        {% if _sharpe is not none and _sharpe >= 0.5 %}
+        <div class="sc-verdict">{{ t('Pays slowly; crashes hard in panics.', '平时缓慢获利；恐慌时大幅回撤。') }}</div>
+        {% else %}
+        <div class="sc-verdict">{{ t('Thin reward for real crash risk.', '回报有限，崩盘风险真实。') }}</div>
+        {% endif %}
       {% elif c.key == 'haven' %}
         <div class="sc-name">{{ t('Risk-off haven basket', '避险货币篮子') }}</div>
-        <div class="sc-thesis">{{ t('Mirror of carry: long havens, short risk currencies. Usually bleeds; pays during stress.', '套息的镜像：做多避险、做空风险货币。平时消耗，在压力期支付。') }}</div>
+        <div class="sc-verdict">{{ t('Costs a little most years; pays in a storm.', '平时小亏；风暴时获利。') }}</div>
       {% elif c.key == 'dollar_trend' %}
         <div class="sc-name">{{ t('Dollar trend overlay', '美元趋势叠加') }}</div>
-        <div class="sc-thesis">{{ t('Long DXY only when its 12-month trend is up. A drawdown filter, not alpha.', '仅在美元12个月趋势向上时做多。是回撤过滤器，非阿尔法。') }}</div>
+        <div class="sc-verdict">{{ t('A drawdown filter, not a money-maker.', '是回撤过滤器，不是盈利来源。') }}</div>
       {% endif %}
-      {% set fm = c.metrics.full %}
-      <div class="sc-met">
-        <div class="m">{{ t('CAGR', '年化') }}<b class="{{ 'warn-pos' if (fm.cagr or 0)>=0 else 'warn-neg' }}">{{ '%+.1f'|format(fm.cagr) if fm.cagr is not none else '—' }}%</b></div>
-        <div class="m">{{ t('Sharpe', '夏普') }}<b>{{ '%.2f'|format(fm.sharpe) if fm.sharpe is not none else '—' }}</b></div>
-        <div class="m">{{ t('Max DD', '最大回撤') }}<b class="warn-neg">{{ '%.0f'|format(fm.maxdd) if fm.maxdd is not none else '—' }}%</b></div>
-      </div>
-      <div class="sc-split">
-        <div class="sr h"><span></span><span>{{ t('CAGR', '年化') }}</span><span>{{ t('Sharpe', '夏普') }}</span><span>{{ t('MaxDD', '回撤') }}</span></div>
-        {{ scrow(t('Full', '全样本'), c.metrics.full) }}
-        {% if c.metrics.pre %}{{ scrow(t('Pre-08', '08前'), c.metrics.pre) }}{% endif %}
-        {% if c.metrics.post %}{{ scrow(t('Post-08', '08后'), c.metrics.post) }}{% endif %}
-        {% if c.metrics.full.skew is not none %}<div class="sr"><span>{{ t('Skew', '偏度') }}</span><span class="{{ 'sc-neg' if c.metrics.full.skew<0 else '' }}" style="grid-column:span 2">{{ '%.2f'|format(c.metrics.full.skew) }}</span><span class="sc-neg">{{ '%.0f'|format(c.metrics.full.worst_month) }}%</span></div>{% endif %}
-      </div>
+      {# Current tilt in plain words #}
       {% if c.key == 'carry' and c.longs %}
-      <div class="sc-tilt">{{ t('Now', '当前') }}: {{ t('long', '做多') }} <b>{{ c.longs|join(' ') }}</b> · {{ t('short', '做空') }} <b>{{ c.shorts|join(' ') }}</b></div>
+      <div class="sc-tilt">{{ t('Now: long', '当前：做多') }} <b>{{ c.longs|join(' ') }}</b> · {{ t('short', '做空') }} <b>{{ c.shorts|join(' ') }}</b></div>
       {% elif c.key == 'haven' %}
-      <div class="sc-tilt">{{ t('Static', '静态') }}: {{ t('long', '做多') }} <b>{{ c.longs|join(' ') }}</b> · {{ t('short', '做空') }} <b>{{ c.shorts|join(' ') }}</b>
-        {% if c.regime %}<br>{{ t('annualized return', '年化收益') }}: {{ t('calm', '平静') }} <span class="{{ 'sc-neg' if (c.regime.calm_ann or 0)<0 else 'sc-pos' }}">{{ '%+.0f'|format(c.regime.calm_ann) if c.regime.calm_ann is not none else '—' }}%</span> · {{ t('risk-off', '避险') }} <span class="{{ 'sc-pos' if (c.regime.stress_ann or 0)>=0 else 'sc-neg' }}">{{ '%+.0f'|format(c.regime.stress_ann) if c.regime.stress_ann is not none else '—' }}%</span>{% endif %}</div>
+      <div class="sc-tilt">{{ t('Permanent: long havens, short risk currencies.', '长期：持有避险货币，做空风险货币。') }}</div>
       {% elif c.key == 'dollar_trend' %}
-      <div class="sc-tilt">{{ t('Now', '当前') }}: <b>{% if c.in_market %}{{ t('long the dollar (trend up)', '做多美元（趋势向上）') }}{% else %}{{ t('flat (trend down)', '空仓（趋势向下）') }}{% endif %}</b>{% if c.hold %} · {{ t('buy & hold MaxDD', '买入持有最大回撤') }} {{ '%.0f'|format(c.hold.maxdd) }}%{% endif %}</div>
+      <div class="sc-tilt"><b>{% if c.in_market %}{{ t('Currently long (trend up)', '当前做多（趋势向上）') }}{% else %}{{ t('Currently flat (trend down)', '当前空仓（趋势向下）') }}{% endif %}</b></div>
       {% endif %}
-      <div class="sub faint" style="margin-top:8px;font-size:11px">{{ t('Net of', '净额扣除') }} {{ '2' }}bp {{ t('one-way cost · display-only / experimental · span', '单边成本 · 仅供展示/实验 · 区间') }} {{ c.span }}</div>
+      {# ? tip — all metrics live here (P5) #}
+      {% set _fm = c.metrics.full %}
+      <span class="wt-q" tabindex="0" data-tip-en="." data-tip-zh=".">?
+        <div class="tip-pop" style="min-width:230px">
+          <div class="l-en">
+            Yearly gain: {{ '%+.1f'|format(_fm.cagr) if _fm.cagr is not none else '—' }}%
+            · Gain per unit of swing: {{ '%.2f'|format(_fm.sharpe) if _fm.sharpe is not none else '—' }}
+            · Worst fall: {{ '%.0f'|format(_fm.maxdd) if _fm.maxdd is not none else '—' }}%
+            {% if c.metrics.pre %}| Pre-2008: {{ '%+.1f'|format(c.metrics.pre.cagr) if c.metrics.pre.cagr is not none else '—' }}% / {{ '%.2f'|format(c.metrics.pre.sharpe) if c.metrics.pre.sharpe is not none else '—' }}{% endif %}
+            {% if c.metrics.post %}| Post-2008: {{ '%+.1f'|format(c.metrics.post.cagr) if c.metrics.post.cagr is not none else '—' }}% / {{ '%.2f'|format(c.metrics.post.sharpe) if c.metrics.post.sharpe is not none else '—' }}{% endif %}
+            — past data only.
+          </div>
+          <div class="l-zh">
+            年化收益：{{ '%+.1f'|format(_fm.cagr) if _fm.cagr is not none else '—' }}%
+            · 单位波动收益：{{ '%.2f'|format(_fm.sharpe) if _fm.sharpe is not none else '—' }}
+            · 最大回撤：{{ '%.0f'|format(_fm.maxdd) if _fm.maxdd is not none else '—' }}%
+            {% if c.metrics.pre %}| 2008前：{{ '%+.1f'|format(c.metrics.pre.cagr) if c.metrics.pre.cagr is not none else '—' }}% / {{ '%.2f'|format(c.metrics.pre.sharpe) if c.metrics.pre.sharpe is not none else '—' }}{% endif %}
+            {% if c.metrics.post %}| 2008后：{{ '%+.1f'|format(c.metrics.post.cagr) if c.metrics.post.cagr is not none else '—' }}% / {{ '%.2f'|format(c.metrics.post.sharpe) if c.metrics.post.sharpe is not none else '—' }}{% endif %}
+            — 仅基于历史数据。
+          </div>
+        </div>
+      </span>
     </div>
     {% endfor %}
   </div>
   {% endif %}
 
-  <!-- ===================== ALERT TIMELINE ===================== -->
+  {# Recent shifts — alert timeline #}
   {% if timeline %}
-  <div class="card" style="margin-top:20px">
-    <h2>{{ t('Alert timeline', '警报时间线') }} <span class="faint">· {{ n_alerts }} {{ t('events · last', '事件 · 近') }} {{ timeline_days }}d</span></h2>
+  <div class="section-h">
+    <span class="eyebrow">{{ t('RECENT SHIFTS', '近期变化') }}</span>
+  </div>
+  <div class="card">
     <div class="timeline">
     {% for day in timeline %}
       <div class="tl-day">{{ day.daylabel }}</div>
       {% for e in day.events %}
       <div class="tl-ev sev-{{ e.severity }}" data-tl-event="1">
-        <span class="tl-type">{{ e.label }}</span>
+        {# Plain type labels (D2: COT/positioning events → "Positioning"/「持仓」) #}
+        {% set _tlbl = {'residual_shock':'Sudden move','risk_regime':'Choppiness',
+          'trend_flip':'Trend','momentum':'Trend','structure':'Chart shape',
+          'positioning':'Positioning','carry_flip':'Rate edge',
+          'peg_approach':'Intervention','smile_regime':'Dollar regime',
+          'cnh_basis':'Yuan','scenario':'Dollar regime',
+          'transmission_shift':'Dollar link','dollar_flash':'Dollar flash'} %}
+        {% set _tlbl_zh = {'residual_shock':'突然波动','risk_regime':'波动性',
+          'trend_flip':'趋势','momentum':'趋势','structure':'形态',
+          'positioning':'持仓','carry_flip':'利差',
+          'peg_approach':'干预','smile_regime':'美元格局',
+          'cnh_basis':'离岸人民币','scenario':'美元格局',
+          'transmission_shift':'美元联动','dollar_flash':'美元闪动'} %}
+        <span class="tl-type"><span class="l-en">{{ _tlbl.get(e.type, e.label or e.type) }}</span><span class="l-zh">{{ _tlbl_zh.get(e.type, e.type) }}</span></span>
         <span class="tl-asset">{{ e.asset_label }}</span>
-        <span class="tl-head"><span class="l-en">{{ e.headline }}</span><span class="l-zh">{{ e.headline_zh }}</span></span>
+        {# D2: map internal regime names + old stored alert strings to plain words #}
+        {% set _hl_en = e.headline
+          | replace('US growth premium', 'US booming')
+          | replace('Risk-off haven bid', 'World stressed')
+          | replace('Global reflation', 'Calm growth')
+          | replace('US-specific stress', 'US wobble')
+          | replace('Neutral', 'In between')
+          | replace('COT crowded short', 'Speculators very short')
+          | replace('COT crowded long', 'Speculators very long')
+          | replace("exogenous bid detected", "buying that the dollar and rates don't explain")
+          | replace("exogenous pressure detected", "selling that the dollar and rates don't explain")
+          | replace('momentum → bull', 'trend turned up')
+          | replace('momentum → bear', 'trend turned down')
+          | replace('structure → broken', 'chart shape broke down')
+          | replace('structure → constructive', 'chart shape turned constructive') %}
+        {% set _hl_zh = e.headline_zh
+          | replace('美国增长溢价', '美国强势')
+          | replace('避险买盘', '全球避险')
+          | replace('全球再通胀', '平静增长')
+          | replace('美国自身风险', '美国走弱')
+          | replace('外生买盘', '美元与利率无法解释的买盘')
+          | replace('外生压力', '美元与利率无法解释的卖压')
+          | replace('COT 空头拥挤', '投机者严重做空')
+          | replace('COT 多头拥挤', '投机者严重做多') %}
+        <span class="tl-head"><span class="l-en">{{ _hl_en }}</span><span class="l-zh">{{ _hl_zh }}</span></span>
       </div>
       {% endfor %}
     {% endfor %}
     </div>
-    <button class="tl-more" type="button" data-open="{{ t('See more', '查看更多') }}" data-close="{{ t('Show less', '收起') }}">{{ t('See more', '查看更多') }}</button>
-    <div class="sub faint" style="margin-top:10px">{{ t('Daily state changes only. Context, not signals.', '仅日度状态变化。背景，非信号。') }}</div>
+    <button class="tl-more" type="button">
+      <span class="lbl-open l-en">See more</span>
+      <span class="lbl-open l-zh">查看更多</span>
+      <span class="lbl-close l-en">Show less</span>
+      <span class="lbl-close l-zh">收起</span>
+    </button>
   </div>
   {% endif %}
 
-  <!-- ===================== METHODOLOGY / HONESTY ===================== -->
-  <div class="card" style="margin-top:22px">
-    <h2>{{ t('How to read this · and what it is not', '如何解读 · 以及它不是什么') }}</h2>
-    <div class="note">
-      <p>{{ t('Pairs are scored on ex-dollar residuals: trend, carry, risk appetite, shocks and positioning when available.', '货币对基于去美元残差评分：趋势、套息、风险偏好、冲击及可用持仓。') }}</p>
-      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('FX is hard to forecast and carry can crash in stress. Treat these reads as risk context, not alpha or trade signals.', '外汇难以预测，套息在压力期可能崩盘。请将这些读数视为风险背景，而非阿尔法或交易信号。') }}</p>
-      <p><b>{{ t('Dollar Desk.', '美元桌。') }}</b> {{ t('Display-only. The dollar is often the tightening impulse itself; the lean is a context summary, not a buy/sell call.', '仅展示。美元波动常常就是紧缩冲击本身；倾向只是背景汇总，不是买卖判断。') }}</p>
-      <p><b>{{ t('Stress Radar.', '压力雷达。') }}</b> {{ t('Shows past base rates for similar currency stress setups. Thin history means wide uncertainty.', '显示类似货币压力情景的历史基率。样本薄意味着不确定性宽。') }}</p>
-      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Yahoo FX, FRED rates and liquidity, BIS REER, CFTC COT, Fed funds futures and MOVE.', 'Yahoo外汇、FRED利率与流动性、BIS REER、CFTC COT、联邦基金期货与MOVE。') }}
-      {% if not cot_ok %}<span class="flag info">ℹ {{ t('COT positioning is temporarily unavailable (CFTC endpoint outage); it populates on the next successful collection.', 'COT持仓暂不可用（CFTC接口故障）；将在下次成功采集时填充。') }}</span>{% endif %}</p>
-      <p class="meta-foot">{{ t('History', '历史') }} {{ cal_span }} · {{ t('built', '构建于') }} {{ built }}</p>
+  {# =====================================================================
+     FOOTER — one merged honesty note (B1.6)
+     ===================================================================== #}
+  <div class="card" style="margin-top:28px">
+    <div class="honesty-note">
+      <span class="l-en">This page describes today's currency backdrop. It moves with markets and does not predict them; nothing here is a trade recommendation. Pair reads are measured on past data and shown for context.</span>
+      <span class="l-zh">本页描述今日货币背景。随市场变化，不预测市场走势；本页内容不构成任何交易建议。货币对读数基于历史数据测算，仅作背景参考。</span>
     </div>
+    <div class="meta-foot">{{ t('As of', '截至') }} {{ as_of }} · {{ t('built', '构建于') }} {{ built }} · {{ t('Data', '数据') }} {{ cal_span }}
+    {% if not cot_ok %} · <span class="flag info">ℹ {{ t('Futures-market positioning data temporarily unavailable.', '期货市场持仓数据暂不可用。') }}</span>{% endif %}</div>
   </div>
 </div>
 
 <script>
-window.__CHART_SWAP__ = { colors:{}, labels:{
-  "Broad USD":"广义美元","Risk-off":"避险","Rebased = 100":"再基准化 = 100",
-  "Idiosyncratic (ex-$)":"特异（去美元）","exogenous bid":"外生买盘","exogenous pressure":"外生压力",
-  "US 10y real yield":"美国10年实际收益率","Broad USD = 100":"广义美元 = 100"} };
-</script>
-<script>
-/* Currency strength meter — horizon toggle (1w / 1m / 3m) */
+/* Currency strength meter — horizon toggle */
 (function(){
   var wrap = document.getElementById('strength-toggle');
   if(!wrap) return;
@@ -721,12 +981,14 @@ window.__CHART_SWAP__ = { colors:{}, labels:{
 })();
 </script>
 <script>
+/* Alert timeline expander — P6: uses .lbl-open/.lbl-close + .open class on button */
 (function(){
   var card = document.querySelector('.timeline');
   if(!card) return;
   var events = Array.from(card.querySelectorAll('[data-tl-event]'));
   var btn = document.querySelector('.tl-more');
   var limit = 8;
+  /* hide close labels initially via CSS: .tl-more .lbl-close{display:none}; .tl-more.open .lbl-open{display:none}; .tl-more.open .lbl-close{display:inline} */
   function sync(open){
     events.forEach(function(ev, i){ ev.classList.toggle('is-hidden', !open && i >= limit); });
     card.querySelectorAll('.tl-day').forEach(function(day){
@@ -737,18 +999,34 @@ window.__CHART_SWAP__ = { colors:{}, labels:{
       }
       day.classList.toggle('is-hidden', !any);
     });
-    if(btn) btn.textContent = open ? btn.dataset.close : btn.dataset.open;
+    if(btn) btn.classList.toggle('open', open);
   }
   if(btn && events.length > limit){
-    btn.addEventListener('click', function(){ sync(btn.textContent !== btn.dataset.close); });
+    btn.addEventListener('click', function(){ sync(!btn.classList.contains('open')); });
     sync(false);
-  } else if(btn) {
-    btn.hidden = true;
-  }
+  } else if(btn) { btn.hidden = true; }
+})();
+</script>
+<script>
+/* Bilingual tip system — reads data-tip-en/zh on hover/focus.
+   Uses the .tip-pop child div pattern (already in markup).
+   This script handles tab/focus and touch. */
+(function(){
+  var lang = document.documentElement.getAttribute('data-lang') || 'en';
+  document.addEventListener('langchange', function(){ lang = document.documentElement.getAttribute('data-lang') || 'en'; });
+  /* tip-pop visibility is handled purely by CSS :hover/:focus-within above;
+     this script only ensures focus works for keyboard users */
+  document.querySelectorAll('[data-tip-en],[data-tip-zh]').forEach(function(el){
+    el.addEventListener('keydown', function(e){
+      if(e.key === 'Escape'){
+        var pop = el.querySelector('.tip-pop');
+        if(pop){ pop.style.opacity='0'; pop.style.pointerEvents='none'; }
+      }
+    });
+  });
 })();
 </script>
 <script src="theme.js"></script>
-<script src="chart_i18n.js"></script>
 <footer class="site-footer">
   <span>© 2026 Mastermind Inc</span>
 </footer>

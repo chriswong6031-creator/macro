@@ -52,6 +52,37 @@ PLOT = dict(
     yaxis={"gridcolor": C["grid"], "zeroline": False},
 )
 
+# M5: single source for dollar flash threshold (abs(z) >= 2.0)
+# Used by dollar_vm hero badge, dollar_day_block.flag, and dollar_flash_events.
+# Do NOT change the config dollar_day_z key — it drives conviction confidence haircut.
+FLASH_Z = 2.0
+
+# m5: smile arc x-position map (regime → 0..1) — moved from template to Python so
+# tests can validate the real constants, not a local copy in the test.
+SMILE_X: dict[str, float] = {
+    "US growth premium": 0.13,
+    "US-specific stress": 0.34,
+    "Global reflation": 0.50,
+    "Neutral": 0.50,
+    "Risk-off haven bid": 0.87,
+}
+
+# m5: trend n_up → plain label map (moved from template if/elif chain to Python dict)
+TREND_LABEL_EN: dict[int, str] = {
+    4: "Rising on all horizons",
+    3: "Mostly rising",
+    2: "Mixed",
+    1: "Mostly falling",
+    0: "Falling on all horizons",
+}
+TREND_LABEL_ZH: dict[int, str] = {
+    4: "全线上行",
+    3: "大多上行",
+    2: "涨跌互现",
+    1: "大多下行",
+    0: "全线下行",
+}
+
 # per-pair display metadata (label, zh, base, quote, archetype label, color)
 META = {
     "EURUSD": {"label": "EUR/USD", "zh": "欧元/美元", "base": "EUR", "quote": "USD",
@@ -80,9 +111,24 @@ REGIME_COLOR = {
     "Global reflation": C["green"], "US-specific stress": C["amber"], "Neutral": C["ink"],
 }
 REGIME_ZH = {
-    "Risk-off haven bid": "避险买盘（美元微笑右侧）", "US growth premium": "美国增长溢价（左侧）",
-    "Global reflation": "全球再通胀（美元走软）", "US-specific stress": "美国自身风险（微笑破裂）",
-    "Neutral": "中性",
+    "Risk-off haven bid": "全球避险", "US growth premium": "美国强势",
+    "Global reflation": "平静增长", "US-specific stress": "美国走弱",
+    "Neutral": "中间地带",
+}
+# Plain zone words per regime (for "Why the dollar is here:" line — P2)
+REGIME_ZONE_EN = {
+    "Risk-off haven bid": "World stressed",
+    "US growth premium": "US booming",
+    "Global reflation": "Calm growth",
+    "US-specific stress": "US wobble",
+    "Neutral": "In between",
+}
+REGIME_ZONE_ZH = {
+    "Risk-off haven bid": "全球避险",
+    "US growth premium": "美国强势",
+    "Global reflation": "平静增长",
+    "US-specific stress": "美国走弱",
+    "Neutral": "中间地带",
 }
 FAVORED = {
     "Risk-off haven bid": (["USD", "JPY", "CHF"], ["美元", "日元", "瑞郎"]),
@@ -100,6 +146,38 @@ def _html(fig: go.Figure) -> str:
 
 def _r(v, n=2):
     return round(float(v), n) if v is not None and pd.notna(v) else None
+
+
+# --------------------------------------------------------------------------- #
+# F2 — inline SVG sparkline helper
+# --------------------------------------------------------------------------- #
+def _spark_pts(values, w: int, h: int, n: int = 126) -> str:
+    """Convert an iterable of floats to an SVG polyline points string.
+
+    Takes the tail `n` values, drops NaN, min-max normalises into the
+    viewBox (w × h) with 2px top/bottom padding, returns "x1,y1 x2,y2 …"
+    with 1-decimal coords.  Returns "" when fewer than 2 finite points.
+    """
+    try:
+        s = pd.to_numeric(pd.Series(list(values)), errors="coerce").dropna()
+        s = s.tail(n)
+        if len(s) < 2:
+            return ""
+        lo, hi = float(s.min()), float(s.max())
+        pad = 2
+        h_inner = h - 2 * pad
+        pts = []
+        n_pts = len(s)
+        for i, v in enumerate(s):
+            x = round(i / (n_pts - 1) * w, 1)
+            if hi == lo:
+                y = round(pad + h_inner / 2, 1)
+            else:
+                y = round(pad + (1.0 - (float(v) - lo) / (hi - lo)) * h_inner, 1)
+            pts.append(f"{x},{y}")
+        return " ".join(pts)
+    except Exception:  # noqa: BLE001
+        return ""
 
 
 def _tail_years(df: pd.DataFrame, years: float) -> pd.DataFrame:
@@ -271,8 +349,26 @@ def dollar_vm(dol: pd.DataFrame) -> dict:
     reg = last.get("smile_regime", "Neutral")
     fav_en, fav_zh = FAVORED.get(reg, ([], []))
     roc = last.get("dollar_roc")
+    # F2 — hero sparkline: broad-dollar rebased to 100 + risk-off composite
+    _broad_tail = dol["broad"].dropna().tail(126) if "broad" in dol.columns else pd.Series(dtype=float)
+    _last_broad = float(_broad_tail.iloc[0]) if len(_broad_tail) > 0 else None
+    if _last_broad and _last_broad != 0:
+        _broad_rebased = 100.0 * _broad_tail / _last_broad
+    else:
+        _broad_rebased = _broad_tail
+    _riskoff_tail = dol["risk_off"].dropna().tail(126) if "risk_off" in dol.columns else pd.Series(dtype=float)
+    _SPARK_W, _SPARK_H = 440, 60
+    hero_spark = {
+        "dollar_pts": _spark_pts(_broad_rebased.tolist(), _SPARK_W, _SPARK_H),
+        "riskoff_pts": _spark_pts(_riskoff_tail.tolist(), _SPARK_W, _SPARK_H),
+        "w": _SPARK_W, "h": _SPARK_H,
+        "last_rebased": _r(_broad_rebased.iloc[-1], 1) if len(_broad_rebased) > 0 else None,
+        "n": len(_broad_rebased),
+    }
     return {
         "regime": reg, "regime_zh": REGIME_ZH.get(reg, reg),
+        "zone_en": REGIME_ZONE_EN.get(reg, reg),
+        "zone_zh": REGIME_ZONE_ZH.get(reg, reg),
         "color": REGIME_COLOR.get(reg, C["ink"]),
         "dollar_dir": "weakening" if (roc or 0) < 0 else ("strengthening" if (roc or 0) > 0 else "flat"),
         "dollar_dir_zh": "走软" if (roc or 0) < 0 else ("走强" if (roc or 0) > 0 else "持平"),
@@ -283,8 +379,10 @@ def dollar_vm(dol: pd.DataFrame) -> dict:
         "broad": _r(last.get("broad"), 2), "dxy": _r(last.get("dxy"), 2),
         "afe": _r(last.get("broad_afe"), 1), "eme": _r(last.get("broad_eme"), 1),
         "dollar_day_z": _r(last.get("dollar_day_z"), 2),
-        "dollar_day": bool((last.get("dollar_day_z") or 0) > config.load()["forex"]["dollar"]["dollar_day_z"]),
+        # M5: hero badge uses the same abs>=FLASH_Z threshold as dollar_day_block.flag
+        "dollar_day": bool(abs(float(last.get("dollar_day_z") or 0.0)) >= FLASH_Z),
         "favored": fav_en, "favored_zh": fav_zh,
+        "hero_spark": hero_spark,
         "chart": chart_dollar(dol),
     }
 
@@ -348,6 +446,10 @@ def pair_vm(pair: str, df: pd.DataFrame, calib: dict, dollar_day: float) -> dict
                     "sub": verdict.get("sub"), "sub_zh": verdict.get("sub_zh"),
                     "grade": verdict.get("grade"), "grade_zh": verdict.get("grade_zh"),
                     "ladder_label": verdict.get("ladder_label"), "ladder_label_zh": verdict.get("ladder_label_zh")},
+        # F2 — per-pair sparkline (126d close series, 300×36 viewBox)
+        "spark_pts": _spark_pts(
+            (1.0 / df["close"]).tolist() if invert else df["close"].tolist(),
+            300, 36, n=126),
         "chart": chart_pair(df, pair),
     }
     return vm
@@ -465,6 +567,17 @@ def _desk_latest(desk: dict) -> dict:
     if lq:
         out.update(liquidity_dir=lq.get("dir"))
     out.update(smile_confidence=sm.get("confidence"), triple_red=sm.get("triple_red"))
+    # B1.1: attach smile_decomp (fixes silent None bug read by flow_regime + build_intl)
+    sd = desk.get("smile_decomp")
+    if sd:
+        out["smile_decomp"] = {
+            "regime": sd.get("regime"),
+            "regime_60d": sd.get("regime_60d"),
+            "safety_bid_today": sd.get("safety_bid_today"),
+            "beta": _r(sd.get("beta"), 3),
+            "r2": _r(sd.get("r2"), 3),
+            "residual_20d_z": _r(sd.get("residual_20d_z"), 2),
+        }
     return out
 
 
@@ -472,11 +585,110 @@ def _transmission_latest(tr: dict) -> dict:
     """Compact transmission summary for latest.json."""
     if not tr:
         return {}
-    return {"usd_dir": tr.get("usd_dir"),
-            "corr": {r["key"]: r.get("corr_fast") for r in tr.get("rows", [])},
-            "headwind_for": tr.get("headwind_for", []),
-            "tailwind_for": tr.get("tailwind_for", []),
-            "unstable": tr.get("unstable", [])}
+    out = {"usd_dir": tr.get("usd_dir"),
+           "corr": {r["key"]: r.get("corr_fast") for r in tr.get("rows", [])},
+           "headwind_for": tr.get("headwind_for", []),
+           "tailwind_for": tr.get("tailwind_for", []),
+           "unstable": tr.get("unstable", [])}
+    # B1.1: per-asset corr_fast, corr_slow, effect, stability
+    out["assets"] = {
+        r["key"]: {
+            "corr_fast": r.get("corr_fast"),
+            "corr_slow": r.get("corr_slow"),
+            "effect": r.get("effect"),
+            "stability": r.get("stability"),
+        }
+        for r in tr.get("rows", [])
+    }
+    out["as_of"] = tr.get("as_of")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# B1.3 Stance derivation (deterministic map)
+# ---------------------------------------------------------------------------
+# Plain-copy asset name tables (B1.5 — used by sentence generation)
+# Keys: both ticker symbols AND forex_transmission label strings (for headwind_for/tailwind_for)
+_PLAIN_ASSET_EN = {
+    # ticker keys
+    "SPY": "US stocks", "EEM": "EM stocks", "GC=F": "gold",
+    "CL=F": "oil", "HG=F": "copper", "UST10": "US bonds", "BTC": "Bitcoin",
+    # transmission label keys (from forex_transmission._ASSET_META)
+    "US equities": "US stocks", "EM equities": "EM stocks",
+    "Gold": "gold", "Oil (WTI)": "oil", "Copper": "copper",
+    "10y Treasury": "US bonds", "Bitcoin": "Bitcoin",
+}
+_PLAIN_ASSET_ZH = {
+    # ticker keys
+    "SPY": "美股", "EEM": "新兴市场股票", "GC=F": "黄金",
+    "CL=F": "原油", "HG=F": "铜", "UST10": "美债", "BTC": "比特币",
+    # transmission label keys
+    "US equities": "美股", "EM equities": "新兴市场股票",
+    "Gold": "黄金", "Oil (WTI)": "原油", "Copper": "铜",
+    "10y Treasury": "美债", "Bitcoin": "比特币",
+}
+
+
+def _stance(dollar_dir: str | None, active_scenarios: list[str],
+            dollar_day_flag: bool, triple_red: bool | None,
+            risk_word: str | None,
+            headwind_for: list[str] | None = None,
+            tailwind_for: list[str] | None = None) -> dict:
+    """Deterministic stance map (B1.3) — NO LLM, NO randomness.
+
+    Returns dict with: word_en, word_zh, tone, headline_en, headline_zh,
+    sentence_en, sentence_zh.
+    """
+    has_active = bool(active_scenarios) or bool(triple_red)
+
+    if has_active:
+        word_en, word_zh, tone = "Get ready", "做好准备", "alert"
+    elif dollar_day_flag:
+        word_en, word_zh, tone = "Watch — don't chase", "观望，别追", "watch"
+    else:
+        word_en, word_zh, tone = "Watch — don't chase", "观望，别追", "calm"
+
+    # headline from dollar_dir
+    _dir = (dollar_dir or "").lower()
+    if "up" in _dir or "strength" in _dir or "support" in _dir:
+        headline_en, headline_zh = "Dollar strong", "美元偏强"
+    elif "down" in _dir or "soft" in _dir or "weak" in _dir:
+        headline_en, headline_zh = "Dollar soft", "美元偏弱"
+    else:
+        headline_en, headline_zh = "Dollar mixed", "美元分化"
+
+    # plain sentence (≤14 words) from direction + top-2 headwind + top-1 tailwind
+    hw = headwind_for or []
+    tw = tailwind_for or []
+    hw_names = [_PLAIN_ASSET_EN.get(k, k) for k in hw[:2]]
+    tw_names = [_PLAIN_ASSET_EN.get(k, k) for k in tw[:1]]
+    hw_names_zh = [_PLAIN_ASSET_ZH.get(k, k) for k in hw[:2]]
+    tw_names_zh = [_PLAIN_ASSET_ZH.get(k, k) for k in tw[:1]]
+
+    dir_word = ("firm" if "up" in _dir or "strength" in _dir
+                else ("soft" if "down" in _dir or "soft" in _dir or "weak" in _dir
+                      else "mixed"))
+    dir_word_zh = "走强" if dir_word == "firm" else ("偏软" if dir_word == "soft" else "走势分化")
+
+    if hw_names and dir_word != "mixed":
+        parts = " and ".join(hw_names)
+        sentence_en = f"A {dir_word} dollar is leaning on {parts}."
+        parts_zh = "与".join(hw_names_zh)
+        sentence_zh = f"美元{dir_word_zh}，正压制{parts_zh}。"
+    elif tw_names and dir_word != "mixed":
+        parts = tw_names[0]
+        sentence_en = f"A {dir_word} dollar is giving {parts} a lift."
+        parts_zh = tw_names_zh[0] if tw_names_zh else ""
+        sentence_zh = f"美元{dir_word_zh}，正提振{parts_zh}。"
+    else:
+        sentence_en = "The dollar is quiet today."
+        sentence_zh = "美元今日平静。"
+
+    return {
+        "word_en": word_en, "word_zh": word_zh, "tone": tone,
+        "headline_en": headline_en, "headline_zh": headline_zh,
+        "sentence_en": sentence_en, "sentence_zh": sentence_zh,
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -580,16 +792,170 @@ def main() -> int:
 
     real_rate_chart = chart_real_rate(drivers)
 
-    # daily alert timeline (deterministic, recomputed each build; no intraday for FX)
+    # ---------------------------------------------------------------------------
+    # B1.1: build derived latest.json fields before writing page + json
+    # ---------------------------------------------------------------------------
+
+    # dollar_day block (B1.1)
+    _dol_last = dol.iloc[-1]
+    _dol_day_z = _r(_dol_last.get("dollar_day_z"), 2)
+    # M5: use FLASH_Z (2.0) for the exported flag — config dollar_day_z drives conviction haircut only
+    _dol_day_flag = bool(abs(float(_dol_last.get("dollar_day_z") or 0.0)) >= FLASH_Z)
+    _dol_roc = _dol_last.get("dollar_roc") or 0.0
+    _dol_dir = "up" if _dol_roc > 0 else ("down" if _dol_roc < 0 else None)
+    dollar_day_block = {"z": _dol_day_z, "flag": _dol_day_flag, "dir": _dol_dir}
+
+    # EM block (B1.1) — CNH basis from USDCNH results, risk_off from dollar master
+    _cnh_df = results.get("USDCNH")
+    _cnh_last = _cnh_df.iloc[-1] if _cnh_df is not None and not _cnh_df.empty else pd.Series(dtype=object)
+    em_block = {
+        "cnh_basis_bps": _r(_cnh_last.get("cnh_basis_bps"), 0) if not _cnh_last.empty else None,
+        "cnh_basis_state": (_cnh_last.get("cnh_basis_state")
+                            if not _cnh_last.empty and pd.notna(_cnh_last.get("cnh_basis_state")) else None),
+        "risk_off_composite": _r(_dol_last.get("risk_off"), 3),
+    }
+
+    # pairs.DXY entry (B1.1) — quote-only from DXY driver series
+    _dxy_val = _r(_dol_last.get("dxy"), 2)
+    _dxy_prev = _r(dol["dxy"].iloc[-22], 2) if "dxy" in dol.columns and len(dol) >= 22 else None
+    _dxy_chg = _r(100 * (_dxy_val / _dxy_prev - 1), 1) if _dxy_val and _dxy_prev and _dxy_prev != 0 else None
+    pairs_dxy = {"label": "DXY", "quote": _dxy_val, "chg": _dxy_chg}
+
+    # regime_radar.scenarios (B1.1)
+    _scenarios_export = {}
+    for s in (regime.get("scenarios") or []):
+        p = s.get("prob") or {}
+        _scenarios_export[s["key"]] = {
+            "intensity": round(s.get("intensity_today") or 0, 1),
+            "n_fired": s.get("n_fired", 0),
+            "min_legs": s.get("min_legs", 2),
+            "active": bool(s.get("active")),
+            "illustrative": bool(s.get("illustrative")),
+            "fired_legs": [leg.get("key") for leg in (s.get("fired_legs") or [])],
+            "prob": {
+                "p_cond": p.get("p_cond"),
+                "base_rate": p.get("base_rate"),
+                "wilson_lo": p.get("wilson_lo"),
+                "wilson_hi": p.get("wilson_hi"),
+                "ci_separated": p.get("ci_separated"),
+                "n_eff": p.get("n_eff"),
+                "status": p.get("status"),
+            },
+        }
+
+    # strength block (B1.1) — {CCY: {'1w': z, '1m': z, '3m': z}}
+    _strength_export: dict = {}
+    if strength and strength.get("horizons"):
+        for hk, rows in strength["horizons"].items():
+            for r in rows:
+                ccy = r.get("ccy")
+                if ccy:
+                    _strength_export.setdefault(ccy, {})[hk] = r.get("strength")
+
+    # stance (B1.1 + B1.3)
+    _desk_lq = desk.get("liquidity") or {}
+    _tr_latest = _transmission_latest(transmission)
+    _active_scn = [s["key"] for s in (regime.get("scenarios") or []) if s.get("active")]
+    _triple_red = bool((desk.get("smile") or {}).get("triple_red"))
+    _desk_trend = desk.get("trend") or {}
+    _dollar_dir_for_stance = (
+        "up" if (dollar["dollar_dir"] or "").startswith("strength") or dollar["dollar_dir"] == "up"
+        else ("down" if (dollar["dollar_dir"] or "").startswith("weak") or dollar["dollar_dir"] == "down"
+              else "mixed"))
+    stance = _stance(
+        dollar_dir=_dollar_dir_for_stance,
+        active_scenarios=_active_scn,
+        dollar_day_flag=_dol_day_flag,
+        triple_red=_triple_red,
+        risk_word=dollar.get("risk_word"),
+        headwind_for=_tr_latest.get("headwind_for"),
+        tailwind_for=_tr_latest.get("tailwind_for"),
+    )
+
+    # pairs additive fields (B1.1)
+    for p in pairs:
+        conv = p.get("conviction") or {}
+        p["reliable"] = conv.get("reliable", False)
+        p["headline"] = conv.get("headline") or ""
+        p["headline_zh"] = conv.get("headline_zh") or ""
+
     from engine import forex_alerts
     acfg = cfg["alerts"]
+
+    # F3 — load previous transmission.assets before rebuild so transmission_shift_events
+    # gets a real prev snapshot (not None, which silently skips all shift events).
+    # M3: also read prior regime_radar.active for scenario edge detection.
+    _transmission_prev: dict | None = None
+    _scenario_prev_active: set | None = None
     try:
-        all_events = forex_alerts.rebuild(results)
+        _prev_path = config.data_dir() / "forex" / "latest.json"
+        if _prev_path.exists():
+            _prev_json = json.loads(_prev_path.read_text())
+            _prev_tr = (_prev_json.get("transmission") or {})
+            # Reconstruct prev transmission in the shape transmission_shift_events expects:
+            # {rows: [{key, corr_fast, corr_slow, effect, stability}, ...]}
+            _prev_assets = _prev_tr.get("assets") or {}
+            if _prev_assets:
+                _transmission_prev = {
+                    "rows": [
+                        {"key": k, **v}
+                        for k, v in _prev_assets.items()
+                    ]
+                }
+            # M3: prior active scenario set from regime_radar.active list
+            _prev_rr = (_prev_json.get("regime_radar") or {})
+            _scenario_prev_active = set(_prev_rr.get("active") or [])
+    except Exception as _e_prev:  # noqa: BLE001
+        log.debug("could not load prev transmission for shift events (%s)", _e_prev)
+
+    # daily alert timeline (deterministic, recomputed each build; no intraday for FX)
+    # F3: pass transmission_prev so transmission_shift_events fires correctly.
+    # M3: pass scenario_prev_active so scenario_events only fires on edges.
+    # F4: fx_state is assembled AFTER rebuild so changes_today has fresh events.
+    try:
+        all_events = forex_alerts.rebuild(
+            results, regime=regime, transmission=transmission,
+            transmission_prev=_transmission_prev,
+            scenario_prev_active=_scenario_prev_active)
     except Exception as e:  # noqa: BLE001 — timeline is optional, never break the page
         log.warning("forex alerts rebuild failed (%s)", e)
         all_events = forex_alerts.load_events()
     recent_events = forex_alerts.recent(all_events, acfg["timeline_days"])
     timeline = _group_timeline(recent_events)
+
+    # F4 — assemble fx_state AFTER rebuild; load_events() now returns tonight's events.
+    # F1 — normalize tz on each event ts before comparing to tz-aware now.
+    _cutoff_utc = pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=2)
+    _changes_today = []
+    for _ev in all_events:
+        try:
+            _t = pd.Timestamp(_ev["ts"])
+            _t = _t.tz_localize("UTC") if _t.tzinfo is None else _t.tz_convert("UTC")
+            if _t >= _cutoff_utc:
+                _changes_today.append(_ev)
+        except Exception:  # noqa: BLE001 — skip malformed ts
+            pass
+    _changes_today = sorted(_changes_today, key=lambda e: e["ts"], reverse=True)[:12]
+
+    fx_state = {
+        "smile_regime": dollar["regime"],
+        "dollar_dir": _dol_dir,
+        "dollar_day_flag": _dol_day_flag,
+        "risk_word": dollar.get("risk_word"),
+        "active_scenarios": _active_scn,
+        "cnh_basis_state": em_block.get("cnh_basis_state"),
+        "transmission_effects": {k: v.get("effect") for k, v in _tr_latest.get("assets", {}).items()},
+        "changes_today": [
+            {
+                "type": e.get("type"),
+                "asset": e.get("asset"),
+                "headline_en": e.get("headline"),
+                "headline_zh": e.get("headline_zh"),
+                "severity": e.get("severity"),
+            }
+            for e in _changes_today
+        ],
+    }
 
     as_of = max((results[p].index.max() for p in order), default=dol.index.max()).strftime("%b %d, %Y")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -605,7 +971,12 @@ def main() -> int:
         transmission=transmission, strength=strength, scorecards=scorecards,
         regime=regime, kinematics=kinematics,
         pairs=pairs, sections=sections, carry_table=ctable, cot_ok=cot_ok,
-        timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent_events))
+        timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent_events),
+        # B1.4 new view-model vars (populated in the new template; stub values for
+        # the existing template so it does not crash if the template is not yet updated)
+        hero=None, why_tiles=None, trans_rows=None, stress=None,
+        scoreboard=None, recent=None,
+        footer_en=None, footer_zh=None, stance=stance)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     write_page(site / "forex.html", html)
     log.info("wrote %s/forex.html (%d KB)", site, len(html) // 1024)
@@ -614,26 +985,40 @@ def main() -> int:
     outdir = config.data_dir() / "forex"
     outdir.mkdir(parents=True, exist_ok=True)
     _asof_raw = max((results[p].index.max() for p in order), default=dol.index.max())
+    # Legacy core (must never fail — consumers depend on these exact keys)
     latest = {"date": as_of, "asof": _asof_raw.strftime("%Y-%m-%d"),
               "regime": dollar["regime"], "favored": dollar["favored"],
               "risk": dollar["risk_word"],
               "pairs": {p["key"]: {"label": p["label"], "quote": p["quote"], "chg": p["chg"],
                                    "action": (p.get("conviction") or {}).get("action"),
-                                   "score": (p.get("conviction") or {}).get("score")}
+                                   "score": (p.get("conviction") or {}).get("score"),
+                                   "reliable": p.get("reliable"),
+                                   "headline": p.get("headline"),
+                                   "headline_zh": p.get("headline_zh"),
+                                   }
                         for p in pairs},
-              # NEW — the deepened dollar read, so the dollar feeds the rest of the
-              # site (cross_asset_confirm / master_brain / hub card / signal archive).
               "dollar_desk": _desk_latest(desk),
-              "transmission": _transmission_latest(transmission),
-              # NEW — compact FX stress-radar STATE (named scenarios + live intensity).
-              # Deliberately NO probabilities here (display-only; never a downstream
-              # signal). Under "regime_radar" so it can't collide with the top-level
-              # "regime" dollar-smile string above.
+              "transmission": _tr_latest,
               "regime_radar": ({"as_of": regime.get("as_of"), "dominant": regime.get("dominant"),
-                                "active": [s["key"] for s in regime.get("scenarios", []) if s.get("active")],
+                                "active": _active_scn,
                                 "intensity": {s["key"]: round(s.get("intensity_today") or 0, 1)
-                                              for s in regime.get("scenarios", [])}}
-                               if regime else {})}
+                                              for s in regime.get("scenarios", [])},
+                                "scenarios": _scenarios_export}
+                               if regime else {}),
+              }
+    # m3: wrap the new additive export fields in try/except so a failure degrades to the
+    # legacy latest.json write rather than crashing the nightly; log a ::warning.
+    try:
+        latest["dollar_day"] = dollar_day_block
+        latest["em"] = em_block
+        latest["strength"] = _strength_export
+        latest["stance"] = stance
+        latest["fx_state"] = fx_state
+        # B1.1: inject DXY into pairs block
+        latest["pairs"]["DXY"] = pairs_dxy
+    except Exception as _e_export:  # noqa: BLE001
+        log.warning("::warning :: forex additive export assembly failed (%s) — "
+                    "writing legacy latest.json only", _e_export)
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str))
     return 0
 

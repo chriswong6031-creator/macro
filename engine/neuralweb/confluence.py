@@ -434,6 +434,11 @@ def _build_macro_nodes(world_state: dict | None, gaps: list[str]) -> list[dict]:
                     "asof": fx.get("asof"),
                     "display_only": True,
                     "source_lobe": "fx_dollar",
+                    # New additive fields (B2) — None when B1 lane not yet landed
+                    "smile_regime": ((fx.get("dollar_desk") or {}).get("smile_decomp") or {}).get("regime"),
+                    "dollar_day_flag": (fx.get("dollar_day") or {}).get("flag"),
+                    "regime_radar_dominant": (fx.get("regime_radar") or {}).get("dominant"),
+                    "stance_word": (fx.get("stance") or {}).get("word_en"),
                 },
             ))
 

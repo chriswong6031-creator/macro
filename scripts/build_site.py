@@ -2879,6 +2879,13 @@ _DOLLAR_SENSITIVE_SECTORS = {
             "工业 —— 海外/出口收入占比高；强美元拖累外币折算销售"),
     "XLK": ("technology — large overseas revenue mix; a strong dollar is a translation headwind",
             "科技 —— 海外收入占比高；强美元带来折算逆风"),
+    # B3: added XLY and XLC — both have meaningful overseas revenue / import-cost exposure
+    "XLY": ("consumer discretionary — import-heavy supply chains and global brands; "
+            "a strong dollar raises import costs and squeezes overseas earnings",
+            "非必需消费品 —— 进口供应链与全球品牌；强美元推高进口成本并压缩海外利润"),
+    "XLC": ("communication services — large global platform revenue; "
+            "a strong dollar is a translation headwind on overseas ad and subscription income",
+            "通信服务 —— 全球平台收入占比高；强美元对海外广告与订阅收入带来折算逆风"),
 }
 
 

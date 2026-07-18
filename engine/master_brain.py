@@ -925,7 +925,8 @@ def gather_state(root: Path | None = None) -> dict:
     fx = _read_json(root / "data/forex/latest.json")
     if fx:
         fx_block = {k: fx.get(k) for k in
-                    ("date", "regime", "favored", "risk", "dollar_desk", "transmission")}
+                    ("date", "regime", "favored", "risk", "dollar_desk", "transmission",
+                     "regime_radar", "stance")}
         fx_block["_tape_family"] = "price_regime"
         fx_block["_lead_lag"] = "coincident"
         fx_block["_tape_note"] = (
@@ -1122,7 +1123,8 @@ def gather_china_state(root: Path | None = None) -> dict:
     fx = _read_json(root / "data/forex/latest.json")
     if fx:
         state["forex"] = {k: fx.get(k) for k in
-                          ("date", "regime", "favored", "risk", "dollar_desk", "transmission")}
+                          ("date", "regime", "favored", "risk", "dollar_desk", "transmission",
+                           "regime_radar", "stance")}
     # bonds backdrop — global rate-differential / risk-off context that pushes on HK & A-shares
     bonds = _bonds_backdrop(root)
     if bonds:

@@ -4239,7 +4239,6 @@ forex:
     spy:          [yahoo, SPY]
     eem:          [hk, EEM]             # EM-equity risk proxy (already collected under hk)
     cny_onshore:  [fred, DEXCHUS]       # onshore USD/CNY — vs offshore CNH=F = the CNH basis
-    btc:          [yahoo, "BTC-USD"]    # bitcoin — dollar cross-asset transmission leg (2014->)
     us10y_real:   [fred, DFII10]        # US 10y TIPS real yield — the dollar's structural anchor (2003->)
     breakeven_10y: [fred, T10YIE]       # 10y inflation breakeven — real-vs-reflation smile arm
     fed_bs:       [fred, WALCL]          # Fed balance sheet (weekly) — USD-liquidity leg
