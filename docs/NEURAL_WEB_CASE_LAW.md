@@ -1,6 +1,6 @@
 <!-- DO NOT EDIT BY HAND — regenerate with: python3 scripts/build_ruling_graph.py -->
 <!-- Source: config/ruling_graph.yml -->
-<!-- source_sha256: a52f0c7a5d4aebb3b275d2a614309dcea58b75c7e674cd8194b029864b86fcfd -->
+<!-- source_sha256: 0272b92c0138782e64b85cf4766187415c447d13a93e1436e73ba91e429aeed3 -->
 
 # Neural Web Case Law
 
@@ -3122,7 +3122,7 @@ Total rulings: 500
 
 - Status: `active_law` | Kind: `constitution` | Nondelegable: `True`
 
-**Ruling:** A PreToolUse hook (model_routing_guard.py) is wired in settings.json and denies Agent/Task spawns without an explicit model, any fable spawn, and Workflow scripts whose agent() calls carry no model:/agentType routing. Model-pinned agent types builder (sonnet) and reviewer (opus) pass the guard without a model: param.
+**Ruling:** A PreToolUse hook (model_routing_guard.py) is wired in settings.json and denies Agent/Task spawns without an explicit model, fable spawns outside the orchestrator+FABLE-WHY gate, fable-pinned agent frontmatter outside that gate, and Workflow scripts whose agent() calls carry no model:/agentType routing (or route to fable). Model-pinned agent types builder (sonnet) and reviewer (opus) pass the guard without a model: param; orchestrator carries an opus floor with fable reachable only via the gate, always with explicit model.
 
 **Scope fence:** Enforced at tool-call boundary via PreToolUse hook for all Agent/Task/Workflow invocations.
 
@@ -3131,7 +3131,7 @@ Total rulings: 500
   - spawn without explicit model or pinned agent type
 
 **Source:** `CLAUDE.md`
-> Enforcement: a PreToolUse hook (`.claude/hooks/model_routing_guard.py`, wired in `.claude/settings.json`) denies Agent/Task spawns without an explicit model, any `fable` spawn, and Workflow scripts whose `agent()` calls carry no `model:`/`agentType` routing.
+> Enforcement: a PreToolUse hook (`.claude/hooks/model_routing_guard.py`, wired in `.claude/settings.json`) denies Agent/Task spawns without an explicit model, `fable` spawns outside the orchestrator+FABLE-WHY gate, fable-pinned agent frontmatter outside that gate, and Workflow scripts whose `agent()` calls carry no `model:`/`agentType` routing (or route to fable).
 
 *Owner program: house-law*
 
