@@ -12,57 +12,242 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Macro Signals — raw data</title>
+<title>Macro Signals — the full signal board</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-{% include '_plotly_head.html.j2' %}
 <style>
+  :root {
+    --num: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
   @media (min-width:1100px){ body{ padding:24px max(36px,calc((100vw - 1340px)/2)); } }
   a { text-decoration:none; color:var(--link); }
   h1 { font-size:21px; margin:0 0 2px; }
-  .lead { color:var(--muted); font-size:13px; margin:0 0 16px; max-width:70ch; }
+  .lead { color:var(--muted); font-size:13px; margin:0 0 16px; max-width:72ch; }
+  .back { display:inline-block; margin-bottom:10px; font-size:13px; font-weight:600; }
+  .sib-link { display:inline-block; margin:0 0 14px 18px; font-size:13px; }
+
+  /* ── Aurora backdrop ─────────────────────────────────────────────────── */
+  .msx-aurora { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .msx-aurora::before {
+    content:''; position:absolute; top:-6%; left:8%;
+    width:42vw; height:42vw; border-radius:50%;
+    background:radial-gradient(ellipse, color-mix(in srgb,var(--info) 8%,transparent) 0%, transparent 70%);
+    filter:blur(90px);
+  }
+  .msx-aurora .au-b2 {
+    position:absolute; top:4%; right:8%;
+    width:38vw; height:38vw; border-radius:50%;
+    background:radial-gradient(ellipse, rgba(139,92,246,.08) 0%, transparent 70%);
+    filter:blur(90px);
+  }
+  .msx-aurora .au-b3 {
+    position:absolute; bottom:-10%; left:50%;
+    transform:translateX(-50%);
+    width:48vw; height:36vw; border-radius:50%;
+    background:radial-gradient(ellipse, color-mix(in srgb,var(--up) 8%,transparent) 0%, transparent 70%);
+    filter:blur(90px);
+  }
+  /* Yellow tint: green blob → amber */
+  .msx-aurora.au-yellow .au-b3 { background:radial-gradient(ellipse, rgba(245,158,11,.08) 0%, transparent 70%); }
+  /* Red tint: green blob → red */
+  .msx-aurora.au-red .au-b3 { background:radial-gradient(ellipse, color-mix(in srgb,var(--down) 8%,transparent) 0%, transparent 70%); }
+  [data-theme="light"] .msx-aurora::before { opacity:.45; }
+  [data-theme="light"] .msx-aurora .au-b2 { opacity:.45; }
+  [data-theme="light"] .msx-aurora .au-b3 { opacity:.45; }
+  .msx-wrap { position:relative; z-index:1; }
+
+  /* ── Grid layout ─────────────────────────────────────────────────────── */
   .grid { display:grid; gap:14px; grid-template-columns:repeat(12,1fr); }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
-  .panel h2 { font-size:15px; margin:0 0 10px; }
-  .span12 { grid-column:span 12; } .span6 { grid-column:span 6; } .span4 { grid-column:span 4; }
-  @media (max-width:900px){ .span6,.span4 { grid-column:span 12; } }
-  .sub { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:11px 13px; }
+  .span12 { grid-column:span 12; }
+  .span6  { grid-column:span 6; }
+  .span4  { grid-column:span 4; }
+  .span3  { grid-column:span 3; }
+  @media (max-width:900px){ .span6,.span4,.span3 { grid-column:span 12; } }
+
+  /* ── Glass panels ────────────────────────────────────────────────────── */
+  .panel {
+    background: color-mix(in srgb, var(--panel) 82%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+    position: relative;
+  }
+  /* h2 rail: 3px vertical gradient bar via ::before */
+  .panel h2 {
+    font-size:15px; margin:0 0 12px;
+    padding-left:11px; position:relative;
+  }
+  .panel h2::before {
+    content:''; position:absolute; left:0; top:2px; bottom:2px;
+    width:3px; border-radius:2px;
+    background: linear-gradient(180deg, var(--rail,var(--info)), transparent);
+  }
+
+  /* Section rail colors */
+  .rail-cycle    { --rail: #5b9bf0; }
+  .rail-money    { --rail: #20c0a0; }
+  .rail-mood     { --rail: #e0a030; }
+  .rail-fx       { --rail: #a070e8; }
+  .rail-commod   { --rail: #8b93a1; }
+
+  /* ── Sub-cards ───────────────────────────────────────────────────────── */
+  .sub { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:11px 13px; margin-bottom:10px; }
+  .sub:last-child { margin-bottom:0; }
   .sub h3 { font-size:13px; margin:0 0 6px; }
+
+  /* ── .sig tiles (conditions grid) ───────────────────────────────────── */
+  .sig-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-top:10px; }
+  .sig-tile {
+    background: var(--panel2); border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px; border-left:3px solid var(--sc, var(--muted));
+    position:relative;
+  }
+  .sig-tile .sig-label { font-size:10px; font-family:var(--num); text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:2px; }
+  .sig-tile .sig-value { font-size:17px; font-weight:800; font-family:var(--num); color:var(--sc, var(--text)); }
+  .sig-tile .sig-meaning { font-size:12px; color:var(--muted); margin-top:3px; }
+  .sig-tile.good  { --sc: var(--up); }
+  .sig-tile.warn  { --sc: var(--warn); }
+  .sig-tile.bad   { --sc: var(--down); }
+  .sig-tile.flat  { --sc: var(--muted); }
+
+  /* ── Needle gauge (SVG semicircle) ──────────────────────────────────── */
+  .gauge-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .gauge-label { font-size:10px; font-family:var(--num); text-transform:uppercase; letter-spacing:.06em; color:var(--muted); text-align:center; }
+  .gauge-value { font-size:13px; font-weight:700; text-align:center; font-family:var(--num); text-transform:capitalize; }
+
+  /* ── Hero strip ──────────────────────────────────────────────────────── */
+  .hero-inner { display:flex; align-items:flex-start; gap:24px; flex-wrap:wrap; }
+  .hero-stance { flex:1 1 200px; min-width:180px; }
+  .hero-stance h1 { font-size:19px; }
+  .hero-stance-line { font-size:15px; font-weight:600; margin:6px 0 0; color:var(--text); }
+  .hero-gauges { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+  .hero-ms { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .ms-pill { display:inline-block; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; border:2px solid transparent; }
+  .ms-green { background:color-mix(in srgb,var(--up) 18%,var(--panel)); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .ms-yellow { background:color-mix(in srgb,var(--warn) 18%,var(--panel)); color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,transparent); }
+  .ms-red { background:color-mix(in srgb,var(--down) 18%,var(--panel)); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ms-grey { background:var(--panel2); color:var(--muted); border-color:var(--line); }
+
+  /* ── Misc ────────────────────────────────────────────────────────────── */
   .kv { display:flex; justify-content:space-between; gap:12px; padding:2px 0; font-size:13px; }
   .kv b { font-family:var(--num); font-weight:700; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   th,td { text-align:right; padding:5px 7px; border-bottom:1px solid var(--line); }
   th.l,td.l { text-align:left; }
   thead th { color:var(--muted); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
-  .muted { color:var(--muted); } .sm { font-size:12px; } .pos { color:var(--up); } .neg { color:var(--down); }
+  .muted { color:var(--muted); }
+  .sm { font-size:12px; }
+  .pos { color:var(--up); }
+  .neg { color:var(--down); }
+  .warn { color:var(--warn); }
   .badge { display:inline-block; font-size:11px; padding:1px 7px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); }
   .chip { display:inline-block; font-size:11px; padding:2px 8px; margin:2px 3px 2px 0; border-radius:6px; border:1px solid var(--line); }
   .chip-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
   .chip-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .chip-warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); }
   .chart { margin-top:8px; }
   .pgauge { position:relative; height:8px; border-radius:5px; background:linear-gradient(90deg,var(--down),var(--warn),var(--up)); margin:6px 0 2px; }
   .pgauge i { position:absolute; top:-2px; width:3px; height:12px; background:var(--text); border-radius:2px; transform:translateX(-50%); }
   .pends { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
   .leg { display:flex; align-items:center; gap:8px; margin:4px 0; font-size:12.5px; }
   .leg-bar { flex:1; height:7px; border-radius:4px; background:var(--line); overflow:hidden; }
-  .leg-bar i { display:block; height:100%; background:var(--muted); }
+  .leg-bar i { display:block; height:100%; background:var(--info); }
   .help { position:relative; display:inline-grid; place-items:center; width:15px; height:15px; border:1px solid var(--line); border-radius:50%; font-size:10px; color:var(--muted); cursor:help; vertical-align:middle; }
-  .help .tip { visibility:hidden; opacity:0; position:absolute; z-index:20; bottom:130%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.5; color:var(--text); box-shadow:0 8px 24px -10px rgba(0,0,0,.5); text-align:left; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
-  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help .tip { visibility:hidden; opacity:0; position:absolute; z-index:20; bottom:130%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.5; color:var(--text); box-shadow:0 8px 24px -10px rgba(0,0,0,.5); text-align:left; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
   .help:hover::before { content:''; position:absolute; bottom:100%; left:-30px; right:-30px; height:10px; }
   .help:hover .tip { visibility:visible; opacity:1; }
-  /* phone: a 280px tooltip centred on a help icon near the right edge spilled off
-     the screen (it widened the page even while hidden). Anchor it to the icon's
-     right and clamp its width so it always stays on-screen. */
   @media (max-width:700px){ .help .tip { left:auto; right:0; transform:none; max-width:calc(100vw - 28px); } }
-  .back { display:inline-block; margin-bottom:14px; font-size:13px; font-weight:600; }
+
+  /* ── Details/deep collapsible ────────────────────────────────────────── */
+  details.deep { margin-top:10px; }
+  details.deep summary {
+    cursor:pointer; font-size:12px; color:var(--muted); padding:6px 0;
+    list-style:none; user-select:none;
+  }
+  details.deep summary::-webkit-details-marker { display:none; }
+  details.deep summary::after { content:' ▸'; }
+  details.deep[open] summary::after { content:' ▾'; }
+  details.deep .deep-body { padding-top:8px; }
+
+  /* ── Tier momentum arrows ────────────────────────────────────────────── */
+  .tier-row { display:flex; align-items:center; gap:10px; padding:5px 0; border-bottom:1px solid var(--line); }
+  .tier-row:last-child { border-bottom:none; }
+  .tier-arrow { font-size:16px; line-height:1; }
+  .tier-bar-wrap { flex:1; height:5px; border-radius:3px; background:var(--line); overflow:hidden; }
+  .tier-bar-fill { height:100%; border-radius:3px; background:var(--info); }
+
+  /* ── FX specific ─────────────────────────────────────────────────────── */
+  .str-bar-row { display:flex; align-items:center; gap:8px; padding:3px 0; font-size:12.5px; }
+  .str-bar-track { flex:1; height:7px; border-radius:4px; background:var(--line); overflow:hidden; position:relative; }
+  .str-bar-fill { position:absolute; top:0; height:100%; border-radius:4px; background:var(--info); }
+  .str-bar-fill.neg-fill { background:var(--down); right:50%; }
+  .str-bar-fill.pos-fill { background:var(--up); left:50%; }
+  .str-bar-center { position:absolute; left:50%; top:-1px; width:1px; height:9px; background:var(--line); }
+  .str-ccy { flex:0 0 38px; font-family:var(--num); font-size:12px; font-weight:700; }
+  .str-val { flex:0 0 46px; text-align:right; font-family:var(--num); font-size:12px; color:var(--muted); }
+  .str-em { color:color-mix(in srgb,var(--warn) 80%,var(--text)); }
+  .stress-chip {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11.5px; padding:3px 9px; margin:3px 4px 3px 0;
+    border-radius:8px; border:1px solid var(--line);
+    background:var(--panel2);
+  }
+  .stress-chip.active-chip { border-color:color-mix(in srgb,var(--down) 50%,var(--line)); color:var(--down); }
+  .stress-chip.dominant-chip { font-weight:700; }
+  .pulse-dot {
+    width:7px; height:7px; border-radius:50%; background:var(--down);
+    animation: stress-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes stress-pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+  .triple-red-banner {
+    background:color-mix(in srgb,var(--down) 12%,var(--panel2));
+    border:1px solid color-mix(in srgb,var(--down) 40%,var(--line));
+    border-radius:8px; padding:10px 14px;
+    color:var(--down); font-weight:600; font-size:13px; margin:10px 0;
+  }
+  .what-changed-row { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:12.5px; border-bottom:1px solid var(--line); }
+  .what-changed-row:last-child { border-bottom:none; }
+  .sev-dot { width:7px; height:7px; border-radius:50%; flex:none; }
+  .sev-high { background:var(--down); }
+  .sev-med  { background:var(--warn); }
+  .sev-low  { background:var(--info); }
+
+  /* ── Entrance animation ──────────────────────────────────────────────── */
+  @media (prefers-reduced-motion: no-preference) {
+    .panel { animation: fade-up .32s ease both; }
+    .anim-d1 { animation-delay:.04s; }
+    .anim-d2 { animation-delay:.08s; }
+    .anim-d3 { animation-delay:.12s; }
+    .anim-d4 { animation-delay:.16s; }
+    .anim-d5 { animation-delay:.20s; }
+    .anim-d6 { animation-delay:.24s; }
+    @keyframes fade-up {
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .panel { animation:none !important; }
+    .pulse-dot { animation:none !important; }
+  }
 </style>
 </head>
 <body class="page-macro">
+
+{# ── Aurora backdrop ─────────────────────────────────────────────────────── #}
+{% set _aur_color = (market_state.color if market_state and market_state.color else '') %}
+<div class="msx-aurora{{ ' au-yellow' if _aur_color == 'yellow' else (' au-red' if _aur_color == 'red' else '') }}" aria-hidden="true">
+  <div class="au-b2"></div>
+  <div class="au-b3"></div>
+</div>
+
+<div class="msx-wrap">
 <nav class="site-nav">
-    {% include "_navlinks.html.j2" %}
+  {% include "_navlinks.html.j2" %}
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -84,304 +269,908 @@
 </nav>
 
 <a class="back" href="macro.html">← {{ t('Back to Macro Dashboard', '返回宏观仪表盘') }}</a>
-<h1>🧮 {{ t('Macro Signals — raw data', '宏观信号 — 原始数据') }}</h1>
-<p class="lead">{{ t('The full reading behind the dashboard — every gauge offloaded from the front page so it stays uncluttered, kept here in compressed form. All display-only / context; nothing here scores, sizes or feeds the regime engine. A machine-readable copy is at', '仪表盘背后的完整读数 — 从首页移出的每个量表都在此以压缩形式保留，使首页保持简洁。全部仅供展示／参考；此处无一进行评分、定仓或进入周期引擎。机器可读副本见') }} <a href="macrodata/macro_signals.json">macro_signals.json</a>{{ t('. Updated', '。更新于') }} {{ latest.date }}.</p>
+<a class="sib-link" href="macro_context.html">{{ t('Macro Weather (labels & history) →', '宏观气象台（标签与历史）→') }}</a>
+
+<h1>{{ t('Macro Signals', '宏观信号') }}</h1>
+<p class="lead">
+  <span class="l-en">Every gauge behind the macro dashboard — the cycle, real-time conditions,
+  liquidity, sentiment, positioning and the dollar — each with what it means
+  right now. These readings feed the system's context layer; none of them alone
+  drives a buy or sell call. Machine-readable copy: <a href="macrodata/macro_signals.json">macro_signals.json</a>.</span>
+  <span class="l-zh">宏观仪表盘背后的全部量表 — 周期、实时状况、流动性、情绪、持仓与美元 —
+  每一项都附有当下含义。这些读数进入系统的背景层；任何单项都不会直接触发买卖
+  决定。机器可读版本见 <a href="macrodata/macro_signals.json">macro_signals.json</a>。</span>
+</p>
 
 <div class="grid">
 
-  {# ===================== BUSINESS CYCLE ===================== #}
-  {% if latest.business_cycle and latest.business_cycle.available %}
-  {% set BC = latest.business_cycle %}{% set SIG = BC.recession_signal %}{% set M = BC.measured %}
-  <div class="panel span12" id="business-cycle">
-    <h2>🔄 {{ t('Business cycle — Leading · Coincident · Lagging', '商业周期 — 领先 · 同步 · 滞后') }}
-      {{ help('Conference-Board-style three-tier decomposition kept SEPARATE so the lead-lag sequence is readable. Leading indicators turn first; coincident confirm the peak; lagging confirm last. The recession signal is the CB 3 Ds — depth+duration and diffusion. Measured against NBER dates.', '会议委员会式三层分解，保持分离以读出领先-滞后顺序。领先指标最先转向；同步确认峰值；滞后最后确认。衰退信号采用 CB 三D — 深度+持续与扩散。以 NBER 日期实测。') }}
-    </h2>
-    <div class="grid">
-      <div class="sub span6">
-        {% set on = SIG.state == 'on' %}
-        <h3>{{ t('Recession signal', '衰退信号') }} · <span class="{{ 'neg' if on else 'pos' }}">{{ t('ON','触发') if on else t('OFF','未触发') }}</span> <span class="muted sm">{{ SIG.months_active }} {{ t('mo','月') }}</span></h3>
-        <div class="muted sm">{{ t('Cycle phase', '周期阶段') }}: <b>{{ td(BC.phase.label) }}</b>
-          {% if SIG.conditions %} · {{ t('depth','深度') }} {{ '✓' if SIG.conditions.depth else '✗' }} · {{ t('breadth','广度') }} {{ '✓' if SIG.conditions.breadth else '✗' }}{% endif %}</div>
-        {% if BC.shadow and BC.shadow.phase and BC.shadow.phase.label != BC.phase.label %}
-        <div class="muted sm" style="margin-top:4px;opacity:.7">{{ t('Shadow phase','影子相位') }}: {{ td(BC.shadow.phase.label) }} — {{ t('at an alternate publication lag','按替代发布滞后') }}</div>
-        {% endif %}
-        {% if M and M.oos_caught is not none %}<div class="muted sm" style="margin-top:6px">{{ t('Out-of-sample (LORO, 1985+)','样本外（留一衰退，1985+）') }} <b>{{ M.oos_caught }}/{{ M.oos_endogenous }}</b> {{ t('caught','已捕捉') }} · {{ t('median lead','中位领先') }} ~{{ M.oos_median_lead_months }}{{ t('mo','月') }} · {{ M.consensus_false_positives }} {{ t('false alarms','误报') }}{% if M.oos_catch_rate_jeffreys95 %} · {{ t('95% CI','95%置信区间') }} {{ M.oos_catch_rate_jeffreys95[0] }}–{{ M.oos_catch_rate_jeffreys95[1] }}{% endif %}</div>{% endif %}
-      </div>
-      <div class="sub span6">
-        <h3>{{ t('Tier momentum', '层级动量') }} <span class="muted sm">{{ t('6-month','6个月') }}</span></h3>
-        {% for tk, ten, tzh in [('leading','Leading','领先'),('coincident','Coincident','同步'),('lagging','Lagging','滞后')] %}
-        {% set T = BC.tiers.get(tk) %}{% if T and T.mom6 is not none %}
-        {{ kv(ten, tzh, ('%+.2f'|format(T.mom6)) ~ '  ·  ' ~ ('diff ' ~ (T.diffusion|round|int) if T.diffusion is not none else '') ~ '  ·  ' ~ (T.n_legs|string) ~ ' legs') }}
-        {% endif %}{% endfor %}
-      </div>
-    </div>
-  </div>
-  {% endif %}
+{# =====================================================================
+   §1  HERO STRIP
+   ===================================================================== #}
+{% set _mscolor = (market_state.color if market_state and market_state.color else '') %}
+{% set _stances = msig_stances if msig_stances is defined and msig_stances else {} %}
+<div class="panel span12 rail-cycle anim-d1" id="hero">
+  <div class="hero-inner">
 
-  {# ===================== REAL-TIME CONDITIONS & NOWCAST ===================== #}
+    {# Stance block #}
+    <div class="hero-stance">
+      <h1>{{ t('Right now', '当下') }}</h1>
+      <div class="hero-stance-line">
+        {# single source: build_site._MSIG_HERO_STANCES via msig_stances.hero #}
+        {% set _hero_st = _stances.get('hero') if _stances else none %}
+        {% if _hero_st and _hero_st.get('en') %}
+          {{ t(_hero_st.en, _hero_st.get('zh') or _hero_st.en) }}
+        {% else %}
+          {{ t('A mixed picture — read the boards below.', '情况混杂 — 请看下方各板。') }}
+        {% endif %}
+      </div>
+      {% if latest and latest.date %}
+      <div class="muted sm" style="margin-top:8px">{{ t('As of','数据截至') }} {{ latest.date }}</div>
+      {% endif %}
+    </div>
+
+    {# 4 needle gauges #}
+    <div class="hero-gauges">
+      {# Gauge 1: Growth score (-1..+1 → 0..100) #}
+      {% set _gs = latest.growth_score if latest and latest.growth_score is not none else none %}
+      {% set _gs_pct = ((_gs + 1) / 2 * 100) if _gs is not none else 50 %}
+      {% set _gs_rot = (_gs_pct * 1.8 - 90) if _gs is not none else -90 %}
+      {% set _gs_state = 'good' if (_gs is not none and _gs >= 0) else 'bad' %}
+      <div class="gauge-wrap">
+        <div class="gauge-label">{{ t('Growth', '增长') }}</div>
+        <svg viewBox="0 -4 140 101" width="110" height="80" aria-hidden="true" id="gauge-growth">
+          <path d="M10,68 A50,50 0 0,1 130,68" stroke="var(--line)" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M10,68 A50,50 0 0,1 130,68" stroke="url(#grd-g)" stroke-width="8" fill="none" stroke-linecap="round" opacity=".35"/>
+          <defs>
+            <linearGradient id="grd-g" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="var(--down)"/>
+              <stop offset="50%" stop-color="var(--warn)"/>
+              <stop offset="100%" stop-color="var(--up)"/>
+            </linearGradient>
+          </defs>
+          <g id="gneedle-growth" style="transform:rotate({{ _gs_rot }}deg);transform-origin:60px 68px;{% if _gs is not none %}transition:transform .8s cubic-bezier(.22,.9,.3,1);{% endif %}">
+            <line x1="60" y1="68" x2="60" y2="26"
+              stroke="{{ 'var(--up)' if _gs_state == 'good' else 'var(--down)' }}"
+              stroke-width="2.5" stroke-linecap="round"
+              style="filter:drop-shadow(0 0 4px {{ 'var(--up)' if _gs_state == 'good' else 'var(--down)' }})"/>
+            <circle cx="60" cy="68" r="4" fill="{{ 'var(--up)' if _gs_state == 'good' else 'var(--down)' }}"/>
+          </g>
+        </svg>
+        <div class="gauge-value {{ _gs_state }}">
+          {% if _gs is not none %}
+            {{ t('RISING', '上行') if _gs >= 0 else t('FALLING', '下行') }}
+          {% else %}—{% endif %}
+          {{ help('Growth dial. Score −1..+1 maps to 0..100 on the arc. Built from market prices (leading) plus economic data confirmation.', '增长刻度盘。分数−1..+1映射为弧上0..100。由市场价格（领先）加经济数据确认构建。') }}
+        </div>
+      </div>
+
+      {# Gauge 2: Inflation score #}
+      {% set _is = latest.inflation_score if latest and latest.inflation_score is not none else none %}
+      {% set _is_pct = ((_is + 1) / 2 * 100) if _is is not none else 50 %}
+      {% set _is_rot = (_is_pct * 1.8 - 90) if _is is not none else -90 %}
+      {% set _is_state = 'warn' if (_is is not none and _is >= 0) else 'good' %}
+      <div class="gauge-wrap">
+        <div class="gauge-label">{{ t('Inflation', '通胀') }}</div>
+        <svg viewBox="0 -4 140 101" width="110" height="80" aria-hidden="true" id="gauge-inflation">
+          <path d="M10,68 A50,50 0 0,1 130,68" stroke="var(--line)" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M10,68 A50,50 0 0,1 130,68" stroke="url(#grd-i)" stroke-width="8" fill="none" stroke-linecap="round" opacity=".35"/>
+          <defs>
+            <linearGradient id="grd-i" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="var(--up)"/>
+              <stop offset="50%" stop-color="var(--warn)"/>
+              <stop offset="100%" stop-color="var(--down)"/>
+            </linearGradient>
+          </defs>
+          <g id="gneedle-inflation" style="transform:rotate({{ _is_rot }}deg);transform-origin:60px 68px;{% if _is is not none %}transition:transform .8s cubic-bezier(.22,.9,.3,1);{% endif %}">
+            <line x1="60" y1="68" x2="60" y2="26"
+              stroke="{{ 'var(--warn)' if _is_state == 'warn' else 'var(--up)' }}"
+              stroke-width="2.5" stroke-linecap="round"
+              style="filter:drop-shadow(0 0 4px {{ 'var(--warn)' if _is_state == 'warn' else 'var(--up)' }})"/>
+            <circle cx="60" cy="68" r="4" fill="{{ 'var(--warn)' if _is_state == 'warn' else 'var(--up)' }}"/>
+          </g>
+        </svg>
+        <div class="gauge-value {{ _is_state }}">
+          {% if _is is not none %}
+            {{ t('RISING', '上行') if _is >= 0 else t('FALLING', '下行') }}
+          {% else %}—{% endif %}
+          {{ help('Inflation dial. Score −1..+1 maps to 0..100. High inflation (right) is an economic headwind for equities.', '通胀刻度盘。分数−1..+1映射至0..100。高通胀（右侧）对股票为逆风。') }}
+        </div>
+      </div>
+
+      {# Gauge 3: Fear/Greed (0..100) #}
+      {% set _fg = fear_greed %}
+      {% set _fg_dial = _fg.dial if _fg and _fg.dial is not none else none %}
+      {% set _fg_rot = (_fg_dial * 1.8 - 90) if _fg_dial is not none else -90 %}
+      {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
+      {% set _fg_state = 'bad' if (_fg_dial is not none and _fg_dial >= 75) else ('good' if (_fg_dial is not none and _fg_dial <= 25) else 'flat') %}
+      <div class="gauge-wrap">
+        <div class="gauge-label">{{ t('Fear / Greed', '恐惧/贪婪') }}</div>
+        <svg viewBox="0 -4 140 101" width="110" height="80" aria-hidden="true" id="gauge-fg">
+          <path d="M10,68 A50,50 0 0,1 130,68" stroke="var(--line)" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M10,68 A50,50 0 0,1 130,68" stroke="url(#grd-fg)" stroke-width="8" fill="none" stroke-linecap="round" opacity=".35"/>
+          <defs>
+            <linearGradient id="grd-fg" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="var(--up)"/>
+              <stop offset="50%" stop-color="var(--warn)"/>
+              <stop offset="100%" stop-color="var(--down)"/>
+            </linearGradient>
+          </defs>
+          <g id="gneedle-fg" style="transform:rotate({{ _fg_rot }}deg);transform-origin:60px 68px;{% if _fg_dial is not none %}transition:transform .8s cubic-bezier(.22,.9,.3,1);{% endif %}">
+            <line x1="60" y1="68" x2="60" y2="26"
+              stroke="var(--warn)"
+              stroke-width="2.5" stroke-linecap="round"
+              style="filter:drop-shadow(0 0 4px var(--warn))"/>
+            <circle cx="60" cy="68" r="4" fill="var(--warn)"/>
+          </g>
+        </svg>
+        <div class="gauge-value {{ _fg_state }}">
+          {% if _fg and _fg.label_en %}
+            {{ t(_fg.label_en, _fgbandzh.get(_fg.label_en, _fg.label_en)) }}
+          {% else %}—{% endif %}
+          {{ help('Fear/Greed composite dial (0=Extreme Fear, 100=Extreme Greed). Wide multi-indicator composite. Technical receipts in the Mood section below.', '恐惧/贪婪合成指针（0=极度恐惧，100=极度贪婪）。宽幅多指标合成。技术细节见下方情绪板块。') }}
+        </div>
+      </div>
+
+      {# Gauge 4: VIX percentile (0..100) #}
+      {% set _vix = vix %}
+      {% set _vp = _vix.pctile if _vix and _vix.pctile is not none else none %}
+      {% set _vp_rot = (_vp * 1.8 - 90) if _vp is not none else -90 %}
+      {% set _vix_state = 'bad' if (_vp is not none and _vp >= 75) else ('warn' if (_vp is not none and _vp >= 50) else 'good') %}
+      <div class="gauge-wrap">
+        <div class="gauge-label">{{ t('VIX level', 'VIX 水平') }}</div>
+        <svg viewBox="0 -4 140 101" width="110" height="80" aria-hidden="true" id="gauge-vix">
+          <path d="M10,68 A50,50 0 0,1 130,68" stroke="var(--line)" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M10,68 A50,50 0 0,1 130,68" stroke="url(#grd-vix)" stroke-width="8" fill="none" stroke-linecap="round" opacity=".35"/>
+          <defs>
+            <linearGradient id="grd-vix" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="var(--up)"/>
+              <stop offset="50%" stop-color="var(--warn)"/>
+              <stop offset="100%" stop-color="var(--down)"/>
+            </linearGradient>
+          </defs>
+          <g id="gneedle-vix" style="transform:rotate({{ _vp_rot }}deg);transform-origin:60px 68px;{% if _vp is not none %}transition:transform .8s cubic-bezier(.22,.9,.3,1);{% endif %}">
+            <line x1="60" y1="68" x2="60" y2="26"
+              stroke="{{ 'var(--down)' if _vix_state == 'bad' else ('var(--warn)' if _vix_state == 'warn' else 'var(--up)') }}"
+              stroke-width="2.5" stroke-linecap="round"
+              style="filter:drop-shadow(0 0 4px {{ 'var(--down)' if _vix_state == 'bad' else ('var(--warn)' if _vix_state == 'warn' else 'var(--up)') }})"/>
+            <circle cx="60" cy="68" r="4" fill="{{ 'var(--down)' if _vix_state == 'bad' else ('var(--warn)' if _vix_state == 'warn' else 'var(--up)') }}"/>
+          </g>
+        </svg>
+        <div class="gauge-value {{ _vix_state }}">
+          {% if _vix and _vix.regime %}{{ td(_vix.regime) }}{% else %}—{% endif %}
+          {{ help('VIX percentile (0=lowest ever, 100=highest ever). Regime bands: calm <16, normal 16-20, stressed 20-28, crisis >28. Technical detail in VIX section below.', 'VIX百分位（0=历史最低，100=历史最高）。区间：平静<16，正常16-20，受压20-28，危机>28。技术细节见下方VIX板块。') }}
+        </div>
+      </div>
+    </div>{# /hero-gauges #}
+
+    {# Market state pill #}
+    <div class="hero-ms">
+      {% if market_state %}
+      {% set _mc = market_state.color if market_state.color else '' %}
+      <a href="macro.html" class="ms-pill {{ 'ms-green' if _mc == 'green' else ('ms-yellow' if _mc == 'yellow' else ('ms-red' if _mc == 'red' else 'ms-grey')) }}">
+        {{ t('Market state:', '市场状态：') }}
+        {{ t('Green', '绿灯') if _mc == 'green' else (t('Yellow', '黄灯') if _mc == 'yellow' else (t('Red', '红灯') if _mc == 'red' else t('—', '—'))) }}
+      </a>
+      {% endif %}
+    </div>
+
+  </div>{# /hero-inner #}
+</div>
+
+{# =====================================================================
+   §2  GROWTH & THE CYCLE
+   ===================================================================== #}
+{% if latest and latest.business_cycle and latest.business_cycle.available %}
+{% set BC = latest.business_cycle %}{% set SIG = BC.recession_signal %}{% set M = BC.measured %}
+<div class="panel span12 rail-cycle anim-d2" id="business-cycle">
+  <h2>{{ t('Growth & the cycle', '增长与周期') }}</h2>
+  <div class="grid">
+
+    {# Sub-card A: Business cycle phase #}
+    <div class="sub span6">
+      {# phase dict carries label/label_zh only (no key) — match on lowercased label #}
+      {% set _ph_key = (BC.phase.key if BC.phase and BC.phase.get('key') else (BC.phase.label|lower if BC.phase and BC.phase.label else '')) %}
+      <div style="font-size:22px;font-weight:800;margin-bottom:6px;text-transform:capitalize">{% if BC.phase and BC.phase.label %}{{ t(BC.phase.label, BC.phase.get('label_zh') or BC.phase.label) }}{% endif %}</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:10px">
+        {% if _ph_key == 'expansion' %}
+          {{ t('The economy is growing — the cycle backdrop is a tailwind.', '经济扩张 — 周期背景为顺风。') }}
+        {% elif _ph_key == 'slowdown' %}
+          {{ t('Growth is cooling — late-cycle; gains get choppier.', '增长降温 — 周期后段，行情更颠簸。') }}
+        {% elif _ph_key == 'contraction' %}
+          {{ t('The economy is shrinking — defensive backdrop.', '经济收缩 — 防御背景。') }}
+        {% elif _ph_key == 'recovery' %}
+          {{ t('Growth is turning back up — early-cycle tailwind.', '增长回升 — 周期初段顺风。') }}
+        {% endif %}
+      </div>
+
+      {# Recession signal chip #}
+      {% set _rec_on = SIG and SIG.state == 'on' %}
+      <div class="chip {{ 'chip-neg' if _rec_on else 'chip-pos' }}" style="font-size:12.5px">
+        {% if _rec_on %}
+          {{ t('Recession signal ON', '衰退信号已触发') }}
+          {% if SIG.months_active %} — {{ SIG.months_active }}{{ t(' months', '个月') }}{% endif %}
+        {% else %}
+          {{ t('No recession signal', '无衰退信号') }}
+        {% endif %}
+      </div>
+      {{ help(
+        'Recession signal: Conference Board 3 Ds — depth, duration, diffusion. Conditions: depth=' ~ (('✓' if SIG.conditions.depth else '✗') if SIG and SIG.conditions else '—') ~ ' breadth=' ~ (('✓' if SIG.conditions.breadth else '✗') if SIG and SIG.conditions else '—') ~ ('. Shadow phase: ' ~ (td(BC.shadow.phase.label) if BC.shadow and BC.shadow.phase and BC.shadow.phase.label else '—') ~ ' (alternate publication lag)') ~ ('. Out-of-sample (LORO 1985+): ' ~ (M.oos_caught|string ~ '/' ~ M.oos_endogenous|string ~ ' caught, median lead ~' ~ M.oos_median_lead_months|string ~ 'mo, ' ~ M.consensus_false_positives|string ~ ' false alarms') if M and M.oos_caught is not none else ''),
+        '衰退信号：会议委员会三D — 深度、持续、扩散。条件：深度=' ~ (('✓' if SIG.conditions.depth else '✗') if SIG and SIG.conditions else '—') ~ ' 广度=' ~ (('✓' if SIG.conditions.breadth else '✗') if SIG and SIG.conditions else '—') ~ ('. 影子相位：' ~ (td(BC.shadow.phase.label) if BC.shadow and BC.shadow.phase and BC.shadow.phase.label else '—')) ~ ('. 样本外（留一衰退1985+）：' ~ (M.oos_caught|string ~ '/' ~ M.oos_endogenous|string ~ ' 已捕捉，中位领先~' ~ M.oos_median_lead_months|string ~ '月，' ~ M.consensus_false_positives|string ~ '次误报') if M and M.oos_caught is not none else '')
+      ) }}
+    </div>
+
+    {# Sub-card B: Tier momentum #}
+    <div class="sub span6">
+      <h3>{{ t('Tier momentum', '层级动量') }} <span class="muted sm">{{ t('6-month', '6个月') }}</span></h3>
+      {% for tk, ten, tzh in [('leading','Leading','领先'),('coincident','Coincident','同步'),('lagging','Lagging','滞后')] %}
+      {% set T = BC.tiers.get(tk) if BC.tiers else none %}
+      {% if T is not none %}
+      {% set _up = T.mom6 is not none and T.mom6 >= 0 %}
+      {% set _bar = ([T.mom6|abs, 1]|min * 100) if T.mom6 is not none else 0 %}
+      <div class="tier-row">
+        <span class="tier-arrow {{ 'pos' if _up else 'neg' }}">{{ '▲' if _up else '▼' }}</span>
+        <span style="flex:0 0 80px;font-size:13px">{{ t(ten, tzh) }}</span>
+        <span style="flex:0 0 90px;font-size:12px;color:var(--muted)">{{ t('turning up','转强') if _up else t('turning down','转弱') }}</span>
+        <div class="tier-bar-wrap">
+          <div class="tier-bar-fill {{ 'pos' if _up else '' }}" style="width:{{ _bar|round(1) }}%;background:{{ 'var(--up)' if _up else 'var(--down)' }}"></div>
+        </div>
+        {{ help(
+          ten ~ ' tier: mom6=' ~ (('%+.2f'|format(T.mom6)) if T.mom6 is not none else '—') ~ (', diffusion=' ~ T.diffusion|round|int|string if T.diffusion is not none else '') ~ (', n=' ~ T.n_legs|string if T.n_legs is not none else ''),
+          tzh ~ ' 层：mom6=' ~ (('%+.2f'|format(T.mom6)) if T.mom6 is not none else '—') ~ (', 扩散=' ~ T.diffusion|round|int|string if T.diffusion is not none else '') ~ (', n=' ~ T.n_legs|string if T.n_legs is not none else '')
+        ) }}
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+  </div>{# /grid #}
+
+  {# Conditions grid #}
   {% if latest.conditions %}
   {% set C = latest.conditions %}
-  <div class="panel span12" id="conditions">
-    <h2>🛰️ {{ t('The economy & risk, in real time', '经济与风险 · 实时') }}
-      {{ help('Live reads from official Fed and options data — financial-system stress, recession odds, real-time growth & inflation, and risk appetite. Context only; never changes the regime call.', '来自官方美联储与期权数据的实时读数 — 金融体系压力、衰退概率、实时增长与通胀、风险偏好。仅供参考；绝不改变周期判断。') }}
-    </h2>
-    <div class="grid">
-      {% if C.recession %}{% set RC = C.recession %}
-      <div class="sub span4"><h3>{{ t('Recession risk','衰退风险') }} · <b>{{ RC.score|round|int if RC.score is not none else '—' }}/100</b> {% if RC.label %}<span class="muted sm">{{ td(RC.label) }}</span>{% endif %}</h3>
-        {% if RC.sahm is not none %}{{ kv('Sahm','萨姆规则', '%.2f'|format(RC.sahm)) }}{% endif %}
-        {% if RC.ny_fed_prob is not none %}{{ kv('NY Fed curve prob','纽约联储曲线概率', '%.0f%%'|format(RC.ny_fed_prob*100)) }}{% endif %}
-        {% if RC.ebp is not none %}{{ kv('Excess bond premium','超额债券溢价', '%+.2f'|format(RC.ebp)) }}{% endif %}
-      </div>{% endif %}
-      {% if C.drawdown_risk %}{% set DR = C.drawdown_risk %}
-      <div class="sub span4"><h3>{{ t('Drawdown risk','回撤风险') }} · <b>{{ DR.score|round|int if DR.score is not none else '—' }}/100</b> {% if DR.band %}<span class="muted sm">{{ td(DR.band) }}</span>{% endif %}</h3>
-        {% if DR.dd10_prob_pct is not none %}{{ kv('P(≥10% / 63d)','概率(≥10%/63日)', DR.dd10_prob_pct ~ '%') }}{% endif %}
-        {% if DR.base_rate_pct is not none %}{{ kv('Base rate','基准概率', DR.base_rate_pct ~ '%') }}{% endif %}
-      </div>{% endif %}
-      {% if C.financial_conditions %}{% set FC = C.financial_conditions %}
-      <div class="sub span4"><h3>{{ t('Financial conditions','金融条件') }} {% if FC.state %}<span class="muted sm">{{ td(FC.state) }}</span>{% endif %}</h3>
-        {% if FC.nfci is not none %}{{ kv('NFCI','NFCI', '%+.2f'|format(FC.nfci)) }}{% endif %}
-        {% if FC.nfci_pctile is not none %}{{ kv('NFCI %ile','NFCI 百分位', (FC.nfci_pctile*100)|round|int ~ '%') }}{% endif %}
-        {% if FC.trend %}{{ kv('Trend','趋势', td(FC.trend)) }}{% endif %}
-      </div>{% endif %}
-      {% if C.systemic_stress %}{% set SS = C.systemic_stress %}
-      <div class="sub span4"><h3>{{ t('Systemic stress (OFR)','系统性压力 (OFR)') }} {% if SS.state %}<span class="muted sm">{{ td(SS.state) }}</span>{% endif %}</h3>
-        {% if SS.ofr_fsi is not none %}{{ kv('OFR FSI','OFR 压力指数', '%+.2f'|format(SS.ofr_fsi)) }}{% endif %}
-        {% if SS.leading_driver %}{{ kv('Top channel','主要渠道', td(SS.leading_driver)) }}{% endif %}
-        {% if SS.cp_stress %}{{ kv('CP funding','商业票据融资', td(SS.cp_stress)) }}{% endif %}
-      </div>{% endif %}
-      {% if C.growth_nowcast or C.inflation_nowcast %}
-      <div class="sub span4"><h3>{{ t('Growth & inflation nowcast','增长与通胀即时预测') }}</h3>
-        {% if C.growth_nowcast %}{% set GN = C.growth_nowcast %}{% if GN.wei is not none %}{{ kv('Weekly Econ Index','周度经济指数', '%+.2f'|format(GN.wei)) }}{% endif %}{% if GN.gdpnow is not none %}{{ kv('GDPNow','GDPNow', '%+.1f%%'|format(GN.gdpnow)) }}{% endif %}{% endif %}
-        {% if C.inflation_nowcast %}{% set IN = C.inflation_nowcast %}{% if IN.sticky_ann is not none %}{{ kv('Sticky CPI (ann.)','粘性CPI(年化)', '%.1f%%'|format(IN.sticky_ann)) }}{% endif %}{% if IN.flexible_ann is not none %}{{ kv('Flexible CPI (ann.)','弹性CPI(年化)', '%.1f%%'|format(IN.flexible_ann)) }}{% endif %}{% endif %}
-      </div>{% endif %}
-      {% if C.labor_nowcast %}{% set LN = C.labor_nowcast %}
-      <div class="sub span4"><h3>{{ t('Labor & real activity','就业与实体活动') }} {% if LN.read %}<span class="muted sm">{{ td(LN.read) }}</span>{% endif %}</h3>
-        {% if LN.claims_yoy_pct is not none %}{{ kv('Initial claims YoY','初请同比', '%+.1f%%'|format(LN.claims_yoy_pct)) }}{% endif %}
-        {% if LN.indeed_chg_3m_pct is not none %}{{ kv('Indeed postings 3m','Indeed招聘3月', '%+.1f%%'|format(LN.indeed_chg_3m_pct)) }}{% endif %}
-        {% if LN.withheld_tax_yoy_pct is not none %}{{ kv('Withheld taxes YoY','预扣税同比', '%+.1f%%'|format(LN.withheld_tax_yoy_pct)) }}{% endif %}
-      </div>{% endif %}
-      {% if C.risk_appetite %}{% set RA = C.risk_appetite %}
-      <div class="sub span4"><h3>{{ t('Risk appetite','风险偏好') }}</h3>
-        {% if RA.roro is not none %}{{ kv('RORO composite','RORO 综合', '%+.2f'|format(RA.roro) ~ (' · ' ~ RA.roro_state if RA.roro_state else '')) }}{% endif %}
-        {% if RA.vrp is not none %}{{ kv('Variance risk premium','方差风险溢价', '%+.1f'|format(RA.vrp)) }}{% endif %}
-        {% if RA.vix_term is not none %}{{ kv('VIX term','VIX 期限', '%.2f'|format(RA.vix_term)) }}{% endif %}
-        {% if RA.stock_bond_corr is not none %}{{ kv('Stock-bond corr','股债相关', '%+.2f'|format(RA.stock_bond_corr)) }}{% endif %}
-      </div>{% endif %}
-      {% if C.capitulation and C.capitulation.score is not none %}{% set CAP = C.capitulation %}
-      <div class="sub span4"><h3>{{ t('Capitulation','投降') }} · <b>{{ CAP.score }}/3</b></h3>
-        {% if CAP.signals_firing %}<div class="muted sm">{{ CAP.signals_firing|join(' · ') }}</div>{% endif %}
-        {% if CAP.measured_bounce_pct is not none %}{{ kv('Measured bounce','实测反弹', '%+.1f%%'|format(CAP.measured_bounce_pct)) }}{% endif %}
-      </div>{% endif %}
-    </div>
-  </div>
-  {% endif %}
+  <h3 style="font-size:13px;margin:14px 0 2px">{{ t('Real-time conditions', '实时状况') }}</h3>
+  <div class="sig-grid">
 
-  {# ===================== FEAR / GREED COMPOSITE — full leg breakdown (P1.2) ===================== #}
-  {% if fear_greed %}
-  {% set FG = fear_greed %}
-  {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
-  <div class="panel span12" id="fear-greed-detail">
-    <h2>📊 {{ t('Fear / Greed composite — full breakdown', '恐惧/贪婪合成 — 完整拆解') }}</h2>
-    <div class="sub" style="margin-bottom:10px">
-      <div><b>{{ t('Composite dial','合成指针') }}</b> <span style="font-size:24px;font-weight:700">{{ FG.dial }}</span><span class="muted sm">/100</span>
-        <span class="badge">{{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }}</span>
-        <span class="muted sm" style="float:right">{{ FG.n_legs_qualifying }} {{ t('legs qualifying','分量入合成') }}</span></div>
-      <div class="pgauge" style="width:min(480px,100%)"><i style="left:{{ FG.dial }}%"></i></div>
-      <div class="pends" style="width:min(480px,100%)">
-        <span>← {{ t('Extreme Fear','极度恐惧') }}</span><span>{{ t('Extreme Greed','极度贪婪') }} →</span>
-      </div>
-    </div>
-
-    {# Qualifying legs table #}
-    {% if FG.legs_included %}
-    <h3 style="font-size:13px;margin:14px 0 6px">{{ t('Qualifying legs (entered composite)','入合成分量') }}
-      <span class="muted sm">{{ t('z-score is greed-positive; orientation shown per leg','z 分数以贪婪为正；每项方向各标注') }}</span></h3>
-    <table>
-      <thead><tr>
-        <th class="l">{{ t('Leg','分量') }}</th>
-        <th>{{ t('Value','数值') }}</th>
-        <th>{{ t('z-score','z 分数') }}</th>
-        <th>{{ t('Greed %ile','贪婪百分位') }}</th>
-        <th class="l">{{ t('Orientation','方向') }}</th>
-        <th>{{ t('Obs','观测数') }}</th>
-        <th>{{ t('Fresh','新鲜度') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for leg in FG.legs_included %}
-      {% set _zc = 'pos' if (leg.z is not none and leg.z > 0.5) else ('neg' if (leg.z is not none and leg.z < -0.5) else '') %}
-      <tr>
-        <td class="l"><b>{{ t(leg.name_en, leg.name_zh) }}</b></td>
-        <td>{{ '%.2f'|format(leg.value) if leg.value is not none else '—' }} <span class="muted sm">{{ leg.unit }}</span></td>
-        <td class="{{ _zc }}">{{ ('%+.2f'|format(leg.z)) if leg.z is not none else '—' }}</td>
-        <td>{% if leg.pct is not none %}<div class="pgauge" style="width:80px;display:inline-block;vertical-align:middle"><i style="left:{{ leg.pct }}%"></i></div> {{ leg.pct }}{% else %}—{% endif %}</td>
-        <td class="l sm muted">{{ t(leg.orientation, leg.orientation|replace('higher=greed','高=贪婪')|replace('lower=greed','低=贪婪')) }}</td>
-        <td class="sm muted">{{ leg.obs_count }}</td>
-        <td class="{{ 'pos' if leg.freshness == 'fresh' else 'warn' if leg.freshness == 'stale' else 'muted' }} sm">{{ t(leg.freshness, leg.freshness|replace('fresh','新鲜')|replace('stale','陈旧')|replace('missing','缺失')) }}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {% endif %}
-
-    {# Excluded legs (young or missing) #}
-    {% if FG.legs_excluded_young %}
-    <h3 style="font-size:13px;margin:14px 0 6px">{{ t('Excluded legs (below min-history gate)','被排除分量（未达最低历史门槛）') }}</h3>
-    <table>
-      <thead><tr>
-        <th class="l">{{ t('Leg','分量') }}</th>
-        <th>{{ t('Obs','观测数') }}</th>
-        <th>{{ t('Gate threshold','门槛') }}</th>
-        <th>{{ t('Status','状态') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for leg in FG.legs_excluded_young %}
-      <tr>
-        <td class="l">{{ t(leg.name_en, leg.name_zh) }}</td>
-        <td class="sm muted">{{ leg.obs_count if leg.obs_count is not none else '—' }}</td>
-        <td class="sm muted">{{ t('≥252 daily','≥252 日') if leg.key not in ['naaim'] else t('≥104 weekly','≥104 周') }}</td>
-        <td class="sm warn">{{ t('excluded — young','已排除 — 过短') }}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {% endif %}
-
-    {# Young context tiles #}
-    {% if FG.young_tiles %}
-    <h3 style="font-size:13px;margin:14px 0 6px">{{ t('Context tiles (series too young to z-score)','背景小块（序列过短，无法计算 z 分数）') }}</h3>
-    <div style="display:flex;flex-wrap:wrap;gap:10px 18px">
-      {% for yt in FG.young_tiles %}
-      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;min-width:180px">
-        <div class="sm muted">{{ t(yt.name_en, yt.name_zh) }}</div>
-        <div style="font-size:18px;font-weight:700">{{ yt.value if yt.value is not none else '—' }}</div>
-        <div class="muted sm">{{ yt.obs_count }} {{ t('obs · raw context only','条 · 仅原始参考') }}</div>
-        {% if yt.as_of %}<div class="muted sm">{{ yt.as_of }}</div>{% endif %}
-      </div>
-      {% endfor %}
+    {# Recession risk #}
+    {% if C.recession %}{% set RC = C.recession %}
+    {% set _rc_state = 'bad' if (RC.score is not none and RC.score >= 60) else ('warn' if (RC.score is not none and RC.score >= 35) else 'good') %}
+    <div class="sig-tile {{ _rc_state }}">
+      <div class="sig-label">{{ t('Recession risk','衰退风险') }}</div>
+      <div class="sig-value">{{ RC.score|round|int if RC.score is not none else '—' }}<small style="font-size:11px">/100</small></div>
+      <div class="sig-meaning">{{ t('odds the economy tips over the next year','未来一年经济衰退的可能性') }}</div>
+      {{ help(
+        'Sahm: ' ~ (('%.2f'|format(RC.sahm)) if RC.sahm is not none else '—') ~ ' · NY Fed prob: ' ~ (('%.0f%%'|format(RC.ny_fed_prob*100)) if RC.ny_fed_prob is not none else '—') ~ ' · Excess bond premium: ' ~ (('%+.2f'|format(RC.ebp)) if RC.ebp is not none else '—'),
+        '萨姆规则: ' ~ (('%.2f'|format(RC.sahm)) if RC.sahm is not none else '—') ~ ' · 纽约联储曲线概率: ' ~ (('%.0f%%'|format(RC.ny_fed_prob*100)) if RC.ny_fed_prob is not none else '—') ~ ' · 超额债券溢价: ' ~ (('%+.2f'|format(RC.ebp)) if RC.ebp is not none else '—')
+      ) }}
     </div>
     {% endif %}
 
-    <p class="muted sm" style="margin:14px 0 0">{{ t(FG.disclaimer_en, FG.disclaimer_zh) }}</p>
-  </div>
-  {% endif %}
-
-  {# ===================== FEAR <-> EUPHORIA (full) ===================== #}
-  {% if fear_euphoria %}
-  {% set FE = fear_euphoria %}
-  {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
-  <div class="panel span6" id="fear-euphoria">
-    <h2>🌡️ {{ t('Fear ↔ Euphoria — full breakdown', '恐惧 ↔ 欣喜 — 完整拆解') }}</h2>
-    <div class="sub">
-      <div><b>{{ t('Fear ↔ Euphoria','恐惧 ↔ 欣喜') }}</b> <span style="font-size:20px">{{ FE.fe_score }}</span><span class="muted sm">/100</span>
-        <span class="badge">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}</span>
-        {% if FE.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(FE.roro) }}</span>{% endif %}</div>
-      <div class="pgauge"><i style="left:{{ FE.fe_score }}%"></i></div>
-      <div class="pends"><span>← {{ t('Fear','恐惧') }}</span><span>{{ t('Euphoria','欣喜') }} →</span></div>
-    </div>
-    <h3 style="font-size:13px;margin:12px 0 4px">{{ t('What is driving it','驱动因素') }} <span class="muted sm">{{ t('7 RORO legs','7 项 RORO 分量') }}</span></h3>
-    {% for leg in FE.legs %}
-    <div class="leg"><span style="flex:0 0 130px">{{ t(leg.name_en, leg.name_zh) }}</span>
-      <div class="leg-bar"><i style="width:{{ leg.pct }}%"></i></div>
-      <span class="muted sm" style="flex:0 0 92px;text-align:right">{{ '%+.2f'|format(leg.value) }} · {{ td(leg.lean) }}</span></div>
-    {% endfor %}
-    {% if FE.positioning %}{% set P = FE.positioning %}
-    <div class="sub" style="margin-top:10px"><b>{{ t('Positioning vs price','持仓与价格') }}</b>
-      <span class="badge" style="float:right">{% if P.chip=='confirms' %}{{ t('confirms','一致') }}{% elif P.chip=='diverges' %}{{ t('diverges','背离') }}{% else %}{{ t('mixed','混杂') }}{% endif %}</span>
-      <div class="muted sm">{{ t('COT spec','COT 投机') }}: {% if P.cot_washed_out %}{{ t('washed out','已清洗') }}{% elif P.cot_crowded_long %}{{ t('crowded long','拥挤做多') }}{% else %}{{ t('neutral','中性') }}{% endif %} · {{ t('insider breadth','内部人广度') }} {{ '%+.0f'|format(P.insider_breadth*100) }}%</div>
+    {# Drawdown risk #}
+    {% if C.drawdown_risk %}{% set DR = C.drawdown_risk %}
+    {% set _dr_state = 'bad' if (DR.score is not none and DR.score >= 60) else ('warn' if (DR.score is not none and DR.score >= 35) else 'good') %}
+    <div class="sig-tile {{ _dr_state }}">
+      <div class="sig-label">{{ t('Drawdown risk','回撤风险') }}</div>
+      <div class="sig-value">{{ DR.score|round|int if DR.score is not none else '—' }}<small style="font-size:11px">/100</small></div>
+      <div class="sig-meaning">{{ t('odds of a ≥10% index drop in ~3 months vs normal','约3个月内指数回撤≥10%的相对概率') }}</div>
+      {{ help(
+        'P(dd≥10%/63d): ' ~ ((DR.dd10_prob_pct|string ~ '%') if DR.dd10_prob_pct is not none else '—') ~ ' · Base rate: ' ~ ((DR.base_rate_pct|string ~ '%') if DR.base_rate_pct is not none else '—'),
+        '概率(≥10%/63日): ' ~ ((DR.dd10_prob_pct|string ~ '%') if DR.dd10_prob_pct is not none else '—') ~ ' · 基准概率: ' ~ ((DR.base_rate_pct|string ~ '%') if DR.base_rate_pct is not none else '—')
+      ) }}
     </div>
     {% endif %}
-  </div>
-  {% endif %}
 
-  {# ===================== REGIME INTERNALS — two dials ===================== #}
-  <div class="panel span6" id="dials">
-    <h2>{{ t('Regime internals — the two dials', '周期内部 — 两个刻度盘') }}
-      {{ help('The regime label comes from two scores between −1 and +1, built from market prices (lead) plus a small weight on economic data (confirm). The chips show which indicators agree (green) vs disagree (red) with the call.', '周期标签来自两个介于 −1 与 +1 之间的分数，由市场价格（领先）加上经济数据（确认）的小幅权重构建。标签显示哪些指标与判断同向（绿）或反向（红）。') }}
-    </h2>
-    {% if latest.growth_score is not none %}
-    <div class="kv">{{ t('Growth','增长') }} <b>{{ t('RISING','上行') if latest.growth_score >= 0 else t('FALLING','下行') }} ({{ '%+.2f'|format(latest.growth_score) }}, {{ t('agree','一致') }} {{ (latest.growth_confidence*100)|round|int }}%)</b></div>
-    <div class="pgauge"><i style="left:{{ ((latest.growth_score+1)/2*100)|round(1) }}%"></i></div>
-    {% endif %}
-    {% if latest.inflation_score is not none %}
-    <div class="kv" style="margin-top:8px">{{ t('Inflation','通胀') }} <b>{{ t('RISING','上行') if latest.inflation_score >= 0 else t('FALLING','下行') }} ({{ '%+.2f'|format(latest.inflation_score) }}, {{ t('agree','一致') }} {{ (latest.inflation_confidence*100)|round|int }}%)</b></div>
-    <div class="pgauge"><i style="left:{{ ((latest.inflation_score+1)/2*100)|round(1) }}%"></i></div>
-    {% endif %}
-    <h3 style="font-size:13px;margin:12px 0 4px">{{ t("What's voting",'哪些指标在投票') }}</h3>
-    <div>{% for c in components_confirming %}<span class="chip chip-pos">{{ c }}</span>{% endfor %}{% for c in components_contradicting %}<span class="chip chip-neg">{{ c }}</span>{% endfor %}{% if not components_confirming and not components_contradicting %}<span class="muted">{{ t('all quiet','一切平静') }}</span>{% endif %}</div>
-    {% if flip_plain %}<h3 style="font-size:13px;margin:12px 0 4px">{{ t('Weakest link','最薄弱环节') }}</h3><p class="muted sm" style="margin:0">{{ flip_plain }}</p>{% endif %}
-    {% if latest.preference_check %}<h3 style="font-size:13px;margin:12px 0 4px">{{ t('Does the market agree?','市场是否认同？') }}</h3><p class="muted sm" style="margin:0">{{ latest.preference_check.note }}</p>{% endif %}
-  </div>
-
-  {# ===================== COMMODITIES TAPE ===================== #}
-  {% if commodities %}
-  <div class="panel span6" id="commodities">
-    <h2>{{ t('Commodities & macro tape', '大宗商品与宏观盘面') }}</h2>
-    <table>
-      <thead><tr><th class="l">{{ t('instrument','标的') }}</th><th>{{ t('trend','趋势') }}</th><th>RSI</th><th>{{ t('off 52w','距52周高') }}</th><th>{{ t('3mo','3月') }}</th></tr></thead>
-      <tbody>
-      {% for c in commodities %}
-      <tr><td class="l"><b>{{ td(c.name) }}</b></td>
-        <td class="sm">{{ '✓' if c.above200 else '✗' }}200 {{ '✓' if c.above50 else '✗' }}50</td>
-        <td>{{ c.rsi14|round|int if c.rsi14 is not none else '—' }}</td>
-        <td class="{{ 'neg' if c.off_52w_high_pct < -10 else '' }}">{{ '%+.1f'|format(c.off_52w_high_pct) }}%</td>
-        <td class="{{ 'pos' if c.mom_60d_pct > 0 else 'neg' }}">{{ '%+.1f'|format(c.mom_60d_pct) }}%</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
-
-  {# ===================== POSITIONING / CROWD METER ===================== #}
-  {% if positioning %}
-  <div class="panel span6" id="positioning">
-    <h2>{{ t("Who's positioned how — the crowd meter", '谁如何持仓 — 拥挤度计') }}</h2>
-    <table>
-      <thead><tr><th class="l">{{ t('who / what','谁／什么') }}</th><th class="l">{{ t('where they stand','当前位置') }}</th></tr></thead>
-      <tbody>
-      {% for p in positioning %}
-      <tr><td class="l">{{ p.name }}</td>
-        <td class="l">{% if p.pct is not none %}<div class="pgauge" style="width:120px;display:inline-block;vertical-align:middle"><i style="left:{{ p.pct|round(1) }}%"></i></div> <span class="sm">{{ p.label }}</span>{% else %}<span class="sm">{{ p.label }}</span>{% endif %}{% if p.verdict %} <span class="muted sm">— {{ p.verdict }}</span>{% endif %}</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
-
-  {# ===================== FED LIQUIDITY ===================== #}
-  {% if chart_liquidity %}
-  <div class="panel span6" id="liquidity">
-    <h2>{{ t('Fed liquidity — the money tide', '美联储流动性 — 资金潮') }}
-      {{ help('Net money in the system (Fed balance sheet − reverse-repo − Treasury account), in billions, plus its 4-week change. Expanding (green) is historically the most reliable tailwind; contracting (red) is a headwind.', '系统内净资金（美联储资产负债表 − 逆回购 − 财政部账户），单位十亿，及其 4 周变化。扩张（绿）历史上最可靠的顺风；收缩（红）为逆风。') }}
-    </h2>
-    <div class="chart">{{ chart_liquidity | safe }}</div>
-  </div>
-  {% endif %}
-
-  {# ===================== CREDIT & BREADTH ===================== #}
-  {% if chart_credit_breadth %}
-  <div class="panel span6" id="credit">
-    <h2>{{ t('Credit stress & market breadth', '信用压力与市场广度') }}
-      {{ help('High-yield spread (the market\'s early smoke detector) over % of the S&P above its 50-day average (participation). Strong index + collapsing breadth = fragile.', '高收益利差（市场早期烟雾探测器）叠加标普中高于50日均线的股票占比（参与度）。指数强而广度崩塌 = 脆弱。') }}
-    </h2>
-    <div class="chart">{{ chart_credit_breadth | safe }}</div>
-  </div>
-  {% endif %}
-
-  {# ===================== VIX MONITOR ===================== #}
-  {% if vix %}
-  <div class="panel span6" id="vix-monitor">
-    <h2>{{ t('VIX monitor', 'VIX 监测') }}</h2>
-    <div class="sub" style="margin-bottom:8px">
-      <span style="font-size:20px;font-weight:700">{{ '%.2f'|format(vix.last) }}</span>
-      <span class="{{ 'pos' if vix.chg > 0 else 'neg' if vix.chg < 0 else 'muted' }}">{{ '%+.2f'|format(vix.chg) }} ({{ '%+.1f'|format(vix.pct) }}%)</span>
-      <span class="badge">{{ vix.regime }}</span>
-      <div class="muted sm" style="margin-top:4px">{% if vix.ratio is not none %}{{ t('Term structure','期限结构') }} <b>{{ '%.2f'|format(vix.ratio) }}</b> {{ vix.rword }} · {% endif %}{{ t('percentile','百分位') }} {{ '%.0f'|format(vix.pctile) }}</div>
+    {# Financial conditions #}
+    {% if C.financial_conditions %}{% set FC = C.financial_conditions %}
+    {% set _fc_state = 'bad' if FC.state and 'tight' in FC.state else ('warn' if FC.state and 'neutral' in FC.state else 'good') %}
+    <div class="sig-tile {{ _fc_state }}">
+      <div class="sig-label">{{ t('Financial conditions','金融条件') }}</div>
+      {% set _fc_zh = {'loose':'宽松','neutral':'中性','tight':'收紧'} %}
+      <div class="sig-value">{% if FC.state %}{{ t(FC.state, _fc_zh.get(FC.state, FC.state)) }}{% else %}—{% endif %}</div>
+      <div class="sig-meaning">{{ t('how easy money is to get','资金松紧程度') }}</div>
+      {{ help(
+        'NFCI: ' ~ (('%+.2f'|format(FC.nfci)) if FC.nfci is not none else '—') ~ ' · Percentile: ' ~ ((FC.nfci_pctile*100)|round|int|string ~ '%' if FC.nfci_pctile is not none else '—') ~ ' · Trend: ' ~ ((td(FC.trend)) if FC.trend else '—'),
+        'NFCI: ' ~ (('%+.2f'|format(FC.nfci)) if FC.nfci is not none else '—') ~ ' · 百分位: ' ~ ((FC.nfci_pctile*100)|round|int|string ~ '%' if FC.nfci_pctile is not none else '—') ~ ' · 趋势: ' ~ ((td(FC.trend)) if FC.trend else '—')
+      ) }}
     </div>
-    <div class="chart">{{ chart_vix | safe }}</div>
+    {% endif %}
+
+    {# Systemic stress #}
+    {% if C.systemic_stress %}{% set SS = C.systemic_stress %}
+    {% set _ss_state = 'bad' if SS.state and 'stress' in SS.state else ('warn' if SS.state and 'elevated' in SS.state else 'good') %}
+    <div class="sig-tile {{ _ss_state }}">
+      <div class="sig-label">{{ t('System stress','系统压力') }}</div>
+      <div class="sig-value">{{ td(SS.state) if SS.state else '—' }}</div>
+      <div class="sig-meaning">{{ t('stress inside the financial system (OFR)','金融体系内部压力(OFR)') }}</div>
+      {{ help(
+        'OFR FSI: ' ~ (('%+.2f'|format(SS.ofr_fsi)) if SS.ofr_fsi is not none else '—') ~ ' · Top channel: ' ~ ((td(SS.leading_driver)) if SS.leading_driver else '—') ~ ' · CP funding: ' ~ ((td(SS.cp_stress)) if SS.cp_stress else '—'),
+        'OFR FSI: ' ~ (('%+.2f'|format(SS.ofr_fsi)) if SS.ofr_fsi is not none else '—') ~ ' · 主要渠道: ' ~ ((td(SS.leading_driver)) if SS.leading_driver else '—') ~ ' · 商业票据融资: ' ~ ((td(SS.cp_stress)) if SS.cp_stress else '—')
+      ) }}
+    </div>
+    {% endif %}
+
+    {# Growth right now #}
+    {% if C.growth_nowcast %}{% set GN = C.growth_nowcast %}
+    {% set _gn_state = 'good' if (GN.gdpnow is not none and GN.gdpnow >= 2) else ('warn' if (GN.gdpnow is not none and GN.gdpnow >= 0) else 'bad') %}
+    <div class="sig-tile {{ _gn_state }}">
+      <div class="sig-label">{{ t('Growth right now','当前增长') }}</div>
+      <div class="sig-value">{{ ('%+.1f%%'|format(GN.gdpnow)) if GN.gdpnow is not none else '—' }}</div>
+      <div class="sig-meaning">{{ t("live estimate of this quarter's growth","本季度增长的实时估计") }}</div>
+      {{ help(
+        'GDPNow: ' ~ (('%+.1f%%'|format(GN.gdpnow)) if GN.gdpnow is not none else '—') ~ ' · WEI: ' ~ (('%+.2f'|format(GN.wei)) if GN.wei is not none else '—'),
+        'GDPNow: ' ~ (('%+.1f%%'|format(GN.gdpnow)) if GN.gdpnow is not none else '—') ~ ' · 周度经济指数: ' ~ (('%+.2f'|format(GN.wei)) if GN.wei is not none else '—')
+      ) }}
+    </div>
+    {% endif %}
+
+    {# Inflation right now #}
+    {% if C.inflation_nowcast %}{% set IN = C.inflation_nowcast %}
+    {% set _in_state = 'bad' if (IN.sticky_ann is not none and IN.sticky_ann >= 4) else ('warn' if (IN.sticky_ann is not none and IN.sticky_ann >= 2.5) else 'good') %}
+    <div class="sig-tile {{ _in_state }}">
+      <div class="sig-label">{{ t('Inflation right now','当前通胀') }}</div>
+      <div class="sig-value">{{ ('%.1f%%'|format(IN.sticky_ann)) if IN.sticky_ann is not none else '—' }}</div>
+      <div class="sig-meaning">{{ t('slow-moving prices are still rising at this pace','粘性物价仍以此速度上涨') }}</div>
+      {{ help(
+        'Sticky CPI (ann.): ' ~ (('%.1f%%'|format(IN.sticky_ann)) if IN.sticky_ann is not none else '—') ~ ' · Flexible CPI (ann.): ' ~ (('%.1f%%'|format(IN.flexible_ann)) if IN.flexible_ann is not none else '—'),
+        '粘性CPI(年化): ' ~ (('%.1f%%'|format(IN.sticky_ann)) if IN.sticky_ann is not none else '—') ~ ' · 弹性CPI(年化): ' ~ (('%.1f%%'|format(IN.flexible_ann)) if IN.flexible_ann is not none else '—')
+      ) }}
+    </div>
+    {% endif %}
+
+    {# Jobs & activity #}
+    {% if C.labor_nowcast %}{% set LN = C.labor_nowcast %}
+    {% set _ln_up = LN.claims_yoy_pct is not none and LN.claims_yoy_pct > 5 %}
+    {% set _ln_state = 'bad' if _ln_up else 'good' %}
+    <div class="sig-tile {{ _ln_state }}">
+      <div class="sig-label">{{ t('Jobs & activity','就业与活动') }}</div>
+      {% set _ln_zh = {'labor firm':'就业稳固','labor mixed':'就业混杂','labor cooling':'就业降温'} %}
+      <div class="sig-value">{% if LN.read %}{{ t(LN.read, _ln_zh.get(LN.read, LN.read)) }}{% else %}—{% endif %}</div>
+      <div class="sig-meaning">{{ t('layoffs rising','裁员上升') if _ln_up else t('layoffs steady','裁员平稳') }}</div>
+      {{ help(
+        'Initial claims YoY: ' ~ (('%+.1f%%'|format(LN.claims_yoy_pct)) if LN.claims_yoy_pct is not none else '—') ~ ' · Indeed postings 3m: ' ~ (('%+.1f%%'|format(LN.indeed_chg_3m_pct)) if LN.indeed_chg_3m_pct is not none else '—') ~ ' · Withheld taxes YoY: ' ~ (('%+.1f%%'|format(LN.withheld_tax_yoy_pct)) if LN.withheld_tax_yoy_pct is not none else '—'),
+        '初请同比: ' ~ (('%+.1f%%'|format(LN.claims_yoy_pct)) if LN.claims_yoy_pct is not none else '—') ~ ' · Indeed招聘3月: ' ~ (('%+.1f%%'|format(LN.indeed_chg_3m_pct)) if LN.indeed_chg_3m_pct is not none else '—') ~ ' · 预扣税同比: ' ~ (('%+.1f%%'|format(LN.withheld_tax_yoy_pct)) if LN.withheld_tax_yoy_pct is not none else '—')
+      ) }}
+    </div>
+    {% endif %}
+
+    {# Risk appetite #}
+    {% if C.risk_appetite %}{% set RA = C.risk_appetite %}
+    {% set _ra_state = 'good' if (RA.roro is not none and RA.roro >= 0.3) else ('bad' if (RA.roro is not none and RA.roro <= -0.3) else 'flat') %}
+    <div class="sig-tile {{ _ra_state }}">
+      <div class="sig-label">{{ t('Risk appetite','风险偏好') }}</div>
+      <div class="sig-value">{{ td(RA.roro_state) if RA.roro_state else '—' }}</div>
+      <div class="sig-meaning">{{ t('how much risk investors are reaching for','投资者的冒险意愿') }}</div>
+      {{ help(
+        'RORO: ' ~ (('%+.2f'|format(RA.roro)) if RA.roro is not none else '—') ~ ' · VRP: ' ~ (('%+.1f'|format(RA.vrp)) if RA.vrp is not none else '—') ~ ' · VIX term: ' ~ (('%.2f'|format(RA.vix_term)) if RA.vix_term is not none else '—') ~ ' · Stock-bond corr: ' ~ (('%+.2f'|format(RA.stock_bond_corr)) if RA.stock_bond_corr is not none else '—'),
+        'RORO: ' ~ (('%+.2f'|format(RA.roro)) if RA.roro is not none else '—') ~ ' · 方差风险溢价: ' ~ (('%+.1f'|format(RA.vrp)) if RA.vrp is not none else '—') ~ ' · VIX期限: ' ~ (('%.2f'|format(RA.vix_term)) if RA.vix_term is not none else '—') ~ ' · 股债相关: ' ~ (('%+.2f'|format(RA.stock_bond_corr)) if RA.stock_bond_corr is not none else '—')
+      ) }}
+    </div>
+    {% endif %}
+
+    {# Capitulation (9th tile, conditional) #}
+    {% if C.capitulation and C.capitulation.score is not none %}{% set CAP = C.capitulation %}
+    {% set _cap_state = 'good' if CAP.score >= 2 else 'warn' %}
+    <div class="sig-tile {{ _cap_state }}">
+      <div class="sig-label">{{ t('Capitulation','投降信号') }}</div>
+      <div class="sig-value">{{ CAP.score }}<small style="font-size:11px">/3</small></div>
+      <div class="sig-meaning">{{ t('distress-selling signal — contrarian','极度悲观信号 — 逆向参考') }}</div>
+      {% if CAP.signals_firing %}
+      {{ help('Signals firing: ' ~ CAP.signals_firing|join(' · '), '触发信号: ' ~ CAP.signals_firing|join(' · ')) }}
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>{# /sig-grid #}
+  {% endif %}{# /conditions #}
+
+</div>{# /panel cycle #}
+{% endif %}{# /business_cycle #}
+
+{# =====================================================================
+   §3  MONEY & LIQUIDITY
+   ===================================================================== #}
+<div class="panel span6 rail-money anim-d3" id="liquidity">
+  <h2>{{ t('Money & liquidity — the tide', '资金与流动性 — 资金潮') }}
+    {{ help('Net money in the system: Fed balance sheet minus reverse-repo minus Treasury account (WALCL−RRP−TGA). Expanding is historically the most reliable tailwind for risk assets; contracting is a headwind.', '系统净资金：美联储资产负债表减去逆回购减去财政部账户(WALCL−RRP−TGA)。扩张历史上是风险资产最可靠的顺风；收缩为逆风。') }}
+  </h2>
+  {% set _liq_stances = (_stances.get('liquidity') if _stances else none) %}
+  {% set _liq_meta = chart_liquidity_meta if chart_liquidity_meta is defined and chart_liquidity_meta else none %}
+  {% if _liq_stances %}
+  <div style="font-size:14px;font-weight:600;margin-bottom:8px">{{ t(_liq_stances.en, _liq_stances.zh) if _liq_stances.en is defined else _liq_stances }}
+    {% if _liq_meta and _liq_meta.get('chg_4w_bn') is not none %}
+    <span class="chip {{ 'chip-pos' if _liq_meta.chg_4w_bn > 0 else ('chip-neg' if _liq_meta.chg_4w_bn < 0 else '') }}" style="margin-left:8px;vertical-align:middle">{{ '%+.0f'|format(_liq_meta.chg_4w_bn) }}{{ t('bn / 4wk','十亿 / 4周') }}</span>
+    {% endif %}
+  </div>
+  {% elif chart_liquidity %}
+  <div style="font-size:14px;font-weight:600;margin-bottom:8px">
+    {{ t('The money tide — watch the 4-week direction.', '关注资金潮4周方向。') }}
   </div>
   {% endif %}
-
+  {% if chart_liquidity %}<div class="chart">{{ chart_liquidity | safe }}</div>{% endif %}
 </div>
+
+<div class="panel span6 rail-money anim-d3" id="credit">
+  <h2>{{ t('Credit & market participation', '信用与市场参与度') }}
+    {{ help('High-yield spread: the market\'s early smoke detector for credit stress. Participation = % of S&P 500 stocks above their 50-day average. Strong index + collapsing breadth = a fragile rally.', '高收益利差：信用压力的市场早期烟雾探测器。参与度=标普500高于50日均线的股票占比。指数强而广度崩塌=脆弱涨势。') }}
+  </h2>
+  {% set _cr_stances = (_stances.get('credit') if _stances else none) %}
+  {% if _cr_stances %}
+  <div style="font-size:14px;font-weight:600;margin-bottom:8px">{{ t(_cr_stances.en, _cr_stances.zh) if _cr_stances.en is defined else _cr_stances }}</div>
+  {% elif chart_credit_breadth %}
+  <div style="font-size:14px;font-weight:600;margin-bottom:8px">
+    {{ t('Credit & participation — read together.', '信用与参与度 — 综合参考。') }}
+  </div>
+  {% endif %}
+  {% if chart_credit_breadth %}<div class="chart">{{ chart_credit_breadth | safe }}</div>{% endif %}
+</div>
+
+{# =====================================================================
+   §4  MOOD & POSITIONING
+   ===================================================================== #}
+{% if fear_greed %}
+{% set FG = fear_greed %}
+{% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
+<div class="panel span6 rail-mood anim-d4" id="mood">
+  <h2>{{ t('Mood — Fear / Greed', '情绪 — 恐惧/贪婪') }}
+    {{ help('Wide multi-indicator composite combining market momentum, volatility, breadth, safe-haven flows, junk demand and several sentiment surveys. 0=Extreme Fear, 100=Extreme Greed.', '宽幅多指标合成，结合市场动量、波动率、广度、避险流、垃圾需求与多项情绪调查。0=极度恐惧，100=极度贪婪。') }}
+  </h2>
+
+  {# Fear/Greed dial inline #}
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:10px">
+    <div>
+      <div style="font-size:32px;font-weight:800;font-family:var(--num)">{{ FG.dial }}</div>
+      <div class="muted sm">/ 100</div>
+    </div>
+    <div>
+      <span class="badge" style="font-size:13px;padding:3px 10px">{{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }}</span>
+      <div class="muted sm" style="margin-top:4px">{{ FG.n_legs_qualifying }} {{ t('legs driving it','项指标合成') }}</div>
+    </div>
+    <div style="flex:1;min-width:100px">
+      <div class="pgauge"><i style="left:{{ FG.dial }}%"></i></div>
+      <div class="pends"><span>{{ t('Fear','恐惧') }}</span><span>{{ t('Greed','贪婪') }}</span></div>
+    </div>
+  </div>
+
+  {# Top 3 drivers by |z| as bars #}
+  {% if FG.legs_included %}
+  <div style="font-size:12px;color:var(--muted);margin-bottom:4px">{{ t("What's driving it most","主要驱动因素") }}</div>
+  {% set _sorted_legs = FG.legs_included|sort(attribute='z',reverse=true) %}
+  {% for leg in _sorted_legs[:3] %}
+  <div class="leg">
+    <span style="flex:0 0 130px;font-size:12.5px">{{ t(leg.name_en, leg.name_zh) }}</span>
+    <div class="leg-bar"><i style="width:{{ ([leg.z|abs / 3 * 100, 100]|min) if leg.z is not none else 0 }}%;background:{{ 'var(--down)' if (leg.z is not none and leg.z < 0) else 'var(--up)' }}"></i></div>
+    <span class="muted sm" style="flex:0 0 60px;text-align:right">{{ ('%+.1f'|format(leg.z)) if leg.z is not none else '—' }}</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {# Full breakdown in details.deep #}
+  <details class="deep">
+    <summary>{{ t('Full breakdown ▸', '完整拆解 ▸') }}</summary>
+    <div class="deep-body">
+      {% if FG.legs_included %}
+      <table style="margin-bottom:10px">
+        <thead><tr>
+          <th class="l">{{ t('Leg','指标') }}</th>
+          <th>{{ t('Value','数值') }}</th>
+          <th>{{ t('State','状态') }}</th>
+          <th>{{ t('Obs','观测数') }}</th>
+        </tr></thead>
+        <tbody>
+        {% for leg in FG.legs_included %}
+        <tr>
+          <td class="l"><b>{{ t(leg.name_en, leg.name_zh) }}</b></td>
+          <td>{{ '%.2f'|format(leg.value) if leg.value is not none else '—' }} <span class="muted sm">{{ leg.unit }}</span></td>
+          <td class="{{ 'pos' if (leg.z is not none and leg.z > 0.5) else ('neg' if (leg.z is not none and leg.z < -0.5) else '') }} sm">{{ ('%+.2f'|format(leg.z)) if leg.z is not none else '—' }}</td>
+          <td class="sm muted">{{ leg.obs_count }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      {% if FG.legs_excluded_young %}
+      <div class="muted sm" style="margin-bottom:6px">{{ t('Excluded (below history gate):','已排除（未达历史门槛）:') }}</div>
+      {% for leg in FG.legs_excluded_young %}
+      <span class="chip">{{ t(leg.name_en, leg.name_zh) }}</span>
+      {% endfor %}
+      {% endif %}
+      {% if FG.young_tiles %}
+      <div class="muted sm" style="margin:8px 0 4px">{{ t('Context tiles (short history):','背景小块（历史较短）:') }}</div>
+      {% for yt in FG.young_tiles %}
+      <span class="chip">{{ t(yt.name_en, yt.name_zh) }}: {{ yt.value if yt.value is not none else '—' }}</span>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </details>
+
+  {# Fear ↔ Euphoria secondary row #}
+  {% if fear_euphoria %}{% set FE = fear_euphoria %}
+  {% set _febandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
+  <div class="sub" style="margin-top:12px">
+    <div class="muted sm" style="margin-bottom:4px">{{ t('Fear ↔ Euphoria (RORO read)','恐惧↔欣喜（RORO侧读）') }}
+      {{ help('Two composites exist deliberately. Fear/Greed is the wide aggregate. Fear↔Euphoria is the RORO-side read (risk-on/risk-off positioning). They often agree; when they diverge, the divergence itself is the signal.', '两个合成指标并存有意为之。恐惧/贪婪是宽幅综合。恐惧↔欣喜是RORO侧读（风险开/关持仓）。通常一致；背离时背离本身即是信号。') }}
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:18px;font-weight:700;font-family:var(--num)">{{ FE.fe_score }}</span>
+      <span class="badge">{{ t(FE.band, _febandzh.get(FE.band, FE.band)) }}</span>
+      {% if FE.positioning %}{% set P = FE.positioning %}
+      <span class="chip {{ 'chip-pos' if P.chip == 'confirms' else ('chip-neg' if P.chip == 'diverges' else '') }}">
+        {% if P.chip == 'confirms' %}{{ t('confirms','一致') }}{% elif P.chip == 'diverges' %}{{ t('diverges','背离') }}{% else %}{{ t('mixed','混杂') }}{% endif %}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if FG.disclaimer_en %}<p class="muted sm" style="margin:10px 0 0">{{ t(FG.disclaimer_en, FG.disclaimer_zh) }}</p>{% endif %}
+</div>
+{% endif %}{# /fear_greed #}
+
+{# Positioning / crowd meter #}
+{% if positioning %}
+<div class="panel span6 rail-mood anim-d4" id="positioning">
+  <h2>{{ t("Who's positioned how", '谁如何持仓') }}</h2>
+  <table>
+    <thead><tr><th class="l">{{ t('Who / what','谁 / 什么') }}</th><th class="l">{{ t('Where they stand','当前位置') }}</th></tr></thead>
+    <tbody>
+    {% for p in positioning %}
+    <tr>
+      <td class="l">{{ p.name }}</td>
+      <td class="l">
+        {% if p.pct is not none %}
+        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:{{ p.pct|round(1) }}%"></i></div>
+        {% endif %}
+        <span class="sm">{{ p.label }}</span>
+        {% if p.verdict %} <span class="muted sm">— {{ p.verdict }}</span>{% endif %}
+        {{ help(p.name ~ ': ' ~ p.label, p.name ~ ': ' ~ p.label) if p.source else '' }}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{# VIX monitor #}
+{% if vix %}
+<div class="panel span6 rail-mood anim-d4" id="vix-monitor">
+  <h2>{{ t('VIX — volatility level', 'VIX — 波动率水平') }}</h2>
+  <div class="sub" style="margin-bottom:8px">
+    <span style="font-size:24px;font-weight:700;font-family:var(--num)">{{ '%.2f'|format(vix.last) }}</span>
+    <span class="{{ 'pos' if vix.chg < 0 else ('neg' if vix.chg > 0 else 'muted') }}" style="margin-left:6px">{{ '%+.2f'|format(vix.chg) }} ({{ '%+.1f'|format(vix.pct) }}%)</span>
+    <span class="badge" style="margin-left:8px">{{ td(vix.regime) }}</span>
+    {% if vix.ratio is not none %}
+    <div class="muted sm" style="margin-top:4px">{{ t('Term structure:','期限结构:') }} <b>{{ '%.2f'|format(vix.ratio) }}</b> — {{ td(vix.rword) if vix.rword else '' }}</div>
+    {% endif %}
+  </div>
+  {# SVG legend chips (bilingual, outside SVG) #}
+  <div style="font-size:11px;color:var(--muted);margin-bottom:4px">
+    <span class="chip">{{ t('Calm <16','平静<16') }}</span>
+    <span class="chip">{{ t('Normal 16–20','正常16–20') }}</span>
+    <span class="chip chip-warn">{{ t('Stressed 20–28','受压20–28') }}</span>
+    <span class="chip chip-neg">{{ t('Crisis >28','危机>28') }}</span>
+  </div>
+  {% if chart_vix %}<div class="chart">{{ chart_vix | safe }}</div>{% endif %}
+</div>
+{% endif %}
+
+{# =====================================================================
+   §4b  COMMODITIES TAPE
+   ===================================================================== #}
+{% if commodities %}
+<div class="panel span6 rail-commod anim-d5" id="commodities">
+  <h2>{{ t('Commodities & macro tape', '大宗商品与宏观盘面') }}</h2>
+  <table>
+    <thead><tr>
+      <th class="l">{{ t('Instrument','标的') }}</th>
+      <th>{{ t('Trend','趋势') }}</th>
+      <th>{{ t('3-mo','3月') }}</th>
+      <th>{{ t('Off 52w high','距52周高') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for c in commodities %}
+    <tr>
+      <td class="l"><b>{{ td(c.name) }}</b></td>
+      <td class="sm">
+        {% if c.above200 %}{{ t('above trend','趋势上方') }}{% else %}{{ t('below trend','趋势下方') }}{% endif %}
+        {{ help('RSI(14): ' ~ (c.rsi14|round|int|string if c.rsi14 is not none else '—') ~ ' · 50d: ' ~ ('above' if c.above50 else 'below'), 'RSI(14): ' ~ (c.rsi14|round|int|string if c.rsi14 is not none else '—') ~ ' · 50日: ' ~ ('上方' if c.above50 else '下方')) }}
+      </td>
+      <td class="{{ 'pos' if c.mom_60d_pct > 0 else 'neg' }}">{{ '%+.1f'|format(c.mom_60d_pct) }}%</td>
+      <td class="{{ 'neg' if c.off_52w_high_pct < -10 else '' }}">{{ '%+.1f'|format(c.off_52w_high_pct) }}%</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{# =====================================================================
+   §6  CURRENCIES & THE DOLLAR
+   ===================================================================== #}
+{% if fx_context %}
+{% set FX = fx_context %}
+{% set _dd = FX.get('dollar_desk') %}
+{% set _smile_map = {
+  'US growth premium': ['Dollar strong — the US is out-earning the world.', '美元走强 — 美国增长领先全球。'],
+  'Risk-off haven bid': ['Dollar strong — investors hiding in it.', '美元走强 — 避险资金涌入。'],
+  'Global reflation': ['Dollar soft — growth is broadening beyond the US.', '美元走软 — 增长扩散至美国以外。'],
+  'US-specific stress': ['Dollar weak while stress rises — a US-specific worry.', '压力上升而美元走弱 — 美国自身问题。'],
+  'Neutral': ['Dollar drifting — no clear regime.', '美元方向不明。']
+} %}
+{% set _smile_regime = FX.get('smile_regime') %}
+
+<div class="panel span12 rail-fx anim-d5" id="currencies">
+  <h2>{{ t('Currencies & the dollar', '货币与美元') }}</h2>
+
+  {# Triple-red banner #}
+  {% if _dd and _dd.get('triple_red') %}
+  <div class="triple-red-banner">
+    <span class="l-en">⚠ Dollar, stocks and bonds are falling together — the dollar is not acting as a safe haven right now.</span>
+    <span class="l-zh">⚠ 美元、股票与债券同跌 — 美元当前未起到避险作用。</span>
+  </div>
+  {% endif %}
+
+  {# Cross-asset FX caution flags (from cross_asset.caution_flags, owner=='fx') #}
+  {% if cross_asset and cross_asset.caution_flags %}
+  {% set _fx_flags = cross_asset.caution_flags | selectattr('owner', 'equalto', 'fx') | list %}
+  {% if _fx_flags %}
+  <div style="margin-bottom:10px">
+    {% for f in _fx_flags %}
+    <div class="chip {{ 'chip-neg' if f.severity == 'high' else 'chip-warn' }}" style="font-size:12px;padding:4px 10px;display:inline-block;margin:2px 4px 2px 0">
+      <span class="l-en">{{ f.en }}</span><span class="l-zh">{{ f.zh }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <div class="grid">
+
+    {# Dollar regime card #}
+    {% if _dd %}
+    <div class="sub span6">
+      <h3>{{ t('Dollar regime', '美元周期') }}
+        {{ help(
+          'Desk legs — real yield z: ' ~ (('%+.2f'|format(_dd.real_rate_z)) if _dd.get('real_rate_z') is not none else '—')
+          ~ ' · Fed path: ' ~ ((('%+d'|format(_dd.fed_path_bps|int)) ~ 'bp to 12m') if _dd.get('fed_path_bps') is not none else '—')
+          ~ ' · REER gap: ' ~ ((('%+.1f'|format(_dd.usd_reer_gap_pct)) ~ '%') if _dd.get('usd_reer_gap_pct') is not none else '—')
+          ~ ' · COT pctile: ' ~ ((_dd.usd_pos_pctile|round|int|string) if _dd.get('usd_pos_pctile') is not none else '—')
+          ~ ' · trend legs up: ' ~ ((_dd.trend_n_up|string ~ '/4') if _dd.get('trend_n_up') is not none else '—')
+          ~ ' · liquidity: ' ~ (_dd.get('liquidity_dir') or '—')
+          ~ ' · smile confirmation: ' ~ (_dd.get('smile_confidence') or '—'),
+          '操盘台分项 — 实际利率z: ' ~ (('%+.2f'|format(_dd.real_rate_z)) if _dd.get('real_rate_z') is not none else '—')
+          ~ ' · 美联储路径: ' ~ ((('%+d'|format(_dd.fed_path_bps|int)) ~ 'bp/12月') if _dd.get('fed_path_bps') is not none else '—')
+          ~ ' · REER缺口: ' ~ ((('%+.1f'|format(_dd.usd_reer_gap_pct)) ~ '%') if _dd.get('usd_reer_gap_pct') is not none else '—')
+          ~ ' · COT百分位: ' ~ ((_dd.usd_pos_pctile|round|int|string) if _dd.get('usd_pos_pctile') is not none else '—')
+          ~ ' · 趋势上行: ' ~ ((_dd.trend_n_up|string ~ '/4') if _dd.get('trend_n_up') is not none else '—')
+          ~ ' · 流动性: ' ~ (_dd.get('liquidity_dir') or '—')
+          ~ ' · 微笑确认: ' ~ (_dd.get('smile_confidence') or '—')
+        ) }}
+      </h3>
+      {% if _smile_regime %}
+      {% set _smile_words = _smile_map.get(_smile_regime, [_smile_regime, _smile_regime]) %}
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px">
+        <span class="l-en">{{ _smile_words[0] }}</span>
+        <span class="l-zh">{{ _smile_words[1] }}</span>
+      </div>
+      {% endif %}
+
+      {# Lean row #}
+      {% if _dd.get('lean') %}
+      <div class="muted sm" style="margin-bottom:6px">
+        {{ t('Desk read: ', '操盘台读数：') }}
+        <b>{{ td(_dd.lean) }}</b>
+        {% if _dd.get('lean_n') is not none %}· {{ t('based on ', '基于') }}{{ _dd.lean_n }}{{ t(' desk reads', '项读数') }}{% endif %}
+      </div>
+      {% endif %}
+
+      {# Days held chip #}
+      {% set _sc = FX.get('state_changes') %}
+      {% if _sc and _sc.get('smile_regime') and _sc.smile_regime.get('days_in_state') is not none %}
+      <span class="chip">{{ t('held ','已持续') }}{{ _sc.smile_regime.days_in_state }}{{ t(' days','天') }}</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# Strength meter #}
+    {% set _str = FX.get('strength') %}
+    {% if _str %}
+    {% set _horizon = _str.get('default', '1m') %}
+    {% set _pairs = _str.get('horizons', {}).get(_horizon, []) %}
+    {% if _pairs %}
+    <div class="sub span6">
+      <h3>{{ t('Strength vs dollar', '兑美元强弱') }} <span class="muted sm">{{ {'1w':'1-week','1m':'1-month','3m':'3-month'}.get(_horizon, _horizon) }}</span></h3>
+      {% for p in _pairs[:8] %}
+      {% set _sv = p.get('strength', 0) or 0 %}
+      {% set _bar_pct = ([_sv|abs * 50, 50]|min) %}
+      <div class="str-bar-row">
+        <span class="str-ccy {{ 'str-em' if p.get('em') else '' }}">{{ p.ccy }}</span>
+        <div class="str-bar-track">
+          {% if _sv >= 0 %}
+          <div class="str-bar-fill pos-fill" style="width:{{ _bar_pct }}%"></div>
+          {% else %}
+          <div class="str-bar-fill neg-fill" style="width:{{ _bar_pct }}%"></div>
+          {% endif %}
+          <div class="str-bar-center"></div>
+        </div>
+        <span class="str-val {{ 'pos' if _sv > 0 else ('neg' if _sv < 0 else 'muted') }}">{% if p.ccy == 'USD' %}—{% elif p.get('vs_usd_pct') is not none %}{{ '%+.1f'|format(p.vs_usd_pct) }}%{% else %}—{% endif %}</span>
+      </div>
+      {% endfor %}
+      <div class="muted sm" style="margin-top:6px">{{ t('% move vs the dollar. Trailing move, not a forecast.','兑美元%变动。仅为近端走势，非预测。') }}</div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {# Stress radar chips #}
+    {% set _rr = FX.get('regime_radar') %}
+    {% if _rr %}
+    {% set _scenarios = _rr.get('scenarios', []) %}
+    {% set _active_scens = [] %}
+    {% for s in _scenarios if s is mapping and ((s.get('intensity') or 0) >= 5 or s.get('active')) %}{% set _ = _active_scens.append(s) %}{% endfor %}
+    <div class="sub span12">
+      <h3>{{ t('Stress patterns', '压力形态') }}</h3>
+      {% if _active_scens %}
+      {% set _dominant_key = _rr.get('dominant') %}
+      {% for sc in _active_scens %}
+      {% set _is_dom = _dominant_key and sc.get('key') == _dominant_key %}
+      <span class="stress-chip {{ 'active-chip' if sc.get('active') else '' }} {{ 'dominant-chip' if _is_dom else '' }}">
+        {% if sc.get('active') %}<span class="pulse-dot"></span>{% endif %}
+        <span class="l-en">{{ sc.get('name_en', '') }}</span>
+        <span class="l-zh">{{ sc.get('name_zh', '') }}</span>
+        <span class="muted sm">{{ (sc.get('intensity') or 0)|round|int }}/100</span>
+        {% if _is_dom %}<span class="muted sm">— {{ t('dominant','主导') }}</span>{% endif %}
+        {% set _prob = sc.get('prob') %}
+        {# receipt numbers only when the empirical read is complete (status ok);
+           insufficient/unprecedented histories say so instead of crashing on None #}
+        {% if _prob and _prob.get('status') == 'ok' and _prob.get('p_cond') is not none and _prob.get('wilson_lo') is not none and _prob.get('wilson_hi') is not none %}
+        {% set _prob_en = ' · At this stress level, ' ~ ((_prob.p_cond * 100)|round|int) ~ '% of past cases saw the adverse move (base rate ' ~ (((_prob.base_rate or 0) * 100)|round|int) ~ '%, 95% CI ' ~ ((_prob.wilson_lo * 100)|round|int) ~ '–' ~ ((_prob.wilson_hi * 100)|round|int) ~ '%, n=' ~ (_prob.get('n_raw') or '—')|string ~ ')' %}
+        {% set _prob_zh = ' · 同等压力的历史案例中' ~ ((_prob.p_cond * 100)|round|int) ~ '%出现不利走势（基率' ~ (((_prob.base_rate or 0) * 100)|round|int) ~ '%，95%区间' ~ ((_prob.wilson_lo * 100)|round|int) ~ '–' ~ ((_prob.wilson_hi * 100)|round|int) ~ '%，n=' ~ (_prob.get('n_raw') or '—')|string ~ '）' %}
+        {% elif _prob %}
+        {% set _prob_en = ' · Not enough history at this stress level for a reliable read' %}
+        {% set _prob_zh = ' · 此压力水平历史样本不足，无可靠读数' %}
+        {% else %}
+        {% set _prob_en = '' %}{% set _prob_zh = '' %}
+        {% endif %}
+        {{ help(
+          'Stress intensity ' ~ ((sc.get('intensity') or 0)|round|int) ~ '/100' ~ _prob_en ~ ('. Managed/intervened regime truncates history — illustrative only.' if sc.get('illustrative') else ''),
+          '压力强度 ' ~ ((sc.get('intensity') or 0)|round|int) ~ '/100' ~ _prob_zh ~ ('。受管理/干预体制截断历史 — 仅供示意。' if sc.get('illustrative') else '')
+        ) }}
+      </span>
+      {% endfor %}
+      {% else %}
+      <div class="muted sm">
+        <span class="l-en">No known stress pattern is configured today.</span>
+        <span class="l-zh">当前无已知压力形态。</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# CNH row (USDCNH pair) #}
+    {% set _pairs_data = FX.get('pairs', {}) %}
+    {% if _pairs_data and _pairs_data.get('USDCNH') %}
+    {% set _cnh = _pairs_data.USDCNH %}
+    {% set _cnh_state = _cnh.get('cnh_basis_state') or 'neutral' %}
+    {% set _cnh_map = {
+      'neutral': ['Offshore yuan: no unusual pressure', '离岸人民币：无异常压力'],
+      'outflow_stress': ['Offshore yuan under outflow pressure', '离岸人民币承受外流压力'],
+      'inflow': ['Offshore yuan: inflow bid', '离岸人民币：资金流入']
+    } %}
+    {# unknown states fall back to the neutral wording — raw enums never render #}
+    {% set _cnh_words = _cnh_map.get(_cnh_state, _cnh_map['neutral']) %}
+    <div class="sub span6">
+      <h3>{{ t('Offshore yuan (CNH)', '离岸人民币 (CNH)') }}</h3>
+      <div style="font-size:13.5px;font-weight:600">
+        <span class="l-en">{{ _cnh_words[0] }}</span>
+        <span class="l-zh">{{ _cnh_words[1] }}</span>
+      </div>
+      {% if _cnh.get('cnh_basis_bps') is not none %}
+      {{ help('CNH basis: ' ~ ('%.0f'|format(_cnh.cnh_basis_bps)) ~ 'bp', 'CNH基差: ' ~ ('%.0f'|format(_cnh.cnh_basis_bps)) ~ 'bp') }}
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# Transmission chips #}
+    {% set _tx = FX.get('transmission') %}
+    {% if _tx and (_tx.get('headwind_for') or _tx.get('tailwind_for')) %}
+    <div class="sub span6">
+      <h3>{{ t('Dollar transmission', '美元传导') }}</h3>
+      {% if _tx.get('headwind_for') %}
+      <div class="muted sm" style="margin-bottom:4px">{{ t('A stronger dollar is pressing on:','美元走强正压制：') }}</div>
+      {% for h in _tx.headwind_for %}
+      <span class="chip chip-neg">{{ t(h, h) }}</span>
+      {% endfor %}
+      {% endif %}
+      {% if _tx.get('tailwind_for') %}
+      <div class="muted sm" style="margin:6px 0 4px">{{ t('Helping:','助力：') }}</div>
+      {% for h in _tx.tailwind_for %}
+      <span class="chip chip-pos">{{ t(h, h) }}</span>
+      {% endfor %}
+      {% endif %}
+      {% if _tx.get('corr') %}
+      {% set _corr_bits = [] %}
+      {% for k, v in _tx.corr.items() %}{% set _ = _corr_bits.append(k ~ ' ' ~ ('%+.2f'|format(v))) %}{% endfor %}
+      {{ help('Correlation to the broad dollar: ' ~ _corr_bits|join(' · '), '与广义美元的相关性: ' ~ _corr_bits|join(' · ')) }}
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# What changed strip #}
+    {% set _events = FX.get('recent_events', []) %}
+    {% if _events %}
+    <div class="sub span12">
+      <h3>{{ t('What changed', '近期变化') }}</h3>
+      {% for ev in _events %}
+      {% set _sev = ev.get('severity', 'low') %}
+      <div class="what-changed-row">
+        <span class="sev-dot {{ 'sev-high' if _sev == 'high' else ('sev-med' if _sev == 'medium' else 'sev-low') }}"></span>
+        <span class="muted sm" style="flex:0 0 84px;white-space:nowrap">{{ ev.get('date','') }}</span>
+        <span>
+          <span class="l-en">{{ ev.get('headline', '') }}</span>
+          <span class="l-zh">{{ ev.get('headline_zh', ev.get('headline', '')) }}</span>
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>{# /grid inside fx section #}
+
+  <div style="margin-top:12px;font-size:12.5px">
+    <a href="forex.html">{{ t('Full currency board → forex.html','完整货币面板 → forex.html') }}</a>
+  </div>
+</div>
+{% endif %}{# /fx_context #}
+
+</div>{# /outer grid #}
+
+<p class="muted" style="font-size:12px;margin:16px 0 4px">
+  <a href="macro.html">← {{ t('Back to Macro Dashboard','返回宏观仪表盘') }}</a>
+  &nbsp;·&nbsp;
+  <a href="macro_context.html">{{ t('Macro Weather (labels & history) →','宏观气象台（标签与历史）→') }}</a>
+</p>
+
+</div>{# /msx-wrap #}
+
+{# Animate needles to final positions after DOM ready #}
+<script>
+(function(){
+  // Sweep each needle from rest (−90°) to its server-rendered final angle.
+  // Server HTML already carries the final rotation, so no-JS renders correctly;
+  // here we rewind without transition, force a reflow, then let CSS animate.
+  var reduced = false;
+  try { reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+  function setNeedle(id, rot){
+    var el = document.getElementById(id);
+    if(!el) return;
+    if(reduced){ el.style.transform = 'rotate(' + rot + 'deg)'; return; }
+    var t = el.style.transition;
+    el.style.transition = 'none';
+    el.style.transform = 'rotate(-90deg)';
+    void el.getBoundingClientRect();          // commit the rewind
+    el.style.transition = t || 'transform .8s cubic-bezier(.22,.9,.3,1)';
+    el.style.transform = 'rotate(' + rot + 'deg)';
+  }
+  function init(){
+    {% if latest and latest.growth_score is not none %}
+    setNeedle('gneedle-growth', {{ (((latest.growth_score + 1) / 2 * 100) * 1.8 - 90)|round(1) }});
+    {% endif %}
+    {% if latest and latest.inflation_score is not none %}
+    setNeedle('gneedle-inflation', {{ (((latest.inflation_score + 1) / 2 * 100) * 1.8 - 90)|round(1) }});
+    {% endif %}
+    {% if fear_greed and fear_greed.dial is not none %}
+    setNeedle('gneedle-fg', {{ (fear_greed.dial * 1.8 - 90)|round(1) }});
+    {% endif %}
+    {% if vix and vix.pctile is not none %}
+    setNeedle('gneedle-vix', {{ (vix.pctile * 1.8 - 90)|round(1) }});
+    {% endif %}
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
 <script src="theme.js"></script>
 </body>
 </html>

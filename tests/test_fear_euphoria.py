@@ -177,14 +177,21 @@ def _render_fe(latest, fear_euphoria):
 
 
 def _render_fe_full(fear_euphoria):
+    """Render the MSX-2 Mood panel (macro_signals.html.j2 §4) — the FE secondary
+    row lives inside the Fear/Greed mood card since the MSX-2 revamp."""
     from jinja2 import Environment, FileSystemLoader
     src = (TEMPLATES / "macro_signals.html.j2").read_text()
     macros = src[: src.index("<!DOCTYPE")]              # the t()/help()/kv() macros
-    start = src.index("{# ===================== FEAR <-> EUPHORIA (full)")
-    end = src.index("{# ===================== REGIME INTERNALS")
+    start = src.index("   §4  MOOD & POSITIONING")
+    start = src.rindex("{#", 0, start)                  # back up to the section comment open
+    end = src.index("{# Positioning / crowd meter #}")
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
-    return env.from_string(macros + src[start:end]).render(fear_euphoria=fear_euphoria)
+    _fg_min = {"dial": 50, "label_en": "Neutral", "n_legs_qualifying": 5,
+               "legs_included": [], "legs_excluded_young": [], "young_tiles": [],
+               "disclaimer_en": None, "disclaimer_zh": None}
+    return env.from_string(macros + src[start:end]).render(
+        fear_greed=_fg_min, fear_euphoria=fear_euphoria)
 
 
 _LATEST_MIN = {
@@ -214,22 +221,22 @@ def test_render_smoke():
 
 
 def test_render_full_breakdown_smoke():
-    # the legs + positioning chip live on the macro_signals full-breakdown panel
+    # MSX-2: the FE secondary row (score + band + positioning chip) lives inside
+    # the macro_signals Mood card; the legs table moved into details.deep
     html = _render_fe_full(_FE_MIN)
-    assert 'id="fear-euphoria"' in html
-    assert "full breakdown" in html and "完整拆解" in html
-    assert "Positioning vs price" in html and "持仓与价格" in html
+    assert "Fear ↔ Euphoria" in html and "恐惧↔欣喜" in html
+    assert "Full breakdown ▸" in html and "完整拆解 ▸" in html
     assert "mixed" in html and "混杂" in html               # the chip, both langs
-    assert "VIX" in html                                    # the leg renders
+    assert ">12</span>" in html                             # fe_score renders
 
 
 def test_render_absent_when_none():
     # the Building… placeholder was retired with the #757 merge: when the
-    # synthesis is None the card (and the full panel) simply do not render
+    # synthesis is None the card (and the FE row on macro_signals) do not render
     html = _render_fe(_LATEST_MIN, None)
     assert 'id="sentiment-regime"' not in html
     assert "Fear ↔ Euphoria" not in html
-    assert 'id="fear-euphoria"' not in _render_fe_full(None)
+    assert "Fear ↔ Euphoria" not in _render_fe_full(None)
 
 
 def test_neutral_no_pos_neg():
