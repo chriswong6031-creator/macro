@@ -684,8 +684,8 @@
        than the injected `.stf-ch-row.st-hide-sm{display:none}`.) */
     body.page-china-stocks .stf-ch-row.st-hide-sm { display:flex; }
   }
-  /* W8-R7 organ chip — inline to avoid collision with theme.css in-flight PRs */
-  .anv2-chip-organ { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
+  /* W8-R7 price-tape chip — inline to avoid collision with theme.css in-flight PRs */
+  .anv2-chip-tape { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
   /* anv2 click-through name link — colour/decoration intentionally inherit from .anv2-name */
   .anv2-name-link { color:inherit; text-decoration:none; }
   .anv2-name-link:hover .l-en, .anv2-name-link:hover .l-zh { text-decoration:underline; }
@@ -739,9 +739,11 @@
   body.page-china .cnx-regime-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:4px 12px;font-size:11.5px;background:rgba(208,69,69,.10)}
   body.page-china .cnx-regime-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--q3)}
   body.page-china .ms-green .cnx-regime-pill{background:rgba(69,184,115,.10)}
-  body.page-china .ms-green .cnx-regime-pill .dot{background:var(--up)}
+  body.page-china .ms-green .cnx-regime-pill .dot{background:var(--ok)}
   body.page-china .ms-yellow .cnx-regime-pill{background:rgba(224,160,48,.10)}
   body.page-china .ms-yellow .cnx-regime-pill .dot{background:var(--warn)}
+  body.page-china .ms-red .cnx-regime-pill{background:rgba(224,100,100,.10)}
+  body.page-china .ms-red .cnx-regime-pill .dot{background:var(--act)}
   body.page-china .cnx-live-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.8px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:999px;margin-left:8px;opacity:.45}
   body.page-china .cnx-live-pill .d{width:6px;height:6px;border-radius:50%;background:var(--muted)}
   body.page-china .cnx-live-pill.on{opacity:1;color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
@@ -752,36 +754,40 @@
   body.page-china .cnx-gauge-svg{flex:0 0 192px;width:192px;height:120px;overflow:visible;display:block}
   @media(max-width:560px){body.page-china .cnx-gauge-svg{width:90px;height:58px;flex:0 0 90px}}
   /* gauge fill colour follows the .ms-{color} class (which the live lane swaps) so it
-     never shows a red arc next to a green/yellow live verdict. (Fill fraction is baked.) */
-  body.page-china .ms-green .cnx-gauge-fill{stroke:var(--up)}
+     never shows a red arc next to a green/yellow live verdict. (Fill fraction is baked.)
+     COLOUR TOKENS: this is a DANGER/health gauge (green=supported, red=defend capital),
+     NOT a price-direction read — so it paints from the NON-flipping health pair
+     --ok/--warn/--act, matching the Pullback-Risk bars. Do NOT swap these to --up/--down:
+     in zh those flip (red=up), which would paint the "红/defend capital" tier GREEN. */
+  body.page-china .ms-green .cnx-gauge-fill{stroke:var(--ok)}
   body.page-china .ms-yellow .cnx-gauge-fill{stroke:var(--warn)}
-  body.page-china .ms-red .cnx-gauge-fill{stroke:var(--down)}
+  body.page-china .ms-red .cnx-gauge-fill{stroke:var(--act)}
   /* needle accents follow the same .ms-* class as the arc (US idiom: hub ring +
      core + glowing tip dot in the verdict colour; stem is theme-text) */
   body.page-china .cnx-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
   body.page-china .cnx-needle-core,body.page-china .cnx-needle-tip{fill:var(--warn)}
   body.page-china .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--warn))}
-  body.page-china .ms-green .cnx-needle-hub{stroke:var(--up)}
-  body.page-china .ms-green .cnx-needle-core,body.page-china .ms-green .cnx-needle-tip{fill:var(--up)}
-  body.page-china .ms-green .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--up))}
-  body.page-china .ms-red .cnx-needle-hub{stroke:var(--down)}
-  body.page-china .ms-red .cnx-needle-core,body.page-china .ms-red .cnx-needle-tip{fill:var(--down)}
-  body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
+  body.page-china .ms-green .cnx-needle-hub{stroke:var(--ok)}
+  body.page-china .ms-green .cnx-needle-core,body.page-china .ms-green .cnx-needle-tip{fill:var(--ok)}
+  body.page-china .ms-green .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--ok))}
+  body.page-china .ms-red .cnx-needle-hub{stroke:var(--act)}
+  body.page-china .ms-red .cnx-needle-core,body.page-china .ms-red .cnx-needle-tip{fill:var(--act)}
+  body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--act))}
   body.page-china .cnx-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   /* Big score: US parity — 68px/800, tabular-nums, state-keyed glow */
   body.page-china .cnx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
-  body.page-china .ms-green .cnx-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
-  body.page-china .ms-red .cnx-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  body.page-china .ms-green .cnx-big-score{color:var(--ok);text-shadow:0 0 36px rgba(34,217,122,.3)}
+  body.page-china .ms-red .cnx-big-score{color:var(--act);text-shadow:0 0 36px rgba(239,68,68,.3)}
   @media(max-width:560px){body.page-china .cnx-big-score{font-size:34px}}
   /* Verdict word: 19px/700 to match US spec */
   body.page-china .cnx-verdict{font-size:19px;font-weight:700;white-space:nowrap}
   @media(max-width:560px){body.page-china .cnx-verdict{font-size:13px}}
   body.page-china .cnx-verdict .arr{color:var(--warn)}
-  body.page-china .ms-green .cnx-verdict .arr{color:var(--up)}
-  body.page-china .ms-red .cnx-verdict .arr{color:var(--down)}
+  body.page-china .ms-green .cnx-verdict .arr{color:var(--ok)}
+  body.page-china .ms-red .cnx-verdict .arr{color:var(--act)}
   body.page-china .cnx-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--warn);margin-top:2px}
-  body.page-china .ms-green .cnx-sub-line{color:var(--up)}
-  body.page-china .ms-red .cnx-sub-line{color:var(--down)}
+  body.page-china .ms-green .cnx-sub-line{color:var(--ok)}
+  body.page-china .ms-red .cnx-sub-line{color:var(--act)}
   /* stance line follows the .ms-{color} class — default caution (yellow), green/red override */
   body.page-china .cnx-sub-line .cnx-sub-g,body.page-china .cnx-sub-line .cnx-sub-r{display:none}
   body.page-china .cnx-sub-line .cnx-sub-y{display:inline}
@@ -1012,6 +1018,42 @@
   [data-theme="light"] body.page-china .cnx-tkr-btn{color:#2456a8}
   [data-theme="light"] body.page-china .cnx-fq.refl{color:#9a6b0e}
 {%- endif %}{# /mode != stocks — MX5 CSS #}
+  /* ── AI BRIEF DIALOG — china scope (aib-* classes, scoped under body.page-china) ── */
+  /* Pin stable accent: --isle-brief → var(--info) to avoid --up red-flip in ZH mode    */
+  body.page-china #cnx-dlg-aibrief{--isle-brief:var(--info);}
+  body.page-china .aib-hdr-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid color-mix(in srgb,var(--isle-brief,var(--info)) 15%,var(--line,rgba(255,255,255,.1)));}
+  body.page-china .aib-icon{width:38px;height:38px;flex-shrink:0;border-radius:10px;background:color-mix(in srgb,var(--isle-brief,var(--info)) 15%,var(--panel2,rgba(255,255,255,.04)));color:var(--isle-brief,var(--info));font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+  body.page-china .aib-hdr-meta{flex:1;min-width:0;}
+  body.page-china .aib-hdr-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:2px;}
+  body.page-china .aib-hdr-date{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  body.page-china .aib-badge{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--isle-brief,var(--info));opacity:.8;text-align:right;line-height:1.4;white-space:normal;max-width:200px;flex-shrink:0;}
+  [data-theme="light"] body.page-china .aib-badge{opacity:.9;}
+  body.page-china .aib-lead{font-size:17px;font-weight:650;line-height:1.6;color:var(--text);padding:18px;border-radius:14px;margin-bottom:16px;background:color-mix(in srgb,var(--isle-brief,var(--info)) 7%,transparent);border:1px solid color-mix(in srgb,var(--isle-brief,var(--info)) 18%,transparent);}
+  [data-theme="light"] body.page-china .aib-lead{background:color-mix(in srgb,var(--isle-brief,var(--info)) 5%,#fff);border-color:color-mix(in srgb,var(--isle-brief,var(--info)) 22%,transparent);}
+  body.page-china .aib-regime{font-size:14.5px;color:var(--text);line-height:1.75;margin-bottom:16px;}
+  body.page-china .aib-conf-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:10px;}
+  [data-theme="light"] body.page-china .aib-conf-row{background:rgba(0,0,0,.03);}
+  body.page-china .aib-conf-bar{display:flex;gap:3px;align-items:center;}
+  body.page-china .aib-conf-seg{width:28px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);}
+  [data-theme="light"] body.page-china .aib-conf-seg{background:rgba(0,0,0,.1);}
+  body.page-china .aib-conf-seg.filled{background:var(--isle-brief,var(--info));}
+  body.page-china .aib-conf-label{font-size:13px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6));}
+  body.page-china .aib-conf-asof{font-size:12px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums;}
+  body.page-china .aib-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+  @media(max-width:760px){body.page-china .aib-grid{grid-template-columns:1fr;}}
+  body.page-china .aib-card{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);}
+  [data-theme="light"] body.page-china .aib-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+  body.page-china .aib-card-full{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:14px;}
+  [data-theme="light"] body.page-china .aib-card-full{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+  body.page-china .aib-card-conflicts{border-left:3px solid var(--warn,#f59e0b);}
+  body.page-china .aib-card-tx{border-left:3px solid var(--isle-deep,#3b82f6);}
+  body.page-china .aib-eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--isle-brief,var(--info)) 70%,var(--ink-2,rgba(255,255,255,.6)));margin-bottom:10px;}
+  body.page-china .aib-items{display:flex;flex-direction:column;gap:6px;}
+  body.page-china .aib-item{font-size:13.5px;color:var(--text);line-height:1.65;}
+  body.page-china .aib-rotation{font-size:14px;color:var(--text);line-height:1.75;}
+  body.page-china .aib-watch-row{display:flex;align-items:flex-start;gap:8px;font-size:14px;color:var(--text);line-height:1.6;padding:4px 0;}
+  body.page-china .aib-watch-marker{color:var(--isle-brief,var(--info));flex-shrink:0;margin-top:2px;font-size:13px;}
+  body.page-china .aib-degraded{font-size:12px;color:var(--muted);margin-bottom:10px;padding:8px 12px;border-radius:8px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.14);}
 </style>
 </head>
 <body class="{{ 'page-china-stocks' if mode == 'stocks' else 'page-china mx4-grid' }}">
@@ -1059,18 +1101,30 @@
     <p class="note" style="margin:8px 0 0;text-transform:none">
       <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a>
       <a href="china_stocks_lab.html" style="margin-left:14px;padding:4px 11px;border:1.5px solid var(--link);border-radius:8px;font-size:12px;font-weight:700;color:var(--link);white-space:nowrap;display:inline-block;margin-top:4px">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
-    {# W5b EDGE-1 — CN drawdown radar sleeve-size chip. Source: engine/risk_radar_intl.py
-       cn_sleeve_chip(). Wired into setups.sleeve_chip by build_china_library.main().
-       Degrades: hidden when setups.sleeve_chip absent or radar_state is None.
-       CN-SYS-R7: display context only — never board-sort input. #}
+    {# W5b EDGE-1 — CN drawdown-radar RISK-BACKDROP cue. Source: engine/risk_radar_intl.py
+       cn_sleeve_chip(), wired into setups.sleeve_chip by build_china_library.main().
+       Plain-word rebuild of the old "Sleeve ×0.62" chip: the "sleeve" multiplier was
+       jargon, and it coloured from --down (which flips GREEN in zh for a risk-off state).
+       Now a plain stance + severity strip, coloured from the NON-flipping danger pair
+       --act/--warn/--ok (danger stays red both langs). This is the ONLY risk read on the
+       stocks page (Pullback-Risk card is macro-mode only). Degrades: hidden when
+       sleeve_chip absent or radar_state None. CN-SYS-R7: display context, never board-sort. #}
     {% set _sc = setups.sleeve_chip if setups else none %}
     {% if _sc and _sc.radar_state and _sc.radar_state != 'None' %}
-    {% set _sc_col = 'var(--down)' if _sc.radar_state in ('elevated','risk-off') else ('var(--warn)' if _sc.radar_state == 'caution' else 'var(--up)') %}
-    <div style="margin:8px 0 0;padding:6px 10px;border-radius:8px;font-size:11.5px;line-height:1.5;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;border:1px solid var(--line);border-left:3px solid {{ _sc_col }};background:color-mix(in srgb,{{ _sc_col }} 6%,var(--panel))">
-      <span style="color:{{ _sc_col }};font-weight:700"><span class="l-en">{{ _sc.label_en }}</span><span class="l-zh">{{ _sc.label_zh }}</span></span>
-      {% if _sc.dominant_driver_en %}<span class="muted" style="font-size:10.5px">· <span class="l-en">{{ _sc.dominant_driver_en }}</span><span class="l-zh">{{ _sc.dominant_driver_zh or _sc.dominant_driver_en }}</span></span>{% endif %}
+    {% set _rs = _sc.radar_state %}
+    {% set _rs_col = 'var(--act)' if _rs in ('elevated','risk-off') else ('var(--warn)' if _rs == 'caution' else 'var(--ok)') %}
+    {% set _rs_en = {'risk-off':'RISK-OFF','elevated':'ELEVATED','caution':'CAUTION','calm':'CALM'}.get(_rs, _rs|upper) %}
+    {% set _rs_zh = {'risk-off':'避险','elevated':'偏高','caution':'谨慎','calm':'平静'}.get(_rs, _rs) %}
+    {% set _rs_act_en = {'risk-off':'trade smaller','elevated':'trade smaller','caution':'avoid chasing','calm':'normal sizing'}.get(_rs, '') %}
+    {% set _rs_act_zh = {'risk-off':'减小仓位','elevated':'减小仓位','caution':'谨慎追高','calm':'正常仓位'}.get(_rs, '') %}
+    {% set _rs_idx = {'calm':0,'caution':1,'elevated':2,'risk-off':3}.get(_rs, 1) %}
+    <div style="margin:8px 0 0;padding:6px 10px;border-radius:8px;font-size:11.5px;line-height:1.5;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;border:1px solid var(--line);border-left:3px solid {{ _rs_col }};background:color-mix(in srgb,{{ _rs_col }} 6%,var(--panel))">
+      <span style="font-weight:600;color:var(--muted)"><span class="l-en">Risk backdrop</span><span class="l-zh">风险背景</span></span>
+      <span aria-hidden="true" style="display:inline-flex;gap:3px;align-items:center">{% for _i in range(4) %}<span style="width:{{ 15 if _i == _rs_idx else 9 }}px;height:6px;border-radius:3px;background:{{ _rs_col if _i == _rs_idx else 'var(--line)' }}"></span>{% endfor %}</span>
+      <span style="color:{{ _rs_col }};font-weight:700"><span class="l-en">{{ _rs_en }} — {{ _rs_act_en }}</span><span class="l-zh">{{ _rs_zh }} — {{ _rs_act_zh }}</span></span>
+      {% if _sc.dominant_driver_en %}<span class="muted" style="font-size:10.5px">· <span class="l-en">main risk: {{ _sc.dominant_driver_en.split(' (')[0] }}</span><span class="l-zh">主要风险：{{ (_sc.dominant_driver_zh or _sc.dominant_driver_en).split('（')[0] }}</span></span>{% endif %}
       {% if _sc.radar_as_of %}<span class="muted" style="font-size:10px">· {{ t('as of', '截至') }} {{ _sc.radar_as_of }}</span>{% endif %}
-      {{ help('CN drawdown radar: measures external-driver risk (US rate shocks, USD/CNH, US–China yield gap, breadth). Sizes the sleeve — context only, never vetoes names or changes board rank (CN-SYS-R7).', 'CN回撤雷达：衡量外部驱动风险（美债利率冲击、美元/人民币、中美利差、市场广度）。用于确定仓位规模——仅供背景参考，不排除个股或改变看板排名（CN-SYS-R7）。') }}
+      {{ help('CN drawdown radar: external-driver risk (US rate shocks, USD/CNH, US–China yield gap, market breadth). Sets a risk backdrop for sizing — context only, never vetoes names or changes board rank (CN-SYS-R7).', 'CN回撤雷达：衡量外部驱动风险（美债利率冲击、美元/人民币、中美利差、市场广度）。用于设定仓位风险背景——仅供背景参考，不排除个股或改变看板排名（CN-SYS-R7）。') }}
     </div>
     {% endif %}
   </div>
@@ -1147,8 +1201,8 @@
             <span class="row-pop-val"><span class="{{ 'up' if row.osc_slope > 0 else 'dn' }}">{{ '↗' if row.osc_slope > 0 else '↘' }} {{ '%.1f'|format(row.osc_slope) }}</span></span></div>
           {%- endif -%}
           {%- if row.organ_state is not none -%}
-          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Tape organ</span><span class="l-zh">器官（纸带）</span></span>
-            <span class="row-pop-val"><span class="l-en">{{ row.organ_state }}</span><span class="l-zh">{{ tr(row.organ_state) }}</span></span></div>
+          <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Price tape</span><span class="l-zh">价格走势</span></span>
+            <span class="row-pop-val"><span class="l-en">{{ row.organ_state|replace('_',' ')|title }}</span><span class="l-zh">{{ tr(row.organ_state) }}</span></span></div>
           {%- endif -%}
           {# SECTOR rows: enrich from sector card via sectors_by_ticker #}
           {%- if _sc is not none -%}
@@ -1216,8 +1270,8 @@
         <span class="anv2-chip anv2-chip-trough" data-tip-en="At the low point of its cycle — the most beaten-down phase." data-tip-zh="处于周期低谷——最超跌的阶段。">{{ t('TROUGH','低谷') }}</span>
         <span class="anv2-chip anv2-chip-turn" data-tip-en="Momentum is turning up from the low — higher number = sharper turn. A first hint, not a buy signal." data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">↗ {{ '%.1f'|format(row.osc_slope) }}</span>
         {% endif %}
-        {# organ chip (W8-R7 rider) — TURNING/CONFIRMED state from basket_turn_cn #}
-        {% if row.organ_chip_en %}<span class="anv2-chip anv2-chip-organ">{{ t(row.organ_chip_en, row.organ_chip_zh or tr(row.organ_chip_en)) }}</span>{% endif %}
+        {# price-tape chip (W8-R7 rider) — TURNING/CONFIRMED state from basket_turn_cn #}
+        {% if row.organ_chip_en %}<span class="anv2-chip anv2-chip-tape">{{ t(row.organ_chip_en, row.organ_chip_zh or tr(row.organ_chip_en)) }}</span>{% endif %}
       </div>
       {# stat line: rel20 for themes, rs_63d+pos for bottoming #}
       {% if lane == 'bot' %}
@@ -1312,7 +1366,7 @@
         {% set _needle_deg = ((_ms_score * 1.8) - 90) | round(1) %}
         <svg class="cnx-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
           <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
-          <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
+          <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--ok)' if _ms_color == 'green' else ('var(--act)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
           {# needle (US idiom): stem + hub + accent tip dot; colours are CLASS-driven
              via .ms-* so they always match the verdict, both themes #}
           <g class="cnx-gauge-needle" transform="rotate({{ _needle_deg }} 60 68)">
@@ -1397,12 +1451,12 @@
         <rect x="20" y="22" width="520" height="56" fill="rgba(69,184,115,.06)"/>
         <rect x="20" y="134" width="520" height="56" fill="rgba(224,100,100,.06)"/>
         <line x1="20" y1="106" x2="540" y2="106" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
-        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-en">Risk-on</text>
-        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-zh">风险偏好</text>
+        <text x="540" y="34" font-size="9" fill="var(--ok)" text-anchor="end" class="l-en">Risk-on</text>
+        <text x="540" y="34" font-size="9" fill="var(--ok)" text-anchor="end" class="l-zh">风险偏好</text>
         <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-en">Mixed</text>
         <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-zh">混合</text>
-        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-en">Risk-off</text>
-        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-zh">避险</text>
+        <text x="540" y="186" font-size="9" fill="var(--act)" text-anchor="end" class="l-en">Risk-off</text>
+        <text x="540" y="186" font-size="9" fill="var(--act)" text-anchor="end" class="l-zh">避险</text>
         <text x="14" y="26" font-size="9" fill="var(--muted)" text-anchor="end">100</text>
         <text x="14" y="109" font-size="9" fill="var(--muted)" text-anchor="end">50</text>
         <text x="14" y="192" font-size="9" fill="var(--muted)" text-anchor="end">0</text>
@@ -1411,7 +1465,7 @@
         {% set _poly_pts = [] %}
         {% for p in _pts %}{% set _x = 20 + loop.index0 * _step %}{% set _y = 190 - (p.score / 100) * 168 %}{% set _ = _poly_pts.append((_x|round(1)|string) + ' ' + (_y|round(1)|string)) %}{% endfor %}
         <path d="M{{ _poly_pts | join(' L') }}"
-              fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="2.2" stroke-linejoin="round"/>
+              fill="none" stroke="{{ 'var(--ok)' if _ms_color == 'green' else ('var(--act)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="2.2" stroke-linejoin="round"/>
         <text x="30" y="222" font-size="9" fill="var(--muted)">{{ _pts[0].date if _pts[0] else '' }}</text>
         <text x="536" y="222" font-size="9" fill="var(--muted)" text-anchor="end">{{ _pts[-1].date if _pts[-1] else '' }}</text>
       </svg>
@@ -1841,7 +1895,7 @@
             {% if latest.conditions and latest.conditions.get('recession') %}
             {% set _cr = latest.conditions.recession %}
             <div style="display:flex;gap:10px;align-items:baseline;margin:2px 0 6px">
-              <span class="cnx-bignum {{ 'neg' if (_cr.score or 0) >= 60 else 'warn' if (_cr.score or 0) >= 40 else 'pos' }}">{{ (_cr.score or 0) | round | int }}</span>
+              <span class="cnx-bignum" style="color:{{ 'var(--act)' if (_cr.score or 0) >= 60 else 'var(--warn)' if (_cr.score or 0) >= 40 else 'var(--ok)' }}">{{ (_cr.score or 0) | round | int }}</span>
             </div>
             {% if _cr.chart_html %}<div class="chart">{{ _cr.chart_html | safe }}</div>{% endif %}
             {% else %}
@@ -2252,40 +2306,129 @@
     </div>
   </div>
 
-  <!-- AI Brief dialog -->
+  <!-- AI Brief dialog — aib-* rich structure (ported from dashboard.html.j2; scoped to body.page-china) -->
   <div class="cnx-dlg" id="cnx-dlg-aibrief">
     <div class="cnx-dlg-backdrop" onclick="cnxCloseDlg()"></div>
     <div class="cnx-dlg-panel">
-      <div class="cnx-dlg-head"><span class="cnx-dlg-title">{{ t('AI Brief — China Synthesis','AI简报 — 中国综合') }}</span><button class="cnx-dlg-close" onclick="cnxCloseDlg()">×</button></div>
+      <div class="cnx-dlg-head"><span class="cnx-dlg-title"><span class="l-en">AI Brief — China Synthesis</span><span class="l-zh">AI简报 — 中国综合</span></span><button class="cnx-dlg-close" onclick="cnxCloseDlg()">×</button></div>
       <div class="cnx-dlg-body">
         {% if china_brief %}
         {% set _cb = china_brief %}
         {% set _cbzh = _cb.zh if _cb.zh is defined and _cb.zh else {} %}
-        <div class="cnx-eyebrow">{{ t('Summary','摘要') }} · {{ t('as of','截至') }} {{ _cb.state_asof or latest.date }}</div>
-        <p style="font-size:13px;margin:0 0 12px"><span class="l-en">{{ _cb.summary or '' }}</span><span class="l-zh">{{ _cbzh.get('summary') or _cb.summary or '' }}</span></p>
-        <div class="cnx-eyebrow">{{ t('Regime read','周期解读') }}</div>
-        <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px"><span class="l-en">{{ _cb.regime_read or '' }}</span><span class="l-zh">{{ _cbzh.get('regime_read') or _cb.regime_read or '' }}</span></p>
-        {% if _cb.conflicts %}
-        <div class="cnx-eyebrow">{{ t('Where signals conflict','信号冲突点') }}</div>
-        <ul style="margin:0 0 12px;padding-left:18px">
-          {% for c in _cb.conflicts %}
-          {% set _czh = (_cbzh.get('conflicts') or [])[loop.index0] if _cbzh.get('conflicts') and loop.index0 < (_cbzh.get('conflicts') or []) | length else none %}
-          <li style="font-size:12.5px;margin:5px 0"><span class="l-en">{{ c }}</span><span class="l-zh">{{ _czh or c }}</span></li>
-          {% endfor %}
-        </ul>
+        {# 1. Header row: AI icon + title + date + mandatory house-law badge #}
+        <div class="aib-hdr-row">
+          <div class="aib-icon">AI</div>
+          <div class="aib-hdr-meta">
+            <div class="aib-hdr-title"><span class="l-en">AI Daily Brief · China &amp; HK synthesis</span><span class="l-zh">AI 每日简报 · 中港综合</span></div>
+            <div class="aib-hdr-date num">{{ _cb.state_asof or latest.date }}</div>
+          </div>
+          <span class="aib-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
+        </div>
+        {# 2. Lead card — summary (accent-tinted) #}
+        {% if _cb.summary %}
+        <div class="aib-lead">
+          <span class="l-en">{{ _cb.summary }}</span>
+          <span class="l-zh">{{ _cbzh.get('summary') or _cb.summary }}</span>
+        </div>
         {% endif %}
-        {% if _cb.watch_items %}
-        <div class="cnx-eyebrow">{{ t('What to watch','值得关注') }}</div>
-        <ul style="margin:0;padding-left:18px">
-          {% for w in _cb.watch_items %}
-          {% set _wzh = (_cbzh.get('watch_items') or [])[loop.index0] if _cbzh.get('watch_items') and loop.index0 < (_cbzh.get('watch_items') or []) | length else none %}
-          <li style="font-size:12.5px;margin:5px 0"><span class="l-en">{{ w }}</span><span class="l-zh">{{ _wzh or w }}</span></li>
-          {% endfor %}
-        </ul>
+        {# 3. Regime read #}
+        {% if _cb.regime_read %}
+        <div class="aib-regime">
+          <span class="l-en">{{ _cb.regime_read }}</span>
+          <span class="l-zh">{{ _cbzh.get('regime_read') or _cb.regime_read }}</span>
+        </div>
+        {% endif %}
+        {# 4. Confidence meter — 3-segment bar #}
+        {% set _cb_conf = _cb.confidence %}
+        {% if _cb_conf %}
+        {% set _cb_conf_n = 3 if _cb_conf == 'high' else (2 if _cb_conf == 'medium' else 1) %}
+        {% set _cb_conf_zh = '高' if _cb_conf == 'high' else ('中' if _cb_conf == 'medium' else '低') %}
+        <div class="aib-conf-row">
+          <div class="aib-conf-bar">
+            <div class="aib-conf-seg{% if _cb_conf_n >= 1 %} filled{% endif %}"></div>
+            <div class="aib-conf-seg{% if _cb_conf_n >= 2 %} filled{% endif %}"></div>
+            <div class="aib-conf-seg{% if _cb_conf_n >= 3 %} filled{% endif %}"></div>
+          </div>
+          <span class="aib-conf-label"><span class="l-en">Confidence: {{ _cb_conf }}</span><span class="l-zh">置信度：{{ _cb_conf_zh }}</span></span>
+          {% if _cb.state_asof %}<span class="aib-conf-asof">{{ t('as of','数据截至') }} {{ _cb.state_asof }}</span>{% endif %}
+        </div>
+        {% endif %}
+        {# 5. 2-col grid: conflicts + transmission #}
+        {% set _cb_conflicts = _cb.conflicts or [] %}
+        {% set _cb_tx = _cb.transmission or [] %}
+        {% if _cb_conflicts or _cb_tx %}
+        <div class="aib-grid">
+          {% if _cb_conflicts %}
+          {% set _cb_conflicts_zh = _cbzh.get('conflicts') or [] %}
+          <div class="aib-card aib-card-conflicts">
+            <div class="aib-eyebrow"><span class="l-en">&#x2696; Where signals disagree</span><span class="l-zh">&#x2696; 信号分歧</span></div>
+            <div class="aib-items">
+              {% for _ci in _cb_conflicts %}
+              {% set _ci_zh = _cb_conflicts_zh[loop.index0] if _cb_conflicts_zh and loop.index0 < _cb_conflicts_zh|length else _ci %}
+              <div class="aib-item">
+                <span class="l-en">{{ _ci }}</span>
+                <span class="l-zh">{{ _ci_zh }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% if _cb_tx %}
+          {% set _cb_tx_zh = _cbzh.get('transmission') or [] %}
+          <div class="aib-card aib-card-tx">
+            <div class="aib-eyebrow"><span class="l-en">&#x26D3; Transmission</span><span class="l-zh">&#x26D3; 传导</span></div>
+            <div class="aib-items">
+              {% for _ti in _cb_tx %}
+              {% set _ti_zh = _cb_tx_zh[loop.index0] if _cb_tx_zh and loop.index0 < _cb_tx_zh|length else _ti %}
+              <div class="aib-item">
+                <span class="l-en">{{ _ti }}</span>
+                <span class="l-zh">{{ _ti_zh }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {# 6. Rotation — full-width card #}
+        {% if _cb.rotation_check %}
+        <div class="aib-card-full">
+          <div class="aib-eyebrow"><span class="l-en">&#x267B; Rotation</span><span class="l-zh">&#x267B; 轮动</span></div>
+          <div class="aib-rotation">
+            <span class="l-en">{{ _cb.rotation_check }}</span>
+            <span class="l-zh">{{ _cbzh.get('rotation_check') or _cb.rotation_check }}</span>
+          </div>
+        </div>
+        {% endif %}
+        {# 7. What to watch — arrow-bullet checklist; split on ':' to bold trigger head #}
+        {% set _cb_watch = _cb.watch_items or [] %}
+        {% if _cb_watch %}
+        {% set _cb_wi_zh = _cbzh.get('watch_items') or [] %}
+        <div class="aib-card-full">
+          <div class="aib-eyebrow"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></div>
+          <div class="aib-items">
+            {% for _wi in _cb_watch %}
+            {% set _wi_zh = _cb_wi_zh[loop.index0] if _cb_wi_zh and loop.index0 < _cb_wi_zh|length else _wi %}
+            <div class="aib-watch-row">
+              <span class="aib-watch-marker">&#x25B9;</span>
+              <span>
+                <span class="l-en">{% if ':' in _wi %}<b>{{ _wi.split(':',1)[0] }}</b>:{{ _wi.split(':',1)[1] }}{% else %}{{ _wi }}{% endif %}</span>
+                <span class="l-zh">{% if '：' in _wi_zh %}<b>{{ _wi_zh.split('：',1)[0] }}</b>：{{ _wi_zh.split('：',1)[1] }}{% elif ':' in _wi_zh %}<b>{{ _wi_zh.split(':',1)[0] }}</b>:{{ _wi_zh.split(':',1)[1] }}{% else %}{{ _wi_zh }}{% endif %}</span>
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {# NOTE: 'Upcoming catalysts' section OMITTED — china_brief has no forward_watch/forward_read fields #}
+        {# 8. Degraded notice #}
+        {% if _cb.degraded_reason %}
+        <div class="aib-degraded"><span class="l-en">Today's brief ran degraded: {{ _cb.degraded_reason }}</span><span class="l-zh">今日简报为降级运行：{{ _cb.degraded_reason }}</span></div>
         {% endif %}
         {% else %}
         <p style="font-size:13px;color:var(--muted)">{{ t('AI brief not available right now.','AI简报暂不可用。') }}</p>
         {% endif %}
+        {# 9. Footer receipt — existing cnx-receipt preserved #}
         <div class="cnx-receipt">{{ t('Research context only — not a signal. Generated nightly from the dashboards; full brief at','仅供研究参考 — 非交易信号。每晚由看板生成；完整简报位于') }} <a href="aibrief.html">aibrief.html</a>.</div>
       </div>
     </div>

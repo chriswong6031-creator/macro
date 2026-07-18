@@ -400,12 +400,15 @@ def assemble_act_now(
             _organ_st = _organ_state_map.get(_bw_id) or _organ_state_map.get(_canonical_id)
             if _organ_st:
                 _bw_row["organ_state"] = _organ_st
-                if _organ_st in ("TURNING", "CONFIRMED"):
-                    _bw_row["organ_chip_en"] = f"organ: {_organ_st} (tape)"
-                    _bw_row["organ_chip_zh"] = f"器官：{tr(_organ_st)}（纸带）"
-                else:
-                    _bw_row["organ_chip_en"] = f"organ: {_organ_st}"
-                    _bw_row["organ_chip_zh"] = f"器官：{tr(_organ_st)}"
+                # Plain-word price-tape chip. Was the internal "organ: STATE (tape)"
+                # label — "organ" is a banned glance-tier word, so surface the price-
+                # tape state in plain terms instead. (Field keys stay for compat.)
+                _bw_row["organ_chip_en"], _bw_row["organ_chip_zh"] = {
+                    "TURNING": ("Turning up", "走势转强"),
+                    "CONFIRMED": ("Trend confirmed", "走势确认"),
+                    "WASHED_OUT": ("Washed out", "超跌洗盘"),
+                    "BASING": ("Basing", "筑底"),
+                }.get(_organ_st, (f"Tape: {_organ_st.title()}", f"走势：{tr(_organ_st)}"))
 
         # Surface NEW baskets from organ (TURNING/CONFIRMED) not already in the lane
         # These are baskets the forward_log Trough+osc rule did not surface but the
@@ -458,8 +461,12 @@ def assemble_act_now(
             _new_bw_row["reco_zh"] = _reco_zh
             _new_bw_row["rel20"] = _rel20
             _new_bw_row["organ_state"] = _org_st
-            _new_bw_row["organ_chip_en"] = f"organ: {_org_st} (tape)"
-            _new_bw_row["organ_chip_zh"] = f"器官：{tr(_org_st)}（纸带）"
+            _new_bw_row["organ_chip_en"], _new_bw_row["organ_chip_zh"] = {
+                "TURNING": ("Turning up", "走势转强"),
+                "CONFIRMED": ("Trend confirmed", "走势确认"),
+                "WASHED_OUT": ("Washed out", "超跌洗盘"),
+                "BASING": ("Basing", "筑底"),
+            }.get(_org_st, (f"Tape: {_org_st.title()}", f"走势：{tr(_org_st)}"))
             bottoming_watch.append(_new_bw_row)
             # Fix 2: register both raw and canonical ids so b-/non-b- variants
             # can't produce duplicate rows across nightly passes

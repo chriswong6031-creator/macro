@@ -4560,6 +4560,7 @@ def main() -> int:
             except Exception:  # noqa: BLE001
                 continue
             _irl_asofs.append(_last.get("asof", ""))
+            _irl_dp = _last.get("drawdown_prob") or {}
             _irl_rows.append({
                 "code": _code,
                 "name_en": _nen,
@@ -4568,6 +4569,11 @@ def main() -> int:
                 "state": _last.get("state", ""),
                 "alert": bool(_last.get("alert")),
                 "asof": _last.get("asof", ""),
+                # — extra fields for per-tile hover profile (Task 7a) —
+                "rd_state": _last.get("state", ""),          # risk-radar state (same field)
+                "dd_h21": _irl_dp.get("h21"),                # ≥5% pullback odds 21-session
+                "dd_lift": _irl_dp.get("lift_h21"),          # odds lift vs long-run baseline
+                "dominant_scare": _last.get("dominant_scare"),
             })
         _irl_alerts = [r for r in _irl_rows if r["alert"]]
         _irl_alerts.sort(key=lambda r: -r["score"])
@@ -4580,6 +4586,71 @@ def main() -> int:
         }
     except Exception as _ice:  # noqa: BLE001 — display-only, never fatal
         log.warning("intl_cascade build failed (%s)", _ice)
+
+    # ── B1b: attach per-country turn profile from intl_market_state (Task 7a) ──
+    # Fail-open: on ANY exception, rows keep their existing fields untouched.
+    # market_states() keys use UPPERCASE config codes (JP/KR/TW/IN/AU/GB/EZ);
+    # forward_log codes are lowercase (jp/kr/tw/in/au/gb/ez). CN/HK/CA have
+    # no market_states() coverage (separate systems), so they remain profile-free.
+    try:
+        if _intl_cascade and _intl_cascade.get("rows"):
+            from engine.intl_market_state import market_states as _ims_fn
+            from engine import intl_inputs as _ims_inputs
+            # Map lowercase forward-log codes → uppercase config keys
+            _IMS_CODE_MAP: dict[str, str] = {
+                "jp": "JP", "kr": "KR", "tw": "TW",
+                "in": "IN", "au": "AU", "gb": "GB", "ez": "EZ",
+            }
+            # Plain-word dominant-scare labels (forward_log dominant_scare values)
+            _IMS_SCARE_EN: dict[str, str] = {
+                "breadth":      "Market breadth",
+                "rate_shock":   "Rate shock",
+                "capital_flow": "Capital outflow",
+                "extension":    "Overextended",
+            }
+            _IMS_SCARE_ZH: dict[str, str] = {
+                "breadth":      "市场广度",
+                "rate_shock":   "利率冲击",
+                "capital_flow": "资本外流",
+                "extension":    "过度延伸",
+            }
+            # Load closes keyed by uppercase country code; bench not available here
+            try:
+                _ims_closes_raw = _ims_inputs._intl_closes()
+                _ims_countries  = _ims_inputs.countries()
+                _ims_closes: dict = {}
+                for _ims_cc, _ims_c in _ims_countries.items():
+                    _ims_idx = _ims_c["index"]
+                    if _ims_idx in _ims_closes_raw:
+                        _ims_s = _ims_closes_raw[_ims_idx].dropna()
+                        if not _ims_s.empty:
+                            _ims_closes[_ims_cc] = _ims_s
+                _ims_states = _ims_fn(_ims_closes, bench=None)
+            except Exception as _ims_load_exc:  # noqa: BLE001
+                log.warning("intl_cascade profile: closes/states load failed (%s)", _ims_load_exc)
+                _ims_states = {}
+            # Attach profile fields to each row (fail-open per row)
+            for _ims_row in _intl_cascade["rows"]:
+                try:
+                    _ims_lc = _ims_row.get("code", "")
+                    _ims_uc = _IMS_CODE_MAP.get(_ims_lc)
+                    if _ims_uc and _ims_uc in _ims_states:
+                        _ims_st = _ims_states[_ims_uc]
+                        _ims_row["profile"] = {
+                            "state_en":  _ims_st.get("state_en"),
+                            "state_zh":  _ims_st.get("state_zh"),
+                            "stance_en": _ims_st.get("stance_en"),
+                            "stance_zh": _ims_st.get("stance_zh"),
+                            "mom20_pct": _ims_st.get("mom20_pct"),
+                            "dd_pct":    _ims_st.get("dd_pct"),
+                        }
+                        _ims_ds = _ims_row.get("dominant_scare")
+                        _ims_row["dominant_en"] = _IMS_SCARE_EN.get(_ims_ds, _ims_ds or "")
+                        _ims_row["dominant_zh"] = _IMS_SCARE_ZH.get(_ims_ds, _ims_ds or "")
+                except Exception:  # noqa: BLE001
+                    pass  # leave row without profile rather than fail the whole cascade
+    except Exception as _imp_exc:  # noqa: BLE001 — display-only, never fatal
+        log.warning("intl_cascade profile attach failed (%s)", _imp_exc)
 
     _intl_spillover: dict | None = None
     try:
@@ -4606,15 +4677,46 @@ def main() -> int:
                     "safety_bid_flag": "避险买盘",
                 }
                 _ISP_LEG_ORDER = ["us_hy_oas_vel", "kre_spy_rs", "move_pctile", "sofr_iorb_corridor", "safety_bid_flag"]
+                # Plain what-it-measures tip text per leg (Task 7c)
+                _ISP_TIP_EN: dict[str, str] = {
+                    "us_hy_oas_vel": "US high-yield credit spread velocity — rising spreads signal stress reaching US credit markets.",
+                    "kre_spy_rs": "Regional bank stocks vs broad market (KRE/SPY ratio) — bank underperformance flags funding stress.",
+                    "move_pctile": "MOVE index percentile — elevated rates volatility precedes spread-widening and risk-off moves.",
+                    "sofr_iorb_corridor": "SOFR vs IORB corridor — positive gap signals funding pressure in overnight money markets.",
+                    "safety_bid_flag": "Safety bid — simultaneous dollar strength and 2y yield drop flags flight to safety.",
+                }
+                _ISP_TIP_ZH: dict[str, str] = {
+                    "us_hy_oas_vel": "美国高收益信用利差速度——利差走阔信号显示压力已传至美国信贷市场。",
+                    "kre_spy_rs": "地区银行股vs大盘（KRE/SPY比率）——银行股跑输预示融资压力。",
+                    "move_pctile": "MOVE指数分位数——利率波动率偏高往往先于利差走阔和避险行情。",
+                    "sofr_iorb_corridor": "SOFR与IORB走廊——正差值预示隔夜货币市场融资压力。",
+                    "safety_bid_flag": "避险买盘——美元同步走强且2年期收益率下跌，显示资金撤至避险资产。",
+                }
                 _isp_raw_legs = _isp_t2.get("legs") or {}
                 _isp_legs = []
                 for _lk in _ISP_LEG_ORDER:
                     _lv = _isp_raw_legs.get(_lk) or {}
+                    _lhot = bool(_lv.get("hot"))
+                    _lval = _lv.get("value")
+                    _lstate = "hot" if _lhot else "quiet"
+                    _ltip_en = _ISP_TIP_EN.get(_lk, "")
+                    _ltip_zh = _ISP_TIP_ZH.get(_lk, "")
+                    # Append value reading if available
+                    if _lval is not None:
+                        try:
+                            _ltip_en += f" Reading: {round(float(_lval), 2)}{' (hot)' if _lhot else ' (quiet)'}."
+                            _ltip_zh += f" 当前读数：{round(float(_lval), 2)}{'（活跃）' if _lhot else '（平静）'}。"
+                        except Exception:  # noqa: BLE001
+                            pass
                     _isp_legs.append({
                         "key": _lk,
                         "label_en": _ISP_LEG_EN.get(_lk, _lk.replace("_", " ").title()),
                         "label_zh": _ISP_LEG_ZH.get(_lk, _lk),
-                        "hot": bool(_lv.get("hot")),
+                        "hot": _lhot,
+                        "value": _lval,
+                        "state": _lstate,
+                        "tip_en": _ltip_en,
+                        "tip_zh": _ltip_zh,
                     })
                 # Also include any unknown keys not in the fixed order (graceful extension)
                 for _lk, _lv in _isp_raw_legs.items():
@@ -4624,6 +4726,10 @@ def main() -> int:
                             "label_en": _lk.replace("_", " ").title(),
                             "label_zh": _lk.replace("_", " ").title(),
                             "hot": bool((_lv or {}).get("hot")),
+                            "value": (_lv or {}).get("value"),
+                            "state": "hot" if (_lv or {}).get("hot") else "quiet",
+                            "tip_en": "",
+                            "tip_zh": "",
                         })
                 _intl_spillover = {
                     "state": _isp_state,
