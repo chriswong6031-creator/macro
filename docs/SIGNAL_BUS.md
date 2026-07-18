@@ -478,7 +478,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| market-structure-latest | `data/market_structure/latest.json` | json | daily-engine | display | 1 | 1 |
+| market-structure-latest | `data/market_structure/latest.json` | json | daily-engine | display | 4 | 1 |
 | market-structure-history | `data/market_structure/history.parquet` | parquet | daily-engine | display | 1 | 0 |
 | market-structure-ledger | `data/market_structure/ledger.parquet` | parquet | daily-engine | shadow | 0 | 0 |
 

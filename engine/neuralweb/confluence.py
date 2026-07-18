@@ -105,6 +105,7 @@ _MACRO_SUBTYPES = [
     "global_regime:china",
     "global_regime:hk",
     "global_regime:canada",
+    "market_structure",  # MSP-W3 display-only market-structure context node
 ]
 
 
@@ -566,6 +567,28 @@ def _build_macro_nodes(world_state: dict | None, gaps: list[str]) -> list[dict]:
                         "source_lobe": "global_regimes",
                     },
                 ))
+
+        # market_structure lobe — MSP-W3 display-only dealer/flow/dispersion node
+        ms = world_state.get("market_structure")
+        if ms is not None and not ms.get("absent"):
+            has_any = True
+            _ms_g = (ms.get("gamma") or {}) if isinstance(ms.get("gamma"), dict) else {}
+            _ms_s = (ms.get("systematic") or {}) if isinstance(ms.get("systematic"), dict) else {}
+            _ms_d = (ms.get("dispersion") or {}) if isinstance(ms.get("dispersion"), dict) else {}
+            nodes.append(_node(
+                nid="macro:market_structure",
+                ntype="macro",
+                label="Market Structure",
+                meta={
+                    "subtype": "market_structure",
+                    "regime": _ms_g.get("regime"),
+                    "agreement": _ms_s.get("agreement"),
+                    "cor1m_regime": _ms_d.get("cor1m_regime"),
+                    "asof": ms.get("asof"),
+                    "display_only": True,
+                    "source_lobe": "world_state.market_structure",
+                },
+            ))
 
     except Exception as exc:  # noqa: BLE001
         log.warning("confluence: macro nodes build failed — %s", exc)

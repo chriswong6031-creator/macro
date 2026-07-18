@@ -13957,6 +13957,9 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/world_state.py
+      - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/brief_context.py
+      - engine/neuralweb/confluence.py
     external_consumers:
       - mastermind:context
     notes: >
