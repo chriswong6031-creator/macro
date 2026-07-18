@@ -1,17 +1,17 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-18T00:37:51.011983+00:00",
+  "generated_at": "2026-07-18T09:05:03.088582+00:00",
   "as_of": "2026-07-18",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 403,
-    "n_features": 26,
+    "n_features": 31,
     "features": [
       {
         "feature": "iv30",
-        "n_nonnull": 403,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 1.0
+        "share_nonnull": 0.9975
       },
       {
         "feature": "iv_rank_252",
@@ -33,9 +33,9 @@
       },
       {
         "feature": "ivspread_5d_chg",
-        "n_nonnull": 356,
+        "n_nonnull": 358,
         "n_total": 403,
-        "share_nonnull": 0.8834
+        "share_nonnull": 0.8883
       },
       {
         "feature": "skew",
@@ -57,9 +57,9 @@
       },
       {
         "feature": "doi_pc",
-        "n_nonnull": 0,
+        "n_nonnull": 346,
         "n_total": 403,
-        "share_nonnull": 0.0
+        "share_nonnull": 0.8586
       },
       {
         "feature": "fresh_contracts",
@@ -69,9 +69,9 @@
       },
       {
         "feature": "fresh_premium_mn",
-        "n_nonnull": 326,
+        "n_nonnull": 340,
         "n_total": 403,
-        "share_nonnull": 0.8089
+        "share_nonnull": 0.8437
       },
       {
         "feature": "zerodte_share",
@@ -93,27 +93,27 @@
       },
       {
         "feature": "dist_to_flip_pct",
-        "n_nonnull": 324,
+        "n_nonnull": 247,
         "n_total": 403,
-        "share_nonnull": 0.804
+        "share_nonnull": 0.6129
       },
       {
         "feature": "wall_up_dist_pct",
-        "n_nonnull": 403,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 1.0
+        "share_nonnull": 0.9975
       },
       {
         "feature": "wall_down_dist_pct",
-        "n_nonnull": 403,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 1.0
+        "share_nonnull": 0.9975
       },
       {
         "feature": "max_pain_dist_pct",
-        "n_nonnull": 403,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 1.0
+        "share_nonnull": 0.9975
       },
       {
         "feature": "opex_days",
@@ -123,15 +123,15 @@
       },
       {
         "feature": "pin_risk",
-        "n_nonnull": 267,
+        "n_nonnull": 257,
         "n_total": 403,
-        "share_nonnull": 0.6625
+        "share_nonnull": 0.6377
       },
       {
         "feature": "gex_confirm_verdict",
-        "n_nonnull": 403,
+        "n_nonnull": 402,
         "n_total": 403,
-        "share_nonnull": 1.0
+        "share_nonnull": 0.9975
       },
       {
         "feature": "evidence_quality",
@@ -162,14 +162,44 @@
         "n_nonnull": 371,
         "n_total": 403,
         "share_nonnull": 0.9206
+      },
+      {
+        "feature": "front7_charm_share",
+        "n_nonnull": 370,
+        "n_total": 403,
+        "share_nonnull": 0.9181
+      },
+      {
+        "feature": "front7_gex_share",
+        "n_nonnull": 370,
+        "n_total": 403,
+        "share_nonnull": 0.9181
+      },
+      {
+        "feature": "signed_vanna_pressure",
+        "n_nonnull": 370,
+        "n_total": 403,
+        "share_nonnull": 0.9181
+      },
+      {
+        "feature": "vanna_hedge_5d",
+        "n_nonnull": 374,
+        "n_total": 403,
+        "share_nonnull": 0.928
+      },
+      {
+        "feature": "root_class",
+        "n_nonnull": 403,
+        "n_total": 403,
+        "share_nonnull": 1.0
       }
     ],
     "ticker_coverage": {
       "n_tickers": 403,
       "n_rows": 403,
-      "n_tickers_ge75pct_features": 368,
-      "n_tickers_50to74pct_features": 29,
-      "n_tickers_lt50pct_features": 6
+      "n_tickers_ge75pct_features": 369,
+      "n_tickers_50to74pct_features": 5,
+      "n_tickers_lt50pct_features": 29
     }
   },
   "family_stamp_coverage": [
@@ -182,140 +212,136 @@
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
-        "2026-W27": 26,
-        "2026-W28": 7
+        "2026-W27": 43,
+        "2026-W28": 17
       },
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
-        "post_wc_fires": 7,
-        "post_wc_span_days": 1
+        "reason": "post-W-C history 4d < 14d minimum; n_post_wc_fires=17",
+        "post_wc_fires": 17,
+        "post_wc_span_days": 4
       }
     },
     {
       "family": "S-DOI",
       "status": "building_history",
-      "n_cond": 13,
-      "n_base": 19,
+      "n_cond": 26,
+      "n_base": 32,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
-        "2026-W27": 26,
-        "2026-W28": 7
+        "2026-W27": 43,
+        "2026-W28": 17
       },
-      "n_stamped_cond": 32,
-      "cond_hit_share": 0.4,
+      "n_stamped_cond": 58,
+      "cond_hit_share": 0.5421,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
-        "post_wc_fires": 7,
-        "post_wc_span_days": 1
+        "reason": "post-W-C history 4d < 14d minimum; n_post_wc_fires=17",
+        "post_wc_fires": 17,
+        "post_wc_span_days": 4
       }
     },
     {
       "family": "S-VOI",
       "status": "building_history",
-      "n_cond": 68,
-      "n_base": 10,
-      "target_n_cond": 30,
-      "weekly_fires": {
-        "2026-W25": 6,
-        "2026-W26": 41,
-        "2026-W27": 26,
-        "2026-W28": 7
-      },
-      "n_stamped_cond": 78,
-      "cond_hit_share": 0.975,
-      "readiness_forecast": {
-        "forecast": "already_ready",
-        "n_cond": 68
-      }
-    },
-    {
-      "family": "S-IVSPREAD-F",
-      "status": "building_history",
-      "n_cond": 19,
-      "n_base": 13,
-      "target_n_cond": 30,
-      "weekly_fires": {
-        "2026-W25": 6,
-        "2026-W26": 41,
-        "2026-W27": 26,
-        "2026-W28": 7
-      },
-      "n_stamped_cond": 32,
-      "cond_hit_share": 0.4,
-      "readiness_forecast": {
-        "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
-        "post_wc_fires": 7,
-        "post_wc_span_days": 1
-      }
-    },
-    {
-      "family": "S-SKEW_DECEL",
-      "status": "building_history",
-      "n_cond": 3,
-      "n_base": 29,
-      "target_n_cond": 30,
-      "weekly_fires": {
-        "2026-W25": 6,
-        "2026-W26": 41,
-        "2026-W27": 26,
-        "2026-W28": 7
-      },
-      "n_stamped_cond": 33,
-      "cond_hit_share": 0.4125,
-      "readiness_forecast": {
-        "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
-        "post_wc_fires": 7,
-        "post_wc_span_days": 1
-      }
-    },
-    {
-      "family": "S-TOP_RISK",
-      "status": "building_history",
-      "n_cond": 18,
+      "n_cond": 90,
       "n_base": 14,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
-        "2026-W27": 26,
-        "2026-W28": 7
+        "2026-W27": 43,
+        "2026-W28": 17
       },
-      "n_stamped_cond": 32,
-      "cond_hit_share": 0.4,
+      "n_stamped_cond": 104,
+      "cond_hit_share": 0.972,
+      "readiness_forecast": {
+        "forecast": "already_ready",
+        "n_cond": 90
+      }
+    },
+    {
+      "family": "S-IVSPREAD-F",
+      "status": "building_history",
+      "n_cond": 33,
+      "n_base": 25,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41,
+        "2026-W27": 43,
+        "2026-W28": 17
+      },
+      "n_stamped_cond": 58,
+      "cond_hit_share": 0.5421,
+      "readiness_forecast": {
+        "forecast": "already_ready",
+        "n_cond": 33
+      }
+    },
+    {
+      "family": "S-SKEW_DECEL",
+      "status": "building_history",
+      "n_cond": 6,
+      "n_base": 52,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41,
+        "2026-W27": 43,
+        "2026-W28": 17
+      },
+      "n_stamped_cond": 60,
+      "cond_hit_share": 0.5607,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
-        "post_wc_fires": 7,
-        "post_wc_span_days": 1
+        "reason": "post-W-C history 4d < 14d minimum; n_post_wc_fires=17",
+        "post_wc_fires": 17,
+        "post_wc_span_days": 4
+      }
+    },
+    {
+      "family": "S-TOP_RISK",
+      "status": "building_history",
+      "n_cond": 32,
+      "n_base": 26,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41,
+        "2026-W27": 43,
+        "2026-W28": 17
+      },
+      "n_stamped_cond": 58,
+      "cond_hit_share": 0.5421,
+      "readiness_forecast": {
+        "forecast": "already_ready",
+        "n_cond": 32
       }
     },
     {
       "family": "S-PIN_RISK",
       "status": "building_history",
       "n_cond": 0,
-      "n_base": 33,
+      "n_base": 60,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
-        "2026-W27": 26,
-        "2026-W28": 7
+        "2026-W27": 43,
+        "2026-W28": 17
       },
-      "n_stamped_cond": 33,
-      "cond_hit_share": 0.4125,
+      "n_stamped_cond": 60,
+      "cond_hit_share": 0.5607,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
-        "post_wc_fires": 7,
-        "post_wc_span_days": 1
+        "reason": "post-W-C history 4d < 14d minimum; n_post_wc_fires=17",
+        "post_wc_fires": 17,
+        "post_wc_span_days": 4
       }
     },
     {
@@ -327,16 +353,58 @@
       "weekly_fires": {
         "2026-W25": 6,
         "2026-W26": 41,
-        "2026-W27": 26,
-        "2026-W28": 7
+        "2026-W27": 43,
+        "2026-W28": 17
       },
-      "n_stamped_cond": 78,
-      "cond_hit_share": 0.975,
+      "n_stamped_cond": 104,
+      "cond_hit_share": 0.972,
       "readiness_forecast": {
         "forecast": "unknown",
-        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=7",
-        "post_wc_fires": 7,
-        "post_wc_span_days": 1
+        "reason": "post-W-C history 4d < 14d minimum; n_post_wc_fires=17",
+        "post_wc_fires": 17,
+        "post_wc_span_days": 4
+      }
+    },
+    {
+      "family": "S-VANNA-RELIEF",
+      "status": "building_history",
+      "n_cond": 17,
+      "n_base": 41,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41,
+        "2026-W27": 43,
+        "2026-W28": 17
+      },
+      "n_stamped_cond": 0,
+      "cond_hit_share": 0.0,
+      "readiness_forecast": {
+        "forecast": "unknown",
+        "reason": "post-W-C history 4d < 14d minimum; n_post_wc_fires=17",
+        "post_wc_fires": 17,
+        "post_wc_span_days": 4
+      }
+    },
+    {
+      "family": "S-FRONT-CHARM",
+      "status": "building_history",
+      "n_cond": 0,
+      "n_base": 0,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41,
+        "2026-W27": 43,
+        "2026-W28": 17
+      },
+      "n_stamped_cond": 0,
+      "cond_hit_share": 0.0,
+      "readiness_forecast": {
+        "forecast": "unknown",
+        "reason": "post-W-C history 4d < 14d minimum; n_post_wc_fires=17",
+        "post_wc_fires": 17,
+        "post_wc_span_days": 4
       }
     }
   ],
@@ -376,36 +444,36 @@
     {
       "check": "bh_test_count_drift",
       "registry_registered": 36,
-      "gate_json_family_size": 22,
+      "gate_json_family_size": 36,
       "validate_docstring_count": 36,
-      "note": "BH test-count drift: registry after FS-3 (2026-07-13) = 36 tests (28 OVC + 8 S-FLOWML cells); gate.json fdr_family.family_size = 22; validate_options_entry.py FDR family_size = 36. These are TEST counts (the BH family size), not bucket counts. Reconciled to 36 by W-OVC fix per RUL-U5 obligation."
+      "note": "BH test-count drift: registry after FS-3 (2026-07-13) = 36 tests (28 OVC + 8 S-FLOWML cells); gate.json fdr_family.family_size = 36; validate_options_entry.py FDR family_size = 36. These are TEST counts (the BH family size), not bucket counts. Reconciled to 36 by W-OVC fix per RUL-U5 obligation."
     },
     {
       "check": "stale_asof_ages",
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-16",
-          "age_days_from_today": 2,
+          "latest_as_of": "2026-07-18",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-07-17 03:52 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-07-18 03:18 UTC",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
-          "latest_as_of": "2026-07-06",
-          "age_days_from_today": 12,
+          "latest_as_of": "2026-07-09",
+          "age_days_from_today": 9,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-18T00:37:50.970445+00:00",
+      "generated_at": "2026-07-18T09:05:03.039791+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -415,7 +483,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-18T00:37:51.011975+00:00",
+    "generated_at_utc": "2026-07-18T09:05:03.088575+00:00",
     "as_of": "2026-07-18",
     "absent_stores": []
   }

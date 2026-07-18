@@ -127,6 +127,17 @@ def _clean(v: Any) -> Any:
 # Internal helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
+def _clean_state_entry(v: Any) -> Any:
+    """Recursively _clean() a state_changes entry dict or scalar.
+
+    MSX-1: state_changes values are {current, prev, changed_on, days_in_state}
+    dicts or None.  Pass through scalars via _clean().
+    """
+    if not isinstance(v, dict):
+        return _clean(v)
+    return {k2: _clean(v2) for k2, v2 in v.items()}
+
 def _read_json(p: Path) -> dict | None:
     """Read and parse JSON from *p*; return None on any failure."""
     try:
@@ -1035,6 +1046,53 @@ def _compose_context_risk(
         return dict(_null)
 
 
+def _read_seasonal_climate(repo: "Path") -> "dict | None":
+    """Read the seasonal-climate sub-key from site/factordata/factor_seasonality.json.
+
+    Returns a compact dict for embedding into factor_weather:
+      {month, seasonality_as_of, verdicts: {factor_key: verdict}, headline_en,
+       stance_en, display_only: True}
+    or None on any failure (absent file, schema < v2, missing 'now' block).
+
+    Fail-open: never raises; returns None on any problem so callers can omit
+    the key silently rather than blocking the lobe.
+
+    Does NOT couple to factor_state_as_of (known circular-staleness trap #1589).
+    Carries its own seasonality_as_of stamp so consumers can assess freshness.
+    """
+    path = repo / "site" / "factordata" / "factor_seasonality.json"
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return None
+        # Schema guard: require v2 (has "now" key)
+        if raw.get("schema") != "factor_seasonality.v2":
+            return None
+        now = raw.get("now")
+        if not isinstance(now, dict):
+            return None
+
+        # Verdicts: {factor_key: verdict} from now.factors list
+        verdicts: dict[str, str] = {}
+        for f in (now.get("factors") or []):
+            if isinstance(f, dict) and f.get("key") and f.get("verdict"):
+                verdicts[_clean(f["key"])] = _clean(f["verdict"])
+
+        return {
+            "month": _clean(now.get("month")),
+            "seasonality_as_of": _clean(raw.get("as_of")),
+            "verdicts": verdicts,
+            "headline_en": _clean(now.get("headline_en")),
+            "stance_en": _clean(now.get("stance_en")),
+            "display_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("seasonal_climate: read failed — %s", exc)
+        return None
+
+
 def _compose_factor_weather(
     root: "Path | str | None" = None,
     prefer_artifact: bool = True,
@@ -1113,6 +1171,9 @@ def _compose_factor_weather(
                         out["factor_state_as_of"] = _artifact_as_of
                         # Ensure display_only is always True regardless of artifact content.
                         out["display_only"] = True
+                        # Seasonal climate sub-key (B4 task): independent as_of stamp,
+                        # no coupling to factor_state_as_of (trap #1589).
+                        out["seasonal_climate"] = _read_seasonal_climate(repo)
                         log.info(
                             "factor_weather: canonical artifact path (RUL-NW2) — as_of=%s",
                             _artifact_as_of,
@@ -1359,6 +1420,9 @@ def _compose_factor_weather(
         "ratio_iwm_spy_20d": _clean(ratio_iwm_spy),
         "display_only": True,
         "factor_state_as_of": None,  # null on legacy fallback path (RUL-NW2)
+        # Seasonal climate sub-key (B4 task): independent as_of stamp,
+        # no coupling to factor_state_as_of (trap #1589).
+        "seasonal_climate": _read_seasonal_climate(repo),
     }
 
 
@@ -1488,9 +1552,20 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         "dollar_desk": None,
         "transmission": None,
         "regime_radar": None,
+        # New fields (B2 additive — may be absent in earlier latest.json builds)
+        "dollar_day": None,
+        "em": None,
+        "stance": None,
+        # MSX-1 new keys
         "pairs": None,
         "scenario_intensity": None,
         "deltas": None,
+        "smile_decomp_regime": None,
+        "safety_bid_today": None,
+        "triple_red": None,
+        "state_changes": None,
+        "regime_radar_dominant_scenario": None,
+        "strength_extremes": None,
         "display_only": True,
     }
 
@@ -1502,6 +1577,10 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
         dd_raw = raw.get("dollar_desk") or {}
         tx_raw = raw.get("transmission") or {}
         rr_raw = raw.get("regime_radar") or {}
+        em_raw = raw.get("em") or {}
+        st_raw = raw.get("stance") or {}
+        dd_raw_day = raw.get("dollar_day") or {}
+        smile_raw = dd_raw.get("smile_decomp") or {}
 
         dollar_desk = {
             "lean": _clean(dd_raw.get("lean")),
@@ -1510,6 +1589,11 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "trend": _clean(dd_raw.get("trend")),
             "fed_path_lean": _clean(dd_raw.get("fed_path_lean")),
             "liquidity_dir": _clean(dd_raw.get("liquidity_dir")),
+            # smile_decomp sub-block (B1 exports; None-safe until that lane lands)
+            "smile_decomp": {
+                "regime": _clean(smile_raw.get("regime")),
+                "safety_bid_today": _clean(smile_raw.get("safety_bid_today")),
+            } if smile_raw else None,
         }
 
         transmission = {
@@ -1519,10 +1603,62 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "unstable": _clean(tx_raw.get("unstable")),
         }
 
+        # regime_radar: existing fields + scenarios active/building summary (names only)
+        # scenarios may be a list [{"key": k, ...}] (MSX-1/main format)
+        # or a dict {"key": {...}} (B2/ours format); handle both.
+        _scenarios_raw_raw = rr_raw.get("scenarios")
+        if isinstance(_scenarios_raw_raw, list):
+            # MSX-1 list format — convert to dict keyed by "key"
+            scenarios_raw = {s["key"]: s for s in _scenarios_raw_raw if isinstance(s, dict) and s.get("key")}
+        elif isinstance(_scenarios_raw_raw, dict):
+            scenarios_raw = _scenarios_raw_raw
+        else:
+            scenarios_raw = {}
+        active_scenarios = [
+            k for k, v in scenarios_raw.items()
+            if isinstance(v, dict) and v.get("active")
+        ] if scenarios_raw else (rr_raw.get("active") or [])
+        building_scenarios = [
+            k for k, v in scenarios_raw.items()
+            if isinstance(v, dict) and not v.get("active")
+            and (v.get("intensity") or 0) >= 40
+        ] if scenarios_raw else []
+
         regime_radar = {
             "dominant": _clean(rr_raw.get("dominant")),
             "active": rr_raw.get("active"),
+            # New: derived summary from scenarios (names only, no stats)
+            "active_scenarios": active_scenarios,
+            "building_scenarios": building_scenarios,
         }
+
+        # New top-level blocks (all None-safe; absent when B1 lane hasn't landed yet)
+        dollar_day: dict | None = None
+        if dd_raw_day or raw.get("dollar_day") is not None:
+            dollar_day = {
+                "z": _clean(dd_raw_day.get("z")),
+                "flag": _clean(dd_raw_day.get("flag")),
+                "dir": _clean(dd_raw_day.get("dir")),
+            }
+
+        em: dict | None = None
+        if em_raw or raw.get("em") is not None:
+            em = {
+                "cnh_basis_state": _clean(em_raw.get("cnh_basis_state")),
+                "risk_off_composite": _clean(em_raw.get("risk_off_composite")),
+            }
+
+        stance: dict | None = None
+        if st_raw or raw.get("stance") is not None:
+            stance = {
+                "word_en": _clean(st_raw.get("word_en")),
+                "word_zh": _clean(st_raw.get("word_zh")),
+                "tone": _clean(st_raw.get("tone")),
+                "headline_en": _clean(st_raw.get("headline_en")),
+                "headline_zh": _clean(st_raw.get("headline_zh")),
+                "sentence_en": _clean(st_raw.get("sentence_en")),
+                "sentence_zh": _clean(st_raw.get("sentence_zh")),
+            }
 
         # v2: pairs — non-FLAT action, sorted by |score| desc, cap 5
         pairs_raw = raw.get("pairs") or {}
@@ -1586,6 +1722,64 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             log.warning("fx_dollar: ledger deltas failed — %s", _de)
             deltas = None
 
+        # ── MSX-1 §2.1 new keys — null-tolerant; absent in old artifacts ─────
+        # smile_decomp fields (bug-fix: forwarded to unblock build_intl + flow_regime)
+        sd_raw = dd_raw.get("smile_decomp") or {}
+        smile_decomp_regime = _clean(sd_raw.get("regime"))
+        safety_bid_today = _clean(sd_raw.get("safety_bid_today"))
+
+        # triple_red lives INSIDE dollar_desk in the producer artifact
+        triple_red = _clean(dd_raw.get("triple_red"))
+        sc_raw = raw.get("state_changes") or {}
+        state_changes: dict | None = None
+        if sc_raw:
+            state_changes = {k: _clean_state_entry(v) for k, v in sc_raw.items()}
+
+        # regime_radar dominant scenario compact receipt
+        scenarios_raw = rr_raw.get("scenarios") or []
+        regime_radar_dominant_scenario: dict | None = None
+        if scenarios_raw:
+            dominant_key = _clean(rr_raw.get("dominant"))
+            for sc in scenarios_raw:
+                if not isinstance(sc, dict):
+                    continue
+                if sc.get("key") == dominant_key or sc.get("active"):
+                    prob = sc.get("prob") or {}
+                    regime_radar_dominant_scenario = {
+                        "key": _clean(sc.get("key")),
+                        "intensity": _clean(sc.get("intensity")),
+                        "prob_status": _clean(prob.get("status")),
+                        "p_cond": _clean(prob.get("p_cond")),
+                        "base_rate": _clean(prob.get("base_rate")),
+                    }
+                    break
+
+        # strength extremes from default horizon
+        strength_extremes: dict | None = None
+        st_raw = raw.get("strength") or {}
+        default_horizon = st_raw.get("default") or "1m"
+        horizons_raw = st_raw.get("horizons") or {}
+        horizon_list = horizons_raw.get(default_horizon) or []
+        if horizon_list and isinstance(horizon_list, list):
+            sorted_list = sorted(
+                [h for h in horizon_list if isinstance(h, dict) and h.get("strength") is not None],
+                key=lambda h: h.get("strength", 0),
+            )
+            if sorted_list:
+                weakest = sorted_list[0]
+                strongest = sorted_list[-1]
+                strength_extremes = {
+                    "strongest": {
+                        "ccy": _clean(strongest.get("ccy")),
+                        "strength": _clean(strongest.get("strength")),
+                    },
+                    "weakest": {
+                        "ccy": _clean(weakest.get("ccy")),
+                        "strength": _clean(weakest.get("strength")),
+                    },
+                    "horizon": _clean(default_horizon),
+                }
+
         # Prefer ISO asof; fall back to display-string date normalisation
         asof = _to_iso(raw.get("asof") or raw.get("date"))
 
@@ -1597,9 +1791,21 @@ def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
             "dollar_desk": dollar_desk,
             "transmission": transmission,
             "regime_radar": regime_radar,
+            # B2 additive fields (ours)
+            "dollar_day": dollar_day,
+            "em": em,
+            "stance": stance,
+            # MSX-1 §2.1 additions (main)
             "pairs": pairs_out if pairs_out else None,
             "scenario_intensity": scenario_intensity if scenario_intensity else None,
             "deltas": deltas,
+            "smile_decomp_regime": smile_decomp_regime,
+            "safety_bid_today": safety_bid_today,
+            # M4: triple_red lives at dollar_desk.triple_red (both sides agree)
+            "triple_red": triple_red,
+            "state_changes": state_changes,
+            "regime_radar_dominant_scenario": regime_radar_dominant_scenario,
+            "strength_extremes": strength_extremes,
         })
     except Exception as exc:  # noqa: BLE001
         log.warning("fx_dollar: compose failed — %s", exc)
@@ -2121,11 +2327,15 @@ def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
         "regime": None,
         "breadth": None,
         "correlation": None,
+        "dominant_cluster": None,
+        "absorption_dir": None,
         "intermarket": None,
         "carry_summary": None,
         "leadlag": None,
         "global_liquidity_dir": None,
         "funding_state": None,
+        "confirm": None,
+        "shadow": None,
         "display_only": True,
         "stale": True,
     }
@@ -2137,15 +2347,36 @@ def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
     try:
         flows = raw.get("flows") or {}
 
-        # correlation sub-block
+        # correlation sub-block (v2 additive: dominant_cluster, absorption_dir)
         corr_raw = flows.get("correlation") or {}
         corr_block: dict | None = None
+        dominant_cluster: list | None = None
+        absorption_dir: str | None = None
         if isinstance(corr_raw, dict) and corr_raw.get("verdict"):
             corr_block = {
                 "verdict": _clean(corr_raw.get("verdict")),
                 "absorption_pctile": _clean(corr_raw.get("absorption_pctile")),
                 "n_markets": _clean(corr_raw.get("n_markets")),
             }
+            # dominant_cluster: list of market names (flows.v2 optional)
+            dc_raw = corr_raw.get("dominant_cluster")
+            if isinstance(dc_raw, list) and dc_raw:
+                dominant_cluster = [_clean(v) for v in dc_raw if v is not None][:6]
+            # absorption_dir: compare current vs ~13-weeks-earlier spark_w value
+            spark_w = corr_raw.get("spark_w")
+            if isinstance(spark_w, list) and len(spark_w) >= 14:
+                try:
+                    latest_val = float(spark_w[-1])
+                    earlier_val = float(spark_w[-14])
+                    diff = latest_val - earlier_val
+                    if diff > 0.01:
+                        absorption_dir = "rising"
+                    elif diff < -0.01:
+                        absorption_dir = "falling"
+                    else:
+                        absorption_dir = "flat"
+                except (TypeError, ValueError):
+                    absorption_dir = None
 
         # intermarket: top 4 entries
         intermarket_raw = flows.get("intermarket") or []
@@ -2187,6 +2418,25 @@ def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
         fund_raw = flows.get("funding_stress") or {}
         funding_state_val: str | None = _clean(fund_raw.get("state")) if isinstance(fund_raw, dict) else None
 
+        # confirm sub-block (flows.v2 optional — from flows.confirm or data/regime/latest.json
+        # cross_asset_confirm, whichever is present; treat as display context only)
+        confirm_block: dict | None = None
+        confirm_raw = flows.get("confirm") or {}
+        if isinstance(confirm_raw, dict) and confirm_raw.get("verdict"):
+            confirm_block = {
+                "verdict": _clean(confirm_raw.get("verdict")),
+                "n_blind_flags": _clean(confirm_raw.get("n_blind_flags")),
+            }
+
+        # shadow sub-block (flows.v2 optional)
+        shadow_block: dict | None = None
+        shadow_raw = flows.get("shadow") or {}
+        if isinstance(shadow_raw, dict) and shadow_raw.get("pressure_pctile") is not None:
+            shadow_block = {
+                "escalated": bool(shadow_raw.get("escalated")),
+                "pressure_pctile": _clean(shadow_raw.get("pressure_pctile")),
+            }
+
         asof = _to_iso(raw.get("asof") or raw.get("date"))
 
         return _display_only({
@@ -2195,11 +2445,15 @@ def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
             "regime": _clean(raw.get("regime")),
             "breadth": _clean(raw.get("breadth")),
             "correlation": corr_block,
+            "dominant_cluster": dominant_cluster,
+            "absorption_dir": absorption_dir,
             "intermarket": intermarket_out if intermarket_out else None,
             "carry_summary": carry_summary,
             "leadlag": leadlag_block,
             "global_liquidity_dir": global_liq_dir,
             "funding_state": funding_state_val,
+            "confirm": confirm_block,
+            "shadow": shadow_block,
             "stale": asof is None,
         })
     except Exception as exc:  # noqa: BLE001

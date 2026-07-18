@@ -452,8 +452,28 @@ def _build_external_block(data_dir: Path) -> tuple[dict | None, list[str]]:
         except Exception as exc:
             gaps.append(f"external: USDCNH parse error ({exc})")
 
-    # DXY: not present in current forex store — documented gap
-    gaps.append("external: DXY not in current forex/latest.json (no dedicated store)")
+    # DXY: read from forex/latest.json pairs.DXY (added by build_forex B1 lane).
+    # B3 item 8: when present, use to distinguish broad-dollar move vs CNH-specific stress.
+    # Keep exact existing fallback (dxy=None) when the key is absent — no behaviour change
+    # until B1 ships the key on the next nightly.
+    dxy: dict | None = None
+    if forex_raw is not None:
+        try:
+            _pairs = forex_raw.get("pairs") or {}
+            if isinstance(_pairs, dict) and "DXY" in _pairs:
+                _dxy_p = _pairs["DXY"]
+                dxy = {
+                    "quote": _safe_float(_dxy_p.get("quote")),
+                    "chg": _safe_float(_dxy_p.get("chg")),
+                    "label": _dxy_p.get("label") or "DXY",
+                }
+            else:
+                # DXY not yet exported — documented gap (will clear after B1 lands)
+                gaps.append("external: DXY not yet in forex/latest.json pairs (pending B1)")
+        except Exception as exc:
+            gaps.append(f"external: DXY parse error ({exc})")
+    else:
+        gaps.append("external: DXY not in current forex/latest.json (no dedicated store)")
 
     if yield_summary is None and cgb_summary is None and usdcnh is None:
         return None, gaps
@@ -462,7 +482,7 @@ def _build_external_block(data_dir: Path) -> tuple[dict | None, list[str]]:
         "yield_curve": yield_summary,
         "cgb_curve": cgb_summary,
         "usdcnh": usdcnh,
-        "dxy": None,  # store not available; gap logged above
+        "dxy": dxy,  # B3: now read from pairs.DXY when present; None if absent
     }
     return block, gaps
 
@@ -533,15 +553,33 @@ def _compute_contradictions(
             )
 
     # 3. USDCNH stress vs domestic recovery quad
+    # B3 item 8: when DXY is present, distinguish broad-dollar move vs CNH-specific stress.
+    # Keep the exact existing fallback when DXY absent (dxy=None → original message).
     if external and macro:
         usdcnh_info = external.get("usdcnh") or {}
         cnh_quote = usdcnh_info.get("quote")
         quad = macro.get("quad")
         if cnh_quote is not None and quad in {"Q1", "Q2"} and cnh_quote > 7.25:
+            dxy_info = external.get("dxy") or {}
+            dxy_chg = dxy_info.get("chg") if isinstance(dxy_info, dict) else None
+            if dxy_chg is not None and dxy_chg > 0:
+                # DXY also rising — broad dollar move, CNH weakness is partly USD-driven
+                _cnh_ctx = (
+                    "currency weakness partly reflects broad-dollar strength "
+                    f"(DXY +{dxy_chg:.2f}%); CNH-specific pressure may be smaller"
+                )
+            elif dxy_chg is not None and dxy_chg <= 0:
+                # DXY flat/falling — CNH weakness is CNH-specific, not a broad-dollar event
+                _cnh_ctx = (
+                    "currency weakness is CNH-specific — DXY is flat/falling, "
+                    "so this is not a broad-dollar event"
+                )
+            else:
+                # DXY absent — keep the exact original message
+                _cnh_ctx = "currency weakness contradicts domestic recovery signal"
             contradictions.append(
                 f"external_cnh_vs_macro: USDCNH={cnh_quote:.4f} (>7.25 stress threshold) "
-                f"while macro.quad={quad!r} (recovery/reflation) — "
-                "currency weakness contradicts domestic recovery signal"
+                f"while macro.quad={quad!r} (recovery/reflation) — {_cnh_ctx}"
             )
 
     # 4. microstructure chase veto + low participation

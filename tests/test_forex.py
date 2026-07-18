@@ -198,6 +198,58 @@ def test_calibrate_peg_mask_excises_zones():
     assert CAL.peg_mask(close, {}).all(), "no peg -> all kept"
 
 
+# --------------------------------------------------------------------------- #
+# F2 — _spark_pts unit tests
+# --------------------------------------------------------------------------- #
+def test_spark_pts_normalises_into_viewbox():
+    from scripts.build_forex import _spark_pts
+    # 10 values linearly spaced 0..1 -> y should span [pad, h-pad] = [2, 34] for h=36
+    vals = list(np.linspace(0.0, 1.0, 10))
+    pts = _spark_pts(vals, 300, 36, n=126)
+    assert pts, "_spark_pts returned empty for valid input"
+    coords = [tuple(float(c) for c in p.split(",")) for p in pts.split()]
+    xs = [c[0] for c in coords]
+    ys = [c[1] for c in coords]
+    # x must span 0 .. w
+    assert xs[0] == 0.0 and xs[-1] == 300.0, f"x range wrong: {xs[0]} .. {xs[-1]}"
+    # y is inverted: min value (0.0) -> bottom (h - pad = 34), max value (1.0) -> top (pad = 2)
+    assert ys[-1] == pytest.approx(2.0, abs=0.2), f"max value y wrong: {ys[-1]}"
+    assert ys[0] == pytest.approx(34.0, abs=0.2), f"min value y wrong: {ys[0]}"
+    # all y within [pad, h-pad]
+    assert all(2.0 - 0.1 <= y <= 34.0 + 0.1 for y in ys), f"y out of bounds: {ys}"
+
+
+def test_spark_pts_empty_on_insufficient_points():
+    from scripts.build_forex import _spark_pts
+    assert _spark_pts([], 300, 36) == "", "empty input should return empty string"
+    assert _spark_pts([1.0], 300, 36) == "", "single point should return empty string"
+    assert _spark_pts([float("nan"), float("nan")], 300, 36) == "", "all-NaN should return empty"
+
+
+def test_spark_pts_flat_series():
+    from scripts.build_forex import _spark_pts
+    # constant series -> all y mid-point
+    pts = _spark_pts([5.0] * 20, 100, 20, n=126)
+    assert pts, "constant series should produce points"
+    ys = [float(p.split(",")[1]) for p in pts.split()]
+    assert all(abs(y - 10.0) < 0.2 for y in ys), f"constant series y should be mid-point: {ys[:3]}"
+
+
+def test_spark_pts_respects_n_tail():
+    from scripts.build_forex import _spark_pts
+    # 200 values but n=50 -> only 50 used
+    vals = list(range(200))
+    pts_50 = _spark_pts(vals, 100, 20, n=50)
+    pts_200 = _spark_pts(vals, 100, 20, n=200)
+    n_50 = len(pts_50.split())
+    n_200 = len(pts_200.split())
+    assert n_50 == 50, f"expected 50 points for n=50, got {n_50}"
+    assert n_200 == 200, f"expected 200 points for n=200, got {n_200}"
+
+
+import pytest  # noqa: E402 — placed here to avoid top-level scope pollution in the existing file
+
+
 def test_calibrate_pair_signs_inverted_and_normalizes():
     """A factor that negatively predicts forward returns -> INVERTED + negative weight;
     weights normalize to sum|w| = 1."""
@@ -585,6 +637,415 @@ def test_regime_missing_drivers_degrades():
     assert reg and reg["scenarios"]
 
 
+# ===========================================================================
+# B1.7 NEW TESTS — latest.json contract, stance map, alert families, smile x
+# ===========================================================================
+
+def test_desk_latest_includes_smile_decomp():
+    """_desk_latest now exports smile_decomp when present (B1.1 — fixes silent None bug)."""
+    from scripts.build_forex import _desk_latest
+    desk = {
+        "lean": "supportive", "lean_zh": "偏多美元", "lean_net": 2, "lean_n": 4,
+        "smile_decomp": {
+            "regime": "US growth premium", "regime_60d": "Neutral",
+            "safety_bid_today": False, "beta": 0.42, "r2": 0.18, "residual_20d_z": 1.1,
+        },
+        "smile": {"confidence": "medium", "triple_red": False},
+    }
+    out = _desk_latest(desk)
+    assert "smile_decomp" in out
+    sd = out["smile_decomp"]
+    assert sd["regime"] == "US growth premium"
+    assert sd["beta"] == 0.42
+    assert sd["r2"] == 0.18
+
+
+def test_desk_latest_backward_compat():
+    """Keys from the old _desk_latest contract are still present (regression fence)."""
+    from scripts.build_forex import _desk_latest
+    desk = {
+        "lean": "soft", "lean_zh": "偏空美元", "lean_net": -1, "lean_n": 3,
+        "real_rate": {"regime": "Restrictive & Rising", "real_z": 1.4, "regime_zh": "限制性上升"},
+        "fed_path": {"path_bps": -50.0, "lean": "dovish_repricing"},
+        "positioning": {"pctile": 30.0, "state": "neutral"},
+        "valuation": {"gap_pct": -3.5, "label": "cheap"},
+        "trend": {"label": "up", "n_up": 4},
+        "liquidity": {"dir": "soft"},
+        "smile": {"confidence": "low", "triple_red": False},
+    }
+    out = _desk_latest(desk)
+    for key in ("lean", "lean_zh", "lean_net", "lean_n", "real_rate_regime",
+                "fed_path_bps", "usd_pos_pctile", "usd_reer_gap_pct",
+                "trend", "trend_n_up", "liquidity_dir", "smile_confidence", "triple_red"):
+        assert key in out, f"old key '{key}' missing from _desk_latest output"
+
+
+def test_transmission_latest_includes_assets():
+    """_transmission_latest now includes per-asset effect/stability (B1.1)."""
+    from scripts.build_forex import _transmission_latest
+    tr = {
+        "usd_dir": "strengthening",
+        "rows": [
+            {"key": "GC=F", "corr_fast": -0.55, "corr_slow": -0.48,
+             "effect": "headwind", "stability": "stable"},
+            {"key": "SPY", "corr_fast": 0.3, "corr_slow": 0.25,
+             "effect": "tailwind", "stability": "flipping"},
+        ],
+        "headwind_for": ["gold"], "tailwind_for": ["US stocks"], "unstable": [],
+        "as_of": "2026-07-18",
+    }
+    out = _transmission_latest(tr)
+    assert "assets" in out
+    assert "GC=F" in out["assets"]
+    assert out["assets"]["GC=F"]["effect"] == "headwind"
+    assert out["assets"]["SPY"]["stability"] == "flipping"
+    # Old keys still present
+    assert "usd_dir" in out and "corr" in out and "headwind_for" in out
+
+
+def test_stance_all_branches():
+    """_stance returns fixed vocab words + ZH + all three tone branches (B1.3)."""
+    from scripts.build_forex import _stance
+    KNOWN_WORDS = {"Get ready", "Watch — don't chase"}
+    KNOWN_ZH = {"做好准备", "观望，别追"}
+    KNOWN_TONES = {"alert", "watch", "calm"}
+    # alert branch: active scenarios
+    s1 = _stance("up", ["carry_unwind"], False, False, "risk-off")
+    assert s1["word_en"] == "Get ready"
+    assert s1["word_zh"] == "做好准备"
+    assert s1["tone"] == "alert"
+    assert s1["headline_en"] and s1["headline_zh"]
+    assert s1["sentence_en"] and s1["sentence_zh"]
+    # alert branch: triple_red
+    s2 = _stance("down", [], False, True, "risk-off")
+    assert s2["tone"] == "alert"
+    # watch branch: dollar_day_flag, no active
+    s3 = _stance("up", [], True, False, "risk-on")
+    assert s3["word_en"] == "Watch — don't chase"
+    assert s3["tone"] == "watch"
+    # calm branch: nothing active
+    s4 = _stance("down", [], False, False, "risk-on")
+    assert s4["word_en"] == "Watch — don't chase"
+    assert s4["tone"] == "calm"
+    for s in (s1, s2, s3, s4):
+        assert s["word_en"] in KNOWN_WORDS
+        assert s["word_zh"] in KNOWN_ZH
+        assert s["tone"] in KNOWN_TONES
+        # headline maps
+        assert s["headline_en"] in ("Dollar strong", "Dollar soft", "Dollar mixed")
+        assert s["headline_zh"] in ("美元偏强", "美元偏弱", "美元分化")
+
+
+def test_stance_sentence_plain_words():
+    """Stance sentence uses plain asset names from B1.5, not ticker strings."""
+    from scripts.build_forex import _stance
+    s = _stance("strengthening", [], False, False, "risk-off",
+                headwind_for=["GC=F", "SPY"], tailwind_for=[])
+    # sentence must contain plain English names, not ticker strings
+    assert "GC=F" not in s["sentence_en"]
+    assert "SPY" not in s["sentence_en"]
+    assert "gold" in s["sentence_en"].lower() or "US stocks" in s["sentence_en"]
+
+
+def test_stance_sentence_zh_no_ascii_when_headwinds():
+    """P3: ZH sentence must contain no [A-Za-z] when headwinds present."""
+    import re
+    from scripts.build_forex import _stance
+    # ticker keys
+    s1 = _stance("strengthening", [], False, False, "risk-off",
+                 headwind_for=["SPY", "EEM"], tailwind_for=[])
+    assert not re.search(r'[A-Za-z]', s1["sentence_zh"]), \
+        f"ZH sentence has ASCII: {s1['sentence_zh']!r}"
+    # transmission label keys
+    s2 = _stance("strengthening", [], False, False, "risk-off",
+                 headwind_for=["US equities", "EM equities"], tailwind_for=[])
+    assert not re.search(r'[A-Za-z]', s2["sentence_zh"]), \
+        f"ZH sentence has ASCII: {s2['sentence_zh']!r}"
+    # Gold key
+    s3 = _stance("weakening", [], False, False, "risk-on",
+                 headwind_for=[], tailwind_for=["GC=F"])
+    assert not re.search(r'[A-Za-z]', s3["sentence_zh"]), \
+        f"ZH tailwind sentence has ASCII: {s3['sentence_zh']!r}"
+
+
+def test_trend_map_plain_words():
+    """m5: n_up→plain label mapping tests the REAL Python maps from build_forex, not
+    a local copy — so a template/script divergence would fail this test."""
+    from scripts.build_forex import TREND_LABEL_EN, TREND_LABEL_ZH
+    expected = {
+        4: ("Rising on all horizons", "全线上行"),
+        3: ("Mostly rising", "大多上行"),
+        2: ("Mixed", "涨跌互现"),
+        1: ("Mostly falling", "大多下行"),
+        0: ("Falling on all horizons", "全线下行"),
+    }
+    for n, (en, zh) in expected.items():
+        assert TREND_LABEL_EN[n] == en, f"TREND_LABEL_EN[{n}] mismatch: {TREND_LABEL_EN[n]!r} != {en!r}"
+        assert TREND_LABEL_ZH[n] == zh, f"TREND_LABEL_ZH[{n}] mismatch: {TREND_LABEL_ZH[n]!r} != {zh!r}"
+    # Coverage: all 5 values present
+    assert set(TREND_LABEL_EN.keys()) == {0, 1, 2, 3, 4}
+    assert set(TREND_LABEL_ZH.keys()) == {0, 1, 2, 3, 4}
+
+
+def test_scenario_events_fire_on_active():
+    """scenario_events produces bilingual events for active scenarios (B1.2)."""
+    from engine.forex_alerts import scenario_events
+    regime = {
+        "as_of": "2026-07-18",
+        "scenarios": [
+            {"key": "carry_unwind", "name_en": "Carry-trade unwind", "name_zh": "套息平仓",
+             "active": True, "n_fired": 3, "min_legs": 2,
+             "intensity_today": 72.0, "illustrative": False},
+            {"key": "reflation_risk_on", "name_en": "Risk-on rally", "name_zh": "风险偏好回升",
+             "active": False, "n_fired": 1, "min_legs": 2,
+             "intensity_today": 20.0, "illustrative": False},
+        ],
+    }
+    evs = scenario_events(regime)
+    assert len(evs) == 1  # only active one fires
+    e = evs[0]
+    assert e["type"] == "scenario"
+    assert e["severity"] == "high"
+    assert "Carry-trade unwind" in e["headline"] or "carry" in e["headline"].lower()
+    assert e["headline_zh"]  # bilingual
+    assert "套息" in e["headline_zh"] or "激活" in e["headline_zh"]
+
+
+def test_dollar_flash_events_fire_on_threshold():
+    """dollar_flash_events fires when dollar_day_z transitions to >= 2.0 (B1.2)."""
+    from engine.forex_alerts import dollar_flash_events
+    idx = _idx(60)
+    # first 30 normal, last 30 flash
+    dollar_day_z = pd.Series([0.8] * 30 + [2.5] * 30, index=idx)
+    dol = pd.DataFrame({"dollar_day_z": dollar_day_z, "dollar_roc": 0.005}, index=idx)
+    evs = dollar_flash_events(dol)
+    assert len(evs) >= 1
+    e = evs[0]
+    assert e["type"] == "dollar_flash"
+    assert e["severity"] == "high"
+    assert e["headline_zh"]  # bilingual
+    assert "异常" in e["headline_zh"] or "波动" in e["headline_zh"]
+
+
+def test_transmission_shift_events_fire_on_change():
+    """transmission_shift_events fires when effect changes between two transmission dicts (B1.2)."""
+    from engine.forex_alerts import transmission_shift_events
+    tr_prev = {
+        "rows": [{"key": "GC=F", "effect": "tailwind", "stability": "stable"}],
+        "as_of": "2026-07-17",
+    }
+    tr_now = {
+        "rows": [{"key": "GC=F", "effect": "headwind", "stability": "stable"}],
+        "as_of": "2026-07-18",
+    }
+    evs = transmission_shift_events(tr_now, tr_prev)
+    assert len(evs) == 1
+    e = evs[0]
+    assert e["type"] == "transmission_shift"
+    assert e["severity"] == "medium"
+    assert "Gold" in e["headline"] or "gold" in e["headline"].lower()
+    assert e["headline_zh"] and "黄金" in e["headline_zh"]
+
+
+def test_scenario_concurrent_activations_distinct_ids():
+    """m6(a): Two concurrent active scenarios survive dedup as two distinct event ids (M1 fix).
+
+    Before M1: both got id …:active, so dedup collapsed them to one.
+    After M1: id includes the scenario key → both survive.
+    """
+    from engine.forex_alerts import scenario_events
+    regime = {
+        "as_of": "2026-07-18",
+        "scenarios": [
+            {"key": "carry_unwind", "active": True, "n_fired": 3, "min_legs": 2,
+             "intensity_today": 70.0},
+            {"key": "haven_flight_risk_off", "active": True, "n_fired": 2, "min_legs": 2,
+             "intensity_today": 55.0},
+        ],
+    }
+    # No prev_active → both are new activations
+    evs = scenario_events(regime, prev_active=set())
+    assert len(evs) == 2, f"Expected 2 distinct events, got {len(evs)}"
+    ids = [e["id"] for e in evs]
+    assert len(set(ids)) == 2, f"Event ids not distinct: {ids}"
+    # Each id must contain the scenario key
+    assert any("carry_unwind" in eid for eid in ids)
+    assert any("haven_flight_risk_off" in eid for eid in ids)
+
+
+def test_scenario_unchanged_active_emits_no_event():
+    """m6(b): If the active set is unchanged (same keys prev and now), no new event fires (M3 fix).
+
+    Before M3: scenario_events fired EVERY day a scenario stayed active (date-bucketed id).
+    After M3: only edges (inactive→active, active→inactive) emit events.
+    """
+    from engine.forex_alerts import scenario_events
+    regime = {
+        "as_of": "2026-07-18",
+        "scenarios": [
+            {"key": "carry_unwind", "active": True, "n_fired": 3, "min_legs": 2,
+             "intensity_today": 70.0},
+        ],
+    }
+    # prev_active already includes carry_unwind → no edge → no event
+    evs = scenario_events(regime, prev_active={"carry_unwind"})
+    assert len(evs) == 0, f"Expected 0 events (no edge), got {len(evs)}: {[e['id'] for e in evs]}"
+
+
+def test_scenario_deactivation_emits_info_event():
+    """m6(c): A scenario that was active but is now inactive emits a severity=info event (M3 fix)."""
+    from engine.forex_alerts import scenario_events
+    regime = {
+        "as_of": "2026-07-18",
+        "scenarios": [
+            {"key": "carry_unwind", "active": False, "n_fired": 1, "min_legs": 2,
+             "intensity_today": 20.0},
+        ],
+    }
+    # prev_active: carry_unwind was active yesterday → deactivation edge
+    evs = scenario_events(regime, prev_active={"carry_unwind"})
+    assert len(evs) == 1, f"Expected 1 deactivation event, got {len(evs)}"
+    e = evs[0]
+    assert e["severity"] == "info", f"Deactivation must be info severity, got {e['severity']!r}"
+    assert e["type"] == "scenario"
+    assert "no longer active" in e["headline"] or "解除" in e["headline_zh"]
+
+
+def test_transmission_shift_concurrent_distinct_ids():
+    """m6(a) for transmission: two assets shifting simultaneously keep distinct event ids (M2 fix)."""
+    from engine.forex_alerts import transmission_shift_events
+    tr_prev = {
+        "rows": [
+            {"key": "GC=F", "effect": "tailwind", "stability": "stable"},
+            {"key": "SPY", "effect": "neutral", "stability": "stable"},
+        ],
+        "as_of": "2026-07-17",
+    }
+    tr_now = {
+        "rows": [
+            {"key": "GC=F", "effect": "headwind", "stability": "stable"},
+            {"key": "SPY", "effect": "headwind", "stability": "stable"},
+        ],
+        "as_of": "2026-07-18",
+    }
+    evs = transmission_shift_events(tr_now, tr_prev)
+    assert len(evs) == 2, f"Expected 2 distinct shift events, got {len(evs)}"
+    ids = [e["id"] for e in evs]
+    assert len(set(ids)) == 2, f"Shift ids not distinct: {ids}"
+
+
+def test_smile_x_mapping_anchors():
+    """m5: smile x anchors tested against the REAL Python map from build_forex — not a
+    local copy — so any divergence between source and test is caught immediately."""
+    from scripts.build_forex import SMILE_X
+    for regime, x in SMILE_X.items():
+        assert 0.0 <= x <= 1.0, f"{regime}: x={x} out of range"
+    assert SMILE_X["US growth premium"] == 0.13
+    assert SMILE_X["Risk-off haven bid"] == 0.87
+    assert SMILE_X["Global reflation"] == SMILE_X["Neutral"] == 0.50
+    # All spec regimes present
+    for r in ("US growth premium", "US-specific stress", "Global reflation",
+              "Neutral", "Risk-off haven bid"):
+        assert r in SMILE_X, f"SMILE_X missing regime {r!r}"
+
+
+def test_alert_timeline_sorted_ts_desc():
+    """compute_all_events returns events sorted ts DESC across all assets (B1.2 fix)."""
+    from engine.forex_alerts import compute_all_events
+    # minimal results with two pairs and a dollar frame
+    idx_a = pd.date_range("2024-01-01", periods=400, freq="B")
+    idx_b = pd.date_range("2024-01-01", periods=350, freq="B")
+    rng = np.random.default_rng(42)
+    results = {
+        "EURUSD": pd.DataFrame({
+            "close": np.exp(pd.Series(rng.normal(0, 0.005, 400), index=idx_a).cumsum()),
+            "carry_diff": pd.Series([-1.0]*200 + [1.0]*200, index=idx_a),
+        }),
+        "USDJPY": pd.DataFrame({
+            "close": np.exp(pd.Series(rng.normal(0, 0.005, 350), index=idx_b).cumsum()),
+            "carry_diff": pd.Series([1.0]*175 + [-1.0]*175, index=idx_b),
+        }),
+        "_dollar": pd.DataFrame({
+            "smile_regime": ["Neutral"]*350 + ["Risk-off haven bid"]*50,
+        }, index=idx_a[:400]),
+    }
+    evs = compute_all_events(results)
+    if len(evs) >= 2:
+        tss = [e["ts"] for e in evs]
+        assert tss == sorted(tss, reverse=True), "events not sorted ts DESC"
+
+
+def test_latest_json_old_keys_unchanged():
+    """m4: Old latest.json keys survive additive expansion — tested via the REAL export
+    helpers (_desk_latest, _transmission_latest, _stance) with synthetic inputs rather
+    than an inert dict-vs-itself check.
+    """
+    from scripts.build_forex import _desk_latest, _transmission_latest, _stance
+
+    # --- _desk_latest with synthetic desk ---
+    desk = {
+        "lean": "supportive", "lean_zh": "偏多美元", "lean_net": 2, "lean_n": 4,
+        "real_rate": {"regime": "Restrictive & Rising", "real_z": 1.4, "regime_zh": "限制性上升"},
+        "fed_path": {"path_bps": -50.0, "lean": "dovish_repricing"},
+        "positioning": {"pctile": 30.0, "state": "neutral"},
+        "valuation": {"gap_pct": -3.5, "label": "cheap"},
+        "trend": {"label": "up", "n_up": 4},
+        "liquidity": {"dir": "soft"},
+        "smile": {"confidence": "medium", "triple_red": True},
+        "smile_decomp": {
+            "regime": "US growth premium", "regime_60d": "Neutral",
+            "safety_bid_today": False, "beta": 0.42, "r2": 0.18, "residual_20d_z": 1.1,
+        },
+    }
+    dl = _desk_latest(desk)
+    # Old keys must still be present
+    for key in ("lean", "lean_zh", "lean_net", "lean_n", "real_rate_regime",
+                "fed_path_bps", "usd_pos_pctile", "usd_reer_gap_pct",
+                "trend", "trend_n_up", "liquidity_dir", "smile_confidence", "triple_red"):
+        assert key in dl, f"_desk_latest missing old key '{key}'"
+    # New key must also be present
+    assert "smile_decomp" in dl, "_desk_latest missing new key 'smile_decomp'"
+    assert dl["smile_decomp"]["regime"] == "US growth premium"
+    assert dl["triple_red"] is True   # reads from smile block (correct path)
+
+    # --- _transmission_latest with synthetic transmission ---
+    tr = {
+        "usd_dir": "strengthening",
+        "rows": [
+            {"key": "GC=F", "corr_fast": -0.55, "corr_slow": -0.48,
+             "effect": "headwind", "stability": "stable"},
+            {"key": "SPY", "corr_fast": 0.3, "corr_slow": 0.25,
+             "effect": "tailwind", "stability": "flipping"},
+        ],
+        "headwind_for": ["gold"], "tailwind_for": ["US stocks"], "unstable": [],
+        "as_of": "2026-07-18",
+    }
+    tl = _transmission_latest(tr)
+    # Old keys
+    for key in ("usd_dir", "corr", "headwind_for", "tailwind_for", "unstable"):
+        assert key in tl, f"_transmission_latest missing old key '{key}'"
+    # New key
+    assert "assets" in tl, "_transmission_latest missing new key 'assets'"
+    assert tl["assets"]["GC=F"]["effect"] == "headwind"
+    assert tl["assets"]["SPY"]["stability"] == "flipping"
+
+    # --- _stance: all branches return correct keys ---
+    for (args, expected_word_en, expected_tone) in [
+        ({"dollar_dir": "up", "active_scenarios": ["carry_unwind"], "dollar_day_flag": False,
+          "triple_red": False, "risk_word": "risk-off"}, "Get ready", "alert"),
+        ({"dollar_dir": "down", "active_scenarios": [], "dollar_day_flag": True,
+          "triple_red": False, "risk_word": "risk-on"}, "Watch — don't chase", "watch"),
+        ({"dollar_dir": "up", "active_scenarios": [], "dollar_day_flag": False,
+          "triple_red": False, "risk_word": "risk-on"}, "Watch — don't chase", "calm"),
+    ]:
+        s = _stance(**args)
+        assert s["word_en"] == expected_word_en, f"stance word_en wrong for {args}"
+        assert s["tone"] == expected_tone, f"stance tone wrong for {args}"
+        for k in ("word_en", "word_zh", "tone", "headline_en", "headline_zh",
+                  "sentence_en", "sentence_zh"):
+            assert k in s, f"_stance missing key '{k}'"
+
+
 if __name__ == "__main__":
     for fn in [test_orthogonalize_strips_dollar_beta, test_carry_sign_and_vol_penalty,
                test_riskoff_factor_archetype_sign, test_factor_panel_naive_bullish_bounds,
@@ -604,7 +1065,16 @@ if __name__ == "__main__":
                test_regime_z_causal_excludes_t, test_regime_forward_label_leak_free,
                test_regime_probability_wilson_neff_semantics, test_regime_probability_suppression_statuses,
                test_regime_wilson_bounds, test_regime_never_scored_isolation,
-               test_regime_end_to_end_real_store, test_regime_missing_drivers_degrades]:
+               test_regime_end_to_end_real_store, test_regime_missing_drivers_degrades,
+               # B1.7 new tests
+               test_desk_latest_includes_smile_decomp, test_desk_latest_backward_compat,
+               test_transmission_latest_includes_assets,
+               test_stance_all_branches, test_stance_sentence_plain_words,
+               test_stance_sentence_zh_no_ascii_when_headwinds, test_trend_map_plain_words,
+               test_scenario_events_fire_on_active, test_dollar_flash_events_fire_on_threshold,
+               test_transmission_shift_events_fire_on_change,
+               test_smile_x_mapping_anchors, test_alert_timeline_sorted_ts_desc,
+               test_latest_json_old_keys_unchanged]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all forex engine tests passed")

@@ -254,7 +254,17 @@ html[data-theme="dark"]{--panel2:#1e222a;
         {{ t('Cycle', '周期') }} <b style="color:{{ vm.health.phase_color }}">{{ t(vm.health.phase_en, vm.health.phase_zh) }}</b>
         <span class="faint">·</span> {{ t('recession risk', '衰退风险') }} <b>{{ vm.health.recession_risk if vm.health.recession_risk is not none else '—' }}</b>/100
         <span class="faint">·</span> {{ t('drawdown risk', '回撤风险') }} <b>{{ vm.health.drawdown_risk if vm.health.drawdown_risk is not none else '—' }}</b>/100
-        {% if usd_link %}<span class="faint">·</span> {{ t('10y corr to USD', '10年债对美元相关') }} <b class="{{ 'down' if usd_link.corr<0 else 'up' }}" data-tip-en="63d correlation with the broad dollar. Context, not forecast." data-tip-zh="与广义美元的63日相关。仅作背景，非预测。">{{ '%+.2f'|format(usd_link.corr) }}</b>{% if not usd_link.stable %} <span class="faint">{{ t('(unstable)', '（不稳定）') }}</span>{% endif %}{% endif %}
+        {% if usd_link %}<span class="faint">·</span> {{ t('10y corr to USD', '10年债对美元相关') }} <b class="{{ 'down' if usd_link.corr<0 else 'up' }}" data-tip-en="63d correlation with the broad dollar. Context, not forecast." data-tip-zh="与广义美元的63日相关。仅作背景，非预测。">{{ '%+.2f'|format(usd_link.corr) }}</b>{% if not usd_link.stable %} <span class="faint">{{ t('(unstable)', '（不稳定）') }}</span>{% endif %}
+        {# M6: B3 enrichment — effect and real_rate_regime in plain bilingual form; all fields guarded #}
+        {% if usd_link.effect is not none and usd_link.effect != 'neutral' %}
+          <span class="faint">·</span>
+          {% if usd_link.effect == 'headwind' %}{{ t('pushes with it', '同向压制') }}{% elif usd_link.effect == 'tailwind' %}{{ t('works against it', '反向提振') }}{% endif %}
+        {% endif %}
+        {% if usd_link.real_rate_regime is not none %}
+          <span class="faint">·</span>
+          {% if 'Rising' in usd_link.real_rate_regime %}{{ t('real rates rising', '实际利率上升') }}{% elif 'Falling' in usd_link.real_rate_regime %}{{ t('real rates falling', '实际利率下降') }}{% else %}{{ t('real rates steady', '实际利率平稳') }}{% endif %}
+        {% endif %}
+        {% endif %}
       </div>
       <p class="verdict-lead"><span class="l-en">{{ vm.health.verdict_en }}</span><span class="l-zh">{{ vm.health.verdict_zh }}</span></p>
       {% if vm.alarms %}{% for a in vm.alarms %}

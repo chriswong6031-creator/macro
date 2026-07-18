@@ -1739,6 +1739,16 @@
       <a href="macro.html" style="color:var(--link);font-weight:600">← {{ t('Macro regime dashboard', '宏观周期看板') }}</a>
       &nbsp;·&nbsp;
       <a href="us_stocks_lab.html" style="color:var(--link);font-weight:600">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
+    {# B4: seasonal-climate chip — display-only context, page furniture.
+       Tone: headwind → warn-border; tailwind → up-border. Absent when neutral or data missing. #}
+    {% if factor_season is defined and factor_season is not none %}
+    <div style="margin:7px 0 0">
+      <span class="chip"
+        style="{% if factor_season.tone == 'headwind' %}border-color:color-mix(in srgb,var(--warn) 55%,var(--line));color:var(--warn);{% elif factor_season.tone == 'tailwind' %}border-color:color-mix(in srgb,var(--up) 45%,var(--line));color:var(--up);{% endif %}cursor:help"
+        data-tip-en="{{ factor_season.tip_en | e }}"
+        data-tip-zh="{{ factor_season.tip_zh | e }}"><span class="l-en">{{ factor_season.chip_en | e }}</span><span class="l-zh">{{ factor_season.chip_zh | e }}</span></span>
+    </div>
+    {% endif %}
   </div>
   {# Ignition Radar — stocks mode placement (after the stocks header).
      Compact span12 STRIP variant (operator revamp 2026-07-11): the tray card

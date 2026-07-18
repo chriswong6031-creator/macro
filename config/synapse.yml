@@ -95,12 +95,14 @@ artifacts:
       - engine/neuralweb/causal_inventory.py
       - scripts/build_macro_snapshot.py
       - scripts/build_macro_context.py
+      - engine/crossasset_shadow.py
+      - scripts/build_crossasset.py
     external_consumers:
       - mastermind:anchor
       - mastermind:vendored
       - terminal:pull_macro_intel
     qual_ladder_ref: null
-    notes: "Highest-consumer artifact in the bus (28 Python modules + 3 external). census confirmed 27 unique module files at W7a; cortex.py added as declared consumer at W7b (reads data/regime/latest.json via read_artifact tool). NW-CI W2: context_api.py reads latest.json for current-date regime (pit_live basis). Producer: engine/run.py:705 json.dump."
+    notes: "Highest-consumer artifact in the bus (28 Python modules + 3 external). census confirmed 27 unique module files at W7a; cortex.py added as declared consumer at W7b (reads data/regime/latest.json via read_artifact tool). NW-CI W2: context_api.py reads latest.json for current-date regime (pit_live basis). W3-E: engine/crossasset_shadow.py reads cross_asset block for pressure_pctile; scripts/build_crossasset.py reads confirm block. Producer: engine/run.py:705 json.dump."
 
   # --- 16 consumers ---
   baskets-membership:
@@ -633,8 +635,9 @@ artifacts:
       - engine/risk_radar_recovery.py
       - engine/risk_radar_review.py
       - engine/run.py
+      - engine/crossasset_shadow.py
     external_consumers: []
-    notes: "Producer: engine/risk_radar_audit.py:35 append, idempotent by as-of."
+    notes: "Producer: engine/risk_radar_audit.py:35 append, idempotent by as-of. W3-E: engine/crossasset_shadow.py reads last-row state as US incumbent baseline for the CGL-mirror escalator."
 
   # RR scorecard (data copy) — the canonical data-side artifact written atomically
   # alongside site/riskdata/scorecard.json by engine/risk_radar_scorecard.py.write().
@@ -3742,7 +3745,7 @@ artifacts:
     consumers: []
     external_consumers:
       - terminal:pull_macro_intel
-    notes: "Producer: scripts/build_site.py:3151 write_text."
+    notes: "Producer: scripts/build_site.py write_text. MSX-2: additive keys market_state_color (green/yellow/red), stances ({hero,liquidity,credit} stance pairs), fx (compact dollar-desk: dollar_desk, state_changes, regime_radar {dominant,active,intensity}, strength). Absent until first nightly post-merge; existing keys byte-compatible."
 
   # --- 2 consumers ---
   site-factors:
@@ -7767,6 +7770,68 @@ artifacts:
       degraded-driving).  RESTORE the real operational SLA (30h) when the ledger
       first appears (~60 trading days of panel accrual unless a backfill runs).
 
+  # --- B4: factor seasonality + momentum display (site/factordata, display-only) ---
+  site-factor-seasonality:
+    path: site/factordata/factor_seasonality.json
+    format: json
+    producer: scripts/build_seasonality.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: factor_seasonality.v2
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - scripts/build_site.py
+      - scripts/build_baskets.py
+    external_consumers: []
+    notes: >
+      Ken French academic factor seasonality payload (schema: factor_seasonality.v2).
+      Written ONLY by scripts/build_seasonality.py (brun seasonality, nightly render
+      band); build_factors_page() recomputes the same payload in-memory for the
+      factors page but never writes this file.
+      Contains full-history + 30y/10y per-calendar-month stats for HML/RMW/CMA/Mom/SMB/Mkt-RF
+      and a "now" block (current-month spotlight with chip_en/zh, headline, stance, per-factor
+      verdicts). DELIBERATELY UNSCORED — full-sample seasonal stats peek at future returns;
+      never enters any calibrated score, rank, gate, or Article-2 surface.
+      display_only=true. Consumed as context chip on us_stocks + baskets pages (B4).
+      Consumed by engine/neuralweb/world_state._compose_factor_weather as seasonal_climate
+      sub-key (independent seasonality_as_of stamp; no coupling to factor_state_as_of).
+
+  site-momentum-display:
+    path: site/factordata/momentum_display.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: momentum_display.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+    external_consumers: []
+    notes: >
+      Momentum display payload (schema: momentum_display.v1): cross-sectional
+      price momentum X-ray — sector concentration, top-decile sample, spread stats,
+      MTUM/SPY pulse. Written by engine/momentum_display.compute_momentum_display()
+      inside build_factors_page() (scripts/build_site.py, nightly render).
+      UNSCORED display context only: momentum selection is a standing null
+      (RESIDUAL_ALPHA_MOMENTUM) and factor timing/velocity signals are a standing
+      kill — this artifact feeds no score, rank, gate, or Article-2 surface.
+      display_only=true. Consumed by factors.html.j2 "Where the heat is" panel only.
+
   # --- PR-C: NW lobe-status health surface ---
   neuralweb-health:
     path: data/neuralweb/health.json
@@ -10112,8 +10177,14 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/world_state.py
+      - engine/neuralweb/mastermind_context.py
+      - engine/master_brain.py
+      - engine/neuralweb/confluence.py
       - scripts/build_site.py
       - scripts/build_macro_snapshot.py
+      - scripts/build_intl.py
+      - engine/flow_regime.py
+      - scripts/build_crossasset.py
     notes: >
       FX regime/pairs snapshot. Current dollar regime (strong/weak/neutral), favored
       pairs with entry context, and dollar_desk narrative. Written by scripts/build_forex.py
@@ -10121,6 +10192,14 @@ artifacts:
       scripts/build_site.py (macro page FX panel), and scripts/build_macro_snapshot.py;
       the cortex/ask_brain see FX state only transitively via world_state.json.
       is_context_only=true, display_only=true — no score or ranking authority.
+      MSX-1 additive keys (§2.1): dollar_desk.smile_decomp (bug-fix — unblocks
+      build_intl.py:281 + flow_regime.py:1536), strength (horizons/extremes),
+      regime_radar.scenarios (per-scenario prob receipts), pairs.<KEY>.headline/sub/
+      shock_state/cycle_position (USDCNH also cnh_basis_bps/cnh_basis_state),
+      state_changes (current/prev/changed_on/days_in_state per key, nightly-lane-gated),
+      schema_note. Never rename/remove existing keys — additive-only contract.
+      W3-E: scripts/build_crossasset.py reads transmission/regime_radar and corr_top for
+      the crossasset dollar block (fail-open).
 
   transmission-latest:
     path: data/transmission/latest.json
@@ -10437,7 +10516,7 @@ artifacts:
     storage: git
     asof_field: date
     freshness_sla_hours: 30
-    schema: implicit
+    schema: crossasset_flows.v2
     tier: display
     horizon_role: context
     weights: none
@@ -10450,9 +10529,70 @@ artifacts:
       R6 NW Cross-Asset Depth — cross-asset flows snapshot (TSMOM regime, correlation
       concentration, intermarket ratios, carry, lead/lag, global liquidity, funding
       stress). Five legacy keys (date, regime, breadth, favored, correlation) are
-      byte-stable for build_vector hub card (RUL-CA-2). New flows sub-block added by
-      R6. display_only=true unconditionally (RUL-CA-1).
+      byte-stable for build_vector hub card (RUL-CA-2). New flows sub-block (flows.v2)
+      added by W3-A. display_only=true unconditionally (RUL-CA-1). Consumers are
+      engine/neuralweb/world_state.py (reads crossasset/latest.json via config path) and
+      scripts/build_vector.py (hub card one-bet line). scripts/build_site.py reads
+      crossasset_shadow/latest.json and regime/latest.json["cross_asset"] instead; it is
+      NOT a consumer of this artifact.
       Producer: scripts/build_crossasset.py (outdir/"latest.json").write_text(...).
+
+  crossasset-history:
+    path: data/crossasset/history.jsonl
+    format: jsonl
+    producer: scripts/build_crossasset.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      W3-A CA-W3-R3 accrual pit — nightly-lane-gated append (COLLECT_LANE=nightly only).
+      Single writer: scripts/build_crossasset.py (_append_history). Each row is a
+      pit_live snapshot (asof, regime, breadth, concentration_verdict,
+      absorption_pctile_5y, confirm_verdict, shadow_state, dominant_cluster, plus all
+      flows.v2 scalar fields) dedup-guarded on last asof. Feeds the §6 conditioning study
+      (fdr_family='macro_context') accrual — minimum 60 rows required before any study
+      gate opens. No consumer yet: accrual is free at display tier (CA-W3-R3 ruling);
+      promotion gate requires ≥60d of rows before study may be initiated.
+
+  crossasset-shadow-latest:
+    path: data/crossasset_shadow/latest.json
+    format: json
+    producer: engine/crossasset_shadow.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+    external_consumers: []
+    notes: >
+      W3-B CGL-mirror shadow escalator — display+shadow only, promotion gate ≥30 graded
+      rows + do-no-harm vs incumbent, earliest review 2026-10-17 (shared RSR-R2 clock).
+      Sole writer: engine/crossasset_shadow.py (invoked from scripts/build_crossasset.py);
+      written only when COLLECT_LANE=nightly (lane-armed
+      check mirrors risk_radar_audit.ledger_lane_armed). Fields: asof, pressure_pctile,
+      incumbent_state, shadow_state, escalated, display_only:true. Forward log rows
+      appended to data/risk_radar/forward_log_crossasset.jsonl (same row schema as CGL
+      contagion shadow rows; graded by the same ≥5%-drawdown h5/h10/h21 ruler).
+      Consumer scripts/build_site.py attaches radar chip (verdict in concentrated/
+      converging only) beside the CGL contagion chip via _risk_radar_card.html.j2.
 
   macro-context-latest:
     path: data/macro_context/latest.json

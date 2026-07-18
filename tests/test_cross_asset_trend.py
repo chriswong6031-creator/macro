@@ -58,3 +58,51 @@ def test_tsmom_panel_breadth_sign():
 def test_snapshot_degrades_with_too_few_legs(monkeypatch):
     monkeypatch.setattr(cat, "_load_universe", lambda cfg=None: {"a": _price(1.0)})
     assert cat.snapshot() is None                      # <4 legs -> graceful None
+
+
+# CA-W3-R5: new legs in _DEFAULT_UNIVERSE and _NAME_LABEL ─────────────────────
+
+def test_default_universe_contains_w3_legs():
+    """CA-W3-R5: equity_intl/equity_em/duration must be in _DEFAULT_UNIVERSE."""
+    assert "equity_intl" in cat._DEFAULT_UNIVERSE
+    assert "equity_em" in cat._DEFAULT_UNIVERSE
+    assert "duration" in cat._DEFAULT_UNIVERSE
+
+
+def test_default_universe_w3_leg_tickers():
+    """CA-W3-R5: new legs must map to EFA/EEM/TLT."""
+    assert cat._DEFAULT_UNIVERSE["equity_intl"][1] == "EFA"
+    assert cat._DEFAULT_UNIVERSE["equity_em"][1] == "EEM"
+    assert cat._DEFAULT_UNIVERSE["duration"][1] == "TLT"
+
+
+def test_default_universe_w3_legs_are_equity_and_rates_class():
+    """CA-W3-R5: equity_intl/em are 'equity'; duration is 'rates'."""
+    assert cat._DEFAULT_UNIVERSE["equity_intl"][3] == "equity"
+    assert cat._DEFAULT_UNIVERSE["equity_em"][3] == "equity"
+    assert cat._DEFAULT_UNIVERSE["duration"][3] == "rates"
+
+
+def test_name_label_contains_w3_legs():
+    """CA-W3-R5: _NAME_LABEL must have bilingual entries for new legs."""
+    for key in ("equity_intl", "equity_em", "duration"):
+        assert key in cat._NAME_LABEL, f"_NAME_LABEL missing {key!r}"
+        en, zh = cat._NAME_LABEL[key]
+        assert isinstance(en, str) and en, f"empty EN label for {key!r}"
+        assert isinstance(zh, str) and zh, f"empty ZH label for {key!r}"
+
+
+def test_name_label_w3_exact_values():
+    """CA-W3-R5: bilingual labels must match the spec exactly."""
+    assert cat._NAME_LABEL["equity_intl"] == ("Intl stocks (DM)", "国际发达股市")
+    assert cat._NAME_LABEL["equity_em"] == ("EM stocks", "新兴市场股市")
+    assert cat._NAME_LABEL["duration"] == ("Long Treasuries", "长期美债")
+
+
+def test_concentration_universe_not_touched():
+    """CA-W3-R5: DEFAULT_MARKETS (concentration) in cross_asset.py must NOT include EFA/EEM/TLT."""
+    from engine.cross_asset import DEFAULT_MARKETS
+    tickers = {v[1] for v in DEFAULT_MARKETS.values()}
+    assert "EFA" not in tickers
+    assert "EEM" not in tickers
+    assert "TLT" not in tickers

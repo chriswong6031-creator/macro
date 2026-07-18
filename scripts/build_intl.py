@@ -268,6 +268,8 @@ def main() -> int:
     # forex lane would silently pass an mtime gate forever (the polygon-universe
     # frozen-cache class, #2690). Missing/unparsable asof ⇒ treated stale (skip).
     smile_result = None
+    # B3: fx_context to attach to each radar record (display-only, CGL pattern, asof-gated)
+    _fx_context_block: dict | None = None
     try:
         _forex_path = config.data_dir() / "forex" / "latest.json"
         if _forex_path.exists():
@@ -279,11 +281,32 @@ def main() -> int:
                 _forex_age_d = None
             if _forex_age_d is not None and _forex_age_d <= 1:      # ≈ the old <36h window
                 smile_result = (_forex_raw.get("dollar_desk") or {}).get("smile_decomp")
+                # B3 item 6: fx_context — display-only, never feeds scored fx leg or radar scoring.
+                _dd_b = _forex_raw.get("dollar_desk") or {}
+                _sm_b = _dd_b.get("smile_decomp") or {}
+                _tr_b = _forex_raw.get("transmission") or {}
+                _st_b = _forex_raw.get("stance") or {}
+                _fx_context_block = {
+                    "regime": _sm_b.get("regime"),
+                    "usd_dir": _tr_b.get("usd_dir"),
+                    "dominant": (_dd_b.get("lean") or None),
+                    "stance_word_en": _st_b.get("word_en") or None,
+                    "stance_word_zh": _st_b.get("word_zh") or None,
+                }
             else:
                 log.warning("smile_decomp skipped: forex latest.json asof=%r stale/missing",
                             _forex_asof)
     except Exception as _e:
         log.error("smile_decomp read from forex/latest.json failed (%s)", _e)
+
+    # B3 item 6: attach fx_context to each intl record now that _fx_context_block is set.
+    # Display-only; mirrors CGL contagion attach pattern (fail-open).
+    if _fx_context_block is not None:
+        try:
+            for _fx_rec in latest.get("records") or []:
+                _fx_rec["fx_context"] = _fx_context_block
+        except Exception as _fx_e:
+            log.warning("fx_context attach failed (fail-open): %s", _fx_e)
 
     # Read SWPT (Fed swap lines) from FRED store: $M → $bn (same as build_bonds)
     _swap_lines_bn: float | None = None

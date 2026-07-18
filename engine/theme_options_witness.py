@@ -605,32 +605,36 @@ def compute_basket_legs(
                 "band": band,
                 "stale": stale,
                 "note_en": (
-                    f"Median call-OI HHI across {hhi_covered}/{len(members)} covered members. "
-                    f"HHI={latest_hhi:.3f} — "
-                    + ("call OI concentrated in few strikes (crowding hazard)."
+                    f"Coverage: {hhi_covered}/{len(members)} members. "
+                    f"Strike concentration (median): {latest_hhi:.3f}"
+                    + (f" (z {latest_hhi_z:+.2f})" if latest_hhi_z is not None else "")
+                    + ". "
+                    + ("Call bets crowded into a few strikes — crowding hazard."
                        if band == "elevated" else
-                       "call OI moderately concentrated."
+                       "Call bets tilting toward fewer strikes."
                        if band == "rising" else
-                       "call OI distributed across strikes (no concentration hazard).")
+                       "Call bets spread across many strikes — no crowding sign.")
                 ),
                 "note_zh": (
-                    f"{hhi_covered}/{len(members)} 个成员覆盖的看涨OI HHI中位数。"
-                    f"HHI={latest_hhi:.3f} — "
-                    + ("看涨OI集中在少数行权价（拥挤风险信号）。"
+                    f"覆盖：{hhi_covered}/{len(members)} 个成员。"
+                    f"行权价集中度（中位数）：{latest_hhi:.3f}"
+                    + (f"（z {latest_hhi_z:+.2f}）" if latest_hhi_z is not None else "")
+                    + "。"
+                    + ("看涨押注集中在少数行权价——拥挤风险。"
                        if band == "elevated" else
-                       "看涨OI集中度中等。"
+                       "看涨押注趋向集中于较少行权价。"
                        if band == "rising" else
-                       "看涨OI分布于多个行权价（无集中风险）。")
+                       "看涨押注分散于多个行权价——无拥挤迹象。")
                 ),
             })
     else:
         leg_a["note_en"] = (
-            f"Suppressed: only {hhi_covered}/{len(members)} members have OI coverage "
-            f"(< {int(_MIN_COVERAGE_FRAC * 100)}% threshold)."
+            f"Not shown — only {hhi_covered}/{len(members)} members have options "
+            f"open-interest data (need at least {int(_MIN_COVERAGE_FRAC * 100)}%)."
         )
         leg_a["note_zh"] = (
-            f"已抑制：仅 {hhi_covered}/{len(members)} 个成员有OI覆盖 "
-            f"（低于 {int(_MIN_COVERAGE_FRAC * 100)}% 阈值）。"
+            f"暂不显示——仅 {hhi_covered}/{len(members)} 个成员有期权持仓数据"
+            f"（至少需 {int(_MIN_COVERAGE_FRAC * 100)}%）。"
         )
 
     # ------------------------------------------------------------------
@@ -733,24 +737,47 @@ def compute_basket_legs(
             "band": band,
             "stale": stale,
             "note_en": (
-                f"Basket PCR across {pcr_covered}/{len(members)} covered members"
-                + (f"; collapse_into_strength={pcr_collapse} (EXIT-CROWD-L3 accrual)"
-                   if pcr_collapse is not None else "")
-                + (f". Band: {band}." if band else ".")
+                f"Coverage: {pcr_covered}/{len(members)} members."
+                + (f" Put/call open-interest ratio: {latest_pcr:.2f}"
+                   + (f" (z {latest_z:+.2f})" if latest_z is not None else "")
+                   + "."
+                   if latest_pcr is not None else "")
+                + f" Hedges coming off into strength: {'yes' if pcr_collapse else 'no'}."
+                + (" Positioning: "
+                   + ("put protection unusually low — complacency hazard."
+                      if band == "complacency" else
+                      "put protection coming down."
+                      if band == "declining" else
+                      "heavy put hedging in place."
+                      if band == "elevated_put" else
+                      "put/call balance in its normal range.")
+                   if band else "")
             ),
             "note_zh": (
-                f"{pcr_covered}/{len(members)} 个成员的篮子PCR比率"
-                + (f"; 下降进入强势={pcr_collapse} (EXIT-CROWD-L3积累)"
-                   if pcr_collapse is not None else "")
-                + (f". 状态: {band}." if band else ".")
+                f"覆盖：{pcr_covered}/{len(members)} 个成员。"
+                + (f"看跌/看涨持仓比：{latest_pcr:.2f}"
+                   + (f"（z {latest_z:+.2f}）" if latest_z is not None else "")
+                   + "。"
+                   if latest_pcr is not None else "")
+                + f"对冲盘在强势中撤离：{'是' if pcr_collapse else '否'}。"
+                + ("仓位状态："
+                   + ("看跌保护异常偏低——自满风险。"
+                      if band == "complacency" else
+                      "看跌保护正在减少。"
+                      if band == "declining" else
+                      "看跌对冲较重。"
+                      if band == "elevated_put" else
+                      "看跌/看涨比处于正常区间。")
+                   if band else "")
             ),
         })
     else:
         leg_b["note_en"] = (
-            f"Suppressed: only {pcr_covered}/{len(members)} members have PCR coverage."
+            f"Not shown — only {pcr_covered}/{len(members)} members have "
+            f"put/call open-interest data."
         )
         leg_b["note_zh"] = (
-            f"已抑制：仅 {pcr_covered}/{len(members)} 个成员有PCR覆盖。"
+            f"暂不显示——仅 {pcr_covered}/{len(members)} 个成员有看跌/看涨持仓数据。"
         )
 
     # ------------------------------------------------------------------
@@ -814,35 +841,40 @@ def compute_basket_legs(
                 "band": band_c,
                 "stale": stale_c,
                 "note_en": (
-                    f"Median IV-premium (IV/RV20-1) across {iv_covered}/{len(members)} "
-                    f"covered members. "
-                    + ("Elevated IV premium = options buyers crowded in (event-premium hazard)."
+                    f"Coverage: {iv_covered}/{len(members)} members. "
+                    f"Options priced vs recent actual swings (median): {latest_iv:+.1%}"
+                    + (f" (z {latest_iv_z:+.2f})" if latest_iv_z is not None else "")
+                    + ". "
+                    + ("Options priced far above recent actual swings — event-premium hazard."
                        if band_c == "elevated" else
-                       "Rising IV premium vs realized."
+                       "Options pricing rising versus recent actual swings."
                        if band_c == "rising" else
-                       "IV premium compressed vs own history."
+                       "Options priced low versus their own history."
                        if band_c == "compressed" else
-                       "IV premium near historical norm.")
+                       "Options priced near their usual level.")
                 ),
                 "note_zh": (
-                    f"{iv_covered}/{len(members)} 个成员的IV溢价中位数（IV/RV20-1）。"
-                    + ("IV溢价偏高 = 期权买入者大量涌入（事件溢价风险）。"
+                    f"覆盖：{iv_covered}/{len(members)} 个成员。"
+                    f"期权定价相对近期实际波动（中位数）：{latest_iv:+.1%}"
+                    + (f"（z {latest_iv_z:+.2f}）" if latest_iv_z is not None else "")
+                    + "。"
+                    + ("期权定价远高于近期实际波动——事件溢价风险。"
                        if band_c == "elevated" else
-                       "IV溢价相对实现波动率上升。"
+                       "期权定价相对近期实际波动上升。"
                        if band_c == "rising" else
-                       "相对自身历史，IV溢价受压。"
+                       "期权定价低于自身历史水平。"
                        if band_c == "compressed" else
-                       "IV溢价接近历史正常水平。")
+                       "期权定价接近正常水平。")
                 ),
             })
     else:
         leg_c["note_en"] = (
-            f"Suppressed: only {iv_covered}/{len(members)} members have IV coverage "
-            f"(greeks 2017+ required)."
+            f"Not shown — only {iv_covered}/{len(members)} members have "
+            f"options-volatility data (needs history from 2017 on)."
         )
         leg_c["note_zh"] = (
-            f"已抑制：仅 {iv_covered}/{len(members)} 个成员有IV覆盖 "
-            f"（需要2017年以后的希腊参数数据）。"
+            f"暂不显示——仅 {iv_covered}/{len(members)} 个成员有期权波动率数据"
+            f"（需2017年以来的历史）。"
         )
 
     return {"leg_a": leg_a, "leg_b": leg_b, "leg_c": leg_c}

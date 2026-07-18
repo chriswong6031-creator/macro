@@ -26,7 +26,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | dannytrades | 1 |
 | engine-fix | 18 |
 | entry-stack-expansion | 2 |
-| factor-intelligence | 5 |
+| factor-intelligence | 7 |
 | fast-turn | 4 |
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
@@ -40,7 +40,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | ird | 5 |
 | leader-radar | 5 |
 | long-hold | 36 |
-| macro-context-rail | 15 |
+| macro-context-rail | 17 |
 | macro-release-intel | 6 |
 | mag7-regime | 3 |
 | mastermind-feedback-contract | 2 |
@@ -94,7 +94,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 305 |
+| display | 309 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 70 |
@@ -103,7 +103,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 452 |
+| git | 456 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -257,13 +257,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 35 | 3 |
+| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 37 | 3 |
 | regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 19 | 0 |
 | breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 18 | 0 |
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
 | market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 8 | 0 |
+| risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 6 | 0 |
 | trial-ledger | `data/trial_ledger.jsonl` | jsonl | on-demand | infrastructure | 6 | 0 |
-| risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 5 | 0 |
 | regime-vector | `data/regime/regime_vector.parquet` | parquet | daily-engine | infrastructure | 4 | 0 |
 | site-regime-timeline | `site/regime_timeline.json` | json | daily-engine | display | 2 | 2 |
 | archetypes-history | `data/archetypes/history.parquet` | parquet | on-demand | display | 3 | 0 |
@@ -288,8 +288,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | factor-intelligence-state | `data/neuralweb/factor_intelligence_state.json` | json | nightly-factor-panel | display | 5 | 0 |
+| site-factor-seasonality | `site/factordata/factor_seasonality.json` | json | daily-engine | display | 3 | 0 |
 | factor-contradictions-ledger | `data/neuralweb/factor_contradictions.jsonl` | jsonl | nightly-factor-panel | display | 2 | 0 |
 | fire-coordinates | `data/factordata/fire_coordinates.jsonl` | jsonl | nightly-factor-panel | display | 2 | 0 |
+| site-momentum-display | `site/factordata/momentum_display.json` | json | daily-engine | display | 1 | 0 |
 | factor-state-history | `data/factordata/factor_state_history.jsonl` | jsonl | nightly-factor-panel | display | 0 | 0 |
 | site-factor-intelligence-state | `site/neuralwebdata/factor_intelligence_state.json` | json | nightly-factor-panel | display | 0 | 0 |
 
@@ -434,9 +436,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| forex-latest | `data/forex/latest.json` | json | daily-engine | display | 9 | 0 |
 | commodity-latest | `data/commodity/latest.json` | json | daily-engine | display | 4 | 0 |
 | transmission-latest | `data/transmission/latest.json` | json | daily-engine | display | 4 | 0 |
-| forex-latest | `data/forex/latest.json` | json | daily-engine | display | 3 | 0 |
 | macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
 | bond-health | `data/bonds/bond_health.json` | json | daily-engine | display | 2 | 0 |
 | canada-regime-latest | `data/canada_regime/latest.json` | json | daily-engine | display | 2 | 0 |
@@ -446,8 +448,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | macro-snapshots-latest | `data/macro_snapshots/latest.json` | json | daily-engine | display | 2 | 0 |
 | macro-transitions | `data/macro_snapshots/transitions.jsonl` | jsonl | daily-engine | display | 2 | 0 |
 | site-factor-series | `site/factordata/factor_series.json` | json | daily-engine | display | 2 | 0 |
+| crossasset-shadow-latest | `data/crossasset_shadow/latest.json` | json | daily-engine | display | 1 | 0 |
 | site-alerts-triage | `site/factordata/alerts_triage.json` | json | daily-engine | display | 1 | 0 |
 | site-intelligence-briefing | `site/intelligence/briefing.json` | json | daily-engine | display | 1 | 0 |
+| crossasset-history | `data/crossasset/history.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 | macro-context-latest | `data/macro_context/latest.json` | json | daily-engine | display | 0 | 0 |
 
 ### macro-release-intel
@@ -990,7 +994,7 @@ flowchart LR
     C_engine_briefing_py["engine/briefing.py"]
     C_engine_china_intel_analysis_py["engine/china_intel_analysis.py"]
     C_engine_china_intel_bus_py["engine/china_intel_bus.py"]
-    OVF_regime_latest["...+34 more"]
+    OVF_regime_latest["...+36 more"]
     A_regime_history["regime-history"]
     C_engine_alerts_py["engine/alerts.py"]
     C_engine_board_ledger_py["engine/board_ledger.py"]
@@ -1067,19 +1071,18 @@ flowchart LR
     C_engine_spine_py["engine/spine.py"]
     C_engine_track_record_py["engine/track_record.py"]
     OVF_us_board_ledger_retro_grades["...+6 more"]
+    P_scripts_build_forex_py(("scripts/build_forex.py"))
+    A_forex_latest["forex-latest"]
+    C_engine_neuralweb_mastermind_context_py["engine/neuralweb/mastermind_context.py"]
+    C_engine_master_brain_py["engine/master_brain.py"]
+    C_engine_neuralweb_confluence_py["engine/neuralweb/confluence.py"]
+    OVF_forex_latest["...+5 more"]
     P_engine_market_state_py(("engine/market_state.py"))
     A_market_state_latest["market-state-latest"]
     C_engine_regime_prior_py["engine/regime_prior.py"]
     C_engine_market_state_audit_py["engine/market_state_audit.py"]
     C_engine_market_state_tune_py["engine/market_state_tune.py"]
     OVF_market_state_latest["...+4 more"]
-    P_engine_radar_py(("engine/radar.py"))
-    A_radar_theses["radar-theses"]
-    C_engine_ai_desk_scorer_py["engine/ai_desk_scorer.py"]
-    C_engine_hub_track_record_py["engine/hub_track_record.py"]
-    C_engine_master_brain_py["engine/master_brain.py"]
-    C_engine_qledger_py["engine/qledger.py"]
-    OVF_radar_theses["...+4 more"]
     P_engine_run_py --> A_regime_latest
     A_regime_latest --> C_engine_alert_triage_py
     A_regime_latest --> C_engine_briefing_py
@@ -1158,18 +1161,18 @@ flowchart LR
     A_us_board_ledger_retro_grades --> C_engine_spine_py
     A_us_board_ledger_retro_grades --> C_engine_track_record_py
     A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
+    P_scripts_build_forex_py --> A_forex_latest
+    A_forex_latest --> C_engine_neuralweb_world_state_py
+    A_forex_latest --> C_engine_neuralweb_mastermind_context_py
+    A_forex_latest --> C_engine_master_brain_py
+    A_forex_latest --> C_engine_neuralweb_confluence_py
+    A_forex_latest --> OVF_forex_latest
     P_engine_market_state_py --> A_market_state_latest
     A_market_state_latest --> C_engine_neuralweb_world_state_py
     A_market_state_latest --> C_engine_regime_prior_py
     A_market_state_latest --> C_engine_market_state_audit_py
     A_market_state_latest --> C_engine_market_state_tune_py
     A_market_state_latest --> OVF_market_state_latest
-    P_engine_radar_py --> A_radar_theses
-    A_radar_theses --> C_engine_ai_desk_scorer_py
-    A_radar_theses --> C_engine_hub_track_record_py
-    A_radar_theses --> C_engine_master_brain_py
-    A_radar_theses --> C_engine_qledger_py
-    A_radar_theses --> OVF_radar_theses
 ```
 
 ## Appendix — Known Extra Writers

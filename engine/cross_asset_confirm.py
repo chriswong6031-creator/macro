@@ -409,6 +409,23 @@ def snapshot(latest: dict | None = None, root: Path | str | None = None,
                                "equity_blind": f["equity_blind"]} for f in flags],
         }
 
+        # B3: named display reasons (additive payload fields — never affects vote math).
+        # These are named handles the template can render as plain-word context chips.
+        # Fail-open: any read error yields an empty list.
+        _display_reasons: list[str] = []
+        try:
+            _desk = fx.get("dollar_desk") or {}
+            if _desk.get("triple_red"):
+                _display_reasons.append("usd_triple_red")
+            _lq_dir = _desk.get("liquidity_dir")
+            # "supportive" = liquidity draining from risk assets (= USD absorbing flow).
+            # Match both the canonical enum ("supportive") and the prose form ("draining")
+            # that future builds may emit, per B3 spec.
+            if _lq_dir in ("supportive", "draining"):
+                _display_reasons.append("usd_liquidity_draining")
+        except Exception:  # noqa: BLE001
+            pass
+
         return {
             "verdict": verdict,
             "verdict_zh": {"confirm": "一致", "diverge": "背离", "mixed": "分歧"}.get(verdict, verdict),
@@ -417,6 +434,7 @@ def snapshot(latest: dict | None = None, root: Path | str | None = None,
             "agree_pct": agree_pct,
             "legs": legs,
             "caution_flags": flags,
+            "display_reasons": _display_reasons,  # B3: named display reasons (additive)
             "cycle": {"equity": eq_cycle, "bonds": b_phase,
                       "bonds_en": _PHASE_EN.get(b_phase, b_phase) if b_phase else None,
                       "bonds_zh": _PHASE_ZH.get(b_phase, b_phase) if b_phase else None,

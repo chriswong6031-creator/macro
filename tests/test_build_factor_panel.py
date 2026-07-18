@@ -3551,3 +3551,62 @@ class TestSchemaStability55:
             "data/factordata/panel/ must be in .gitignore "
             "(RULING-C: no tracked files written by panel step)"
         )
+
+
+class TestSeasonalClimateRead:
+    """Fail-open branches of world_state._read_seasonal_climate (B4)."""
+
+    def _import_read(self):
+        import importlib
+        ws = importlib.import_module("engine.neuralweb.world_state")
+        if not hasattr(ws, "_read_seasonal_climate"):
+            pytest.skip("_read_seasonal_climate not present")
+        return ws._read_seasonal_climate
+
+    def _write(self, tmp_path, payload):
+        import json as _json
+        d = tmp_path / "site" / "factordata"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / "factor_seasonality.json"
+        p.write_text(payload if isinstance(payload, str) else _json.dumps(payload))
+        return tmp_path
+
+    def test_absent_file_none(self, tmp_path):
+        assert self._import_read()(tmp_path) is None
+
+    def test_non_dict_json_none(self, tmp_path):
+        assert self._import_read()(self._write(tmp_path, "[1, 2, 3]")) is None
+
+    def test_malformed_json_none(self, tmp_path):
+        assert self._import_read()(self._write(tmp_path, "{not json")) is None
+
+    def test_v1_schema_none(self, tmp_path):
+        repo = self._write(tmp_path, {"as_of": "2026-05", "factors": []})
+        assert self._import_read()(repo) is None
+
+    def test_v2_missing_now_none(self, tmp_path):
+        repo = self._write(tmp_path, {"schema": "factor_seasonality.v2", "as_of": "2026-05"})
+        assert self._import_read()(repo) is None
+
+    def test_valid_v2_compact_dict(self, tmp_path):
+        repo = self._write(tmp_path, {
+            "schema": "factor_seasonality.v2", "as_of": "2026-05",
+            "now": {
+                "month": 7,
+                "factors": [
+                    {"key": "momentum", "verdict": "headwind"},
+                    {"key": "value", "verdict": "neutral"},
+                    {"key": None, "verdict": "neutral"},
+                ],
+                "headline_en": "July is usually a rough month for the market's recent winners.",
+                "stance_en": "Watch — don't chase this month's hottest stocks.",
+            },
+        })
+        out = self._import_read()(repo)
+        assert out is not None
+        assert out["display_only"] is True
+        assert out["month"] == 7
+        assert out["seasonality_as_of"] == "2026-05"
+        assert out["verdicts"] == {"momentum": "headwind", "value": "neutral"}
+        assert "rough month" in out["headline_en"]
+        assert out["stance_en"].startswith("Watch")

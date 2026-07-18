@@ -1954,6 +1954,30 @@
         {% else %}
         <p style="font-size:12px;color:var(--muted)">{{ t('Building…','积累中…') }}</p>
         {% endif %}
+        {# FX context row-pair (MSX-1, Tier-2, adjacent to CGL pattern).
+           Guard: entire block absent when _rad.fx_context is not present.
+           Dual-span l-en/l-zh; no title= translated text; no <svg><text> spans. #}
+        {% if _rad is defined and _rad and _rad.fx_context is defined and _rad.fx_context %}
+        {% set _fxc = _rad.fx_context %}
+        <div class="hkx-sep"></div>
+        {%- set _cnh_st = _fxc.cnh_basis_state if _fxc.cnh_basis_state is defined else none -%}
+        {%- set _cnh_en = 'Offshore yuan: outflow pressure' if _cnh_st == 'outflow_stress' else ('Offshore yuan: inflow bid' if _cnh_st == 'inflow' else 'Offshore yuan: no unusual pressure') -%}
+        {%- set _cnh_zh = '离岸人民币：资金外流压力' if _cnh_st == 'outflow_stress' else ('离岸人民币：资金流入' if _cnh_st == 'inflow' else '离岸人民币：无异常压力') -%}
+        {%- set _usd = _fxc.usd_dir if _fxc.usd_dir is defined else none -%}
+        {%- set _usd_en = 'Dollar rising — headwind for EM' if _usd == 'strengthening' else ('Dollar falling — tailwind for EM' if _usd == 'weakening' else 'Dollar: mixed') -%}
+        {%- set _usd_zh = '美元走强 — 新兴市场逆风' if _usd == 'strengthening' else ('美元走弱 — 新兴市场顺风' if _usd == 'weakening' else '美元：方向混乱') -%}
+        <div class="hkx-kv"><span class="hkx-k">{{ t('Yuan pressure','人民币压力') }}</span>
+          <span class="hkx-v"><span class="l-en">{{ _cnh_en }}</span><span class="l-zh">{{ _cnh_zh }}</span>
+          {%- if _fxc.cnh_basis_bps is defined and _fxc.cnh_basis_bps is not none %} <span class="hkx-nchip">{{ '%.0f'|format(_fxc.cnh_basis_bps) }}bp</span>{%- endif -%}
+          </span>
+        </div>
+        <div class="hkx-kv"><span class="hkx-k">{{ t('Dollar direction','美元方向') }}</span>
+          <span class="hkx-v"><span class="l-en">{{ _usd_en }}</span><span class="l-zh">{{ _usd_zh }}</span></span>
+        </div>
+        {%- if _fxc.stale is defined and _fxc.stale and _fxc.built_date is defined and _fxc.built_date %}
+        <div style="font-size:9.5px;color:var(--muted)"><span class="l-en">FX data as of {{ _fxc.built_date }}</span><span class="l-zh">外汇数据截至 {{ _fxc.built_date }}</span></div>
+        {%- endif %}
+        {% endif %}
         <div class="hkx-receipt">{{ t('Display-only risk gauge. HK\'s swings come mostly from outside — global moves, not local problems.','仅供展示的风险计。香港波动主要来自外部 — 全球走势，而非本地问题。') }}</div>
       </div>
     </div>

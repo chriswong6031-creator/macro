@@ -186,15 +186,199 @@
 
   <div class="panel">
     <div class="topline">
-      <h1>🧮 {{ t('Equity factor rankings', '股票因子排名') }}</h1>
-      <span class="muted sm">{{ t('value · quality · profitability · investment · payout · low-vol — across the S&P 1500', '价值 · 质量 · 盈利 · 投资 · 派息 · 低波动 — 覆盖标普 1500') }}</span>
+      <h1>🧮 {{ t('Factors & seasonality', '因子与季节性') }}{{ help(
+        "The cross-sectional factors quant equity desks actually trade — computed from SEC EDGAR fundamentals joined to prices, not proxied by an ETF. Each factor is a winsorized cross-sectional z-score (higher = more attractive on that factor); the composite is their equal-weight blend. These are RANKS and context, not a backtested alpha: factors decay and crowd, free fundamentals are sparse for some tags, book/price is weak for intangible-heavy firms, and every value is lagged to the filing period (no look-ahead).",
+        "量化股票交易台真正使用的横截面因子 — 由 SEC EDGAR 基本面与价格计算，而非用 ETF 代理。每个因子为去极值后的横截面 z 分数（越高 = 在该因子上越有吸引力）；综合为等权混合。这些是排名与背景，而非回测出的超额收益：因子会衰减与拥挤，免费基本面在部分科目上稀疏，市净率对无形资产密集的公司较弱，且所有数值滞后至申报期（无前视）。"
+      ) }}</h1>
+      <span class="muted sm">{{ t('Which styles of stock are working — and what this month usually brings', '哪些风格正在起作用——以及本月的历史规律') }}</span>
     </div>
     <p class="muted sm" style="margin:10px 0 0">{{ t(
-      "The cross-sectional factors quant equity desks actually trade — computed from SEC EDGAR fundamentals joined to prices, not proxied by an ETF. Each factor is a winsorized cross-sectional z-score (higher = more attractive on that factor); the composite is their equal-weight blend. These are RANKS and context, not a backtested alpha: factors decay and crowd, free fundamentals are sparse for some tags, book/price is weak for intangible-heavy firms, and every value is lagged to the filing period (no look-ahead).",
-      "量化股票交易台真正使用的横截面因子 — 由 SEC EDGAR 基本面与价格计算，而非用 ETF 代理。每个因子为去极值后的横截面 z 分数（越高 = 在该因子上越有吸引力）；综合为等权混合。这些是排名与背景，而非回测出的超额收益：因子会衰减与拥挤，免费基本面在部分科目上稀疏，市净率对无形资产密集的公司较弱，且所有数值滞后至申报期（无前视）。") }}</p>
+      'Styles — cheap, high-quality, dividend-paying, recent winners — take turns leading. Ranks and history here are descriptions, not buy lists.',
+      '低估值、高质量、高分红、近期赢家等风格轮流领跑。此处的排名与历史是描述，不是买入清单。') }}</p>
   </div>
 
-  <!-- Neural Web integration status (RUL-NW7/NW8 §D PR-4) — fail-open: nw_state absent → DORMANT panel -->
+  <!-- Factor weather hero — fail-open: seas absent or seas.now absent → panel hides -->
+  {% if seas is not none and seas %}
+  <div class="panel">
+    <div class="topline" style="margin-bottom:8px">
+      <h2 style="margin:0">{{ t('Factor weather', '因子风向') }}</h2>
+      {% if seas.as_of %}<span class="muted sm">{{ seas.as_of }}</span>{% endif %}
+    </div>
+    {% if seas.now is not none and seas.now %}
+    {% set _now = seas.now %}
+    <p style="margin:0 0 8px;font-size:14px">
+      <span class="l-en">{{ _now.headline_en or '' }}</span><span class="l-zh">{{ _now.headline_zh or '' }}</span>
+    </p>
+    {% if _now.stance_en %}
+    <div style="margin-bottom:8px">
+      {% if _now.chip_en %}
+        {# Non-neutral: chip has color based on verdicts present #}
+        {% set _any_hw = _now.factors | selectattr('verdict','eq','headwind') | list | length > 0 %}
+        {% set _any_tw = _now.factors | selectattr('verdict','eq','tailwind') | list | length > 0 %}
+        {% if _any_hw %}
+          <span style="display:inline-block;padding:2px 10px;border-radius:8px;border:1px solid var(--act);color:var(--act);background:color-mix(in srgb,var(--act) 10%,var(--panel));font-size:12px;font-weight:600">
+            <span class="l-en">{{ _now.stance_en }}</span><span class="l-zh">{{ _now.stance_zh or _now.stance_en }}</span>
+          </span>
+        {% elif _any_tw %}
+          <span style="display:inline-block;padding:2px 10px;border-radius:8px;border:1px solid var(--ok);color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--panel));font-size:12px;font-weight:600">
+            <span class="l-en">{{ _now.stance_en }}</span><span class="l-zh">{{ _now.stance_zh or _now.stance_en }}</span>
+          </span>
+        {% else %}
+          <span class="chip"><span class="l-en">{{ _now.stance_en }}</span><span class="l-zh">{{ _now.stance_zh or _now.stance_en }}</span></span>
+        {% endif %}
+      {% else %}
+        <span class="chip"><span class="l-en">{{ _now.stance_en }}</span><span class="l-zh">{{ _now.stance_zh or _now.stance_en }}</span></span>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if momo is not none and momo.get('top_decile') %}
+    {% set _td = momo.top_decile %}
+    <p class="sm" style="margin:0 0 4px">
+      <span class="l-en">The hottest 10% of stocks right now: {{ _td.top_sector_share_pct }}% sit in {{ _td.top_sector }}.</span>
+      <span class="l-zh">当前最热的10%个股中，{{ _td.top_sector_share_pct }}% 集中在{{ _td.top_sector }}。</span>
+    </p>
+    {% if momo.get('pulse') and momo.pulse.get('mtum_spy_20d_pct') is not none %}
+    {% set _p20 = momo.pulse.mtum_spy_20d_pct %}
+    <p class="sm muted" style="margin:0 0 4px">
+      <span class="l-en">Hot stocks vs the market, last 20 days: {{ '%+.1f'|format(_p20) }}%.</span>
+      <span class="l-zh">热门股相对大盘（近20日）：{{ '%+.1f'|format(_p20) }}%。</span>
+    </p>
+    {% endif %}
+    {% endif %}
+    {{ help(
+      "Current-month per-factor seasonal stats — "
+      ~ (_now.factors | map(attribute='plain_en') | join(', '))
+      ~ ". Stats from Ken French total-US-market academic portfolios (1926+). "
+      "Definition mismatch: French HML/RMW/CMA are value-weighted long/short over the whole US market, NOT our S&P-1500 winsorized z-scores — this is the style's long-run seasonal CLIMATE, not a forecast of our daily factor leadership. Kept out of every score.",
+      "当月各因子季节性统计——来自 Ken French 全美市场学术组合（1926年+）。定义差异：French 的多空因子与我们的 S&P 1500 z 分数不同——此为长期季节性气候，非每日因子领先预测，且绝不进入任何评分。"
+    ) }}
+    {% endif %}
+    <p class="muted sm" style="margin:8px 0 0">{{ t(
+      'Long-run tendencies and descriptions — not forecasts, and kept out of every score.',
+      '长期倾向与描述——不是预测，也不进入任何评分。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Factor calendar — fail-open: seas absent → panel hides -->
+  {% if seas is not none and seas and seas.factors %}
+  {% set _cal_months_en = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+  {% set _cal_months_zh = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'] %}
+  {% set _cur_month = (seas.now.month if seas.now is not none and seas.now else none) %}
+  <div class="panel">
+    <div class="topline" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">{{ t('Factor calendar — what each month usually brings', '因子月历——每个月的历史规律') }}</h2>
+      <span class="seg" id="cal-seg">
+        <button data-win="t10" class="on">{{ t('Past 10 years', '近10年') }}</button>
+        <button data-win="t30">{{ t('Past 30 years', '近30年') }}</button>
+        <button data-win="full">{{ t('Full history', '完整历史') }}</button>
+      </span>
+    </div>
+    <div class="scroll">
+    <table class="hm" style="width:auto;min-width:600px">
+      <tr>
+        <th style="text-align:left;min-width:140px">{{ t('Style','风格') }}</th>
+        {% for mi in range(1,13) %}
+        <th style="{{ 'outline:2px solid var(--text);outline-offset:-1px;' if _cur_month == mi else '' }}">
+          <span class="l-en">{{ _cal_months_en[mi-1] }}</span><span class="l-zh">{{ _cal_months_zh[mi-1] }}</span>
+        </th>
+        {% endfor %}
+      </tr>
+      {% for f in seas.factors if f.key != 'market' %}
+      <tr>
+        <td style="text-align:left;white-space:nowrap;font-size:11.5px">
+          <span class="l-en">{{ f.plain_en }}</span><span class="l-zh">{{ f.plain_zh }}</span>
+        </td>
+        {% for mi in range(1,13) %}
+        {% set _t10 = f.trailing_10y.get(mi|string) or f.trailing_10y.get(mi) %}
+        {% set _t30 = f.trailing_30y.get(mi|string) or f.trailing_30y.get(mi) %}
+        {% set _full = f.full.get(mi|string) or f.full.get(mi) %}
+        {# Intensity: cap |mean| at 2 for opacity scaling #}
+        {% set _t10m = _t10.mean if _t10 else none %}
+        {% set _t30m = _t30.mean if _t30 else none %}
+        {% set _fullm = _full.mean if _full else none %}
+        {# Render cell: full window as default display value; JS swaps based on window toggle #}
+        {# We render the cell once (full window default) and use JS to swap the displayed value #}
+        {% if _fullm is not none %}
+        {% set _dm = _fullm %}{% set _dh = _full.hit if _full else none %}{% set _dn = _full.n if _full else none %}
+        {% elif _t30m is not none %}
+        {% set _dm = _t30m %}{% set _dh = _t30.hit if _t30 else none %}{% set _dn = _t30.n if _t30 else none %}
+        {% elif _t10m is not none %}
+        {% set _dm = _t10m %}{% set _dh = _t10.hit if _t10 else none %}{% set _dn = _t10.n if _t10 else none %}
+        {% else %}
+        {% set _dm = none %}{% set _dh = none %}{% set _dn = none %}
+        {% endif %}
+        {% set _intensity = [_dm|abs / 2.0, 1.0]|min if _dm is not none else 0 %}
+        {% if _dm is not none %}
+        <td class="hmc cal-cell"
+            style="background:{{ ('rgba(56,139,253,' ~ (_intensity*0.85)|round(2) ~ ')') if _dm >= 0 else ('rgba(248,81,73,' ~ (_intensity*0.85)|round(2) ~ ')') }};{{ 'outline:2px solid var(--text);outline-offset:-2px;' if _cur_month == mi else '' }}"
+            data-t10m="{{ '%.2f'|format(_t10m) if _t10m is not none else '' }}"
+            data-t30m="{{ '%.2f'|format(_t30m) if _t30m is not none else '' }}"
+            data-fullm="{{ '%.2f'|format(_fullm) if _fullm is not none else '' }}"
+            data-t10h="{{ _t10.hit if _t10 else '' }}"
+            data-t30h="{{ _t30.hit if _t30 else '' }}"
+            data-fullh="{{ _full.hit if _full else '' }}"
+            data-t10n="{{ _t10.n if _t10 else '' }}"
+            data-t30n="{{ _t30.n if _t30 else '' }}"
+            data-fulln="{{ _full.n if _full else '' }}"
+            title="mean {{ '%.2f'|format(_dm) }}% · up {{ _dh }}% of years · {{ _dn }} obs"
+            >{{ '%.1f'|format(_dm) }}</td>
+        {% else %}
+        <td class="hmc cal-cell"
+            data-t10m="" data-t30m="" data-fullm=""
+            style="{{ 'outline:2px solid var(--text);outline-offset:-2px;' if _cur_month == mi else '' }}"
+            title="—"
+            >—</td>
+        {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    <p class="muted sm" style="margin:8px 0 4px">
+      {{ t(
+        'Academic long/short style portfolios (Ken French, 1926+) — a climate read, not our live rankings, and never scored.',
+        '学术多空风格组合（Ken French，1926年起）——气候参考，非实时排名，绝不计分。') }}
+      <a href="seasonality.html" style="color:var(--muted)">{{ t('Full 100-year deep dive →', '完整百年数据 →') }}</a>
+    </p>
+  </div>
+  <script>
+  (function(){
+    var seg = document.getElementById('cal-seg');
+    if (!seg) return;
+    var cells = document.querySelectorAll('.cal-cell[data-t10m]');
+    function applyWin(win) {
+      cells.forEach(function(td) {
+        var m = td.getAttribute('data-' + win + 'm');
+        var h = td.getAttribute('data-' + win + 'h');
+        var n = td.getAttribute('data-' + win + 'n');
+        var v = parseFloat(m);
+        if (isNaN(v)) {
+          td.textContent = '—';
+          td.style.background = '';
+          td.title = '—';
+        } else {
+          td.textContent = v.toFixed(1);
+          var intensity = Math.min(Math.abs(v) / 2.0, 1.0) * 0.85;
+          td.style.background = v >= 0
+            ? 'rgba(56,139,253,' + intensity.toFixed(2) + ')'
+            : 'rgba(248,81,73,' + intensity.toFixed(2) + ')';
+          td.title = 'mean ' + v.toFixed(2) + '% · up ' + (h || '?') + '% of years · ' + (n || '?') + ' obs';
+        }
+      });
+    }
+    // Default: t10
+    applyWin('t10');
+    seg.addEventListener('click', function(e) {
+      var b = e.target.closest('button[data-win]');
+      if (!b) return;
+      seg.querySelectorAll('button').forEach(function(x) { x.classList.toggle('on', x === b); });
+      applyWin(b.dataset.win);
+    });
+  })();
+  </script>
+  {% endif %}
+
+  <!-- NW panel variables (set early so they're available when we render at bottom) -->
   {% set _nws = nw_state %}
   {% set _nw_avail = (_nws is defined and _nws is not none) %}
   {% set _nw_panel = _nw_avail and (_nws.get('panel') is not none) %}
@@ -206,109 +390,6 @@
   {% set _nw_att = (_nws.get('attention') or {}).get('factor_attention', {}) if _nw_avail else {} %}
   {% set _nw_hyp = (_nws.get('hypotheses') or {}) if _nw_avail else {} %}
   {% set _nw_as_of = _nws.get('as_of') if _nw_avail else none %}
-  <div class="panel" style="font-size:12.5px">
-    <div class="topline" style="margin-bottom:8px">
-      <h2 style="margin:0">{{ t('Neural Web integration', '神经网络集成状态') }}
-        {{ help(
-          "Factor intelligence is context-only inside the Neural Web: it explains regime context and flags attention candidates for the cortex to consider, but it never ranks, scores, or originates signals (RUL-NW7). The BH-WITHHELD chip is mandatory until the 5-hypothesis family FDR sweep completes (per RUL-NW7, display-only interim).",
-          "因子智能在神经网络中仅作为背景：解释市场体制背景，为皮层标记关注候选项，但从不排名、评分或发起信号（RUL-NW7）。BH-WITHHELD 标签为必须项，直至五假设家族 FDR 整体检验完成。"
-        ) }}
-      </h2>
-      {% if not _nw_avail %}
-        <span class="nw-chip dormant">{{ t('DORMANT — state artifact absent', 'DORMANT — 状态文件缺失') }}</span>
-      {% elif _nw_floor %}
-        <span class="nw-chip live">LIVE</span>
-      {% else %}
-        <span class="nw-chip accruing">{{ t('ACCRUING', '累积中') }}</span>
-      {% endif %}
-    </div>
-
-    {% if not _nw_avail %}
-    <p class="muted sm" style="margin:4px 0 0">{{ t(
-      'data/neuralweb/factor_intelligence_state.json has not been written yet (factor_panel job not yet run). This panel will populate after the next nightly build.',
-      'data/neuralweb/factor_intelligence_state.json 尚未生成（factor_panel 作业尚未运行）。该面板将在下次夜间构建后填充。') }}</p>
-    {% else %}
-    <div class="nw-status-grid">
-      <span class="nw-lab">{{ t('As of', '数据日期') }}</span>
-      <span>{{ _nw_as_of or '—' }}
-        {% if _nw_n_dates is not none %}<span class="muted"> · {{ _nw_n_dates }} {{ t('dates', '个日期') }}{% if _nw_latest %} · {{ t('latest', '最新') }} {{ _nw_latest }}{% endif %}</span>{% endif %}
-        {% if _nw_floor %}<span class="nw-chip live" style="font-size:9px;padding:0 5px;margin-left:6px">{{ t('floor met', '基础满足') }}</span>{% else %}<span class="nw-chip dormant" style="font-size:9px;padding:0 5px;margin-left:6px">{{ t('floor pending', '基础待建') }}</span>{% endif %}
-      </span>
-
-      {% if _nw_fw.get('style_regime') is defined and _nw_fw.get('style_regime') is not none %}
-      <span class="nw-lab">{{ t('Style regime', '风格体制') }}</span>
-      <span>
-        <span class="chip">{{ _nw_fw.get('style_regime') }}</span>
-        {% if _nw_fw.get('factor_leader') is not none %}
-          <span class="muted">{{ t('leader', '领先因子') }}</span> <span class="chip">{{ _nw_fw.get('factor_leader') }}</span>
-          {% if _nw_fw.get('factor_leader_ic') is not none %}<span class="muted sm"> IC {{ '%+.4f'|format(_nw_fw.factor_leader_ic) }}</span>{% endif %}
-        {% endif %}
-      </span>
-      {% endif %}
-
-      <span class="nw-lab">{{ t('Pair G (contradictions)', 'G 对（矛盾）') }}
-        {{ help(
-          "Pair G is the Neural Web contradiction detector: it flags factor-vs-NW signal mismatches above a severity threshold. Dormant until the factor panel exceeds 60 dates (config/reflexes.yml §555). Severity policy: 'note' is the current ceiling (H2 gate-passed required for 'tension'; RUL-NW12).",
-          "G 对是神经网络矛盾检测器：当因子与神经网络信号之间的不一致超过严重程度阈值时，进行标记。在因子面板超过 60 个日期前为休眠状态。严重程度策略：当前上限为 'note'（升为 'tension' 需通过 H2 关卡；RUL-NW12）。"
-        ) }}
-      </span>
-      <span>
-        {% if _nw_contr.get('dormant', true) %}
-          <span class="nw-chip dormant">{{ t('DORMANT', '休眠') }}</span>
-        {% else %}
-          <span class="nw-chip shadow">{{ _nw_contr.get('n_today', 0) }} {{ t('today', '今日') }}</span>
-        {% endif %}
-        <span class="muted sm"> · {{ t('severity ceiling: note (H2 gate required for tension)', '严重程度上限：note（tension 需 H2 关卡）') }}</span>
-      </span>
-
-      <span class="nw-lab">{{ t('Factor attention', '因子关注度') }}
-        {{ help(
-          "The factor_attention reflex fires when a factor signal warrants cortex attention. Authority tier shows how much influence the attention reflex has been granted (A0/A1 = shadow only; granted = full attend allowed). Influence is earned through graded probation, never self-asserted.",
-          "因子关注反射在因子信号值得皮层注意时触发。权限等级显示该关注反射被授予的影响力（A0/A1 = 仅影子跟踪；已授权 = 允许完整关注）。影响力通过评级试用期获得，从不自我声明。"
-        ) }}
-      </span>
-      <span>
-        <span class="chip">{{ t('tier', '等级') }}: {{ _nw_att.get('tier', '—') }}</span>
-        <span class="muted sm"> · {{ _nw_att.get('n_firings', 0) }} {{ t('firings', '次触发') }} · {{ _nw_att.get('n_graded', 0) }} {{ t('graded', '已评级') }}</span>
-        {% if _nw_att.get('granted', false) %}
-          <span class="nw-chip live" style="font-size:9px;padding:0 5px">{{ t('granted', '已授权') }}</span>
-        {% else %}
-          <span class="nw-chip dormant" style="font-size:9px;padding:0 5px">{{ t('refused', '未授权') }}</span>
-        {% endif %}
-      </span>
-
-      <span class="nw-lab">{{ t('Hypotheses H1–H5', '假设 H1–H5') }}
-        {{ help(
-          "H1=factor_weather→NW conditioning, H2=Pair G severity elevation, H3=cross-section alibi on board fires, H4=factor_attention earn-in, H5=factor_leader macro alignment. All carry BH-WITHHELD status until the 5-hypothesis family FDR sweep runs (RUL-NW6). PRE-FDR INTERIM = registered, accruing data, but not actionable before family BH.",
-          "H1=因子天气→神经网络条件，H2=G 对严重程度提升，H3=买盘触发的横截面依据，H4=因子关注赚取，H5=因子领先者宏观对齐。在五假设家族 FDR 整体检验运行前（RUL-NW6），所有假设均携带 BH-WITHHELD 状态。"
-        ) }}
-      </span>
-      <span>
-        {% for hi in ['h1','h2','h3','h4','h5'] %}
-          {% set _hdata = _nw_hyp.get(hi, {}) %}
-          {% set _hstatus = _hdata.get('status', 'not-visible-in-tree') if _hdata is mapping else 'not-visible-in-tree' %}
-          <span class="nw-chip bh-withheld">{{ hi.upper() }}: BH-WITHHELD</span>
-        {% endfor %}
-        <span class="muted sm" style="display:block;margin-top:4px">{{ t(
-          'Mandatory interim: BH-WITHHELD on all 5 hypotheses until family FDR sweep completes (est. ≥2027). PRE-FDR INTERIM data is accruing.',
-          '强制过渡期：所有 5 个假设的 BH-WITHHELD 状态将保持至家族 FDR 整体检验完成（预计≥2027）。PRE-FDR INTERIM 数据正在累积。') }}</span>
-      </span>
-
-      <span class="nw-lab">{{ t('Allowed influence', '允许的影响') }}
-        {{ help(
-          "What factor intelligence is and is not permitted to do inside the Neural Web, per RUL-NW7/NW9 and the constitution. Explain and shadow-attend are always permitted for context. De-escalation and ranking are permanently prohibited at this tier.",
-          "根据 RUL-NW7/NW9 和章程，因子智能在神经网络内被允许和禁止的操作。解释和影子关注始终允许用于背景分析。去升级和排名在当前等级下永久禁止。"
-        ) }}
-      </span>
-      <span class="nw-influence">
-        <span class="nw-chip live">{{ t('explain — always', '解释 — 始终允许') }}</span>
-        <span class="nw-chip shadow">{{ t('attend — shadow only', '关注 — 仅影子') }}</span>
-        <span class="nw-chip dormant">{{ t('de-escalate — no', '去升级 — 禁止') }}</span>
-        <span class="nw-chip dormant">{{ t('rank — never', '排名 — 永不') }}</span>
-      </span>
-    </div>
-    {% endif %}
-  </div>
 
   <!-- Factor leadership -->
   {% if fac.leadership %}
@@ -316,6 +397,9 @@
     <h2>{{ t('What is working now', '当前哪种因子在起作用') }}
       {{ help("For each factor, the trailing-63-day return of its top quintile MINUS its bottom quintile. Positive = that factor has been rewarded recently (descriptive, not a forecast). Compare against the regime above: e.g. value & low-vol leading often accompanies risk-off / late-cycle.", "每个因子最近 63 个交易日内：顶部五分位减底部五分位的回报。正值=该因子近期获得回报（描述性，非预测）。") }}
     </h2>
+    <p class="muted sm" style="margin:0 0 10px">{{ t(
+      'What the market has rewarded over the past 3 months. Descriptive — leadership rotates.',
+      '过去3个月市场奖励的风格。仅为描述——领先风格会轮换。') }}</p>
     <div class="lead">
       {% set maxsp = (fac.leadership | map(attribute='spread_pct') | map('abs') | max) or 1 %}
       {% for L in fac.leadership %}
@@ -333,22 +417,68 @@
   </div>
   {% endif %}
 
+  <!-- Where the heat is — momentum concentration (momo.top_decile; fail-open) -->
+  {% if momo is not none and momo.get('top_decile') %}
+  {% set _mtd = momo.top_decile %}
+  {% set _mmax = (_mtd.sectors | map(attribute='share_pct') | max) if _mtd.sectors else 1 %}
+  <div class="panel">
+    <h2>{{ t('Where the heat is', '热度集中在哪') }}</h2>
+    <div class="lead" style="margin-bottom:8px">
+      {% for sec in _mtd.sectors %}
+      <div class="leadrow">
+        <span class="sm">{{ sec.sector }}</span>
+        <span class="leadbar">
+          <i style="left:0;width:{{ (sec.share_pct / _mmax * 100)|round(1) }}%;background:var(--up)"></i>
+        </span>
+        <span class="sm" style="text-align:right">{{ sec.share_pct }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% if _mtd.sample %}
+    <div style="margin-bottom:8px">
+      {% for tk in _mtd.sample %}
+      <span class="chip">{{ tk }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p class="sm" style="margin:0 0 6px">{{ t(
+      'When the hottest stocks crowd into one sector, a stumble there hits them all together.',
+      '当最热个股集中于单一板块时，该板块受挫会同时波及所有热门股。') }}</p>
+    <p class="muted sm" style="margin:0">
+      <span class="l-en">{{ momo.disclosure_en }}</span>
+      <span class="l-zh">{{ momo.disclosure_zh }}</span>
+    </p>
+  </div>
+  {% endif %}
+
   <!-- Does the rank actually predict? — leak-free point-in-time IC scorecard -->
   {% if ic and ic.rows %}
   <div class="panel">
-    <h2>{{ t('Does the rank actually predict? — point-in-time IC', '排名真的能预测吗？— 时点信息系数') }}
-      {{ help("The honest test most factor dashboards never show. At each quarter-end we rebuild every factor AS IT WAS KNOWABLE THEN — no look-ahead into a not-yet-filed 10-K (fundamentals are point-in-time) — then rank-correlate the factor score with the NEXT " ~ ic.horizon_d ~ "-day return: the Information Coefficient (IC). mean IC ≈ raw predictive edge; IC-IR (annualized) = IC ÷ its own volatility; t_HAC = Newey-West t-stat (overlapping forward windows autocorrelate the IC series); q_FDR = Benjamini-Hochberg false-discovery rate across every factor screened. One caveat the deep panel can't escape: prices cover only the currently-listed (delisted names are absent), so the deep read is survivorship-biased — an OPTIMISTIC bound. Judge each number against ZERO.",
-                "大多数因子面板从不展示的诚实检验。在每个季末，我们按当时可知的信息重建每个因子（无前视、基本面为时点数据），再将因子分数与未来 " ~ ic.horizon_d ~ " 日回报做秩相关，得到信息系数 IC。平均 IC ≈ 原始预测力；IC-IR（年化）= IC ÷ 自身波动；t_HAC = Newey-West t 值；q_FDR = 跨全部因子的多重检验错误发现率。深度面板的一个无法回避的代价：价格仅覆盖现存名（已退市名缺失），故深度读数含幸存者偏差 — 为乐观上界。每个数字都应与零比较。") }}
+    <h2>{{ t('Do these rankings actually predict? — the honest test', '这些排名真的能预测吗？— 诚实检验') }}
+      {{ help("The honest test most factor dashboards never show. At each quarter-end we rebuild every factor AS IT WAS KNOWABLE THEN — no look-ahead into a not-yet-filed 10-K (fundamentals are point-in-time) — then rank-correlate the factor score with the NEXT " ~ ic.horizon_d ~ "-day return: the Information Coefficient (IC). mean IC = average predictive edge; 0 = none. IC-IR (annualized) = IC ÷ its own volatility; t_HAC = Newey-West t-stat (overlapping forward windows autocorrelate the IC series); q_FDR = Benjamini-Hochberg false-discovery rate across every factor screened. One caveat the deep panel can't escape: prices cover only the currently-listed (delisted names are absent), so the deep read is survivorship-biased — an OPTIMISTIC bound. Judge each number against ZERO.",
+                "大多数因子面板从不展示的诚实检验。在每个季末，我们按当时可知的信息重建每个因子（无前视、基本面为时点数据），再将因子分数与未来 " ~ ic.horizon_d ~ " 日回报做秩相关，得到信息系数 IC。平均 IC = 平均预测优势；0 = 无优势。IC-IR（年化）= IC ÷ 自身波动；t_HAC = Newey-West t 值（重叠窗口使 IC 序列自相关）；q_FDR = 跨全部因子的多重检验错误发现率。深度面板的一个无法回避的代价：价格仅覆盖现存名（已退市名缺失），故深度读数含幸存者偏差 — 为乐观上界。每个数字都应与零比较。") }}
     </h2>
+    {% if not ic.any_survive %}
+    <div class="ic-alert">
+      {{ t(
+        'Straight talk: none of these rankings has proven it predicts future returns on our honest test. Read them as descriptions — what is cheap, what is high quality — not as buy lists.',
+        '直说：在我们的诚实检验中，这些排名均未证明能预测未来回报。请将其视为描述——哪些便宜、哪些优质——而非买入清单。') }}
+    </div>
+    {% else %}
+    {% set _survivors = ic.rows | selectattr('survives_fdr') | selectattr('mean_ic') | selectattr('mean_ic', 'gt', 0) | map(attribute='label_en') | list %}
+    <div class="ic-alert" style="border-color:var(--line);background:var(--panel2)">
+      {{ t(
+        'Straight talk: of everything on this page, only ' ~ (_survivors | join(', ') if _survivors else 'one ranking') ~ ' clears our honest prediction test — and only barely, on data tilted in its favour. Treat the rest as descriptions — what is cheap, what is high quality — not as buy lists.',
+        '直说：本页所有排名中，仅「' ~ (_survivors | join('、') if _survivors else '个别因子') ~ '」勉强通过我们的诚实预测检验——且数据本身对其有利。其余请视为描述——哪些便宜、哪些优质——而非买入清单。') }}
+    </div>
+    {% endif %}
     <p class="muted sm" style="margin:0 0 10px">
-      {% if not ic.any_survive %}<b class="zneg">{{ t('No factor clears the multiple-testing bar (BH-FDR 10%).', '没有因子通过多重检验（BH-FDR 10%）。') }}</b> {% endif %}
-      {% if ic.survivorship_biased %}
-      {{ t('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names — a DEEP 2011-2026 re-test on a backfilled close panel, not the ~3y rolling cache. The catch: that panel is SURVIVORSHIP-BIASED (delisted names absent — free prices only cover the currently-listed), so it is an OPTIMISTIC bound; a lone, marginal survivor is shown, not a green light. SUE — the strongest factor on the shallow 2023-2025 window — collapses to IC≈0 here. FINRA short-interest is dropped (no point-in-time history) and fundamentals refresh only ~annually, so fundamental factors still have few independent draws.',
-              '区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只 — 这是 2011-2026 深度复检（回填的价格面板，而非约 3 年滚动缓存）。代价：该面板含幸存者偏差（已退市名缺失，免费价格仅覆盖现存名），为乐观上界；仅展示个别勉强通过者，而非买入信号。浅窗口（2023-2025）最强的 SUE 在此崩塌至 IC≈0。FINRA 做空数据因无时点历史而剔除，基本面约每年才更新，基本面因子独立样本仍少。') }}
-      {% else %}
-      {{ t('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names. ~3 years of price history caps the sample at n≈' ~ ic.rebalances ~ ', so t-stats and FDR are low-power. Read it as honest context, not a green light — and note fundamentals refresh only ~annually, so the fundamental factors have even fewer independent draws.',
-              '区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只。约 3 年价格历史使样本仅 n≈' ~ ic.rebalances ~ '，t 统计与 FDR 检验力较低。仅作诚实背景，而非买入信号 — 且基本面约每年才更新一次，基本面因子的独立样本更少。') }}
-      {% endif %}
+      {{ t('Deep 2011-2026 test · survivor-tilted data, so treat results as an optimistic upper bound.',
+           '2011-2026 深度检验 · 数据含幸存者偏差，结果应视为乐观上界。') }}
+      {{ help(
+        (('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names — a DEEP 2011-2026 re-test on a backfilled close panel, not the ~3y rolling cache. The catch: that panel is SURVIVORSHIP-BIASED (delisted names absent — free prices only cover the currently-listed), so it is an OPTIMISTIC bound; a lone, marginal survivor is shown, not a green light. SUE — the strongest factor on the shallow 2023-2025 window — collapses to IC≈0 here. FINRA short-interest is dropped (no point-in-time history) and fundamentals refresh only ~annually, so fundamental factors still have few independent draws.') if ic.survivorship_biased else ('Span ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' quarterly rebalances · ~' ~ ic.median_universe ~ ' names. ~3 years of price history caps the sample at n≈' ~ ic.rebalances ~ ', so t-stats and FDR are low-power. Read it as honest context, not a green light — and note fundamentals refresh only ~annually, so the fundamental factors have even fewer independent draws.')),
+        (('区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只 — 2011-2026 深度复检。含幸存者偏差：已退市名缺失，为乐观上界；仅展示个别勉强通过者，而非买入信号。') if ic.survivorship_biased else ('区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只。约 3 年价格历史使样本仅 n≈' ~ ic.rebalances ~ '，t 统计与 FDR 检验力较低。'))
+      ) }}
     </p>
     {% set _comp = ic.factors.get('composite') if ic.factors else none %}
     {% if _comp and _comp.get('mean_ic') is not none and _comp.mean_ic < 0 %}
@@ -361,12 +491,12 @@
     <table>
       <tr>
         <th>{{ t('factor','因子') }}</th>
-        <th class="r">{{ t('mean IC','平均 IC') }}</th>
-        <th class="r">{{ t('IC-IR (ann)','IC-IR（年化）') }}</th>
-        <th class="r">t<sub>HAC</sub></th>
-        <th class="r">{{ t('hit','命中率') }}</th>
-        <th class="r">q<sub>FDR</sub></th>
-        <th class="r">n</th>
+        <th class="r">{{ t('mean IC','平均 IC') }}{{ help('average predictive edge; 0 = none', '平均预测优势；0 = 无优势') }}</th>
+        <th class="r">{{ t('IC-IR (ann)','IC-IR（年化）') }}{{ help('IC ÷ its own volatility, annualized — how consistent the edge is', 'IC ÷ 自身波动（年化）——优势的一致性') }}</th>
+        <th class="r">t<sub>HAC</sub>{{ help('Newey-West t-stat: accounts for overlapping return windows', 'Newey-West t 值：修正重叠窗口的自相关') }}</th>
+        <th class="r">{{ t('hit','命中率') }}{{ help('fraction of quarters the IC was positive', 'IC 为正的季度占比') }}</th>
+        <th class="r">q<sub>FDR</sub>{{ help('Benjamini-Hochberg false-discovery rate across all factors screened', 'BH 错误发现率（跨全部因子）') }}</th>
+        <th class="r">n{{ help('number of quarterly rebalances', '季度再平衡次数') }}</th>
       </tr>
       {% for r in ic.rows %}
       {% set _vs = 'validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0) else ('negative-ic' if (r.mean_ic is not none and r.mean_ic < 0) else 'fdr-fail') %}
@@ -650,7 +780,7 @@
   </div>
   {% endif %}
 
-  <!-- Per-factor leaderboards -->
+  <!-- Per-factor leaderboards (Factor leaders section) -->
   <div class="panel">
     <h2>{{ t('Factor leaders', '各因子领先股') }}</h2>
     <div class="cardgrid">
@@ -673,10 +803,117 @@
     </div>
   </div>
 
+  <!-- How this research feeds the system — NW technical status (MOVED to bottom per doctrine) -->
+  <div class="panel" style="font-size:12.5px">
+    <div class="topline" style="margin-bottom:8px">
+      <h2 style="margin:0">{{ t("How this research feeds the system — technical status", "本页研究如何接入系统——技术状态") }}
+        {{ help(
+          "Factor intelligence is context-only inside the Neural Web: it explains regime context and flags attention candidates for the cortex to consider, but it never ranks, scores, or originates signals (RUL-NW7). The BH-WITHHELD chip is mandatory until the 5-hypothesis family FDR sweep completes (per RUL-NW7, display-only interim).",
+          "因子智能在神经网络中仅作为背景：解释市场体制背景，为皮层标记关注候选项，但从不排名、评分或发起信号（RUL-NW7）。BH-WITHHELD 标签为必须项，直至五假设家族 FDR 整体检验完成。"
+        ) }}
+      </h2>
+      {% if not _nw_avail %}
+        <span class="nw-chip dormant">{{ t('DORMANT — state artifact absent', 'DORMANT — 状态文件缺失') }}</span>
+      {% elif _nw_floor %}
+        <span class="nw-chip live">LIVE</span>
+      {% else %}
+        <span class="nw-chip accruing">{{ t('ACCRUING', '累积中') }}</span>
+      {% endif %}
+    </div>
+    <p class="muted sm" style="margin:0 0 8px">{{ t(
+      "For the curious: what this factor research may influence elsewhere. Short version — it explains and observes; it never picks stocks or moves rankings.",
+      "给好奇者：本页因子研究可影响系统的哪些部分。简言之——只解释与观察，从不选股或改动排名。") }}</p>
+
+    {% if not _nw_avail %}
+    <p class="muted sm" style="margin:4px 0 0">{{ t(
+      'data/neuralweb/factor_intelligence_state.json has not been written yet (factor_panel job not yet run). This panel will populate after the next nightly build.',
+      'data/neuralweb/factor_intelligence_state.json 尚未生成（factor_panel 作业尚未运行）。该面板将在下次夜间构建后填充。') }}</p>
+    {% else %}
+    <div class="nw-status-grid">
+      <span class="nw-lab">{{ t('As of', '数据日期') }}</span>
+      <span>{{ _nw_as_of or '—' }}
+        {% if _nw_n_dates is not none %}<span class="muted"> · {{ _nw_n_dates }} {{ t('dates', '个日期') }}{% if _nw_latest %} · {{ t('latest', '最新') }} {{ _nw_latest }}{% endif %}</span>{% endif %}
+        {% if _nw_floor %}<span class="nw-chip live" style="font-size:9px;padding:0 5px;margin-left:6px">{{ t('floor met', '基础满足') }}</span>{% else %}<span class="nw-chip dormant" style="font-size:9px;padding:0 5px;margin-left:6px">{{ t('floor pending', '基础待建') }}</span>{% endif %}
+      </span>
+
+      {% if _nw_fw.get('style_regime') is defined and _nw_fw.get('style_regime') is not none %}
+      <span class="nw-lab">{{ t('Style regime', '风格体制') }}</span>
+      <span>
+        <span class="chip">{{ _nw_fw.get('style_regime') }}</span>
+        {% if _nw_fw.get('factor_leader') is not none %}
+          <span class="muted">{{ t('leader', '领先因子') }}</span> <span class="chip">{{ _nw_fw.get('factor_leader') }}</span>
+          {% if _nw_fw.get('factor_leader_ic') is not none %}<span class="muted sm"> IC {{ '%+.4f'|format(_nw_fw.factor_leader_ic) }}</span>{% endif %}
+        {% endif %}
+      </span>
+      {% endif %}
+
+      <span class="nw-lab">{{ t('Pair G (contradictions)', 'G 对（矛盾）') }}
+        {{ help(
+          "Pair G is the Neural Web contradiction detector: it flags factor-vs-NW signal mismatches above a severity threshold. Dormant until the factor panel exceeds 60 dates (config/reflexes.yml §555). Severity policy: note is the current ceiling (H2 gate-passed required for tension; RUL-NW12).",
+          "G 对是神经网络矛盾检测器：当因子与神经网络信号之间的不一致超过严重程度阈値时，进行标记。"
+        ) }}
+      </span>
+      <span>
+        {% if _nw_contr.get('dormant', true) %}
+          <span class="nw-chip dormant">{{ t('DORMANT', '休眠') }}</span>
+        {% else %}
+          <span class="nw-chip shadow">{{ _nw_contr.get('n_today', 0) }} {{ t('today', '今日') }}</span>
+        {% endif %}
+        <span class="muted sm"> · {{ t('severity ceiling: note (H2 gate required for tension)', '严重程度上限：note（tension 需 H2 关卡）') }}</span>
+      </span>
+
+      <span class="nw-lab">{{ t('Factor attention', '因子关注度') }}
+        {{ help(
+          "The factor_attention reflex fires when a factor signal warrants cortex attention. Authority tier shows how much influence the attention reflex has been granted (A0/A1 = shadow only; granted = full attend allowed). Influence is earned through graded probation, never self-asserted.",
+          "因子关注反射在因子信号值得皮层注意时触发。权限等级显示该关注反射被授予的影响力。"
+        ) }}
+      </span>
+      <span>
+        <span class="chip">{{ t('tier', '等级') }}: {{ _nw_att.get('tier', '—') }}</span>
+        <span class="muted sm"> · {{ _nw_att.get('n_firings', 0) }} {{ t('firings', '次触发') }} · {{ _nw_att.get('n_graded', 0) }} {{ t('graded', '已评级') }}</span>
+        {% if _nw_att.get('granted', false) %}
+          <span class="nw-chip live" style="font-size:9px;padding:0 5px">{{ t('granted', '已授权') }}</span>
+        {% else %}
+          <span class="nw-chip dormant" style="font-size:9px;padding:0 5px">{{ t('refused', '未授权') }}</span>
+        {% endif %}
+      </span>
+
+      <span class="nw-lab">{{ t('Hypotheses H1–H5', '假设 H1–H5') }}
+        {{ help(
+          "H1=factor_weather to NW conditioning, H2=Pair G severity elevation, H3=cross-section alibi on board fires, H4=factor_attention earn-in, H5=factor_leader macro alignment. All carry BH-WITHHELD status until the 5-hypothesis family FDR sweep runs (RUL-NW6). PRE-FDR INTERIM = registered, accruing data, but not actionable before family BH.",
+          "H1=因子天气→神经网络条件，H2=G 对严重程度提升，H3=买盘触发的横截面依据，H4=因子关注赚取，H5=因子领先者宏观对齐。"
+        ) }}
+      </span>
+      <span>
+        {% for hi in ['h1','h2','h3','h4','h5'] %}
+          {% set _hdata = _nw_hyp.get(hi, {}) %}
+          <span class="nw-chip bh-withheld">{{ hi.upper() }}: BH-WITHHELD</span>
+        {% endfor %}
+        <span class="muted sm" style="display:block;margin-top:4px">{{ t(
+          'Mandatory interim: BH-WITHHELD on all 5 hypotheses until family FDR sweep completes (est. ≥2027). PRE-FDR INTERIM data is accruing.',
+          '强制过渡期：所有 5 个假设的 BH-WITHHELD 状态将保持至家族 FDR 整体检验完成（预计≥2027）。PRE-FDR INTERIM 数据正在累积。') }}</span>
+      </span>
+
+      <span class="nw-lab">{{ t('Allowed influence', '允许的影响') }}
+        {{ help(
+          "What factor intelligence is and is not permitted to do inside the Neural Web, per RUL-NW7/NW9 and the constitution. Explain and shadow-attend are always permitted for context. De-escalation and ranking are permanently prohibited at this tier.",
+          "根据 RUL-NW7/NW9 和章程，因子智能在神经网络内被允许和禁止的操作。解释和影子关注始终允许用于背景分析。去升级和排名在当前等级下永久禁止。"
+        ) }}
+      </span>
+      <span class="nw-influence">
+        <span class="nw-chip live">{{ t('explain — always', '解释 — 始终允许') }}</span>
+        <span class="nw-chip shadow">{{ t('attend — shadow only', '关注 — 仅影子') }}</span>
+        <span class="nw-chip dormant">{{ t('de-escalate — no', '去升级 — 禁止') }}</span>
+        <span class="nw-chip dormant">{{ t('rank — never', '排名 — 永不') }}</span>
+      </span>
+    </div>
+    {% endif %}
+  </div>
+
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0">{{ t(
       "Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY" ~ (fac.fy or '') ~ " fundamentals, joined to the S&P 1500 price universe; " ~ fac.n ~ " names with a full composite as of " ~ fac.as_of ~ ". Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.",
-      "来源：SEC EDGAR XBRL ‘frames’ API（免费、无需密钥）的 FY" ~ (fac.fy or '') ~ " 基本面，与标普 1500 价格域连接；截至 " ~ fac.as_of ~ " 有 " ~ fac.n ~ " 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。") }}
+      "来源：SEC EDGAR XBRL 'frames' API（免费、无需密钥）的 FY" ~ (fac.fy or '') ~ " 基本面，与标普 1500 价格域连接；截至 " ~ fac.as_of ~ " 有 " ~ fac.n ~ " 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。") }}
       {{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
   </div>
   <script>

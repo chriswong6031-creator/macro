@@ -3153,6 +3153,10 @@ cross_asset:
     dollar:     [yahoo, "DX-Y.NYB", close, fx]
     bond_10y:   [fred,  "DGS10",    us10y, rates]   # traded as -duration*Δyield proxy
     crypto:     [yahoo, "BTC-USD",  close, crypto]
+    # CA-W3-R5 display-board legs (NOT in the phase0 calibration window below)
+    equity_intl: [yahoo, "EFA",     close, equity]
+    equity_em:   [yahoo, "EEM",     close, equity]
+    duration:    [yahoo, "TLT",     close, rates]
   tsmom:
     lookbacks_d: [63, 126, 252]      # 3/6/12-month TSMOM, equal-weight blend of signs
     skip_d: 5                        # skip most-recent week (dodge 1-week reversal)
@@ -4248,7 +4252,6 @@ forex:
     spy:          [yahoo, SPY]
     eem:          [hk, EEM]             # EM-equity risk proxy (already collected under hk)
     cny_onshore:  [fred, DEXCHUS]       # onshore USD/CNY — vs offshore CNH=F = the CNH basis
-    btc:          [yahoo, "BTC-USD"]    # bitcoin — dollar cross-asset transmission leg (2014->)
     us10y_real:   [fred, DFII10]        # US 10y TIPS real yield — the dollar's structural anchor (2003->)
     breakeven_10y: [fred, T10YIE]       # 10y inflation breakeven — real-vs-reflation smile arm
     fed_bs:       [fred, WALCL]          # Fed balance sheet (weekly) — USD-liquidity leg

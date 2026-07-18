@@ -451,6 +451,27 @@ def _rebuild_broad_proxy() -> None:
         log.warning("flow_desk: broad ETF proxy rebuild failed (non-fatal): %s", e)
 
 
+def _rebuild_sector_proxy() -> None:
+    """Rebuild etf_flow_proxy.parquet (11 sector SPDRs) each nightly run.
+
+    P1.7 shipped engine.etf_flows.rebuild() and the reader (proxy_json →
+    build_etf_tile) but never wired the writer into any builder, so the store
+    froze at its seed commit while the per-ticker inputs kept advancing.  This
+    is the missing production call site — same placement and non-fatal
+    contract as _rebuild_broad_proxy(), and it must run before
+    build_etf_tile() so the tile reads today's rows.
+    """
+    try:
+        from engine.etf_flows import rebuild
+        path = rebuild()
+        if path is not None:
+            log.info("flow_desk: sector ETF proxy rebuilt -> %s", path)
+        else:
+            log.info("flow_desk: sector ETF proxy skipped (no SO data yet)")
+    except Exception as e:  # noqa: BLE001
+        log.warning("flow_desk: sector ETF proxy rebuild failed (non-fatal): %s", e)
+
+
 def build_etf_tile(data_dir: Path) -> dict | None:
     """Section 4: ETF flows tile — proxy-labeled creation/redemption flows."""
     try:
@@ -592,9 +613,11 @@ def build() -> dict:
     site_dir = config.ROOT / cfg["storage"]["site_dir"]
     site_dir.mkdir(parents=True, exist_ok=True)
 
-    # RLT-R3: rebuild broad-index ETF proxy FIRST so load_broad_proxy() in
-    # downstream consumers (RLT-R2 classifier) reads today's data.
+    # Rebuild both flow-proxy stores FIRST — before the flow-rows early return —
+    # so they accrue even on nights with no options-flow index: broad (RLT-R3,
+    # read by the RLT-R2 classifier) and sector (read by build_etf_tile below).
     _rebuild_broad_proxy()
+    _rebuild_sector_proxy()
 
     flow_rows = _load_flow_index(site_dir)
     if not flow_rows:

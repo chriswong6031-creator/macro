@@ -462,7 +462,7 @@ def _make_transitions_jsonl(root: Path) -> None:
 
 
 def _make_crossasset(root: Path) -> dict:
-    """Write data/crossasset/latest.json with R6 flows block so the lobe gap is suppressed."""
+    """Write data/crossasset/latest.json with flows.v2 block so the lobe gap is suppressed."""
     d = {
         "date": "2026-07-05",
         "regime": "mixed / no clear trend",
@@ -471,16 +471,34 @@ def _make_crossasset(root: Path) -> dict:
         "correlation": "converging",
         "asof": "2026-07-05",
         "flows": {
-            "schema": "crossasset_flows.v1",
+            "schema": "crossasset_flows.v2",
             "display_only": True,
-            "correlation": {"verdict": "converging", "absorption_pctile": 0.55, "n_markets": 6},
+            "regime": "mixed / no clear trend",
+            "correlation": {
+                "verdict": "converging",
+                "absorption_pctile": 0.55,
+                "n_markets": 6,
+                "dominant_cluster": ["US", "Commodities", "Dollar"],
+                "spark_w": [0.5] * 14 + [0.62],  # 15 values; last > first → rising
+                "spark_asof": "2026-07-05",
+            },
             "breadth": 0.1,
             "trend_top": [{"asset": "equity_us", "trend": "up", "z": 0.5}],
+            "trend_summary": {"n": 1, "n_up": 1, "n_down": 0},
             "intermarket": [{"pair": "copper_gold", "ratio": 0.22, "trend": "mid"}],
             "carry": None,
-            "leadlag": {"verdict": "contemporaneous", "links": []},
+            "leadlag": {
+                "verdict": "contemporaneous",
+                "links": [],
+                "stable": None,
+                "lead_asset": None,
+                "n_significant": 0,
+                "n_tested": 6,
+            },
             "global_liquidity": None,
             "funding_stress": None,
+            "confirm": {"verdict": "aligned", "n_blind_flags": 2, "asof": "2026-07-05"},
+            "shadow": {"pressure_pctile": 0.72, "incumbent_state": "watch", "shadow_state": "caution", "escalated": False},
             "note": "display-only regime read",
         },
     }
@@ -1446,3 +1464,461 @@ def test_compose_rotation_events_non_dict_rows_fail_open(tmp_path):
     assert lobe["n_active"] == 1
     assert len(lobe["events"]) == 1
     assert lobe["events"][0]["from_leg"]["key"] == "a"
+
+
+# ---------------------------------------------------------------------------
+# Tests 32–36: B2 — _compose_fx_dollar new additive fields (fail-open)
+# ---------------------------------------------------------------------------
+
+def _make_forex_b2_extended(root: Path) -> dict:
+    """Write latest.json with the new B2 fields (smile_decomp, dollar_day, em, stance,
+    triple_red, regime_radar.scenarios).
+
+    M4: triple_red lives at dollar_desk.triple_red, not at the top level.
+    The fixture now reflects the correct schema; the old top-level key is omitted.
+    """
+    fx = {
+        "date": "Jul 01, 2026",
+        "asof": "2026-07-01",
+        "regime": "dollar_bull",
+        "risk": "risk_on",
+        "favored": ["EUR", "JPY"],
+        "dollar_desk": {
+            "lean": "neutral",
+            "real_rate_regime": "positive",
+            "usd_valuation": "overvalued",
+            "trend": "declining",
+            "fed_path_lean": "hawkish",
+            "liquidity_dir": "tightening",
+            "triple_red": False,  # M4: canonical location is dollar_desk.triple_red
+            "smile_decomp": {
+                "regime": "Global reflation",
+                "regime_60d": "Neutral",
+                "safety_bid_today": False,
+                "beta": 0.42,
+                "r2": 0.31,
+                "residual_20d_z": 0.15,
+            },
+        },
+        "dollar_day": {"z": 1.1, "flag": False, "dir": "up"},
+        "em": {
+            "cnh_basis_bps": -120,
+            "cnh_basis_state": "mild_pressure",
+            "risk_off_composite": 0.25,
+        },
+        "stance": {
+            "word_en": "Watch — don't chase",
+            "word_zh": "观望，别追",
+            "tone": "calm",
+            "headline_en": "Dollar mixed",
+            "headline_zh": "美元分化",
+            "sentence_en": "The dollar is quiet today.",
+            "sentence_zh": "美元今日平静。",
+        },
+        "transmission": {
+            "usd_dir": "up",
+            "headwind_for": ["Gold"],
+            "tailwind_for": [],
+            "unstable": False,
+        },
+        "regime_radar": {
+            "dominant": "dollar_bull",
+            "active": ["carry_unwind"],
+            "scenarios": {
+                "carry_unwind": {
+                    "intensity": 72,
+                    "n_fired": 3,
+                    "min_legs": 2,
+                    "active": True,
+                    "illustrative": False,
+                    "fired_legs": ["vol", "em_spread"],
+                    "prob": {"p_cond": 0.42, "base_rate": 0.18, "status": "thin"},
+                },
+                "haven_flight_risk_off": {
+                    "intensity": 35,
+                    "n_fired": 1,
+                    "min_legs": 2,
+                    "active": False,
+                    "illustrative": False,
+                    "fired_legs": ["vol"],
+                    "prob": {"p_cond": 0.22, "base_rate": 0.12, "status": "thin"},
+                },
+            },
+        },
+    }
+    _write_json(root / "data" / "forex" / "latest.json", fx)
+    return fx
+
+
+def test_fx_dollar_b2_new_keys_present(tmp_path):
+    """Test 32: _compose_fx_dollar returns all new B2 keys when fully populated."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+
+    _make_forex_b2_extended(tmp_path)
+    result = _compose_fx_dollar(root=tmp_path)
+
+    assert result["display_only"] is True
+
+    # New top-level keys
+    assert "dollar_day" in result
+    assert "em" in result
+    assert "stance" in result
+    assert "triple_red" in result
+
+    # dollar_day sub-fields
+    dd = result["dollar_day"]
+    assert isinstance(dd, dict)
+    assert dd["z"] == 1.1
+    assert dd["flag"] is False
+    assert dd["dir"] == "up"
+
+    # em sub-fields
+    em = result["em"]
+    assert isinstance(em, dict)
+    assert em["cnh_basis_state"] == "mild_pressure"
+    assert em["risk_off_composite"] == 0.25
+
+    # stance sub-fields
+    st = result["stance"]
+    assert isinstance(st, dict)
+    assert st["word_en"] == "Watch — don't chase"
+    assert st["word_zh"] == "观望，别追"
+    assert st["tone"] == "calm"
+    assert st["headline_en"] == "Dollar mixed"
+    assert st["sentence_en"] == "The dollar is quiet today."
+
+    # triple_red
+    assert result["triple_red"] is False
+
+
+def test_fx_dollar_b2_smile_decomp_propagated(tmp_path):
+    """Test 33: smile_decomp sub-block in dollar_desk propagated correctly."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+
+    _make_forex_b2_extended(tmp_path)
+    result = _compose_fx_dollar(root=tmp_path)
+
+    dd = result.get("dollar_desk") or {}
+    sd = dd.get("smile_decomp") or {}
+    assert sd.get("regime") == "Global reflation"
+    assert sd.get("safety_bid_today") is False
+
+
+def test_fx_dollar_b2_regime_radar_scenarios_summary(tmp_path):
+    """Test 34: regime_radar.active_scenarios + building_scenarios derived from scenarios dict."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+
+    _make_forex_b2_extended(tmp_path)
+    result = _compose_fx_dollar(root=tmp_path)
+
+    rr = result.get("regime_radar") or {}
+    assert "active_scenarios" in rr
+    assert "building_scenarios" in rr
+    # carry_unwind is active=True → should be in active_scenarios
+    assert "carry_unwind" in rr["active_scenarios"]
+    # haven_flight_risk_off is active=False, intensity=35 < 40 → not building
+    assert "haven_flight_risk_off" not in rr["building_scenarios"]
+
+
+def test_fx_dollar_b2_absent_file_null_out(tmp_path):
+    """Test 35: missing latest.json yields null_out with all new keys as None — no raise."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+
+    # Do NOT create the file
+    result = _compose_fx_dollar(root=tmp_path)
+
+    assert result["display_only"] is True
+    assert result["dollar_day"] is None
+    assert result["em"] is None
+    assert result["stance"] is None
+    assert result["triple_red"] is None
+    # Legacy keys also null
+    assert result["regime"] is None
+    assert result["dollar_desk"] is None
+
+
+def test_fx_dollar_b2_partial_file_fail_open(tmp_path):
+    """Test 36: latest.json missing the new keys → old fields intact, new fields None.
+
+    Simulates the period before B1 lane has landed: B2 code is correct even when the
+    new keys don't exist in the JSON yet.
+    """
+    from engine.neuralweb.world_state import _compose_fx_dollar
+
+    # Write a minimal legacy-style forex latest without the new B2 keys
+    legacy_fx = {
+        "date": "Jul 01, 2026",
+        "regime": "dollar_bull",
+        "risk": "risk_on",
+        "favored": ["EUR", "JPY"],
+        "dollar_desk": {
+            "lean": "neutral",
+            "trend": "declining",
+        },
+        "transmission": {"usd_dir": "up"},
+        "regime_radar": {"dominant": "dollar_bull", "active": ["dollar_bull"]},
+    }
+    _write_json(tmp_path / "data" / "forex" / "latest.json", legacy_fx)
+
+    result = _compose_fx_dollar(root=tmp_path)
+
+    assert result["display_only"] is True
+    # Old fields still present
+    assert result["regime"] == "dollar_bull"
+    assert result["dollar_desk"]["trend"] == "declining"
+    # New fields absent in source → None (fail-open)
+    assert result["dollar_day"] is None
+    assert result["em"] is None
+    assert result["stance"] is None
+    assert result["triple_red"] is None
+    # smile_decomp is None because dollar_desk has no smile_decomp key
+    assert result["dollar_desk"].get("smile_decomp") is None
+
+
+def test_fx_dollar_triple_red_from_dollar_desk(tmp_path):
+    """M4: triple_red is read from dollar_desk.triple_red, not the top-level key.
+
+    Previously `raw.get('triple_red')` always returned None because the key lives
+    one level deeper at `dollar_desk.triple_red`.  The fix reads the correct path.
+    """
+    from engine.neuralweb.world_state import _compose_fx_dollar
+
+    # Fixture: triple_red=True at dollar_desk.triple_red (correct schema)
+    fx_triple = {
+        "date": "Jul 01, 2026",
+        "asof": "2026-07-01",
+        "regime": "Risk-off haven bid",
+        "risk": "risk_off",
+        "favored": [],
+        "dollar_desk": {
+            "lean": "supportive",
+            "triple_red": True,  # <-- canonical location
+        },
+        "transmission": {"usd_dir": "strengthening"},
+        "regime_radar": {},
+    }
+    _write_json(tmp_path / "data" / "forex" / "latest.json", fx_triple)
+    result = _compose_fx_dollar(root=tmp_path)
+
+    # M4: triple_red=True must propagate
+    assert result["triple_red"] is True, (
+        "M4 regression: triple_red=True at dollar_desk.triple_red must propagate; "
+        "raw.get('triple_red') always returns None (top-level key doesn't exist)"
+    )
+
+    # Sanity: triple_red=False from dollar_desk also propagates
+    fx_false = dict(fx_triple)
+    fx_false["dollar_desk"] = dict(fx_triple["dollar_desk"], triple_red=False)
+    _write_json(tmp_path / "data" / "forex" / "latest.json", fx_false)
+    result2 = _compose_fx_dollar(root=tmp_path)
+    assert result2["triple_red"] is False
+
+    # Sanity: top-level triple_red is ignored (old stale field must not win)
+    fx_wrong = dict(fx_triple)
+    fx_wrong["triple_red"] = True          # top-level (wrong location)
+    fx_wrong["dollar_desk"] = {"lean": "soft"}  # no triple_red here → None
+    _write_json(tmp_path / "data" / "forex" / "latest.json", fx_wrong)
+    result3 = _compose_fx_dollar(root=tmp_path)
+    assert result3["triple_red"] is None, (
+        "top-level triple_red must be ignored — only dollar_desk.triple_red counts"
+    )
+
+
+
+# ---------------------------------------------------------------------------
+# Tests 37–39 (MSX-1): _compose_fx_dollar MSX-1 lobe enrichment (world_state.py)
+# ---------------------------------------------------------------------------
+
+def _make_forex_msx(root: Path) -> dict:
+    """Latest.json fixture WITH MSX-1 §2.1 keys for forward-pass tests."""
+    fx = {
+        "date": "Jul 01, 2026",
+        "regime": "dollar_bull",
+        "risk": "risk_on",
+        "favored": ["EUR", "JPY"],
+        "dollar_desk": {
+            "lean": "neutral",
+            "triple_red": True,
+            "real_rate_regime": "positive",
+            "usd_valuation": "overvalued",
+            "trend": "declining",
+            "fed_path_lean": "hawkish",
+            "liquidity_dir": "tightening",
+            "smile_decomp": {
+                "regime": "risk_on",
+                "regime_60d": "risk_on",
+                "residual_20d_z": -0.4,
+                "beta": 0.7,
+                "r2": 0.55,
+                "safety_bid_today": False,
+                "gaps": [],
+                "display_only": True,
+            },
+        },
+        "transmission": {
+            "usd_dir": "down",
+            "headwind_for": ["EM", "Gold"],
+            "tailwind_for": ["USD assets"],
+            "unstable": False,
+        },
+        "regime_radar": {
+            "as_of": "2026-07-01",
+            "dominant": "carry_unwind",
+            "active": ["carry_unwind"],
+            "scenarios": [
+                {
+                    "key": "carry_unwind",
+                    "name_en": "Carry Unwind",
+                    "name_zh": "套息平仓",
+                    "intensity": 0.72,
+                    "active": True,
+                    "illustrative": False,
+                    "prob": {
+                        "status": "active",
+                        "p_cond": 0.45,
+                        "base_rate": 0.18,
+                        "wilson_lo": 0.12,
+                        "wilson_hi": 0.26,
+                        "n_raw": 40,
+                        "n_eff": 38,
+                        "N": 210,
+                    },
+                },
+                {
+                    "key": "dollar_wrecking_ball",
+                    "name_en": "Dollar Wrecking Ball",
+                    "name_zh": "美元破坏球",
+                    "intensity": 0.3,
+                    "active": False,
+                    "illustrative": False,
+                    "prob": {
+                        "status": "inactive",
+                        "p_cond": 0.1,
+                        "base_rate": 0.08,
+                        "wilson_lo": 0.04,
+                        "wilson_hi": 0.16,
+                        "n_raw": 16,
+                        "n_eff": 16,
+                        "N": 210,
+                    },
+                },
+            ],
+        },
+        "strength": {
+            "default": "1m",
+            "order": ["JPY", "EUR", "GBP"],
+            "horizons": {
+                "1w": [],
+                "1m": [
+                    {"ccy": "JPY", "ccy_zh": "日元", "strength": 0.82, "vs_usd_pct": 1.5, "em": False},
+                    {"ccy": "EUR", "ccy_zh": "欧元", "strength": 0.55, "vs_usd_pct": 0.3, "em": False},
+                    {"ccy": "BRL", "ccy_zh": "巴西雷亚尔", "strength": -0.3, "vs_usd_pct": -2.1, "em": True},
+                ],
+                "3m": [],
+            },
+        },
+        "state_changes": {
+            "smile_regime": {
+                "current": "risk_on",
+                "prev": "risk_off",
+                "changed_on": "2026-06-20",
+                "days_in_state": 11,
+            },
+            "lean": {
+                "current": "neutral",
+                "prev": "bearish",
+                "changed_on": "2026-06-25",
+                "days_in_state": 6,
+            },
+            "triple_red": {
+                "current": True,
+                "prev": False,
+                "changed_on": "2026-07-01",
+                "days_in_state": 0,
+            },
+        },
+    }
+    _write_json(root / "data" / "forex" / "latest.json", fx)
+    return fx
+
+
+def test_fx_dollar_msx_keys_forwarded(tmp_path):
+    """Test 32: MSX-1 keys present in latest.json are forwarded into the lobe."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+    _make_forex_msx(tmp_path)
+    lobe = _compose_fx_dollar(root=tmp_path)
+
+    # Core keys still present
+    assert lobe["regime"] == "dollar_bull"
+    assert lobe["display_only"] is True
+
+    # smile_decomp regime and safety_bid_today forwarded
+    assert lobe["smile_decomp_regime"] == "risk_on"
+    assert lobe["safety_bid_today"] is False
+
+    # triple_red forwarded
+    assert lobe["triple_red"] is True
+
+    # state_changes forwarded and _clean()-ed
+    sc = lobe["state_changes"]
+    assert isinstance(sc, dict)
+    assert sc["smile_regime"]["current"] == "risk_on"
+    assert sc["smile_regime"]["days_in_state"] == 11
+    assert sc["lean"]["days_in_state"] == 6
+
+    # dominant scenario receipt (carry_unwind is active)
+    dom = lobe["regime_radar_dominant_scenario"]
+    assert dom is not None
+    assert dom["key"] == "carry_unwind"
+    assert dom["intensity"] == 0.72
+    assert dom["p_cond"] == 0.45
+    assert dom["base_rate"] == 0.18
+
+    # strength extremes from default horizon (1m)
+    ext = lobe["strength_extremes"]
+    assert ext is not None
+    assert ext["horizon"] == "1m"
+    assert ext["strongest"]["ccy"] == "JPY"
+    assert ext["weakest"]["ccy"] == "BRL"
+
+
+def test_fx_dollar_msx_keys_absent_null_tolerant(tmp_path):
+    """Test 33: old latest.json WITHOUT MSX-1 keys degrades to None, never raises."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+    # Write a minimal legacy fixture without any MSX-1 keys
+    _write_json(tmp_path / "data" / "forex" / "latest.json", {
+        "date": "Jul 01, 2026",
+        "regime": "dollar_neutral",
+        "risk": "risk_off",
+        "favored": [],
+        "dollar_desk": {"lean": "neutral", "trend": "flat"},
+        "transmission": {"usd_dir": "flat"},
+        "regime_radar": {"dominant": "carry_unwind", "active": ["carry_unwind"]},
+    })
+    lobe = _compose_fx_dollar(root=tmp_path)
+
+    assert lobe["display_only"] is True
+    assert lobe["regime"] == "dollar_neutral"
+    # All MSX-1 keys must be None when absent in source
+    assert lobe["smile_decomp_regime"] is None
+    assert lobe["safety_bid_today"] is None
+    assert lobe["triple_red"] is None
+    assert lobe["state_changes"] is None
+    assert lobe["regime_radar_dominant_scenario"] is None
+    assert lobe["strength_extremes"] is None
+
+
+def test_fx_dollar_msx_file_absent_null_tolerant(tmp_path):
+    """Test 34: missing latest.json → null_out with all MSX-1 keys None, no raise."""
+    from engine.neuralweb.world_state import _compose_fx_dollar
+    # Do NOT write any file
+    lobe = _compose_fx_dollar(root=tmp_path)
+
+    assert lobe["display_only"] is True
+    assert lobe["regime"] is None
+    assert lobe["smile_decomp_regime"] is None
+    assert lobe["safety_bid_today"] is None
+    assert lobe["triple_red"] is None
+    assert lobe["state_changes"] is None
+    assert lobe["regime_radar_dominant_scenario"] is None
+    assert lobe["strength_extremes"] is None

@@ -947,11 +947,16 @@ def _crossasset_state() -> dict:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     try:
         d = json.loads((config.data_dir() / "crossasset" / "latest.json").read_text())
+        # one_bet: concentration verdict from flows.correlation.verdict (flows.v2 additive)
+        _flows = d.get("flows") or {}
+        _corr = _flows.get("correlation") or {}
+        _one_bet: str | None = _corr.get("verdict") if isinstance(_corr, dict) else None
         return {"regime": d.get("regime", "—"), "correlation": d.get("correlation", ""),
-                "date": d.get("date", ""), "present": (site / "crossasset.html").exists()}
+                "date": d.get("date", ""), "present": (site / "crossasset.html").exists(),
+                "one_bet": _one_bet}
     except Exception:
         return {"regime": "—", "correlation": "", "date": "",
-                "present": (site / "crossasset.html").exists()}
+                "present": (site / "crossasset.html").exists(), "one_bet": None}
 
 
 def _watchlist_state() -> dict:

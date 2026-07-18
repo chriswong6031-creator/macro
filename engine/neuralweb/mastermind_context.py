@@ -504,6 +504,10 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
         fx_ws = ws.get("fx_dollar") or {}
         tx_ws = fx_ws.get("transmission") or {}
         fx_deltas = fx_ws.get("deltas") or {}
+        # MSX-1 additions — null-tolerant; keys absent in old artifacts degrade to None
+        _fx_sc = fx_ws.get("state_changes") or {}
+        _fx_dom_sc = fx_ws.get("regime_radar_dominant_scenario") or {}
+        _fx_st_ext = fx_ws.get("strength_extremes") or {}
         fx_block = {
             "regime": fx_ws.get("regime"),
             "usd_trend": (fx_ws.get("dollar_desk") or {}).get("trend"),
@@ -517,6 +521,19 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
                 (fx_ws.get("scenario_intensity") or [{}])[0].get("name")
                 if fx_ws.get("scenario_intensity") else None
             ),
+            # MSX-1: state_changes compact summary (current states only; producer-
+            # stamped flips — complements the ledger-derived delta fields above)
+            "state_changes_summary": {
+                k: (v.get("current") if isinstance(v, dict) else None)
+                for k, v in _fx_sc.items()
+            } if _fx_sc else None,
+            # dominant stress scenario + intensity
+            "dominant_stress_scenario": _fx_dom_sc.get("key"),
+            "dominant_stress_intensity": _fx_dom_sc.get("intensity"),
+            # strength extremes
+            "strength_strongest": _fx_st_ext.get("strongest"),
+            "strength_weakest": _fx_st_ext.get("weakest"),
+            "strength_horizon": _fx_st_ext.get("horizon"),
         }
 
         # ── Rates block from world_state rates_transmission + rates_credit ────
@@ -568,6 +585,9 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
         ca_ws = ws.get("cross_asset_flows") or {}
         ca_corr = ca_ws.get("correlation") or {}
         ca_im_raw = ca_ws.get("intermarket") or []
+        # one_bet_cluster: dominant_cluster[:3] (flows.v2 additive, None-safe)
+        _dc_raw = ca_ws.get("dominant_cluster")
+        _one_bet_cluster = _dc_raw[:3] if isinstance(_dc_raw, list) and _dc_raw else None
         ca_block = {
             "regime": ca_ws.get("regime"),
             "correlation_concentration": ca_corr.get("verdict") if isinstance(ca_corr, dict) else None,
@@ -575,6 +595,8 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
             "intermarket_top": ca_im_raw[:3] if isinstance(ca_im_raw, list) else [],
             "breadth": ca_ws.get("breadth"),
             "leadlag_verdict": (ca_ws.get("leadlag") or {}).get("verdict"),
+            "one_bet_cluster": _one_bet_cluster,
+            "funding_state": ca_ws.get("funding_state"),
         }
 
         # ── Label deltas from macro_deltas ────────────────────────────────────

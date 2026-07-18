@@ -226,6 +226,8 @@ LEX: dict[str, str] = {
     "CONTEXT": "仅作背景",
     "CONTRARIAN": "逆向",
     # commodity + cross-asset proper names (shown as labels)
+    "Deflation-scare": "通缩担忧",
+    "Oil · WTI": "原油 · WTI",
     "Crude Oil": "原油",
     "Oil": "原油",
     "Copper": "铜",

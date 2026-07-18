@@ -133,26 +133,368 @@ def chart_axes(hist: pd.DataFrame, days: int = 730) -> str:
     return _html(fig)
 
 
+# ----- MSX-2: stance helpers + FX context builder --------------------------------
+
+# Spec §1 — hero stance words keyed by market_state.color
+_MSIG_HERO_STANCES: dict[str, tuple[str, str]] = {
+    "green": (
+        "Conditions support staying invested — watch the usual risks.",
+        "环境支持持仓 — 留意常规风险。",
+    ),
+    "yellow": (
+        "Mixed signals — hold what works, add slowly.",
+        "信号混杂 — 持有有效仓位，谨慎加仓。",
+    ),
+    "red": (
+        "Defensive tape — protect first; opportunities can wait.",
+        "防御行情 — 先保护本金，机会可以等。",
+    ),
+}
+_MSIG_HERO_ABSENT = ("A mixed picture — read the boards below.", "情况混杂 — 请看下方各板。")
+
+# Spec §3 — credit state copy
+_MSIG_CREDIT_STATES: dict[str, tuple[str, str]] = {
+    "calm": (
+        "Credit calm, participation healthy — no smoke.",
+        "信用平稳，参与度健康 — 无警讯。",
+    ),
+    "widening": (
+        "Credit spreads widening — the market's smoke detector is warming.",
+        "信用利差走阔 — 市场烟雾探测器升温。",
+    ),
+    "narrow": (
+        "Narrow participation — strength is thin.",
+        "参与面收窄 — 涨势偏窄。",
+    ),
+}
+
+# Spec §3 — liquidity state copy
+_MSIG_LIQ_STATES: dict[str, tuple[str, str]] = {
+    "rising": (
+        "The money tide is rising — historically the most reliable tailwind.",
+        "资金潮上涨 — 历史上最可靠的顺风。",
+    ),
+    "falling": (
+        "The money tide is going out — a headwind.",
+        "资金潮退去 — 逆风。",
+    ),
+    "flat": (
+        "Net liquidity is roughly flat.",
+        "净流动性大体持平。",
+    ),
+}
+
+
+def _msig_stances(
+    market_state: dict | None,
+    chart_liq_meta: dict | None,
+    f: pd.DataFrame | None = None,
+) -> dict:
+    """Compute deterministic stance {en, zh} pairs for hero, liquidity, credit sections.
+
+    Args:
+        market_state: vm['market_state'] dict (may be None; uses .color key).
+        chart_liq_meta: output of _chart_liquidity_meta(f); provides state.
+        f: feature frame for credit breadth state; may be None.
+
+    Returns dict: {hero, liquidity, credit} each {en, zh}.
+    (MSX-2 spec §1–§3; strings are verbatim from spec.)
+    """
+    # Hero
+    color = (market_state or {}).get("color")
+    hero_en, hero_zh = _MSIG_HERO_STANCES.get(color, _MSIG_HERO_ABSENT)
+    hero = {"en": hero_en, "zh": hero_zh}
+
+    # Liquidity
+    liq_state = (chart_liq_meta or {}).get("state", "flat")
+    liq_en, liq_zh = _MSIG_LIQ_STATES.get(liq_state, _MSIG_LIQ_STATES["flat"])
+    liquidity = {"en": liq_en, "zh": liq_zh}
+
+    # Credit — spec §3: spread widening trumps breadth; breadth < 40 with calm spreads
+    credit_key = "calm"
+    if f is not None and "hy_oas" in f.columns:
+        oas = f["hy_oas"].dropna()
+        if len(oas) >= 252:
+            last_oas = float(oas.iloc[-1])
+            med_1y = float(oas.iloc[-252:].median())
+            spread_widening = last_oas > med_1y
+        elif not oas.empty:
+            spread_widening = False
+        else:
+            spread_widening = False
+        if spread_widening:
+            credit_key = "widening"
+        elif f is not None and "pct_above_50" in f.columns:
+            br = f["pct_above_50"].dropna()
+            if not br.empty and float(br.iloc[-1]) < 40 and not spread_widening:
+                credit_key = "narrow"
+    cred_en, cred_zh = _MSIG_CREDIT_STATES.get(credit_key, _MSIG_CREDIT_STATES["calm"])
+    credit = {"en": cred_en, "zh": cred_zh}
+
+    return {"hero": hero, "liquidity": liquidity, "credit": credit}
+
+
+# Desk-level event types from forex_alerts (MSX-1, spec §6 "recent_events")
+_FX_DESK_EVENT_TYPES = frozenset(
+    {"smile_regime", "smile_regime_flip", "triple_red", "scenario_active"}
+)
+
+
+def _build_fx_context() -> dict | None:
+    """Build the fx_context vm key from lib/forex_link + data/forex/latest.json.
+
+    Keys: {asof, dollar_desk, strength, regime_radar, transmission,
+            state_changes, pairs, recent_events}.
+
+    Fail-open: returns None when data/forex/latest.json is absent or unreadable.
+    Each sub-block is presence-guarded and .get()-accessed.
+
+    MSX-2 spec §6 + 6b critic delta: cross_asset fx caution flags are already in
+    vm.cross_asset; we do NOT duplicate them here.
+    """
+    try:
+        from lib.forex_link import _latest, dollar_lean, state_changes, stress_radar
+    except Exception:  # noqa: BLE001
+        return None
+
+    try:
+        fx = _latest()
+        if not fx:
+            return None
+
+        desk = dollar_lean(fx)
+        if desk is not None:
+            # Strip smile_decomp internals (compact per spec §7); keep the rest
+            desk = {k: v for k, v in desk.items() if k != "smile_decomp"}
+
+        sc = state_changes(fx)
+        radar = stress_radar(fx)
+
+        # strength: forward the meter verbatim (spec §2.1 — template reads
+        # horizons[default]) plus top/bottom extremes for the sidecar
+        strength = None
+        try:
+            strength_raw = fx.get("strength")
+            if strength_raw:
+                default_h = strength_raw.get("default", "1m")
+                h_data = (strength_raw.get("horizons") or {}).get(default_h, [])
+                if h_data and isinstance(h_data, list):
+                    sorted_h = sorted(
+                        (x for x in h_data if isinstance(x, dict)),
+                        key=lambda x: x.get("strength") or 0, reverse=True)
+                    strength = {
+                        "default": default_h,
+                        "order": strength_raw.get("order"),
+                        "horizons": strength_raw.get("horizons"),
+                        "top": sorted_h[0] if sorted_h else None,
+                        "bottom": sorted_h[-1] if sorted_h else None,
+                    }
+        except Exception:  # noqa: BLE001 — strength never drops its siblings
+            strength = None
+
+        # regime_radar: compact (dominant, active, intensity, scenarios)
+        # sanitize scenarios: dicts only, intensity coerced numeric (a null/
+        # missing intensity must never reach template comparisons)
+        if radar and isinstance(radar.get("scenarios"), list):
+            _clean_scens = []
+            for s in radar["scenarios"]:
+                if not isinstance(s, dict):
+                    continue
+                s = dict(s)
+                try:
+                    s["intensity"] = float(s.get("intensity") or 0)
+                except (TypeError, ValueError):
+                    s["intensity"] = 0.0
+                _clean_scens.append(s)
+            radar = dict(radar)
+            radar["scenarios"] = _clean_scens
+        elif radar and radar.get("scenarios") is not None and not isinstance(radar.get("scenarios"), list):
+            radar = dict(radar)
+            radar["scenarios"] = []
+        radar_compact = None
+        if radar:
+            radar_compact = {
+                "dominant": radar.get("dominant"),
+                "active": radar.get("active"),
+                "intensity": radar.get("intensity"),
+                "as_of": radar.get("as_of"),
+            }
+            # include scenarios if present (post-MSX-1)
+            if radar.get("scenarios"):
+                radar_compact["scenarios"] = radar["scenarios"]
+
+        # transmission block (present pre-MSX-1)
+        transmission = fx.get("transmission")
+
+        # state_changes compact (present only post-MSX-1 nightly)
+        # sc is already the full block or None
+
+        # pairs: USDCNH only per spec §6
+        pairs_raw = fx.get("pairs") or {}
+        cnh = pairs_raw.get("USDCNH")
+        pairs = {"USDCNH": cnh} if cnh else {}
+
+        # recent_events: last ≤5 desk-level events from data/forex/alerts.jsonl
+        recent_events: list[dict] = []
+        try:
+            from lib import config as _cfg
+            alerts_path = _cfg.data_dir() / "forex" / "alerts.jsonl"
+            if alerts_path.exists():
+                with open(alerts_path) as _fh:
+                    all_lines = _fh.readlines()
+                # The file is NOT newest-last (historical rebuilds append per
+                # type) — collect all desk events, sort by ts desc, and keep
+                # only genuinely recent ones (180d of the artifact asof):
+                # decades-old regime flips are history, not "what changed".
+                _desk_evs = []
+                for line in all_lines:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        ev = json.loads(line)
+                    except Exception:  # noqa: BLE001
+                        continue
+                    if ev.get("type") in _FX_DESK_EVENT_TYPES:
+                        _desk_evs.append(ev)
+                _desk_evs.sort(key=lambda e: str(e.get("ts", "")), reverse=True)
+                _cut = None
+                try:
+                    from datetime import datetime as _dt, timedelta as _td
+                    _asof_d = _dt.fromisoformat(str(fx.get("asof", ""))[:10])
+                    _cut = (_asof_d - _td(days=180)).date().isoformat()
+                except Exception:  # noqa: BLE001
+                    _cut = None
+                for ev in _desk_evs:
+                    _d = str(ev.get("ts", ""))[:10]
+                    if _cut and _d < _cut:
+                        break
+                    # compact, template-facing shape (alerts rows carry ts/
+                    # headline/headline_zh — not date/headline_en)
+                    recent_events.append({
+                        "date": _d,
+                        "severity": ev.get("severity", "low"),
+                        "headline": ev.get("headline", ""),
+                        "headline_zh": ev.get("headline_zh", ev.get("headline", "")),
+                    })
+                    if len(recent_events) >= 5:
+                        break
+        except Exception:  # noqa: BLE001 — recent_events always fail-open
+            recent_events = []
+
+        ctx: dict = {
+            "asof": fx.get("asof"),
+            "smile_regime": fx.get("regime"),
+            "dollar_desk": desk,
+            "strength": strength,
+            "regime_radar": radar_compact,
+            "transmission": transmission,
+            "state_changes": sc,
+            "pairs": pairs or None,
+            "recent_events": recent_events,
+        }
+        # Return None only if the context is entirely empty
+        if not any(v is not None for v in ctx.values() if v != recent_events):
+            return None
+        return ctx
+    except Exception:  # noqa: BLE001 — always fail-open
+        return None
+
+
+# ---------------------------------------------------------------------------------
+
 def chart_liquidity(f: pd.DataFrame) -> str:
-    cfg = config.load()["engine"]["liquidity"]
+    """Inline SVG: 2y net-liquidity line (var(--info)) with latest-value dot + right-edge label.
+    Returns '' when data absent. Replaces Plotly chart (MSX-2, spec §5.1)."""
+    if "net_liquidity_bn" not in f.columns:
+        return ""
     two_y = f.index.max() - pd.Timedelta(days=730)
     nl = f.loc[two_y:, "net_liquidity_bn"].dropna()
-    roc = (f["net_liquidity_bn"] - f["net_liquidity_bn"].shift(cfg["roc_window_d"])).loc[two_y:]
-    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.65, 0.35],
-                        vertical_spacing=0.06)
-    fig.add_trace(go.Scatter(x=nl.index, y=nl, name="net liquidity",
-                             line={"color": "#7aa7e0", "width": 1.3}), row=1, col=1)
-    fig.add_trace(go.Bar(x=roc.index, y=roc, name="4w RoC",
-                         marker={"color": ["#5fbf7f" if v >= 0 else "#e07070"
-                                           for v in roc.fillna(0)]}), row=2, col=1)
-    fig.add_hline(y=cfg["expanding_threshold_bn"], line={"color": "#5fbf7f", "width": 0.5,
-                                                         "dash": "dot"}, row=2, col=1)
-    fig.add_hline(y=cfg["contracting_threshold_bn"], line={"color": "#e07070", "width": 0.5,
-                                                           "dash": "dot"}, row=2, col=1)
-    layout = {**PLOT_LAYOUT, "height": 340}
-    fig.update_layout(**layout, showlegend=False)
-    _apply_range(fig, subplot=True, height=340)
-    return _html(fig)
+    if len(nl) < 2:
+        return ""
+    W, H, PAD_L, PAD_R, PAD_T, PAD_B = 640, 220, 50, 60, 16, 32
+    cw, ch = W - PAD_L - PAD_R, H - PAD_T - PAD_B
+    # scale
+    mn, mx = float(nl.min()), float(nl.max())
+    rng = mx - mn if mx != mn else 1.0
+    n = len(nl)
+    def px(i: int) -> float:
+        return PAD_L + (i / (n - 1)) * cw
+    def py(v: float) -> float:
+        return PAD_T + ch * (1 - (v - mn) / rng)
+    # gridlines at 25/50/75%
+    lines: list[str] = []
+    for frac in (0.25, 0.50, 0.75):
+        gy = PAD_T + ch * (1 - frac)
+        gv = mn + rng * frac
+        lines.append(
+            f'<line x1="{PAD_L}" y1="{gy:.1f}" x2="{W - PAD_R}" y2="{gy:.1f}" '
+            f'stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>'
+        )
+        lines.append(
+            f'<text x="{PAD_L - 4}" y="{gy + 4:.1f}" text-anchor="end" '
+            f'font-size="10" fill="var(--muted)">{gv:.0f}</text>'
+        )
+    # zero line if in range
+    if mn < 0 < mx:
+        zy = py(0)
+        lines.append(
+            f'<line x1="{PAD_L}" y1="{zy:.1f}" x2="{W - PAD_R}" y2="{zy:.1f}" '
+            f'stroke="var(--line)" stroke-width="1.2"/>'
+        )
+    # area fill path
+    vals = list(nl)
+    pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(vals))
+    last_x, last_y = px(n - 1), py(vals[-1])
+    fill_path = (
+        f"M{PAD_L:.1f},{PAD_T + ch:.1f} "
+        + " ".join(f"L{px(i):.1f},{py(v):.1f}" for i, v in enumerate(vals))
+        + f" L{W - PAD_R:.1f},{PAD_T + ch:.1f} Z"
+    )
+    # date axis labels: first + last
+    dates = list(nl.index)
+    d_labels: list[str] = []
+    for i, d in [(0, dates[0]), (n - 1, dates[-1])]:
+        d_labels.append(
+            f'<text x="{px(i):.1f}" y="{H - 6}" text-anchor="{"start" if i == 0 else "end"}" '
+            f'font-size="10" fill="var(--muted)">{d.strftime("%b %Y")}</text>'
+        )
+    # right-edge value label
+    label = f'{vals[-1]:+.0f}bn'
+    svg = (
+        f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" '
+        f'style="width:100%;height:auto;display:block;overflow:visible">'
+        + "".join(lines)
+        + "".join(d_labels)
+        + f'<path d="{fill_path}" fill="var(--info)" fill-opacity=".08" stroke="none"/>'
+        + f'<polyline points="{pts}" fill="none" stroke="var(--info)" stroke-width="1.6" '
+        f'vector-effect="non-scaling-stroke"/>'
+        + f'<circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="3.5" fill="var(--info)"/>'
+        + f'<text x="{min(last_x + 6, W - 4):.1f}" y="{last_y + 4:.1f}" '
+        f'font-size="10" fill="var(--info)">{label}</text>'
+        + "</svg>"
+    )
+    return svg
+
+
+def _chart_liquidity_meta(f: pd.DataFrame) -> dict | None:
+    """Return {chg_4w_bn, state} for the panel chip. Fail-open None. (MSX-2 §5.1)"""
+    if "net_liquidity_bn" not in f.columns:
+        return None
+    nl = f["net_liquidity_bn"].dropna()
+    if len(nl) < 20:
+        return None
+    chg = float(nl.iloc[-1] - nl.iloc[-20])
+    cfg = config.load().get("engine", {}).get("liquidity", {})
+    thr_up = cfg.get("expanding_threshold_bn", 25)
+    thr_dn = cfg.get("contracting_threshold_bn", -25)
+    if chg >= thr_up:
+        state = "rising"
+    elif chg <= thr_dn:
+        state = "falling"
+    else:
+        state = "flat"
+    return {"chg_4w_bn": chg, "state": state}
 
 
 # ----- market snapshot tiles + VIX monitor (display surfacing; reuse the frame) -----
@@ -238,43 +580,181 @@ def vix_monitor(f: pd.DataFrame, days: int = 30) -> dict | None:
 
 
 def chart_vix(f: pd.DataFrame, days: int = 90) -> str:
-    """A focused VIX path with the conventional regime bands shaded behind it."""
+    """Inline SVG: 90d VIX line (var(--warn)) with dashed separators at 16/20/28.
+    Labels (calm/normal/stressed/crisis) live in the HTML legend, not inside SVG.
+    Returns '' when data absent. Replaces Plotly chart (MSX-2, spec §5.3)."""
     if "vix" not in f.columns:
         return ""
     v = f["vix"].dropna()
     if v.empty:
         return ""
     v = v.loc[v.index.max() - pd.Timedelta(days=days):]
-    fig = go.Figure()
-    for y0, y1, c in ((0, 15, "#4fb39a"), (15, 20, "#7aa7e0"),
-                      (20, 30, "#e0a030"), (30, 90, "#e06464")):
-        fig.add_hrect(y0=y0, y1=y1, fillcolor=c, opacity=0.07, line_width=0)
-    fig.add_trace(go.Scatter(x=v.index, y=v, name="VIX",
-                             line={"color": "#e07a9a", "width": 1.6}))
-    fig.update_layout(**{**PLOT_LAYOUT, "height": 240}, showlegend=False)
-    fig.update_yaxes(range=[max(0.0, float(v.min()) - 2), float(v.max()) + 3])
-    return _html(fig)
+    if len(v) < 2:
+        return ""
+    W, H, PAD_L, PAD_R, PAD_T, PAD_B = 640, 220, 44, 20, 16, 32
+    cw, ch = W - PAD_L - PAD_R, H - PAD_T - PAD_B
+    mn = max(0.0, float(v.min()) - 2)
+    mx = float(v.max()) + 3
+    rng = mx - mn if mx != mn else 1.0
+    n = len(v)
+    vals = list(v)
+    def px(i: int) -> float:
+        return PAD_L + (i / (n - 1)) * cw
+    def py(val: float) -> float:
+        return PAD_T + ch * (1 - (val - mn) / rng)
+    # gridlines at 25/50/75%
+    g_parts: list[str] = []
+    for frac in (0.25, 0.50, 0.75):
+        gy = PAD_T + ch * (1 - frac)
+        gv = mn + rng * frac
+        g_parts.append(
+            f'<line x1="{PAD_L}" y1="{gy:.1f}" x2="{W - PAD_R}" y2="{gy:.1f}" '
+            f'stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>'
+        )
+        g_parts.append(
+            f'<text x="{PAD_L - 4}" y="{gy + 4:.1f}" text-anchor="end" '
+            f'font-size="10" fill="var(--muted)">{gv:.0f}</text>'
+        )
+    # dashed regime separators at 16/20/28
+    sep_parts: list[str] = []
+    for level in (16.0, 20.0, 28.0):
+        if mn < level < mx:
+            sy = py(level)
+            sep_parts.append(
+                f'<line x1="{PAD_L}" y1="{sy:.1f}" x2="{W - PAD_R}" y2="{sy:.1f}" '
+                f'stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="4 4" '
+                f'opacity="0.6"/>'
+            )
+    # area fill + line
+    last_x, last_y = px(n - 1), py(vals[-1])
+    pts = " ".join(f"{px(i):.1f},{py(v_):.1f}" for i, v_ in enumerate(vals))
+    fill_path = (
+        f"M{PAD_L:.1f},{PAD_T + ch:.1f} "
+        + " ".join(f"L{px(i):.1f},{py(v_):.1f}" for i, v_ in enumerate(vals))
+        + f" L{W - PAD_R:.1f},{PAD_T + ch:.1f} Z"
+    )
+    # date axis labels
+    dates = list(v.index)
+    d_labels: list[str] = [
+        f'<text x="{PAD_L}" y="{H - 6}" text-anchor="start" '
+        f'font-size="10" fill="var(--muted)">{dates[0].strftime("%b %d")}</text>',
+        f'<text x="{W - PAD_R}" y="{H - 6}" text-anchor="end" '
+        f'font-size="10" fill="var(--muted)">{dates[-1].strftime("%b %d")}</text>',
+    ]
+    label = f'{vals[-1]:.1f}'
+    svg = (
+        f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" '
+        f'style="width:100%;height:auto;display:block;overflow:visible">'
+        + "".join(g_parts)
+        + "".join(sep_parts)
+        + "".join(d_labels)
+        + f'<path d="{fill_path}" fill="var(--warn)" fill-opacity=".08" stroke="none"/>'
+        + f'<polyline points="{pts}" fill="none" stroke="var(--warn)" stroke-width="1.6" '
+        f'vector-effect="non-scaling-stroke"/>'
+        + f'<circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="3.5" fill="var(--warn)"/>'
+        + f'<text x="{max(PAD_L + 2, last_x - 12):.1f}" y="{last_y - 6:.1f}" '
+        f'font-size="10" fill="var(--warn)">{label}</text>'
+        + "</svg>"
+    )
+    return svg
 
 
 def chart_credit_breadth(f: pd.DataFrame) -> str:
+    """Inline SVG: dual-series — hy_oas (var(--down)) left scale, pct_above_50 (var(--up))
+    right scale 0..100. Two right/left edge labels. Legend as inline chips in HTML (not SVG).
+    Returns '' when data absent. Replaces Plotly chart (MSX-2, spec §5.2)."""
     two_y = f.index.max() - pd.Timedelta(days=730)
-    oas = f.loc[two_y:, "hy_oas"].dropna()
-    br = f.loc[two_y:, "pct_above_50"].dropna()
-    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.06)
-    fig.add_trace(go.Scatter(x=oas.index, y=oas, name="HY OAS %",
-                             line={"color": "#e0a030", "width": 1.2}), row=1, col=1)
-    fig.add_trace(go.Scatter(x=br.index, y=br, name="% S&P500 > 50DMA",
-                             line={"color": "#9b8de0", "width": 1.2}), row=2, col=1)
-    # small-cap participation (S&P 600) overlaid — large strong / small weak = fragile,
-    # small leading = broadening. The gap between the two lines IS the divergence read.
-    scb = f.loc[two_y:, "sc_pct_above_50"].dropna()
-    if not scb.empty:
-        fig.add_trace(go.Scatter(x=scb.index, y=scb, name="% small-cap > 50DMA",
-                                 line={"color": "#4fb39a", "width": 1.2}), row=2, col=1)
-    layout = {**PLOT_LAYOUT, "height": 340}
-    fig.update_layout(**layout)
-    _apply_range(fig, subplot=True, has_legend=True, height=340)
-    return _html(fig)
+    oas = f.loc[two_y:, "hy_oas"].dropna() if "hy_oas" in f.columns else pd.Series(dtype=float)
+    br = f.loc[two_y:, "pct_above_50"].dropna() if "pct_above_50" in f.columns else pd.Series(dtype=float)
+    if oas.empty and br.empty:
+        return ""
+    W, H, PAD_L, PAD_R, PAD_T, PAD_B = 640, 220, 50, 60, 16, 32
+    cw, ch = W - PAD_L - PAD_R, H - PAD_T - PAD_B
+    parts: list[str] = []
+    # gridlines at 25/50/75%
+    for frac in (0.25, 0.50, 0.75):
+        gy = PAD_T + ch * (1 - frac)
+        parts.append(
+            f'<line x1="{PAD_L}" y1="{gy:.1f}" x2="{W - PAD_R}" y2="{gy:.1f}" '
+            f'stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>'
+        )
+    # date labels from whichever series is longer
+    ref = oas if len(oas) >= len(br) else br
+    if not ref.empty:
+        dates = list(ref.index)
+        n_r = len(dates)
+        parts.append(
+            f'<text x="{PAD_L}" y="{H - 6}" text-anchor="start" '
+            f'font-size="10" fill="var(--muted)">{dates[0].strftime("%b %Y")}</text>'
+        )
+        parts.append(
+            f'<text x="{W - PAD_R}" y="{H - 6}" text-anchor="end" '
+            f'font-size="10" fill="var(--muted)">{dates[-1].strftime("%b %Y")}</text>'
+        )
+    # OAS series (left scale, var(--down))
+    if not oas.empty:
+        mn_o, mx_o = float(oas.min()), float(oas.max())
+        rng_o = mx_o - mn_o if mx_o != mn_o else 1.0
+        n_o = len(oas)
+        def py_o(v: float) -> float:
+            return PAD_T + ch * (1 - (v - mn_o) / rng_o)
+        def px_o(i: int) -> float:
+            return PAD_L + (i / max(n_o - 1, 1)) * cw
+        vals_o = list(oas)
+        pts_o = " ".join(f"{px_o(i):.1f},{py_o(v):.1f}" for i, v in enumerate(vals_o))
+        fill_o = (
+            f"M{PAD_L:.1f},{PAD_T + ch:.1f} "
+            + " ".join(f"L{px_o(i):.1f},{py_o(v):.1f}" for i, v in enumerate(vals_o))
+            + f" L{W - PAD_R:.1f},{PAD_T + ch:.1f} Z"
+        )
+        last_oy = py_o(vals_o[-1])
+        parts.append(f'<path d="{fill_o}" fill="var(--down)" fill-opacity=".08" stroke="none"/>')
+        parts.append(
+            f'<polyline points="{pts_o}" fill="none" stroke="var(--down)" stroke-width="1.6" '
+            f'vector-effect="non-scaling-stroke"/>'
+        )
+        parts.append(f'<circle cx="{W - PAD_R:.1f}" cy="{last_oy:.1f}" r="3" fill="var(--down)"/>')
+        parts.append(
+            f'<text x="{W - PAD_R + 6}" y="{last_oy + 4:.1f}" font-size="10" '
+            f'fill="var(--down)">{vals_o[-1]:.1f}%</text>'
+        )
+        # left axis label
+        parts.append(
+            f'<text x="{PAD_L - 4}" y="{py_o(vals_o[0]) + 4:.1f}" text-anchor="end" '
+            f'font-size="10" fill="var(--down)">{vals_o[0]:.0f}</text>'
+        )
+    # Breadth series (right scale 0..100, var(--up))
+    if not br.empty:
+        n_b = len(br)
+        def py_b(v: float) -> float:
+            return PAD_T + ch * (1 - v / 100.0)
+        def px_b(i: int) -> float:
+            return PAD_L + (i / max(n_b - 1, 1)) * cw
+        vals_b = list(br)
+        pts_b = " ".join(f"{px_b(i):.1f},{py_b(v):.1f}" for i, v in enumerate(vals_b))
+        fill_b = (
+            f"M{PAD_L:.1f},{PAD_T + ch:.1f} "
+            + " ".join(f"L{px_b(i):.1f},{py_b(v):.1f}" for i, v in enumerate(vals_b))
+            + f" L{W - PAD_R:.1f},{PAD_T + ch:.1f} Z"
+        )
+        last_by = py_b(vals_b[-1])
+        parts.append(f'<path d="{fill_b}" fill="var(--up)" fill-opacity=".08" stroke="none"/>')
+        parts.append(
+            f'<polyline points="{pts_b}" fill="none" stroke="var(--up)" stroke-width="1.6" '
+            f'vector-effect="non-scaling-stroke"/>'
+        )
+        parts.append(f'<circle cx="{W - PAD_R:.1f}" cy="{last_by:.1f}" r="3" fill="var(--up)"/>')
+        parts.append(
+            f'<text x="{W - PAD_R + 6}" y="{last_by + 14:.1f}" font-size="10" '
+            f'fill="var(--up)">{vals_b[-1]:.0f}%</text>'
+        )
+    svg = (
+        f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" '
+        f'style="width:100%;height:auto;display:block;overflow:visible">'
+        + "".join(parts)
+        + "</svg>"
+    )
+    return svg
 
 
 def _crowd_words(p: float, lo_word: str, hi_word: str,
@@ -2636,12 +3116,31 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     breadth = _load_breadth()                  # market-member breadth context (degrade-never-raise)
     series = _load_factor_series()             # factor portfolio return series (degrade-never-raise)
     nw_state = _load_nw_factor_state()         # NW factor intelligence state (RUL-NW7/NW8, fail-open)
+    # Factor seasonality v2 (fail-open: absent French data → None → panel hides)
+    try:
+        from engine import factor_seasonality as _fse
+        seas = _fse.compute_factor_seasonality()
+    except Exception as _e:  # noqa: BLE001
+        log.warning("factor_seasonality engine failed: %s", _e)
+        seas = None
+    # Momentum display (fail-open, display-only, UNSCORED)
+    try:
+        from engine import momentum_display as _mde
+        momo = _mde.compute_momentum_display()
+    except Exception as _e:  # noqa: BLE001
+        log.warning("momentum_display engine failed: %s", _e)
+        momo = None
+    if momo is not None:
+        (fdir / "momentum_display.json").write_text(
+            json.dumps(momo, separators=(",", ":"), default=str))
     html = env.get_template("factors.html.j2").render(
         fac=fac, ic=ic, breadth=breadth, series=series,
-        nw_state=nw_state, generated_utc=generated)
+        nw_state=nw_state, seas=seas, momo=momo, generated_utc=generated)
     write_page(site / "factors.html", html)
-    log.info("wrote factors.html (%d names, FY%s, ic=%s, nw_state=%s)", fac.get("n"), fac.get("fy"),
-             "yes" if ic else "no", "yes" if nw_state else "no")
+    log.info("wrote factors.html (%d names, FY%s, ic=%s, nw_state=%s, seas=%s, momo=%s)",
+             fac.get("n"), fac.get("fy"),
+             "yes" if ic else "no", "yes" if nw_state else "no",
+             "yes" if seas else "no", "yes" if momo else "no")
     return fac
 
 
@@ -2879,6 +3378,13 @@ _DOLLAR_SENSITIVE_SECTORS = {
             "工业 —— 海外/出口收入占比高；强美元拖累外币折算销售"),
     "XLK": ("technology — large overseas revenue mix; a strong dollar is a translation headwind",
             "科技 —— 海外收入占比高；强美元带来折算逆风"),
+    # B3: added XLY and XLC — both have meaningful overseas revenue / import-cost exposure
+    "XLY": ("consumer discretionary — import-heavy supply chains and global brands; "
+            "a strong dollar raises import costs and squeezes overseas earnings",
+            "非必需消费品 —— 进口供应链与全球品牌；强美元推高进口成本并压缩海外利润"),
+    "XLC": ("communication services — large global platform revenue; "
+            "a strong dollar is a translation headwind on overseas ad and subscription income",
+            "通信服务 —— 全球平台收入占比高；强美元对海外广告与订阅收入带来折算逆风"),
 }
 
 
@@ -4099,6 +4605,82 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — additive, never break the build
         pass
 
+    # CA-W3: cross_asset radar chip — display-only concentration context.
+    # Sources: data/regime/latest.json["cross_asset"] + data/crossasset_shadow/latest.json
+    # Both fail-open; skips attach entirely if no data.
+    try:
+        if _us_ms_view and isinstance(_us_ms_view.get("radar"), dict):
+            _regime_path = config.data_dir() / "regime" / "latest.json"
+            _shadow_path = config.data_dir() / "crossasset_shadow" / "latest.json"
+            _ca_regime_blk: dict = {}
+            _ca_shadow_blk: dict = {}
+            if _regime_path.exists():
+                _regime_art = json.loads(_regime_path.read_text(encoding="utf-8"))
+                _ca_regime_blk = _regime_art.get("cross_asset") or {}
+            if _shadow_path.exists():
+                _ca_shadow_blk = json.loads(_shadow_path.read_text(encoding="utf-8"))
+            if _ca_regime_blk:
+                _dc_raw = _ca_regime_blk.get("dominant_cluster") or []
+                _us_ms_view["radar"]["cross_asset"] = {
+                    "verdict": _ca_regime_blk.get("verdict"),
+                    "absorption_pctile": _ca_regime_blk.get("absorption_pctile_5y"),
+                    "dominant_cluster": _dc_raw[:3] if isinstance(_dc_raw, list) else [],
+                    "shadow_escalated": _ca_shadow_blk.get("escalated") if _ca_shadow_blk else None,
+                }
+    except Exception:  # noqa: BLE001 — additive, never break the build
+        pass
+
+    # B4: seasonal-climate chip for us_stocks + baskets pages (display-only, page furniture).
+    # Reads the committed site artifact — no recompute here. Fail-open: None hides the chip.
+    # One-build lag by design: build_site runs before the seasonality builder in the nightly,
+    # so the chip reflects the PRIOR night's now-block (at a month boundary the old month can
+    # show for one build; heals on the next).
+    factor_season: "dict | None" = None
+    try:
+        _seas_path = site / "factordata" / "factor_seasonality.json"
+        if _seas_path.exists():
+            _seas_raw = json.loads(_seas_path.read_text(encoding="utf-8"))
+            _seas_now = _seas_raw.get("now") if isinstance(_seas_raw, dict) else None
+            if (
+                isinstance(_seas_raw, dict)
+                and _seas_raw.get("schema") == "factor_seasonality.v2"
+                and isinstance(_seas_now, dict)
+                and _seas_now.get("chip_en")  # only when non-neutral chip is present
+            ):
+                # Only emit chip when momentum OR another factor is non-neutral
+                _factor_list = _seas_now.get("factors") or []
+                _mom = next((f for f in _factor_list if f.get("key") == "momentum"), None)
+                _any_non_neutral = (
+                    (_mom and _mom.get("verdict") != "neutral")
+                    or any(f.get("verdict") != "neutral" for f in _factor_list if f.get("key") != "momentum")
+                )
+                if _any_non_neutral:
+                    _mom_verdict = (_mom or {}).get("verdict", "neutral")
+                    _tone = _mom_verdict if _mom_verdict != "neutral" else next(
+                        (f.get("verdict") for f in _factor_list if f.get("verdict") != "neutral"),
+                        "neutral",
+                    )
+                    factor_season = {
+                        "chip_en": _seas_now.get("chip_en"),
+                        "chip_zh": _seas_now.get("chip_zh"),
+                        "tip_en": (
+                            (_seas_now.get("headline_en") or "")
+                            + (" " + _seas_now.get("stance_en") if _seas_now.get("stance_en") else "")
+                        ).strip(),
+                        "tip_zh": (
+                            (_seas_now.get("headline_zh") or "")
+                            + (" " + _seas_now.get("stance_zh") if _seas_now.get("stance_zh") else "")
+                        ).strip(),
+                        "tone": _tone,
+                    }
+    except Exception as _fse:  # noqa: BLE001 — additive display chip, never fatal
+        log.warning("factor_season chip read failed: %s", _fse)
+
+    # MSX-2: pre-compute chart_liquidity_meta (needed by _msig_stances before vm assembles)
+    _chart_liq_meta = _chart_liquidity_meta(f)
+    _fx_context = _build_fx_context()
+    _msig_stances_val = _msig_stances(_us_ms_view, _chart_liq_meta, f)
+
     vm = dict(
         latest=latest,
         mtf=mtf_data,
@@ -4137,6 +4719,9 @@ def main() -> int:
         market_tiles=market_tiles(f),
         vix=vix_monitor(f),
         chart_vix=chart_vix(f),
+        chart_liquidity_meta=_chart_liq_meta,   # MSX-2: {chg_4w_bn, state} for panel chip
+        msig_stances=_msig_stances_val,          # MSX-2: stance {en,zh} pairs per section
+        fx_context=_fx_context,                  # MSX-2: FX context block (fail-open None)
         positioning=positioning_rows(f),
         holdings_changes=holdings_rows(),
         holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],
@@ -4176,6 +4761,7 @@ def main() -> int:
         global_leg_lag_days=_global_leg_lag_days,  # B1d: ETF parquet lag vs radar asof in business days (display-only)
         leadership_crack=_leadership_crack,  # RSR-R2/R4: AI-hardware cohort velocity+carnage state (display-only)
         det_cascade=_det_cascade,            # RSR-R5: intl deterioration speed state (display-only)
+        factor_season=factor_season,         # B4: seasonal-climate chip (display-only, page furniture)
         **_master_brief_vm(),
     )
 
@@ -4329,6 +4915,30 @@ def main() -> int:
     try:
         _nh = {k: {kk: vv for kk, vv in (v or {}).items() if kk != "svg"}
                for k, v in (vm.get("nowcast_hist") or {}).items()}
+        # MSX-2: compact fx mirror for sidecar (spec §7) — omit smile_decomp internals
+        # and recent_events (those are large/transient); keep desk, state_changes,
+        # radar {dominant,active,intensity}, strength extremes.
+        _fx_ctx = vm.get("fx_context") or {}
+        _fx_sidecar: dict | None = None
+        if _fx_ctx:
+            _fx_desk = {k: v for k, v in (_fx_ctx.get("dollar_desk") or {}).items()
+                        if k != "smile_decomp"}
+            _radar_raw = _fx_ctx.get("regime_radar") or {}
+            _radar_compact = {
+                "dominant": _radar_raw.get("dominant"),
+                "active": _radar_raw.get("active"),
+                "intensity": _radar_raw.get("intensity"),
+            }
+            _str_raw = _fx_ctx.get("strength") or {}
+            _str_compact = {k: _str_raw.get(k) for k in ("default", "top", "bottom")
+                            if _str_raw.get(k) is not None} or None
+            _fx_sidecar = {
+                "asof": _fx_ctx.get("asof"),
+                "dollar_desk": _fx_desk or None,
+                "state_changes": _fx_ctx.get("state_changes"),
+                "regime_radar": _radar_compact,
+                "strength": _str_compact,
+            }
         _msdata = {
             "date": latest.get("date", ""),
             "generated_utc": generated,
@@ -4347,6 +4957,10 @@ def main() -> int:
             "commodities": vm.get("commodities"),
             "vix": vm.get("vix"),
             "positioning": vm.get("positioning"),
+            # MSX-2 additions (spec §7) — additive-only
+            "market_state_color": (vm.get("market_state") or {}).get("color"),
+            "stances": vm.get("msig_stances"),
+            "fx": _fx_sidecar,
         }
         _msdir = site / "macrodata"
         _msdir.mkdir(parents=True, exist_ok=True)
