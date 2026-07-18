@@ -86,6 +86,7 @@
             {% if intraday_flow_enabled is not defined or intraday_flow_enabled %}<a href="{{ NP }}intraday_flow.html">📊 {{ t('Intraday Flow Tracker', '盘中资金流追踪') }}<span class="d">{{ t('Volume durability · RVOL · VWAP · ~options flow · K/7 confluence', '量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚') }}</span></a>{% endif %}
             {% if flow_leaders_enabled is not defined or flow_leaders_enabled %}<a href="{{ NP }}flow_leaders.html">🏆 {{ t('Flow Leaders', '资金领袖') }}<span class="d">{{ t('Recurring net-impact leaders · washout turns · K/N confluence', '持续净额领头 · 洗盘转机 · K/N汇聚') }}</span></a>{% endif %}
             {% if darkpool_enabled is not defined or darkpool_enabled %}<a href="{{ NP }}darkpool.html">🌑 {{ t('Dark Pool Desk', '场外暗池台') }}<span class="d">{{ t('Off-exchange volume · short ratio · ATS venues', '场外成交量 · 融券比率 · ATS场所') }}</span></a>{% endif %}
+            <a href="{{ NP }}market_structure.html">🏗️ {{ t('Market Structure', '市场结构') }}<span class="d">{{ t('GEX regime · machine flows · dispersion · weekly range', '做市商制度 · 机器资金 · 离散度 · 周度区间') }}</span></a>
           </div>
         </div>
         {% if leader_radar_enabled is not defined or leader_radar_enabled %}<a href="{{ NP }}leader_radar.html">📡 {{ t('Leader Radar', '领袖雷达') }}<span class="d">{{ t('Lifecycle board · regime · handoff watch · rerating watch', '生命周期看板 · 领导力制度 · 交接观察 · 重估观察') }}</span></a>{% endif %}
