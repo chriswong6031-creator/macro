@@ -434,16 +434,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| forex-latest | `data/forex/latest.json` | json | daily-engine | display | 8 | 0 |
 | commodity-latest | `data/commodity/latest.json` | json | daily-engine | display | 4 | 0 |
 | transmission-latest | `data/transmission/latest.json` | json | daily-engine | display | 4 | 0 |
-| forex-latest | `data/forex/latest.json` | json | daily-engine | display | 3 | 0 |
+| macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
 | bond-health | `data/bonds/bond_health.json` | json | daily-engine | display | 2 | 0 |
 | canada-regime-latest | `data/canada_regime/latest.json` | json | daily-engine | display | 2 | 0 |
 | china-regime-latest | `data/china_regime/latest.json` | json | asia-close | display | 2 | 0 |
 | crossasset-latest | `data/crossasset/latest.json` | json | daily-engine | display | 2 | 0 |
 | hk-regime-latest | `data/hk_regime/latest.json` | json | asia-close | display | 2 | 0 |
 | macro-snapshots-latest | `data/macro_snapshots/latest.json` | json | daily-engine | display | 2 | 0 |
-| macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 2 | 0 |
 | macro-transitions | `data/macro_snapshots/transitions.jsonl` | jsonl | daily-engine | display | 2 | 0 |
 | site-factor-series | `site/factordata/factor_series.json` | json | daily-engine | display | 2 | 0 |
 | site-alerts-triage | `site/factordata/alerts_triage.json` | json | daily-engine | display | 1 | 0 |
@@ -1064,19 +1064,18 @@ flowchart LR
     C_engine_spine_py["engine/spine.py"]
     C_engine_track_record_py["engine/track_record.py"]
     OVF_us_board_ledger_retro_grades["...+6 more"]
+    P_scripts_build_forex_py(("scripts/build_forex.py"))
+    A_forex_latest["forex-latest"]
+    C_engine_neuralweb_mastermind_context_py["engine/neuralweb/mastermind_context.py"]
+    C_engine_master_brain_py["engine/master_brain.py"]
+    C_engine_neuralweb_confluence_py["engine/neuralweb/confluence.py"]
+    OVF_forex_latest["...+4 more"]
     P_engine_market_state_py(("engine/market_state.py"))
     A_market_state_latest["market-state-latest"]
     C_engine_regime_prior_py["engine/regime_prior.py"]
     C_engine_market_state_audit_py["engine/market_state_audit.py"]
     C_engine_market_state_tune_py["engine/market_state_tune.py"]
     OVF_market_state_latest["...+4 more"]
-    P_engine_radar_py(("engine/radar.py"))
-    A_radar_theses["radar-theses"]
-    C_engine_ai_desk_scorer_py["engine/ai_desk_scorer.py"]
-    C_engine_hub_track_record_py["engine/hub_track_record.py"]
-    C_engine_master_brain_py["engine/master_brain.py"]
-    C_engine_qledger_py["engine/qledger.py"]
-    OVF_radar_theses["...+4 more"]
     P_engine_run_py --> A_regime_latest
     A_regime_latest --> C_engine_alert_triage_py
     A_regime_latest --> C_engine_briefing_py
@@ -1155,18 +1154,18 @@ flowchart LR
     A_us_board_ledger_retro_grades --> C_engine_spine_py
     A_us_board_ledger_retro_grades --> C_engine_track_record_py
     A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
+    P_scripts_build_forex_py --> A_forex_latest
+    A_forex_latest --> C_engine_neuralweb_world_state_py
+    A_forex_latest --> C_engine_neuralweb_mastermind_context_py
+    A_forex_latest --> C_engine_master_brain_py
+    A_forex_latest --> C_engine_neuralweb_confluence_py
+    A_forex_latest --> OVF_forex_latest
     P_engine_market_state_py --> A_market_state_latest
     A_market_state_latest --> C_engine_neuralweb_world_state_py
     A_market_state_latest --> C_engine_regime_prior_py
     A_market_state_latest --> C_engine_market_state_audit_py
     A_market_state_latest --> C_engine_market_state_tune_py
     A_market_state_latest --> OVF_market_state_latest
-    P_engine_radar_py --> A_radar_theses
-    A_radar_theses --> C_engine_ai_desk_scorer_py
-    A_radar_theses --> C_engine_hub_track_record_py
-    A_radar_theses --> C_engine_master_brain_py
-    A_radar_theses --> C_engine_qledger_py
-    A_radar_theses --> OVF_radar_theses
 ```
 
 ## Appendix — Known Extra Writers
