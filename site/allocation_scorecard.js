@@ -105,7 +105,11 @@
           // observed durability_bar distribution across US baskets — below it the leader's
           // momentum is decelerating materially (display-only caution chip, FT-R1 holds).
           var durLow = (h.durability_bar != null && h.durability_bar < 0.35);
-          if (durLow)
+          // Extended checks on new headline fields when present
+          var breadthLow = (h.breadth != null && h.breadth <= 0.25);
+          var valFading = (h.val_state === 'fading');
+          var r10Neg = (h.r10 != null && h.r10 <= -0.08);
+          if (durLow || breadthLow || valFading || r10Neg)
             faltering = { lag: false, ladder: '', reco: '', source: 'payload' };
         }
       } catch (e) { faltering = null; }

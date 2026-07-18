@@ -63,6 +63,13 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .rel-chip.improving { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
 .rel-chip.stable { color:var(--muted); background:var(--panel2); }
 .rel-chip.deteriorating { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
+/* follow-tier chip (mirrors desk page .ftier) */
+.ftier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+         letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); }
+.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
+.ftier.watch  { color:var(--muted); background:var(--panel2); }
+.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
+.ftier.insufficient { color:var(--muted); background:transparent; border-style:dashed; }
 
 /* ---- hero header ---- */
 .fd-crumb { font-size:12px; color:var(--muted); margin:4px 0 10px; }
@@ -229,6 +236,9 @@ table.sm-t th.sorted { color:var(--text); }
 {% set BOOKUSD = BM.get('book_value_usd') or BF.get('book_value_usd') %}
 {% set NPOS = BM.get('n_positions') if BM.get('n_positions') is not none else (BOOK | length if BOOK else None) %}
 {% set TREND = REL.get('trend') or '' %}
+{#- Follow-desk tier chip: guarded entirely — absent when follow desk not computed -#}
+{%- set _FD_FOLLOW = ((desk or {}).get('follow') or {}).get('followability') -%}
+{%- set _FD_ENTRY = (_FD_FOLLOW.get(SLUG) if _FD_FOLLOW is not none and SLUG else none) -%}
 
 <div class="fd">
 
@@ -253,6 +263,15 @@ table.sm-t th.sorted { color:var(--text); }
       {% endif %}
       {% if LB.get('status') == 'closed' %}<span class="chip-fresh">{{ t('closed','已关闭') }}</span>{% endif %}
       {% if LB.get('rank') %}<span class="chip-fresh">{{ t('leaderboard rank','榜单排名') }} <b class="num">#{{ LB.get('rank') }}</b></span>{% endif %}
+      {%- if _FD_ENTRY is not none -%}
+        {%- set _ft = _FD_ENTRY.get('follow_tier') or 'insufficient' -%}
+        {%- set _fs = _FD_ENTRY.get('follow_score') -%}
+        {%- if _ft == 'follow' -%}<span class="ftier follow" data-tip-en="Follow score {{ _fs }}" data-tip-zh="跟随分 {{ _fs }}">{{ t('FOLLOW','跟随') }}</span>
+        {%- elif _ft == 'watch' -%}<span class="ftier watch" data-tip-en="Watch score {{ _fs }}" data-tip-zh="观察分 {{ _fs }}">{{ t('WATCH','观察') }}</span>
+        {%- elif _ft == 'fade' -%}<span class="ftier fade" data-tip-en="Fade score {{ _fs }}" data-tip-zh="淡出分 {{ _fs }}">{{ t('FADE','淡出') }}</span>
+        {%- else -%}<span class="ftier insufficient" data-tip-en="LOW DATA" data-tip-zh="数据不足">{{ t('LOW DATA','数据不足') }}</span>
+        {%- endif -%}
+      {%- endif -%}
     </div>
   </div>
   <div class="metacol">

@@ -121,6 +121,40 @@
   .semis-badge { display:inline-block; font-size:10px; font-weight:650; border:1px solid var(--line);
     border-radius:6px; padding:0 6px; margin-left:6px; color:var(--muted); vertical-align:1px; }
   .semis-badge.on { color:var(--up); border-color:color-mix(in srgb, var(--up) 40%, var(--line)); }
+  /* ---- score badge ---- */
+  .score-badge { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700;
+    padding:1px 7px; border-radius:7px; border:1px solid var(--line); font-variant-numeric:tabular-nums;
+    vertical-align:1px; margin-left:6px; }
+  .score-badge.strong { color:#4ade80; border-color:color-mix(in srgb,#4ade80 40%,var(--line)); background:color-mix(in srgb,#4ade80 8%,transparent); }
+  .score-badge.neutral { color:var(--muted); border-color:var(--line); }
+  .score-badge.weak { color:#f87171; border-color:color-mix(in srgb,#f87171 40%,var(--line)); background:color-mix(in srgb,#f87171 8%,transparent); }
+  /* ---- turn-state chip ---- */
+  .turn-chip { display:inline-block; font-size:10.5px; font-weight:600; padding:1px 6px; border-radius:6px;
+    border:1px solid var(--line); margin-left:5px; vertical-align:1px; }
+  .turn-chip.washed_out { color:#60a5fa; border-color:color-mix(in srgb,#60a5fa 40%,var(--line)); }
+  .turn-chip.basing     { color:#facc15; border-color:color-mix(in srgb,#facc15 40%,var(--line)); }
+  .turn-chip.turning    { color:#fb923c; border-color:color-mix(in srgb,#fb923c 40%,var(--line)); }
+  .turn-chip.confirmed  { color:#4ade80; border-color:color-mix(in srgb,#4ade80 40%,var(--line)); }
+  /* ---- signal tier chip ---- */
+  .sig-fresh { color:#4ade80; font-size:8px; vertical-align:middle; margin-left:2px; }
+  .sig-chip { display:inline-block; font-size:10px; font-weight:700; padding:0 5px;
+    border-radius:5px; vertical-align:1px; color:var(--up);
+    border:1px solid color-mix(in srgb,var(--up) 40%,var(--line)); margin-left:4px; }
+  /* ---- entry radar strip ---- */
+  .entry-radar { background:var(--panel); border:1px solid var(--line); border-left:3px solid #fb923c;
+    border-radius:10px; padding:12px 15px; margin:0 0 20px; }
+  .entry-radar .er-head { font-size:14px; font-weight:700; margin:0 0 2px; display:flex; align-items:center; gap:8px; }
+  .entry-radar .er-sub { font-size:12px; color:var(--muted); margin:0 0 10px; line-height:1.5; }
+  .entry-radar .er-items { display:flex; flex-direction:column; gap:7px; }
+  .entry-radar .er-item { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:13px; }
+  .entry-radar .er-reco { font-size:11px; color:var(--muted); }
+  .entry-radar .er-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; border-top:1px solid var(--line); padding-top:7px; }
+  .entry-radar .er-empty { color:var(--muted); font-size:12.5px; font-style:italic; padding:4px 0; }
+  /* ---- overlap chips ---- */
+  .overlap-row { margin:6px 0 2px; display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:11.5px; }
+  .overlap-chip { display:inline-block; padding:1px 8px; border:1px solid var(--line); border-radius:7px;
+    background:var(--panel2); font-size:11px; cursor:pointer; color:inherit; }
+  .overlap-chip:hover { border-color:var(--muted); }
 </style>
 </head>
 <body>
@@ -173,6 +207,9 @@
 
   {% include "_baskets_desk.html.j2" %}
 
+  {# Entry Radar — baskets in the washout/basing/turning/confirmed lifecycle ONLY (adjudicated 07-18); clean-entry shows as a chip, never as an admission #}
+  <div id="entry-radar"></div>
+
   {# 🔥 Forming Narratives — emerging A-share themes our models detect + clean-entry tickers. #}
   {% set ne_base = "chinabasketdata/" %}
   {% include "_forming_narratives.html.j2" %}
@@ -213,6 +250,8 @@
 
     <h2 id="categories"><span class="idx">03</span>{{ t('Baskets by category', '按类别分组') }}</h2>
     <div class="toolbar">
+      <span class="lbl">{{ t('Sort', '排序') }}</span>
+      <span class="tabs" id="card-sort-tabs" role="group"></span>
       <span class="lbl">{{ t('Horizon', '时间跨度') }}</span>
       <span class="tabs" id="hz-tabs" role="group"></span>
     </div>
@@ -228,14 +267,18 @@
       'Monthly contrarian basket. Portfolio-level signal, not stock tips; high variance, small size. Forward results accrue as rebalances mature.',
       '按月逆向篮子。组合层面的信号，不是个股建议；波动高、仓位宜小。前瞻结果会随再平衡成熟后累积。') }}</p>
     <div class="sc-stats">
-      {# rd_n_members is passed by the builder when available; falls back gracefully #}
+      {# sleeve_stats carries n_members, sleeve_factor, and (when rederive_stats available) sharpe + n_rebalances #}
       {% if sleeve_stats %}
       <span class="sc-stat">{{ t('members','成分') }} <b>{{ sleeve_stats.n_members }}</b></span>
       <span class="sc-stat">{{ t('sleeve sizing','组合仓位') }} <b>×{{ '%.2f'|format(sleeve_stats.sleeve_factor) }}</b></span>
+      {% if sleeve_stats.sharpe is defined and sleeve_stats.sharpe is not none %}
+      <span class="sc-stat">{{ t('re-derived Sharpe (raw plane)','再推导夏普（原始面板）') }} <b>~{{ '%.2f'|format(sleeve_stats.sharpe) }}</b></span>
       {% endif %}
-      <span class="sc-stat">{{ t('re-derived Sharpe (raw plane)','再推导夏普（原始面板）') }} <b>~0.57</b></span>
       <span class="sc-stat">{{ t('+0.43%/reb universe-rel. (fill-realistic)','每再平衡+0.43%相对等权宇宙（真实成交）') }}</span>
-      <span class="sc-stat">{{ t('n','样本数') }} <b>349</b> {{ t('monthly rebalances','月度再平衡') }}</span>
+      {% if sleeve_stats.n_rebalances is defined and sleeve_stats.n_rebalances is not none %}
+      <span class="sc-stat">{{ t('n','样本数') }} <b>{{ sleeve_stats.n_rebalances }}</b> {{ t('monthly rebalances','月度再平衡') }}</span>
+      {% endif %}
+      {% endif %}
     </div>
     <a class="sc-link" href="cn_reversal_sleeve.html">{{ t('→ Open Reversal Sleeve page','→ 打开反转组合页面') }}</a>
     <p class="sc-note">{{ t(
@@ -274,6 +317,31 @@ const colorOf = {}; (BASKETS.baskets||[]).forEach((b,i)=>colorOf[b.id]=PALETTE[i
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const BENCH_COLOR = () => cssv('--muted') || '#94a3b8';
 
+// ---- score helpers ---------------------------------------------------------
+const scoreBand = s => s==null ? 'neutral' : (s>=65?'strong':s>=45?'neutral':'weak');
+const scoreBadgeHtml = s => s==null ? '' :
+  `<span class="score-badge ${scoreBand(s)}">${s}</span>`;
+// Plain-word turn-state display (no raw enum slugs per doctrine §6).
+const TURN_PLAIN = {
+  WASHED_OUT: {en:'washed out', zh:'超跌', cls:'washed_out'},
+  BASING:     {en:'basing',     zh:'筑底', cls:'basing'},
+  TURNING:    {en:'turning',    zh:'转折', cls:'turning'},
+  CONFIRMED:  {en:'confirmed',  zh:'确认', cls:'confirmed'},
+};
+const turnChipHtml = ts => {
+  const tp = TURN_PLAIN[ts]; if(!tp) return '';
+  const lbl = LANG()==='zh' ? tp.zh : tp.en;
+  return `<span class="turn-chip ${tp.cls}">${esc(lbl)}</span>`;
+};
+// Signal tier chip (display-only, bilingual via LANG()).
+const SIG_LABELS = {T1:{en:'T1 signal',zh:'T1信号'}, T2:{en:'T2 signal',zh:'T2信号'}, T3:{en:'T3 forming',zh:'T3预备'}};
+const sigChipHtml = (tier, fresh) => {
+  if(!tier || !SIG_LABELS[tier]) return '';
+  const lbl = LANG()==='zh' ? SIG_LABELS[tier].zh : SIG_LABELS[tier].en;
+  const fr = fresh ? `<span class="sig-fresh" data-tip="${LANG()==='zh'?'信号在近10根K线内触发':'signal fired within the last 10 bars'}">●</span>` : '';
+  return `<span class="sig-chip">&#9889;${esc(lbl)}${fr}</span>`;
+};
+
 // ---- bilingual helpers (the page re-renders on langchange) -----------------
 const LANG = () => document.documentElement.getAttribute('data-lang')||'en';
 const bn  = b => (LANG()==='zh' && b && b.name_zh) ? b.name_zh : (b?b.name:'');
@@ -293,8 +361,18 @@ const fmtZ   = x => x==null ? '—' : (x>=0?'+':'')+x.toFixed(1)+'σ';
 const cls    = x => x==null ? 'muted' : (x>=0?'pos':'neg');
 const esc    = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm   = s => (s==null?'':String(s)).toLowerCase().replace(/[\s_\-·/()（）]+/g,'');
-const detailKey = b => ((b.detail_key || b.id || '').startsWith('ths_') ? (b.detail_key || b.id).replace(/_/g,'-') : (b.detail_key || b.id || ''));
-const detailHref = b => `subsector_china/${detailKey(b)}.html`;
+// detailKey: THS baskets use ths_ prefix → slug is underscore-stripped (ths_semis→ths-semis).
+// Curated baskets (cn_*) keep underscores as-is (cn_pharma_cxo → cn_pharma_cxo).
+// Explicit safe mapping: never silently mangle a curated basket id.
+const detailKey = b => {
+  const raw = b.detail_key || b.id || '';
+  if(raw.startsWith('ths_')) return raw.replace(/_/g,'-');
+  return raw;
+};
+// curated basket detail pages are written to basket_china/ (build_theme_detail);
+// THS concept pages live under subsector_china/ — the old single-path href 404'd curated links
+const detailHref = b => String(b?.id||'').startsWith('ths_')
+  ? `subsector_china/${detailKey(b)}.html` : `basket_china/${detailKey(b)}.html`;
 const nameLink = b => `<a class="blink" href="${esc(detailHref(b))}" data-nav="detail">${esc(bn(b))}</a>`;
 const basketText = b => [b?.id,b?.name,b?.name_zh,b?.category,b?.category_zh,b?.thesis,b?.thesis_zh,(b?.members||[]).map(m=>[m.symbol,m.name].join(' ')).join(' ')].join(' ');
 function filteredBaskets(){
@@ -343,34 +421,42 @@ function renderTabs(el, opts, active, cb){
 
 // ---- 01 table -------------------------------------------------------------
 let btblMode = localStorage.getItem('cnfw-btbl-mode')||'rel';
-let btblSort = JSON.parse(localStorage.getItem('cnfw-btbl-sort')||'{"col":"20d","dir":-1}');
+// Bumped key: cnfw-btbl-sort-v2 (adds score column — old prefs had no score col).
+let btblSort = JSON.parse(localStorage.getItem('cnfw-btbl-sort-v2')||'{"col":"20d","dir":-1}');
 function renderBTable(){
   const allowed = new Set(filteredBaskets().map(b=>b.id));
   let rows = Object.entries(CHART.baskets).filter(([id])=>allowed.has(id)).map(([id,lv])=>{
     const b=(BASKETS.baskets||[]).find(x=>x.id===id); const rl=ratio(lv);
     const src = btblMode==='raw'?lv:rl;
     const vals={}; TBL_COLS.forEach(c=>{ vals[c]= btblMode==='sigma' ? (/^\d/.test(c)?winZ(rl,c):null) : winRet(src,c); });
-    return {id,b,name:bn(b),color:colorOf[id]||'#888',spark:sparkTail(src),vals};
+    return {id,b,name:bn(b),color:colorOf[id]||'#888',spark:sparkTail(src),vals,score:b?b.score:null};
   });
   const sc=btblSort.col, dir=btblSort.dir;
-  rows.sort((a,b)=>{ if(sc==='name') return a.name.localeCompare(b.name)*dir;
-    const x=a.vals[sc], y=b.vals[sc]; if(x==null) return 1; if(y==null) return -1; return (x-y)*dir; });
+  rows.sort((a,b)=>{
+    if(sc==='name') return a.name.localeCompare(b.name)*dir;
+    if(sc==='score'){ if(a.score==null) return 1; if(b.score==null) return -1; return (a.score-b.score)*dir; }
+    const x=a.vals[sc], y=b.vals[sc]; if(x==null) return 1; if(y==null) return -1; return (x-y)*dir;
+  });
   const totalRows = rows.length;
   const shownRows = tableExpanded ? rows : rows.slice(0,TABLE_LIMIT);
   const fmt = btblMode==='sigma' ? fmtZ : fmtPct;
   const th = c => `<th class="num ${c===sc?'sel':''}" data-c="${c}">${c}${c===sc?(dir<0?' ▾':' ▴'):''}</th>`;
+  const scoreHdrLbl = LANG()==='zh'?'得分':'Score';
   const nameHdr = LANG()==='zh'?'篮子':'Basket';
-  let html = `<thead><tr><th data-c="name">${nameHdr}${sc==='name'?(dir<0?' ▾':' ▴'):''}</th><th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
+  let html = `<thead><tr><th data-c="name">${nameHdr}${sc==='name'?(dir<0?' ▾':' ▴'):''}</th>
+    <th class="num ${sc==='score'?'sel':''}" data-c="score">${scoreHdrLbl}${sc==='score'?(dir<0?' ▾':' ▴'):''}</th>
+    <th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
   html += shownRows.map(r=>`<tr><td class="bname" data-id="${r.id}"><span class="dot" style="background:${r.color}"></span>${nameLink(r.b)}</td>
+    <td class="num">${r.score!=null?`<span class="score-badge ${scoreBand(r.score)}">${r.score}</span>`:'<span class="muted">—</span>'}</td>
     <td class="num">${sparkSvg(r.spark,{color:r.color})}</td>
     ${TBL_COLS.map(c=>`<td class="num ${cls(r.vals[c])}">${r.vals[c]==null?'<span class="muted">—</span>':fmt(r.vals[c])}</td>`).join('')}</tr>`).join('');
   if(btblMode==='raw'){ const bv={}; TBL_COLS.forEach(c=>bv[c]=winRet(CHART.bench,c));
-    html += `<tr><td class="bname" style="font-weight:500"><span class="dot" style="background:${BENCH_COLOR()}"></span>${esc(BENCH())}</td><td></td>${TBL_COLS.map(c=>`<td class="num ${cls(bv[c])}">${fmtPct(bv[c])}</td>`).join('')}</tr>`; }
+    html += `<tr><td class="bname" style="font-weight:500"><span class="dot" style="background:${BENCH_COLOR()}"></span>${esc(BENCH())}</td><td></td><td></td>${TBL_COLS.map(c=>`<td class="num ${cls(bv[c])}">${fmtPct(bv[c])}</td>`).join('')}</tr>`; }
   html += '</tbody>';
   const tbl=document.getElementById('btable'); tbl.innerHTML=html;
   tbl.querySelectorAll('th[data-c]').forEach(h=>h.onclick=()=>{ const c=h.dataset.c;
     if(c===btblSort.col) btblSort.dir*=-1; else btblSort={col:c,dir:c==='name'?1:-1};
-    localStorage.setItem('cnfw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); });
+    localStorage.setItem('cnfw-btbl-sort-v2',JSON.stringify(btblSort)); renderBTable(); });
   const more=document.getElementById('table-more');
   if(more){
     const hiddenN=Math.max(0,totalRows-TABLE_LIMIT);
@@ -473,21 +559,52 @@ function renderChartCats(){
 
 // ---- 03 cards + details ---------------------------------------------------
 let bhz = localStorage.getItem('cnfw-hz')||'20d';
+// Bumped key: cnfw-card-sort-v2 (adds Score sort — old stored prefs may have been 'rel').
+let cardSort = localStorage.getItem('cnfw-card-sort-v2')||'score';
 function kpi(k,p){ const v=p?p.rel:null; return `<div class="kpi"><div class="v ${cls(v)}">${fmtPct(v)}</div><div class="k">${k} ${esc(VS())}</div></div>`; }
+function sortedCards(cards){
+  if(cardSort==='score'){
+    // lite/THS payloads carry no scores — fall back to momentum so the default
+    // ordering is never accidental input order (review 07-18)
+    if(!cards.some(b=>b.score!=null))
+      return cards.slice().sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9));
+    return cards.slice().sort((a,c)=>{
+      if(a.score==null&&c.score==null) return 0;
+      if(a.score==null) return 1; if(c.score==null) return -1;
+      return c.score - a.score;
+    });
+  }
+  if(cardSort==='name') return cards.slice().sort((a,c)=>bn(a).localeCompare(bn(c)));
+  // momentum: sort by selected hz rel return
+  return cards.slice().sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9));
+}
+function renderCardSortTabs(){
+  const host=document.getElementById('card-sort-tabs'); if(!host) return;
+  const zh=LANG()==='zh';
+  const opts=[['score',zh?'得分':'Score'],['momentum',zh?'动量':'Momentum'],['name',zh?'名称':'Name']];
+  host.innerHTML=opts.map(([v,l])=>`<button data-v="${v}" class="${v===cardSort?'on':''}">${l}</button>`).join('');
+  host.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    cardSort=b.dataset.v; localStorage.setItem('cnfw-card-sort-v2',cardSort);
+    host.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    renderCards();
+  });
+}
 function renderCards(){
   const el=document.getElementById('cards');
   el.innerHTML=(BASKETS.categories||[]).map(cat=>{
     const since = LANG()==='zh'?'自':'since';
     const memberW = LANG()==='zh'?'只 · ':' members · ';
-    const cards=filteredBaskets().filter(b=>b.category===cat)
-      .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
+    const baskets=filteredBaskets().filter(b=>b.category===cat);
+    const cards=sortedCards(baskets)
       .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));
         const ref=b.reference?` · ${LANG()==='zh'?'对标':'tracks'} ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
         // tiny cross-market confirmer badge on AI-supply baskets (context only, not a signal)
         const sx=b.ai_semis_confirmer;
-        const sxBadge=(sx&&sx.on!=null)?`<span class="semis-badge ${sx.on?'on':''}" title="cross-market confirmer — global semis momentum context, not a buy signal (SMH/SOXX/TSM 4w-mom ${sx.semis_mom_4w==null?'—':sx.semis_mom_4w})">${_bl('AI-semis '+(sx.state||''),'全球AI半导体 '+(sx.on?'开启':'关闭'))}</span>`:'';
+        const sxBadge=(sx&&sx.on!=null)?`<span class="semis-badge ${sx.on?'on':''}" data-tip="cross-market confirmer — global semis momentum context, not a buy signal">${_bl('AI-semis '+(sx.state||''),'全球AI半导体 '+(sx.on?'开启':'关闭'))}</span>`:'';
+        const scoreBadge = scoreBadgeHtml(b.score);
+        const turnChip = turnChipHtml(b.turn_state);
         return `<div class="card" style="--c:${colorOf[b.id]}" data-id="${b.id}">
-          <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${nameLink(b)}${sxBadge}</div>
+          <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${nameLink(b)}${sxBadge}${scoreBadge}${turnChip}</div>
           <div class="meta">${b.n_members}${memberW}${since} ${esc(b.created)}${ref}</div>
           <div class="th">${esc(bth(b))}</div>
           <div class="perf">${kpi(hzLabel(bhz),b.perf?.[bhz])}${kpi('YTD',b.perf?.ytd)}<span class="spark">${sparkSvg(spk,{w:96,h:30,color:colorOf[b.id]})}</span></div>
@@ -497,9 +614,21 @@ function renderCards(){
   el.querySelectorAll('.card').forEach(c=>c.onclick=()=>openBasket(c.dataset.id));
   el.querySelectorAll('a[data-nav="detail"]').forEach(a=>a.onclick=e=>e.stopPropagation());
 }
-function memRows(b){ return (b.members||[]).map(m=>`<tr><td><a href="china_lookup.html#${encodeURIComponent(m.symbol)}"><b>${esc(m.symbol)}</b></a> <span class="muted sm">${esc(m.name)}</span></td>
-  <td class="why">${esc(m.rationale)}</td><td class="num muted sm">${esc(m.added)}</td>
-  <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td><td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td></tr>`).join(''); }
+const SIG_TIER_ORDER = {T1:0, T2:1, T3:2};
+function memRows(b){
+  // Sort: signal tier present first (T1>T2>T3), then by ret_20d desc.
+  const members = (b.members||[]).slice().sort((a,c)=>{
+    const ao = a.sig_tier!=null ? (SIG_TIER_ORDER[a.sig_tier]??3) : 99;
+    const co = c.sig_tier!=null ? (SIG_TIER_ORDER[c.sig_tier]??3) : 99;
+    if(ao!==co) return ao-co;
+    return ((c.ret_20d??-9) - (a.ret_20d??-9));
+  });
+  return members.map(m=>`<tr>
+    <td><a href="china_lookup.html#${encodeURIComponent(m.symbol)}"><b>${esc(m.symbol)}</b></a> <span class="muted sm">${esc(m.name)}</span>${sigChipHtml(m.sig_tier, m.sig_fresh)}</td>
+    <td class="why">${esc(m.rationale)}</td><td class="num muted sm">${esc(m.added)}</td>
+    <td class="num ${cls(m.ret_5d)}">${fmtPct(m.ret_5d)}</td>
+    <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td><td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td></tr>`).join('');
+}
 function detailSection(b){
   const p=b.perf||{}; const kr=(k,h)=>`<div><div class="k">${k} ${esc(VS())}</div><div class="v ${cls(p[h]?.rel)}">${fmtPct(p[h]?.rel)}</div></div>`;
   const zh=LANG()==='zh';
@@ -507,22 +636,80 @@ function detailSection(b){
   const warns=[]; if((b.missing||[]).length) warns.push(`<span class="warn">${zh?'已剔除（不在缓存）':'excluded (not in free cache)'}: ${b.missing.map(esc).join(', ')}</span>`);
   (b.partial||[]).forEach(pp=>warns.push(`<span class="warn">${esc(pp.symbol)} ${zh?'纳入于':'enters'} ${esc(pp.from)}</span>`));
   const clog=(b.changelog||[]).map(c=>`<li><b>${esc(c.date)}</b> — ${esc(c.action)}: ${esc(c.note)}</li>`).join('');
-  const memHdr = zh?['代码','理由','纳入','20d','YTD']:['Symbol','Rationale','Added','20d','YTD'];
+  const memHdr = zh?['代码','理由','纳入','5d','20d','YTD']:['Symbol','Rationale','Added','5d','20d','YTD'];
+  // cross-basket overlap chips
+  const ovls = (b.top_overlaps||[]);
+  const overlapHtml = ovls.length ? `<div class="overlap-row"><span class="muted sm">${zh?'与以下篮子重叠：':'Overlaps with:'}</span>${
+    ovls.map(o=>`<span class="overlap-chip" data-id="${esc(o.id)}">${esc(zh&&o.name_zh?o.name_zh:o.name)} <span class="muted">(${o.n_shared})</span></span>`).join('')
+  }</div>` : '';
+  // score + reco chip row
+  const scoreRow = (b.score!=null||b.reco!=null) ? `<div style="margin:4px 0 6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    ${b.score!=null?scoreBadgeHtml(b.score):''}
+    ${(b.reco!=null||b.reco_zh!=null)?`<span class="chip">${esc(zh?(b.reco_zh||b.reco||''):(b.reco||''))}</span>`:''}
+    ${turnChipHtml(b.turn_state)}
+  </div>` : '';
   return `<div class="detail" id="b-${b.id}"><h4><span class="dot" style="background:${colorOf[b.id]}"></span>${nameLink(b)} <span class="chip">${esc(catLabel(b.category))}</span></h4>
-    <p class="th">${esc(bth(b))}</p>
+    ${scoreRow}<p class="th">${esc(bth(b))}</p>
     <div class="kpirow">${kr('20d','20d')}${kr('60d','60d')}${kr('MTD','mtd')}${kr('YTD','ytd')}${kr(zh?'全程':'Full','full')}</div>
-    ${ref}<div>${warns.join(' ')}</div>
+    ${ref}${overlapHtml}<div>${warns.join(' ')}</div>
     <details open><summary>${zh?'成分':'Members'} (${b.n_members}) &amp; ${zh?'变更记录':'changelog'}</summary>
-      <div class="ts"><table><thead><tr><th>${memHdr[0]}</th><th>${memHdr[1]}</th><th class="num">${memHdr[2]}</th><th class="num">${memHdr[3]}</th><th class="num">${memHdr[4]}</th></tr></thead><tbody>${memRows(b)}</tbody></table></div>
+      <div class="ts"><table><thead><tr><th>${memHdr[0]}</th><th>${memHdr[1]}</th><th class="num">${memHdr[2]}</th><th class="num">${memHdr[3]}</th><th class="num">${memHdr[4]}</th><th class="num">${memHdr[5]}</th></tr></thead><tbody>${memRows(b)}</tbody></table></div>
       <ul class="clog">${clog}</ul>
     </details></div>`;
 }
 function renderDetails(){
   const el=document.getElementById('details');
-  el.innerHTML=(BASKETS.categories||[]).map(cat=>filteredBaskets().filter(b=>b.category===cat)
-    .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9)).map(detailSection).join('')).join('');
+  el.innerHTML=(BASKETS.categories||[]).map(cat=>sortedCards(filteredBaskets().filter(b=>b.category===cat))
+    .map(detailSection).join('')).join('');
+  // wire overlap chip clicks after render
+  el.querySelectorAll('.overlap-chip[data-id]').forEach(c=>c.onclick=e=>{ e.stopPropagation(); openBasket(c.dataset.id); });
 }
-function openBasket(id){ const d=document.getElementById('b-'+id); if(!d) return; const det=d.querySelector('details'); if(det) det.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); }
+function openBasket(id){ const d=document.getElementById('b-'+id); if(!d) return; const det=d.querySelector('details'); if(det) det.open=true; d.scrollIntoView({behavior:'instant',block:'start'}); }
+
+// ---- Entry Radar (non-lite: curated baskets in the turn lifecycle ONLY; clean-entry is a chip) ----
+const RADAR_TURN_ORDER = {CONFIRMED:0, TURNING:1, BASING:2, WASHED_OUT:3};
+function renderEntryRadar(){
+  const host=document.getElementById('entry-radar'); if(!host) return;
+  const zh=LANG()==='zh';
+  // Collect baskets that qualify: turn_state in lifecycle OR clean_entry_q >= 0.6.
+  const candidates=(BASKETS.baskets||[]).filter(b=>
+    RADAR_TURN_ORDER[b.turn_state]!=null
+  );
+  // Rank: CONFIRMED > TURNING > BASING > WASHED_OUT, tiebreak score desc.
+  candidates.sort((a,c)=>{
+    const ao = RADAR_TURN_ORDER[a.turn_state]??99;
+    const co = RADAR_TURN_ORDER[c.turn_state]??99;
+    if(ao!==co) return ao-co;
+    return ((c.score??-1)-(a.score??-1));
+  });
+  // Count members with sig_tier in each basket.
+  const sigCount = b => (b.members||[]).filter(m=>m.sig_tier!=null).length;
+  const title=zh?'入场雷达':'Entry Radar';
+  const subEn='Baskets in the washout-to-confirmed lifecycle. Ranked by lifecycle stage then score. Entry aids, not proof.';
+  const subZh='处于超跌到确认生命周期中的篮子。按生命周期阶段再按得分排序。仅为入场辅助，非证明。';
+  if(!candidates.length){
+    host.innerHTML=`<div class="entry-radar"><div class="er-head">&#9654; ${esc(title)}</div>
+      <div class="er-empty">${zh?'目前无满足条件的篮子 — 大多数时候确实如此。':'None right now — most days none.'}</div>
+      <div class="er-note">${zh?'生命周期来自超跌状态机；入场辅助，非证明。':'Lifecycle from the washout state machine; entry aids, not proof.'}</div></div>`;
+    return;
+  }
+  const items=candidates.map(b=>{
+    const sc=sigCount(b);
+    const scNote=sc>0?` · <span class="muted">${sc} ${zh?'只成分有信号':`member${sc>1?'s':''} gated`}</span>`:'';
+    const recoWord=zh?(b.reco_zh||b.reco||''):(b.reco||'');
+    const ceChip=(b.clean_entry_q!=null&&b.clean_entry_q>=0.7)?`<span class="chip" data-tip="${zh?'清洁入场读数（0-1）— 回调结构质量':'clean-entry reading (0-1) — pullback structure quality'}">${zh?'清洁入场':'clean entry'} ${b.clean_entry_q.toFixed(1)}</span>`:'';
+    return `<div class="er-item">
+      <a class="blink" href="${esc(detailHref(b))}" data-nav="detail">${esc(bn(b))}</a>
+      ${turnChipHtml(b.turn_state)}${scoreBadgeHtml(b.score)}${ceChip}${scNote}
+      ${recoWord?`<span class="er-reco">${esc(recoWord)}</span>`:''}
+    </div>`;
+  }).join('');
+  host.innerHTML=`<div class="entry-radar"><div class="er-head">&#9654; ${esc(title)}<span class="chip">${candidates.length}</span></div>
+    <div class="er-sub">${zh?subZh:subEn}</div>
+    <div class="er-items">${items}</div>
+    <div class="er-note">${zh?'生命周期来自超跌状态机；入场辅助，非证明（显示层，无验证前瞻优势）。':'Lifecycle from the washout state machine; entry aids, not proof (display-tier, no validated forward edge).'}</div>
+  </div>`;
+}
 
 function renderStory(){
   const s=BASKETS.story; if(!s) return; const zh=LANG()==='zh';
@@ -556,7 +743,7 @@ function renderSemisChip(){
   </div>`;
 }
 
-function renderAll(){ renderStory(); renderModeTabs(); renderBTable(); renderChartCats(); renderChart(); renderCards(); renderDetails(); updateCount(); }
+function renderAll(){ renderStory(); renderModeTabs(); renderBTable(); renderChartCats(); renderChart(); renderCardSortTabs(); renderCards(); renderDetails(); renderEntryRadar(); updateCount(); }
 
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
@@ -574,8 +761,9 @@ function boot(){
   rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderChart(); });
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cnfw-hz',v); renderCards(); renderDetails(); });
+  renderCardSortTabs();
   initChartDefaults();
-  renderStory(); renderBTable(); renderChartCats(); renderChart(); renderCards(); renderDetails(); renderSemisChip(); updateCount();{% if not lite %} deskBoot();
+  renderStory(); renderBTable(); renderChartCats(); renderChart(); renderCardSortTabs(); renderCards(); renderDetails(); renderEntryRadar(); renderSemisChip(); updateCount();{% if not lite %} deskBoot();
   // W8b parity: cap "What to act on now" columns at 4 rows (matches PR #1992/#2010)
   document.querySelectorAll('#actnow .anlist.lst-collapse').forEach(function(el){ el.classList.add('lst-cap4'); });{% endif %}
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);

@@ -68,11 +68,8 @@
     #forming-narratives .ne-pop-code{font-size:15.5px;font-weight:700;letter-spacing:.02em;line-height:1.15;color:var(--text,inherit);
       font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
     #forming-narratives .ne-pop-sub{font-size:10.5px;color:var(--muted);line-height:1.4}
-    #forming-narratives .ne-caution{margin-top:9px;font-size:11.5px;color:var(--warn,#f59e0b)}
-    #forming-narratives details.ne-cav{margin-top:9px;font-size:11.5px;color:var(--muted)}
-    #forming-narratives details.ne-cav summary{cursor:pointer;user-select:none}
-    #forming-narratives details.ne-cav ul{margin:6px 0 0;padding-left:18px;line-height:1.5}
-    #forming-narratives .ne-note{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.5;max-width:90ch}`;
+    #forming-narratives .ne-flags{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
+    #forming-narratives .ne-flag{font-size:11px;color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:1px 7px}`;
     const st = document.createElement('style'); st.id = 'ne-styles'; st.textContent = css;
     document.head.appendChild(st);
   }
@@ -110,30 +107,25 @@
   function card(nv) {
     const sc = SCORE_COLOR[(nv.score_label || {}).css] || 'var(--muted)';
     const recs = (nv.recommended || []).map(tickerChip).join('');
-    let caution = '';
-    if (nv.hype && nv.hype.ipo_wave)
-      caution += `🪧 ${L('Recent-IPO wave — hype tends to mark late, not early.', '近期 IPO 潮 — 炒作往往标志偏晚而非偏早。')}<br>`;
+    // Hype flags — kept as compact inline chips
+    let flags = '';
+    if (nv.hype && nv.hype.ipo_wave) flags += `<span class="ne-flag">🪧 ${L('IPO wave', 'IPO潮')}</span>`;
     if (nv.hype && nv.hype.stretched_share >= 0.4)
-      caution += `⚠ ${L(Math.round(nv.hype.stretched_share * 100) + '% of the cohort is already stretched/parabolic.',
-        '已有 ' + Math.round(nv.hype.stretched_share * 100) + '% 的组合处于拉伸／抛物状态。')}<br>`;
-    if (nv.attention_aligned)
-      caution += `🔭 ${L('Sits under a currently-hot macro narrative — elevated attention raises the bar.',
-        '处于当前热门宏观叙事之下 — 关注升温抬高门槛。')}`;
-    const cav = `<details class="ne-cav"><summary>${L('Why this is a watchlist, not a buy list', '为何这是观察清单而非买入清单')}</summary>`
-      + `<ul>` + (nv.caveats_en || []).map((c, i) =>
-        `<li>${L(esc(c), esc((nv.caveats_zh || [])[i] || c))}</li>`).join('') + `</ul></details>`;
+      flags += `<span class="ne-flag">⚠ ${Math.round(nv.hype.stretched_share * 100)}% ${L('stretched', '超伸')}</span>`;
+    if (nv.attention_aligned) flags += `<span class="ne-flag">🔭 ${L('hot narrative', '热门叙事')}</span>`;
+    // why_en/why_zh promoted to data-tip on the score pill
+    const scoreTipEn = esc(nv.why_en || '');
+    const scoreTipZh = esc(nv.why_zh || nv.why_en || '');
     return `<div class="ne-card" id="ne-${esc(nv.signature)}">
       <div class="ne-hd">
         <div class="ne-name">${L(esc(nv.name_en), esc(nv.name_zh))}</div>
-        <div class="ne-badge"><div class="ne-score" style="color:${sc}">${nv.score}</div>
-          <div class="ne-lab">${L(esc((nv.score_label || {}).en), esc((nv.score_label || {}).zh))}</div></div>
+        <div class="ne-badge" data-tip-en="${scoreTipEn}" data-tip-zh="${scoreTipZh}" style="cursor:default">
+          <div class="ne-score" style="color:${sc}">${nv.score}</div>
+          <div class="ne-lab">${L(esc((nv.score_label || {}).en), esc((nv.score_label || {}).zh))}</div>
+        </div>
       </div>
-      ${legBar(nv.legs || {})}
-      <div class="ne-why">${L(esc(nv.why_en), esc(nv.why_zh))}</div>
-      <div class="ne-rec-h">${L('Where to look', '该看哪里')}</div>
+      ${flags ? `<div class="ne-flags">${flags}</div>` : ''}
       <div class="ne-recs">${recs || '<small style="color:var(--muted)">' + L('no clean read', '无清晰读数') + '</small>'}</div>
-      ${caution ? `<div class="ne-caution">${caution}</div>` : ''}
-      ${cav}
     </div>`;
   }
 
@@ -162,15 +154,17 @@
       .then(d => {
         if (!d || !(d.narratives || []).length) { sec.style.display = 'none'; return; }
         injectStyles();
+        const scanNote = L(
+          'Scanned ' + (d.n_universe || '—') + ' names as of ' + esc(d.as_of) + '. Scores rank narrative formation, not expected return. A noisy watchlist lens — not a buy list.',
+          '截至 ' + esc(d.as_of) + ' 扫描了 ' + (d.n_universe || '—') + ' 只个股。分数衡量叙事成形程度，并非预期回报。这是嘈杂的观察清单，并非买入清单。'
+        );
         sec.innerHTML = `<h2><span class="idx">★</span>🔥 ${L('Forming Narratives', '成形叙事')}
             <span class="sect-tag">${L('emerging themes our models see · ' + esc(d.market_en),
-              '模型识别的新兴主题 · ' + esc(d.market_zh))}</span></h2>
+              '模型识别的新兴主题 · ' + esc(d.market_zh))}</span>
+            <span style="cursor:default;color:var(--muted);font-size:13px;font-weight:400" data-tip-en="${esc(scanNote.replace(/<[^>]+>/g,''))}" data-tip-zh="${esc(scanNote.replace(/<[^>]+>/g,''))}">?</span></h2>
           <p class="ne-sub">${L(esc(d.note_en), esc(d.note_zh))}</p>
           ${attnBar(d)}
-          <div class="ne-grid">${d.narratives.map(card).join('')}</div>
-          <p class="ne-note">${L(
-            'Scanned ' + (d.n_universe || '—') + ' names as of ' + esc(d.as_of) + '. Scores rank narrative formation, not expected return.',
-            '截至 ' + esc(d.as_of) + ' 扫描了 ' + (d.n_universe || '—') + ' 只个股。分数衡量叙事成形程度，并非预期回报。')}</p>`;
+          <div class="ne-grid">${d.narratives.map(card).join('')}</div>`;
         // hover/focus reveals the code popover via CSS; a tap pins it (touch, where hover is
         // unreliable). Close on outside tap or Escape; only one pinned at a time.
         sec.querySelectorAll('.ne-tk').forEach(chip => {

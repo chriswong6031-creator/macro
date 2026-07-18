@@ -727,12 +727,40 @@ def _narrate(rot: dict, alloc: dict, ranks: dict, durab: dict, crowd: dict,
     lead_id = L["id"]
     led = durab.get(lead_id, {})
     lcr = crowd.get(lead_id, {})
+    # theme_context health-awareness: read breadth/r10/val_state from the leader's row
+    _lead_row = ranks.get(lead_id, {}) if isinstance(ranks, dict) else {}
+    _lead_breadth = led.get("breadth")   # durability breadth (pct members > 50d MA)
+    _lead_r10 = None                      # r10 is in rows not ranks dict — tolerate absence
+    _lead_val_state = _lead_row.get("val_state")
+    # find the leader's r10 from preps rows (after rank_themes; additive read)
+    _lead_prep = byid.get(lead_id)
+    if _lead_prep is not None:
+        try:
+            _lvl = _lead_prep["lvl"]
+            _r10_raw = _cum_ret(_lvl, 10, skip=0)
+            _lead_r10 = _r10_raw
+        except Exception:  # noqa: BLE001
+            pass
+    _lead_breaking = (
+        (_lead_breadth is not None and _lead_breadth <= 0.25)
+        or _lead_val_state == "fading"
+    )
     bits_en, bits_zh = [], []
     if L["name"]:
-        dbar = led.get("bar")
-        dtxt = ("durable" if (dbar or 0) >= 0.66 else "firm" if (dbar or 0) >= 0.4 else "fragile")
-        bits_en.append(f"<b>{L['name']}</b> leads the themes (durability {dtxt})")
-        bits_zh.append(f"<b>{L['name_zh']}</b> 领跑主题（持续性{ {'durable':'强','firm':'中','fragile':'弱'}[dtxt] }）")
+        if _lead_breaking:
+            # health-aware first clause (contract §narrative_rotation additions)
+            bits_en.append(
+                f"<b>{L['name']}</b> still ranks first by trailing momentum, "
+                "but is breaking down now (few members holding up)"
+            )
+            bits_zh.append(
+                f"<b>{L['name_zh']}</b> 按趋势动量仍居首位，但近期正在走弱（成分股多数转弱）"
+            )
+        else:
+            dbar = led.get("bar")
+            dtxt = ("durable" if (dbar or 0) >= 0.66 else "firm" if (dbar or 0) >= 0.4 else "fragile")
+            bits_en.append(f"<b>{L['name']}</b> leads the themes (durability {dtxt})")
+            bits_zh.append(f"<b>{L['name_zh']}</b> 领跑主题（持续性{ {'durable':'强','firm':'中','fragile':'弱'}[dtxt] }）")
     if rot.get("one_narrative"):
         bits_en.append(f"one narrative dominates (absorption {rot.get('absorption')}) — the leader is "
                        f"capped at {int(POS_CAP*100)}%, not faded, with the remainder routed to "
@@ -862,12 +890,19 @@ def compute_narrative_rotation(region: str = "us") -> dict | None:
         lead = next((w for w in sorted(alloc["weights"], key=lambda x: x["rank"])), None)
         if lead is not None:
             durb = durab.get(lead["id"], {})
+            # Additive health fields (theme_context.v1 contract) — null-safe reads from rows.
+            # breadth/r10/val_state only; desk_score attached in build_baskets where theme_intel exists.
+            _lead_rows_hit = next((r for r in rows if r.get("id") == lead["id"]), {})
             headline = {"id": lead["id"], "name": lead["name"], "name_zh": lead["name_zh"],
                         "weight": lead["weight"], "cash": alloc["cash"],
                         "durability_bar": durb.get("bar"),
                         "hurst_tag": durb.get("hurst_tag"),
                         "crowded": lead.get("crowded", False),
-                        "one_narrative": rot.get("one_narrative")}
+                        "one_narrative": rot.get("one_narrative"),
+                        # health context (additive; null until rows populated)
+                        "breadth": (durb.get("breadth")),
+                        "r10": _lead_rows_hit.get("r10"),
+                        "val_state": _lead_rows_hit.get("val_state")}
 
         return {
             "as_of": s["idx"].max().strftime("%Y-%m-%d"),

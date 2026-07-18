@@ -34,6 +34,18 @@ STALE_DAYS: int = 45
 # is DARK — the audit exits non-zero to warn CI/local collect.
 MIN_PRESENT_PCT: float = 50.0
 
+# Series known to be discontinued/frozen at the SOURCE, kept in config only so their
+# parquet history stays collected-adjacent (splice legs, provenance). Counted as present
+# (the freeze is expected — the engine side has already routed around it) and excluded
+# from the per-series stale warning so the tripwire below stays high-signal. A new id
+# lands here ONLY together with the engine-side substitute that makes the freeze benign.
+DISCONTINUED_UPSTREAM: dict[str, str] = {
+    # OECD MEI UK 3m interbank froze at 2026-01 (AU/CA/CH siblings still update).
+    # Live GBP leg = IUDSOIA (BoE SONIA), spliced in engine/forex_inputs.load_rate
+    # + engine/forex_dollar smile; this id retained as the pre-2026 history leg.
+    "IR3TIB01GBM156N": "frozen upstream 2026-01; live substitute IUDSOIA spliced in forex engine",
+}
+
 
 # ---------------------------------------------------------------------------
 # Core logic
@@ -101,6 +113,7 @@ def audit_groups(
 
     groups: list[dict] = []
     any_dark = False
+    any_stale_series = False
 
     for group_name, series_map in groups_cfg.items():
         if not isinstance(series_map, dict):
@@ -110,8 +123,14 @@ def audit_groups(
             continue
 
         missing: list[str] = []
+        discontinued: list[str] = []
         present_count = 0
         for sid in series_map:
+            if sid in DISCONTINUED_UPSTREAM:
+                # expected-frozen: history intact, engine routed around it — present.
+                discontinued.append(sid)
+                present_count += 1
+                continue
             path = fred_dir / f"{sid}.parquet"
             if _is_fresh(path, asof, stale_days):
                 present_count += 1
@@ -135,6 +154,19 @@ def audit_groups(
                 ", ".join(missing) if missing else "none",
             )
 
+        # Per-series tripwire: a SINGLE frozen series in an otherwise-healthy group
+        # never crossed the 50% group gate, so the GBP carry input (IR3TIB01GBM156N)
+        # sat 6 months stale at INFO level. Every stale/absent series now warns
+        # individually — and as a ::warning:: so the CI run annotates it — even when
+        # its group passes. Warn-only by design: staleness must never block collection.
+        for sid in missing:
+            any_stale_series = True
+            msg = (f"fred_groups: series {sid} (group {group_name}) stale/absent — "
+                   f"engine consumers are reading a frozen value; if discontinued "
+                   f"upstream, splice a live substitute (see DISCONTINUED_UPSTREAM)")
+            log.warning("[fred_groups] %s", msg)
+            print(f"::warning::{msg}")
+
         groups.append({
             "group": group_name,
             "n_present": present_count,
@@ -142,6 +174,7 @@ def audit_groups(
             "pct_present": round(pct, 1),
             "dark": dark,
             "missing": missing,
+            **({"discontinued": discontinued} if discontinued else {}),
         })
 
     doc = {
@@ -150,6 +183,7 @@ def audit_groups(
         "stale_days": stale_days,
         "min_present_pct": min_present_pct,
         "any_dark": any_dark,
+        "any_stale_series": any_stale_series,   # per-series tripwire (warn-only, never gates)
         "groups": groups,
     }
     (out_dir / "fred_groups_audit.json").write_text(json.dumps(doc, indent=1))

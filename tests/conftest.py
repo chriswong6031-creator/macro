@@ -195,5 +195,16 @@ def pytest_sessionfinish(session, exitstatus):
         f"MM_DATA_GUARD: test session dirtied the real data/ or site/ tree:\n{body}\n"
         f"{_GUARD_MSG}\n{'=' * 70}"
     )
+    # On GitHub Actions the banner sits ~60 log lines above the green "N
+    # passed" summary and the job dies with what reads as a silent exit 1 —
+    # exactly how the 2026-07-18 engine-render-guards red got misdiagnosed as
+    # a pytest-9 shutdown bug. Emit a workflow error annotation so the trip
+    # is visible on the run page without reading the step log.
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        lines = fresh or [line for _, changed in hits for line in changed]
+        dirtied = ", ".join(line.strip() for line in lines) or "see step log"
+        print(f"::error title=MM_DATA_GUARD::test session dirtied the real "
+              f"data/ or site/ tree ({dirtied}) — exit forced to 1; "
+              f"see the MM_DATA_GUARD banner above the pytest summary")
     if session.exitstatus == 0:
         session.exitstatus = 1
