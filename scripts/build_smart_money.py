@@ -114,12 +114,21 @@ def _build_initiations(sm: dict, tracker: dict) -> list[dict]:
             if pct < MIN_PCT:
                 continue
             ticker = str(r.ticker)
+            # shares_change_pct: the actual share-count change from the diff output
+            # (used by _incr_pct in board scoring — NOT tilt_pp which is overweight-vs-fund-mean)
+            _scp = None
+            if hasattr(r, "shares_change_pct") and r.shares_change_pct is not None:
+                try:
+                    _scp = float(r.shares_change_pct)
+                except (TypeError, ValueError):
+                    _scp = None
             fund_entry = {
                 "slug": slug,
                 "name": spec.get("name", slug),
                 "action": r.action,
                 "rank": int(r.rank) if hasattr(r, "rank") and r.rank is not None else None,
                 "tilt": round(float(r.tilt_pp), 3) if hasattr(r, "tilt_pp") and r.tilt_pp is not None else None,
+                "shares_change_pct": _scp,
                 "pct_book": round(pct, 2),
                 "turnover_tier": tt_index.get(slug),
             }
@@ -648,6 +657,203 @@ def main() -> int:
         flow = {}
     phase_times["flow"] = round(time.monotonic() - t44, 2)
 
+    # ---- Phase 4.5: Follow Desk (followability + boards) ----
+    t45 = time.monotonic()
+    follow_desk: dict = {}
+    try:
+        from engine.fund_followability import compute_followability, load_books
+        from engine.fund_boards import (build_best_buys, build_small_mid_board,
+                                        build_sector_consensus, load_grade_a_card,
+                                        load_cap_sources)
+
+        # Reuse the classifications already loaded in Phase 4.4 if available
+        _fol_cls = cls  # may be None — followability handles it
+        if _fol_cls is None:
+            try:
+                from engine.fund_intelligence import load_classifications as _lc
+                _fol_cls = _lc()
+            except Exception as _e_cls:
+                log.warning("follow-desk: load_classifications failed: %s", _e_cls)
+                _fol_cls = {}
+
+        _slugs = list(funds.keys())
+        _books_by_fund = load_books(_slugs)
+
+        # Build a single run-level price-series cache to avoid re-reading
+        # the same parquet file thousands of times across 51 funds × many periods.
+        # SM2-R12: each read is ~1-2ms but N_funds × N_periods × N_tickers
+        # accumulates to minutes without this. Cache stays in-scope for the
+        # duration of Phase 4.5 only (not leaked to other phases).
+        from engine.fund_followability import _default_price_loader as _raw_pl
+        _price_cache: dict = {}
+        def _cached_price_loader(ticker: str, _cache=_price_cache) -> object:
+            if ticker not in _cache:
+                _cache[ticker] = _raw_pl(ticker)
+            return _cache[ticker]
+
+        # ---- followability cache gate (render-budget law) ----
+        # The heavy compute (sleeve/rotation-IQ/front-run pricing across 51 funds x
+        # 13 quarters) only meaningfully changes when a NEW FILING lands or the
+        # scoring version bumps; filing-anchored windows drift slowly between
+        # filings. Fingerprint = latest (period, filing_date, n_rows) per fund +
+        # FOLLOW_VERSION; reuse the committed artifact when it matches and is
+        # under _FOLLOW_CACHE_MAX_AGE_D old (bounds fixed-horizon drift to a week).
+        # The boards below are ALWAYS rebuilt fresh — they use daily inputs.
+        import hashlib as _hl
+        from engine.fund_followability import FOLLOW_VERSION as _FV
+        _FOLLOW_CACHE_MAX_AGE_D = 7
+        _fp_src: list = [_FV]
+        for _s in sorted(_books_by_fund):
+            _pers = _books_by_fund[_s]
+            if not _pers:
+                continue
+            _mx = max(_pers)
+            _df_mx = _pers[_mx]
+            _fd_mx = ""
+            try:
+                if "filing_date" in _df_mx.columns and len(_df_mx):
+                    _fd_mx = str(_df_mx["filing_date"].iloc[0])
+            except Exception:  # noqa: BLE001
+                pass
+            _fp_src.append(f"{_s}|{_mx}|{_fd_mx}|{len(_df_mx)}")
+        _fingerprint = _hl.sha1("\n".join(_fp_src).encode()).hexdigest()[:16]
+
+        _followability = None
+        _follow_computed_at = None
+        try:
+            _prev = json.loads((_site_dir() / "smartmoney_follow.json").read_text())
+            _pm = _prev.get("meta") or {}
+            _age_ok = False
+            if _pm.get("computed_at"):
+                _age_d = (datetime.now(timezone.utc)
+                          - datetime.fromisoformat(_pm["computed_at"])).days
+                _age_ok = 0 <= _age_d <= _FOLLOW_CACHE_MAX_AGE_D
+            if _pm.get("fingerprint") == _fingerprint and _age_ok and _prev.get("followability"):
+                _followability = _prev["followability"]
+                _follow_computed_at = _pm.get("computed_at")
+                log.info("follow-desk: followability cache HIT (fp=%s, computed %s) — boards fresh",
+                         _fingerprint, _follow_computed_at)
+        except Exception:  # noqa: BLE001
+            _followability = None
+
+        if _followability is None:
+            _followability = compute_followability(
+                tracker or {}, _books_by_fund, _fol_cls or {},
+                price_loader=_cached_price_loader,
+            )
+            _follow_computed_at = datetime.now(timezone.utc).isoformat()
+
+        # Derive sector_flows from the already-computed flow["sector"] output
+        # shape: {key: {net_pp: float, ...}} — net_pp > 0 means net inflow
+        _sector_flows: dict | None = None
+        _raw_sector = (flow.get("sector") or {}).get("groups")
+        if _raw_sector:
+            _sector_flows = {
+                row["key"]: {"net_inflow": float(row.get("net_pp") or 0) > 0}
+                for row in _raw_sector if row.get("key")
+            }
+
+        _cap_sources = load_cap_sources()
+
+        # Flat initiations list enriched with slug for board scoring
+        _flat_initiations: list[dict] = []
+        for init_row in initiations:
+            ticker = init_row.get("ticker", "")
+            # Sector lookup from classifications (FIX 2: was hard-coded None)
+            _ticker_upper = (ticker or "").upper()
+            _sector = ((_fol_cls or {}).get(_ticker_upper) or {}).get("sector")
+            # since_excess is ticker-level (median across funds = same value — display only)
+            for fe in init_row.get("funds", []):
+                _flat_initiations.append({
+                    "ticker": ticker,
+                    "issuer": init_row.get("issuer", ""),
+                    "action": fe.get("action", ""),
+                    "pct_book": fe.get("pct_book") or 0.0,
+                    "shares_change_pct": fe.get("shares_change_pct"),  # real share-count delta (not tilt)
+                    "filing_date": init_row.get("filing_date", ""),
+                    "since_excess": init_row.get("since_excess"),
+                    "sector": _sector,
+                    "slug": fe.get("slug", ""),
+                    "name": fe.get("name", ""),
+                })
+
+        _best_buys = build_best_buys(
+            _flat_initiations, _followability, _sector_flows, _cap_sources, top_n=40
+        )
+        _small_mid = build_small_mid_board(
+            _best_buys or _flat_initiations, _followability, _cap_sources
+        )
+
+        # Sector consensus: build books_latest_pair from fund_intel sector_series
+        _books_latest_pair: dict = {}
+        for slug, fi_entry in (fund_intel.get("funds") or {}).items():
+            _series = fi_entry.get("sector_series") or []
+            if len(_series) < 2:
+                continue
+            _prev_w = (_series[-2] or {}).get("weights") or {}
+            _curr_w = (_series[-1] or {}).get("weights") or {}
+            _riq = (_followability.get(slug) or {}).get("rotation_iq") or {}
+            _books_latest_pair[slug] = {
+                "prev": _prev_w,
+                "curr": _curr_w,
+                "rotation_iq": _riq,
+                "tickers_curr": {},  # ticker-level detail not needed for consensus bars
+            }
+        _consensus = build_sector_consensus(_books_latest_pair, _followability, _fol_cls or {})
+        _grade_a = load_grade_a_card()
+
+        # Tier counts for the meta block
+        _tier_counts: dict[str, int] = {"follow": 0, "watch": 0, "fade": 0, "insufficient": 0}
+        for fol_entry in _followability.values():
+            t_key = fol_entry.get("follow_tier") or "insufficient"
+            _tier_counts[t_key] = _tier_counts.get(t_key, 0) + 1
+
+        # Proven-rotator count: funds with rotation_iq.n_calls>=6 AND hit_rate>=0.5
+        # AND tier != "fade" (FIX 6: replaces first-row namespace hack in template)
+        _n_proven_rotators = sum(
+            1 for slug, fol_entry in _followability.items()
+            if fol_entry.get("follow_tier") != "fade"
+            and (fol_entry.get("rotation_iq") or {}).get("n_calls", 0) >= 6
+            and ((fol_entry.get("rotation_iq") or {}).get("hit_rate") or 0.0) >= 0.5
+        )
+
+        follow_desk = {
+            "followability": _followability,
+            "best_buys": _best_buys,
+            "small_mid": _small_mid,
+            "sector_consensus": _consensus,
+            "grade_a": _grade_a,
+            "meta": {
+                "n_follow": _tier_counts["follow"],
+                "n_watch": _tier_counts["watch"],
+                "n_fade": _tier_counts["fade"],
+                "n_insufficient": _tier_counts["insufficient"],
+                "n_proven_rotators": _n_proven_rotators,
+                "phase_s": round(time.monotonic() - t45, 2),
+                "fingerprint": _fingerprint,
+                "computed_at": _follow_computed_at,
+            },
+        }
+
+        # Write follow-desk artifact
+        try:
+            (_site_dir() / "smartmoney_follow.json").write_text(_jdump(follow_desk))
+        except Exception as _e_fw:
+            log.warning("write smartmoney_follow.json failed: %s", _e_fw)
+
+        log.info(
+            "follow-desk: follow=%d watch=%d fade=%d insufficient=%d | "
+            "best_buys=%d small_mid=%d consensus_sectors=%d grade_a=%s",
+            _tier_counts["follow"], _tier_counts["watch"],
+            _tier_counts["fade"], _tier_counts["insufficient"],
+            len(_best_buys), len(_small_mid), len(_consensus),
+            "yes" if _grade_a else "no",
+        )
+    except Exception as e:  # noqa: BLE001 — NEVER-BREAK: follow desk must not break the build
+        log.warning("follow-desk phase failed — desk degrades gracefully: %s", e)
+        follow_desk = {}
+    phase_times["follow"] = round(time.monotonic() - t45, 2)
+
     # ---- Phase 5: ledger advance (nightly-only) ----
     t5 = time.monotonic()
     ledger_added: dict = {}
@@ -667,7 +873,8 @@ def main() -> int:
         time.monotonic() - t4 - phase_times["ledger"]
         - phase_times.get("insider_intel", 0)
         - phase_times.get("fund_intel", 0)
-        - phase_times.get("flow", 0), 2)
+        - phase_times.get("flow", 0)
+        - phase_times.get("follow", 0), 2)
 
     built = datetime.now(timezone.utc).isoformat()
 
@@ -719,6 +926,7 @@ def main() -> int:
         "flow": flow,
         "fund_intel_index": fund_intel_index,
         "ledger": ledger,
+        "follow": follow_desk,
     }
 
     try:
@@ -813,12 +1021,14 @@ def main() -> int:
     phase_times["dossiers"] = round(time.monotonic() - t65, 2)
 
     # Benchmark log (SM2-R12)
+    _fol_meta = (follow_desk.get("meta") or {})
     log.info(
         "build_smart_money BENCHMARK: total=%.1fs | tracker=%.1fs smart_money=%.1fs "
         "wire=%.1fs boards=%.1fs insider_intel=%.1fs fund_intel=%.1fs flow=%.1fs "
-        "ledger=%.1fs dossiers=%.1fs | "
+        "follow=%.1fs ledger=%.1fs dossiers=%.1fs | "
         "desk=%dKB wire_rows=%d initiations=%d crowding=%d activists=%d "
-        "dossier_pages=%d ledger_added=%s",
+        "dossier_pages=%d ledger_added=%s | "
+        "follow: follow=%d watch=%d fade=%d insufficient=%d best_buys=%d",
         phase_times["total"],
         phase_times.get("tracker", 0),
         phase_times.get("smart_money", 0),
@@ -827,6 +1037,7 @@ def main() -> int:
         phase_times.get("insider_intel", 0),
         phase_times.get("fund_intel", 0),
         phase_times.get("flow", 0),
+        phase_times.get("follow", 0),
         phase_times.get("ledger", 0),
         phase_times.get("dossiers", 0),
         desk_kb,
@@ -836,6 +1047,11 @@ def main() -> int:
         len(activists),
         n_dossiers,
         ledger_added,
+        _fol_meta.get("n_follow", 0),
+        _fol_meta.get("n_watch", 0),
+        _fol_meta.get("n_fade", 0),
+        _fol_meta.get("n_insufficient", 0),
+        len((follow_desk.get("best_buys") or [])),
     )
 
     return 0

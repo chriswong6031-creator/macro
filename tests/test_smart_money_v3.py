@@ -1166,3 +1166,298 @@ def test_dossier_renders_minimal_fund():
     assert "ticker_icons/SNDK.png" in html     # logo idiom (F10)
     assert ">None<" not in html
     assert 'data-pct="None"' not in html
+
+
+# =========================================================================== #
+# SECTION 5 — engine/fund_intelligence.py: load_classifications sources 5 & 6 #
+# =========================================================================== #
+#
+# All tests are disk-free: they write a synthetic tmp dir, patch config.data_dir
+# to point at it, call fi._clear_caches(), then restore.  No real data reads.
+
+import json as _json
+import tempfile as _tempfile
+from pathlib import Path as _Path
+from unittest.mock import patch as _patch
+
+
+def _write_json(path: _Path, obj) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_json.dumps(obj))
+
+
+def _write_parquet(path: _Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    import pandas as _pd
+    _pd.DataFrame(rows).to_parquet(path, index=False)
+
+
+class _TmpData:
+    """Context-manager: sets up a synthetic data_dir, patches config.data_dir,
+    resets the module cache on enter and exit."""
+
+    def __init__(self):
+        self._td = None
+
+    def __enter__(self):
+        self._td = _tempfile.TemporaryDirectory()
+        self.root = _Path(self._td.name)
+        fi._clear_caches()
+        self._patcher = _patch("lib.config.data_dir", return_value=self.root)
+        self._patcher.start()
+        return self
+
+    def __exit__(self, *_):
+        self._patcher.stop()
+        fi._clear_caches()
+        self._td.cleanup()
+
+
+# --------------------------------------------------------------------------- #
+# Source-5 override fill                                                        #
+# --------------------------------------------------------------------------- #
+
+def test_source5_fills_missing_sector():
+    """Source-5 (fund_holdings_sectors.json) fills sector when sources 1-4 leave
+    it empty; the fill is visible in the returned classification map."""
+    with _TmpData() as d:
+        # Write a minimal industry_map that does NOT include ASNDUSD
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json",
+                    {"AAPL": {"sector": "Technology", "sub_industry": "Tech Hardware"}})
+        # Source-5 override
+        _write_json(d.root / "sector_overrides" / "fund_holdings_sectors.json", {
+            "_meta": {"generated": "test"},
+            "ASNDUSD": {"sector": "Healthcare", "note": "Ascendis Pharma ADR"},
+            "BN":      {"sector": "Financial",  "note": "Brookfield Corp"},
+        })
+
+        cls = fi.load_classifications()
+
+        assert cls["ASNDUSD"]["sector"] == "Healthcare"
+        assert cls["BN"]["sector"]      == "Financial"
+        assert cls["AAPL"]["sector"]    == "Technology"  # original untouched
+        assert cls["_meta"]["sector_overrides_fill"] == 2
+
+
+def test_source5_never_overrides_existing_sector():
+    """Source-5 must NEVER override a sector already set by sources 1-4."""
+    with _TmpData() as d:
+        # AAPL already has a sector from the heatmap (source 1)
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json",
+                    {"AAPL": {"sector": "Technology", "sub_industry": ""}})
+        # Source-5 tries to override with something different — must be rejected
+        _write_json(d.root / "sector_overrides" / "fund_holdings_sectors.json",
+                    {"AAPL": {"sector": "Healthcare", "note": "wrong — must not win"}})
+
+        cls = fi.load_classifications()
+
+        assert cls["AAPL"]["sector"] == "Technology"  # source 1 wins
+        # override_fill counter is 0 because no new fills occurred
+        assert cls["_meta"]["sector_overrides_fill"] == 0
+
+
+def test_source5_missing_file_degrades_gracefully():
+    """A missing fund_holdings_sectors.json is silently skipped; the rest of
+    the map is intact and no exception surfaces."""
+    with _TmpData() as d:
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json",
+                    {"MSFT": {"sector": "Technology", "sub_industry": ""}})
+        # sector_overrides directory intentionally absent
+
+        cls = fi.load_classifications()
+
+        assert cls["MSFT"]["sector"] == "Technology"
+        # meta key present and zero when source is absent
+        assert cls["_meta"]["sector_overrides_fill"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# Source-6 theme->sector inference                                              #
+# --------------------------------------------------------------------------- #
+
+def _minimal_themes_tree() -> list:
+    """Synthetic themes_tree.json with two themes containing one ticker each."""
+    return [
+        {
+            "key": "Semiconductors",
+            "theme": "Semiconductors",
+            "subsectors": [
+                {"key": "semiscompute", "name": "Compute Chips",
+                 "members": ["TSM", "NVDA"]},
+            ],
+        },
+        {
+            "key": "Healthcare & Biotech",
+            "theme": "Healthcare & Biotech",
+            "subsectors": [
+                {"key": "healthcarediagnostics", "name": "Diagnostics",
+                 "members": ["NTRA"]},
+            ],
+        },
+        {
+            "key": "Environmental Sustainability",
+            "theme": "Environmental Sustainability",
+            "subsectors": [
+                {"key": "envclimate", "name": "Climate",
+                 "members": ["CLMT"]},
+            ],
+        },
+    ]
+
+
+def test_source6_infers_sector_from_theme():
+    """Source-6 infers sector via _THEME_SECTOR for tickers absent from
+    sources 1-5; sets sector_inferred=True on each inferred entry."""
+    with _TmpData() as d:
+        # No industry_map entries for TSM/NTRA → they need source-6 inference
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json", {})
+        _write_json(d.root / "themes_heatmap" / "themes_tree.json",
+                    _minimal_themes_tree())
+
+        cls = fi.load_classifications()
+
+        # TSM inferred as Technology from "Semiconductors" theme
+        assert cls["TSM"]["sector"] == "Technology"
+        assert cls["TSM"].get("sector_inferred") is True
+        # NTRA inferred as Healthcare from "Healthcare & Biotech" theme
+        assert cls["NTRA"]["sector"] == "Healthcare"
+        assert cls["NTRA"].get("sector_inferred") is True
+        assert cls["_meta"]["theme_sector_inferred"] >= 2
+
+
+def test_source6_none_theme_produces_no_sector():
+    """Themes mapped to None in _THEME_SECTOR (cross-sector) must not
+    produce a sector — the ticker remains unclassified."""
+    with _TmpData() as d:
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json", {})
+        _write_json(d.root / "themes_heatmap" / "themes_tree.json",
+                    _minimal_themes_tree())
+
+        cls = fi.load_classifications()
+
+        # CLMT is only in Environmental Sustainability -> None in _THEME_SECTOR
+        assert cls.get("CLMT", {}).get("sector") is None
+        assert not cls.get("CLMT", {}).get("sector_inferred", False)
+
+
+def test_source6_never_overrides_existing_sector():
+    """Source-6 must NEVER touch a ticker whose sector was set by sources 1-5."""
+    with _TmpData() as d:
+        # NVDA already classified by source 1 as Information Technology
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json",
+                    {"NVDA": {"sector": "Information Technology", "sub_industry": ""}})
+        _write_json(d.root / "themes_heatmap" / "themes_tree.json",
+                    _minimal_themes_tree())  # Semiconductors -> Technology for NVDA
+
+        cls = fi.load_classifications()
+
+        # Source 1 wins; source 6 must not overwrite. The final canon pass maps
+        # the GICS dialect to the finviz canon ("Information Technology"->"Technology")
+        # WITHOUT marking it inferred — provenance stays source-1.
+        assert cls["NVDA"]["sector"] == "Technology"
+        assert not cls["NVDA"].get("sector_inferred", False)
+
+
+def test_source6_theme_sector_map_covers_all_40_keys():
+    """_THEME_SECTOR must have exactly 40 entries (one per Finviz top-level
+    theme) — a coverage invariant so new themes can't silently fall through."""
+    assert len(fi._THEME_SECTOR) == 40
+
+
+def test_load_classifications_meta_carries_new_keys():
+    """The _meta dict returned by load_classifications includes the two new
+    source-coverage counters so operators can monitor fill rates."""
+    with _TmpData() as d:
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json", {})
+        # Both optional sources absent — counters present but zero
+
+        cls = fi.load_classifications()
+        meta = cls["_meta"]
+
+        assert "sector_overrides_fill"   in meta
+        assert "theme_sector_inferred"   in meta
+        assert isinstance(meta["sector_overrides_fill"], int)
+        assert isinstance(meta["theme_sector_inferred"], int)
+
+
+# =========================================================================== #
+# SECTION 6 — Canon sector pins (FIX 9)                                        #
+# =========================================================================== #
+
+def test_fix9_gics_information_technology_canonicalizes_to_technology():
+    """FIX 9(a): source-1 GICS name 'Information Technology' must canonicalize
+    to 'Technology' (the finviz canon used across boards and SECTOR_ETF map)."""
+    with _TmpData() as d:
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json", {
+            "NVDA": {"sector": "Information Technology", "sub_industry": "Semiconductors"},
+        })
+        cls = fi.load_classifications()
+        # After canon pass: "Information Technology" -> "Technology"
+        assert cls["NVDA"]["sector"] == "Technology"
+
+
+def test_fix9_source5_fills_only_when_sources_1_4_leave_none():
+    """FIX 9(b): source-5 override fills ONLY when sources 1-4 left sector None
+    (never overrides an existing classification)."""
+    with _TmpData() as d:
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json", {
+            "AAPL": {"sector": "Information Technology", "sub_industry": ""},
+            # NFLX absent from source 1 — source 5 should fill it
+        })
+        _write_json(d.root / "sector_overrides" / "fund_holdings_sectors.json", {
+            "_meta": {"generated": "test"},
+            "AAPL": {"sector": "Healthcare", "note": "must not override source 1"},
+            "NFLX": {"sector": "Communication Services", "note": "fresh fill"},
+        })
+        cls = fi.load_classifications()
+        # AAPL: source 1 wins (Technology, after canon pass)
+        assert cls["AAPL"]["sector"] == "Technology"
+        # NFLX: source 5 fills (no source 1-4 classification)
+        assert cls["NFLX"]["sector"] == "Communication Services"
+
+
+def test_fix9_source6_inference_sets_sector_inferred_and_never_overrides():
+    """FIX 9(c): source-6 inference sets sector_inferred=True and never overrides
+    a sector already set by sources 1-5."""
+    with _TmpData() as d:
+        # TSM has no source-1 entry -> source-6 may infer
+        # NVDA has a source-1 entry -> source-6 must not touch it
+        _write_json(d.root / "sp500_heatmap" / "industry_map.json", {
+            "NVDA": {"sector": "Information Technology", "sub_industry": ""},
+        })
+        _write_json(d.root / "themes_heatmap" / "themes_tree.json", [{
+            "key": "Semiconductors", "theme": "Semiconductors",
+            "subsectors": [{"key": "semis", "name": "Semis", "members": ["TSM", "NVDA"]}],
+        }])
+        cls = fi.load_classifications()
+        # TSM inferred
+        assert cls["TSM"]["sector"] == "Technology"
+        assert cls["TSM"].get("sector_inferred") is True
+        # NVDA: source 1 wins; sector_inferred must be False/absent
+        assert cls["NVDA"]["sector"] == "Technology"
+        assert not cls["NVDA"].get("sector_inferred", False)
+
+
+def test_fix9_sector_etf_covers_all_canon_and_theme_sector_values():
+    """FIX 9(d): every value in _CANON_SECTOR (the canonicalization map in
+    fund_intelligence) AND every non-None value in _THEME_SECTOR must be a
+    key in engine.fund_followability.SECTOR_ETF (coverage invariant)."""
+    from engine import fund_followability as _ff
+
+    # Collect canon values (the target/output side of the canonicalization map)
+    # fund_intelligence maps GICS dialect -> finviz canon via _CANON_SECTOR
+    if hasattr(fi, "_CANON_SECTOR"):
+        canon_targets = set(fi._CANON_SECTOR.values())
+    else:
+        # Fallback: extract from load_classifications logic
+        # The canon values are the RHS of the sector mapping
+        canon_targets = set()
+
+    # Collect non-None _THEME_SECTOR values
+    theme_targets = {v for v in fi._THEME_SECTOR.values() if v is not None}
+
+    all_sector_values = canon_targets | theme_targets
+    missing = all_sector_values - set(_ff.SECTOR_ETF.keys())
+    assert not missing, (
+        f"These sector values have no ETF in fund_followability.SECTOR_ETF: {missing}"
+    )
