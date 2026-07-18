@@ -170,7 +170,10 @@ def log_snapshot(ms: dict, root=None) -> bool:
             return False
         p = _path(root)
         rows = _read(p)
-        if any(r.get("asof") == entry["asof"] for r in rows):
+        # premise_repair rows share an as-of date with the real snapshot on the switch
+        # date — skip them in the idempotency guard so the snapshot still lands.
+        snapshot_rows = [r for r in rows if r.get("type") != "premise_repair"]
+        if any(r.get("asof") == entry["asof"] for r in snapshot_rows):
             return False
         rows.append(entry)
         _write(p, rows)
@@ -235,6 +238,8 @@ def grade_log(root=None) -> int:
             return 0
         n = 0
         for r in rows:
+            if r.get("type") == "premise_repair":   # disclosure row — not a scored snapshot
+                continue
             if r.get("graded"):
                 continue
             g = _grade_entry(r, spy)
