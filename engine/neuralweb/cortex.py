@@ -135,6 +135,8 @@ _READ_TOOLS = frozenset({
     "read_master_brain_theses",
     # ADB-W3: read-only content fields from master_brief / china_brief / btc_brief
     "read_master_brain_brief",
+    # SS-NW-W1: read-only special-situations event context (display/context only)
+    "read_special_situations",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -964,6 +966,18 @@ def _tool_read_liquidity_plumbing_cx(root: Path, params: dict) -> dict:
     return _f(root, params)
 
 
+def _tool_read_special_situations_cx(root: Path, params: dict) -> dict:
+    """Read special-situations event context (SS-NW-W1, delegates to ask_brain).
+
+    Reads data/special_situations/context/latest.json (feed view) and optionally
+    site/allocationdata/special_situations.json per-ticker view.
+    DISPLAY-ONLY ceiling: context only — never a signal, rank, or sizing input.
+    is_context_only always true. Fails open when absent.
+    """
+    from engine.neuralweb.ask_brain import _tool_read_special_situations as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
 def _tool_read_china_decision_packet_cx(root: Path, params: dict) -> dict:
     """Read the China decision packet summary (delegates to ask_brain)."""
     from engine.neuralweb.ask_brain import _tool_read_china_decision_packet as _f  # noqa: PLC0415
@@ -1555,6 +1569,9 @@ def dispatch_tool(
     elif tool_name == "read_master_brain_brief":
         # ADB-W3: content fields from master_brief / china_brief / btc_brief
         return _tool_read_master_brain_brief(root, tool_params)
+    elif tool_name == "read_special_situations":
+        # SS-NW-W1: special-situations event context (display/context only)
+        return _tool_read_special_situations_cx(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -1995,6 +2012,46 @@ def _tool_schemas() -> list[dict]:
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
         },
+        # --- SS-NW-W1: special-situations event context read tool ---
+        {
+            "name": "read_special_situations",
+            "description": (
+                "Read data/special_situations/context/latest.json — the nightly "
+                "special-situations event context feed (special_sits_context.v1): "
+                "top_setups (grade A/B ranked by display-tier score, with ticker, "
+                "category, stage, grade, and plain-EN why list), counts "
+                "(total/new_today/grade_a/grade_b/with_arb/cross_border), "
+                "changes (new/stage/terminal/grade transitions since prior day), "
+                "and risk_arb_top (gross spread, annualized pct, days to close). "
+                "Optional params: ticker (str) — if provided also returns that "
+                "ticker's entry from the per-ticker site view; "
+                "category (str) — filter top_setups to that category; "
+                "min_grade ('A'|'B'|'C') — filter top_setups to that grade floor. "
+                "DISPLAY-ONLY ceiling (SS-NW-W1): context only — never a signal, "
+                "rank, or sizing input. The score is display-tier context, not a "
+                "calibrated signal. LLMs may only de-escalate, never originate. "
+                "is_context_only: true. Fails open with available=False when absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "ticker": {
+                        "type": "string",
+                        "description": "Optional: single ticker to look up in the per-ticker view",
+                    },
+                    "category": {
+                        "type": "string",
+                        "description": "Optional: filter top_setups to this event category",
+                    },
+                    "min_grade": {
+                        "type": "string",
+                        "description": "Optional: minimum grade floor (A, B, or C)",
+                        "enum": ["A", "B", "C"],
+                    },
+                },
+                "required": [],
+            },
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -2098,7 +2155,7 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (29): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (30): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
@@ -2109,7 +2166,8 @@ READ (29): read_world_state, query_spine, read_kernel, read_graph, read_contradi
            read_theme_state, read_theme_thesis, read_theme_pathways,
            read_theme_asymmetry, read_theme_options_witness,
            read_theme_clinical, read_theme_trade_flows,
-           read_master_brain_theses, read_master_brain_brief
+           read_master_brain_theses, read_master_brain_brief,
+           read_special_situations
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CAUSAL CANDIDATES (CHF W5): read_causal_candidates returns inert CHF mechanism cards

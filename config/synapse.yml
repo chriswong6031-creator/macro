@@ -10230,6 +10230,34 @@ artifacts:
       scripts/build_stock_library.py and scripts/build_macro_snapshot.py for
       display context. Display/context only — no score or ranking authority.
 
+  special-sits-context-latest:
+    path: data/special_situations/context/latest.json
+    format: json
+    producer: scripts/build_special_situations.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: special_sits_context.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/ask_brain.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Nightly context feed for US special-situation events (M&A, spin-offs, risk-arb,
+      activist, clinical, index changes). Carries ranked top-setups (grade A/B, display-tier
+      score only — never a signal or sizing input), a same-day idempotent change-feed
+      (new/stage/terminal/grade transitions vs prev_state), and risk-arb spread context.
+      is_context_only=true, display_only=true — no score or ranking authority. Absent until
+      scripts/build_special_situations.py first runs; all consumers fail-open (block=None).
+
   bond-health:
     path: data/bonds/bond_health.json
     format: json
