@@ -4,8 +4,13 @@ Reads the four site/neuralwebdata theme artifacts (tolerant: missing artifact
 → honest empty-state, never crash) and renders templates/state_of_themes.html.j2
 → site/state_of_themes.html.
 
-Also reads data/neuralweb/theme_phase_history.jsonl for the weekly-delta strip;
-falls back to 'no changes this week' when absent.
+Also reads:
+  data/neuralweb/theme_phase_history.jsonl   — weekly-delta strip
+  site/basketdata/options_witness.json        — crowding check drawer sections
+  site/basketdata/clinical_pipeline.json      — clinical pipeline drawer sections
+  site/basketdata/trade_flows.json            — import flows page note + drawer sections
+All basketdata artifacts are tolerant: missing/corrupt → sections silently absent,
+never crash.
 
 Called from scripts/build_site.py after the build_thematic_state step.
 
@@ -60,6 +65,229 @@ _LEG_LABELS = {
     "falsifier_clarity": ("fal", "Falsifier clarity", "假证伪清晰度"),
     "orthogonality": ("ort", "Orthogonality vs market", "市场正交性"),
 }
+
+# ---------------------------------------------------------------------------
+# Options-witness band → plain-word maps
+# ---------------------------------------------------------------------------
+
+# Leg A (call-OI HHI concentration): normal/rising/elevated or None
+# Leg B (PCR): normal/declining/complacency/elevated_put or None
+# Leg C (IV premium): normal/rising/elevated/compressed or None
+# Worst-band ranking for section-level stance (higher = more concern):
+_OW_BAND_SEVERITY = {
+    "elevated": 3,
+    "elevated_put": 2,
+    "complacency": 3,    # low put protection = fragile = hazard
+    "rising": 2,
+    "declining": 1,
+    "compressed": 1,
+    "normal": 0,
+    None: -1,
+}
+
+# Leg A (HHI): plain state words
+_OW_LEG_A_BAND_EN = {
+    "elevated": "crowding sign — don't chase",
+    "rising": "concentration building — be alert",
+    "normal": "normal — no crowding sign",
+    None: "no read yet (accruing)",
+}
+_OW_LEG_A_BAND_ZH = {
+    "elevated": "有拥挤迹象——勿追高",
+    "rising": "集中度上升——保持警惕",
+    "normal": "正常——无拥挤迹象",
+    None: "暂无读数（累积中）",
+}
+
+# Leg B (PCR): pcr_collapse_into_strength triggers hazard regardless of band
+_OW_LEG_B_BAND_EN = {
+    "elevated_put": "heavy hedging",
+    "normal": "hedging normal",
+    "declining": "hedges coming off — watch for complacency",
+    "complacency": "crowding sign — don't chase",
+    None: "no read yet (accruing)",
+}
+_OW_LEG_B_BAND_ZH = {
+    "elevated_put": "对冲力度大",
+    "normal": "对冲正常",
+    "declining": "对冲减少——警惕自满",
+    "complacency": "有拥挤迹象——勿追高",
+    None: "暂无读数（累积中）",
+}
+
+# Leg C (IV premium): plain state words
+_OW_LEG_C_BAND_EN = {
+    "elevated": "crowding sign — don't chase",
+    "rising": "options getting pricier — be alert",
+    "compressed": "options priced cheap",
+    "normal": "normal — no crowding sign",
+    None: "no read yet (accruing)",
+}
+_OW_LEG_C_BAND_ZH = {
+    "elevated": "有拥挤迹象——勿追高",
+    "rising": "期权趋贵——保持警惕",
+    "compressed": "期权定价偏低",
+    "normal": "正常——无拥挤迹象",
+    None: "暂无读数（累积中）",
+}
+
+
+def _ow_leg_severity(band, pcr_collapse: bool = False) -> int:
+    """Return severity rank for an options-witness band (higher = more concern)."""
+    if pcr_collapse:
+        return 3  # collapse into strength = crowding hazard regardless of band
+    return _OW_BAND_SEVERITY.get(band, -1)
+
+
+def _ow_leg_b_word_en(band, pcr_collapse: bool = False) -> str:
+    if pcr_collapse:
+        return "crowding sign — don't chase"
+    return _OW_LEG_B_BAND_EN.get(band, "no read yet (accruing)")
+
+
+def _ow_leg_b_word_zh(band, pcr_collapse: bool = False) -> str:
+    if pcr_collapse:
+        return "有拥挤迹象——勿追高"
+    return _OW_LEG_B_BAND_ZH.get(band, "暂无读数（累积中）")
+
+
+def _ow_worst_severity(leg_a: dict, leg_b: dict, leg_c: dict) -> int:
+    a_sev = _ow_leg_severity(leg_a.get("band") if leg_a else None)
+    b_sev = _ow_leg_severity(
+        leg_b.get("band") if leg_b else None,
+        bool(leg_b.get("pcr_collapse_into_strength")) if leg_b else False,
+    )
+    c_sev = _ow_leg_severity(leg_c.get("band") if leg_c else None)
+    return max(a_sev, b_sev, c_sev)
+
+
+# ---------------------------------------------------------------------------
+# Clinical-pipeline velocity_read map
+# ---------------------------------------------------------------------------
+
+_CP_VELOCITY_EN = {
+    "accelerating": "picking up",
+    "decelerating": "slowing",
+    "neutral": "steady",
+}
+_CP_VELOCITY_ZH = {
+    "accelerating": "加快",
+    "decelerating": "放缓",
+    "neutral": "平稳",
+}
+
+
+def _cp_velocity_word_en(velocity_read: str | None) -> str:
+    return _CP_VELOCITY_EN.get(velocity_read or "", "steady")
+
+
+def _cp_velocity_word_zh(velocity_read: str | None) -> str:
+    return _CP_VELOCITY_ZH.get(velocity_read or "", "平稳")
+
+
+# ---------------------------------------------------------------------------
+# Trade-flows confirmation map
+# ---------------------------------------------------------------------------
+
+_TF_CONFIRMATION_EN = {
+    "confirms": "imports confirm the demand story",
+    "contradicts": "imports cut against the story",
+    "neutral": "no clear read",
+    "mixed_direction": "mixed picture across product lines",
+}
+_TF_CONFIRMATION_ZH = {
+    "confirms": "进口数据印证需求",
+    "contradicts": "进口数据与论点相悖",
+    "neutral": "无明确读数",
+    "mixed_direction": "各产品线方向不一",
+}
+
+
+# Plain-word labels for the two engine direction-leg keys (sign convention:
+# rising imports = demand evidence; falling imports = domestic-substitution
+# evidence). Raw keys must never render at rest (Design Doctrine Law 2).
+_TF_DIRECTION_LABELS = {
+    "rising_imports_confirms": ("Demand-side products", "需求侧产品"),
+    "falling_imports_confirms": ("Substitution-side products", "替代侧产品"),
+}
+
+
+def _tf_confirmation_word_en(confirmation: str | None) -> str:
+    return _TF_CONFIRMATION_EN.get(confirmation or "", "no clear read")
+
+
+def _tf_confirmation_word_zh(confirmation: str | None) -> str:
+    return _TF_CONFIRMATION_ZH.get(confirmation or "", "无明确读数")
+
+
+# ---------------------------------------------------------------------------
+# Asymmetry leg valence table (single source of truth for Setup legs section
+# AND matrix dots).
+#
+# Each entry: (word_en, word_zh, valence_class)
+# valence_class ∈ {fav, mid, caut, neut, null}
+#   fav  = green  (good-when-present)
+#   mid  = amber  (partial / watch)
+#   caut = red    (unfavorable / risk)
+#   neut = gray solid  (not present — nothing alarming)
+#   null = gray dashed (no data yet / accruing)
+#
+# Polarity: "high" does NOT uniformly mean "caution" — each leg has its own
+# polarity (e.g. bottleneck_tightness high → fav, crowding_hazard high → caut).
+# ---------------------------------------------------------------------------
+
+_ASYM_LEG_TABLE: dict[str, dict[str, tuple[str, str, str]]] = {
+    # (word_en, word_zh, valence_class) keyed by band ∈ {high, med, low}
+    "bottleneck_tightness": {
+        "high": ("tight — supports the thesis", "紧张——支持论点", "fav"),
+        "med":  ("some tightness", "略有紧张", "mid"),
+        "low":  ("not tight — no support from supply", "不紧张——供应端无支持", "neut"),
+    },
+    "stale_consensus_gap": {
+        "high": ("consensus looks stale — room to re-rate", "共识滞后——存在重估空间", "fav"),
+        "med":  ("some gap", "存在一定差距", "mid"),
+        "low":  ("market already caught up", "市场已基本反映", "neut"),
+    },
+    "cyclical_dislocation": {
+        "high": ("deeply dislocated — long-term story at marked-down prices", "深度错位——长期故事处于折价", "fav"),
+        "med":  ("somewhat dislocated", "有所错位", "mid"),
+        "low":  ("prices near cycle norm", "价格接近周期常态", "neut"),
+    },
+    "entry_cleanliness": {
+        "high": ("clean entry", "入场条件良好", "fav"),
+        "med":  ("so-so entry", "入场条件一般", "mid"),
+        "low":  ("messy entry — stretched or overheated", "入场条件较差——超买或过热", "caut"),
+    },
+    "crowding_hazard": {
+        "low":  ("not crowded", "不拥挤", "fav"),
+        "med":  ("getting crowded", "趋于拥挤", "mid"),
+        "high": ("crowded — caution", "拥挤——需谨慎", "caut"),
+    },
+    "falsifier_clarity": {
+        "high": ("easy to test — clear tripwires", "易于检验——触发线清晰", "fav"),
+        "med":  ("partly testable", "部分可检验", "mid"),
+        "low":  ("hard to test — few clear tripwires", "难以检验——缺乏清晰触发线", "caut"),
+    },
+    "orthogonality": {
+        "high": ("moves on its own story", "走自身逻辑", "fav"),
+        "med":  ("partly market-driven", "部分随大盘", "mid"),
+        "low":  ("mostly moves with the market", "基本随大盘波动", "caut"),
+    },
+}
+
+# Sentinel for null/missing band
+_ASYM_NULL_ENTRY: tuple[str, str, str] = ("no data yet", "暂无数据", "null")
+
+
+def _asym_leg_entry(leg_id: str, band: str | None) -> tuple[str, str, str]:
+    """Return (word_en, word_zh, valence_class) for a leg+band combination."""
+    if band is None or band == "null":
+        return _ASYM_NULL_ENTRY
+    leg_map = _ASYM_LEG_TABLE.get(leg_id)
+    if leg_map is None:
+        return _ASYM_NULL_ENTRY
+    return leg_map.get(band, _ASYM_NULL_ENTRY)
+
 
 # Stage sort order for column sort (higher = more actionable)
 _STAGE_SORT = {
@@ -336,12 +564,54 @@ def compose(root: Path) -> dict[str, Any]:
     """Build template context from live artifacts. Never raises."""
     nwd = root / "site" / "neuralwebdata"
     data_nw = root / "data" / "neuralweb"
+    bkd = root / "site" / "basketdata"
 
     state = _load_json(nwd / "theme_state.json")
     thesis = _load_json(nwd / "theme_thesis.json")
     asymmetry = _load_json(nwd / "theme_asymmetry.json")
     pathways_data = _load_json(nwd / "theme_pathways.json")
     history = _load_jsonl(data_nw / "theme_phase_history.jsonl")
+
+    # ── Basketdata artifacts (tolerant — absent/corrupt → sections silently absent) ──
+    options_witness = _load_json(bkd / "options_witness.json")
+    clinical_pipeline = _load_json(bkd / "clinical_pipeline.json")
+    trade_flows = _load_json(bkd / "trade_flows.json")
+
+    # ── Build options-witness index by theme_id ──
+    ow_by_id: dict[str, dict] = {}
+    if options_witness and isinstance(options_witness.get("themes"), dict):
+        ow_by_id = options_witness["themes"]
+    _ow_as_of = (options_witness or {}).get("as_of", "")
+    _ow_cov_stats = (options_witness or {}).get("coverage_stats", {})
+
+    # ── Build clinical-pipeline index by theme_id ──
+    cp_by_id: dict[str, dict] = {}
+    if clinical_pipeline and isinstance(clinical_pipeline.get("themes"), dict):
+        cp_by_id = clinical_pipeline["themes"]
+    _cp_as_of = (clinical_pipeline or {}).get("as_of", "")
+
+    # ── Trade-flows: check if any theme has data ──
+    _tf_themes_with_data = 0
+    tf_by_id: dict[str, dict] = {}
+    if trade_flows:
+        _cs = trade_flows.get("coverage_stats", {})
+        _tf_themes_with_data = _cs.get("themes_with_data", 0)
+        if isinstance(trade_flows.get("themes"), dict):
+            tf_by_id = trade_flows["themes"]
+    _tf_as_of = (trade_flows or {}).get("as_of", "")
+
+    # ── Trade-flows page-level accrual note (shown once when all-null) ──
+    trade_flows_page_note_en = ""
+    trade_flows_page_note_zh = ""
+    if trade_flows is not None and _tf_themes_with_data == 0:
+        trade_flows_page_note_en = (
+            "Customs import-flow checks are being set up — no data has arrived yet. "
+            "Per-theme import reads will appear here once the feed activates."
+        )
+        trade_flows_page_note_zh = (
+            "海关进口流量核对正在接入中——数据尚未到达。"
+            "数据接通后，各主题的进口读数将显示在此。"
+        )
 
     # ── Build thesis index by theme_id ──
     thesis_by_id: dict[str, dict] = {}
@@ -434,12 +704,16 @@ def compose(root: Path) -> dict[str, Any]:
                 note_zh = ""
             lbl = _LEG_LABELS.get(leg_id)
             abbr = lbl[0] if lbl else leg_id[:3]
+            # Valence class for the dot — polarity-correct per leg
+            band_key = band if band not in ("null", "") else None
+            _, _, dot_valence = _asym_leg_entry(leg_id, band_key)
             tip_en = f"{lbl[1] if lbl else leg_id} ({band}): {note_en[:120]}" if note_en else f"{lbl[1] if lbl else leg_id}: {band}"
             tip_zh = f"{lbl[2] if lbl else leg_id} ({band}): {note_zh[:120]}" if note_zh else tip_en
             legs_ordered.append({
                 "id": leg_id,
                 "abbr": abbr,
                 "band": band,
+                "dot_valence": dot_valence,  # CSS class for matrix dot
                 "tip_en": tip_en,
                 "tip_zh": tip_zh,
             })
@@ -490,6 +764,278 @@ def compose(root: Path) -> dict[str, Any]:
         mechanism_zh = (th_data.get("mechanism_zh") or "").strip()
         evidence_refs = th_data.get("evidence_refs", []) or []
 
+        # ── Asymmetry "Setup legs" drawer section ──
+        # Re-uses the same legs_ordered already computed above but maps band → plain word
+        # using the per-leg valence table (_ASYM_LEG_TABLE) so each leg gets a
+        # polarity-correct word and valence class (fav/mid/caut/neut/null).
+        asym_legs_section: list[dict] = []
+        for leg_id in _LEG_ORDER:
+            leg_data = raw_legs.get(leg_id, {})
+            if isinstance(leg_data, dict):
+                band_raw = leg_data.get("band") or "null"
+                note_en = leg_data.get("note_en", "")
+                note_zh = leg_data.get("note_zh", "")
+            else:
+                band_raw = "null"
+                note_en = ""
+                note_zh = ""
+            lbl = _LEG_LABELS.get(leg_id)
+            name_en = lbl[1] if lbl else leg_id
+            name_zh = lbl[2] if lbl else leg_id
+            band_key = band_raw if band_raw not in ("null", "") else None
+            w_en, w_zh, v_cls = _asym_leg_entry(leg_id, band_key)
+            # Extended tip: "{Leg name} — {word_en} ({band} level): {note_en}"
+            if note_en:
+                tip_en = f"{name_en} — {w_en} ({band_raw} level): {note_en[:120]}"
+                tip_zh = f"{name_zh} — {w_zh}（{band_raw}级别）：{(note_zh or note_en)[:120]}"
+            else:
+                tip_en = f"{name_en} — {w_en} ({band_raw} level)"
+                tip_zh = f"{name_zh} — {w_zh}（{band_raw}级别）"
+            asym_legs_section.append({
+                "id": leg_id,
+                "name_en": name_en,
+                "name_zh": name_zh,
+                "band": band_raw,
+                "valence_class": v_cls,
+                "word_en": w_en,
+                "word_zh": w_zh,
+                "tip_en": tip_en,
+                "tip_zh": tip_zh,
+                "note_en": note_en,
+                "note_zh": note_zh,
+            })
+
+        # ── Options-witness crowding check drawer section ──
+        ow_th = ow_by_id.get(tid)
+        ow_section: dict = {}
+        if ow_th is not None:
+            la = ow_th.get("leg_a_call_oi_hhi") or {}
+            lb = ow_th.get("leg_b_pcr") or {}
+            lc = ow_th.get("leg_c_iv_premium") or {}
+
+            def _ow_suppressed(leg: dict) -> bool:
+                """True when band is None (suppressed or absent)."""
+                return leg.get("band") is None
+
+            la_stale = bool(la.get("stale"))
+            lb_stale = bool(lb.get("stale"))
+            lc_stale = bool(lc.get("stale"))
+            pcr_collapse = bool(lb.get("pcr_collapse_into_strength"))
+
+            # Leg-A state word
+            la_band = None if (_ow_suppressed(la) or la_stale) else la.get("band")
+            la_word_en = _OW_LEG_A_BAND_EN.get(la_band, "no read yet (accruing)")
+            la_word_zh = _OW_LEG_A_BAND_ZH.get(la_band, "暂无读数（累积中）")
+
+            # Leg-B state word (pcr_collapse overrides)
+            lb_band = None if (_ow_suppressed(lb) or lb_stale) else lb.get("band")
+            lb_word_en = _ow_leg_b_word_en(lb_band, pcr_collapse and not lb_stale)
+            lb_word_zh = _ow_leg_b_word_zh(lb_band, pcr_collapse and not lb_stale)
+
+            # Leg-C state word
+            lc_band = None if (_ow_suppressed(lc) or lc_stale) else lc.get("band")
+            lc_word_en = _OW_LEG_C_BAND_EN.get(lc_band, "no read yet (accruing)")
+            lc_word_zh = _OW_LEG_C_BAND_ZH.get(lc_band, "暂无读数（累积中）")
+
+            # Section-level stance: worst severity across three legs
+            worst = max(
+                _ow_leg_severity(la_band),
+                _ow_leg_severity(lb_band, pcr_collapse and not lb_stale),
+                _ow_leg_severity(lc_band),
+            )
+            if worst >= 3:
+                stance_en = "Crowding signs building — be choosy, don't chase."
+                stance_zh = "拥挤迹象增加——精选入场，勿追高。"
+            elif worst >= 2:
+                stance_en = "Some concentration building — monitor before adding."
+                stance_zh = "集中度上升——加仓前保持观察。"
+            elif worst >= 1:
+                stance_en = "Minor signals — nothing urgent."
+                stance_zh = "轻微信号——无紧迫情况。"
+            elif worst == 0:
+                stance_en = "No crowding signs in the options tape."
+                stance_zh = "期权盘面无拥挤迹象。"
+            else:
+                # All legs null/suppressed
+                stance_en = "Not enough option coverage to read crowding."
+                stance_zh = "期权覆盖不足，无法读取拥挤度。"
+
+            # Coverage count strings for h4 hover tip
+            la_cov = f"{la.get('coverage_count','?')}/{la.get('coverage_total','?')}" if la else "—"
+            lb_cov = f"{lb.get('coverage_count','?')}/{lb.get('coverage_total','?')}" if lb else "—"
+            lc_cov = f"{lc.get('coverage_count','?')}/{lc.get('coverage_total','?')}" if lc else "—"
+            ow_h4_tip_en = (
+                f"Options crowding check — context only, not a signal. "
+                f"as_of: {_ow_as_of}; "
+                f"leg-A coverage {la_cov}, leg-B coverage {lb_cov}, leg-C coverage {lc_cov}."
+            )
+            ow_h4_tip_zh = (
+                f"期权拥挤度检查——仅供参考，非信号。"
+                f"截止日期：{_ow_as_of}；"
+                f"腿A覆盖{la_cov}，腿B覆盖{lb_cov}，腿C覆盖{lc_cov}。"
+            )
+
+            covered = not (
+                _ow_suppressed(la) and _ow_suppressed(lb) and _ow_suppressed(lc)
+            )
+
+            ow_section = {
+                "available": True,
+                "covered": covered,
+                "stance_en": stance_en,
+                "stance_zh": stance_zh,
+                "h4_tip_en": ow_h4_tip_en,
+                "h4_tip_zh": ow_h4_tip_zh,
+                "leg_a": {
+                    "word_en": la_word_en,
+                    "word_zh": la_word_zh,
+                    "note_en": la.get("note_en", ""),
+                    "note_zh": la.get("note_zh", ""),
+                },
+                "leg_b": {
+                    "word_en": lb_word_en,
+                    "word_zh": lb_word_zh,
+                    "note_en": lb.get("note_en", ""),
+                    "note_zh": lb.get("note_zh", ""),
+                },
+                "leg_c": {
+                    "word_en": lc_word_en,
+                    "word_zh": lc_word_zh,
+                    "note_en": lc.get("note_en", ""),
+                    "note_zh": lc.get("note_zh", ""),
+                },
+            }
+
+        # ── Clinical-pipeline drawer section ──
+        cp_th = cp_by_id.get(tid)
+        cp_section: dict = {}
+        if cp_th is not None and (cp_th.get("n_studies_total") or 0) > 0:
+            yoy = cp_th.get("theme_registration_yoy_pct")
+            vel = cp_th.get("theme_registration_velocity_read")
+            n_phase3 = cp_th.get("n_phase3_trailing12m", 0)
+
+            if yoy is not None:
+                sign = "+" if yoy >= 0 else ""
+                yoy_str_en = f"{sign}{yoy:.0f}% vs a year ago"
+                yoy_str_zh = f"同比{sign}{yoy:.0f}%"
+            else:
+                yoy_str_en = ""
+                yoy_str_zh = ""
+
+            vel_en = _cp_velocity_word_en(vel)
+            vel_zh = _cp_velocity_word_zh(vel)
+
+            if yoy_str_en and n_phase3 is not None:
+                line1_en = (
+                    f"Drug-trial registrations {vel_en}: {yoy_str_en}; "
+                    f"{n_phase3} late-stage (Phase-3) trials started in the past 12 months."
+                )
+                line1_zh = (
+                    f"药物试验注册{vel_zh}：{yoy_str_zh}；"
+                    f"过去12个月启动了{n_phase3}项晚期（III期）试验。"
+                )
+            elif yoy_str_en:
+                line1_en = f"Drug-trial registrations {vel_en}: {yoy_str_en}."
+                line1_zh = f"药物试验注册{vel_zh}：{yoy_str_zh}。"
+            else:
+                line1_en = "Drug-trial registration data accruing."
+                line1_zh = "药物试验注册数据累积中。"
+
+            cp_h4_tip_en = (
+                "Context only — shows where research money is committing, not a buy signal. "
+                f"Source: ClinicalTrials.gov v2 (keyless, INDUSTRY-sponsored only). as_of: {_cp_as_of}. "
+                + (cp_th.get("coverage_note") or "")
+            )
+            cp_h4_tip_zh = (
+                "仅供参考——显示研究资金投向，非买入信号。"
+                f"来源：ClinicalTrials.gov v2（无需密钥，仅行业赞助）。截止日期：{_cp_as_of}。"
+                + (cp_th.get("coverage_note_zh") or "")
+            )
+
+            cp_section = {
+                "available": True,
+                "line1_en": line1_en,
+                "line1_zh": line1_zh,
+                "h4_tip_en": cp_h4_tip_en,
+                "h4_tip_zh": cp_h4_tip_zh,
+            }
+
+        # ── Trade-flows drawer section (per-theme — only when data exists) ──
+        tf_section: dict = {}
+        if _tf_themes_with_data > 0:
+            tf_th = tf_by_id.get(tid)
+            if tf_th is not None and (tf_th.get("n_codes_with_data") or 0) > 0:
+                yoy_pct = tf_th.get("yoy_pct")
+                conf = tf_th.get("confirmation")
+                is_mixed = bool(tf_th.get("is_mixed_direction"))
+                direction_legs = tf_th.get("direction_legs") or {}
+                conf_word_en = _tf_confirmation_word_en(conf)
+                conf_word_zh = _tf_confirmation_word_zh(conf)
+                if yoy_pct is not None and not is_mixed:
+                    sign = "+" if yoy_pct >= 0 else ""
+                    yoy_en = f" ({sign}{yoy_pct:.0f}% vs a year ago)"
+                    yoy_zh = f"（同比{sign}{yoy_pct:.0f}%）"
+                else:
+                    yoy_en = ""
+                    yoy_zh = ""
+                tf_cov_tip_en = (
+                    "Import-flow check — context only. "
+                    f"as_of: {_tf_as_of}. "
+                    + (tf_th.get("coverage_note") or "")
+                )
+                tf_cov_tip_zh = (
+                    "进口流量核对——仅供参考。"
+                    f"截止日期：{_tf_as_of}。"
+                    + (tf_th.get("coverage_note_zh") or "")
+                )
+
+                # For mixed-direction themes, build per-direction-leg rows
+                tf_direction_leg_rows: list[dict] = []
+                if is_mixed and direction_legs:
+                    for _dir, _dl in direction_legs.items():
+                        if not isinstance(_dl, dict):
+                            continue
+                        _dl_conf = _dl.get("confirmation")
+                        _dl_yoy = _dl.get("yoy_pct")
+                        # direction_legs carry no per-leg coverage note; fall back
+                        # to the theme-level note so the receipt hover is never empty
+                        _dl_cov_note_en = (_dl.get("coverage_note")
+                                           or tf_th.get("coverage_note") or "")
+                        _dl_cov_note_zh = (_dl.get("coverage_note_zh")
+                                           or tf_th.get("coverage_note_zh")
+                                           or _dl_cov_note_en)
+                        _dl_word_en = _tf_confirmation_word_en(_dl_conf)
+                        _dl_word_zh = _tf_confirmation_word_zh(_dl_conf)
+                        if _dl_yoy is not None:
+                            _s = "+" if _dl_yoy >= 0 else ""
+                            _dl_yoy_en = f" ({_s}{_dl_yoy:.0f}% vs a year ago)"
+                            _dl_yoy_zh = f"（同比{_s}{_dl_yoy:.0f}%）"
+                        else:
+                            _dl_yoy_en = ""
+                            _dl_yoy_zh = ""
+                        # Plain direction framing (raw keys never render at rest;
+                        # prettified fallback only if an unknown key appears)
+                        _dir_label_en, _dir_label_zh = _TF_DIRECTION_LABELS.get(
+                            _dir, (_dir.replace("_", " "), _dir.replace("_", " "))
+                        )
+                        tf_direction_leg_rows.append({
+                            "direction": _dir,
+                            "line_en": f"{_dir_label_en}: {_dl_word_en}{_dl_yoy_en}",
+                            "line_zh": f"{_dir_label_zh}：{_dl_word_zh}{_dl_yoy_zh}",
+                            "cov_tip_en": _dl_cov_note_en,
+                            "cov_tip_zh": _dl_cov_note_zh,
+                        })
+
+                tf_section = {
+                    "available": True,
+                    "is_mixed": is_mixed,
+                    "line_en": f"Import flows: {conf_word_en}{yoy_en}.",
+                    "line_zh": f"进口流量：{conf_word_zh}{yoy_zh}。",
+                    "direction_leg_rows": tf_direction_leg_rows,
+                    "h4_tip_en": tf_cov_tip_en,
+                    "h4_tip_zh": tf_cov_tip_zh,
+                }
+
         themes.append({
             "theme_id": tid,
             "name_en": st_th.get("name_en", tid),
@@ -515,6 +1061,11 @@ def compose(root: Path) -> dict[str, Any]:
             "mechanism_zh": mechanism_zh,
             "pathway_nodes": pathway_nodes,
             "evidence_refs": evidence_refs,
+            # New drawer sections
+            "asym_legs_section": asym_legs_section,
+            "ow_section": ow_section,
+            "cp_section": cp_section,
+            "tf_section": tf_section,
         })
 
     # ── Weekly delta ──
@@ -537,6 +1088,9 @@ def compose(root: Path) -> dict[str, Any]:
         "weekly_fired": weekly_fired,
         "collision_note_en": collision_note_en,
         "collision_note_zh": collision_note_zh,
+        # Trade-flows page-level note (shown once when all-null accrual state)
+        "trade_flows_page_note_en": trade_flows_page_note_en,
+        "trade_flows_page_note_zh": trade_flows_page_note_zh,
     }
 
 

@@ -203,6 +203,11 @@ _ASK_READ_TOOLS = frozenset({
     "read_theme_state",
     "read_theme_thesis",
     "read_theme_pathways",
+    # TIL page-wiring PR: basketdata + asymmetry read tools (display/context only)
+    "read_theme_asymmetry",
+    "read_theme_options_witness",
+    "read_theme_clinical",
+    "read_theme_trade_flows",
 })
 
 # Thematic Intelligence trigger terms (TIL W5 NW citizenship).
@@ -398,10 +403,19 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     # Thematic Intelligence path (TIL W5) — checked after liquidity, before options/generic.
     # Seeds: read_theme_state (compact stage/falsifier summary) + read_theme_thesis.
     # add read_theme_pathways when beneficiary/pathway phrasing is present.
+    # add TIL page-wiring tools when specific sub-topic phrasing is present.
     if _THEME_TRIGGER_TERMS.search(question):
         seeds: list[str] = ["read_theme_state", "read_theme_thesis"]
         if re.search(r"\b(pathway|beneficiar\w*)\b|路径|受益者", q, re.IGNORECASE):
             seeds.append("read_theme_pathways")
+        if re.search(r"asymmetr\w*|legs|setup\s+quality|不对称", q, re.IGNORECASE):
+            seeds.append("read_theme_asymmetry")
+        if re.search(r"crowd\w*|positioning|options|拥挤|期权", q, re.IGNORECASE):
+            seeds.append("read_theme_options_witness")
+        if re.search(r"clinical|trial|pipeline|临床|试验", q, re.IGNORECASE):
+            seeds.append("read_theme_clinical")
+        if re.search(r"import|trade\s+flow|customs|进口|贸易流", q, re.IGNORECASE):
+            seeds.append("read_theme_trade_flows")
         return _BUDGET_REGIME, seeds
 
     # Options path (RO-7) — checked after factor, before generic contradictions/regime
@@ -1078,6 +1092,395 @@ def _tool_read_theme_pathways(root: Path, params: dict) -> dict:
         return {**_null, "note": f"read error: {exc}"}
 
 
+def _tool_read_theme_asymmetry(root: Path, params: dict) -> dict:
+    """Tool handler: return per-theme 7-leg asymmetry data (display/context only).
+
+    Reads site/neuralwebdata/theme_asymmetry.json (site projection).
+    Optional param: theme_id (str) — returns just that theme's data.
+    is_context_only=True, display_only=True.
+    WA-R1 fence: no fused number; legs only.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    theme_id_filter: str | None = params.get("theme_id") if isinstance(params, dict) else None
+    path = root / "site" / "neuralwebdata" / "theme_asymmetry.json"
+
+    _null = {
+        "available": False,
+        "is_context_only": True,
+        "display_only": True,
+        "note": (
+            "site/neuralwebdata/theme_asymmetry.json absent — "
+            "run scripts/build_thematic_state.py to populate"
+        ),
+    }
+
+    if not path.exists():
+        return dict(_null)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {**_null, "note": "theme_asymmetry.json is not a dict"}
+
+        themes_list: list = raw.get("themes") or []
+
+        def _summarize_asym(t: dict) -> dict:
+            legs = t.get("legs") or {}
+            compact_legs = {}
+            for leg_id, leg_data in legs.items():
+                if isinstance(leg_data, dict):
+                    compact_legs[leg_id] = {
+                        "band": leg_data.get("band"),
+                        "value": leg_data.get("value"),
+                    }
+            return {
+                "theme_id": t.get("theme_id"),
+                "name_en": t.get("name_en"),
+                "legs": compact_legs,
+            }
+
+        authority_note = (
+            "not a buy score; legs only — no fused number (WA-R1). "
+            "Display/context only. Not a signal."
+        )
+
+        if theme_id_filter:
+            matched = [
+                t for t in themes_list
+                if isinstance(t, dict) and t.get("theme_id") == theme_id_filter
+            ]
+            if not matched:
+                return {
+                    "available": True,
+                    "theme_id": theme_id_filter,
+                    "found": False,
+                    "is_context_only": True,
+                    "display_only": True,
+                    "note": authority_note,
+                }
+            return {
+                "available": True,
+                "theme_id": theme_id_filter,
+                "found": True,
+                "asymmetry": _summarize_asym(matched[0]),
+                "as_of": raw.get("as_of"),
+                "is_context_only": True,
+                "display_only": True,
+                "note": authority_note,
+            }
+
+        return {
+            "available": True,
+            "as_of": raw.get("as_of"),
+            "n_themes": len(themes_list),
+            "themes": [_summarize_asym(t) for t in themes_list if isinstance(t, dict)],
+            "is_context_only": True,
+            "display_only": True,
+            "note": authority_note,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {**_null, "note": f"read error: {exc}"}
+
+
+def _tool_read_theme_options_witness(root: Path, params: dict) -> dict:
+    """Tool handler: return per-theme options crowding-hazard witness.
+
+    Reads site/basketdata/options_witness.json.
+    Optional param: theme_id (str) — returns just that theme's data.
+    is_context_only=True, display_only=True.
+    Hazard framing only — never feeds any score (R-TIL-3/WA-R1).
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    theme_id_filter: str | None = params.get("theme_id") if isinstance(params, dict) else None
+    path = root / "site" / "basketdata" / "options_witness.json"
+
+    _null = {
+        "available": False,
+        "is_context_only": True,
+        "display_only": True,
+        "note": (
+            "site/basketdata/options_witness.json absent — "
+            "run engine/theme_options_witness.py to populate"
+        ),
+    }
+
+    if not path.exists():
+        return dict(_null)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {**_null, "note": "options_witness.json is not a dict"}
+
+        themes_dict: dict = raw.get("themes") or {}
+        authority_note = (
+            "crowding-hazard context only — never feeds any score (R-TIL-3/WA-R1). "
+            "High values = crowded/fragile. Neither direction is a buy."
+        )
+
+        def _compact_leg(leg: dict | None) -> dict:
+            if not leg:
+                return {"band": None, "value": None, "stale": None}
+            return {
+                "band": leg.get("band"),
+                "value": leg.get("value"),
+                "value_z252": leg.get("value_z252"),
+                "stale": leg.get("stale"),
+            }
+
+        def _summarize_witness(tid: str, t: dict) -> dict:
+            lb = t.get("leg_b_pcr") or {}
+            return {
+                "theme_id": tid,
+                "name_en": t.get("name_en"),
+                "name_zh": t.get("name_zh"),
+                "leg_a_call_oi_hhi": _compact_leg(t.get("leg_a_call_oi_hhi")),
+                "leg_b_pcr": {
+                    **_compact_leg(t.get("leg_b_pcr")),
+                    "pcr_collapse_into_strength": lb.get("pcr_collapse_into_strength"),
+                },
+                "leg_c_iv_premium": _compact_leg(t.get("leg_c_iv_premium")),
+            }
+
+        if theme_id_filter:
+            t = themes_dict.get(theme_id_filter)
+            if t is None:
+                return {
+                    "available": True,
+                    "theme_id": theme_id_filter,
+                    "found": False,
+                    "is_context_only": True,
+                    "display_only": True,
+                    "note": authority_note,
+                }
+            return {
+                "available": True,
+                "theme_id": theme_id_filter,
+                "found": True,
+                "witness": _summarize_witness(theme_id_filter, t),
+                "as_of": raw.get("as_of"),
+                "is_context_only": True,
+                "display_only": True,
+                "note": authority_note,
+            }
+
+        return {
+            "available": True,
+            "as_of": raw.get("as_of"),
+            "coverage_stats": raw.get("coverage_stats"),
+            "n_themes": len(themes_dict),
+            "themes": [_summarize_witness(tid, t) for tid, t in themes_dict.items()],
+            "is_context_only": True,
+            "display_only": True,
+            "note": authority_note,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {**_null, "note": f"read error: {exc}"}
+
+
+def _tool_read_theme_clinical(root: Path, params: dict) -> dict:
+    """Tool handler: return per-theme clinical-pipeline capital-commitment context.
+
+    Reads site/basketdata/clinical_pipeline.json.
+    Optional param: theme_id (str) — returns just that theme's data.
+    is_context_only=True, display_only=True.
+    Capital-commitment context; separate display leg (never folds into fused_obs_z).
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    theme_id_filter: str | None = params.get("theme_id") if isinstance(params, dict) else None
+    path = root / "site" / "basketdata" / "clinical_pipeline.json"
+
+    _null = {
+        "available": False,
+        "is_context_only": True,
+        "display_only": True,
+        "note": (
+            "site/basketdata/clinical_pipeline.json absent — "
+            "run engine/theme_clinical.py to populate"
+        ),
+    }
+
+    if not path.exists():
+        return dict(_null)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {**_null, "note": "clinical_pipeline.json is not a dict"}
+
+        themes_dict: dict = raw.get("themes") or {}
+        coverage_stats = raw.get("coverage_stats") or {}
+        authority_note = (
+            "capital-commitment context; separate display leg (never folds into fused_obs_z). "
+            "Display/context only. Not a signal."
+        )
+
+        def _summarize_clinical(tid: str, t: dict) -> dict:
+            return {
+                "theme_id": tid,
+                "yoy": t.get("theme_registration_yoy_pct"),
+                "velocity_read": t.get("theme_registration_velocity_read"),
+                "magnitude_band": t.get("theme_registration_magnitude_band"),
+                "n_phase3_trailing12m": t.get("n_phase3_trailing12m"),
+                "n_studies_total": t.get("n_studies_total"),
+            }
+
+        if theme_id_filter:
+            t = themes_dict.get(theme_id_filter)
+            if t is None:
+                return {
+                    "available": True,
+                    "theme_id": theme_id_filter,
+                    "found": False,
+                    "is_context_only": True,
+                    "display_only": True,
+                    "note": authority_note,
+                }
+            return {
+                "available": True,
+                "theme_id": theme_id_filter,
+                "found": True,
+                "clinical": _summarize_clinical(theme_id_filter, t),
+                "as_of": raw.get("as_of"),
+                "is_context_only": True,
+                "display_only": True,
+                "note": authority_note,
+            }
+
+        return {
+            "available": True,
+            "as_of": raw.get("as_of"),
+            "coverage_stats": coverage_stats,
+            "n_themes_with_data": coverage_stats.get("themes_with_data", 0),
+            "themes": [_summarize_clinical(tid, t) for tid, t in themes_dict.items()],
+            "is_context_only": True,
+            "display_only": True,
+            "note": authority_note,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {**_null, "note": f"read error: {exc}"}
+
+
+def _tool_read_theme_trade_flows(root: Path, params: dict) -> dict:
+    """Tool handler: return per-theme import-flow rollup context.
+
+    Reads site/basketdata/trade_flows.json.
+    Optional param: theme_id (str) — returns just that theme's data.
+    is_context_only=True, display_only=True.
+    When themes_with_data==0: returns accruing=True + honest note about pending backfill.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    theme_id_filter: str | None = params.get("theme_id") if isinstance(params, dict) else None
+    path = root / "site" / "basketdata" / "trade_flows.json"
+
+    _null = {
+        "available": False,
+        "is_context_only": True,
+        "display_only": True,
+        "note": (
+            "site/basketdata/trade_flows.json absent — "
+            "run engine/theme_trade_flows.py with CENSUS_API_KEY to populate"
+        ),
+    }
+
+    if not path.exists():
+        return dict(_null)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {**_null, "note": "trade_flows.json is not a dict"}
+
+        coverage_stats = raw.get("coverage_stats") or {}
+        themes_with_data = coverage_stats.get("themes_with_data", 0)
+        authority_note = (
+            "physical import-flow context only. Not a scored factor. Not a signal. "
+            "No composite across themes (SEPARATE_DISPLAY_LEG)."
+        )
+
+        # Accruing state: all-null because CENSUS_API_KEY not yet active
+        if themes_with_data == 0:
+            return {
+                "available": True,
+                "accruing": True,
+                "themes_with_data": 0,
+                "as_of": raw.get("as_of"),
+                "coverage_stats": coverage_stats,
+                "is_context_only": True,
+                "display_only": True,
+                "note": (
+                    "Import-flow data is accruing — Census API backfill pending "
+                    "(CENSUS_API_KEY must be activated). All per-theme metrics are null. "
+                    + authority_note
+                ),
+            }
+
+        themes_dict: dict = raw.get("themes") or {}
+
+        def _summarize_flow(tid: str, t: dict) -> dict:
+            return {
+                "theme_id": tid,
+                "yoy_pct": t.get("yoy_pct"),
+                "accel_3m_vs_12m": t.get("accel_3m_vs_12m"),
+                "confirmation": t.get("confirmation"),
+                "magnitude_band": t.get("magnitude_band"),
+                "is_mixed_direction": t.get("is_mixed_direction", False),
+            }
+
+        if theme_id_filter:
+            t = themes_dict.get(theme_id_filter)
+            if t is None:
+                return {
+                    "available": True,
+                    "accruing": False,
+                    "theme_id": theme_id_filter,
+                    "found": False,
+                    "is_context_only": True,
+                    "display_only": True,
+                    "note": authority_note,
+                }
+            return {
+                "available": True,
+                "accruing": False,
+                "theme_id": theme_id_filter,
+                "found": True,
+                "trade_flows": _summarize_flow(theme_id_filter, t),
+                "as_of": raw.get("as_of"),
+                "is_context_only": True,
+                "display_only": True,
+                "note": authority_note,
+            }
+
+        return {
+            "available": True,
+            "accruing": False,
+            "as_of": raw.get("as_of"),
+            "coverage_stats": coverage_stats,
+            "themes": [_summarize_flow(tid, t) for tid, t in themes_dict.items()],
+            "is_context_only": True,
+            "display_only": True,
+            "note": authority_note,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {**_null, "note": f"read error: {exc}"}
+
+
 # ---------------------------------------------------------------------------
 # Read-only tool schemas (write tools excluded structurally)
 # ---------------------------------------------------------------------------
@@ -1326,6 +1729,18 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
     elif tool_name == "read_theme_pathways":
         # TIL W5 NW citizenship: theme beneficiary/loser pathway summaries (display/context only)
         return _tool_read_theme_pathways(root, tool_params)
+    elif tool_name == "read_theme_asymmetry":
+        # TIL page-wiring: per-theme 7-leg asymmetry (display/context only, WA-R1 fence)
+        return _tool_read_theme_asymmetry(root, tool_params)
+    elif tool_name == "read_theme_options_witness":
+        # TIL page-wiring: per-theme options crowding-hazard witness (display/context, R-TIL-3)
+        return _tool_read_theme_options_witness(root, tool_params)
+    elif tool_name == "read_theme_clinical":
+        # TIL page-wiring: per-theme clinical-pipeline capital-commitment context
+        return _tool_read_theme_clinical(root, tool_params)
+    elif tool_name == "read_theme_trade_flows":
+        # TIL page-wiring: per-theme import-flow rollup context
+        return _tool_read_theme_trade_flows(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 
