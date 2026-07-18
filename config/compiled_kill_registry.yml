@@ -138,6 +138,12 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: 'Composite market-regime scorecard fusing gamma/vol/flow/breadth into a regime verdict + tactical ETF allocation surface (Ivory Hill Gamma Report intake §17, SPLV/SPHB/SPXL grid)'
+    verdict: 'REJECT-REDUNDANT + FORBIDDEN fusion path — duplicates the risk_radar→market_state→regime_vector authority chain and the strategies allocation layer (SPVector); fusing positioning keys into a regime score restates Signal-Commons positioning-fusion ILLEGAL'
+    source: 'MSP-R2, `IVORY_HILL_MARKET_STRUCTURE_MASTERPLAN_BY_FABLE.md` (2026-07-18)'
+    section: 1
+    section_name: forbidden_by_ruling
+
   - topic: 'Cross-organ flip-counter (conjunction-of-transitions deterioration meter) as a standalone organ'
     verdict: 'KILLED — double-counts the cascade meter''s intl leg, log-birth FP (07-07 artifact), count-conjunction class (RISK_RADAR_TUNING line 93 governs any authority path)'
     source: 'RSR-R6a, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
