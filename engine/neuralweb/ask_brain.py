@@ -208,6 +208,8 @@ _ASK_READ_TOOLS = frozenset({
     "read_theme_options_witness",
     "read_theme_clinical",
     "read_theme_trade_flows",
+    # SS-NW-W1: special-situations event context read tool (display/context only)
+    "read_special_situations",
 })
 
 # Thematic Intelligence trigger terms (TIL W5 NW citizenship).
@@ -1485,6 +1487,94 @@ def _tool_read_theme_trade_flows(root: Path, params: dict) -> dict:
 # Read-only tool schemas (write tools excluded structurally)
 # ---------------------------------------------------------------------------
 
+def _tool_read_special_situations(root: Path, params: dict) -> dict:
+    """Tool handler: return special-situations event context.
+
+    Reads both:
+      data/special_situations/context/latest.json  — feed view (top_setups, changes, arb)
+      site/allocationdata/special_situations.json  — per-ticker view (when ticker given)
+
+    Optional params:
+      ticker (str)    — if provided, returns that ticker's entry from by_ticker view
+      category (str)  — filter top_setups to this category
+      min_grade (str) — 'A'|'B'|'C' — filter top_setups to this grade or better
+
+    Authority: display/context only (SS-NW-W1). is_context_only=True always.
+    Absent files => {'available': False, 'note': ...}. No write path.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    p = params if isinstance(params, dict) else {}
+    ticker_filter: str | None = p.get("ticker")
+    category_filter: str | None = p.get("category")
+    min_grade_filter: str | None = p.get("min_grade")
+
+    ctx_path  = root / "data" / "special_situations" / "context" / "latest.json"
+    site_path = root / "site" / "allocationdata" / "special_situations.json"
+
+    _null = {
+        "available": False,
+        "is_context_only": True,
+        "display_only": True,
+        "note": (
+            "data/special_situations/context/latest.json absent — "
+            "run scripts/build_special_situations.py to populate"
+        ),
+    }
+
+    if not ctx_path.exists():
+        return dict(_null)
+
+    try:
+        raw = json.loads(ctx_path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {**_null, "note": "context/latest.json is not a dict"}
+
+        _GRADE_ORDER = {"A": 3, "B": 2, "C": 1}
+        min_grade_val = _GRADE_ORDER.get(min_grade_filter or "", 0)
+
+        top_raw = raw.get("top_setups") or []
+        if category_filter:
+            top_raw = [s for s in top_raw if isinstance(s, dict) and s.get("category") == category_filter]
+        if min_grade_filter:
+            top_raw = [s for s in top_raw if isinstance(s, dict)
+                       and _GRADE_ORDER.get(s.get("grade") or "", 0) >= min_grade_val]
+
+        changes_items = (raw.get("changes") or {}).get("items") or []
+        arb_top = raw.get("risk_arb_top") or []
+
+        out: dict = {
+            "available": True,
+            "is_context_only": True,
+            "display_only": True,
+            "asof": raw.get("asof"),
+            "counts": raw.get("counts"),
+            "setups_display": top_raw[:8],
+            "changes": changes_items[:8],
+            "risk_arb_top": arb_top[:3],
+            "note": "context only — event tracking, never a signal or sizing input",
+        }
+
+        # Per-ticker view (site/allocationdata/special_situations.json)
+        if ticker_filter and site_path.exists():
+            try:
+                site_raw = json.loads(site_path.read_text(encoding="utf-8"))
+                by_ticker = (site_raw.get("by_ticker") or {}) if isinstance(site_raw, dict) else {}
+                ticker_data = by_ticker.get(ticker_filter)
+                out["ticker_view"] = ticker_data if ticker_data else {"found": False, "ticker": ticker_filter}
+            except Exception:  # noqa: BLE001
+                out["ticker_view"] = {"available": False, "note": "site/allocationdata/special_situations.json read error"}
+        elif ticker_filter and not site_path.exists():
+            out["ticker_view"] = {"available": False, "note": "site/allocationdata/special_situations.json absent"}
+
+        return out
+    except Exception as exc:  # noqa: BLE001
+        return {**_null, "note": f"read error: {exc}"}
+
+
 def _read_tool_schemas() -> list[dict]:
     """Return read-tool schemas (write tools excluded structurally).
 
@@ -1741,6 +1831,9 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
     elif tool_name == "read_theme_trade_flows":
         # TIL page-wiring: per-theme import-flow rollup context
         return _tool_read_theme_trade_flows(root, tool_params)
+    elif tool_name == "read_special_situations":
+        # SS-NW-W1: special-situations event context (display/context only)
+        return _tool_read_special_situations(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 

@@ -319,6 +319,27 @@ admin.mastermind-x.com {
 	}
 }
 
+# ---- home.greydeercapital.com — Grey Home private smart-home dashboard -------
+# The app and all home-device credentials stay on the Mac Studio. A dedicated,
+# restricted reverse SSH tunnel exposes only the local web server on loopback
+# :47900. Cloudflare terminates public TLS; the origin uses Caddy's internal cert.
+home.greydeercapital.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:47900 {
+		header_up X-Forwarded-Proto https
+	}
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Strict-Transport-Security "max-age=31536000"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+		-Server
+	}
+	tls internal
+}
+
 # ---- maltese.greydeercapital.com — 线条小狗 Line-Puppy sticker gallery (static) ----
 # A SEPARATE Cloudflare zone (greydeercapital.com) proxied to THIS origin; the static
 # files live at /opt/maltese (OUTSIDE this /opt/macro checkout — synced by hand via

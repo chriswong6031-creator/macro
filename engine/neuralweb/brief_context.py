@@ -39,6 +39,7 @@ Drop order for macro_slice (lowest priority first):
    5. factor_weather
    4. cross_asset_flows
    3. liquidity_plumbing
+   2c. special_situations  (SS-NW-W1; absent = drops cleanly)
    2b. fx_dollar  (FX/dollar transmission context; absent = drops cleanly)
    2. contradictions
    1c. global_regimes
@@ -864,6 +865,65 @@ def _block_fx_dollar(ws: dict | None) -> dict | None:
     }
 
 
+def _block_special_situations(ws: dict | None) -> dict | None:
+    """Block special_situations: SS-NW-W1 event context from world_state.special_situations.
+
+    Budget: ~0.5 KB.  Returns None when absent/null so it drops cleanly.
+    Compact form: new_events count, setups_display (cap 4, ticker+category+grade),
+    deal_arb_best (top arb spread), changes_note (count of stage/grade changes).
+
+    Display-only, context only — never a signal or sizing input.
+    """
+    if ws is None:
+        return None
+    ss = ws.get("special_situations")
+    if not ss or not isinstance(ss, dict):
+        return None
+
+    counts = ss.get("counts") or {}
+    top_setups_raw = ss.get("setups_display") or []
+    changes_raw = ss.get("changes") or []
+    risk_arb_raw = ss.get("risk_arb_top") or []
+    asof = ss.get("asof")
+
+    # Compact setups_display: ticker + category + grade only
+    top_setups = [
+        {"ticker": s.get("ticker"), "category": s.get("category"), "grade": s.get("grade")}
+        for s in top_setups_raw[:4]
+        if isinstance(s, dict)
+    ]
+
+    # Best arb spread
+    deal_arb_best = None
+    if risk_arb_raw and isinstance(risk_arb_raw[0], dict):
+        arb = risk_arb_raw[0]
+        deal_arb_best = {
+            "ticker": arb.get("ticker"),
+            "gross_spread_pct": arb.get("gross_spread_pct"),
+            "annualized_pct": arb.get("annualized_pct"),
+        }
+
+    n_changes = len(changes_raw) if isinstance(changes_raw, list) else 0
+    new_today = counts.get("new_today", 0)
+
+    # Drop when nothing meaningful present
+    if not top_setups and deal_arb_best is None and not new_today and not n_changes:
+        return None
+
+    return {
+        "display_only": True,
+        "is_context_only": True,
+        "_tape_family": "special_situations",
+        "_lead_lag": "coincident",
+        "as_of": asof,
+        "new_events": new_today,
+        "setups_display": top_setups,
+        "deal_arb_best": deal_arb_best,
+        "changes_note": f"{n_changes} stage/grade change(s) today" if n_changes else None,
+        "honesty_note": "context only — event tracking, never a signal or sizing input",
+    }
+
+
 # ---------------------------------------------------------------------------
 # macro_slice
 # ---------------------------------------------------------------------------
@@ -881,6 +941,7 @@ _MACRO_DROP_ORDER = [
     "factor_weather",    # 6
     "cross_asset_flows", # 3
     "liquidity_plumbing",# 4
+    "special_situations", # 2c — SS-NW-W1 event context block (drops before fx_dollar)
     "fx_dollar",         # 2b — FX/dollar transmission context block
     "contradictions",    # 2
     "global_regimes",    # 5
@@ -969,6 +1030,10 @@ def _build_macro_slice(root: Path) -> dict:
     _fx_dollar = _block_fx_dollar(ws)
     if _fx_dollar is not None:
         result["fx_dollar"]     = _fx_dollar
+    # Special-situations event context block (SS-NW-W1) — None when absent, drops cleanly
+    _ss = _block_special_situations(ws)
+    if _ss is not None:
+        result["special_situations"] = _ss
 
     # Enforce budget
     _enforce_budget(result, _MACRO_CAP, _MACRO_DROP_ORDER)

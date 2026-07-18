@@ -30,3 +30,8 @@
 {"date": "2026-07-17", "ticker": "9888.HK", "slug": "baidu", "name_en": "Baidu", "attention_shock_z": 2.583, "tone_pctile": null, "narrative_state": "attention_spike", "asof_freshness": "degraded", "organ": "hk_narrative"}
 {"date": "2026-07-17", "ticker": "1024.HK", "slug": "kuaishou", "name_en": "Kuaishou", "attention_shock_z": 1.611, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
 {"date": "2026-07-17", "ticker": "0981.HK", "slug": "smic", "name_en": "SMIC", "attention_shock_z": 1.477, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
+{"date": "2026-07-18", "ticker": "9988.HK", "slug": "alibaba", "name_en": "Alibaba", "attention_shock_z": 0.078, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "stale", "organ": "hk_narrative"}
+{"date": "2026-07-18", "ticker": "3690.HK", "slug": "meituan", "name_en": "Meituan", "attention_shock_z": 0.102, "tone_pctile": 92.9, "narrative_state": "tone_positive_shift", "asof_freshness": "stale", "organ": "hk_narrative"}
+{"date": "2026-07-18", "ticker": "9888.HK", "slug": "baidu", "name_en": "Baidu", "attention_shock_z": 2.583, "tone_pctile": null, "narrative_state": "attention_spike", "asof_freshness": "stale", "organ": "hk_narrative"}
+{"date": "2026-07-18", "ticker": "1024.HK", "slug": "kuaishou", "name_en": "Kuaishou", "attention_shock_z": 1.611, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "stale", "organ": "hk_narrative"}
+{"date": "2026-07-18", "ticker": "0981.HK", "slug": "smic", "name_en": "SMIC", "attention_shock_z": 1.477, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "stale", "organ": "hk_narrative"}
