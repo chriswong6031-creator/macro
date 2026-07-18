@@ -157,3 +157,47 @@ class TestReadPathsUnaffected:
             assert isinstance(sc, dict), "scorecard must return dict"
         except Exception as exc:
             pytest.fail(f"scorecard raised off-lane: {exc}")
+
+
+class TestGradeWriteBackLaneGate:
+    """grade() computes in memory everywhere but persists stamps producer-lane-only.
+
+    Regression: scorecard() -> grade() rewrote the committed CA store from the
+    read-only prophet_governor (MM_DATA_GUARD catch on CI, 2026-07-18).
+    """
+
+    def _seed_store(self, bl, tmp_path, monkeypatch, market, lane_env):
+        monkeypatch.setattr(
+            bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet"
+        )
+        monkeypatch.setattr(bl, "_regime_stamp_for_date", lambda asof: {})
+        for k, v in lane_env.items():
+            monkeypatch.setenv(k, v)
+        calls = [{"ticker": "0001.HK" if market == "HK" else "RY.TO",
+                  "group": "entry_open", "board_pos": 1}]
+        n = bl.append_board(calls, market, asof="2026-07-10")
+        assert n == 1
+        return tmp_path / f"{market.lower()}_board.parquet"
+
+    def test_ca_off_lane_grade_does_not_rewrite_store(self, tmp_path, monkeypatch):
+        import engine.board_ledger as bl
+
+        p = self._seed_store(bl, tmp_path, monkeypatch,
+                             "CA", {"COLLECT_LANE": "nightly"})
+        before = p.read_bytes()
+        monkeypatch.setenv("COLLECT_LANE", "render")
+        bl.grade("CA")
+        assert p.read_bytes() == before, (
+            "off-lane grade() must not rewrite the CA store (PR-R10)"
+        )
+
+    def test_hk_on_lane_grade_may_rewrite_store(self, tmp_path, monkeypatch):
+        import engine.board_ledger as bl
+
+        p = self._seed_store(bl, tmp_path, monkeypatch,
+                             "HK", {"CN_LANE": "asia"})
+        # on-lane: write-back path is permitted (no assertion on content —
+        # whether stamps change depends on fixture data; must not raise)
+        out = bl.grade("HK")
+        assert isinstance(out, dict)
+        assert p.exists()
