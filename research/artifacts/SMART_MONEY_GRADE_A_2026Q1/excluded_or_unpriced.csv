@@ -1,0 +1,28 @@
+cusip,issuer,shares,value_usd,pct_portfolio,action,prior_shares,shares_change_pct,ticker,title_class,fund,fund_name,grade,is_common_equity,exclusion_reason,book_pct,incremental_book_pct,value_usd_reported,cusips,n_security_lines,price_source
+15102KAA8,Celcuity Inc.,30750000.0,74868563.0,0.4298914559527813,new,,,CELC 2.75 08-01-31,Note  2.75% 8/1/2031,bakerbros,Baker Bros. Advisors,A,False,non_common_security,,,,,,
+65339F655,NEXTERA ENERGY INC,1200703.0,60430906.0,0.8216350462485852,new,,,NEE 7.375 02-15-29,UNIT 02/15/2029,soros,Soros Fund Management,A,False,non_common_security,,,,,,
+683712137,OPENDOOR TECHNOLOGIES INC,1102.0,271.0,3.684589761625725e-06,add,200.0,451.0,OPENL,*W EXP 11/20/202,soros,Soros Fund Management,A,False,non_common_security,,,,,,
+68389X204,ORACLE CORP,569360.0,26057044.0,0.3542786625115536,new,,,ORCL 6.5 01-15-29 D,6.5 DEP CUM SR D,soros,Soros Fund Management,A,False,non_common_security,,,,,,
+918284209,VSE CORP,336856.0,16571601.0,0.22531199770607613,new,,,VSEC 5.75 02-01-29,UNIT 02/01/2029,soros,Soros Fund Management,A,False,non_common_security,,,,,,
+G1143H119,BITCOIN INFRASTRUCTURE ACQUI,149999.0,44550.0,0.0009738205091403406,new,,,,*W EXP 11/06/203,starboard,Starboard Value,A,False,unresolved_ticker,,,,,,
+,HELIX ACQUISITION CORP-CL A,,,,new,,,HLXA,COMMON STOCK,racapital,RA Capital Management,A,,unpriced_ticker,0.13456605692702794,0.13456605692702794,12700000.0,G4444S107,1.0,unpriced
+,AMICUS THERAPEUTIC,,,,add,,15.1,FOLD,COM,soros,Soros Fund Management,A,,unpriced_ticker,1.1310884309250517,0.14838779589025441,83191070.0,03152W109,1.0,unpriced
+,APELLIS PHARMACEUTICALS INC,,,,new,,,APLS,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.5776087996028572,0.5776087996028572,42482880.0,03753U106,1.0,unpriced
+,ARCELLX INC,,,,new,,,ACLX,COMMON STOCK,soros,Soros Fund Management,A,,unpriced_ticker,0.31222479441318507,0.31222479441318507,22964000.0,03940C100,1.0,unpriced
+,DAY ONE BIOPHARMACEUTICALS I,,,,new,,,DAWN,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.4486539227653624,0.4486539227653624,32998304.0,23954D109,1.0,unpriced
+,ENHABIT INC,,,,new,,,EHAB,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.21430603291419478,0.21430603291419478,15762117.0,29332G102,1.0,unpriced
+,GOLDEN ENTMT INC,,,,new,,,GDEN,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.15607699251382767,0.15607699251382767,11479396.0,381013101,1.0,unpriced
+,PEAKSTONE REALTY TRUST,,,,new,,,PKST,COMMON SHARES,soros,Soros Fund Management,A,,unpriced_ticker,0.07038224504278798,0.07038224504278798,5176584.0,39818P799,1.0,unpriced
+,HOLOGIC INC,,,,add,,15.6,HOLX,COM,soros,Soros Fund Management,A,,unpriced_ticker,1.0416701811613982,0.1405714085304309,76614396.0,436440101,1.0,unpriced
+,VERIS RESIDENTIAL INC,,,,new,,,VRE,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.3935245333047588,0.3935245333047588,28943561.0,554489104,1.0,unpriced
+,MASIMO CORP,,,,new,,,MASI,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.24386348567142396,0.24386348567142396,17936055.0,574795100,1.0,unpriced
+,ONESTREAM INC,,,,add,,454.6,OS,CL A,soros,Soros Fund Management,A,,unpriced_ticker,0.5972207152208553,0.4895357683725223,43925328.0,68278B107,1.0,unpriced
+,SEALED AIR CORP NEW,,,,add,,428.2,SEE,COM,soros,Soros Fund Management,A,,unpriced_ticker,1.5732674553737351,1.2754129579534899,115713148.0,81211K100,1.0,unpriced
+,SELECT MED HLDGS CORP,,,,new,,,SEM,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.406083600268118,0.406083600268118,29867275.0,81619Q105,1.0,unpriced
+,SEMRUSH HLDGS INC,,,,add,,15.4,SEMR,CL A COM,soros,Soros Fund Management,A,,unpriced_ticker,0.2406889056756593,0.032119663322401674,17702566.0,81686C104,1.0,unpriced
+,TRI POINTE HOMES INC,,,,new,,,TPH,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.6616739658713889,0.6616739658713889,48665837.0,87265H109,1.0,unpriced
+,TERNS PHARMACEUTICALS INC,,,,new,,,TERN,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.2307400510460156,0.2307400510460156,16970832.0,880881107,1.0,unpriced
+,THERMON GROUP HLDGS INC,,,,new,,,THR,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.30705324834425235,0.30705324834425235,22583635.0,88362T103,1.0,unpriced
+,UDEMY INC,,,,add,,74.7,UDMY,COM,soros,Soros Fund Management,A,,unpriced_ticker,0.12070324486447001,0.05161151912636469,8877672.0,902685106,1.0,unpriced
+,CANTOR EQUITY PARTNERS II IN,,,,new,,,CEPT,CL A ORD SHS,soros,Soros Fund Management,A,,unpriced_ticker,0.007403170203709252,0.007403170203709252,544500.0,G1827P106,1.0,unpriced
+,SPRING VY ACQUISITION CORP I,,,,new,,,SVII,SHS CL A,soros,Soros Fund Management,A,,unpriced_ticker,0.04078680430107917,0.04078680430107917,2999852.0,G8377R101,1.0,unpriced
