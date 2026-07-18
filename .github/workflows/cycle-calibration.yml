@@ -47,7 +47,7 @@ jobs:
 
       - name: install deps
         run: |
-          pip install --quiet "pytest<9" pandas numpy pyarrow pyyaml scipy
+          pip install --quiet pytest pandas numpy pyarrow pyyaml scipy
 
       # ── HARD: gen_ontology_js --check ──────────────────────────────────────
       # The generated site/cycle_ontology.js must exactly match what
