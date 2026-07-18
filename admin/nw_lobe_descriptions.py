@@ -30,7 +30,7 @@ LOBE_DESCRIPTIONS = {
     "bottom-sensors-parquet": {
         "short": "Daily per-stock sensor readings for the US board — shown for context only, ranks and gates nothing.",
         "full": "Each day this feed gathers sensor readings for each US stock on the board: distance from recent lows and highs, balance-sheet leverage ratios from regulatory filings, and other positioning metrics. It is display-only — it neither ranks stocks nor gates any alert or allocation. Leverage ratios need data still arriving through a weekly refresh, so many are null today. The thresholds defining sensor states are frozen; changing them needs a new record.",
-        "src_fp": "d3b2cbe35a292ef0",
+        "src_fp": "43fa427c4b716dd3",
     },
     "capability-audit": {
         "short": "Append-only audit tape of every capability broker call actually used in a pipeline run — no secret values, operator audit only.",

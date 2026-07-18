@@ -183,6 +183,12 @@ class TestKOShapeIntact:
         # Accept both intact and launched: the key invariant is invalidation correctness.
         assert result["state"] in ("intact", "launched"), (
             f"Fade from anchor (above inv 58.20) must not be broken. Got {result}")
+        # ret_since_anchor_pct is SIGNED: anchor=75, last=72 → -4%.  maxup_pct
+        # cannot see this (max favorable excursion ≈ 0) — the signed field is
+        # what bottom_sensors labels_v2 binds for the DEAD_MONEY_RISK gate.
+        assert abs(result["ret_since_anchor_pct"] - (72.0 / 75.0 - 1.0) * 100) < 0.05, (
+            f"ret_since_anchor_pct must be ~-4.0 (signed), got "
+            f"{result['ret_since_anchor_pct']}")
 
     def test_invalidation_strictly_below_trough(self):
         """invalidation = trough * 0.97, NOT trough itself. Verify the 3% buffer."""

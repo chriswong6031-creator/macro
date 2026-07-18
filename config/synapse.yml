@@ -5347,7 +5347,7 @@ artifacts:
     storage: git
     asof_field: as_of
     freshness_sla_hours: 30
-    schema: bottom_sensors.labels_v1
+    schema: bottom_sensors.labels_v2
     tier: display
     horizon_role: tactical_entry
     weights: none
@@ -5358,8 +5358,13 @@ artifacts:
     notes: >
       Amendment 1, Lane B0, PR-1. Bottom-sensor envelope for the US board.
       is_display_only=true — ranks nothing, gates nothing, alerts nothing.
-      labels_version=labels_v1 (frozen thresholds; any change = new version logged
-      in research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md).
+      labels_version=labels_v2 (frozen thresholds; any change = new version logged
+      in research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md). v2 2026-07-18
+      (operator-ratified): DEAD_MONEY_RISK binds hold.py's signed ret_since_anchor_pct
+      — the labels_v1 maxup_pct proxy (max favorable excursion) could not see
+      underwater names and mislabeled them as flat; decision table and the |ret|<4%
+      threshold unchanged. Per-row labels_version stamp is the epoch marker for any
+      cross-version study of the git-history label series.
       Bind-first: fields from signal_gate.json / us_standouts.json / hold.py outputs.
       Two new rolling columns (dist_21d_low_pct, dist_126d_high_pct) are the only
       new price computations. rs_repair_state and sponsorship_state are unavailable
@@ -5372,7 +5377,7 @@ artifacts:
       any future UI surface MUST carry a proxy label for this ratio.
       net_debt_to_ebitda requires D&A (DepreciationDepletionAndAmortization) which
       accrues via the collectors/edgar_facts.py weekly drip — mostly None until drip runs.
-      Amendment-3 structural descriptors (additive; labels_v1 decision table UNCHANGED):
+      Amendment-3 structural descriptors (additive; decision table UNCHANGED):
         decline_herf / decline_geometry (family E, DISPLAY-CANDIDATE) — latest trailing-63-bar
           loss-Herfindahl bound from engine.entry_primitives.decline_concentration_series, plus its
           current-day cross-sectional tercile label flush/mixed/grind. A decline-SHAPE read, NOT an
@@ -5394,7 +5399,7 @@ artifacts:
     storage: git
     asof_field: as_of
     freshness_sla_hours: 30
-    schema: bottom_sensors.labels_v1
+    schema: bottom_sensors.labels_v2
     tier: display
     horizon_role: tactical_entry
     weights: none
