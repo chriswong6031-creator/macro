@@ -2,8 +2,9 @@ name: render
 # FAST site re-render + deploy from ALREADY-COMMITTED data — the express lane for
 # shipping a template / CSS / JS bug fix WITHOUT waiting on the nightly `daily`
 # pipeline's data collection (up to ~100m), its LLM "brain" layers (~20m), or the
-# special-situations EDGAR sweep (~28m). Recent dailies ran 1h12m–2h31m; a render
-# is a handful of minutes.
+# special-situations EDGAR sweep (~28m). Recent dailies ran 1h12m–2h31m; a scope=all
+# render is ~40–85m (Mac quiet-box 40–71m measured 07-11; pc-render-1 ~81m measured
+# 07-18) — a narrowed single-region scope (see the scope picker) is minutes.
 #
 # How it stays fast AND correct: every page builder reads COMMITTED engine output
 # (regime/latest.json, each desk's latest.json, the brains' committed *.json) and
@@ -36,6 +37,11 @@ on:
         type: choice
         default: all
         options: [all, macro, china, hk, markets, gex, baskets]
+      runner:
+        description: "Runner label — re-dispatch with macstudio if the render PC (pc-render-1) is down (GHA has no automatic label fallback)"
+        type: choice
+        default: render-linux
+        options: [render-linux, macstudio]
   push:
     branches: [main]
     # A HUMAN pushing a template or builder change auto-renders + deploys. The
@@ -62,7 +68,10 @@ concurrency:
 
 jobs:
   render:
-    runs-on: [self-hosted, render-linux]
+    # render-linux = pc-render-1, the WSL2 PC (#2771). GHA has no OR-label fallback —
+    # if the PC is down, re-dispatch with runner=macstudio (the venv bootstrap and the
+    # setup-node step below are portable both ways).
+    runs-on: ${{ github.event.inputs.runner || 'render-linux' }}
     # was 75 — a scope=all render now takes 40-71m when the box is quiet (measured
     # 2026-07-11: run 29155365959 = 40m, run 29169451233 = 71.4m) and blew straight
     # through 75m under the evening merge-spree congestion (run 29172926033 CANCELLED
@@ -389,6 +398,14 @@ jobs:
               echo "::error::unknown scope '$SCOPE'"; exit 1 ;;
           esac
           exit 0
+      - name: ensure node for the inline-JS guard
+        # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
+        # WITHOUT node, so this guard failed on every render there 07-18 — and because the
+        # commit step is if: always(), unverified JS shipped to main (the VPS serves main).
+        # setup-node installs into the runner tool cache: works on Linux AND a Mac fallback.
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: guard — inline JS must parse
         # Same gate as pages.yml: refuse to deploy if a committed inline <script> has a
         # JS syntax error (e.g. an empty template var rendering the page blank), so a bad
@@ -400,11 +417,16 @@ jobs:
         # boards from checkout HEAD so the commit step (if: always()) can't ship them,
         # then fail RED for visibility. The rebase-race hybrid variant (2026-07-07,
         # commit 5bf116a3b3) is healed separately inside the push loop below.
+        # !cancelled(): the commit below ships even when the JS guard fails, so this heal
+        # must not be skippable by an earlier step failure (07-18: a failing JS guard
+        # silently skipped both this guard and the shim inject).
+        if: ${{ !cancelled() }}
         run: |
           python3 scripts/check_ms_board_coherence.py && exit 0
           python3 scripts/check_ms_board_coherence.py --heal-from HEAD || true
           exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
+        if: ${{ !cancelled() }}
         run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)
         if: always()
