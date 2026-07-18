@@ -396,6 +396,15 @@
       '等权重美国主题篮子，对标标普 500。用于观察哪些主题在走强或走弱。') }}</p>
   </header>
 
+  <!-- ── B4: seasonal-climate chip (display-only context, page furniture) ── -->
+  {% if factor_season is defined and factor_season is not none %}
+  <div style="margin:4px 0 6px">
+    <span class="chip"
+      style="{% if factor_season.tone == 'headwind' %}border-color:color-mix(in srgb,var(--warn) 55%,var(--line));color:var(--warn);{% elif factor_season.tone == 'tailwind' %}border-color:color-mix(in srgb,var(--up) 45%,var(--line));color:var(--up);{% endif %}cursor:help"
+      data-tip-en="{{ factor_season.tip_en | e }}"
+      data-tip-zh="{{ factor_season.tip_zh | e }}"><span class="l-en">{{ factor_season.chip_en | e }}</span><span class="l-zh">{{ factor_season.chip_zh | e }}</span></span>
+  </div>
+  {% endif %}
   <!-- ── Shock de-escalation banner (FTR W1 / PS-R3, de-escalation only) ── -->
   <!-- Fetched live from site/live/shock_state.json. Absent file = no banner (graceful). -->
   <div id="ftr-shock-banner"></div>

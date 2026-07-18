@@ -26,7 +26,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | dannytrades | 1 |
 | engine-fix | 18 |
 | entry-stack-expansion | 2 |
-| factor-intelligence | 5 |
+| factor-intelligence | 7 |
 | fast-turn | 4 |
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
@@ -94,7 +94,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 304 |
+| display | 306 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 70 |
@@ -103,7 +103,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 451 |
+| git | 453 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -288,8 +288,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | factor-intelligence-state | `data/neuralweb/factor_intelligence_state.json` | json | nightly-factor-panel | display | 5 | 0 |
+| site-factor-seasonality | `site/factordata/factor_seasonality.json` | json | daily-engine | display | 3 | 0 |
 | factor-contradictions-ledger | `data/neuralweb/factor_contradictions.jsonl` | jsonl | nightly-factor-panel | display | 2 | 0 |
 | fire-coordinates | `data/factordata/fire_coordinates.jsonl` | jsonl | nightly-factor-panel | display | 2 | 0 |
+| site-momentum-display | `site/factordata/momentum_display.json` | json | daily-engine | display | 1 | 0 |
 | factor-state-history | `data/factordata/factor_state_history.jsonl` | jsonl | nightly-factor-panel | display | 0 | 0 |
 | site-factor-intelligence-state | `site/neuralwebdata/factor_intelligence_state.json` | json | nightly-factor-panel | display | 0 | 0 |
 
