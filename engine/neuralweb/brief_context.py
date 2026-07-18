@@ -80,6 +80,7 @@ _SLA_HOURS: dict[str, float] = {
     "cortex_memo":              30.0,
     "mastermind_context":       30.0,
     "fx_dollar":                30.0,
+    "theme_rotation":           28.0,
 }
 
 _DEFAULT_SLA_HOURS: float = 30.0
@@ -925,12 +926,83 @@ def _block_special_situations(ws: dict | None) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Theme-rotation context block (reads world_state.theme_rotation)
+# ---------------------------------------------------------------------------
+
+def _block_theme_rotation(ws: dict | None) -> dict | None:
+    """Block theme_rotation: theme leadership context from world_state.theme_rotation.
+
+    Budget: ~0.4 KB.  Returns None when the block is entirely null/absent so
+    it drops cleanly from macro_slice.
+
+    Reads world_state.theme_rotation composed by _compose_theme_rotation from
+    site/basketdata/theme_context.json (theme_context.v1 artifact).
+
+    Fields: state, stance, trailing leader (name+health+breadth+r10),
+    strength names (max 4), migration categories, alignment flag, days_in_state.
+
+    Deterministic re-projection only — no LLM content, no rank/score raise.
+    display_only=True always.
+    """
+    if ws is None:
+        return None
+    tr = ws.get("theme_rotation")
+    if not tr or not isinstance(tr, dict):
+        return None
+
+    state = tr.get("leadership_state")
+    stance_en = tr.get("stance_en")
+    asof = tr.get("as_of")
+
+    # Drop cleanly when all key fields are null
+    if state is None and stance_en is None:
+        return None
+
+    tl = (tr.get("trailing_leader") or {}) if isinstance(tr.get("trailing_leader"), dict) else {}
+    strength = (tr.get("strength") or [])[:4]
+    migration = tr.get("migration") or {}
+    alignment = tr.get("alignment") or {}
+
+    return {
+        "display_only": True,
+        "is_context_only": True,
+        "_tape_family": "theme_rotation",
+        "_lead_lag": "coincident",
+        "as_of": asof,
+        "stale": _is_stale(asof, "theme_rotation"),
+        "leadership_state": state,
+        "days_in_state": tr.get("days_in_state"),
+        "stance_en": stance_en,
+        "stance_zh": tr.get("stance_zh"),
+        "trailing_leader": {
+            "id": tl.get("id"),
+            "name": tl.get("name"),
+            "health": tl.get("health"),
+            "breadth": tl.get("breadth"),
+            "r10": tl.get("r10"),
+        } if tl else None,
+        "strength_names": [s.get("name") for s in strength if isinstance(s, dict)] or None,
+        "migration_absorbing": [
+            x.get("category") for x in (migration.get("absorbing") or [])
+            if isinstance(x, dict)
+        ] or None,
+        "migration_bleeding": [
+            x.get("category") for x in (migration.get("bleeding") or [])
+            if isinstance(x, dict)
+        ] or None,
+        "sector_rotation_agrees": alignment.get("sector_rotation_agrees"),
+        "honesty_note": "context only — display-tier leadership read, not a trade signal",
+    }
+
+
+# ---------------------------------------------------------------------------
 # macro_slice
 # ---------------------------------------------------------------------------
 
 # Drop order for budget enforcement: lowest-priority first
 _MACRO_DROP_ORDER = [
     "cross_asset_context",  # 13 — new; lowest priority, drops first
+    "theme_rotation",    # 13b — theme leadership context; drops just above cross_asset_context
     "causal_lab",        # 12
     "evidence_clock",    # 11
     "attention",         # 10
@@ -1034,6 +1106,10 @@ def _build_macro_slice(root: Path) -> dict:
     _ss = _block_special_situations(ws)
     if _ss is not None:
         result["special_situations"] = _ss
+    # Theme-rotation context block — None when absent, drops cleanly
+    _theme_rot = _block_theme_rotation(ws)
+    if _theme_rot is not None:
+        result["theme_rotation"] = _theme_rot
 
     # Enforce budget
     _enforce_budget(result, _MACRO_CAP, _MACRO_DROP_ORDER)
