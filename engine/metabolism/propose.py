@@ -127,6 +127,18 @@ _LLM_CFG: dict[str, Any] = {
     "max_tokens": 4000,
 }
 
+# Hard fallback for model-not-found retry (PR-R8)
+_OPUS_FALLBACK = "claude-opus-4-8"
+
+
+def _get_deliberation_model() -> str:
+    """Return the active deliberation model (PR-R8). Falls back to Opus on any error."""
+    try:
+        from engine import llm_auth as _la  # noqa: PLC0415
+        return _la.deliberation_model(default=_OPUS_FALLBACK)
+    except Exception:  # noqa: BLE001
+        return _OPUS_FALLBACK
+
 
 # ── Path helpers ──────────────────────────────────────────────────────────────
 
@@ -582,7 +594,9 @@ def _invoke_llm(
     cache_creation_tokens, model} when the SDK exposes them; empty dict otherwise.
     NEVER raises.  Tests patch this function to inject a canned reply without any network.
     """
-    conf = {**_LLM_CFG, **(cfg or {})}
+    # PR-R8: use deliberation model (Fable) if enabled and within budget
+    active_model = _get_deliberation_model()
+    conf = {**_LLM_CFG, **(cfg or {}), "opus_model": active_model}
     _usage: list[dict[str, Any]] = []  # mutable side-channel for resp.usage
     try:
         from engine import llm_auth  # type: ignore[import]
@@ -630,9 +644,50 @@ def _invoke_llm(
         text, reason, provider = llm_auth.make_call(
             providers, _do_call, context="metabolism_propose")
         usage_info = _usage[0] if _usage else {}
+
+        # PR-R8: model-not-found fallback — retry ONCE with Opus when the
+        # deliberation model returned no text and the reason is not a provider issue
+        if text is None and active_model != _OPUS_FALLBACK and reason not in (
+            "no_provider", "rate_limited_all", "auth_invalid_all"
+        ):
+            log.warning(
+                "propose: model %r returned no text (reason=%r); retrying with %r",
+                active_model, reason, _OPUS_FALLBACK,
+            )
+            _usage.clear()
+            fb_conf = {**_LLM_CFG, **(cfg or {}), "opus_model": _OPUS_FALLBACK}
+            fb_providers = llm_auth.build_providers(
+                fb_conf, opus_model=_OPUS_FALLBACK,
+                deepseek_model=fb_conf.get("deepseek_model"),
+            )
+            if fb_providers:
+                text, reason, provider = llm_auth.make_call(
+                    fb_providers, _do_call, context="metabolism_propose_fallback")
+                usage_info = _usage[0] if _usage else {}
+                if text is not None:
+                    log.info("propose: fallback %r served", _OPUS_FALLBACK)
+
         return text, provider, reason, usage_info
     except Exception as exc:  # noqa: BLE001
         log.warning("propose: LLM invocation failed: %s", exc)
+        # PR-R8: on exception with deliberation model, retry with Opus
+        if active_model != _OPUS_FALLBACK:
+            try:
+                from engine import llm_auth as _la2  # noqa: PLC0415
+                fb_conf2 = {**_LLM_CFG, **(cfg or {}), "opus_model": _OPUS_FALLBACK}
+                fb_prov2 = _la2.build_providers(
+                    fb_conf2, opus_model=_OPUS_FALLBACK,
+                    deepseek_model=fb_conf2.get("deepseek_model"),
+                )
+                if fb_prov2:
+                    text2, reason2, prov2 = _la2.make_call(
+                        fb_prov2, _do_call, context="metabolism_propose_fallback"
+                    )
+                    if text2 is not None:
+                        log.info("propose: exception retry with %r succeeded", _OPUS_FALLBACK)
+                        return text2, prov2, reason2, (_usage[0] if _usage else {})
+            except Exception as exc2:  # noqa: BLE001
+                log.warning("propose: fallback retry also failed: %s", exc2)
         return None, None, "llm_error", {}
 
 

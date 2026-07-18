@@ -727,3 +727,91 @@ def build_providers(
                 prov["usage_stage"] = _usage_stage
 
     return out
+
+
+# --------------------------------------------------------------------------- #
+# Deliberation model selector (PR-R8 — Prophet / Fable grant)
+# --------------------------------------------------------------------------- #
+
+def deliberation_model(default: str = "claude-opus-4-8") -> str:
+    """Return the configured deliberation model if the daily token budget is not
+    exhausted; fall back to *default* on any error or when Fable is disabled.
+
+    Logic (all fail-soft — any error returns *default*):
+      1. Read config.yml prophet.fable_enabled.  False → return default.
+      2. Read config.yml llm_models.deliberation.  Absent → return default.
+      3. Sum today's output+input tokens for the deliberation model prefix from
+         lib.ai_costs.summarize().
+      4. Compare against prophet.deliberation_daily_token_cap.
+         Exhausted → return default.
+      5. Return the deliberation model id.
+
+    Callers keep their original model as the FALLBACK when the waterfall cannot
+    serve the returned model (make_call handles 401/429; model-not-found must be
+    detected by the caller on a text/reason basis — see standout_auditor,
+    propose, adjudicate retry wrappers).
+    """
+    try:
+        # --- read config ---
+        import sys as _sys
+        import pathlib as _pl
+        _root = _pl.Path(__file__).resolve().parent.parent
+        _root_str = str(_root)
+        if _root_str not in _sys.path:
+            _sys.path.insert(0, _root_str)
+
+        from lib import config as _config  # noqa: PLC0415
+        cfg = _config.load() if hasattr(_config, "load") else {}
+
+        # Prefer lib.config; fall back to reading config.yml directly
+        if not cfg:
+            import yaml as _yaml  # noqa: PLC0415
+            _cfg_path = _root / "config.yml"
+            if _cfg_path.exists():
+                cfg = _yaml.safe_load(_cfg_path.read_text(encoding="utf-8")) or {}
+
+        prophet_cfg = cfg.get("prophet") or {}
+        if not prophet_cfg.get("fable_enabled", False):
+            log.debug("deliberation_model: fable_enabled=false → default")
+            return default
+
+        delib = (cfg.get("llm_models") or {}).get("deliberation") or ""
+        if not delib:
+            log.debug("deliberation_model: llm_models.deliberation absent → default")
+            return default
+
+        cap = int(prophet_cfg.get("deliberation_daily_token_cap") or 0)
+        if cap <= 0:
+            log.debug("deliberation_model: cap=0 → default")
+            return default
+
+        # --- check budget ---
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        summary = _ac.summarize(root=_root)
+        by_model = summary.get("by_model") or {}
+        today_tokens = 0
+        delib_lower = delib.lower()
+        for model_key, bucket in by_model.items():
+            mk = str(model_key or "").lower()
+            if "fable" in mk or mk.startswith(delib_lower):
+                today_tokens += (
+                    int(bucket.get("input_tokens") or 0) +
+                    int(bucket.get("output_tokens") or 0)
+                )
+
+        if today_tokens >= cap:
+            log.info(
+                "deliberation_model: daily budget exhausted (%d >= %d tokens) → default",
+                today_tokens, cap,
+            )
+            return default
+
+        log.debug(
+            "deliberation_model: returning %s (budget %d/%d used)",
+            delib, today_tokens, cap,
+        )
+        return delib
+
+    except Exception as exc:  # noqa: BLE001
+        log.debug("deliberation_model: failed (%s) → default", exc)
+        return default

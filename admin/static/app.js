@@ -141,11 +141,12 @@ const ICONS = {
   codex:         NAV_ICO('<path d="M12 3l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/>'),
   orchestrator:  NAV_ICO('<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v2.6M12 17.9v2.6M3.5 12h2.6M17.9 12h2.6"/>'),
   mastermind_ai: NAV_ICO('<rect x="5" y="7" width="14" height="12" rx="2.5"/><circle cx="9.5" cy="12.5" r="1.2"/><circle cx="14.5" cy="12.5" r="1.2"/><path d="M12 7V4M12 4h.01M9 16h6"/>'),
+  prophet:       NAV_ICO('<ellipse cx="12" cy="12" rx="5" ry="7.5"/><path d="M12 4.5a7.5 5 0 0 1 0 15M12 4.5a7.5 5 0 0 0 0 15"/><circle cx="12" cy="12" r="2"/>'),
   site_gate:     NAV_ICO('<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -2620,7 +2621,35 @@ RENDER.orchestrator = async () => {
       <div class="note muted" style="margin-top:6px">Read-only pipeline persona &mdash; never trading advice. Without an LLM key it degrades to a deterministic run-log digest.</div>
     </div>`;
 
-  v.innerHTML = heroHtml + settingsHtml + runlogHtml + reviewsHtml + dialogueHtml + chatHtml;
+  /* Prophet suggestions compact block (PR-R4) — loaded from /api/prophet */
+  let prophetSuggestionsHtml = "";
+  try {
+    const pd = await api("/api/prophet");
+    const psug = (pd && pd.ok && Array.isArray(pd.suggestions)) ? pd.suggestions.slice(0, 10) : [];
+    if (psug.length) {
+      const SEV_CLS = { high: "s-bad", medium: "s-warn", low: "s-mut" };
+      prophetSuggestionsHtml = `<div class="section">Prophet suggestions <span class="cnt">${psug.length}</span></div>
+        <div class="sub muted" style="margin-bottom:8px">Cross-market accountability suggestions from the Prophet lobe. <a href="#" id="orchToProphet">View full Prophet page</a></div>
+        <table><thead><tr><th>Kind</th><th>Severity</th><th>Detail</th><th>Market</th><th>First seen</th></tr></thead><tbody>
+        ${psug.map(s => `<tr>
+          <td class="sub">${esc(s.kind || "—")}</td>
+          <td><span class="statpill ${SEV_CLS[s.severity] || "s-mut"}">${esc(s.severity || "—")}</span></td>
+          <td class="sub" style="max-width:320px">${esc(s.detail || "")}</td>
+          <td class="sub">${esc(s.market || "—")}</td>
+          <td class="sub mono">${esc(s.first_seen || "—")}</td>
+        </tr>`).join("")}
+        </tbody></table>`;
+    } else {
+      prophetSuggestionsHtml = `<div class="section">Prophet suggestions</div><div class="sub muted">No suggestions from the Prophet lobe yet — accruing.</div>`;
+    }
+  } catch (e) {
+    prophetSuggestionsHtml = `<div class="section">Prophet suggestions</div><div class="sub muted">Prophet page unavailable.</div>`;
+  }
+
+  v.innerHTML = heroHtml + settingsHtml + runlogHtml + reviewsHtml + dialogueHtml + prophetSuggestionsHtml + chatHtml;
+
+  /* Prophet page link */
+  const toProphet = $("#orchToProphet"); if (toProphet) toProphet.onclick = (e) => { e.preventDefault(); go("prophet"); };
 
   /* wiring */
   const meta = (SUMMARY && SUMMARY.meta) || {};
@@ -2682,6 +2711,170 @@ RENDER.orchestrator = async () => {
       LOOP_TICK = setInterval(() => tickLoopElapsed(), 1000);
     }
   })();
+};
+
+/* ---- PROPHET (NW lobe governor) ------------------------------------------ */
+RENDER.prophet = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/prophet");
+  if (!d || !d.ok) {
+    v.innerHTML = nwEmpty("Prophet unavailable", (d && d.error) || "panel error");
+    return;
+  }
+  const ps   = d.prophet_status   || {};
+  const sug  = d.suggestions      || [];
+  const fit  = d.fitness          || {};
+  const ast  = d.audit_state      || {};
+  const pm   = d.postmortems      || [];
+  const ap   = d.pick_autopsies   || [];
+  const tr   = d.track_record;
+  const sp   = d.fable_spend      || {};
+  const cfg  = d.settings         || {};
+
+  /* --- Cross-market record cards --- */
+  const markets = Object.keys((ps.markets) || {});
+  const mktCls  = (st) => st === "accruing" ? "s-mut" : st === "active" ? "s-ok" : "s-warn";
+  const mktCardsHtml = markets.length
+    ? `<div class="section">Cross-market record <span class="cnt">${markets.length} markets</span></div>
+       <div class="grid">${markets.map(mk => {
+         const blk = (ps.markets || {})[mk] || {};
+         const gaps = (blk.data_gaps || []);
+         const sb   = blk.audit_scoreboard || {};
+         return `<div class="card">
+           <h3>${esc(mk.toUpperCase())} <span class="statpill ${mktCls(blk.maturity_state)}">${esc(blk.maturity_state || "unknown")}</span></h3>
+           <div class="kv"><span>Fill basis</span><b>${esc(blk.fill_basis || "—")}</b></div>
+           <div class="kv"><span>Benchmark</span><b>${esc(blk.benchmark || "—")}</b></div>
+           ${sb.win_rate != null ? `<div class="kv"><span>Win rate</span><b>${(sb.win_rate * 100).toFixed(1)}%</b></div>` : ""}
+           ${sb.n_matured != null ? `<div class="kv"><span>Matured picks</span><b>${sb.n_matured}</b></div>` : ""}
+           ${gaps.length ? `<div class="note muted" style="margin-top:4px">${gaps.length} data gap${gaps.length > 1 ? "s" : ""}: ${esc(gaps.slice(0,2).join(", "))}${gaps.length > 2 ? "…" : ""}</div>` : ""}
+           ${blk.maturity_state === "accruing" ? `<div class="note muted">ACCRUING — not enough matured picks yet</div>` : ""}
+         </div>`;
+       }).join("")}</div>`
+    : `<div class="section">Cross-market record</div><div class="sub muted">prophet_status.json not yet written — accruing after first nightly run.</div>`;
+
+  /* --- Dashboard integrity strip --- */
+  const integrityBlk = ps.dashboard_integrity || {};
+  const intMkts = Object.keys(integrityBlk);
+  const integrityHtml = intMkts.length
+    ? `<div class="section">Dashboard integrity</div>
+       <table><thead><tr><th>Market</th><th>Freshness</th><th>Data gaps</th><th>Status</th></tr></thead><tbody>
+       ${intMkts.map(mk => {
+         const ib = integrityBlk[mk] || {};
+         return `<tr>
+           <td class="mono"><b>${esc(mk)}</b></td>
+           <td class="sub">${ib.freshness_hours != null ? `${Number(ib.freshness_hours).toFixed(1)}h old` : "—"}</td>
+           <td class="r mono">${ib.data_gap_count != null ? ib.data_gap_count : "—"}</td>
+           <td><span class="statpill ${ib.ok ? "s-ok" : "s-bad"}">${esc(ib.status || (ib.ok ? "ok" : "stale"))}</span></td>
+         </tr>`;
+       }).join("")}
+       </tbody></table>`
+    : `<div class="section">Dashboard integrity</div><div class="sub muted">No integrity block in prophet_status yet.</div>`;
+
+  /* --- Suggestions table --- */
+  const SUG_SEV_CLS = { high: "s-bad", medium: "s-warn", low: "s-mut" };
+  const suggestionsHtml = `<div class="section">Suggestions <span class="cnt">${sug.length}</span></div>`
+    + (sug.length
+      ? `<table><thead><tr><th>Kind</th><th>Severity</th><th>Detail</th><th>Market</th><th>First seen</th></tr></thead><tbody>
+         ${sug.map(s => `<tr>
+           <td class="sub">${esc(s.kind || "—")}</td>
+           <td><span class="statpill ${SUG_SEV_CLS[s.severity] || "s-mut"}">${esc(s.severity || "—")}</span></td>
+           <td class="sub" style="max-width:320px">${esc(s.detail || "")}</td>
+           <td class="sub">${esc(s.market || "—")}</td>
+           <td class="sub mono">${esc(s.first_seen || "—")}</td>
+         </tr>`).join("")}
+         </tbody></table>`
+      : `<div class="sub muted">No active suggestions — Prophet lobe reports all clear.</div>`);
+
+  /* --- Latest autopsy digests --- */
+  const autopsiesHtml = `<div class="section">Latest pick autopsies <span class="cnt">${ap.length}</span></div>`
+    + (ap.length
+      ? `<table><thead><tr><th>Ticker</th><th>Market</th><th>Verdict</th><th>Lesson</th><th>As of</th></tr></thead><tbody>
+         ${ap.map(a => `<tr>
+           <td class="mono"><b>${esc(a.ticker || "—")}</b></td>
+           <td class="sub">${esc(a.market || "—")}</td>
+           <td><span class="statpill s-mut" style="font-size:11px">${esc((a.mitigation_verdict || "—").replace(/_/g, " "))}</span></td>
+           <td class="sub" style="max-width:340px">${esc(a.lesson || "")}</td>
+           <td class="sub mono">${esc((a.as_of || "").slice(0, 10))}</td>
+         </tr>`).join("")}
+         </tbody></table>`
+      : `<div class="sub muted">${esc(d.pick_autopsies_note || "No pick autopsies yet (accruing).")}</div>`);
+
+  /* --- Postmortem digests --- */
+  const pmHtml = `<div class="section">Cohort postmortems <span class="cnt">${pm.length}</span></div>`
+    + (pm.length
+      ? pm.map(p => `<div class="card" style="margin-bottom:8px">
+          <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+            <b>${esc(p.market || "—")}</b>
+            <span class="sub mono">${esc(p.as_of || "")}</span>
+            ${p.matured_n != null ? `<span class="statpill s-mut">${p.matured_n} matured</span>` : ""}
+          </div>
+          ${p.narrative_excerpt ? `<div class="note" style="margin-top:4px">${esc(p.narrative_excerpt)}${p.narrative_excerpt.length >= 200 ? "…" : ""}</div>` : ""}
+        </div>`).join("")
+      : `<div class="sub muted">${esc(d.postmortems_note || "No postmortems yet (accruing).")}</div>`);
+
+  /* --- Self-improvement status (fitness + audit trigger) --- */
+  const fitUs = fit.us || {};
+  const fitCn = fit.cn || {};
+  const astUs = ast.us || {};
+  const astCn = ast.cn || {};
+  const fitHtml = `<div class="section">Self-improvement status</div>
+    <div class="grid">
+      ${card("US fitness", `<div class="kv"><span>Lobe</span><b>${esc(fitUs.lobe || "site-us-standouts")}</b></div>
+        <div class="kv"><span>Maturity</span><b>${esc(fitUs.maturity || "accruing")}</b></div>
+        <div class="kv"><span>As of</span><b>${esc(fitUs.as_of || "—")}</b></div>
+        <div class="note muted">Last audit: ${esc((astUs.last_run_utc || "—").slice(0, 16).replace("T", " "))} · attributed ${astUs.rows_attributed_total || 0}</div>`)}
+      ${card("CN fitness", `<div class="kv"><span>Lobe</span><b>${esc(fitCn.lobe || "site-china-standouts")}</b></div>
+        <div class="kv"><span>Maturity</span><b>${esc(fitCn.maturity || "accruing")}</b></div>
+        <div class="kv"><span>As of</span><b>${esc(fitCn.as_of || "—")}</b></div>
+        <div class="note muted">Last audit: ${esc((astCn.last_run_utc || "—").slice(0, 16).replace("T", " "))} · attributed ${astCn.rows_attributed_total || 0}</div>`)}
+    </div>`;
+
+  /* --- Track record summary --- */
+  const trHtml = tr
+    ? `<div class="section">Track record (US)</div>
+       <div class="card">
+         <div class="kv"><span>As of</span><b>${esc(tr.as_of || "—")}</b></div>
+         <div class="kv"><span>Horizons</span><b>${esc((tr.horizons || []).join(", ") || "—")}</b></div>
+         ${tr.h21_effective_n != null ? `<div class="kv"><span>21d effective n</span><b>${tr.h21_effective_n}</b></div>` : ""}
+         ${tr.h21_win_rate != null ? `<div class="kv"><span>21d win rate</span><b>${(tr.h21_win_rate * 100).toFixed(1)}%</b></div>` : ""}
+         ${tr.accruing ? `<div class="note muted">All horizons accruing — effective-N floors not yet met.</div>` : ""}
+       </div>`
+    : `<div class="section">Track record (US)</div><div class="sub muted">us_track_history.json not yet written.</div>`;
+
+  /* --- Fable spend meter --- */
+  const spendPct = sp.budget_pct != null ? sp.budget_pct : 0;
+  const spendHtml = `<div class="section">Deliberation spend today <span class="cnt">${esc(sp.deliberation_model || "—")}</span></div>
+    ${meter("Today's deliberation tokens", spendPct, `${(sp.today_tokens_model || 0).toLocaleString()} / ${(sp.cap || 0).toLocaleString()}`, spendPct >= 80 ? "bad" : spendPct >= 50 ? "warn" : "")}
+    <div class="note muted" style="margin-top:4px">Est. cost today: $${Number(sp.today_usd_model || 0).toFixed(4)} &mdash; cap ${(sp.cap || 0).toLocaleString()} tokens/day (config.yml <code>prophet.deliberation_daily_token_cap</code>)</div>`;
+
+  /* --- Settings form --- */
+  const numInputP = (key, val, lo, hi) => `<input type="number" data-prophset="${key}" data-prev="${val}" min="${lo}" max="${hi}" value="${val != null ? val : ''}" style="width:120px">`;
+  const boolSwitchP = (key, val) => `<label class="switch"><input type="checkbox" data-prophsetb="${key}" ${val ? "checked" : ""}><span class="slider"></span></label>`;
+  const settingsHtml = `<div class="section">Settings <span class="cnt">config.yml &middot; prophet</span></div>
+    <div class="row">${boolSwitchP("fable_enabled", cfg.fable_enabled)}
+      <div><div class="lab">Fable deliberation enabled</div><div class="note">Use the deliberation model (claude-fable-5) for cohort audits and pick autopsies when within budget. Falls back to claude-opus-4-8 on model-not-found. <code class="muted">prophet.fable_enabled</code></div></div></div>
+    <div class="row"><div class="lab" style="min-width:220px">Autopsy cap per cycle</div>${numInputP("autopsy_cap_per_cycle", cfg.autopsy_cap_per_cycle, 0, 50)}
+      <div class="note">Max per-pick autopsy artifacts written per audit cycle (0–50). Token economy guard. <code class="muted">prophet.autopsy_cap_per_cycle</code></div></div>
+    <div class="row"><div class="lab" style="min-width:220px">Daily token cap</div>${numInputP("deliberation_daily_token_cap", cfg.deliberation_daily_token_cap, 0, 5000000)}
+      <div class="note">Daily deliberation token budget. When exhausted, lanes fall back to claude-opus-4-8. Range 0–5,000,000. <code class="muted">prophet.deliberation_daily_token_cap</code></div></div>`;
+
+  v.innerHTML = mktCardsHtml + integrityHtml + suggestionsHtml + autopsiesHtml + pmHtml + fitHtml + trHtml + spendHtml + settingsHtml;
+
+  /* Wire up settings inputs */
+  const meta2 = (SUMMARY && SUMMARY.meta) || {};
+  const writable2 = !meta2.deployed || (meta2.integrations && meta2.integrations.github_write);
+  v.querySelectorAll("[data-prophset],[data-prophsetb]").forEach(el => { if (!writable2) el.disabled = true; });
+  v.querySelectorAll("[data-prophsetb]").forEach(cb => cb.onchange = async () => {
+    const r = await post("/api/prophet/settings", { key: cb.dataset.prophsetb, value: cb.checked });
+    if (r.ok) toast(`${cb.dataset.prophsetb} → ${r.new}`);
+    else { cb.checked = !cb.checked; toast(r.error || "failed", true); }
+  });
+  v.querySelectorAll("[data-prophset]").forEach(inp => inp.onchange = async () => {
+    const r = await post("/api/prophet/settings", { key: inp.dataset.prophset, value: Number(inp.value) });
+    if (r.ok) { inp.dataset.prev = String(r.new); toast(`${inp.dataset.prophset} → ${r.new}`); }
+    else { inp.value = inp.dataset.prev; toast(r.error || "failed", true); }
+  });
 };
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */

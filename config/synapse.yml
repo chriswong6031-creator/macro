@@ -13865,7 +13865,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [admin/prophet.py]
     external_consumers: []
     notes: >
       Prophet NW lobe governor artifact (PR-R1/R4/R5/R6). Cross-market accountability
@@ -13877,7 +13877,7 @@ artifacts:
       stale-store flags. momoedge_trade_plans block: display-only crosslink to Prophet
       trade plans (PR-R2). Single writer (SA-R14). Never-raise + freshness stamp (SA-R16).
       Authority: all five booleans false (context-only).
-      Reader lands in PR-W3 (admin Prophet page).
+      PR-W3: admin Prophet page reads this artifact.
 
   prophet-suggestions:
     path: data/neuralweb/prophet_suggestions.json
@@ -13894,7 +13894,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [admin/prophet.py, admin/neural_web.py]
     external_consumers: []
     notes: >
       Prophet NW lobe suggestion artifact (PR-R4). Deterministic detections converted to
@@ -13905,7 +13905,7 @@ artifacts:
       High-severity rows also emitted to insight_bus (freshness_sla_breach/contradiction/
       health_transition). Single writer (SA-R14). Never-raise (SA-R16).
       Authority: all five booleans false.
-      Reader lands in PR-W3 (admin Prophet page).
+      PR-W3: admin Prophet page + Master Brain page (orchestrator_panel) read this artifact.
 
   prophet-pick-autopsies:
     path: data/standout_audit/pick_autopsies/<market>/<pick_id>.json
