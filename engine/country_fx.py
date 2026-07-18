@@ -171,7 +171,9 @@ def build_local_series(ticker: str, fxmeta: dict, usd_px: pd.Series,
     synth = None
     synth_cov = 0
     if fx is not None and not fx.empty:
-        joined = pd.concat([usd_px.rename("px"), fx.rename("fx")], axis=1).dropna()
+        # sort=True pins the pre-pandas-4 default (sorted union index) explicitly.
+        joined = pd.concat([usd_px.rename("px"), fx.rename("fx")], axis=1,
+                           sort=True).dropna()
         if not joined.empty:
             synth = (joined["px"] * joined["fx"]).rename(ticker)
             synth_cov = int(synth.index.isin(etf_span).sum())
