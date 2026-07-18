@@ -57,6 +57,10 @@ concurrency:
   # killed the in-flight one) so the site almost never re-rendered. With `false`, a running
   # render always FINISHES and ships; GitHub still supersedes redundant *pending* runs
   # (only the latest queued one runs next), so the site stays current without starving.
+  # The COVERAGE half of that supersede behavior lives in the `pick` step (scope-union):
+  # the surviving run diffs against per-region "(scope=X, from=SHA)" render-commit
+  # watermarks, so superseded runs' pages — and merges landing mid-render — are still
+  # rendered by whichever run eventually executes (2026-07-17 starvation postmortem).
   group: pipeline-render
   cancel-in-progress: false
 
@@ -134,25 +138,34 @@ jobs:
           path: data/intraday
           key: intraday-render-${{ github.run_id }}
           restore-keys: intraday-
-      - name: pick render scope from changed files (push narrows; dispatch honors its input)
+      - name: pick render scope (union of everything un-rendered since each region's last covering render)
         id: pick
-        # SAFE scope detection: narrow to ONE region ONLY when every changed file is in that
-        # region's whitelist AND render.yml's scope for it fully rebuilds those pages. Anything
-        # shared (_partials, *_base), multi-region, a sub-page no narrow scope covers, or
-        # unknown -> 'all' (today's behavior, zero regression). A wrong scope can only FAIL a
-        # render (recoverable — the render step's `case` exits on an unknown scope), never
-        # silently stale a page. Cuts a single-desk/dashboard edit from a ~28m full render to
-        # a few minutes.
-        env:
-          GH_TOKEN: ${{ github.token }}
+        # SCOPE-UNION detection (2026-07-17 starvation fix). The old logic diffed ONLY the
+        # triggering push (event.before..after). Under a merge burst the pipeline-render
+        # group keeps a single PENDING run (cancel-in-progress: false; older pending runs
+        # are superseded = shown "cancelled"), so the one surviving run rendered just its
+        # own push's scope and silently dropped the superseded merges' pages (2026-07-17
+        # 08:32-11:49Z: 3.2h of narrowed coverage during a live crash while display fixes
+        # sat merged-but-undeployed). Same hole for merges landing DURING a 40-71m render.
+        #
+        # Fix: every COMPLETED render commits "(scope=X, from=SHA)" where SHA is the main
+        # tree it actually rendered (captured here, post-pull — see the commit step). A
+        # region R is DIRTY iff any R-relevant file changed between the newest render
+        # commit whose scope covered R (scope=all, or R listed in a composite scope) and
+        # HEAD. Final scope = union of dirty regions: 1-3 regions -> "r1+r2" (the render
+        # step runs each sequentially), 4+ regions or any shared/unmapped file -> all.
+        # Cancelled/timed-out renders commit WITHOUT from= and so never advance a
+        # watermark. Per-region whitelists are unchanged from the ratified narrow-scope
+        # design: a wrong scope can only FAIL a render (unknown-scope exit, recoverable),
+        # never silently stale a page — and ANY fetch/parse/diff failure here falls back
+        # to scope=all, so this step can only ever OVER-render.
         run: |
           set +e
+          FROM_SHA=$(git rev-parse HEAD 2>/dev/null | cut -c1-12)
+          echo "rendered_from=$FROM_SHA" >> "$GITHUB_OUTPUT"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "scope=${{ github.event.inputs.scope }}" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          FILES=$(gh api "repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.event.after }}" --jq '.files[].filename' 2>/dev/null)
-          if [ -z "$FILES" ]; then echo "::notice::no changed-file list -> full render"; echo "scope=all" >> "$GITHUB_OUTPUT"; exit 0; fi
-          echo "$FILES" | sed 's/^/  changed: /'
           region_of() {
             case "$1" in
               templates/china.html.j2|templates/china_news.html.j2|scripts/build_china.py) echo china;;
@@ -165,17 +178,42 @@ jobs:
               *) echo skip;;
             esac
           }
-          REGIONS=""
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            r=$(region_of "$f")
-            [ "$r" = "skip" ] && continue   # build output (site/), data/, engine/, app/ — not a scope input
-            case " $REGIONS " in *" $r "*) ;; *) REGIONS="$REGIONS $r";; esac
-          done <<< "$FILES"
-          REGIONS=$(echo $REGIONS | xargs)
-          read -ra _arr <<< "$REGIONS"
-          if [ "${#_arr[@]}" -ne 1 ] || echo " $REGIONS " | grep -q " all "; then S=all; else S="$REGIONS"; fi
-          echo "::notice::changed regions=[$REGIONS] -> render scope=$S"
+          # checkout@v4 is depth-1: deepen enough to reach recent watermarks (main runs
+          # ~215 commits/day and renders land ~10x/day, so 900 covers >3 days; a watermark
+          # beyond the window just means scope=all once, which re-primes it at HEAD).
+          [ -f "$(git rev-parse --git-dir)/shallow" ] && git fetch -q --deepen=900 origin main 2>/dev/null
+          # Newest-first "(scope, from)" pairs from prior completed renders.
+          WATERMARKS=$(git log -n 900 --format='%s' 2>/dev/null \
+            | sed -n -E 's/^render: site re-render [0-9-]+ \(scope=([a-z+]+), from=([0-9a-f]{7,40})\)$/\1 \2/p')
+          covering_from() {   # $1=region -> newest from= SHA of a render whose scope covered it
+            local sc fr
+            while read -r sc fr; do
+              case "+$sc+" in *"+all+"*|*"+$1+"*) echo "$fr"; return 0;; esac
+            done <<< "$WATERMARKS"
+            return 1
+          }
+          DIRTY="" NEED_ALL=""
+          for R in macro china hk markets gex baskets; do
+            FR=$(covering_from "$R")
+            if [ -z "$FR" ]; then NEED_ALL="no from=-tagged render covers '$R' in the log window"; break; fi
+            CH=$(git diff --name-only "$FR..HEAD" -- templates scripts config.yml lib 2>/dev/null)
+            if [ $? -ne 0 ]; then NEED_ALL="git diff $FR..HEAD failed for '$R' (rewritten/expired watermark)"; break; fi
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              case "$(region_of "$f")" in
+                "$R") DIRTY="$DIRTY $R"; break;;
+                all)  NEED_ALL="'$f' (shared/unmapped) changed since '$R' watermark $FR"; break;;
+              esac
+            done <<< "$CH"
+            [ -n "$NEED_ALL" ] && break
+          done
+          DIRTY=$(echo $DIRTY | tr ' ' '\n' | awk 'NF && !s[$0]++' | paste -sd+ -)
+          N=$(echo "$DIRTY" | tr '+' '\n' | grep -c .)
+          if [ -n "$NEED_ALL" ]; then S=all; echo "::notice::scope=all ($NEED_ALL)"
+          elif [ "$N" -eq 0 ]; then S=all; echo "::notice::scope=all (push fired but no region resolved dirty — defensive full render)"
+          elif [ "$N" -ge 4 ]; then S=all; echo "::notice::scope=all ($N regions dirty [$DIRTY] — full render is comparable cost)"
+          else S="$DIRTY"; echo "::notice::dirty since last covering renders -> scope=$S"
+          fi
           echo "scope=$S" >> "$GITHUB_OUTPUT"
       - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
         # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
@@ -203,6 +241,8 @@ jobs:
           set +e
           SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
           echo "::notice::render scope = $SCOPE"
+          # Composite scopes ("macro+china" from the pick step's union) run each region's
+          # branch sequentially; hub/central are guarded to run at most once per job.
           # marker for the library-rebuild guard (same as daily): only libraries whose
           # dashboard didn't build them fresh this run get rebuilt by the safety net.
           touch "$RUNNER_TEMP/render_libs_marker"
@@ -246,11 +286,11 @@ jobs:
             run_py "AI desk page (build_ai_desk_page)"  scripts.build_ai_desk_page
           }
 
-          hub() { run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
+          hub() { [ -n "$HUB_DONE" ] && return 0; HUB_DONE=1; run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
 
           # US Sector Central hub — reads baskets.json + sector_cycles_data.js + the heatmap json
           # (all committed or freshly rebuilt by band/spine). Call AFTER band so its deps exist.
-          central() { run_py "US sector central intelligence (build_sector_central)" scripts.build_sector_central; }
+          central() { [ -n "$CENTRAL_DONE" ] && return 0; CENTRAL_DONE=1; run_py "US sector central intelligence (build_sector_central)" scripts.build_sector_central; }
 
           # ---- the parallel regional/desk band (mirrors daily, MINUS special-sits) ----
           band() {
@@ -351,7 +391,8 @@ jobs:
             done
           }
 
-          case "$SCOPE" in
+          for SC in ${SCOPE//+/ }; do
+          case "$SC" in
             all)
               spine; band; central; hub; us_pages; libs ;;
             macro)
@@ -386,8 +427,12 @@ jobs:
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
               central; hub ;;
             *)
-              echo "::error::unknown scope '$SCOPE'"; exit 1 ;;
+              echo "::error::unknown scope '$SC'"; exit 1 ;;
           esac
+          done
+          # Watermark gate: only a render that ran every scoped builder to the end may stamp
+          # from= on its commit (see commit step) — a cancelled/timed-out job skips this line.
+          echo "RENDER_OK=1" >> "$GITHUB_ENV"
           exit 0
       - name: guard — inline JS must parse
         # Same gate as pages.yml: refuse to deploy if a committed inline <script> has a
@@ -420,7 +465,20 @@ jobs:
           # a no-op for any subtree this scope didn't rebuild.
           git add -f site/stockbrief 2>/dev/null || true
           if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
-          git commit -m "render: site re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
+          # Stamp the ACTUAL scope (the old inputs.scope||'all' recorded every push-narrowed
+          # render as "all" — an audit-trail lie) plus from= = the main SHA this run actually
+          # rendered (captured post-pull in the pick step). The NEXT run's scope union diffs
+          # against from=, so merges that landed DURING this render are correctly seen as
+          # un-rendered. from= is stamped ONLY when the render step ran to completion
+          # (RENDER_OK): a cancelled/timed-out run commits without it and never becomes a
+          # watermark, so any pages it skipped stay dirty for the next run.
+          SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
+          FROM="${{ steps.pick.outputs.rendered_from }}"
+          if [ "${RENDER_OK:-0}" = "1" ] && [ -n "$FROM" ]; then
+            git commit -m "render: site re-render $(date -u +%F) (scope=$SCOPE, from=$FROM)"
+          else
+            git commit -m "render: site re-render $(date -u +%F) (scope=$SCOPE)"
+          fi
           # This push is now the ONLY way the render reaches the live site (the VPS serves
           # committed main; there is no Pages-artifact fallback), so it MUST land.
           # --autostash parks the render's throwaway data/ writes (we commit site/ ONLY) so
