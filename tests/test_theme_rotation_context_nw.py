@@ -7,6 +7,10 @@ Covers:
 4. _MACRO_DROP_ORDER membership assertion
 5. mastermind_context._summarize_theme_rotation: smoke test (present / absent ws)
 6. _LOBE_TO_ARTIFACT_IDS entry for theme_rotation
+7. China artifact present -> 'china' sub-dict cleaned + display_only preserved at top level
+8. China artifact absent -> 'china' is None and US fields unchanged
+9. brief_context china path: china sub-block present / absent
+10. mastermind_context china path: china sub-block present / absent
 
 All tests use tmp_path; no real market data is read from disk.
 """
@@ -412,3 +416,355 @@ def test_lobe_to_artifact_ids_entry():
     assert "theme_rotation" in _LOBE_TO_ARTIFACT_IDS
     assert "theme-context-latest" in _LOBE_TO_ARTIFACT_IDS["theme_rotation"]
     assert "theme_rotation" in LOBE_SUMMARIZERS
+
+
+# ---------------------------------------------------------------------------
+# China sub-dict fixtures
+# ---------------------------------------------------------------------------
+
+_THEME_CTX_CN_FIXTURE: dict = {
+    "schema": "theme_context.v1",
+    "as_of": "2026-07-17",
+    "region": "china",
+    "display_only": True,
+    "leadership": {
+        "state": "rotating",
+        "days_in_state": 2,
+        "stance_en": "Rotation under way — favour the fresh leaders, not the old one.",
+        "stance_zh": "轮动进行中——关注新领涨主题，勿追旧龙头。",
+        "trailing_leader": {
+            "id": "new_energy",
+            "name": "New Energy",
+            "name_zh": "新能源",
+            "alloc_rank": 1,
+            "health": "broken",
+            "breadth": 0.15,
+            "r10": -0.08,
+            "val_state": None,
+        },
+        "strength": [
+            {
+                "id": "tech_ai",
+                "name": "Technology & AI",
+                "name_zh": "科技与AI",
+                "desk_score": 65,
+                "health": "confirmed",
+                "breadth": 0.72,
+                "r10": 0.035,
+                "category": "Technology & AI",
+            }
+        ],
+        "breaking": [],
+    },
+    "migration": {
+        "absorbing": [
+            {"category": "Advanced Manufacturing", "avg_breadth": 0.68, "avg_r10": 0.02, "n": 2}
+        ],
+        "bleeding": [
+            {"category": "New Energy & Autos", "avg_breadth": 0.12, "avg_r10": -0.07, "n": 2}
+        ],
+        "note_en": "Capital moving from New Energy into Advanced Manufacturing.",
+        "note_zh": "资金从新能源流向先进制造。",
+    },
+    "alignment": {
+        "sector_rotation_agrees": False,
+        "note_en": "No active rotation events confirm theme shift.",
+        "note_zh": "暂无轮动事件确认主题切换。",
+    },
+    "themes": {},
+    "state_changes": {},
+    "prev_asof": "2026-07-16",
+}
+
+
+# ---------------------------------------------------------------------------
+# 9. China artifact present → 'china' sub-dict cleaned + display_only preserved
+# ---------------------------------------------------------------------------
+
+def test_compose_theme_rotation_china_present(tmp_path: Path):
+    """CN artifact present -> 'china' sub-dict in block; US fields unchanged; display_only True."""
+    from engine.neuralweb.world_state import _compose_theme_rotation
+
+    # Write US artifact
+    tc_path = tmp_path / "site" / "basketdata" / "theme_context.json"
+    _write_json(tc_path, _THEME_CTX_FIXTURE)
+    # Write CN artifact
+    cn_path = tmp_path / "site" / "basketdata" / "theme_context_cn.json"
+    _write_json(cn_path, _THEME_CTX_CN_FIXTURE)
+
+    block = _compose_theme_rotation(root=tmp_path)
+
+    # US flat keys preserved byte-for-byte
+    assert block["display_only"] is True
+    assert block["as_of"] == "2026-07-17"
+    assert block["leadership_state"] == "strain"
+
+    # China sub-dict present and cleaned
+    cn = block["china"]
+    assert cn is not None
+    assert cn["display_only"] is True
+    assert cn["leadership_state"] == "rotating"
+    assert cn["stance_en"] == "Rotation under way — favour the fresh leaders, not the old one."
+    assert cn["stance_zh"] == "轮动进行中——关注新领涨主题，勿追旧龙头。"
+    assert cn["as_of"] == "2026-07-17"
+
+    # Trailing leader compact
+    cn_tl = cn["trailing_leader"]
+    assert cn_tl is not None
+    assert cn_tl["id"] == "new_energy"
+    assert cn_tl["health"] == "broken"
+    assert cn_tl["breadth"] == pytest.approx(0.15)
+
+    # Strength: id+name only
+    assert cn["strength"] is not None
+    assert cn["strength"][0]["id"] == "tech_ai"
+    assert cn["strength"][0]["name"] == "Technology & AI"
+    assert "desk_score" not in cn["strength"][0]
+
+    # Migration
+    cn_mig = cn["migration"]
+    assert cn_mig is not None
+    assert cn_mig["absorbing"][0]["category"] == "Advanced Manufacturing"
+    assert cn_mig["bleeding"][0]["category"] == "New Energy & Autos"
+
+    # Alignment
+    assert cn["alignment"]["sector_rotation_agrees"] is False
+
+
+# ---------------------------------------------------------------------------
+# 10. China artifact absent → 'china' is None; US fields unchanged
+# ---------------------------------------------------------------------------
+
+def test_compose_theme_rotation_china_absent(tmp_path: Path):
+    """CN artifact absent -> 'china' is None; US fields byte-stable."""
+    from engine.neuralweb.world_state import _compose_theme_rotation
+
+    # Write only US artifact; no CN file
+    tc_path = tmp_path / "site" / "basketdata" / "theme_context.json"
+    _write_json(tc_path, _THEME_CTX_FIXTURE)
+
+    block = _compose_theme_rotation(root=tmp_path)
+
+    assert block["china"] is None
+    # US fields unaffected
+    assert block["leadership_state"] == "strain"
+    assert block["display_only"] is True
+    assert block["as_of"] == "2026-07-17"
+
+
+def test_compose_theme_rotation_both_absent(tmp_path: Path):
+    """Both US and CN artifacts absent -> null_out with china: None."""
+    from engine.neuralweb.world_state import _compose_theme_rotation
+
+    block = _compose_theme_rotation(root=tmp_path)
+
+    assert block["display_only"] is True
+    assert block["leadership_state"] is None
+    assert block["china"] is None
+
+
+# ---------------------------------------------------------------------------
+# 11. brief_context china path: sub-block present
+# ---------------------------------------------------------------------------
+
+def test_block_theme_rotation_china_present():
+    """China sub-block present in ws -> returned in brief block."""
+    from engine.neuralweb.brief_context import _block_theme_rotation
+
+    ws = {
+        "theme_rotation": {
+            "display_only": True,
+            "leadership_state": "strain",
+            "days_in_state": 3,
+            "stance_en": "Leadership under strain — watch, don't chase.",
+            "stance_zh": "领涨承压——观望，勿追高。",
+            "as_of": "2026-07-17",
+            "trailing_leader": {
+                "id": "memory_storage",
+                "name": "Memory / Storage",
+                "health": "broken",
+                "breadth": 0.0,
+                "r10": -0.127,
+            },
+            "strength": [{"id": "cybersecurity", "name": "Cybersecurity"}],
+            "migration": {
+                "absorbing": [{"category": "Healthcare", "avg_breadth": 0.79}],
+                "bleeding": [{"category": "Semiconductors", "avg_breadth": 0.07}],
+            },
+            "alignment": {"sector_rotation_agrees": True},
+            "state_changes": None,
+            "china": {
+                "leadership_state": "rotating",
+                "stance_en": "Rotation under way — favour the fresh leaders, not the old one.",
+                "stance_zh": "轮动进行中——关注新领涨主题，勿追旧龙头。",
+                "as_of": "2026-07-17",
+                "trailing_leader": {
+                    "id": "new_energy",
+                    "name": "New Energy",
+                    "health": "broken",
+                    "breadth": 0.15,
+                    "r10": -0.08,
+                },
+                "strength": [{"id": "tech_ai", "name": "Technology & AI"}],
+                "migration": {
+                    "absorbing": [{"category": "Advanced Manufacturing", "avg_breadth": 0.68}],
+                    "bleeding": [{"category": "New Energy & Autos", "avg_breadth": 0.12}],
+                },
+                "alignment": {"sector_rotation_agrees": False},
+                "display_only": True,
+            },
+        }
+    }
+
+    block = _block_theme_rotation(ws)
+    assert block is not None
+    assert block["display_only"] is True
+
+    cn = block["china"]
+    assert cn is not None
+    assert cn["leadership_state"] == "rotating"
+    assert cn["stance_en"] == "Rotation under way — favour the fresh leaders, not the old one."
+    assert cn["trailing_leader"]["id"] == "new_energy"
+    assert cn["strength_names"] == ["Technology & AI"]
+    assert cn["migration_absorbing"] == ["Advanced Manufacturing"]
+    assert cn["migration_bleeding"] == ["New Energy & Autos"]
+    assert cn["sector_rotation_agrees"] is False
+
+
+def test_block_theme_rotation_china_absent():
+    """China key absent in ws.theme_rotation -> china: None in block."""
+    from engine.neuralweb.brief_context import _block_theme_rotation
+
+    ws = {
+        "theme_rotation": {
+            "display_only": True,
+            "leadership_state": "strain",
+            "stance_en": "Leadership under strain — watch, don't chase.",
+            "as_of": "2026-07-17",
+            "trailing_leader": {
+                "id": "memory_storage",
+                "name": "Memory / Storage",
+                "health": "broken",
+                "breadth": 0.0,
+                "r10": -0.127,
+            },
+            "strength": [],
+            "migration": {},
+            "alignment": {},
+            # No 'china' key
+        }
+    }
+
+    block = _block_theme_rotation(ws)
+    assert block is not None
+    assert block["china"] is None
+
+
+# ---------------------------------------------------------------------------
+# 12. mastermind_context china path: sub-block present / absent
+# ---------------------------------------------------------------------------
+
+def test_summarize_theme_rotation_china_present(tmp_path: Path):
+    """China sub-block in world_state -> lobe['china'] non-None."""
+    from engine.neuralweb.mastermind_context import _summarize_theme_rotation
+
+    ws = {
+        "theme_rotation": {
+            "display_only": True,
+            "as_of": "2026-07-17",
+            "leadership_state": "strain",
+            "days_in_state": 3,
+            "stance_en": "Leadership under strain — watch, don't chase.",
+            "stance_zh": "领涨承压——观望，勿追高。",
+            "trailing_leader": {
+                "id": "memory_storage",
+                "name": "Memory / Storage",
+                "health": "broken",
+                "breadth": 0.0,
+                "r10": -0.127,
+            },
+            "strength": [{"id": "cybersecurity", "name": "Cybersecurity"}],
+            "migration": {
+                "absorbing": [{"category": "Healthcare", "avg_breadth": 0.79}],
+                "bleeding": [{"category": "Semiconductors", "avg_breadth": 0.07}],
+            },
+            "alignment": {"sector_rotation_agrees": True},
+            "state_changes": None,
+            "china": {
+                "leadership_state": "rotating",
+                "stance_en": "Rotation under way — favour the fresh leaders, not the old one.",
+                "stance_zh": "轮动进行中——关注新领涨主题，勿追旧龙头。",
+                "as_of": "2026-07-17",
+                "trailing_leader": {
+                    "id": "new_energy",
+                    "name": "New Energy",
+                    "health": "broken",
+                    "breadth": 0.15,
+                    "r10": -0.08,
+                },
+                "strength": [{"id": "tech_ai", "name": "Technology & AI"}],
+                "migration": {
+                    "absorbing": [{"category": "Advanced Manufacturing", "avg_breadth": 0.68}],
+                    "bleeding": [{"category": "New Energy & Autos", "avg_breadth": 0.12}],
+                },
+                "alignment": {"sector_rotation_agrees": False},
+                "display_only": True,
+            },
+        }
+    }
+    ws_path = tmp_path / "data" / "neuralweb" / "world_state.json"
+    _write_json(ws_path, ws)
+
+    lobe, gap = _summarize_theme_rotation(tmp_path)
+
+    assert gap is None
+    assert lobe["display_only"] is True
+    # US fields intact
+    assert lobe["leadership_state"] == "strain"
+    assert lobe["trailing_leader_id"] == "memory_storage"
+
+    cn = lobe["china"]
+    assert cn is not None
+    assert cn["leadership_state"] == "rotating"
+    assert cn["trailing_leader_id"] == "new_energy"
+    assert cn["trailing_leader_health"] == "broken"
+    assert cn["strength_names"] == ["Technology & AI"]
+    assert cn["migration_absorbing"] == ["Advanced Manufacturing"]
+    assert cn["migration_bleeding"] == ["New Energy & Autos"]
+    assert cn["sector_rotation_agrees"] is False
+    assert "validated" not in str(lobe)
+
+
+def test_summarize_theme_rotation_china_absent(tmp_path: Path):
+    """No china key in world_state.theme_rotation -> lobe['china'] is None."""
+    from engine.neuralweb.mastermind_context import _summarize_theme_rotation
+
+    ws = {
+        "theme_rotation": {
+            "display_only": True,
+            "as_of": "2026-07-17",
+            "leadership_state": "strain",
+            "stance_en": "Leadership under strain — watch, don't chase.",
+            "trailing_leader": {
+                "id": "memory_storage",
+                "name": "Memory / Storage",
+                "health": "broken",
+                "breadth": 0.0,
+                "r10": -0.127,
+            },
+            "strength": [],
+            "migration": {},
+            "alignment": {},
+            # No 'china' key
+        }
+    }
+    ws_path = tmp_path / "data" / "neuralweb" / "world_state.json"
+    _write_json(ws_path, ws)
+
+    lobe, gap = _summarize_theme_rotation(tmp_path)
+
+    assert gap is None
+    assert lobe["china"] is None
+    # US fields unaffected
+    assert lobe["leadership_state"] == "strain"
+    assert lobe["display_only"] is True

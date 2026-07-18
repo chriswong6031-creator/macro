@@ -5,6 +5,7 @@ baskets.html's "Prevailing narrative" can honestly represent a broken leader
 without modifying the rank/score/eligible/weights of engine.narrative_rotation.
 
 Contract: /tmp/theme_context_contract.md (pinned).
+China delta: /tmp/theme_context_cn_contract.md (pinned; wins on china specifics).
 
 Public API
 ----------
@@ -12,7 +13,7 @@ compute_theme_context(alloc, theme_intel, region='us', root=None) -> dict | None
     Main producer.  Pure/additive — never raises, logs + returns None on shortfall.
 
 write_context(ctx, root=None) -> None
-    Write site/basketdata/theme_context.json.
+    Write the region-appropriate artifact path (derived from ctx['region']).
 
 read_context(region='us', root=None) -> dict | None
     Consumer API.  Returns None when the artifact is absent.
@@ -21,7 +22,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from datetime import date as _date
 from pathlib import Path
 from typing import Any
@@ -30,13 +30,23 @@ log = logging.getLogger(__name__)
 
 _SCHEMA = "theme_context.v1"
 
-# ── Lane gate (copied verbatim from engine.ledger_lane) ────────────────────────
+# ── Lane gate — delegates to engine.ledger_lane (single definition) ────────────
 
 
-def _nightly_advance_enabled() -> bool:
-    """True only when running in the US nightly engine lane."""
-    val = os.environ.get("COLLECT_LANE", "") or os.environ.get("US_LANE", "")
-    return val.lower() == "nightly"
+def _advance_enabled(region: str) -> bool:
+    """True only when the lane for the given region is armed.
+
+    'us'    -> engine.ledger_lane.nightly_advance_enabled()  (COLLECT_LANE=nightly)
+    'china' -> engine.ledger_lane.asia_advance_enabled()     (CN_LANE=asia)
+    All other regions -> nightly gate (safe default; can be tightened later).
+    """
+    try:
+        from engine.ledger_lane import nightly_advance_enabled, asia_advance_enabled
+        if region == "china":
+            return asia_advance_enabled()
+        return nightly_advance_enabled()
+    except Exception:  # noqa: BLE001 — fail-open, never block compute
+        return False
 
 
 # ── Health classification (deterministic; exact precedence per contract §Health) ──
@@ -158,7 +168,9 @@ _STANCE: dict[str, dict[str, str]] = {
 
 
 # ── Category ZH translation map (migration note_zh only — never user-facing in EN) ─────
+# US categories + China-specific categories (items 6 in CN contract).
 _CAT_ZH: dict[str, str] = {
+    # US categories
     "AI & Technology": "AI与科技",
     "Artificial Intelligence": "人工智能",
     "Biotech": "生物技术",
@@ -181,6 +193,13 @@ _CAT_ZH: dict[str, str] = {
     "Technology": "科技",
     "US Sectors (EW)": "美股行业（等权）",
     "Utilities": "公用事业",
+    # China-specific categories (CN contract item 6)
+    "Advanced Manufacturing": "先进制造",
+    "Consumer & Brands": "消费与品牌",
+    "Cyclicals & Resources": "周期与资源",
+    "Financials & Value": "金融与价值",
+    "New Energy & Autos": "新能源与汽车",
+    "Technology & AI": "科技与AI",
 }
 
 
@@ -258,13 +277,15 @@ def _migration(rank_rows: list[dict], ti_by_id: dict[str, dict]) -> dict:
 def _alignment(
     strength_ids: list[str],
     root: Path,
+    region: str = "us",
 ) -> dict:
     """Cross-check strength themes vs active sector rotation events.
 
+    Reads rotation_events.json (US) or rotation_events_china.json (china) per CN contract item 5.
     Returns sector_rotation_agrees: True | False | None.
     None = artifact absent/unreadable (fail-open per contract).
     """
-    re_path = root / "site" / "marketdata" / "rotation_events.json"
+    re_path = _alignment_path(region, root)
     if not re_path.exists():
         return {"sector_rotation_agrees": None, "note_en": "", "note_zh": ""}
     try:
@@ -298,16 +319,48 @@ def _alignment(
         return {"sector_rotation_agrees": None, "note_en": "", "note_zh": ""}
 
 
+# ── Region-aware artifact / history path helpers ────────────────────────────────
+
+
+def _artifact_path(region: str, root: Path) -> Path:
+    """Return the region-scoped theme_context JSON path.
+
+    'us'    -> site/basketdata/theme_context.json    (backward-compat)
+    'china' -> site/basketdata/theme_context_cn.json
+    """
+    if region == "china":
+        return root / "site" / "basketdata" / "theme_context_cn.json"
+    return root / "site" / "basketdata" / "theme_context.json"
+
+
+# ── Alignment vs rotation_events*.json (region-aware) ──────────────────────────
+
+
+def _alignment_path(region: str, root: Path) -> Path:
+    """Return the region-scoped rotation_events JSON path."""
+    if region == "china":
+        return root / "site" / "marketdata" / "rotation_events_china.json"
+    return root / "site" / "marketdata" / "rotation_events.json"
+
+
 # ── History JSONL helpers ───────────────────────────────────────────────────────
 
 
-def _history_path(root: Path) -> Path:
+def _history_path(root: Path, region: str = "us") -> Path:
+    """Return the region-scoped history JSONL path.
+
+    'us'    -> data/themes/context_history.jsonl    (backward-compat)
+    'china' -> data/themes/context_history_cn.jsonl
+    A china run MUST NEVER touch the US file.
+    """
+    if region == "china":
+        return root / "data" / "themes" / "context_history_cn.jsonl"
     return root / "data" / "themes" / "context_history.jsonl"
 
 
-def _load_history(root: Path) -> list[dict]:
-    """Load context_history.jsonl.  Returns [] on any failure."""
-    p = _history_path(root)
+def _load_history(root: Path, region: str = "us") -> list[dict]:
+    """Load context_history[_cn].jsonl.  Returns [] on any failure."""
+    p = _history_path(root, region)
     if not p.exists():
         return []
     rows = []
@@ -325,8 +378,8 @@ def _load_history(root: Path) -> list[dict]:
     return rows
 
 
-def _write_history(rows: list[dict], root: Path) -> None:
-    p = _history_path(root)
+def _write_history(rows: list[dict], root: Path, region: str = "us") -> None:
+    p = _history_path(root, region)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(
         "\n".join(json.dumps(r, separators=(",", ":"), default=str) for r in rows) + "\n",
@@ -337,16 +390,19 @@ def _write_history(rows: list[dict], root: Path) -> None:
 # ── One-shot seed from baskets.parquet ─────────────────────────────────────────
 
 
-def _seed_from_archive(root: Path) -> list[dict]:
-    """Best-effort seed from data/signal_archive/baskets.parquet.
+def _seed_from_archive(root: Path, region: str = "us") -> list[dict]:
+    """Best-effort seed from data/signal_archive/baskets[_china].parquet.
 
+    'us'    -> data/signal_archive/baskets.parquet
+    'china' -> data/signal_archive/baskets_china.parquet  (CN contract item 4)
     Each row carries snapshot_json with per-theme label/score.  Returns empty
     list on any failure (including missing parquet).
     """
     try:
         import pandas as pd
 
-        p = root / "data" / "signal_archive" / "baskets.parquet"
+        archive_name = "baskets_china.parquet" if region == "china" else "baskets.parquet"
+        p = root / "data" / "signal_archive" / archive_name
         if not p.exists():
             return []
         df = pd.read_parquet(str(p))
@@ -578,14 +634,14 @@ def _compute(alloc: dict, theme_intel: dict, region: str, root: Path) -> dict | 
     ti_by_id: dict[str, dict] = {t["id"]: t for t in ti_themes if t.get("id")}
 
     # ── Load history (for state_changes / days_in_state / metric deltas) ──
-    history = _load_history(root)
+    history = _load_history(root, region)
 
     # One-shot seed if history absent AND lane armed
-    if not history and _nightly_advance_enabled():
+    if not history and _advance_enabled(region):
         try:
-            seed_rows = _seed_from_archive(root)
+            seed_rows = _seed_from_archive(root, region)
             if seed_rows:
-                _write_history(seed_rows, root)
+                _write_history(seed_rows, root, region)
                 history = seed_rows
         except Exception as e:  # noqa: BLE001
             log.debug("theme_context: seed_from_archive failed: %s", e)
@@ -751,7 +807,7 @@ def _compute(alloc: dict, theme_intel: dict, region: str, root: Path) -> dict | 
     migration = _migration(rank_rows, ti_by_id)
 
     # ── Alignment ──────────────────────────────────────────────────────────
-    alignment = _alignment(strength_ids, root)
+    alignment = _alignment(strength_ids, root, region)
 
     # ── state_changes ──────────────────────────────────────────────────────
     current_snapshot_for_changes = {
@@ -799,7 +855,7 @@ def _compute(alloc: dict, theme_intel: dict, region: str, root: Path) -> dict | 
         "scores": current_scores,
     }
 
-    if _nightly_advance_enabled():
+    if _advance_enabled(region):
         updated_history = list(history)
         if updated_history and updated_history[-1].get("asof") == as_of:
             # Same-day idempotent: replace last row
@@ -807,7 +863,7 @@ def _compute(alloc: dict, theme_intel: dict, region: str, root: Path) -> dict | 
         else:
             updated_history.append(history_row)
         try:
-            _write_history(updated_history, root)
+            _write_history(updated_history, root, region)
         except Exception as e:  # noqa: BLE001
             log.warning("theme_context: history write failed: %s", e)
     # Off-lane: do not touch history file.
@@ -819,24 +875,35 @@ def _compute(alloc: dict, theme_intel: dict, region: str, root: Path) -> dict | 
 
 
 def write_context(ctx: dict, root: Any = None) -> None:
-    """Write site/basketdata/theme_context.json."""
+    """Write the region-scoped artifact.
+
+    Path is derived from ctx['region']:
+      'us'    -> site/basketdata/theme_context.json    (backward-compat)
+      'china' -> site/basketdata/theme_context_cn.json
+    """
     r = _repo_root(root)
-    p = r / "site" / "basketdata" / "theme_context.json"
+    region = ctx.get("region", "us")
+    p = _artifact_path(region, r)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(ctx, separators=(",", ":"), default=str), encoding="utf-8")
 
 
 def read_context(region: str = "us", root: Any = None) -> dict | None:
-    """Consumer API — returns the committed JSON or None if absent."""
+    """Consumer API — returns the committed JSON or None if absent.
+
+    Reads the region-scoped path; returns None when absent or region tag mismatches.
+    """
     r = _repo_root(root)
-    p = r / "site" / "basketdata" / "theme_context.json"
+    p = _artifact_path(region, r)
     if not p.exists():
         return None
     try:
         d = json.loads(p.read_text(encoding="utf-8"))
         if not isinstance(d, dict):
             return None
-        if region and d.get("region") != region:
+        # Soft region guard: accept if field absent (legacy) but reject if explicitly different.
+        stored_region = d.get("region")
+        if stored_region is not None and stored_region != region:
             return None
         return d
     except Exception as e:  # noqa: BLE001

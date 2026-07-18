@@ -1266,6 +1266,33 @@ def _summarize_theme_rotation(repo: Path) -> tuple[dict, str | None]:
     migration = tr.get("migration") or {}
     alignment = tr.get("alignment") or {}
 
+    # China sub-block — compact; None when absent (no gap entry)
+    cn = tr.get("china")
+    china_lobe: dict | None = None
+    if cn and isinstance(cn, dict):
+        cn_lead_state = cn.get("leadership_state")
+        cn_tl_raw = cn.get("trailing_leader") or {}
+        cn_tl = cn_tl_raw if isinstance(cn_tl_raw, dict) and cn_tl_raw else {}
+        cn_strength = (cn.get("strength") or [])[:4]
+        cn_migration = cn.get("migration") or {}
+        cn_alignment = cn.get("alignment") or {}
+        if cn_lead_state is not None or cn.get("stance_en") is not None:
+            china_lobe = {
+                "leadership_state": cn_lead_state,
+                "stance_en": cn.get("stance_en"),
+                "stance_zh": cn.get("stance_zh"),
+                "as_of": cn.get("as_of"),
+                "trailing_leader_id": cn_tl.get("id"),
+                "trailing_leader_name": cn_tl.get("name"),
+                "trailing_leader_health": cn_tl.get("health"),
+                "trailing_leader_breadth": cn_tl.get("breadth"),
+                "trailing_leader_r10": cn_tl.get("r10"),
+                "strength_names": [s.get("name") for s in cn_strength if isinstance(s, dict)] or None,
+                "migration_absorbing": [x.get("category") for x in (cn_migration.get("absorbing") or []) if isinstance(x, dict)] or None,
+                "migration_bleeding": [x.get("category") for x in (cn_migration.get("bleeding") or []) if isinstance(x, dict)] or None,
+                "sector_rotation_agrees": cn_alignment.get("sector_rotation_agrees"),
+            }
+
     lobe: dict = {
         "is_context_only": True,
         "display_only": True,
@@ -1289,6 +1316,7 @@ def _summarize_theme_rotation(repo: Path) -> tuple[dict, str | None]:
             if isinstance(x, dict)
         ] or None,
         "sector_rotation_agrees": alignment.get("sector_rotation_agrees"),
+        "china": china_lobe,
         "honesty_note": "context only — display-tier leadership read, not a trade signal",
     }
     return lobe, None

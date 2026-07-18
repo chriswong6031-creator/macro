@@ -2970,6 +2970,9 @@ def _compose_theme_rotation(root: "Path | str | None" = None) -> dict:
         alignment.sector_rotation_agrees,
         state_changes, display_only.
 
+    China additive sub-dict: reads site/basketdata/theme_context_cn.json;
+    absent → 'china': None (no gap entry). Flat US keys byte-preserved.
+
     # TODO(synapse): register theme-context-latest post-#2854
     """
     repo = _repo_root(root)
@@ -2986,6 +2989,7 @@ def _compose_theme_rotation(root: "Path | str | None" = None) -> dict:
         "migration": None,
         "alignment": None,
         "state_changes": None,
+        "china": None,
         "display_only": True,
     }
 
@@ -3060,6 +3064,66 @@ def _compose_theme_rotation(root: "Path | str | None" = None) -> dict:
                 k: _clean_state_entry(v) for k, v in state_changes_raw.items()
             }
 
+        # China sub-dict — read site/basketdata/theme_context_cn.json; absent → None
+        china_out: dict | None = None
+        cn_path = repo / "site" / "basketdata" / "theme_context_cn.json"
+        cn_raw = _read_json(cn_path)
+        if cn_raw is not None:
+            try:
+                cn_lead = cn_raw.get("leadership") or {}
+                cn_tl_raw = cn_lead.get("trailing_leader") or {}
+                cn_tl: dict | None = None
+                if cn_tl_raw and isinstance(cn_tl_raw, dict):
+                    cn_tl = {
+                        "id": _clean(cn_tl_raw.get("id")),
+                        "name": _clean(cn_tl_raw.get("name")),
+                        "health": _clean(cn_tl_raw.get("health")),
+                        "breadth": _clean(cn_tl_raw.get("breadth")),
+                        "r10": _clean(cn_tl_raw.get("r10")),
+                    }
+                cn_strength_raw = cn_lead.get("strength") or []
+                cn_strength = [
+                    {"id": _clean(e.get("id")), "name": _clean(e.get("name"))}
+                    for e in cn_strength_raw[:4]
+                    if isinstance(e, dict)
+                ] or None
+                cn_mig_raw = cn_raw.get("migration") or {}
+                cn_mig: dict | None = None
+                cn_abs = cn_mig_raw.get("absorbing") or []
+                cn_ble = cn_mig_raw.get("bleeding") or []
+                if cn_abs or cn_ble:
+                    cn_mig = {
+                        "absorbing": [
+                            {"category": _clean(x.get("category")), "avg_breadth": _clean(x.get("avg_breadth"))}
+                            for x in cn_abs[:3] if isinstance(x, dict)
+                        ],
+                        "bleeding": [
+                            {"category": _clean(x.get("category")), "avg_breadth": _clean(x.get("avg_breadth"))}
+                            for x in cn_ble[:3] if isinstance(x, dict)
+                        ],
+                    }
+                cn_align_raw = cn_raw.get("alignment") or {}
+                cn_align: dict | None = None
+                if cn_align_raw and isinstance(cn_align_raw, dict):
+                    cn_align = {
+                        "sector_rotation_agrees": _clean(cn_align_raw.get("sector_rotation_agrees")),
+                    }
+                china_out = {
+                    "as_of": _clean(cn_raw.get("as_of")),
+                    "leadership_state": _clean(cn_lead.get("state")),
+                    "days_in_state": _clean(cn_lead.get("days_in_state")),
+                    "stance_en": _clean(cn_lead.get("stance_en")),
+                    "stance_zh": _clean(cn_lead.get("stance_zh")),
+                    "trailing_leader": cn_tl,
+                    "strength": cn_strength,
+                    "migration": cn_mig,
+                    "alignment": cn_align,
+                    "display_only": True,
+                }
+            except Exception as _cn_exc:  # noqa: BLE001
+                log.warning("theme_rotation: china sub-dict compose failed — %s", _cn_exc)
+                china_out = None
+
         return _display_only({
             "as_of": _clean(raw.get("as_of")),
             "leadership_state": _clean(leadership.get("state")),
@@ -3071,6 +3135,7 @@ def _compose_theme_rotation(root: "Path | str | None" = None) -> dict:
             "migration": migration_out,
             "alignment": alignment_out,
             "state_changes": state_changes_out,
+            "china": china_out,
         })
     except Exception as exc:  # noqa: BLE001
         log.warning("theme_rotation: compose failed — %s", exc)
