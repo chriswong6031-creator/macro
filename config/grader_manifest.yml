@@ -17,7 +17,7 @@ files:
 
     '
 - path: engine/theme_placebo.py
-  sha256: f3089c26abd263725a535272696e2586ca6be0dece3d5d7a998101f63d934d04
+  sha256: 96c1ce3e46c30688b6b91db70f68c3534d6d1d50717df1c304dff0d578ac687a
   role: placebo
   notes: 'Placebo tape: appends K=3 random peer themes + 1 time-shifted variant to
     data/foresight/theme_placebo_tape.jsonl (append-only, deduped). Guards against
@@ -32,7 +32,7 @@ files:
 
     '
 - path: engine/qledger_falsifier.py
-  sha256: 3ce3f410c17a2de59d994b5eae1ea8c64b8fb6f7ceb14b093837b315efb8ffdc
+  sha256: 3306d374655bc8a2c2f5311c7718ddcb5e96bb3610aebefc8112dabe9e24975f
   role: falsifier
   notes: 'Falsifier auto-evaluation: evaluates qledger claims whose check_by has arrived
     and appends FALSIFIER_TRIPPED / CONFIRMED / UNVERIFIABLE rows to data/qledger/falsifier_evaluations.jsonl
