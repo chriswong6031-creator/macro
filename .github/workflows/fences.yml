@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        run: pip install "pytest<9" pyyaml
       - name: self-mod-fence selftest (all four cases proven)
         run: python3 scripts/check_self_mod_fence.py --selftest
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
@@ -72,7 +72,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pyyaml
+        run: pip install "pytest<9" pyyaml
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         run: python3 scripts/check_capability_redline.py --selftest
       - name: capability-redline live scan (hard fail on secret values or value-capture)
@@ -89,7 +89,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        run: pip install "pytest<9" pyyaml
       - name: grader-manifest selftest (drift detection + fail-closed proof)
         run: python3 scripts/check_grader_manifest.py --selftest
       - name: grader-manifest live check (hash drift is a hard failure)
