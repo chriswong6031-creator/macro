@@ -98,7 +98,15 @@ def load_cot_positioning(cot_name: str | None) -> pd.Series | None:
 def load_rate(meta: dict, meta_key: str, group: str, sid_maps: dict) -> pd.Series | None:
     """Foreign rate / REER series named by a column in meta -> its FRED parquet.
     Short/policy rates are step functions (ffill correct); REER/10y are monthly +
-    lagged (the signal engine shifts them by the configured pub_lag before use)."""
+    lagged (the signal engine shifts them by the configured pub_lag before use).
+
+    Discontinued-series splice: when meta carries ``<meta_key>_hist`` +
+    ``<meta_key>_splice`` (e.g. GBP short_rate: gb_sonia live, gb_short = the
+    upstream-frozen OECD 3m interbank for history), the hist series is used up to
+    and including the splice date and the live series strictly after. This is a
+    LEVEL splice — carry consumes the level, so no seam return exists here; any
+    consumer differencing across the seam must mask the straddling window
+    (flow_regime.py DXY/DTWEXBGS splice-masking)."""
     col = meta.get(meta_key)
     if not col:
         return None
@@ -106,7 +114,21 @@ def load_rate(meta: dict, meta_key: str, group: str, sid_maps: dict) -> pd.Serie
     if not sid:
         log.warning("forex_inputs: no FRED series for %s col %s", meta_key, col)
         return None
-    return _col("fred", sid, col)
+    live = _col("fred", sid, col)
+    hist_col = meta.get(f"{meta_key}_hist")
+    if not hist_col:
+        return live
+    hist_sid = sid_maps.get(group, {}).get(hist_col)
+    hist = _col("fred", hist_sid, hist_col) if hist_sid else None
+    if hist is None:
+        return live
+    if live is None:  # live leg not landed yet (pre-first-collection) — stale hist beats nothing
+        log.warning("forex_inputs: %s live leg %s absent — using %s history alone",
+                    meta_key, col, hist_col)
+        return hist
+    splice = pd.Timestamp(meta.get(f"{meta_key}_splice") or hist.index.max())
+    out = pd.concat([hist[hist.index <= splice], live[live.index > splice]])
+    return out.rename(col).sort_index()
 
 
 def load_asset(pair: str, drivers: dict | None = None, cfg: dict | None = None,

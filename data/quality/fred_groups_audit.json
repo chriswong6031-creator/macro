@@ -1,9 +1,10 @@
 {
- "asof": "2026-07-02",
+ "asof": "2026-07-18",
  "audit": "fred_groups",
  "stale_days": 45,
  "min_present_pct": 50.0,
  "any_dark": false,
+ "any_stale_series": true,
  "groups": [
   {
    "group": "rates",
@@ -22,6 +23,38 @@
    "missing": []
   },
   {
+   "group": "em_oas_ladder",
+   "n_present": 8,
+   "n_total": 8,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "swap_lines",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "em_vol",
+   "n_present": 1,
+   "n_total": 1,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "corridor_rates",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
    "group": "risk",
    "n_present": 2,
    "n_total": 2,
@@ -31,8 +64,18 @@
   },
   {
    "group": "housing",
-   "n_present": 1,
-   "n_total": 1,
+   "n_present": 2,
+   "n_total": 3,
+   "pct_present": 66.7,
+   "dark": false,
+   "missing": [
+    "CSUSHPISA"
+   ]
+  },
+  {
+   "group": "energy_cycles",
+   "n_present": 2,
+   "n_total": 2,
    "pct_present": 100.0,
    "dark": false,
    "missing": []
@@ -47,8 +90,8 @@
   },
   {
    "group": "liquidity",
-   "n_present": 5,
-   "n_total": 5,
+   "n_present": 6,
+   "n_total": 6,
    "pct_present": 100.0,
    "dark": false,
    "missing": []
@@ -111,8 +154,8 @@
   },
   {
    "group": "inflation_releases",
-   "n_present": 10,
-   "n_total": 10,
+   "n_present": 13,
+   "n_total": 13,
    "pct_present": 100.0,
    "dark": false,
    "missing": []
@@ -135,8 +178,8 @@
   },
   {
    "group": "curve",
-   "n_present": 5,
-   "n_total": 5,
+   "n_present": 6,
+   "n_total": 6,
    "pct_present": 100.0,
    "dark": false,
    "missing": []
@@ -151,6 +194,14 @@
   },
   {
    "group": "bonds_extra",
+   "n_present": 9,
+   "n_total": 9,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "corp_credit",
    "n_present": 9,
    "n_total": 9,
    "pct_present": 100.0,
@@ -175,11 +226,13 @@
   },
   {
    "group": "cycle_coincident",
-   "n_present": 2,
+   "n_present": 1,
    "n_total": 2,
-   "pct_present": 100.0,
+   "pct_present": 50.0,
    "dark": false,
-   "missing": []
+   "missing": [
+    "CMRMTSPL"
+   ]
   },
   {
    "group": "cycle_lagging",
@@ -215,19 +268,24 @@
   },
   {
    "group": "fx_rates_short",
-   "n_present": 9,
-   "n_total": 9,
+   "n_present": 10,
+   "n_total": 10,
    "pct_present": 100.0,
    "dark": false,
-   "missing": []
+   "missing": [],
+   "discontinued": [
+    "IR3TIB01GBM156N"
+   ]
   },
   {
    "group": "fx_rates_long",
-   "n_present": 6,
+   "n_present": 5,
    "n_total": 6,
-   "pct_present": 100.0,
+   "pct_present": 83.3,
    "dark": false,
-   "missing": []
+   "missing": [
+    "IRLTLT01EZM156N"
+   ]
   },
   {
    "group": "fx_reer",
@@ -249,6 +307,14 @@
    "group": "power",
    "n_present": 8,
    "n_total": 8,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "release_intel",
+   "n_present": 11,
+   "n_total": 11,
    "pct_present": 100.0,
    "dark": false,
    "missing": []
