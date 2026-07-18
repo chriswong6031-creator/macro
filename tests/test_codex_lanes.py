@@ -4208,6 +4208,750 @@ class TestRawTailLogging:
 
 
 # ---------------------------------------------------------------------------
+# FIX 1 — CODEX_CASE_PR_MODE env override
+# ---------------------------------------------------------------------------
+
+class TestCasePrModeEnvOverride:
+    """_case_pr_mode() and run_once use env CODEX_CASE_PR_MODE to override cfg."""
+
+    def test_env_ready_overrides_cfg_draft(self):
+        """CODEX_CASE_PR_MODE=ready overrides cfg case_pr_mode=draft."""
+        import scripts.codex_case_lane as lane
+        cfg = {"case_pr_mode": "draft"}
+        with patch.dict(os.environ, {"CODEX_CASE_PR_MODE": "ready"}):
+            assert lane._case_pr_mode(cfg) == "ready"
+
+    def test_env_draft_overrides_cfg_ready(self):
+        """CODEX_CASE_PR_MODE=draft overrides cfg case_pr_mode=ready."""
+        import scripts.codex_case_lane as lane
+        cfg = {"case_pr_mode": "ready"}
+        with patch.dict(os.environ, {"CODEX_CASE_PR_MODE": "draft"}):
+            assert lane._case_pr_mode(cfg) == "draft"
+
+    def test_env_invalid_ignored_falls_back_to_cfg(self):
+        """Unknown env value is ignored; cfg value is used."""
+        import scripts.codex_case_lane as lane
+        cfg = {"case_pr_mode": "draft"}
+        with patch.dict(os.environ, {"CODEX_CASE_PR_MODE": "banana"}):
+            assert lane._case_pr_mode(cfg) == "draft"
+
+    def test_env_absent_falls_back_to_cfg(self, tmp_path: Path):
+        """Env absent → cfg value used."""
+        import scripts.codex_case_lane as lane
+        cfg = {"case_pr_mode": "ready"}
+        env = {k: v for k, v in os.environ.items() if k != "CODEX_CASE_PR_MODE"}
+        with patch.dict(os.environ, env, clear=True):
+            assert lane._case_pr_mode(cfg) == "ready"
+
+    def test_run_once_uses_env_ready_for_pr_open(self, tmp_path: Path):
+        """When CODEX_CASE_PR_MODE=ready, _open_pr is called with draft=False."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)
+        _make_prompt_template(root)
+
+        case_dir = root / "research" / "winners" / "cases"
+        case_path = case_dir / "NVDA_2023.md"
+        audit_msg = '{"verdict": "PASS", "findings": []}'
+
+        def fake_run_codex(prompt, **kwargs):
+            # Generation: write the case file
+            case_path.write_text(_make_case_md("NVDA", 2023), encoding="utf-8")
+            return _make_ok_run_result("done")
+
+        open_pr_calls: list = []
+
+        def fake_open_pr(root, ticker, year, case_path, audit_summary, draft):
+            open_pr_calls.append({"draft": draft})
+            return "https://github.com/owner/repo/pull/1"
+
+        with patch.dict(os.environ, {"CODEX_CASE_PR_MODE": "ready"}):
+            with patch("engine.codex_lane.runner.run_codex", side_effect=fake_run_codex):
+                with patch("scripts.codex_case_lane._run_codex_audit",
+                           return_value=_make_ok_run_result(audit_msg)):
+                    with patch("scripts.codex_case_lane._open_pr", side_effect=fake_open_pr):
+                        with patch("scripts.codex_case_lane._pr_recovery_sweep"):
+                            with patch("scripts.codex_case_lane._pr_resolution_sweep",
+                                       return_value={"skipped": True}):
+                                import scripts.codex_case_lane as lane
+                                lane.run_once(root=root, dry_run=False)
+
+        assert len(open_pr_calls) >= 1, "Expected _open_pr to be called"
+        assert open_pr_calls[0]["draft"] is False, (
+            f"Expected draft=False when CODEX_CASE_PR_MODE=ready, got: {open_pr_calls[0]}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# FIX 2 — _pr_resolution_sweep
+# ---------------------------------------------------------------------------
+
+class TestPrResolutionSweep:
+    """Autonomous PR resolution sweep."""
+
+    def _make_pr(self, number: int, head_ref: str, is_draft: bool = False,
+                 created_at: str | None = None, base_ref: str = "main") -> dict:
+        """Build a minimal PR dict as returned by gh pr list --json."""
+        if created_at is None:
+            created_at = "2026-01-01T00:00:00Z"
+        return {
+            "number": number,
+            "headRefName": head_ref,
+            "baseRefName": base_ref,
+            "isDraft": is_draft,
+            "createdAt": created_at,
+        }
+
+    def _make_files_response(self, paths: list[str]) -> str:
+        """Build a JSON response for gh pr view --json files."""
+        return json.dumps({"files": [{"path": p} for p in paths]})
+
+    def _valid_case_files(self, ticker: str = "nvda", year: str = "2023") -> str:
+        """Return a valid files JSON for a single case file."""
+        return self._make_files_response([f"research/winners/cases/{ticker}_{year}.md"])
+
+    def _make_check(self, name: str, state: str) -> dict:
+        return {"name": name, "state": state}
+
+    # ------------------------------------------------------------------
+    # Gate tests
+    # ------------------------------------------------------------------
+
+    def test_autoresolve_absent_returns_skipped(self, tmp_path: Path):
+        """CODEX_CASE_AUTORESOLVE absent → skipped=True, no gh calls."""
+        root = _make_root(tmp_path)
+        env = {k: v for k, v in os.environ.items() if k != "CODEX_CASE_AUTORESOLVE"}
+        with patch.dict(os.environ, env, clear=True):
+            with patch("subprocess.run") as mock_sub:
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+        assert result.get("skipped") is True
+        mock_sub.assert_not_called()
+
+    def test_autoresolve_off_returns_skipped(self, tmp_path: Path):
+        """CODEX_CASE_AUTORESOLVE=off → skipped=True, no gh calls."""
+        root = _make_root(tmp_path)
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "off"}):
+            with patch("subprocess.run") as mock_sub:
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+        assert result.get("skipped") is True
+        mock_sub.assert_not_called()
+
+    # ------------------------------------------------------------------
+    # Green non-draft PR
+    # ------------------------------------------------------------------
+
+    def test_green_nondraft_pr_squash_merged(self, tmp_path: Path):
+        """GREEN non-draft PR → gh pr merge called (no gh pr ready); 'merged' ledger row."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(42, "codex/case-nvda-2023", is_draft=False)]
+        checks_list = [self._make_check("CI / tests", "SUCCESS")]
+
+        calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            calls.append(args_list)
+            m = MagicMock(); m.returncode = 0
+            if args_list[0] == "gh" and "list" in args_list:
+                m.stdout = json.dumps(prs_list)
+            elif args_list[0] == "gh" and "checks" in args_list:
+                m.stdout = json.dumps(checks_list)
+            elif args_list[0] == "gh" and "view" in args_list and "--json" in args_list and "files" in args_list:
+                m.stdout = self._valid_case_files("nvda", "2023")
+            elif args_list[0] == "gh" and "view" in args_list:
+                m.stdout = "https://github.com/owner/repo"
+            else:
+                m.stdout = ""
+            m.stderr = ""
+            return m
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake_subprocess_run):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged") == 1, f"Expected 1 merged, got: {result}"
+        # gh pr ready must NOT have been called (not a draft)
+        ready_calls = [c for c in calls if c[0] == "gh" and "ready" in c]
+        assert len(ready_calls) == 0, f"gh pr ready should not be called for non-draft: {ready_calls}"
+        # gh pr merge must have been called
+        merge_calls = [c for c in calls if c[0] == "gh" and "merge" in c]
+        assert len(merge_calls) >= 1, f"Expected gh pr merge call: {calls}"
+        assert "--squash" in merge_calls[0]
+        assert "--delete-branch" in merge_calls[0]
+        # Ledger row
+        rows = _read_attempts(root)
+        merged_rows = [r for r in rows if r.get("status") == "merged"]
+        assert len(merged_rows) == 1
+        assert merged_rows[0]["episode"] == "NVDA_2023"
+        assert "auto-resolved" in merged_rows[0].get("detail", "")
+
+    # ------------------------------------------------------------------
+    # Green draft PR
+    # ------------------------------------------------------------------
+
+    def test_green_draft_pr_ready_then_merge(self, tmp_path: Path):
+        """GREEN draft PR → gh pr ready called first, then gh pr merge."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(43, "codex/case-aapl-2022", is_draft=True)]
+        checks_list = [self._make_check("CI / tests", "SUCCESS")]
+
+        calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            calls.append(args_list)
+            m = MagicMock(); m.returncode = 0
+            if args_list[0] == "gh" and "list" in args_list:
+                m.stdout = json.dumps(prs_list)
+            elif args_list[0] == "gh" and "checks" in args_list:
+                m.stdout = json.dumps(checks_list)
+            elif args_list[0] == "gh" and "view" in args_list and "--json" in args_list and "files" in args_list:
+                m.stdout = self._valid_case_files("aapl", "2022")
+            elif args_list[0] == "gh" and "view" in args_list:
+                m.stdout = "https://github.com/owner/repo"
+            else:
+                m.stdout = ""
+            m.stderr = ""
+            return m
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake_subprocess_run):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged") == 1, f"Expected 1 merged, got: {result}"
+        # gh pr ready must be called
+        ready_calls = [c for c in calls if c[0] == "gh" and "ready" in c]
+        assert len(ready_calls) >= 1, f"Expected gh pr ready call for draft PR: {calls}"
+        # Merge must also be called
+        merge_calls = [c for c in calls if c[0] == "gh" and "merge" in c]
+        assert len(merge_calls) >= 1, f"Expected gh pr merge after ready: {calls}"
+        # Order: ready before merge
+        ready_idx = next(i for i, c in enumerate(calls) if c[0] == "gh" and "ready" in c)
+        merge_idx = next(i for i, c in enumerate(calls) if c[0] == "gh" and "merge" in c)
+        assert ready_idx < merge_idx, "gh pr ready must precede gh pr merge"
+        # Ledger
+        rows = _read_attempts(root)
+        assert any(r.get("status") == "merged" and r.get("episode") == "AAPL_2022" for r in rows)
+
+    # ------------------------------------------------------------------
+    # Failing check
+    # ------------------------------------------------------------------
+
+    def test_failing_check_closes_pr_and_records_terminal(self, tmp_path: Path):
+        """FAILED check → gh pr close, pr_closed_ci_failed ledger row, episode excluded."""
+        root = _make_root(tmp_path)
+        _make_episodes_parquet(root)  # has NVDA_2023
+        prs_list = [self._make_pr(44, "codex/case-nvda-2023", is_draft=False)]
+        checks_list = [
+            self._make_check("CI / tests", "FAILURE"),
+            self._make_check("lint", "SUCCESS"),
+        ]
+
+        calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            calls.append(args_list)
+            m = MagicMock(); m.returncode = 0
+            if args_list[0] == "gh" and "list" in args_list:
+                m.stdout = json.dumps(prs_list)
+            elif args_list[0] == "gh" and "checks" in args_list:
+                m.stdout = json.dumps(checks_list)
+            elif args_list[0] == "gh" and "view" in args_list and "--json" in args_list and "files" in args_list:
+                m.stdout = self._valid_case_files("nvda", "2023")
+            elif args_list[0] == "gh" and "view" in args_list:
+                m.stdout = "https://github.com/owner/repo"
+            else:
+                m.stdout = ""
+            m.stderr = ""
+            return m
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake_subprocess_run):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("closed") == 1, f"Expected 1 closed, got: {result}"
+        # gh pr close called
+        close_calls = [c for c in calls if c[0] == "gh" and "close" in c]
+        assert len(close_calls) >= 1, f"Expected gh pr close call: {calls}"
+        # Ledger row
+        rows = _read_attempts(root)
+        ci_failed_rows = [r for r in rows if r.get("status") == "pr_closed_ci_failed"]
+        assert len(ci_failed_rows) == 1, f"Expected pr_closed_ci_failed row, got: {rows}"
+        assert ci_failed_rows[0]["episode"] == "NVDA_2023"
+        # The failing check name should appear in detail
+        assert "CI / tests" in ci_failed_rows[0].get("detail", ""), (
+            f"Expected failing check name in detail: {ci_failed_rows[0]}"
+        )
+        # Episode must now be excluded from queue
+        with patch("subprocess.run", return_value=MagicMock(returncode=1, stdout="", stderr="")):
+            excluded = lane._load_attempted_episodes(root)
+        assert "NVDA_2023" in excluded, (
+            f"Expected NVDA_2023 excluded after pr_closed_ci_failed, got: {excluded}"
+        )
+
+    # ------------------------------------------------------------------
+    # Workers Builds failure alone treated as GREEN
+    # ------------------------------------------------------------------
+
+    def test_workers_builds_failure_alone_treated_green(self, tmp_path: Path):
+        """Workers Builds FAILURE only (all non-spurious pass) → treated GREEN → merge."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(45, "codex/case-msft-2021", is_draft=False)]
+        # Workers Builds = spurious, CI/tests = SUCCESS
+        checks_list = [
+            self._make_check("Workers Builds: macro", "FAILURE"),
+            self._make_check("CI / tests", "SUCCESS"),
+        ]
+
+        calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            calls.append(args_list)
+            m = MagicMock(); m.returncode = 0
+            if args_list[0] == "gh" and "list" in args_list:
+                m.stdout = json.dumps(prs_list)
+            elif args_list[0] == "gh" and "checks" in args_list:
+                m.stdout = json.dumps(checks_list)
+            elif args_list[0] == "gh" and "view" in args_list and "--json" in args_list and "files" in args_list:
+                m.stdout = self._valid_case_files("msft", "2021")
+            elif args_list[0] == "gh" and "view" in args_list:
+                m.stdout = "https://github.com/owner/repo"
+            else:
+                m.stdout = ""
+            m.stderr = ""
+            return m
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake_subprocess_run):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged") == 1, (
+            f"Expected 1 merged (Workers Builds spurious = ignored), got: {result}"
+        )
+        close_calls = [c for c in calls if c[0] == "gh" and "close" in c]
+        assert len(close_calls) == 0, f"Expected no close call when only spurious check fails: {calls}"
+
+    # ------------------------------------------------------------------
+    # Pending checks
+    # ------------------------------------------------------------------
+
+    def test_pending_checks_untouched(self, tmp_path: Path):
+        """PENDING checks → PR left untouched."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(46, "codex/case-tsla-2022", is_draft=False)]
+        checks_list = [self._make_check("CI / tests", "IN_PROGRESS")]
+
+        calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            calls.append(args_list)
+            m = MagicMock(); m.returncode = 0
+            if args_list[0] == "gh" and "list" in args_list:
+                m.stdout = json.dumps(prs_list)
+            elif args_list[0] == "gh" and "checks" in args_list:
+                m.stdout = json.dumps(checks_list)
+            elif args_list[0] == "gh" and "view" in args_list and "--json" in args_list and "files" in args_list:
+                m.stdout = self._valid_case_files("tsla", "2022")
+            elif args_list[0] == "gh" and "view" in args_list:
+                m.stdout = "https://github.com/owner/repo"
+            else:
+                m.stdout = ""
+            m.stderr = ""
+            return m
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake_subprocess_run):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("pending") == 1
+        assert result.get("merged", 0) == 0
+        assert result.get("closed", 0) == 0
+        merge_calls = [c for c in calls if c[0] == "gh" and "merge" in c]
+        assert len(merge_calls) == 0
+        close_calls = [c for c in calls if c[0] == "gh" and "close" in c]
+        assert len(close_calls) == 0
+
+    # ------------------------------------------------------------------
+    # Zero checks age-based classification
+    # ------------------------------------------------------------------
+
+    def test_zero_checks_young_pr_pending(self, tmp_path: Path):
+        """Zero relevant checks + young PR (< 30 min) → PENDING, not merged."""
+        from datetime import timedelta
+        root = _make_root(tmp_path)
+        # createdAt: 5 minutes ago (young)
+        young_ts = (datetime.now(timezone.utc) - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        prs_list = [self._make_pr(47, "codex/case-goog-2021", is_draft=False, created_at=young_ts)]
+        checks_list: list = []  # zero checks
+
+        calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            calls.append(args_list)
+            m = MagicMock(); m.returncode = 0
+            if args_list[0] == "gh" and "list" in args_list:
+                m.stdout = json.dumps(prs_list)
+            elif args_list[0] == "gh" and "checks" in args_list:
+                m.stdout = json.dumps(checks_list)
+            elif args_list[0] == "gh" and "view" in args_list and "--json" in args_list and "files" in args_list:
+                m.stdout = self._valid_case_files("goog", "2021")
+            elif args_list[0] == "gh" and "view" in args_list:
+                m.stdout = "https://github.com/owner/repo"
+            else:
+                m.stdout = ""
+            m.stderr = ""
+            return m
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake_subprocess_run):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("pending") == 1, f"Young PR with zero checks should be PENDING: {result}"
+        assert result.get("merged", 0) == 0
+
+    def test_zero_checks_old_pr_merged(self, tmp_path: Path):
+        """Zero relevant checks + old PR (> 30 min, 2h ago) → GREEN → merged."""
+        from datetime import timedelta
+        root = _make_root(tmp_path)
+        # createdAt: 2 hours ago (old)
+        old_ts = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        prs_list = [self._make_pr(48, "codex/case-amzn-2020", is_draft=False, created_at=old_ts)]
+        checks_list: list = []  # zero checks
+
+        calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            calls.append(args_list)
+            m = MagicMock(); m.returncode = 0
+            if args_list[0] == "gh" and "list" in args_list:
+                m.stdout = json.dumps(prs_list)
+            elif args_list[0] == "gh" and "checks" in args_list:
+                m.stdout = json.dumps(checks_list)
+            elif args_list[0] == "gh" and "view" in args_list and "--json" in args_list and "files" in args_list:
+                m.stdout = self._valid_case_files("amzn", "2020")
+            elif args_list[0] == "gh" and "view" in args_list:
+                m.stdout = "https://github.com/owner/repo"
+            else:
+                m.stdout = ""
+            m.stderr = ""
+            return m
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake_subprocess_run):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged") == 1, (
+            f"Old PR with zero checks should be GREEN → merged: {result}"
+        )
+
+    # ------------------------------------------------------------------
+    # F1+F4 — extended state coverage
+    # ------------------------------------------------------------------
+
+    def _make_fake_run(self, prs_list: list, checks_list: list,
+                       files_json: str | None = None) -> "tuple[list, object]":
+        """Return (calls_collector, fake_subprocess_run) for standard sweep tests."""
+        calls: list = []
+        _files_json = files_json
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            calls.append(args_list)
+            m = MagicMock(); m.returncode = 0
+            if args_list[0] == "gh" and "list" in args_list:
+                m.stdout = json.dumps(prs_list)
+            elif args_list[0] == "gh" and "checks" in args_list:
+                m.stdout = json.dumps(checks_list)
+            elif args_list[0] == "gh" and "view" in args_list and "--json" in args_list and "files" in args_list:
+                m.stdout = _files_json if _files_json is not None else self._valid_case_files()
+            elif args_list[0] == "gh" and "view" in args_list:
+                m.stdout = "https://github.com/owner/repo"
+            else:
+                m.stdout = ""
+            m.stderr = ""
+            return m
+
+        return calls, fake_subprocess_run
+
+    def test_action_required_closes_pr(self, tmp_path: Path):
+        """ACTION_REQUIRED → FAILED → close path, not merge."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(50, "codex/case-nvda-2023")]
+        checks_list = [self._make_check("CI / approve", "ACTION_REQUIRED")]
+        calls, fake = self._make_fake_run(prs_list, checks_list)
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("closed") == 1, f"ACTION_REQUIRED should close PR: {result}"
+        assert result.get("merged", 0) == 0
+        close_calls = [c for c in calls if c[0] == "gh" and "close" in c]
+        assert len(close_calls) >= 1
+
+    def test_startup_failure_closes_pr(self, tmp_path: Path):
+        """STARTUP_FAILURE → FAILED → close path, not merge."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(51, "codex/case-nvda-2023")]
+        checks_list = [self._make_check("CI / build", "STARTUP_FAILURE")]
+        calls, fake = self._make_fake_run(prs_list, checks_list)
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("closed") == 1, f"STARTUP_FAILURE should close PR: {result}"
+        assert result.get("merged", 0) == 0
+
+    def test_stale_closes_pr(self, tmp_path: Path):
+        """STALE → FAILED → close path, not merge."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(52, "codex/case-nvda-2023")]
+        checks_list = [self._make_check("CI / tests", "STALE")]
+        calls, fake = self._make_fake_run(prs_list, checks_list)
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("closed") == 1, f"STALE should close PR: {result}"
+        assert result.get("merged", 0) == 0
+
+    def test_requested_is_pending(self, tmp_path: Path):
+        """REQUESTED → PENDING → PR left untouched."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(53, "codex/case-nvda-2023")]
+        checks_list = [self._make_check("CI / tests", "REQUESTED")]
+        calls, fake = self._make_fake_run(prs_list, checks_list)
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("pending") == 1, f"REQUESTED should be PENDING: {result}"
+        assert result.get("merged", 0) == 0
+        assert result.get("closed", 0) == 0
+
+    def test_unknown_state_is_pending(self, tmp_path: Path):
+        """Unknown state 'BOGUS_STATE' → treated as PENDING, not merged or closed."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(54, "codex/case-nvda-2023")]
+        checks_list = [self._make_check("CI / tests", "BOGUS_STATE")]
+        calls, fake = self._make_fake_run(prs_list, checks_list)
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("pending") == 1, f"Unknown state should be PENDING: {result}"
+        assert result.get("merged", 0) == 0
+        assert result.get("closed", 0) == 0
+
+    def test_empty_string_state_is_pending(self, tmp_path: Path):
+        """Check with empty-string state '' → treated as PENDING."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(55, "codex/case-nvda-2023")]
+        checks_list = [self._make_check("CI / tests", "")]
+        calls, fake = self._make_fake_run(prs_list, checks_list)
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("pending") == 1, f"Empty-string state should be PENDING: {result}"
+        assert result.get("merged", 0) == 0
+        assert result.get("closed", 0) == 0
+
+    def test_all_skipped_checks_merged(self, tmp_path: Path):
+        """All-SKIPPED checks → subset of GREEN_STATES → merged."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(56, "codex/case-nvda-2023")]
+        checks_list = [
+            self._make_check("CI / optional-a", "SKIPPED"),
+            self._make_check("CI / optional-b", "SKIPPED"),
+        ]
+        calls, fake = self._make_fake_run(prs_list, checks_list)
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged") == 1, f"All-SKIPPED should be GREEN → merged: {result}"
+        assert result.get("closed", 0) == 0
+
+    # ------------------------------------------------------------------
+    # F2 — merge-scope guards
+    # ------------------------------------------------------------------
+
+    def test_non_main_base_ref_skipped(self, tmp_path: Path):
+        """baseRefName 'develop' → skipped, no merge, no close."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(60, "codex/case-nvda-2023", base_ref="develop")]
+        calls, fake = self._make_fake_run(prs_list, [self._make_check("CI", "SUCCESS")])
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged", 0) == 0, f"Non-main base should skip: {result}"
+        assert result.get("closed", 0) == 0
+        merge_calls = [c for c in calls if c[0] == "gh" and "merge" in c]
+        assert len(merge_calls) == 0
+        close_calls = [c for c in calls if c[0] == "gh" and "close" in c]
+        assert len(close_calls) == 0
+
+    def test_out_of_scope_files_skipped(self, tmp_path: Path):
+        """Files containing 'engine/evil.py' → skipped."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(61, "codex/case-nvda-2023")]
+        files_json = self._make_files_response([
+            "research/winners/cases/nvda_2023.md",
+            "engine/evil.py",
+        ])
+        calls, fake = self._make_fake_run(
+            prs_list, [self._make_check("CI", "SUCCESS")], files_json=files_json,
+        )
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged", 0) == 0, f"Out-of-scope files should skip: {result}"
+        assert result.get("closed", 0) == 0
+
+    def test_empty_files_list_skipped(self, tmp_path: Path):
+        """Empty files list → skipped (no in-scope case file)."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(62, "codex/case-nvda-2023")]
+        files_json = self._make_files_response([])
+        calls, fake = self._make_fake_run(
+            prs_list, [self._make_check("CI", "SUCCESS")], files_json=files_json,
+        )
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged", 0) == 0, f"Empty files should skip: {result}"
+        assert result.get("closed", 0) == 0
+
+    # ------------------------------------------------------------------
+    # F3 — strict branch shape
+    # ------------------------------------------------------------------
+
+    def test_branch_without_year_skipped_entirely(self, tmp_path: Path):
+        """headRefName 'codex/case-experiment' (no 4-digit year) → skipped entirely."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(70, "codex/case-experiment")]
+        calls, fake = self._make_fake_run(prs_list, [self._make_check("CI", "SUCCESS")])
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged", 0) == 0, f"Bad branch shape should skip: {result}"
+        assert result.get("closed", 0) == 0
+        assert result.get("pending", 0) == 0
+        # No ledger row should be written
+        rows = _read_attempts(root)
+        assert len(rows) == 0, f"No ledger row expected for bad branch: {rows}"
+
+    # ------------------------------------------------------------------
+    # F6 — bounded merge retries
+    # ------------------------------------------------------------------
+
+    def test_three_merge_failed_rows_skips_merge(self, tmp_path: Path):
+        """3 merge_failed rows in ledger → merge not attempted for that episode."""
+        root = _make_root(tmp_path)
+        import scripts.codex_case_lane as lane
+
+        # Pre-populate 3 merge_failed rows for NVDA_2023
+        for i in range(3):
+            lane._append_attempt(root, "NVDA_2023", "merge_failed", None, f"prior failure {i}")
+
+        prs_list = [self._make_pr(80, "codex/case-nvda-2023")]
+        calls, fake = self._make_fake_run(prs_list, [self._make_check("CI", "SUCCESS")])
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake):
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged", 0) == 0, f"3 merge_failed rows should prevent merge: {result}"
+        merge_calls = [c for c in calls if c[0] == "gh" and "merge" in c]
+        assert len(merge_calls) == 0, f"gh pr merge should not be called: {calls}"
+
+    def test_merge_failure_appends_merge_failed_row(self, tmp_path: Path):
+        """Merge gh command failure → merge_failed ledger row appended."""
+        root = _make_root(tmp_path)
+        prs_list = [self._make_pr(81, "codex/case-nvda-2023")]
+        checks_list = [self._make_check("CI / tests", "SUCCESS")]
+        calls: list = []
+
+        def fake_subprocess_run(args, **kwargs):
+            args_list = list(args)
+            calls.append(args_list)
+            m = MagicMock()
+            if args_list[0] == "gh" and "list" in args_list:
+                m.returncode = 0
+                m.stdout = json.dumps(prs_list)
+            elif args_list[0] == "gh" and "checks" in args_list:
+                m.returncode = 0
+                m.stdout = json.dumps(checks_list)
+            elif args_list[0] == "gh" and "view" in args_list and "--json" in args_list and "files" in args_list:
+                m.returncode = 0
+                m.stdout = self._valid_case_files("nvda", "2023")
+            elif args_list[0] == "gh" and "view" in args_list:
+                m.returncode = 0
+                m.stdout = "https://github.com/owner/repo"
+            elif args_list[0] == "gh" and "merge" in args_list:
+                # Simulate merge failure
+                m.returncode = 1
+                m.stdout = ""
+                m.stderr = "GraphQL: Pull Request is not mergeable"
+            else:
+                m.returncode = 0
+                m.stdout = ""
+                m.stderr = ""
+            return m
+
+        with patch.dict(os.environ, {"CODEX_CASE_AUTORESOLVE": "on"}):
+            with patch("subprocess.run", side_effect=fake_subprocess_run):
+                import scripts.codex_case_lane as lane
+                result = lane._pr_resolution_sweep(root, {})
+
+        assert result.get("merged", 0) == 0, f"Failed merge should not count as merged: {result}"
+        rows = _read_attempts(root)
+        merge_failed_rows = [r for r in rows if r.get("status") == "merge_failed"]
+        assert len(merge_failed_rows) == 1, f"Expected 1 merge_failed row: {rows}"
+        assert merge_failed_rows[0]["episode"] == "NVDA_2023"
+        assert "merge failed" in merge_failed_rows[0].get("detail", "").lower()
+
+
+# ---------------------------------------------------------------------------
 # Main runner
 # ---------------------------------------------------------------------------
 
