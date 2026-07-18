@@ -137,24 +137,69 @@ def _r(v, n=2):
 # --------------------------------------------------------------------------- #
 # alert timeline (mirrors build_vector._group_timeline)
 # --------------------------------------------------------------------------- #
-TYPE_LABEL = {"residual_shock": "Shock", "price_shock": "Shock", "risk_regime": "Risk",
-              "risk_extreme": "Risk", "driver_shift": "Driver", "trend_flip": "Trend",
-              "momentum": "Momentum", "structure": "Structure", "allocation": "Allocation",
-              "positioning": "COT", "value": "Value", "complex_regime": "Complex"}
+# Bilingual (en, zh) pairs — template emits dual-span, never a raw slug.
+TYPE_LABEL_BI: dict[str, tuple[str, str]] = {
+    "residual_shock":  ("Shock",       "冲击"),
+    "price_shock":     ("Shock",       "冲击"),
+    "risk_regime":     ("Risk",        "风险"),
+    "risk_extreme":    ("Risk",        "风险"),
+    "driver_shift":    ("Driver",      "驱动"),
+    "trend_flip":      ("Trend break", "趋势破位"),
+    "momentum":        ("Momentum",    "动量"),
+    "structure":       ("Trend break", "趋势破位"),
+    "allocation":      ("Allocation",  "配置"),
+    "positioning":     ("Positioning", "持仓"),
+    "value":           ("Value",       "价值"),
+    "complex_regime":  ("Sector-wide", "板块整体"),
+}
+# Keep the legacy str-only dict for any callers outside the template
+TYPE_LABEL = {k: v[0] for k, v in TYPE_LABEL_BI.items()}
+
 FILTER_OF = {"residual_shock": "shock", "price_shock": "shock", "risk_regime": "risk",
              "risk_extreme": "risk", "driver_shift": "driver", "trend_flip": "driver",
              "allocation": "alloc"}
+
+# Plain bilingual names for catalyst type slugs (EIA_WPSR → "EIA oil report")
+CATALYST_TYPE_LABELS: dict[str, tuple[str, str]] = {
+    "FOMC":     ("Fed meeting",    "美联储会议"),
+    "EIA_WPSR": ("EIA oil report", "EIA油品报告"),
+    "OPEC":     ("OPEC meeting",   "OPEC会议"),
+}
+
+# Plain bilingual names for likely_cause slugs from commodity_news.py
+CAUSE_LABELS: dict[str, tuple[str, str]] = {
+    "supply_disruption":          ("supply disruption",        "供应中断"),
+    "demand_shock":               ("demand shock",             "需求冲击"),
+    "geopolitical_conflict":      ("geopolitics",              "地缘政治"),
+    "sanctions_or_trade_policy":  ("sanctions / trade policy", "制裁/贸易政策"),
+    "weather_or_natural_disaster":("weather / natural disaster","天气/自然灾害"),
+    "inventory_or_production_data":("inventory data",          "库存数据"),
+    "currency_or_macro":          ("dollar / macro",           "美元/宏观"),
+    "ofac_opec_or_cartel_action": ("OPEC / cartel action",     "OPEC/产油国行动"),
+}
+
+# Conviction action translations (SBUY/BUY/HOLD/SELL/SSELL → plain EN + ZH)
+CONVICTION_LABELS: dict[str, tuple[str, str]] = {
+    "SBUY":  ("Strong buy", "强力买入"),
+    "BUY":   ("Buy",        "买入"),
+    "HOLD":  ("Hold",       "持有"),
+    "SELL":  ("Sell",       "卖出"),
+    "SSELL": ("Strong sell","强力卖出"),
+}
 
 
 def _group_timeline(events: list[dict]) -> list[dict]:
     days: dict[str, list] = {}
     for e in events:
         ts = pd.Timestamp(e["ts"])
-        e = {**e, "label": TYPE_LABEL.get(e["type"], e["type"]),
-             "filter": FILTER_OF.get(e["type"], "other"),
+        bi = TYPE_LABEL_BI.get(e["type"], (e["type"], e["type"]))
+        e = {**e,
+             "label":     bi[0],
+             "label_zh":  bi[1],
+             "filter":    FILTER_OF.get(e["type"], "other"),
              "asset_label": META.get(e.get("asset"), {}).get("label", e.get("asset", "")),
-             "time": ts.strftime("%H:%M UTC") if (ts.hour or ts.minute) else "",
-             "daylabel": ts.strftime("%a %b %d")}
+             "time":      ts.strftime("%H:%M UTC") if (ts.hour or ts.minute) else "",
+             "daylabel":  ts.strftime("%a %b %d")}
         days.setdefault(ts.strftime("%Y-%m-%d"), []).append(e)
     return [{"day": d, "daylabel": evs[0]["daylabel"], "events": evs}
             for d, evs in sorted(days.items(), reverse=True)]
@@ -404,7 +449,9 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
     risk_on = last.get("risk_regime") == "low_risk"
     vm = {
         "key": asset, "label": META[asset]["label"], "zh": META[asset]["zh"],
-        "unit": META[asset]["unit"], "price": _r(close.iloc[-1], 2), "chg": chg,
+        "unit": META[asset]["unit"], "price": _r(close.iloc[-1], 2),
+        "price_fmt": (f"{float(close.iloc[-1]):,.2f}" if close.iloc[-1] is not None else None),
+        "chg": chg,
         # canonical front-month futures symbol so live.js refreshes the price tile
         "sym": {"gold": "GC=F", "silver": "SI=F", "copper": "HG=F", "oil": "CL=F"}.get(asset),
         "alloc_pct": alloc_pct, "market_mode": last.get("market_mode", "—"),
@@ -772,9 +819,13 @@ def _build_sector_vm_inner(
         phase_en, phase_zh = _plain_cycle(phase)
         cycle_summary.append({
             "phase": phase, "phase_en": phase_en, "phase_zh": phase_zh,
+            "count": len(names),
             "names_en": [MEMBER_LABELS.get(n, (n.replace("_"," ").title(), n))[0] for n in names],
             "names_zh": [MEMBER_LABELS.get(n, (n.replace("_"," ").title(), n))[1] for n in names],
         })
+
+    # Dominant phase: entry with the most members (max count wins, not alphabetical)
+    cycle_dominant: dict | None = max(cycle_summary, key=lambda e: e["count"]) if cycle_summary else None
 
     # --- board (tops + bottoms) -----------------------------------------------
     top_states   = {"Blowing off — extended", "Extended — late cycle", "Euphoric top — rolling over"}
@@ -991,13 +1042,14 @@ def _build_sector_vm_inner(
         detail.append(entry)
 
     return {
-        "stance":        stance,
-        "breadth":       breadth_vm,
-        "index":         index_vm,
-        "cycle_summary": cycle_summary,
-        "board":         board,
-        "grid":          grid,
-        "detail":        detail,
+        "stance":         stance,
+        "breadth":        breadth_vm,
+        "index":          index_vm,
+        "cycle_summary":  cycle_summary,
+        "cycle_dominant": cycle_dominant,
+        "board":          board,
+        "grid":           grid,
+        "detail":         detail,
     }
 
 
@@ -1150,6 +1202,13 @@ def main() -> int:
                                                             e.get("headline", ""))
                         if ann and ann.get("headlines"):
                             e["news"] = ann
+                            # Resolve likely_cause slug to plain bilingual pair for template
+                            lc = ann.get("likely_cause") or {}
+                            cause_slug = lc.get("cause") if isinstance(lc, dict) else lc
+                            if cause_slug and cause_slug != "unknown":
+                                cbi = CAUSE_LABELS.get(cause_slug, (cause_slug.replace("_", " "), cause_slug))
+                                e["cause_en"] = cbi[0]
+                                e["cause_zh"] = cbi[1]
                     except Exception as ex:  # noqa: BLE001
                         log.warning("news annotation failed for %s (%s)", e.get("asset"), ex)
                     annotated += 1
@@ -1172,13 +1231,27 @@ def main() -> int:
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
     env.filters["money"] = lambda v: ("—" if v is None else f"${v:,.2f}")
+    # Resolve catalyst type slugs to bilingual labels + days_out countdown for the template
+    from datetime import date as _date
+    _build_date = results["gold"].index.max().date()
+    catalysts_resolved = []
+    for _cat in (catalysts or []):
+        _type = _cat.get("type", "")
+        _bi = CATALYST_TYPE_LABELS.get(_type, (_type.replace("_", " "), _type.replace("_", " ")))
+        try:
+            _cat_date = _date.fromisoformat(_cat["date"])
+            _days_out = (_cat_date - _build_date).days
+        except Exception:  # noqa: BLE001
+            _days_out = None
+        catalysts_resolved.append({**_cat, "type_en": _bi[0], "type_zh": _bi[1], "days_out": _days_out})
     try:
         html = env.get_template("commodities.html.j2").render(
             C=C, as_of=as_of, built=built, cal_span=cal_span, complex=cx,
             assets=assets, order=ORDER, timeline=timeline,
             timeline_days=acfg["timeline_days"], n_alerts=len(recent_events),
-            catalysts=catalysts, news_disclaimer=news_disclaimer,
-            vm=vm, idx_ew_spark=idx_ew_spark)
+            catalysts=catalysts_resolved, news_disclaimer=news_disclaimer,
+            vm=vm, idx_ew_spark=idx_ew_spark,
+            conviction_labels=CONVICTION_LABELS)
     except Exception as _re:  # noqa: BLE001 — never crash the whole site build
         log.error("commodities template render failed (%s); skipping page write", _re)
         return 0
