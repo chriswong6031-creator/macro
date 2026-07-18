@@ -43,6 +43,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | macro-context-rail | 17 |
 | macro-release-intel | 6 |
 | mag7-regime | 3 |
+| market-structure | 3 |
 | mastermind-feedback-contract | 2 |
 | metabolism-phase-a | 5 |
 | metabolism-phase-v2a | 4 |
@@ -94,16 +95,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 310 |
+| display | 312 |
 | infrastructure | 95 |
 | scored | 4 |
-| shadow | 70 |
+| shadow | 71 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 457 |
+| git | 460 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -472,6 +473,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mag7-regime-latest | `data/mag7_regime/latest.json` | json | daily-engine | display | 2 | 0 |
 | mag7-regime-site | `site/stockdata/mag7_regime.json` | json | daily-engine | display | 1 | 0 |
 | mag7-regime-ledger | `data/mag7_regime/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+
+### market-structure
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| market-structure-latest | `data/market_structure/latest.json` | json | daily-engine | display | 1 | 1 |
+| market-structure-history | `data/market_structure/history.parquet` | parquet | daily-engine | display | 1 | 0 |
+| market-structure-ledger | `data/market_structure/ledger.parquet` | parquet | daily-engine | shadow | 0 | 0 |
 
 ### mastermind-feedback-contract
 
