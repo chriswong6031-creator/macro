@@ -64,9 +64,45 @@ def main() -> int:
     span = f"{f.index.min().date()} → {f.index.max().date()}"
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
+    # DOLLAR CHANNEL + hero verdict + day-over-day change feed (engine/transmission_context).
+    # All three are additive display context: any failure leaves them None and the page
+    # renders without that block, never breaking. build_forex runs earlier in daily.yml,
+    # so data/forex/latest.json is fresh at this point.
+    dx = hero = changes = prev_state = None
+    outdir = config.data_dir() / "transmission"
+    try:
+        from engine import transmission_context as txc
+        dx = txc.compose_dollar_channel()
+        hero = txc.compose_hero(tx, dx)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("transmission_context (dollar/hero) failed: %s", e)
+
+    # the transmission contract carries the yield-curve block too, so downstream readers
+    # (stock macro-sensitivity, the LLM brief) get the curve read from one file.
+    contract = dict(tx)
+    if yc is not None:
+        contract["yield_curve"] = yc
+    if dx is not None:
+        contract["dollar_channel"] = dx
+    if hero is not None:
+        contract["hero"] = hero
+    try:
+        from engine import transmission_context as txc
+        old = None
+        old_path = outdir / "latest.json"
+        if old_path.exists():
+            old = json.loads(old_path.read_text())
+        changes, prev_state = txc.build_changes(old, contract, dx, as_of)
+        contract["changes"] = changes
+        contract["prev_state"] = prev_state
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("transmission_context (changes) failed: %s", e)
+        changes = None
+
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("transmission.html.j2").render(
-        C=C, as_of=as_of, built=built, span=span, tx=tx, gate=gate, yc=yc)
+        C=C, as_of=as_of, built=built, span=span, tx=tx, gate=gate, yc=yc,
+        dx=dx, hero=hero, changes=changes)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
     write_page(site / "transmission.html", html)
@@ -74,13 +110,7 @@ def main() -> int:
 
     # machine-readable hub contract (for the macro panel + LLM brief), mirrors the
     # latest.json block written by engine.run so the page and the brief never drift.
-    outdir = config.data_dir() / "transmission"
     outdir.mkdir(parents=True, exist_ok=True)
-    # the transmission contract carries the yield-curve block too, so downstream readers
-    # (stock macro-sensitivity, the LLM brief) get the curve read from one file.
-    contract = dict(tx)
-    if yc is not None:
-        contract["yield_curve"] = yc
     (outdir / "latest.json").write_text(json.dumps(contract, indent=2, default=str, ensure_ascii=False))
     return 0
 

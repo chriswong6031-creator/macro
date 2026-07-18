@@ -1256,7 +1256,20 @@ def _compose_rates_transmission(root: "Path | str | None" = None) -> dict:
             },
         }
 
-        return _display_only({
+        # Additive pass-through: changes + dollar_channel_dir (Task 4 FX-TX program)
+        # All fail-open: missing keys → omit or None.
+        changes_raw = raw.get("changes") or {}
+        changes_items_raw = changes_raw.get("items") or []
+        changes_compact = [
+            {"key": item.get("key"), "en": item.get("en")}
+            for item in changes_items_raw[:6]
+            if isinstance(item, dict)
+        ]
+        changes_vs = changes_raw.get("vs_asof")
+        dollar_channel_dir = (raw.get("dollar_channel") or {}).get("usd_dir") \
+            if isinstance(raw.get("dollar_channel"), dict) else None
+
+        out = {
             "asof": _clean(raw.get("asof")),
             "scored_status": _clean(raw.get("scored_status")),
             "calibrated": _clean(raw.get("calibrated")),
@@ -1265,7 +1278,15 @@ def _compose_rates_transmission(root: "Path | str | None" = None) -> dict:
             "tailwinds": _hw_tw(raw.get("tailwinds") or []),
             "yield_curve": yc,
             "yield_curve_source": "transmission",
-        })
+        }
+        if changes_compact:
+            out["changes"] = changes_compact
+        if changes_vs is not None:
+            out["changes_vs"] = changes_vs
+        if dollar_channel_dir is not None:
+            out["dollar_channel_dir"] = dollar_channel_dir
+
+        return _display_only(out)
     except Exception as exc:  # noqa: BLE001
         log.warning("rates_transmission: compose failed — %s", exc)
         return null_out
