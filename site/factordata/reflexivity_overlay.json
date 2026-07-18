@@ -2,7 +2,7 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-17",
-  "generated_utc": "2026-07-18T02:23:38Z",
+  "generated_utc": "2026-07-18T07:15:16Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
@@ -22,7 +22,7 @@
       ],
       "size": 5,
       "basis": "membership-jaccard",
-      "label": "Consumer Discretionary"
+      "label": "Financials"
     }
   ],
   "earnings_coverage_frac": 0.667,
@@ -68,94 +68,6 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as CUBI \u2014 shared factor profile (similarity 69%).",
       "why_zh": "\u4e0e CUBI \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 69%\uff09\u3002"
-    },
-    "GIII": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "CALY",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.9008,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "CUBI",
-          "combined": 0.9934,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9934,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "WT",
-          "combined": 0.8812,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8812,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        }
-      ],
-      "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as CALY \u2014 Consumer Discretionary (similarity 100%).",
-      "why_zh": "\u4e0e CALY \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "CALY": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "GIII",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.9008,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "WT",
-          "combined": 0.9554,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9554,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "CUBI",
-          "combined": 0.9109,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.9109,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-05",
-        "same_week_peers": [],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as GIII \u2014 Consumer Discretionary (similarity 100%).",
-      "why_zh": "\u4e0e GIII \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
     "WT": {
       "verdict": "duplicate",
@@ -247,6 +159,94 @@
       "why_en": "Same bet as WT \u2014 Financials (similarity 100%).",
       "why_zh": "\u4e0e WT \u62bc\u6ce8\u76f8\u540c \u2014 Financials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
+    "GIII": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "CALY",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9008,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "CUBI",
+          "combined": 0.9934,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9934,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "WT",
+          "combined": 0.8812,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8812,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as CALY \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e CALY \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "CALY": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "GIII",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.9008,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "WT",
+          "combined": 0.9554,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9554,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "CUBI",
+          "combined": 0.9109,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9109,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-05",
+        "same_week_peers": [],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as GIII \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e GIII \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
     "HR": {
       "verdict": "new",
       "max_similarity": 0.0,
@@ -262,16 +262,16 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "GIII",
+          "ticker": "WT",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": false
+          "same_earnings_week": true
         },
         {
-          "ticker": "CALY",
+          "ticker": "CUBI",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -293,20 +293,6 @@
     }
   },
   "pair_basis": {
-    "REX__GIII": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.6135,
-      "combined": 0.6135,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "REX__CALY": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.6203,
-      "combined": 0.6203,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
     "REX__WT": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.5467,
@@ -321,58 +307,21 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
+    "REX__GIII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.6135,
+      "combined": 0.6135,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "REX__CALY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.6203,
+      "combined": 0.6203,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "REX__HR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "GIII__CALY": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": 0.9008,
-      "combined": 1.0,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "GIII__WT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8812,
-      "combined": 0.8812,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "GIII__CUBI": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.9934,
-      "combined": 0.9934,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "GIII__HR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "CALY__WT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.9554,
-      "combined": 0.9554,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "CALY__CUBI": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.9109,
-      "combined": 0.9109,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "CALY__HR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -388,6 +337,20 @@
         "sector:Financials"
       ]
     },
+    "WT__GIII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8812,
+      "combined": 0.8812,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "WT__CALY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9554,
+      "combined": 0.9554,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "WT__HR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -395,7 +358,44 @@
       "factor_basis": "beta-read-thin:r2=0.18<0.2",
       "shared_groups": []
     },
+    "CUBI__GIII": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9934,
+      "combined": 0.9934,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "CUBI__CALY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9109,
+      "combined": 0.9109,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "CUBI__HR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "GIII__CALY": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9008,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "GIII__HR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "CALY__HR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,

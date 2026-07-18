@@ -1900,7 +1900,7 @@ jobs:
       - name: build bottom-sensor envelope (NW Rails B0)
         if: always()
         # Display-only (no ranking/gating/money-path) — assembles the bottom-sensor
-        # envelope for the US board (labels_v1 decision table, Amendment 1 Lane B0).
+        # envelope for the US board (labels_v2 decision table, Amendment 1 Lane B0).
         # Reads site/factordata/signal_gate.json + us_standouts.json (written by
         # build_site above) and optional price/earnings/oracle stores.
         # Writes data/neuralweb/bottom_sensors.parquet + site/neuralwebdata/bottom_sensors.json.

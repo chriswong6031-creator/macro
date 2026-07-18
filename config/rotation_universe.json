@@ -1,0 +1,47 @@
+{
+  "version": "2.0",
+  "region": "us",
+  "data_subdir": "rotation_events",
+  "registered": "2026-07-18",
+  "prereg": "research/ROTATION_UNIVERSE_EXTENSION_PREREG.md",
+  "bench": {"key": "spy", "kind": "etf", "ticker": "SPY"},
+  "series": [
+    {"key": "xlk", "kind": "etf", "ticker": "XLK", "label_en": "Technology", "label_zh": "科技", "sector": "xlk"},
+    {"key": "xlv", "kind": "etf", "ticker": "XLV", "label_en": "Health Care", "label_zh": "医疗保健", "sector": "xlv"},
+    {"key": "xlf", "kind": "etf", "ticker": "XLF", "label_en": "Financials", "label_zh": "金融", "sector": "xlf"},
+    {"key": "xlp", "kind": "etf", "ticker": "XLP", "label_en": "Consumer Staples", "label_zh": "必需消费", "sector": "xlp"},
+    {"key": "xlu", "kind": "etf", "ticker": "XLU", "label_en": "Utilities", "label_zh": "公用事业", "sector": "xlu"},
+    {"key": "xlc", "kind": "etf", "ticker": "XLC", "label_en": "Communication Services", "label_zh": "通信服务", "sector": "xlc"},
+    {"key": "xle", "kind": "etf", "ticker": "XLE", "label_en": "Energy", "label_zh": "能源", "sector": "xle"},
+    {"key": "smh", "kind": "etf", "ticker": "SMH", "label_en": "Semiconductors", "label_zh": "半导体", "sector": "xlk"},
+    {"key": "igv", "kind": "etf", "ticker": "IGV", "label_en": "Software", "label_zh": "软件", "sector": "xlk"},
+    {"key": "mag7_basket", "kind": "basket_composite", "basket": "mag7", "label_en": "Mag-7 basket", "label_zh": "七巨头篮子", "sector": "xlk"},
+    {"key": "ai_semis_basket", "kind": "basket_composite", "basket": "ai_semiconductors", "label_en": "AI semiconductors", "label_zh": "AI芯片", "sector": "xlk"},
+    {"key": "big_pharma_basket", "kind": "basket_composite", "basket": "big_pharma", "label_en": "Big pharma", "label_zh": "大型制药", "sector": "xlv"}
+  ],
+  "pairs": [
+    {"id": "xlk->xlv", "donor": "xlk", "receiver": "xlv", "tier": "primary"},
+    {"id": "smh->xlv", "donor": "smh", "receiver": "xlv", "tier": "primary"},
+    {"id": "mag7_basket->xlv", "donor": "mag7_basket", "receiver": "xlv", "tier": "primary"},
+    {"id": "xlk->xlp", "donor": "xlk", "receiver": "xlp", "tier": "secondary"},
+    {"id": "xlk->xlu", "donor": "xlk", "receiver": "xlu", "tier": "secondary"},
+    {"id": "smh->xlf", "donor": "smh", "receiver": "xlf", "tier": "secondary"},
+    {"id": "xlk->xlf", "donor": "xlk", "receiver": "xlf", "tier": "secondary"}
+  ],
+  "complexes": [
+    {
+      "key": "xlk_complex",
+      "label_en": "Tech complex",
+      "label_zh": "科技综合体",
+      "members": ["xlk", "smh", "igv", "mag7_basket", "ai_semis_basket"],
+      "attribution_members": ["mag7_basket", "smh", "igv", "ai_semis_basket"],
+      "attribution_probes": ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
+    }
+  ],
+  "contagion_pairs": [
+    {"id": "smh~mag7_basket", "a": "smh", "b": "mag7_basket", "complex": "xlk_complex"},
+    {"id": "smh~igv", "a": "smh", "b": "igv", "complex": "xlk_complex"},
+    {"id": "xlk~smh", "a": "xlk", "b": "smh", "complex": "xlk_complex"}
+  ],
+  "velocity_series": ["xlk", "xlv", "xlf", "xlp", "xlu", "xlc", "xle", "smh", "igv", "mag7_basket"]
+}

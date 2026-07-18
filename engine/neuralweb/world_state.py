@@ -756,7 +756,7 @@ def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
         for evt in shown:
             if not isinstance(evt, dict):
                 continue
-            events_out.append({
+            row: dict = {
                 "sector": _clean(evt.get("sector")),
                 "from_leg": _leg_compact(evt.get("from_leg")),
                 "to_leg": _leg_compact(evt.get("to_leg")),
@@ -764,10 +764,52 @@ def _compose_rotation_events(root: "Path | str | None" = None) -> dict:
                 "day_n": _clean(evt.get("day_n")),
                 "started": _clean(evt.get("started")),
                 "confirmed_tonight": _clean(evt.get("confirmed_tonight")),
-            })
+            }
+            # v2 additive fields — null-safe; v1 payloads that lack them compose
+            # identically (the keys are simply absent from the row).
+            _event_type = evt.get("event_type")
+            if _event_type is not None:
+                row["event_type"] = _clean(_event_type)
+            _to_sector = evt.get("to_sector")
+            if _to_sector is not None:
+                row["to_sector"] = _clean(_to_sector)
+            _from_sector = evt.get("from_sector")
+            if _from_sector is not None:
+                row["from_sector"] = _clean(_from_sector)
+            _sev_eff = evt.get("severity_effective")
+            if _sev_eff is not None:
+                row["severity_effective"] = _clean(_sev_eff)
+            _health = evt.get("health")
+            if isinstance(_health, dict):
+                # Pass through health.state only — compact; lobe consumers can
+                # use it for context without carrying the full health object.
+                _hstate = _health.get("state")
+                if _hstate is not None:
+                    row["health_state"] = _clean(_hstate)
+            events_out.append(row)
 
         out["events"] = events_out if events_out else None
         out["n_truncated"] = _clean(n_truncated)
+
+        # v2 top-level: compact contagion summary (n_breaks + up to 2 breaks)
+        _contagion_list = payload.get("contagion")
+        if isinstance(_contagion_list, list) and _contagion_list:
+            _breaks = [c for c in _contagion_list if isinstance(c, dict)]
+            _n_breaks = len(_breaks)
+            _break_rows: list[dict] = []
+            for _cb in _breaks[:2]:
+                _br: dict = {}
+                if _cb.get("complex") is not None:
+                    _br["complex"] = _clean(_cb.get("complex"))
+                if _cb.get("corr10_raw") is not None:
+                    _br["corr10_raw"] = _clean(_cb.get("corr10_raw"))
+                if _cb.get("root_cause") and isinstance(_cb["root_cause"], dict):
+                    _br["leader"] = _clean(_cb["root_cause"].get("leader"))
+                _break_rows.append(_br)
+            out["contagion_summary"] = {
+                "n_breaks": _clean(_n_breaks),
+                "breaks": _break_rows,
+            }
 
         # Ruler passthrough — modern-era census summary if present
         ruler = payload.get("ruler")
@@ -1387,7 +1429,20 @@ def _compose_rates_transmission(root: "Path | str | None" = None) -> dict:
             },
         }
 
-        return _display_only({
+        # Additive pass-through: changes + dollar_channel_dir (Task 4 FX-TX program)
+        # All fail-open: missing keys → omit or None.
+        changes_raw = raw.get("changes") or {}
+        changes_items_raw = changes_raw.get("items") or []
+        changes_compact = [
+            {"key": item.get("key"), "en": item.get("en")}
+            for item in changes_items_raw[:6]
+            if isinstance(item, dict)
+        ]
+        changes_vs = changes_raw.get("vs_asof")
+        dollar_channel_dir = (raw.get("dollar_channel") or {}).get("usd_dir") \
+            if isinstance(raw.get("dollar_channel"), dict) else None
+
+        out = {
             "asof": _clean(raw.get("asof")),
             "scored_status": _clean(raw.get("scored_status")),
             "calibrated": _clean(raw.get("calibrated")),
@@ -1396,7 +1451,15 @@ def _compose_rates_transmission(root: "Path | str | None" = None) -> dict:
             "tailwinds": _hw_tw(raw.get("tailwinds") or []),
             "yield_curve": yc,
             "yield_curve_source": "transmission",
-        })
+        }
+        if changes_compact:
+            out["changes"] = changes_compact
+        if changes_vs is not None:
+            out["changes_vs"] = changes_vs
+        if dollar_channel_dir is not None:
+            out["dollar_channel_dir"] = dollar_channel_dir
+
+        return _display_only(out)
     except Exception as exc:  # noqa: BLE001
         log.warning("rates_transmission: compose failed — %s", exc)
         return null_out

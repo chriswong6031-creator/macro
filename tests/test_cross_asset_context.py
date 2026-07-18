@@ -595,10 +595,30 @@ def test_block_cross_asset_context_delta_lines(tmp_path: Path) -> None:
     assert result.get("display_only") is True
     lines = result.get("delta_lines") or []
     assert len(lines) >= 1, f"Expected at least 1 delta line, got: {lines}"
-    # First line should mention USD and an ISO since-date (format: "since YYYY-MM-DD")
-    first = lines[0]
-    assert "USD" in first or "usd" in first.lower(), f"Expected USD mention, got: {first!r}"
-    assert "since" in first, f"Expected 'since <date>' in USD streak line, got: {first!r}"
+    # Reconcile #2845: USD trend/regime narration moved to the fx_dollar block;
+    # this block now carries commodity lines + per-pair streak lines.
+    # With no pairs in the fixture the commodity line is first; verify it
+    # mentions the regime and a since-date.
+    all_text = " ".join(lines)
+    assert "since" in all_text, f"Expected 'since <date>' in delta lines, got: {lines}"
+    # At least one commodity line present when commodity lobe present
+    assert any("Commodities" in ln or "commodity" in ln.lower() for ln in lines), (
+        f"Expected commodity line in delta_lines: {lines}"
+    )
+    # Per-pair streak lines: verify with fixture that has pairs
+    ws_with_pairs = _make_ws_with_lobes()
+    ws_with_pairs["fx_dollar"]["pairs"] = [
+        {"pair": "USD/JPY", "action": "SHORT", "score": -0.7},
+    ]
+    ws_with_pairs["fx_dollar"]["deltas"]["fx_usdjpy_action"] = {
+        "value": "SHORT", "prev": "FLAT", "since": "2026-07-05", "days_in_state": 5,
+    }
+    result2 = _block_cross_asset_context(ws_with_pairs)
+    assert result2 is not None
+    lines2 = result2.get("delta_lines") or []
+    all_text2 = " ".join(lines2)
+    assert "USD/JPY" in all_text2, f"Expected pair streak line, got: {lines2}"
+    assert "SHORT" in all_text2, f"Expected pair action in streak line, got: {lines2}"
 
 
 def test_block_cross_asset_context_returns_none_when_ws_none() -> None:

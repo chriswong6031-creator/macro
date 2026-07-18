@@ -39,6 +39,7 @@ Drop order for macro_slice (lowest priority first):
    5. factor_weather
    4. cross_asset_flows
    3. liquidity_plumbing
+   2b. fx_dollar  (FX/dollar transmission context; absent = drops cleanly)
    2. contradictions
    1c. global_regimes
    1b. contagion  (CSP-W1; absent = drops cleanly)
@@ -77,6 +78,7 @@ _SLA_HOURS: dict[str, float] = {
     "causal_lab_state":         36.0,
     "cortex_memo":              30.0,
     "mastermind_context":       30.0,
+    "fx_dollar":                30.0,
 }
 
 _DEFAULT_SLA_HOURS: float = 30.0
@@ -702,11 +704,14 @@ def _block_contagion(ws: dict | None) -> dict | None:
 
 
 def _block_cross_asset_context(ws: dict | None) -> dict | None:
-    """Block 13: FX + commodity delta context from world_state lobes (display-tier).
+    """Block 13: commodity context + FX per-pair streaks (display-tier).
 
-    Returns a compact block with 2-4 plain-text delta lines derived from the
-    fx_dollar and commodity_context lobes written by _compose_fx_dollar /
-    _compose_commodity_context in world_state.py.
+    Slimmed (reconcile with #2845): USD trend/regime narration is now covered
+    by the fx_dollar block (_block_fx_dollar).  This block carries:
+      (a) commodity lines — regime + since date, shock state, breadth bucket
+      (b) FX per-pair model-lean streak lines  (e.g. "USD/JPY lean SHORT since 2026-07-05")
+          sourced from fx_dollar.deltas  fx_{pair}_action entries
+      (c) copper/gold and gold/silver ratio directions
 
     Article-2 compliant: annotates, never ranks, gates, or escalates.
     display_only=True always.  Returns None when fully absent (drops cleanly
@@ -725,22 +730,28 @@ def _block_cross_asset_context(ws: dict | None) -> dict | None:
     # Build compact delta lines (plain text for LLM context)
     delta_lines: list[str] = []
 
-    # FX: USD trend streak + regime since
+    # FX: per-pair model-lean streak lines sourced from ledger deltas.
+    # Keys in deltas are "fx_{pair}_action" (e.g. "fx_usdjpy_action"); the
+    # pairs list in fx_ws carries the action labels.  Combine them so each
+    # line reads: "{PAIR} lean {ACTION} since {since}".
     fx_deltas = fx_ws.get("deltas") or {}
-    usd_regime = fx_ws.get("regime")
-    usd_trend_entry = fx_deltas.get("usd_trend") or {}
-    usd_trend_days = usd_trend_entry.get("days_in_state")
-    regime_entry = fx_deltas.get("usd_regime") or {}
-    regime_since = regime_entry.get("since")
-
-    if usd_regime and usd_trend_days is not None:
-        delta_lines.append(
-            f"USD {(fx_ws.get('dollar_desk') or {}).get('trend', 'trend unknown')}, "
-            f"since {usd_trend_entry.get('since', '?')}; regime '{usd_regime}'"
-            + (f" since {regime_since}" if regime_since else "")
-        )
-    elif usd_regime:
-        delta_lines.append(f"FX regime: {usd_regime}")
+    fx_pairs = fx_ws.get("pairs") or []  # list of {pair, action, score}
+    if isinstance(fx_pairs, list):
+        for pair_entry in fx_pairs[:5]:
+            if not isinstance(pair_entry, dict):
+                continue
+            pair_label = pair_entry.get("pair") or ""
+            action = pair_entry.get("action")
+            if not pair_label or not action:
+                continue
+            # Derive the ledger key: "fx_eurusd_action" etc
+            pair_slug = pair_label.lower().replace("/", "").replace("-", "")
+            delta_entry = fx_deltas.get(f"fx_{pair_slug}_action") or {}
+            since_date = delta_entry.get("since")
+            line = f"{pair_label} lean {action}"
+            if since_date:
+                line += f" since {since_date}"
+            delta_lines.append(line)
 
     # Commodity: regime, shock state + days, breadth bucket
     cc_regime = cc_ws.get("regime")
@@ -796,6 +807,64 @@ def _block_cross_asset_context(ws: dict | None) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# FX Dollar context block (reads world_state.fx_dollar)
+# ---------------------------------------------------------------------------
+
+def _block_fx_dollar(ws: dict | None) -> dict | None:
+    """Block fx_dollar: FX/dollar transmission context from world_state.fx_dollar.
+
+    Budget: ~0.5 KB.  Returns None when the block is entirely null/degraded so
+    it drops cleanly from the macro_slice.
+
+    Deterministic numeric text only — engine-computed fields re-projected to
+    the AI context plane.  No LLM-originated content.  Mirrors _block_contagion
+    in style (CSP-W1 pattern).
+
+    honesty_note: "context only — measured correlations, not a trade signal"
+    """
+    if ws is None:
+        return None
+    fx = ws.get("fx_dollar")
+    if not fx or not isinstance(fx, dict):
+        return None
+
+    tx   = (fx.get("transmission") or {}) if isinstance(fx.get("transmission"), dict) else {}
+    dd   = (fx.get("dollar_desk") or {}) if isinstance(fx.get("dollar_desk"), dict) else {}
+    rr   = (fx.get("regime_radar") or {}) if isinstance(fx.get("regime_radar"), dict) else {}
+
+    usd_dir        = tx.get("usd_dir")
+    lean           = dd.get("lean")
+    real_rate_reg  = dd.get("real_rate_regime")
+    liquidity_dir  = dd.get("liquidity_dir")
+    headwind_for   = (tx.get("headwind_for") or [])[:4]
+    tailwind_for   = (tx.get("tailwind_for") or [])[:4]
+    fx_stress_dom  = rr.get("dominant")
+    asof           = fx.get("asof")
+
+    # Drop when all key fields are null/absent
+    if all(v is None for v in [usd_dir, lean, real_rate_reg, liquidity_dir, fx_stress_dom]) \
+            and not headwind_for and not tailwind_for:
+        return None
+
+    return {
+        "display_only":        True,
+        "is_context_only":     True,
+        "_tape_family":        "fx_dollar",
+        "_lead_lag":           "coincident",
+        "as_of":               asof,
+        "stale":               _is_stale(asof, "fx_dollar"),
+        "usd_dir":             usd_dir,
+        "lean":                lean,
+        "real_rate_regime":    real_rate_reg,
+        "liquidity_dir":       liquidity_dir,
+        "headwind_for":        headwind_for,
+        "tailwind_for":        tailwind_for,
+        "fx_stress_dominant":  fx_stress_dom,
+        "honesty_note":        "context only — measured correlations, not a trade signal",
+    }
+
+
+# ---------------------------------------------------------------------------
 # macro_slice
 # ---------------------------------------------------------------------------
 
@@ -812,6 +881,7 @@ _MACRO_DROP_ORDER = [
     "factor_weather",    # 6
     "cross_asset_flows", # 3
     "liquidity_plumbing",# 4
+    "fx_dollar",         # 2b — FX/dollar transmission context block
     "contradictions",    # 2
     "global_regimes",    # 5
     "contagion",         # 1c — CSP-W1 context block
@@ -895,6 +965,10 @@ def _build_macro_slice(root: Path) -> dict:
     _ca_ctx = _block_cross_asset_context(ws)
     if _ca_ctx is not None:
         result["cross_asset_context"] = _ca_ctx
+    # FX/dollar transmission context block — None when null/degraded, drops cleanly
+    _fx_dollar = _block_fx_dollar(ws)
+    if _fx_dollar is not None:
+        result["fx_dollar"]     = _fx_dollar
 
     # Enforce budget
     _enforce_budget(result, _MACRO_CAP, _MACRO_DROP_ORDER)
