@@ -1521,7 +1521,12 @@ jobs:
           set +e
           python -m scripts.build_spine_index > "$RUNNER_TEMP/spine_index.log" 2>&1; rc=$?
           cat "$RUNNER_TEMP/spine_index.log"
-          if [ "$rc" -ne 0 ]; then echo "::warning title=build_spine_index::rc=$rc (non-fatal)"; fi
+          # ::error:: (not ::warning::) so a spine build failure is LOUD — it stays
+          # non-fatal (exit 0, last-committed-brains philosophy) but must never go
+          # silent again: a frozen spine cascades to the whole NW layer (kernel /
+          # confluence / cortex / half-life) rebuilding from stale data. (2026-07-07
+          # freeze went unnoticed 11 days behind a ::warning::.)
+          if [ "$rc" -ne 0 ]; then echo "::error title=build_spine_index::rc=$rc — SPINE FROZEN (non-fatal); downstream neural-web rebuilds from stale spine_index until fixed"; fi
           exit 0
       - name: build reliability kernel estimates (neural-web W3)
         # Reliability kernel estimates: (engine × regime × horizon) cells over the spine
