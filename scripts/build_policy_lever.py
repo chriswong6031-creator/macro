@@ -34,6 +34,9 @@ Artifact schema (Policy-Shock W2-F, masterplan §4):
           "arming": dict | None,   # technical_arming block from engine/commodity_signals.py
           "watch": str,            # unsigned qualitative EN
           "watch_zh": str,
+          "copy_as_of": str,       # YYYY-MM-DD date this caption was last reviewed
+          "copy_age_days": int,    # calendar days since copy_as_of (live-computed)
+          "copy_stale": bool,      # True when copy_age_days > _CAPTION_STALE_DAYS
         }
       ],
       "state": "QUIET" | "ELEVATED" | "ARMED",
@@ -58,7 +61,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -81,6 +84,8 @@ _DRAWDOWN_ZSCORE_WINDOW_D = 252      # history for z-score normalisation
 _JAWBONE_7D_WINDOW = 7
 _JAWBONE_30D_WINDOW = 30
 _LAST_ALERT_SUMMARY_LEN = 140
+_CAPTION_AS_OF = "2026-07-18"       # bump when you edit a lever watch caption
+_CAPTION_STALE_DAYS = 60            # dialog shows "review due" past this age
 
 
 # ---------------------------------------------------------------------------
@@ -416,17 +421,16 @@ def _build_levers(oil_arming: dict | None) -> list[dict]:
             "asset": "CL=F",
             "arming": oil_arming,
             "watch": (
-                "Re-escalation risk restated by 2026-07-08 strike developments; "
-                "oil is the transmission lever to rate-cut repricing. "
-                "A rapid CL=F spike would widen breakevens and reprice fed-funds futures, "
-                "reversing the conditions that have supported the semis recovery."
+                "Middle East escalation is the transmission channel to rate-cut repricing, "
+                "with oil as the lever. A rapid CL=F spike would widen breakevens and reprice "
+                "fed-funds futures, reversing the conditions that have supported the semis recovery."
             ),
             "watch_zh": (
-                "2026年7月8日打击事件重申了再升级风险；"
-                "石油是向降息重定价传导的核心杠杆。"
+                "中东局势升级是向降息重定价传导的通道，石油是核心杠杆。"
                 "CL=F快速飙升将扩大盈亏平衡通胀预期并重定价联邦基金期货，"
                 "逆转支撑半导体复苏的现有条件。"
             ),
+            "copy_as_of": _CAPTION_AS_OF,
         },
         {
             "name": "China / tariffs",
@@ -434,15 +438,15 @@ def _build_levers(oil_arming: dict | None) -> list[dict]:
             "asset": None,
             "arming": None,
             "watch": (
-                "Tariff truce fragility: any rollback of the 90-day pause or "
-                "re-escalation in export controls would directly compress the "
-                "semis supply chain margins that are priced into the current recovery."
+                "US-China trade friction is the policy channel most directly tied to semis "
+                "supply-chain margins: an escalation in tariffs or export controls would compress "
+                "the margins priced into the current recovery."
             ),
             "watch_zh": (
-                "关税休战的脆弱性：90天暂停期内任何回退"
-                "或出口管制再升级，将直接压缩已计入当前复苏预期的"
-                "半导体供应链利润率。"
+                "中美贸易摩擦是与半导体供应链利润率关联最直接的政策渠道："
+                "关税或出口管制的任何升级，都会压缩已计入当前复苏预期的利润率。"
             ),
+            "copy_as_of": _CAPTION_AS_OF,
         },
     ]
 
@@ -491,6 +495,19 @@ def build() -> dict:
 
     # 5. levers
     levers = _build_levers(oil_arming)
+
+    # 5a. stamp copy_age_days / copy_stale on each lever that has copy_as_of
+    _today_utc = datetime.now(timezone.utc).date()
+    for _lv in levers:
+        _cao = _lv.get("copy_as_of")
+        if not _cao:
+            continue
+        try:
+            _age = max(0, (_today_utc - date.fromisoformat(_cao)).days)
+            _lv["copy_age_days"] = _age
+            _lv["copy_stale"] = _age > _CAPTION_STALE_DAYS
+        except Exception:  # noqa: BLE001 — never raises
+            pass
 
     # 6. state
     state = _compute_state(fc.get("drawdown_pct"), levers)
