@@ -1,48 +1,48 @@
 {
   "DECLINE": {
-    "n": 7062,
+    "n": 7080,
     "hit_pct": 52.6,
     "avg_fwd_pct": 1.72,
-    "dd_med_pct": -4.48,
-    "dd_p10_pct": -14.71,
+    "dd_med_pct": -4.49,
+    "dd_p10_pct": -14.69,
     "dd_bad_pct": 21.4
   },
   "BOTTOM WATCH": {
-    "n": 3517,
-    "hit_pct": 44.8,
-    "avg_fwd_pct": 1.66,
+    "n": 3524,
+    "hit_pct": 44.7,
+    "avg_fwd_pct": 1.65,
     "dd_med_pct": -3.56,
-    "dd_p10_pct": -14.4,
+    "dd_p10_pct": -14.42,
     "dd_bad_pct": 19.4
   },
   "TURN SIGNALED": {
-    "n": 11315,
+    "n": 11327,
     "hit_pct": 48.5,
     "avg_fwd_pct": 1.27,
     "dd_med_pct": -4.52,
-    "dd_p10_pct": -14.73,
+    "dd_p10_pct": -14.74,
     "dd_bad_pct": 21.5
   },
   "FRESH BUY": {
     "n": 2367,
-    "hit_pct": 52.3,
+    "hit_pct": 52.4,
     "avg_fwd_pct": 2.16,
-    "dd_med_pct": -4.43,
-    "dd_p10_pct": -13.7,
-    "dd_bad_pct": 19.3
+    "dd_med_pct": -4.44,
+    "dd_p10_pct": -13.74,
+    "dd_bad_pct": 19.4
   },
   "RALLY ON": {
-    "n": 2381,
+    "n": 2380,
     "hit_pct": 50.9,
-    "avg_fwd_pct": 1.58,
-    "dd_med_pct": -4.27,
-    "dd_p10_pct": -14.24,
+    "avg_fwd_pct": 1.59,
+    "dd_med_pct": -4.26,
+    "dd_p10_pct": -14.23,
     "dd_bad_pct": 20.8
   },
   "TOP WATCH": {
     "n": 6378,
     "hit_pct": 51.3,
-    "avg_fwd_pct": 2.59,
+    "avg_fwd_pct": 2.6,
     "dd_med_pct": -4.92,
     "dd_p10_pct": -15.69,
     "dd_bad_pct": 24.5
@@ -53,28 +53,28 @@
     "avg_fwd_pct": 0.47,
     "dd_med_pct": -4.53,
     "dd_p10_pct": -13.52,
-    "dd_bad_pct": 19.6
+    "dd_bad_pct": 19.2
   },
   "COUNTERTREND BOUNCE": {
-    "n": 10904,
-    "hit_pct": 51.7,
-    "avg_fwd_pct": 1.32,
+    "n": 10919,
+    "hit_pct": 51.6,
+    "avg_fwd_pct": 1.31,
     "dd_med_pct": -4.22,
-    "dd_p10_pct": -15.01,
-    "dd_bad_pct": 21.3
+    "dd_p10_pct": -15.0,
+    "dd_bad_pct": 21.4
   },
   "BOTTOM WATCH +early-bull": {
-    "n": 132,
-    "hit_pct": 48.5,
-    "avg_fwd_pct": 1.8,
-    "dd_med_pct": -2.16,
-    "dd_p10_pct": -13.52,
-    "dd_bad_pct": 20.5
+    "n": 133,
+    "hit_pct": 48.1,
+    "avg_fwd_pct": 1.53,
+    "dd_med_pct": -2.26,
+    "dd_p10_pct": -13.62,
+    "dd_bad_pct": 21.1
   },
   "BOTTOM WATCH no-early": {
-    "n": 3385,
+    "n": 3391,
     "hit_pct": 44.6,
-    "avg_fwd_pct": 1.66,
+    "avg_fwd_pct": 1.65,
     "dd_med_pct": -3.59,
     "dd_p10_pct": -14.42,
     "dd_bad_pct": 19.3

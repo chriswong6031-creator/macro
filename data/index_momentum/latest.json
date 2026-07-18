@@ -1,6 +1,6 @@
 {
   "organ": "index_momentum.v1",
-  "as_of": "2026-07-17",
+  "as_of": "2026-07-18",
   "data_as_of": "2026-07-17",
   "authority": {
     "rank": false,
@@ -1642,5 +1642,5 @@
     ]
   },
   "n_roster": 13,
-  "_timing_s": 2.34
+  "_timing_s": 2.22
 }

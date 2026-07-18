@@ -1,62 +1,4334 @@
 {
+"AABA": {
+"cik": null,
+"method": "unresolved"
+},
+"AAMRQ": {
+"cik": null,
+"method": "unresolved"
+},
+"AAN": {
+"cik": null,
+"method": "unresolved"
+},
+"AAOI": {
+"cik": null,
+"method": "unresolved"
+},
+"AAWW": {
+"cik": 1135185,
+"method": "edgar_fts"
+},
+"ABC": {
+"cik": null,
+"method": "unresolved"
+},
+"ABI": {
+"cik": null,
+"method": "unresolved"
+},
+"ABKFQ": {
+"cik": null,
+"method": "unresolved"
+},
 "ABMD": {
 "cik": 815094,
 "method": "seed"
+},
+"ABS": {
+"cik": null,
+"method": "unresolved"
+},
+"ABTX": {
+"cik": null,
+"method": "unresolved"
+},
+"ABX": {
+"cik": null,
+"method": "unresolved"
+},
+"ACAS": {
+"cik": null,
+"method": "unresolved"
+},
+"ACC": {
+"cik": null,
+"method": "unresolved"
+},
+"ACKH": {
+"cik": null,
+"method": "unresolved"
+},
+"ACOR": {
+"cik": 1008848,
+"method": "edgar_fts"
+},
+"ACS": {
+"cik": null,
+"method": "unresolved"
+},
+"ACV": {
+"cik": null,
+"method": "unresolved"
+},
+"ADCT": {
+"cik": null,
+"method": "unresolved"
+},
+"ADS": {
+"cik": null,
+"method": "unresolved"
+},
+"ADTN": {
+"cik": null,
+"method": "unresolved"
+},
+"AEGN": {
+"cik": null,
+"method": "unresolved"
+},
+"AEL": {
+"cik": null,
+"method": "unresolved"
 },
 "AET": {
 "cik": 1122304,
 "method": "seed"
 },
+"AFS-A": {
+"cik": null,
+"method": "unresolved"
+},
+"AGC": {
+"cik": null,
+"method": "unresolved"
+},
+"AGN": {
+"cik": null,
+"method": "unresolved"
+},
+"AGP": {
+"cik": null,
+"method": "unresolved"
+},
+"AGTI": {
+"cik": 1749704,
+"method": "edgar_fts"
+},
+"AHL": {
+"cik": null,
+"method": "unresolved"
+},
+"AHM": {
+"cik": null,
+"method": "unresolved"
+},
+"AHRT": {
+"cik": null,
+"method": "unresolved"
+},
+"AINV": {
+"cik": null,
+"method": "unresolved"
+},
+"AIRC": {
+"cik": null,
+"method": "unresolved"
+},
+"AIV": {
+"cik": null,
+"method": "unresolved"
+},
+"AJRD": {
+"cik": null,
+"method": "unresolved"
+},
+"AKRX": {
+"cik": null,
+"method": "unresolved"
+},
+"AKS": {
+"cik": null,
+"method": "unresolved"
+},
+"AL": {
+"cik": null,
+"method": "unresolved"
+},
+"ALE": {
+"cik": null,
+"method": "unresolved"
+},
+"ALEX": {
+"cik": null,
+"method": "unresolved"
+},
+"ALTM": {
+"cik": null,
+"method": "unresolved"
+},
+"ALTR": {
+"cik": null,
+"method": "unresolved"
+},
+"ALXN": {
+"cik": 899866,
+"method": "edgar_fts"
+},
+"AMAG": {
+"cik": 792977,
+"method": "edgar_fts"
+},
+"AMBC": {
+"cik": null,
+"method": "unresolved"
+},
+"AMCC": {
+"cik": null,
+"method": "unresolved"
+},
+"AMCX": {
+"cik": 1514991,
+"method": "edgar_fts"
+},
+"AMED": {
+"cik": null,
+"method": "unresolved"
+},
+"AMWD": {
+"cik": 794619,
+"method": "edgar_fts"
+},
+"ANDV": {
+"cik": null,
+"method": "unresolved"
+},
+"ANDW": {
+"cik": 317093,
+"method": "edgar_fts"
+},
+"ANGI": {
+"cik": 1705110,
+"method": "edgar_fts"
+},
+"ANGO": {
+"cik": null,
+"method": "unresolved"
+},
+"ANR": {
+"cik": 1301063,
+"method": "edgar_fts"
+},
+"ANRZQ": {
+"cik": null,
+"method": "unresolved"
+},
+"ANSS": {
+"cik": 1013462,
+"method": "edgar_fts"
+},
 "ANTM": {
 "cik": 1156039,
 "method": "seed"
+},
+"ANV": {
+"cik": null,
+"method": "unresolved"
+},
+"AOL": {
+"cik": 1468516,
+"method": "edgar_fts"
+},
+"APC": {
+"cik": null,
+"method": "unresolved"
+},
+"APCC": {
+"cik": 835910,
+"method": "edgar_fts"
+},
+"APEI": {
+"cik": null,
+"method": "unresolved"
+},
+"APLS": {
+"cik": 1492422,
+"method": "edgar_fts"
+},
+"APOL": {
+"cik": null,
+"method": "unresolved"
+},
+"APPS": {
+"cik": null,
+"method": "unresolved"
+},
+"ARC": {
+"cik": null,
+"method": "unresolved"
+},
+"ARCH": {
+"cik": null,
+"method": "unresolved"
+},
+"ARG": {
+"cik": 804212,
+"method": "edgar_fts"
+},
+"ARNC": {
+"cik": null,
+"method": "unresolved"
+},
+"AS": {
+"cik": null,
+"method": "unresolved"
+},
+"ASC": {
+"cik": null,
+"method": "unresolved"
+},
+"ASGN": {
+"cik": null,
+"method": "unresolved"
+},
+"ASIX": {
+"cik": 1673985,
+"method": "edgar_fts"
+},
+"ASN": {
+"cik": null,
+"method": "unresolved"
+},
+"ASNA": {
+"cik": null,
+"method": "unresolved"
+},
+"ASND": {
+"cik": null,
+"method": "unresolved"
+},
+"AT": {
+"cik": null,
+"method": "unresolved"
+},
+"ATGE": {
+"cik": null,
+"method": "unresolved"
+},
+"ATML": {
+"cik": 872448,
+"method": "edgar_fts"
+},
+"ATNI": {
+"cik": 879585,
+"method": "edgar_fts"
 },
 "ATVI": {
 "cik": 718877,
 "method": "seed"
 },
+"ATW": {
+"cik": 8411,
+"method": "edgar_fts"
+},
+"AV": {
+"cik": null,
+"method": "unresolved"
+},
+"AVD": {
+"cik": 5981,
+"method": "edgar_fts"
+},
+"AVID": {
+"cik": null,
+"method": "unresolved"
+},
+"AVP": {
+"cik": null,
+"method": "unresolved"
+},
+"AVTA": {
+"cik": null,
+"method": "unresolved"
+},
+"AW": {
+"cik": null,
+"method": "unresolved"
+},
+"AWE": {
+"cik": null,
+"method": "unresolved"
+},
+"AXE": {
+"cik": null,
+"method": "unresolved"
+},
+"AYE": {
+"cik": null,
+"method": "unresolved"
+},
+"AZA-A": {
+"cik": null,
+"method": "unresolved"
+},
+"AZPN": {
+"cik": null,
+"method": "unresolved"
+},
+"B": {
+"cik": 1383094,
+"method": "edgar_fts"
+},
+"BAY": {
+"cik": null,
+"method": "unresolved"
+},
+"BBBY": {
+"cik": 886158,
+"method": "edgar_fts"
+},
+"BBG": {
+"cik": null,
+"method": "unresolved"
+},
+"BBI": {
+"cik": null,
+"method": "unresolved"
+},
+"BCR": {
+"cik": 9892,
+"method": "edgar_fts"
+},
+"BDK": {
+"cik": null,
+"method": "unresolved"
+},
+"BDN": {
+"cik": null,
+"method": "unresolved"
+},
+"BEAM": {
+"cik": null,
+"method": "unresolved"
+},
+"BEAT": {
+"cik": null,
+"method": "unresolved"
+},
+"BEAV": {
+"cik": null,
+"method": "unresolved"
+},
+"BELFB": {
+"cik": null,
+"method": "unresolved"
+},
+"BERY": {
+"cik": null,
+"method": "unresolved"
+},
+"BEV": {
+"cik": null,
+"method": "unresolved"
+},
+"BFI": {
+"cik": null,
+"method": "unresolved"
+},
+"BFO": {
+"cik": null,
+"method": "unresolved"
+},
+"BGEN": {
+"cik": 714655,
+"method": "edgar_fts"
+},
+"BGG": {
+"cik": 14195,
+"method": "edgar_fts"
+},
+"BGS": {
+"cik": 1278027,
+"method": "edgar_fts"
+},
+"BHGE": {
+"cik": null,
+"method": "unresolved"
+},
+"BHMSQ": {
+"cik": null,
+"method": "unresolved"
+},
+"BID": {
+"cik": null,
+"method": "unresolved"
+},
+"BIG": {
+"cik": null,
+"method": "unresolved"
+},
+"BIVV": {
+"cik": 1681689,
+"method": "edgar_fts"
+},
+"BJS": {
+"cik": null,
+"method": "unresolved"
+},
+"BK": {
+"cik": null,
+"method": "unresolved"
+},
+"BKB": {
+"cik": null,
+"method": "unresolved"
+},
+"BKS": {
+"cik": null,
+"method": "unresolved"
+},
+"BLL": {
+"cik": null,
+"method": "unresolved"
+},
+"BLMN": {
+"cik": 1546417,
+"method": "edgar_fts"
+},
+"BLS": {
+"cik": null,
+"method": "unresolved"
+},
+"BLY": {
+"cik": null,
+"method": "unresolved"
+},
+"BMC": {
+"cik": 835729,
+"method": "edgar_fts"
+},
+"BMET": {
+"cik": null,
+"method": "unresolved"
+},
+"BMGCA": {
+"cik": null,
+"method": "unresolved"
+},
+"BMR": {
+"cik": null,
+"method": "unresolved"
+},
+"BMS": {
+"cik": null,
+"method": "unresolved"
+},
+"BNED": {
+"cik": null,
+"method": "unresolved"
+},
+"BNI": {
+"cik": null,
+"method": "unresolved"
+},
+"BOAT": {
+"cik": null,
+"method": "unresolved"
+},
+"BOBE": {
+"cik": 33769,
+"method": "edgar_fts"
+},
+"BOL": {
+"cik": null,
+"method": "unresolved"
+},
+"BOOM": {
+"cik": 34067,
+"method": "edgar_fts"
+},
+"BPFH": {
+"cik": null,
+"method": "unresolved"
+},
+"BRCD": {
+"cik": 1009626,
+"method": "edgar_fts"
+},
+"BRCM": {
+"cik": 1054374,
+"method": "edgar_fts"
+},
+"BRE": {
+"cik": null,
+"method": "unresolved"
+},
+"BRKL": {
+"cik": 1049782,
+"method": "edgar_fts"
+},
+"BRKS": {
+"cik": null,
+"method": "unresolved"
+},
+"BRL": {
+"cik": null,
+"method": "unresolved"
+},
+"BSC": {
+"cik": null,
+"method": "unresolved"
+},
+"BT": {
+"cik": null,
+"method": "unresolved"
+},
+"BTUUQ": {
+"cik": null,
+"method": "unresolved"
+},
+"BUD": {
+"cik": null,
+"method": "unresolved"
+},
+"BVSN": {
+"cik": null,
+"method": "unresolved"
+},
+"BWLD": {
+"cik": 1062449,
+"method": "edgar_fts"
+},
+"BXLT": {
+"cik": null,
+"method": "unresolved"
+},
+"BYI": {
+"cik": null,
+"method": "unresolved"
+},
+"CA": {
+"cik": null,
+"method": "unresolved"
+},
+"CAA": {
+"cik": null,
+"method": "unresolved"
+},
+"CAB": {
+"cik": null,
+"method": "unresolved"
+},
+"CADE": {
+"cik": null,
+"method": "unresolved"
+},
+"CAL": {
+"cik": null,
+"method": "unresolved"
+},
+"CAM": {
+"cik": null,
+"method": "unresolved"
+},
+"CAMP": {
+"cik": 730255,
+"method": "edgar_fts"
+},
+"CARA": {
+"cik": null,
+"method": "unresolved"
+},
+"CARS": {
+"cik": null,
+"method": "unresolved"
+},
+"CATM": {
+"cik": null,
+"method": "unresolved"
+},
+"CATO": {
+"cik": 18255,
+"method": "edgar_fts"
+},
+"CBB": {
+"cik": null,
+"method": "unresolved"
+},
+"CBE": {
+"cik": null,
+"method": "unresolved"
+},
+"CBH": {
+"cik": null,
+"method": "unresolved"
+},
+"CBL": {
+"cik": null,
+"method": "unresolved"
+},
+"CBS": {
+"cik": null,
+"method": "unresolved"
+},
+"CBSS": {
+"cik": 18568,
+"method": "edgar_fts"
+},
+"CCB": {
+"cik": null,
+"method": "unresolved"
+},
+"CCE": {
+"cik": null,
+"method": "unresolved"
+},
+"CCEP": {
+"cik": null,
+"method": "unresolved"
+},
+"CCMP": {
+"cik": null,
+"method": "unresolved"
+},
+"CCP": {
+"cik": null,
+"method": "unresolved"
+},
+"CCRN": {
+"cik": null,
+"method": "unresolved"
+},
+"CCSI": {
+"cik": null,
+"method": "unresolved"
+},
+"CCTYQ": {
+"cik": null,
+"method": "unresolved"
+},
+"CCU": {
+"cik": null,
+"method": "unresolved"
+},
+"CDAY": {
+"cik": null,
+"method": "unresolved"
+},
+"CDK": {
+"cik": 1609702,
+"method": "edgar_fts"
+},
+"CDMO": {
+"cik": 1588972,
+"method": "edgar_fts"
+},
+"CDR": {
+"cik": null,
+"method": "unresolved"
+},
+"CEB": {
+"cik": null,
+"method": "unresolved"
+},
+"CELG": {
+"cik": null,
+"method": "unresolved"
+},
+"CEN": {
+"cik": null,
+"method": "unresolved"
+},
+"CEPH": {
+"cik": null,
+"method": "unresolved"
+},
 "CERN": {
 "cik": 804753,
 "method": "seed"
+},
+"CEVA": {
+"cik": 1173489,
+"method": "edgar_fts"
+},
+"CFC": {
+"cik": null,
+"method": "unresolved"
+},
+"CFL": {
+"cik": null,
+"method": "unresolved"
+},
+"CFN": {
+"cik": null,
+"method": "unresolved"
+},
+"CGP": {
+"cik": null,
+"method": "unresolved"
+},
+"CHA": {
+"cik": null,
+"method": "unresolved"
+},
+"CHCT": {
+"cik": 1631569,
+"method": "edgar_fts"
+},
+"CHFC": {
+"cik": null,
+"method": "unresolved"
+},
+"CHIR": {
+"cik": null,
+"method": "unresolved"
+},
+"CHK": {
+"cik": null,
+"method": "unresolved"
+},
+"CHRS": {
+"cik": null,
+"method": "unresolved"
+},
+"CHS": {
+"cik": null,
+"method": "unresolved"
+},
+"CHUY": {
+"cik": 1524931,
+"method": "edgar_fts"
+},
+"CHX": {
+"cik": null,
+"method": "unresolved"
+},
+"CIN": {
+"cik": null,
+"method": "unresolved"
+},
+"CIR": {
+"cik": null,
+"method": "unresolved"
+},
+"CIT": {
+"cik": null,
+"method": "unresolved"
+},
+"CIT-A": {
+"cik": null,
+"method": "unresolved"
+},
+"CITGQ": {
+"cik": null,
+"method": "unresolved"
+},
+"CIVI": {
+"cik": null,
+"method": "unresolved"
+},
+"CKH": {
+"cik": null,
+"method": "unresolved"
+},
+"CLC": {
+"cik": null,
+"method": "unresolved"
+},
+"CLDT": {
+"cik": null,
+"method": "unresolved"
+},
+"CLFD": {
+"cik": null,
+"method": "unresolved"
+},
+"CLGX": {
+"cik": null,
+"method": "unresolved"
+},
+"CLI": {
+"cik": null,
+"method": "unresolved"
+},
+"CLW": {
+"cik": null,
+"method": "unresolved"
+},
+"CMA": {
+"cik": null,
+"method": "unresolved"
+},
+"CMB": {
+"cik": null,
+"method": "unresolved"
+},
+"CMCSK": {
+"cik": null,
+"method": "unresolved"
+},
+"CMD": {
+"cik": null,
+"method": "unresolved"
+},
+"CMO": {
+"cik": null,
+"method": "unresolved"
+},
+"CMP": {
+"cik": null,
+"method": "unresolved"
+},
+"CMTL": {
+"cik": null,
+"method": "unresolved"
+},
+"CMVT": {
+"cik": null,
+"method": "unresolved"
+},
+"CMX": {
+"cik": null,
+"method": "unresolved"
+},
+"CNG": {
+"cik": null,
+"method": "unresolved"
+},
+"CNL": {
+"cik": null,
+"method": "unresolved"
+},
+"CNQR": {
+"cik": null,
+"method": "unresolved"
+},
+"CNSL": {
+"cik": null,
+"method": "unresolved"
+},
+"CNVR": {
+"cik": null,
+"method": "unresolved"
+},
+"CNW": {
+"cik": null,
+"method": "unresolved"
+},
+"CNXT": {
+"cik": null,
+"method": "unresolved"
+},
+"COC-B": {
+"cik": null,
+"method": "unresolved"
+},
+"COG": {
+"cik": null,
+"method": "unresolved"
+},
+"COL": {
+"cik": null,
+"method": "unresolved"
+},
+"COMS": {
+"cik": null,
+"method": "unresolved"
+},
+"CONE": {
+"cik": null,
+"method": "unresolved"
+},
+"CONN": {
+"cik": null,
+"method": "unresolved"
+},
+"COOP": {
+"cik": null,
+"method": "unresolved"
+},
+"CORE": {
+"cik": null,
+"method": "unresolved"
+},
+"COV": {
+"cik": null,
+"method": "unresolved"
+},
+"CPE": {
+"cik": null,
+"method": "unresolved"
+},
+"CPGX": {
+"cik": null,
+"method": "unresolved"
+},
+"CPNLQ": {
+"cik": null,
+"method": "unresolved"
+},
+"CPQ": {
+"cik": null,
+"method": "unresolved"
+},
+"CPS": {
+"cik": null,
+"method": "unresolved"
+},
+"CPSI": {
+"cik": null,
+"method": "unresolved"
+},
+"CPWR": {
+"cik": null,
+"method": "unresolved"
+},
+"CRCM": {
+"cik": null,
+"method": "unresolved"
+},
+"CRMT": {
+"cik": null,
+"method": "unresolved"
+},
+"CRNC": {
+"cik": null,
+"method": "unresolved"
+},
+"CRR": {
+"cik": null,
+"method": "unresolved"
+},
+"CRZO": {
+"cik": null,
+"method": "unresolved"
+},
+"CSC": {
+"cik": null,
+"method": "unresolved"
+},
+"CSE": {
+"cik": null,
+"method": "unresolved"
+},
+"CSGS": {
+"cik": null,
+"method": "unresolved"
+},
+"CSII": {
+"cik": null,
+"method": "unresolved"
+},
+"CSRA": {
+"cik": null,
+"method": "unresolved"
+},
+"CST": {
+"cik": null,
+"method": "unresolved"
+},
+"CTB": {
+"cik": null,
+"method": "unresolved"
 },
 "CTL": {
 "cik": 18926,
 "method": "seed"
 },
+"CTLT": {
+"cik": null,
+"method": "unresolved"
+},
+"CTRA": {
+"cik": null,
+"method": "unresolved"
+},
+"CTX": {
+"cik": null,
+"method": "unresolved"
+},
+"CTXS": {
+"cik": null,
+"method": "unresolved"
+},
+"CUB": {
+"cik": null,
+"method": "unresolved"
+},
+"CUTR": {
+"cik": null,
+"method": "unresolved"
+},
+"CVC": {
+"cik": null,
+"method": "unresolved"
+},
+"CVEO": {
+"cik": null,
+"method": "unresolved"
+},
+"CVET": {
+"cik": null,
+"method": "unresolved"
+},
+"CVG": {
+"cik": null,
+"method": "unresolved"
+},
+"CVGW": {
+"cik": null,
+"method": "unresolved"
+},
+"CVH": {
+"cik": null,
+"method": "unresolved"
+},
+"CXO": {
+"cik": null,
+"method": "unresolved"
+},
+"CY": {
+"cik": null,
+"method": "unresolved"
+},
+"CYH": {
+"cik": null,
+"method": "unresolved"
+},
+"CYM": {
+"cik": null,
+"method": "unresolved"
+},
+"CYN": {
+"cik": null,
+"method": "unresolved"
+},
+"CYR": {
+"cik": null,
+"method": "unresolved"
+},
+"CYT": {
+"cik": null,
+"method": "unresolved"
+},
+"DAKT": {
+"cik": null,
+"method": "unresolved"
+},
+"DALRQ": {
+"cik": null,
+"method": "unresolved"
+},
+"DAY": {
+"cik": null,
+"method": "unresolved"
+},
+"DBI": {
+"cik": null,
+"method": "unresolved"
+},
+"DCNAQ": {
+"cik": null,
+"method": "unresolved"
+},
+"DCT": {
+"cik": null,
+"method": "unresolved"
+},
+"DDD": {
+"cik": null,
+"method": "unresolved"
+},
+"DDR": {
+"cik": null,
+"method": "unresolved"
+},
+"DDS": {
+"cik": null,
+"method": "unresolved"
+},
+"DEC": {
+"cik": null,
+"method": "unresolved"
+},
+"DF": {
+"cik": null,
+"method": "unresolved"
+},
+"DFS": {
+"cik": null,
+"method": "unresolved"
+},
+"DGN": {
+"cik": null,
+"method": "unresolved"
+},
+"DHC": {
+"cik": null,
+"method": "unresolved"
+},
+"DI": {
+"cik": null,
+"method": "unresolved"
+},
+"DIGI": {
+"cik": null,
+"method": "unresolved"
+},
+"DIN": {
+"cik": null,
+"method": "unresolved"
+},
+"DISCA": {
+"cik": null,
+"method": "unresolved"
+},
+"DISCK": {
+"cik": null,
+"method": "unresolved"
+},
+"DISH": {
+"cik": null,
+"method": "unresolved"
+},
+"DJ": {
+"cik": null,
+"method": "unresolved"
+},
+"DLPH": {
+"cik": null,
+"method": "unresolved"
+},
+"DNB": {
+"cik": null,
+"method": "unresolved"
+},
+"DNKN": {
+"cik": null,
+"method": "unresolved"
+},
+"DNR": {
+"cik": null,
+"method": "unresolved"
+},
+"DO": {
+"cik": null,
+"method": "unresolved"
+},
+"DOUG": {
+"cik": null,
+"method": "unresolved"
+},
+"DPHIQ": {
+"cik": null,
+"method": "unresolved"
+},
+"DPLO": {
+"cik": null,
+"method": "unresolved"
+},
+"DRC": {
+"cik": null,
+"method": "unresolved"
+},
+"DRE": {
+"cik": null,
+"method": "unresolved"
+},
+"DRQ": {
+"cik": null,
+"method": "unresolved"
+},
+"DSPG": {
+"cik": null,
+"method": "unresolved"
+},
+"DST": {
+"cik": null,
+"method": "unresolved"
+},
+"DTV": {
+"cik": null,
+"method": "unresolved"
+},
+"DVAX": {
+"cik": null,
+"method": "unresolved"
+},
+"DWA": {
+"cik": null,
+"method": "unresolved"
+},
+"DWD": {
+"cik": null,
+"method": "unresolved"
+},
+"DWDP": {
+"cik": null,
+"method": "unresolved"
+},
+"DYN": {
+"cik": null,
+"method": "unresolved"
+},
+"EBIX": {
+"cik": null,
+"method": "unresolved"
+},
+"EBS": {
+"cik": null,
+"method": "unresolved"
+},
+"EC": {
+"cik": null,
+"method": "unresolved"
+},
+"ECH": {
+"cik": null,
+"method": "unresolved"
+},
+"ECHO": {
+"cik": null,
+"method": "unresolved"
+},
+"ECO": {
+"cik": null,
+"method": "unresolved"
+},
+"ECOL": {
+"cik": null,
+"method": "unresolved"
+},
+"EDR": {
+"cik": null,
+"method": "unresolved"
+},
+"EDS": {
+"cik": null,
+"method": "unresolved"
+},
+"EE": {
+"cik": null,
+"method": "unresolved"
+},
+"EFU": {
+"cik": null,
+"method": "unresolved"
+},
+"EGHT": {
+"cik": null,
+"method": "unresolved"
+},
+"EGOV": {
+"cik": null,
+"method": "unresolved"
+},
+"EGRX": {
+"cik": null,
+"method": "unresolved"
+},
+"EHAB": {
+"cik": null,
+"method": "unresolved"
+},
+"EHTH": {
+"cik": null,
+"method": "unresolved"
+},
+"EKDKQ": {
+"cik": null,
+"method": "unresolved"
+},
+"ELME": {
+"cik": null,
+"method": "unresolved"
+},
+"ELY": {
+"cik": null,
+"method": "unresolved"
+},
+"EMC": {
+"cik": null,
+"method": "unresolved"
+},
+"ENDP": {
+"cik": null,
+"method": "unresolved"
+},
+"ENH": {
+"cik": null,
+"method": "unresolved"
+},
+"ENRNQ": {
+"cik": null,
+"method": "unresolved"
+},
+"ENV": {
+"cik": null,
+"method": "unresolved"
+},
+"EOP": {
+"cik": null,
+"method": "unresolved"
+},
+"EP": {
+"cik": null,
+"method": "unresolved"
+},
+"EPAY": {
+"cik": null,
+"method": "unresolved"
+},
+"EQ": {
+"cik": null,
+"method": "unresolved"
+},
+"EQY": {
+"cik": null,
+"method": "unresolved"
+},
+"ESRX": {
+"cik": null,
+"method": "unresolved"
+},
+"ESV": {
+"cik": null,
+"method": "unresolved"
+},
 "ETFC": {
 "cik": 1015780,
 "method": "seed"
+},
+"ETRN": {
+"cik": null,
+"method": "unresolved"
+},
+"ETS": {
+"cik": null,
+"method": "unresolved"
+},
+"EV": {
+"cik": null,
+"method": "unresolved"
+},
+"EVHC": {
+"cik": null,
+"method": "unresolved"
+},
+"EXPI": {
+"cik": null,
+"method": "unresolved"
+},
+"EXPR": {
+"cik": null,
+"method": "unresolved"
+},
+"EXTN": {
+"cik": null,
+"method": "unresolved"
+},
+"FARO": {
+"cik": null,
+"method": "unresolved"
+},
+"FB": {
+"cik": null,
+"method": "unresolved"
+},
+"FBC": {
+"cik": null,
+"method": "unresolved"
+},
+"FBF": {
+"cik": null,
+"method": "unresolved"
+},
+"FBHS": {
+"cik": null,
+"method": "unresolved"
+},
+"FBM": {
+"cik": null,
+"method": "unresolved"
+},
+"FBO": {
+"cik": null,
+"method": "unresolved"
+},
+"FCS": {
+"cik": null,
+"method": "unresolved"
+},
+"FDC": {
+"cik": null,
+"method": "unresolved"
+},
+"FDO": {
+"cik": null,
+"method": "unresolved"
+},
+"FF": {
+"cik": null,
+"method": "unresolved"
+},
+"FI": {
+"cik": null,
+"method": "unresolved"
+},
+"FII": {
+"cik": null,
+"method": "unresolved"
+},
+"FJ": {
+"cik": null,
+"method": "unresolved"
+},
+"FL": {
+"cik": null,
+"method": "unresolved"
+},
+"FLGT": {
+"cik": null,
+"method": "unresolved"
 },
 "FLIR": {
 "cik": 354908,
 "method": "seed"
 },
+"FLMIQ": {
+"cik": null,
+"method": "unresolved"
+},
+"FLOW": {
+"cik": null,
+"method": "unresolved"
+},
+"FLT": {
+"cik": null,
+"method": "unresolved"
+},
+"FLTWQ": {
+"cik": null,
+"method": "unresolved"
+},
+"FMBI": {
+"cik": null,
+"method": "unresolved"
+},
+"FMCC": {
+"cik": null,
+"method": "unresolved"
+},
+"FMER": {
+"cik": null,
+"method": "unresolved"
+},
+"FMY": {
+"cik": null,
+"method": "unresolved"
+},
+"FNFG": {
+"cik": null,
+"method": "unresolved"
+},
+"FNMA": {
+"cik": null,
+"method": "unresolved"
+},
+"FOE": {
+"cik": null,
+"method": "unresolved"
+},
+"FORR": {
+"cik": null,
+"method": "unresolved"
+},
+"FOSL": {
+"cik": null,
+"method": "unresolved"
+},
+"FPC": {
+"cik": null,
+"method": "unresolved"
+},
+"FRC": {
+"cik": null,
+"method": "unresolved"
+},
+"FRGI": {
+"cik": null,
+"method": "unresolved"
+},
+"FRO": {
+"cik": null,
+"method": "unresolved"
+},
+"FRX": {
+"cik": null,
+"method": "unresolved"
+},
+"FSB": {
+"cik": null,
+"method": "unresolved"
+},
+"FSH": {
+"cik": null,
+"method": "unresolved"
+},
+"FSL": {
+"cik": null,
+"method": "unresolved"
+},
+"FSP": {
+"cik": null,
+"method": "unresolved"
+},
+"FST": {
+"cik": null,
+"method": "unresolved"
+},
+"FTL-A": {
+"cik": null,
+"method": "unresolved"
+},
+"FTR": {
+"cik": null,
+"method": "unresolved"
+},
+"FWLT": {
+"cik": null,
+"method": "unresolved"
+},
+"FYBR": {
+"cik": null,
+"method": "unresolved"
+},
+"GAPTQ": {
+"cik": null,
+"method": "unresolved"
+},
+"GAS": {
+"cik": null,
+"method": "unresolved"
+},
+"GCI": {
+"cik": null,
+"method": "unresolved"
+},
+"GCO": {
+"cik": null,
+"method": "unresolved"
+},
+"GCP": {
+"cik": null,
+"method": "unresolved"
+},
+"GDEN": {
+"cik": null,
+"method": "unresolved"
+},
+"GDI": {
+"cik": null,
+"method": "unresolved"
+},
+"GDOT": {
+"cik": null,
+"method": "unresolved"
+},
+"GDT": {
+"cik": null,
+"method": "unresolved"
+},
+"GDW": {
+"cik": null,
+"method": "unresolved"
+},
+"GEAR": {
+"cik": null,
+"method": "unresolved"
+},
+"GENZ": {
+"cik": null,
+"method": "unresolved"
+},
+"GEOS": {
+"cik": null,
+"method": "unresolved"
+},
+"GES": {
+"cik": null,
+"method": "unresolved"
+},
+"GFS-A": {
+"cik": null,
+"method": "unresolved"
+},
+"GGP": {
+"cik": null,
+"method": "unresolved"
+},
+"GHL": {
+"cik": null,
+"method": "unresolved"
+},
+"GIDL": {
+"cik": null,
+"method": "unresolved"
+},
+"GLD": {
+"cik": null,
+"method": "unresolved"
+},
+"GLK": {
+"cik": null,
+"method": "unresolved"
+},
+"GLT": {
+"cik": null,
+"method": "unresolved"
+},
+"GLUU": {
+"cik": null,
+"method": "unresolved"
+},
+"GMCR": {
+"cik": null,
+"method": "unresolved"
+},
+"GMS": {
+"cik": null,
+"method": "unresolved"
+},
+"GNT": {
+"cik": null,
+"method": "unresolved"
+},
+"GP": {
+"cik": null,
+"method": "unresolved"
+},
+"GPMT": {
+"cik": null,
+"method": "unresolved"
+},
+"GPOR": {
+"cik": null,
+"method": "unresolved"
+},
+"GPRE": {
+"cik": null,
+"method": "unresolved"
+},
+"GPRO": {
+"cik": null,
+"method": "unresolved"
+},
+"GPS": {
+"cik": null,
+"method": "unresolved"
+},
+"GPU": {
+"cik": null,
+"method": "unresolved"
+},
+"GR": {
+"cik": null,
+"method": "unresolved"
+},
+"GRA": {
+"cik": null,
+"method": "unresolved"
+},
+"GRN": {
+"cik": null,
+"method": "unresolved"
+},
+"GRUB": {
+"cik": null,
+"method": "unresolved"
+},
+"GSX": {
+"cik": null,
+"method": "unresolved"
+},
+"GTE": {
+"cik": null,
+"method": "unresolved"
+},
+"GTW": {
+"cik": null,
+"method": "unresolved"
+},
+"GTX": {
+"cik": null,
+"method": "unresolved"
+},
+"GWB": {
+"cik": null,
+"method": "unresolved"
+},
+"GWF": {
+"cik": null,
+"method": "unresolved"
+},
+"GWR": {
+"cik": null,
+"method": "unresolved"
+},
+"GX": {
+"cik": null,
+"method": "unresolved"
+},
+"GXP": {
+"cik": null,
+"method": "unresolved"
+},
+"HA": {
+"cik": null,
+"method": "unresolved"
+},
+"HAIN": {
+"cik": null,
+"method": "unresolved"
+},
+"HAR": {
+"cik": null,
+"method": "unresolved"
+},
+"HAYN": {
+"cik": null,
+"method": "unresolved"
+},
+"HBI": {
+"cik": null,
+"method": "unresolved"
+},
+"HBOC": {
+"cik": null,
+"method": "unresolved"
+},
+"HCBK": {
+"cik": null,
+"method": "unresolved"
+},
+"HCP": {
+"cik": null,
+"method": "unresolved"
+},
+"HCR": {
+"cik": null,
+"method": "unresolved"
+},
+"HDLM": {
+"cik": null,
+"method": "unresolved"
+},
+"HELE": {
+"cik": null,
+"method": "unresolved"
+},
+"HES": {
+"cik": null,
+"method": "unresolved"
+},
+"HET": {
+"cik": null,
+"method": "unresolved"
+},
+"HFC": {
+"cik": null,
+"method": "unresolved"
+},
+"HFS": {
+"cik": null,
+"method": "unresolved"
+},
+"HI": {
+"cik": null,
+"method": "unresolved"
+},
+"HIBB": {
+"cik": null,
+"method": "unresolved"
+},
+"HLS": {
+"cik": null,
+"method": "unresolved"
+},
+"HM": {
+"cik": null,
+"method": "unresolved"
+},
+"HMA": {
+"cik": null,
+"method": "unresolved"
+},
+"HMST": {
+"cik": null,
+"method": "unresolved"
+},
+"HMSY": {
+"cik": null,
+"method": "unresolved"
+},
+"HNGR": {
+"cik": null,
+"method": "unresolved"
+},
+"HNZ": {
+"cik": null,
+"method": "unresolved"
+},
+"HOLX": {
+"cik": null,
+"method": "unresolved"
+},
+"HOT": {
+"cik": null,
+"method": "unresolved"
+},
+"HOUS": {
+"cik": null,
+"method": "unresolved"
+},
+"HPC": {
+"cik": null,
+"method": "unresolved"
+},
+"HPH": {
+"cik": null,
+"method": "unresolved"
+},
+"HPP": {
+"cik": null,
+"method": "unresolved"
+},
+"HPR": {
+"cik": null,
+"method": "unresolved"
+},
+"HRC": {
+"cik": null,
+"method": "unresolved"
+},
+"HRS": {
+"cik": null,
+"method": "unresolved"
+},
+"HSH": {
+"cik": null,
+"method": "unresolved"
+},
+"HSII": {
+"cik": null,
+"method": "unresolved"
+},
+"HSKA": {
+"cik": null,
+"method": "unresolved"
+},
+"HSNI": {
+"cik": null,
+"method": "unresolved"
+},
+"HSP": {
+"cik": null,
+"method": "unresolved"
+},
+"HT": {
+"cik": null,
+"method": "unresolved"
+},
+"HTSI": {
+"cik": null,
+"method": "unresolved"
+},
+"HVT": {
+"cik": null,
+"method": "unresolved"
+},
+"I": {
+"cik": null,
+"method": "unresolved"
+},
+"IAA": {
+"cik": null,
+"method": "unresolved"
+},
+"IAC": {
+"cik": null,
+"method": "unresolved"
+},
+"IBTX": {
+"cik": null,
+"method": "unresolved"
+},
+"IDTI": {
+"cik": null,
+"method": "unresolved"
+},
+"IGT": {
+"cik": null,
+"method": "unresolved"
+},
+"IKN": {
+"cik": null,
+"method": "unresolved"
+},
+"ILG": {
+"cik": null,
+"method": "unresolved"
+},
+"ILPT": {
+"cik": null,
+"method": "unresolved"
+},
+"IMNX": {
+"cik": null,
+"method": "unresolved"
+},
+"INCLF": {
+"cik": null,
+"method": "unresolved"
+},
+"INFO": {
+"cik": null,
+"method": "unresolved"
+},
+"INGN": {
+"cik": null,
+"method": "unresolved"
+},
+"INN": {
+"cik": null,
+"method": "unresolved"
+},
+"INT": {
+"cik": null,
+"method": "unresolved"
+},
+"IPG": {
+"cik": null,
+"method": "unresolved"
+},
+"IPI": {
+"cik": null,
+"method": "unresolved"
+},
+"IRBT": {
+"cik": null,
+"method": "unresolved"
+},
+"IRWD": {
+"cik": null,
+"method": "unresolved"
+},
+"ISBC": {
+"cik": null,
+"method": "unresolved"
+},
+"ISCA": {
+"cik": null,
+"method": "unresolved"
+},
+"ISIL": {
+"cik": null,
+"method": "unresolved"
+},
+"ITOS": {
+"cik": null,
+"method": "unresolved"
+},
+"IVC": {
+"cik": null,
+"method": "unresolved"
+},
+"IVR": {
+"cik": null,
+"method": "unresolved"
+},
+"JACK": {
+"cik": null,
+"method": "unresolved"
+},
+"JAH": {
+"cik": null,
+"method": "unresolved"
+},
+"JAVA": {
+"cik": null,
+"method": "unresolved"
+},
+"JBT": {
+"cik": null,
+"method": "unresolved"
+},
+"JCP": {
+"cik": null,
+"method": "unresolved"
+},
+"JEC": {
+"cik": null,
+"method": "unresolved"
+},
+"JH": {
+"cik": null,
+"method": "unresolved"
+},
+"JHF": {
+"cik": null,
+"method": "unresolved"
+},
+"JNPR": {
+"cik": null,
+"method": "unresolved"
+},
+"JNS": {
+"cik": null,
+"method": "unresolved"
+},
+"JNY": {
+"cik": null,
+"method": "unresolved"
+},
+"JOS": {
+"cik": null,
+"method": "unresolved"
+},
+"JOY": {
+"cik": null,
+"method": "unresolved"
+},
+"JP": {
+"cik": null,
+"method": "unresolved"
+},
+"JRVR": {
+"cik": null,
+"method": "unresolved"
+},
+"JWN": {
+"cik": null,
+"method": "unresolved"
+},
+"JYNT": {
+"cik": null,
+"method": "unresolved"
+},
+"K": {
+"cik": null,
+"method": "unresolved"
+},
+"KAMN": {
+"cik": null,
+"method": "unresolved"
+},
+"KAR": {
+"cik": null,
+"method": "unresolved"
+},
+"KATE": {
+"cik": null,
+"method": "unresolved"
+},
+"KELYA": {
+"cik": null,
+"method": "unresolved"
+},
+"KG": {
+"cik": null,
+"method": "unresolved"
+},
+"KLG": {
+"cik": null,
+"method": "unresolved"
+},
+"KLXI": {
+"cik": null,
+"method": "unresolved"
+},
+"KM": {
+"cik": null,
+"method": "unresolved"
+},
+"KMG": {
+"cik": null,
+"method": "unresolved"
+},
+"KORS": {
+"cik": null,
+"method": "unresolved"
+},
+"KRA": {
+"cik": null,
+"method": "unresolved"
+},
+"KRB": {
+"cik": null,
+"method": "unresolved"
+},
+"KREF": {
+"cik": null,
+"method": "unresolved"
+},
+"KRFT": {
+"cik": null,
+"method": "unresolved"
+},
+"KRI": {
+"cik": null,
+"method": "unresolved"
+},
+"KSE": {
+"cik": null,
+"method": "unresolved"
+},
+"KSU": {
+"cik": null,
+"method": "unresolved"
+},
+"KWK": {
+"cik": null,
+"method": "unresolved"
+},
+"KWP": {
+"cik": null,
+"method": "unresolved"
+},
+"LB": {
+"cik": null,
+"method": "unresolved"
+},
+"LCI": {
+"cik": null,
+"method": "unresolved"
+},
+"LDG": {
+"cik": null,
+"method": "unresolved"
+},
+"LDL": {
+"cik": null,
+"method": "unresolved"
+},
+"LDW-B": {
+"cik": null,
+"method": "unresolved"
+},
+"LEHMQ": {
+"cik": null,
+"method": "unresolved"
+},
+"LESL": {
+"cik": null,
+"method": "unresolved"
+},
+"LHCG": {
+"cik": null,
+"method": "unresolved"
+},
+"LIFE": {
+"cik": null,
+"method": "unresolved"
+},
+"LL": {
+"cik": null,
+"method": "unresolved"
+},
+"LLL": {
+"cik": null,
+"method": "unresolved"
+},
+"LLTC": {
+"cik": null,
+"method": "unresolved"
+},
+"LLX": {
+"cik": null,
+"method": "unresolved"
+},
+"LM": {
+"cik": null,
+"method": "unresolved"
+},
+"LMNX": {
+"cik": null,
+"method": "unresolved"
+},
+"LNCE": {
+"cik": null,
+"method": "unresolved"
+},
+"LNCR": {
+"cik": null,
+"method": "unresolved"
+},
+"LNW": {
+"cik": null,
+"method": "unresolved"
+},
+"LO": {
+"cik": null,
+"method": "unresolved"
+},
+"LOCO": {
+"cik": null,
+"method": "unresolved"
+},
+"LOGM": {
+"cik": null,
+"method": "unresolved"
+},
+"LOR": {
+"cik": null,
+"method": "unresolved"
+},
+"LPNT": {
+"cik": null,
+"method": "unresolved"
+},
+"LPS": {
+"cik": null,
+"method": "unresolved"
+},
+"LPSN": {
+"cik": null,
+"method": "unresolved"
+},
+"LPT": {
+"cik": null,
+"method": "unresolved"
+},
+"LSI": {
+"cik": null,
+"method": "unresolved"
+},
+"LTHM": {
+"cik": null,
+"method": "unresolved"
+},
+"LTM": {
+"cik": null,
+"method": "unresolved"
+},
+"LU": {
+"cik": null,
+"method": "unresolved"
+},
+"LUB": {
+"cik": null,
+"method": "unresolved"
+},
+"LVLT": {
+"cik": null,
+"method": "unresolved"
+},
+"LXK": {
+"cik": null,
+"method": "unresolved"
+},
+"LXU": {
+"cik": null,
+"method": "unresolved"
+},
+"LYLT": {
+"cik": null,
+"method": "unresolved"
+},
+"MANT": {
+"cik": null,
+"method": "unresolved"
+},
+"MATV": {
+"cik": null,
+"method": "unresolved"
+},
+"MAY": {
+"cik": null,
+"method": "unresolved"
+},
+"MBFI": {
+"cik": null,
+"method": "unresolved"
+},
+"MBI": {
+"cik": null,
+"method": "unresolved"
+},
+"MCIC": {
+"cik": null,
+"method": "unresolved"
+},
+"MCRS": {
+"cik": null,
+"method": "unresolved"
+},
+"MCS": {
+"cik": null,
+"method": "unresolved"
+},
+"MCW": {
+"cik": null,
+"method": "unresolved"
+},
+"MDC": {
+"cik": null,
+"method": "unresolved"
+},
+"MDP": {
+"cik": null,
+"method": "unresolved"
+},
+"MDR": {
+"cik": null,
+"method": "unresolved"
+},
+"MDRX": {
+"cik": null,
+"method": "unresolved"
+},
+"MDSO": {
+"cik": null,
+"method": "unresolved"
+},
+"MEA": {
+"cik": null,
+"method": "unresolved"
+},
+"MED": {
+"cik": null,
+"method": "unresolved"
+},
+"MEDI": {
+"cik": null,
+"method": "unresolved"
+},
+"MEE": {
+"cik": null,
+"method": "unresolved"
+},
+"MEI": {
+"cik": null,
+"method": "unresolved"
+},
+"MEL": {
+"cik": null,
+"method": "unresolved"
+},
+"MENT": {
+"cik": null,
+"method": "unresolved"
+},
+"MER": {
+"cik": null,
+"method": "unresolved"
+},
+"MERC": {
+"cik": null,
+"method": "unresolved"
+},
+"MERQ": {
+"cik": null,
+"method": "unresolved"
+},
+"MFE": {
+"cik": null,
+"method": "unresolved"
+},
+"MGLN": {
+"cik": null,
+"method": "unresolved"
+},
+"MGPI": {
+"cik": null,
+"method": "unresolved"
+},
+"MHS": {
+"cik": null,
+"method": "unresolved"
+},
+"MI": {
+"cik": null,
+"method": "unresolved"
+},
+"MII": {
+"cik": null,
+"method": "unresolved"
+},
+"MIK": {
+"cik": null,
+"method": "unresolved"
+},
+"MIL": {
+"cik": null,
+"method": "unresolved"
+},
+"MIME": {
+"cik": null,
+"method": "unresolved"
+},
+"MJN": {
+"cik": null,
+"method": "unresolved"
+},
+"MKG": {
+"cik": null,
+"method": "unresolved"
+},
+"MLAB": {
+"cik": null,
+"method": "unresolved"
+},
+"MMC": {
+"cik": null,
+"method": "unresolved"
+},
+"MNK": {
+"cik": null,
+"method": "unresolved"
+},
+"MNR": {
+"cik": null,
+"method": "unresolved"
+},
+"MNTA": {
+"cik": null,
+"method": "unresolved"
+},
+"MOB": {
+"cik": null,
+"method": "unresolved"
+},
+"MODG": {
+"cik": null,
+"method": "unresolved"
+},
+"MODV": {
+"cik": null,
+"method": "unresolved"
+},
+"MOLX": {
+"cik": null,
+"method": "unresolved"
+},
+"MON": {
+"cik": null,
+"method": "unresolved"
+},
+"MOV": {
+"cik": null,
+"method": "unresolved"
+},
+"MPAA": {
+"cik": null,
+"method": "unresolved"
+},
+"MPW": {
+"cik": null,
+"method": "unresolved"
+},
+"MRO": {
+"cik": null,
+"method": "unresolved"
+},
+"MRX": {
+"cik": null,
+"method": "unresolved"
+},
+"MSCC": {
+"cik": null,
+"method": "unresolved"
+},
+"MST": {
+"cik": null,
+"method": "unresolved"
+},
+"MSTR": {
+"cik": null,
+"method": "unresolved"
+},
+"MTL": {
+"cik": null,
+"method": "unresolved"
+},
+"MTLQQ": {
+"cik": null,
+"method": "unresolved"
+},
+"MTOR": {
+"cik": null,
+"method": "unresolved"
+},
+"MTRX": {
+"cik": null,
+"method": "unresolved"
+},
+"MTSC": {
+"cik": null,
+"method": "unresolved"
+},
+"MTW": {
+"cik": null,
+"method": "unresolved"
+},
+"MWI": {
+"cik": null,
+"method": "unresolved"
+},
+"MWV": {
+"cik": null,
+"method": "unresolved"
+},
+"MWW": {
+"cik": null,
+"method": "unresolved"
+},
 "MXIM": {
 "cik": 743316,
 "method": "seed"
+},
+"MYE": {
+"cik": null,
+"method": "unresolved"
+},
+"MYG": {
+"cik": null,
+"method": "unresolved"
+},
+"MYGN": {
+"cik": null,
+"method": "unresolved"
+},
+"MYL": {
+"cik": null,
+"method": "unresolved"
+},
+"MZIAQ": {
+"cik": null,
+"method": "unresolved"
+},
+"NAE": {
+"cik": null,
+"method": "unresolved"
+},
+"NARI": {
+"cik": null,
+"method": "unresolved"
+},
+"NATI": {
+"cik": null,
+"method": "unresolved"
+},
+"NAV": {
+"cik": null,
+"method": "unresolved"
 },
 "NBL": {
 "cik": 72207,
 "method": "seed"
 },
+"NBR": {
+"cik": null,
+"method": "unresolved"
+},
+"NC": {
+"cik": null,
+"method": "unresolved"
+},
+"NCC": {
+"cik": null,
+"method": "unresolved"
+},
+"NCE": {
+"cik": null,
+"method": "unresolved"
+},
+"NCR": {
+"cik": null,
+"method": "unresolved"
+},
+"NDN": {
+"cik": null,
+"method": "unresolved"
+},
+"NEX": {
+"cik": null,
+"method": "unresolved"
+},
+"NFB": {
+"cik": null,
+"method": "unresolved"
+},
+"NFBK": {
+"cik": null,
+"method": "unresolved"
+},
+"NFX": {
+"cik": null,
+"method": "unresolved"
+},
+"NGH": {
+"cik": null,
+"method": "unresolved"
+},
+"NKTR": {
+"cik": null,
+"method": "unresolved"
+},
+"NLC": {
+"cik": null,
+"method": "unresolved"
+},
+"NLOK": {
+"cik": null,
+"method": "unresolved"
+},
+"NLSN": {
+"cik": null,
+"method": "unresolved"
+},
+"NLV": {
+"cik": null,
+"method": "unresolved"
+},
+"NMK": {
+"cik": null,
+"method": "unresolved"
+},
+"NOVL": {
+"cik": null,
+"method": "unresolved"
+},
+"NP": {
+"cik": null,
+"method": "unresolved"
+},
+"NR": {
+"cik": null,
+"method": "unresolved"
+},
+"NRTLQ": {
+"cik": null,
+"method": "unresolved"
+},
+"NSI": {
+"cik": null,
+"method": "unresolved"
+},
+"NSM": {
+"cik": null,
+"method": "unresolved"
+},
+"NSR": {
+"cik": null,
+"method": "unresolved"
+},
+"NTGR": {
+"cik": null,
+"method": "unresolved"
+},
+"NTUS": {
+"cik": null,
+"method": "unresolved"
+},
+"NUS": {
+"cik": null,
+"method": "unresolved"
+},
+"NUVA": {
+"cik": null,
+"method": "unresolved"
+},
+"NVE": {
+"cik": null,
+"method": "unresolved"
+},
+"NVEE": {
+"cik": null,
+"method": "unresolved"
+},
+"NVLS": {
+"cik": null,
+"method": "unresolved"
+},
+"NVRI": {
+"cik": null,
+"method": "unresolved"
+},
+"NXGN": {
+"cik": null,
+"method": "unresolved"
+},
+"NXTL": {
+"cik": null,
+"method": "unresolved"
+},
+"NYMT": {
+"cik": null,
+"method": "unresolved"
+},
+"NYN": {
+"cik": null,
+"method": "unresolved"
+},
+"NYX": {
+"cik": null,
+"method": "unresolved"
+},
+"OA": {
+"cik": null,
+"method": "unresolved"
+},
+"OAS": {
+"cik": null,
+"method": "unresolved"
+},
+"OAT": {
+"cik": null,
+"method": "unresolved"
+},
+"ODP": {
+"cik": null,
+"method": "unresolved"
+},
+"OFIX": {
+"cik": null,
+"method": "unresolved"
+},
+"OIS": {
+"cik": null,
+"method": "unresolved"
+},
+"OK": {
+"cik": null,
+"method": "unresolved"
+},
+"OM": {
+"cik": null,
+"method": "unresolved"
+},
+"OMI": {
+"cik": null,
+"method": "unresolved"
+},
+"OMX": {
+"cik": null,
+"method": "unresolved"
+},
+"ONE": {
+"cik": null,
+"method": "unresolved"
+},
+"ONL": {
+"cik": null,
+"method": "unresolved"
+},
+"OPB": {
+"cik": null,
+"method": "unresolved"
+},
+"OPI": {
+"cik": null,
+"method": "unresolved"
+},
+"OPRX": {
+"cik": null,
+"method": "unresolved"
+},
+"ORGO": {
+"cik": null,
+"method": "unresolved"
+},
+"ORX": {
+"cik": null,
+"method": "unresolved"
+},
+"OSPN": {
+"cik": null,
+"method": "unresolved"
+},
+"OSUR": {
+"cik": null,
+"method": "unresolved"
+},
+"OWENQ": {
+"cik": null,
+"method": "unresolved"
+},
+"PAC": {
+"cik": null,
+"method": "unresolved"
+},
+"PACW": {
+"cik": null,
+"method": "unresolved"
+},
+"PALM": {
+"cik": null,
+"method": "unresolved"
+},
+"PARA": {
+"cik": null,
+"method": "unresolved"
+},
+"PAS": {
+"cik": null,
+"method": "unresolved"
+},
+"PAY": {
+"cik": null,
+"method": "unresolved"
+},
+"PBCT": {
+"cik": null,
+"method": "unresolved"
+},
+"PBG": {
+"cik": null,
+"method": "unresolved"
+},
+"PBY": {
+"cik": null,
+"method": "unresolved"
+},
+"PCH": {
+"cik": null,
+"method": "unresolved"
+},
+"PCL": {
+"cik": null,
+"method": "unresolved"
+},
+"PCP": {
+"cik": null,
+"method": "unresolved"
+},
+"PCS": {
+"cik": null,
+"method": "unresolved"
+},
+"PCX": {
+"cik": null,
+"method": "unresolved"
+},
+"PD": {
+"cik": null,
+"method": "unresolved"
+},
+"PDCE": {
+"cik": null,
+"method": "unresolved"
+},
+"PDCO": {
+"cik": null,
+"method": "unresolved"
+},
+"PDG": {
+"cik": null,
+"method": "unresolved"
+},
+"PEAK": {
+"cik": null,
+"method": "unresolved"
+},
+"PEI": {
+"cik": null,
+"method": "unresolved"
+},
+"PEL": {
+"cik": null,
+"method": "unresolved"
+},
+"PET": {
+"cik": null,
+"method": "unresolved"
+},
+"PETM": {
+"cik": null,
+"method": "unresolved"
+},
+"PETS": {
+"cik": null,
+"method": "unresolved"
+},
+"PGL": {
+"cik": null,
+"method": "unresolved"
+},
+"PGN": {
+"cik": null,
+"method": "unresolved"
+},
+"PGTI": {
+"cik": null,
+"method": "unresolved"
+},
+"PHA": {
+"cik": null,
+"method": "unresolved"
+},
+"PHB": {
+"cik": null,
+"method": "unresolved"
+},
+"PINC": {
+"cik": null,
+"method": "unresolved"
+},
+"PKE": {
+"cik": null,
+"method": "unresolved"
+},
+"PKI": {
+"cik": null,
+"method": "unresolved"
+},
+"PLAY": {
+"cik": null,
+"method": "unresolved"
+},
+"PLCE": {
+"cik": null,
+"method": "unresolved"
+},
+"PLCM": {
+"cik": null,
+"method": "unresolved"
+},
+"PLL": {
+"cik": null,
+"method": "unresolved"
+},
+"PLT": {
+"cik": null,
+"method": "unresolved"
+},
+"PMCS": {
+"cik": null,
+"method": "unresolved"
+},
+"PMI": {
+"cik": null,
+"method": "unresolved"
+},
+"PNRA": {
+"cik": null,
+"method": "unresolved"
+},
+"PNTG": {
+"cik": null,
+"method": "unresolved"
+},
+"PNU": {
+"cik": null,
+"method": "unresolved"
+},
+"POLY": {
+"cik": null,
+"method": "unresolved"
+},
+"POM": {
+"cik": null,
+"method": "unresolved"
+},
+"PPBI": {
+"cik": null,
+"method": "unresolved"
+},
+"PPW": {
+"cik": null,
+"method": "unresolved"
+},
+"PRAH": {
+"cik": null,
+"method": "unresolved"
+},
+"PRD": {
+"cik": null,
+"method": "unresolved"
+},
+"PRFT": {
+"cik": null,
+"method": "unresolved"
+},
+"PRSP": {
+"cik": null,
+"method": "unresolved"
+},
+"PRXL": {
+"cik": null,
+"method": "unresolved"
+},
+"PSB": {
+"cik": null,
+"method": "unresolved"
+},
+"PSFT": {
+"cik": null,
+"method": "unresolved"
+},
+"PSS": {
+"cik": null,
+"method": "unresolved"
+},
+"PTV": {
+"cik": null,
+"method": "unresolved"
+},
+"PUMP": {
+"cik": null,
+"method": "unresolved"
+},
+"PVN": {
+"cik": null,
+"method": "unresolved"
+},
+"PVT": {
+"cik": null,
+"method": "unresolved"
+},
+"PVTB": {
+"cik": null,
+"method": "unresolved"
+},
+"PWER": {
+"cik": null,
+"method": "unresolved"
+},
+"PWJ": {
+"cik": null,
+"method": "unresolved"
+},
+"PX": {
+"cik": null,
+"method": "unresolved"
+},
+"PXD": {
+"cik": null,
+"method": "unresolved"
+},
+"PXP": {
+"cik": null,
+"method": "unresolved"
+},
+"PZE": {
+"cik": null,
+"method": "unresolved"
+},
+"QCP": {
+"cik": null,
+"method": "unresolved"
+},
+"QEP": {
+"cik": null,
+"method": "unresolved"
+},
+"QLGC": {
+"cik": null,
+"method": "unresolved"
+},
+"QTRN": {
+"cik": null,
+"method": "unresolved"
+},
+"QURE": {
+"cik": null,
+"method": "unresolved"
+},
+"RAD": {
+"cik": null,
+"method": "unresolved"
+},
+"RAH": {
+"cik": null,
+"method": "unresolved"
+},
+"RAI": {
+"cik": null,
+"method": "unresolved"
+},
+"RATL": {
+"cik": null,
+"method": "unresolved"
+},
+"RAVN": {
+"cik": null,
+"method": "unresolved"
+},
+"RAX": {
+"cik": null,
+"method": "unresolved"
+},
+"RBD": {
+"cik": null,
+"method": "unresolved"
+},
+"RBK": {
+"cik": null,
+"method": "unresolved"
+},
+"RC": {
+"cik": null,
+"method": "unresolved"
+},
+"RCII": {
+"cik": null,
+"method": "unresolved"
+},
+"RCM": {
+"cik": null,
+"method": "unresolved"
+},
+"RDC": {
+"cik": null,
+"method": "unresolved"
+},
+"RDS-A": {
+"cik": null,
+"method": "unresolved"
+},
+"RE": {
+"cik": null,
+"method": "unresolved"
+},
+"REGI": {
+"cik": null,
+"method": "unresolved"
+},
+"REI": {
+"cik": null,
+"method": "unresolved"
+},
+"RGNX": {
+"cik": null,
+"method": "unresolved"
+},
+"RGP": {
+"cik": null,
+"method": "unresolved"
+},
+"RGR": {
+"cik": null,
+"method": "unresolved"
+},
+"RGS": {
+"cik": null,
+"method": "unresolved"
+},
+"RHT": {
+"cik": null,
+"method": "unresolved"
+},
+"RIG": {
+"cik": null,
+"method": "unresolved"
+},
+"RILY": {
+"cik": null,
+"method": "unresolved"
+},
+"RLGY": {
+"cik": null,
+"method": "unresolved"
+},
+"RLM": {
+"cik": null,
+"method": "unresolved"
+},
+"RMAX": {
+"cik": null,
+"method": "unresolved"
+},
+"RML": {
+"cik": null,
+"method": "unresolved"
+},
+"RNB": {
+"cik": null,
+"method": "unresolved"
+},
+"ROCC": {
+"cik": null,
+"method": "unresolved"
+},
+"ROH": {
+"cik": null,
+"method": "unresolved"
+},
+"ROIC": {
+"cik": null,
+"method": "unresolved"
+},
+"ROVI": {
+"cik": null,
+"method": "unresolved"
+},
+"RPAI": {
+"cik": null,
+"method": "unresolved"
+},
+"RPT": {
+"cik": null,
+"method": "unresolved"
+},
+"RRD": {
+"cik": null,
+"method": "unresolved"
+},
+"RRGB": {
+"cik": null,
+"method": "unresolved"
+},
+"RSH": {
+"cik": null,
+"method": "unresolved"
+},
+"RSHCQ": {
+"cik": null,
+"method": "unresolved"
+},
 "RTN": {
 "cik": 1047122,
 "method": "seed"
+},
+"RUTH": {
+"cik": null,
+"method": "unresolved"
+},
+"RVBD": {
+"cik": null,
+"method": "unresolved"
+},
+"RX": {
+"cik": null,
+"method": "unresolved"
+},
+"RYAM": {
+"cik": null,
+"method": "unresolved"
+},
+"RYC": {
+"cik": null,
+"method": "unresolved"
+},
+"RYI": {
+"cik": null,
+"method": "unresolved"
+},
+"S": {
+"cik": null,
+"method": "unresolved"
+},
+"SAF": {
+"cik": null,
+"method": "unresolved"
+},
+"SAFM": {
+"cik": null,
+"method": "unresolved"
+},
+"SAI": {
+"cik": null,
+"method": "unresolved"
+},
+"SAIL": {
+"cik": null,
+"method": "unresolved"
+},
+"SAPE": {
+"cik": null,
+"method": "unresolved"
+},
+"SB": {
+"cik": null,
+"method": "unresolved"
+},
+"SBL": {
+"cik": null,
+"method": "unresolved"
+},
+"SBNY": {
+"cik": null,
+"method": "unresolved"
+},
+"SCG": {
+"cik": null,
+"method": "unresolved"
+},
+"SCOR": {
+"cik": null,
+"method": "unresolved"
+},
+"SCVL": {
+"cik": null,
+"method": "unresolved"
+},
+"SDS": {
+"cik": null,
+"method": "unresolved"
+},
+"SE": {
+"cik": null,
+"method": "unresolved"
+},
+"SEBL": {
+"cik": null,
+"method": "unresolved"
+},
+"SEE": {
+"cik": null,
+"method": "unresolved"
+},
+"SEG": {
+"cik": null,
+"method": "unresolved"
+},
+"SENEA": {
+"cik": null,
+"method": "unresolved"
+},
+"SFA": {
+"cik": null,
+"method": "unresolved"
+},
+"SFD": {
+"cik": null,
+"method": "unresolved"
+},
+"SFG": {
+"cik": null,
+"method": "unresolved"
+},
+"SFS": {
+"cik": null,
+"method": "unresolved"
+},
+"SGH": {
+"cik": null,
+"method": "unresolved"
+},
+"SGID": {
+"cik": null,
+"method": "unresolved"
+},
+"SGMS": {
+"cik": null,
+"method": "unresolved"
+},
+"SGP": {
+"cik": null,
+"method": "unresolved"
+},
+"SHAW": {
+"cik": null,
+"method": "unresolved"
+},
+"SHLD": {
+"cik": null,
+"method": "unresolved"
+},
+"SHN": {
+"cik": null,
+"method": "unresolved"
+},
+"SIAL": {
+"cik": null,
+"method": "unresolved"
+},
+"SII": {
+"cik": null,
+"method": "unresolved"
+},
+"SIRO": {
+"cik": null,
+"method": "unresolved"
+},
+"SITC": {
+"cik": null,
+"method": "unresolved"
+},
+"SIVB": {
+"cik": null,
+"method": "unresolved"
+},
+"SIX": {
+"cik": null,
+"method": "unresolved"
+},
+"SJI": {
+"cik": null,
+"method": "unresolved"
+},
+"SJW": {
+"cik": null,
+"method": "unresolved"
+},
+"SK": {
+"cik": null,
+"method": "unresolved"
+},
+"SKS": {
+"cik": null,
+"method": "unresolved"
+},
+"SKX": {
+"cik": null,
+"method": "unresolved"
+},
+"SLCA": {
+"cik": null,
+"method": "unresolved"
+},
+"SLH": {
+"cik": null,
+"method": "unresolved"
+},
+"SLP": {
+"cik": null,
+"method": "unresolved"
+},
+"SLQT": {
+"cik": null,
+"method": "unresolved"
+},
+"SLR": {
+"cik": null,
+"method": "unresolved"
+},
+"SLXP": {
+"cik": null,
+"method": "unresolved"
+},
+"SMI": {
+"cik": null,
+"method": "unresolved"
+},
+"SMS": {
+"cik": null,
+"method": "unresolved"
+},
+"SNBR": {
+"cik": null,
+"method": "unresolved"
+},
+"SNCY": {
+"cik": null,
+"method": "unresolved"
+},
+"SNI": {
+"cik": null,
+"method": "unresolved"
+},
+"SNT": {
+"cik": null,
+"method": "unresolved"
+},
+"SNV": {
+"cik": null,
+"method": "unresolved"
+},
+"SOTR": {
+"cik": null,
+"method": "unresolved"
+},
+"SOV": {
+"cik": null,
+"method": "unresolved"
+},
+"SPLS": {
+"cik": null,
+"method": "unresolved"
+},
+"SPN": {
+"cik": null,
+"method": "unresolved"
+},
+"SPOK": {
+"cik": null,
+"method": "unresolved"
+},
+"SPPI": {
+"cik": null,
+"method": "unresolved"
+},
+"SPTN": {
+"cik": null,
+"method": "unresolved"
+},
+"SPWR": {
+"cik": null,
+"method": "unresolved"
+},
+"SRC": {
+"cik": null,
+"method": "unresolved"
+},
+"SRCL": {
+"cik": null,
+"method": "unresolved"
+},
+"SRDX": {
+"cik": null,
+"method": "unresolved"
+},
+"SRR": {
+"cik": null,
+"method": "unresolved"
+},
+"SSP": {
+"cik": null,
+"method": "unresolved"
+},
+"SSTK": {
+"cik": null,
+"method": "unresolved"
+},
+"STAR": {
+"cik": null,
+"method": "unresolved"
+},
+"STI": {
+"cik": null,
+"method": "unresolved"
+},
+"STJ": {
+"cik": null,
+"method": "unresolved"
+},
+"STL": {
+"cik": null,
+"method": "unresolved"
+},
+"STMP": {
+"cik": null,
+"method": "unresolved"
+},
+"STO": {
+"cik": null,
+"method": "unresolved"
+},
+"STOR": {
+"cik": null,
+"method": "unresolved"
+},
+"STR": {
+"cik": null,
+"method": "unresolved"
+},
+"SUB": {
+"cik": null,
+"method": "unresolved"
+},
+"SUG": {
+"cik": null,
+"method": "unresolved"
+},
+"SUN": {
+"cik": null,
+"method": "unresolved"
+},
+"SUNE": {
+"cik": null,
+"method": "unresolved"
+},
+"SUNEQ": {
+"cik": null,
+"method": "unresolved"
+},
+"SVC": {
+"cik": null,
+"method": "unresolved"
+},
+"SVU": {
+"cik": null,
+"method": "unresolved"
+},
+"SWAV": {
+"cik": null,
+"method": "unresolved"
+},
+"SWI": {
+"cik": null,
+"method": "unresolved"
+},
+"SWN": {
+"cik": null,
+"method": "unresolved"
+},
+"SWY": {
+"cik": null,
+"method": "unresolved"
+},
+"SXC": {
+"cik": null,
+"method": "unresolved"
+},
+"SXCL": {
+"cik": null,
+"method": "unresolved"
+},
+"SYKE": {
+"cik": null,
+"method": "unresolved"
+},
+"SYMC": {
+"cik": null,
+"method": "unresolved"
+},
+"SYNH": {
+"cik": null,
+"method": "unresolved"
+},
+"TA": {
+"cik": null,
+"method": "unresolved"
+},
+"TBI": {
+"cik": null,
+"method": "unresolved"
+},
+"TCF": {
+"cik": null,
+"method": "unresolved"
+},
+"TCMD": {
+"cik": null,
+"method": "unresolved"
+},
+"TCO": {
+"cik": null,
+"method": "unresolved"
+},
+"TCOMA": {
+"cik": null,
+"method": "unresolved"
+},
+"TDM": {
+"cik": null,
+"method": "unresolved"
+},
+"TE": {
+"cik": null,
+"method": "unresolved"
+},
+"TECD": {
+"cik": null,
+"method": "unresolved"
+},
+"TEG": {
+"cik": null,
+"method": "unresolved"
+},
+"TEK": {
+"cik": null,
+"method": "unresolved"
+},
+"TEN": {
+"cik": null,
+"method": "unresolved"
+},
+"TG": {
+"cik": null,
+"method": "unresolved"
+},
+"TGI": {
+"cik": null,
+"method": "unresolved"
+},
+"TGNA": {
+"cik": null,
+"method": "unresolved"
+},
+"THRY": {
+"cik": null,
+"method": "unresolved"
+},
+"THS": {
+"cik": null,
+"method": "unresolved"
+},
+"THY": {
+"cik": null,
+"method": "unresolved"
+},
+"TIBX": {
+"cik": null,
+"method": "unresolved"
+},
+"TIE": {
+"cik": null,
+"method": "unresolved"
 },
 "TIF": {
 "cik": 98246,
 "method": "seed"
 },
+"TIME": {
+"cik": null,
+"method": "unresolved"
+},
+"TIN": {
+"cik": null,
+"method": "unresolved"
+},
+"TISI": {
+"cik": null,
+"method": "unresolved"
+},
+"TIVO": {
+"cik": null,
+"method": "unresolved"
+},
+"TLAB": {
+"cik": null,
+"method": "unresolved"
+},
+"TLRD": {
+"cik": null,
+"method": "unresolved"
+},
+"TMC": {
+"cik": null,
+"method": "unresolved"
+},
+"TMC-A": {
+"cik": null,
+"method": "unresolved"
+},
+"TMK": {
+"cik": null,
+"method": "unresolved"
+},
+"TMST": {
+"cik": null,
+"method": "unresolved"
+},
+"TNB": {
+"cik": null,
+"method": "unresolved"
+},
+"TOS": {
+"cik": null,
+"method": "unresolved"
+},
+"TOY": {
+"cik": null,
+"method": "unresolved"
+},
+"TPH": {
+"cik": null,
+"method": "unresolved"
+},
+"TRB": {
+"cik": null,
+"method": "unresolved"
+},
+"TREE": {
+"cik": null,
+"method": "unresolved"
+},
+"TRHC": {
+"cik": null,
+"method": "unresolved"
+},
+"TRW": {
+"cik": null,
+"method": "unresolved"
+},
+"TSE": {
+"cik": null,
+"method": "unresolved"
+},
+"TSG": {
+"cik": null,
+"method": "unresolved"
+},
+"TSS": {
+"cik": null,
+"method": "unresolved"
+},
+"TTEC": {
+"cik": null,
+"method": "unresolved"
+},
+"TTGT": {
+"cik": null,
+"method": "unresolved"
+},
+"TTI": {
+"cik": null,
+"method": "unresolved"
+},
+"TUP": {
+"cik": null,
+"method": "unresolved"
+},
+"TVTY": {
+"cik": null,
+"method": "unresolved"
+},
+"TW": {
+"cik": null,
+"method": "unresolved"
+},
+"TWC": {
+"cik": null,
+"method": "unresolved"
+},
+"TWI": {
+"cik": null,
+"method": "unresolved"
+},
+"TWNK": {
+"cik": null,
+"method": "unresolved"
+},
+"TWTC": {
+"cik": null,
+"method": "unresolved"
+},
+"TWTR": {
+"cik": null,
+"method": "unresolved"
+},
+"TWX": {
+"cik": null,
+"method": "unresolved"
+},
+"TX": {
+"cik": null,
+"method": "unresolved"
+},
+"TXU": {
+"cik": null,
+"method": "unresolved"
+},
+"UAA/UA": {
+"cik": null,
+"method": "unresolved"
+},
+"UAWGQ": {
+"cik": null,
+"method": "unresolved"
+},
+"UBA": {
+"cik": null,
+"method": "unresolved"
+},
+"UCC": {
+"cik": null,
+"method": "unresolved"
+},
+"UCL": {
+"cik": null,
+"method": "unresolved"
+},
+"UCM": {
+"cik": null,
+"method": "unresolved"
+},
+"UEIC": {
+"cik": null,
+"method": "unresolved"
+},
+"UFI": {
+"cik": null,
+"method": "unresolved"
+},
+"UFS": {
+"cik": null,
+"method": "unresolved"
+},
+"UIHC": {
+"cik": null,
+"method": "unresolved"
+},
+"UIS": {
+"cik": null,
+"method": "unresolved"
+},
+"UK": {
+"cik": null,
+"method": "unresolved"
+},
+"ULTI": {
+"cik": null,
+"method": "unresolved"
+},
+"UMG": {
+"cik": null,
+"method": "unresolved"
+},
+"UMPQ": {
+"cik": null,
+"method": "unresolved"
+},
+"UN": {
+"cik": null,
+"method": "unresolved"
+},
+"UNT": {
+"cik": null,
+"method": "unresolved"
+},
+"UNVR": {
+"cik": null,
+"method": "unresolved"
+},
+"UPC": {
+"cik": null,
+"method": "unresolved"
+},
+"UPR": {
+"cik": null,
+"method": "unresolved"
+},
+"URS": {
+"cik": null,
+"method": "unresolved"
+},
+"USBC": {
+"cik": null,
+"method": "unresolved"
+},
+"USCR": {
+"cik": null,
+"method": "unresolved"
+},
+"USH": {
+"cik": null,
+"method": "unresolved"
+},
+"USHC": {
+"cik": null,
+"method": "unresolved"
+},
+"USNA": {
+"cik": null,
+"method": "unresolved"
+},
+"USS": {
+"cik": null,
+"method": "unresolved"
+},
+"UST": {
+"cik": null,
+"method": "unresolved"
+},
+"USW": {
+"cik": null,
+"method": "unresolved"
+},
+"UTIW": {
+"cik": null,
+"method": "unresolved"
+},
+"UTX": {
+"cik": null,
+"method": "unresolved"
+},
+"UVE": {
+"cik": null,
+"method": "unresolved"
+},
+"UVN": {
+"cik": null,
+"method": "unresolved"
+},
 "VAR": {
 "cik": 203527,
 "method": "seed"
+},
+"VAT": {
+"cik": null,
+"method": "unresolved"
+},
+"VBTX": {
+"cik": null,
+"method": "unresolved"
+},
+"VCI": {
+"cik": null,
+"method": "unresolved"
+},
+"VG": {
+"cik": null,
+"method": "unresolved"
+},
+"VGR": {
+"cik": null,
+"method": "unresolved"
+},
+"VIAB": {
+"cik": null,
+"method": "unresolved"
+},
+"VIAC": {
+"cik": null,
+"method": "unresolved"
+},
+"VIVO": {
+"cik": null,
+"method": "unresolved"
+},
+"VNDA": {
+"cik": null,
+"method": "unresolved"
+},
+"VO": {
+"cik": null,
+"method": "unresolved"
+},
+"VRA": {
+"cik": null,
+"method": "unresolved"
+},
+"VRE": {
+"cik": null,
+"method": "unresolved"
+},
+"VREX": {
+"cik": null,
+"method": "unresolved"
+},
+"VRTU": {
+"cik": null,
+"method": "unresolved"
+},
+"VRTV": {
+"cik": null,
+"method": "unresolved"
+},
+"VSCO": {
+"cik": null,
+"method": "unresolved"
+},
+"VSI": {
+"cik": null,
+"method": "unresolved"
+},
+"VSM": {
+"cik": null,
+"method": "unresolved"
+},
+"VSTNQ": {
+"cik": null,
+"method": "unresolved"
+},
+"VSTO": {
+"cik": null,
+"method": "unresolved"
+},
+"VTLE": {
+"cik": null,
+"method": "unresolved"
+},
+"VTSS": {
+"cik": null,
+"method": "unresolved"
+},
+"VVC": {
+"cik": null,
+"method": "unresolved"
+},
+"WAI": {
+"cik": null,
+"method": "unresolved"
+},
+"WAMUQ": {
+"cik": null,
+"method": "unresolved"
+},
+"WB": {
+"cik": null,
+"method": "unresolved"
+},
+"WBA": {
+"cik": null,
+"method": "unresolved"
+},
+"WBMD": {
+"cik": null,
+"method": "unresolved"
+},
+"WCG": {
+"cik": null,
+"method": "unresolved"
+},
+"WCOEQ": {
+"cik": null,
+"method": "unresolved"
+},
+"WDR": {
+"cik": null,
+"method": "unresolved"
+},
+"WETF": {
+"cik": null,
+"method": "unresolved"
+},
+"WFM": {
+"cik": null,
+"method": "unresolved"
+},
+"WFT": {
+"cik": null,
+"method": "unresolved"
+},
+"WGL": {
+"cik": null,
+"method": "unresolved"
+},
+"WIN": {
+"cik": null,
+"method": "unresolved"
+},
+"WIRE": {
+"cik": null,
+"method": "unresolved"
+},
+"WLA": {
+"cik": null,
+"method": "unresolved"
+},
+"WLH": {
+"cik": null,
+"method": "unresolved"
+},
+"WLL": {
+"cik": null,
+"method": "unresolved"
+},
+"WLP": {
+"cik": null,
+"method": "unresolved"
 },
 "WLTW": {
 "cik": 1140536,
 "method": "seed"
 },
+"WMX": {
+"cik": null,
+"method": "unresolved"
+},
+"WNC": {
+"cik": null,
+"method": "unresolved"
+},
+"WNDXQ": {
+"cik": null,
+"method": "unresolved"
+},
+"WNR": {
+"cik": null,
+"method": "unresolved"
+},
+"WOLF": {
+"cik": null,
+"method": "unresolved"
+},
+"WOOF": {
+"cik": null,
+"method": "unresolved"
+},
+"WPG": {
+"cik": null,
+"method": "unresolved"
+},
+"WPX": {
+"cik": null,
+"method": "unresolved"
+},
+"WR": {
+"cik": null,
+"method": "unresolved"
+},
+"WRI": {
+"cik": null,
+"method": "unresolved"
+},
+"WRK": {
+"cik": null,
+"method": "unresolved"
+},
+"WW": {
+"cik": null,
+"method": "unresolved"
+},
+"WWAV": {
+"cik": null,
+"method": "unresolved"
+},
+"WWY": {
+"cik": null,
+"method": "unresolved"
+},
+"WYE": {
+"cik": null,
+"method": "unresolved"
+},
+"WYND": {
+"cik": null,
+"method": "unresolved"
+},
+"X": {
+"cik": null,
+"method": "unresolved"
+},
+"XEC": {
+"cik": null,
+"method": "unresolved"
+},
+"XL": {
+"cik": null,
+"method": "unresolved"
+},
 "XLNX": {
 "cik": 743988,
 "method": "seed"
+},
+"XLS": {
+"cik": null,
+"method": "unresolved"
+},
+"XPER": {
+"cik": null,
+"method": "unresolved"
+},
+"XRX": {
+"cik": null,
+"method": "unresolved"
+},
+"XTO": {
+"cik": null,
+"method": "unresolved"
+},
+"Y": {
+"cik": null,
+"method": "unresolved"
+},
+"YNR": {
+"cik": null,
+"method": "unresolved"
+},
+"YRCW": {
+"cik": null,
+"method": "unresolved"
+},
+"ZEUS": {
+"cik": null,
+"method": "unresolved"
+},
+"ZIMV": {
+"cik": null,
+"method": "unresolved"
+},
+"ZUMZ": {
+"cik": null,
+"method": "unresolved"
+},
+"ZYXI": {
+"cik": null,
+"method": "unresolved"
 }
 }

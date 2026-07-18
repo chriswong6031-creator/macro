@@ -1904,3 +1904,6 @@
 {"date": "2026-07-17", "ticker": "GDDY", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-17", "ticker": "PYPL", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-17", "ticker": "VRTS", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-17", "ticker": "COLM", "score": 32.0, "percentile": 32.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-17", "ticker": "GPK", "score": 60.0, "percentile": 60.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-17", "ticker": "MTN", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}

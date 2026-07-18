@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-07-17",
-    "built": "2026-07-18T02:27:44.919304+00:00",
+    "built": "2026-07-18T17:09:21.804556+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -743,8 +743,8 @@
         "accruing": true
       },
       "dc_reit_credit": {
-        "stance_en": "Ignore",
-        "stance_zh": "无需关注",
+        "stance_en": "Watch",
+        "stance_zh": "观望",
         "accruing": true
       },
       "ai_hardware_credit": {

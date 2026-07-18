@@ -1,10 +1,10 @@
 {
-  "asof": "2026-07-01",
+  "asof": "2026-07-17",
   "n_trials_config": 65,
   "overrides_dof": {
-    "midterm_blackout": 3
+    "midterm_blackout": 6
   },
-  "n_trials_declared": 68,
+  "n_trials_declared": 71,
   "cost_bps_one_way": 10.0,
   "allocation_variants_tested": [
     "conservative",

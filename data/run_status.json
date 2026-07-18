@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-18T09:00:40.465312+00:00",
+  "last_run": "2026-07-18T14:49:23.625607+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -8,12 +8,12 @@
       "last_date": "2026-07-14",
       "error": null,
       "notes": [
-        "frozen tail: cot_natgas last=2022-02-01 age=1627d",
-        "frozen tail: cot_heating_oil last=2013-11-05 age=4637d"
+        "frozen tail: cot_natgas last=2022-02-01 age=1628d",
+        "frozen tail: cot_heating_oil last=2013-11-05 age=4638d"
       ],
       "probed_at": null,
-      "elapsed_sec": 17.1,
-      "checked_at": "2026-07-18T00:31:18.031562+00:00"
+      "elapsed_sec": 19.4,
+      "checked_at": "2026-07-18T14:49:23.625643+00:00"
     },
     "fred": {
       "source": "fred",
@@ -201,18 +201,18 @@
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 1.1,
-      "checked_at": "2026-07-18T00:31:18.030663+00:00"
+      "checked_at": "2026-07-18T14:49:23.625622+00:00"
     },
     "sentiment_aaii": {
       "source": "sentiment_aaii",
       "status": "ok",
-      "rows": 22,
+      "rows": 21,
       "last_date": "2026-07-15",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.2,
-      "checked_at": "2026-07-18T00:31:18.030677+00:00"
+      "elapsed_sec": 0.8,
+      "checked_at": "2026-07-18T14:49:23.625630+00:00"
     },
     "sector_flows": {
       "source": "sector_flows",
@@ -240,12 +240,12 @@
       "source": "fundamentals",
       "status": "ok",
       "rows": 5781,
-      "last_date": "2026-07-17",
+      "last_date": "2026-07-18",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 5.1,
-      "checked_at": "2026-07-18T00:31:18.030831+00:00"
+      "elapsed_sec": 5.2,
+      "checked_at": "2026-07-18T14:49:23.625635+00:00"
     },
     "coinmetrics": {
       "source": "coinmetrics",
@@ -451,12 +451,12 @@
       "source": "stock_fundamentals",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-17",
+      "last_date": "2026-07-18",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 139.6,
-      "checked_at": "2026-07-18T00:31:18.030845+00:00"
+      "elapsed_sec": 140.7,
+      "checked_at": "2026-07-18T14:49:23.625639+00:00"
     },
     "china_universe": {
       "source": "china_universe",
@@ -3059,16 +3059,16 @@
       "series": "cot_natgas",
       "last_obs": "2022-02-01",
       "cadence_days": 12,
-      "age_days": 1627,
-      "detected_at": "2026-07-17T23:57:37.204177+00:00"
+      "age_days": 1628,
+      "detected_at": "2026-07-18T14:49:23.622548+00:00"
     },
     {
       "group": "cot",
       "series": "cot_heating_oil",
       "last_obs": "2013-11-05",
       "cadence_days": 12,
-      "age_days": 4637,
-      "detected_at": "2026-07-17T23:57:37.204182+00:00"
+      "age_days": 4638,
+      "detected_at": "2026-07-18T14:49:23.622554+00:00"
     },
     {
       "group": "fred",

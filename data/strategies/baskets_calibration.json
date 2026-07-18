@@ -1,7 +1,7 @@
 {
   "schema": "baskets_calibration.v1",
   "region": "us",
-  "generated_at": "2026-06-21T10:03:03.884612+00:00",
+  "generated_at": "2026-07-18T15:25:47.749401+00:00",
   "fwd_horizons_d": [
     21,
     63
@@ -13,28 +13,28 @@
     "n_assets": 11,
     "span": [
       "1998-12-22",
-      "2026-06-18"
+      "2026-07-17"
     ],
-    "n_steps": 1332,
+    "n_steps": 1336,
     "labels": {
       "emerging": {
-        "n": 1422,
-        "n_days": 861,
+        "n": 1425,
+        "n_days": 863,
         "rel21_med_pct": -0.1,
         "rel63_med_pct": -0.2,
-        "dd21_med_pct": -1.89,
-        "dd63_med_pct": -3.5,
-        "p_dd21_lt_risk": 0.103,
+        "dd21_med_pct": -1.9,
+        "dd63_med_pct": -3.48,
+        "p_dd21_lt_risk": 0.102,
         "kind": "continuation",
         "car_metric": "fwd_rel_21d",
-        "mean_pct": -0.09,
-        "t_hac": -0.645,
-        "p_hac": 0.519,
+        "mean_pct": -0.1,
+        "t_hac": -0.67,
+        "p_hac": 0.5029,
         "hit": 0.488,
-        "t_n": 861,
+        "t_n": 863,
         "measurable": false,
         "verdict": "not_measurable",
-        "bh_q": 0.6488,
+        "bh_q": 0.6286,
         "bh_reject": false
       },
       "dominant": {
@@ -54,112 +54,112 @@
         "t_n": 35,
         "measurable": false,
         "verdict": "not_measurable",
-        "bh_q": 0.6488,
+        "bh_q": 0.6286,
         "bh_reject": false
       },
       "fading": {
-        "n": 252,
-        "n_days": 230,
-        "rel21_med_pct": 0.2,
-        "rel63_med_pct": 0.49,
-        "dd21_med_pct": -2.48,
-        "dd63_med_pct": -4.34,
+        "n": 253,
+        "n_days": 231,
+        "rel21_med_pct": 0.18,
+        "rel63_med_pct": 0.43,
+        "dd21_med_pct": -2.49,
+        "dd63_med_pct": -4.36,
         "p_dd21_lt_risk": 0.115,
         "kind": "risk",
         "car_metric": "fwd_dd_21d",
         "mean_pct": -3.74,
-        "t_hac": -9.65,
+        "t_hac": -9.69,
         "p_hac": 0.0,
         "hit": 0.115,
-        "t_n": 230,
+        "t_n": 231,
         "measurable": true,
         "verdict": "measurable_edge",
         "bh_q": 0.0,
         "bh_reject": true
       },
       "deteriorating": {
-        "n": 3959,
-        "n_days": 1270,
-        "rel21_med_pct": -0.07,
-        "rel63_med_pct": 0.12,
-        "dd21_med_pct": -2.27,
-        "dd63_med_pct": -3.83,
+        "n": 3980,
+        "n_days": 1274,
+        "rel21_med_pct": -0.09,
+        "rel63_med_pct": 0.09,
+        "dd21_med_pct": -2.26,
+        "dd63_med_pct": -3.8,
         "p_dd21_lt_risk": 0.126,
         "kind": "risk",
         "car_metric": "fwd_dd_21d",
-        "mean_pct": -3.61,
-        "t_hac": -15.472,
+        "mean_pct": -3.6,
+        "t_hac": -15.464,
         "p_hac": 0.0,
         "hit": 0.126,
-        "t_n": 1270,
+        "t_n": 1274,
         "measurable": true,
         "verdict": "measurable_edge",
         "bh_q": 0.0,
         "bh_reject": true
       },
       "neutral": {
-        "n": 7064,
-        "n_days": 1316,
+        "n": 7083,
+        "n_days": 1320,
         "rel21_med_pct": -0.04,
-        "rel63_med_pct": -0.09,
+        "rel63_med_pct": -0.1,
         "dd21_med_pct": -2.03,
         "dd63_med_pct": -3.77,
         "p_dd21_lt_risk": 0.102,
         "kind": "continuation",
         "car_metric": "fwd_rel_21d",
-        "mean_pct": 0.02,
-        "t_hac": 0.25,
-        "p_hac": 0.8026,
-        "hit": 0.494,
-        "t_n": 1316,
+        "mean_pct": -0.0,
+        "t_hac": -0.046,
+        "p_hac": 0.963,
+        "hit": 0.493,
+        "t_n": 1320,
         "measurable": false,
         "verdict": "not_measurable",
-        "bh_q": 0.8026,
+        "bh_q": 0.963,
         "bh_reject": false
       }
     },
     "rank_ic": {
       "21d": {
-        "mean_ic": -0.0295,
-        "ic_vol": 0.3952,
-        "ic_ir": -0.075,
-        "ic_ir_ann": -0.527,
-        "t_hac": -1.363,
-        "p_hac": 0.1728,
-        "hit": 0.46,
-        "n": 500
+        "mean_ic": -0.0306,
+        "ic_vol": 0.3942,
+        "ic_ir": -0.078,
+        "ic_ir_ann": -0.549,
+        "t_hac": -1.435,
+        "p_hac": 0.1514,
+        "hit": 0.456,
+        "n": 504
       },
       "63d": {
-        "mean_ic": -0.041,
-        "ic_vol": 0.3933,
-        "ic_ir": -0.104,
-        "ic_ir_ann": -0.737,
-        "t_hac": -2.027,
-        "p_hac": 0.0427,
+        "mean_ic": -0.0417,
+        "ic_vol": 0.3929,
+        "ic_ir": -0.106,
+        "ic_ir_ann": -0.751,
+        "t_hac": -2.068,
+        "p_hac": 0.0387,
         "hit": 0.454,
-        "n": 500
+        "n": 504
       }
     },
     "trend_gate_drawdown": {
-      "above_dd21_med_pct": -1.92,
-      "below_dd21_med_pct": -2.89,
+      "above_dd21_med_pct": -1.91,
+      "below_dd21_med_pct": -2.87,
       "shallower_when_above": true,
-      "n_above": 9151,
-      "n_below": 3593
+      "n_above": 9180,
+      "n_below": 3608
     },
     "alert_gate": {
       "risk": {
-        "n": 12744,
+        "n": 12788,
         "outcome": "fwd_dd21<-8%",
         "base_rate": 0.11,
         "reliability": {
-          "brier": 0.1779,
-          "base_brier": 0.0982,
-          "skill_score": -0.812,
+          "brier": 0.1781,
+          "base_brier": 0.098,
+          "skill_score": -0.818,
           "reliability": [
             {
               "bin": "0.0-0.1",
-              "n": 3037,
+              "n": 3040,
               "pred": 0.013,
               "obs": 0.074
             },
@@ -171,33 +171,33 @@
             },
             {
               "bin": "0.2-0.3",
-              "n": 2510,
+              "n": 2523,
               "pred": 0.253,
-              "obs": 0.124
+              "obs": 0.123
             },
             {
               "bin": "0.3-0.4",
-              "n": 2398,
+              "n": 2404,
               "pred": 0.355,
-              "obs": 0.097
+              "obs": 0.098
             },
             {
               "bin": "0.4-0.5",
-              "n": 1258,
+              "n": 1262,
               "pred": 0.437,
               "obs": 0.139
             },
             {
               "bin": "0.5-0.6",
-              "n": 1517,
+              "n": 1525,
               "pred": 0.57,
-              "obs": 0.139
+              "obs": 0.138
             },
             {
               "bin": "0.6-0.7",
-              "n": 714,
+              "n": 720,
               "pred": 0.645,
-              "obs": 0.168
+              "obs": 0.167
             },
             {
               "bin": "0.7-0.8",
@@ -207,48 +207,48 @@
             },
             {
               "bin": "0.8-0.9",
-              "n": 151,
+              "n": 153,
               "pred": 0.852,
-              "obs": 0.185
+              "obs": 0.183
             },
             {
               "bin": "0.9-1.0",
-              "n": 116,
-              "pred": 0.937,
-              "obs": 0.147
+              "n": 118,
+              "pred": 0.938,
+              "obs": 0.144
             }
           ],
-          "n": 12744,
+          "n": 12788,
           "base_rate": 0.11
         },
         "platt": {
           "a": 0.076,
-          "b": -1.947,
-          "brier_recal": 0.0976
+          "b": -1.95,
+          "brier_recal": 0.0975
         },
-        "skill_recal": 0.006,
+        "skill_recal": 0.005,
         "gate": {
           "min_confidence": 0.6,
-          "precision_oos": 0.142,
-          "recall_oos": 0.139,
-          "lift_oos": 1.29,
+          "precision_oos": 0.141,
+          "recall_oos": 0.14,
+          "lift_oos": 1.28,
           "lift_ci": [
             1.12,
-            1.46
+            1.44
           ],
-          "n_fired_oos": 1777,
+          "n_fired_oos": 1791,
           "k_folds": 5
         },
         "gate_rejected": null,
         "verdict": "calibratable"
       },
       "entry": {
-        "n": 12744,
+        "n": 12788,
         "outcome": "fwd_rel21>0",
-        "base_rate": 0.493,
+        "base_rate": 0.492,
         "reliability": {
           "brier": 0.3065,
-          "base_brier": 0.25,
+          "base_brier": 0.2499,
           "skill_score": -0.226,
           "reliability": [
             {
@@ -265,45 +265,45 @@
             },
             {
               "bin": "0.2-0.3",
-              "n": 3376,
+              "n": 3391,
               "pred": 0.299,
-              "obs": 0.496
+              "obs": 0.494
             },
             {
               "bin": "0.3-0.4",
-              "n": 690,
+              "n": 692,
               "pred": 0.351,
               "obs": 0.493
             },
             {
               "bin": "0.4-0.5",
-              "n": 766,
+              "n": 768,
               "pred": 0.441,
               "obs": 0.539
             },
             {
               "bin": "0.5-0.6",
-              "n": 3252,
+              "n": 3265,
               "pred": 0.592,
-              "obs": 0.49
+              "obs": 0.488
             },
             {
               "bin": "0.6-0.7",
-              "n": 2194,
+              "n": 2204,
               "pred": 0.674,
-              "obs": 0.487
+              "obs": 0.485
             },
             {
               "bin": "0.7-0.8",
-              "n": 552,
+              "n": 553,
               "pred": 0.749,
-              "obs": 0.551
+              "obs": 0.55
             },
             {
               "bin": "0.8-0.9",
-              "n": 436,
+              "n": 437,
               "pred": 0.848,
-              "obs": 0.454
+              "obs": 0.453
             },
             {
               "bin": "0.9-1.0",
@@ -312,26 +312,26 @@
               "obs": 0.468
             }
           ],
-          "n": 12744,
-          "base_rate": 0.493
+          "n": 12788,
+          "base_rate": 0.492
         },
         "platt": {
           "a": -0.01,
-          "b": -0.023,
+          "b": -0.028,
           "brier_recal": 0.2499
         },
         "skill_recal": 0.0,
         "gate": null,
         "gate_rejected": {
           "min_confidence": 0.35,
-          "precision_oos": 0.485,
-          "recall_oos": 0.511,
+          "precision_oos": 0.483,
+          "recall_oos": 0.51,
           "lift_oos": 0.98,
           "lift_ci": [
             0.96,
             1.0
           ],
-          "n_fired_oos": 6506,
+          "n_fired_oos": 6518,
           "k_folds": 5
         },
         "verdict": "weak_separation"
@@ -342,7 +342,7 @@
     "universe": "proxy_spdr_sectors",
     "span": [
       "1998-12-22",
-      "2026-06-18"
+      "2026-07-17"
     ],
     "verdict": "display_only",
     "default": {
@@ -358,49 +358,49 @@
     ],
     "n_trials": 80,
     "cost_bps": 10.0,
-    "dsr": 0.7748,
+    "dsr": 0.7705,
     "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
     "vt": {
-      "sharpe": 0.593,
+      "sharpe": 0.589,
       "maxdd_pct": -21.7,
-      "cagr": 5.83,
+      "cagr": 5.78,
       "avg_gross": 0.67,
-      "turnover_yr": 5.66
+      "turnover_yr": 5.65
     },
     "base": {
-      "sharpe": 0.556,
+      "sharpe": 0.552,
       "maxdd_pct": -33.9,
-      "cagr": 7.05
+      "cagr": 6.98
     },
     "brake": {
-      "sharpe": 0.502
+      "sharpe": 0.498
     },
     "beats_brake": true,
     "dd_reduction_ci": {
       "dd_reduction_pp_ci": [
         1.0,
-        7.5,
-        17.2
+        7.7,
+        17.4
       ],
       "favorable": true,
       "excludes_0": true,
-      "n": 6914
+      "n": 6933
     },
     "block_bootstrap": {
       "sharpe_ci": [
-        0.26,
-        0.59,
+        0.25,
+        0.58,
         0.93
       ],
       "maxdd_ci_pct": [
-        -39.6,
-        -23.7,
-        -15.5
+        -40.3,
+        -23.9,
+        -15.8
       ],
       "sharpe_gt0_prob": 1.0,
       "block": 21,
       "B": 4000,
-      "n": 6914
+      "n": 6933
     },
     "split_half": {
       "pre2013": {
@@ -423,15 +423,15 @@
       "floor": 0.4,
       "dd_reduction_vs_vt_ci": {
         "dd_reduction_pp_ci": [
-          -5.1,
+          -5.3,
           1.6,
-          7.1
+          7.2
         ],
         "favorable": false,
         "excludes_0": false,
-        "n": 6914
+        "n": 6933
       },
-      "sharpe": 0.566,
+      "sharpe": 0.565,
       "maxdd_pct": -21.9
     }
   },
@@ -439,32 +439,32 @@
     "universe": "proxy_spdr_sectors",
     "n_trials": 9,
     "total": {
-      "sharpe": 0.556,
+      "sharpe": 0.552,
       "maxdd_pct": -33.9,
       "skew": -0.43,
-      "cagr": 7.05
+      "cagr": 6.98
     },
     "residual": {
-      "sharpe": 0.549,
+      "sharpe": 0.547,
       "maxdd_pct": -33.8,
       "skew": -0.47,
-      "cagr": 6.86
+      "cagr": 6.83
     },
     "dd_reduction_vs_total_ci": {
       "dd_reduction_pp_ci": [
-        -3.5,
-        0.5,
-        4.4
+        -3.3,
+        0.6,
+        4.5
       ],
       "favorable": false,
       "excludes_0": false,
-      "n": 6914
+      "n": 6933
     },
     "verdict": "not_additive_descriptive"
   },
   "rollover_fit": {
     "universe": "proxy_spdr_sectors",
-    "n": 12832,
+    "n": 12876,
     "n_trials": 12,
     "base_rate": 0.11,
     "legs": [
@@ -482,87 +482,32 @@
       0.1
     ],
     "fitted_weights": [
-      0.294,
+      0.301,
       0.0,
       0.0,
-      0.859,
-      0.005
+      0.852,
+      0.002
     ],
     "wired_weights": [
-      0.254,
+      0.26,
       0.0,
       0.0,
-      0.742,
-      0.004
+      0.738,
+      0.002
     ],
     "oos_lift_hand": 1.08,
     "oos_lift_fitted": 1.32,
-    "reliability_skill": -0.898,
+    "reliability_skill": -0.896,
     "verdict": "ship_fitted_weights"
-  },
-  "verdict": {
-    "emerging": {
-      "verdict": "not_measurable",
-      "t_hac": -0.645,
-      "mean_pct": -0.09,
-      "n": 1422
-    },
-    "fading": {
-      "verdict": "measurable_edge",
-      "t_hac": -9.65,
-      "mean_pct": -3.74,
-      "n": 252
-    },
-    "deteriorating": {
-      "verdict": "measurable_edge",
-      "t_hac": -15.472,
-      "mean_pct": -3.61,
-      "n": 3959
-    },
-    "dominant": {
-      "verdict": "not_measurable",
-      "t_hac": 0.86,
-      "mean_pct": 1.14,
-      "n": 47
-    },
-    "cross_sectional_momentum": {
-      "mean_ic_21d": -0.0295,
-      "verdict": "no_return_edge"
-    },
-    "trend_gate": {
-      "verdict": "drawdown_control",
-      "above_dd21_med_pct": -1.92,
-      "below_dd21_med_pct": -2.89,
-      "shallower_when_above": true,
-      "n_above": 9151,
-      "n_below": 3593
-    },
-    "alert_firing_gate": {
-      "risk": {
-        "min_confidence": 0.6,
-        "precision_oos": 0.142,
-        "recall_oos": 0.139,
-        "lift_oos": 1.29,
-        "lift_ci": [
-          1.12,
-          1.46
-        ],
-        "n_fired_oos": 1777,
-        "k_folds": 5
-      },
-      "entry": null,
-      "note": "Only high-confidence alerts claim added precision. Lower-confidence alerts stay visible for the audit trail."
-    },
-    "GO": true
   },
   "breadth_divergence_fit": {
     "universe": "proxy_spdr_sectors",
     "n_assets": 11,
     "span": [
       "1998-12-22",
-      "2026-06-30"
+      "2026-07-17"
     ],
-    "n": 1330,
+    "n": 1332,
     "base_rate": 0.07,
     "n_trials": 12,
     "target": "fwd_dd21<-8% (basket drawdown \u2014 never forward return)",
@@ -577,7 +522,7 @@
       0.2
     ],
     "fitted_leg_weights": [
-      0.554,
+      0.55,
       0.0,
       0.0
     ],
@@ -590,15 +535,15 @@
       "pass": false,
       "oos_topthird_lift": 0.94,
       "lift_ci": [
-        0.56,
+        0.57,
         1.06
       ],
-      "n_fired_oos": 436,
+      "n_fired_oos": 437,
       "k_folds": 5
     },
     "g2_incremental": {
       "pass": false,
-      "n": 12854,
+      "n": 12876,
       "base_rate": 0.11,
       "oos_lift_hand5": 1.08,
       "oos_lift_fit5": 1.32,
@@ -612,30 +557,30 @@
         0.0
       ],
       "full_fit_weights": [
-        0.296,
+        0.301,
         0.0,
         0.0,
-        0.857,
-        0.005,
+        0.852,
+        0.002,
         0.0
       ]
     },
     "confidence": {
-      "n": 1330,
+      "n": 1332,
       "outcome": "fwd_dd21<-8%",
       "base_rate": 0.07,
       "skill_recal": -0.002,
       "gate": null,
       "gate_rejected": {
         "min_confidence": 0.2,
-        "precision_oos": 0.059,
-        "recall_oos": 0.283,
-        "lift_oos": 0.84,
+        "precision_oos": 0.058,
+        "recall_oos": 0.284,
+        "lift_oos": 0.83,
         "lift_ci": [
-          0.53,
-          1.12
+          0.55,
+          1.11
         ],
-        "n_fired_oos": 376,
+        "n_fired_oos": 378,
         "k_folds": 5
       },
       "verdict": "weak_separation"
@@ -643,337 +588,59 @@
     "verdict": "weak_separation",
     "note": "Display-only texture in ALL cases; the verdict only controls the displayed grade. CN/HK reads are descriptive-only regardless (US-proxy verdict cited cross-market, 0/152-FWER CN prior)."
   },
-  "abs_escape_fit": {
-    "universe": "proxy_spdr_sectors",
-    "n_assets": 11,
-    "span": [
-      "1998-12-22",
-      "2026-07-01"
-    ],
-    "preregistered": "research/LABEL_FALTERING_PHASE0.md#B1",
-    "n": 12854,
-    "n_inset": 8591,
-    "base_rate_inset": 0.103,
-    "n_trials": 12,
-    "grid_pct": [
-      -3,
-      -5,
-      -7
-    ],
-    "primary_cell_pct": -5,
-    "breadth_det_def": "net_nh<=0 OR pct50<0.5 (panel proxy, broadcast)",
-    "cells": {
-      "-3%": {
-        "n_fired": 461,
-        "n_days_fired": 217,
-        "dd21_med_fired_pct": -3.37,
-        "dd21_med_inset_pct": -2.02,
-        "ret21_med_fired_pct": 1.48,
-        "rel21_med_fired_pct": 0.04,
-        "hit_fired": 0.219,
-        "lift": 2.14,
+  "verdict": {
+    "emerging": {
+      "verdict": "not_measurable",
+      "t_hac": -0.67,
+      "mean_pct": -0.1,
+      "n": 1425
+    },
+    "fading": {
+      "verdict": "measurable_edge",
+      "t_hac": -9.69,
+      "mean_pct": -3.74,
+      "n": 253
+    },
+    "deteriorating": {
+      "verdict": "measurable_edge",
+      "t_hac": -15.464,
+      "mean_pct": -3.6,
+      "n": 3980
+    },
+    "dominant": {
+      "verdict": "not_measurable",
+      "t_hac": 0.86,
+      "mean_pct": 1.14,
+      "n": 47
+    },
+    "cross_sectional_momentum": {
+      "mean_ic_21d": -0.0306,
+      "verdict": "weak_edge"
+    },
+    "trend_gate": {
+      "verdict": "drawdown_control",
+      "above_dd21_med_pct": -1.91,
+      "below_dd21_med_pct": -2.87,
+      "shallower_when_above": true,
+      "n_above": 9180,
+      "n_below": 3608
+    },
+    "alert_firing_gate": {
+      "risk": {
+        "min_confidence": 0.6,
+        "precision_oos": 0.141,
+        "recall_oos": 0.14,
+        "lift_oos": 1.28,
         "lift_ci": [
-          1.61,
-          2.66
+          1.12,
+          1.44
         ],
-        "t_dd_paired": {
-          "t": -1.994,
-          "mean": -0.51,
-          "n_days": 199
-        },
-        "t_ret_paired": {
-          "t": 1.128,
-          "mean": 0.39,
-          "n_days": 199
-        },
-        "split_half": {
-          "pre2013": {
-            "lift": 1.82,
-            "n_fired": 274
-          },
-          "post2013": {
-            "lift": 2.49,
-            "n_fired": 187
-          }
-        },
-        "g1_risk": false,
-        "killed": false,
-        "verdict": "no_incremental_edge"
+        "n_fired_oos": 1791,
+        "k_folds": 5
       },
-      "-5%": {
-        "n_fired": 148,
-        "n_days_fired": 72,
-        "dd21_med_fired_pct": -4.69,
-        "dd21_med_inset_pct": -2.02,
-        "ret21_med_fired_pct": 1.84,
-        "rel21_med_fired_pct": -0.68,
-        "hit_fired": 0.338,
-        "lift": 3.29,
-        "lift_ci": [
-          2.15,
-          4.47
-        ],
-        "t_dd_paired": {
-          "t": -1.966,
-          "mean": -1.39,
-          "n_days": 65
-        },
-        "t_ret_paired": {
-          "t": -0.095,
-          "mean": -0.07,
-          "n_days": 65
-        },
-        "split_half": {
-          "pre2013": {
-            "lift": 2.71,
-            "n_fired": 92
-          },
-          "post2013": {
-            "lift": 4.05,
-            "n_fired": 56
-          }
-        },
-        "g1_risk": false,
-        "killed": false,
-        "verdict": "no_incremental_edge"
-      },
-      "-7%": {
-        "n_fired": 79,
-        "n_days_fired": 42,
-        "dd21_med_fired_pct": -5.11,
-        "dd21_med_inset_pct": -2.02,
-        "ret21_med_fired_pct": 2.11,
-        "rel21_med_fired_pct": -0.52,
-        "hit_fired": 0.418,
-        "lift": 4.07,
-        "lift_ci": [
-          2.55,
-          5.79
-        ],
-        "t_dd_paired": {
-          "t": -0.983,
-          "mean": -0.88,
-          "n_days": 38
-        },
-        "t_ret_paired": {
-          "t": 1.344,
-          "mean": 1.01,
-          "n_days": 38
-        },
-        "split_half": {
-          "pre2013": {
-            "lift": 3.45,
-            "n_fired": 42
-          },
-          "post2013": {
-            "lift": 4.84,
-            "n_fired": 37
-          }
-        },
-        "g1_risk": false,
-        "killed": false,
-        "verdict": "no_incremental_edge"
-      }
+      "entry": null,
+      "note": "Only high-confidence alerts claim added precision. Lower-confidence alerts stay visible for the audit trail."
     },
-    "sensitivity_kill_veto": false,
-    "verdict": "no_incremental_edge",
-    "note": "In-set = relative-path label NOT fading/deteriorating \u2014 the events the escape leg would ADD. Not wired into _label() in this task."
-  },
-  "conviction_demotion_fit": {
-    "universe": "proxy_spdr_sectors",
-    "preregistered": "research/LABEL_FALTERING_PHASE0.md#B2",
-    "n_trials": 12,
-    "pit_audit": {
-      "china_standout_track": {
-        "span": [
-          "2026-06-30",
-          "2026-07-02"
-        ],
-        "n_days": 3,
-        "has_conviction_field": false,
-        "fields": [
-          "date",
-          "ticker",
-          "board_rank",
-          "tier",
-          "setup",
-          "extended",
-          "washout",
-          "level",
-          "coiled",
-          "coiled_star",
-          "coiled_cohort",
-          "coiled_fire",
-          "coiled_fire_ticks"
-        ]
-      },
-      "signal_archive_baskets": {
-        "span": [
-          "2026-06-18",
-          "2026-07-02"
-        ],
-        "n_days": 10,
-        "conviction_fields": []
-      },
-      "git_rendered_stores": {
-        "note": "site/*stockdata/*.json carried conviction blocks in git only 2026-06-13 \u2192 2026-07-01 (~13 trading days), then untracked to R2 (r2-data-plane). Rendered current-state, formula drift across renders \u2014 not a PIT series."
-      },
-      "r2_data_plane": {
-        "note": "current-state per-ticker stores only; no dated snapshots."
-      },
-      "usable_pit_history": false
-    },
-    "accrual_spec": {
-      "what": "daily, per basket and region: member conviction.potential median, IQR, n_members, theme score, label \u2014 archived via engine.signal_archive at render",
-      "rerun_bar": ">=180 archived trading days (~9 months; ~36 non-overlapping 21d windows per basket x ~25 baskets, date-blocked pooling)",
-      "gates_on_rerun": "identical to the proxy G1/G2 below, pre-registered 2026-07-03"
-    },
-    "proxy": {
-      "n_constructive": 778,
-      "base_rate": 0.032,
-      "n_events": 0,
-      "event_def": "constructive AND member-median health <= 25",
-      "g1_standalone": {
-        "pass": false,
-        "note": "too few collapse events"
-      },
-      "g2_incremental": {
-        "pass": false,
-        "n": 12854,
-        "base_rate": 0.11,
-        "oos_lift_hand5": 1.08,
-        "oos_lift_fit5": 1.32,
-        "oos_lift_fit6": 1.32,
-        "w6_full_fit": 0.0,
-        "w6_by_fold": [
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0
-        ]
-      },
-      "verdict": "proxy_no_signal"
-    },
-    "verdict": "no_pit_history_accrue",
-    "note": "The proxy health composite is a PRICE stand-in for the conviction score's price legs \u2014 it can set the prior for the accrued re-run but can never ship the demotion leg. Not wired in this task."
-  },
-  "rank_dd_modulation_fit": {
-    "universe": "proxy_spdr_sectors",
-    "span": [
-      "1998-12-22",
-      "2026-07-01"
-    ],
-    "preregistered": "research/LABEL_FALTERING_PHASE0.md#B3",
-    "n_trials": 12,
-    "cost_bps": 10.0,
-    "grid_pct": [
-      -5,
-      -10,
-      -15
-    ],
-    "primary_cell_pct": -10,
-    "base": {
-      "sharpe": 0.552,
-      "maxdd_pct": -33.9,
-      "cagr": 6.99
-    },
-    "cells": {
-      "-5%": {
-        "sharpe": 0.538,
-        "maxdd_pct": -37.7,
-        "cagr": 6.6,
-        "sharpe_diff_ci": {
-          "sharpe_diff_ci": [
-            -0.077,
-            -0.015,
-            0.052
-          ],
-          "real_improvement": false,
-          "real_degradation": false,
-          "n": 6922
-        },
-        "dd_reduction_ci": {
-          "dd_reduction_pp_ci": [
-            -4.4,
-            0.3,
-            5.5
-          ],
-          "favorable": false,
-          "excludes_0": false,
-          "n": 6922
-        },
-        "split_half_sharpe_diff": {
-          "pre2013": -0.041,
-          "post2013": 0.015
-        },
-        "go": false,
-        "verdict": "no_edge"
-      },
-      "-10%": {
-        "sharpe": 0.553,
-        "maxdd_pct": -33.9,
-        "cagr": 6.99,
-        "sharpe_diff_ci": {
-          "sharpe_diff_ci": [
-            -0.014,
-            0.001,
-            0.015
-          ],
-          "real_improvement": false,
-          "real_degradation": false,
-          "n": 6922
-        },
-        "dd_reduction_ci": {
-          "dd_reduction_pp_ci": [
-            -1.2,
-            0.0,
-            1.4
-          ],
-          "favorable": false,
-          "excludes_0": false,
-          "n": 6922
-        },
-        "split_half_sharpe_diff": {
-          "pre2013": 0.01,
-          "post2013": -0.009
-        },
-        "go": false,
-        "verdict": "no_edge"
-      },
-      "-15%": {
-        "sharpe": 0.547,
-        "maxdd_pct": -33.9,
-        "cagr": 6.92,
-        "sharpe_diff_ci": {
-          "sharpe_diff_ci": [
-            -0.018,
-            -0.004,
-            0.004
-          ],
-          "real_improvement": false,
-          "real_degradation": false,
-          "n": 6922
-        },
-        "dd_reduction_ci": {
-          "dd_reduction_pp_ci": [
-            -1.3,
-            0.0,
-            0.6
-          ],
-          "favorable": false,
-          "excludes_0": false,
-          "n": 6922
-        },
-        "split_half_sharpe_diff": {
-          "pre2013": 0.0,
-          "post2013": -0.009
-        },
-        "go": false,
-        "verdict": "no_edge"
-      }
-    },
-    "verdict": "no_edge",
-    "note": "Verdict from the pre-declared primary cell; sensitivity cells reported. Not wired into rank_themes()/allocate() in this task."
+    "GO": true
   }
 }

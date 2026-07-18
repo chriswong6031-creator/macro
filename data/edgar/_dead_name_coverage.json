@@ -1,15 +1,21 @@
 {
- "schema": "dead_name_coverage.v2",
- "generated_utc": "2026-07-06T03:05:25.513776+00:00",
+ "schema": "dead_name_coverage.v1",
+ "generated_utc": "2026-07-18T14:56:48.549746+00:00",
  "n_dead_universe": 1083,
- "n_cik_resolved": 15,
- "n_with_prices": 415,
- "price_coverage_frac": 0.3832,
- "post_anchor_n": 418,
- "post_anchor_fetched": 415,
- "post_anchor_failed": 3,
- "by_source": {
-  "polygon": 415
+ "n_cik_resolved": 58,
+ "n_with_fundamentals": 53,
+ "coverage_frac": 0.0489,
+ "resolved_by_method": {
+  "edgar_fts": 43,
+  "seed": 15
  },
- "note": "Price coverage via Polygon REST (MASSIVE_API_KEY). Coverage is limited to post-2021-07-06 dead names (~418 tickers). Pre-2021-07 dead names (665 tickers) are unreachable via Polygon; they are survivorship-biased and stamped UPPER BOUND in all analyses. Coverage for 756d gate: need >= 542/1083 (50%); current = 415/1083 (38.3%). "
+ "fts_funnel": {
+  "no_dominant": 120,
+  "reject_still_active": 5,
+  "resolved": 43,
+  "reject_no_name_corroboration": 7,
+  "reject_live_mismatch": 9,
+  "out_of_range": 16
+ },
+ "note": "OPTIMISTIC de-bias bound \u2014 dead-name PRICES are still ~absent (yfinance survivor-only), so factor ICs over the merged panel are fundamentals-de-biased but price-join-limited. Stamp on every output."
 }

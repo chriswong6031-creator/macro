@@ -459,12 +459,12 @@
         "bottom_fired": [
           {
             "code": "oversold_htf",
-            "label_en": "Oversold longer-term / \u4e2d\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u5356"
           },
           {
             "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery / \u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf",
+            "label_en": "Cycle in trough/recovery",
             "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
           }
         ],
@@ -487,12 +487,12 @@
         "bottom_fired": [
           {
             "code": "oversold_htf",
-            "label_en": "Oversold longer-term / \u4e2d\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u5356"
           },
           {
             "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery / \u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf",
+            "label_en": "Cycle in trough/recovery",
             "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
           }
         ],
@@ -515,24 +515,24 @@
         "bottom_fired": [
           {
             "code": "oversold_htf",
-            "label_en": "Oversold longer-term / \u4e2d\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u5356"
           },
           {
             "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery / \u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf",
+            "label_en": "Cycle in trough/recovery",
             "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
           }
         ],
         "top_fired": [
           {
             "code": "curl_dn",
-            "label_en": "Momentum rolling over / \u52a8\u91cf\u4e0b\u94a9",
+            "label_en": "Momentum rolling over",
             "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           },
           {
             "code": "divergence",
-            "label_en": "Momentum diverging from trend / \u52a8\u91cf\u4e0e\u8d8b\u52bf\u80cc\u79bb",
+            "label_en": "Momentum diverging from trend",
             "label_zh": "\u52a8\u91cf\u4e0e\u8d8b\u52bf\u80cc\u79bb"
           }
         ],
@@ -554,19 +554,19 @@
         "bottom_fired": [
           {
             "code": "oversold_htf",
-            "label_en": "Oversold longer-term / \u4e2d\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u5356"
           },
           {
             "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery / \u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf",
+            "label_en": "Cycle in trough/recovery",
             "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
           }
         ],
         "top_fired": [
           {
             "code": "curl_dn",
-            "label_en": "Momentum rolling over / \u52a8\u91cf\u4e0b\u94a9",
+            "label_en": "Momentum rolling over",
             "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
@@ -589,22 +589,22 @@
         "top_fired": [
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           },
           {
             "code": "cot_long",
-            "label_en": "COT crowded long / COT\u5927\u5e45\u504f\u591a",
+            "label_en": "COT crowded long",
             "label_zh": "COT\u5927\u5e45\u504f\u591a"
           },
           {
             "code": "curl_dn",
-            "label_en": "Momentum rolling over / \u52a8\u91cf\u4e0b\u94a9",
+            "label_en": "Momentum rolling over",
             "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           },
           {
             "code": "cycle_top",
-            "label_en": "Cycle at peak/downturn / \u5468\u671f\u5904\u4e8e\u9876\u5cf0/\u4e0b\u884c",
+            "label_en": "Cycle at peak/downturn",
             "label_zh": "\u5468\u671f\u5904\u4e8e\u9876\u5cf0/\u4e0b\u884c"
           }
         ],
@@ -626,12 +626,12 @@
         "bottom_fired": [
           {
             "code": "oversold_htf",
-            "label_en": "Oversold longer-term / \u4e2d\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u5356"
           },
           {
             "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery / \u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf",
+            "label_en": "Cycle in trough/recovery",
             "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
           }
         ],
@@ -654,17 +654,17 @@
         "bottom_fired": [
           {
             "code": "oversold_ltf",
-            "label_en": "Oversold short-term / \u77ed\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold short-term",
             "label_zh": "\u77ed\u5468\u671f\u8d85\u5356"
           },
           {
             "code": "curl",
-            "label_en": "Momentum curl up / \u52a8\u91cf\u4e0a\u94a9",
+            "label_en": "Momentum curl up",
             "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
           },
           {
             "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery / \u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf",
+            "label_en": "Cycle in trough/recovery",
             "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
           }
         ],
@@ -687,24 +687,24 @@
         "bottom_fired": [
           {
             "code": "oversold_htf",
-            "label_en": "Oversold longer-term / \u4e2d\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u5356"
           }
         ],
         "top_fired": [
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           },
           {
             "code": "stretch",
-            "label_en": "Price stretched above 200-day / \u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf",
+            "label_en": "Price stretched above 200-day",
             "label_zh": "\u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf"
           },
           {
             "code": "curl_dn",
-            "label_en": "Momentum rolling over / \u52a8\u91cf\u4e0b\u94a9",
+            "label_en": "Momentum rolling over",
             "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
@@ -727,22 +727,22 @@
         "top_fired": [
           {
             "code": "overbought_ltf",
-            "label_en": "Overbought short-term / \u77ed\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought short-term",
             "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
           },
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           },
           {
             "code": "stretch",
-            "label_en": "Price stretched above 200-day / \u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf",
+            "label_en": "Price stretched above 200-day",
             "label_zh": "\u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf"
           },
           {
             "code": "curl_dn",
-            "label_en": "Momentum rolling over / \u52a8\u91cf\u4e0b\u94a9",
+            "label_en": "Momentum rolling over",
             "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
@@ -765,17 +765,17 @@
         "top_fired": [
           {
             "code": "shock_top",
-            "label_en": "Exogenous blow-off bid / \u5916\u751f\u5439\u9876\u4e70\u76d8",
+            "label_en": "Exogenous blow-off bid",
             "label_zh": "\u5916\u751f\u5439\u9876\u4e70\u76d8"
           },
           {
             "code": "overbought_ltf",
-            "label_en": "Overbought short-term / \u77ed\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought short-term",
             "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
           },
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           }
         ],
@@ -798,22 +798,22 @@
         "top_fired": [
           {
             "code": "shock_top",
-            "label_en": "Exogenous blow-off bid / \u5916\u751f\u5439\u9876\u4e70\u76d8",
+            "label_en": "Exogenous blow-off bid",
             "label_zh": "\u5916\u751f\u5439\u9876\u4e70\u76d8"
           },
           {
             "code": "overbought_ltf",
-            "label_en": "Overbought short-term / \u77ed\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought short-term",
             "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
           },
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           },
           {
             "code": "cot_long",
-            "label_en": "COT crowded long / COT\u5927\u5e45\u504f\u591a",
+            "label_en": "COT crowded long",
             "label_zh": "COT\u5927\u5e45\u504f\u591a"
           }
         ],
@@ -836,12 +836,12 @@
         "top_fired": [
           {
             "code": "overbought_ltf",
-            "label_en": "Overbought short-term / \u77ed\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought short-term",
             "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
           },
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           }
         ],
@@ -863,17 +863,17 @@
         "bottom_fired": [
           {
             "code": "shock_bottom",
-            "label_en": "Exogenous washout / \u5916\u751f\u51b2\u51fb\u6d17\u76d8",
+            "label_en": "Exogenous washout",
             "label_zh": "\u5916\u751f\u51b2\u51fb\u6d17\u76d8"
           },
           {
             "code": "oversold_ltf",
-            "label_en": "Oversold short-term / \u77ed\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold short-term",
             "label_zh": "\u77ed\u5468\u671f\u8d85\u5356"
           },
           {
             "code": "oversold_htf",
-            "label_en": "Oversold longer-term / \u4e2d\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u5356"
           }
         ],
@@ -897,7 +897,7 @@
         "top_fired": [
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           }
         ],
@@ -920,7 +920,7 @@
         "top_fired": [
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           }
         ],
@@ -943,12 +943,12 @@
         "top_fired": [
           {
             "code": "shock_top",
-            "label_en": "Exogenous blow-off bid / \u5916\u751f\u5439\u9876\u4e70\u76d8",
+            "label_en": "Exogenous blow-off bid",
             "label_zh": "\u5916\u751f\u5439\u9876\u4e70\u76d8"
           },
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           }
         ],
@@ -970,29 +970,29 @@
         "bottom_fired": [
           {
             "code": "oversold_htf",
-            "label_en": "Oversold longer-term / \u4e2d\u5468\u671f\u8d85\u5356",
+            "label_en": "Oversold longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u5356"
           },
           {
             "code": "bc_conf",
-            "label_en": "Bottom-confidence high / \u5e95\u90e8\u4fe1\u5fc3\u9ad8",
+            "label_en": "Bottom-confidence high",
             "label_zh": "\u5e95\u90e8\u4fe1\u5fc3\u9ad8"
           }
         ],
         "top_fired": [
           {
             "code": "overbought_htf",
-            "label_en": "Overbought longer-term / \u4e2d\u5468\u671f\u8d85\u4e70",
+            "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           },
           {
             "code": "cot_long",
-            "label_en": "COT crowded long / COT\u5927\u5e45\u504f\u591a",
+            "label_en": "COT crowded long",
             "label_zh": "COT\u5927\u5e45\u504f\u591a"
           },
           {
             "code": "curl_dn",
-            "label_en": "Momentum rolling over / \u52a8\u91cf\u4e0b\u94a9",
+            "label_en": "Momentum rolling over",
             "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
@@ -1015,19 +1015,19 @@
       "bottom_fired": [
         {
           "code": "oversold_htf",
-          "label_en": "Oversold longer-term / \u4e2d\u5468\u671f\u8d85\u5356",
+          "label_en": "Oversold longer-term",
           "label_zh": "\u4e2d\u5468\u671f\u8d85\u5356"
         }
       ],
       "top_fired": [
         {
           "code": "breadth_top",
-          "label_en": "Sector breadth euphoric / \u677f\u5757\u5e7f\u5ea6\u4ea2\u594b",
+          "label_en": "Sector breadth euphoric",
           "label_zh": "\u677f\u5757\u5e7f\u5ea6\u4ea2\u594b"
         },
         {
           "code": "curl_dn",
-          "label_en": "Momentum rolling over / \u52a8\u91cf\u4e0b\u94a9",
+          "label_en": "Momentum rolling over",
           "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
         }
       ],
