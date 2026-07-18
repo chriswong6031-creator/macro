@@ -77,6 +77,13 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .rel-chip.improving { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
 .rel-chip.stable { color:var(--muted); background:var(--panel2); }
 .rel-chip.deteriorating { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
+/* follow-tier chip (mirrors desk page .ftier) */
+.ftier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+         letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); }
+.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
+.ftier.watch  { color:var(--muted); background:var(--panel2); }
+.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
+.ftier.insufficient { color:var(--muted); background:transparent; border-style:dashed; }
 
 /* ---- hero header ---- */
 .fd-crumb { font-size:12px; color:var(--muted); margin:4px 0 10px; }
@@ -509,8 +516,6 @@ table.sm-t th.sorted { color:var(--text); }
 
 
 
-
-
 <div class="fd">
 
 <div class="fd-crumb">
@@ -530,13 +535,12 @@ table.sm-t th.sorted { color:var(--text); }
       <span class="grade na">—</span>
       
       
-      
-    </div>
+      <span class="ftier insufficient" data-tip-en="LOW DATA" data-tip-zh="数据不足"><span class="l-en">LOW DATA</span><span class="l-zh">数据不足</span></span></div>
   </div>
   <div class="metacol">
     <span class="chip-fresh t-amber"><span class="fdot"></span><span class="l-en">13F · quarterly · ~45-day lag</span><span class="l-zh">13F · 季度披露 · 约45天滞后</span></span>
     <span class="chip-fresh"><span class="l-en">filed</span><span class="l-zh">申报日</span> <b class="num">2026-05-15</b> · <span class="l-en">period end</span><span class="l-zh">期末</span> <b class="num">2026-03-31</b></span>
-    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-18 11:26 UTC</span></span>
+    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-18 12:49 UTC</span></span>
     <a class="chip-fresh" href="funddata/mudrick.json"><span class="l-en">Data (JSON)</span><span class="l-zh">数据 (JSON)</span></a>
   </div>
 </div>

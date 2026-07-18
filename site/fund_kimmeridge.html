@@ -77,6 +77,13 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .rel-chip.improving { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
 .rel-chip.stable { color:var(--muted); background:var(--panel2); }
 .rel-chip.deteriorating { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
+/* follow-tier chip (mirrors desk page .ftier) */
+.ftier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+         letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); }
+.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
+.ftier.watch  { color:var(--muted); background:var(--panel2); }
+.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
+.ftier.insufficient { color:var(--muted); background:transparent; border-style:dashed; }
 
 /* ---- hero header ---- */
 .fd-crumb { font-size:12px; color:var(--muted); margin:4px 0 10px; }
@@ -509,8 +516,6 @@ table.sm-t th.sorted { color:var(--text); }
 
 
 
-
-
 <div class="fd">
 
 <div class="fd-crumb">
@@ -531,13 +536,12 @@ table.sm-t th.sorted { color:var(--text); }
       <span class="rel-chip stable"><span class="l-en">Reliability stable</span><span class="l-zh">可靠性稳定</span></span>
       
       
-      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#49</b></span>
-    </div>
+      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#49</b></span><span class="ftier watch" data-tip-en="Watch score 29.2" data-tip-zh="观察分 29.2"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></div>
   </div>
   <div class="metacol">
     <span class="chip-fresh t-amber"><span class="fdot"></span><span class="l-en">13F · quarterly · ~45-day lag</span><span class="l-zh">13F · 季度披露 · 约45天滞后</span></span>
     <span class="chip-fresh"><span class="l-en">filed</span><span class="l-zh">申报日</span> <b class="num">2026-05-15</b> · <span class="l-en">period end</span><span class="l-zh">期末</span> <b class="num">2026-03-31</b></span>
-    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-18 11:26 UTC</span></span>
+    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-18 12:49 UTC</span></span>
     <a class="chip-fresh" href="funddata/kimmeridge.json"><span class="l-en">Data (JSON)</span><span class="l-zh">数据 (JSON)</span></a>
   </div>
 </div>
@@ -689,13 +693,13 @@ table.sm-t th.sorted { color:var(--text); }
       
       
       <div class="sxrow">
-        <span class="sx-name">Unclassified</span>
+        <span class="sx-name">Energy</span>
         <span class="sbar"><i style="width:100.0%"></i></span>
         <span class="num" style="text-align:right">100.0%</span>
         <span class="num" style="text-align:right">
           
           
-            <span class="r-pos">▲ +51.9pp</span>
+            <span class="r-pos">▲ +21.7pp</span>
           
         </span>
       </div>
@@ -708,13 +712,13 @@ table.sm-t th.sorted { color:var(--text); }
       
       <div class="rot-h into"><span class="l-en">Rotating into (QoQ)</span><span class="l-zh">轮入（环比）</span></div>
       <div class="rotchips">
-        <span class="sub"><span class="l-en">no QoQ increases</span><span class="l-zh">无环比增持</span></span>
+        
+          <span class="rotchip into">Energy <b class="num">+21.7pp</b></span>
+        
       </div>
       <div class="rot-h out" style="margin-top:10px"><span class="l-en">Rotating out of (QoQ)</span><span class="l-zh">轮出（环比）</span></div>
       <div class="rotchips">
-        
-          <span class="rotchip outof">Energy <b class="num">-51.9pp</b></span>
-        
+        <span class="sub"><span class="l-en">no QoQ decreases</span><span class="l-zh">无环比减持</span></span>
       </div>
       
       <div class="rot-h" style="margin-top:14px"><span class="l-en">Quarter history — top-3 sectors</span><span class="l-zh">季度历史 — 前三大行业</span></div>
@@ -726,7 +730,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2026-03-31</td>
             <td class="l">
-              <span class="sub2">Unclassified <b class="num">100%</b> · </span>
+              <span class="sub2">Energy <b class="num">100%</b> · </span>
             </td>
           </tr>
         
@@ -735,7 +739,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2025-12-31</td>
             <td class="l">
-              <span class="sub2">Energy <b class="num">52%</b> · </span><span class="sub2">Unclassified <b class="num">48%</b> · </span>
+              <span class="sub2">Energy <b class="num">78%</b> · </span><span class="sub2">Unclassified <b class="num">22%</b> · </span>
             </td>
           </tr>
         
@@ -913,7 +917,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="35.6"
           data-streak="2"
           data-conv="70.0"
-          data-sector=""
+          data-sector="Energy"
           data-since="">
         <td class="rk num">1</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CTRA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CTRA</span></td>
@@ -930,7 +934,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >70 · HIGH</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Energy</td>
         <td class="l sub">Gas &amp; LNG</td>
         <td><span class="mut">—</span></td>
       </tr>

@@ -531,14 +531,15 @@ html[data-theme="dark"] body::before{
 .ai-brief-link:hover{transform:translateY(-1px);
   box-shadow:0 5px 14px -5px color-mix(in srgb,var(--blue) 42%,transparent);}
 
-/* menu light-up — accent-tinted hover/active (replaces the hardcoded #eef1f6 /
-   #222732; matched specificity so the dark variants win too) */
-a.nav-link:hover,a.nav-link.active{background:color-mix(in srgb,var(--blue) 12%,var(--card));}
+/* top-bar link light-up — accent-tinted hover/active. Mix base uses the FULL
+   surface fallback chain --card → --panel2 → --panel (+ hardcoded final), same as
+   the glass fill below: the vector family has two palette conventions (most pages
+   define --card; commodities uses --panel2/--panel and no --card), so a bare
+   --card OR bare --panel2 base is null on some pages → invalid color-mix → dead
+   hover. The dropdown-item hover moved to the aurora-glass block below. */
+a.nav-link:hover,a.nav-link.active{background:color-mix(in srgb,var(--blue) 12%,var(--card,var(--panel2,var(--panel,#eef1f6))));}
 html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{
-  background:color-mix(in srgb,var(--blue) 18%,var(--card));}
-.nav-dd-menu a:hover,.nav-dd-menu a.active{background:color-mix(in srgb,var(--blue) 12%,var(--card));}
-html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{
-  background:color-mix(in srgb,var(--blue) 18%,var(--card));}
+  background:color-mix(in srgb,var(--blue) 20%,var(--card,var(--panel2,var(--panel,#222732))));}
 
 /* 3rd-tier fly-out (Other Assets ▸ Bitcoin Vector / Commodities) — layout only,
    palette inherited from the host page's inline nav-dd-menu. Loaded after the
@@ -546,8 +547,15 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
 .nav-dd-menu .nav-sub{display:block;position:relative;}
 .nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:flex-start;}
 .nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;padding-left:12px;font-size:10px;
-  opacity:.55;flex:none;align-self:center;transition:transform .2s;}
-.nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{opacity:.9;transform:translateX(2px);}
+  opacity:.55;flex:none;align-self:center;transition:transform .2s,color .2s,opacity .2s,filter .2s;}
+/* breathe only while the dropdown is open + hover-capable + motion allowed — never
+   on hidden carets (perf) or the mobile accordion (theme.js rotate clobber). */
+@media (hover:hover) and (prefers-reduced-motion:no-preference){
+  .nav-dd:hover .nav-sub>a.nav-sub-trig .caret-r,
+  .nav-dd:focus-within .nav-sub>a.nav-sub-trig .caret-r{animation:navCaretBreath 2.6s ease-in-out infinite;}}
+.nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{animation:none;opacity:1;transform:translateX(3px);
+  color:var(--blue,var(--link,#5b9dff));
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 65%,transparent));}
 .nav-dd-menu .nav-sub>a.nav-sub-trig .nav-sub-text{display:block;flex:1;min-width:0;white-space:normal;}
 .nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
 .nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
@@ -612,25 +620,49 @@ html[data-theme="dark"] .site-nav .nav-sugg{box-shadow:var(--glass-shadow,0 24px
    pages (strategies, masterminds, spr, *_allocation …), so every page in the
    family gets the same glass — not just the site-nav half. Loaded after each
    page's inline `.nav-dd-menu` (0,1,0), so this (0,2,0) wins. */
+/* surface fallback chain --card → --panel2 → --panel covers BOTH vector-family
+   palette conventions: most pages (forex/vector/bonds/spr/strategies…) define
+   --card but not --panel2; commodities uses --panel2/--panel and no --card. A
+   hardcoded final keeps the glass opaque even if a page defines none. */
 .site-nav .nav-dd-menu,.topbar .nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;
-  background:color-mix(in srgb,var(--card) 66%,transparent);
-  -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
-  border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);border-radius:14px;
-  box-shadow:0 20px 54px -24px rgba(20,32,64,.34),0 10px 24px -14px rgba(20,32,64,.20),inset 0 1px 0 rgba(255,255,255,.85);
+  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#ffffff))) 90%,transparent);
+  -webkit-backdrop-filter:saturate(185%) blur(26px);backdrop-filter:saturate(185%) blur(26px);
+  border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);border-radius:15px;
+  box-shadow:0 20px 54px -24px rgba(20,32,64,.34),0 12px 28px -14px rgba(20,32,64,.20),inset 0 1px 0 rgba(255,255,255,.85);
   padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
-html[data-theme="dark"] .site-nav .nav-dd-menu,html[data-theme="dark"] .topbar .nav-dd-menu{background:color-mix(in srgb,var(--card) 75%,transparent);
-  border-color:color-mix(in srgb,var(--text) 14%,transparent);
-  box-shadow:0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55),inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent)}
+html[data-theme="dark"] .site-nav .nav-dd-menu,html[data-theme="dark"] .topbar .nav-dd-menu{background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#14171f))) 86%,transparent);
+  border-color:color-mix(in srgb,var(--text,var(--tx)) 14%,transparent);
+  box-shadow:0 24px 64px -22px rgba(3,7,18,.74),0 12px 28px -14px rgba(3,7,18,.55),inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent)}
 /* 3rd-tier fly-out: its parent .nav-dd-menu is already a backdrop root, so the
    nested backdrop-filter can't blur the page behind and the fill reads see-through.
    A denser near-opaque card fill matches the 2nd tier's frosted density. This
    selector is (0,4,0) — it beats the 2nd-tier glass rules above, including the
    dark override (0,3,1), so one rule covers both themes. */
 .site-nav .nav-dd-menu .nav-sub>.nav-dd-menu,.topbar .nav-dd-menu .nav-sub>.nav-dd-menu{
-  background:color-mix(in srgb,var(--card) 96%,transparent)}
+  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#181b21))) 97%,transparent)}
 .site-nav .nav-dd:hover>.nav-dd-menu,.site-nav .nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
 .site-nav .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
-.site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted,var(--mut,#8b93a1));margin-top:2px}
+/* aurora-glass hover — mirrors theme.css so the whole site shares one menu feel:
+   a soft blue→violet wash (::before) + luminous left bar (::after) + 2px glide.
+   Excludes the Research mega cards (.nm-feat/.nav-mega-item, kept as-is). Accent
+   --blue→--link→#5b9dff so it resolves on every family palette. .active = current
+   page. Loaded after the page's inline nav, so it wins. */
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item){position:relative;isolation:isolate;transition:transform .24s cubic-bezier(.2,.7,.3,1),color .18s}
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;opacity:0;transition:opacity .3s ease;
+  background:radial-gradient(130% 150% at 0% 50%,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 30%,transparent),transparent 62%),linear-gradient(90deg,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 17%,transparent),color-mix(in srgb,#9b8cff 12%,transparent) 70%,transparent);
+  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 12%,transparent)}
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);height:0;width:2.5px;border-radius:3px;z-index:-1;opacity:0;
+  background:linear-gradient(color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 90%,#fff),#9b8cff);
+  box-shadow:0 0 8px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 70%,transparent);transition:height .3s cubic-bezier(.2,.7,.3,1),opacity .3s ease}
+/* background:transparent neutralises each page's hardcoded inline flat hover
+   (#222732 / #eef1f6) so only the aurora wash paints (my 0,4,1 beats page 0,2,0). */
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:translateX(2px);background:transparent}
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active{background:transparent}
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::before,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::before{opacity:1}
+.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::after,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::after{height:56%;opacity:1}
+@keyframes navCaretBreath{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:.9;transform:translateX(2px)}}
+@media(prefers-reduced-motion:reduce){.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{animation:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{transition:none}}
 .site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
 .site-nav .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer}
 .site-nav .nav-ctrls .ai-brief-link.active{background:var(--blue);border-color:var(--blue);color:#fff}
@@ -3412,7 +3444,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-18 10:26 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-18 13:20 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->

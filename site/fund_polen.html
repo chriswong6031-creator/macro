@@ -77,6 +77,13 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .rel-chip.improving { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
 .rel-chip.stable { color:var(--muted); background:var(--panel2); }
 .rel-chip.deteriorating { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
+/* follow-tier chip (mirrors desk page .ftier) */
+.ftier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+         letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); }
+.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
+.ftier.watch  { color:var(--muted); background:var(--panel2); }
+.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
+.ftier.insufficient { color:var(--muted); background:transparent; border-style:dashed; }
 
 /* ---- hero header ---- */
 .fd-crumb { font-size:12px; color:var(--muted); margin:4px 0 10px; }
@@ -509,8 +516,6 @@ table.sm-t th.sorted { color:var(--text); }
 
 
 
-
-
 <div class="fd">
 
 <div class="fd-crumb">
@@ -531,13 +536,12 @@ table.sm-t th.sorted { color:var(--text); }
       <span class="rel-chip improving"><span class="l-en">Reliability improving</span><span class="l-zh">可靠性走强</span></span>
       
       
-      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#25</b></span>
-    </div>
+      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#25</b></span><span class="ftier watch" data-tip-en="Watch score 19.1" data-tip-zh="观察分 19.1"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></div>
   </div>
   <div class="metacol">
     <span class="chip-fresh t-amber"><span class="fdot"></span><span class="l-en">13F · quarterly · ~45-day lag</span><span class="l-zh">13F · 季度披露 · 约45天滞后</span></span>
     <span class="chip-fresh"><span class="l-en">filed</span><span class="l-zh">申报日</span> <b class="num">2026-05-14</b> · <span class="l-en">period end</span><span class="l-zh">期末</span> <b class="num">2026-03-31</b></span>
-    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-18 11:26 UTC</span></span>
+    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-18 12:49 UTC</span></span>
     <a class="chip-fresh" href="funddata/polen.json"><span class="l-en">Data (JSON)</span><span class="l-zh">数据 (JSON)</span></a>
   </div>
 </div>
@@ -873,72 +877,60 @@ table.sm-t th.sorted { color:var(--text); }
       
       <div class="sxrow">
         <span class="sx-name">Technology</span>
-        <span class="sbar"><i style="width:35.19%"></i></span>
-        <span class="num" style="text-align:right">35.2%</span>
+        <span class="sbar"><i style="width:41.53%"></i></span>
+        <span class="num" style="text-align:right">41.5%</span>
         <span class="num" style="text-align:right">
           
           
-            <span class="r-neg">▼ -0.6pp</span>
+            <span class="r-neg">▼ -0.2pp</span>
           
         </span>
       </div>
       
       <div class="sxrow">
         <span class="sx-name">Financial</span>
-        <span class="sbar"><i style="width:16.97%"></i></span>
-        <span class="num" style="text-align:right">17.0%</span>
+        <span class="sbar"><i style="width:17.05%"></i></span>
+        <span class="num" style="text-align:right">17.1%</span>
         <span class="num" style="text-align:right">
           
           
-            <span class="r-pos">▲ +0.6pp</span>
+            <span class="r-pos">▲ +0.7pp</span>
           
         </span>
       </div>
       
       <div class="sxrow">
         <span class="sx-name">Healthcare</span>
-        <span class="sbar"><i style="width:14.21%"></i></span>
-        <span class="num" style="text-align:right">14.2%</span>
+        <span class="sbar"><i style="width:14.47%"></i></span>
+        <span class="num" style="text-align:right">14.5%</span>
         <span class="num" style="text-align:right">
           
           
-            <span class="r-neg">▼ -3.1pp</span>
+            <span class="r-neg">▼ -3.0pp</span>
           
         </span>
       </div>
       
       <div class="sxrow">
         <span class="sx-name">Consumer Cyclical</span>
-        <span class="sbar"><i style="width:11.57%"></i></span>
-        <span class="num" style="text-align:right">11.6%</span>
+        <span class="sbar"><i style="width:11.67%"></i></span>
+        <span class="num" style="text-align:right">11.7%</span>
         <span class="num" style="text-align:right">
           
           
-            <span class="r-neg">▼ -1.2pp</span>
-          
-        </span>
-      </div>
-      
-      <div class="sxrow">
-        <span class="sx-name">Unclassified</span>
-        <span class="sbar"><i style="width:9.91%"></i></span>
-        <span class="num" style="text-align:right">9.9%</span>
-        <span class="num" style="text-align:right">
-          
-          
-            <span class="r-pos">▲ +0.6pp</span>
+            <span class="r-neg">▼ -1.1pp</span>
           
         </span>
       </div>
       
       <div class="sxrow">
         <span class="sx-name">Communication Services</span>
-        <span class="sbar"><i style="width:7.88%"></i></span>
-        <span class="num" style="text-align:right">7.9%</span>
+        <span class="sbar"><i style="width:8.29%"></i></span>
+        <span class="num" style="text-align:right">8.3%</span>
         <span class="num" style="text-align:right">
           
           
-            <span class="r-pos">▲ +2.4pp</span>
+            <span class="r-pos">▲ +2.5pp</span>
           
         </span>
       </div>
@@ -956,57 +948,33 @@ table.sm-t th.sorted { color:var(--text); }
       </div>
       
       <div class="sxrow">
+        <span class="sx-name">Unclassified</span>
+        <span class="sbar"><i style="width:2.84%"></i></span>
+        <span class="num" style="text-align:right">2.8%</span>
+        <span class="num" style="text-align:right">
+          
+          
+            <span class="r-neg">▼ -0.1pp</span>
+          
+        </span>
+      </div>
+      
+      <div class="sxrow">
         <span class="sx-name">Industrials</span>
-        <span class="sbar"><i style="width:0.42%"></i></span>
-        <span class="num" style="text-align:right">0.4%</span>
+        <span class="sbar"><i style="width:0.49%"></i></span>
+        <span class="num" style="text-align:right">0.5%</span>
         <span class="num" style="text-align:right">
           
           
-            <span class="r-neg">▼ -1.0pp</span>
+            <span class="r-neg">▼ -0.9pp</span>
           
         </span>
       </div>
       
       <div class="sxrow">
-        <span class="sx-name">Information Technology</span>
-        <span class="sbar"><i style="width:0.16%"></i></span>
-        <span class="num" style="text-align:right">0.2%</span>
-        <span class="num" style="text-align:right">
-          
-          
-            <span class="r-pos">▲ +0.1pp</span>
-          
-        </span>
-      </div>
-      
-      <div class="sxrow">
-        <span class="sx-name">Financials</span>
+        <span class="sx-name">Utilities</span>
         <span class="sbar"><i style="width:0.06%"></i></span>
         <span class="num" style="text-align:right">0.1%</span>
-        <span class="num" style="text-align:right">
-          
-          
-            <span class="r-pos">▲ +0.0pp</span>
-          
-        </span>
-      </div>
-      
-      <div class="sxrow">
-        <span class="sx-name">Consumer Discretionary</span>
-        <span class="sbar"><i style="width:0.06%"></i></span>
-        <span class="num" style="text-align:right">0.1%</span>
-        <span class="num" style="text-align:right">
-          
-          
-            <span class="r-pos">▲ +0.1pp</span>
-          
-        </span>
-      </div>
-      
-      <div class="sxrow">
-        <span class="sx-name">Health Care</span>
-        <span class="sbar"><i style="width:0.03%"></i></span>
-        <span class="num" style="text-align:right">0.0%</span>
         <span class="num" style="text-align:right">
           
           
@@ -1017,8 +985,8 @@ table.sm-t th.sorted { color:var(--text); }
       
       <div class="sxrow">
         <span class="sx-name">Energy</span>
-        <span class="sbar"><i style="width:0.02%"></i></span>
-        <span class="num" style="text-align:right">0.0%</span>
+        <span class="sbar"><i style="width:0.06%"></i></span>
+        <span class="num" style="text-align:right">0.1%</span>
         <span class="num" style="text-align:right">
           
           
@@ -1028,20 +996,8 @@ table.sm-t th.sorted { color:var(--text); }
       </div>
       
       <div class="sxrow">
-        <span class="sx-name">Utilities</span>
-        <span class="sbar"><i style="width:0%"></i></span>
-        <span class="num" style="text-align:right">0.0%</span>
-        <span class="num" style="text-align:right">
-          
-          
-            <span class="r-neg">▼ -0.0pp</span>
-          
-        </span>
-      </div>
-      
-      <div class="sxrow">
-        <span class="sx-name">Materials</span>
-        <span class="sbar"><i style="width:0%"></i></span>
+        <span class="sx-name">Basic Materials</span>
+        <span class="sbar"><i style="width:0.02%"></i></span>
         <span class="num" style="text-align:right">0.0%</span>
         <span class="num" style="text-align:right">
           
@@ -1079,21 +1035,21 @@ table.sm-t th.sorted { color:var(--text); }
       <div class="rot-h into"><span class="l-en">Rotating into (QoQ)</span><span class="l-zh">轮入（环比）</span></div>
       <div class="rotchips">
         
-          <span class="rotchip into">Communication Services <b class="num">+2.4pp</b></span>
+          <span class="rotchip into">Communication Services <b class="num">+2.5pp</b></span>
         
           <span class="rotchip into">Real Estate <b class="num">+2.1pp</b></span>
         
-          <span class="rotchip into">Financial <b class="num">+0.6pp</b></span>
+          <span class="rotchip into">Financial <b class="num">+0.7pp</b></span>
         
       </div>
       <div class="rot-h out" style="margin-top:10px"><span class="l-en">Rotating out of (QoQ)</span><span class="l-zh">轮出（环比）</span></div>
       <div class="rotchips">
         
-          <span class="rotchip outof">Healthcare <b class="num">-3.1pp</b></span>
+          <span class="rotchip outof">Healthcare <b class="num">-3.0pp</b></span>
         
-          <span class="rotchip outof">Consumer Cyclical <b class="num">-1.2pp</b></span>
+          <span class="rotchip outof">Consumer Cyclical <b class="num">-1.1pp</b></span>
         
-          <span class="rotchip outof">Industrials <b class="num">-1.0pp</b></span>
+          <span class="rotchip outof">Industrials <b class="num">-0.9pp</b></span>
         
       </div>
       
@@ -1106,7 +1062,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2026-03-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">35%</b> · </span><span class="sub2">Financial <b class="num">17%</b> · </span><span class="sub2">Healthcare <b class="num">14%</b></span>
+              <span class="sub2">Technology <b class="num">42%</b> · </span><span class="sub2">Financial <b class="num">17%</b> · </span><span class="sub2">Healthcare <b class="num">14%</b></span>
             </td>
           </tr>
         
@@ -1115,7 +1071,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2025-12-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">36%</b> · </span><span class="sub2">Healthcare <b class="num">17%</b> · </span><span class="sub2">Financial <b class="num">16%</b></span>
+              <span class="sub2">Technology <b class="num">42%</b> · </span><span class="sub2">Healthcare <b class="num">17%</b> · </span><span class="sub2">Financial <b class="num">16%</b></span>
             </td>
           </tr>
         
@@ -1124,7 +1080,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2025-09-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">39%</b> · </span><span class="sub2">Financial <b class="num">16%</b> · </span><span class="sub2">Healthcare <b class="num">15%</b></span>
+              <span class="sub2">Technology <b class="num">45%</b> · </span><span class="sub2">Financial <b class="num">16%</b> · </span><span class="sub2">Healthcare <b class="num">15%</b></span>
             </td>
           </tr>
         
@@ -1133,7 +1089,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2025-06-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">30%</b> · </span><span class="sub2">Financial <b class="num">18%</b> · </span><span class="sub2">Healthcare <b class="num">17%</b></span>
+              <span class="sub2">Technology <b class="num">37%</b> · </span><span class="sub2">Financial <b class="num">18%</b> · </span><span class="sub2">Healthcare <b class="num">18%</b></span>
             </td>
           </tr>
         
@@ -1142,7 +1098,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2025-03-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">27%</b> · </span><span class="sub2">Financial <b class="num">20%</b> · </span><span class="sub2">Healthcare <b class="num">19%</b></span>
+              <span class="sub2">Technology <b class="num">33%</b> · </span><span class="sub2">Financial <b class="num">20%</b> · </span><span class="sub2">Healthcare <b class="num">20%</b></span>
             </td>
           </tr>
         
@@ -1151,7 +1107,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2024-12-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">32%</b> · </span><span class="sub2">Healthcare <b class="num">15%</b> · </span><span class="sub2">Financial <b class="num">15%</b></span>
+              <span class="sub2">Technology <b class="num">38%</b> · </span><span class="sub2">Healthcare <b class="num">17%</b> · </span><span class="sub2">Financial <b class="num">15%</b></span>
             </td>
           </tr>
         
@@ -1160,7 +1116,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2024-09-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">34%</b> · </span><span class="sub2">Healthcare <b class="num">16%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">15%</b></span>
+              <span class="sub2">Technology <b class="num">39%</b> · </span><span class="sub2">Healthcare <b class="num">18%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">15%</b></span>
             </td>
           </tr>
         
@@ -1169,7 +1125,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2024-06-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">30%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">20%</b> · </span><span class="sub2">Healthcare <b class="num">16%</b></span>
+              <span class="sub2">Technology <b class="num">33%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">20%</b> · </span><span class="sub2">Healthcare <b class="num">18%</b></span>
             </td>
           </tr>
         
@@ -1178,7 +1134,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2024-03-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">33%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">21%</b> · </span><span class="sub2">Healthcare <b class="num">16%</b></span>
+              <span class="sub2">Technology <b class="num">34%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">21%</b> · </span><span class="sub2">Healthcare <b class="num">19%</b></span>
             </td>
           </tr>
         
@@ -1187,7 +1143,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2023-12-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">38%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">18%</b> · </span><span class="sub2">Financial <b class="num">13%</b></span>
+              <span class="sub2">Technology <b class="num">39%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">19%</b> · </span><span class="sub2">Healthcare <b class="num">15%</b></span>
             </td>
           </tr>
         
@@ -1196,7 +1152,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2023-09-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">33%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">18%</b> · </span><span class="sub2">Healthcare <b class="num">14%</b></span>
+              <span class="sub2">Technology <b class="num">34%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">18%</b> · </span><span class="sub2">Healthcare <b class="num">18%</b></span>
             </td>
           </tr>
         
@@ -1205,7 +1161,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2023-06-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">33%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">19%</b> · </span><span class="sub2">Communication Services <b class="num">14%</b></span>
+              <span class="sub2">Technology <b class="num">34%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">19%</b> · </span><span class="sub2">Healthcare <b class="num">16%</b></span>
             </td>
           </tr>
         
@@ -1692,7 +1648,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-12.4"
           data-streak="0"
           data-conv="68.8"
-          data-sector=""
+          data-sector="Technology"
           data-since="">
         <td class="rk num">8</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SHOP.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SHOP</span></td>
@@ -1709,7 +1665,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >69 · MODERATE</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">H-SaaS, E-Commerce, H-SaaS</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -2775,7 +2731,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-28.1"
           data-streak="0"
           data-conv="40.6"
-          data-sector=""
+          data-sector="Technology"
           data-since="0.135">
         <td class="rk num">27</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MELI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MELI</span></td>
@@ -2792,7 +2748,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >41 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">E-Commerce, Marketplaces</td>
         <td><span class="num r-pos">+14%</span></td>
       </tr>
@@ -2832,7 +2788,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-12.9"
           data-streak="0"
           data-conv="40.6"
-          data-sector=""
+          data-sector="Technology"
           data-since="-0.0376">
         <td class="rk num">28</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TSM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TSM</span></td>
@@ -2849,7 +2805,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >41 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Compute, Compute, Foundries</td>
         <td><span class="num r-neg">-4%</span></td>
       </tr>
@@ -2889,7 +2845,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="49.9"
           data-streak="2"
           data-conv="50.3"
-          data-sector=""
+          data-sector="Communication Services"
           data-since="0.1119">
         <td class="rk num">29</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SPOT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SPOT</span></td>
@@ -2906,7 +2862,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >50 · MODERATE</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Communication Services</td>
         <td class="l sub">Music</td>
         <td><span class="num r-pos">+11%</span></td>
       </tr>
@@ -3060,7 +3016,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-71.4"
           data-streak="0"
           data-conv="39.8"
-          data-sector=""
+          data-sector="Technology"
           data-since="">
         <td class="rk num">32</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SAP.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SAP</span></td>
@@ -3077,7 +3033,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Data, Enterprise, Enterprise</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -3231,7 +3187,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-30.7"
           data-streak="0"
           data-conv="39.3"
-          data-sector=""
+          data-sector="Utilities"
           data-since="">
         <td class="rk num">35</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/BE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">BE</span></td>
@@ -3248,7 +3204,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >39 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Utilities</td>
         <td class="l sub">Hydrogen</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -3459,7 +3415,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="34.3"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="">
         <td class="rk num">39</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/DOCN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">DOCN</span></td>
@@ -3476,7 +3432,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >34 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">PaaS</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -3801,7 +3757,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="271.0"
           data-streak="3"
           data-conv="53.1"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="-0.0113">
         <td class="rk num">45</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/YOU.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">YOU</span></td>
@@ -3818,7 +3774,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >53 · MODERATE</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Identity</td>
         <td><span class="num r-neg">-1%</span></td>
       </tr>
@@ -3915,7 +3871,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="33.1"
-          data-sector=""
+          data-sector="Technology"
           data-since="">
         <td class="rk num">47</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/FSLY.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">FSLY</span></td>
@@ -3932,7 +3888,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >33 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Serverless, Edge, Infrastructure</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -3972,7 +3928,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="103.0"
           data-streak="1"
           data-conv="42.1"
-          data-sector=""
+          data-sector="Technology"
           data-since="">
         <td class="rk num">48</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MOD.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MOD</span></td>
@@ -3989,7 +3945,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >42 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Data Centers</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -4029,7 +3985,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="91.8"
           data-streak="2"
           data-conv="47.1"
-          data-sector=""
+          data-sector="Industrials"
           data-since="-0.4714">
         <td class="rk num">49</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/PL.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">PL</span></td>
@@ -4046,7 +4002,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >47 · MODERATE</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Industrials</td>
         <td class="l sub">Space Economy</td>
         <td><span class="num r-neg">-47%</span></td>
       </tr>
@@ -4086,7 +4042,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="109.6"
           data-streak="4"
           data-conv="57.1"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">50</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/BKD.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">BKD</span></td>
@@ -4103,7 +4059,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >57 · MODERATE</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">Senior Living</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -4542,7 +4498,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="29.3"
           data-streak="1"
           data-conv="40.5"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">58</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/WGS.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">WGS</span></td>
@@ -4559,7 +4515,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -4770,7 +4726,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-0.5"
           data-streak="0"
           data-conv="35.5"
-          data-sector=""
+          data-sector="Communication Services"
           data-since="0.067">
         <td class="rk num">62</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TME.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TME</span></td>
@@ -4787,7 +4743,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >36 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Communication Services</td>
         <td class="l sub">Music</td>
         <td><span class="num r-pos">+7%</span></td>
       </tr>
@@ -4998,7 +4954,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="20.1"
           data-streak="1"
           data-conv="39.4"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="0.1748">
         <td class="rk num">66</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/BBIO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">BBIO</span></td>
@@ -5015,7 +4971,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >39 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+17%</span></td>
       </tr>
@@ -5055,7 +5011,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="29.4"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">67</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/PRAX.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">PRAX</span></td>
@@ -5072,7 +5028,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >29 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -5112,7 +5068,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="76.6"
           data-streak="4"
           data-conv="54.4"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="0.5864">
         <td class="rk num">68</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/GH.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">GH</span></td>
@@ -5129,7 +5085,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >54 · MODERATE</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">Oncology, Diagnostics, Genomics</td>
         <td><span class="num r-pos">+59%</span></td>
       </tr>
@@ -5568,7 +5524,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-23.0"
           data-streak="0"
           data-conv="34.4"
-          data-sector=""
+          data-sector="Communication Services"
           data-since="0.1845">
         <td class="rk num">76</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SE</span></td>
@@ -5585,7 +5541,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >34 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Communication Services</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+18%</span></td>
       </tr>
@@ -5625,7 +5581,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="31.1"
           data-streak="1"
           data-conv="39.4"
-          data-sector=""
+          data-sector="Consumer Cyclical"
           data-since="0.4491">
         <td class="rk num">77</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/W.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">W</span></td>
@@ -5642,7 +5598,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >39 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">Household</td>
         <td><span class="num r-pos">+45%</span></td>
       </tr>
@@ -5682,7 +5638,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="257.7"
           data-streak="1"
           data-conv="39.4"
-          data-sector="Financials"
+          data-sector="Financial"
           data-since="0.1333">
         <td class="rk num">78</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/VCTR.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">VCTR</span></td>
@@ -5699,7 +5655,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >39 · LOW</span>
           
         </td>
-        <td class="l sub2">Financials</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+13%</span></td>
       </tr>
@@ -5739,7 +5695,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="19.6"
           data-streak="1"
           data-conv="39.4"
-          data-sector="Health Care"
+          data-sector="Healthcare"
           data-since="0.3415">
         <td class="rk num">79</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/PTGX.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">PTGX</span></td>
@@ -5756,7 +5712,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >39 · LOW</span>
           
         </td>
-        <td class="l sub2">Health Care</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+34%</span></td>
       </tr>
@@ -5853,7 +5809,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="39.4"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="">
         <td class="rk num">81</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SITM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SITM</span></td>
@@ -5870,7 +5826,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >39 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -6309,7 +6265,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-28.3"
           data-streak="0"
           data-conv="34.4"
-          data-sector=""
+          data-sector="Energy"
           data-since="-0.2325">
         <td class="rk num">89</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CCJ.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CCJ</span></td>
@@ -6326,7 +6282,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >34 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Energy</td>
         <td class="l sub">Uranium &amp; Nuclear Fuel</td>
         <td><span class="num r-neg">-23%</span></td>
       </tr>
@@ -6480,7 +6436,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="26.7"
           data-streak="3"
           data-conv="45.1"
-          data-sector=""
+          data-sector="Consumer Cyclical"
           data-since="">
         <td class="rk num">92</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/REAL.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">REAL</span></td>
@@ -6497,7 +6453,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >45 · MODERATE</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">Secondhand, Luxury, Secondhand</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -6651,7 +6607,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="268.7"
           data-streak="2"
           data-conv="40.1"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">95</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CELC.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CELC</span></td>
@@ -6668,7 +6624,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -6765,7 +6721,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="54.0"
           data-streak="2"
           data-conv="40.1"
-          data-sector=""
+          data-sector="Basic Materials"
           data-since="">
         <td class="rk num">97</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ERO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ERO</span></td>
@@ -6782,7 +6738,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Basic Materials</td>
         <td class="l sub">Industrial</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -6822,7 +6778,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="35.1"
           data-streak="1"
           data-conv="35.1"
-          data-sector=""
+          data-sector="Energy"
           data-since="">
         <td class="rk num">98</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/METC.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">METC</span></td>
@@ -6839,7 +6795,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >35 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Energy</td>
         <td class="l sub">Thermal</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -7164,7 +7120,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="25.1"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="">
         <td class="rk num">104</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LFUS.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LFUS</span></td>
@@ -7181,7 +7137,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >25 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -7221,7 +7177,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="35.1"
-          data-sector="Consumer Discretionary"
+          data-sector="Consumer Cyclical"
           data-since="-0.0562">
         <td class="rk num">105</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SHAK.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SHAK</span></td>
@@ -7238,7 +7194,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >35 · LOW</span>
           
         </td>
-        <td class="l sub2">Consumer Discretionary</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">—</td>
         <td><span class="num r-neg">-6%</span></td>
       </tr>
@@ -7335,7 +7291,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-35.1"
           data-streak="0"
           data-conv="30.1"
-          data-sector=""
+          data-sector="Financial"
           data-since="0.0852">
         <td class="rk num">107</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SOFI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SOFI</span></td>
@@ -7352,7 +7308,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >30 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">Payments &amp; Fintech</td>
         <td><span class="num r-pos">+9%</span></td>
       </tr>
@@ -7392,7 +7348,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-64.4"
           data-streak="0"
           data-conv="30.1"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">108</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ADPT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ADPT</span></td>
@@ -7409,7 +7365,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >30 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -7449,7 +7405,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="25.1"
-          data-sector="Financials"
+          data-sector="Financial"
           data-since="0.0186">
         <td class="rk num">109</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/WT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">WT</span></td>
@@ -7466,7 +7422,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >25 · LOW</span>
           
         </td>
-        <td class="l sub2">Financials</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">Tokenization</td>
         <td><span class="num r-pos">+2%</span></td>
       </tr>
@@ -7506,7 +7462,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="0.0"
           data-streak="0"
           data-conv="30.1"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">110</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/KOD.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">KOD</span></td>
@@ -7523,7 +7479,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >30 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -7620,7 +7576,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="25.1"
-          data-sector=""
+          data-sector="Financial"
           data-since="-0.2421">
         <td class="rk num">112</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/WULF.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">WULF</span></td>
@@ -7637,7 +7593,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >25 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">AI Neoclouds &amp; HPC Hosting</td>
         <td><span class="num r-neg">-24%</span></td>
       </tr>
@@ -7734,7 +7690,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="53.7"
           data-streak="2"
           data-conv="40.1"
-          data-sector=""
+          data-sector="Industrials"
           data-since="-0.4833">
         <td class="rk num">114</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/RKLB.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">RKLB</span></td>
@@ -7751,7 +7707,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Industrials</td>
         <td class="l sub">Defense &amp; Aerospace, Space Economy</td>
         <td><span class="num r-neg">-48%</span></td>
       </tr>
@@ -7848,7 +7804,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="53.4"
           data-streak="3"
           data-conv="45.1"
-          data-sector="Financials"
+          data-sector="Financial"
           data-since="0.1994">
         <td class="rk num">116</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AX.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AX</span></td>
@@ -7865,7 +7821,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >45 · MODERATE</span>
           
         </td>
-        <td class="l sub2">Financials</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+20%</span></td>
       </tr>
@@ -7905,7 +7861,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="104.2"
           data-streak="2"
           data-conv="40.1"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">117</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TSHA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TSHA</span></td>
@@ -7922,7 +7878,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -8019,7 +7975,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="35.1"
-          data-sector=""
+          data-sector="Energy"
           data-since="-0.2583">
         <td class="rk num">119</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NXE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">NXE</span></td>
@@ -8036,7 +7992,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >35 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Energy</td>
         <td class="l sub">Uranium &amp; Nuclear Fuel</td>
         <td><span class="num r-neg">-26%</span></td>
       </tr>
@@ -8133,7 +8089,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="35.1"
-          data-sector="Consumer Discretionary"
+          data-sector="Consumer Cyclical"
           data-since="0.4782">
         <td class="rk num">121</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CAKE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CAKE</span></td>
@@ -8150,7 +8106,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >35 · LOW</span>
           
         </td>
-        <td class="l sub2">Consumer Discretionary</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+48%</span></td>
       </tr>
@@ -8190,7 +8146,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="100.4"
           data-streak="2"
           data-conv="40.1"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">122</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NUVL.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">NUVL</span></td>
@@ -8207,7 +8163,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -8361,7 +8317,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="142.8"
           data-streak="2"
           data-conv="40.1"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">125</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/DNLI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">DNLI</span></td>
@@ -8378,7 +8334,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -8475,7 +8431,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="25.1"
-          data-sector=""
+          data-sector="Technology"
           data-since="-0.3883">
         <td class="rk num">127</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/IONQ.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">IONQ</span></td>
@@ -8492,7 +8448,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >25 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Quantum Computing</td>
         <td><span class="num r-neg">-39%</span></td>
       </tr>
@@ -8589,7 +8545,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="25.1"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">129</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TWST.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TWST</span></td>
@@ -8606,7 +8562,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >25 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">Genomics</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -8703,7 +8659,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="321.3"
           data-streak="1"
           data-conv="35.1"
-          data-sector="Consumer Discretionary"
+          data-sector="Consumer Cyclical"
           data-since="0.255">
         <td class="rk num">131</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LTH.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LTH</span></td>
@@ -8720,7 +8676,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >35 · LOW</span>
           
         </td>
-        <td class="l sub2">Consumer Discretionary</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+26%</span></td>
       </tr>
@@ -8760,7 +8716,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-14.3"
           data-streak="0"
           data-conv="30.1"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">132</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SION.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SION</span></td>
@@ -8777,7 +8733,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >30 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -8931,7 +8887,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="45.9"
           data-streak="2"
           data-conv="40.1"
-          data-sector="Financials"
+          data-sector="Financial"
           data-since="0.1598">
         <td class="rk num">135</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CPF.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CPF</span></td>
@@ -8948,7 +8904,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">Financials</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+16%</span></td>
       </tr>
@@ -9045,7 +9001,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="35.1"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="-0.3526">
         <td class="rk num">137</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/FN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">FN</span></td>
@@ -9062,7 +9018,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >35 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">—</td>
         <td><span class="num r-neg">-35%</span></td>
       </tr>
@@ -9159,7 +9115,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="10.0"
           data-streak="2"
           data-conv="40.1"
-          data-sector=""
+          data-sector="Industrials"
           data-since="">
         <td class="rk num">139</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/XMTR.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">XMTR</span></td>
@@ -9176,7 +9132,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Industrials</td>
         <td class="l sub">3D Printing</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -9273,7 +9229,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="35.1"
-          data-sector="Consumer Discretionary"
+          data-sector="Consumer Cyclical"
           data-since="0.2798">
         <td class="rk num">141</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CALY.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CALY</span></td>
@@ -9290,7 +9246,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >35 · LOW</span>
           
         </td>
-        <td class="l sub2">Consumer Discretionary</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+28%</span></td>
       </tr>
@@ -9330,7 +9286,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="165.8"
           data-streak="2"
           data-conv="40.1"
-          data-sector="Consumer Discretionary"
+          data-sector="Consumer Cyclical"
           data-since="0.0791">
         <td class="rk num">142</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/WINA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">WINA</span></td>
@@ -9347,7 +9303,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">Consumer Discretionary</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+8%</span></td>
       </tr>
@@ -9444,7 +9400,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="25.1"
-          data-sector=""
+          data-sector="Technology"
           data-since="">
         <td class="rk num">144</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ADTN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ADTN</span></td>
@@ -9461,7 +9417,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >25 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Telecom</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -9501,7 +9457,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-66.3"
           data-streak="0"
           data-conv="30.1"
-          data-sector="Financials"
+          data-sector="Financial"
           data-since="0.1471">
         <td class="rk num">145</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/HCI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">HCI</span></td>
@@ -9518,7 +9474,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >30 · LOW</span>
           
         </td>
-        <td class="l sub2">Financials</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+15%</span></td>
       </tr>
@@ -9558,7 +9514,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="35.1"
-          data-sector="Consumer Discretionary"
+          data-sector="Consumer Cyclical"
           data-since="-0.0057">
         <td class="rk num">146</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LRN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LRN</span></td>
@@ -9575,7 +9531,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >35 · LOW</span>
           
         </td>
-        <td class="l sub2">Consumer Discretionary</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">Platforms, Workforce, Curriculum</td>
         <td><span class="num r-neg">-1%</span></td>
       </tr>
@@ -9615,7 +9571,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="25.1"
-          data-sector="Consumer Discretionary"
+          data-sector="Consumer Cyclical"
           data-since="0.3605">
         <td class="rk num">147</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/KTB.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">KTB</span></td>
@@ -9632,7 +9588,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >25 · LOW</span>
           
         </td>
-        <td class="l sub2">Consumer Discretionary</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+36%</span></td>
       </tr>
@@ -9729,7 +9685,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="102.0"
           data-streak="2"
           data-conv="40.1"
-          data-sector="Consumer Discretionary"
+          data-sector="Consumer Cyclical"
           data-since="0.1429">
         <td class="rk num">149</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/GRBK.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">GRBK</span></td>
@@ -9746,7 +9702,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">Consumer Discretionary</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+14%</span></td>
       </tr>
@@ -9786,7 +9742,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="35.1"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="0.0537">
         <td class="rk num">150</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ARLO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ARLO</span></td>
@@ -9803,7 +9759,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >35 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Devices, Security</td>
         <td><span class="num r-pos">+5%</span></td>
       </tr>
@@ -10014,7 +9970,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="25.1"
-          data-sector=""
+          data-sector="Industrials"
           data-since="-0.4733">
         <td class="rk num">154</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/BKSY.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">BKSY</span></td>
@@ -10031,7 +9987,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >25 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Industrials</td>
         <td class="l sub">Space Economy</td>
         <td><span class="num r-neg">-47%</span></td>
       </tr>
@@ -10128,7 +10084,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-31.5"
           data-streak="0"
           data-conv="30.1"
-          data-sector="Health Care"
+          data-sector="Healthcare"
           data-since="0.199">
         <td class="rk num">156</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TMDX.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TMDX</span></td>
@@ -10145,7 +10101,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >30 · LOW</span>
           
         </td>
-        <td class="l sub2">Health Care</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+20%</span></td>
       </tr>
@@ -10185,7 +10141,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="25.1"
-          data-sector=""
+          data-sector="Industrials"
           data-since="-0.5388">
         <td class="rk num">157</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/FLY.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">FLY</span></td>
@@ -10202,7 +10158,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >25 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Industrials</td>
         <td class="l sub">Space Economy</td>
         <td><span class="num r-neg">-54%</span></td>
       </tr>
@@ -10242,7 +10198,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-67.2"
           data-streak="0"
           data-conv="18.7"
-          data-sector="Financials"
+          data-sector="Financial"
           data-since="0.8847">
         <td class="rk num">158</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/DAVE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">DAVE</span></td>
@@ -10259,7 +10215,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >19 · LOW</span>
           
         </td>
-        <td class="l sub2">Financials</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">Neobanks</td>
         <td><span class="num r-pos">+88%</span></td>
       </tr>
@@ -10641,7 +10597,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="15.3"
           data-streak="1"
           data-conv="23.7"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">165</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/EMBJ.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">EMBJ</span></td>
@@ -10658,7 +10614,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >24 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -10755,7 +10711,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector=""
+          data-sector="Financial"
           data-since="">
         <td class="rk num">167</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LMND.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LMND</span></td>
@@ -10772,7 +10728,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">Insurance</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -10812,7 +10768,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="-0.0836">
         <td class="rk num">168</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SMTC.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SMTC</span></td>
@@ -10829,7 +10785,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Edge Devices, Networking</td>
         <td><span class="num r-neg">-8%</span></td>
       </tr>
@@ -10869,7 +10825,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector="Health Care"
+          data-sector="Healthcare"
           data-since="0.0017">
         <td class="rk num">169</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ANIP.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ANIP</span></td>
@@ -10886,7 +10842,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">Health Care</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="num r-pos">+0%</span></td>
       </tr>
@@ -11097,7 +11053,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-68.6"
           data-streak="0"
           data-conv="18.7"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="-0.1494">
         <td class="rk num">173</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MIR.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MIR</span></td>
@@ -11114,7 +11070,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >19 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">—</td>
         <td><span class="num r-neg">-15%</span></td>
       </tr>
@@ -11154,7 +11110,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="49.6"
           data-streak="1"
           data-conv="23.7"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">174</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ASNDUSD.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ASNDUSD</span></td>
@@ -11171,7 +11127,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >24 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -11268,7 +11224,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="-0.1151">
         <td class="rk num">176</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/VECO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">VECO</span></td>
@@ -11285,7 +11241,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Semiconductor Equipment (WFE)</td>
         <td><span class="num r-neg">-12%</span></td>
       </tr>
@@ -11496,7 +11452,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector="Health Care"
+          data-sector="Healthcare"
           data-since="-0.0681">
         <td class="rk num">180</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/PAHC.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">PAHC</span></td>
@@ -11513,7 +11469,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">Health Care</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="num r-neg">-7%</span></td>
       </tr>
@@ -11724,7 +11680,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector=""
+          data-sector="Technology"
           data-since="">
         <td class="rk num">184</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MITK.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MITK</span></td>
@@ -11741,7 +11697,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Software, Identity, Gov &amp; Defense</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -11895,7 +11851,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">187</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/DNTH.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">DNTH</span></td>
@@ -11912,7 +11868,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">—</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -11952,7 +11908,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-11.4"
           data-streak="0"
           data-conv="18.7"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="0.0507">
         <td class="rk num">188</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TWLO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TWLO</span></td>
@@ -11969,7 +11925,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >19 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">PaaS, CRM, Collaboration</td>
         <td><span class="num r-pos">+5%</span></td>
       </tr>
@@ -12009,7 +11965,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector="Materials"
+          data-sector="Basic Materials"
           data-since="-0.3262">
         <td class="rk num">189</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AA</span></td>
@@ -12026,7 +11982,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">Materials</td>
+        <td class="l sub2">Basic Materials</td>
         <td class="l sub">Industrial</td>
         <td><span class="num r-neg">-33%</span></td>
       </tr>
@@ -12123,7 +12079,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-5.3"
           data-streak="0"
           data-conv="18.7"
-          data-sector=""
+          data-sector="Consumer Cyclical"
           data-since="">
         <td class="rk num">191</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SES.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SES</span></td>
@@ -12140,7 +12096,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >19 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">Batteries</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -12294,7 +12250,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector="Consumer Discretionary"
+          data-sector="Consumer Cyclical"
           data-since="">
         <td class="rk num">194</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SN</span></td>
@@ -12311,7 +12267,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">Consumer Discretionary</td>
+        <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">Household</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -12351,7 +12307,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-7.8"
           data-streak="0"
           data-conv="18.7"
-          data-sector=""
+          data-sector="Healthcare"
           data-since="">
         <td class="rk num">195</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NTRA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">NTRA</span></td>
@@ -12368,7 +12324,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >19 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Healthcare</td>
         <td class="l sub">Diagnostics</td>
         <td><span class="mut">—</span></td>
       </tr>
@@ -12579,7 +12535,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="13.7"
-          data-sector="Information Technology"
+          data-sector="Technology"
           data-since="-0.2964">
         <td class="rk num">199</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MTSI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MTSI</span></td>
@@ -12596,7 +12552,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >14 · LOW</span>
           
         </td>
-        <td class="l sub2">Information Technology</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">—</td>
         <td><span class="num r-neg">-30%</span></td>
       </tr>
@@ -12636,7 +12592,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-67.1"
           data-streak="0"
           data-conv="18.7"
-          data-sector=""
+          data-sector="Technology"
           data-since="-0.3533">
         <td class="rk num">200</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SMR.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SMR</span></td>
@@ -12653,7 +12609,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >19 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Power &amp; Grid Buildout, Nuclear &amp; SMR Power</td>
         <td><span class="num r-neg">-35%</span></td>
       </tr>
@@ -12750,7 +12706,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-85.6"
           data-streak="0"
           data-conv="18.7"
-          data-sector=""
+          data-sector="Financial"
           data-since="0.1323">
         <td class="rk num">202</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AFRM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AFRM</span></td>
@@ -12767,7 +12723,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >19 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Financial</td>
         <td class="l sub">Payments &amp; Fintech</td>
         <td><span class="num r-pos">+13%</span></td>
       </tr>

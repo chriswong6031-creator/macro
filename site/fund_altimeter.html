@@ -77,6 +77,13 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 .rel-chip.improving { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
 .rel-chip.stable { color:var(--muted); background:var(--panel2); }
 .rel-chip.deteriorating { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
+/* follow-tier chip (mirrors desk page .ftier) */
+.ftier { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px;
+         letter-spacing:.05em; text-transform:uppercase; border:1px solid var(--line); }
+.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
+.ftier.watch  { color:var(--muted); background:var(--panel2); }
+.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
+.ftier.insufficient { color:var(--muted); background:transparent; border-style:dashed; }
 
 /* ---- hero header ---- */
 .fd-crumb { font-size:12px; color:var(--muted); margin:4px 0 10px; }
@@ -509,8 +516,6 @@ table.sm-t th.sorted { color:var(--text); }
 
 
 
-
-
 <div class="fd">
 
 <div class="fd-crumb">
@@ -531,13 +536,12 @@ table.sm-t th.sorted { color:var(--text); }
       <span class="rel-chip stable"><span class="l-en">Reliability stable</span><span class="l-zh">可靠性稳定</span></span>
       
       
-      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#15</b></span>
-    </div>
+      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#15</b></span><span class="ftier fade" data-tip-en="Fade score 54.8" data-tip-zh="淡出分 54.8"><span class="l-en">FADE</span><span class="l-zh">淡出</span></span></div>
   </div>
   <div class="metacol">
     <span class="chip-fresh t-amber"><span class="fdot"></span><span class="l-en">13F · quarterly · ~45-day lag</span><span class="l-zh">13F · 季度披露 · 约45天滞后</span></span>
     <span class="chip-fresh"><span class="l-en">filed</span><span class="l-zh">申报日</span> <b class="num">2026-05-15</b> · <span class="l-en">period end</span><span class="l-zh">期末</span> <b class="num">2026-03-31</b></span>
-    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-18 11:26 UTC</span></span>
+    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-18 12:49 UTC</span></span>
     <a class="chip-fresh" href="funddata/altimeter.json"><span class="l-en">Data (JSON)</span><span class="l-zh">数据 (JSON)</span></a>
   </div>
 </div>
@@ -865,24 +869,12 @@ table.sm-t th.sorted { color:var(--text); }
       
       <div class="sxrow">
         <span class="sx-name">Technology</span>
-        <span class="sbar"><i style="width:46.68%"></i></span>
-        <span class="num" style="text-align:right">46.7%</span>
+        <span class="sbar"><i style="width:70.55%"></i></span>
+        <span class="num" style="text-align:right">70.5%</span>
         <span class="num" style="text-align:right">
           
           
-            <span class="r-pos">▲ +7.7pp</span>
-          
-        </span>
-      </div>
-      
-      <div class="sxrow">
-        <span class="sx-name">Unclassified</span>
-        <span class="sbar"><i style="width:23.87%"></i></span>
-        <span class="num" style="text-align:right">23.9%</span>
-        <span class="num" style="text-align:right">
-          
-          
-            <span class="r-neg">▼ -6.6pp</span>
+            <span class="r-pos">▲ +6.9pp</span>
           
         </span>
       </div>
@@ -935,6 +927,18 @@ table.sm-t th.sorted { color:var(--text); }
         </span>
       </div>
       
+      <div class="sxrow">
+        <span class="sx-name">Unclassified</span>
+        <span class="sbar"><i style="width:0%"></i></span>
+        <span class="num" style="text-align:right">0.0%</span>
+        <span class="num" style="text-align:right">
+          
+          
+            <span class="r-neg">▼ -3.2pp</span>
+          
+        </span>
+      </div>
+      
       
       
       <div class="rot-h" style="margin-top:12px"><span class="l-en">Theme categories</span><span class="l-zh">主题类别</span></div>
@@ -957,7 +961,7 @@ table.sm-t th.sorted { color:var(--text); }
       <div class="rot-h into"><span class="l-en">Rotating into (QoQ)</span><span class="l-zh">轮入（环比）</span></div>
       <div class="rotchips">
         
-          <span class="rotchip into">Technology <b class="num">+7.7pp</b></span>
+          <span class="rotchip into">Technology <b class="num">+6.9pp</b></span>
         
           <span class="rotchip into">Industrials <b class="num">+1.1pp</b></span>
         
@@ -965,11 +969,11 @@ table.sm-t th.sorted { color:var(--text); }
       <div class="rot-h out" style="margin-top:10px"><span class="l-en">Rotating out of (QoQ)</span><span class="l-zh">轮出（环比）</span></div>
       <div class="rotchips">
         
+          <span class="rotchip outof">Real Estate <b class="num">-2.2pp</b></span>
+        
           <span class="rotchip outof">Communication Services <b class="num">-1.1pp</b></span>
         
           <span class="rotchip outof">Financial <b class="num">-1.1pp</b></span>
-        
-          <span class="rotchip outof">Consumer Cyclical <b class="num">-0.0pp</b></span>
         
       </div>
       
@@ -982,7 +986,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2026-03-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">47%</b> · </span><span class="sub2">Unclassified <b class="num">24%</b> · </span><span class="sub2">Communication Services <b class="num">20%</b></span>
+              <span class="sub2">Technology <b class="num">71%</b> · </span><span class="sub2">Communication Services <b class="num">20%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">8%</b></span>
             </td>
           </tr>
         
@@ -991,7 +995,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2025-12-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">39%</b> · </span><span class="sub2">Unclassified <b class="num">30%</b> · </span><span class="sub2">Communication Services <b class="num">21%</b></span>
+              <span class="sub2">Technology <b class="num">64%</b> · </span><span class="sub2">Communication Services <b class="num">21%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">8%</b></span>
             </td>
           </tr>
         
@@ -1000,7 +1004,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2025-09-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">39%</b> · </span><span class="sub2">Unclassified <b class="num">29%</b> · </span><span class="sub2">Communication Services <b class="num">19%</b></span>
+              <span class="sub2">Technology <b class="num">62%</b> · </span><span class="sub2">Communication Services <b class="num">19%</b> · </span><span class="sub2">Consumer Cyclical <b class="num">6%</b></span>
             </td>
           </tr>
         
@@ -1009,7 +1013,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2025-06-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">36%</b> · </span><span class="sub2">Unclassified <b class="num">32%</b> · </span><span class="sub2">Communication Services <b class="num">20%</b></span>
+              <span class="sub2">Technology <b class="num">60%</b> · </span><span class="sub2">Communication Services <b class="num">20%</b> · </span><span class="sub2">Unclassified <b class="num">6%</b></span>
             </td>
           </tr>
         
@@ -1018,7 +1022,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2025-03-31</td>
             <td class="l">
-              <span class="sub2">Unclassified <b class="num">38%</b> · </span><span class="sub2">Technology <b class="num">31%</b> · </span><span class="sub2">Communication Services <b class="num">21%</b></span>
+              <span class="sub2">Technology <b class="num">47%</b> · </span><span class="sub2">Communication Services <b class="num">21%</b> · </span><span class="sub2">Unclassified <b class="num">20%</b></span>
             </td>
           </tr>
         
@@ -1027,7 +1031,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2024-12-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">35%</b> · </span><span class="sub2">Unclassified <b class="num">33%</b> · </span><span class="sub2">Communication Services <b class="num">22%</b></span>
+              <span class="sub2">Technology <b class="num">57%</b> · </span><span class="sub2">Communication Services <b class="num">22%</b> · </span><span class="sub2">Unclassified <b class="num">11%</b></span>
             </td>
           </tr>
         
@@ -1036,7 +1040,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2024-09-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">42%</b> · </span><span class="sub2">Unclassified <b class="num">31%</b> · </span><span class="sub2">Communication Services <b class="num">21%</b></span>
+              <span class="sub2">Technology <b class="num">63%</b> · </span><span class="sub2">Communication Services <b class="num">21%</b> · </span><span class="sub2">Unclassified <b class="num">9%</b></span>
             </td>
           </tr>
         
@@ -1045,7 +1049,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2024-06-30</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">45%</b> · </span><span class="sub2">Unclassified <b class="num">32%</b> · </span><span class="sub2">Communication Services <b class="num">19%</b></span>
+              <span class="sub2">Technology <b class="num">71%</b> · </span><span class="sub2">Communication Services <b class="num">19%</b> · </span><span class="sub2">Unclassified <b class="num">6%</b></span>
             </td>
           </tr>
         
@@ -1054,7 +1058,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2024-03-31</td>
             <td class="l">
-              <span class="sub2">Technology <b class="num">40%</b> · </span><span class="sub2">Unclassified <b class="num">36%</b> · </span><span class="sub2">Communication Services <b class="num">18%</b></span>
+              <span class="sub2">Technology <b class="num">69%</b> · </span><span class="sub2">Communication Services <b class="num">18%</b> · </span><span class="sub2">Unclassified <b class="num">7%</b></span>
             </td>
           </tr>
         
@@ -1063,7 +1067,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2023-12-31</td>
             <td class="l">
-              <span class="sub2">Unclassified <b class="num">52%</b> · </span><span class="sub2">Technology <b class="num">31%</b> · </span><span class="sub2">Communication Services <b class="num">14%</b></span>
+              <span class="sub2">Technology <b class="num">76%</b> · </span><span class="sub2">Communication Services <b class="num">14%</b> · </span><span class="sub2">Unclassified <b class="num">6%</b></span>
             </td>
           </tr>
         
@@ -1072,7 +1076,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2023-09-30</td>
             <td class="l">
-              <span class="sub2">Unclassified <b class="num">55%</b> · </span><span class="sub2">Technology <b class="num">28%</b> · </span><span class="sub2">Communication Services <b class="num">14%</b></span>
+              <span class="sub2">Technology <b class="num">74%</b> · </span><span class="sub2">Communication Services <b class="num">14%</b> · </span><span class="sub2">Unclassified <b class="num">9%</b></span>
             </td>
           </tr>
         
@@ -1081,7 +1085,7 @@ table.sm-t th.sorted { color:var(--text); }
           <tr>
             <td class="l num">2023-06-30</td>
             <td class="l">
-              <span class="sub2">Unclassified <b class="num">61%</b> · </span><span class="sub2">Technology <b class="num">26%</b> · </span><span class="sub2">Communication Services <b class="num">12%</b></span>
+              <span class="sub2">Technology <b class="num">77%</b> · </span><span class="sub2">Communication Services <b class="num">12%</b> · </span><span class="sub2">Unclassified <b class="num">10%</b></span>
             </td>
           </tr>
         
@@ -1340,7 +1344,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="12.0"
           data-streak="4"
           data-conv="71.2"
-          data-sector=""
+          data-sector="Technology"
           data-since="-0.0181">
         <td class="rk num">4</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TSM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TSM</span></td>
@@ -1357,7 +1361,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >71 · HIGH</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">Compute, Compute, Foundries</td>
         <td><span class="num r-neg">-2%</span></td>
       </tr>
@@ -1511,7 +1515,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="40.0"
           data-streak="2"
           data-conv="52.5"
-          data-sector=""
+          data-sector="Technology"
           data-since="-0.3233">
         <td class="rk num">7</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CRWV.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CRWV</span></td>
@@ -1528,7 +1532,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >52 · MODERATE</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">AI Infrastructure, AI Neoclouds &amp; HPC Hosting</td>
         <td><span class="num r-neg">-32%</span></td>
       </tr>
@@ -1568,7 +1572,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg="-5.0"
           data-streak="0"
           data-conv="39.6"
-          data-sector=""
+          data-sector="Technology"
           data-since="0.7021">
         <td class="rk num">8</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SNOW.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SNOW</span></td>
@@ -1585,7 +1589,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >40 · LOW</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">AI Software &amp; Platforms, Non-AI Software</td>
         <td><span class="num r-pos">+70%</span></td>
       </tr>
@@ -1625,7 +1629,7 @@ table.sm-t th.sorted { color:var(--text); }
           data-chg=""
           data-streak="1"
           data-conv="51.7"
-          data-sector=""
+          data-sector="Technology"
           data-since="0.2719">
         <td class="rk num">9</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ARM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ARM</span></td>
@@ -1642,7 +1646,7 @@ table.sm-t th.sorted { color:var(--text); }
                   >52 · MODERATE</span>
           
         </td>
-        <td class="l sub2">—</td>
+        <td class="l sub2">Technology</td>
         <td class="l sub">AI Infrastructure, AI Semiconductors</td>
         <td><span class="num r-pos">+27%</span></td>
       </tr>
