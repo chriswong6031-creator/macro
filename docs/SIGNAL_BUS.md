@@ -44,6 +44,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | macro-release-intel | 6 |
 | mag7-regime | 3 |
 | market-structure | 3 |
+| marketing | 2 |
 | mastermind-feedback-contract | 2 |
 | metabolism-phase-a | 5 |
 | metabolism-phase-v2a | 4 |
@@ -95,7 +96,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 312 |
+| display | 314 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 71 |
@@ -104,7 +105,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 460 |
+| git | 462 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -481,6 +482,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | market-structure-latest | `data/market_structure/latest.json` | json | daily-engine | display | 4 | 1 |
 | market-structure-history | `data/market_structure/history.parquet` | parquet | daily-engine | display | 1 | 0 |
 | market-structure-ledger | `data/market_structure/ledger.parquet` | parquet | daily-engine | shadow | 0 | 0 |
+
+### marketing
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| marketing-lobe | `site/neuralwebdata/marketing_lobe.json` | json | daily-engine | display | 1 | 0 |
+| marketing-state | `data/neuralweb/marketing_state.json` | json | daily-engine | display | 1 | 0 |
 
 ### mastermind-feedback-contract
 

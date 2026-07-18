@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_opportunity.v1",
+  "title": "Marketing Opportunity (marketing_opportunity.v1)",
+  "type": "object",
+  "properties": {
+    "opportunity_id": {"type": "string"},
+    "detected_at": {"type": "string", "format": "date-time"},
+    "source_type": {"type": "string"},
+    "source_refs": {"type": "array", "items": {"type": "string"}},
+    "audience_hypothesis": {"type": "string"},
+    "problem_or_desire": {"type": "string"},
+    "attention_half_life": {"type": "string"},
+    "expected_value": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+    "originality": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+    "evidence_available": {"type": "boolean"},
+    "possible_products": {"type": "array", "items": {"type": "string"}},
+    "possible_channels": {"type": "array", "items": {"type": "string"}},
+    "consequence_class": {"type": "string"},
+    "owner_department": {"type": "string"},
+    "status": {"type": "string", "enum": ["open", "in_progress", "completed", "killed"]},
+    "mode": {"type": "string", "enum": ["live", "shadow"]}
+  },
+  "required": ["opportunity_id", "detected_at", "source_type", "problem_or_desire", "status"]
+}

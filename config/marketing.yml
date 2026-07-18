@@ -1,0 +1,60 @@
+## config/marketing.yml — Marketing lobe configuration
+## Drives engine/neuralweb/marketing_governor.py
+## Spec §5 (frozen contract).
+
+positioning:
+  category: "Accountable AI market intelligence"
+  promise: "Know what changed, why it matters, and what to watch next."
+  proof: "Every important conclusion carries evidence, invalidation, timestamp, and outcome history."
+  icp: "Self-directed, research-intensive swing/position investors following 10–100 names."
+  first_paid_job: "Continuously monitor what matters to my holdings/watchlist and tell me when the causal picture changes."
+
+settings:
+  trial_variant: "7_trading_days"      # or 14_calendar_days | value_moment_limited
+  desk_network_stage: "A"              # A warm | B assisted | C autonomous
+  paid_enabled: false
+  auditor_strict: true
+  north_star_window_days: 90
+
+departments:
+  growth_os:
+    lifecycle_state: building
+    authority_level: G2
+    budget_envelope_usd: 0
+  # Optional per-department overrides below.
+  # Unspecified departments use coded DEPARTMENT_CHARTERS defaults.
+  # Fields: lifecycle_state, authority_level, budget_envelope_usd
+
+desk_network:
+  stage: A
+  accounts:
+    - id: flagship
+      kind: branded
+      beat: "What changed and why it matters"
+      voice: "authoritative desk"
+      corpus: full
+    - id: receipts
+      kind: branded
+      beat: "Visual evidence + public report card"
+      voice: "dry, receipts-forward"
+      corpus: charts_claims
+    - id: theme_desk
+      kind: branded
+      beat: "Rotating high-attention vertical"
+      voice: "specialist"
+      corpus: theme
+    - id: research_a
+      kind: generic
+      beat: "Macro/rates/liquidity explainers"
+      voice: "educational"
+      corpus: macro
+    - id: research_b
+      kind: generic
+      beat: "Single-stock why-is-it-moving fast desk"
+      voice: "fast, reactive"
+      corpus: why_moving
+    - id: research_c
+      kind: generic
+      beat: "Charts + historical analogues"
+      voice: "pattern/history"
+      corpus: analogues

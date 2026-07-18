@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_correction.v1",
+  "title": "Marketing Correction (marketing_correction.v1)",
+  "type": "object",
+  "properties": {
+    "correction_id": {"type": "string"},
+    "claim_id": {"type": "string"},
+    "correction_type": {"type": "string", "enum": ["clarification", "retraction", "update", "supplemental"]},
+    "original_claim": {"type": "string"},
+    "corrected_claim": {"type": "string"},
+    "evidence": {"type": "string"},
+    "derivative_asset_ids": {"type": "array", "items": {"type": "string"}},
+    "correction_state": {"type": "string", "enum": ["pending", "resolved", "propagated"]},
+    "corrected_at": {"type": "string", "format": "date-time"},
+    "mode": {"type": "string", "enum": ["live", "shadow"]}
+  },
+  "required": ["correction_id", "claim_id", "correction_type", "original_claim", "corrected_claim", "corrected_at"]
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_publication_receipt.v1",
+  "title": "Marketing Publication Receipt (publication_receipt.v1)",
+  "type": "object",
+  "properties": {
+    "publication_id": {"type": "string"},
+    "asset_id": {"type": "string"},
+    "channel": {"type": "string"},
+    "account": {"type": "string"},
+    "remote_id": {"type": ["string", "null"]},
+    "published_at": {"type": "string", "format": "date-time"},
+    "effective_copy_hash": {"type": "string"},
+    "policy_version": {"type": "string"},
+    "audience": {"type": "string"},
+    "destination": {"type": "string"},
+    "campaign_id": {"type": "string"},
+    "experiment_cell": {"type": ["string", "null"]},
+    "correction_state": {"type": "string", "enum": ["clean", "correction_pending", "corrected", "retracted"]},
+    "takedown_method": {"type": "string"},
+    "mode": {"type": "string", "enum": ["live", "shadow"]}
+  },
+  "required": ["publication_id", "asset_id", "channel", "account", "published_at", "campaign_id"]
+}

@@ -1337,3 +1337,36 @@ charters:
       + ex-ante release-risk read chip. Display context only (is_context_only=True).
       authority.may_rank/gate/size/escalate=false.
 
+  marketing-state:
+    lobe_id: marketing-state
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    owner_program: marketing
+    notes: >-
+      Marketing lobe NW artifact (sovereign business-growth lobe, off the scored path).
+      Deterministic Growth-OS state: CMO portfolio, 10 department scorecards, growth-authority
+      ladder, desk network, campaign/opportunity/publication/experiment pipeline, provenance &
+      claims, economics, wave status. Display-only; originates no market signal.
+      tier mirrored from synapse.yml (display); string-form fitness_sensors = no metabolism
+      roster slot consumed. authority.may_rank/gate/size/escalate=false.
+
+  marketing-lobe:
+    lobe_id: marketing-lobe
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    owner_program: marketing
+    notes: >-
+      Public-safe summary of the Marketing lobe for the Neural Web organization graph.
+      No budgets, no credentials, no desk handles — names, lifecycle states, wave status,
+      positioning, channel priority only. Consumed by committee.html.
+      tier mirrored from synapse.yml (display); string-form fitness_sensors = no metabolism
+      roster slot consumed. authority.may_rank/gate/size/escalate=false.
+
