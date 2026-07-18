@@ -1043,7 +1043,7 @@ rulings:
     local_id: "HOUSE-U2"
     short_name: "model-routing-hook-enforcement-guard-denies-unrouted-spawns"
     title: "Model routing hook enforcement: guard denies unrouted spawns"
-    ruling: "A PreToolUse hook (model_routing_guard.py) is wired in settings.json and denies Agent/Task spawns without an explicit model, any fable spawn, and Workflow scripts whose agent() calls carry no model:/agentType routing. Model-pinned agent types builder (sonnet) and reviewer (opus) pass the guard without a model: param."
+    ruling: "A PreToolUse hook (model_routing_guard.py) is wired in settings.json and denies Agent/Task spawns without an explicit model, fable spawns outside the orchestrator+FABLE-WHY gate, fable-pinned agent frontmatter outside that gate, and Workflow scripts whose agent() calls carry no model:/agentType routing (or route to fable). Model-pinned agent types builder (sonnet) and reviewer (opus) pass the guard without a model: param; orchestrator is opus-floor (fable only via the gate, always with explicit model:)."
     status: "active_law"
     object_kind: "constitution"
     owner_program: "house-law"
@@ -1059,8 +1059,8 @@ rulings:
     fdr_family: null
     precedence_rank: 1
     source_doc: "CLAUDE.md"
-    source_quote: "Enforcement: a PreToolUse hook (`.claude/hooks/model_routing_guard.py`, wired in `.claude/settings.json`) denies Agent/Task spawns without an explicit model, any `fable` spawn, and Workflow scripts whose `agent()` calls carry no `model:`/`agentType` routing."
-    source_pr: 1241
+    source_quote: "Enforcement: a PreToolUse hook (`.claude/hooks/model_routing_guard.py`, wired in `.claude/settings.json`) denies Agent/Task spawns without an explicit model, `fable` spawns outside the orchestrator+FABLE-WHY gate, fable-pinned agent frontmatter outside that gate, and Workflow scripts whose `agent()` calls carry no `model:`/`agentType` routing (or route to fable)."
+    source_pr: 2836
     supersedes: []
     superseded_by: []
     nondelegable: true
