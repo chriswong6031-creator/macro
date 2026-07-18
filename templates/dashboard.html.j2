@@ -2426,8 +2426,56 @@ body.page-macro .mxfs-v{min-width:0}
 body.page-macro .mxfs-v b{font-weight:700;color:var(--text)}
 @media(max-width:640px){body.page-macro .mxfs-row{flex-direction:column;gap:1px}body.page-macro .mxfs-k{width:auto}
 /* the longer honest-stance pill text ("… — not all-clear") must wrap on narrow
-   phones instead of bleeding past the card edge (pill is nowrap on desktop) */
+   phones instead of bleeding past the card edge (pill is nowrap on desktop; nowrap removed
+   in 1c so this override is now redundant but harmless) */
 body.page-macro.mx4-grid .mx5-regime-pill{white-space:normal}}
+/* ── Flip-context hover panel (grid view only) ── */
+/* Panel floats over the thesis/buttons; hover on gauge row or panel itself keeps it open */
+body.page-macro.mx4-grid .mx5-flipctx-anchor{position:relative;}
+body.page-macro.mx4-grid .mx5-flipctx-pop{
+  position:absolute;left:0;right:0;
+  top:calc(100% - 8px);z-index:40;
+  opacity:0;visibility:hidden;transform:translateY(-4px);
+  transition:opacity .18s ease .05s,transform .18s ease .05s,visibility 0s linear .3s;
+  pointer-events:none;
+  background:var(--mx5-pop-bg,rgba(16,21,30,.97));
+  border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
+  border-radius:14px;
+  box-shadow:0 18px 48px rgba(0,0,0,.5);
+  padding:4px 6px;
+  backdrop-filter:blur(20px);
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-flipctx-pop{
+  background:#fff;
+  border-color:rgba(0,0,0,.12);
+  box-shadow:0 18px 48px rgba(20,30,50,.18);
+}
+/* reveal on gauge-row hover/focus, or when cursor enters the panel itself */
+body.page-macro.mx4-grid .mx5-sc-gauge-row:hover ~ .mx5-flipctx-pop,
+body.page-macro.mx4-grid .mx5-flipctx-pop:hover,
+body.page-macro.mx4-grid .mx5-sc-gauge-row:focus-within ~ .mx5-flipctx-pop{
+  opacity:1;visibility:visible;transform:none;pointer-events:auto;
+  transition:opacity .18s ease .12s,transform .18s ease .12s,visibility 0s linear 0s;
+}
+/* neutralize the .mxfs card chrome inside the pop — the pop provides its own container */
+body.page-macro.mx4-grid .mx5-flipctx-pop .mxfs{border:none;background:transparent;margin-top:0;}
+/* affordance: score element signals hoverability */
+body.page-macro.mx4-grid .mx5-big-score{cursor:help;}
+/* tiny hint line below sub-line; hidden on narrow viewports where hover isn't available */
+body.page-macro.mx4-grid .mx5-flip-hint{
+  font-size:10px;color:var(--ink-3,rgba(255,255,255,.32));
+  margin-top:4px;line-height:1.4;
+}
+@media(max-width:700px){body.page-macro.mx4-grid .mx5-flip-hint{display:none;}}
+/* mobile: pop is static and initially hidden; toggled by JS tap */
+@media(max-width:700px){
+  body.page-macro.mx4-grid .mx5-flipctx-pop{
+    position:static;box-shadow:none;
+    border:1px solid var(--line);
+    display:none;opacity:1;visibility:visible;transform:none;pointer-events:auto;
+  }
+  body.page-macro.mx4-grid .mx5-flipctx-pop.open{display:block;}
+}
 /* Grid view: hide driver-ctx text block (Zone 2 covers it); keep alerts+catalyst pill row */
 body.page-macro.mx4-grid .mx2-hero-ctx>div:first-child{display:none;}
 /* In grid view, ctx card becomes a slim row with just alerts */
@@ -3452,8 +3500,13 @@ body.page-macro.mx4-grid .mx5-sc-gauge-row{
 }
 body.page-macro.mx4-grid .mx5-gauge-svg{
   /* Order 2: scaled up ~1.37× (viewBox unchanged → JS gauge math contract intact) */
-  width:192px;height:120px;overflow:visible;display:block;flex-shrink:0;
+  width:192px;height:138px;overflow:visible;display:block;flex-shrink:0;
 }
+/* Light mode: the gauge's white-alpha track/ticks/scale-labels vanish on white —
+   repaint in dark ink. #mx5-score-numeral keeps its own id rule (state colour). */
+[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
 
 /* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
 body.page-macro.mx4-grid .mx5-regime-pill{
@@ -3462,10 +3515,14 @@ body.page-macro.mx4-grid .mx5-regime-pill{
   border:1px solid var(--mx5-accent);background:var(--mx5-accent-dim);
   font-size:11px;font-weight:600;color:var(--mx5-accent-ink);
   letter-spacing:.02em;margin-bottom:10px;line-height:1.3;
-  max-width:100%;box-sizing:border-box;white-space:nowrap;width:auto;
+  max-width:100%;box-sizing:border-box;text-align:left;width:auto;
 }
+/* pill parent flex child must not overflow — allow wrapping instead of bleed */
+body.page-macro.mx4-grid .mx5-sc-gauge-row > div:last-child{min-width:0;}
 /* The pill's text span must not be forced to shrink below its content */
-body.page-macro.mx4-grid .mx5-regime-pill > span{flex:0 0 auto;}
+/* span must be allowed to shrink AND wrap inside the pill — flex:0 0 auto here made the
+   text escape the pill border once the pill itself stopped being nowrap (pill-bleed bug) */
+body.page-macro.mx4-grid .mx5-regime-pill > span{flex:0 1 auto;min-width:0;}
 /* pill follows the market-state verdict color (operator order 2026-07-13):
    default green accent when risk-on, amber when mixed, red when risk-off */
 body.page-macro.mx4-grid .mx5-regime-pill.rp-yellow{
@@ -3703,7 +3760,7 @@ body.page-macro.mx4-grid .mx5-path-tip-verdict{font-size:12px;font-weight:600;}
 @media(max-width:560px){
   body.page-macro.mx4-grid .mx5-sc-left{padding:16px 12px 14px;}
   body.page-macro.mx4-grid .mx5-sc-gauge-row{gap:10px;margin-bottom:10px;}
-  body.page-macro.mx4-grid .mx5-gauge-svg{width:90px;height:58px;}
+  body.page-macro.mx4-grid .mx5-gauge-svg{width:90px;height:65px;}
   body.page-macro.mx4-grid .mx5-big-score{font-size:34px;}
   body.page-macro.mx4-grid .mx5-verdict-word{font-size:13px;}
 }
@@ -3943,8 +4000,8 @@ body.mx5-dlg-open{ overflow:hidden; }
   [data-theme="light"] .mx5-dlg-header{background:var(--mx5-pop-bg,rgba(255,255,255,.98));}
 }
 .mx5-dlg-title{
-  font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--ink-3,rgba(255,255,255,.36));
+  font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2,rgba(255,255,255,.6));
 }
 .mx5-dlg-close{
   display:flex;align-items:center;justify-content:center;
@@ -4467,57 +4524,6 @@ body.page-macro.mx4-grid .mx5-mkt-delta.dn{color:var(--down,#ef4444);}
 body.page-macro.mx4-grid .mx5-spark{margin-top:10px;}
 body.page-macro.mx4-grid .mx5-spark svg{width:100%;height:32px;display:block;}
 
-/* ── B2: OVERNIGHT / ASIA secondary strip (inside sx-markets-v2 face) ──────── */
-body.page-macro.mx4-grid .mx5-ovn-eyebrow{
-  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--ink-3,rgba(255,255,255,.36));margin-top:16px;margin-bottom:8px;
-}
-body.page-macro.mx4-grid .mx5-ovn-grid{
-  display:grid;grid-template-columns:repeat(5,1fr);gap:10px;
-}
-@media(max-width:1100px){
-  body.page-macro.mx4-grid .mx5-ovn-grid{grid-template-columns:repeat(3,1fr);}
-}
-@media(max-width:700px){
-  body.page-macro.mx4-grid .mx5-ovn-grid{grid-template-columns:1fr 1fr;}
-}
-/* Overnight tiles: slightly smaller than main index tiles */
-body.page-macro.mx4-grid .mx5-ovn-tile{
-  background:rgba(255,255,255,.02);
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:9px;
-  padding:10px 12px 8px;
-  position:relative;overflow:hidden;
-}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-ovn-tile{
-  background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.05);
-}
-body.page-macro.mx4-grid .mx5-ovn-ticker{
-  font-size:10px;font-weight:700;letter-spacing:.07em;
-  color:var(--ink-3,rgba(255,255,255,.36));text-transform:uppercase;margin-bottom:2px;
-}
-body.page-macro.mx4-grid .mx5-ovn-sub{
-  font-size:9px;color:var(--ink-3,rgba(255,255,255,.36));
-  letter-spacing:.03em;text-transform:uppercase;margin-bottom:3px;
-}
-body.page-macro.mx4-grid .mx5-ovn-price{
-  font-size:14px;font-weight:700;line-height:1;
-  color:var(--ink-1,rgba(255,255,255,.92));margin-bottom:3px;
-  font-variant-numeric:tabular-nums;
-}
-body.page-macro.mx4-grid .mx5-ovn-delta{font-size:11px;font-weight:600;color:var(--ink-3,rgba(255,255,255,.36));}
-body.page-macro.mx4-grid .mx5-ovn-delta.up{color:var(--up,#22d97a);}
-body.page-macro.mx4-grid .mx5-ovn-delta.dn{color:var(--down,#ef4444);}
-/* B2: overnight banner */
-body.page-macro.mx4-grid .mx5-ovn-note{
-  display:none;margin-top:10px;padding:7px 10px 7px 12px;
-  border-left:3px solid var(--muted);border-radius:0 6px 6px 0;
-  font-size:11.5px;line-height:1.5;background:rgba(255,255,255,.02);
-}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-ovn-note{background:rgba(0,0,0,.02);}
-body.page-macro.mx4-grid .mx5-ovn-note.ovn-red{border-left-color:var(--down);}
-body.page-macro.mx4-grid .mx5-ovn-note.ovn-amber{border-left-color:var(--warn);}
-body.page-macro.mx4-grid .mx5-ovn-note.ovn-quiet{border-left-color:var(--muted);opacity:.7;}
 /* B3: intl risk chips in the hero button row — red (alert) variant + non-interactive chip */
 body.page-macro.mx4-grid a.mx5-sc-btn{text-decoration:none;}
 body.page-macro.mx4-grid .mx5-sc-btn-alert{
@@ -4526,6 +4532,108 @@ body.page-macro.mx4-grid .mx5-sc-btn-alert{
   background:color-mix(in srgb,var(--down,#ef4444) 9%,transparent);
 }
 body.page-macro.mx4-grid .mx5-sc-btn-static{cursor:default;}
+/* B3: intl merged popover — wide enough for the 10-market grid */
+body.page-macro.mx4-grid .mx5-popover-intl{min-width:340px;max-width:520px;}
+body.page-macro.mx4-grid .mx5-pop-asof{
+  font-size:10px;font-weight:400;color:var(--ink-3,rgba(255,255,255,.36));
+  margin-left:8px;font-variant-numeric:tabular-nums;
+}
+body.page-macro.mx4-grid .mx5-pop-intl-body{padding:4px 8px 8px;}
+/* Market grid: alert tiles first, 2-col auto-fill */
+body.page-macro.mx4-grid .mx5-pop-intl-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px;
+  margin-bottom:10px;
+}
+body.page-macro.mx4-grid .mx5-pop-intl-tile{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 7px;border-radius:7px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  font-size:11px;line-height:1.3;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-pop-intl-tile{
+  background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06);
+}
+body.page-macro.mx4-grid .mx5-pop-intl-tile.intl-alert{
+  border-color:color-mix(in srgb,var(--down,#ef4444) 28%,transparent);
+  background:color-mix(in srgb,var(--down,#ef4444) 6%,transparent);
+}
+body.page-macro.mx4-grid .mx5-intl-dot{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0;
+  background:var(--ink-3,rgba(255,255,255,.36));
+}
+body.page-macro.mx4-grid .mx5-intl-dot.intl-dot-alert{background:var(--down,#ef4444);}
+body.page-macro.mx4-grid .mx5-intl-name{flex:1;min-width:0;color:var(--ink-2,rgba(255,255,255,.62));}
+body.page-macro.mx4-grid .mx5-intl-score{
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+  color:var(--ink-3,rgba(255,255,255,.36));margin-left:auto;flex-shrink:0;
+}
+body.page-macro.mx4-grid .mx5-intl-score.intl-score-alert{color:var(--down,#ef4444);}
+/* Spread speed row */
+body.page-macro.mx4-grid .mx5-pop-intl-spread{
+  font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.62));
+  padding:6px 0;border-top:1px solid rgba(255,255,255,.06);margin-bottom:8px;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-pop-intl-spread{border-color:rgba(0,0,0,.07);}
+body.page-macro.mx4-grid .mx5-pop-intl-small{
+  display:block;font-size:10.5px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
+}
+/* Spillover board */
+body.page-macro.mx4-grid .mx5-pop-intl-spill{
+  padding:6px 0;border-top:1px solid rgba(255,255,255,.06);margin-bottom:8px;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-pop-intl-spill{border-color:rgba(0,0,0,.07);}
+body.page-macro.mx4-grid .mx5-pop-intl-spill-hd{
+  display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;
+  color:var(--ink-2,rgba(255,255,255,.62));margin-bottom:7px;
+}
+body.page-macro.mx4-grid .mx5-pop-intl-spill-word{font-size:11.5px;font-weight:500;}
+body.page-macro.mx4-grid .mx5-pop-intl-spill-word.spill-alert{color:var(--down,#ef4444);}
+body.page-macro.mx4-grid .mx5-pop-intl-spill-word.spill-warn{color:var(--warn,#f59e0b);}
+body.page-macro.mx4-grid .mx5-pop-intl-spill-word.spill-muted{color:var(--ink-3,rgba(255,255,255,.36));}
+body.page-macro.mx4-grid .mx5-pop-intl-legs{
+  display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px;
+}
+body.page-macro.mx4-grid .mx5-pop-intl-leg{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 7px;border-radius:20px;font-size:11px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  color:var(--ink-3,rgba(255,255,255,.36));
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-pop-intl-leg{
+  background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);
+}
+body.page-macro.mx4-grid .mx5-pop-intl-leg.leg-hot{
+  color:var(--ink-1,rgba(255,255,255,.92));
+  border-color:color-mix(in srgb,var(--warn,#f59e0b) 36%,transparent);
+  background:color-mix(in srgb,var(--warn,#f59e0b) 8%,transparent);
+}
+body.page-macro.mx4-grid .mx5-leg-dot{
+  width:5px;height:5px;border-radius:50%;flex-shrink:0;
+  background:rgba(255,255,255,.24);
+}
+body.page-macro.mx4-grid .mx5-leg-dot.leg-dot-hot{
+  background:var(--warn,#f59e0b);
+  box-shadow:0 0 4px var(--warn,#f59e0b);
+}
+body.page-macro.mx4-grid .mx5-pop-intl-legcount{
+  font-size:10.5px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
+}
+/* Fallback text row */
+body.page-macro.mx4-grid .mx5-pop-intl-fallback{
+  font-size:12px;color:var(--ink-2,rgba(255,255,255,.62));margin-bottom:8px;
+}
+/* Footer */
+body.page-macro.mx4-grid .mx5-pop-intl-footer{
+  font-size:10.5px;color:var(--ink-3,rgba(255,255,255,.36));
+  border-top:1px solid rgba(255,255,255,.06);padding-top:6px;margin-top:4px;
+  line-height:1.5;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-pop-intl-footer{border-color:rgba(0,0,0,.07);}
+body.page-macro.mx4-grid .mx5-pop-intl-link{
+  display:inline-block;margin-top:4px;font-size:11px;
+  color:var(--isle-policy,#60a5fa);text-decoration:none;
+}
+body.page-macro.mx4-grid .mx5-pop-intl-link:hover{text-decoration:underline;}
 /* B4: stocks context strip */
 body.page-stocks .stk-ctx-strip{
   display:block;text-decoration:none;padding:7px 14px;
@@ -4657,6 +4765,110 @@ body.page-macro.mx4-grid .mx5-fed-policy-note{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-fed-policy-note{border-top-color:rgba(0,0,0,.07);}
 body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,255,255,.92));}
 
+/* ── POLICY DIALOG (plx-* classes) ──────────────────────────────── */
+.plx-state-hero{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+.plx-state-sent{font-size:13px;font-weight:600;line-height:1.45;}
+.plx-asof{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;}
+.plx-framing{font-size:13px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.65;margin-bottom:16px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:8px;}
+[data-theme="light"] .plx-framing{background:rgba(0,0,0,.04);}
+/* Rate path chart */
+.plx-chart-wrap{margin-bottom:18px;}
+.plx-chart-svg{display:block;width:100%;height:180px;}
+.plx-chart-caption{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5;margin-top:8px;}
+.plx-chart-gap-chip{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(160,112,232,.10);border:1px solid rgba(160,112,232,.22);color:var(--isle-policy);margin-left:8px;}
+[data-theme="light"] .plx-chart-gap-chip{background:rgba(160,112,232,.08);}
+.plx-x-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:2px;padding:0 2px;}
+/* Fed stance card */
+.plx-stance-card{padding:12px 14px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:14px;}
+[data-theme="light"] .plx-stance-card{background:rgba(0,0,0,.04);}
+.plx-stance-label{font-size:14px;font-weight:700;margin-bottom:4px;}
+.plx-stance-mve{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));margin-top:5px;}
+.plx-drivers{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:3px;}
+.plx-drivers li{font-size:12px;color:var(--ink-3,rgba(255,255,255,.36));padding-left:14px;position:relative;line-height:1.45;}
+.plx-drivers li::before{content:"·";position:absolute;left:4px;color:var(--ink-3,rgba(255,255,255,.36));}
+/* Jawboning counts */
+.plx-jaw-counts{display:flex;gap:20px;margin-bottom:12px;}
+.plx-jaw-count-box{text-align:center;}
+.plx-jaw-count-num{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.92));}
+.plx-jaw-count-lbl{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:2px;}
+.plx-jaw-bar-track{height:5px;border-radius:3px;background:rgba(255,255,255,.07);margin-bottom:10px;overflow:hidden;}
+[data-theme="light"] .plx-jaw-bar-track{background:rgba(0,0,0,.07);}
+.plx-jaw-bar-fill{height:100%;border-radius:3px;background:var(--isle-policy);}
+.plx-jaw-summary{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.55;}
+.plx-jaw-ts{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:5px;}
+/* Lever board */
+.plx-lever-row{display:grid;grid-template-columns:1fr auto 60px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+.plx-lever-row:last-child{border-bottom:none;}
+[data-theme="light"] .plx-lever-row{border-bottom-color:rgba(0,0,0,.07);}
+.plx-lever-name{font-size:13px;font-weight:600;}
+.plx-lever-status{font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;}
+.plx-lever-stoch{height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:4px;}
+[data-theme="light"] .plx-lever-stoch{background:rgba(0,0,0,.07);}
+.plx-lever-stoch-fill{height:100%;border-radius:3px;}
+.plx-lever-watch{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.45;margin-top:3px;}
+.plx-favored{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.plx-basket-chip{font-size:12px;font-weight:700;padding:3px 9px;border-radius:var(--mx5-radius-pill);background:rgba(160,112,232,.11);border:1px solid rgba(160,112,232,.22);color:var(--isle-policy);}
+/* Calendar row */
+.plx-cal-row{display:flex;align-items:center;gap:10px;padding:10px 0;}
+.plx-cal-countdown{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.92));}
+.plx-cal-note{font-size:12px;color:var(--ink-3,rgba(255,255,255,.36));}
+/* Null disclosure */
+.plx-null{font-size:12px;color:var(--ink-3,rgba(255,255,255,.36));padding:10px 0;font-style:italic;}
+/* Outer dots annotation chips */
+.plx-dot-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.plx-dot-chip{font-size:11px;padding:2px 8px;border-radius:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);color:var(--warn,#f59e0b);}
+[data-theme="light"] .plx-dot-chip{background:rgba(245,158,11,.06);}
+/* ── AI BRIEF DIALOG (aib-* classes) ───────────────────────────── */
+.aib-hdr-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid color-mix(in srgb,var(--isle-brief,var(--up)) 15%,var(--line,rgba(255,255,255,.1)));}
+.aib-icon{width:38px;height:38px;flex-shrink:0;border-radius:10px;background:color-mix(in srgb,var(--isle-brief,var(--up)) 15%,var(--panel2,rgba(255,255,255,.04)));color:var(--isle-brief,var(--up));font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+.aib-hdr-meta{flex:1;min-width:0;}
+.aib-hdr-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:2px;}
+.aib-hdr-date{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.aib-badge{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--isle-brief,var(--up));opacity:.8;text-align:right;line-height:1.4;white-space:normal;max-width:200px;flex-shrink:0;}
+[data-theme="light"] .aib-badge{opacity:.9;}
+/* Lead card — summary */
+.aib-lead{font-size:17px;font-weight:650;line-height:1.6;color:var(--text);padding:18px;border-radius:14px;margin-bottom:16px;background:color-mix(in srgb,var(--isle-brief,var(--up)) 7%,transparent);border:1px solid color-mix(in srgb,var(--isle-brief,var(--up)) 18%,transparent);}
+[data-theme="light"] .aib-lead{background:color-mix(in srgb,var(--isle-brief,var(--up)) 5%,#fff);border-color:color-mix(in srgb,var(--isle-brief,var(--up)) 22%,transparent);}
+/* Regime read */
+.aib-regime{font-size:14.5px;color:var(--text);line-height:1.75;margin-bottom:16px;}
+/* Confidence meter */
+.aib-conf-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:10px;}
+[data-theme="light"] .aib-conf-row{background:rgba(0,0,0,.03);}
+.aib-conf-bar{display:flex;gap:3px;align-items:center;}
+.aib-conf-seg{width:28px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);}
+[data-theme="light"] .aib-conf-seg{background:rgba(0,0,0,.1);}
+.aib-conf-seg.filled{background:var(--isle-brief,var(--up));}
+.aib-conf-label{font-size:13px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6));}
+.aib-conf-asof{font-size:12px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums;}
+/* Section grid */
+.aib-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+@media(max-width:760px){.aib-grid{grid-template-columns:1fr;}}
+/* Section cards */
+.aib-card{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);}
+[data-theme="light"] .aib-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+.aib-card-full{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:14px;}
+[data-theme="light"] .aib-card-full{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+/* Conflicts card left-border accent */
+.aib-card-conflicts{border-left:3px solid var(--warn,#f59e0b);}
+/* Transmission card left-border accent */
+.aib-card-tx{border-left:3px solid var(--isle-deep,#3b82f6);}
+/* Eyebrows */
+.aib-eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--isle-brief,var(--up)) 70%,var(--ink-2,rgba(255,255,255,.6)));margin-bottom:10px;}
+/* List items in cards */
+.aib-items{display:flex;flex-direction:column;gap:6px;}
+.aib-item{font-size:13.5px;color:var(--text);line-height:1.65;}
+/* Rotation card */
+.aib-rotation{font-size:14px;color:var(--text);line-height:1.75;}
+/* Watch checklist */
+.aib-watch-row{display:flex;align-items:flex-start;gap:8px;font-size:14px;color:var(--text);line-height:1.6;padding:4px 0;}
+.aib-watch-marker{color:var(--isle-brief,var(--up));flex-shrink:0;margin-top:2px;font-size:13px;}
+/* Catalyst chips */
+.aib-catalyst-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.aib-catalyst-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--mx5-radius-pill,20px);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);font-size:12.5px;font-weight:600;}
+[data-theme="light"] .aib-catalyst-chip{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.09);}
+.aib-catalyst-read{font-size:12.5px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.55;margin-bottom:14px;}
+/* Degraded + footer */
+.aib-degraded{font-size:12px;color:var(--muted);margin-bottom:10px;padding:8px 12px;border-radius:8px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.14);}
 /* ── MARKET SENTIMENT (static card — odometer dial) ────────────── */
 body.page-macro.mx4-grid .mx5-sentiment-dial-wrap{
   text-align:center;margin-bottom:4px;
@@ -4765,6 +4977,19 @@ body.page-macro.mx4-grid .mx5-policy-val{
   color:var(--ink-1,rgba(255,255,255,.92));font-weight:600;text-align:right;
 }
 
+/* ── POLICY MONITOR face revamp (plf-*) ────────────────────────── */
+body.page-macro.mx4-grid .plf-stance-row{display:flex;align-items:flex-start;gap:7px;font-size:12px;font-weight:600;color:var(--ink-1,rgba(255,255,255,.92));margin-bottom:10px;}
+body.page-macro.mx4-grid .plf-spark-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+body.page-macro.mx4-grid .plf-spark-svg{width:120px;height:36px;flex-shrink:0;}
+body.page-macro.mx4-grid .plf-spark-label{font-size:11px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5;min-width:0;}
+body.page-macro.mx4-grid .plf-chip-row{display:flex;flex-wrap:wrap;gap:5px;}
+body.page-macro.mx4-grid .plf-chip{
+  display:inline-flex;align-items:center;font-size:11px;font-weight:500;
+  padding:2px 8px;border-radius:var(--mx5-radius-pill,20px);
+  background:rgba(160,112,232,.10);border:1px solid rgba(160,112,232,.22);
+  color:var(--ink-2,rgba(255,255,255,.6));
+}
+[data-theme="light"] .plf-chip{background:rgba(160,112,232,.08);border-color:rgba(160,112,232,.28);color:rgba(40,20,70,.72);}
 /* ── AI BRIEF (sx-aibrief-v2 face) ─────────────────────────────── */
 body.page-macro.mx4-grid .mx5-ai-ticker-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px;}
 body.page-macro.mx4-grid .mx5-ai-ticker-pill{
@@ -4773,11 +4998,11 @@ body.page-macro.mx4-grid .mx5-ai-ticker-pill{
   font-size:11px;font-weight:700;color:var(--mx5-accent-ink);letter-spacing:.03em;
 }
 body.page-macro.mx4-grid .mx5-ai-body{
-  font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));
+  font-size:13px;color:var(--ink-2,rgba(255,255,255,.6));
   line-height:1.55;margin-bottom:10px;
 }
 body.page-macro.mx4-grid .mx5-ai-note{
-  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));
+  font-size:11.5px;color:var(--ink-3,rgba(255,255,255,.36));
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
   border-radius:8px;padding:8px 11px;line-height:1.45;margin-top:auto;
 }
@@ -5122,9 +5347,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     <div class="mx5-sc-left">
 
       {# ── Gauge cluster ── #}
-      <div class="mx5-sc-gauge-row {{ _mx5_sc_cls }}">
+      <div class="mx5-flipctx-anchor">
+      {# Regime pill on its own full-width row — beside the (taller) gauge it wrapped to
+         three cramped lines; above the row it fits one line at glance width #}
+      <div class="mx5-regime-pill{{ ' rp-yellow' if MS.color == 'yellow' else (' rp-red' if MS.color == 'red' else '') }}">
+        <div class="mx5-dot"></div>
+        <span class="l-en">{{ td(latest.quad_name) if latest.quad_name is defined else 'Regime' }}{% if _mx5_ts_en %} &nbsp;&middot;&nbsp; {{ _mx5_ts_en }}{% endif %}</span>
+        <span class="l-zh">{{ td(latest.quad_name) if latest.quad_name is defined else '周期' }}{% if _mx5_ts_zh %} &nbsp;&middot;&nbsp; {{ _mx5_ts_zh }}{% endif %}</span>
+      </div>
+      <div class="mx5-sc-gauge-row {{ _mx5_sc_cls }}" tabindex="0">
         {# Compact semicircle gauge; data-* attrs for risk_state_live.js patchMacro #}
-        <svg class="mx5-gauge-svg" viewBox="0 0 140 88" fill="none"
+        <svg class="mx5-gauge-svg" viewBox="0 -4 140 101" fill="none"
              aria-label="{{ MS.label_en }} — score {{ _mx5_score }}"
              data-gauge-arc-len="{{ _mx5_arc_len }}"
              data-gauge-radius="56"
@@ -5153,10 +5386,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <line x1="70" y1="19" x2="70" y2="26" transform="rotate(45 70 75)"/>
             <line x1="70" y1="19" x2="70" y2="26" transform="rotate(90 70 75)"/>
           </g>
-          {# Scale labels — ≥11px per spec #}
-          <text x="8"   y="84" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">0</text>
-          <text x="70"  y="14" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">50</text>
-          <text x="132" y="84" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">100</text>
+          {# Scale labels — repositioned for clearance: 0/100 directly under arc ends, 50 above arc peak #}
+          <text x="14"  y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">0</text>
+          <text x="70"  y="10" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">50</text>
+          <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="-apple-system,sans-serif">100</text>
           {# Needle — rotation baked by Jinja; JS patches via data attr #}
           <g id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
@@ -5175,13 +5408,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 text-anchor="middle" font-family="-apple-system,Inter,sans-serif">/ 100</text>
         </svg>
 
-        {# Right of gauge: regime pill + big score + verdict word #}
+        {# Right of gauge: big score + verdict word (pill moved above the row) #}
         <div>
-          <div class="mx5-regime-pill{{ ' rp-yellow' if MS.color == 'yellow' else (' rp-red' if MS.color == 'red' else '') }}">
-            <div class="mx5-dot"></div>
-            <span class="l-en">{{ td(latest.quad_name) if latest.quad_name is defined else 'Regime' }}{% if _mx5_ts_en %} &nbsp;&middot;&nbsp; {{ _mx5_ts_en }}{% endif %}</span>
-            <span class="l-zh">{{ td(latest.quad_name) if latest.quad_name is defined else '周期' }}{% if _mx5_ts_zh %} &nbsp;&middot;&nbsp; {{ _mx5_ts_zh }}{% endif %}</span>
-          </div>
           <div class="mx5-score-line">
             <span class="mx5-big-score">{{ _mx5_score }}</span>
             <span class="mx5-verdict-word"><span class="l-en">{{ MS.label_en }}</span><span class="l-zh">{{ MS.label_zh or MS.label_en }}</span></span>
@@ -5190,8 +5418,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <span class="l-en">{{ {'green':'GREEN','yellow':'YELLOW','red':'RED'}.get(MS.color,'—') }} &mdash; {{ {'green':'Trend-following supported','yellow':'Trade with caution','red':'Defend capital first'}.get(MS.color,'') }}</span>
             <span class="l-zh">{{ {'green':'偏多 — 顺势而为受支撑','yellow':'谨慎操作','red':'优先保住本金'}.get(MS.color,'') }}</span>
           </div>
+          {# Affordance hint — desktop only (hidden ≤700px via CSS) #}
+          <div class="mx5-flip-hint">{{ t('Hover the score — what would flip this call','悬停评分 — 什么会改变这一判断') }}</div>
         </div>
       </div>{# /mx5-sc-gauge-row #}
+
+      {# Flip-context hover panel — grid view; overlays content below without pushing layout.
+         The .mx5-flipctx-anchor relative wrapper is load-bearing: without it the abspos pop
+         resolves its static position to the flex column's top and covers the score it
+         annotates (flexbox abspos-child rule). #}
+      {# Desktop: revealed on gauge-row hover/focus via CSS sibling selector.
+         Mobile (≤700px): static block toggled by JS tap on gauge row.
+         The ledger-view call at ~line 5076 is the sole other call site and stays untouched. #}
+      <div class="mx5-flipctx-pop" id="mx5FlipCtxPop" role="group" aria-label="What would flip this call">{{ regime_flip_strip(latest) }}</div>
+      </div>{# /mx5-flipctx-anchor #}
 
       {# Thesis line (from engine headline_en/zh) #}
       <div class="mx5-thesis">
@@ -5207,9 +5447,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if MS.flip_zh %}<span class="l-zh">{{ MS.flip_zh }}</span>{% endif %}
       </div>
       {% endif %}
-
-      {# Regime flip-context strip — grid view is the default glance surface #}
-      {{ regime_flip_strip(latest) }}
 
       {# Popover trigger buttons #}
       <div class="mx5-btn-row">
@@ -5256,47 +5493,43 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
              (the sibling Factors button keeps its caret — it does open a popover) #}
         </button>
 
-        {# B3: intl cascade chip — glance-tier rollup of our own per-market pullback radars;
-           only shown when at least one market is in risk-off alert. Links to intl.html. #}
-        {% if intl_cascade is defined and intl_cascade and intl_cascade.n_alert is not none and intl_cascade.n_alert > 0 %}
-        {% set _cas_names_en = [] %}
-        {% set _cas_names_zh = [] %}
-        {% set _cas_ns = namespace(count=0) %}
-        {% for _a in intl_cascade.alerts %}
-          {% if _cas_ns.count < 3 %}
-            {% if _cas_names_en.append(_a.name_en) %}{% endif %}
-            {% if _cas_names_zh.append(_a.name_zh) %}{% endif %}
-            {% set _cas_ns.count = _cas_ns.count + 1 %}
-          {% endif %}
-        {% endfor %}
-        {% set _cas_extra = intl_cascade.n_alert - 3 if intl_cascade.n_alert > 3 else 0 %}
-        {% set _cas_list_en = _cas_names_en | join(' · ') ~ (' +' ~ _cas_extra if _cas_extra > 0 else '') %}
-        {% set _cas_list_zh = _cas_names_zh | join('·') ~ (' +' ~ _cas_extra if _cas_extra > 0 else '') %}
-        {% set _cas_tip_en = 'Stress abroad at the source — not a US signal on its own. Markets risk-off: ' ~ (intl_cascade.alerts | map(attribute='name_en') | list | join(', ')) ~ ('. As of ' ~ intl_cascade.asof if intl_cascade.asof else '') %}
-        {% set _cas_tip_zh = '海外源头压力——本身并非美股信号。避险市场：' ~ (intl_cascade.alerts | map(attribute='name_zh') | list | join('、')) ~ ('。截至' ~ intl_cascade.asof if intl_cascade.asof else '') %}
-        <a class="mx5-sc-btn mx5-sc-btn-alert" href="intl.html" data-tip-en="{{ _cas_tip_en }}" data-tip-zh="{{ _cas_tip_zh }}">
-          <span class="l-en">&#9888; {{ intl_cascade.n_alert }} of {{ intl_cascade.n_total }} markets risk-off — {{ _cas_list_en }}</span>
-          <span class="l-zh">&#9888; {{ intl_cascade.n_total }}个海外市场中{{ intl_cascade.n_alert }}个避险 — {{ _cas_list_zh }}</span>
-        </a>
-        {% endif %}
-        {# RSR-R5: deterioration cascade SPEED chip — how fast risk-off is spreading (complements the count chip above) #}
-        {% if det_cascade is defined and det_cascade and det_cascade.state is defined and det_cascade.state != 'STEADY' %}
-        {% set _dc_n_mat = det_cascade.n_mature if det_cascade.n_mature is defined else 0 %}
-        {% set _dc_n_alert = det_cascade.n_alert if det_cascade.n_alert is defined else 0 %}
-        {% set _dc_immature = det_cascade.immature if det_cascade.immature is defined else [] %}
-        {% set _dc_tip_en = 'Overseas risk-off spreading: ' ~ _dc_n_alert ~ ' of ' ~ _dc_n_mat ~ ' tracked markets in alert. ' ~ (_dc_immature | length) ~ ' markets excluded (log too young). Does not change the score — accruing since 2026-07-17, unproven.' %}
-        {% set _dc_tip_zh = '海外避险扩散：' ~ _dc_n_mat ~ '个已追踪市场中' ~ _dc_n_alert ~ '个发出警报。' ~ (_dc_immature | length) ~ '个市场因数据不足暂不计入。不影响评分——自2026-07-17起积累中，尚未经验证。' %}
-        <span class="mx5-sc-btn{% if det_cascade.state == 'DETERIORATING_FAST' %} mx5-sc-btn-alert{% else %} mx5-sc-btn-warn{% endif %} mx5-sc-btn-static"
-              data-tip-en="{{ _dc_tip_en }}" data-tip-zh="{{ _dc_tip_zh }}">
-          {% if det_cascade.state == 'DETERIORATING_FAST' %}
-          <span class="l-en">&#9888; Broad, fast overseas risk-off.</span>
-          <span class="l-zh">&#9888; 海外避险快速蔓延，范围广泛。</span>
+        {# B3: merged intl chip — combines cascade (n_alert), deterioration speed, and spillover
+           into ONE button that opens a rich popover. Shown when any of the three has signal.
+           leadership_crack chip (RSR-R2/R4) stays in place below, untouched. #}
+        {% set _iov_n_alert = (intl_cascade.n_alert if (intl_cascade is defined and intl_cascade and intl_cascade.n_alert is not none) else 0) %}
+        {% set _iov_n_total = (intl_cascade.n_total if (intl_cascade is defined and intl_cascade and intl_cascade.n_total is not none) else 0) %}
+        {% set _iov_det_state = (det_cascade.state if (det_cascade is defined and det_cascade and det_cascade.state is defined) else 'STEADY') %}
+        {% set _iov_spill_state = (intl_spillover.state if (intl_spillover is defined and intl_spillover and intl_spillover.state is defined) else 'quiet') %}
+        {% set _iov_fast = (_iov_det_state == 'DETERIORATING_FAST') %}
+        {% set _iov_spill_word_map = {'quiet': ('quiet', '平静'), 'contained': ('contained', '受控'), 'watching': ('watching', '关注中'), 'transmitting': ('transmitting', '正在传导')} %}
+        {% set _iov_spill_words = _iov_spill_word_map.get(_iov_spill_state, (_iov_spill_state, _iov_spill_state)) %}
+        {% set _iov_alert_cls = 'mx5-sc-btn-alert' if (_iov_fast or _iov_spill_state == 'transmitting') else 'mx5-sc-btn-warn' %}
+        {% if (_iov_n_alert > 0) or (_iov_det_state != 'STEADY') or (_iov_spill_state in ('watching', 'transmitting')) %}
+        <button class="mx5-sc-btn {{ _iov_alert_cls }}" id="mx5BtnIntl"
+                onclick="mx5TogglePop('mx5PopIntl','mx5BtnIntl')"
+                aria-expanded="false" aria-controls="mx5PopIntl"
+                type="button">
+          <svg width="12" height="11" viewBox="0 0 24 21" fill="none">
+            <path d="M12 2L1.5 20h21L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="17" r="1" fill="currentColor"/>
+          </svg>
+          {% if _iov_n_alert > 0 %}
+            {% if _iov_fast %}
+            <span class="l-en">Broad &amp; fast — Overseas: {{ _iov_n_alert }} of {{ _iov_n_total }} risk-off &middot; US impact: {{ _iov_spill_words[0] }}</span>
+            <span class="l-zh">范围广速度快——海外：{{ _iov_n_total }}个市场中{{ _iov_n_alert }}个避险 &middot; 对美影响：{{ _iov_spill_words[1] }}</span>
+            {% else %}
+            <span class="l-en">Overseas: {{ _iov_n_alert }} of {{ _iov_n_total }} risk-off &middot; US impact: {{ _iov_spill_words[0] }}</span>
+            <span class="l-zh">海外：{{ _iov_n_total }}个市场中{{ _iov_n_alert }}个避险 &middot; 对美影响：{{ _iov_spill_words[1] }}</span>
+            {% endif %}
           {% else %}
-          <span class="l-en">Risk-off spreading overseas — watch, don't chase.</span>
-          <span class="l-zh">海外避险情绪扩散——观望，勿追高。</span>
+          <span class="l-en">Overseas stress — US impact: {{ _iov_spill_words[0] }}</span>
+          <span class="l-zh">海外承压 — 对美影响：{{ _iov_spill_words[1] }}</span>
           {% endif %}
-        </span>
+          <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
+        </button>
         {% endif %}
+
         {# RSR-R2/R4: leadership crack chip — AI-hardware cohort velocity + carnage state #}
         {% if leadership_crack is defined and leadership_crack and leadership_crack.state is defined and leadership_crack.state != 'INTACT' %}
         {% set _lc_state = leadership_crack.state %}
@@ -5325,18 +5558,114 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% endif %}
         </span>
         {% endif %}
-        {# B3: spillover-to-US chip — contagion two-tier read (quiet/contained/watching/transmitting) #}
-        {% if intl_spillover is defined and intl_spillover and intl_spillover.state is defined %}
-        {% set _spill_state = intl_spillover.state %}
-        {% set _spill_word_map = {'quiet': ('quiet', '平静'), 'contained': ('contained', '受控'), 'watching': ('watching', '关注中'), 'transmitting': ('transmitting', '正在传导')} %}
-        {% set _spill_words = _spill_word_map.get(_spill_state, (_spill_state, _spill_state)) %}
-        {% set _spill_tip_en = 'Reads US credit, bank stocks and rates vol for actual transmission — ' ~ intl_spillover.hot_count ~ ' of ' ~ intl_spillover.n_legs ~ ' channels hot.' %}
-        {% set _spill_tip_zh = '监测美国信用、银行股与利率波动的实际传导——' ~ intl_spillover.n_legs ~ '条通道中' ~ intl_spillover.hot_count ~ '条发热。' %}
-        <span class="mx5-sc-btn mx5-sc-btn-static{% if _spill_state == 'transmitting' %} mx5-sc-btn-alert{% elif _spill_state in ('contained', 'watching') %} mx5-sc-btn-warn{% endif %}" data-tip-en="{{ _spill_tip_en }}" data-tip-zh="{{ _spill_tip_zh }}">
-          <span class="l-en">Spillover to US: {{ _spill_words[0] }}</span>
-          <span class="l-zh">对美传导：{{ _spill_words[1] }}</span>
-        </span>
-        {% endif %}
+
+        {# POPOVER: Overseas Risk Monitor (merged intl cascade + det_cascade + spillover) #}
+        <div class="mx5-popover mx5-popover-intl" id="mx5PopIntl" role="dialog"
+             aria-label="Overseas Risk Monitor">
+          <div class="mx5-pop-close-bar">
+            <div style="width:32px"></div>
+            <div class="mx5-pop-close-handle"></div>
+            <button class="mx5-pop-close-btn" type="button"
+                    onclick="mx5CloseAllPopovers()" aria-label="Close">&#xd7;</button>
+          </div>
+          <div class="mx5-popover-title">
+            <span class="l-en">Overseas Risk Monitor</span><span class="l-zh">海外风险监测</span>
+            {% if intl_cascade is defined and intl_cascade and intl_cascade.asof %}
+            <span class="mx5-pop-asof">{{ intl_cascade.asof }}</span>
+            {% endif %}
+          </div>
+          <div class="mx5-pop-intl-body">
+            {# 1. Market grid — alert markets first (rows pre-sorted by -score in Python) #}
+            {% if intl_cascade is defined and intl_cascade and intl_cascade.rows is defined and intl_cascade.rows %}
+            {% set _iov_grid_rows = (intl_cascade.alerts + (intl_cascade.rows | selectattr('alert', 'equalto', false) | list)) %}
+            <div class="mx5-pop-intl-grid">
+              {% for _gr in _iov_grid_rows %}
+              <div class="mx5-pop-intl-tile{% if _gr.alert %} intl-alert{% endif %}"
+                   data-tip-en="{{ _gr.name_en }} pullback-radar score {{ _gr.score }}/100 — {{ 'in risk-off alert' if _gr.alert else 'no alert' }}. As of {{ _gr.asof }}."
+                   data-tip-zh="{{ _gr.name_zh }} 回撤雷达评分 {{ _gr.score }}/100 — {{ '处于避险警报' if _gr.alert else '无警报' }}。截至 {{ _gr.asof }}。">
+                <span class="mx5-intl-dot{% if _gr.alert %} intl-dot-alert{% endif %}"></span>
+                <span class="mx5-intl-name"><span class="l-en">{{ _gr.name_en }}</span><span class="l-zh">{{ _gr.name_zh }}</span></span>
+                <span class="mx5-intl-score{% if _gr.alert %} intl-score-alert{% endif %}">{{ _gr.score }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% elif intl_cascade is defined and intl_cascade and intl_cascade.n_alert is not none and intl_cascade.n_alert > 0 %}
+            {# Fallback: plain alert names when rows not present #}
+            <div class="mx5-pop-intl-fallback">
+              <span class="l-en">&#9888; {{ intl_cascade.n_alert }} of {{ intl_cascade.n_total }} markets risk-off — {{ (intl_cascade.alerts | map(attribute='name_en') | list | join(' · ')) }}</span>
+              <span class="l-zh">&#9888; {{ intl_cascade.n_total }}个市场中{{ intl_cascade.n_alert }}个避险 — {{ (intl_cascade.alerts | map(attribute='name_zh') | list | join('·')) }}</span>
+            </div>
+            {% endif %}
+
+            {# 2. Spread speed row #}
+            {% if det_cascade is defined and det_cascade and det_cascade.state is defined and det_cascade.state != 'STEADY' %}
+            {% set _iov_dc_mat = det_cascade.n_mature if det_cascade.n_mature is defined else 0 %}
+            {% set _iov_dc_alert = det_cascade.n_alert if det_cascade.n_alert is defined else 0 %}
+            {% set _iov_dc_d3 = det_cascade.d3_alert if det_cascade.d3_alert is defined else 0 %}
+            {% set _iov_dc_imm = det_cascade.immature if det_cascade.immature is defined else [] %}
+            <div class="mx5-pop-intl-spread">
+              {% if _iov_fast %}
+              <span class="l-en">Broad, fast deterioration — watch, don't chase.</span>
+              <span class="l-zh">大范围快速恶化——观望，勿追高。</span>
+              {% else %}
+              <span class="l-en">Spreading: {{ _iov_dc_alert }} of {{ _iov_dc_mat }} tracked markets in alert{% if _iov_dc_d3 and _iov_dc_d3 > 0 %} &middot; +{{ _iov_dc_d3 }} in 3 sessions{% endif %} — watch, don't chase.</span>
+              <span class="l-zh">扩散中：{{ _iov_dc_mat }}个追踪市场中{{ _iov_dc_alert }}个发出警报{% if _iov_dc_d3 and _iov_dc_d3 > 0 %} &middot; 近3个交易日新增{{ _iov_dc_d3 }}个{% endif %}——观望，勿追高。</span>
+              {% endif %}
+              {% if _iov_dc_imm | length > 0 %}
+              <span class="mx5-pop-intl-small">
+                <span class="l-en">{{ _iov_dc_imm | length }} markets excluded — history too short.</span>
+                <span class="l-zh">{{ _iov_dc_imm | length }}个市场因数据不足暂不计入。</span>
+              </span>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {# 3. US transmission board #}
+            {% if intl_spillover is defined and intl_spillover %}
+            {% set _iov_sp_st = intl_spillover.state if intl_spillover.state is defined else 'quiet' %}
+            {% set _iov_sp_words = _iov_spill_word_map.get(_iov_sp_st, (_iov_sp_st, _iov_sp_st)) %}
+            <div class="mx5-pop-intl-spill">
+              <div class="mx5-pop-intl-spill-hd">
+                <span class="l-en">Spillover to US</span><span class="l-zh">对美传导</span>
+                <span class="mx5-pop-intl-spill-word{% if _iov_sp_st == 'transmitting' %} spill-alert{% elif _iov_sp_st in ('watching', 'contained') %} spill-warn{% else %} spill-muted{% endif %}">
+                  <span class="l-en">{{ _iov_sp_words[0] }}</span><span class="l-zh">{{ _iov_sp_words[1] }}</span>
+                </span>
+              </div>
+              {% if intl_spillover.legs is defined and intl_spillover.legs %}
+              {% set _iov_hot_ct = namespace(n=0) %}
+              <div class="mx5-pop-intl-legs">
+                {% for _lg in intl_spillover.legs %}
+                {% if _lg.hot %}{% set _iov_hot_ct.n = _iov_hot_ct.n + 1 %}{% endif %}
+                <span class="mx5-pop-intl-leg{% if _lg.hot %} leg-hot{% endif %}">
+                  <span class="mx5-leg-dot{% if _lg.hot %} leg-dot-hot{% endif %}"></span>
+                  <span class="l-en">{{ _lg.label_en }}</span><span class="l-zh">{{ _lg.label_zh }}</span>
+                </span>
+                {% endfor %}
+              </div>
+              <div class="mx5-pop-intl-legcount">
+                <span class="l-en">{{ intl_spillover.hot_count }} of {{ intl_spillover.n_legs }} channels hot</span>
+                <span class="l-zh">{{ intl_spillover.n_legs }}条通道中{{ intl_spillover.hot_count }}条发热</span>
+              </div>
+              {% else %}
+              <div class="mx5-pop-intl-legcount">
+                <span class="l-en">{{ intl_spillover.hot_count }} of {{ intl_spillover.n_legs }} channels hot</span>
+                <span class="l-zh">{{ intl_spillover.n_legs }}条通道中{{ intl_spillover.hot_count }}条发热</span>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            {# 4. Honesty footer #}
+            <div class="mx5-pop-intl-footer">
+              <span class="l-en">Context only — accruing since 2026-07-17, does not move the US score.</span>
+              <span class="l-zh">仅为参考——自2026-07-17起积累中，不影响美股评分。</span>
+              <a href="intl.html" class="mx5-pop-intl-link">
+                <span class="l-en">Full international dashboard &rarr;</span>
+                <span class="l-zh">完整国际看板 &rarr;</span>
+              </a>
+            </div>
+          </div>
+        </div>{# /mx5PopIntl #}
 
         {# POPOVER: Factor Breakdown #}
         <div class="mx5-popover" id="mx5PopFactors" role="dialog"
@@ -5693,6 +6022,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         e.stopImmediatePropagation(); /* prevent mx2 island close on same keypress */
         window.mx5CloseAllPopovers();
       }
+    });
+  })();
+  </script>
+  {# Mobile tap-toggle for flip-context panel (≤700px: no hover; tap score to reveal) #}
+  <script>
+  (function(){
+    var gaugeRow = document.querySelector('body.page-macro.mx4-grid .mx5-sc-gauge-row');
+    var pop = document.getElementById('mx5FlipCtxPop');
+    if (!gaugeRow || !pop) return;
+    /* only wire tap on touch-capable narrow viewports */
+    function isMobile(){ return window.innerWidth <= 700; }
+    gaugeRow.addEventListener('click', function(){
+      if (!isMobile()) return;
+      pop.classList.toggle('open');
     });
   })();
   </script>
@@ -8053,7 +8396,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-sentiment')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-sentiment');}">
     <div class="mx5-card-title"><span class="l-en">Market Sentiment</span><span class="l-zh">市场情绪</span></div>
     <div class="mx5-sentiment-dial-wrap">
-      <svg viewBox="0 0 380 200" style="width:100%;max-width:340px;height:180px;display:inline-block;overflow:visible">
+      <svg viewBox="0 0 380 212" style="width:100%;max-width:340px;height:190px;display:inline-block;overflow:visible">
         <defs>
           <linearGradient id="sentGrad5" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%"   stop-color="#ef4444"/>
@@ -8061,22 +8404,30 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <stop offset="65%"  stop-color="#22d97a"/>
             <stop offset="100%" stop-color="#22d97a"/>
           </linearGradient>
+          {# filterUnits=userSpaceOnUse: explicit bounds prevent zero-bbox collapse when needle is vertical (dial=50) #}
+          {# default objectBoundingBox region on purpose: the needle <g> below always
+             contains the r=9 hub circle, so its bbox never collapses at any rotation.
+             An explicit userSpaceOnUse region here CLIPS the swept needle (it only
+             stays inside a narrow window at dial=50) — do not re-add one. #}
           <filter id="dialGlow5"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         </defs>
         {# Track #}
         <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="18" stroke-linecap="round"/>
         {# Gradient decorative track #}
         <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="url(#sentGrad5)" stroke-width="18" stroke-linecap="round" opacity=".55"/>
-        {# Needle — rotate(angle-90, cx=190, cy=185) where angle=dial/100*180 #}
-        <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
-              stroke="{{ _fgv5_col }}" stroke-width="4" stroke-linecap="round"
-              transform="rotate({{ _fg_needle_rot }}, 190, 185)"
-              filter="url(#dialGlow5)"/>
-        <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="{{ _fgv5_col }}" stroke-width="2.5"/>
-        <circle class="fg-mark-f" cx="190" cy="185" r="4"  fill="{{ _fgv5_col }}"/>
-        {# Zone labels (≥11px per spec); NEUTRAL arc apex removed — zone word below already names state #}
-        <text class="fg-lab-panic" x="20"  y="196" fill="#ef4444" font-size="13" font-family="-apple-system,sans-serif" font-weight="700">PANIC</text>
-        <text class="fg-lab-euph" x="360" y="196" fill="#22d97a" font-size="13" font-family="-apple-system,sans-serif" text-anchor="end" font-weight="700">EUPHORIA</text>
+        {# Needle wrapped in <g> so filter bbox is always non-zero (group includes the hub circles) #}
+        <g filter="url(#dialGlow5)">
+          <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
+                stroke="{{ _fgv5_col }}" stroke-width="4" stroke-linecap="round"
+                transform="rotate({{ _fg_needle_rot }}, 190, 185)"/>
+          <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="{{ _fgv5_col }}" stroke-width="2.5"/>
+          <circle class="fg-mark-f" cx="190" cy="185" r="4"  fill="{{ _fgv5_col }}"/>
+        </g>
+        {# Zone labels: bilingual dual-text (SVG <text> l-en/l-zh honours display CSS); placed below arc for clearance #}
+        <text class="l-en fg-lab-panic" x="26"  y="208" fill="#ef4444" font-size="13" font-family="-apple-system,sans-serif" font-weight="700" text-anchor="start">PANIC</text>
+        <text class="l-zh fg-lab-panic" x="26"  y="208" fill="#ef4444" font-size="13" font-family="-apple-system,sans-serif" font-weight="700" text-anchor="start">恐慌</text>
+        <text class="l-en fg-lab-euph" x="354" y="208" fill="#22d97a" font-size="13" font-family="-apple-system,sans-serif" text-anchor="end" font-weight="700">EUPHORIA</text>
+        <text class="l-zh fg-lab-euph" x="354" y="208" fill="#22d97a" font-size="13" font-family="-apple-system,sans-serif" text-anchor="end" font-weight="700">亢奋</text>
       </svg>
     </div>
     <div class="mx5-sentiment-zone-text" style="color:var(--fg-col, {{ _fgv5_col }})">
@@ -8240,46 +8591,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-mkt-delta nb-chg" data-sym="NQ=F" data-mkt="us">—</div>
         </div>
       </div>
-      {# B2: Overnight / Asia secondary strip — 5 index tiles + severity banner.
-         Tiles use the same nb-px/nb-chg data-sym pattern so live.js patches them.
-         data-bare suppresses "$" prefix on price. Banner hidden until JS evaluates. #}
-      <div class="mx5-ovn-eyebrow"><span class="l-en">OVERNIGHT / ASIA</span><span class="l-zh">隔夜 / 亚洲</span></div>
-      <div class="mx5-ovn-grid">
-        <div class="mx5-ovn-tile" data-sym="^N225" data-mkt="us">
-          <div class="mx5-ovn-ticker">N225</div>
-          <div class="mx5-ovn-sub"><span class="l-en">Nikkei</span><span class="l-zh">日经</span></div>
-          <div class="mx5-ovn-price nb-px" data-sym="^N225" data-mkt="us" data-bare>—</div>
-          <div class="mx5-ovn-delta nb-chg" data-sym="^N225" data-mkt="us">—</div>
-        </div>
-        <div class="mx5-ovn-tile" data-sym="^KS11" data-mkt="us">
-          <div class="mx5-ovn-ticker">KOSPI</div>
-          <div class="mx5-ovn-sub"><span class="l-en">Korea</span><span class="l-zh">韩国</span></div>
-          <div class="mx5-ovn-price nb-px" data-sym="^KS11" data-mkt="us" data-bare>—</div>
-          <div class="mx5-ovn-delta nb-chg" data-sym="^KS11" data-mkt="us">—</div>
-        </div>
-        <div class="mx5-ovn-tile" data-sym="^TWII" data-mkt="us">
-          <div class="mx5-ovn-ticker">TWII</div>
-          <div class="mx5-ovn-sub"><span class="l-en">Taiwan</span><span class="l-zh">台湾加权</span></div>
-          <div class="mx5-ovn-price nb-px" data-sym="^TWII" data-mkt="us" data-bare>—</div>
-          <div class="mx5-ovn-delta nb-chg" data-sym="^TWII" data-mkt="us">—</div>
-        </div>
-        <div class="mx5-ovn-tile" data-sym="^HSI" data-mkt="us">
-          <div class="mx5-ovn-ticker">HSI</div>
-          <div class="mx5-ovn-sub"><span class="l-en">Hang Seng</span><span class="l-zh">恒指</span></div>
-          <div class="mx5-ovn-price nb-px" data-sym="^HSI" data-mkt="us" data-bare>—</div>
-          <div class="mx5-ovn-delta nb-chg" data-sym="^HSI" data-mkt="us">—</div>
-        </div>
-        <div class="mx5-ovn-tile" data-sym="000001.SS" data-mkt="us">
-          <div class="mx5-ovn-ticker">SSE</div>
-          <div class="mx5-ovn-sub"><span class="l-en">Shanghai</span><span class="l-zh">上证</span></div>
-          <div class="mx5-ovn-price nb-px" data-sym="000001.SS" data-mkt="us" data-bare>—</div>
-          <div class="mx5-ovn-delta nb-chg" data-sym="000001.SS" data-mkt="us">—</div>
-        </div>
-      </div>
-      {# B2: severity banner — hidden until ovnSeverity() evaluates after live data loads #}
-      <div class="mx5-ovn-note" id="mx5-ovn-note" style="display:none" aria-live="polite">
-        <span class="l-en ovn-txt-en"></span><span class="l-zh ovn-txt-zh"></span>
-      </div>
     </div>
     {# Heatmap staging: heatmap.js mounts on first #heatmap-scorecard at DOMContentLoaded;
        this div sits outside any dialog, height-collapsed so it doesn't affect layout.
@@ -8355,57 +8666,93 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% set _pl_fed_st = (latest.fed_stance.stance if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
     {% set _pl_fsl = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral / hold'} %}
     {% set _pl_fsl_zh = {'hawkish':'鹰派','very-hawkish':'极鹰派','dovish':'鸽派','very-dovish':'极鸽派','neutral':'中性 / 不动'} %}
-    {# v5 face — POLICY MONITOR (structured key-rows; keep engine field vocab) #}
+    {# v5 face — POLICY MONITOR (revamp: stance dot + sparkline + chip row) #}
+    {# Precompute: fed_path fields (guarded — absent VM must not crash) #}
+    {% set _fp = (latest.fed_path if (latest is defined and latest.fed_path is defined and latest.fed_path) else none) %}
+    {% set _fp_impl = (_fp.implied if (_fp and _fp.implied is defined and _fp.implied) else none) %}
+    {# All 5 implied points must be present for sparkline #}
+    {# is not none, NOT is defined — the engine emits present-but-None horizons on a
+       partial futures strip, and None reaching |min crashes the whole render #}
+    {% set _fp_ok = (_fp_impl and _fp_impl.get('now') is not none and _fp_impl.get('m1') is not none and _fp_impl.get('m3') is not none and _fp_impl.get('m6') is not none and _fp_impl.get('m12') is not none) %}
+    {# Fed stance word for face chip #}
+    {% set _pl_label_en = (latest.fed_stance.label_en if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.label_en is defined) else (_pl_fsl.get(_pl_fed_st, _pl_fed_st) if _pl_fed_st else none)) %}
+    {# engine label_zh ("鹰派"/"鸽派"/…) — label_en values are NOT in the i18n LEX, so td() would leak EN into ZH #}
+    {% set _pl_label_zh = (latest.fed_stance.label_zh if (latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.label_zh is defined and latest.fed_stance.label_zh) else (_pl_fsl_zh.get(_pl_fed_st, _pl_fed_st) if _pl_fed_st else none)) %}
+    {# evw_snap td_to_fomc for face chip #}
+    {% set _pl_td_fomc = (evw_snap.get('td_to_fomc') if (evw_snap is defined and evw_snap and evw_snap.get('available')) else none) %}
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-policy')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-policy');}">
       <div class="mx5-card-title"><span class="l-en">Policy Monitor</span><span class="l-zh">政策监测</span></div>
-      <div class="mx5-policy-rows">
-        {# Signal / state row #}
-        <div class="mx5-policy-row">
-          <span class="mx5-policy-key"><span class="l-en">Signal</span><span class="l-zh">信号</span></span>
-          <span class="mx5-policy-val">
-            <span class="l-en">{{ _pl_plain_en }}</span>
-            <span class="l-zh">{{ _pl_plain_zh }}</span>
-          </span>
+      {# 4a-1: Stance line — colored dot + plain-word state #}
+      {% set _pl_dot_col = 'var(--down)' if _pl_state == 'ARMED' else ('var(--warn)' if _pl_state == 'ELEVATED' else 'color-mix(in srgb,var(--up) 70%,transparent)') %}
+      <div class="plf-stance-row">
+        <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:2px"><circle cx="4" cy="4" r="4" fill="{{ _pl_dot_col }}"/></svg>
+        <span>
+          <span class="l-en">{{ _pl_plain_en }}</span>
+          <span class="l-zh">{{ _pl_plain_zh }}</span>
+        </span>
+      </div>
+      {# 4a-2: Mini rate-path sparkline (120×36) + headline; only when all 5 implied points present #}
+      {% if _fp_ok %}
+      {% set _fp_vals = [_fp_impl.now, _fp_impl.m1, _fp_impl.m3, _fp_impl.m6, _fp_impl.m12] %}
+      {% set _fp_min = _fp_vals | min %}
+      {% set _fp_max = _fp_vals | max %}
+      {% set _fp_range = (_fp_max - _fp_min) if (_fp_max - _fp_min) > 0.001 else 0.25 %}
+      {# 5 points evenly at x=0,30,60,90,120; y=32*(1-(v-min)/range) #}
+      {% set _fp_pts = [] %}
+      {% for v in _fp_vals %}
+        {% set _fpx = (loop.index0 * 30) | round(1) %}
+        {% set _fpy = (32 * (1 - (v - _fp_min) / _fp_range)) | round(1) %}
+        {% if _fp_pts.append(_fpx ~ ',' ~ _fpy) %}{% endif %}
+      {% endfor %}
+      {# Area path: M first, L rest, then down to y=36, back to x=0 #}
+      {% set _fp_area = 'M' ~ _fp_pts[0] ~ ' L' ~ _fp_pts[1] ~ ' L' ~ _fp_pts[2] ~ ' L' ~ _fp_pts[3] ~ ' L' ~ _fp_pts[4] ~ ' L120,36 L0,36 Z' %}
+      <div class="plf-spark-row">
+        <svg class="plf-spark-svg" viewBox="0 0 120 36" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="plSpkGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--isle-policy)" stop-opacity=".18"/>
+              <stop offset="100%" stop-color="var(--isle-policy)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="{{ _fp_area }}" fill="url(#plSpkGrad)"/>
+          <polyline points="{{ _fp_pts | join(' ') }}" fill="none" stroke="var(--isle-policy)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <div class="plf-spark-label">
+          {% if _fp.headline_en is defined and _fp.headline_en %}
+          <span class="l-en">{{ _fp.headline_en | truncate(72, True, '…') }}</span>
+          {# ZH: engine headline_zh is the true twin; built line only as last resort #}
+          {% if _fp.headline_zh is defined and _fp.headline_zh %}
+          <span class="l-zh">{{ _fp.headline_zh | truncate(72, True, '…') }}</span>
+          {% else %}
+          {% set _fp_cuts = (_fp.implied_cuts_12m if (_fp.implied_cuts_12m is defined and _fp.implied_cuts_12m is not none) else 0) %}
+          {% set _fp_n_zh = (_fp_cuts | abs) | round(0) | int %}
+          {% set _fp_dir_zh = '加息' if _fp_cuts < 0 else ('降息' if _fp_cuts > 0 else '不变') %}
+          <span class="l-zh">未来12个月市场定价约{{ _fp_n_zh }}次{{ _fp_dir_zh }}</span>
+          {% endif %}
+          {% else %}
+          <span class="l-en">Rate path — open dialog for detail</span>
+          <span class="l-zh">利率路径 — 点击查看详情</span>
+          {% endif %}
         </div>
-        {# Status row #}
-        <div class="mx5-policy-row">
-          <span class="mx5-policy-key"><span class="l-en">Status</span><span class="l-zh">状态</span></span>
-          <span class="mx5-policy-val" style="font-size:11px;color:var(--ink-2,rgba(255,255,255,.6))">
-            {% if PL and PL.get('jawboning') and PL.jawboning.get('n_7d') is not none %}
-            <span class="l-en">{{ PL.jawboning.n_7d }} speeches 7d</span>
-            <span class="l-zh">7日 {{ PL.jawboning.n_7d }} 次发声</span>
-            {% else %}
-            <span class="l-en">No active jawboning</span>
-            <span class="l-zh">无积极发声</span>
-            {% endif %}
-          </span>
-        </div>
-        {# Last flip row #}
-        {% if flip_confirmation is defined and flip_confirmation and flip_confirmation.last_event %}
-        <div class="mx5-policy-row">
-          <span class="mx5-policy-key"><span class="l-en">Last flip</span><span class="l-zh">最近翻转</span></span>
-          <span class="mx5-policy-val">{{ flip_confirmation.last_event.event_date }}</span>
-        </div>
+      </div>
+      {% endif %}
+      {# 4a-3: Chip row — Fed stance · FOMC countdown · jawboning (11px) #}
+      <div class="plf-chip-row">
+        {% if _pl_label_en %}
+        <span class="plf-chip"><span class="l-en">{{ _pl_label_en }}</span><span class="l-zh">{{ _pl_label_zh or _pl_label_en }}</span></span>
         {% endif %}
-        {# Fed stance row #}
-        {% if _pl_fed_st %}
-        <div class="mx5-policy-row">
-          <span class="mx5-policy-key"><span class="l-en">Fed stance</span><span class="l-zh">美联储立场</span></span>
-          <span class="mx5-policy-val">
-            <span class="l-en">{{ _pl_fsl.get(_pl_fed_st, _pl_fed_st) }}</span>
-            <span class="l-zh">{{ _pl_fsl_zh.get(_pl_fed_st, _pl_fed_st) }}</span>
-          </span>
-        </div>
+        {% if _pl_td_fomc is not none %}
+        <span class="plf-chip">
+          <span class="l-en">FOMC in {{ _pl_td_fomc }} trading days</span>
+          <span class="l-zh">美联储会议还有{{ _pl_td_fomc }}个交易日</span>
+        </span>
         {% endif %}
-        {# Repricing count #}
-        {% if _plrepr_count > 0 %}
-        <div class="mx5-policy-row">
-          <span class="mx5-policy-key"><span class="l-en">Repricing</span><span class="l-zh">重定价</span></span>
-          <span class="mx5-policy-val">
-            <span class="l-en">{{ _plrepr_count }}/4 active</span>
-            <span class="l-zh">{{ _plrepr_count }}/4 活跃</span>
-          </span>
-        </div>
+        {% if PL and PL.get('jawboning') and PL.jawboning.get('n_7d') %}
+        {% set _pl_jw_n = PL.jawboning.n_7d %}
+        <span class="plf-chip">
+          <span class="l-en">{{ _pl_jw_n }} speech{{ 'es' if _pl_jw_n != 1 else '' }} this week</span>
+          <span class="l-zh">本周{{ _pl_jw_n }}次政策发声</span>
+        </span>
         {% endif %}
       </div>
     </div>
@@ -8485,31 +8832,50 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   {% if mode != 'stocks' %}
   {% set TL_nb = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
   <div class="sx" id="sx-news-v2" style="--isle-color:var(--isle-news)">
-    {# v5 face — ALERTS CENTRE (severity-sorted; warn first; plain_en/zh + message; footer opens dialog) #}
-    {# alerts VM list: severity-sort: warn > info; top 3 shown #}
+    {# v5 face — ALERTS CENTRE (conviction-tier ranked; context items off face; plain_en/zh + message) #}
     {% set _alv5_all = alerts if alerts else [] %}
-    {# Sort: warn severity first, then info #}
-    {% set _alv5_sorted = (_alv5_all | selectattr('severity','in',('warn','high','critical')) | list) + (_alv5_all | rejectattr('severity','in',('warn','high','critical')) | list) %}
-    {% set _alv5_top = _alv5_sorted[:3] %}
+    {# Tier ranking: act+watch on face; context items suppressed from face count and badge #}
+    {% set _alv5_prio = (_alv5_all | selectattr('tier','in',('act','watch')) | list) if _alv5_all else [] %}
+    {# event_risk is engine-tiered 'context' (calendar context, not an edge claim) but an
+       imminent FOMC/CPI is time-critical — promote it on the FACE only; the dialog keeps
+       the honest engine tier grouping #}
+    {% set _alv5_prio = _alv5_prio + (_alv5_all | selectattr('tier','equalto','context') | selectattr('rule','equalto','event_risk') | list) %}
+    {# Guard: if tier missing default to watch so legacy alerts are not silently dropped #}
+    {% set _alv5_prio = _alv5_prio + (_alv5_all | rejectattr('tier','defined') | list) if _alv5_all else _alv5_prio %}
+    {% set _alv5_ctx  = (_alv5_all | selectattr('tier','equalto','context') | rejectattr('rule','equalto','event_risk') | list) if _alv5_all else [] %}
+    {% set _alv5_total = _alv5_all | length %}
+    {# Hot news headline (importance=high); guard importance field missing #}
+    {% set _alv5_hot_news = ((macro_news.headlines | selectattr('importance','defined') | selectattr('importance','equalto','high') | list)[:1]) if (macro_news is defined and macro_news and macro_news.headlines) else [] %}
+    {# Face list: first 2 prio, then hot headline, then pad prio to 3 rows total #}
+    {% set _alv5_face_prio_2 = _alv5_prio[:2] %}
+    {% set _alv5_prio_rest = _alv5_prio[2:] %}
     {% set _alv5_total = _alv5_all | length %}
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-news')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-news');}">
       <div class="mx5-card-title-row">
         <div class="mx5-card-title"><span class="l-en">Alerts Centre</span><span class="l-zh">警报中心</span></div>
-        {% if _alv5_total > 0 %}
+        {% if _alv5_prio | length > 0 %}
         <div class="mx5-card-badge" style="color:var(--mx5-warn-ink);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
-          <span class="l-en">{{ _alv5_total }} FIRED</span>
-          <span class="l-zh">{{ _alv5_total }} 条触发</span>
+          <span class="l-en">{{ _alv5_prio | length }} FIRED</span>
+          <span class="l-zh">{{ _alv5_prio | length }} 条触发</span>
         </div>
         {% endif %}
       </div>
-      {% if _alv5_top %}
+      {% if _alv5_prio or _alv5_hot_news %}
+      {# Rows rendered: up to 2 prio, 1 hot news headline, then pad prio to 3 if slots remain.
+         Two counters: total rows (layout cap) vs alert rows only (footer "X of Y in feed" —
+         the news row is not part of the alert feed and must not inflate X past Y). #}
+      {% set _alv5_face_rows_rendered = namespace(count=0) %}
+      {% set _alv5_alert_rows = namespace(count=0) %}
       <div class="mx5-alerts-list">
-        {% for a in _alv5_top %}
+        {% for a in _alv5_face_prio_2 %}
         {% set _asev = 'warn' if a.severity in ('warn','high','critical') else 'info' %}
+        {% set _alv5_face_rows_rendered.count = _alv5_face_rows_rendered.count + 1 %}
+        {% set _alv5_alert_rows.count = _alv5_alert_rows.count + 1 %}
         <div class="mx5-alert-item {{ _asev }}">
           <div class="mx5-alert-dot {{ _asev }}"></div>
           <div class="mx5-alert-content">
             <div class="mx5-alert-title {{ _asev }}">
+              {% if a.icon %}<span style="font-size:12px;margin-right:3px">{{ a.icon }}</span>{% endif %}
               <span class="l-en">{{ a.plain_en }}</span>
               <span class="l-zh">{{ a.plain_zh or a.plain_en }}</span>
             </div>
@@ -8520,11 +8886,64 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
         </div>
         {% endfor %}
+        {# Hot headline row (high-importance news) #}
+        {% if _alv5_hot_news %}
+        {% set _hn = _alv5_hot_news[0] %}
+        {% set _alv5_face_rows_rendered.count = _alv5_face_rows_rendered.count + 1 %}
+        <div class="mx5-alert-item info">
+          <div class="mx5-alert-dot info"></div>
+          <div class="mx5-alert-content">
+            <div class="mx5-alert-title">
+              <span style="font-size:12px;margin-right:3px">📰</span>
+              <span class="l-en">{{ (_hn.title or '')[:80] }}{% if (_hn.title or '') | length > 80 %}…{% endif %}</span>
+              <span class="l-zh">{{ (_hn.get('title_zh') or _hn.title or '')[:60] }}{% if (_hn.get('title_zh') or _hn.title or '') | length > 60 %}…{% endif %}</span>
+            </div>
+            <div class="mx5-alert-detail">
+              {% if _hn.get('source_name') %}<span>{{ _hn.source_name }}</span> · {% endif %}
+              <span style="color:var(--mx5-warn-ink,#9c6212);font-weight:600"><span class="l-en">High impact</span><span class="l-zh">高影响</span></span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {# Pad with remaining prio items up to 3 face rows total #}
+        {% for a in _alv5_prio_rest %}
+        {% if _alv5_face_rows_rendered.count < 3 %}
+        {% set _asev = 'warn' if a.severity in ('warn','high','critical') else 'info' %}
+        {% set _alv5_face_rows_rendered.count = _alv5_face_rows_rendered.count + 1 %}
+        {% set _alv5_alert_rows.count = _alv5_alert_rows.count + 1 %}
+        <div class="mx5-alert-item {{ _asev }}">
+          <div class="mx5-alert-dot {{ _asev }}"></div>
+          <div class="mx5-alert-content">
+            <div class="mx5-alert-title {{ _asev }}">
+              {% if a.icon %}<span style="font-size:12px;margin-right:3px">{{ a.icon }}</span>{% endif %}
+              <span class="l-en">{{ a.plain_en }}</span>
+              <span class="l-zh">{{ a.plain_zh or a.plain_en }}</span>
+            </div>
+            <div class="mx5-alert-detail">
+              <span class="l-en">{{ a.message[:120] }}{% if a.message | length > 120 %}…{% endif %}</span>
+              <span class="l-zh">{{ (a.message_zh or a.message)[:80] }}{% if (a.message_zh or a.message) | length > 80 %}…{% endif %}</span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {# Quiet-state row when prio is empty but context items or news present #}
+        {% if _alv5_prio | length == 0 and not _alv5_hot_news %}
+        <div class="mx5-alert-item info">
+          <div class="mx5-alert-dot info"></div>
+          <div class="mx5-alert-content">
+            <div class="mx5-alert-title" style="color:var(--ink-3,rgba(255,255,255,.4))">
+              <span class="l-en">Nothing urgent — {{ _alv5_ctx | length }} context note{{ 's' if _alv5_ctx | length != 1 }} in the feed</span>
+              <span class="l-zh">暂无紧急警报 — 信息流中有{{ _alv5_ctx | length }}条背景提示</span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing {{ _alv5_top | length }} of {{ _alv5_total }} fired</span>
-          <span class="l-zh">显示 {{ _alv5_top | length }} / {{ _alv5_total }} 条</span>
+          <span class="l-en">Showing {{ [_alv5_alert_rows.count, _alv5_total] | min }} of {{ _alv5_total }} in feed</span>
+          <span class="l-zh">显示 {{ [_alv5_alert_rows.count, _alv5_total] | min }} / {{ _alv5_total }} 条</span>
         </span>
         <button type="button" class="mx5-alert-footer-link" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -9282,96 +9701,400 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>
   {% endif %}{# /market_state — dlg-risk #}
 
-  {# dlg-policy: Policy lever + repricing #}
+  {# dlg-policy: Policy Monitor — full redesign (spec §4b) #}
   {% if policy_lever is defined and policy_lever %}
+  {# Precompute shared vars for dialog #}
+  {% set _DPL = policy_lever %}
+  {% set _dpl_s = _DPL.get('state') or 'QUIET' %}
+  {% set _dplc = 'c-down' if _dpl_s == 'ARMED' else ('c-warn' if _dpl_s == 'ELEVATED' else 'c-muted') %}
+  {% set _dpl_sent_en = {'ARMED':'Active repricing in progress','ELEVATED':'Elevated — watch for market repricing','QUIET':'No active policy pressure'}.get(_dpl_s,'') %}
+  {% set _dpl_sent_zh = {'ARMED':'重定价进行中','ELEVATED':'警戒 — 留意市场重定价','QUIET':'当前无积极政策压力'}.get(_dpl_s,'') %}
+  {# Fed stance for dialog #}
+  {% set _dpl_fed = (latest.fed_stance.stance if (latest is defined and latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
+  {% set _dpl_fsl = {'hawkish':'Hawkish','very-hawkish':'Very Hawkish','dovish':'Dovish','very-dovish':'Very Dovish','neutral':'Neutral'} %}
+  {% set _dpl_fsl_zh = {'hawkish':'鹰派','very-hawkish':'超鹰派','dovish':'鸽派','very-dovish':'超鸽派','neutral':'中性'} %}
+  {% set _dpl_guid_en = {'tightening':'leaning tighter','easing':'leaning easier','on_hold':'on hold','mixed':'mixed signals'} %}
+  {% set _dpl_guid_zh = {'tightening':'倾向收紧','easing':'倾向宽松','on_hold':'按兵不动','mixed':'信号混杂'} %}
+  {% set _dpl_guid_v = (latest.fed_stance.guidance if (latest is defined and latest.fed_stance is defined and latest.fed_stance.guidance is defined) else none) %}
+  {# Rate path for dialog chart (all fields guarded) #}
+  {% set _dfp = (latest.fed_path if (latest is defined and latest.fed_path is defined and latest.fed_path) else none) %}
+  {% set _dfp_impl = (_dfp.implied if (_dfp and _dfp.implied is defined and _dfp.implied) else none) %}
+  {# is not none, NOT is defined — see the face-sparkline guard: None horizons crash |min #}
+  {% set _dfp_ok = (_dfp_impl and _dfp_impl.get('now') is not none and _dfp_impl.get('m1') is not none and _dfp_impl.get('m3') is not none and _dfp_impl.get('m6') is not none and _dfp_impl.get('m12') is not none) %}
+  {# Flip confirmation for dialog #}
+  {% set _DFC = (flip_confirmation if (flip_confirmation is defined and flip_confirmation and flip_confirmation.last_event is defined) else none) %}
   <div class="mx5-dlg" id="dlg-policy" role="dialog" aria-modal="true" tabindex="-1">
     <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title"><span class="l-en">Policy — Lever State &amp; Repricing</span><span class="l-zh">政策 — 杠杆状态与重定价</span></span>
+        <span class="mx5-dlg-title"><span class="l-en">Policy Monitor</span><span class="l-zh">政策监测</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
         <div id="dlg-policy-lever-card">
-          {% set _DPL = policy_lever %}
-          {% set _dpl_s = _DPL.get('state') or 'QUIET' %}
-          {% set _dplc = 'c-down' if _dpl_s == 'ARMED' else ('c-warn' if _dpl_s == 'ELEVATED' else 'c-muted') %}
-          {# State header #}
-          <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
-            <span class="chip {{ _dplc }}" style="font-size:15px;padding:6px 16px;font-weight:700">
-              <span class="l-en">{{ _dpl_s }}</span><span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_dpl_s, _dpl_s) }}</span>
-            </span>
-            <div>
-              <div style="font-size:13px;font-weight:600"><span class="l-en">{{ {'ARMED':'Active repricing in progress','ELEVATED':'Elevated — watch for market repricing','QUIET':'No active policy pressure'}.get(_dpl_s,'') }}</span><span class="l-zh">{{ {'ARMED':'重定价进行中','ELEVATED':'警戒 — 留意市场重定价','QUIET':'当前无积极政策压力'}.get(_dpl_s,'') }}</span></div>
-              {% if _DPL.get('as_of') %}<div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">As of {{ _DPL.as_of }}</span><span class="l-zh">截至 {{ _DPL.as_of }}</span></div>{% endif %}
+
+        {# ── §4b-1: State hero ───────────────────────────────────── #}
+        <div class="plx-state-hero">
+          <span class="chip {{ _dplc }}" style="font-size:15px;padding:6px 16px;font-weight:700">
+            <span class="l-en">{{ _dpl_s }}</span>
+            <span class="l-zh">{{ {'ARMED':'已触发','ELEVATED':'警戒','QUIET':'平静'}.get(_dpl_s, _dpl_s) }}</span>
+          </span>
+          <div>
+            <div class="plx-state-sent">
+              <span class="l-en">{{ _dpl_sent_en }}</span>
+              <span class="l-zh">{{ _dpl_sent_zh }}</span>
             </div>
-          </div>
-          {# Framing note (plain-word) #}
-          {% if _DPL.get('framing') %}
-          <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6;margin-bottom:16px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:8px">
-            <span class="l-en">{{ _DPL.framing }}</span><span class="l-zh">{{ _DPL.get('framing_zh') or _DPL.framing }}</span>
-          </div>
-          {% endif %}
-          {# Fed stance row #}
-          {% set _dpl_fed = (latest.fed_stance.stance if (latest is defined and latest.fed_stance is defined and latest.fed_stance and latest.fed_stance.stance is defined and latest.fed_stance.stance != 'unknown') else none) %}
-          {% if _dpl_fed %}
-          {% set _dpl_fsl = {'hawkish':'Hawkish — leaning toward tighter policy','very-hawkish':'Very Hawkish — strong tightening bias','dovish':'Dovish — leaning toward rate cuts','very-dovish':'Very Dovish — strong easing bias','neutral':'Neutral — no clear lean'} %}
-          {% set _dpl_fsl_zh = {'hawkish':'鹰派 — 倾向收紧政策','very-hawkish':'超鹰派 — 强烈收紧倾向','dovish':'鸽派 — 倾向降息','very-dovish':'超鸽派 — 强烈宽松倾向','neutral':'中性 — 无明确倾向'} %}
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
-            <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Fed stance</span><span class="l-zh">美联储立场</span></span>
-            <span style="font-size:12px;font-weight:600"><span class="l-en">{{ _dpl_fsl.get(_dpl_fed, _dpl_fed) }}</span><span class="l-zh">{{ _dpl_fsl_zh.get(_dpl_fed, _dpl_fed) }}</span></span>
-          </div>
-          {% endif %}
-          {# Flip confirmation #}
-          {% if flip_confirmation is defined and flip_confirmation and flip_confirmation.last_event is defined %}
-          {% set _DFC = flip_confirmation %}
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
-            <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Last confirmed flip</span><span class="l-zh">最近确认翻转</span></span>
-            <span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">{{ _DFC.last_event.event_date }}</span>
-          </div>
-          {% if _DFC.last_event.get('description') or _DFC.last_event.get('description_zh') %}
-          <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6;margin-bottom:8px;padding-left:4px">
-            <span class="l-en">{{ _DFC.last_event.get('description','') }}</span><span class="l-zh">{{ _DFC.last_event.get('description_zh') or _DFC.last_event.get('description','') }}</span>
-          </div>
-          {% endif %}
-          {% endif %}
-          {# Repricing components #}
-          {% set _dplrepr = _DPL.get('repricing_components') %}
-          {% if _dplrepr %}
-          <div class="mx5-dlg-sep"></div>
-          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px"><span class="l-en">Active repricing channels</span><span class="l-zh">活跃重定价渠道</span></div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            {% for r in _dplrepr %}
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.14);border-radius:8px">
-              <span style="font-size:12px"><span class="l-en">{{ r.label_en if r.label_en is defined else r.name }}</span><span class="l-zh">{{ r.label_zh if r.label_zh is defined else (r.name_zh if r.name_zh is defined else r.name) }}</span></span>
-              <span class="chip c-warn" style="font-size:11px;padding:2px 8px"><span class="l-en">Active</span><span class="l-zh">活跃</span></span>
+            {% if _DPL.get('as_of') %}
+            <div class="plx-asof">
+              <span class="l-en">As of {{ _DPL.as_of }}</span>
+              <span class="l-zh">截至 {{ _DPL.as_of }}</span>
             </div>
-            {% endfor %}
-          </div>
-          {% endif %}
-          {# Jawboning counts #}
-          {% if _DPL.get('jawboning') %}
-          {% set _DJW = _DPL.jawboning %}
-          {% if _DJW.get('n_7d') is not none %}
-          <div class="mx5-dlg-sep"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
-            <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))"><span class="l-en">Jawboning events (7 day / 30 day)</span><span class="l-zh">政策发声次数（7日 / 30日）</span></span>
-            <span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums">{{ _DJW.n_7d }} / {{ _DJW.n_30d }}</span>
-          </div>
-          {% if _DJW.get('last_alert_summary') %}
-          <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6;padding-left:4px">
-            <span class="l-en">{{ _DJW.last_alert_summary }}</span><span class="l-zh">{{ _DJW.get('last_alert_summary_zh') or _DJW.last_alert_summary }}</span>
-          </div>
-          {% endif %}
-          {% endif %}
-          {% endif %}
-          {# Disclaimer #}
-          <div class="mx5-dlg-sep"></div>
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));line-height:1.6">
-            <span class="l-en">Context only — not a forecast.</span>
-            <span class="l-zh">仅供参考 — 非预测。</span>
+            {% endif %}
           </div>
         </div>
+        {% if _DPL.get('framing') %}
+        <div class="plx-framing">
+          <span class="l-en">{{ _DPL.framing }}</span>
+          <span class="l-zh">{{ _DPL.get('framing_zh') or _DPL.framing }}</span>
+        </div>
+        {% endif %}
+
+        {# ── §4b-2: Rate path chart ──────────────────────────────── #}
+        {% if _dfp_ok %}
+        <div class="mx5-dlg-eyebrow">
+          <span class="l-en">Rate Path</span><span class="l-zh">利率路径</span>
+        </div>
+        <div class="plx-chart-wrap">
+        {# Build 5-point polyline: x positions evenly spaced 0..540 in 640-wide chart (padding 50 left/right)
+           y: rate % auto-scaled over implied ∪ dots (pad 0.15pp each side); chart height inner = 120px (y 30..150) #}
+        {% set _ch_impl = [_dfp_impl.now, _dfp_impl.m1, _dfp_impl.m3, _dfp_impl.m6, _dfp_impl.m12] %}
+        {# Collect dot medians for dots in chart range (year 2026 → m6 horizon slot) #}
+        {% set _ch_dots = (_dfp.dots if (_dfp.dots is defined and _dfp.dots) else []) %}
+        {# All y-values for scaling #}
+        {% set _ch_allvals = _ch_impl[:] %}
+        {% for d in _ch_dots %}{% if _ch_allvals.append(d.median) %}{% endif %}{% endfor %}
+        {% set _ch_min_raw = _ch_allvals | min %}
+        {% set _ch_max_raw = _ch_allvals | max %}
+        {% set _ch_pad = 0.15 %}
+        {% set _ch_ymin = _ch_min_raw - _ch_pad %}
+        {% set _ch_ymax = _ch_max_raw + _ch_pad %}
+        {% set _ch_yrange = (_ch_ymax - _ch_ymin) if (_ch_ymax - _ch_ymin) > 0.01 else 0.5 %}
+        {# Chart geometry: viewBox 0 0 640 180; x 50..590, y 20..150 (inner h=130) #}
+        {% set _ch_xl = 50 %}
+        {% set _ch_xr = 590 %}
+        {% set _ch_yt = 20 %}
+        {% set _ch_yb = 150 %}
+        {% set _ch_w = 540 %}
+        {% set _ch_h = 130 %}
+        {# 5 x positions evenly spaced #}
+        {# parens are load-bearing: `w*0.25|round(1)` parses as `w*(0.25|round(1))` = w*0.2 #}
+        {% set _ch_xs = [_ch_xl, _ch_xl + ((_ch_w*0.25)|round(1)|float), _ch_xl + ((_ch_w*0.5)|round(1)|float), _ch_xl + ((_ch_w*0.75)|round(1)|float), _ch_xr] %}
+        {# Macro to convert rate value → SVG y coordinate #}
+        {# Helper: rate to y #}
+        {% macro ry(v) %}{{ (_ch_yb - _ch_h * (v - _ch_ymin) / _ch_yrange) | round(1) }}{% endmacro %}
+        {# Build polyline points for implied path #}
+        {% set _ch_pts = [] %}
+        {% for i in range(5) %}
+          {% if _ch_pts.append(_ch_xs[i]|string ~ ',' ~ ry(_ch_impl[i])) %}{% endif %}
+        {% endfor %}
+        {# Area fill path #}
+        {% set _ch_area = 'M' ~ _ch_pts[0] ~ ' L' ~ _ch_pts[1] ~ ' L' ~ _ch_pts[2] ~ ' L' ~ _ch_pts[3] ~ ' L' ~ _ch_pts[4] ~ ' L' ~ _ch_xr|string ~ ',' ~ _ch_yb|string ~ ' L' ~ _ch_xl|string ~ ',' ~ _ch_yb|string ~ ' Z' %}
+        {# Target mid dashed line y-coord #}
+        {% set _ch_target_mid = (_dfp.target_mid if (_dfp.target_mid is defined and _dfp.target_mid is not none) else _dfp_impl.now) %}
+        {% set _ch_ydash = ry(_ch_target_mid) %}
+        {# Classify dots: current-year dot → in-chart m6 slot (_ch_xs[3]), outer years = annotation
+           chips only. Year derived from the data date so this survives the calendar rollover. #}
+        {% set _ch_cur_year = (latest.date[:4]|int) if (latest is defined and latest.date is defined and latest.date) else none %}
+        {% set _ch_dots_inner = [] %}
+        {% set _ch_dots_outer = [] %}
+        {% for d in _ch_dots %}
+          {% if d.year is defined and _ch_cur_year is not none and d.year == _ch_cur_year %}
+            {% if _ch_dots_inner.append(d) %}{% endif %}
+          {% else %}
+            {% if _ch_dots_outer.append(d) %}{% endif %}
+          {% endif %}
+        {% endfor %}
+        {# Gap chip values #}
+        {% set _ch_gap = (_dfp.gap if (_dfp.gap is defined and _dfp.gap) else none) %}
+        <svg class="plx-chart-svg" viewBox="0 0 640 180" role="img">
+          <defs>
+            <linearGradient id="plxChartGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--isle-policy)" stop-opacity=".18"/>
+              <stop offset="100%" stop-color="var(--isle-policy)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          {# Area fill under implied path #}
+          <path d="{{ _ch_area }}" fill="url(#plxChartGrad)"/>
+          {# Dashed hairline at current target mid #}
+          <line x1="{{ _ch_xl }}" y1="{{ _ch_ydash }}" x2="{{ _ch_xr }}" y2="{{ _ch_ydash }}" stroke="rgba(255,255,255,.18)" stroke-width="1" stroke-dasharray="4,4"/>
+          {# Implied path polyline #}
+          <polyline points="{{ _ch_pts | join(' ') }}" fill="none" stroke="var(--isle-policy)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+          {# Dots and value labels at each implied point #}
+          {% for i in range(5) %}
+          {% set _px = _ch_xs[i] %}
+          {% set _py = ry(_ch_impl[i]) | float %}
+          <circle cx="{{ _px }}" cy="{{ _py }}" r="4" fill="var(--isle-policy)" stroke="rgba(13,17,24,.8)" stroke-width="1.5"/>
+          <text x="{{ _px }}" y="{{ _py - 8 }}" text-anchor="middle" font-size="10" fill="var(--isle-policy)" font-family="inherit" font-variant-numeric="tabular-nums">{{ '%.2f'|format(_ch_impl[i]) }}%</text>
+          {% endfor %}
+          {# Inner FOMC dot-plot diamonds (2026 → m6 slot) #}
+          {% for d in _ch_dots_inner %}
+          {% set _dpx = _ch_xs[3] %}
+          {% set _dpy = ry(d.median) | float %}
+          {# Diamond shape via polygon offset ±6,0 and 0,±6 #}
+          <polygon points="{{ _dpx }},{{ _dpy - 6 }} {{ _dpx + 6 }},{{ _dpy }} {{ _dpx }},{{ _dpy + 6 }} {{ _dpx - 6 }},{{ _dpy }}" fill="var(--warn,#f59e0b)" fill-opacity=".85"/>
+          {% endfor %}
+          {# X-axis labels (EN and ZH via SVG text — bilingual handled via l-en/l-zh CSS;
+             SVG text does NOT support span so we emit two separate SVG text elements
+             per the svg-span-breakout law — EN visible by default, ZH shown on lang switch) #}
+          {% set _ch_xlabels_en = ['Now','1m','3m','6m','12m'] %}
+          {% set _ch_xlabels_zh = ['现在','1月','3月','6月','12月'] %}
+          {% for i in range(5) %}
+          <text class="l-en" x="{{ _ch_xs[i] }}" y="170" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.36)" font-family="inherit">{{ _ch_xlabels_en[i] }}</text>
+          <text class="l-zh" x="{{ _ch_xs[i] }}" y="170" text-anchor="middle" font-size="10" fill="rgba(255,255,255,.36)" font-family="inherit">{{ _ch_xlabels_zh[i] }}</text>
+          {% endfor %}
+        </svg>
+        {# Outer dot-plot year annotations (e.g. '27 3.60%) as chips below chart #}
+        {% if _ch_dots_outer %}
+        <div class="plx-dot-chips">
+          {% for d in _ch_dots_outer %}
+          <span class="plx-dot-chip">
+            <span class="l-en">'{{ (d.year|string)[2:] }} {{ '%.2f'|format(d.median) }}% (Fed dot)</span>
+            <span class="l-zh">'{{ (d.year|string)[2:] }} {{ '%.2f'|format(d.median) }}%（美联储点图）</span>
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {# Caption row #}
+        <div class="plx-chart-caption">
+          {% if _dfp.read_en is defined and _dfp.read_en %}
+          <span class="l-en">{{ _dfp.read_en }}</span>
+          {% elif _dfp.headline_en is defined and _dfp.headline_en %}
+          <span class="l-en">{{ _dfp.headline_en }}</span>
+          {% else %}
+          <span class="l-en">Market-implied rate path (ZQ fed-funds futures).</span>
+          {% endif %}
+          {# ZH mirrors the EN preference order: read_zh → headline_zh → built line #}
+          {% if _dfp.read_zh is defined and _dfp.read_zh %}
+          <span class="l-zh">{{ _dfp.read_zh }}</span>
+          {% elif _dfp.headline_zh is defined and _dfp.headline_zh %}
+          <span class="l-zh">{{ _dfp.headline_zh }}</span>
+          {% else %}
+          {% set _dfp_cuts = (_dfp.implied_cuts_12m if (_dfp.implied_cuts_12m is defined and _dfp.implied_cuts_12m is not none) else 0) %}
+          {% set _dfp_n_zh = (_dfp_cuts | abs) | round(0) | int %}
+          {% set _dfp_dir_zh = '加息' if _dfp_cuts < 0 else ('降息' if _dfp_cuts > 0 else '不变') %}
+          <span class="l-zh">市场隐含利率路径：未来12个月定价约{{ _dfp_n_zh }}次{{ _dfp_dir_zh }}。</span>
+          {% endif %}
+          {# Gap chip (Fed vs market divergence) #}
+          {% if _ch_gap and _ch_gap.lean_en is defined and _ch_gap.gap_bp is defined %}
+          <span class="plx-chart-gap-chip"
+            data-tip-en="Fed dot at {{ _ch_gap.horizon_label }}: {{ _ch_gap.fed_dot }}%. Market: {{ _ch_gap.market }}%. Gap {{ _ch_gap.gap_bp }}bp."
+            data-tip-zh="美联储点图{{ _ch_gap.horizon_label }}: {{ _ch_gap.fed_dot }}%，市场定价: {{ _ch_gap.market }}%，差距{{ _ch_gap.gap_bp }}bp。">
+            <span class="l-en">{{ _ch_gap.lean_en }} ({{ _ch_gap.gap_bp }}bp at {{ _ch_gap.horizon_label }})</span>
+            <span class="l-zh">{{ _ch_gap.get('lean_zh') or _ch_gap.lean_en }}（{{ _ch_gap.gap_bp }}bp @ {{ _ch_gap.horizon_label }}）</span>
+          </span>
+          {% endif %}
+        </div>
+        </div>{# /plx-chart-wrap #}
+        {% endif %}{# /_dfp_ok #}
+
+        <div class="mx5-dlg-sep"></div>
+
+        {# ── §4b-3: Fed stance card ──────────────────────────────── #}
+        {% if _dpl_fed %}
+        <div class="mx5-dlg-eyebrow">
+          <span class="l-en">Fed Stance</span><span class="l-zh">美联储立场</span>
+        </div>
+        <div class="plx-stance-card">
+          <div class="plx-stance-label">
+            <span class="l-en">{{ _dpl_fsl.get(_dpl_fed, _dpl_fed) }}{% if _dpl_guid_v %} — {{ _dpl_guid_en.get(_dpl_guid_v, _dpl_guid_v) }}{% endif %}</span>
+            <span class="l-zh">{{ _dpl_fsl_zh.get(_dpl_fed, _dpl_fed) }}{% if _dpl_guid_v %} — {{ _dpl_guid_zh.get(_dpl_guid_v, _dpl_guid_v) }}{% endif %}</span>
+          </div>
+          {% if latest is defined and latest.fed_stance is defined and latest.fed_stance.market_vs_fed_en is defined and latest.fed_stance.market_vs_fed_en %}
+          <div class="plx-stance-mve">
+            <span class="l-en">{{ latest.fed_stance.market_vs_fed_en }}</span>
+            <span class="l-zh">{{ latest.fed_stance.get('market_vs_fed_zh') or latest.fed_stance.market_vs_fed_en }}</span>
+          </div>
+          {% endif %}
+          {% if latest is defined and latest.fed_stance is defined and latest.fed_stance.drivers_en is defined and latest.fed_stance.drivers_en %}
+          {% set _plx_drv_zh = (latest.fed_stance.drivers_zh if (latest.fed_stance.drivers_zh is defined and latest.fed_stance.drivers_zh) else []) %}
+          <ul class="plx-drivers">
+            {% for drv in latest.fed_stance.drivers_en[:3] %}
+            <li><span class="l-en">{{ drv }}</span><span class="l-zh">{{ _plx_drv_zh[loop.index0] if loop.index0 < _plx_drv_zh|length else drv }}</span></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+        <div class="mx5-dlg-sep"></div>
+        {% endif %}
+
+        {# ── §4b-4: Jawboning activity ───────────────────────────── #}
+        {% if _DPL.get('jawboning') %}
+        {% set _DJW = _DPL.jawboning %}
+        {% if _DJW.get('n_7d') is not none %}
+        <div class="mx5-dlg-eyebrow">
+          <span class="l-en">Jawboning Activity</span><span class="l-zh">政策发声活跃度</span>
+        </div>
+        <div class="plx-jaw-counts">
+          <div class="plx-jaw-count-box">
+            <div class="plx-jaw-count-num">{{ _DJW.n_7d }}</div>
+            <div class="plx-jaw-count-lbl">
+              <span class="l-en">speeches 7d</span><span class="l-zh">7日发声</span>
+            </div>
+          </div>
+          <div class="plx-jaw-count-box">
+            <div class="plx-jaw-count-num">{{ _DJW.get('n_30d') or '—' }}</div>
+            <div class="plx-jaw-count-lbl">
+              <span class="l-en">speeches 30d</span><span class="l-zh">30日发声</span>
+            </div>
+          </div>
+        </div>
+        {# 7d vs 30d proportion bar (guard div/zero) #}
+        {% set _jaw_n7 = _DJW.n_7d | int %}
+        {% set _jaw_n30 = (_DJW.get('n_30d') or 1) | int %}
+        {% set _jaw_pct = ([(_jaw_n7 / _jaw_n30 * 100) | round(0) | int, 100] | min) if _jaw_n30 > 0 else 0 %}
+        <div class="plx-jaw-bar-track"><div class="plx-jaw-bar-fill" style="width:{{ _jaw_pct }}%"></div></div>
+        {% if _DJW.get('last_alert_ts') %}
+        <div class="plx-jaw-ts">
+          <span class="l-en">Last event: {{ _DJW.last_alert_ts[:10] }}</span>
+          <span class="l-zh">最近事件：{{ _DJW.last_alert_ts[:10] }}</span>
+        </div>
+        {% endif %}
+        {% if _DJW.get('last_alert_summary') %}
+        <div class="plx-jaw-summary">
+          <span class="l-en">{{ _DJW.last_alert_summary }}</span>
+          <span class="l-zh">{{ _DJW.get('last_alert_summary_zh') or _DJW.last_alert_summary }}</span>
+        </div>
+        {% endif %}
+        <div class="mx5-dlg-sep"></div>
+        {% endif %}
+        {% endif %}
+
+        {# ── §4b-5: Lever board ──────────────────────────────────── #}
+        {% if _DPL.get('levers') %}
+        <div class="mx5-dlg-eyebrow">
+          <span class="l-en">Lever Board</span><span class="l-zh">杠杆面板</span>
+        </div>
+        <div style="margin-bottom:12px">
+          {% for lv in _DPL.levers %}
+          {% set _lv_armed = (lv.arming.armed if (lv.arming is defined and lv.arming and lv.arming.armed is defined) else false) %}
+          {% set _lv_stk = (lv.arming.stoch_k if (lv.arming is defined and lv.arming and lv.arming.stoch_k is defined and lv.arming.stoch_k is not none) else none) %}
+          <div class="plx-lever-row">
+            <div>
+              <div class="plx-lever-name">
+                <span class="l-en">{{ lv.name if lv.name is defined else '' }}</span>
+                <span class="l-zh">{{ (lv.name_zh if lv.name_zh is defined and lv.name_zh else (lv.name if lv.name is defined else '')) }}</span>
+              </div>
+              {% if _lv_stk is not none %}
+              {# bar carries the LEVEL only; the state colour lives on the armed dot —
+                 a quiet lever with a high oscillator must not read as an alarm #}
+              <div class="plx-lever-stoch"
+                   data-tip-en="Setup gauge (stochastic %K): {{ _lv_stk|round(0)|int }}/100 — how coiled this lever's asset is; state is set by the Armed/Quiet flag, not this bar"
+                   data-tip-zh="蓄势程度（随机指标%K）：{{ _lv_stk|round(0)|int }}/100 — 状态以“已触发/平静”标记为准，非此条形">
+                <div class="plx-lever-stoch-fill" style="width:{{ [_lv_stk|round(0)|int, 100]|min }}%;background:{{ 'var(--down)' if _lv_armed else 'color-mix(in srgb,var(--isle-policy) 55%,transparent)' }}"></div>
+              </div>
+              {% endif %}
+              {% if lv.watch is defined and lv.watch %}
+              <div class="plx-lever-watch">
+                <span class="l-en">{{ lv.watch }}</span>
+                <span class="l-zh">{{ (lv.watch_zh if lv.watch_zh is defined and lv.watch_zh else lv.watch) }}</span>
+              </div>
+              {% endif %}
+            </div>
+            <div class="plx-lever-status">
+              <svg width="7" height="7" viewBox="0 0 7 7"><circle cx="3.5" cy="3.5" r="3.5" fill="{{ 'var(--down)' if _lv_armed else 'rgba(255,255,255,.22)' }}"/></svg>
+              <span>
+                <span class="l-en">{{ 'Armed' if _lv_armed else 'Quiet' }}</span>
+                <span class="l-zh">{{ '已触发' if _lv_armed else '平静' }}</span>
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {# Favored complex chip row #}
+        {% if _DPL.get('favored_complex') and _DPL.favored_complex.get('basket') %}
+        {% set _fc = _DPL.favored_complex %}
+        <div class="plx-favored"
+          data-tip-en="{{ _fc.get('note','') }}"
+          data-tip-zh="{{ _fc.get('note_zh') or _fc.get('note','') }}">
+          {% for b in _fc.basket %}
+          <span class="plx-basket-chip">{{ b }}</span>
+          {% endfor %}
+          {% if _fc.drawdown_pct is defined and _fc.drawdown_pct is not none %}
+          <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));align-self:center">
+            <span class="l-en">drawdown {{ '%.1f'|format(_fc.drawdown_pct) }}% from 120d peak</span>
+            <span class="l-zh">较120日高点回撤{{ '%.1f'|format(_fc.drawdown_pct) }}%</span>
+          </span>
+          {% endif %}
+        </div>
+        {% endif %}
+        <div class="mx5-dlg-sep"></div>
+        {% endif %}
+
+        {# ── §4b-6: Political runway ─────────────────────────────── #}
+        {% if _DPL.get('calendar') and _DPL.calendar.get('days_to_midterm') is not none %}
+        {% set _dcal = _DPL.calendar %}
+        <div class="plx-cal-row">
+          <span class="plx-cal-countdown">{{ _dcal.days_to_midterm }}</span>
+          <div>
+            <div style="font-size:12px;font-weight:600">
+              <span class="l-en">days to the midterm election</span>
+              <span class="l-zh">距中期选举</span>
+            </div>
+            {% if _dcal.get('context_note') %}
+            <div class="plx-cal-note">
+              <span class="l-en">{{ _dcal.context_note }}</span>
+              <span class="l-zh">{{ _dcal.get('context_note_zh') or _dcal.context_note }}</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="mx5-dlg-sep"></div>
+        {% endif %}
+
+        {# ── §4b-7: Repricing channels ───────────────────────────── #}
+        <div class="mx5-dlg-eyebrow">
+          <span class="l-en">Active Repricing Channels</span><span class="l-zh">活跃重定价渠道</span>
+        </div>
+        {% set _dplrepr = _DPL.get('repricing_components') %}
+        {% if _dplrepr %}
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+          {% for r in _dplrepr %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.14);border-radius:8px">
+            <span style="font-size:12px"><span class="l-en">{{ r.label_en if r.label_en is defined else r.name }}</span><span class="l-zh">{{ r.label_zh if r.label_zh is defined else (r.name_zh if r.name_zh is defined else r.name) }}</span></span>
+            <span class="chip c-warn" style="font-size:11px;padding:2px 8px"><span class="l-en">Active</span><span class="l-zh">活跃</span></span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="plx-null">
+          <span class="l-en">No repricing channels active today.</span>
+          <span class="l-zh">今日无活跃重定价渠道。</span>
+        </div>
+        {% endif %}
+
+        {# ── §4b-8: Last confirmed flip + disclaimer ─────────────── #}
+        {% if _DFC %}
+        <div class="mx5-dlg-sep"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6))">
+            <span class="l-en">Last confirmed flip</span><span class="l-zh">最近确认翻转</span>
+          </span>
+          <span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">{{ _DFC.last_event.event_date }}</span>
+        </div>
+        {% if _DFC.last_event.get('description') or _DFC.last_event.get('description_zh') %}
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6;margin-bottom:8px;padding-left:4px">
+          <span class="l-en">{{ _DFC.last_event.get('description','') }}</span>
+          <span class="l-zh">{{ _DFC.last_event.get('description_zh') or _DFC.last_event.get('description','') }}</span>
+        </div>
+        {% endif %}
+        {% endif %}
+        <div class="mx5-dlg-sep"></div>
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));line-height:1.6">
+          <span class="l-en">Context only — not a forecast.</span>
+          <span class="l-zh">仅供参考 — 非预测。</span>
+        </div>
+
+        </div>{# /dlg-policy-lever-card #}
       </div>
     </div>
   </div>
@@ -9387,93 +10110,144 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
-        {# Header row: icon + title + date + badge. No outer <a> wrapper. #}
-        <div class="isle-aibrief-hdr">
-          <div class="isle-aibrief-icon">AI</div>
-          <div>
-            <div style="font-size:13px;font-weight:700;color:var(--text)"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
-            <div class="num" style="font-size:11px;color:var(--muted)">{% if master_brief is defined and master_brief and master_brief.get('state_asof') %}{{ master_brief.get('state_asof') }}{% else %}{{ latest.date if latest.date else generated_utc[:10] }}{% endif %}</div>
+        {# 1. Header row: icon (38px) + title (15px bold) + date + mandatory badge (≥10.5px) #}
+        <div class="aib-hdr-row">
+          <div class="aib-icon">AI</div>
+          <div class="aib-hdr-meta">
+            <div class="aib-hdr-title"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
+            <div class="aib-hdr-date num">{% if master_brief is defined and master_brief and master_brief.get('state_asof') %}{{ master_brief.get('state_asof') }}{% else %}{{ latest.date if latest.date else generated_utc[:10] }}{% endif %}</div>
           </div>
-          {# Mandatory house-law note — never delete #}
-          <span class="isle-aibrief-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
+          {# Mandatory house-law note — never delete or alter text #}
+          <span class="aib-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
         </div>
         {# Full brief body when master_brief is present #}
         {% if master_brief is defined and master_brief and master_brief.get('summary') %}
         {% set _mb_zh = master_brief.get('zh') or {} %}
-        {# 1. Summary — lead paragraph #}
-        <div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.7;margin-bottom:14px">
+        {# 2. Lead card — summary (17px/650 weight, accent-tinted) #}
+        <div class="aib-lead">
           <span class="l-en">{{ master_brief.get('summary') }}</span>
           <span class="l-zh">{{ _mb_zh.get('summary') or master_brief.get('summary') }}</span>
         </div>
-        {# 2. Regime read #}
-        {% if master_brief.get('regime_read') is not none and master_brief.get('regime_read') %}
-        <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:14px">
+        {# 3. Regime read (14.5px prose) #}
+        {% if master_brief.get('regime_read') %}
+        <div class="aib-regime">
           <span class="l-en">{{ master_brief.get('regime_read') }}</span>
           <span class="l-zh">{{ _mb_zh.get('regime_read') or master_brief.get('regime_read') }}</span>
         </div>
         {% endif %}
-        {# 3. Conflicts #}
-        {% if master_brief.get('conflicts') is not none and master_brief.get('conflicts') %}
-        {% set _mb_conflicts_zh = _mb_zh.get('conflicts') or [] %}
-        <div class="mx5-dlg-eyebrow"><span class="l-en">Where signals disagree</span><span class="l-zh">信号分歧</span></div>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
-          {% for _ci in master_brief.get('conflicts') %}
-          {% set _ci_zh = _mb_conflicts_zh[loop.index0] if _mb_conflicts_zh and loop.index0 < _mb_conflicts_zh|length else _ci %}
-          <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">{{ _ci }}</span>
-            <span class="l-zh">{{ _ci_zh }}</span>
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-        {# 4. Rotation check #}
-        {% if master_brief.get('rotation_check') is not none and master_brief.get('rotation_check') %}
-        <div class="mx5-dlg-eyebrow"><span class="l-en">Rotation</span><span class="l-zh">轮动</span></div>
-        <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:14px">
-          <span class="l-en">{{ master_brief.get('rotation_check') }}</span>
-          <span class="l-zh">{{ _mb_zh.get('rotation_check') or master_brief.get('rotation_check') }}</span>
-        </div>
-        {% endif %}
-        {# 5. Transmission #}
-        {% if master_brief.get('transmission') is not none and master_brief.get('transmission') %}
-        {% set _mb_tx_zh = _mb_zh.get('transmission') or [] %}
-        <div class="mx5-dlg-eyebrow"><span class="l-en">Transmission</span><span class="l-zh">传导</span></div>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
-          {% for _ti in master_brief.get('transmission') %}
-          {% set _ti_zh = _mb_tx_zh[loop.index0] if _mb_tx_zh and loop.index0 < _mb_tx_zh|length else _ti %}
-          <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">{{ _ti }}</span>
-            <span class="l-zh">{{ _ti_zh }}</span>
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-        {# 6. Watch items #}
-        {% if master_brief.get('watch_items') is not none and master_brief.get('watch_items') %}
-        {% set _mb_wi_zh = _mb_zh.get('watch_items') or [] %}
-        <div class="mx5-dlg-eyebrow"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></div>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
-          {% for _wi in master_brief.get('watch_items') %}
-          {% set _wi_zh = _mb_wi_zh[loop.index0] if _mb_wi_zh and loop.index0 < _mb_wi_zh|length else _wi %}
-          <div style="font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(255,255,255,.12)">
-            <span class="l-en">{{ _wi }}</span>
-            <span class="l-zh">{{ _wi_zh }}</span>
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-        {# 7. Footer receipt line — confidence + asof + degraded_reason #}
+        {# 4. Confidence meter — 3-segment bar (moved UP per spec) #}
         {% set _mb_conf = master_brief.get('confidence') %}
-        {% set _mb_deg = master_brief.get('degraded_reason') %}
-        <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:12px">
-          {% if _mb_conf is not none and _mb_conf %}<span class="l-en">Confidence: {{ _mb_conf }}</span><span class="l-zh">置信度：{{ _mb_conf }}</span>{% endif %}
-          {% if _mb_conf is not none and _mb_conf and master_brief.get('state_asof') %} · {% endif %}
-          {% if master_brief.get('state_asof') is not none and master_brief.get('state_asof') %}<span>as of {{ master_brief.get('state_asof') }}</span>{% endif %}
-          {% if _mb_deg is not none and _mb_deg %}
-          <div style="margin-top:4px"><span class="l-en">Today's brief ran degraded: {{ _mb_deg }}</span><span class="l-zh">今日简报为降级运行：{{ _mb_deg }}</span></div>
+        {% if _mb_conf %}
+        {% set _mb_conf_n = 3 if _mb_conf == 'high' else (2 if _mb_conf == 'medium' else 1) %}
+        {% set _mb_conf_zh = '高' if _mb_conf == 'high' else ('中' if _mb_conf == 'medium' else '低') %}
+        <div class="aib-conf-row">
+          <div class="aib-conf-bar">
+            <div class="aib-conf-seg{% if _mb_conf_n >= 1 %} filled{% endif %}"></div>
+            <div class="aib-conf-seg{% if _mb_conf_n >= 2 %} filled{% endif %}"></div>
+            <div class="aib-conf-seg{% if _mb_conf_n >= 3 %} filled{% endif %}"></div>
+          </div>
+          <span class="aib-conf-label"><span class="l-en">Confidence: {{ _mb_conf }}</span><span class="l-zh">置信度：{{ _mb_conf_zh }}</span></span>
+          {% if master_brief.get('state_asof') %}<span class="aib-conf-asof">{{ t('as of','数据截至') }} {{ master_brief.get('state_asof') }}</span>{% endif %}
+        </div>
+        {% endif %}
+        {# 5. Section grid (2-col ≥760px): Conflicts + Transmission #}
+        {% set _mb_conflicts = master_brief.get('conflicts') or [] %}
+        {% set _mb_tx = master_brief.get('transmission') or [] %}
+        {% if _mb_conflicts or _mb_tx %}
+        <div class="aib-grid">
+          {# Conflicts card — left-border warn amber #}
+          {% if _mb_conflicts %}
+          {% set _mb_conflicts_zh = _mb_zh.get('conflicts') or [] %}
+          <div class="aib-card aib-card-conflicts">
+            <div class="aib-eyebrow"><span class="l-en">&#x2696; Where signals disagree</span><span class="l-zh">&#x2696; 信号分歧</span></div>
+            <div class="aib-items">
+              {% for _ci in _mb_conflicts %}
+              {% set _ci_zh = _mb_conflicts_zh[loop.index0] if _mb_conflicts_zh and loop.index0 < _mb_conflicts_zh|length else _ci %}
+              <div class="aib-item">
+                <span class="l-en">{{ _ci }}</span>
+                <span class="l-zh">{{ _ci_zh }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {# Transmission card — left-border blue #}
+          {% if _mb_tx %}
+          {% set _mb_tx_zh = _mb_zh.get('transmission') or [] %}
+          <div class="aib-card aib-card-tx">
+            <div class="aib-eyebrow"><span class="l-en">&#x26D3; Transmission</span><span class="l-zh">&#x26D3; 传导</span></div>
+            <div class="aib-items">
+              {% for _ti in _mb_tx %}
+              {% set _ti_zh = _mb_tx_zh[loop.index0] if _mb_tx_zh and loop.index0 < _mb_tx_zh|length else _ti %}
+              <div class="aib-item">
+                <span class="l-en">{{ _ti }}</span>
+                <span class="l-zh">{{ _ti_zh }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
           {% endif %}
         </div>
-        {# 8. Footer link to full brief page #}
+        {% endif %}
+        {# 6. Rotation — full-width card #}
+        {% if master_brief.get('rotation_check') %}
+        <div class="aib-card-full">
+          <div class="aib-eyebrow"><span class="l-en">&#x267B; Rotation</span><span class="l-zh">&#x267B; 轮动</span></div>
+          <div class="aib-rotation">
+            <span class="l-en">{{ master_brief.get('rotation_check') }}</span>
+            <span class="l-zh">{{ _mb_zh.get('rotation_check') or master_brief.get('rotation_check') }}</span>
+          </div>
+        </div>
+        {% endif %}
+        {# 7. What to watch — checklist with bolded trigger head (split on ':' / '：') #}
+        {% set _mb_watch = master_brief.get('watch_items') or [] %}
+        {% if _mb_watch %}
+        {% set _mb_wi_zh = _mb_zh.get('watch_items') or [] %}
+        <div class="aib-card-full">
+          <div class="aib-eyebrow"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></div>
+          <div class="aib-items">
+            {% for _wi in _mb_watch %}
+            {% set _wi_zh = _mb_wi_zh[loop.index0] if _mb_wi_zh and loop.index0 < _mb_wi_zh|length else _wi %}
+            <div class="aib-watch-row">
+              <span class="aib-watch-marker">&#x25B9;</span>
+              <span>
+                <span class="l-en">{% if ':' in _wi %}<b>{{ _wi.split(':',1)[0] }}</b>:{{ _wi.split(':',1)[1] }}{% else %}{{ _wi }}{% endif %}</span>
+                <span class="l-zh">{% if '：' in _wi_zh %}<b>{{ _wi_zh.split('：',1)[0] }}</b>：{{ _wi_zh.split('：',1)[1] }}{% elif ':' in _wi_zh %}<b>{{ _wi_zh.split(':',1)[0] }}</b>:{{ _wi_zh.split(':',1)[1] }}{% else %}{{ _wi_zh }}{% endif %}</span>
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {# 8. Upcoming catalysts (forward_watch[] — previously unused in dialog) #}
+        {% set _mb_fw = master_brief.get('forward_watch') if master_brief.get('forward_watch') is defined else [] %}
+        {% if _mb_fw is not none and _mb_fw %}
+        <div class="aib-card-full">
+          <div class="aib-eyebrow"><span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化剂</span></div>
+          <div class="aib-catalyst-row">
+            {% for _fw in _mb_fw %}
+            {% set _fw_date = _fw.get('date','') %}
+            {% set _fw_label = _fw.get('label','') %}
+            <span class="aib-catalyst-chip">
+              <span class="l-en">{{ _fw_date[5:10] if _fw_date|length >= 10 else _fw_date }} {{ _fw_label }}</span>
+              <span class="l-zh">{{ _fw_date[5:10] if _fw_date|length >= 10 else _fw_date }} {{ _fw_label }}</span>
+            </span>
+            {% endfor %}
+          </div>
+          {% set _mb_fwr = master_brief.get('forward_read') %}
+          {% if _mb_fwr %}
+          <div class="aib-catalyst-read">
+            <span class="l-en">{{ _mb_fwr }}</span>
+            <span class="l-zh">{{ _mb_fwr }}</span>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {# 9. Degraded notice + footer link #}
+        {% set _mb_deg = master_brief.get('degraded_reason') %}
+        {% if _mb_deg %}
+        <div class="aib-degraded"><span class="l-en">Today's brief ran degraded: {{ _mb_deg }}</span><span class="l-zh">今日简报为降级运行：{{ _mb_deg }}</span></div>
+        {% endif %}
         <div class="isle-aibrief-footer"><span></span><a href="aibrief.html" class="isle-aibrief-link"><span class="l-en">Full brief page (China &amp; Bitcoin lenses) →</span><span class="l-zh">完整简报页（中国与比特币视角）→</span></a></div>
         {% else %}
         {# Fallback teaser when master_brief is absent #}
@@ -9507,23 +10281,67 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
-        {# All fired alerts #}
+        {# All fired alerts — grouped by conviction tier: act+watch (Priority) then context #}
         {% if alerts %}
         {% set _dlg_alv5_all = alerts %}
-        {% set _dlg_alv5_sorted = (_dlg_alv5_all | selectattr('severity','in',('warn','high','critical')) | list) + (_dlg_alv5_all | rejectattr('severity','in',('warn','high','critical')) | list) %}
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">All Fired Alerts</span><span class="l-zh">全部触发警报</span></span><div class="isle-head-line"></div></div>
+        {# Same partition as the face: event_risk (engine-tiered context = no edge claim) is
+           time-critical calendar fact and sits with Priority; its chip says "Event", honest #}
+        {% set _dlg_alv5_prio = (_dlg_alv5_all | selectattr('tier','in',('act','watch')) | list) + (_dlg_alv5_all | selectattr('tier','equalto','context') | selectattr('rule','equalto','event_risk') | list) + (_dlg_alv5_all | rejectattr('tier','defined') | list) %}
+        {% set _dlg_alv5_ctx  = _dlg_alv5_all | selectattr('tier','equalto','context') | rejectattr('rule','equalto','event_risk') | list %}
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Priority</span><span class="l-zh">优先</span></span><div class="isle-head-line"></div></div>
+        {% if _dlg_alv5_prio %}
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-          {% for a in _dlg_alv5_sorted %}
+          {% for a in _dlg_alv5_prio %}
           {% set _asev2 = 'warn' if a.severity in ('warn','high','critical') else 'info' %}
+          {% set _atier = a.tier if (a.tier is defined and a.tier) else 'watch' %}
           <div style="display:flex;gap:10px;padding:12px;background:{{ 'rgba(245,158,11,.06)' if _asev2=='warn' else 'rgba(255,255,255,.03)' }};border-radius:10px;border:1px solid {{ 'rgba(245,158,11,.18)' if _asev2=='warn' else 'rgba(255,255,255,.06)' }}">
             <div style="width:8px;height:8px;border-radius:50%;background:{{ 'var(--mx5-warn)' if _asev2=='warn' else 'var(--ink-3,rgba(255,255,255,.36))' }};flex-shrink:0;margin-top:5px"></div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:{{ 'var(--mx5-warn)' if _asev2=='warn' else 'var(--ink-1,rgba(255,255,255,.92))' }};margin-bottom:4px"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh or a.plain_en }}</span></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                <div style="font-size:13px;font-weight:600;color:{{ 'var(--mx5-warn)' if _asev2=='warn' else 'var(--ink-1,rgba(255,255,255,.92))' }}">
+                  {% if a.icon %}<span style="font-size:12px;margin-right:3px">{{ a.icon }}</span>{% endif %}
+                  <span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh or a.plain_en }}</span>
+                </div>
+                {# Tier chip #}
+                {% if a.rule is defined and a.rule == 'event_risk' %}
+                <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Event</span><span class="l-zh">事件</span></span>
+                {% elif _atier == 'act' %}
+                <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.25);white-space:nowrap"><span class="l-en">Act</span><span class="l-zh">行动</span></span>
+                {% elif _atier == 'watch' %}
+                <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Watch</span><span class="l-zh">关注</span></span>
+                {% endif %}
+              </div>
               <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
             </div>
           </div>
           {% endfor %}
         </div>
+        {% else %}
+        <div style="font-size:12px;color:var(--ink-3,rgba(255,255,255,.4));margin-bottom:16px;padding:10px 0">
+          <span class="l-en">No priority alerts firing right now.</span><span class="l-zh">当前无优先警报触发。</span>
+        </div>
+        {% endif %}
+        {# Context tier — dimmer, distinct section #}
+        {% if _dlg_alv5_ctx %}
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          {% for a in _dlg_alv5_ctx %}
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  {% if a.icon %}<span style="font-size:11px;margin-right:3px">{{ a.icon }}</span>{% endif %}
+                  <span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh or a.plain_en }}</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
         {% endif %}
         {# Headlines #}
         {% if macro_news and macro_news.headlines %}
@@ -12465,77 +13283,6 @@ window.__CHART_SWAP__ = {
 <script src="live.js"></script>
 <script src="risk_state_live.js"></script>
 <script src="heatmap.js"></script>
-<script>
-/* B2: Overnight / Asia severity banner — reads changePct from DOM elements that
-   live.js has already painted (avoids a redundant quotes.json fetch alongside the
-   live.js poller). Runs once 2s after load (live.js first tick) and re-evaluates
-   every 5 min by re-reading the same DOM nodes. Guards all DOM ops (absent in
-   stocks mode). */
-(function(){
-  var ASIA_SYMS = ['^N225','^KS11','^TWII','^HSI','000001.SS'];
-  var FUT_SYMS  = ['ES=F','NQ=F'];
-  var INTERVAL_MS = 5 * 60 * 1000;
-
-  /* Read changePct from a .nb-chg[data-sym] element painted by live.js.
-     live.js sets textContent to e.g. "+1.23%" or "-0.45%"; returns null if
-     the element is absent or not yet painted (still shows the placeholder). */
-  function pctFromDom(sym){
-    var el = document.querySelector('.nb-chg[data-sym="' + sym + '"]');
-    if(!el) return null;
-    var txt = (el.textContent || '').trim();
-    if(!txt || txt === '—' || txt === '-') return null;
-    var v = parseFloat(txt.replace(/[^-0-9.]/g, ''));
-    return isNaN(v) ? null : v;
-  }
-
-  function evalSeverity(){
-    var asia = ASIA_SYMS.map(pctFromDom).filter(function(v){ return v != null; });
-    if(asia.length < 3) return null; // not enough data yet
-    var fut = FUT_SYMS.map(pctFromDom).filter(function(v){ return v != null; });
-    var asiaDown15 = asia.filter(function(v){ return v <= -1.5; }).length;
-    var asiaMin    = Math.min.apply(null, asia);
-    var futMin     = fut.length ? Math.min.apply(null, fut) : 0;
-    var asiaDown1  = asia.filter(function(v){ return v <= -1.0; }).length;
-    if(asiaDown15 >= 3 || asiaMin <= -3){ return 'red'; }
-    if(asiaDown1  >= 2 || futMin <= -0.75){ return 'amber'; }
-    return 'quiet';
-  }
-
-  function applyBanner(sev){
-    var el = document.getElementById('mx5-ovn-note');
-    if(!el) return;
-    var enEl = el.querySelector('.ovn-txt-en');
-    var zhEl = el.querySelector('.ovn-txt-zh');
-    el.className = 'mx5-ovn-note';
-    if(sev === 'red'){
-      el.classList.add('ovn-red');
-      if(enEl) enEl.textContent = 'Broad overnight selling — numbers elsewhere are last close. Protect gains; don\'t chase.';
-      if(zhEl) zhEl.textContent = '隔夜普跌——其他数据为昨收。保住利润，勿追高。';
-      el.style.display = 'block';
-    } else if(sev === 'amber'){
-      el.classList.add('ovn-amber');
-      if(enEl) enEl.textContent = 'Overnight tape is weak — watch, don\'t chase.';
-      if(zhEl) zhEl.textContent = '隔夜盘面偏弱——观望，勿追高。';
-      el.style.display = 'block';
-    } else if(sev === 'quiet'){
-      el.classList.add('ovn-quiet');
-      if(enEl) enEl.textContent = 'Overnight session quiet.';
-      if(zhEl) zhEl.textContent = '隔夜平静。';
-      el.style.display = 'block';
-    } else {
-      el.style.display = 'none';
-    }
-  }
-
-  function run(){ applyBanner(evalSeverity()); }
-
-  /* Run once after live.js has had a chance to paint its first tick, then on interval */
-  if(document.getElementById('mx5-ovn-note')){
-    setTimeout(run, 2000);
-    setInterval(run, INTERVAL_MS);
-  }
-})();
-</script>
 <script>
 /* Keep .help tooltips on-screen: flip below the icon when it's near the top of
    the viewport, and clamp horizontally near the left/right edges. Hover-only,

@@ -3968,6 +3968,7 @@ def main() -> int:
             "n_alert": len(_irl_alerts),
             "n_total": len(_irl_rows),
             "alerts": _irl_alerts,
+            "rows": _irl_rows,  # full 10-market list for the rich dropdown (alert markets first)
             "asof": max(_irl_asofs) if _irl_asofs else None,
         }
     except Exception as _ice:  # noqa: BLE001 — display-only, never fatal
@@ -3982,10 +3983,48 @@ def main() -> int:
             _isp_t2 = _isp_tt.get("tier2") or {}
             _isp_state = _isp_tt.get("state")
             if _isp_state:
+                # Build the 5-channel leg list for the rich dropdown (fixed order + display names)
+                _ISP_LEG_EN = {
+                    "us_hy_oas_vel": "Credit spreads",
+                    "kre_spy_rs": "Bank stocks",
+                    "move_pctile": "Rates volatility",
+                    "sofr_iorb_corridor": "Funding stress",
+                    "safety_bid_flag": "Safety bid",
+                }
+                _ISP_LEG_ZH = {
+                    "us_hy_oas_vel": "信用利差",
+                    "kre_spy_rs": "银行股",
+                    "move_pctile": "利率波动",
+                    "sofr_iorb_corridor": "融资压力",
+                    "safety_bid_flag": "避险买盘",
+                }
+                _ISP_LEG_ORDER = ["us_hy_oas_vel", "kre_spy_rs", "move_pctile", "sofr_iorb_corridor", "safety_bid_flag"]
+                _isp_raw_legs = _isp_t2.get("legs") or {}
+                _isp_legs = []
+                for _lk in _ISP_LEG_ORDER:
+                    _lv = _isp_raw_legs.get(_lk) or {}
+                    _isp_legs.append({
+                        "key": _lk,
+                        "label_en": _ISP_LEG_EN.get(_lk, _lk.replace("_", " ").title()),
+                        "label_zh": _ISP_LEG_ZH.get(_lk, _lk),
+                        "hot": bool(_lv.get("hot")),
+                    })
+                # Also include any unknown keys not in the fixed order (graceful extension)
+                for _lk, _lv in _isp_raw_legs.items():
+                    if _lk not in _ISP_LEG_ORDER:
+                        _isp_legs.append({
+                            "key": _lk,
+                            "label_en": _lk.replace("_", " ").title(),
+                            "label_zh": _lk.replace("_", " ").title(),
+                            "hot": bool((_lv or {}).get("hot")),
+                        })
                 _intl_spillover = {
                     "state": _isp_state,
                     "hot_count": _isp_t2.get("hot_count", 0),
-                    "n_legs": len(_isp_t2.get("legs") or {}),
+                    # denominator from the BUILT list so the "X of N channels hot"
+                    # footer always matches the pills rendered above it
+                    "n_legs": len(_isp_legs),
+                    "legs": _isp_legs,  # per-channel detail for rich dropdown
                 }
     except Exception as _ispe:  # noqa: BLE001 — display-only, never fatal
         log.warning("intl_spillover read failed (%s)", _ispe)
