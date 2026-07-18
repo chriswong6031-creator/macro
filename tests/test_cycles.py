@@ -212,6 +212,108 @@ def test_eq_thin_history_bows_out() -> None:
     assert entry_quality(c, cycle_state(c) or {"x": 1}, {"D": {}}, {}, {"regime": "neutral"}) == {}
 
 
+def _midweek_rollover_fixture() -> pd.Series:
+    """Fixture for the RSR-W1b completed-bar test (R3b).
+
+    Series ends on a Wednesday (mid-week).  History: long uptrend, then a sharp
+    decline during the week ending 2024-07-05 (the *completed* weekly bar),
+    followed by a +5%/day bounce on Mon-Wed 2024-07-08..10 (the *partial* week
+    that is still in progress).
+
+    The result: with 1441 days of history, the live partial-week resample has
+    macd_pos=True (the bounce lifts the MACD histogram back above zero), while
+    the completed weekly bar has macd_pos=False (the drop crossed it negative).
+    This mirrors the 07-16 production bug documented in R3b:
+      asof 2026-07-16 trend=85 from live partial W-FRI,
+      completed 07-10 bar: QQQ hist -0.212, vel3 -1.324.
+    """
+    idx = pd.bdate_range("2019-01-02", "2024-07-10")  # ends Wednesday
+    n = len(idx)
+    rng = np.random.default_rng(7)
+    price = np.zeros(n)
+    price[0] = 100.0
+    for i in range(1, n):
+        price[i] = price[i - 1] * (1 + 0.00025 + rng.normal(0, 0.004))
+    # Last completed week (Mon-Fri ending 2024-07-05): sharp -3% cumulative drop
+    last_fri_idx = next(i for i in range(n - 1, -1, -1) if idx[i].day_name() == "Friday")
+    week_start = last_fri_idx - 4
+    for i in range(week_start, last_fri_idx + 1):
+        price[i] = price[week_start - 1] * (1 - 0.006 * (i - week_start + 1))
+    # Partial current week (Mon-Wed 2024-07-08..10): strong +5%/day bounce
+    base = price[last_fri_idx]
+    for j, i in enumerate(range(last_fri_idx + 1, n)):
+        price[i] = base * (1 + 0.05 * (j + 1))
+    return pd.Series(price, index=idx)
+
+
+def test_mtf_snapshot_completed_only_reads_completed_bar() -> None:
+    """RSR-W1b / R3b: completed_only=True must use the finished weekly bar.
+
+    The fixture ends mid-week (Wednesday) with a partial bounce.  With the
+    default (completed_only=False) the live partial-week resample is included
+    and the W MACD histogram is positive (macd_pos=True).  With
+    completed_only=True the trailing in-progress bucket is dropped (IHM-R1
+    PIT gate) and the W state reflects the last *completed* Friday bar where
+    the histogram is negative (macd_pos=False).
+    """
+    s = _midweek_rollover_fixture()
+    # --- default path unchanged ---
+    snap_live = mtf_snapshot(s, completed_only=False)
+    w_live = snap_live.get("W") or {}
+    assert w_live.get("macd_pos") is True, (
+        f"default (live partial) W should be macd_pos=True on this fixture, got {w_live}"
+    )
+    # --- completed_only=True reads the rolled-over completed bar ---
+    snap_comp = mtf_snapshot(s, completed_only=True)
+    w_comp = snap_comp.get("W") or {}
+    assert w_comp.get("macd_pos") is False, (
+        f"completed_only W should be macd_pos=False (completed bar rolled over), got {w_comp}"
+    )
+    # --- structural invariant: one fewer weekly bar ---
+    import pandas as _pd  # already imported above; alias for clarity
+    from engine.cycles import _w_fri_completed  # noqa: PLC0415
+    completed_bars = _w_fri_completed(s.dropna())
+    live_bars = s.resample("W-FRI").last().dropna()
+    assert len(live_bars) == len(completed_bars) + 1, (
+        f"live should have exactly one more bar (the in-progress week): "
+        f"live={len(live_bars)}, completed={len(completed_bars)}"
+    )
+    # --- last completed bar label must be <= last observed daily date ---
+    last_obs = s.index.max()
+    assert completed_bars.index[-1] <= last_obs, (
+        f"completed bar label {completed_bars.index[-1]} > last obs {last_obs}"
+    )
+    # --- D and 3D timeframes are unaffected by completed_only ---
+    assert snap_live.get("D") == snap_comp.get("D"), "D timeframe must be identical"
+    assert snap_live.get("3D") == snap_comp.get("3D"), "3D timeframe must be identical"
+
+
+def test_mtf_snapshot_completed_only_w_availability_gate_parity() -> None:
+    """FIX B / R3b: the W availability gate must be identical between paths.
+
+    A thin-history series (<= 300 daily bars) must produce W={} regardless of
+    whether completed_only is True or False.  Before the fix, completed_only=True
+    gated on len(w_series) > 40, meaning a 301-bar series with only ~60 weekly bars
+    would GAIN a W timeframe under completed_only=True that it didn't have before —
+    an undisclosed second behaviour change.  After the fix both paths gate on
+    len(daily) > 300.
+    """
+    # Build a short series: 200 daily business-day bars (< 300)
+    idx_short = pd.bdate_range("2024-01-01", periods=200)
+    s_short = pd.Series(
+        [100.0 * (1 + 0.0003 * i) for i in range(200)], index=idx_short
+    )
+    snap_default = mtf_snapshot(s_short, completed_only=False)
+    snap_comp = mtf_snapshot(s_short, completed_only=True)
+    # Both must produce W={} — thin history is excluded identically
+    assert snap_default.get("W") == {}, (
+        f"default W must be {{}} for <300-bar series, got {snap_default.get('W')}"
+    )
+    assert snap_comp.get("W") == {}, (
+        f"completed_only W must be {{}} for <300-bar series, got {snap_comp.get('W')}"
+    )
+
+
 def test_eq_fields_and_analyze() -> None:
     fields = entry_quality_fields({"score": 58.0, "pct_from_low": 4.2})
     assert fields["eq_dir"] == "up" and "+58" in fields["eq_badge"]
@@ -716,7 +818,9 @@ if __name__ == "__main__":
                test_overextended_none_ext_pct_still_fires,
                test_overextended_stretch_leg_fires_regardless,
                test_below_ma10_htf_curl_dn_only_fires_gate,
-               test_below_ma10_no_3d_key_does_not_gate_on_curl]:
+               test_below_ma10_no_3d_key_does_not_gate_on_curl,
+               test_mtf_snapshot_completed_only_reads_completed_bar,
+               test_mtf_snapshot_completed_only_w_availability_gate_parity]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")

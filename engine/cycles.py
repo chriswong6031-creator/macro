@@ -271,16 +271,46 @@ def _tf_state(close: pd.Series) -> dict:
     }
 
 
-def mtf_snapshot(close: pd.Series, kind: str = "equity") -> dict:
+def _w_fri_completed(daily: pd.Series) -> pd.Series:
+    """Return the W-FRI resampled series keeping ONLY completed weekly bars.
+
+    IHM-R1 PIT gate (mirrored from engine/index_momentum.py _resample_to_grid):
+    a W-FRI bar whose label (the next Friday) is AFTER the last observed daily
+    date is still in progress — drop it.  This is the same rule that index_momentum
+    uses; see ruling R3b (RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md §2).
+    """
+    last_obs = daily.index.max()
+    b = daily.resample("W-FRI").last().dropna()
+    return b[b.index <= last_obs]
+
+
+def mtf_snapshot(close: pd.Series, kind: str = "equity",
+                 completed_only: bool = False) -> dict:
     """Daily / 3-day / weekly indicator states. The 3-day bar respects the
     asset's trading calendar (business days for equities, calendar days for
-    24/7 crypto)."""
+    24/7 crypto).
+
+    completed_only=True: the W timeframe uses ONLY completed weekly bars
+    (IHM-R1 PIT gate — drops the trailing in-progress W-FRI bucket).
+    Default False preserves existing behaviour for all callers.
+    Only market_state.trend opts in; every other caller is byte-identical.
+
+    W availability gate: IDENTICAL to the default path — gated on
+    len(daily) > 300, not on len(w_series).  The ONLY difference between
+    the two paths is which weekly series feeds _tf_state (completed vs live
+    partial).  A medium-history index (<= 300 daily bars) gets {} for W
+    whether completed_only is True or False.
+    """
     daily = close.dropna()
     tf3 = _preset(kind)["tf3"]
+    if completed_only:
+        w_state = _tf_state(_w_fri_completed(daily)) if len(daily) > 300 else {}
+    else:
+        w_state = _tf_state(daily.resample("W-FRI").last().dropna()) if len(daily) > 300 else {}
     out = {
         "D": _tf_state(daily),
         "3D": _tf_state(daily.resample(tf3).last().dropna()) if len(daily) > 150 else {},
-        "W": _tf_state(daily.resample("W-FRI").last().dropna()) if len(daily) > 300 else {},
+        "W": w_state,
         # Monthly — for the multi-timeframe Bottom-Confidence confluence. Needs
         # ~40 month-end bars for the MACD/RSI math (_tf_state bows out under 40),
         # i.e. ~900 trading days; thin-history names simply omit it.

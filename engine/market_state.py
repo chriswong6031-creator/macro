@@ -123,12 +123,22 @@ def _tf_sign(st: dict) -> int:
 
 
 def _index_mtf(close: pd.Series) -> dict | None:
-    """Per-timeframe arrow read for one index. None if too little history."""
+    """Per-timeframe arrow read for one index. None if too little history.
+
+    PREMISE REPAIR — R3b (2026-07-18):
+    The W timeframe now reads the COMPLETED weekly bar only (completed_only=True),
+    mirroring the IHM-R1 PIT gate in engine/index_momentum.py.
+    Before this fix the live partial-week resample was used, so the in-progress
+    bounce week of 07-14..16 produced macd_pos=True / trend=85 GOOD while the
+    completed 07-10 weekly bar had already rolled over (QQQ hist −0.212,
+    vel3 −1.324).  07-16 counterfactual: trend 85 → materially lower.
+    Switch date: 2026-07-18.  See research/RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md §2 R3b.
+    """
     from engine import cycles  # lazy — keeps module import cheap
     s = close.dropna().astype(float)
     if len(s) < 60:
         return None
-    snap = cycles.mtf_snapshot(s)
+    snap = cycles.mtf_snapshot(s, completed_only=True)
     cells, score_num, score_den = {}, 0.0, 0.0
     for tf, w in _TF_W.items():
         st = snap.get(tf) or {}
