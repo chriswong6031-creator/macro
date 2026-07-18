@@ -14,6 +14,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% include "_interfonts.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
 <title>Market Structure</title>
 {% set seo_title = 'Market Structure — Dealer Positioning, Machine Flows & Dispersion | Mastermind' %}
 {% set seo_desc = 'Shock absorber state, machine money flows, stock-picker conditions, and weekly expected range — all in plain words.' %}
@@ -217,7 +218,7 @@ a{color:var(--blue);text-decoration:none}
     {% if gamma.dist_to_flip_pct is not none and gamma.gamma_flip is not none and gamma.spot is not none %}
     <div class="hmeta">
       <b>
-        {{ t('about', '约') }} {{ '%.1f'|format(gamma.dist_to_flip_pct|float) }}%
+        {{ t('about', '约') }} {{ '%.1f'|format(gamma.dist_to_flip_pct|float|abs) }}%
         {% if gamma.spot|float > gamma.gamma_flip|float %}{{ t('above', '高于') }}{% else %}{{ t('below', '低于') }}{% endif %}
         {{ t('the flip level', '翻转点') }}
       </b>
@@ -225,7 +226,7 @@ a{color:var(--blue);text-decoration:none}
     </div>
     {% endif %}
     {% if gamma.days_in_regime is not none %}
-    <div class="hmeta"><b>{{ gamma.days_in_regime }} {{ t('days in this state', '天处于此状态') }}</b></div>
+    <div class="hmeta"><b>{{ gamma.days_in_regime }} {{ t('day in this state' if gamma.days_in_regime|int == 1 else 'days in this state', '天处于此状态') }}</b></div>
     {% endif %}
     {% if gamma.net_gex_bn is not none %}
     <div class="hmeta">
@@ -326,9 +327,11 @@ a{color:var(--blue);text-decoration:none}
     <div class="kick">{{ t('Trend-following funds', '趋势跟踪基金') }}</div>
     {% if cta is not none %}
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-      {% if cta.z is not none %}<div style="font-size:17px;font-weight:800;color:var(--ink)">{% if cta.z|float >= 0 %}+{% endif %}{{ '%.2f'|format(cta.z|float) }} <small style="font-size:12px;font-weight:500;color:var(--faint)">{{ t('trend score', '趋势分数') }}</small></div>{% endif %}
-      {% if cta.state is not none %}<span class="rc {{ cta.state }}">{% if cta.state=='adding' %}<span class="l-en">Leaning long</span><span class="l-zh">偏多仓</span>{% elif cta.state=='cutting' %}<span class="l-en">Leaning short</span><span class="l-zh">偏空仓</span>{% else %}<span class="l-en">Neutral</span><span class="l-zh">中性</span>{% endif %}</span>{% endif %}
+      {% if cta.score is not none %}<div style="font-size:17px;font-weight:800;color:var(--ink)">{% if cta.score|float >= 0 %}+{% endif %}{{ '%.2f'|format(cta.score|float) }} <small style="font-size:12px;font-weight:500;color:var(--faint)">{{ t('trend score', '趋势分数') }}</small></div>{% endif %}
+      {% if cta.score is not none %}{% set _cs = cta.score|float %}<span class="rc {{ 'adding' if _cs > 0.15 else ('cutting' if _cs < -0.15 else 'pausing') }}">{% if _cs > 0.15 %}<span class="l-en">Positioned long</span><span class="l-zh">持多仓</span>{% elif _cs < -0.15 %}<span class="l-en">Positioned short</span><span class="l-zh">持空仓</span>{% else %}<span class="l-en">Near flat</span><span class="l-zh">接近空仓</span>{% endif %}</span>{% endif %}
+      {% if cta.state is not none %}<span class="rc {{ cta.state }}">{% if cta.state=='adding' %}<span class="l-en">adding exposure</span><span class="l-zh">加仓中</span>{% elif cta.state=='cutting' %}<span class="l-en">trimming exposure</span><span class="l-zh">减仓中</span>{% else %}<span class="l-en">holding steady</span><span class="l-zh">持稳</span>{% endif %}</span>{% endif %}
     </div>
+    {% if cta.z is not none %}{% set _cz = cta.z|float %}<div style="font-size:12px;color:var(--mut);margin-bottom:6px">{% if _cz <= -0.3 %}<span class="l-en">Lighter than their 1-year norm ({{ '%.1f'|format(_cz) }})</span><span class="l-zh">仓位低于近一年常态（{{ '%.1f'|format(_cz) }}）</span>{% elif _cz >= 0.3 %}<span class="l-en">Heavier than their 1-year norm (+{{ '%.1f'|format(_cz) }})</span><span class="l-zh">仓位高于近一年常态（+{{ '%.1f'|format(_cz) }}）</span>{% else %}<span class="l-en">Near their 1-year norm</span><span class="l-zh">接近近一年常态</span>{% endif %}</div>{% endif %}
     <div class="badge-stack">
       {% if cta.flow_1d is not none %}<span class="badge {{ 'up' if cta.flow_1d|float >= 0 else 'dn' }}">{% if cta.flow_1d|float >= 0 %}▲{% else %}▼{% endif %} {{ '%.1f'|format(cta.flow_1d|float|abs) }} {{ t('today', '今日') }}</span>{% endif %}
       {% if cta.flow_5d is not none %}<span class="badge {{ 'up' if cta.flow_5d|float >= 0 else 'dn' }}">{% if cta.flow_5d|float >= 0 %}▲{% else %}▼{% endif %} {{ '%.1f'|format(cta.flow_5d|float|abs) }} {{ t('over 5 days', '5日累计') }}</span>{% endif %}
@@ -339,9 +342,9 @@ a{color:var(--blue);text-decoration:none}
 
 {% if sys.history is not none and sys.history | length > 0 %}
 <div class="panel">
-  <div style="font-size:12px;color:var(--mut);margin-bottom:8px">{{ t('VC exposure ($B) vs SPX — toggle above to change window', 'VC敞口（十亿美元）vs 标普500 — 切换上方按钮调整窗口') }}</div>
+  <div style="font-size:12px;color:var(--mut);margin-bottom:8px">{{ t('Vol-target fund exposure ($B) vs S&P 500 — toggle above to change window', '波动率目标基金敞口（十亿美元）vs 标普500 — 切换上方按钮调整窗口') }}</div>
   <div class="chart-wrap" style="height:160px"><svg id="sys-chart" viewBox="0 0 800 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg></div>
-  <div class="sec-foot">{{ t('Blue line = VC exposure · grey line = SPX · model estimates, not audited fund data', '蓝线=VC敞口 · 灰线=标普500 · 模型估算，非审计基金数据') }}</div>
+  <div class="sec-foot">{{ t('Blue line = vol-target fund exposure · grey line = S&P 500 · model estimates, not audited fund data', '蓝线=波动率目标基金敞口 · 灰线=标普500 · 模型估算，非审计基金数据') }}</div>
 </div>
 {% endif %}
 
@@ -383,10 +386,10 @@ a{color:var(--blue);text-decoration:none}
     </p>
   </div>
   <div class="kpi-row">
-    {% if disp.cor1m is not none %}<div class="kpi"><b>{{ '%.3f'|format(disp.cor1m|float) }}</b>{{ t('implied correlation (1M)', '隐含相关性（1个月）') }}</div>{% endif %}
-    {% if disp.cor1m_1y_delta is not none %}<div class="kpi"><b class="{{ 'up' if disp.cor1m_1y_delta|float < 0 else 'dn' }}">{% if disp.cor1m_1y_delta|float >= 0 %}+{% endif %}{{ '%.3f'|format(disp.cor1m_1y_delta|float) }}</b>{{ t('vs 1 year ago', '较一年前') }}</div>{% endif %}
+    {% if disp.cor1m is not none %}<div class="kpi"><b>{{ '%.2f'|format(disp.cor1m|float) }}</b>{{ t('implied correlation (1M)', '隐含相关性（1个月）') }}</div>{% endif %}
+    {% if disp.cor1m_1y_delta is not none %}<div class="kpi"><b class="{{ 'up' if disp.cor1m_1y_delta|float < 0 else 'dn' }}">{% if disp.cor1m_1y_delta|float >= 0 %}+{% endif %}{{ '%.2f'|format(disp.cor1m_1y_delta|float) }}</b>{{ t('vs 1 year ago', '较一年前') }}</div>{% endif %}
     {% if disp.cor1m_pctile_2y is not none %}<div class="kpi"><b>{{ '%.0f'|format(disp.cor1m_pctile_2y|float) }}th</b>{{ t('percentile (2-year)', '百分位（2年）') }}</div>{% endif %}
-    {% if disp.cor3m is not none %}<div class="kpi"><b>{{ '%.3f'|format(disp.cor3m|float) }}</b>{{ t('3-month corr', '3个月相关性') }}</div>{% endif %}
+    {% if disp.cor3m is not none %}<div class="kpi"><b>{{ '%.2f'|format(disp.cor3m|float) }}</b>{{ t('3-month corr', '3个月相关性') }}</div>{% endif %}
     {% if disp.dspx is not none %}<div class="kpi"><b>{{ '%.1f'|format(disp.dspx|float) }}</b>{{ t('CBOE dispersion', 'CBOE离散度') }}</div>{% endif %}
   </div>
   {% if disp.history is not none and disp.history | length > 0 %}
@@ -419,8 +422,8 @@ a{color:var(--blue);text-decoration:none}
     </span>
     {% endif %}
     <div class="kpi-row">
-      {% if vol.rv21 is not none %}<div class="kpi"><b>{{ '%.1f'|format(vol.rv21|float) }}%</b>{{ t('1-month vol', '1个月波动率') }}</div>{% endif %}
-      {% if vol.rv63 is not none %}<div class="kpi"><b>{{ '%.1f'|format(vol.rv63|float) }}%</b>{{ t('3-month vol', '3个月波动率') }}</div>{% endif %}
+      {% if vol.rv21 is not none %}<div class="kpi"><b>{{ '%.1f'|format(vol.rv21|float * 100) }}%</b>{{ t('1-month vol', '1个月波动率') }}</div>{% endif %}
+      {% if vol.rv63 is not none %}<div class="kpi"><b>{{ '%.1f'|format(vol.rv63|float * 100) }}%</b>{{ t('3-month vol', '3个月波动率') }}</div>{% endif %}
     </div>
     <div class="sec-foot" style="margin-top:8px"><a href="gex.html">{{ t('Options Desk → Market Weather for full vol read', '期权台 → 市场天气查看完整波动率读数') }}</a></div>
   </div>
@@ -460,8 +463,8 @@ a{color:var(--blue);text-decoration:none}
   <span class="eyebrow">6</span>
   <h2>{{ t('Weekly range', '本周区间') }}</h2>
   <span class="help">?<span class="tip">
-    <span class="l-en">The range options paid for at Friday's close, held through the week. ±1σ = 68% of outcomes; ±2σ = 95%. Gamma flip line: where dealer-regime changes. Resets each weekend, fixed intraweek ("Locked Friday close · held through week" semantics). Uses optional <code>week_map</code> key in the artifact — proposed additive schema extension (absent = panel hides).</span>
-    <span class="l-zh">周五收盘时期权定价的本周区间，持有至本周末。±1σ=68%概率；±2σ=95%。伽马翻转线：做市商制度变化位置。每周末重置，本周内保持不变。使用数据文件中的可选字段 <code>week_map</code>（建议新增字段，缺失时面板安静隐藏）。</span>
+    <span class="l-en">The range options paid for at Friday's close, held through the week. ±1σ = 68% of outcomes; ±2σ = 95%. Gamma flip line: where the dealer regime changes. Locked at Friday's close, fixed through the week, resets each weekend.</span>
+    <span class="l-zh">周五收盘时期权定价的本周区间，持有至本周末。±1σ=68%概率；±2σ=95%。伽马翻转线：做市商机制变化位置。周五收盘锁定，本周内保持不变，每周末重置。</span>
   </span></span>
 </div>
 
@@ -521,13 +524,13 @@ a{color:var(--blue);text-decoration:none}
   <div class="sec-foot" style="margin-top:10px">{{ t('Bands from Friday IV · held through week · resets each weekend · source:', '区间由周五IV确定 · 本周持有 · 每周末重置 · 来源：') }} {{ wm.source if wm.source is not none else 'iv_derived_atm_weekly' }}</div>
 </div>
 {% else %}
-<div class="warmup"><b><span class="l-en">Week map warming up</span><span class="l-zh">周度图预热中</span></b><span class="l-en">Weekly expected-move bands appear after the first nightly run. Uses optional <code>week_map</code> artifact key.</span><span class="l-zh">首次夜间运行后显示。使用数据文件中的可选字段 <code>week_map</code>。</span></div>
+<div class="warmup"><b><span class="l-en">Week map warming up</span><span class="l-zh">周度图预热中</span></b><span class="l-en">The weekly expected-move bands appear after tonight's data run.</span><span class="l-zh">本周期权定价区间将在今晚数据更新后显示。</span></div>
 {% endif %}
 
 {# ── Footer ── #}
 <div style="margin-top:36px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)">
-  <span class="l-en">Display-tier context only (<code>display_only: true</code>) — no outputs are authority signals or sized inputs. Systematic flows are model estimates, not audited positions. GEX/flip series from {{ gamma.series_start if gamma is not none and gamma.series_start is not none else 'inception' }}. COR1M from 2006.</span>
-  <span class="l-zh">仅为展示层背景参考（<code>display_only: true</code>）— 所有输出均非权威信号或仓位输入。系统性资金数据为模型估算，非审计持仓。GEX/翻转点系列自{{ gamma.series_start if gamma is not none and gamma.series_start is not none else '首日' }}，COR1M自2006年起。</span>
+  <span class="l-en">Context for expectations and sizing — not buy or sell signals. Machine-flow figures are model estimates, not audited fund positions. Shock-absorber series from {{ gamma.series_start if gamma is not none and gamma.series_start is not none else 'inception' }}; correlation series from 2006.</span>
+  <span class="l-zh">仅供把握市场环境与仓位预期 — 并非买卖信号。机器资金数据为模型估算，非审计持仓。缓冲机制数据自{{ gamma.series_start if gamma is not none and gamma.series_start is not none else '首日' }}起，相关性数据自2006年起。</span>
   {% if msp is defined and msp is not none and msp.built_at is not none %} · {{ t('Built', '构建于') }} {{ msp.built_at[:10] }}{% endif %}
 </div>
 

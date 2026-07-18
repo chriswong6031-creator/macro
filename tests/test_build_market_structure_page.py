@@ -173,9 +173,14 @@ def test_range_buttons_present():
 
 
 def test_footer_display_only_disclaimer():
-    """display_only disclaimer must appear in footer."""
+    """Plain-word context disclaimer must appear in footer.
+
+    Re-pinned 2026-07-18: the footer originally printed the machine token
+    ``display_only: true`` — internal vocabulary banned from Tier 1 by
+    docs/DESIGN_DOCTRINE.md Law 2. Same honesty, plain words (Law 5).
+    """
     html = _render_with_fixture()
-    assert "display_only" in html
+    assert "not buy or sell signals" in html
 
 
 def test_model_estimate_disclaimer():
