@@ -434,15 +434,18 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
    Vector / Commodities). On desktop the child menu flies out to the right of
    its row; ::after bridges the gap so the cursor can cross into it. */
 .nav-dd-menu .nav-sub { display: block; position: relative; }
-/* flex-start (not center): the trigger is a two-line row (title + .d description),
-   so the leading emoji must sit on the first line exactly like the leaf links;
-   only the ▸ caret stays vertically centered via align-self. */
+/* flex-start (not center): the trigger is a two-line row — .nav-sub-text (the
+   emoji+title+.d column) on the left, the ▸ caret on the right. flex-start
+   top-aligns the text column while the caret stays vertically centered via
+   align-self. The emoji lives INSIDE .nav-sub-text (not as a flex sibling) so
+   the block .d description wraps to the column's left edge, aligning under the
+   emoji exactly like the leaf links. */
 .nav-dd-menu .nav-sub > a.nav-sub-trig { display: flex; align-items: flex-start; gap: .3em; }
 .nav-dd-menu .nav-sub > a.nav-sub-trig .caret-r { margin-left: auto; padding-left: 12px; font-size: 10px;
   opacity: .55; flex: none; align-self: center; transition: transform .2s; }
 .nav-dd-menu .nav-sub:hover > a.nav-sub-trig .caret-r { opacity: .9; transform: translateX(2px); }
-/* nav-sub-text: title+description column inside the flex .nav-sub-trig row —
-   makes fly-out triggers visually identical to leaf links while the flex
+/* nav-sub-text: emoji+title+description column inside the flex .nav-sub-trig row
+   — makes fly-out triggers visually identical to leaf links while the flex
    layout keeps the ▸ caret right-aligned. */
 .nav-dd-menu .nav-sub > a.nav-sub-trig .nav-sub-text { display: block; flex: 1; min-width: 0; white-space: normal; }
 .nav-dd-menu .nav-sub > .nav-dd-menu { top: -7px; left: 100%; z-index: 95;
