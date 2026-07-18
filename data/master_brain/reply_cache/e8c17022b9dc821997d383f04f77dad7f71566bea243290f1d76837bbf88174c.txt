@@ -1,0 +1,26 @@
+{
+  "summary": "Macro liquidity is expanding but Bitcoin's internal cycle, positioning, and demand metrics are in distribution/bear mode, creating a high-risk regime where the global tailwind is yet to translate.",
+  "regime_read": "The composite state reads DISTRIBUTE with a froth context, and risk regime is high_risk. Momentum is bearish, structure neutral, and the cycle phase is markdown (56% through) with ~80 days to the next pivot. Yet global liquidity is expanding (net liquidity +3.7%, global M2 YoY 7%) and the macro backdrop is a Goldilocks tailwind (macro score 0.25). Valuation remains fair (MVRV-Z 0.34, 20th percentile; Mayer 0.87, below 1), so the market isn't extremely overvalued. However, on-chain demand is low (flow_state low, Coinbase premium meager, stablecoin contracting with z -1.4) and miners are under duress (hash ribbon capitulation, Puell 0.61). The distribution tag and bearish momentum persist despite fair valuations and expanding macro liquidity, indicating a disconnect.",
+  "conflicts": [
+    "Global liquidity/M2 expanding vs. BTC cycle in markdown and composite distribution state – liquidity tailwind not being priced.",
+    "Fair valuation (MVRV-Z low percentile, Mayer below 1) vs. COT speculator extreme (z=2.41) and high-risk regime – cheap price but overextended positioning.",
+    "ETF flows neutral vs. stablecoin contraction and low on-chain flow – institutional and on-chain demand diverge.",
+    "Bond market healthy with no alarms, while BTC shows internal capitulation (miner, momentum) – macro calm not syncing with crypto stress."
+  ],
+  "rotation_check": "The working thesis posits that Bitcoin leads risk assets higher when net liquidity/global M2 expand. Here, net liquidity and M2 are expanding, yet BTC is distributing in a markdown phase rather than leading. This suggests the thesis is partially off-track: the liquidity tailwind is present but not transmitting into BTC price action, likely suppressed by crypto-specific headwinds (stablecoin contraction, miner capitulation, crowded speculative longs). If stablecoin growth resumes and COT normalizes, the thesis could reassert; until then, the macro expansion is a background support not a bullish catalyst.",
+  "transmission": [
+    "Stablecoin growth (stbl_growth_z) turning positive would signal crypto-native liquidity improving, potentially unlocking the global liquidity tailwind.",
+    "COT z-score mean-reverting from extreme bullish could flush speculative longs, resetting positioning for a healthier rally if macro remains supportive.",
+    "A shift in momentum from bear to bullish with improving efficiency ratio would confirm that the markdown phase exhaustion is near and price can respond to macro.",
+    "If net liquidity/M2 expansion continues while the cphase markdown completes (~80 days), the cycle may transition to accumulation, aligning with the thesis."
+  ],
+  "watch_items": [
+    "Stablecoin growth rate (z-score) turning positive as a leading on-chain demand signal.",
+    "CME COT positioning (z-score) normalizing from current extreme bullish level.",
+    "BTC momentum (efficiency ratio, structure state) shifting from bearish to neutral/bullish.",
+    "Hash ribbon exiting capitulation and Puell multiple recovering above 1.0.",
+    "Net liquidity/M2 expansion maintaining pace or accelerating.",
+    "Options VRP of 3.07 and DVOL at the 5th percentile—a volatility expansion could trigger sharp moves."
+  ],
+  "confidence": "medium"
+}

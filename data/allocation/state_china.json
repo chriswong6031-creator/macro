@@ -6,7 +6,6 @@
     "cn_coal",
     "cn_consumer_elec",
     "cn_pharma_cxo",
-    "cn_rare_earth",
     "cn_robotics",
     "cn_semis"
   ],
@@ -14,7 +13,7 @@
     "cn_ai_compute",
     "cn_pharma_cxo",
     "cn_robotics",
-    "cn_rare_earth"
+    "cn_coal"
   ],
   "leader": "cn_ai_compute",
   "names": {

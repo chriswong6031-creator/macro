@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PI-BULL-20260703",
-  "asof": "2026-07-16",
+  "asof": "2026-07-17",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 63.5,
-  "raw_confidence": 62.7,
-  "delta_vs_base": 3.5,
+  "management_confidence": 58.3,
+  "raw_confidence": 52.0,
+  "delta_vs_base": -1.7,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 100.0,
-    "progress": 0.5,
-    "pace": 58.9,
+    "validity": 85.7,
+    "progress": 0.0,
+    "pace": 52.8,
     "retention": 50.0,
-    "overlay": 50.0
+    "overlay": 47.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.002,
-    "dist_to_t1_r": 1.498,
-    "dist_to_t2_r": 2.998,
-    "horizon_pct_used": 28.9,
-    "p1": 0.0013,
-    "p2": 0.0007,
+    "dist_to_stop_r": 0.892,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 31.1,
+    "p1": -0.072,
+    "p2": -0.036,
     "p3": null,
-    "move_r": 0.002,
+    "move_r": -0.108,
     "mfe_r": 0.029,
-    "mae_r": -0.007
+    "mae_r": -0.108
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Moving Away from Stop",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 1.6200042724609318,
-  "_mae": -0.3700012207031307,
+  "_mae": -6.030004882812506,
   "_max_p1": 0.019354889754610898,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 13,
-  "tau": 0.2889
+  "days_elapsed": 14,
+  "tau": 0.3111
 }

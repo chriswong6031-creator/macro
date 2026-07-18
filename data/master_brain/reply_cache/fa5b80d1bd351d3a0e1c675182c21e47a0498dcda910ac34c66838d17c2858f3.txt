@@ -1,0 +1,30 @@
+{
+  "stance": "The structural cluster map groups Health Care, Real Estate, Financials and Consumer Discretionary as the dominant co‑moving set, with low HHI and high member counts confirming a genuine thematic spread rather than a narrow, single‑name mirage. Within that cluster, Health Care leads with the highest relative strength (RS pctile 1.0) and the only cohering, stress‑conditional signature.",
+  "candidates": [
+    {
+      "subject": "Health Care",
+      "lean": "overweight",
+      "rationale": "Top RS in the dominant cluster, cohering with stress‑conditional tagging, and broad leadership (HHI 0.01, n=164) – genuine co‑movement with upside leadership.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Real Estate",
+      "lean": "overweight",
+      "rationale": "Very high RS (0.94) and broad, low‑HHI leadership (0.014, n=102); a core member of the dominant cluster with no single‑name distortion.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Financials",
+      "lean": "overweight",
+      "rationale": "High RS (0.89) and the broadest leadership of any sector (HHI 0.006, n=251); the cluster’s most diversely‑driven leg.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Consumer Discretionary",
+      "lean": "underweight",
+      "rationale": "In the cluster but with depressed RS (0.38) and non‑cohering, non‑stress‑conditional conditions; likely a laggard being carried, not a leader.",
+      "strength": "weak"
+    }
+  ],
+  "key_risk": "A macro shock that unhinges the rate‑sensitivity link could cause the Health Care–Real Estate–Financials cluster to fracture, invalidating the co‑movement signal."
+}

@@ -1,0 +1,1 @@
+{"schema": "deterioration_cascade.v1", "asof": "2026-07-16", "state": "SLIPPING", "n_alert": 2, "n_escalating": 1, "d3_alert": 1, "n_mature": 3, "alerts": ["cn", "hk"], "immature": ["tw", "kr", "jp", "in", "au", "gb", "ez"], "logged_at": "2026-07-18T01:14:07+00:00"}

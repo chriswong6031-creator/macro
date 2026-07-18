@@ -1,0 +1,22 @@
+**Desk Note — Narrative-Emergence Scout**  
+2026-07-17 | US Market  
+**Role:** Watch-hypothesis only; no size, no trade, no certainty.
+
+---
+
+### Emerging Watch: “Industrial Specialties & Selective Services” (hypothesis, not theme)
+**Source:** `state.theme_candidates` candidate #1 (cohesion 0.562, cohesion chg +0.333; 7 tickers).  
+**Constituents:** DXPE, GATX, IBP, PAHC, TPR, VNT, ZTS — a cross-sector cluster spanning industrial distribution, railcar leasing, building products, animal health, and specialty consumer.  
+**Why it’s on the radar:** Cohesion is rising, indicating the group’s return structure is tightening. This could be early-stage formation of a niche “industrial/services” niche if breadth and durability improve. **BUT** candidate radar is ~10% persistent, cohesion ~0.56 is modest, and there is **no validated forward edge** from this detector.  
+**Kill-criterion:** If within **4 weeks** (by 2026-08-14) the cluster’s average relative-strength ranking against the S&P 500 fails to cross into the **top half of thematic ranks**, or its breadth deteriorates (fewer than 4 of 7 names with positive 20-day momentum), drop it from the watch.  
+**Check-by horizon:** Weekly review; final kill-or-keep decision by 2026-08-14.
+
+### Context & Guardrails
+- **Leading theme:** Memory, HBM & Storage (durability 0.5, not crowded, mixed Hurst). Rotation is broad (70% eligible themes) — no single narrative dominance, so a new theme could plausibly form without a “fade the leader” trap.
+- **Crowding/Flow:** No IPO wave or hype spike; guardrails forbid treating a crowding flag as a fade signal (capacity reduction only).
+- **Discipline reminder:** The ONLY validated edge from this system is drawdown avoidance via absolute-trend gates. Thematic momentum rank-IC is ~0 — use as a focus lens, not a return forecast. Candidate radar is display-only; no buy triggers here. **Any emergent theme must prove itself with breadth, durability, and trend-health before it enters an investible basket.**
+
+### Falsifiable Conditional Lean
+> **If** the “Industrial Specialties” candidate sustains rising cohesion, broadens to a named theme (durability ≥0.5, breadth ≥0.5), and appears in the top-10 thematic ranks within 4 weeks, **then** it strengthens as a plausible secondary narrative alongside Memory/HBM. **Else**, the hypothesis is killed and the watch removed.
+
+**No size, no allocation, no fade.** This desk note is an accountable, falsifiable hypothesis — not an edge extracted from the detector. Track record: n=0; we are building that record one conditional at a time.

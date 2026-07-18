@@ -1,0 +1,25 @@
+{
+  "summary": "China A-shares in stagflation with PBoC easing but contracting liquidity; mean-reversion fading recent RS leaders (semis, brokers) and pointing to deep-pullback cyclicals; Hong Kong under dollar/outflow pressure diverging from onshore.",
+  "regime_read": "Mainland China sits in Q3 Stagflation (growth -0.14σ, inflation +0.18σ), with a mid-cycle tag and a contracting liquidity overlay despite cumulative PBoC rate/RRR cuts — the policy impulse is easing, but money-market signals remain tight. A-share sector relative strength is rolling over: leaders (Semiconductors, Technology) have negative 20d momentum, while deep-pullback names (NEV, Metals, Solar, Defense) sit at sub-20th percentile levels, consistent with the mean-reversion thesis. The offshore ETF gap leads onshore, but heading into the July 20 LPR fix, market sentiment remains cautious (news z -0.63). Hong Kong shares the stagflation regime, with an added weak-side peg and elevated slowdown fears, driving a tech-led de-rating and Fear-level sentiment; HKD outflow and USD strength create a clear headwind that mainland purely domestic liquidity may not offset.",
+  "conflicts": [
+    "PBoC is actively easing (cumulative RRR/LPR cuts) but the liquidity overlay reads 'contracting' and credit impulse is -5.7%; the easing has not yet translated into looser financial conditions, leaving the policy-to-risk-appetite chain unconfirmed.",
+    "Stagflation regime (weak growth, rising inflation) is historically hostile to equities, yet the radar flags a positive PBoC-easing signal for real estate and the mean-reversion thesis expects a bounce in beaten-down cyclicals; the regime may cap any reflation trade.",
+    "Sector flow radar shows negative divergences for the top RS sectors (semis, brokers, banks), yet alt-data shows simultaneous institutional accumulation in some individual stocks — the sector-level flow is fading, but stock-level smart money is picking, clouding the reversal signal.",
+    "The offshore ETF gap (KWEB/CQQQ) is strongly positive (+6.34% 20d) implying offshore leadership, but HK market is de-rating internet/tech and stuck in Fear — the gap likely reflects basket composition (tech-heavy offshore vs financials-heavy onshore) rather than pure venue sentiment, and may not indicate imminent onshore catch-up."
+  ],
+  "rotation_check": "The working thesis that A-shares mean-revert is tracking: recent relative-strength leaders are pulling back (semis -4.75% 20d, tech -10%) while deep-pullback sectors hold low percentiles, offering potential reversal setups. Domestic policy is the main driver in theory, but the stagflation quadrant and contracting liquidity overlay suggest the easing impulse has not yet lifted risk appetite broadly. The divergence between China A and Hong Kong is pronounced — HK is suffering from USD strength and peg outflows, exactly per the thesis that HK rides global risk more than the mainland.",
+  "transmission": [
+    "PBoC easing → interbank liquidity → southbound flows → HKEX/China financials: 2/5 legs align, LPR fix on Jul 20 is a catalyst.",
+    "USD/CNY stability: if the dollar maintains strengthening momentum (USD lean mixed, up trend, real rates restrictive), it will keep HKD peg under pressure and dampen HK risk appetite, even if onshore policy improves.",
+    "US Goldilocks → risk-on spillover: if US growth surprises to downside, Fed path reprices, USD weakens, that would relieve HK outflows and allow the positive offshore ETF gap to turn into genuine onshore catch-up.",
+    "Credit impulse improvement: a turn in TSF/credit data could reactivate the dormant cyclical reflation chain, moving metals/materials off their 0.4 percentile."
+  ],
+  "watch_items": [
+    "July 20 LPR fix — any cut would signal PBoC is still in easing mode and could kickstart the easing-reflation chain.",
+    "USD/CNY fix and onshore FX reserve data — if CNY weakens past 6.80, it could prompt PBoC countermeasures, either tightening onshore liquidity (bad for stocks) or outright intervention.",
+    "NBS PMI on July 31 — if stays above 50, it contradicts the stagflation growth weakness and could revive the cyclical reflation chain.",
+    "Sector flow and alt-data distribution signals for semiconductors — if the distribution (negative flow) persists while the sector RS holds up, the mean-reversion edge may fade.",
+    "Hong Kong peg distance — if it approaches 7.85 weak-side convertibility, expect increased volatility and potential HKMA intervention, which would further pressure HK equities."
+  ],
+  "confidence": "low"
+}

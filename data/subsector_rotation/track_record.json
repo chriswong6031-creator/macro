@@ -1,72 +1,72 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-07-16",
-  "generated_at": "2026-07-17T02:15:49.253035+00:00",
+  "as_of": "2026-07-18",
+  "generated_at": "2026-07-18T02:01:50.094127+00:00",
   "is_context_only": true,
-  "n_snapshots": 3487,
-  "n_days": 13,
+  "n_snapshots": 3756,
+  "n_days": 14,
   "horizons": {
     "5": {
-      "n_matured": 2391,
-      "score_ic": 0.2122,
-      "score_ic_t_hac": 2.122,
+      "n_matured": 2632,
+      "score_ic": 0.2221,
+      "score_ic_t_hac": 2.381,
       "score_ic_detail": {
-        "mean_ic": 0.2122,
-        "ic_vol": 0.3836,
-        "ic_ir": 0.553,
-        "ic_ir_ann": 1.749,
-        "t_hac": 2.122,
-        "p_hac": 0.0338,
-        "hit": 0.8,
-        "n": 10
+        "mean_ic": 0.2221,
+        "ic_vol": 0.3654,
+        "ic_ir": 0.608,
+        "ic_ir_ann": 1.922,
+        "t_hac": 2.381,
+        "p_hac": 0.0172,
+        "hit": 0.818,
+        "n": 11
       },
       "by_stage": {
         "emerging": {
-          "n": 90,
-          "mean_fwd_rel": 0.0027,
-          "hit_rate": 0.556
+          "n": 100,
+          "mean_fwd_rel": 0.004,
+          "hit_rate": 0.58
         },
         "neutral": {
-          "n": 2191,
-          "mean_fwd_rel": -0.002,
+          "n": 2411,
+          "mean_fwd_rel": -0.0024,
           "hit_rate": null
         },
         "fading": {
-          "n": 110,
-          "mean_fwd_rel": -0.0234,
-          "hit_rate": 0.782
+          "n": 121,
+          "mean_fwd_rel": -0.0277,
+          "hit_rate": 0.793
         }
       }
     },
     "10": {
-      "n_matured": 1434,
-      "score_ic": 0.0793,
+      "n_matured": 1673,
+      "score_ic": 0.0933,
       "score_ic_t_hac": null,
       "score_ic_detail": {
-        "mean_ic": 0.0793,
-        "ic_vol": 0.2764,
-        "ic_ir": 0.287,
-        "ic_ir_ann": 1.284,
+        "mean_ic": 0.0933,
+        "ic_vol": 0.255,
+        "ic_ir": 0.366,
+        "ic_ir_ann": 1.637,
         "t_hac": null,
         "p_hac": null,
-        "hit": 0.667,
-        "n": 6
+        "hit": 0.714,
+        "n": 7
       },
       "by_stage": {
         "emerging": {
-          "n": 53,
-          "mean_fwd_rel": -0.0077,
-          "hit_rate": 0.491
+          "n": 63,
+          "mean_fwd_rel": -0.0078,
+          "hit_rate": 0.476
         },
         "neutral": {
-          "n": 1315,
-          "mean_fwd_rel": -0.0058,
+          "n": 1533,
+          "mean_fwd_rel": -0.0065,
           "hit_rate": null
         },
         "fading": {
-          "n": 66,
-          "mean_fwd_rel": -0.0205,
-          "hit_rate": 0.621
+          "n": 77,
+          "mean_fwd_rel": -0.0239,
+          "hit_rate": 0.662
         }
       }
     },
@@ -90,7 +90,7 @@
     }
   },
   "lead_time_d": 5,
-  "peak_score_ic": 0.2122,
+  "peak_score_ic": 0.2221,
   "proven": {
     "5": true,
     "10": false,

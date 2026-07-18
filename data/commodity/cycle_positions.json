@@ -5,11 +5,11 @@
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": true,
-    "overdue_frac": 1.302,
-    "hazard_1m": 0.5908,
+    "overdue_frac": 1.31,
+    "hazard_1m": 0.595,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-16"
+    "asof": "2026-07-17"
   },
   "silver": {
     "cycle_ref": "silver",
@@ -17,23 +17,23 @@
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,
-    "overdue_frac": 0.442,
+    "overdue_frac": 0.449,
     "hazard_1m": 0.5777,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-16"
+    "asof": "2026-07-17"
   },
   "copper": {
     "cycle_ref": "copper",
-    "pos": 55.7,
+    "pos": 55.8,
     "phase": "Downturn",
     "phase_v2": "Downturn",
     "overdue": true,
-    "overdue_frac": 2.477,
+    "overdue_frac": 2.484,
     "hazard_1m": 0.6304,
     "hazard_3m": 0.4,
     "hazard_6m": 0.5882,
-    "asof": "2026-07-16"
+    "asof": "2026-07-17"
   },
   "oil": {
     "cycle_ref": "oil",
@@ -65,11 +65,11 @@
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,
-    "overdue_frac": 0.804,
+    "overdue_frac": 0.809,
     "hazard_1m": 0.5676,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-16"
+    "asof": "2026-07-17"
   },
   "palladium": {
     "cycle_ref": "pgms",
@@ -77,46 +77,46 @@
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,
-    "overdue_frac": 0.804,
+    "overdue_frac": 0.809,
     "hazard_1m": 0.5676,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-16"
+    "asof": "2026-07-17"
   },
   "corn": {
     "cycle_ref": "agriculture",
-    "pos": 52.0,
+    "pos": 54.3,
     "phase": "Expansion",
-    "phase_v2": "Peak",
+    "phase_v2": "Expansion",
     "overdue": true,
-    "overdue_frac": 10.781,
-    "hazard_1m": 0.3839,
+    "overdue_frac": 10.789,
+    "hazard_1m": 0.3502,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-16"
+    "asof": "2026-07-17"
   },
   "wheat": {
     "cycle_ref": "agriculture",
-    "pos": 52.0,
+    "pos": 54.3,
     "phase": "Expansion",
-    "phase_v2": "Peak",
+    "phase_v2": "Expansion",
     "overdue": true,
-    "overdue_frac": 10.781,
-    "hazard_1m": 0.3839,
+    "overdue_frac": 10.789,
+    "hazard_1m": 0.3502,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-16"
+    "asof": "2026-07-17"
   },
   "soybeans": {
     "cycle_ref": "agriculture",
-    "pos": 52.0,
+    "pos": 54.3,
     "phase": "Expansion",
-    "phase_v2": "Peak",
+    "phase_v2": "Expansion",
     "overdue": true,
-    "overdue_frac": 10.781,
-    "hazard_1m": 0.3839,
+    "overdue_frac": 10.789,
+    "hazard_1m": 0.3502,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-07-16"
+    "asof": "2026-07-17"
   }
 }

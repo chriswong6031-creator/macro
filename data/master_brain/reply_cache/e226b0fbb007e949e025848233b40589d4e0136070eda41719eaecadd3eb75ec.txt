@@ -1,0 +1,35 @@
+{
+  "regime_context": "Detector shows narrow leadership: only 4 of 17 themes are eligible, dominated by Tech Hardware & Semis (trend, durability 0.64, no crowding). Absolute-trend gate has historically helped control drawdown in Hong Kong, but cross-sectional momentum ranks provide no return edge.",
+  "theses": [
+    {
+      "subject": "Tech Hardware & Semis",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Staying in the single eligible durable trend aligns with the gate's validated drawdown‑control edge. The theme exhibits trend persistence (hurst_tag trend) and moderate cohesion (durability_bar 0.64) without crowding, supporting a maintained overweight in a narrow‑leadership rotation, not a return forecast.",
+      "evidence": [
+        "absolute-trend gate historically cuts drawdown (gate_helps: true)",
+        "Tech Hardware eligible with hurst_tag trend",
+        "durability_bar 0.64, crowded: false"
+      ],
+      "dissent": "If AI/narrative hype reverses violently on earnings or policy, the trend can break; low breadth (0.167) makes it concentrated and fragile.",
+      "falsifier_text": "Tech Hardware score drops below eligibility threshold and hurst tag flips to mean‑revert for 5 consecutive days."
+    },
+    {
+      "subject": "China Tech & Internet",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Marked ineligible with a negative score trend; the validated absolute‑trend gate suggests avoiding such themes historically lowered drawdown. With no macro‑narrative tailwind (AI benefits flow to hardware, not China internet), staying out aligns with risk‑control discipline.",
+      "evidence": [
+        "ineligible (eligible: false) means gate would exclude it",
+        "absolute-trend gate valid for drawdown avoidance",
+        "scorable via ETF (3033.HK), making thesis falsifiable"
+      ],
+      "dissent": "A sudden regulatory easing or large‑scale stimulus for China tech could trigger a sharp re‑rating, making avoidance costly.",
+      "falsifier_text": "Theme becomes eligible (score crosses above eligibility threshold) for more than 3 consecutive days."
+    }
+  ],
+  "emerging_watch": "Conglomerates & Exchange — watch for a potential handoff if Tech Hardware durability bar falls below 0.5 and rotation margin narrows below 0.8; kill if margin widens back above 1.5.",
+  "confidence": "low"
+}

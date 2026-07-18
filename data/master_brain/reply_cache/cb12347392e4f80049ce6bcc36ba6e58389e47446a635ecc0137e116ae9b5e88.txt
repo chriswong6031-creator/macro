@@ -1,0 +1,30 @@
+# CROWDING-SKEPTIC DESK NOTE — CHINA A‑SHARES
+*2026‑07‑17 | Analysts: Risk‑Mgmt Lens Only (not alpha)*  
+*Gate‑helps = FALSE on this market → all trend‑following here is experimental; crowding caution must be extra humble.*
+
+---
+
+## Most Over‑Extended Theme: Innovative Pharma & CXO (cn_pharma_cxo)
+
+**Crowding conviction: SIZE‑DOWN**  
+- `crowding_z` = **+1.23** – the only theme flagged `crowded: true`.  
+- `breadth` = 0.929 – near full participation, but broadness does not immunise against a positioning unwind; it simply means the herd is in, not around.  
+- `durability_bar` = 0.88 – a mature, well‑established trend… which is exactly where reflexivity bites hardest.
+
+**Supporting fragility markers**  
+- Rotation breadth is narrowing: only 27 % of themes eligible, absorption 0.36. When the field shrinks, crowded leaders face amplified exit‑ramp jams.  
+- Unscheduled macro/policy flow share is 59 % (window‑5d). A crowded theme is highly sensitive to any macro‑narrative shift that reprices risk appetite (US‑China, health‑policy, funding‑tightness).  
+- The absolute‑trend gate **did not hold drawdown** historically on this market. So even a “healthy” trend can whip. Crowding magnifies that whiplash.
+
+**Why this is a sizing warning, not a fade**  
+Per guardrails: *Do NOT fade the dominant theme on a crowding flag – cap it, do not fade it.* We are forbidding a sell/short. The only validated crowding edge is **down‑sizing**; it prevents the worst of the drawdown when the themed‑herd rushes for the exit, but it does not time that exit. The track record of our calls is 0/1 (0 % hit rate), so this note carries **zero predictive confidence** – only the mechanical risk recall that crowded themes tend to erase trend gains in a single acute episode if correlations tighten.
+
+**Falsifiable conditional**  
+If `crowding_z` remains above +1 and breadth begins to contract (i.e., participants start dropping out while the price tag is still high), we would expect the theme to deliver a materially larger drawdown than uncrowded peers (e.g., Semiconductors z=0.37, AI Compute z=‑0.44) over a 20‑day horizon. That expectation is a risk‑budget caution, not a return forecast.
+
+**The action**  
+A disciplined allocation to Innovative Pharma & CXO should be **significantly smaller** than its trend score alone would imply. Sizing must reflect the elevated fragility, the experimental nature of the trend‑gate in this market, and the documented failure mode of chasing a crowded, widely‑owned theme. No change to direction – just a reduction to protect capital.
+
+---
+
+*Re‑checked against guardrails: no fade call, no next‑narrative prediction, no basket‑drawdown timer. This is a fallible, falsifiable crowding‑skeptic overlay – discard it when rising breadth and falling crowding_z materialise.*

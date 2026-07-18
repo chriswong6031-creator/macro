@@ -60,7 +60,7 @@
       },
       {
         "pair": "gold_silver",
-        "ratio": 71.805,
+        "ratio": 71.558,
         "trend": "mid"
       },
       {
@@ -70,7 +70,7 @@
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.188,
+        "ratio": 0.185,
         "trend": "mid"
       }
     ],
@@ -118,8 +118,16 @@
           "leader": "US",
           "follower": "HK",
           "lag": 1,
-          "r": 0.34,
-          "t": 4.656,
+          "r": 0.344,
+          "t": 4.766,
+          "q": 0.0
+        },
+        {
+          "leader": "Dollar",
+          "follower": "HK",
+          "lag": 1,
+          "r": 0.295,
+          "t": 4.548,
           "q": 0.0
         },
         {
@@ -127,24 +135,24 @@
           "follower": "HK",
           "lag": 1,
           "r": 0.3,
-          "t": 4.461,
-          "q": 0.0
-        },
-        {
-          "leader": "Dollar",
-          "follower": "HK",
-          "lag": 1,
-          "r": 0.286,
-          "t": 4.433,
+          "t": 4.478,
           "q": 0.0
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.237,
-          "t": 3.17,
-          "q": 0.0563
+          "r": 0.242,
+          "t": 3.443,
+          "q": 0.0225
+        },
+        {
+          "leader": "Crypto",
+          "follower": "China",
+          "lag": 1,
+          "r": 0.196,
+          "t": 2.973,
+          "q": 0.087
         }
       ]
     },
@@ -155,10 +163,10 @@
       "total_usd_tn": 17.85
     },
     "funding_stress": {
-      "asof": "2026-07-14",
+      "asof": "2026-07-16",
       "state": "calm",
-      "score": 44.0,
-      "spread_bp": 0.0
+      "score": 23.0,
+      "spread_bp": -1.0
     },
     "note": "display-only regime read; TSMOM fails DSR (cross-asset-phase0), lead/lag=lag-1 timezone (cross-asset-leadlag-phase0) \u2014 not a strategy/hedge-ratio"
   }

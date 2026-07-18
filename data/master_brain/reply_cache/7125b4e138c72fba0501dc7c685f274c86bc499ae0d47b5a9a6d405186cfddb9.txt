@@ -1,0 +1,52 @@
+{
+  "regime_context": "The US thematic landscape shows broad rotation (32/46 themes eligible) with Memory, HBM & Storage leading by a wide score margin but not forming a dominant 'one narrative'. The absolute trend gate (the only validated risk edge) is active and will be used to size and de-risk; cross-sectional momentum ranks have no forward return edge and are treated as an attention lens only. Several themes are crowded, urging sizing caution.",
+  "theses": [
+    {
+      "subject": "Memory, HBM & Storage",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Memory/HBM leads the momentum rank and remains eligible under the absolute trend gate (score 2.89, durability 0.5, not crowded). While the rank itself isn't predictive, the trend gate's historical drawdown control supports maintaining exposure over a trading-month horizon, and the lack of crowding reduces the risk of a sharp unwind.",
+      "evidence": [
+        "rank 1 with large score gap (2.893 vs 1.85 challenger)",
+        "eligible under absolute trend gate (validated for drawdown reduction)",
+        "crowding z -0.36 (not crowded, no reflexivity risk)",
+        "hurst_tag: mixed but durability_bar 0.5 suggests trend is intact"
+      ],
+      "dissent": "The theme is heavily tied to AI capex narrative, which could mean-revert if spending plans are revised down; the momentum rank itself has near-zero IC, so leadership could reverse without warning.",
+      "falsifier_text": "The theme becomes ineligible (absolute trend gate flips to false) or its score drops below 0 and breadth plummets dramatically."
+    },
+    {
+      "subject": "Financials (Equal-Weight)",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Financials (EW) is eligible with high durability (bar 0.83), broad breadth (0.895), and is not crowded. The consistent participation and trend-gate protection make it a low-volatility overweight within a trend-following framework, supported by a macro backdrop of resilient nominal activity.",
+      "evidence": [
+        "eligible: true, absolute trend gate risk control applies",
+        "durability_bar 0.83 (high), hurst_tag: trend",
+        "breadth 0.895 (broad participation across sub-industries)",
+        "crowding_z 0.73 (not crowded)"
+      ],
+      "dissent": "Financials are sensitive to yield curve shape and credit events; a sudden recession scare or credit deterioration could break the trend, and the equal-weight sector could be dragged down by regional banks (crowded, mixed trend).",
+      "falsifier_text": "Absolute trend gate flips to ineligible for Financials (ETF proxy XLF crosses below its trend filter) or breadth collapses below 0.6."
+    },
+    {
+      "subject": "Crypto & Digital Assets",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 60,
+      "thesis": "Crypto ranked last with negative score (-1.03), ineligible under the absolute trend gate (durability bar 0.22, Hurst mixed). The trend gate's historical record of drawdown avoidance suggests steering clear of themes in this state.",
+      "evidence": [
+        "eligible: false (trend gate exclusion)",
+        "score -1.028, rank 43/46",
+        "durability_bar 0.22 (low trend cohesion)",
+        "breadth 0.0 (no participation)"
+      ],
+      "dissent": "Crypto is a volatile, sentiment-driven theme that can rebound sharply on a narrative shift (e.g., regulatory clarity, spot ETF flows); avoiding may miss a sharp rally.",
+      "falsifier_text": "Crypto becomes eligible (absolute trend gate true) and its score rises above 0, sustained for 5 consecutive trading days."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

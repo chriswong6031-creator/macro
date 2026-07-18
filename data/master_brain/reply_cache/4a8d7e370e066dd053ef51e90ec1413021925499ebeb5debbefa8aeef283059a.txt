@@ -1,0 +1,20 @@
+## DESK NOTE — Narrative-Emergence Scout  
+**Date:** 2026-07-17  
+**Market:** Hong Kong (Hang Seng)  
+**Role:** Scout — early-hypothesis only, no sizing, no directional certainty  
+
+### Prevailing Narrative  
+Tech Hardware & Semis (`hk_tech_hardware`) is the clear leader: momentum score 1.777, durability 0.64 (trend), not crowded. However, breadth is only 16.7% — leadership is narrow, concentrated in few names. The rotation is narrow (4 eligible themes), absorption 0.55, no one-narrative dominance. The existing macro chatter is AI/tech-heavy, consistent with this leadership.  
+
+**Durability assessment:** The trend is healthy but the low breadth makes the leadership potentially fragile; it’s a “concentrated leader” structure, not a broad thematic wave. No handoff is confirmed — the challenger (Conglomerates) is mean-reverting, high breadth but lower momentum, and not threatening the top spot.  
+
+### Early Hypothesis (Emerging Watch)  
+**Theme:** Biotech, Pharma & CXO (`hk_biotech`)  
+**Current state:** Rank 7/17, momentum score 0.218, not yet eligible. Durability 0.48 (trend), breadth 66.7%, crowding z = -0.58 (uncrowded).  
+**Why watching:** Broad participation, a trending (though modest) durability, and the theme sits in a defensive/innovation pocket that could benefit if rate‑cut or healthcare-policy narratives strengthen. It’s not in the current macro themes, but the breadth and trend structure mean it could transition from “laggard” to “challenger” quickly if momentum inflects.  
+**Thesis (minimal):** Early-stage, broad-based, trend-positive theme with room to improve if its score rises toward the eligibility threshold. Not yet a leader, but worth monitoring as a potential narrative-formation candidate.  
+
+**Falsifiable kill‑criterion:**  
+If the momentum score does **not** cross above 0.35 **and** durability remains below 0.50 by **2026-07-31** (10 trading days), the formation hypothesis is invalidated and removed from watch.  
+
+*This is not a prediction. It is a low-conviction, falsifiable conditional with no implication for positioning. All guardrails apply — no fading the current leader, no next-theme forecast, no scoring use.*

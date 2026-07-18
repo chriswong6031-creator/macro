@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-16",
+  "as_of": "2026-07-17",
   "desks": [
     {
       "name": "AI Desk",
@@ -20,7 +20,7 @@
       "name": "Policy Intent",
       "slug": "policy_intent",
       "scored": 0,
-      "open": 16,
+      "open": 18,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -32,7 +32,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 311,
+      "open": 324,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -235,15 +235,21 @@
         "effective_n": 22
       },
       {
+        "family": "intl_bridge",
+        "itemized": 21,
+        "declared": 21,
+        "effective_n": 21
+      },
+      {
         "family": "capitulation_overlay_phase0",
         "itemized": 0,
         "declared": 18,
         "effective_n": 18
       },
       {
-        "family": "intl_bridge",
+        "family": "signal_foundry",
         "itemized": 17,
-        "declared": 17,
+        "declared": 0,
         "effective_n": 17
       },
       {
@@ -394,12 +400,6 @@
         "family": "short_side",
         "itemized": 12,
         "declared": 6,
-        "effective_n": 12
-      },
-      {
-        "family": "signal_foundry",
-        "itemized": 12,
-        "declared": 0,
         "effective_n": 12
       },
       {
@@ -794,7 +794,7 @@
       }
     ],
     "total_families": 118,
-    "total_effective_n": 2816
+    "total_effective_n": 2825
   },
   "summary_note": "2/6 desk loops live; 4 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position.",
   "standout_tracks": [
@@ -802,8 +802,8 @@
       "name": "US Buy Board (v1)",
       "region": "US",
       "rel_path": "site/factordata/us_board_track.json",
-      "board_dates": 8,
-      "graded_rows": 1210,
+      "board_dates": 9,
+      "graded_rows": 1411,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
@@ -813,12 +813,12 @@
       "name": "CN Standout Track",
       "region": "CN",
       "rel_path": "data/china_standout_track/board.parquet",
-      "board_dates": 11,
+      "board_dates": 12,
       "graded_rows": 0,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
-      "health_note": "662 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+      "health_note": "722 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
     }
   ]
 }

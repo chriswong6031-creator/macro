@@ -6,7 +6,7 @@
    "from_leg": "ai_semis",
    "to_leg": "mag7",
    "started": "2026-07-02",
-   "lapse_count": 0,
+   "lapse_count": 1,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-22",
@@ -28,144 +28,32 @@
     "asof": "2026-07-15"
    }
   },
-  "xlk:semicap->mag7": {
-   "pair_id": "xlk:semicap->mag7",
-   "sector": "xlk",
-   "from_leg": "semicap",
-   "to_leg": "mag7",
-   "started": "2026-07-02",
-   "lapse_count": 4,
-   "last_receipts": {
-    "blowoff": {
-     "peak_date": "2026-06-30",
-     "runup_pct": 0.39,
-     "runup_z": 2.1,
-     "drawdown_pct": 0.1425,
-     "qualified_by": "z"
-    },
-    "turn": {
-     "low_date": "2026-06-25",
-     "off_low_pct": 0.1097,
-     "reclaimed": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.2301,
-     "inflected": true,
-     "ratio_20s_high": false
-    },
-    "asof": "2026-07-10"
-   }
-  },
-  "xlk:semicap->ai_software": {
-   "pair_id": "xlk:semicap->ai_software",
-   "sector": "xlk",
-   "from_leg": "semicap",
-   "to_leg": "ai_software",
-   "started": "2026-07-06",
-   "lapse_count": 4,
-   "last_receipts": {
-    "blowoff": {
-     "peak_date": "2026-06-30",
-     "runup_pct": 0.39,
-     "runup_z": 2.1,
-     "drawdown_pct": 0.1425,
-     "qualified_by": "z"
-    },
-    "turn": {
-     "low_date": "2026-06-25",
-     "off_low_pct": 0.1143,
-     "reclaimed": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.2353,
-     "inflected": true,
-     "ratio_20s_high": false
-    },
-    "asof": "2026-07-10"
-   }
-  },
   "xlk:semicap->software": {
    "pair_id": "xlk:semicap->software",
    "sector": "xlk",
    "from_leg": "semicap",
    "to_leg": "software",
    "started": "2026-07-02",
-   "lapse_count": 4,
+   "lapse_count": 0,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",
-     "runup_pct": 0.39,
-     "runup_z": 2.1,
-     "drawdown_pct": 0.1425,
+     "runup_pct": 0.413,
+     "runup_z": 2.29,
+     "drawdown_pct": 0.2656,
      "qualified_by": "z"
     },
     "turn": {
      "low_date": "2026-06-25",
-     "off_low_pct": 0.1058,
+     "off_low_pct": 0.2029,
      "reclaimed": true
     },
     "ratio": {
-     "ratio_chg_10s": 0.2258,
-     "inflected": true,
-     "ratio_20s_high": false
+     "ratio_chg_10s": 0.165,
+     "inflected": false,
+     "ratio_20s_high": true
     },
-    "asof": "2026-07-10"
-   }
-  },
-  "xlk:software->mag7": {
-   "pair_id": "xlk:software->mag7",
-   "sector": "xlk",
-   "from_leg": "software",
-   "to_leg": "mag7",
-   "started": "2026-07-10",
-   "lapse_count": 4,
-   "last_receipts": {
-    "blowoff": {
-     "peak_date": "2026-06-04",
-     "runup_pct": 0.213,
-     "runup_z": 2.12,
-     "drawdown_pct": 0.1002,
-     "qualified_by": "z"
-    },
-    "turn": {
-     "low_date": "2026-06-25",
-     "off_low_pct": 0.1097,
-     "reclaimed": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.0035,
-     "inflected": true,
-     "ratio_20s_high": false
-    },
-    "asof": "2026-07-10"
-   }
-  },
-  "xlk:software->ai_software": {
-   "pair_id": "xlk:software->ai_software",
-   "sector": "xlk",
-   "from_leg": "software",
-   "to_leg": "ai_software",
-   "started": "2026-07-06",
-   "lapse_count": 4,
-   "last_receipts": {
-    "blowoff": {
-     "peak_date": "2026-06-04",
-     "runup_pct": 0.213,
-     "runup_z": 2.12,
-     "drawdown_pct": 0.1002,
-     "qualified_by": "z"
-    },
-    "turn": {
-     "low_date": "2026-06-25",
-     "off_low_pct": 0.1143,
-     "reclaimed": true
-    },
-    "ratio": {
-     "ratio_chg_10s": 0.0077,
-     "inflected": true,
-     "ratio_20s_high": false
-    },
-    "asof": "2026-07-10"
+    "asof": "2026-07-17"
    }
   }
  },
@@ -176,6 +64,10 @@
   "xlk:ai_software->software": "2026-07-13",
   "xlk:memory->mag7": "2026-07-13",
   "xlk:memory->ai_software": "2026-07-13",
-  "xlk:memory->software": "2026-07-13"
+  "xlk:memory->software": "2026-07-13",
+  "xlk:semicap->mag7": "2026-07-17",
+  "xlk:semicap->ai_software": "2026-07-17",
+  "xlk:software->mag7": "2026-07-17",
+  "xlk:software->ai_software": "2026-07-17"
  }
 }

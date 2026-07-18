@@ -1,9 +1,9 @@
 {
   "schema": "ai_desk_track_record.v1",
-  "as_of": "2026-07-16",
+  "as_of": "2026-07-17",
   "scored_total": 0,
-  "open": 16,
-  "unscored_soft": 2,
+  "open": 18,
+  "unscored_soft": 3,
   "expired": 0,
   "overall": {
     "n": 0,

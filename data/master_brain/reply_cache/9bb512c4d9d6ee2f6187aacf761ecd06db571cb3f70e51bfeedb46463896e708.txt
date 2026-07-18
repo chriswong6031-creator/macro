@@ -1,0 +1,61 @@
+{
+  "regime_context": "The policy regime is a sequenced campaign of near-term hawkish credibility banking by the Fed (Warsh) paired with Treasury (Bessent) yield suppression, aiming for lower real yields post-midterm. Consensus sees sustained hawkishness; revealed preference shows inflation-mandate priority, but weak labor data introduces optionality for a data-driven pivot, making the September meeting a live checkpoint.",
+  "regime_context_zh": "当前的政经体制是一场顺次展开的战役：美联储（Warsh）在近期通过鹰派立场建立信誉，财政部（Bessent）则实施结构性收益率抑制，目标是在中期选举后实现实际收益率下行。市场共识认为鹰派将持续，但行为揭示的偏好是：通胀目标优先，然而疲弱的劳动力数据为数据驱动的转向提供了选择权，使得9月会议成为一个关键观察点。",
+  "theses": [
+    {
+      "actor": "fed",
+      "subject": "BIL",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 45,
+      "thesis": "Fed hawkishness and a probable September hike will push front-end yields higher, making Treasury bills attractive relative to risk assets, causing BIL to outperform SPY.",
+      "thesis_zh": "美联储的鹰派立场和可能的9月加息将推高前端收益率，使国债类资产相对风险资产更具吸引力，从而推动BIL跑赢SPY。",
+      "evidence": [
+        "Fed Chair Warsh's Sintra comments (7/1) held a hawkish line, declining to signal July ease and burying forward guidance.",
+        "CME FedWatch moved to >70% probability of a September hike (50.6% 25bp + 19.6% 50bp) after Iran re-escalation.",
+        "The admin and Fed are aligned in banking credibility now, with easing held as inflation-gated optionality post-midterm."
+      ],
+      "dissent": "A further crack in the labor market could force the Fed to hold or cut instead of hiking, causing front-end yields to drop and BIL to underperform.",
+      "dissent_zh": "劳动力市场若进一步恶化，可能迫使美联储放弃加息甚至降息，导致前端收益率下降，BIL将表现落后。",
+      "falsifier_text": "The September 2026 FOMC meeting results in no rate hike and signals an easing bias.",
+      "falsifier_text_zh": "2026年9月FOMC会议不加息，并且释放出宽松倾向。"
+    },
+    {
+      "actor": "admin",
+      "subject": "ITA",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 60,
+      "thesis": "The structural NATO defense super-cycle, missile-defense expansion, and ongoing Iran conflict drive sustained military spending, benefiting defense primes; ITA outperforms SPY.",
+      "thesis_zh": "结构性的北约防务超级周期、导弹防御扩张以及持续的伊朗冲突，推动持续性军费开支，利好国防航空等承包商；ITA将跑赢SPY。",
+      "evidence": [
+        "NATO budget increases and Golden Dome missile-defense initiative (theater: NATO/Defense).",
+        "Iran ceasefire collapse on 7/8 and US strikes 7/8-11 re-primed the defense bid regardless of oil.",
+        "Defense was already a targeted rotation with proxies ITA, XAR, PPA, SHLD."
+      ],
+      "dissent": "A comprehensive ceasefire deal with Iran or a diplomatic offramp could reduce the urgency of defense spending, causing the sector to lag.",
+      "dissent_zh": "与伊朗达成全面停火协议或外交解决方案，可能降低国防开支的紧迫性，导致该板块表现落后。",
+      "falsifier_text": "A major Iran ceasefire agreement is signed and defense budget expectations are materially cut.",
+      "falsifier_text_zh": "伊朗签署重大停火协议，且国防预算预期被大幅下调。"
+    },
+    {
+      "actor": "admin",
+      "subject": "SMR",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 90,
+      "thesis": "The administration's push for nuclear to power AI datacenters, together with the expected DOE release of ≥20 MT HALEU into the fuel bank, provides policy-driven upside for small modular reactor equities; SMR outperforms SPY.",
+      "thesis_zh": "政府推动以核能支持AI数据中心，叠加能源部预计将向燃料银行释放≥20公吨高纯度低浓缩铀（HALEU），为小型模块化反应堆股带来政策驱动的上行空间；SMR将跑赢SPY。",
+      "evidence": [
+        "Open prediction: DOE releases ≥20 MT HALEU into the fuel bank for private/AI projects.",
+        "Nuclear/uranium/HALEU fuel cycle is a targeted rotation basis with FACT mechanism.",
+        "Industrial policy explicitly steers capital toward strategic domestic capacity, including nuclear-for-AI."
+      ],
+      "dissent": "Regulatory delays, cost overruns, or a shift in AI energy demand toward renewables or natural gas could undermine the investment thesis, causing SMR to underperform.",
+      "dissent_zh": "监审核批延迟、成本超支，或AI能源需求转向可再生能源/天然气，都可能削弱投资逻辑，导致SMR表现落后。",
+      "falsifier_text": "The DOE does not release the HALEU by year-end, or a key nuclear regulatory approval is publicly denied.",
+      "falsifier_text_zh": "能源部年底前未释放HALEU，或一项关键核能监管批准被公开否决。"
+    }
+  ],
+  "confidence": "low"
+}

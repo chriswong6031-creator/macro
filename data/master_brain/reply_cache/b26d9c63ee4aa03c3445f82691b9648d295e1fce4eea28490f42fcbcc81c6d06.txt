@@ -1,0 +1,59 @@
+{
+  "summary": "Goldilocks macro masks a tech-led de-rating; bonds flash a leading credit caution as the curve re-steepens, while the AI/semis unwind dominates price action with narrow breadth.",
+  "regime_read": "The US macro quad reads Q1 Goldilocks with loose financial conditions, low recession risk, and risk-on sentiment, but the dominant market driver is a clear AI/semis unwind — a sharp tech-led de-rating visible in semis RS at -2.5σ, growth vs value at -2.1σ, and cap-weight vs equal-weight at -1.9σ. This is a sector-specific rotation/correction within a still-constructive macro environment, not a broad market collapse: trend breadth is broad-up (75% above 200-day) while entry-quality breadth is narrow (33% take-quality), indicating narrow leadership rather than broad conviction. The independent leading tape from bonds signals a late-cycle credit caution — HY OAS is tight but direction is widening, and EBP is just below zero — a leading flag that equities have not yet priced. The curve is a bear steepener, reflecting fiscal supply repricing and restrictive real rates (10y real 2.35%), which pressures long-duration assets and growth. FX is risk-on but USD strengthening on a growth premium, creating a headwind for gold, copper, EM, and Bitcoin. BTC is in DISTRIBUTE. The net picture is a risk asset unwind that begins with semis and growth, with bonds warning that credit cracks could broaden the pullback.",
+  "conflicts": [
+    "The macro quad is Goldilocks (benign) while the primary market driver is an AI/semis unwind (sharp tech de-rating). This is a decomposition of the same price_regime tape: the unwind is sector-specific, not a macro-driven sell-off, but it conflicts with the broad macro read.",
+    "Bonds (independent rates_credit tape) flash a leading credit caution — direction widening, EBP negative but turning, late-cycle — while equities still show risk-on sentiment. The cross-asset confirm notes bonds/FX diverge from the equity regime, with credit as the key leading caution flag not yet priced in equities. This is a genuine cross-tape divergence.",
+    "Entry-quality breadth shows broad trend (75% above 200-day) but only 38% of fresh entries clear the buy-filter. This calibrates the macro risk-on read as narrow leadership/rotation, not broad conviction — tempering the benign quad signal.",
+    "Rate/inflation transmission lists both real_rate and sticky_inflation chains active, with headwinds for SPY, XLK, QQQ but a tailwind for gold. This is unusual given rising real rates typically hurt gold; the signal may reflect a disconnect worth monitoring."
+  ],
+  "rotation_check": "The working thesis — that liquidity rotates out of semis first in a contraction phase — is tracking. The unwind fingerprint (semis -2.5σ, growth vs value -2.1σ, cap-weight vs equal-weight -1.9σ) matches the expected reverse sequence. However, there is no rotation into the next expected destinations: China/HK are in stagflation with contracting liquidity and neutral risk, and BTC is in DISTRIBUTE. The shift toward value, partly driven by the bear steepener, appears to be a defensive rotation rather than a liquidity-driven expansion into ex-US or crypto. The lack of rotation breadth suggests the unwind is concentrated and not yet a broad regime shift.",
+  "transmission": [
+    "Credit widening as a leading caution — HY OAS direction widening from a tight base; if it breaks distress band, it would be the canary for equity drawdowns across growth and high-yield-sensitive sectors.",
+    "USD strengthening via rate differentials and growth premium is a coincident headwind for gold, copper, EM equities, and Bitcoin. Monitor if USD breaks higher, accelerating commodity and BTC headwinds.",
+    "Restrictive real 10y yield (2.35%) and bear steepener pressure long-duration tech (XLK, QQQ) and bond proxies (XLU, XLRE), while supporting value/financials. The active real_rate and sticky_inflation chains will keep pressure on growth unless real yields reverse.",
+    "Labor-market cracks (June payrolls +57k, participation 61.5%) vs sticky PCE (core 3.4%) create a stagflationary split. If labor weakness deepens, the hawkish Fed stance could pivot, reversing the rate headwind for duration and gold."
+  ],
+  "watch_items": [
+    "FOMC rate decision on 7/29 — any shift in language toward labor weakness would challenge the hawkish stance and could reverse the rate/dollar headwinds.",
+    "PCE release on 7/30 — the model projects a cold headline (point -0.29% m/m, p_cold 1.0). A cold print would support a pause narrative and ease real-rate pressure.",
+    "HY OAS and credit spreads — a sustained move above 3% would signal the credit canary is firing, implying broader equity risk.",
+    "Semis RS and growth/value — reversal in semis relative strength would invalidate the primary driver; stabilization would signal the unwind is pausing.",
+    "Claims on 7/23 and 7/30 — further deterioration would add urgency to the labor-crack narrative and increase odds of a Fed pivot later in the year.",
+    "USD and real yields — if DXY breaks its recent range and 10y real yields move above 2.4%, the headwind for gold, EM, and BTC intensifies."
+  ],
+  "confidence": "medium",
+  "forward_watch": [
+    {
+      "date": "2026-07-23",
+      "label": "Initial claims",
+      "kind": "claims",
+      "note": "Benchmark-only series; no projection available. Watch claims level for continuation of labor-market softening."
+    },
+    {
+      "date": "2026-07-29",
+      "label": "FOMC rate decision",
+      "kind": "FOMC",
+      "note": "Key rate decision. Hawkish hold expected; market will parse for any labor-side dovish shift."
+    },
+    {
+      "date": "2026-07-30",
+      "label": "GDP (BEA estimate)",
+      "kind": "GDP",
+      "note": "Q2 advance GDP. Provides context for growth premium and recession risk gauge."
+    },
+    {
+      "date": "2026-07-30",
+      "label": "PCE / personal income (BEA)",
+      "kind": "PCE",
+      "note": "Headline PCE model projects cold print (p_cold=1.0, point -0.29% m/m). A realized cold number would challenge the inflation-mandate-first stance."
+    },
+    {
+      "date": "2026-07-30",
+      "label": "Initial claims",
+      "kind": "claims",
+      "note": "Second weekly claims print in the FOMC/GDP/PCE week. Benchmark-only series."
+    }
+  ],
+  "forward_read": "The back half of July brings a heavy data slate: FOMC on the 29th, GDP and PCE on the 30th, plus two claims prints. The model's cold PCE projection — if realized — would directly test the Fed's hawkish, inflation-mandate-first posture. Claims and the BEA growth estimate will shape the labor-crack narrative. The calendar could resolve the stagflationary split in either direction."
+}

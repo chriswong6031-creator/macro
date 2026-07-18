@@ -1,0 +1,23 @@
+{
+  "regime_context": "China A-shares detector shows AI Compute & Optics leading with durable trend (durability 0.55, hurst=trend, not crowded) but the absolute-trend gate failed to reduce drawdown historically (gate_helps=false) and cross-sectional momentum has no predictive edge. Eligible themes narrowed to 6 of 22, with Pharma crowded; macro backdrop is AI-dominated yet highly unscheduled (59% unscheduled). The detector is a coincident focus lens, not a forecast engine.",
+  "theses": [
+    {
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The theme holds the top momentum rank, above-threshold durability (0.55), a trending Hurst tag, and is not crowded, suggesting the trend structure may persist near-term. However, the gate’s historical failure to filter whipsaws in A-shares means this is an experimental lean; overweight is a fallible judgement that relative strength continues absent a shake-out.",
+      "evidence": [
+        "Rank #1 with score 2.297 and eligible",
+        "durability_bar 0.55 remains above the baseline 0.5",
+        "hurst_tag = 'trend'",
+        "crowded = false",
+        "current headline and leader in rotation"
+      ],
+      "dissent": "The gate_helps=false history shows A-share trends are prone to sharp reversals; high unscheduled macro surprise share (59%) and a potentially over-concentrated tech rally (AI headlines) could trigger a rapid unwind, making trend-following especially fragile.",
+      "falsifier_text": "The durability_bar for AI Compute & Optics drops below 0.40 and the theme becomes ineligible, or its ETF proxy 515000.SS closes below its 50-day simple moving average."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

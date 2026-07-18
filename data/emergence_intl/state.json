@@ -1,32 +1,32 @@
 {
-  "3b6d57ae6d4e": {
-    "name_en": "Cross-sector cluster \u00b7 Financials + Communication",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Financials + Communication",
-    "score": 57.3
-  },
   "860b4941b551": {
     "name_en": "Emerging Consumer Staples cluster",
     "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 44.5
+    "score": 43.9
   },
   "8b38428033c7": {
     "name_en": "Cross-sector cluster \u00b7 Health Care + Financials",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Financials",
-    "score": 60.7
+    "score": 57.8
   },
   "9de1537ed35f": {
     "name_en": "Cross-sector cluster \u00b7 Information Technology + Industrials",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Industrials",
-    "score": 66.9
+    "score": 67.1
+  },
+  "aa8a164a99e1": {
+    "name_en": "Cross-sector cluster \u00b7 Financials + Communication",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Financials + Communication",
+    "score": 58.2
   },
   "b6e9deee1ac4": {
     "name_en": "Cross-sector cluster \u00b7 Information Technology + Communication",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Communication",
-    "score": 65.7
+    "score": 65.6
   },
   "eb019c11c1fd": {
     "name_en": "Emerging Consumer Staples cluster",
     "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 53.5
+    "score": 52.1
   }
 }

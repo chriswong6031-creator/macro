@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-17T22:48:15.349840+00:00",
+  "generated_utc": "2026-07-18T03:20:36.871059+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,12 +749,11 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 7,
-      "alt_weighted": 2.6,
+      "alt_score": 6,
+      "alt_weighted": 2.1,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
-        "darkpool_accum",
+        "github_momentum",
         "hf_model_momentum",
         "patent_cluster",
         "retail_buzz",
@@ -800,10 +799,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.15,
       "alt_channels": [
         "affiliation",
+        "cnbc_pick",
         "special_situation"
       ],
       "top_holder": {
@@ -933,10 +933,9 @@
       ],
       "n_actors": 3,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.45,
+      "alt_score": 3,
+      "alt_weighted": 1.05,
       "alt_channels": [
-        "13f_add",
         "affiliation",
         "retail_buzz",
         "special_situation"
@@ -1125,10 +1124,11 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.55,
+      "alt_score": 4,
+      "alt_weighted": 1.85,
       "alt_channels": [
         "affiliation",
+        "github_momentum",
         "gov_contract_accel",
         "retail_buzz"
       ],
@@ -1658,6 +1658,22 @@
   "n_candidates": 0,
   "filings": [
     {
+      "date": "2026-07-16",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926023709/djt20260709c_8k.htm"
+    },
+    {
+      "date": "2026-07-16",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000143774926023709/ex_988917.htm"
+    },
+    {
       "date": "2026-07-13",
       "form": "S-1/A",
       "company": "Ionic Digital Inc.",
@@ -1727,7 +1743,7 @@
       "company": "Dominari Holdings Inc.",
       "ticker": "DOMH",
       "items": "4.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/12239/000121390026072650/ea029608601ex16-1.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/12239/000121390026072650/ea0296086-8k_dominari.htm"
     },
     {
       "date": "2026-06-26",
@@ -1735,23 +1751,7 @@
       "company": "Dominari Holdings Inc.",
       "ticker": "DOMH",
       "items": "4.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/12239/000121390026072650/ea0296086-8k_dominari.htm"
-    },
-    {
-      "date": "2026-06-24",
-      "form": "8-K",
-      "company": "American Bitcoin Corp.",
-      "ticker": "ABTC",
-      "items": "5.07,8.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526281239/abtc-20260622.htm"
-    },
-    {
-      "date": "2026-06-17",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126025585/ef20076341_425.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/12239/000121390026072650/ea029608601ex16-1.htm"
     }
   ]
 }

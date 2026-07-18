@@ -1,15 +1,15 @@
 {
   "schema": "desk_weights.shadow.v1",
-  "as_of": "2026-07-16",
+  "as_of": "2026-07-17",
   "armed": false,
   "arming": {
     "armed": false,
-    "n_eff": 7.0,
+    "n_eff": 10.0,
     "need_n": 12.0,
     "pooled_beats_equal": null,
     "heldout_edge_pooled": null,
     "heldout_edge_equal": null,
-    "reason": "accruing: 7/12 effective events"
+    "reason": "accruing: 10/12 effective events"
   },
   "equal_weight": {
     "ai_desk": 0.1429,
@@ -38,13 +38,13 @@
     "narrative_brain": 0.1429,
     "thematic_desk": 0.1429
   },
-  "divergence_l1": 0.0049,
+  "divergence_l1": 0.005,
   "per_desk": {
     "ai_desk": {
-      "n": 7,
-      "mean_signed": -0.0525,
-      "reliability": 0.4667,
-      "pooled_edge": -0.02138,
+      "n": 10,
+      "mean_signed": -0.04039,
+      "reliability": 0.5556,
+      "pooled_edge": -0.01923,
       "equal_w": 0.1429,
       "shadow_w": 0.1404,
       "live_w": 0.1429,
@@ -54,7 +54,7 @@
       "n": 0,
       "mean_signed": 0.0,
       "reliability": 0.0,
-      "pooled_edge": -0.0167,
+      "pooled_edge": -0.01442,
       "equal_w": 0.1429,
       "shadow_w": 0.1433,
       "live_w": 0.1429,
@@ -64,7 +64,7 @@
       "n": 0,
       "mean_signed": 0.0,
       "reliability": 0.0,
-      "pooled_edge": -0.0167,
+      "pooled_edge": -0.01442,
       "equal_w": 0.1429,
       "shadow_w": 0.1433,
       "live_w": 0.1429,
@@ -74,7 +74,7 @@
       "n": 0,
       "mean_signed": 0.0,
       "reliability": 0.0,
-      "pooled_edge": -0.0167,
+      "pooled_edge": -0.01442,
       "equal_w": 0.1429,
       "shadow_w": 0.1433,
       "live_w": 0.1429,
@@ -84,7 +84,7 @@
       "n": 0,
       "mean_signed": 0.0,
       "reliability": 0.0,
-      "pooled_edge": -0.0167,
+      "pooled_edge": -0.01442,
       "equal_w": 0.1429,
       "shadow_w": 0.1433,
       "live_w": 0.1429,
@@ -94,7 +94,7 @@
       "n": 0,
       "mean_signed": 0.0,
       "reliability": 0.0,
-      "pooled_edge": -0.0167,
+      "pooled_edge": -0.01442,
       "equal_w": 0.1429,
       "shadow_w": 0.1433,
       "live_w": 0.1429,
@@ -104,12 +104,12 @@
       "n": 0,
       "mean_signed": 0.0,
       "reliability": 0.0,
-      "pooled_edge": -0.0167,
+      "pooled_edge": -0.01442,
       "equal_w": 0.1429,
       "shadow_w": 0.1433,
       "live_w": 0.1429,
       "wrong_sign": false
     }
   },
-  "note": "SHADOW \u2014 live weights held at equal-weight (accruing: 7/12 effective events)."
+  "note": "SHADOW \u2014 live weights held at equal-weight (accruing: 10/12 effective events)."
 }

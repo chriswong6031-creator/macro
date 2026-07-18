@@ -1,0 +1,34 @@
+**DESK NOTE — CROWDING-SKEPTIC ANALYST**
+**Market: Canada / TSX — 2026-07-17**
+**Role: Falsify the longs; size-down warning only — no fade, no short, no trade**
+
+---
+
+### Most Over-Extended Theme: **Big Banks (ZEB.TO)**
+**Crowding Evidence:**
+
+| Metric | Value | Interpretation |
+|--------|-------|----------------|
+| **crowding_z** | 1.59 | >1.5 → statistically stretched positioning; reflexivity risk elevated |
+| **RS-stretch (score)** | 1.555 | Leader score >1.5 — a parabolic extension in cross-sectional momentum |
+| **Breadth** | 1.0 | Perfect participation: “all shoes shined,” no internal buffer left |
+| **Durability (Hurst)** | 0.74 mixed | Trend health is not robust; the move has trend-like but not persistent dynamics |
+| **Absorption** | 0.36 | Rotation broad, not one-narrative — leader still absorbing disproportionate flow, but not monopoly |
+
+The theme checks every crowding box: high z-score, extreme relative strength, flawless breadth (every constituent participating), and mixed durability — exactly the configuration where forward drawdown risk compounds without a clear trend-stability offset.
+
+**Why SIZE-DOWN, not fade:**  
+Crowding does not predict a basket-level crash (backtest_verdict: no basket-drawdown edge). It signals that the marginal buyer is likely already in, leaving the theme vulnerable to shake-outs. The absolute-trend gate *does* provide validated drawdown control in this market (gate_helps: true), so the correct action is to **cap exposure** at a level that allows you to stay in the trend but survive a sudden air pocket — not to exit or short. The fatal error is betting against the leader.
+
+**Supporting bearish texture — other crowded names:**  
+Pipelines (crowding_z 1.69) and Insurers (1.77) are also crowded, but they trail. Banks is the price leader; if it wobbles, these will drop harder on relative flow. The crowding flags should sharpen the conviction that **overall portfolio beta to this cluster must be trimmed**, not rotated.
+
+**Falsifiable conditional lean (coincident, not predictive):**
+> **IF** the Big Banks theme’s crowding_z crosses above 2.0 **OR** breadth dips below 0.8 **OR** the score mean-reverts below 0.75 (halving the parabolic stretch) within the next 4 weeks (by 2026-08-14), **THEN** the crowding caution was well-timed and the size-down prevented a larger drawdown. If none of these trigger and the trend resumes, the detector’s crowding flag was a false alarm for this episode, and the size reduction only cost opportunity — which is the intended trade-off.
+
+**Guardrails honoured:**
+- No call to sell, short, or fade the leader.
+- No prediction of the next narrative.
+- No position weight, size, or trade provided.
+- All conclusions are conditional and falsifiable.  
+- Detector track record: n=0 — no edge extracted, humility mandatory.

@@ -1,7 +1,7 @@
 {
   "date": "2026-07-16",
   "label": "7 economies \u00b7 Goldilocks",
-  "recession_watch": 1,
+  "recession_watch": 0,
   "em_stress_state": "strained",
   "contagion_state": "contained"
 }

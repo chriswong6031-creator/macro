@@ -1,10 +1,23 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-07-16",
-  "n_events_logged": 91,
+  "asof": "2026-07-17",
+  "n_events_logged": 103,
   "n_events_graded": 0,
   "classes": [
+    {
+      "event_type": "bankruptcy_restructuring",
+      "direction": "bearish",
+      "n": 1,
+      "n_graded": 0,
+      "hit_5d": null,
+      "hit_21d": null,
+      "avg_rel_5d": null,
+      "avg_rel_21d": null,
+      "wilson_low_5d": null,
+      "wilson_high_5d": null,
+      "verdict": "insufficient"
+    },
     {
       "event_type": "contract_award",
       "direction": "bullish",
@@ -73,7 +86,7 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 42,
+      "n": 49,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -99,7 +112,7 @@
     {
       "event_type": "management_change",
       "direction": "mixed",
-      "n": 3,
+      "n": 6,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -151,7 +164,7 @@
     {
       "event_type": "product_delay",
       "direction": "bearish",
-      "n": 1,
+      "n": 2,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -202,7 +215,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 213,
+    "n_sampled": 231,
     "n_graded": 0,
     "classes": []
   }

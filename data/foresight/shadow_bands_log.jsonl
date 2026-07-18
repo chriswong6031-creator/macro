@@ -52,3 +52,57 @@
 {"theme":"grid_electrification","asof":"2026-05-01","ts":"2026-07-03T06:36:28.523718+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
 {"theme":"grid_electrification","asof":"2026-05-01","ts":"2026-07-03T06:36:28.523718+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
 {"theme":"grid_electrification","asof":"2026-05-01","ts":"2026-07-03T06:36:28.523718+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"nuclear_power","asof":"2026-06-01","ts":"2026-07-18T01:12:34.692977+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"nuclear_power","asof":"2026-06-01","ts":"2026-07-18T01:12:34.692977+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"nuclear_power","asof":"2026-06-01","ts":"2026-07-18T01:12:34.692977+00:00","cutoff":2.0,"would_be_band":"TIGHTENING (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"rare_earth_critical_min","asof":"2026-06-01","ts":"2026-07-18T01:12:34.703519+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":2}
+{"theme":"rare_earth_critical_min","asof":"2026-06-01","ts":"2026-07-18T01:12:34.703519+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":2}
+{"theme":"rare_earth_critical_min","asof":"2026-06-01","ts":"2026-07-18T01:12:34.703519+00:00","cutoff":2.0,"would_be_band":"TIGHTENING (text)","lang_accel":2.0,"n_filers":2}
+{"theme":"data_center_power","asof":"2026-06-01","ts":"2026-07-18T01:12:34.712075+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"data_center_power","asof":"2026-06-01","ts":"2026-07-18T01:12:34.712075+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"data_center_power","asof":"2026-06-01","ts":"2026-07-18T01:12:34.712075+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"memory_storage","asof":"2026-06-01","ts":"2026-07-18T01:12:34.721270+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":2}
+{"theme":"memory_storage","asof":"2026-06-01","ts":"2026-07-18T01:12:34.721270+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":2}
+{"theme":"memory_storage","asof":"2026-06-01","ts":"2026-07-18T01:12:34.721270+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":2}
+{"theme":"ai_semiconductors","asof":"2026-06-01","ts":"2026-07-18T01:12:34.731361+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":1.4,"n_filers":4}
+{"theme":"ai_semiconductors","asof":"2026-06-01","ts":"2026-07-18T01:12:34.731361+00:00","cutoff":1.5,"would_be_band":"TIGHTENING (text)","lang_accel":1.4,"n_filers":4}
+{"theme":"ai_semiconductors","asof":"2026-06-01","ts":"2026-07-18T01:12:34.731361+00:00","cutoff":2.0,"would_be_band":"TIGHTENING (text)","lang_accel":1.4,"n_filers":4}
+{"theme":"semicap_equipment","asof":"2026-06-01","ts":"2026-07-18T01:12:34.742183+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"semicap_equipment","asof":"2026-06-01","ts":"2026-07-18T01:12:34.742183+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"semicap_equipment","asof":"2026-06-01","ts":"2026-07-18T01:12:34.742183+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"cybersecurity","asof":"2026-06-01","ts":"2026-07-18T01:12:34.748464+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"cybersecurity","asof":"2026-06-01","ts":"2026-07-18T01:12:34.748464+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"cybersecurity","asof":"2026-06-01","ts":"2026-07-18T01:12:34.748464+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"glp1_obesity","asof":"2026-06-01","ts":"2026-07-18T01:12:34.754427+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"glp1_obesity","asof":"2026-06-01","ts":"2026-07-18T01:12:34.754427+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"glp1_obesity","asof":"2026-06-01","ts":"2026-07-18T01:12:34.754427+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"defense_aerospace","asof":"2026-06-01","ts":"2026-07-18T01:12:34.763353+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":-0.5,"n_filers":2}
+{"theme":"defense_aerospace","asof":"2026-06-01","ts":"2026-07-18T01:12:34.763353+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":-0.5,"n_filers":2}
+{"theme":"defense_aerospace","asof":"2026-06-01","ts":"2026-07-18T01:12:34.763353+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":-0.5,"n_filers":2}
+{"theme":"copper_steel_electrify","asof":"2026-06-01","ts":"2026-07-18T01:12:34.773164+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"copper_steel_electrify","asof":"2026-06-01","ts":"2026-07-18T01:12:34.773164+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"copper_steel_electrify","asof":"2026-06-01","ts":"2026-07-18T01:12:34.773164+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"solar","asof":"2026-06-01","ts":"2026-07-18T01:12:34.779032+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"solar","asof":"2026-06-01","ts":"2026-07-18T01:12:34.779032+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"solar","asof":"2026-06-01","ts":"2026-07-18T01:12:34.779032+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"robotics_automation","asof":"2026-06-01","ts":"2026-07-18T01:12:34.785730+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"robotics_automation","asof":"2026-06-01","ts":"2026-07-18T01:12:34.785730+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"robotics_automation","asof":"2026-06-01","ts":"2026-07-18T01:12:34.785730+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"fintech_payments","asof":"2026-06-01","ts":"2026-07-18T01:12:34.791544+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"fintech_payments","asof":"2026-06-01","ts":"2026-07-18T01:12:34.791544+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"fintech_payments","asof":"2026-06-01","ts":"2026-07-18T01:12:34.791544+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"medical_devices","asof":"2026-06-01","ts":"2026-07-18T01:12:34.799216+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"medical_devices","asof":"2026-06-01","ts":"2026-07-18T01:12:34.799216+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"medical_devices","asof":"2026-06-01","ts":"2026-07-18T01:12:34.799216+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"diagnostics_lifesci","asof":"2026-06-01","ts":"2026-07-18T01:12:34.806296+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"diagnostics_lifesci","asof":"2026-06-01","ts":"2026-07-18T01:12:34.806296+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"diagnostics_lifesci","asof":"2026-06-01","ts":"2026-07-18T01:12:34.806296+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"ag_fertilizer","asof":"2026-06-01","ts":"2026-07-18T01:12:34.814154+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"ag_fertilizer","asof":"2026-06-01","ts":"2026-07-18T01:12:34.814154+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"ag_fertilizer","asof":"2026-06-01","ts":"2026-07-18T01:12:34.814154+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"space_satellite","asof":"2026-06-01","ts":"2026-07-18T01:12:34.821592+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"space_satellite","asof":"2026-06-01","ts":"2026-07-18T01:12:34.821592+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"space_satellite","asof":"2026-06-01","ts":"2026-07-18T01:12:34.821592+00:00","cutoff":2.0,"would_be_band":"TIGHTENING (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"grid_electrification","asof":"2026-06-01","ts":"2026-07-18T01:12:34.830551+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"grid_electrification","asof":"2026-06-01","ts":"2026-07-18T01:12:34.830551+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"grid_electrification","asof":"2026-06-01","ts":"2026-07-18T01:12:34.830551+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}

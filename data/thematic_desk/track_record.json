@@ -1,14 +1,14 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-07-17",
-  "scored_total": 2,
-  "open": 91,
-  "unscored_soft": 11,
+  "as_of": "2026-07-18",
+  "scored_total": 3,
+  "open": 98,
+  "unscored_soft": 12,
   "overall": {
-    "n": 2,
+    "n": 3,
     "hits": 1,
-    "misses": 1,
-    "hit_rate": 0.5,
+    "misses": 2,
+    "hit_rate": 0.333,
     "dir_accuracy": 0.0
   },
   "by_market": {
@@ -20,9 +20,9 @@
       "dir_accuracy": null
     },
     "china": {
-      "n": 1,
+      "n": 2,
       "hits": 0,
-      "misses": 1,
+      "misses": 2,
       "hit_rate": 0.0,
       "dir_accuracy": 0.0
     },
@@ -43,10 +43,10 @@
   },
   "by_conviction": {
     "low": {
-      "n": 2,
+      "n": 3,
       "hits": 1,
-      "misses": 1,
-      "hit_rate": 0.5,
+      "misses": 2,
+      "hit_rate": 0.333,
       "dir_accuracy": 0.0
     },
     "medium": {
@@ -64,8 +64,18 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "2 scored, hit-rate 0.5 (directional accuracy 0.0). Sample is small \u2014 treat conviction as provisional; the honest expectation is no exploitable forward edge (display-only).",
+  "calibration_note": "3 scored, hit-rate 0.333 (directional accuracy 0.0). Sample is small \u2014 treat conviction as provisional; the honest expectation is no exploitable forward edge (display-only).",
   "recent": [
+    {
+      "id": "china-2026-06-26-1",
+      "market": "china",
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.1352,
+      "check_by": "2026-07-17"
+    },
     {
       "id": "hk-2026-06-18-3",
       "market": "hk",

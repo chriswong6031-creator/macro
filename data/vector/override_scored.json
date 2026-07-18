@@ -1,6 +1,6 @@
 {
   "schema": "btc_override_ledger.v1",
-  "as_of": "2026-07-16",
+  "as_of": "2026-07-17",
   "override_id": "midterm_blackout",
   "graded_year": 2026,
   "gate_start": "2026-01-01",
@@ -64,5 +64,5 @@
     "null": "circular block bootstrap of pre-gate log returns"
   },
   "authority": "MONITORING ONLY \u2014 zero allocation authority. Nothing in sizing/allocation reads this file.",
-  "n_ledger_rows": 13
+  "n_ledger_rows": 14
 }
