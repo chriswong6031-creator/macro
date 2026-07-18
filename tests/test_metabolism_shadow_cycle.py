@@ -342,6 +342,7 @@ class TestSummarySchema:
             "sense_fitness", "sense_organism_state", "sense_insight_bus",
             "agenda", "propose", "adjudicate",
             "build", "verify", "dream", "artifact_collection",
+            "audit_due_probe", "pick_autopsy_probe",
         }
         for stage_key in expected_stages:
             assert stage_key in summary["stages"], (
@@ -460,3 +461,63 @@ class TestScoutWired:
               / ".github" / "workflows" / "metabolism-agenda.yml").read_text()
         assert "from engine.metabolism.scout import scan" in wf
         assert "scan(cycle_id=" in wf
+
+
+# ---------------------------------------------------------------------------
+# Pick-autopsy probe stage (SA-W5)
+# ---------------------------------------------------------------------------
+class TestPickAutopsyProbe:
+    """_run_pick_autopsy_probe: SA-W5 shadow probe for run_pick_autopsies."""
+
+    def test_probe_returns_ok_status(self, tmp_path: Path) -> None:
+        """Pick-autopsy probe must return status=ok (even when attribution data absent)."""
+        repo_root = _make_minimal_repo(tmp_path)
+        import scripts.metabolism_shadow_cycle as sc
+        result = sc._run_pick_autopsy_probe(repo_root, repo_root, "shadow-20260718-autopsy")
+        assert result["status"] == "ok", (
+            f"Expected status=ok from pick_autopsy_probe, got {result['status']!r}: {result}"
+        )
+
+    def test_probe_note_mentions_real_stores(self, tmp_path: Path) -> None:
+        """Probe note must assert real_stores_untouched=True."""
+        repo_root = _make_minimal_repo(tmp_path)
+        import scripts.metabolism_shadow_cycle as sc
+        result = sc._run_pick_autopsy_probe(repo_root, repo_root, "shadow-20260718-autostore")
+        assert "real_stores_untouched" in result.get("note", ""), (
+            f"Probe note should mention real_stores_untouched: {result.get('note')}"
+        )
+
+    def test_probe_never_writes_real_autopsy_dir(self, tmp_path: Path) -> None:
+        """Probe must NOT write to data/standout_audit/pick_autopsies/ under real_root."""
+        repo_root = _make_minimal_repo(tmp_path)
+        real_autopsy = repo_root / "data" / "standout_audit" / "pick_autopsies"
+        import scripts.metabolism_shadow_cycle as sc
+        sc._run_pick_autopsy_probe(repo_root, repo_root, "shadow-20260718-nowrite")
+        if real_autopsy.exists():
+            non_shadow = [
+                f for f in real_autopsy.rglob("*.json")
+                if "shadow" not in str(f)
+            ]
+            assert not non_shadow, (
+                f"pick_autopsy_probe wrote to real autopsy dir: {non_shadow}"
+            )
+
+    def test_probe_present_in_full_shadow_cycle(self, tmp_path: Path) -> None:
+        """pick_autopsy_probe stage must appear in the full shadow cycle output."""
+        repo_root = _make_minimal_repo(tmp_path)
+        summary = _run_shadow_cycle(repo_root)
+        assert "pick_autopsy_probe" in summary["stages"], (
+            "pick_autopsy_probe stage missing from full shadow cycle stages"
+        )
+        probe_result = summary["stages"]["pick_autopsy_probe"]
+        assert probe_result["status"] in ("ok", "failed"), (
+            f"pick_autopsy_probe stage has unexpected status: {probe_result['status']}"
+        )
+
+    def test_real_stores_untouched_after_probe(self, tmp_path: Path) -> None:
+        """Full shadow cycle real_stores_untouched must remain True with probe included."""
+        repo_root = _make_minimal_repo(tmp_path)
+        summary = _run_shadow_cycle(repo_root)
+        assert summary["real_stores_untouched"] is True, (
+            "real_stores_untouched became False after adding pick_autopsy_probe"
+        )

@@ -1,6 +1,6 @@
 {
   "schema": "prophet.status/v1",
-  "as_of": "2026-07-18T08:41:53+00:00",
+  "as_of": "2026-07-18T09:09:48+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "markets": {
     "us": {
@@ -108,7 +108,7 @@
       "ledger_born": null,
       "data_gaps": [],
       "maturity_state": "no_stock_ledger",
-      "disclosure": "Intl has no stock-level forward ledger. The residual-alpha base score is a ranking context leg, NOT a validated ranker \u2014 a modest, regime-decayed edge. See engine/residual_alpha.py. No return statistics are computed.",
+      "disclosure": "International standout scores are a context read, not a graded ranker \u2014 no forward ledger accrues for this board yet.",
       "coverage": {
         "n_markets": 0,
         "as_of": null,
@@ -162,21 +162,21 @@
           "artifact": "us-audit-scoreboard",
           "path": "site/factordata/us_audit_scoreboard.json",
           "status": "ok",
-          "age_hours": 8.7,
+          "age_hours": 9.2,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-track-history",
           "path": "site/factordata/us_track_history.json",
           "status": "ok",
-          "age_hours": 8.7,
+          "age_hours": 9.2,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-board-outcomes",
           "path": "site/factordata/us_board_outcomes.json",
           "status": "ok",
-          "age_hours": 32.7,
+          "age_hours": 33.2,
           "sla_hours": 48
         }
       ],
@@ -190,7 +190,7 @@
           "artifact": "site-china-standouts",
           "path": "data/metabolism/fitness/standouts_cn.json",
           "status": "stale",
-          "age_hours": 32.7,
+          "age_hours": 33.2,
           "sla_hours": 30.0
         }
       ],
@@ -232,7 +232,7 @@
           "artifact": "intl-setups",
           "path": "site/factordata/intl_setups.json",
           "status": "ok",
-          "age_hours": 0.3,
+          "age_hours": 0.7,
           "sla_hours": 48
         }
       ],

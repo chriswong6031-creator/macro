@@ -1646,15 +1646,19 @@ Each object must have exactly these keys:
             if not isinstance(item, dict):
                 continue
             verdict = str(item.get("mitigation_verdict", "")).strip()
-            if verdict not in _MITIGATION_VERDICTS:
-                verdict = "external_unforeseeable"  # safe fallback
-            result_list.append({
+            row: dict = {
                 "pick_index": item.get("pick_index"),
                 "root_cause": str(item.get("root_cause", ""))[:500],
-                "mitigation_verdict": verdict,
                 "lesson": str(item.get("lesson", ""))[:300],
                 "engines_credit": str(item.get("engines_credit", ""))[:300],
-            })
+            }
+            if verdict not in _MITIGATION_VERDICTS:
+                # Reject invalid enum value — record raw LLM string for diagnostics
+                row["mitigation_verdict"] = "invalid"
+                row["mitigation_verdict_raw"] = verdict[:200]
+            else:
+                row["mitigation_verdict"] = verdict
+            result_list.append(row)
         return result_list
 
     except Exception as exc:  # noqa: BLE001
@@ -1701,21 +1705,29 @@ def _write_pick_autopsies(
         pick_id = _pick_id(pick)
         autopsy_path = autopsy_dir / f"{pick_id}.json"
 
-        # LLM block
+        # LLM block — _invoke_autopsy_llm has already validated/rejected the verdict:
+        # valid enum → mitigation_verdict holds the value (no mitigation_verdict_raw)
+        # invalid enum → mitigation_verdict = "invalid", mitigation_verdict_raw = original string
+        # missing → mitigation_verdict = "" (empty string)
         llm_block = llm_by_idx.get(i) or {}
-        llm_doc = {
+        llm_doc: dict = {
             "root_cause": llm_block.get("root_cause", ""),
             "mitigation_verdict": llm_block.get("mitigation_verdict", ""),
             "lesson": llm_block.get("lesson", ""),
             "engines_credit": llm_block.get("engines_credit", ""),
         }
 
-        # Validate verdict; if missing, mark clearly
-        if llm_doc["mitigation_verdict"] not in _MITIGATION_VERDICTS:
-            if llm_doc["root_cause"]:
-                llm_doc["mitigation_verdict"] = "external_unforeseeable"
-            else:
-                llm_doc["mitigation_verdict"] = ""
+        # Validate verdict; applies when llm_block came directly from LLM without parse stage
+        # (e.g. constructed externally).  If already "invalid" with a raw, pass through.
+        verdict = llm_doc["mitigation_verdict"]
+        if "mitigation_verdict_raw" in llm_block:
+            # Already processed by _invoke_autopsy_llm — carry the raw value through
+            llm_doc["mitigation_verdict_raw"] = llm_block["mitigation_verdict_raw"]
+        elif verdict not in _MITIGATION_VERDICTS and verdict != "invalid":
+            # Direct construction: reject and record raw string
+            llm_doc["mitigation_verdict"] = "invalid" if verdict else ""
+            if verdict:
+                llm_doc["mitigation_verdict_raw"] = str(verdict)[:200]
 
         doc = {
             "schema": SCHEMA_PICK_AUTOPSY,

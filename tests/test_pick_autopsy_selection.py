@@ -264,3 +264,110 @@ class TestDryRunContract:
             assert not non_shadow, (
                 f"dry_run wrote to real autopsy dir: {non_shadow}"
             )
+
+
+# ---------------------------------------------------------------------------
+# 8. Invalid mitigation_verdict rejects to "invalid" not "external_unforeseeable"
+# ---------------------------------------------------------------------------
+class TestMitigationVerdictValidation:
+    """Fix #3: invalid enum values must be rejected, not coerced to a valid member."""
+
+    def _make_attr_parquet(self, tmp_path: Path) -> Path:
+        from engine.metabolism.standout_auditor import _attribution_path
+        rows = [
+            {"ticker": "INVLD", "as_of": "2026-07-01", "lane": "buy",
+             "horizon": 21, "taxonomy_version": "v1",
+             "outcome_cause": "momentum", "process_fault": "gate_suppressed",
+             "excess_spy": 0.05, "sector": "tech", "board_tenure_days": 3,
+             "quad_hard_label": "bull", "vol_regime": "normal"},
+        ]
+        attr_path = _attribution_path("us", tmp_path)
+        attr_path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(rows).to_parquet(str(attr_path))
+        return attr_path
+
+    def test_invalid_verdict_produces_invalid_marker(self, tmp_path):
+        """LLM returning an unrecognised verdict must produce mitigation_verdict='invalid'."""
+        from engine.metabolism.standout_auditor import run_pick_autopsies
+
+        self._make_attr_parquet(tmp_path)
+
+        def _bad_verdict_caller(prompt: str):
+            return (
+                '[{"pick_index": 1, "root_cause": "something", '
+                '"mitigation_verdict": "totally_made_up_value", '
+                '"lesson": "lesson", "engines_credit": "none"}]',
+                None, None,
+            )
+
+        result = run_pick_autopsies(
+            "us", "test_cycle_invalid_verdict",
+            model_caller=_bad_verdict_caller,
+            root=tmp_path, dry_run=True,
+        )
+        # If picks were written, inspect the artifact
+        if result.get("written"):
+            doc = json.loads(Path(result["written"][0]).read_text())
+            assert doc["llm"]["mitigation_verdict"] == "invalid", (
+                f"Expected mitigation_verdict='invalid', got {doc['llm']['mitigation_verdict']!r}"
+            )
+            assert "mitigation_verdict_raw" in doc["llm"], (
+                "Expected mitigation_verdict_raw field to carry the raw LLM value"
+            )
+            assert doc["llm"]["mitigation_verdict_raw"] == "totally_made_up_value", (
+                f"mitigation_verdict_raw should carry the raw string, "
+                f"got {doc['llm']['mitigation_verdict_raw']!r}"
+            )
+
+    def test_valid_verdict_passes_through(self, tmp_path):
+        """A valid mitigation_verdict must pass through unchanged."""
+        from engine.metabolism.standout_auditor import run_pick_autopsies
+
+        self._make_attr_parquet(tmp_path)
+
+        def _good_verdict_caller(prompt: str):
+            return (
+                '[{"pick_index": 1, "root_cause": "some cause", '
+                '"mitigation_verdict": "mitigable_process", '
+                '"lesson": "lesson text", "engines_credit": "systems noted"}]',
+                None, None,
+            )
+
+        result = run_pick_autopsies(
+            "us", "test_cycle_valid_verdict",
+            model_caller=_good_verdict_caller,
+            root=tmp_path, dry_run=True,
+        )
+        if result.get("written"):
+            doc = json.loads(Path(result["written"][0]).read_text())
+            assert doc["llm"]["mitigation_verdict"] == "mitigable_process", (
+                f"Valid verdict should pass through, got {doc['llm']['mitigation_verdict']!r}"
+            )
+            assert "mitigation_verdict_raw" not in doc["llm"], (
+                "mitigation_verdict_raw should be absent for valid verdicts"
+            )
+
+    def test_invalid_verdict_never_maps_to_external_unforeseeable(self, tmp_path):
+        """The old fallback 'external_unforeseeable' must NOT be used for invalid LLM output."""
+        from engine.metabolism.standout_auditor import run_pick_autopsies
+
+        self._make_attr_parquet(tmp_path)
+
+        def _bad_caller(prompt: str):
+            return (
+                '[{"pick_index": 1, "root_cause": "a root cause", '
+                '"mitigation_verdict": "BAD_ENUM_VALUE", '
+                '"lesson": "l", "engines_credit": "e"}]',
+                None, None,
+            )
+
+        result = run_pick_autopsies(
+            "us", "test_cycle_no_ext_unfore",
+            model_caller=_bad_caller,
+            root=tmp_path, dry_run=True,
+        )
+        if result.get("written"):
+            doc = json.loads(Path(result["written"][0]).read_text())
+            assert doc["llm"]["mitigation_verdict"] != "external_unforeseeable", (
+                "Invalid LLM verdict must not silently map to external_unforeseeable"
+            )

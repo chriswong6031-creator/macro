@@ -360,12 +360,12 @@ LOBE_DESCRIPTIONS = {
     "prophet-status": {
         "short": "Cross-market accountability summary: what each standout board has accrued, which inputs are healthy, and how the whole system is holding up.",
         "full": "This artifact is the Prophet lobe's nightly health report for the entire standout system. It reads the committed records for every market — US, China, Hong Kong, Canada, and the international dashboard — and compiles a single document that captures how many picks have matured and been graded in each market, which artifacts are fresh or overdue, how many data gaps exist per market, and what the overall process-fault picture looks like. Importantly, each market's numbers stay in its own block: the US and Canada boards fill at a different price than the China board, and those fill conventions are never mixed together. The cross-market section shows counts and coverage only. A separate section records the freshness of every monitored artifact against its stated deadline and flags anything that has fallen behind.",
-        "src_fp": "605499777a168d14",
+        "src_fp": "da5489c1bbe82fe0",
     },
     "prophet-suggestions": {
         "short": "Coded recommendations from the Prophet lobe to the Master Brain, flagging stale data, coverage gaps, and system drift.",
         "full": "Each night the Prophet governor scans the dashboard health report for deterministic findings worth surfacing to the wider system. When it finds an artifact that has gone stale, a cluster of missing data in one market, or signs that a board ledger has not been updated recently, it writes a suggestion row here. The rows follow the same format as the Mastermind feedback nudges: a stable code, a short severity label, the affected market, and a plain-language description of the problem capped at one hundred and sixty characters. High-severity findings are also sent to the shared inter-lobe channel so the Master Brain can see them without polling this file directly. The suggestions accumulate across nights but are deduplicated by their stable codes, so the same recurring problem appears once with its original discovery date.",
-        "src_fp": "754cc8ae5ccd850f",
+        "src_fp": "19836ace99521a31",
     },
     "reflex-firings-commodity-shock": {
         "short": "Log of commodity shock events detected by the automated sentinel, graded over short horizons.",

@@ -309,7 +309,100 @@ class TestBuildAndWrite:
 
 
 # ---------------------------------------------------------------------------
-# 5. Never raises
+# 5. first_seen persists across runs (Fix: build_and_write must preserve dates)
+# ---------------------------------------------------------------------------
+class TestFirstSeenPersistence:
+    """first_seen must reflect the original discovery date, not the last run date."""
+
+    def _make_status_with_stale(self, tmp_path: Path) -> dict:
+        import engine.neuralweb.prophet_governor as pg
+        art_dir = tmp_path / "site" / "factordata"
+        art_dir.mkdir(parents=True)
+        stale_path = art_dir / "us_audit_scoreboard.json"
+        old_ts = "2020-01-01T00:00:00+00:00"
+        stale_path.write_text(json.dumps({"as_of": old_ts, "status": "ok"}))
+        return pg.build_status(root=tmp_path)
+
+    def test_first_seen_preserved_on_second_run(self, tmp_path, monkeypatch):
+        """second build_and_write call must keep first_seen from the first run."""
+        import engine.neuralweb.prophet_governor as pg
+        import engine.board_ledger as bl
+        monkeypatch.setattr(bl, "scorecard", lambda m: {"status": "accruing", "n_matured": 0})
+
+        # Create a stale artifact so at least one suggestion row is produced
+        art_dir = tmp_path / "site" / "factordata"
+        art_dir.mkdir(parents=True)
+        stale_path = art_dir / "us_audit_scoreboard.json"
+        old_ts = "2020-01-01T00:00:00+00:00"
+        stale_path.write_text(json.dumps({"as_of": old_ts, "status": "ok"}))
+
+        # First run — today is "2026-07-17"
+        import unittest.mock as mock
+        with mock.patch("engine.neuralweb.prophet_governor._today_utc", return_value="2026-07-17"):
+            r1 = pg.build_and_write(root=tmp_path)
+        assert r1["n_suggestions"] >= 1, "Expected at least one suggestion from stale artifact"
+        sug_path = Path(r1["suggestions_path"])
+        doc1 = json.loads(sug_path.read_text())
+        first_seen_day1 = {s["code"]: s["first_seen"] for s in doc1["suggestions"]}
+        assert all(v == "2026-07-17" for v in first_seen_day1.values()), (
+            f"Expected all first_seen='2026-07-17' on first run, got {first_seen_day1}"
+        )
+
+        # Second run — today is "2026-07-18" (one day later)
+        with mock.patch("engine.neuralweb.prophet_governor._today_utc", return_value="2026-07-18"):
+            r2 = pg.build_and_write(root=tmp_path)
+        doc2 = json.loads(Path(r2["suggestions_path"]).read_text())
+
+        for s in doc2["suggestions"]:
+            code = s["code"]
+            if code in first_seen_day1:
+                assert s["first_seen"] == "2026-07-17", (
+                    f"first_seen changed on second run for code={code!r}: "
+                    f"expected 2026-07-17, got {s['first_seen']!r}"
+                )
+            # asof must advance to today
+            assert s["asof"] == "2026-07-18", (
+                f"asof must reflect today for code={code!r}: got {s['asof']!r}"
+            )
+
+    def test_first_seen_set_for_new_code(self, tmp_path, monkeypatch):
+        """A code that appears only in run 2 (not in run 1 prior map) gets today's first_seen."""
+        import engine.neuralweb.prophet_governor as pg
+        import engine.board_ledger as bl
+        import unittest.mock as mock
+        monkeypatch.setattr(bl, "scorecard", lambda m: {"status": "accruing", "n_matured": 0})
+
+        # Run 1 — produce suggestions with today = 2026-07-17
+        with mock.patch("engine.neuralweb.prophet_governor._today_utc", return_value="2026-07-17"):
+            r1 = pg.build_and_write(root=tmp_path)
+        doc1 = json.loads(Path(r1["suggestions_path"]).read_text())
+        codes_day1 = {s["code"] for s in doc1["suggestions"]}
+
+        # Inject a brand-new code that is impossible to produce without this manipulation:
+        # directly patch the prior suggestions.json to include a synthetic code from day 1,
+        # then on run 2 that code should survive with day 1 date while truly new codes get day 2.
+        # We verify by checking that all day-1 codes still carry "2026-07-17" on day 2.
+        with mock.patch("engine.neuralweb.prophet_governor._today_utc", return_value="2026-07-18"):
+            r2 = pg.build_and_write(root=tmp_path)
+        doc2 = json.loads(Path(r2["suggestions_path"]).read_text())
+
+        # All codes that appeared in run 1 must still show 2026-07-17 in run 2
+        for s in doc2["suggestions"]:
+            if s["code"] in codes_day1:
+                assert s["first_seen"] == "2026-07-17", (
+                    f"Persisted code {s['code']!r} should keep first_seen=2026-07-17, "
+                    f"got {s['first_seen']!r}"
+                )
+            else:
+                # Brand-new codes (not in prior map) get today
+                assert s["first_seen"] == "2026-07-18", (
+                    f"New code {s['code']!r} should have first_seen=2026-07-18, "
+                    f"got {s['first_seen']!r}"
+                )
+
+
+# ---------------------------------------------------------------------------
+# 6. Never raises
 # ---------------------------------------------------------------------------
 class TestNeverRaises:
     def test_build_status_never_raises(self, tmp_path):

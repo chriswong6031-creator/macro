@@ -448,8 +448,7 @@ def _build_intl_block(repo: Path) -> dict:
     """Build the intl market accountability block.
 
     Coverage/counts only.  Per PR-R5 hard law: no pooled return statistics.
-    The residual-alpha base score is context, not a graded ranker (PR-R5
-    disclosure from engine/residual_alpha.py docstring).
+    The residual-alpha base score is context, not a graded ranker (PR-R5).
     """
     block: dict[str, Any] = {
         "market": "intl",
@@ -459,9 +458,8 @@ def _build_intl_block(repo: Path) -> dict:
         "data_gaps": [],
         "maturity_state": "no_stock_ledger",
         "disclosure": (
-            "Intl has no stock-level forward ledger. The residual-alpha base score "
-            "is a ranking context leg, NOT a validated ranker — a modest, regime-decayed "
-            "edge. See engine/residual_alpha.py. No return statistics are computed."
+            "International standout scores are a context read, not a graded ranker "
+            "— no forward ledger accrues for this board yet."
         ),
     }
     gaps: list[dict] = []
@@ -934,6 +932,11 @@ def build_and_write(root: Path | None = None) -> dict:
 
     Returns dict with status_path, suggestions_path, n_suggestions, data_gaps.
     Emits insight_bus rows for high-severity suggestions.
+
+    first_seen semantics: load the prior suggestions artifact (fail-soft), build a
+    {code: first_seen} lookup, and carry those dates forward for codes that persist
+    across runs.  New codes receive today's date.  This makes ``first_seen`` the
+    genuine discovery date rather than the last-run date.
     """
     repo = _repo_root(root)
     result: dict[str, Any] = {
@@ -944,6 +947,20 @@ def build_and_write(root: Path | None = None) -> dict:
         "as_of": _now_utc(),
     }
 
+    # Load prior first_seen values (fail-soft — missing / corrupt → empty map)
+    prior_first_seen: dict[str, str] = {}
+    try:
+        prior_path = repo / _SUGGESTIONS_PATH
+        if prior_path.exists():
+            prior_doc = json.loads(prior_path.read_text(encoding="utf-8"))
+            for row in (prior_doc.get("suggestions") or []):
+                code = row.get("code", "")
+                fs = row.get("first_seen", "")
+                if code and fs:
+                    prior_first_seen[code] = fs
+    except Exception as exc:  # noqa: BLE001
+        log.debug("prophet_governor: could not load prior first_seen map: %s", exc)
+
     try:
         status = build_status(repo)
     except Exception as exc:  # noqa: BLE001
@@ -953,6 +970,11 @@ def build_and_write(root: Path | None = None) -> dict:
 
     try:
         suggestions = build_suggestions(status)
+        # Preserve first_seen for codes that persist across runs
+        for s in suggestions:
+            code = s.get("code", "")
+            if code in prior_first_seen:
+                s["first_seen"] = prior_first_seen[code]
         suggestions_doc = {
             "schema": SCHEMA_SUGGESTIONS,
             "as_of": status.get("as_of", _now_utc()),
