@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 
 from engine import forward_dist as FD
+from engine.btc_master import plain_name
 
 HORIZONS = {"7d": 7, "30d": 30, "90d": 90}
 _RISK_EDGES = (0, 25, 50, 75, 100)
@@ -147,7 +148,7 @@ def recommend(sig: pd.DataFrame, master: dict | None, cones: dict | None,
     # managed sizing (MODERATE/LOW, never a directional claim — direction is a coin-flip) -
     if strong_value and not strong_top:
         action, action_zh = "ACCUMULATE", "逢低累积"
-        conv, basis_en, basis_zh = "HIGH", "measured deep-value extreme (MVRV-Z<0)", "实测深度低估极值（MVRV-Z<0）"
+        conv, basis_en, basis_zh = "HIGH", "price at a measured deep-value extreme", "价格处于实测深度低估极值"
         lo, hi = max(kpct, 55), 100
         tone = "bull"
     elif strong_top:
@@ -162,27 +163,27 @@ def recommend(sig: pd.DataFrame, master: dict | None, cones: dict | None,
         tone = "bear"
     elif soft_value and not risk_hi:
         action, action_zh = "ACCUMULATE (start)", "逢低累积（试探）"
-        conv, basis_en, basis_zh = "MODERATE", "cheap valuation, calm regime", "估值便宜、格局平静"
+        conv, basis_en, basis_zh = "MODERATE", "cheap valuation, calm market", "估值便宜、市场平静"
         lo, hi = band(max(kpct, 45), 12)
         tone = "bull"
     elif risk_hi or score <= -35:
         action, action_zh = "REDUCE · HEDGE", "减仓 · 对冲"
-        conv, basis_en, basis_zh = "MODERATE", "elevated forward-drawdown regime", "前瞻回撤偏高格局"
+        conv, basis_en, basis_zh = "MODERATE", "dip risk ahead reads elevated", "未来回撤风险偏高"
         lo, hi = band(max(0, kpct - 15), 12)
         tone = "bear"
     elif mom_bull and not risk_hi and score >= 12:
         action, action_zh = "HOLD CORE · ADD ON DIPS", "持有核心 · 逢回调加仓"
-        conv, basis_en, basis_zh = "MODERATE", "constructive trend, low drawdown risk", "趋势偏多、回撤风险低"
+        conv, basis_en, basis_zh = "MODERATE", "uptrend intact, dip risk low", "上升趋势完好、回撤风险低"
         lo, hi = band(min(100, kpct + 8), 12)
         tone = "bull"
     elif mom_bear:
         action, action_zh = "STAY DEFENSIVE", "保持防守"
-        conv, basis_en, basis_zh = "MODERATE", "broken trend — de-risk the sleeve", "趋势走坏 — 降低敞口"
+        conv, basis_en, basis_zh = "MODERATE", "trend broken — cut exposure", "趋势走坏 — 降低敞口"
         lo, hi = band(max(0, kpct - 10), 10)
         tone = "bear"
     else:
         action, action_zh = "HOLD CORE", "持有核心"
-        conv, basis_en, basis_zh = "LOW", "direction a coin-flip — size by risk", "方向接近抛硬币 — 按风险定仓"
+        conv, basis_en, basis_zh = "LOW", "direction is a coin flip — size by risk", "方向接近抛硬币 — 按风险定仓"
         lo, hi = band(kpct, 10)
         tone = "neutral"
 
@@ -237,10 +238,11 @@ def recommend(sig: pd.DataFrame, master: dict | None, cones: dict | None,
     dd_avg = R7.get("avg")
     dd_tail = R7.get("tail")
     if dd_tail is not None:
-        lead = (neg[0]["label_en"] if neg else "Volatility")
-        lead_zh = (neg[0]["label_zh"] if neg else "波动")
-        key_risk_en = f"{lead}; next-7d worst-case dip ~{dd_tail}% (typical {dd_avg}%)."
-        key_risk_zh = f"{lead_zh}；未来 7 天极端回撤约 {dd_tail}%（常见 {dd_avg}%）。"
+        # glance-tier plain name for the lead driver (falls back to its board label)
+        lead, lead_zh = plain_name(neg[0]) if neg else ("volatility", "波动")
+        lead = lead[0].upper() + lead[1:]
+        key_risk_en = f"{lead}; worst-case dip over the next 7 days ~{dd_tail}% (typical {dd_avg}%)."
+        key_risk_zh = f"{lead_zh}；未来 7 天最坏情况回撤约 {dd_tail}%（常见 {dd_avg}%）。"
 
     return {
         "ok": True, "action": action, "action_zh": action_zh, "tone": tone,

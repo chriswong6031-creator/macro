@@ -120,7 +120,7 @@ def _axes_contributions(last: pd.Series) -> list[dict]:
     prem = _f(g("coinbase_premium_ema"))
     add("premium", "Coinbase premium", "Coinbase 溢价", 0.2,
         None if prem is None else -_tanh(prem - 0.4, 1.0),  # >1.5 FOMO top is contrarian-bearish
-        ("Healthy demand", "健康需求"), ("Euphoric/absent", "亢奋/缺位"))
+        ("Healthy demand", "健康需求"), ("Overheated or absent", "过热或缺位"))
 
     # --- valuation / extremes (contrarian, EXTREMES-calibrated) -------------
     vs = g("valuation_state")
@@ -136,7 +136,7 @@ def _axes_contributions(last: pd.Series) -> list[dict]:
     if rr is not None:
         rrc = -1.0 if rr > 0.02 else (np.clip((50 - rrp) / 50, -1, 1) if rrp is not None else 0.0)
     add("reserve_risk", "Reserve Risk", "储备风险", 0.4, rrc,
-        ("Accumulation", "累积"), ("Distribution top", "派发顶部"))
+        ("Accumulation", "累积"), ("Heavy profit-taking", "高位获利了结"))
 
     # --- positioning / behaviour (contrarian context) ----------------------
     cz = _f(g("cot_z"))
@@ -163,7 +163,7 @@ def _axes_contributions(last: pd.Series) -> list[dict]:
     # --- cross-asset / cycle ------------------------------------------------
     ba = _f(g("beta_asym"))
     add("beta", "Conditional beta", "条件贝塔", 0.3, None if ba is None else _tanh(ba, 0.6),
-        ("Limited downside", "下行受限"), ("Drawdown amplifier", "回撤放大"))
+        ("Limited downside", "下行受限"), ("Amplifies sell-offs", "放大下跌"))
     cph = g("cphase_phase")
     cpc = (0.4 if cph == "markup" else (-0.4 if cph == "markdown" else 0.0)) if isinstance(cph, str) else None
     add("cycle", "Cycle phase", "周期相位", 0.3, cpc, ("Markup", "拉升"), ("Markdown", "下行"))
@@ -277,19 +277,66 @@ def synthesize(sig: pd.DataFrame, calib: dict | None = None) -> dict:
     }
 
 
+# Glance-tier plain names per axis (Design Doctrine Law 2): the hero headline and
+# key-risk sentences speak these; the Signal Board keeps the precise metric labels.
+# btc_recommend imports plain_name() for its key-risk lead.
+PLAIN_NAMES = {
+    "momentum": ("momentum", "动量"),
+    "structure": ("the trend", "趋势"),
+    "impulse": ("the pace of the move", "涨跌节奏"),
+    "risk": ("the risk gauge", "风险读数"),
+    "leverage": ("leverage levels", "杠杆水平"),
+    "bfi": ("fundamentals", "基本面"),
+    "macro": ("the macro backdrop", "宏观环境"),
+    "etf": ("ETF flows", "ETF 资金流"),
+    "stbl": ("stablecoin flows", "稳定币资金"),
+    "premium": ("US buyers", "美国买盘"),
+    "valuation": ("valuation", "估值"),
+    "extreme": ("crowd sentiment", "市场情绪"),
+    "reserve_risk": ("long-term holders", "长期持有者"),
+    "cot": ("futures positioning", "期货持仓"),
+    "funding": ("leveraged bets", "杠杆押注"),
+    "miner": ("miners", "矿工"),
+    "holders": ("holder behaviour", "持币者动向"),
+    "attention": ("public attention", "大众关注度"),
+    "beta": ("behaviour versus stocks", "与美股的联动"),
+    "cycle": ("the market cycle", "所处周期"),
+}
+
+_BAND_PLAIN = {
+    "STRONG RISK-ON": ("strongly risk-on", "明显偏多"),
+    "RISK-ON": ("risk-on", "偏多"),
+    "NEUTRAL": ("neutral", "中性"),
+    "RISK-OFF": ("risk-off", "偏空"),
+    "STRONG RISK-OFF": ("strongly risk-off", "明显偏空"),
+}
+
+
+def plain_name(d: dict) -> tuple[str, str]:
+    """Glance-tier (en, zh) name for a driver dict; falls back to its board label."""
+    return PLAIN_NAMES.get(d.get("key"), (d.get("label_en") or "—", d.get("label_zh") or "—"))
+
+
 def _headline(band: str, pos: list, neg: list) -> tuple[str, str]:
-    """One honest sentence: the regime band + the strongest pull on each side."""
-    def names(d, zh=False):
-        return "、".join(a["label_zh"] for a in d) if zh else ", ".join(a["label_en"] for a in d)
+    """One honest glance-tier sentence: plain-word regime read + the strongest pull
+    on each side. "Support comes from …" framing sidesteps is/are agreement across
+    singular ("momentum") and plural ("miners") plain names."""
+    def names(ds, zh=False):
+        parts = [plain_name(d)[1 if zh else 0] for d in ds]
+        return "与".join(parts) if zh else " and ".join(parts)
     p, n = pos[:2], neg[:2]
-    en = f"Strategic regime reads {band.replace('-', ' ').lower()}."
-    zh = "战略格局："
-    if p:
-        en += f" Supported by {names(p)}."
-        zh += f"支撑：{names(p, True)}。"
-    if n:
-        en += f" Held back by {names(n)}."
-        zh += f"拖累：{names(n, True)}。"
-    en += " Direction over days stays a coin-flip — the drawdown card leads tactically."
-    zh += "数日方向仍接近抛硬币 — 战术上以回撤卡片为准。"
+    band_en, band_zh = _BAND_PLAIN.get(band, (band.lower(), band))
+    en = f"The big picture reads {band_en}."
+    zh = f"大方向{band_zh}。"
+    if p and n:
+        en += f" Support comes from {names(p)}; the drag comes from {names(n)}."
+        zh += f"支撑来自{names(p, True)}；拖累来自{names(n, True)}。"
+    elif p:
+        en += f" Support comes from {names(p)}, with little pulling the other way."
+        zh += f"支撑来自{names(p, True)}，暂无明显拖累。"
+    elif n:
+        en += f" The drag comes from {names(n)}, with little support against it."
+        zh += f"拖累来自{names(n, True)}，暂无明显支撑。"
+    en += " Day-to-day direction is a coin flip — watch the dip-risk read below."
+    zh += "未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。"
     return en, zh
