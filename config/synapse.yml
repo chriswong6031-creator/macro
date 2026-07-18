@@ -8445,7 +8445,8 @@ artifacts:
       clarity, orthogonality). Ownership/attention legs are hazard context
       only (NEXTL-U13). hard_caveat: not a buy score; no behavior-changing
       consumer.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      Read surface is the site projection (site-theme-asymmetry) — state_of_themes
+      page + ask_brain read tools; data/ copy remains the primary artifact.
 
   site-theme-asymmetry:
     path: site/neuralwebdata/theme_asymmetry.json
@@ -8462,11 +8463,18 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_state_of_themes.py
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       Site projection of theme_asymmetry.json. Display/context only.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      The page reader (scripts/build_state_of_themes.py) has existed since TIL W4 (PR #2137)
+      and renders the 7-dot Legs column + hover tips in the matrix; the 2026-07-17 audit
+      erroneously flagged it as having no reader because it checked consumers: not code.
+      Wired 2026-07-18: state_of_themes drawer "Setup legs" expansion section
+      (build_state_of_themes) + cortex read tool read_theme_asymmetry in ask_brain
+      (TIL page-wiring PR).
 
   foresight-earliness-grades:
     path: data/foresight/earliness_grades.json
@@ -11496,7 +11504,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_state_of_themes.py
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       TIL W8 (PR-W8) site projection of theme import-flow rollups (compact).
@@ -11511,7 +11521,9 @@ artifacts:
       pends key email-activation; honest null with fresh as_of until then).
       Off render path (collect-lane step or standalone CLI).
       Honest null (all metrics null) when CENSUS_API_KEY not set.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      Wired 2026-07-18: state_of_themes page-level accrual note + per-theme drawer section
+      (build_state_of_themes) + cortex read tool read_theme_trade_flows in ask_brain
+      (TIL page-wiring PR).
 
   # --- TIL W10 (PR-W10) — ClinicalTrials.gov theme-level pipeline density ---
 
@@ -11570,7 +11582,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_state_of_themes.py
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       TIL W10 (PR-W10) site projection of theme clinical-pipeline rollups
@@ -11581,7 +11595,9 @@ artifacts:
       Authority: all may_* false; is_context_only=true.
       Off render path (collect-lane step or standalone CLI).
       Honest null when modality_monthly.parquet absent.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      Wired 2026-07-18: state_of_themes drawer "Clinical pipeline" section
+      (build_state_of_themes) + cortex read tool read_theme_clinical in ask_brain
+      (TIL page-wiring PR).
 
   # --- TIL W11 (PR-W11) — Options-tape crowding-hazard witness ---
 
@@ -11647,7 +11663,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_state_of_themes.py
+      - engine/neuralweb/ask_brain.py
     external_consumers: []
     notes: >
       TIL W11 (PR-W11) site projection of theme options-tape crowding-hazard witness
@@ -11659,7 +11677,9 @@ artifacts:
       real legs are newer than 6d — see neuralweb-theme-options-witness
       notes for the real-data path).
       Honest null when ThetaData store absent.
-      No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
+      Wired 2026-07-18: state_of_themes drawer "Options crowding check" section
+      (build_state_of_themes) + cortex read tool read_theme_options_witness in ask_brain
+      (TIL page-wiring PR).
 
   # ── Metabolism Phase 0 (F3 capability broker) ────────────────────────────
 

@@ -120,6 +120,11 @@ _READ_TOOLS = frozenset({
     "read_theme_state",
     "read_theme_thesis",
     "read_theme_pathways",
+    # TIL page-wiring PR: basketdata + asymmetry read tools (display/context only)
+    "read_theme_asymmetry",
+    "read_theme_options_witness",
+    "read_theme_clinical",
+    "read_theme_trade_flows",
     # Cortex-schema parity fix (2026-07-09): these two rode in _ASK_READ_TOOLS
     # without cortex schemas (pre-existing red on test_ask_whitelist_schema_consistency)
     "read_liquidity_plumbing",
@@ -913,6 +918,46 @@ def _tool_read_theme_pathways(root: Path, params: dict) -> dict:
     return _f(root, params)
 
 
+def _tool_read_theme_asymmetry_cx(root: Path, params: dict) -> dict:
+    """Read site/neuralwebdata/theme_asymmetry.json — per-theme 7-leg panel.
+
+    Optional param: theme_id. Delegates to ask_brain handler.
+    WA-R1 fence: no fused number; legs only. Display/context only.
+    """
+    from engine.neuralweb.ask_brain import _tool_read_theme_asymmetry as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
+def _tool_read_theme_options_witness_cx(root: Path, params: dict) -> dict:
+    """Read site/basketdata/options_witness.json — crowding-hazard witness.
+
+    Optional param: theme_id. Delegates to ask_brain handler.
+    HAZARD framing only (R-TIL-3/WA-R1). Display/context only.
+    """
+    from engine.neuralweb.ask_brain import _tool_read_theme_options_witness as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
+def _tool_read_theme_clinical_cx(root: Path, params: dict) -> dict:
+    """Read site/basketdata/clinical_pipeline.json — clinical pipeline context.
+
+    Optional param: theme_id. Delegates to ask_brain handler.
+    Separate display leg — never folds into fused_obs_z. Display/context only.
+    """
+    from engine.neuralweb.ask_brain import _tool_read_theme_clinical as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
+def _tool_read_theme_trade_flows_cx(root: Path, params: dict) -> dict:
+    """Read site/basketdata/trade_flows.json — import-flow rollup context.
+
+    Optional param: theme_id. Delegates to ask_brain handler.
+    Returns accruing=True when Census API backfill pending. Display/context only.
+    """
+    from engine.neuralweb.ask_brain import _tool_read_theme_trade_flows as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
 def _tool_read_liquidity_plumbing_cx(root: Path, params: dict) -> dict:
     """Read the liquidity-plumbing organ summary (delegates to ask_brain)."""
     from engine.neuralweb.ask_brain import _tool_read_liquidity_plumbing as _f  # noqa: PLC0415
@@ -1489,6 +1534,14 @@ def dispatch_tool(
         return _tool_read_theme_thesis(root, tool_params)
     elif tool_name == "read_theme_pathways":
         return _tool_read_theme_pathways(root, tool_params)
+    elif tool_name == "read_theme_asymmetry":
+        return _tool_read_theme_asymmetry_cx(root, tool_params)
+    elif tool_name == "read_theme_options_witness":
+        return _tool_read_theme_options_witness_cx(root, tool_params)
+    elif tool_name == "read_theme_clinical":
+        return _tool_read_theme_clinical_cx(root, tool_params)
+    elif tool_name == "read_theme_trade_flows":
+        return _tool_read_theme_trade_flows_cx(root, tool_params)
     elif tool_name == "read_liquidity_plumbing":
         return _tool_read_liquidity_plumbing_cx(root, tool_params)
     elif tool_name == "read_china_decision_packet":
@@ -1770,6 +1823,76 @@ def _tool_schemas() -> list[dict]:
                 "cross-theme node-collision map. TI-R5 fence: structural context "
                 "only — NEVER a rotation call, board ordering, or escalation. "
                 "Optional param theme_id. Fails open when absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "theme_id": {"type": "string", "description": "Optional theme filter"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_theme_asymmetry",
+            "description": (
+                "Read per-theme 7-leg asymmetry panel from site/neuralwebdata/theme_asymmetry.json. "
+                "Legs: bottleneck_tightness, stale_consensus_gap, cyclical_dislocation, "
+                "entry_cleanliness, crowding_hazard, falsifier_clarity, orthogonality. "
+                "WA-R1 fence: no fused number — legs only. is_context_only: true. "
+                "Optional param theme_id. Fails open when absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "theme_id": {"type": "string", "description": "Optional theme filter"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_theme_options_witness",
+            "description": (
+                "Read per-theme options crowding-hazard witness from site/basketdata/options_witness.json. "
+                "Three legs: leg_a_call_oi_hhi (call concentration), leg_b_pcr (put/call ratio), "
+                "leg_c_iv_premium (IV vs realized). HAZARD framing only — high = crowded/fragile. "
+                "Positioning fusion ILLEGAL (R-TIL-3/WA-R1). is_context_only: true. "
+                "Optional param theme_id. Fails open when absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "theme_id": {"type": "string", "description": "Optional theme filter"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_theme_clinical",
+            "description": (
+                "Read per-theme clinical-pipeline capital-commitment context from "
+                "site/basketdata/clinical_pipeline.json. "
+                "Per theme: yoy (registration YoY%), velocity_read, magnitude_band, "
+                "n_phase3_trailing12m, n_studies_total. "
+                "Capital-commitment context; separate display leg (never folds into fused_obs_z). "
+                "is_context_only: true. Optional param theme_id. Fails open when absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "theme_id": {"type": "string", "description": "Optional theme filter"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_theme_trade_flows",
+            "description": (
+                "Read per-theme import-flow rollup context from site/basketdata/trade_flows.json. "
+                "Per theme: yoy_pct, accel_3m_vs_12m, confirmation "
+                "(confirms/contradicts/neutral/mixed_direction), magnitude_band. "
+                "When themes_with_data==0 returns accruing=True (Census API backfill pending). "
+                "Physical-flow leg — display/context only, not a scored factor. "
+                "is_context_only: true. Optional param theme_id. Fails open when absent."
             ),
             "input_schema": {
                 "type": "object",

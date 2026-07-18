@@ -901,6 +901,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | theme-state | `data/neuralweb/theme_state.json` | json | daily-engine | display | 5 | 0 |
 | site-theme-thesis | `site/neuralwebdata/theme_thesis.json` | json | daily-engine | display | 4 | 0 |
+| site-theme-asymmetry | `site/neuralwebdata/theme_asymmetry.json` | json | daily-engine | display | 2 | 0 |
 | qledger-falsifier-evaluations | `data/qledger/falsifier_evaluations.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-theme-pathways | `site/neuralwebdata/theme_pathways.json` | json | daily-engine | display | 1 | 0 |
 | site-theme-state | `site/neuralwebdata/theme_state.json` | json | daily-engine | display | 1 | 0 |
@@ -908,7 +909,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | theme-placebo-tape | `data/foresight/theme_placebo_tape.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | theme-thesis-ledger | `data/neuralweb/theme_thesis_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | foresight-earliness-grades | `data/foresight/earliness_grades.json` | json | daily-engine | display | 0 | 0 |
-| site-theme-asymmetry | `site/neuralwebdata/theme_asymmetry.json` | json | daily-engine | display | 0 | 0 |
 | theme-asymmetry | `data/neuralweb/theme_asymmetry.json` | json | daily-engine | display | 0 | 0 |
 | theme-pathways | `data/neuralweb/theme_pathways.json` | json | daily-engine | display | 0 | 0 |
 
@@ -916,15 +916,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-clinical-pipeline | `site/basketdata/clinical_pipeline.json` | json | collect | display | 2 | 0 |
 | neuralweb-theme-clinical | `data/neuralweb/theme_clinical.json` | json | collect | display | 0 | 0 |
-| site-clinical-pipeline | `site/basketdata/clinical_pipeline.json` | json | collect | display | 0 | 0 |
 
 ### til-w11-options-witness
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-options-witness | `site/basketdata/options_witness.json` | json | collect | display | 2 | 0 |
 | neuralweb-theme-options-witness | `data/neuralweb/theme_options_witness.json` | json | collect | display | 0 | 0 |
-| site-options-witness | `site/basketdata/options_witness.json` | json | collect | display | 0 | 0 |
 
 ### til-w7-hiring-intent
 
@@ -938,8 +938,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-trade-flows | `site/basketdata/trade_flows.json` | json | collect | display | 2 | 0 |
 | neuralweb-theme-trade-flows | `data/neuralweb/theme_trade_flows.json` | json | collect | display | 1 | 0 |
-| site-trade-flows | `site/basketdata/trade_flows.json` | json | collect | display | 0 | 0 |
 
 ### til-w9-discovery-v2
 
