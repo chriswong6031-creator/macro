@@ -55,3 +55,19 @@
 {"ts": "2026-07-18T04:14:52+00:00", "episode": "EDU_2019", "status": "pr_opened", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2820", "detail": "PR opened: https://github.com/chriswong6031-creator/macro/pull/2820"}
 {"ts": "2026-07-18T04:21:24+00:00", "episode": "CF_2020", "status": "pr_opened", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2821", "detail": "PR opened: https://github.com/chriswong6031-creator/macro/pull/2821"}
 {"ts": "2026-07-18T04:30:04+00:00", "episode": "UPST_2021", "status": "audit_failed", "pr_url": null, "detail": "audit_failed: ['catalyst_ladder[0] missing date', 'catalyst_ladder[1] missing date', 'catalyst_ladder[2] missing date']"}
+{"ts": "2026-07-18T05:43:44+00:00", "episode": "CF_2020", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2821", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:43:51+00:00", "episode": "EDU_2019", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2820", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:43:58+00:00", "episode": "ANET_2020", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2819", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:44:04+00:00", "episode": "CIFR_2024", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2817", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:44:08+00:00", "episode": "BIDU_2013", "status": "pr_closed_ci_failed", "pr_url": null, "detail": "auto-resolved: CI checks failed (ccw-w4-credit-desk)"}
+{"ts": "2026-07-18T05:44:16+00:00", "episode": "STX_2012", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2815", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:44:23+00:00", "episode": "FN_2025", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2813", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:44:31+00:00", "episode": "MARA_2021", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2811", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:44:40+00:00", "episode": "ILMN_2025", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2810", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:44:48+00:00", "episode": "AMAT_2020", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2809", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:44:54+00:00", "episode": "NVDA_2017", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2808", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:45:00+00:00", "episode": "APLD_2024", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2807", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:45:06+00:00", "episode": "LNG_2013", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2806", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:45:13+00:00", "episode": "TSM_2025", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2805", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T05:45:20+00:00", "episode": "MP_2025", "status": "merged", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2804", "detail": "auto-resolved: checks green"}
+{"ts": "2026-07-18T06:01:02+00:00", "episode": "IREN_2023", "status": "pr_opened", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/2825", "detail": "PR opened: https://github.com/chriswong6031-creator/macro/pull/2825"}

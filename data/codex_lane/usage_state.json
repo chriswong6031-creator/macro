@@ -1,20 +1,20 @@
 {
   "schema": "codex_lane.usage_state.v1",
-  "updated_at": "2026-07-18T04:30:04.972864+00:00",
+  "updated_at": "2026-07-18T06:00:35.056892+00:00",
   "rate_limits": {
     "primary": {
-      "used_percent": 0.0,
+      "used_percent": 1.0,
       "resets_at": "2026-07-25T03:32:33+00:00",
       "window_mins": 10080
     },
     "secondary": null,
     "plan_type": "pro",
-    "fetched_at": "2026-07-18T04:21:24.680961+00:00"
+    "fetched_at": "2026-07-18T05:43:26.682698+00:00"
   },
   "token_usage_last": {
-    "input_tokens": 169717,
-    "output_tokens": 952,
-    "total_tokens": 170669
+    "input_tokens": 24502,
+    "output_tokens": 1050,
+    "total_tokens": 25552
   },
   "sessions": [
     {
@@ -967,6 +967,18 @@
     },
     {
       "ts": "2026-07-18T04:30:04.972814+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-18T06:00:09.699757+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-18T06:00:35.056770+00:00",
       "lane": "cases",
       "ok": true,
       "error_kind": null
