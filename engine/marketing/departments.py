@@ -29,16 +29,19 @@ class Scorecard:
 @dataclass
 class Department:
     id: str
-    name: str
-    director_model: str  # "fable" | "opus"
+    name: str                # short display name (spec §1.1)
+    formal_name: str         # full hover name (spec §1.1)
+    tagline: str             # one plain-word sentence (spec §1.1)
+    icon: str                # slug for admin SVG glyph (spec §1.1)
+    director_model: str      # "fable" | "opus"
     primary_outcome: str
     non_goals: list[str]
-    engines: list[str]
-    authority_level: str  # "G1" | "G2"
-    lifecycle_state: str  # "chartered" | "building"
-    budget: dict  # {envelope_usd: 0, spent_usd: 0}
+    engines: list[dict]      # list[{id, name, does}] (spec §1.2)
+    authority_level: str     # "G1" | "G2"
+    lifecycle_state: str     # "chartered" | "building"
+    budget: dict             # {envelope_usd: 0, spent_usd: 0}
     model_mix: dict
-    clock: dict  # {cadence, last_review, next_review}
+    clock: dict              # {cadence, last_review, next_review}
     retirement_test: str
     scorecard: Scorecard
     wave: int
@@ -47,10 +50,13 @@ class Department:
         return {
             "id": self.id,
             "name": self.name,
+            "formal_name": self.formal_name,
+            "tagline": self.tagline,
+            "icon": self.icon,
             "director_model": self.director_model,
             "primary_outcome": self.primary_outcome,
             "non_goals": self.non_goals,
-            "engines": self.engines,
+            "engines": [dict(e) for e in self.engines],
             "authority_level": self.authority_level,
             "lifecycle_state": self.lifecycle_state,
             "budget": dict(self.budget),
@@ -80,7 +86,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="office_cmo",
-        name="Office of the Autonomous CMO",
+        name="Command",
+        formal_name="Office of the Autonomous CMO",
+        tagline="Sets strategy, allocates budget, hires and retires teams.",
+        icon="command",
         director_model="fable",
         primary_outcome=(
             "Maximize durable contribution profit and strategic distribution power "
@@ -92,13 +101,13 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Be the chief copywriter or day-to-day content producer.",
         ],
         engines=[
-            "portfolio_allocator",
-            "department_registry",
-            "objective_tree",
-            "conflict_resolver",
-            "strategy_memory",
-            "opportunity_queue",
-            "org_simulator",
+            {"id": "portfolio_allocator", "name": "Budget Allocator", "does": "Decides how much of the budget goes to each department based on expected return."},
+            {"id": "department_registry", "name": "Dept Registry", "does": "Keeps the authoritative list of all active departments, their owners, and current status."},
+            {"id": "objective_tree", "name": "Goal Tree", "does": "Maintains the hierarchy of company goals so every campaign connects back to the north star."},
+            {"id": "conflict_resolver", "name": "Conflict Desk", "does": "Spots and resolves disagreements between departments before they slow things down."},
+            {"id": "strategy_memory", "name": "Strategy Log", "does": "Stores every major strategic decision with its reasoning so we can learn from history."},
+            {"id": "opportunity_queue", "name": "Opportunity Queue", "does": "Holds every scored opportunity waiting for a department to pick it up and run with it."},
+            {"id": "org_simulator", "name": "Org Planner", "does": "Models what adding or removing a department would do to capacity and output before we commit."},
         ],
         authority_level="G2",
         lifecycle_state="chartered",
@@ -126,7 +135,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="growth_os",
-        name="Growth Operating System and Finance",
+        name="Engine Room",
+        formal_name="Growth Operating System & Finance",
+        tagline="Keeps everything running — scheduling, budgets, credentials, recovery.",
+        icon="engine_room",
         director_model="opus",
         primary_outcome="Reliable autonomous execution at known cost.",
         non_goals=[
@@ -135,16 +147,16 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Own product feature roadmap.",
         ],
         engines=[
-            "campaign_task_scheduler",
-            "run_ledger_event_bus",
-            "budget_inference_cost_allocator",
-            "credential_connector_registry",
-            "job_locks_idempotency",
-            "vendor_cost_monitor",
-            "department_health",
-            "incident_rollback_manager",
-            "service_level_objectives",
-            "human_exception_queue",
+            {"id": "campaign_task_scheduler", "name": "Task Scheduler", "does": "Queues and times every campaign action so nothing runs late or out of order."},
+            {"id": "run_ledger_event_bus", "name": "Run Ledger", "does": "Records every action taken and emits events so other systems stay in sync."},
+            {"id": "budget_inference_cost_allocator", "name": "Cost Tracker", "does": "Measures what every AI call costs and bills it back to the right department."},
+            {"id": "credential_connector_registry", "name": "Key Vault", "does": "Stores and rotates API keys and credentials so no one else needs to touch them."},
+            {"id": "job_locks_idempotency", "name": "Lock Guard", "does": "Prevents the same job running twice, even if the system restarts mid-run."},
+            {"id": "vendor_cost_monitor", "name": "Vendor Watch", "does": "Flags when any vendor bill spikes unexpectedly so we can investigate fast."},
+            {"id": "department_health", "name": "Health Board", "does": "Shows a real-time dashboard of which departments are healthy and which need attention."},
+            {"id": "incident_rollback_manager", "name": "Rollback Desk", "does": "Automatically reverses a bad deployment or action when something goes wrong."},
+            {"id": "service_level_objectives", "name": "SLO Monitor", "does": "Tracks whether each system is meeting its reliability targets and alerts when not."},
+            {"id": "human_exception_queue", "name": "Human Queue", "does": "Holds the rare decisions that need a human to look at before the system proceeds."},
         ],
         authority_level="G2",
         lifecycle_state="building",
@@ -172,7 +184,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="intelligence",
-        name="Market, Audience, and Opportunity Intelligence",
+        name="Radar",
+        formal_name="Market, Audience & Opportunity Intelligence",
+        tagline="Spots opportunities: trending questions, events, audiences, gaps.",
+        icon="radar",
         director_model="opus",
         primary_outcome=(
             "Identify the best audience/problem/event/channel opportunities "
@@ -184,16 +199,16 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Own the publication ledger.",
         ],
         engines=[
-            "product_page_crawler",
-            "competitor_category_monitor",
-            "search_demand_miner",
-            "community_question_miner",
-            "event_attention_detector",
-            "audience_segment_graph",
-            "review_objection_miner",
-            "channel_white_space_detector",
-            "creator_community_prospecting",
-            "opportunity_scoring_decay",
+            {"id": "product_page_crawler", "name": "Page Scanner", "does": "Crawls competitor and partner pages to track what they say, add, or remove over time."},
+            {"id": "competitor_category_monitor", "name": "Category Watch", "does": "Monitors how competitors position themselves and which audiences they chase."},
+            {"id": "search_demand_miner", "name": "Search Miner", "does": "Finds what people are searching for so we can create content that answers those questions."},
+            {"id": "community_question_miner", "name": "Question Radar", "does": "Reads forums and communities to find the real questions investors are asking right now."},
+            {"id": "event_attention_detector", "name": "Event Spotter", "does": "Detects when earnings, news, or macro events are drawing outsized audience attention."},
+            {"id": "audience_segment_graph", "name": "Audience Map", "does": "Builds a map of who follows us, who could follow us, and what each group cares about."},
+            {"id": "review_objection_miner", "name": "Objection Log", "does": "Collects the real objections and complaints people have so we can address them honestly."},
+            {"id": "channel_white_space_detector", "name": "Gap Finder", "does": "Spots underserved topics or channels where good content has no competition yet."},
+            {"id": "creator_community_prospecting", "name": "Creator Scout", "does": "Finds creators and communities who reach the audience we want and have real credibility."},
+            {"id": "opportunity_scoring_decay", "name": "Score Timer", "does": "Keeps opportunity scores fresh by aging them down when the window to act starts closing."},
         ],
         authority_level="G1",
         lifecycle_state="chartered",
@@ -221,7 +236,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="products",
-        name="Intelligence Products and Public Tools",
+        name="Workshop",
+        formal_name="Intelligence Products & Public Tools",
+        tagline="Builds the free tools that pull people in.",
+        icon="workshop",
         director_model="opus",
         primary_outcome=(
             "Turn user uncertainty into useful, shareable product experiences."
@@ -232,18 +250,18 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Operate distribution channels.",
         ],
         engines=[
-            "what_changed",
-            "why_is_it_moving",
-            "stock_dossier",
-            "event_impact_maps",
-            "receipt_forecast_pages",
-            "chart_as_url",
-            "portfolio_watchlist_xray",
-            "market_regime_explainers",
-            "comparison_alternative_pages",
-            "widgets_embeds",
-            "public_report_generator",
-            "content_freshness_expiration",
+            {"id": "what_changed", "name": "What Changed", "does": "Spots what changed for a ticker or sector since the last time you looked and explains why it matters."},
+            {"id": "why_is_it_moving", "name": "Why It's Moving", "does": "Gives a plain-English reason for today's price move, anchored on actual data not guesses."},
+            {"id": "stock_dossier", "name": "Dossier Forge", "does": "Builds a one-page briefing on any stock with the key facts, signals, and open questions."},
+            {"id": "event_impact_maps", "name": "Event Mapper", "does": "Shows how a specific event — earnings, rate decision, merger — tends to ripple through related assets."},
+            {"id": "receipt_forecast_pages", "name": "Receipt Book", "does": "Publishes a public record of every call we made and whether it paid off, with the numbers."},
+            {"id": "chart_as_url", "name": "Chart Studio", "does": "Turns any signal or data series into a shareable chart URL anyone can embed or post."},
+            {"id": "portfolio_watchlist_xray", "name": "Portfolio X-Ray", "does": "Scans a watchlist and surfaces the most important changes, risks, and opportunities right now."},
+            {"id": "market_regime_explainers", "name": "Regime Guide", "does": "Explains the current market regime in plain words and what it historically means for returns."},
+            {"id": "comparison_alternative_pages", "name": "Compare Desk", "does": "Creates side-by-side comparisons of stocks, ETFs, or sectors so users can make informed choices."},
+            {"id": "widgets_embeds", "name": "Widget Builder", "does": "Packages any data view as an embeddable widget so it can live inside a blog or third-party site."},
+            {"id": "public_report_generator", "name": "Report Builder", "does": "Generates a shareable PDF or page report from any set of signals, ready to send to a client."},
+            {"id": "content_freshness_expiration", "name": "Freshness Guard", "does": "Marks any public page stale when its data is old and swaps in an honest placeholder."},
         ],
         authority_level="G1",
         lifecycle_state="chartered",
@@ -271,7 +289,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="studio",
-        name="Editorial, Creative Studio, and Data Newsroom",
+        name="Studio",
+        formal_name="Editorial, Creative Studio & Data Newsroom",
+        tagline="Creates the posts, charts, videos, and newsletters.",
+        icon="studio",
         director_model="opus",
         primary_outcome=(
             "Create distinctive, timely, multi-format work from every "
@@ -283,18 +304,18 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Make budget allocation decisions.",
         ],
         engines=[
-            "campaign_brief_compiler",
-            "narrative_hook_generator",
-            "chart_annotation",
-            "visual_identity_renderer",
-            "short_long_form_video",
-            "voice_caption_transcript",
-            "newsletter_article_assembly",
-            "platform_specific_adaptation",
-            "multilingual_localization",
-            "event_newsroom",
-            "asset_quality_tests",
-            "asset_variation_fatigue_detection",
+            {"id": "campaign_brief_compiler", "name": "Brief Builder", "does": "Takes a raw opportunity and turns it into a structured brief every creator can execute from."},
+            {"id": "narrative_hook_generator", "name": "Hook Finder", "does": "Writes the opening hook for a post or video that makes the audience stop and pay attention."},
+            {"id": "chart_annotation", "name": "Chart Notes", "does": "Adds plain-English annotations to charts so the important moment is obvious at a glance."},
+            {"id": "visual_identity_renderer", "name": "Brand Renderer", "does": "Applies consistent visual style, colors, and logos to every asset before it goes out."},
+            {"id": "short_long_form_video", "name": "Video Desk", "does": "Produces short clips and longer explainer videos from data and research, ready to post."},
+            {"id": "voice_caption_transcript", "name": "Caption Maker", "does": "Generates accurate captions and transcripts for every audio and video asset we publish."},
+            {"id": "newsletter_article_assembly", "name": "Newsletter Builder", "does": "Assembles the weekly newsletter from the best signals, receipts, and explainers of the week."},
+            {"id": "platform_specific_adaptation", "name": "Platform Adapter", "does": "Reformats a core piece of content for each platform so it fits the feed and character limits."},
+            {"id": "multilingual_localization", "name": "Localization Desk", "does": "Translates and adapts content for non-English audiences without losing accuracy or tone."},
+            {"id": "event_newsroom", "name": "Live Desk", "does": "Spins up a fast-turnaround coverage desk when a major market event happens that demands real-time reaction."},
+            {"id": "asset_quality_tests", "name": "Quality Check", "does": "Runs automated checks on every asset before it goes out to catch factual errors and formatting problems."},
+            {"id": "asset_variation_fatigue_detection", "name": "Fatigue Radar", "does": "Detects when the same creative has run too many times and flags it for rotation or retirement."},
         ],
         authority_level="G1",
         lifecycle_state="chartered",
@@ -322,7 +343,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="distribution",
-        name="Distribution Network",
+        name="Broadcast",
+        formal_name="Distribution Network",
+        tagline="Runs the accounts and channels; posts, replies, tracks receipts.",
+        icon="broadcast",
         director_model="opus",
         primary_outcome=(
             "Place useful intelligence where the right audience already gathers."
@@ -333,20 +357,21 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Make product decisions.",
         ],
         engines=[
-            "owned_site_publisher",
-            "email_publisher",
-            "x_publisher",
-            "youtube_publisher",
-            "tiktok_instagram_adapters",
-            "stocktwits_editorial_queue",
-            "reddit_participation_queue",
-            "discord_telegram_apps",
-            "syndication",
-            "embed_widget_delivery",
-            "partner_feeds",
-            "channel_policy_adapters",
-            "reply_community_queues",
-            "publication_receipts_takedown",
+            {"id": "owned_site_publisher", "name": "Site Publisher", "does": "Publishes new pages and updates to the owned site on a reliable schedule."},
+            {"id": "email_publisher", "name": "Email Sender", "does": "Sends newsletters and lifecycle emails to the subscriber list at the right time."},
+            {"id": "x_publisher", "name": "Desk Network", "does": "Manages the full network of X accounts, scheduling posts and monitoring for replies."},
+            {"id": "youtube_publisher", "name": "YouTube Desk", "does": "Uploads and optimizes videos on YouTube, including titles, thumbnails, and descriptions."},
+            {"id": "tiktok_instagram_adapters", "name": "Short Video Desk", "does": "Adapts content for TikTok and Instagram Reels and schedules posts at peak hours."},
+            {"id": "stocktwits_editorial_queue", "name": "Stocktwits Queue", "does": "Queues editorial posts for Stocktwits where authorized, under the policy rules for that platform."},
+            {"id": "reddit_participation_queue", "name": "Reddit Desk", "does": "Manages thoughtful community participation on relevant subreddits under strict editorial rules."},
+            {"id": "discord_telegram_apps", "name": "Community Apps", "does": "Runs the Discord and Telegram channels, pushing updates and answering questions in community spaces."},
+            {"id": "syndication", "name": "Syndication Hub", "does": "Distributes content to third-party publishers and aggregators who reach our target audience."},
+            {"id": "embed_widget_delivery", "name": "Widget Delivery", "does": "Serves the embeddable widgets to partner sites and tracks how often they load and engage."},
+            {"id": "partner_feeds", "name": "Partner Feed", "does": "Pushes data and content to partners via API feeds they can pull into their own products."},
+            {"id": "channel_policy_adapters", "name": "Policy Guard", "does": "Applies platform-specific rules before any post goes out so we stay within terms of service."},
+            {"id": "reply_community_queues", "name": "Reply Desk", "does": "Manages the queue of replies and community interactions, flagging anything that needs a human."},
+            {"id": "publication_receipts_takedown", "name": "Receipt Tracker & Recall", "does": "Records every publication with a timestamped receipt and handles takedowns when corrections are needed."},
+            {"id": "content_studio", "name": "Content Studio", "does": "Generates the actual mixed-content plans each desk will post, anchored on signal posts with chart illustrations."},
         ],
         authority_level="G2",
         lifecycle_state="chartered",
@@ -378,7 +403,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="lifecycle",
-        name="Lifecycle, Conversion, and Monetization",
+        name="Funnel",
+        formal_name="Lifecycle, Conversion & Monetization",
+        tagline="Turns visitors into trial users into paying subscribers.",
+        icon="funnel",
         director_model="opus",
         primary_outcome=(
             "Move the right visitor from first value to repeated value "
@@ -390,17 +418,17 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Make positioning or category decisions.",
         ],
         engines=[
-            "landing_onboarding_optimizer",
-            "account_watchlist_activation",
-            "preview_trial_allocator",
-            "next_best_value_engine",
-            "email_in_product_lifecycle",
-            "checkout_offer_experiments",
-            "pricing_packaging_research",
-            "cancellation_refund_intelligence",
-            "win_back",
-            "subscriber_reason_to_return_graph",
-            "lead_quality_backpressure",
+            {"id": "landing_onboarding_optimizer", "name": "Landing Tuner", "does": "Tests and improves landing pages so more visitors understand the value and sign up."},
+            {"id": "account_watchlist_activation", "name": "Activation Desk", "does": "Guides new accounts to add their first watchlist and see their first insight within minutes."},
+            {"id": "preview_trial_allocator", "name": "Trial Router", "does": "Decides which trial variant each new user gets and tracks whether it converts them to paid."},
+            {"id": "next_best_value_engine", "name": "Value Nudge", "does": "Finds the next piece of value each user hasn't seen yet and surfaces it at the right moment."},
+            {"id": "email_in_product_lifecycle", "name": "Lifecycle Emails", "does": "Sends the right email at the right moment in the user journey — welcome, nudge, renewal, win-back."},
+            {"id": "checkout_offer_experiments", "name": "Checkout Lab", "does": "Tests different offers, prices, and payment flows at checkout to find what converts best."},
+            {"id": "pricing_packaging_research", "name": "Pricing Desk", "does": "Studies what users are willing to pay and tests packaging changes to improve retained contribution."},
+            {"id": "cancellation_refund_intelligence", "name": "Cancel Desk", "does": "Captures the real reason someone cancels and feeds it back so we can fix the underlying problem."},
+            {"id": "win_back", "name": "Win-Back Engine", "does": "Identifies lapsed users who might return and sends the right offer at the moment they're most likely to come back."},
+            {"id": "subscriber_reason_to_return_graph", "name": "Return Graph", "does": "Maps what brings each subscriber back after a quiet period so we can trigger that event deliberately."},
+            {"id": "lead_quality_backpressure", "name": "Lead Filter", "does": "Pushes back on acquisition channels that bring low-quality leads who churn quickly and drain margin."},
         ],
         authority_level="G2",
         lifecycle_state="chartered",
@@ -428,7 +456,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="ecosystem",
-        name="Creator, Partner, and Community Infrastructure",
+        name="Allies",
+        formal_name="Creator, Partner & Community Infrastructure",
+        tagline="Works with creators, partners, and communities.",
+        icon="allies",
         director_model="opus",
         primary_outcome=(
             "Make external people and communities more effective "
@@ -440,17 +471,17 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Own lifecycle or billing infrastructure.",
         ],
         engines=[
-            "creator_graph_quality_score",
-            "personalized_creator_demos",
-            "creator_copilot",
-            "cobranded_reports",
-            "recurring_referral_ledger",
-            "standard_commercial_terms",
-            "partner_workspace_provisioning",
-            "discord_telegram_community_config",
-            "partner_dashboards",
-            "reporter_newsletter_data_desk",
-            "partnership_outcome_analysis",
+            {"id": "creator_graph_quality_score", "name": "Creator Score", "does": "Scores each creator by audience quality and content credibility before we invite them to work with us."},
+            {"id": "personalized_creator_demos", "name": "Creator Demo", "does": "Builds a personalized demo of Mastermind tailored to each creator's own audience and content style."},
+            {"id": "creator_copilot", "name": "Creator Copilot", "does": "Gives creators a private feed of signals and data they can turn into their own content with confidence."},
+            {"id": "cobranded_reports", "name": "Co-Brand Reports", "does": "Produces co-branded reports that let a creator or partner share our research under their name."},
+            {"id": "recurring_referral_ledger", "name": "Referral Ledger", "does": "Tracks every referral from every partner and ensures payouts are accurate and on time."},
+            {"id": "standard_commercial_terms", "name": "Deal Terms", "does": "Maintains a standard set of commercial terms for partner deals so we move fast without custom contracts."},
+            {"id": "partner_workspace_provisioning", "name": "Partner Portal", "does": "Sets up a private workspace for each partner with the data access and tools they need to succeed."},
+            {"id": "discord_telegram_community_config", "name": "Community Config", "does": "Configures and moderates the Discord and Telegram community spaces to keep them high-quality."},
+            {"id": "partner_dashboards", "name": "Partner Dashboard", "does": "Shows each partner their referral counts, revenue, and content performance in real time."},
+            {"id": "reporter_newsletter_data_desk", "name": "Press Desk", "does": "Provides reporters and newsletter writers with accurate, embargoed data before their deadlines."},
+            {"id": "partnership_outcome_analysis", "name": "Partner Audit", "does": "Measures the real contribution of each partnership after two full payout cycles and recommends renewals or exits."},
         ],
         authority_level="G1",
         lifecycle_state="chartered",
@@ -478,7 +509,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="growth_science",
-        name="Growth Science and Self-Improvement",
+        name="Lab",
+        formal_name="Growth Science & Self-Improvement",
+        tagline="Measures what actually works; runs experiments; kills last-click myths.",
+        icon="lab",
         director_model="opus",
         primary_outcome=(
             "Determine incremental causal impact and improve the institution."
@@ -489,20 +523,20 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Operate the human-exception queue.",
         ],
         engines=[
-            "event_taxonomy",
-            "identity_resolution",
-            "attribution",
-            "randomized_holdouts",
-            "incrementality_tests",
-            "cohort_retention",
-            "contribution_margin_model",
-            "creative_audience_embeddings",
-            "experiment_registry",
-            "playbook_promotion_demotion",
-            "department_scorecards",
-            "model_prompt_evaluation",
-            "simulation_digital_twin",
-            "automated_postmortems",
+            {"id": "event_taxonomy", "name": "Event Atlas", "does": "Defines and standardizes every event we track so every department measures the same things the same way."},
+            {"id": "identity_resolution", "name": "Identity Graph", "does": "Links anonymous visitors to known users across sessions and devices so we count people, not clicks."},
+            {"id": "attribution", "name": "Attribution Engine", "does": "Figures out which touchpoints actually caused a subscription, not just which ones happened before it."},
+            {"id": "randomized_holdouts", "name": "Holdout Runner", "does": "Holds back a random group from every major campaign so we can measure what would have happened without it."},
+            {"id": "incrementality_tests", "name": "Lift Tests", "does": "Runs controlled experiments to measure the true incremental lift from any channel or campaign."},
+            {"id": "cohort_retention", "name": "Cohort Tracker", "does": "Follows each signup cohort over time to see how many are still paying and how much they're worth."},
+            {"id": "contribution_margin_model", "name": "Margin Model", "does": "Calculates the true retained contribution per cohort after every cost is subtracted."},
+            {"id": "creative_audience_embeddings", "name": "Audience Embedder", "does": "Builds mathematical representations of what audiences respond to so we can predict creative performance."},
+            {"id": "experiment_registry", "name": "Experiment Log", "does": "Records every experiment with its hypothesis, results, and decision so the institution learns over time."},
+            {"id": "playbook_promotion_demotion", "name": "Playbook Desk", "does": "Promotes tactics that beat the holdout to the standard playbook and retires ones that don't."},
+            {"id": "department_scorecards", "name": "Scorecard Board", "does": "Publishes weekly scorecards for every department so everyone can see what's working and what's not."},
+            {"id": "model_prompt_evaluation", "name": "Prompt Eval", "does": "Tests every AI prompt before it runs in production to catch regressions in quality or cost."},
+            {"id": "simulation_digital_twin", "name": "The Twin", "does": "Runs a simulation of the entire marketing system so we can test changes before applying them live."},
+            {"id": "automated_postmortems", "name": "Postmortem Desk", "does": "Automatically generates a structured review after every major success or failure so we extract the lesson."},
         ],
         authority_level="G1",
         lifecycle_state="chartered",
@@ -530,7 +564,10 @@ DEPARTMENT_CHARTERS: list[Department] = [
 
     Department(
         id="trust_office",
-        name="Autonomous Trust, Policy, and Red-Team Office",
+        name="Sentinel",
+        formal_name="Autonomous Trust, Policy & Red-Team Office",
+        tagline="Independent watchdog: fact-checks claims, catches risk, can hit pause.",
+        icon="sentinel",
         director_model="opus",
         primary_outcome=(
             "Keep autonomy truthful, recoverable, and commercially durable."
@@ -541,18 +578,18 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "Report to any department it audits.",
         ],
         engines=[
-            "provenance_verification",
-            "claim_disclosure_linting",
-            "platform_policy_compiler",
-            "jurisdiction_consequence_classifier",
-            "privacy_consent_checks",
-            "duplicate_spam_detection",
-            "correction_recall",
-            "adversarial_brand_review",
-            "security_secret_checks",
-            "contract_rights_checks",
-            "audit_sampling",
-            "autonomous_quarantine_rollback",
+            {"id": "provenance_verification", "name": "Provenance Check", "does": "Verifies where every claim came from before it goes into any public post or product."},
+            {"id": "claim_disclosure_linting", "name": "Claim Linter", "does": "Scans draft content for claims that need a disclosure or citation and flags them before publishing."},
+            {"id": "platform_policy_compiler", "name": "Policy Compiler", "does": "Tracks the terms of service for every platform we use and keeps a machine-readable version up to date."},
+            {"id": "jurisdiction_consequence_classifier", "name": "Legal Classifier", "does": "Identifies which content touches regulated territory in each jurisdiction and routes it to human review."},
+            {"id": "privacy_consent_checks", "name": "Privacy Guard", "does": "Checks that every data use is covered by consent and flags anything that might create a privacy risk."},
+            {"id": "duplicate_spam_detection", "name": "Spam Detector", "does": "Catches if we're about to post something too similar to something we already posted, preventing spam flags."},
+            {"id": "correction_recall", "name": "Recall Bus", "does": "When a fact changes, finds every published asset that cited that fact and queues them for correction."},
+            {"id": "adversarial_brand_review", "name": "Brand Red Team", "does": "Stress-tests every major campaign from the perspective of a hostile critic before it goes live."},
+            {"id": "security_secret_checks", "name": "Secret Scanner", "does": "Scans every commit and asset for API keys, passwords, or private data before they leave the system."},
+            {"id": "contract_rights_checks", "name": "Rights Checker", "does": "Checks that we have the rights to use every image, data source, or third-party content we publish."},
+            {"id": "audit_sampling", "name": "Audit Sampler", "does": "Randomly samples published content on a schedule to check that policy compliance is holding in practice."},
+            {"id": "autonomous_quarantine_rollback", "name": "The Pause Switch", "does": "Can automatically halt publishing and roll back any recent posts if a serious policy breach is detected."},
         ],
         authority_level="G2",
         lifecycle_state="chartered",

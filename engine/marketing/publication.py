@@ -20,6 +20,8 @@ class DeskAccount:
     beat: str
     voice: str
     corpus: str
+    tilt: dict = field(default_factory=dict)          # per-type weight map (spec §2.4)
+    mix_observed: dict = field(default_factory=dict)  # observed counts (spec §2.5)
     stage: str = "A"
     status: str = "warming"
     authority: str = "G1"
@@ -37,6 +39,8 @@ class DeskAccount:
             "beat": self.beat,
             "voice": self.voice,
             "corpus": self.corpus,
+            "tilt": dict(self.tilt),
+            "mix_observed": dict(self.mix_observed),
             "stage": self.stage,
             "status": self.status,
             "authority": self.authority,
@@ -66,6 +70,8 @@ def desk_network(cfg: dict | None = None) -> dict[str, Any]:
             beat=acct.get("beat", ""),
             voice=acct.get("voice", ""),
             corpus=acct.get("corpus", "full"),
+            tilt=dict(acct.get("tilt", {})),
+            mix_observed={},
             stage=stage,
             status="warming",
             authority="G1",

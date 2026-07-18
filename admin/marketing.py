@@ -23,11 +23,16 @@ log = logging.getLogger(__name__)
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
 
-_STATE_REL  = Path("data/neuralweb/marketing_state.json")
-_CONFIG_REL = Path("config/marketing.yml")
+_STATE_REL   = Path("data/neuralweb/marketing_state.json")
+_CONTENT_REL = Path("data/marketing/content_plan.json")
+_CONFIG_REL  = Path("config/marketing.yml")
 
 _ACCRUING_NOTE = (
     "marketing_state.json not yet written — "
+    "accruing after first nightly governor run."
+)
+_CONTENT_ACCRUING_NOTE = (
+    "content_plan.json not yet written — "
     "accruing after first nightly governor run."
 )
 
@@ -232,6 +237,80 @@ def lobes(root=None) -> dict:
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.lobes failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def content(root=None) -> dict:
+    """Content Studio panel: reads data/marketing/content_plan.json.
+
+    Returns {ok, content_types, accounts, featured_charts, distinctness, summary}.
+    Fail-soft with honest note when the file is absent (accruing state).
+    """
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        cp = _read_json(repo / _CONTENT_REL)
+        if cp is None:
+            return {
+                "ok": True,
+                "note": _CONTENT_ACCRUING_NOTE,
+                "content_types": [],
+                "accounts": [],
+                "featured_charts": [],
+                "distinctness": None,
+                "summary": None,
+            }
+        return {
+            "ok": True,
+            "content_types": cp.get("content_types") or [],
+            "accounts": cp.get("accounts") or [],
+            "featured_charts": cp.get("featured_charts") or [],
+            "distinctness": cp.get("distinctness"),
+            "summary": cp.get("summary"),
+            "as_of": cp.get("as_of"),
+            "source": cp.get("source"),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.content failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def department(root=None, dept_id=None) -> dict:
+    """Single-department detail payload.
+
+    Returns mission/tagline/formal_name, engines [{id,name,does}], scorecard,
+    authority, model mix, wave, retirement test.
+    Fail-soft: returns ok:True with note if state absent or dept not found.
+    """
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        s = _state(repo)
+        if s is None:
+            return {
+                "ok": True,
+                "note": _ACCRUING_NOTE,
+                "department": None,
+            }
+        depts = s.get("departments") or []
+        if dept_id is None:
+            return {
+                "ok": True,
+                "note": "dept_id required",
+                "department": None,
+            }
+        dept = next((d for d in depts if d.get("id") == dept_id), None)
+        if dept is None:
+            return {
+                "ok": True,
+                "note": f"Department '{dept_id}' not found (accruing or unknown id).",
+                "department": None,
+            }
+        return {
+            "ok": True,
+            "department": dept,
+            "as_of": s.get("as_of"),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.department failed: %s", exc)
         return {"ok": False, "error": str(exc)}
 
 

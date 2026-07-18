@@ -2002,3 +2002,263 @@ input:focus, select:focus {
   opacity: .65;
 }
 
+/* ==========================================================================
+   MARKETING COCKPIT — Content Studio + Department Cards
+   ========================================================================== */
+
+/* Department cards — clickable with hover lift */
+.mkt-dept-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+  box-shadow: var(--shadow-card);
+}
+.mkt-dept-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+.mkt-dept-card h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mkt-dept-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.mkt-dept-tagline {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.mkt-dept-footer {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  align-items: center;
+}
+
+/* Flywheel illustration wrapper */
+.mkt-flywheel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 0 8px;
+}
+.mkt-flywheel svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Content-type filter chips */
+.mkt-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease), background var(--dur) var(--ease);
+  user-select: none;
+}
+.mkt-filter-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.mkt-filter-chip.active {
+  background: rgba(106,141,255,.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.mkt-filter-chip .mkt-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Account switcher pills */
+.mkt-acct-switcher {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.mkt-acct-pill {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease), background var(--dur) var(--ease);
+  user-select: none;
+}
+.mkt-acct-pill:hover {
+  border-color: var(--accent-cyan);
+  color: var(--text);
+}
+.mkt-acct-pill.active {
+  background: rgba(56,224,212,.10);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+/* Content-mix donut (SVG wrapper) */
+.mkt-donut {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0;
+}
+.mkt-donut svg {
+  flex-shrink: 0;
+}
+.mkt-donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+}
+.mkt-donut-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+.mkt-donut-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Tilt bar */
+.mkt-tilt-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  gap: 1px;
+  margin: 6px 0 10px;
+}
+.mkt-tilt-seg {
+  height: 100%;
+  border-radius: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+.mkt-tilt-bar .mkt-tilt-seg:first-child { border-radius: 4px 0 0 4px; }
+.mkt-tilt-bar .mkt-tilt-seg:last-child  { border-radius: 0 4px 4px 0; }
+
+/* Post card */
+.mkt-post-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: border-color var(--dur) var(--ease);
+}
+.mkt-post-card:hover {
+  border-color: var(--grid);
+}
+.mkt-post-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.mkt-post-card.hidden {
+  display: none;
+}
+
+/* Inline chart embed */
+.mkt-chart-embed {
+  width: 100%;
+  max-width: 560px;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  margin: 10px 0;
+  background: #0d1117;
+}
+.mkt-chart-embed svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Cashtag chip */
+.mkt-cashtag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(56,224,212,.12);
+  border: 1px solid rgba(56,224,212,.25);
+  color: var(--accent-cyan);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: .01em;
+}
+
+/* Typed content chip (colored by type) */
+.mkt-type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+/* Engine name cards in dept detail */
+.mkt-engine-card {
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  margin-bottom: 6px;
+}
+.mkt-engine-card-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.mkt-engine-card-does {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.mkt-engine-card-id {
+  font-size: 10px;
+  color: var(--faint);
+  font-family: var(--mono);
+  margin-top: 3px;
+}
+

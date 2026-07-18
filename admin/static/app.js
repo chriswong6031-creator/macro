@@ -150,11 +150,12 @@ const ICONS = {
   marketing_campaigns:   NAV_ICO('<path d="M3 12a9 9 0 1 0 18 0M12 3v5M12 3l-3 3M12 3l3 3M7 8.5l1.5 1.5M17 8.5l-1.5 1.5M12 8v4l3 3"/>'),
   marketing_experiments: NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/><circle cx="10.5" cy="16.5" r="1"/><circle cx="14" cy="15" r="1"/>'),
   marketing_lobes:       NAV_ICO('<rect x="3" y="3" width="5" height="5" rx="1.2"/><rect x="10" y="3" width="5" height="5" rx="1.2"/><rect x="17" y="3" width="4" height="5" rx="1.2"/><rect x="3" y="10" width="5" height="5" rx="1.2"/><rect x="10" y="10" width="5" height="5" rx="1.2"/><path d="M5.5 15v2a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2"/>'),
+  marketing_content:     NAV_ICO('<path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12a8 8 0 0 0 16 0"/><path d="M12 4v4M12 16v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -368,7 +369,7 @@ function setActiveNav(id) {
 function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textContent = t; }
 
 function go(id) {
-  if (currentLobeId() || currentAnalyticsDetail()) history.replaceState(null, "", location.pathname + location.search);
+  if (currentLobeId() || currentMktDept() || currentAnalyticsDetail()) history.replaceState(null, "", location.pathname + location.search);
   CURRENT = id;
   if (RT_TIMER)   { clearInterval(RT_TIMER);   RT_TIMER   = null; }
   if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
@@ -389,9 +390,23 @@ function backToObservatory() {
   if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
   go("neural_web");
 }
+
+/* hash router — marketing department detail pages live at #/mkt-dept/<id> */
+function currentMktDept() {
+  const m = location.hash.match(/^#\/mkt-dept\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function gotoMktDept(id) { location.hash = "#/mkt-dept/" + encodeURIComponent(id); }
+function backToDepartments() {
+  if (currentMktDept()) history.replaceState(null, "", location.pathname + location.search);
+  go("marketing_departments");
+}
+
 function route() {
   const id = currentLobeId();
   if (id) { renderLobeDetail(id); return; }
+  const deptId = currentMktDept();
+  if (deptId) { renderMktDept(deptId); return; }
   const det = currentAnalyticsDetail();
   if (det) { (det.kind === "session" ? renderSessionDetail : renderVisitorDetail)(det.id); return; }
   go(CURRENT || "overview");
@@ -2891,11 +2906,113 @@ RENDER.prophet = async () => {
 const MKT_LIFECYCLE_CLS = { chartered: "s-mut", building: "s-warn", growing: "s-ok", scaling: "s-ok", mature: "s-ok", sunset: "s-bad" };
 const MKT_AUTH_CLS = { G0: "s-mut", G1: "s-mut", G2: "s-warn", G3: "s-warn", G4: "s-ok", G5: "s-ok", G6: "s-ok", G7: "s-ok" };
 const MKT_STAGE_CLS = { A: "s-mut", B: "s-warn", C: "s-ok" };
+
+/* Icon glyphs per department id */
+const MKT_DEPT_ICONS = {
+  office_cmo:    "🧭",
+  growth_os:     "⚙️",
+  intelligence:  "📡",
+  products:      "🔧",
+  studio:        "🎨",
+  distribution:  "📣",
+  lifecycle:     "🔄",
+  ecosystem:     "🤝",
+  growth_science:"🔬",
+  trust_office:  "🛡️",
+};
+
 function mktLifecyclePill(lc) { return `<span class="statpill ${MKT_LIFECYCLE_CLS[lc] || "s-mut"}">${esc(lc || "chartered")}</span>`; }
 function mktAuthPill(auth) { return `<span class="statpill ${MKT_AUTH_CLS[auth] || "s-mut"}">${esc(auth || "G1")}</span>`; }
 /* Stacked label/value row — for long wrapping text that reads badly in a space-between .kv. */
 function mktStack(label, value) {
   return `<div class="mkt-stack"><div class="mkt-stack-lab">${esc(label)}</div><div class="mkt-stack-val">${esc(value != null && value !== "" ? value : "—")}</div></div>`;
+}
+
+/* Flywheel SVG — 9-step growth loop ring diagram */
+function mktFlywheelSVG() {
+  const cx = 160, cy = 160, R = 120, r = 36;
+  const steps = [
+    { label: "Radar",     color: "#6a8dff", desc: "spots opportunities" },
+    { label: "Studio",    color: "#38e0d4", desc: "creates content" },
+    { label: "Broadcast", color: "#b18cff", desc: "posts to 6 desks" },
+    { label: "Funnel",    color: "#ffb84d", desc: "converts readers" },
+    { label: "Lab",       color: "#3ddc84", desc: "measures results" },
+    { label: "Sentinel",  color: "#ff6b6b", desc: "watches accuracy" },
+    { label: "Workshop",  color: "#4ad6a0", desc: "builds tools" },
+    { label: "Allies",    color: "#f78fff", desc: "grows partners" },
+    { label: "Engine",    color: "#8b98ad", desc: "keeps it running" },
+  ];
+  const n = steps.length;
+  let arcs = "", labels = "";
+  steps.forEach((s, i) => {
+    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
+    const nextAngle = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
+    const midAngle = (angle + nextAngle) / 2;
+    // arc segment
+    const x1 = cx + R * Math.cos(angle), y1 = cy + R * Math.sin(angle);
+    const x2 = cx + R * Math.cos(nextAngle), y2 = cy + R * Math.sin(nextAngle);
+    const gap = 0.06;
+    const ag1 = angle + gap, ag2 = nextAngle - gap;
+    const ax1 = cx + R * Math.cos(ag1), ay1 = cy + R * Math.sin(ag1);
+    const ax2 = cx + R * Math.cos(ag2), ay2 = cy + R * Math.sin(ag2);
+    arcs += `<path d="M ${ax1.toFixed(1)} ${ay1.toFixed(1)} A ${R} ${R} 0 0 1 ${ax2.toFixed(1)} ${ay2.toFixed(1)}" stroke="${s.color}" stroke-width="18" fill="none" stroke-linecap="round" opacity=".85"/>`;
+    // label outside ring
+    const lx = cx + (R + 36) * Math.cos(midAngle), ly = cy + (R + 36) * Math.sin(midAngle);
+    labels += `<text x="${lx.toFixed(1)}" y="${(ly - 5).toFixed(1)}" text-anchor="middle" fill="${s.color}" font-size="10" font-weight="700" font-family="-apple-system,sans-serif">${s.label}</text>`;
+    labels += `<text x="${lx.toFixed(1)}" y="${(ly + 7).toFixed(1)}" text-anchor="middle" fill="#93a0b4" font-size="8.5" font-family="-apple-system,sans-serif">${s.desc}</text>`;
+  });
+  return `<svg viewBox="0 0 320 320" width="280" height="280" xmlns="http://www.w3.org/2000/svg" aria-label="Growth flywheel diagram">
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#1e2332" stroke-width="22"/>
+    ${arcs}
+    ${labels}
+    <text x="${cx}" y="${cy - 8}" text-anchor="middle" fill="#e8edf5" font-size="11" font-weight="700" font-family="-apple-system,sans-serif">GROWTH</text>
+    <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="#38e0d4" font-size="10" font-family="-apple-system,sans-serif">FLYWHEEL</text>
+  </svg>`;
+}
+
+/* Content-type color lookup (falls back gracefully) */
+const MKT_TYPE_COLORS = {
+  signal:    "#38e0d4",
+  chart:     "#6a8dff",
+  education: "#b18cff",
+  macro:     "#ffb84d",
+  receipt:   "#4ad6a0",
+  watchlist: "#93a0b4",
+  event:     "#ff6b6b",
+};
+function mktTypeColor(typeId) { return MKT_TYPE_COLORS[typeId] || "#8b98ad"; }
+
+/* Build a donut SVG for content mix */
+function mktDonutSVG(tilt, contentTypes, size=72) {
+  const r = size / 2 - 8, cx = size / 2, cy = size / 2;
+  const circ = 2 * Math.PI * r;
+  const types = contentTypes.length ? contentTypes : Object.keys(MKT_TYPE_COLORS).map(id => ({ id, color: MKT_TYPE_COLORS[id] }));
+  let offset = 0;
+  let segs = "";
+  types.forEach(ct => {
+    const w = tilt[ct.id] || 0;
+    if (w <= 0) return;
+    const len = w * circ;
+    const color = ct.color || mktTypeColor(ct.id);
+    segs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${esc(color)}" stroke-width="8" stroke-dasharray="${len.toFixed(2)} ${(circ - len).toFixed(2)}" stroke-dashoffset="${(-offset * circ).toFixed(2)}" stroke-linecap="butt" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += w;
+  });
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1e2332" stroke-width="8"/>
+    ${segs}
+  </svg>`;
+}
+
+/* Tilt bar HTML */
+function mktTiltBar(tilt, contentTypes) {
+  const types = contentTypes.length ? contentTypes : Object.keys(MKT_TYPE_COLORS).map(id => ({ id, color: MKT_TYPE_COLORS[id] }));
+  const segs = types.map(ct => {
+    const w = (tilt[ct.id] || 0) * 100;
+    if (w < 1) return "";
+    const color = ct.color || mktTypeColor(ct.id);
+    return `<div class="mkt-tilt-seg" style="width:${w.toFixed(1)}%;background:${esc(color)}" title="${esc(ct.name || ct.id)} ${w.toFixed(0)}%"></div>`;
+  }).join("");
+  return `<div class="mkt-tilt-bar">${segs}</div>`;
 }
 
 /* ---- CMO OFFICE ----------------------------------------------------------- */
@@ -2995,7 +3112,6 @@ RENDER.marketing_overview = async () => {
     : "";
 
   /* Settings (read-only display) */
-  const settingsData = await api("/api/marketing/overview").catch(() => null);
   const cfgData = await api("/api/marketing/experiments").catch(() => ({}));
   const activeVariant = (cfgData && cfgData.active_trial_variant) || "7_trading_days";
   const settingsHtml = `<div class="section">Settings <span class="cnt">config/marketing.yml · read-only</span></div>
@@ -3004,7 +3120,22 @@ RENDER.marketing_overview = async () => {
       <span class="statpill s-mut">${esc(activeVariant)}</span>
       <div class="note" style="margin-left:8px">Active trial measurement window.</div></div>`;
 
-  v.innerHTML = heroHtml + allocHtml + selfImpHtml + guardrailHtml + waveHtml + settingsHtml;
+  /* Flywheel illustration */
+  const flywheelHtml = `<div class="section">How the machine works</div>
+    <div class="card">
+      <div class="mkt-flywheel">${mktFlywheelSVG()}</div>
+      <p style="font-size:13px;line-height:1.65;color:var(--muted);margin:10px 0 0">
+        The growth loop runs like this: <b style="color:var(--text)">Radar</b> spots what investors are curious about right now.
+        <b style="color:var(--text)">Studio</b> turns those insights into posts — anchored on Prophet signal alerts with cashtags, mixed with charts, explainers, and macro notes.
+        <b style="color:var(--text)">Broadcast</b> publishes across six desks, each with its own voice so the same signal reads differently per desk.
+        <b style="color:var(--text)">Funnel</b> turns engaged readers into trial users.
+        <b style="color:var(--text)">Lab</b> measures what actually drove the conversion, kills the myths, and feeds findings back into strategy.
+        <b style="color:var(--text)">Sentinel</b> watches the whole loop for accuracy and compliance — it can pause anything.
+        The loop repeats, gets smarter, and compounds.
+      </p>
+    </div>`;
+
+  v.innerHTML = heroHtml + flywheelHtml + allocHtml + selfImpHtml + guardrailHtml + waveHtml + settingsHtml;
 };
 
 /* ---- DEPARTMENTS ---------------------------------------------------------- */
@@ -3031,29 +3162,28 @@ RENDER.marketing_departments = async () => {
     </tr>`).join("")}
     </tbody></table>`;
 
-  /* Department cards */
+  /* Department cards — clickable, short name + icon + tagline */
   const deptsHtml = `<div class="section">Departments <span class="cnt">${depts.length}</span></div>
     <div class="grid">
     ${depts.map(dept => {
       const sc = dept.scorecard || {};
-      const budget = dept.budget || {};
-      const clock = dept.clock || {};
       const engines = dept.engines || [];
-      return `<div class="card">
-        <h3>${esc(dept.name || dept.id)}
-          <span class="statpill ${dept.director_model === "fable" ? "s-ok" : "s-warn"}" style="font-size:10px">${esc(dept.director_model || "opus")}</span>
+      const icon = dept.icon ? MKT_DEPT_ICONS[dept.id] || "📋" : (MKT_DEPT_ICONS[dept.id] || "📋");
+      const shortName = dept.name || dept.id;
+      const formalName = dept.formal_name || dept.name || dept.id;
+      const engCount = engines.length;
+      return `<a class="mkt-dept-card" href="#/mkt-dept/${encodeURIComponent(dept.id)}" title="${esc(formalName)}" onclick="event.preventDefault();gotoMktDept(${JSON.stringify(dept.id)})">
+        <h3><span class="mkt-dept-icon">${icon}</span>${esc(shortName)}
           ${mktLifecyclePill(dept.lifecycle_state)}
           ${mktAuthPill(dept.authority_level)}
         </h3>
-        ${mktStack("Primary outcome", dept.primary_outcome)}
-        <div class="kv"><span>Wave</span><b>${esc(String(dept.wave || "—"))}</b></div>
-        <div class="kv"><span>Trust health</span><span class="statpill ${sc.trust_health === "clean" ? "s-ok" : "s-warn"}">${esc(sc.trust_health || "seeding")}</span></div>
-        <div class="kv"><span>Exp velocity</span><b>${Number(sc.experiment_velocity || 0)}</b></div>
-        <div class="kv"><span>Learning quality</span><b>${esc(sc.learning_quality || "seeding")}</b></div>
-        <div class="kv"><span>Budget envelope</span><b>$${Number(budget.envelope_usd || 0).toLocaleString()}</b></div>
-        ${engines.length ? `<div class="note muted" style="margin-top:4px">Engines: ${engines.map(e => esc(e)).join(", ")}</div>` : ""}
-        ${dept.retirement_test ? `<div class="note muted">Retirement: ${esc(dept.retirement_test)}</div>` : ""}
-      </div>`;
+        <div class="mkt-dept-tagline">${esc(dept.tagline || dept.primary_outcome || "")}</div>
+        <div class="mkt-dept-footer">
+          <span class="statpill ${dept.director_model === "fable" ? "s-ok" : "s-warn"}" style="font-size:10px">${esc(dept.director_model || "opus")}</span>
+          ${engCount ? `<span class="statpill s-mut">${engCount} engine${engCount !== 1 ? "s" : ""}</span>` : ""}
+          <span class="statpill s-mut">Wave ${esc(String(dept.wave != null ? dept.wave : "—"))}</span>
+        </div>
+      </a>`;
     }).join("")}
     </div>`;
 
@@ -3166,11 +3296,25 @@ RENDER.marketing_channels = async () => {
       <div class="kv"><span>Corrections</span><b style="color:${Number(d.corrections || 0) > 0 ? "var(--warn)" : "var(--ok)"}">${Number(d.corrections || 0)}</b></div>`)}
   </div>`;
 
-  /* Account cards */
+  /* Mixed-tilt model note */
+  const mixedTiltNote = `<div class="card" style="margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.55">
+    <b style="color:var(--text)">Every desk posts a mix.</b>
+    The tilt only shifts emphasis so desks feel distinct without being clones.
+    The same Prophet signal is rendered with different copy per desk — distinctness-safe under platform rules.
+    Signal alerts carry cashtags and a buy marker chart; no indicator vocabulary appears in public copy.
+  </div>`;
+
+  /* Account cards with tilt bars */
   const acctHtml = `<div class="section">Accounts <span class="cnt">${accts.length}</span></div>
+    ${mixedTiltNote}
     <div class="grid">
     ${accts.map(a => {
       const health = a.health || {};
+      const tilt = a.tilt || {};
+      const mixObs = a.mix_observed || {};
+      const hasTilt = Object.keys(tilt).length > 0;
+      const tiltBar = hasTilt ? mktTiltBar(tilt, []) : "";
+      const mixItems = Object.entries(mixObs).filter(([, v]) => v > 0).map(([k, v]) => `<span class="statpill s-mut" style="font-size:10px">${esc(k)} ${v}</span>`).join(" ");
       return `<div class="card">
         <h3>${esc(a.id || "—")}
           <span class="statpill ${a.kind === "branded" ? "s-ok" : "s-mut"}">${esc(a.kind || "generic")}</span>
@@ -3178,10 +3322,11 @@ RENDER.marketing_channels = async () => {
         </h3>
         <div class="kv"><span>Beat</span><b style="max-width:220px">${esc(a.beat || "—")}</b></div>
         <div class="kv"><span>Voice</span><b>${esc(a.voice || "—")}</b></div>
-        <div class="kv"><span>Corpus</span><b>${esc(a.corpus || "—")}</b></div>
         <div class="kv"><span>Status</span><span class="statpill ${a.status === "warming" ? "s-warn" : a.status === "live" ? "s-ok" : "s-mut"}">${esc(a.status || "warming")}</span></div>
         <div class="kv"><span>Authority</span>${mktAuthPill(a.authority)}</div>
-        ${health.warnings > 0 ? `<div class="note muted" style="color:var(--warn)">${Number(health.warnings)} health warning${health.warnings > 1 ? "s" : ""}</div>` : ""}
+        ${hasTilt ? `<div style="font-size:11px;color:var(--muted);margin:8px 0 2px;text-transform:uppercase;letter-spacing:.04em">Content tilt</div>${tiltBar}` : ""}
+        ${mixItems ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${mixItems}</div>` : ""}
+        ${health.warnings > 0 ? `<div class="note muted" style="color:var(--warn);margin-top:6px">${Number(health.warnings)} health warning${health.warnings > 1 ? "s" : ""}</div>` : ""}
         ${health.followers != null ? `<div class="kv"><span>Followers</span><b>${Number(health.followers).toLocaleString()}</b></div>` : ""}
       </div>`;
     }).join("")}
@@ -3313,6 +3458,260 @@ RENDER.marketing_lobes = async () => {
 
   v.innerHTML = provHtml + geChipHtml + engsHtml;
 };
+
+/* ---- DEPARTMENT DETAIL (#/mkt-dept/<id>) ---------------------------------- */
+function mktDeptCrumbs(current) {
+  return `<div class="crumbs"><a href="#" data-mktback>← Departments</a><span class="crumbs-sep">/</span><span class="crumbs-current">${esc(current)}</span></div>`;
+}
+
+async function renderMktDept(id) {
+  CURRENT = "marketing_departments"; setActiveNav("marketing_departments");
+  if (RT_TIMER)   { clearInterval(RT_TIMER);   RT_TIMER   = null; }
+  if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
+  if (LOOP_TICK)  { clearInterval(LOOP_TICK);  LOOP_TICK  = null; }
+  setTopbarTitle("Departments");
+  const v = $("#view");
+  v.innerHTML = mktDeptCrumbs(id) + `<div class="skeleton skeleton-title"></div>
+    <div class="metric-tiles-row">${'<div class="skeleton skeleton-card" style="width:120px;height:70px"></div>'.repeat(3)}</div>`;
+  const wireBack = () => { const b = v.querySelector("[data-mktback]"); if (b) b.onclick = e => { e.preventDefault(); backToDepartments(); }; };
+  const d = await api("/api/marketing/department?id=" + encodeURIComponent(id));
+  if (!d || !d.ok) { v.innerHTML = mktDeptCrumbs(id) + nwEmpty("Error", (d && d.error) || "panel error"); wireBack(); return; }
+  if (d.note && !d.department) {
+    v.innerHTML = mktDeptCrumbs(id) + nwEmpty("Department not found", d.note); wireBack(); return;
+  }
+  const dept = d.department || {};
+  const sc = dept.scorecard || {};
+  const budget = dept.budget || {};
+  const clock = dept.clock || {};
+  const mm = dept.model_mix || {};
+  const engines = dept.engines || [];
+  const icon = MKT_DEPT_ICONS[dept.id] || "📋";
+  const formalName = dept.formal_name || dept.name || dept.id;
+  const shortName = dept.name || dept.id;
+
+  setTopbarTitle(shortName);
+
+  const heroHtml = `${mktDeptCrumbs(shortName)}
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap">
+      <span style="font-size:36px">${icon}</span>
+      <div>
+        <div style="font-size:24px;font-weight:700;letter-spacing:-.02em">${esc(shortName)}</div>
+        <div style="font-size:13px;color:var(--muted)" title="${esc(formalName)}">${esc(formalName)}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">${esc(dept.tagline || dept.primary_outcome || "")}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        ${mktLifecyclePill(dept.lifecycle_state)}
+        ${mktAuthPill(dept.authority_level)}
+        <span class="statpill ${dept.director_model === "fable" ? "s-ok" : "s-warn"}" style="font-size:10px">${esc(dept.director_model || "opus")}</span>
+      </div>
+    </div>`;
+
+  const missionHtml = dept.primary_outcome ? `<div class="card" style="margin-bottom:12px">
+    <div class="note muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Mission</div>
+    <div style="font-size:14px;line-height:1.6;color:var(--text)">${esc(dept.primary_outcome)}</div>
+    ${dept.retirement_test ? `<div class="note muted" style="margin-top:8px">Retirement test: ${esc(dept.retirement_test)}</div>` : ""}
+  </div>` : "";
+
+  const scorecardHtml = `<div class="section">Scorecard</div>
+    <div class="grid">
+      ${card("Health", `
+        <div class="kv"><span>Trust health</span><span class="statpill ${sc.trust_health === "clean" ? "s-ok" : "s-warn"}">${esc(sc.trust_health || "seeding")}</span></div>
+        <div class="kv"><span>Authority</span>${mktAuthPill(sc.authority_level || dept.authority_level)}</div>
+        <div class="kv"><span>Exp velocity</span><b>${Number(sc.experiment_velocity || 0)}</b></div>
+        <div class="kv"><span>Learning quality</span><b>${esc(sc.learning_quality || "seeding")}</b></div>`)}
+      ${card("Budget", `
+        <div class="kv"><span>Envelope</span><b>$${Number(budget.envelope_usd || 0).toLocaleString()}</b></div>
+        <div class="kv"><span>Spent</span><b>$${Number(budget.spent_usd || 0).toLocaleString()}</b></div>
+        <div class="kv"><span>Wave</span><b>${esc(String(dept.wave != null ? dept.wave : "—"))}</b></div>`)}
+      ${card("Clock", `
+        <div class="kv"><span>Cadence</span><b>${esc(clock.cadence || "weekly")}</b></div>
+        <div class="kv"><span>Last review</span><b>${esc(clock.last_review || "—")}</b></div>
+        <div class="kv"><span>Next review</span><b>${esc(clock.next_review || "—")}</b></div>
+        <div class="kv"><span>As of</span><b>${esc(d.as_of || "—")}</b></div>`)}
+    </div>`;
+
+  /* Engines as named cards */
+  let enginesHtml = "";
+  if (engines.length) {
+    /* Check if engines are the new {id,name,does} shape or old string list */
+    const isNewShape = engines.length && typeof engines[0] === "object";
+    enginesHtml = `<div class="section">Engines <span class="cnt">${engines.length}</span></div>`;
+    if (isNewShape) {
+      enginesHtml += engines.map(e => `<div class="mkt-engine-card">
+        <div class="mkt-engine-card-name">${esc(e.name || e.id)}</div>
+        ${e.does ? `<div class="mkt-engine-card-does">${esc(e.does)}</div>` : ""}
+        <div class="mkt-engine-card-id">${esc(e.id)}</div>
+      </div>`).join("");
+    } else {
+      enginesHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+        ${engines.map(e => `<span class="statpill s-mut mono">${esc(typeof e === "string" ? e : (e.id || ""))}</span>`).join("")}
+      </div>`;
+    }
+  } else {
+    enginesHtml = `<div class="section">Engines</div><div class="note muted">No engines registered yet for this department.</div>`;
+  }
+
+  /* Model mix */
+  const mmKeys = Object.keys(mm);
+  const mmHtml = mmKeys.length ? `<div class="section">Model mix</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+    ${mmKeys.map(k => `<span class="statpill s-mut">${esc(k)} ${esc(String(mm[k]))}</span>`).join("")}
+    </div>` : "";
+
+  v.innerHTML = heroHtml + missionHtml + scorecardHtml + enginesHtml + mmHtml;
+  wireBack();
+}
+
+/* ---- CONTENT STUDIO ------------------------------------------------------- */
+RENDER.marketing_content = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/content");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Content Studio unavailable", (d && d.error) || "panel error"); return; }
+
+  if (d.note && !d.accounts.length) {
+    v.innerHTML = `<div class="section">Content Studio</div>
+      <div class="card">
+        <div class="note muted" style="margin-bottom:8px">${esc(d.note)}</div>
+        <div class="note muted">Content plans accrue after the first nightly governor run that has Prophet plans + stock closes available.</div>
+      </div>`;
+    return;
+  }
+
+  const contentTypes = d.content_types || [];
+  const accounts = d.accounts || [];
+  const featuredCharts = d.featured_charts || [];
+  const summary = d.summary || {};
+  const distinctness = d.distinctness || {};
+
+  /* Build featured chart lookup by id */
+  const chartById = {};
+  featuredCharts.forEach(fc => { chartById[fc.id] = fc; });
+
+  /* Header stats */
+  const headerHtml = `<div class="section">Content Studio
+    <span class="cnt">shadow · drafted plan</span>
+    <span class="statpill s-mut">not yet posted</span>
+  </div>
+  <div class="metric-tiles-row">
+    ${["total_posts", "signal_posts", "charts", "accounts"].map(k => `
+      <div class="metric-tile">
+        <div class="eyebrow">${esc(k.replace(/_/g, " "))}</div>
+        <div class="tile-value">${summary[k] != null ? summary[k] : "—"}</div>
+      </div>`).join("")}
+    ${distinctness.max_similarity != null ? `
+      <div class="metric-tile">
+        <div class="eyebrow">Max similarity</div>
+        <div class="tile-value" style="color:${(distinctness.max_similarity || 0) > 0.7 ? "var(--bad)" : "var(--ok)"}">${((distinctness.max_similarity || 0) * 100).toFixed(0)}%</div>
+        <div class="tile-sub">cross-desk Jaccard</div>
+      </div>` : ""}
+  </div>
+  <div class="card" style="margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.55">
+    <b style="color:var(--text)">Mixed-tilt model:</b> every desk posts all content types — signal alerts, charts, explainers, macro notes, receipts, watchlists, and event reactions.
+    The tilt shifts emphasis so each desk feels distinct. The same Prophet signal is rendered with different copy per desk so cross-posting stays safe under platform rules.
+    <b style="color:var(--warn)">This is a drafted plan (shadow mode — not yet posted externally).</b>
+  </div>`;
+
+  /* Content-type filter chips */
+  const typeIds = contentTypes.length ? contentTypes.map(ct => ct.id) : Object.keys(MKT_TYPE_COLORS);
+  const filterHtml = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="mkt-type-filters">
+    <button class="mkt-filter-chip active" data-type="all" onclick="mktFilterPosts('all',this)">All</button>
+    ${contentTypes.map(ct => `<button class="mkt-filter-chip" data-type="${esc(ct.id)}" onclick="mktFilterPosts('${esc(ct.id)}',this)" style="--dot-color:${esc(ct.color || mktTypeColor(ct.id))}">
+      <span class="mkt-dot" style="background:${esc(ct.color || mktTypeColor(ct.id))}"></span>${esc(ct.name || ct.id)}
+    </button>`).join("")}
+  </div>`;
+
+  /* Account switcher */
+  const acctPills = `<div class="mkt-acct-switcher" id="mkt-acct-sw">
+    <button class="mkt-acct-pill active" data-acct="all" onclick="mktSwitchAcct('all',this)">All desks</button>
+    ${accounts.map(a => `<button class="mkt-acct-pill" data-acct="${esc(a.id)}" onclick="mktSwitchAcct('${esc(a.id)}',this)">${esc(a.id)}</button>`).join("")}
+  </div>`;
+
+  /* Per-account section with donut + tilt + post gallery */
+  let acctSections = "";
+  accounts.forEach(acct => {
+    const tilt = acct.tilt || {};
+    const mixObs = acct.mix_observed || {};
+    const queue = acct.queue || [];
+
+    const donutSvg = mktDonutSVG(tilt, contentTypes);
+    const tiltBar = mktTiltBar(tilt, contentTypes);
+    const legendHtml = contentTypes.map(ct => {
+      const w = (tilt[ct.id] || 0) * 100;
+      return `<div class="mkt-donut-legend-row">
+        <span class="mkt-donut-dot" style="background:${esc(ct.color || mktTypeColor(ct.id))}"></span>
+        <span>${esc(ct.name || ct.id)}</span>
+        <span style="margin-left:auto;font-weight:700;color:var(--text)">${w.toFixed(0)}%</span>
+      </div>`;
+    }).join("");
+
+    const acctMeta = `<div class="card" style="margin-bottom:8px">
+      <h3 style="margin-bottom:8px">${esc(acct.id)}
+        <span class="statpill ${acct.kind === "branded" ? "s-ok" : "s-mut"}">${esc(acct.kind || "generic")}</span>
+      </h3>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Voice: <b style="color:var(--text)">${esc(acct.voice || "—")}</b></div>
+      <div class="mkt-donut">
+        ${donutSvg}
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Content tilt</div>
+          <div class="mkt-donut-legend">${legendHtml}</div>
+        </div>
+      </div>
+      ${tiltBar}
+    </div>`;
+
+    /* Post cards */
+    const postCards = queue.map(post => {
+      const featured = post.chart_id ? chartById[post.chart_id] : null;
+      const typeColor = mktTypeColor(post.type);
+      const typeLabel = (contentTypes.find(ct => ct.id === post.type) || {}).name || post.type;
+      const chipHtml = `<span class="mkt-type-chip" style="background:${typeColor}22;border-color:${typeColor}44;color:${typeColor}">${esc(typeLabel)}</span>`;
+      const slotBadge = post.slot ? `<span class="statpill s-mut" style="font-size:10px">${esc(post.slot)}</span>` : "";
+      const statusBadge = `<span class="statpill s-mut" style="font-size:10px">${esc(post.status || "drafted")}</span>`;
+
+      let chartEmbed = "";
+      if (featured && featured.svg) {
+        chartEmbed = `<div class="mkt-chart-embed">${featured.svg}</div>`;
+      }
+
+      const cashtag = post.cashtag ? `<span class="mkt-cashtag">${esc(post.cashtag)}</span>` : "";
+
+      return `<div class="mkt-post-card" data-type="${esc(post.type)}" data-acct="${esc(post.account || acct.id)}">
+        <div class="mkt-post-card-header">
+          ${chipHtml}${cashtag}${slotBadge}${statusBadge}
+          <span class="sub" style="margin-left:auto;font-size:10px;color:var(--faint)">${esc(post.provenance || "")}</span>
+        </div>
+        ${chartEmbed}
+        ${post.headline ? `<div style="font-size:14px;font-weight:600;margin-bottom:4px;line-height:1.4">${esc(post.headline)}</div>` : ""}
+        ${post.body ? `<div style="font-size:12px;color:var(--muted);line-height:1.6">${esc(post.body)}</div>` : ""}
+      </div>`;
+    }).join("");
+
+    acctSections += `<div class="mkt-acct-section" data-acct="${esc(acct.id)}" style="margin-bottom:24px">
+      <div class="section" style="margin-bottom:8px">${esc(acct.id)} <span class="cnt">${queue.length} posts</span></div>
+      ${acctMeta}
+      ${postCards || `<div class="note muted">No posts queued for this desk yet.</div>`}
+    </div>`;
+  });
+
+  v.innerHTML = headerHtml + filterHtml + acctPills + `<div id="mkt-post-gallery">${acctSections}</div>`;
+};
+
+/* Content Studio client-side filter helpers */
+function mktFilterPosts(type, btn) {
+  document.querySelectorAll("#mkt-type-filters .mkt-filter-chip").forEach(el => el.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  document.querySelectorAll(".mkt-post-card").forEach(el => {
+    el.classList.toggle("hidden", type !== "all" && el.dataset.type !== type);
+  });
+}
+function mktSwitchAcct(acct, btn) {
+  document.querySelectorAll("#mkt-acct-sw .mkt-acct-pill").forEach(el => el.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  document.querySelectorAll(".mkt-acct-section").forEach(el => {
+    el.style.display = (acct === "all" || el.dataset.acct === acct) ? "" : "none";
+  });
+}
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */
 const MAI_SETTING_FIELDS = [   /* [key, kind, label, note, min, max] — bounds mirror the bot's */

@@ -3,6 +3,10 @@
 Uses a fixture root with a minimal marketing_state.json matching the frozen
 §3 contract shape (authored here, not depending on the engine lane).
 
+Also tests the NEW content() and department() panels added in round 2 of the
+Marketing Cockpit build.  The content_plan.json fixture is authored here and
+does NOT depend on Lane A (engine lane).
+
 Assertions:
   - Each panel returns ok:True with expected top-level sections when data is present.
   - Each panel returns ok:True with empty/honest state (never raises) when the
@@ -230,6 +234,196 @@ MINIMAL_STATE = {
 
 
 # ---------------------------------------------------------------------------
+# Minimal content_plan.json fixture (§2.3 shape, authored here — no Lane A dep)
+# ---------------------------------------------------------------------------
+
+MINIMAL_CONTENT_PLAN = {
+    "schema_version": 1,
+    "produced_by": "test-fixture",
+    "produced_at": "2026-07-18T00:00:00Z",
+    "tier": "display",
+    "schema": "marketing.content/v1",
+    "as_of": "2026-07-18",
+    "source": {
+        "prophet_plans": 3,
+        "plans_with_charts": 2,
+        "note": "test fixture — no real Prophet data",
+    },
+    "content_types": [
+        {"id": "signal",    "name": "Signal Alert",          "desc": "A Prophet plan as a cashtag post + chart.", "color": "#38e0d4"},
+        {"id": "chart",     "name": "Chart of the Day",      "desc": "A notable price chart.",                   "color": "#6a8dff"},
+        {"id": "education", "name": "Plain-English Explainer","desc": "Simple concept explainers.",              "color": "#b18cff"},
+        {"id": "macro",     "name": "Macro Note",            "desc": "Big-picture macro context.",               "color": "#ffb84d"},
+        {"id": "receipt",   "name": "Report Card",           "desc": "Outcome reopen / call review.",            "color": "#4ad6a0"},
+        {"id": "watchlist", "name": "On Our Radar",          "desc": "Names we are watching.",                   "color": "#93a0b4"},
+        {"id": "event",     "name": "Event Reaction",        "desc": "Reaction to a market event.",              "color": "#ff6b6b"},
+    ],
+    "accounts": [
+        {
+            "id": "flagship",
+            "name": "Flagship",
+            "kind": "branded",
+            "voice": "authoritative desk",
+            "tilt": {
+                "signal": 0.38, "chart": 0.14, "education": 0.10,
+                "macro": 0.14, "receipt": 0.10, "watchlist": 0.07, "event": 0.07,
+            },
+            "mix_observed": {
+                "signal": 8, "chart": 3, "education": 2, "macro": 3,
+                "receipt": 2, "watchlist": 1, "event": 2,
+            },
+            "queue": [
+                {
+                    "id": "post-flagship-001",
+                    "type": "signal",
+                    "account": "flagship",
+                    "cashtag": "$TNDM",
+                    "ticker": "TNDM",
+                    "headline": "Tandem Diabetes — momentum building after catalyst",
+                    "body": "Watch $TNDM. The technical picture shifted this week; what to watch: FDA label update timeline. What would change this: broad medtech selloff.",
+                    "provenance": "neural_web",
+                    "chart_id": "chart-001",
+                    "slot": "D1-AM",
+                    "status": "drafted",
+                },
+                {
+                    "id": "post-flagship-002",
+                    "type": "macro",
+                    "account": "flagship",
+                    "cashtag": None,
+                    "ticker": None,
+                    "headline": "Fed pivot window: what the bond market is telling you",
+                    "body": "Rates moved; here is what it means for equity risk appetite and where to watch for confirmation.",
+                    "provenance": "neural_web",
+                    "chart_id": None,
+                    "slot": "D1-PM",
+                    "status": "drafted",
+                },
+            ],
+        },
+        {
+            "id": "research_a",
+            "name": "Research A",
+            "kind": "generic",
+            "voice": "educational",
+            "tilt": {
+                "signal": 0.28, "chart": 0.12, "education": 0.22,
+                "macro": 0.18, "receipt": 0.08, "watchlist": 0.07, "event": 0.05,
+            },
+            "mix_observed": {
+                "signal": 6, "chart": 2, "education": 5, "macro": 4,
+                "receipt": 2, "watchlist": 2, "event": 0,
+            },
+            "queue": [
+                {
+                    "id": "post-research_a-001",
+                    "type": "education",
+                    "account": "research_a",
+                    "cashtag": None,
+                    "ticker": None,
+                    "headline": "What is MACD telling us — without the jargon",
+                    "body": "A buy marker on our charts means the price momentum shifted. Here is what that means in plain English.",
+                    "provenance": "neural_web",
+                    "chart_id": None,
+                    "slot": "D2-AM",
+                    "status": "drafted",
+                },
+            ],
+        },
+    ],
+    "featured_charts": [
+        {
+            "id": "chart-001",
+            "ticker": "TNDM",
+            "account": "flagship",
+            "cashtag": "$TNDM",
+            "marker_source": "macd_cross",
+            "marker_date": "2026-06-24",
+            "marker_price": 15.28,
+            "svg": "<svg viewBox='0 0 560 300' xmlns='http://www.w3.org/2000/svg'><rect width='560' height='300' fill='#0d1117'/><text x='10' y='20' fill='#38e0d4' font-size='12'>$TNDM</text><polyline points='0,250 100,220 200,180 300,150 400,120 500,90' stroke='#38e0d4' stroke-width='2' fill='none'/><polygon points='300,130 295,145 305,145' fill='#3ddc84'/><text x='295' y='125' fill='#3ddc84' font-size='10'>BUY</text></svg>",
+            "headline": "TNDM buy marker — price momentum shifted",
+            "body": "Watch $TNDM at current levels. The price line crossed into new territory.",
+        },
+    ],
+    "distinctness": {
+        "max_similarity": 0.12,
+        "flags": 0,
+        "note": "same signal rendered per-desk; variants checked",
+    },
+    "summary": {
+        "total_posts": 3,
+        "signal_posts": 1,
+        "charts": 1,
+        "accounts": 2,
+    },
+}
+
+
+# ---------------------------------------------------------------------------
+# State fixture extended with new dept fields (name short, formal_name, tagline, icon, engines as dicts)
+# ---------------------------------------------------------------------------
+
+MINIMAL_STATE_V2 = dict(MINIMAL_STATE)  # shallow copy; override departments below
+MINIMAL_STATE_V2["departments"] = [
+    {
+        "id": "office_cmo",
+        "name": "Command",
+        "formal_name": "Office of the Autonomous CMO",
+        "tagline": "Sets strategy, allocates budget, hires and retires teams.",
+        "icon": "command",
+        "director_model": "fable",
+        "primary_outcome": "Coherent growth strategy and authority ladder.",
+        "non_goals": ["Paid media buying"],
+        "engines": [],
+        "authority_level": "G2",
+        "lifecycle_state": "chartered",
+        "budget": {"envelope_usd": 0, "spent_usd": 0},
+        "model_mix": {},
+        "clock": {"cadence": "weekly", "last_review": None, "next_review": "2026-07-25"},
+        "retirement_test": "North-star flat for 3 consecutive quarters after G4.",
+        "scorecard": {
+            "primary_metric": "authority_level",
+            "leading": [],
+            "trust_health": "clean",
+            "experiment_velocity": 0,
+            "learning_quality": "seeding",
+            "authority_level": "G2",
+        },
+        "wave": 0,
+    },
+    {
+        "id": "growth_os",
+        "name": "Engine Room",
+        "formal_name": "Growth Operating System & Finance",
+        "tagline": "Keeps everything running — scheduling, budgets, credentials, recovery.",
+        "icon": "engine_room",
+        "director_model": "opus",
+        "primary_outcome": "Scalable, repeatable growth infrastructure.",
+        "non_goals": [],
+        "engines": [
+            {"id": "campaign_compiler", "name": "Campaign Compiler", "does": "Turns opportunity data into a structured campaign brief."},
+            {"id": "opportunity_bus", "name": "Opportunity Bus", "does": "Scores and queues incoming opportunities from the intelligence layer."},
+        ],
+        "authority_level": "G2",
+        "lifecycle_state": "building",
+        "budget": {"envelope_usd": 0, "spent_usd": 0},
+        "model_mix": {},
+        "clock": {"cadence": "weekly", "last_review": None, "next_review": "2026-07-25"},
+        "retirement_test": "Infrastructure fully automated; maintenance only.",
+        "scorecard": {
+            "primary_metric": "campaigns_compiled_per_week",
+            "leading": [],
+            "trust_health": "clean",
+            "experiment_velocity": 0,
+            "learning_quality": "seeding",
+            "authority_level": "G2",
+        },
+        "wave": 0,
+    },
+]
+
+
+# ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
@@ -240,6 +434,36 @@ def seeded_root(tmp_path):
     nw_dir.mkdir(parents=True)
     (nw_dir / "marketing_state.json").write_text(
         json.dumps(MINIMAL_STATE, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    return tmp_path
+
+
+@pytest.fixture()
+def seeded_root_v2(tmp_path):
+    """Fixture root with v2 state (short name / formal_name / tagline / engines-as-dicts)."""
+    nw_dir = tmp_path / "data" / "neuralweb"
+    nw_dir.mkdir(parents=True)
+    (nw_dir / "marketing_state.json").write_text(
+        json.dumps(MINIMAL_STATE_V2, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    return tmp_path
+
+
+@pytest.fixture()
+def seeded_content_root(tmp_path):
+    """Fixture root with both marketing_state.json and content_plan.json."""
+    nw_dir = tmp_path / "data" / "neuralweb"
+    nw_dir.mkdir(parents=True)
+    (nw_dir / "marketing_state.json").write_text(
+        json.dumps(MINIMAL_STATE_V2, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    content_dir = tmp_path / "data" / "marketing"
+    content_dir.mkdir(parents=True)
+    (content_dir / "content_plan.json").write_text(
+        json.dumps(MINIMAL_CONTENT_PLAN, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
     return tmp_path
@@ -383,12 +607,203 @@ class TestEmptyRoot:
         assert "settings" in r
 
     def test_no_panel_raises(self, empty_root):
-        """Belt-and-suspenders: none of the 7 panels may raise on empty root."""
+        """Belt-and-suspenders: none of the panels may raise on empty root."""
         for fn_name in ("overview", "departments", "channels", "campaigns",
-                        "experiments", "lobes", "settings"):
+                        "experiments", "lobes", "settings", "content"):
             fn = getattr(marketing, fn_name)
             try:
                 result = fn(empty_root)
+                assert isinstance(result, dict), f"{fn_name} returned non-dict: {result!r}"
+            except Exception as exc:  # noqa: BLE001
+                pytest.fail(f"marketing.{fn_name}() raised on empty root: {exc}")
+
+    def test_department_fail_soft(self, empty_root):
+        r = marketing.department(empty_root, dept_id="office_cmo")
+        _assert_fail_soft(r, "department")
+        assert r["department"] is None
+
+    def test_content_fail_soft(self, empty_root):
+        r = marketing.content(empty_root)
+        _assert_fail_soft(r, "content")
+        assert r["content_types"] == []
+        assert r["accounts"] == []
+        assert r["featured_charts"] == []
+
+
+# ---------------------------------------------------------------------------
+# Tests — departments now have name (short), formal_name, tagline, icon
+# ---------------------------------------------------------------------------
+
+class TestDepartmentShape:
+    """Verify departments in the live engine have the new spec §1.1 shape."""
+
+    def test_departments_have_short_names(self):
+        from engine.marketing.departments import DEPARTMENT_CHARTERS
+        short_names = {d.name for d in DEPARTMENT_CHARTERS}
+        expected_short = {
+            "Command", "Engine Room", "Radar", "Workshop", "Studio",
+            "Broadcast", "Funnel", "Allies", "Lab", "Sentinel",
+        }
+        assert expected_short == short_names, (
+            f"Short names mismatch. Got: {short_names}"
+        )
+
+    def test_departments_have_formal_name(self):
+        from engine.marketing.departments import DEPARTMENT_CHARTERS
+        for dept in DEPARTMENT_CHARTERS:
+            d = dept.as_dict()
+            assert d.get("formal_name"), f"dept {dept.id} missing formal_name"
+
+    def test_departments_have_tagline(self):
+        from engine.marketing.departments import DEPARTMENT_CHARTERS
+        for dept in DEPARTMENT_CHARTERS:
+            d = dept.as_dict()
+            assert d.get("tagline"), f"dept {dept.id} missing tagline"
+
+    def test_departments_have_icon(self):
+        from engine.marketing.departments import DEPARTMENT_CHARTERS
+        for dept in DEPARTMENT_CHARTERS:
+            d = dept.as_dict()
+            assert d.get("icon"), f"dept {dept.id} missing icon"
+
+    def test_engines_are_dicts(self):
+        from engine.marketing.departments import DEPARTMENT_CHARTERS
+        for dept in DEPARTMENT_CHARTERS:
+            d = dept.as_dict()
+            for engine in d["engines"]:
+                assert isinstance(engine, dict), (
+                    f"dept {dept.id}: engine is not dict: {engine!r}"
+                )
+                assert "id" in engine and "name" in engine and "does" in engine, (
+                    f"dept {dept.id}: engine missing keys: {engine}"
+                )
+
+
+# ---------------------------------------------------------------------------
+# Tests — content() panel (round 2)
+# ---------------------------------------------------------------------------
+
+class TestContentPanel:
+    def test_content_ok_with_data(self, seeded_content_root):
+        r = marketing.content(seeded_content_root)
+        assert r["ok"] is True
+        assert isinstance(r["content_types"], list)
+        assert len(r["content_types"]) == 7
+        assert isinstance(r["accounts"], list)
+        assert len(r["accounts"]) == 2
+        assert isinstance(r["featured_charts"], list)
+        assert len(r["featured_charts"]) == 1
+        assert r["summary"]["total_posts"] == 3
+        assert r["summary"]["signal_posts"] == 1
+        assert r["summary"]["charts"] == 1
+        assert r["summary"]["accounts"] == 2
+        assert r["distinctness"]["flags"] == 0
+
+    def test_content_type_fields(self, seeded_content_root):
+        r = marketing.content(seeded_content_root)
+        ct = r["content_types"][0]
+        assert "id" in ct
+        assert "name" in ct
+        assert "color" in ct
+
+    def test_content_account_tilt(self, seeded_content_root):
+        r = marketing.content(seeded_content_root)
+        acct = r["accounts"][0]
+        assert acct["id"] == "flagship"
+        tilt = acct["tilt"]
+        assert "signal" in tilt
+        # signal must be the largest weight for flagship
+        assert tilt["signal"] >= max(v for k, v in tilt.items() if k != "signal")
+
+    def test_content_featured_chart_has_svg(self, seeded_content_root):
+        r = marketing.content(seeded_content_root)
+        fc = r["featured_charts"][0]
+        assert fc["ticker"] == "TNDM"
+        assert fc["svg"].startswith("<svg")
+        assert "BUY" in fc["svg"]
+
+    def test_content_queue_posts(self, seeded_content_root):
+        r = marketing.content(seeded_content_root)
+        flagship = next(a for a in r["accounts"] if a["id"] == "flagship")
+        queue = flagship["queue"]
+        assert len(queue) == 2
+        signal_post = next(p for p in queue if p["type"] == "signal")
+        assert signal_post["cashtag"] == "$TNDM"
+        assert signal_post["chart_id"] == "chart-001"
+        assert signal_post["status"] == "drafted"
+
+    def test_content_fail_soft_absent(self, seeded_root):
+        """content_plan.json absent → ok:True with honest note, empty lists."""
+        r = marketing.content(seeded_root)
+        assert r["ok"] is True
+        assert r.get("note") is not None
+        assert "accruing" in r["note"].lower() or "not yet" in r["note"].lower()
+        assert r["content_types"] == []
+        assert r["accounts"] == []
+        assert r["featured_charts"] == []
+
+    def test_content_fail_soft_empty_root(self, empty_root):
+        r = marketing.content(empty_root)
+        _assert_fail_soft(r, "content")
+        assert r["content_types"] == []
+        assert r["accounts"] == []
+
+
+# ---------------------------------------------------------------------------
+# Tests — department() panel (round 2)
+# ---------------------------------------------------------------------------
+
+class TestDepartmentPanel:
+    def test_department_ok_known_id(self, seeded_root_v2):
+        r = marketing.department(seeded_root_v2, dept_id="growth_os")
+        assert r["ok"] is True
+        dept = r["department"]
+        assert dept is not None
+        assert dept["id"] == "growth_os"
+        assert dept["name"] == "Engine Room"
+        assert dept["formal_name"] == "Growth Operating System & Finance"
+        assert dept["tagline"] is not None
+        assert dept["icon"] == "engine_room"
+
+    def test_department_engines_as_dicts(self, seeded_root_v2):
+        r = marketing.department(seeded_root_v2, dept_id="growth_os")
+        engines = r["department"]["engines"]
+        assert len(engines) == 2
+        eng = engines[0]
+        assert "id" in eng
+        assert "name" in eng
+        assert "does" in eng
+
+    def test_department_known_id_cmo(self, seeded_root_v2):
+        r = marketing.department(seeded_root_v2, dept_id="office_cmo")
+        assert r["ok"] is True
+        dept = r["department"]
+        assert dept["name"] == "Command"
+        assert dept["formal_name"] == "Office of the Autonomous CMO"
+        assert dept["engines"] == []
+
+    def test_department_unknown_id_fail_soft(self, seeded_root_v2):
+        r = marketing.department(seeded_root_v2, dept_id="does_not_exist")
+        assert r["ok"] is True
+        assert r["department"] is None
+        assert r.get("note") is not None
+
+    def test_department_none_id_fail_soft(self, seeded_root_v2):
+        r = marketing.department(seeded_root_v2, dept_id=None)
+        assert r["ok"] is True
+        assert r["department"] is None
+
+    def test_department_fail_soft_absent_state(self, empty_root):
+        r = marketing.department(empty_root, dept_id="office_cmo")
+        _assert_fail_soft(r, "department")
+        assert r["department"] is None
+
+    def test_no_new_panel_raises_empty_root(self, empty_root):
+        """content() and department() must not raise on empty root."""
+        for fn_name, kwargs in [("content", {}), ("department", {"dept_id": "office_cmo"})]:
+            fn = getattr(marketing, fn_name)
+            try:
+                result = fn(empty_root, **kwargs)
                 assert isinstance(result, dict), f"{fn_name} returned non-dict: {result!r}"
             except Exception as exc:  # noqa: BLE001
                 pytest.fail(f"marketing.{fn_name}() raised on empty root: {exc}")

@@ -31,6 +31,8 @@ _ARTIFACT_LOBE = "marketing-lobe"
 # Paths relative to repo root
 _STATE_PATH = Path("data") / "neuralweb" / "marketing_state.json"
 _LOBE_PATH = Path("site") / "neuralwebdata" / "marketing_lobe.json"
+# Unregistered — beside seed ledgers, no synapse pin/SIGNAL_BUS churn
+_CONTENT_PLAN_PATH = Path("data") / "marketing" / "content_plan.json"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -109,20 +111,68 @@ def _public_safe_subset(state: dict) -> dict:
 # Governor
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _build_content_plan(r: Path, cfg: dict) -> dict:
+    """Build content plan — fail-soft to a minimal honest plan if unavailable."""
+    try:
+        from engine.marketing.content_studio import content_plan as _content_plan
+        from engine.marketing.chart_render import load_closes
+
+        # Load Prophet plans
+        plans: list[dict] = []
+        prophet_path = r / "site" / "prophet" / "index.json"
+        if prophet_path.exists():
+            import json as _json
+            _idx = _json.loads(prophet_path.read_text(encoding="utf-8"))
+            plans = _idx.get("plans", []) or []
+
+        def closes_loader(ticker: str):  # type: ignore[return]
+            return load_closes(ticker, r, n=90)
+
+        return _content_plan(cfg=cfg, plans=plans, closes_loader=closes_loader)
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing_governor: content_plan build failed: %s", exc)
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return {
+            "schema_version": 1,
+            "produced_by": "engine/neuralweb/marketing_governor.py",
+            "produced_at": now_str,
+            "tier": "display",
+            "schema": "marketing.content/v1",
+            "as_of": now_str[:10],
+            "source": {"prophet_plans": 0, "plans_with_charts": 0, "note": f"Build failed: {exc}"},
+            "content_types": [],
+            "accounts": [],
+            "featured_charts": [],
+            "distinctness": {"max_similarity": 0.0, "flags": 0, "note": "unavailable"},
+            "summary": {"total_posts": 0, "signal_posts": 0, "charts": 0, "accounts": 0},
+        }
+
+
 def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
     """Build marketing state and write both artifacts.
 
-    Returns {"state_path": str, "lobe_path": str} on success.
-    Never raises — returns {"state_path": None, "lobe_path": None, "error": ...}
-    on failure.
+    Returns {"state_path": str, "lobe_path": str, "content_plan_path": str} on success.
+    Never raises — returns error key on failure.
     """
-    result: dict[str, Any] = {"state_path": None, "lobe_path": None}
+    result: dict[str, Any] = {"state_path": None, "lobe_path": None, "content_plan_path": None}
     try:
         r = _repo_root(root)
 
+        # Load config once
+        from engine.marketing.state import _load_cfg
+        cfg = _load_cfg(r)
+
+        # Build + write content plan FIRST (state.py reads it for the summary block)
+        content_plan_obj = _build_content_plan(r, cfg)
+        content_plan_path = r / _CONTENT_PLAN_PATH
+        _write_json_atomic(content_plan_path, content_plan_obj)
+        result["content_plan_path"] = str(content_plan_path)
+        log.info("marketing_governor: wrote %s", content_plan_path)
+
         # Build state
         from engine.marketing.state import build_state
-        state = build_state(root=r)
+        state = build_state(root=r, cfg=cfg)
 
         # Stamp with envelope
         try:
@@ -191,5 +241,6 @@ if __name__ == "__main__":
     print(
         f"marketing_governor: ok — "
         f"state={res.get('state_path')} "
-        f"lobe={res.get('lobe_path')}"
+        f"lobe={res.get('lobe_path')} "
+        f"content_plan={res.get('content_plan_path')}"
     )

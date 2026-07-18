@@ -267,8 +267,34 @@ def build_state(root: Path | str | None = None, cfg: dict | None = None) -> dict
         budget_alloc = BudgetAllocator(total_envelope_usd=0.0)
         budget_alloc.allocate(depts_list)
 
-        # --- Desk network ---
+        # --- Desk network (with per-account tilt + mix_observed) ---
         dn = desk_network(cfg)
+
+        # --- Content plan summary (reads data/marketing/content_plan.json if present) ---
+        content_summary: dict = {
+            "total_posts": None,
+            "signal_posts": None,
+            "charts": None,
+            "accounts": None,
+            "state": "accruing",
+            "note": "Content plan not yet generated.",
+        }
+        content_plan_path = r / "data" / "marketing" / "content_plan.json"
+        try:
+            if content_plan_path.exists():
+                import json as _json
+                _cp = _json.loads(content_plan_path.read_text(encoding="utf-8"))
+                _s = _cp.get("summary", {})
+                content_summary = {
+                    "total_posts": _s.get("total_posts"),
+                    "signal_posts": _s.get("signal_posts"),
+                    "charts": _s.get("charts"),
+                    "accounts": _s.get("accounts"),
+                    "state": "present",
+                    "as_of": _cp.get("as_of"),
+                }
+        except Exception:  # noqa: BLE001
+            pass
 
         # --- Self-improvement loop ---
         improvement = improvement_loop_state(
@@ -389,6 +415,7 @@ def build_state(root: Path | str | None = None, cfg: dict | None = None) -> dict
             },
             "channels_priority": _CHANNELS_PRIORITY,
             "waves": _WAVES,
+            "content": content_summary,
             "notes": [
                 "deterministic v1 substrate; agent actuation staged",
                 "display-tier; originates no market signal or score",

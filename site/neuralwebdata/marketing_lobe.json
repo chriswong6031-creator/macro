@@ -19,61 +19,61 @@
   "departments": [
     {
       "id": "office_cmo",
-      "name": "Office of the Autonomous CMO",
+      "name": "Command",
       "lifecycle_state": "chartered",
       "wave": 0
     },
     {
       "id": "growth_os",
-      "name": "Growth Operating System and Finance",
+      "name": "Engine Room",
       "lifecycle_state": "building",
       "wave": 1
     },
     {
       "id": "intelligence",
-      "name": "Market, Audience, and Opportunity Intelligence",
+      "name": "Radar",
       "lifecycle_state": "chartered",
       "wave": 1
     },
     {
       "id": "products",
-      "name": "Intelligence Products and Public Tools",
+      "name": "Workshop",
       "lifecycle_state": "chartered",
       "wave": 3
     },
     {
       "id": "studio",
-      "name": "Editorial, Creative Studio, and Data Newsroom",
+      "name": "Studio",
       "lifecycle_state": "chartered",
       "wave": 4
     },
     {
       "id": "distribution",
-      "name": "Distribution Network",
+      "name": "Broadcast",
       "lifecycle_state": "chartered",
       "wave": 4
     },
     {
       "id": "lifecycle",
-      "name": "Lifecycle, Conversion, and Monetization",
+      "name": "Funnel",
       "lifecycle_state": "chartered",
       "wave": 2
     },
     {
       "id": "ecosystem",
-      "name": "Creator, Partner, and Community Infrastructure",
+      "name": "Allies",
       "lifecycle_state": "chartered",
       "wave": 5
     },
     {
       "id": "growth_science",
-      "name": "Growth Science and Self-Improvement",
+      "name": "Lab",
       "lifecycle_state": "chartered",
       "wave": 2
     },
     {
       "id": "trust_office",
-      "name": "Autonomous Trust, Policy, and Red-Team Office",
+      "name": "Sentinel",
       "lifecycle_state": "chartered",
       "wave": 0
     }
@@ -159,7 +159,7 @@
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-18T18:02:02Z",
-  "inputs_hash": "sha256:649be1c3077733665290512c735c35c3977f88705fb72a771efcda585ba6c950",
+  "produced_at": "2026-07-18T21:45:26Z",
+  "inputs_hash": "sha256:a77f70323d6660f4bf94ebabce37ee4cbcb1765b2b287535f6ddfe8d22d9cb67",
   "tier": "display"
 }

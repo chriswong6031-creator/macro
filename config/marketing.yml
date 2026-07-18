@@ -1,6 +1,11 @@
 ## config/marketing.yml — Marketing lobe configuration
 ## Drives engine/neuralweb/marketing_governor.py
 ## Spec §5 (frozen contract).
+##
+## Mixed-tilt model: every desk posts ALL 7 content types; the tilt
+## shifts emphasis so desks feel distinct without being clones.
+## signal is the largest weight on every account (min 0.28).
+## All weights ≥ 0.03.
 
 positioning:
   category: "Accountable AI market intelligence"
@@ -32,29 +37,82 @@ desk_network:
       kind: branded
       beat: "What changed and why it matters"
       voice: "authoritative desk"
-      corpus: full
+      # Flagship: heavy on signal + macro; the authoritative read
+      tilt:
+        signal: 0.38
+        chart: 0.12
+        education: 0.10
+        macro: 0.18
+        receipt: 0.10
+        watchlist: 0.06
+        event: 0.06
+
     - id: receipts
       kind: branded
       beat: "Visual evidence + public report card"
       voice: "dry, receipts-forward"
-      corpus: charts_claims
+      # Receipts: heavy on receipt + chart; accountability desk
+      tilt:
+        signal: 0.30
+        chart: 0.22
+        education: 0.06
+        macro: 0.08
+        receipt: 0.22
+        watchlist: 0.06
+        event: 0.06
+
     - id: theme_desk
       kind: branded
       beat: "Rotating high-attention vertical"
       voice: "specialist"
-      corpus: theme
+      # Theme: heavy on signal + event; follows high-attention moments
+      tilt:
+        signal: 0.36
+        chart: 0.12
+        education: 0.10
+        macro: 0.10
+        receipt: 0.08
+        watchlist: 0.06
+        event: 0.18
+
     - id: research_a
       kind: generic
       beat: "Macro/rates/liquidity explainers"
       voice: "educational"
-      corpus: macro
+      # Research A: heavy on macro + education; the explainer desk
+      tilt:
+        signal: 0.28
+        chart: 0.10
+        education: 0.22
+        macro: 0.24
+        receipt: 0.06
+        watchlist: 0.06
+        event: 0.04
+
     - id: research_b
       kind: generic
       beat: "Single-stock why-is-it-moving fast desk"
       voice: "fast, reactive"
-      corpus: why_moving
+      # Research B: heavy on signal + chart; fast-turn desk
+      tilt:
+        signal: 0.40
+        chart: 0.22
+        education: 0.06
+        macro: 0.08
+        receipt: 0.08
+        watchlist: 0.06
+        event: 0.10
+
     - id: research_c
       kind: generic
       beat: "Charts + historical analogues"
       voice: "pattern/history"
-      corpus: analogues
+      # Research C: heavy on chart + watchlist; pattern and historical context desk
+      tilt:
+        signal: 0.30
+        chart: 0.26
+        education: 0.08
+        macro: 0.08
+        receipt: 0.06
+        watchlist: 0.16
+        event: 0.06
