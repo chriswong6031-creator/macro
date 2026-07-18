@@ -1340,6 +1340,8 @@ jobs:
         run: python scripts/check_ruling_conflicts.py --selftest
       - name: ruling graph test suite
         run: python -m pytest tests/test_ruling_graph.py -q
+      - name: model-routing guard hook matrix (HOUSE-U2 — deny/allow incl. FABLE-WHY workflow gate)
+        run: python -m pytest tests/test_model_routing_guard.py -q
 
   contract-drift:
     # NW Rails PR-7 (R4 contract governance): checks that each artifact in
