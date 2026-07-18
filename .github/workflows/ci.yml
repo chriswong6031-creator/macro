@@ -761,7 +761,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - name: install test deps (engine cross-check imports market_state)
-        run: pip install "pytest<9" pandas numpy
+        run: pip install pytest pandas numpy
       - name: guard constants must match engine/market_state.py
         run: python -m pytest tests/test_check_ms_board_coherence.py -q
 
@@ -812,7 +812,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install jsonschema "pytest<9" pandas numpy pyyaml
+        run: pip install jsonschema pytest pandas numpy pyyaml
       - name: signal §7 contract tests
         run: python -m pytest tests/test_validate_signals.py -q
 
@@ -828,7 +828,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: trial-registration lint (no new unregistered harness)
         run: python3 scripts/check_trial_registration.py
       - name: reliability-contract guard (no gated field rendered directionally, audit #46)
@@ -848,7 +848,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: badge-passport ratchet (no new conviction badge without a passport)
         run: python3 scripts/check_badge_passport.py site
       - name: spine contract + partial-pooling safety tests
@@ -886,7 +886,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: forward-log writer contract tests (keep-FIRST, cone edges, never-raise)
         run: python -m pytest tests/test_cycle_forward_log.py -q
 
@@ -903,7 +903,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml scipy
+        run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: grading_stats library tests (wilson_ci, fdr_bh, cone_coverage, china regression)
         run: python -m pytest tests/test_grading_stats.py -q
 
@@ -924,7 +924,7 @@ jobs:
       - name: install minimal deps
         # beautifulsoup4: test_china_news_engine.py patches bs4.BeautifulSoup on the
         # official-pages fetch path, and patch() imports the module.
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1015,7 +1015,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyyaml requests
+        run: pip install pytest pandas numpy pyyaml requests
       - name: china_news collector tests (incl. adapter-registered-without-akshare)
         run: python -m pytest tests/test_china_news.py -q
       - name: adapter registry must stay populated
@@ -1036,7 +1036,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: same instrument agrees across pages (or declares its basis)
         run: python3 scripts/check_cycle_consistency.py site
       - name: consistency + phase-coherence regression tests
@@ -1057,7 +1057,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pyyaml pandas pyarrow requests
+        run: pip install pytest pyyaml pandas pyarrow requests
       - name: synapse registry integrity (hard gate)
         run: python3 scripts/check_synapse_registry.py
       - name: synapse read-gate — warn tier + Article-2 hard fail
@@ -1101,7 +1101,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
         run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_admin_metabolism.py tests/test_admin_metabolism_history.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py tests/test_nw_lobe_descriptions.py tests/test_synapse_registry_contract.py -q
       - name: "HARD | entity/thesis/mechanism registry integrity (ETM-C1..C7)"
@@ -1129,7 +1129,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml jinja2
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar)
         run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py -q
 
@@ -1146,7 +1146,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: SA-W2 CN standout audit tests
         run: python -m pytest tests/test_cn_standout_audit.py tests/test_china_standout_track.py -v -q
 
@@ -1189,7 +1189,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml scipy
+        run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: causal factory + signal-foundry brainstorm suites
         run: >
           python -m pytest
@@ -1209,7 +1209,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: rebalance calendar + pulse tests
         run: python -m pytest tests/test_rebalance_calendar.py tests/test_rebalance_pulse.py -q
 
@@ -1235,7 +1235,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pyyaml
+        run: pip install pytest pyyaml
       - name: DAG conformance check (hard — exits 1 on undeclared lane drift)
         run: python scripts/check_dag_conformance.py --verbose
       - name: DAG conformance selftest + live conformance tests
@@ -1254,7 +1254,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pyyaml
+        run: pip install pytest pyyaml
       - name: authority guard (hard fail on Article-2 forbidden reads)
         run: python scripts/check_research_factory_authority.py
       - name: authority guard selftest (gate fires on planted violation)
@@ -1275,7 +1275,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pyyaml
+        run: pip install pytest pyyaml
       - name: authority guard (hard fail on money-path forbidden reads)
         run: python scripts/check_cycle_pattern_authority.py
       - name: authority guard selftest (gate fires on planted violation)
@@ -1296,7 +1296,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9"
+        run: pip install pytest
       - name: privacy-boundary guard selftest (gate fires on planted violations)
         run: python3 scripts/check_private_boundary.py --selftest
       - name: privacy-boundary guard (hard fail on committed private fields or missing rail)
@@ -1327,7 +1327,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pyyaml
+        run: pip install pytest pyyaml
       - name: build check (committed outputs match YAML regeneration byte-for-byte)
         run: python scripts/build_ruling_graph.py --check
       - name: conflict checker (hard fail on new FDR family or privacy boundary violations)
@@ -1359,7 +1359,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: contract drift check (hard-fail — ratchet flipped 2026-07-14)
         run: python scripts/check_contract_drift.py
       - name: contract drift unit tests
@@ -1377,7 +1377,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: flow-cohorts unit tests
         run: python -m pytest tests/test_flow_cohorts.py -q
 
@@ -1400,7 +1400,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml boto3 scikit-learn joblib
+        run: pip install pytest pandas numpy pyarrow pyyaml boto3 scikit-learn joblib
       - name: flow-signals ledger + grader unit tests
         run: python -m pytest tests/test_flow_signals.py -q
       - name: FS-4 scorer unit tests (Lane B)
@@ -1427,7 +1427,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pytest-mock pandas numpy pyarrow pyyaml requests boto3 scikit-learn joblib
+        run: pip install pytest pytest-mock pandas numpy pyarrow pyyaml requests boto3 scikit-learn joblib
       - name: FS-1 flow cohorts unit tests
         run: python -m pytest tests/test_fs1_flow_cohorts.py -q
       - name: FS-2 atlas builder unit tests
@@ -1450,7 +1450,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow
+        run: pip install pytest pandas numpy pyarrow
       - name: broad ETF flow proxy unit tests
         run: python -m pytest tests/test_broad_etf_flows.py -q
 
@@ -1466,7 +1466,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: qledger cluster-honest Wilson CI unit tests
         run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
       - name: altdata reboot W2 — per-channel family routing + placebo tests
@@ -1484,7 +1484,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml requests
+        run: pip install pytest pandas numpy pyarrow pyyaml requests
       - name: finnhub transcript collector tests
         run: python -m pytest tests/test_finnhub_transcripts.py -q
       - name: stocktwits sentiment collector tests
@@ -1508,7 +1508,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pyyaml
+        run: pip install pytest pyyaml
       - name: meta-guard selftest (synthetic assertions — gate fires on violations)
         run: python3 scripts/check_house_law_registry.py --selftest
       - name: meta-guard live check (census + wiring + selftest truth + ratchets)
@@ -1536,7 +1536,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml jinja2
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: leader lifecycle engine tests
         run: python -m pytest tests/test_leader_lifecycle.py -q
       - name: leader radar builder tests
@@ -1556,7 +1556,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pyyaml
+        run: pip install pytest pyyaml
       - name: evidence-clock checker selftest (gate fires on synthetic violations)
         run: python3 scripts/check_evidence_clock.py --selftest
       - name: evidence-clock artifact integrity (hard gate)
@@ -1621,7 +1621,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pyyaml
+        run: pip install pytest pyyaml
       - name: grader-manifest selftest (drift detection + fail-closed proof)
         run: python3 scripts/check_grader_manifest.py --selftest
       - name: grader-manifest live check (hash drift is a hard failure)
@@ -1644,7 +1644,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9" pyyaml
+        run: pip install pytest pyyaml
       - name: self-mod-fence selftest (all four cases proven)
         run: python3 scripts/check_self_mod_fence.py --selftest
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
@@ -1690,7 +1690,7 @@ jobs:
         # requests: the v8 reflex-arc reping tests (#2442) patch scripts.notify.send_telegram,
         # and scripts/notify.py does a real `import requests` at module import — without it
         # the patch target fails to resolve and 5 reflex tests die at import, not on behavior.
-        run: pip install "pytest<9" pandas numpy pyyaml anthropic pyarrow requests
+        run: pip install pytest pandas numpy pyyaml anthropic pyarrow requests
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         run: python3 scripts/check_capability_redline.py --selftest
       - name: capability-redline live scan (hard fail on secret values or value-capture)
@@ -1783,7 +1783,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9"
+        run: pip install pytest
       - name: hub a11y guard (5 checks on globe-deck pages)
         run: python -m scripts.check_hub_a11y site
       - name: hub a11y guard unit tests (violating + passing fixtures per check)
@@ -1806,7 +1806,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install "pytest<9"
+        run: pip install pytest
       - name: font-ui definition guard (body-level var(--font-ui) coverage)
         run: python -m scripts.check_font_ui_defined templates
       - name: font-ui guard unit tests (violating + passing fixtures per check)
@@ -1823,7 +1823,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy scipy pyyaml pyarrow
+        run: pip install pytest pandas numpy scipy pyyaml pyarrow
       - name: ratio lens test suite
         run: python -m pytest tests/test_oracle_ratio_lens.py -q
 
@@ -1838,7 +1838,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: hk confirming turn tests
         run: python -m pytest tests/test_hk_confirming_turn.py -q
 
@@ -1853,7 +1853,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: cycle ontology tests
         run: python -m pytest tests/test_cycle_ontology.py -q
 
@@ -1867,7 +1867,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: hk leadership tests
         run: python -m pytest tests/test_hk_leadership.py -q
 
@@ -1882,7 +1882,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: hk context chips tests
         run: python -m pytest tests/test_hk_context_chips.py -q
 
@@ -1900,7 +1900,7 @@ jobs:
         # full heavy profile — these tests import through scripts/build_hk.py
         # (jinja2 -> markupsafe, plotly, pillow, requests); verified in a scratch
         # venv against exactly this set.
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
       - name: hk robustness w5 tests
         run: python -m pytest tests/test_hk_robustness_w5.py tests/test_hk_freshness.py -q
 
@@ -1914,7 +1914,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: hk integration seam tests
         run: python -m pytest tests/test_hk_integration_seams.py -q
 
@@ -1930,7 +1930,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml jinja2 markupsafe
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 markupsafe
       - name: hkrv w3 banner tests
         run: python -m pytest tests/test_hkrv_w3_banner.py -q
 
@@ -1944,7 +1944,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas pyarrow jinja2 pyyaml
+        run: pip install pytest pandas pyarrow jinja2 pyyaml
       - name: basket staleness warn tests
         run: python -m pytest tests/test_basket_staleness_warn.py -q
 
@@ -1960,7 +1960,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyyaml pyarrow
+        run: pip install pytest pandas numpy pyyaml pyarrow
       - name: live flow ops test suite
         run: python -m pytest tests/test_live_flow_tiering.py -v
 
@@ -1977,7 +1977,7 @@ jobs:
           python-version: "3.12"
       - name: install deps
         # jinja2: test_ird_wiring imports scripts.build_intl / build_macro_context (template env)
-        run: pip install "pytest<9" pandas numpy pyyaml pyarrow requests jinja2 plotly
+        run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2 plotly
       - name: IRD substrate + engines test suite
         run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py tests/test_ird_velocity.py tests/test_ird_wiring.py -q
 
@@ -1993,7 +1993,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyyaml pyarrow requests jinja2
+        run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2
       - name: ITR turn state machine + rotation test suite
         run: python -m pytest tests/test_intl_market_state.py tests/test_intl_rotation.py -q
 
@@ -2013,7 +2013,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyyaml pyarrow
+        run: pip install pytest pandas numpy pyyaml pyarrow
       - name: altdata-brain governance + de-escalation law tests
         run: python -m pytest tests/test_w7a_tenants.py tests/test_altdata_brain_reconcile.py -q
 
@@ -2034,7 +2034,7 @@ jobs:
         # pandas/numpy/pyyaml: both suites import their producers at collection time
         # (build_dt_contra_state → engine.dannytrades_chip → numpy/pandas;
         # build_subsector_membership → engine.basket_index → lib.config → yaml).
-        run: pip install "pytest<9" pandas numpy pyyaml
+        run: pip install pytest pandas numpy pyyaml
       - name: dt_contra_state + subsector membership test suites
         run: python -m pytest tests/test_dt_contra_state.py tests/test_build_subsector_membership.py -q
 
@@ -2053,7 +2053,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pyyaml pandas numpy pyarrow
+        run: pip install pytest pyyaml pandas numpy pyarrow
       - name: SA-W4 standout review test suite
         run: python -m pytest tests/test_standout_review.py -v
 
@@ -2070,7 +2070,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyyaml pyarrow
+        run: pip install pytest pandas numpy pyyaml pyarrow
       - name: RC-R14 China + HK rotation events test suite
         run: python -m pytest tests/test_rotation_events.py tests/test_rotation_events_china.py tests/test_rotation_events_hk.py -v
 
@@ -2096,7 +2096,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml scipy
+        run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: CRX runner + budget contract tests (NEVER-RAISE, 85% gate, usage-state)
         run: python -m pytest tests/test_codex_runner_budget.py -q
       - name: CRX lanes + loop driver tests (case lane, signal lane, run_once, loop iterations)
@@ -2126,7 +2126,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: budget gate contract tests (key_budget, gate_verdict, write_status)
         run: python -m pytest tests/test_metabolism_budget_gate.py -q
       - name: run-until dispatch + workflow YAML assertion tests
@@ -2149,7 +2149,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" requests pyyaml pandas numpy
+        run: pip install pytest requests pyyaml pandas numpy
       - name: admin live-runs snapshot tests
         run: python -m pytest tests/test_admin_live_runs.py -q
 
@@ -2171,7 +2171,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow
+        run: pip install pytest pandas numpy pyarrow
       - name: CBF regime classifier contract tests
         run: python -m pytest tests/test_flow_regime.py -v
 
@@ -2201,7 +2201,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml openpyxl requests
+        run: pip install pytest pandas numpy pyarrow pyyaml openpyxl requests
       - name: CCW-W1 bond holdings parser + registry + FRED alias tests
         run: python -m pytest tests/test_corp_bond_holdings.py tests/test_fred_series_alias_conflicts.py tests/test_fred_baml_archive.py -v
       - name: CCW-W5 FINRA corp bonds collector tests
@@ -2233,7 +2233,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: CCW-W2 g-spread engine tests
         run: python -m pytest tests/test_corp_credit.py -v
 
@@ -2266,7 +2266,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml openpyxl requests
+        run: pip install pytest pandas numpy pyarrow pyyaml openpyxl requests
       - name: CCW-W3 credit momentum tests
         run: python -m pytest tests/test_credit_momentum.py tests/test_corp_bond_holdings.py tests/test_finra_corp_bonds.py -v
 
@@ -2292,7 +2292,7 @@ jobs:
           python-version: "3.12"
       - name: install deps
         # plotly: test file imports scripts.build_bonds, which imports plotly.graph_objects
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml jinja2 plotly
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly
       - name: CCW-W4 credit desk vm tests
         run: python -m pytest tests/test_bonds_corp_credit_vm.py -v
 
@@ -2316,7 +2316,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml scipy
+        run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: CCW-W6 Study S1 unit tests
         run: python -m pytest tests/test_ccw_study_s1.py -v
 
@@ -2340,7 +2340,7 @@ jobs:
         # admin.config_store imports yaml at module load). maxminddb is deliberately
         # OMITTED so this run ALSO proves app/gate.py imports and runs cleanly without
         # the optional GeoIP library.
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: gate logic unit tests (app/gate.py, no maxminddb)
         run: python -m pytest tests/test_site_gate.py -v
       - name: admin site-gate unit + HTTP tests (admin/site_gate.py)
@@ -2367,7 +2367,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: pick lab liquidity gate regression tests
         run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py -q
 
@@ -2393,7 +2393,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: W2 SURFACE engine unit tests
         run: python -m pytest tests/test_options_surface.py -v
 
@@ -2408,6 +2408,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install "pytest<9" fastapi
+        run: pip install pytest fastapi
       - name: identity capture unit tests
         run: python -m pytest tests/test_collect_identity.py -v
