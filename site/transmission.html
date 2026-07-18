@@ -3,6 +3,9 @@
 
 
 
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,19 +21,19 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 </style>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Rate & Inflation Transmission — 2026-07-17</title>
+<title>Transmission — 2026-07-17</title>
 
-<meta name="description" content="How interest rates and inflation drive every asset class — headwinds, tailwinds, and regime-aware transmission reads.">
+<meta name="description" content="The three forces that move every asset — interest rates, inflation and the dollar — read in plain words: what each is doing, who benefits, who gets hurt, and what changed.">
 <link rel="canonical" href="https://mastermind-x.com/transmission.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mastermind">
-<meta property="og:title" content="Rate &amp; Inflation Transmission | Mastermind">
-<meta property="og:description" content="How interest rates and inflation drive every asset class — headwinds, tailwinds, and regime-aware transmission reads.">
+<meta property="og:title" content="Transmission — Rates, Inflation &amp; the Dollar | Mastermind">
+<meta property="og:description" content="The three forces that move every asset — interest rates, inflation and the dollar — read in plain words: what each is doing, who benefits, who gets hurt, and what changed.">
 <meta property="og:url" content="https://mastermind-x.com/transmission.html">
 <meta property="og:image" content="https://mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Rate &amp; Inflation Transmission | Mastermind">
-<meta name="twitter:description" content="How interest rates and inflation drive every asset class — headwinds, tailwinds, and regime-aware transmission reads.">
+<meta name="twitter:title" content="Transmission — Rates, Inflation &amp; the Dollar | Mastermind">
+<meta name="twitter:description" content="The three forces that move every asset — interest rates, inflation and the dollar — read in plain words: what each is doing, who benefits, who gets hurt, and what changed.">
 <meta name="twitter:image" content="https://mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -40,7 +43,11 @@
   --blue:#285FFF; --indigo:#4559DC; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
   --faint:#A0A0A0; --red:#D30B0B; --amber:#F5AD42; --green:#1a7f43; --teal:#1F8A70;
   --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA;
+  /* channel identity hues — every element belonging to a channel wears its hue */
+  --ch-rates:#4559DC; --ch-infl:#B45309; --ch-usd:#0F766E;
 }
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;
+  --ch-rates:#8b96f8;--ch-infl:#fbbf24;--ch-usd:#2dd4bf}
 *{box-sizing:border-box}
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
@@ -48,85 +55,157 @@ html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsof
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:var(--blue);text-decoration:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
-.grid{display:grid;gap:18px}
-.cols-2{grid-template-columns:1fr 1fr}.cols-3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
-.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:30px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:6px}
+
+/* ---------- hero ---------- */
+.tx-hero{padding:26px 0 4px;animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.tx-brand{font-weight:800;font-size:26px;color:var(--ink);letter-spacing:-.02em}
+.tx-brand .gn{background:linear-gradient(92deg,var(--ch-rates),var(--ch-infl) 55%,var(--ch-usd));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tx-sub{color:var(--muted);font-size:14px;margin:4px 0 0}
+.tx-verdict{font-size:clamp(21px,3.2vw,30px);font-weight:800;color:var(--ink);letter-spacing:-.022em;line-height:1.28;margin:18px 0 6px;max-width:900px}
+.tx-asof{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:4px}
+.tx-asof .txdot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:txBreathe 2.8s ease-in-out infinite}
+
+/* ---------- what changed ---------- */
+.tx-changes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:18px 0 4px}
+.tx-changes .tc-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.tc-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;border:1px solid var(--grid);background:var(--card);font-size:12.5px;font-weight:600;color:var(--ink)}
+.tc-chip .txdot{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:txBreathe 2.2s ease-in-out infinite;flex:none}
+.tc-chip.calm .txdot{background:var(--green)}
+.tc-chip.calm{color:var(--muted);font-weight:500}
+
+/* ---------- channel rail ---------- */
+.tx-rail{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px}
+@media(max-width:940px){.tx-rail{grid-template-columns:1fr}}
+.tx-ch{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px 22px 18px;overflow:hidden;
+  transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease;animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.tx-ch:nth-child(2){animation-delay:.06s}.tx-ch:nth-child(3){animation-delay:.12s}
+.tx-ch:hover{transform:translateY(-2px);box-shadow:0 10px 28px -14px rgba(9,17,40,.28)}
+.tx-ch::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--chc)}
+.tx-ch.ch-rates{--chc:var(--ch-rates)}.tx-ch.ch-infl{--chc:var(--ch-infl)}.tx-ch.ch-usd{--chc:var(--ch-usd)}
+.tx-ch .ch-eyebrow{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--chc)}
+.tx-ch .ch-state{font-size:29px;font-weight:800;letter-spacing:-.028em;color:var(--ink);line-height:1.12;margin:10px 0 2px}
+.tx-ch .ch-dir{font-size:12.5px;color:var(--muted);font-weight:600}
+.txflow{display:block;width:100%;height:44px;margin:10px 0 6px}
+.txflow-base{fill:none;stroke:var(--grid);stroke-width:2}
+.txflow-pulse{fill:none;stroke:var(--chc,var(--blue));stroke-width:2.4;stroke-linecap:round;stroke-dasharray:16 84;stroke-dashoffset:100;animation:txFlow 3.6s linear infinite;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--chc,var(--blue)) 55%,transparent))}
+.txflow-pulse.ch-rates{--chc:var(--ch-rates)}.txflow-pulse.ch-infl{--chc:var(--ch-infl)}.txflow-pulse.ch-usd{--chc:var(--ch-usd)}
+.ch-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 2px}
+@media(max-width:420px){.ch-facts{grid-template-columns:1fr 1fr}}
+.chf .chf-l{font-size:11px;color:var(--muted);line-height:1.3}
+.chf .chf-v{font-size:17px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;margin:1px 0}
+.chf .chf-m{font-size:11px;color:var(--faint);line-height:1.35}
+.ch-extra{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.5}
+.ch-extra b{color:var(--ink)}
+.ch-dots{display:inline-flex;gap:4px;margin-right:7px;vertical-align:middle}
+.ch-dots i{width:8px;height:8px;border-radius:50%;background:var(--grid);display:inline-block}
+.ch-dots i.on{background:var(--red)}
+.ch-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--grid)}
+.ch-stance{display:inline-block;padding:5px 13px;border-radius:999px;font-size:12.5px;font-weight:700;
+  background:color-mix(in srgb,var(--chc) 11%,var(--card));color:var(--chc);border:1px solid color-mix(in srgb,var(--chc) 30%,var(--grid))}
+.ch-more{font-size:12px;color:var(--muted);white-space:nowrap}
+.ch-more:hover{color:var(--blue)}
+.ch-minichips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.mchip{display:inline-block;padding:2px 9px;border-radius:7px;font-size:11.5px;font-weight:600}
+.mchip.down{background:rgba(211,11,11,.09);color:var(--red)}
+.mchip.up{background:rgba(26,127,67,.11);color:var(--green)}
+/* the ? help tip — CSS-only bilingual popover (Tier-2 home for mechanics) */
+.txq{position:relative;display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;
+  border:1px solid var(--grid);color:var(--muted);font-size:11px;font-weight:700;cursor:help;flex:none}
+.txq .txq-tip{display:none;position:absolute;top:22px;right:-8px;z-index:30;width:250px;padding:10px 12px;border-radius:11px;
+  background:var(--card);border:1px solid var(--grid);box-shadow:0 12px 30px -12px rgba(9,17,40,.35);
+  font-size:12px;font-weight:500;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0}
+.txq:hover .txq-tip,.txq:focus .txq-tip{display:block}
+
+/* ---------- pressure map ---------- */
+.sec-head{display:flex;align-items:baseline;gap:10px;font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;margin:34px 0 4px}
+.sec-sub{font-size:13px;color:var(--muted);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
-.brand .gn{color:var(--blue)}
-.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
-.sub{font-size:13px;color:var(--muted)}.faint{color:var(--faint)}
-.state-val{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1;margin:4px 0 6px}
-.state-val small{font-size:15px;color:var(--muted);font-weight:700}
-.band-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12.5px;font-weight:700;color:#fff;letter-spacing:.01em;margin:2px 0}
-.kpis{display:flex;gap:14px 20px;flex-wrap:wrap;margin-top:14px}
-.kpi{font-size:12px;color:var(--muted)}.kpi b{display:block;font-size:16px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
-.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#eef1f6;color:var(--ink);margin:2px 4px 2px 0}
-html[data-theme="dark"] .pill{background:#222732}
-.flag{display:inline-block;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:10px;line-height:1.4}
-.flag.warn{background:rgba(245,173,66,.16);color:#9a6a10}
-.flag.alarm{background:rgba(211,11,11,.13);color:var(--red)}
-.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
-.flag.ok{background:rgba(26,127,67,.12);color:var(--green)}
-.note{font-size:13px;color:var(--muted);line-height:1.6}.note b{color:var(--ink)}
-.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
-.lvg{margin-left:4px;font-weight:800;font-size:11px;cursor:help}
-.vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
-/* per-asset headwind/tailwind bars */
-.tbar{display:grid;grid-template-columns:150px 1fr 58px;align-items:center;gap:10px;font-size:12.5px;padding:5px 0}
-.tbar .tname{color:var(--text);font-weight:600}
-.tbar .ttrack{position:relative;height:9px;background:#eef1f6;border-radius:5px}
-html[data-theme="dark"] .tbar .ttrack{background:#222732}
-.tbar .tmid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.5}
-.tbar .tfill{position:absolute;top:0;bottom:0;border-radius:5px}
-.tbar .tfill.head{right:50%;background:var(--red)}
-.tbar .tfill.tail{left:50%;background:var(--green)}
-.tbar .tval{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
-.tdrv{font-size:11px;color:var(--faint);margin:1px 0 0 150px}
-/* chain cascade */
-.chain{margin-bottom:16px}
-.chain.dim{opacity:.55}
-.chain-head{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px}
-.chain-state{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}
+.pm-row{display:grid;grid-template-columns:150px 1fr 56px;align-items:center;gap:12px;padding:7px 0}
+@media(max-width:560px){.pm-row{grid-template-columns:104px 1fr 48px}}
+.pm-row .pm-name{font-size:12.5px;font-weight:600;color:var(--text)}
+.pm-track{position:relative;height:12px;background:color-mix(in srgb,var(--grid) 55%,var(--card));border-radius:6px}
+.pm-track .pm-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--faint);opacity:.55}
+.pm-fill{position:absolute;top:0;bottom:0;border-radius:6px;animation:txGrow .8s cubic-bezier(.2,.7,.3,1) both}
+.pm-fill.neg{right:50%;background:linear-gradient(270deg,color-mix(in srgb,var(--red) 72%,transparent),var(--red));transform-origin:right}
+.pm-fill.pos{left:50%;background:linear-gradient(90deg,color-mix(in srgb,var(--green) 72%,transparent),var(--green));transform-origin:left}
+.pm-val{text-align:right;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.pm-val.neg{color:var(--red)}.pm-val.pos{color:var(--green)}
+.pm-axis{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:2px 0 8px}
+.pm-axis .ax-l{color:var(--red)}.pm-axis .ax-r{color:var(--green)}
+.pm-foot{font-size:12px;color:var(--faint);margin-top:10px}
+
+/* ---------- chains ---------- */
+.chain{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px 22px;margin-bottom:14px;position:relative;overflow:hidden}
+.chain.live::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--blue)}
+.chain-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.chain-state{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
 .chain-state.on{background:rgba(40,95,255,.12);color:var(--blue)}
-.chain-state.off{background:#eef1f6;color:var(--faint)}
-html[data-theme="dark"] .chain-state.off{background:#222732}
-.order{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--grid)}
-.order:last-child{border-bottom:none}
-.order .onum{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+.chain-state.on i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-right:5px;animation:txBreathe 2s ease-in-out infinite}
+.order{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:11px 0;position:relative}
+.order+.order{border-top:1px dashed var(--grid)}
+.order .onum{width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--blue) 14%,var(--card));border:1px solid color-mix(in srgb,var(--blue) 35%,var(--grid));color:var(--blue);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
 .order .otext{font-size:13.5px;color:var(--text);line-height:1.5}
 .order .ocells{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
-.achip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:600;background:#eef1f6;color:var(--text)}
-html[data-theme="dark"] .achip{background:#222732}
-.achip.ac-head{background:rgba(211,11,11,.10);color:var(--red)}
-.achip.ac-tail{background:rgba(26,127,67,.12);color:var(--green)}
-.achip b{font-variant-numeric:tabular-nums}
-/* scenario */
-.scen{border:1px solid var(--grid);border-radius:13px;padding:15px;margin-bottom:14px}
-.scen h3{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--ink)}
+.achip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:11.5px;font-weight:600;background:color-mix(in srgb,var(--grid) 55%,var(--card));color:var(--text);cursor:default}
+.achip.ac-head{background:rgba(211,11,11,.09);color:var(--red)}
+.achip.ac-tail{background:rgba(26,127,67,.11);color:var(--green)}
+.lvg{margin-left:2px;font-weight:800;font-size:11px;cursor:help}
+.vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
+.chain-quiet{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:8px 22px;margin-bottom:14px}
+.cq-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;font-size:13.5px;color:var(--muted)}
+.cq-row+.cq-row{border-top:1px solid var(--grid)}
+.cq-row b{color:var(--text);font-weight:600}
+.cq-tag{font-size:11px;font-weight:700;color:var(--faint);padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card));white-space:nowrap}
+
+/* ---------- scenarios ---------- */
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.cols-2{grid-template-columns:1fr}}
+.scen{border:1px solid var(--grid);background:var(--card);border-radius:16px;padding:17px 18px}
+.scen h3{margin:0 0 10px;font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
 .scen-row{display:flex;flex-wrap:wrap;gap:14px}
-.scen-col{flex:1;min-width:180px}
-.scen-col .scl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.scen-col{flex:1;min-width:170px}
+.scen-col .scl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 .scen-col.head .scl{color:var(--red)}.scen-col.tail .scl{color:var(--green)}
 .smv{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0}
 .smv b{font-variant-numeric:tabular-nums}
 .smv .neg{color:var(--red)}.smv .pos{color:var(--green)}
-/* decomposition */
+
+/* ---------- study shelf ---------- */
+.shelf{margin-top:34px}
+.shelf details{background:var(--card);border:1px solid var(--grid);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.shelf summary{list-style:none;cursor:pointer;padding:16px 22px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;color:var(--ink);transition:background .18s}
+.shelf summary::-webkit-details-marker{display:none}
+.shelf summary:hover{background:color-mix(in srgb,var(--blue) 5%,var(--card))}
+.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;background:color-mix(in srgb,var(--blue) 10%,var(--card))}
+.shelf summary .sh-hint{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--faint)}
+.shelf summary .sh-caret{flex:none;font-size:11px;color:var(--faint);transition:transform .25s}
+.shelf details[open] summary .sh-caret{transform:rotate(90deg)}
+.shelf .sh-body{padding:6px 22px 22px;border-top:1px solid var(--grid)}
+.sub{font-size:13px;color:var(--muted)}.faint{color:var(--faint)}
+.note{font-size:13px;color:var(--muted);line-height:1.6}.note b{color:var(--ink)}
+.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
+.tx-disclosure{font-size:12.5px;color:var(--muted);margin:26px 0 0;padding-top:14px;border-top:1px solid var(--grid)}
+
+/* ---------- legacy tier-3 components (yield curve / expectations / receipts) ---------- */
+.state-val{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1;margin:4px 0 6px;color:var(--ink)}
+.state-val small{font-size:15px;color:var(--muted);font-weight:700}
+.band-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12.5px;font-weight:700;color:#fff;letter-spacing:.01em;margin:2px 0}
+.kpis{display:flex;gap:14px 20px;flex-wrap:wrap;margin-top:14px}
+.kpi{font-size:12px;color:var(--muted)}.kpi b{display:block;font-size:16px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.flag{display:inline-block;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:10px;line-height:1.4}
+.flag.warn{background:rgba(245,173,66,.16);color:#9a6a10}
+.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
+.flag.ok{background:rgba(26,127,67,.12);color:var(--green)}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cols-3{grid-template-columns:1fr}}
 .decomp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:6px}
-.decomp .dc{padding:11px 13px;border-radius:11px;background:#eef1f6}
-html[data-theme="dark"] .decomp .dc{background:#222732}
+.decomp .dc{padding:11px 13px;border-radius:11px;background:color-mix(in srgb,var(--grid) 45%,var(--card))}
 .decomp .dc .dcl{font-size:11.5px;color:var(--muted);margin-bottom:3px}
 .decomp .dc .dcv{font-size:19px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
 .decomp .dc .dcn{font-size:11px;color:var(--faint);margin-top:2px}
-.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
-table.gate{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
-table.gate th,table.gate td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid)}
-table.gate th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em}
-table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
-/* === yield-curve scorecards === */
 .pcabar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 4px;border:1px solid var(--grid)}
 .pcabar span{display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
 .pcabar .pc-l{background:var(--indigo)}.pcabar .pc-s{background:var(--blue)}.pcabar .pc-c{background:var(--teal)}.pcabar .pc-r{background:var(--faint)}
@@ -140,8 +219,7 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 .tkpill.fav{background:rgba(26,127,67,.12);color:var(--green)}
 .tkpill.pres{background:rgba(211,11,11,.10);color:var(--red)}
 .recgauges{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:8px 0 4px}
-.recg{padding:9px 11px;border-radius:11px;background:#eef1f6}
-html[data-theme="dark"] .recg{background:#222732}
+.recg{padding:9px 11px;border-radius:11px;background:color-mix(in srgb,var(--grid) 45%,var(--card))}
 .recg .rgl{font-size:11px;color:var(--muted);line-height:1.3}
 .recg .rgv{font-size:18px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:1px}
 .recg.flag-on{background:rgba(211,11,11,.12)}
@@ -149,8 +227,7 @@ html[data-theme="dark"] .recg{background:#222732}
 .sectilt{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;margin-top:8px}
 .stile{padding:7px 9px;border-radius:10px;font-size:12px;border:1px solid var(--grid);background:var(--card)}
 .stile .se{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
-.stile .sb{float:right;font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .stile .sb{background:#222732}
+.stile .sb{float:right;font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;background:color-mix(in srgb,var(--grid) 55%,var(--card));color:var(--muted)}
 .stile .sb.meas{background:rgba(26,127,67,.14);color:var(--green)}
 .stile .sm{font-size:10.5px;color:var(--faint);margin-top:3px;line-height:1.35}
 .stile.tail{background:rgba(26,127,67,.07);border-color:rgba(26,127,67,.28)}
@@ -164,10 +241,35 @@ table.slopes td{font-variant-numeric:tabular-nums;color:var(--text)}
 table.slopes td.nm{color:var(--ink);font-weight:600}
 table.slopes td.inv{color:var(--red);font-weight:700}
 .facrow{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
-.facpill{display:inline-flex;flex-direction:column;padding:7px 13px;border-radius:11px;background:#eef1f6;min-width:120px}
-html[data-theme="dark"] .facpill{background:#222732}
+.facpill{display:inline-flex;flex-direction:column;padding:7px 13px;border-radius:11px;background:color-mix(in srgb,var(--grid) 45%,var(--card));min-width:120px}
 .facpill .fk{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
 .facpill .fv{font-size:15px;font-weight:800;color:var(--ink)}
+table.gate{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+table.gate th,table.gate td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid)}
+table.gate th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em}
+table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
+.bdkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:12px;margin:10px 0 4px}
+.bd-tag{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--grid);color:var(--ink)}
+.bd-tag.bd-fall{background:rgba(211,11,11,.10);color:var(--red)}
+.bd-tag.bd-rise{background:rgba(26,127,67,.12);color:var(--green)}
+.bd b.dn{color:var(--red)} .bd b.up{color:var(--green)}
+.bd-badge{margin-top:12px;padding:12px 14px;border-radius:12px;border-left:4px solid var(--faint);background:color-mix(in srgb,var(--grid) 40%,var(--card))}
+.bd-badge-h{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.bd-liquidity{border-left-color:var(--red)} .bd-growth{border-left-color:var(--amber)}
+.bd-real_rate{border-left-color:var(--amber)} .bd-oil{border-left-color:var(--teal)}
+.bd-reflation{border-left-color:var(--blue)} .bd-quiet{border-left-color:var(--faint)}
+.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
+
+/* ---------- motion ---------- */
+@keyframes txFlow{to{stroke-dashoffset:0}}
+@keyframes txBreathe{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes txUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes txGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion: reduce){
+  .txflow-pulse,.txdot,.tc-chip .txdot,.chain-state.on i{animation:none}
+  .tx-hero,.tx-ch,.pm-fill{animation:none}
+  *{transition:none!important}
+}
 </style>
 
 <style>
@@ -409,7 +511,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central.html"><span class="nav-sub-text">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
@@ -422,7 +524,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="gex.html">🧲 <span class="nav-sub-text"><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">GEX · screener · flow · dark pool</span><span class="l-zh">GEX · 筛选台 · 资金流 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="gex.html"><span class="nav-sub-text">🧲 <span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">GEX · screener · flow · dark pool</span><span class="l-zh">GEX · 筛选台 · 资金流 · 暗池</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
             <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
@@ -441,7 +543,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central_china.html"><span class="nav-sub-text">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
@@ -453,7 +555,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="china_intel.html"><span class="nav-sub-text">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
             <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
@@ -501,7 +603,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="vector.html"><span class="nav-sub-text">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
             <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
@@ -509,7 +611,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           </div>
         </div>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="commodities.html"><span class="nav-sub-text">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
             <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
@@ -636,7 +738,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
             <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
             <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
-            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
           </div>
         </div>
       </div>
@@ -658,364 +760,192 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 </nav>
 
 <div class="wrap">
-  <div class="brand">🔀 <span class="l-en">Rate &amp; Inflation</span><span class="l-zh">利率与通胀</span> <span class="gn"><span class="l-en">Transmission</span><span class="l-zh">传导</span></span></div>
-  <p class="lead"><span class="l-en">How the interest-rate, rate-expectations and inflation (CPI · core PCE) state propagates — first, second and third order — into every asset class we track: the full yield-curve read (shape, regime, recession &amp; cross-asset signals), the headwind / tailwind each asset faces now, the causal chains behind it, and what a rate or inflation shock would imply. Coefficients are MEASURED (split-half forward IC); display-only, never a trade call — repricing is reactive.</span><span class="l-zh">利率、利率预期与通胀（CPI · 核心PCE）的当前状态如何一阶、二阶、三阶地传导至我们跟踪的每一类资产：完整的收益率曲线解读（形态、状态、衰退与跨资产信号）、各资产当前面临的逆风/顺风、其背后的因果链，以及一次利率或通胀冲击意味着什么。系数均为实测（前后半段前瞻IC）；仅供展示，绝非交易建议——重定价是被动的。</span>
-  <span class="faint">· <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-17</span></p>
-
   
-  <!-- ===================== CURRENT STATE ===================== -->
-  <div class="grid cols-3" style="margin-bottom:6px">
-    <div class="card">
-      <h2><span class="l-en">Interest rates</span><span class="l-zh">利率</span></h2>
-      <div class="state-val">2.35<small>% <span class="l-en">real 10y</span><span class="l-zh">实际10年</span></small></div>
-      
-      <span class="band-chip" style="background:#D30B0B"><span class="l-en">restrictive</span><span class="l-zh">偏紧</span> · <span class="l-en">rising</span><span class="l-zh">上行</span></span>
-      <div class="kpis">
-        <div class="kpi"><span class="l-en">Nominal 10y</span><span class="l-zh">名义10年</span><b>4.57%</b></div>
-        <div class="kpi"><span class="l-en">2s10s curve</span><span class="l-zh">2-10年曲线</span><b>0.37</b></div>
-        <div class="kpi"><span class="l-en">Real 10y %ile</span><span class="l-zh">实际10年分位</span><b>98</b></div>
-        <div class="kpi"><span class="l-en">Policy gap (2y−ff)</span><span class="l-zh">政策缺口</span><b>0.53</b></div>
+
+  <!-- ===================== HERO ===================== -->
+  <header class="tx-hero">
+    <div class="tx-brand">🔀 <span class="gn"><span class="l-en">Transmission</span><span class="l-zh">传导</span></span></div>
+    <p class="tx-sub"><span class="l-en">How rates, inflation and the dollar push on every asset we track.</span><span class="l-zh">利率、通胀与美元如何推动我们跟踪的每一类资产。</span></p>
+    <div class="tx-verdict"><span class="l-en">Rates are high &amp; rising, inflation is sticky above target, and the dollar is rising.</span><span class="l-zh">利率高位上行，通胀高于目标且粘性，美元走强。</span></div>
+    <div class="tx-asof"><span class="txdot"></span><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-17 · <span class="l-en">context, not trade calls</span><span class="l-zh">仅为背景，非交易信号</span></div>
+  </header>
+
+  <!-- ===================== WHAT CHANGED ===================== -->
+  
+
+  <!-- ===================== CHANNEL RAIL ===================== -->
+  <div class="tx-rail">
+
+    <!-- Rates -->
+    <section class="tx-ch ch-rates">
+      <div class="ch-eyebrow"><span class="l-en">Rates</span><span class="l-zh">利率</span>
+        <span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">The real 10-year yield is the interest rate after inflation — the true cost of money. High and rising real yields pull money out of risk assets; falling ones push it back in.</span><span class="l-zh">实际10年利率 = 名义利率减去通胀，即资金的真实成本。实际利率上行会从风险资产抽走资金，下行则相反。</span></span></span>
       </div>
-    </div>
-    <div class="card">
-      <h2><span class="l-en">Inflation</span><span class="l-zh">通胀</span></h2>
-      <div class="state-val">3.4<small>% <span class="l-en">core PCE YoY</span><span class="l-zh">核心PCE同比</span></small></div>
+      <div class="ch-state"><span class="l-en">High &amp; rising</span><span class="l-zh">高位上行</span></div>
+      <div class="ch-dir">2.35% <span class="l-en">real 10-year yield</span><span class="l-zh">实际10年利率</span> · <span class="l-en">higher than 98% of the past decade</span><span class="l-zh">高于过去十年98%的时间</span></div>
       
-      <span class="band-chip" style="background:#D30B0B"><span class="l-en">above target</span><span class="l-zh">高于目标</span> · <span class="l-en">steady</span><span class="l-zh">平稳</span></span>
-      <div class="kpis">
-        <div class="kpi"><span class="l-en">Core CPI</span><span class="l-zh">核心CPI</span><b>2.8%</b></div>
-        <div class="kpi"><span class="l-en">Headline CPI</span><span class="l-zh">整体CPI</span><b>3.7%</b></div>
-        <div class="kpi"><span class="l-en">Core PPI</span><span class="l-zh">核心PPI</span><b>4.7%</b></div>
-        <div class="kpi"><span class="l-en">ECI wages</span><span class="l-zh">ECI薪酬</span><b>3.4%</b></div>
+<svg class="txflow" viewBox="0 0 300 44" preserveAspectRatio="none" aria-hidden="true">
+  <path class="txflow-base" d="M0,36 C60,36 95,31 135,24 S225,10 300,7" pathLength="100"/>
+  <path class="txflow-pulse ch-rates" d="M0,36 C60,36 95,31 135,24 S225,10 300,7" pathLength="100"/>
+</svg>
+      <div class="ch-facts">
+        <div class="chf"><div class="chf-l"><span class="l-en">10-year rate</span><span class="l-zh">10年利率</span></div><div class="chf-v">4.57%</div><div class="chf-m"><span class="l-en">what the market charges</span><span class="l-zh">市场定价</span></div></div>
+        <div class="chf"><div class="chf-l"><span class="l-en">Yield curve</span><span class="l-zh">收益率曲线</span></div><div class="chf-v">+0.37</div><div class="chf-m"><span class="l-en">upward-sloping — normal</span><span class="l-zh">向上倾斜——正常</span></div></div>
+        <div class="chf"><div class="chf-l"><span class="l-en">Fed stance</span><span class="l-zh">美联储立场</span></div><div class="chf-v"><span class="l-en">Tight</span><span class="l-zh">偏紧</span></div><div class="chf-m"><span class="l-en">and pressing harder</span><span class="l-zh">且仍在收紧</span></div></div>
       </div>
-    </div>
-    <div class="card">
-      <h2><span class="l-en">Expectations</span><span class="l-zh">通胀预期</span></h2>
-      <div class="state-val">2.21<small>% <span class="l-en">5y5y breakeven</span><span class="l-zh">5年5年盈亏平衡</span></small></div>
       
-      <span class="band-chip" style="background:#1a7f43"><span class="l-en">anchored</span><span class="l-zh">锚定</span></span>
-      <div class="kpis">
-        <div class="kpi"><span class="l-en">10y breakeven</span><span class="l-zh">10年盈亏平衡</span><b>2.24%</b></div>
-        <div class="kpi"><span class="l-en">Model 5y</span><span class="l-zh">模型5年</span><b>2.42%</b></div>
-        <div class="kpi"><span class="l-en">Survey 1y</span><span class="l-zh">调查1年</span><b>4.8%</b></div>
-        <div class="kpi"><span class="l-en">Mkt−model</span><span class="l-zh">市场−模型</span><b>-21bp</b></div>
+      <div class="ch-extra"><span class="ch-dots"><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span><span class="l-en">0 of 4 recession warning signs lit</span><span class="l-zh">4项衰退预警中亮起0项</span></div>
+      
+      <div class="ch-foot">
+        <span class="ch-stance"><span class="l-en">Headwind building — watch</span><span class="l-zh">逆风累积 — 观察</span></span>
+        <a class="ch-more" href="#shelf-yc"><span class="l-en">Full curve detail ↓</span><span class="l-zh">曲线详情 ↓</span></a>
       </div>
-    </div>
+    </section>
+
+    <!-- Inflation -->
+    <section class="tx-ch ch-infl">
+      <div class="ch-eyebrow"><span class="l-en">Inflation</span><span class="l-zh">通胀</span>
+        <span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">Core PCE is the Fed&#39;s preferred inflation gauge; its 2% target drives rate policy. &#34;Anchored&#34; expectations mean markets still trust that target — the single most important thing to watch.</span><span class="l-zh">核心PCE是美联储最看重的通胀指标，2%目标决定利率政策。“预期锚定”表示市场仍相信该目标——这是最关键的观察点。</span></span></span>
+      </div>
+      <div class="ch-state"><span class="l-en">Sticky above target</span><span class="l-zh">高于目标且粘性</span></div>
+      <div class="ch-dir">3.4% <span class="l-en">core inflation</span><span class="l-zh">核心通胀</span> · <span class="l-en">1.4pp above the Fed&#39;s 2% goal</span><span class="l-zh">高于美联储2%目标1.4个百分点</span></div>
+      
+<svg class="txflow" viewBox="0 0 300 44" preserveAspectRatio="none" aria-hidden="true">
+  <path class="txflow-base" d="M0,22 C50,22 75,17 105,22 S155,27 185,22 235,17 265,22 300,22" pathLength="100"/>
+  <path class="txflow-pulse ch-infl" d="M0,22 C50,22 75,17 105,22 S155,27 185,22 235,17 265,22 300,22" pathLength="100"/>
+</svg>
+      <div class="ch-facts">
+        <div class="chf"><div class="chf-l"><span class="l-en">Core CPI</span><span class="l-zh">核心CPI</span></div><div class="chf-v">2.8%</div><div class="chf-m"><span class="l-en">the headline cousin</span><span class="l-zh">常见口径</span></div></div>
+        <div class="chf"><div class="chf-l"><span class="l-en">Direction</span><span class="l-zh">方向</span></div><div class="chf-v"><span class="l-en">Steady</span><span class="l-zh">平稳</span></div><div class="chf-m"><span class="l-en">trend over recent months</span><span class="l-zh">近几个月趋势</span></div></div>
+        <div class="chf"><div class="chf-l"><span class="l-en">Expectations</span><span class="l-zh">通胀预期</span></div><div class="chf-v"><span class="l-en">Anchored</span><span class="l-zh">锚定</span></div><div class="chf-m"><span class="l-en">what markets price long-run</span><span class="l-zh">市场的长期定价</span></div></div>
+      </div>
+      
+      <div class="ch-extra"><span class="l-en">The sticky part: housing costs still running</span><span class="l-zh">最具粘性的部分：住房成本仍达</span> <b>3.5%</b><span class="l-en"> — rents adjust slowly.</span><span class="l-zh">——租金调整缓慢。</span></div>
+      
+      <div class="ch-foot">
+        <span class="ch-stance"><span class="l-en">Watch — still above target</span><span class="l-zh">观察 — 仍高于目标</span></span>
+        <a class="ch-more" href="#shelf-infl"><span class="l-en">Full detail ↓</span><span class="l-zh">详情 ↓</span></a>
+      </div>
+    </section>
+
+    <!-- Dollar -->
+    <section class="tx-ch ch-usd">
+      <div class="ch-eyebrow"><span class="l-en">Dollar</span><span class="l-zh">美元</span>
+        <span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">Most world trade and debt is priced in dollars, so a strong dollar squeezes commodities, emerging markets and US exporters; a weak one relieves them. Read from the broad trade-weighted dollar index.</span><span class="l-zh">全球多数贸易与债务以美元计价：美元走强会挤压大宗商品、新兴市场与美国出口商，走弱则相反。数据取自广义贸易加权美元指数。</span></span></span>
+      </div>
+      
+      <div class="ch-state"><span class="l-en">Rising</span><span class="l-zh">走强</span></div>
+      <div class="ch-dir"><span class="l-en">broad trade-weighted dollar</span><span class="l-zh">广义贸易加权美元</span></div>
+      
+<svg class="txflow" viewBox="0 0 300 44" preserveAspectRatio="none" aria-hidden="true">
+  <path class="txflow-base" d="M0,36 C60,36 95,31 135,24 S225,10 300,7" pathLength="100"/>
+  <path class="txflow-pulse ch-usd" d="M0,36 C60,36 95,31 135,24 S225,10 300,7" pathLength="100"/>
+</svg>
+      <div class="ch-facts">
+        <div class="chf"><div class="chf-l"><span class="l-en">Trend</span><span class="l-zh">趋势</span></div><div class="chf-v"><span class="l-en">Rising</span><span class="l-zh">走强</span></div><div class="chf-m"><span class="l-en">vs major trade partners</span><span class="l-zh">相对主要贸易伙伴</span></div></div>
+        
+        <div class="chf"><div class="chf-l"><span class="l-en">Fed liquidity</span><span class="l-zh">美元流动性</span></div><div class="chf-v"><span class="l-en">Adding</span><span class="l-zh">投放</span></div><div class="chf-m"><span class="l-en">fuel for risk assets</span><span class="l-zh">风险资产的燃料</span></div></div>
+        <div class="chf"><div class="chf-l"><span class="l-en">FX stress</span><span class="l-zh">汇市压力</span></div><div class="chf-v"><span class="l-en">None</span><span class="l-zh">无</span></div><div class="chf-m"><span class="l-en">no stress scenario active</span><span class="l-zh">无压力情景触发</span></div></div>
+      </div>
+      
+      <div class="ch-minichips">
+        <span class="mchip down">▾ <span class="l-en">US equities</span><span class="l-zh">美国股票</span></span><span class="mchip down">▾ <span class="l-en">EM equities</span><span class="l-zh">新兴市场股票</span></span><span class="mchip down">▾ <span class="l-en">Gold</span><span class="l-zh">黄金</span></span>
+        <span class="mchip up">▴ <span class="l-en">Oil (WTI)</span><span class="l-zh">原油</span></span>
+      </div>
+      
+      <div class="ch-foot">
+        <span class="ch-stance"><span class="l-en">Headwind building — watch</span><span class="l-zh">逆风累积 — 观察</span></span>
+        <a class="ch-more" href="forex.html"><span class="l-en">Full dollar desk →</span><span class="l-zh">美元台 →</span></a>
+      </div>
+      
+    </section>
   </div>
 
-  
-  <div class="card" style="margin-top:12px">
-    <h2><span class="l-en">Inflation decomposition</span><span class="l-zh">通胀分解</span></h2>
-    <div class="decomp">
-      <div class="dc"><div class="dcl"><span class="l-en">Headline − core CPI</span><span class="l-zh">整体−核心CPI</span></div><div class="dcv">+0.92</div><div class="dcn"><span class="l-en">food / energy push</span><span class="l-zh">食品/能源推动</span></div></div>
-      <div class="dc"><div class="dcl"><span class="l-en">Core services YoY</span><span class="l-zh">核心服务同比</span></div><div class="dcv">3.42</div><div class="dcn"><span class="l-en">the sticky leg</span><span class="l-zh">粘性部分</span></div></div>
-      <div class="dc"><div class="dcl"><span class="l-en">Shelter YoY</span><span class="l-zh">住房同比</span></div><div class="dcv">3.48</div><div class="dcn"><span class="l-en">lagging rent</span><span class="l-zh">滞后的租金</span></div></div>
-      <div class="dc"><div class="dcl"><span class="l-en">Core PCE − core CPI</span><span class="l-zh">核心PCE−核心CPI</span></div><div class="dcv">+0.61</div><div class="dcn"><span class="l-en">basket / weight gap</span><span class="l-zh">篮子/权重差</span></div></div>
-      <div class="dc"><div class="dcl"><span class="l-en">Actual − market-priced</span><span class="l-zh">实际−市场定价</span></div><div class="dcv">57bp</div><div class="dcn"><span class="l-en">core CPI vs 10y breakeven</span><span class="l-zh">核心CPI vs 10年盈亏平衡</span></div></div>
-    </div>
-  </div>
-
+  <!-- ===================== PRESSURE MAP ===================== -->
   
   
-  
-  <style>
-  .bdkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:12px;margin:10px 0 4px}
-  .bd-tag{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--grid);color:var(--ink)}
-  .bd-tag.bd-fall{background:rgba(211,11,11,.10);color:var(--red)}
-  .bd-tag.bd-rise{background:rgba(26,127,67,.12);color:var(--green)}
-  .bd b.dn{color:var(--red)} .bd b.up{color:var(--green)}
-  .bd-badge{margin-top:12px;padding:12px 14px;border-radius:12px;border-left:4px solid var(--faint);background:#f3f5f9}
-  html[data-theme="dark"] .bd-badge{background:#1c212b}
-  .bd-badge-h{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
-  .bd-liquidity{border-left-color:var(--red)} .bd-growth{border-left-color:var(--amber)}
-  .bd-real_rate{border-left-color:var(--amber)} .bd-oil{border-left-color:var(--teal)}
-  .bd-reflation{border-left-color:var(--blue)} .bd-quiet{border-left-color:var(--faint)}
-  </style>
-  <div class="card bd" style="margin-top:12px">
-    <h2><span class="l-en">Breakeven velocity &amp; cause — visibility only</span><span class="l-zh">盈亏平衡速度与成因 — 仅供观察</span></h2>
-    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;margin:2px 0 4px">
-      <div class="state-val" style="margin:0">2.24<small>% <span class="l-en">10y breakeven</span><span class="l-zh">10年盈亏平衡</span></small></div>
-      <span class="bd-tag bd-flat">
-        <span class="l-en">flat</span><span class="l-zh">平稳</span> ·
-        <span class="l-en">choppy</span><span class="l-zh">震荡</span>
-      </span>
-    </div>
-    <div class="bdkpis">
-      <div class="kpi"><span class="l-en">5d</span><span class="l-zh">5日</span><b class="up">+0bp</b></div>
-      <div class="kpi"><span class="l-en">10d</span><span class="l-zh">10日</span><b class="up">+1bp</b></div>
-      <div class="kpi"><span class="l-en">20d</span><span class="l-zh">20日</span><b class="dn">-1bp</b></div>
-      <div class="kpi"><span class="l-en">63d</span><span class="l-zh">63日</span><b class="dn">-14bp</b></div>
-      <div class="kpi"><span class="l-en">Accel 10d</span><span class="l-zh">10日加速</span><b class="up">+3bp</b></div>
-      <div class="kpi"><span class="l-en">Speed pctile</span><span class="l-zh">速度分位</span><b>8</b></div>
-      <div class="kpi"><span class="l-en">5y5y 20d</span><span class="l-zh">5y5y 20日</span><b class="dn">-2bp</b></div>
-    </div>
-    <div class="bd-badge bd-quiet">
-      <div class="bd-badge-h"><span class="l-en">Cause</span><span class="l-zh">成因</span>: QUIET</div>
-      <div><span class="l-en">Breakeven roughly stable — no actionable move.</span><span class="l-zh">盈亏平衡大致平稳——无可操作变动。</span></div>
+  <div class="sec-head"><span class="l-en">Who benefits · who gets hurt</span><span class="l-zh">谁受益 · 谁承压</span></div>
+  <p class="sec-sub"><span class="l-en">The net force of today&#39;s rate and inflation state on each asset.</span><span class="l-zh">当前利率与通胀状态对各资产的净作用力。</span></p>
+  <div class="card">
+    <div class="pm-axis"><span class="ax-l"><span class="l-en">◂ pushed down</span><span class="l-zh">◂ 承压</span></span><span class="ax-r"><span class="l-en">pushed up ▸</span><span class="l-zh">推升 ▸</span></span></div>
+    
+    
+    
+    
+    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (confirmed) · Core PCE YoY − 2% target (confirmed)">
+      <span class="pm-name"><span class="l-en">Materials (inflation beneficiary)</span><span class="l-zh">材料（通胀受益）</span></span>
+      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:46.0%;animation-delay:0ms"></span></span>
+      <span class="pm-val neg">-0.43</span>
     </div>
     
-    <div class="sub faint" style="margin-top:8px"><span class="l-en">Co-state</span><span class="l-zh">联动状态</span>:
-      <span class="l-en">oil</span><span class="l-zh">油</span> +7% ·
-      <span class="l-en">real 10y</span><span class="l-zh">实际10年</span> +14bp ·
-      <span class="l-en">nom 10y</span><span class="l-zh">名义10年</span> +11bp ·
-      <span class="l-en">HY-OAS z</span><span class="l-zh">高收益OAS z</span> -0.84 ·
-      VIX 39pct</div>
-    <p class="sub" style="margin-top:8px"><span class="l-en">VISIBILITY ONLY — a falling breakeven is a thermometer, not a forecast. Across 2008 / 2014–15 / 2018 / 2020 / 2022 / 2023 it led the risk cascade in ~0 clean cases; breakeven velocity has ~0 forward-drawdown edge and the credit/vol co-state adds nothing beyond VIX. Use this to disambiguate an in-progress move (which kind of fall?), never to front-run one.</span><span class="l-zh">仅供观察——下行的盈亏平衡是温度计，不是预测。在2008/2014-15/2018/2020/2022/2023中，它几乎没有一次干净地领先风险资产的瀑布式下跌；盈亏平衡速度对前瞻回撤几乎没有预测力，信用/波动率联动相对VIX无增量。用它来辨别正在发生的变动（属于哪一类下跌），而非抢跑。</span></p>
-  </div>
-  
-
-  
-  <!-- ===================== YIELD CURVE ===================== -->
-  <div class="sec-head"><span class="l-en">Yield curve — shape, regime, recession &amp; cross-asset signals</span><span class="l-zh">收益率曲线 — 形态、状态、衰退与跨资产信号</span></div>
-  <p class="sub" style="margin:-4px 0 14px"><span class="l-en">Curve: Bear steepener. recession dashboard low (0/4 flags).</span><span class="l-zh">曲线：熊市陡峭。衰退面板低（0/4 项亮起）。</span></p>
-  <div class="grid cols-3">
-    <!-- ---- Curve shape & decomposition ---- -->
-    <div class="card">
-      <h2><span class="l-en">Curve shape</span><span class="l-zh">曲线形态</span></h2>
-      
-      <div class="decomp" style="grid-template-columns:1fr 1fr 1fr">
-        <div class="dc"><div class="dcl"><span class="l-en">Level (avg yield)</span><span class="l-zh">水平（平均收益率）</span></div><div class="dcv">4.26<small style="font-size:11px;color:var(--muted)">%</small></div><div class="dcn"><span class="l-en">pctile</span><span class="l-zh">分位</span> 64 · +28bp/63d</div></div>
-        <div class="dc"><div class="dcl"><span class="l-en">Slope (2s10s)</span><span class="l-zh">斜率（2-10年）</span></div><div class="dcv">+0.37</div><div class="dcn"><span class="l-en">pctile</span><span class="l-zh">分位</span> 65 · -15bp/63d</div></div>
-        <div class="dc"><div class="dcl"><span class="l-en">Curvature (2s5s10s fly)</span><span class="l-zh">曲率（2-5-10年蝶式）</span></div><div class="dcv">-0.17</div><div class="dcn"><span class="l-en">pctile</span><span class="l-zh">分位</span> 68 · <span class="l-en">+ humped / − bowed</span><span class="l-zh">+隆起／−凹陷</span></div></div>
-      </div>
-      
-      <div style="margin-top:12px">
-        <div class="sub" style="font-size:11.5px"><span class="l-en">Principal components of daily curve changes (Litterman-Scheinkman)</span><span class="l-zh">日度曲线变动的主成分（Litterman-Scheinkman）</span></div>
-        <div class="pcabar">
-          <span class="pc-l" style="width:82.5%">82%</span><span class="pc-s" style="width:9.5%">9%</span><span class="pc-c" style="width:4.4%">4%</span>
-          <span class="pc-r" style="width:3.7%"></span>
-        </div>
-        <div class="pcalegend"><span><i style="background:var(--indigo)"></i><span class="l-en">Level</span><span class="l-zh">水平</span></span><span><i style="background:var(--blue)"></i><span class="l-en">Slope</span><span class="l-zh">斜率</span></span><span><i style="background:var(--teal)"></i><span class="l-en">Curvature</span><span class="l-zh">曲率</span></span></div>
-        <p class="sub" style="font-size:11px;margin-top:6px"><span class="l-en">The three classic factors span</span><span class="l-zh">三个经典因子合计解释</span> <b>96.3%</b> <span class="l-en">of curve variance — the textbook result, measured on our data.</span><span class="l-zh">的曲线方差——教科书结论，在我方数据上实测。</span></p>
-      </div>
-      
-    </div>
-    <!-- ---- Curve regime ---- -->
-    <div class="card">
-      <h2><span class="l-en">Curve regime</span><span class="l-zh">曲线状态</span></h2>
-      
-      
-      
-      <div class="curve-regime">
-        <span class="regchip" style="background:#F5AD42"><span class="l-en">Bear steepener</span><span class="l-zh">熊市陡峭</span></span>
-        <div class="sub" style="line-height:1.45"><span class="l-en">long rates rising faster than short — reflation / term-premium / fiscal repricing</span><span class="l-zh">长端利率上行快于短端 — 再通胀/期限溢价/财政重新定价</span></div>
-        <div class="sub" style="font-size:11.5px"><b style="color:var(--ink)"><span class="l-en">Fed-cycle phase</span><span class="l-zh">美联储周期阶段</span>:</b> <span class="l-en">Reflation / fiscal supply / term-premium repricing — long end rising fastest</span><span class="l-zh">再通胀／财政供给／期限溢价重新定价——长端上行最快</span> · <span class="l-en">slope</span><span class="l-zh">斜率</span> +10bp/21d · <span class="l-en">term premium</span><span class="l-zh">期限溢价</span> <span class="l-en">rising</span><span class="l-zh">上行</span></div>
-        <div class="favrow"><span class="fl fav"><span class="l-en">Favoured</span><span class="l-zh">受益</span></span><span class="tkpill fav">XLE</span><span class="tkpill fav">XLF</span><span class="tkpill fav">XLB</span></div>
-        <div class="favrow"><span class="fl pres"><span class="l-en">Pressured</span><span class="l-zh">承压</span></span><span class="tkpill pres">QQQ</span><span class="tkpill pres">XLK</span><span class="tkpill pres">XLU</span><span class="tkpill pres">XLRE</span><span class="tkpill pres">TLT</span><span class="tkpill pres">GC=F</span></div>
-        <p class="note" style="font-size:12px;margin-top:4px"><span class="l-en">Historically the BEST equity regime overall (~+22% annualised across post-2000 growth-led episodes) — value, banks and real-asset cyclicals over long-duration growth/utilities/REITs. BUT a TERM-PREMIUM/fiscal-driven steepener (long end up with no growth) is not the bullish kind — check 5s30s + breakevens to disambiguate; rising term premium also breaks the &#39;duration = safe haven&#39; assumption.</span><span class="l-zh">历史上整体最佳的股票状态（2000年后增长主导的episode年化约+22%）——价值、银行、实物资产周期跑赢长久期成长/公用/REITs。但由期限溢价/财政驱动的变陡（长端上行而无增长）并非看多版本——用5-30年与盈亏平衡来区分；上升的期限溢价也会打破“久期＝避风港”的假设。</span></p>
-      </div>
-      
-    </div>
-    <!-- ---- Recession dashboard ---- -->
-    <div class="card">
-      <h2><span class="l-en">Recession dashboard</span><span class="l-zh">衰退面板</span></h2>
-      
-      
-      <span class="band-chip" style="background:#1a7f43"><span class="l-en">low</span><span class="l-zh">低</span> · 0/4 <span class="l-en">flags</span><span class="l-zh">项亮起</span></span>
-      <div class="recgauges">
-        <div class="recg "><div class="rgl"><span class="l-en">Near-term fwd spread</span><span class="l-zh">近端远期利差</span></div><div class="rgv">+0.67</div></div>
-        <div class="recg "><div class="rgl"><span class="l-en">NY Fed 10y-3m probit</span><span class="l-zh">纽约联储10年-3月概率</span></div><div class="rgv">16%</div></div>
-        <div class="recg "><div class="rgl"><span class="l-en">Un-inversion alarm</span><span class="l-zh">重新变陡警报</span></div><div class="rgv"><span class="l-en">no</span><span class="l-zh">否</span></div></div>
-        <div class="recg "><div class="rgl"><span class="l-en">TP-adjusted 2s10s</span><span class="l-zh">期限溢价调整2-10年</span></div><div class="rgv">+1.15</div></div>
-      </div>
-      <div class="flag warn" style="display:block;margin:2px 0 6px"><span class="l-en">Policy stance</span><span class="l-zh">政策立场</span>: <b>3.63%</b> <span class="l-en">funds vs</span><span class="l-zh">基金 vs</span> ~2.5% = <span class="l-en">restrictive</span><span class="l-zh">偏紧</span> (+1.13pp)</div>
-      <p class="note" style="font-size:11.5px;margin-top:4px"><span class="l-en">The near-term forward spread (3m rate ~18m forward − 3m bill) statistically dominates the 2s10s — Engstrom-Sharpe (Fed 2018-19) find it renders the 2s10s redundant in a joint probit. We read 3m10y, not 2s10s, as the recession slope (Estrella-Mishkin γ = −0.53, −0.66). The genuinely ominous configuration is the curve RE-STEEPENING out of a deep inversion: the un-inversion has historically COINCIDED WITH or slightly led recession onset (1990 ≈3m, 2001 ≈6m after the curve turned positive) — a fresh dis-inversion is the late-cycle handoff, not an all-clear.</span><span class="l-zh">近端远期利差（约18个月远期3月利率−3月票据）在统计上优于2-10年——Engstrom-Sharpe（美联储2018-19）发现在联合probit中它使2-10年变得多余。我们以3月-10年（而非2-10年）作为衰退斜率（Estrella-Mishkin γ＝−0.53、−0.66）。真正危险的形态是深度倒挂后曲线重新变陡：历史上重新转正与衰退开始大致同步或略微领先（1990年约3个月、2001年约6个月），因此刚出现的重新变陡是周期晚段的交接，而非解除警报。</span> <span class="l-en">Funds 3.63% vs ~2.5% nominal-neutral = restrictive. Wright (2006): the same curve slope is more restrictive at a higher funds level — a flat curve at 5% funds is a stronger recession tell than at 2%.</span><span class="l-zh">联邦基金3.63% vs 约2.5%名义中性＝偏紧。Wright（2006）：相同曲线斜率在更高基金利率下更具紧缩性——5%基金利率下的平坦曲线比2%下更强的衰退信号。</span></p>
-    </div>
-  </div>
-
-  <!-- ---- slopes table + forwards ---- -->
-  <div class="grid cols-2" style="margin-top:14px">
-    <div class="card">
-      <h2><span class="l-en">Slopes &amp; momentum</span><span class="l-zh">斜率与动能</span></h2>
-      <table class="slopes">
-        <tr><th><span class="l-en">Spread</span><span class="l-zh">利差</span></th><th><span class="l-en">Level</span><span class="l-zh">水平</span></th><th><span class="l-en">%ile</span><span class="l-zh">分位</span></th><th><span class="l-en">63d Δ</span><span class="l-zh">63日变动</span></th></tr>
-        
-        <tr><td class="nm"><span class="l-en">2s10s (cycle slope)</span><span class="l-zh">2-10年（周期斜率）</span></td><td class="">+0.37</td><td>65</td><td>-15bp</td></tr>
-        
-        <tr><td class="nm"><span class="l-en">3m10y (recession slope)</span><span class="l-zh">3月-10年（衰退斜率）</span></td><td class="">+0.70</td><td>81</td><td>+9bp</td></tr>
-        
-        <tr><td class="nm"><span class="l-en">5s30s (long-end / term-premium)</span><span class="l-zh">5-30年（长端/期限溢价）</span></td><td class="">+0.81</td><td>74</td><td>-17bp</td></tr>
-        
-        <tr><td class="nm"><span class="l-en">2s5s (front belly)</span><span class="l-zh">2-5年（前段腹部）</span></td><td class="">+0.12</td><td>69</td><td>-1bp</td></tr>
-        
-        <tr><td class="nm"><span class="l-en">Real 5s10s (TIPS curve)</span><span class="l-zh">实际5-10年（TIPS曲线）</span></td><td class="">+0.31</td><td>57</td><td>-30bp</td></tr>
-        
-        <tr><td class="nm"><span class="l-en">Breakeven 5s10s (inflation curve)</span><span class="l-zh">盈亏平衡5-10年（通胀曲线）</span></td><td class="">-0.03</td><td>67</td><td>+19bp</td></tr>
-        
-        <tr><td class="nm"><span class="l-en">TP-adjusted 2s10s</span><span class="l-zh">期限溢价调整2-10年</span></td><td class="">+1.15</td><td>89</td><td>+0bp</td></tr>
-        
-      </table>
-      
-      <p class="sub" style="font-size:11.5px;margin-top:8px"><span class="l-en">Curve speed (63d)</span><span class="l-zh">曲线速度（63日）</span>: <span class="l-en">real 10y</span><span class="l-zh">实际10年</span> +43bp · <span class="l-en">front 2y</span><span class="l-zh">前端2年</span> +38bp · <span class="l-en">|real-speed| pctile</span><span class="l-zh">|实际速度|分位</span> 74. <span class="l-en">Rate-of-change beats level — the SPEED of a real-yield move breaks equities more than its level.</span><span class="l-zh">变动速度胜过水平——实际收益率移动的速度比其水平更能冲击股票。</span></p>
-      <p class="sub" style="font-size:11.5px;margin-top:4px"><span class="l-en">Term-spread trend (2y smooth)</span><span class="l-zh">期限利差趋势（2年平滑）</span>: <b style="color:var(--ink)">+0.09</b> · <span class="l-en">rising</span><span class="l-zh">上行</span>. <span class="l-en">The literature flags the smoothed, business-cycle-frequency component of the 3m10y spread as the curve read with genuine equity-premium content (Faria-Verona 2020) — but OUR calibration finds it regime-dependent (the IC sign flips post-2015), so we carry it as context, never a timing signal.</span><span class="l-zh">文献认为3月-10年利差经平滑的商业周期频率成分是收益率曲线中具有真正股权溢价含义的读数（Faria-Verona 2020）——但我方校准发现其依赖状态（IC符号在2015年后翻转），故仅作背景，绝非择时信号。</span></p>
-    </div>
-    <div class="card">
-      <h2><span class="l-en">Forward rates &amp; carry</span><span class="l-zh">远期利率与持有收益</span></h2>
-      
-      <div class="kpis">
-        <div class="kpi"><span class="l-en">1y1y fwd</span><span class="l-zh">1年1年远期</span><b>4.33%</b></div>
-        <div class="kpi"><span class="l-en">2y1y fwd</span><span class="l-zh">2年1年远期</span><b>4.28%</b></div>
-        <div class="kpi"><span class="l-en">5y5y fwd</span><span class="l-zh">5年5年远期</span><b>4.86%</b></div>
-        <div class="kpi"><span class="l-en">10y carry</span><span class="l-zh">10年持有</span><b>4.57%</b></div>
-        <div class="kpi"><span class="l-en">10y roll-down</span><span class="l-zh">10年滚动</span><b>+0.43%</b></div>
-        <div class="kpi"><span class="l-en">carry + roll</span><span class="l-zh">持有＋滚动</span><b>5.00%</b></div>
-      </div>
-      <p class="note" style="font-size:12px;margin-top:10px"><span class="l-en">Forward rates are the market-implied future short rates embedded in today&#39;s curve; carry+roll-down is the total return a duration holder earns if the curve is unchanged in a year (the cushion before price loss).</span><span class="l-zh">远期利率是今日曲线隐含的市场预期未来短端利率；carry＋滚动收益是久期持有者在曲线一年不变时获得的总回报（价格亏损前的缓冲）。</span></p>
-    </div>
-  </div>
-
-  <!-- ---- signal families: sector tilt + factor + market tendency ---- -->
-  <div class="card" style="margin-top:14px">
-    <h2><span class="l-en">Curve signals — sector, style &amp; market tendency</span><span class="l-zh">曲线信号 — 板块、风格与市场倾向</span></h2>
     
-    <div class="sub" style="font-size:11.5px"><span class="l-en">Per-sector curve tilt under the current regime. ✓meas = a calibrated forward-IC edge in the transmission matrix; ·thy = textbook channel only.</span><span class="l-zh">当前状态下各板块的曲线倾向。✓实测＝传导矩阵中存在校准的前瞻IC优势；·理论＝仅教科书传导。</span></div>
-    <div class="sectilt">
-      
-      <div class="stile tail">
-        <span class="se">XLF</span><span class="sb meas" title="measured forward IC (confirmed)">✓curvature -0.20</span>
-        <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">short</span><span class="l-zh">短久期</span><br><span class="l-en">banks earn the curve — steeper = wider NIM; rate beneficiary</span><span class="l-zh">银行赚取曲线——更陡＝更宽净息差；利率受益</span></div>
-      </div>
-      
-      <div class="stile tail">
-        <span class="se">XLP</span><span class="sb meas" title="measured forward IC (directional)">✓NTFS -0.11</span>
-        <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">short</span><span class="l-zh">短久期</span><br><span class="l-en">staples — mild bond proxy with pricing power; relatively favoured when the curve flattens / growth slows (weaker rate sensitivity than utilities)</span><span class="l-zh">必需消费——具定价权的温和类债券；曲线趋平/增长放缓时相对受青睐（利率敏感度弱于公用事业）</span></div>
-      </div>
-      
-      <div class="stile tail">
-        <span class="se">XLV</span><span class="sb meas" title="measured forward IC (directional)">✓curvature -0.07</span>
-        <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">short</span><span class="l-zh">短久期</span><br><span class="l-en">health care defensive — low rate sensitivity, late-cycle relative haven</span><span class="l-zh">医疗防御——利率敏感度低、周期晚段相对避风港</span></div>
-      </div>
-      
-      <div class="stile tail">
-        <span class="se">XLE</span><span class="sb meas" title="measured forward IC (confirmed)">✓curvature -0.10</span>
-        <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">short</span><span class="l-zh">短久期</span><br><span class="l-en">energy — reflation/inflation beneficiary, bear-steepener winner</span><span class="l-zh">能源——再通胀/通胀受益，熊市变陡赢家</span></div>
-      </div>
-      
-      <div class="stile tail">
-        <span class="se">XLB</span><span class="sb meas" title="measured forward IC (confirmed)">✓NTFS -0.22</span>
-        <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">neutral</span><span class="l-zh">久期中性</span><br><span class="l-en">materials — cyclical reflation play, helped by a steepening growth curve</span><span class="l-zh">材料——周期再通胀，受益于增长型变陡</span></div>
-      </div>
-      
-      <div class="stile head">
-        <span class="se">XLRE</span><span class="sb " title="textbook channel, no measured edge">·thy</span>
-        <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">long</span><span class="l-zh">长久期</span><br><span class="l-en">REITs are bond-proxy long-duration — hurt by higher long rates</span><span class="l-zh">REITs为类债券长久期——受长端利率上行拖累</span></div>
-      </div>
-      
-      <div class="stile head">
-        <span class="se">XLU</span><span class="sb meas" title="measured forward IC (directional)">✓NTFS -0.05</span>
-        <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">long</span><span class="l-zh">长久期</span><br><span class="l-en">utilities are the classic bond proxy — dividend yield competes with rates</span><span class="l-zh">公用事业为经典类债券——股息率与利率竞争</span></div>
-      </div>
-      
-      <div class="stile head">
-        <span class="se">XLK</span><span class="sb meas" title="measured forward IC (confirmed)">✓curvature -0.22</span>
-        <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">long</span><span class="l-zh">长久期</span><br><span class="l-en">long-duration growth — rising discount rate de-rates future cash flows</span><span class="l-zh">长久期成长——贴现率上行压低未来现金流估值</span></div>
-      </div>
-      
-      <div class="stile head">
-        <span class="se">XLI</span><span class="sb " title="textbook channel, no measured edge">·thy</span>
-        <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">neutral</span><span class="l-zh">久期中性</span><br><span class="l-en">industrials — cyclical, mild positive to a growth-led steepening</span><span class="l-zh">工业——周期性，对增长型变陡温和正向</span></div>
-      </div>
-      
-      <div class="stile head">
-        <span class="se">IWM</span><span class="sb meas" title="measured forward IC (confirmed)">✓curvature -0.19</span>
-        <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">long</span><span class="l-zh">长久期</span><br><span class="l-en">small caps — heavy floating-rate debt; financing cost is the squeeze, easing the relief</span><span class="l-zh">小盘——大量浮动利率债务；融资成本是挤压，宽松是缓解</span></div>
-      </div>
-      
-      <div class="stile ">
-        <span class="se">XLY</span><span class="sb " title="textbook channel, no measured edge">·thy</span>
-        <div class="sm"><span class="l-en">neutral</span><span class="l-zh">中性</span> · <span class="l-en">neutral</span><span class="l-zh">久期中性</span><br><span class="l-en">consumer discretionary — cyclical growth offset by financing-cost drag (autos/credit) + long-duration mega-cap skew</span><span class="l-zh">可选消费——周期性增长被融资成本拖累（汽车/信贷）抵消，且有长久期巨头偏向</span></div>
-      </div>
-      
+    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (confirmed) · Core PCE YoY − 2% target (confirmed)">
+      <span class="pm-name"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></span>
+      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:41.8%;animation-delay:60ms"></span></span>
+      <span class="pm-val neg">-0.39</span>
     </div>
-    <div style="margin-top:16px">
-      <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)"><span class="l-en">Equity style / factor</span><span class="l-zh">股票风格／因子</span></div>
-      
-      <div class="facrow">
-        <div class="facpill"><span class="fk"><span class="l-en">Value vs growth</span><span class="l-zh">价值vs成长</span></span><span class="fv"><span class="l-en">Value</span><span class="l-zh">价值</span></span></div>
-        <div class="facpill"><span class="fk"><span class="l-en">Size</span><span class="l-zh">规模</span></span><span class="fv"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></div>
-        <div class="facpill"><span class="fk"><span class="l-en">Duration factor</span><span class="l-zh">久期因子</span></span><span class="fv"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span></div>
-      </div>
-      <p class="note" style="font-size:12px"><span class="l-en">Equity duration: growth stocks discount cash flows further out, so they behave as long-duration assets and de-rate when real yields rise (~2× the rate-sensitivity of value, BIS 2022); value/financials are short-duration. HONEST CAVEAT: the long-run correlation of the value-minus-growth factor with Δ10y is only ~0.10 (AQR/Asness) — the link is concentrated in episodes (the +25% growth→value rotation of 2022) and is largely NOT pure duration. Small caps are driven by the FRONT end (floating-rate debt cost), a distinct channel from value/growth duration.</span><span class="l-zh">股票久期：成长股贴现更远期的现金流，因而表现为长久期资产，实际收益率上行时估值下修（利率敏感度约为价值的2倍，BIS 2022）；价值/金融为短久期。诚实提醒：价值减成长因子与10年期变动的长期相关性仅约0.10（AQR/Asness）——该联系集中于特定时期（如2022年+25%的成长→价值轮动），且大部分并非纯久期效应。小盘由前端驱动（浮动利率债务成本），与价值/成长久期是不同的渠道。</span></p>
+    
+    
+    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional) · Core PCE YoY − 2% target (confirmed)">
+      <span class="pm-name"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
+      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:40.6%;animation-delay:120ms"></span></span>
+      <span class="pm-val neg">-0.38</span>
     </div>
-    <div style="margin-top:12px">
-      <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)"><span class="l-en">Market tendency (curve-speed → drawdown risk)</span><span class="l-zh">市场倾向（曲线速度→回撤风险）</span></div>
-      
-      
-      <span class="band-chip" style="background:#1a7f43;margin:6px 0"><span class="l-en">calm</span><span class="l-zh">平静</span></span>
-      <p class="note" style="font-size:12px"><span class="l-en">No fast real-rate repricing — the curve is not flagging near-term equity stress.</span><span class="l-zh">无快速实际利率重定价——曲线未对近端股票压力发出警示。</span></p>
+    
+    
+    <div class="pm-row" title="drivers: Core PCE YoY − 2% target (confirmed) · Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional)">
+      <span class="pm-name"><span class="l-en">Nasdaq 100 (long-duration growth)</span><span class="l-zh">纳斯达克100（长久期成长）</span></span>
+      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:39.8%;animation-delay:180ms"></span></span>
+      <span class="pm-val neg">-0.37</span>
     </div>
-    <div class="flag info" style="display:block;margin-top:10px"><span class="l-en">Display-only. No yield-curve leg passed the forward-drawdown scored-leg gate (see reports/rate-inflation-transmission-calibration.md).</span><span class="l-zh">仅供展示。没有任何收益率曲线腿通过前瞻回撤可计分门槛（详见校准报告）。</span></div>
+    
+    
+    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional) · Core PCE YoY − 2% target (confirmed)">
+      <span class="pm-name"><span class="l-en">Financials (rate beneficiary)</span><span class="l-zh">金融（利率受益）</span></span>
+      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:37.9%;animation-delay:240ms"></span></span>
+      <span class="pm-val neg">-0.35</span>
+    </div>
+    
+    
+    <div class="pm-row" title="drivers: Core PCE YoY − 2% target (confirmed) · Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional)">
+      <span class="pm-name"><span class="l-en">Russell 2000 (small caps)</span><span class="l-zh">罗素2000（小盘）</span></span>
+      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:34.8%;animation-delay:300ms"></span></span>
+      <span class="pm-val neg">-0.33</span>
+    </div>
+    
+    
+    <div class="pm-row" title="drivers: Expectations wedge (mkt − model) (confirmed) · 10y breakeven — 63d change (confirmed) · Nominal 10y — 63d change (directional)">
+      <span class="pm-name"><span class="l-en">Gold</span><span class="l-zh">黄金</span></span>
+      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill pos" style="width:12.8%;animation-delay:360ms"></span></span>
+      <span class="pm-val pos">+0.12</span>
+    </div>
+    
+    
+    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · TP-adjusted 2s10s curve (confirmed) · Nominal 10y — 63d change (directional)">
+      <span class="pm-name"><span class="l-en">Long Treasuries (20y+)</span><span class="l-zh">长期美债(20年+)</span></span>
+      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill pos" style="width:19.0%;animation-delay:420ms"></span></span>
+      <span class="pm-val pos">+0.18</span>
+    </div>
+    
+    <p class="pm-foot"><span class="l-en">Bar length = combined strength of the measured forces acting on that asset now. Hover a row for its drivers; full receipts in the study shelf below.</span><span class="l-zh">柱长＝当前作用于该资产的实测力量之和。悬停查看驱动因素，完整依据见下方深度研究区。</span></p>
   </div>
   
 
-  <!-- ===================== CROSS-ASSET HEADWIND / TAILWIND ===================== -->
-  <div class="sec-head"><span class="l-en">Cross-asset transmission — what each asset faces now</span><span class="l-zh">跨资产传导 — 各资产当前所面对的</span></div>
-  <div class="grid cols-2">
-    <div class="card">
-      <h2 style="color:var(--red)"><span class="l-en">Headwinds</span><span class="l-zh">逆风</span></h2>
-      
-      <div class="tbar"><span class="tname"><span class="l-en">Materials (inflation beneficiary)</span><span class="l-zh">材料（通胀受益）</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill head" style="width:38.61%"></span></span>
-        <span class="tval" style="color:var(--red)">-0.43</span></div>
-      <div class="tdrv">Real 10y — 63d change (speed)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · us2y − funds (cut/hike pricing)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · Core PCE YoY − 2% target<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></div>
-      
-      <div class="tbar"><span class="tname"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill head" style="width:35.1%"></span></span>
-        <span class="tval" style="color:var(--red)">-0.39</span></div>
-      <div class="tdrv">Real 10y — 63d change (speed)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · us2y − funds (cut/hike pricing)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · Core PCE YoY − 2% target<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></div>
-      
-      <div class="tbar"><span class="tname"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill head" style="width:34.11%"></span></span>
-        <span class="tval" style="color:var(--red)">-0.38</span></div>
-      <div class="tdrv">Real 10y — 63d change (speed)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · us2y − funds (cut/hike pricing)<span class="lvg vg-directional" title="full-sample only">~</span> · Core PCE YoY − 2% target<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></div>
-      
-      <div class="tbar"><span class="tname"><span class="l-en">Nasdaq 100 (long-duration growth)</span><span class="l-zh">纳斯达克100（长久期成长）</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill head" style="width:33.39%"></span></span>
-        <span class="tval" style="color:var(--red)">-0.37</span></div>
-      <div class="tdrv">Core PCE YoY − 2% target<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · Real 10y — 63d change (speed)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · us2y − funds (cut/hike pricing)<span class="lvg vg-directional" title="full-sample only">~</span></div>
-      
-      <div class="tbar"><span class="tname"><span class="l-en">Financials (rate beneficiary)</span><span class="l-zh">金融（利率受益）</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill head" style="width:31.77%"></span></span>
-        <span class="tval" style="color:var(--red)">-0.35</span></div>
-      <div class="tdrv">Real 10y — 63d change (speed)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · us2y − funds (cut/hike pricing)<span class="lvg vg-directional" title="full-sample only">~</span> · Core PCE YoY − 2% target<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></div>
-      
-      <div class="tbar"><span class="tname"><span class="l-en">Russell 2000 (small caps)</span><span class="l-zh">罗素2000（小盘）</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill head" style="width:29.25%"></span></span>
-        <span class="tval" style="color:var(--red)">-0.33</span></div>
-      <div class="tdrv">Core PCE YoY − 2% target<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · Real 10y — 63d change (speed)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · us2y − funds (cut/hike pricing)<span class="lvg vg-directional" title="full-sample only">~</span></div>
-      
-    </div>
-    <div class="card">
-      <h2 style="color:var(--green)"><span class="l-en">Tailwinds</span><span class="l-zh">顺风</span></h2>
-      
-      <div class="tbar"><span class="tname"><span class="l-en">Long Treasuries (20y+)</span><span class="l-zh">长期美债(20年+)</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill tail" style="width:15.93%"></span></span>
-        <span class="tval" style="color:var(--green)">+0.18</span></div>
-      <div class="tdrv">Real 10y — 63d change (speed)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · TP-adjusted 2s10s curve<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · Nominal 10y — 63d change<span class="lvg vg-directional" title="full-sample only">~</span></div>
-      
-      <div class="tbar"><span class="tname"><span class="l-en">Gold</span><span class="l-zh">黄金</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill tail" style="width:10.709999999999999%"></span></span>
-        <span class="tval" style="color:var(--green)">+0.12</span></div>
-      <div class="tdrv">Expectations wedge (mkt − model)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · 10y breakeven — 63d change<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span> · Nominal 10y — 63d change<span class="lvg vg-directional" title="full-sample only">~</span></div>
-      
-    </div>
-  </div>
-  <p class="sub" style="margin-top:8px"><span class="l-en">Net = the sum of each active driver’s current extension × its measured forward IC for that asset (the change / gap drivers only; raw levels are excluded as co-trend). ✓ confirmed split-half · ~ directional · ⤫ inverted (effect measured opposite the chain direction) · · context.</span><span class="l-zh">净值＝各活跃驱动的当前偏离度 × 其对该资产的实测前瞻IC之和（仅取变动/缺口类驱动；原始水平因共趋势而剔除）。✓ 前后半段确认 · ~ 有方向 · ⤫ 反向（实测效应与链条方向相反）· · 仅背景。</span></p>
-
-  <!-- ===================== TRANSMISSION CHAINS ===================== -->
-  <div class="sec-head"><span class="l-en">Transmission chains — first → second → third order</span><span class="l-zh">传导链 — 一阶 → 二阶 → 三阶</span></div>
+  <!-- ===================== CHAINS ===================== -->
+  <div class="sec-head"><span class="l-en">How a shock travels</span><span class="l-zh">冲击如何传导</span></div>
+  <p class="sec-sub"><span class="l-en">First the direct hit, then the knock-on effects, in order.</span><span class="l-zh">先是直接冲击，随后按顺序层层传导。</span></p>
   
-  <div class="card chain " style="margin-bottom:14px">
+  <div class="chain live">
     <div class="chain-head">
       <span><span class="l-en">Real-rate / discount-rate channel</span><span class="l-zh">实际利率／贴现率传导</span></span>
-      <span class="chain-state on"><span class="l-en">ACTIVE</span><span class="l-zh">活跃</span> · Real 10y — 63d change (speed) +1.6σ</span>
+      <span class="chain-state on"><i></i><span class="l-en">Active now</span><span class="l-zh">当前活跃</span></span>
     </div>
     
     <div class="order">
       <span class="onum">1</span>
       <div>
         <div class="otext"><span class="l-en">Rising real 10y yields lift the discount rate → long-duration equities, REITs and other long-duration assets de-rate first.</span><span class="l-zh">实际10年期收益率上行抬高贴现率→长久期股票、REITs等长久期资产首先承压。</span></div>
-        <div class="ocells"><span class="achip ac-head">Nasdaq 100 (long-duration growth) <b>-0.20</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head">Technology <b>-0.19</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-neut">Real Estate (rate-sensitive) <b>+0.02</b><span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-tail">Long Treasuries (20y+) <b>+0.15</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head">Bitcoin (long-duration) <b>-0.31</b><span class="lvg vg-context" title="weak / context only">·</span></span></div>
+        <div class="ocells"><span class="achip ac-head" title="measured effect -0.20 (confirmed)">Nasdaq 100 (long-duration growth)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.19 (confirmed)">Technology<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-neut" title="measured effect +0.02 (context)">Real Estate (rate-sensitive)<span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-tail" title="measured effect +0.15 (confirmed)">Long Treasuries (20y+)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.31 (context)">Bitcoin (long-duration)<span class="lvg vg-context" title="weak / context only">·</span></span></div>
       </div>
     </div>
     
@@ -1023,7 +953,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <span class="onum">2</span>
       <div>
         <div class="otext"><span class="l-en">Higher US real yields pull capital in → the dollar firms → gold, industrial commodities and EM are pressured.</span><span class="l-zh">美国实际收益率走高吸引资本流入→美元走强→黄金、工业商品与新兴市场受压。</span></div>
-        <div class="ocells"><span class="achip ac-neut">US Dollar (DXY) <b>+0.01</b><span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-neut">Gold <b>-0.00</b><span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-head">Copper <b>-0.17</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head">Oil (WTI) <b>-0.18</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head">China large-cap (EM proxy) <b>-0.08</b><span class="lvg vg-context" title="weak / context only">·</span></span></div>
+        <div class="ocells"><span class="achip ac-neut" title="measured effect +0.01 (context)">US Dollar (DXY)<span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-neut" title="measured effect -0.00 (context)">Gold<span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-head" title="measured effect -0.17 (confirmed)">Copper<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.18 (confirmed)">Oil (WTI)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.08 (context)">China large-cap (EM proxy)<span class="lvg vg-context" title="weak / context only">·</span></span></div>
       </div>
     </div>
     
@@ -1031,23 +961,23 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <span class="onum">3</span>
       <div>
         <div class="otext"><span class="l-en">A firm dollar + soft commodities → energy/materials relative headwind and EM-revenue exporters de-rate; financials are the relative beneficiary as curves steepen.</span><span class="l-zh">强美元＋商品走软→能源/材料相对承压、新兴市场营收型出口商估值下修；曲线变陡时金融为相对受益者。</span></div>
-        <div class="ocells"><span class="achip ac-head">Energy (inflation beneficiary) <b>-0.11</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head">Materials (inflation beneficiary) <b>-0.21</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head">Financials (rate beneficiary) <b>-0.16</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+        <div class="ocells"><span class="achip ac-head" title="measured effect -0.11 (confirmed)">Energy (inflation beneficiary)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.21 (confirmed)">Materials (inflation beneficiary)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.16 (confirmed)">Financials (rate beneficiary)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
       </div>
     </div>
     
   </div>
   
-  <div class="card chain " style="margin-bottom:14px">
+  <div class="chain live">
     <div class="chain-head">
       <span><span class="l-en">Sticky-inflation / higher-for-longer channel</span><span class="l-zh">通胀粘性／更高更久传导</span></span>
-      <span class="chain-state on"><span class="l-en">ACTIVE</span><span class="l-zh">活跃</span> · Core PCE YoY − 2% target +2.0σ</span>
+      <span class="chain-state on"><i></i><span class="l-en">Active now</span><span class="l-zh">当前活跃</span></span>
     </div>
     
     <div class="order">
       <span class="onum">1</span>
       <div>
         <div class="otext"><span class="l-en">Core PCE/CPI stuck above the 2% target → the market reprices the terminal rate higher (breakevens, policy path) → broad equities carry a valuation headwind.</span><span class="l-zh">核心PCE/CPI高于2%目标→市场上修终端利率（盈亏平衡、政策路径）→大盘股估值承压。</span></div>
-        <div class="ocells"><span class="achip ac-head">S&amp;P 500 <b>-0.11</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head">Nasdaq 100 (long-duration growth) <b>-0.17</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+        <div class="ocells"><span class="achip ac-head" title="measured effect -0.11 (confirmed)">S&amp;P 500<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.17 (confirmed)">Nasdaq 100 (long-duration growth)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
       </div>
     </div>
     
@@ -1055,7 +985,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <span class="onum">2</span>
       <div>
         <div class="otext"><span class="l-en">Higher-for-longer keeps real yields elevated → small caps and rate-sensitive borrowers are squeezed by financing cost.</span><span class="l-zh">更高更久使实际收益率维持高位→小盘股与利率敏感借款方被融资成本挤压。</span></div>
-        <div class="ocells"><span class="achip ac-head">Russell 2000 (small caps) <b>-0.19</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head">Financials (rate beneficiary) <b>-0.12</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+        <div class="ocells"><span class="achip ac-head" title="measured effect -0.19 (confirmed)">Russell 2000 (small caps)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.12 (confirmed)">Financials (rate beneficiary)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
       </div>
     </div>
     
@@ -1063,89 +993,36 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <span class="onum">3</span>
       <div>
         <div class="otext"><span class="l-en">PPI / ECI wage pressure compresses margins → defensives (staples, health care) relatively outperform.</span><span class="l-zh">PPI／就业成本（ECI）工资压力压缩利润率→防御板块（必需消费、医疗）相对跑赢。</span></div>
-        <div class="ocells"><span class="achip ac-head">Staples (defensive) <b>-0.09</b><span class="lvg vg-directional" title="full-sample only">~</span></span><span class="achip ac-head">Health Care (defensive) <b>-0.19</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+        <div class="ocells"><span class="achip ac-head" title="measured effect -0.09 (directional)">Staples (defensive)<span class="lvg vg-directional" title="full-sample only">~</span></span><span class="achip ac-head" title="measured effect -0.19 (confirmed)">Health Care (defensive)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
       </div>
     </div>
     
   </div>
   
-  <div class="card chain dim" style="margin-bottom:14px">
-    <div class="chain-head">
-      <span><span class="l-en">Policy-easing / curve-steepening channel</span><span class="l-zh">政策宽松／曲线变陡传导</span></span>
-      <span class="chain-state off"><span class="l-en">dormant</span><span class="l-zh">静默</span> · TP-adjusted 2s10s curve +0.6σ</span>
-    </div>
-    
-    <div class="order">
-      <span class="onum">1</span>
-      <div>
-        <div class="otext"><span class="l-en">Cuts priced (policy gap negative) → the front end falls and the curve bull-steepens → duration rallies.</span><span class="l-zh">计入降息（政策缺口为负）→短端下行、曲线牛市变陡→久期资产上涨。</span></div>
-        <div class="ocells"><span class="achip ac-tail">Long Treasuries (20y+) <b>+0.24</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
-      </div>
-    </div>
-    
-    <div class="order">
-      <span class="onum">2</span>
-      <div>
-        <div class="otext"><span class="l-en">A steeper curve → bank net-interest margins and rate-sensitive REITs/housing improve.</span><span class="l-zh">曲线变陡→银行净息差与利率敏感的REITs/地产改善。</span></div>
-        <div class="ocells"><span class="achip ac-head">Financials (rate beneficiary) <b>-0.14</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-tail">Real Estate (rate-sensitive) <b>+0.16</b><span class="lvg vg-context" title="weak / context only">·</span></span></div>
-      </div>
-    </div>
-    
-    <div class="order">
-      <span class="onum">3</span>
-      <div>
-        <div class="otext"><span class="l-en">Easier financial conditions → small caps and cyclicals lead a risk-on rotation.</span><span class="l-zh">金融条件转松→小盘与周期股领涨的风险偏好轮动。</span></div>
-        <div class="ocells"><span class="achip ac-neut">Russell 2000 (small caps) <b>-0.02</b><span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-head">Materials (inflation beneficiary) <b>-0.04</b><span class="lvg vg-directional" title="full-sample only">~</span></span></div>
-      </div>
-    </div>
-    
-  </div>
   
-  <div class="card chain dim" style="margin-bottom:14px">
-    <div class="chain-head">
-      <span><span class="l-en">Inflation-expectations (anchoring) channel</span><span class="l-zh">通胀预期（锚定）传导</span></span>
-      <span class="chain-state off"><span class="l-en">dormant</span><span class="l-zh">静默</span> · Expectations wedge (mkt − model) -0.7σ</span>
-    </div>
+  
+  <div class="chain-quiet">
     
-    <div class="order">
-      <span class="onum">1</span>
-      <div>
-        <div class="otext"><span class="l-en">Market inflation expectations drift above the model/survey → unanchoring risk; the dollar firms as the Fed is expected to stay restrictive. Counter-intuitively, gold&#39;s MEASURED response to this wedge is a headwind — the higher real yields from a restrictive Fed dominate the inflation-hedge bid.</span><span class="l-zh">市场通胀预期高于模型/调查→脱锚风险；美元因预期美联储维持紧缩而走强。与直觉相反，黄金对此缺口的实测反应为逆风——紧缩带来的更高实际收益率压过了通胀对冲买盘。</span></div>
-        <div class="ocells"><span class="achip ac-tail">US Dollar (DXY) <b>+0.15</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head">Gold <b>-0.28</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
-      </div>
-    </div>
+    <div class="cq-row"><b><span class="l-en">Policy-easing / curve-steepening channel</span><span class="l-zh">政策宽松／曲线变陡传导</span></b><span class="cq-tag"><span class="l-en">quiet now</span><span class="l-zh">暂时静默</span></span></div>
     
-    <div class="order">
-      <span class="onum">2</span>
-      <div>
-        <div class="otext"><span class="l-en">Unanchoring → the Fed stays restrictive → real yields rise; long-duration growth de-rates while defensives are relatively favored.</span><span class="l-zh">脱锚→美联储维持紧缩→实际收益率上行；长久期成长下修，防御相对受青睐。</span></div>
-        <div class="ocells"><span class="achip ac-neut">Nasdaq 100 (long-duration growth) <b>-0.00</b><span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-tail">Health Care (defensive) <b>+0.22</b><span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
-      </div>
-    </div>
-    
-    <div class="order">
-      <span class="onum">3</span>
-      <div>
-        <div class="otext"><span class="l-en">The textbook &#39;real-asset hedge&#39; (energy, materials, gold) is unreliable for this wedge: with the Fed held restrictive, the measured beneficiaries are the dollar and defensives, not the inflation-beneficiary sectors.</span><span class="l-zh">教科书式的“实物资产对冲”（能源、材料、黄金）对此缺口并不可靠：在美联储维持紧缩下，实测受益者是美元与防御板块，而非通胀受益板块。</span></div>
-        <div class="ocells"><span class="achip ac-neut">Energy (inflation beneficiary) <b>+0.00</b><span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-neut">Materials (inflation beneficiary) <b>-0.00</b><span class="lvg vg-context" title="weak / context only">·</span></span></div>
-      </div>
-    </div>
+    <div class="cq-row"><b><span class="l-en">Inflation-expectations (anchoring) channel</span><span class="l-zh">通胀预期（锚定）传导</span></b><span class="cq-tag"><span class="l-en">quiet now</span><span class="l-zh">暂时静默</span></span></div>
     
   </div>
   
 
   <!-- ===================== SCENARIOS ===================== -->
-  <div class="sec-head"><span class="l-en">Conditional scenarios — if this shock holds a quarter</span><span class="l-zh">情景推演 — 若该冲击持续一个季度</span></div>
+  <div class="sec-head"><span class="l-en">If this holds for three months</span><span class="l-zh">若持续三个月</span></div>
+  <p class="sec-sub"><span class="l-en">What each shock has historically meant for asset prices — illustrations, not forecasts.</span><span class="l-zh">各类冲击在历史上对资产价格的含义——仅为示意，并非预测。</span></p>
   <div class="grid cols-2">
   
     <div class="scen">
       <h3><span class="l-en">Real 10y +50bp (persists a quarter)</span><span class="l-zh">实际10年期收益率 +50基点（持续一季度）</span></h3>
       <div class="scen-row">
         <div class="scen-col head"><div class="scl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
-          <div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-8.2%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-6.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-6.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-5.4%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-3.6%</b></div>
+          <div class="smv"><span>Bitcoin (long-duration)</span><b class="neg">-8.2%</b></div><div class="smv"><span>Real Estate (rate-sensitive)</span><b class="neg">-6.0%</b></div><div class="smv"><span>Long Treasuries (20y+)</span><b class="neg">-6.0%</b></div><div class="smv"><span>Gold</span><b class="neg">-5.4%</b></div><div class="smv"><span>China large-cap (EM proxy)</span><b class="neg">-3.6%</b></div>
         </div>
         <div class="scen-col tail"><div class="scl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
-          <div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+2.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+1.1%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+0.9%</b></div>
+          <div class="smv"><span>US Dollar (DXY)</span><b class="pos">+2.0%</b></div><div class="smv"><span>Energy (inflation beneficiary)</span><b class="pos">+1.1%</b></div><div class="smv"><span>Financials (rate beneficiary)</span><b class="pos">+0.9%</b></div>
         </div>
       </div>
     </div>
@@ -1154,10 +1031,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <h3><span class="l-en">Real 10y -50bp (easing)</span><span class="l-zh">实际10年期收益率 -50基点（宽松）</span></h3>
       <div class="scen-row">
         <div class="scen-col head"><div class="scl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
-          <div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-2.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-1.1%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-0.9%</b></div>
+          <div class="smv"><span>US Dollar (DXY)</span><b class="neg">-2.0%</b></div><div class="smv"><span>Energy (inflation beneficiary)</span><b class="neg">-1.1%</b></div><div class="smv"><span>Financials (rate beneficiary)</span><b class="neg">-0.9%</b></div>
         </div>
         <div class="scen-col tail"><div class="scl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
-          <div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+8.2%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+6.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+6.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+5.4%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+3.6%</b></div>
+          <div class="smv"><span>Bitcoin (long-duration)</span><b class="pos">+8.2%</b></div><div class="smv"><span>Long Treasuries (20y+)</span><b class="pos">+6.0%</b></div><div class="smv"><span>Real Estate (rate-sensitive)</span><b class="pos">+6.0%</b></div><div class="smv"><span>Gold</span><b class="pos">+5.4%</b></div><div class="smv"><span>China large-cap (EM proxy)</span><b class="pos">+3.6%</b></div>
         </div>
       </div>
     </div>
@@ -1166,10 +1043,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <h3><span class="l-en">Breakeven +30bp (inflation scare)</span><span class="l-zh">盈亏平衡通胀 +30基点（通胀恐慌）</span></h3>
       <div class="scen-row">
         <div class="scen-col head"><div class="scl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
-          <div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-4.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-1.2%</b></div>
+          <div class="smv"><span>Long Treasuries (20y+)</span><b class="neg">-4.0%</b></div><div class="smv"><span>US Dollar (DXY)</span><b class="neg">-1.2%</b></div>
         </div>
         <div class="scen-col tail"><div class="scl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
-          <div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+17.5%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+12.6%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+8.7%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+7.3%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+6.0%</b></div>
+          <div class="smv"><span>Bitcoin (long-duration)</span><b class="pos">+17.5%</b></div><div class="smv"><span>Oil (WTI)</span><b class="pos">+12.6%</b></div><div class="smv"><span>Copper</span><b class="pos">+8.7%</b></div><div class="smv"><span>Energy (inflation beneficiary)</span><b class="pos">+7.3%</b></div><div class="smv"><span>Materials (inflation beneficiary)</span><b class="pos">+6.0%</b></div>
         </div>
       </div>
     </div>
@@ -1178,57 +1055,307 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <h3><span class="l-en">Curve bull-steepens +50bp (cuts priced)</span><span class="l-zh">收益率曲线牛市变陡 +50基点（计入降息）</span></h3>
       <div class="scen-row">
         <div class="scen-col head"><div class="scl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
-          <div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-5.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-2.1%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-2.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="neg">-1.0%</b></div>
+          <div class="smv"><span>Long Treasuries (20y+)</span><b class="neg">-5.0%</b></div><div class="smv"><span>Real Estate (rate-sensitive)</span><b class="neg">-2.1%</b></div><div class="smv"><span>Utilities (bond proxy)</span><b class="neg">-2.0%</b></div><div class="smv"><span>Gold</span><b class="neg">-1.0%</b></div>
         </div>
         <div class="scen-col tail"><div class="scl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
-          <div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+12.3%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+4.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+3.0%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+2.4%</b></div><div class="smv"><span><span class="l-en"></span><span class="l-zh"></span></span><b class="pos">+2.2%</b></div>
+          <div class="smv"><span>Bitcoin (long-duration)</span><b class="pos">+12.3%</b></div><div class="smv"><span>Oil (WTI)</span><b class="pos">+4.0%</b></div><div class="smv"><span>Copper</span><b class="pos">+3.0%</b></div><div class="smv"><span>Financials (rate beneficiary)</span><b class="pos">+2.4%</b></div><div class="smv"><span>Materials (inflation beneficiary)</span><b class="pos">+2.2%</b></div>
         </div>
       </div>
     </div>
   
   </div>
-  <p class="sub" style="margin-top:6px"><span class="l-en">Implied move = the asset’s MEASURED contemporaneous 63-day beta to that driver × the shock. Illustrative &amp; regime-dependent — not a forecast, and the shock must actually persist.</span><span class="l-zh">隐含涨跌＝该资产对此驱动实测的同期63日beta × 冲击幅度。仅为示意且依赖状态——并非预测，且冲击须真实持续。</span></p>
 
-  <!-- ===================== HONESTY / SCORED-LEG GATE ===================== -->
-  <div class="card" style="margin-top:22px">
-    <h2><span class="l-en">How this is graded · and what it is not</span><span class="l-zh">如何评级 · 以及它不是什么</span></h2>
-    <div class="flag info" style="display:block;margin-bottom:10px"><span class="l-en">Display-only. Scored-leg gate: NO rate/inflation leg passed the forward-drawdown bar with purged-CV robustness (see reports/rate-inflation-transmission-calibration.md).</span><span class="l-zh">仅供展示。可计分腿检验：没有任何利率/通胀腿通过前瞻回撤门槛并满足清洗交叉验证稳健性（详见校准报告）。</span></div>
+  <!-- ===================== STUDY SHELF (tier 3) ===================== -->
+  <div class="sec-head" id="shelf"><span class="l-en">The study shelf</span><span class="l-zh">深度研究区</span></div>
+  <p class="sec-sub"><span class="l-en">Everything above, with the machinery showing — for readers who want the receipts.</span><span class="l-zh">以上全部内容的完整技术细节——供想查看依据的读者。</span></p>
+  <div class="shelf">
+
     
-    <table class="gate">
-      <tr><th><span class="l-en">Candidate leg</span><span class="l-zh">候选腿</span></th><th><span class="l-en">Verdict</span><span class="l-zh">判定</span></th><th class="num"><span class="l-en">IC dd (f/pre/post)</span><span class="l-zh">IC回撤(全/前/后)</span></th><th class="num"><span class="l-en">hi-tercile edge</span><span class="l-zh">高三分位超额</span></th><th><span class="l-en">scored?</span><span class="l-zh">计分?</span></th></tr>
-      
-      <tr><td>Real-rate SPEED (63d rise) — &#39;speed breaks equities&#39;</td><td>DIRECTIONAL</td><td class="num">0.139/0.052/0.222</td><td class="num">7.2pp</td><td>—</td></tr>
-      
-      <tr><td>Real-rate LEVEL (high real yields)</td><td>DIRECTIONAL</td><td class="num">0.047/0.053/0.004</td><td class="num">-1.0pp</td><td>—</td></tr>
-      
-      <tr><td>Core-PCE-vs-target gap (sticky inflation)</td><td>DIRECTIONAL</td><td class="num">0.042/0.009/0.13</td><td class="num">0.2pp</td><td>—</td></tr>
-      
-      <tr><td>Inflation re-acceleration (3m&gt;12m)</td><td>DIRECTIONAL</td><td class="num">0.053/0.049/0.073</td><td class="num">4.0pp</td><td>—</td></tr>
-      
-      <tr><td>Expectations unanchoring (market&gt;model)</td><td>INVERTED</td><td class="num">-0.054/-0.05/-0.106</td><td class="num">-6.2pp</td><td>—</td></tr>
-      
-      <tr><td>TP-adjusted curve inversion (flip: low=stress)</td><td>CONTEXT</td><td class="num">0.005/0.01/0.031</td><td class="num">-0.7pp</td><td>—</td></tr>
-      
-      <tr><td>Nominal-rate SPEED (63d rise)</td><td>DIRECTIONAL</td><td class="num">0.095/0.068/0.208</td><td class="num">-0.4pp</td><td>—</td></tr>
-      
-      <tr><td>Near-term forward spread inversion (flip: low=stress; Engstrom-Sharpe beats 2s10s)</td><td>CONTEXT</td><td class="num">-0.018/0.048/-0.213</td><td class="num">-1.2pp</td><td>—</td></tr>
-      
-      <tr><td>Curve curvature (2s5s10s butterfly — humped = late-cycle)</td><td>CONTEXT</td><td class="num">0.032/-0.013/0.177</td><td class="num">-0.1pp</td><td>—</td></tr>
-      
-      <tr><td>Real-rate move VIOLENCE (|63d speed|, either direction)</td><td>DIRECTIONAL</td><td class="num">0.112/0.161/0.057</td><td class="num">3.0pp</td><td>—</td></tr>
-      
-      <tr><td>Curve flattening impulse (flip: − = flattening = stress; INVERTED if post-inversion steepening is the tell)</td><td>CONTEXT</td><td class="num">-0.032/-0.085/0.169</td><td class="num">-2.1pp</td><td>—</td></tr>
-      
-      <tr><td>3m10y TREND inversion (flip: low trend = stress) — Faria-Verona OOS equity-premium claim, tested on the return-forecast bar</td><td>CONTEXT</td><td class="num">0.163/0.234/-0.031</td><td class="num">6.4pp</td><td>—</td></tr>
-      
-    </table>
+    <details id="shelf-yc">
+      <summary><span class="sh-ic">📈</span><span class="l-en">Yield curve — the full read</span><span class="l-zh">收益率曲线——完整解读</span><span class="sh-hint"><span class="l-en">shape · regime · recession · signals</span><span class="l-zh">形态 · 状态 · 衰退 · 信号</span></span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+      <p class="sub" style="margin:12px 0 14px"><span class="l-en">Curve: Bear steepener. recession dashboard low (0/4 flags).</span><span class="l-zh">曲线：熊市陡峭。衰退面板低（0/4 项亮起）。</span></p>
+      <div class="grid cols-3">
+        <div class="card">
+          <h2><span class="l-en">Curve shape</span><span class="l-zh">曲线形态</span></h2>
+          
+          <div class="decomp" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="dc"><div class="dcl"><span class="l-en">Level (avg yield)</span><span class="l-zh">水平（平均收益率）</span></div><div class="dcv">4.26<small style="font-size:11px;color:var(--muted)">%</small></div><div class="dcn"><span class="l-en">pctile</span><span class="l-zh">分位</span> 64 · +28bp/63d</div></div>
+            <div class="dc"><div class="dcl"><span class="l-en">Slope (2s10s)</span><span class="l-zh">斜率（2-10年）</span></div><div class="dcv">+0.37</div><div class="dcn"><span class="l-en">pctile</span><span class="l-zh">分位</span> 65 · -15bp/63d</div></div>
+            <div class="dc"><div class="dcl"><span class="l-en">Curvature (2s5s10s fly)</span><span class="l-zh">曲率（2-5-10年蝶式）</span></div><div class="dcv">-0.17</div><div class="dcn"><span class="l-en">pctile</span><span class="l-zh">分位</span> 68 · <span class="l-en">+ humped / − bowed</span><span class="l-zh">+隆起／−凹陷</span></div></div>
+          </div>
+          
+          <div style="margin-top:12px">
+            <div class="sub" style="font-size:11.5px"><span class="l-en">Principal components of daily curve changes (Litterman-Scheinkman)</span><span class="l-zh">日度曲线变动的主成分（Litterman-Scheinkman）</span></div>
+            <div class="pcabar">
+              <span class="pc-l" style="width:82.5%">82%</span><span class="pc-s" style="width:9.5%">9%</span><span class="pc-c" style="width:4.4%">4%</span>
+              <span class="pc-r" style="width:3.7%"></span>
+            </div>
+            <div class="pcalegend"><span><i style="background:var(--indigo)"></i><span class="l-en">Level</span><span class="l-zh">水平</span></span><span><i style="background:var(--blue)"></i><span class="l-en">Slope</span><span class="l-zh">斜率</span></span><span><i style="background:var(--teal)"></i><span class="l-en">Curvature</span><span class="l-zh">曲率</span></span></div>
+            <p class="sub" style="font-size:11px;margin-top:6px"><span class="l-en">The three classic factors span</span><span class="l-zh">三个经典因子合计解释</span> <b>96.3%</b> <span class="l-en">of curve variance — the textbook result, measured on our data.</span><span class="l-zh">的曲线方差——教科书结论，在我方数据上实测。</span></p>
+          </div>
+          
+        </div>
+        <div class="card">
+          <h2><span class="l-en">Curve regime</span><span class="l-zh">曲线状态</span></h2>
+          
+          
+          
+          <div class="curve-regime">
+            <span class="regchip" style="background:#F5AD42"><span class="l-en">Bear steepener</span><span class="l-zh">熊市陡峭</span></span>
+            <div class="sub" style="line-height:1.45;margin-top:8px"><span class="l-en">long rates rising faster than short — reflation / term-premium / fiscal repricing</span><span class="l-zh">长端利率上行快于短端 — 再通胀/期限溢价/财政重新定价</span></div>
+            <div class="sub" style="font-size:11.5px"><b style="color:var(--ink)"><span class="l-en">Fed-cycle phase</span><span class="l-zh">美联储周期阶段</span>:</b> <span class="l-en">Reflation / fiscal supply / term-premium repricing — long end rising fastest</span><span class="l-zh">再通胀／财政供给／期限溢价重新定价——长端上行最快</span> · <span class="l-en">slope</span><span class="l-zh">斜率</span> +10bp/21d · <span class="l-en">term premium</span><span class="l-zh">期限溢价</span> <span class="l-en">rising</span><span class="l-zh">上行</span></div>
+            <div class="favrow"><span class="fl fav"><span class="l-en">Favoured</span><span class="l-zh">受益</span></span><span class="tkpill fav">XLE</span><span class="tkpill fav">XLF</span><span class="tkpill fav">XLB</span></div>
+            <div class="favrow"><span class="fl pres"><span class="l-en">Pressured</span><span class="l-zh">承压</span></span><span class="tkpill pres">QQQ</span><span class="tkpill pres">XLK</span><span class="tkpill pres">XLU</span><span class="tkpill pres">XLRE</span><span class="tkpill pres">TLT</span><span class="tkpill pres">GC=F</span></div>
+            <p class="note" style="font-size:12px;margin-top:4px"><span class="l-en">Historically the BEST equity regime overall (~+22% annualised across post-2000 growth-led episodes) — value, banks and real-asset cyclicals over long-duration growth/utilities/REITs. BUT a TERM-PREMIUM/fiscal-driven steepener (long end up with no growth) is not the bullish kind — check 5s30s + breakevens to disambiguate; rising term premium also breaks the &#39;duration = safe haven&#39; assumption.</span><span class="l-zh">历史上整体最佳的股票状态（2000年后增长主导的episode年化约+22%）——价值、银行、实物资产周期跑赢长久期成长/公用/REITs。但由期限溢价/财政驱动的变陡（长端上行而无增长）并非看多版本——用5-30年与盈亏平衡来区分；上升的期限溢价也会打破“久期＝避风港”的假设。</span></p>
+          </div>
+          
+        </div>
+        <div class="card">
+          <h2><span class="l-en">Recession dashboard</span><span class="l-zh">衰退面板</span></h2>
+          
+          
+          <span class="band-chip" style="background:#1a7f43"><span class="l-en">low</span><span class="l-zh">低</span> · 0/4 <span class="l-en">flags</span><span class="l-zh">项亮起</span></span>
+          <div class="recgauges">
+            <div class="recg "><div class="rgl"><span class="l-en">Near-term fwd spread</span><span class="l-zh">近端远期利差</span></div><div class="rgv">+0.67</div></div>
+            <div class="recg "><div class="rgl"><span class="l-en">NY Fed 10y-3m probit</span><span class="l-zh">纽约联储10年-3月概率</span></div><div class="rgv">16%</div></div>
+            <div class="recg "><div class="rgl"><span class="l-en">Un-inversion alarm</span><span class="l-zh">重新变陡警报</span></div><div class="rgv"><span class="l-en">no</span><span class="l-zh">否</span></div></div>
+            <div class="recg "><div class="rgl"><span class="l-en">TP-adjusted 2s10s</span><span class="l-zh">期限溢价调整2-10年</span></div><div class="rgv">+1.15</div></div>
+          </div>
+          <div class="flag warn" style="display:block;margin:2px 0 6px"><span class="l-en">Policy stance</span><span class="l-zh">政策立场</span>: <b>3.63%</b> <span class="l-en">funds vs</span><span class="l-zh">基金 vs</span> ~2.5% = <span class="l-en">restrictive</span><span class="l-zh">偏紧</span> (+1.13pp)</div>
+          <p class="note" style="font-size:11.5px;margin-top:4px"><span class="l-en">The near-term forward spread (3m rate ~18m forward − 3m bill) statistically dominates the 2s10s — Engstrom-Sharpe (Fed 2018-19) find it renders the 2s10s redundant in a joint probit. We read 3m10y, not 2s10s, as the recession slope (Estrella-Mishkin γ = −0.53, −0.66). The genuinely ominous configuration is the curve RE-STEEPENING out of a deep inversion: the un-inversion has historically COINCIDED WITH or slightly led recession onset (1990 ≈3m, 2001 ≈6m after the curve turned positive) — a fresh dis-inversion is the late-cycle handoff, not an all-clear.</span><span class="l-zh">近端远期利差（约18个月远期3月利率−3月票据）在统计上优于2-10年——Engstrom-Sharpe（美联储2018-19）发现在联合probit中它使2-10年变得多余。我们以3月-10年（而非2-10年）作为衰退斜率（Estrella-Mishkin γ＝−0.53、−0.66）。真正危险的形态是深度倒挂后曲线重新变陡：历史上重新转正与衰退开始大致同步或略微领先（1990年约3个月、2001年约6个月），因此刚出现的重新变陡是周期晚段的交接，而非解除警报。</span> <span class="l-en">Funds 3.63% vs ~2.5% nominal-neutral = restrictive. Wright (2006): the same curve slope is more restrictive at a higher funds level — a flat curve at 5% funds is a stronger recession tell than at 2%.</span><span class="l-zh">联邦基金3.63% vs 约2.5%名义中性＝偏紧。Wright（2006）：相同曲线斜率在更高基金利率下更具紧缩性——5%基金利率下的平坦曲线比2%下更强的衰退信号。</span></p>
+        </div>
+      </div>
+      <div class="grid cols-2" style="margin-top:14px">
+        <div class="card">
+          <h2><span class="l-en">Slopes &amp; momentum</span><span class="l-zh">斜率与动能</span></h2>
+          <table class="slopes">
+            <tr><th><span class="l-en">Spread</span><span class="l-zh">利差</span></th><th><span class="l-en">Level</span><span class="l-zh">水平</span></th><th><span class="l-en">%ile</span><span class="l-zh">分位</span></th><th><span class="l-en">63d Δ</span><span class="l-zh">63日变动</span></th></tr>
+            
+            <tr><td class="nm"><span class="l-en">2s10s (cycle slope)</span><span class="l-zh">2-10年（周期斜率）</span></td><td class="">+0.37</td><td>65</td><td>-15bp</td></tr>
+            
+            <tr><td class="nm"><span class="l-en">3m10y (recession slope)</span><span class="l-zh">3月-10年（衰退斜率）</span></td><td class="">+0.70</td><td>81</td><td>+9bp</td></tr>
+            
+            <tr><td class="nm"><span class="l-en">5s30s (long-end / term-premium)</span><span class="l-zh">5-30年（长端/期限溢价）</span></td><td class="">+0.81</td><td>74</td><td>-17bp</td></tr>
+            
+            <tr><td class="nm"><span class="l-en">2s5s (front belly)</span><span class="l-zh">2-5年（前段腹部）</span></td><td class="">+0.12</td><td>69</td><td>-1bp</td></tr>
+            
+            <tr><td class="nm"><span class="l-en">Real 5s10s (TIPS curve)</span><span class="l-zh">实际5-10年（TIPS曲线）</span></td><td class="">+0.31</td><td>57</td><td>-30bp</td></tr>
+            
+            <tr><td class="nm"><span class="l-en">Breakeven 5s10s (inflation curve)</span><span class="l-zh">盈亏平衡5-10年（通胀曲线）</span></td><td class="">-0.03</td><td>67</td><td>+19bp</td></tr>
+            
+            <tr><td class="nm"><span class="l-en">TP-adjusted 2s10s</span><span class="l-zh">期限溢价调整2-10年</span></td><td class="">+1.15</td><td>89</td><td>+0bp</td></tr>
+            
+          </table>
+          
+          <p class="sub" style="font-size:11.5px;margin-top:8px"><span class="l-en">Curve speed (63d)</span><span class="l-zh">曲线速度（63日）</span>: <span class="l-en">real 10y</span><span class="l-zh">实际10年</span> +43bp · <span class="l-en">front 2y</span><span class="l-zh">前端2年</span> +38bp · <span class="l-en">|real-speed| pctile</span><span class="l-zh">|实际速度|分位</span> 74. <span class="l-en">Rate-of-change beats level — the SPEED of a real-yield move breaks equities more than its level.</span><span class="l-zh">变动速度胜过水平——实际收益率移动的速度比其水平更能冲击股票。</span></p>
+          <p class="sub" style="font-size:11.5px;margin-top:4px"><span class="l-en">Term-spread trend (2y smooth)</span><span class="l-zh">期限利差趋势（2年平滑）</span>: <b style="color:var(--ink)">+0.09</b> · <span class="l-en">rising</span><span class="l-zh">上行</span>. <span class="l-en">The literature flags the smoothed, business-cycle-frequency component of the 3m10y spread as the curve read with genuine equity-premium content (Faria-Verona 2020) — but OUR calibration finds it regime-dependent (the IC sign flips post-2015), so we carry it as context, never a timing signal.</span><span class="l-zh">文献认为3月-10年利差经平滑的商业周期频率成分是收益率曲线中具有真正股权溢价含义的读数（Faria-Verona 2020）——但我方校准发现其依赖状态（IC符号在2015年后翻转），故仅作背景，绝非择时信号。</span></p>
+        </div>
+        <div class="card">
+          <h2><span class="l-en">Forward rates &amp; carry</span><span class="l-zh">远期利率与持有收益</span></h2>
+          
+          <div class="kpis">
+            <div class="kpi"><span class="l-en">1y1y fwd</span><span class="l-zh">1年1年远期</span><b>4.33%</b></div>
+            <div class="kpi"><span class="l-en">2y1y fwd</span><span class="l-zh">2年1年远期</span><b>4.28%</b></div>
+            <div class="kpi"><span class="l-en">5y5y fwd</span><span class="l-zh">5年5年远期</span><b>4.86%</b></div>
+            <div class="kpi"><span class="l-en">10y carry</span><span class="l-zh">10年持有</span><b>4.57%</b></div>
+            <div class="kpi"><span class="l-en">10y roll-down</span><span class="l-zh">10年滚动</span><b>+0.43%</b></div>
+            <div class="kpi"><span class="l-en">carry + roll</span><span class="l-zh">持有＋滚动</span><b>5.00%</b></div>
+          </div>
+          <p class="note" style="font-size:12px;margin-top:10px"><span class="l-en">Forward rates are the market-implied future short rates embedded in today&#39;s curve; carry+roll-down is the total return a duration holder earns if the curve is unchanged in a year (the cushion before price loss).</span><span class="l-zh">远期利率是今日曲线隐含的市场预期未来短端利率；carry＋滚动收益是久期持有者在曲线一年不变时获得的总回报（价格亏损前的缓冲）。</span></p>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2><span class="l-en">Curve signals — sector, style &amp; market tendency</span><span class="l-zh">曲线信号 — 板块、风格与市场倾向</span></h2>
+        
+        <div class="sub" style="font-size:11.5px"><span class="l-en">Per-sector curve tilt under the current regime. ✓meas = a calibrated forward-IC edge in the transmission matrix; ·thy = textbook channel only.</span><span class="l-zh">当前状态下各板块的曲线倾向。✓实测＝传导矩阵中存在校准的前瞻IC优势；·理论＝仅教科书传导。</span></div>
+        <div class="sectilt">
+          
+          <div class="stile tail">
+            <span class="se">XLF</span><span class="sb meas" title="measured forward IC (confirmed)">✓curvature -0.20</span>
+            <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">short</span><span class="l-zh">短久期</span><br><span class="l-en">banks earn the curve — steeper = wider NIM; rate beneficiary</span><span class="l-zh">银行赚取曲线——更陡＝更宽净息差；利率受益</span></div>
+          </div>
+          
+          <div class="stile tail">
+            <span class="se">XLP</span><span class="sb meas" title="measured forward IC (directional)">✓NTFS -0.11</span>
+            <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">short</span><span class="l-zh">短久期</span><br><span class="l-en">staples — mild bond proxy with pricing power; relatively favoured when the curve flattens / growth slows (weaker rate sensitivity than utilities)</span><span class="l-zh">必需消费——具定价权的温和类债券；曲线趋平/增长放缓时相对受青睐（利率敏感度弱于公用事业）</span></div>
+          </div>
+          
+          <div class="stile tail">
+            <span class="se">XLV</span><span class="sb meas" title="measured forward IC (directional)">✓curvature -0.07</span>
+            <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">short</span><span class="l-zh">短久期</span><br><span class="l-en">health care defensive — low rate sensitivity, late-cycle relative haven</span><span class="l-zh">医疗防御——利率敏感度低、周期晚段相对避风港</span></div>
+          </div>
+          
+          <div class="stile tail">
+            <span class="se">XLE</span><span class="sb meas" title="measured forward IC (confirmed)">✓curvature -0.10</span>
+            <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">short</span><span class="l-zh">短久期</span><br><span class="l-en">energy — reflation/inflation beneficiary, bear-steepener winner</span><span class="l-zh">能源——再通胀/通胀受益，熊市变陡赢家</span></div>
+          </div>
+          
+          <div class="stile tail">
+            <span class="se">XLB</span><span class="sb meas" title="measured forward IC (confirmed)">✓NTFS -0.22</span>
+            <div class="sm"><span class="l-en">tailwind</span><span class="l-zh">顺风</span> · <span class="l-en">neutral</span><span class="l-zh">久期中性</span><br><span class="l-en">materials — cyclical reflation play, helped by a steepening growth curve</span><span class="l-zh">材料——周期再通胀，受益于增长型变陡</span></div>
+          </div>
+          
+          <div class="stile head">
+            <span class="se">XLRE</span><span class="sb " title="textbook channel, no measured edge">·thy</span>
+            <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">long</span><span class="l-zh">长久期</span><br><span class="l-en">REITs are bond-proxy long-duration — hurt by higher long rates</span><span class="l-zh">REITs为类债券长久期——受长端利率上行拖累</span></div>
+          </div>
+          
+          <div class="stile head">
+            <span class="se">XLU</span><span class="sb meas" title="measured forward IC (directional)">✓NTFS -0.05</span>
+            <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">long</span><span class="l-zh">长久期</span><br><span class="l-en">utilities are the classic bond proxy — dividend yield competes with rates</span><span class="l-zh">公用事业为经典类债券——股息率与利率竞争</span></div>
+          </div>
+          
+          <div class="stile head">
+            <span class="se">XLK</span><span class="sb meas" title="measured forward IC (confirmed)">✓curvature -0.22</span>
+            <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">long</span><span class="l-zh">长久期</span><br><span class="l-en">long-duration growth — rising discount rate de-rates future cash flows</span><span class="l-zh">长久期成长——贴现率上行压低未来现金流估值</span></div>
+          </div>
+          
+          <div class="stile head">
+            <span class="se">XLI</span><span class="sb " title="textbook channel, no measured edge">·thy</span>
+            <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">neutral</span><span class="l-zh">久期中性</span><br><span class="l-en">industrials — cyclical, mild positive to a growth-led steepening</span><span class="l-zh">工业——周期性，对增长型变陡温和正向</span></div>
+          </div>
+          
+          <div class="stile head">
+            <span class="se">IWM</span><span class="sb meas" title="measured forward IC (confirmed)">✓curvature -0.19</span>
+            <div class="sm"><span class="l-en">headwind</span><span class="l-zh">逆风</span> · <span class="l-en">long</span><span class="l-zh">长久期</span><br><span class="l-en">small caps — heavy floating-rate debt; financing cost is the squeeze, easing the relief</span><span class="l-zh">小盘——大量浮动利率债务；融资成本是挤压，宽松是缓解</span></div>
+          </div>
+          
+          <div class="stile ">
+            <span class="se">XLY</span><span class="sb " title="textbook channel, no measured edge">·thy</span>
+            <div class="sm"><span class="l-en">neutral</span><span class="l-zh">中性</span> · <span class="l-en">neutral</span><span class="l-zh">久期中性</span><br><span class="l-en">consumer discretionary — cyclical growth offset by financing-cost drag (autos/credit) + long-duration mega-cap skew</span><span class="l-zh">可选消费——周期性增长被融资成本拖累（汽车/信贷）抵消，且有长久期巨头偏向</span></div>
+          </div>
+          
+        </div>
+        <div style="margin-top:16px">
+          <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)"><span class="l-en">Equity style / factor</span><span class="l-zh">股票风格／因子</span></div>
+          
+          <div class="facrow">
+            <div class="facpill"><span class="fk"><span class="l-en">Value vs growth</span><span class="l-zh">价值vs成长</span></span><span class="fv"><span class="l-en">Value</span><span class="l-zh">价值</span></span></div>
+            <div class="facpill"><span class="fk"><span class="l-en">Size</span><span class="l-zh">规模</span></span><span class="fv"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></div>
+            <div class="facpill"><span class="fk"><span class="l-en">Duration factor</span><span class="l-zh">久期因子</span></span><span class="fv"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span></div>
+          </div>
+          <p class="note" style="font-size:12px"><span class="l-en">Equity duration: growth stocks discount cash flows further out, so they behave as long-duration assets and de-rate when real yields rise (~2× the rate-sensitivity of value, BIS 2022); value/financials are short-duration. HONEST CAVEAT: the long-run correlation of the value-minus-growth factor with Δ10y is only ~0.10 (AQR/Asness) — the link is concentrated in episodes (the +25% growth→value rotation of 2022) and is largely NOT pure duration. Small caps are driven by the FRONT end (floating-rate debt cost), a distinct channel from value/growth duration.</span><span class="l-zh">股票久期：成长股贴现更远期的现金流，因而表现为长久期资产，实际收益率上行时估值下修（利率敏感度约为价值的2倍，BIS 2022）；价值/金融为短久期。诚实提醒：价值减成长因子与10年期变动的长期相关性仅约0.10（AQR/Asness）——该联系集中于特定时期（如2022年+25%的成长→价值轮动），且大部分并非纯久期效应。小盘由前端驱动（浮动利率债务成本），与价值/成长久期是不同的渠道。</span></p>
+        </div>
+        <div style="margin-top:12px">
+          <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)"><span class="l-en">Market tendency (curve-speed → drawdown risk)</span><span class="l-zh">市场倾向（曲线速度→回撤风险）</span></div>
+          
+          
+          <span class="band-chip" style="background:#1a7f43;margin:6px 0"><span class="l-en">calm</span><span class="l-zh">平静</span></span>
+          <p class="note" style="font-size:12px"><span class="l-en">No fast real-rate repricing — the curve is not flagging near-term equity stress.</span><span class="l-zh">无快速实际利率重定价——曲线未对近端股票压力发出警示。</span></p>
+        </div>
+        <div class="flag info" style="display:block;margin-top:10px"><span class="l-en">Display-only. No yield-curve leg passed the forward-drawdown scored-leg gate (see reports/rate-inflation-transmission-calibration.md).</span><span class="l-zh">仅供展示。没有任何收益率曲线腿通过前瞻回撤可计分门槛（详见校准报告）。</span></div>
+      </div>
+      </div>
+    </details>
     
-    <div class="note" style="margin-top:12px">
-      <p>• <span class="l-en">Display-only — never scored. The repricing of rates/inflation is REACTIVE; the curve moves after the data and the Fed, it does not lead them.</span><span class="l-zh">仅供展示，从不计入评分。利率/通胀的重新定价是被动的；曲线在数据与美联储之后变动，而非领先。</span></p><p>• <span class="l-en">Rate-of-change beats level: the SPEED of a real-yield move breaks equities more than its level. Coefficients are the measured forward IC, not a promise.</span><span class="l-zh">变动速度比水平更重要：实际收益率移动的速度比其水平更能冲击股票。系数为已测得的前瞻IC，并非承诺。</span></p><p>• <span class="l-en">Scenario moves apply a historical beta to a hypothetical shock — they are regime-dependent illustrations, not predictions, and assume the shock persists one quarter.</span><span class="l-zh">情景中的涨跌幅是将历史beta应用于假设冲击——属于依赖状态的示意而非预测，且假设冲击持续一个季度。</span></p><p>• <span class="l-en">The real / nominal / breakeven 63d-change drivers are mechanically collinear (real = nominal − breakeven); do not treat them as independent confirmations.</span><span class="l-zh">实际／名义／盈亏平衡的63日变动驱动在机制上共线（实际＝名义−盈亏平衡）；不应视为相互独立的印证。</span></p>
-      <p><b><span class="l-en">Data.</span><span class="l-zh">数据。</span></b> <span class="l-en">Free / keyless FRED: full Treasury curve, real yields (TIPS), 5y/10y/5y5y breakevens, term premium; headline &amp; core CPI, headline &amp; core PCE (the Fed’s 2% target gauge), PPI, ECI wage growth, shelter &amp; core-services CPI; Cleveland model + UMich survey inflation expectations. All point-in-time vintaged for honest backtests.</span><span class="l-zh">免费/无密钥的FRED：完整国债曲线、实际利率(TIPS)、5/10年与5年5年盈亏平衡、期限溢价；整体与核心CPI、整体与核心PCE（美联储2%目标）、PPI、ECI工资增长、住房与核心服务CPI；克利夫兰模型与密歇根调查通胀预期。均按时点存档以便诚实回测。</span></p>
-      <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1927-12-30 → 2026-07-17 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-18 07:32 UTC</p>
-    </div>
+
+    <details id="shelf-infl">
+      <summary><span class="sh-ic">🌡️</span><span class="l-en">Inflation &amp; expectations — the deep read</span><span class="l-zh">通胀与预期——深入解读</span><span class="sh-hint"><span class="l-en">decomposition · breakeven velocity</span><span class="l-zh">分解 · 盈亏平衡速度</span></span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+      
+      <div class="card" style="margin-top:12px">
+        <h2><span class="l-en">Inflation decomposition</span><span class="l-zh">通胀分解</span></h2>
+        <div class="decomp">
+          <div class="dc"><div class="dcl"><span class="l-en">Headline − core CPI</span><span class="l-zh">整体−核心CPI</span></div><div class="dcv">+0.92</div><div class="dcn"><span class="l-en">food / energy push</span><span class="l-zh">食品/能源推动</span></div></div>
+          <div class="dc"><div class="dcl"><span class="l-en">Core services YoY</span><span class="l-zh">核心服务同比</span></div><div class="dcv">3.42</div><div class="dcn"><span class="l-en">the sticky leg</span><span class="l-zh">粘性部分</span></div></div>
+          <div class="dc"><div class="dcl"><span class="l-en">Shelter YoY</span><span class="l-zh">住房同比</span></div><div class="dcv">3.48</div><div class="dcn"><span class="l-en">lagging rent</span><span class="l-zh">滞后的租金</span></div></div>
+          <div class="dc"><div class="dcl"><span class="l-en">Core PCE − core CPI</span><span class="l-zh">核心PCE−核心CPI</span></div><div class="dcv">+0.61</div><div class="dcn"><span class="l-en">basket / weight gap</span><span class="l-zh">篮子/权重差</span></div></div>
+          <div class="dc"><div class="dcl"><span class="l-en">Actual − market-priced</span><span class="l-zh">实际−市场定价</span></div><div class="dcv">57bp</div><div class="dcn"><span class="l-en">core CPI vs 10y breakeven</span><span class="l-zh">核心CPI vs 10年盈亏平衡</span></div></div>
+        </div>
+        <div class="kpis" style="margin-top:14px">
+          <div class="kpi"><span class="l-en">10y breakeven</span><span class="l-zh">10年盈亏平衡</span><b>2.24%</b></div>
+          <div class="kpi"><span class="l-en">5y5y breakeven</span><span class="l-zh">5年5年盈亏平衡</span><b>2.21%</b></div>
+          <div class="kpi"><span class="l-en">Model 5y</span><span class="l-zh">模型5年</span><b>2.42%</b></div>
+          <div class="kpi"><span class="l-en">Survey 1y</span><span class="l-zh">调查1年</span><b>4.8%</b></div>
+          <div class="kpi"><span class="l-en">Mkt−model</span><span class="l-zh">市场−模型</span><b>-21bp</b></div>
+          <div class="kpi"><span class="l-en">Core PPI</span><span class="l-zh">核心PPI</span><b>4.7%</b></div>
+          <div class="kpi"><span class="l-en">ECI wages</span><span class="l-zh">ECI薪酬</span><b>3.4%</b></div>
+        </div>
+      </div>
+      
+      
+      
+      <div class="card bd" style="margin-top:12px">
+        <h2><span class="l-en">Breakeven velocity &amp; cause — visibility only</span><span class="l-zh">盈亏平衡速度与成因 — 仅供观察</span></h2>
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;margin:2px 0 4px">
+          <div class="state-val" style="margin:0">2.24<small>% <span class="l-en">10y breakeven</span><span class="l-zh">10年盈亏平衡</span></small></div>
+          <span class="bd-tag bd-flat">
+            <span class="l-en">flat</span><span class="l-zh">平稳</span> ·
+            <span class="l-en">choppy</span><span class="l-zh">震荡</span>
+          </span>
+        </div>
+        <div class="bdkpis">
+          <div class="kpi"><span class="l-en">5d</span><span class="l-zh">5日</span><b class="up">+0bp</b></div>
+          <div class="kpi"><span class="l-en">10d</span><span class="l-zh">10日</span><b class="up">+1bp</b></div>
+          <div class="kpi"><span class="l-en">20d</span><span class="l-zh">20日</span><b class="dn">-1bp</b></div>
+          <div class="kpi"><span class="l-en">63d</span><span class="l-zh">63日</span><b class="dn">-14bp</b></div>
+          <div class="kpi"><span class="l-en">Accel 10d</span><span class="l-zh">10日加速</span><b class="up">+3bp</b></div>
+          <div class="kpi"><span class="l-en">Speed pctile</span><span class="l-zh">速度分位</span><b>8</b></div>
+          <div class="kpi"><span class="l-en">5y5y 20d</span><span class="l-zh">5y5y 20日</span><b class="dn">-2bp</b></div>
+        </div>
+        <div class="bd-badge bd-quiet">
+          <div class="bd-badge-h"><span class="l-en">Cause</span><span class="l-zh">成因</span>: QUIET</div>
+          <div><span class="l-en">Breakeven roughly stable — no actionable move.</span><span class="l-zh">盈亏平衡大致平稳——无可操作变动。</span></div>
+        </div>
+        
+        <div class="sub faint" style="margin-top:8px"><span class="l-en">Co-state</span><span class="l-zh">联动状态</span>:
+          <span class="l-en">oil</span><span class="l-zh">油</span> +7% ·
+          <span class="l-en">real 10y</span><span class="l-zh">实际10年</span> +14bp ·
+          <span class="l-en">nom 10y</span><span class="l-zh">名义10年</span> +11bp ·
+          <span class="l-en">HY-OAS z</span><span class="l-zh">高收益OAS z</span> -0.84 ·
+          VIX 39pct</div>
+        <p class="sub" style="margin-top:8px"><span class="l-en">VISIBILITY ONLY — a falling breakeven is a thermometer, not a forecast. Across 2008 / 2014–15 / 2018 / 2020 / 2022 / 2023 it led the risk cascade in ~0 clean cases; breakeven velocity has ~0 forward-drawdown edge and the credit/vol co-state adds nothing beyond VIX. Use this to disambiguate an in-progress move (which kind of fall?), never to front-run one.</span><span class="l-zh">仅供观察——下行的盈亏平衡是温度计，不是预测。在2008/2014-15/2018/2020/2022/2023中，它几乎没有一次干净地领先风险资产的瀑布式下跌；盈亏平衡速度对前瞻回撤几乎没有预测力，信用/波动率联动相对VIX无增量。用它来辨别正在发生的变动（属于哪一类下跌），而非抢跑。</span></p>
+      </div>
+      
+      </div>
+    </details>
+
+    <details id="shelf-gate">
+      <summary><span class="sh-ic">🧾</span><span class="l-en">How we measure — receipts &amp; caveats</span><span class="l-zh">测量方法——依据与告诫</span><span class="sh-hint"><span class="l-en">every tested signal, including the failures</span><span class="l-zh">每个被检验的信号，包括失败的</span></span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+      <p class="note" style="margin-top:12px"><span class="l-en">We tested every rate and inflation driver on this page for real predictive edge. None passed the bar to be scored — so everything here is shown as context to explain moves, never as a signal to trade on. The table below is the full honest record.</span><span class="l-zh">我们对页面上每个利率与通胀驱动都做了预测优势检验，无一通过计分门槛——因此本页内容仅为解释行情的背景，绝非交易信号。下表为完整的诚实记录。</span></p>
+      <div class="flag info" style="display:block;margin-bottom:10px"><span class="l-en">Display-only. Scored-leg gate: NO rate/inflation leg passed the forward-drawdown bar with purged-CV robustness (see reports/rate-inflation-transmission-calibration.md).</span><span class="l-zh">仅供展示。可计分腿检验：没有任何利率/通胀腿通过前瞻回撤门槛并满足清洗交叉验证稳健性（详见校准报告）。</span></div>
+      
+      <table class="gate">
+        <tr><th><span class="l-en">Candidate leg</span><span class="l-zh">候选腿</span></th><th><span class="l-en">Verdict</span><span class="l-zh">判定</span></th><th class="num"><span class="l-en">IC dd (f/pre/post)</span><span class="l-zh">IC回撤(全/前/后)</span></th><th class="num"><span class="l-en">hi-tercile edge</span><span class="l-zh">高三分位超额</span></th><th><span class="l-en">scored?</span><span class="l-zh">计分?</span></th></tr>
+        
+        <tr><td>Real-rate SPEED (63d rise) — &#39;speed breaks equities&#39;</td><td>DIRECTIONAL</td><td class="num">0.139/0.052/0.222</td><td class="num">7.2pp</td><td>—</td></tr>
+        
+        <tr><td>Real-rate LEVEL (high real yields)</td><td>DIRECTIONAL</td><td class="num">0.047/0.053/0.004</td><td class="num">-1.0pp</td><td>—</td></tr>
+        
+        <tr><td>Core-PCE-vs-target gap (sticky inflation)</td><td>DIRECTIONAL</td><td class="num">0.042/0.009/0.13</td><td class="num">0.2pp</td><td>—</td></tr>
+        
+        <tr><td>Inflation re-acceleration (3m&gt;12m)</td><td>DIRECTIONAL</td><td class="num">0.053/0.049/0.073</td><td class="num">4.0pp</td><td>—</td></tr>
+        
+        <tr><td>Expectations unanchoring (market&gt;model)</td><td>INVERTED</td><td class="num">-0.054/-0.05/-0.106</td><td class="num">-6.2pp</td><td>—</td></tr>
+        
+        <tr><td>TP-adjusted curve inversion (flip: low=stress)</td><td>CONTEXT</td><td class="num">0.005/0.01/0.031</td><td class="num">-0.7pp</td><td>—</td></tr>
+        
+        <tr><td>Nominal-rate SPEED (63d rise)</td><td>DIRECTIONAL</td><td class="num">0.095/0.068/0.208</td><td class="num">-0.4pp</td><td>—</td></tr>
+        
+        <tr><td>Near-term forward spread inversion (flip: low=stress; Engstrom-Sharpe beats 2s10s)</td><td>CONTEXT</td><td class="num">-0.018/0.048/-0.213</td><td class="num">-1.2pp</td><td>—</td></tr>
+        
+        <tr><td>Curve curvature (2s5s10s butterfly — humped = late-cycle)</td><td>CONTEXT</td><td class="num">0.032/-0.013/0.177</td><td class="num">-0.1pp</td><td>—</td></tr>
+        
+        <tr><td>Real-rate move VIOLENCE (|63d speed|, either direction)</td><td>DIRECTIONAL</td><td class="num">0.112/0.161/0.057</td><td class="num">3.0pp</td><td>—</td></tr>
+        
+        <tr><td>Curve flattening impulse (flip: − = flattening = stress; INVERTED if post-inversion steepening is the tell)</td><td>CONTEXT</td><td class="num">-0.032/-0.085/0.169</td><td class="num">-2.1pp</td><td>—</td></tr>
+        
+        <tr><td>3m10y TREND inversion (flip: low trend = stress) — Faria-Verona OOS equity-premium claim, tested on the return-forecast bar</td><td>CONTEXT</td><td class="num">0.163/0.234/-0.031</td><td class="num">6.4pp</td><td>—</td></tr>
+        
+      </table>
+      
+      <div class="note" style="margin-top:12px">
+        <p>• <span class="l-en">Display-only — never scored. The repricing of rates/inflation is REACTIVE; the curve moves after the data and the Fed, it does not lead them.</span><span class="l-zh">仅供展示，从不计入评分。利率/通胀的重新定价是被动的；曲线在数据与美联储之后变动，而非领先。</span></p><p>• <span class="l-en">Rate-of-change beats level: the SPEED of a real-yield move breaks equities more than its level. Coefficients are the measured forward IC, not a promise.</span><span class="l-zh">变动速度比水平更重要：实际收益率移动的速度比其水平更能冲击股票。系数为已测得的前瞻IC，并非承诺。</span></p><p>• <span class="l-en">Scenario moves apply a historical beta to a hypothetical shock — they are regime-dependent illustrations, not predictions, and assume the shock persists one quarter.</span><span class="l-zh">情景中的涨跌幅是将历史beta应用于假设冲击——属于依赖状态的示意而非预测，且假设冲击持续一个季度。</span></p><p>• <span class="l-en">The real / nominal / breakeven 63d-change drivers are mechanically collinear (real = nominal − breakeven); do not treat them as independent confirmations.</span><span class="l-zh">实际／名义／盈亏平衡的63日变动驱动在机制上共线（实际＝名义−盈亏平衡）；不应视为相互独立的印证。</span></p>
+        <p><b><span class="l-en">Data.</span><span class="l-zh">数据。</span></b> <span class="l-en">Free / keyless FRED: full Treasury curve, real yields (TIPS), 5y/10y/5y5y breakevens, term premium; headline &amp; core CPI, headline &amp; core PCE (the Fed’s 2% target gauge), PPI, ECI wage growth, shelter &amp; core-services CPI; Cleveland model + UMich survey inflation expectations. All point-in-time vintaged for honest backtests. Dollar read: broad trade-weighted dollar + the Dollar Desk on the Forex page.</span><span class="l-zh">免费/无密钥的FRED：完整国债曲线、实际利率(TIPS)、5/10年与5年5年盈亏平衡、期限溢价；整体与核心CPI、整体与核心PCE（美联储2%目标）、PPI、ECI工资增长、住房与核心服务CPI；克利夫兰模型与密歇根调查通胀预期。均按时点存档以便诚实回测。美元读数：广义贸易加权美元及外汇页的美元台。</span></p>
+        <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1927-12-30 → 2026-07-17 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-18 10:26 UTC</p>
+      </div>
+      </div>
+    </details>
   </div>
+
+  <p class="tx-disclosure"><span class="l-en">Everything on this page is a measured relationship shown to explain market moves — none of it is a prediction or a trade signal. When a relationship failed our tests, we say so in the receipts above.</span><span class="l-zh">本页所有内容均为用于解释行情的实测关联——皆非预测或交易信号。未通过检验的关联，已在上方依据中如实注明。</span></p>
 </div>
 
 <script src="theme.js"></script>
