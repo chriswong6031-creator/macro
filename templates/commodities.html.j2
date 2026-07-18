@@ -19,7 +19,9 @@
 {% set seo_desc = 'Live commodity sector read: sector stance, index breadth, bottoms & tops confluence board, trend-diversity heat grid, and per-commodity detail for all 17 members.' %}
 {% set seo_path = 'commodities.html' %}
 {% include "_seo_head.html.j2" %}
-{% include '_plotly_head.html.j2' %}
+{# Plotly deliberately NOT loaded: this page renders zero Plotly charts (stance
+   board + heat grid are pure HTML/SVG). Re-include '_plotly_head.html.j2' only
+   if a real chart returns. #}
 <style>
 /* ── base vars — dark-default ──────────────────────────────── */
 :root {

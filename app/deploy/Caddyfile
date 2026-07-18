@@ -161,8 +161,19 @@
 	@static {
 		path /vendor/* *.js *.css *.json *.svg *.png *.jpg *.jpeg *.ico *.webp *.woff *.woff2
 		not path /api/*
+		not path /plotly-2.32.0.min.js
 	}
 	header @static Cache-Control "public, max-age=300, must-revalidate"
+
+	# Version-PINNED vendor bundles are safe to cache long: the filename embeds
+	# the version, so its content can never change under the same URL — the
+	# white-page-incident concern (bad body stuck at the edge under a reused
+	# name) does not apply. Before this, plotly (1.15MB gzipped) was
+	# re-revalidated every 300s by every visitor of every chart page.
+	@vendor_pinned {
+		path /plotly-2.32.0.min.js
+	}
+	header @vendor_pinned Cache-Control "public, max-age=31536000, immutable"
 
 	header {
 		# PUBLIC (was pre-launch noindex): the site is now open to search engines.

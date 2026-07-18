@@ -128,7 +128,12 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-{% if mode != 'stocks' %}{% include '_plotly_head.html.j2' %}{% endif %}
+{# Plotly deliberately NOT loaded: neither macro.html nor us_stocks.html renders a
+   single Plotly chart anymore (macro's charts live on macro_signals.html; sparklines
+   are inline SVG). The 3.5MB bundle (1.15MB gzipped) was ~79% of macro.html's total
+   transfer and delayed DOMContentLoaded for nothing. theme.js / chart_i18n.js /
+   charts.js all no-op safely without window.Plotly. If a real chart ever returns,
+   re-add: {% raw %}{% include '_plotly_head.html.j2' %}{% endraw %} gated on it. #}
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
@@ -13279,8 +13284,8 @@ window.__CHART_SWAP__ = {
 <script src="timemachine.js"></script>
 <script src="tablesort.js"></script>
 <script src="charts.js"></script>
-<script src="live_config.js"></script>
-<script src="live.js"></script>
+{# live_config.js + live.js already load via _navlinks.html.j2 on every page;
+   live.js is __mmLiveInit-guarded so this second include was a no-op — dropped. #}
 <script src="risk_state_live.js"></script>
 <script src="heatmap.js"></script>
 <script>
