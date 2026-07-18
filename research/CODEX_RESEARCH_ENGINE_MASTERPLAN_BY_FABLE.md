@@ -126,3 +126,7 @@ POOL_CAPABILITY_IDS).
   skeptic pass wired as an SF advisory lens; usage sparklines.
 - **W3:** cross-lane scheduler (codex vs claude key pools arbitraged by
   whichever has headroom).
+
+## Amendment 1 (2026-07-17, operator order) — CRX-R6 auto-resolve
+
+Operator directive: case PRs are resolved autonomously — no human review. `CODEX_CASE_PR_MODE=ready` + `CODEX_CASE_AUTORESOLVE=on` (repo variables, fail-closed when absent) have the case lane open PRs ready-for-review and a per-tick resolution sweep squash-merge green PRs (known-spurious Workers Builds ignored), close CI-failed PRs (episode terminal `pr_closed_ci_failed`), and wait on pending. CI + the lane's deterministic/codex dual audit are the full quality gate. Draft-mode + operator merge remains available by unsetting the variables.

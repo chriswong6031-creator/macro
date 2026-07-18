@@ -113,17 +113,43 @@ def _fill_prompt(template: str, ticker: str, year: int) -> str:
 # Attempt ledger helpers
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Terminal statuses — module-level so _pr_resolution_sweep can reference
+# ---------------------------------------------------------------------------
+
+_TERMINAL_STATUSES: set[str] = {
+    "pr_opened", "audit_failed", "generated", "pr_exists_closed",
+    "pr_closed_ci_failed",
+}
+
+
+# ---------------------------------------------------------------------------
+# FIX 1 — env override helper for PR mode
+# ---------------------------------------------------------------------------
+
+def _case_pr_mode(cfg: dict) -> str:
+    """Return the effective case PR mode.
+
+    env CODEX_CASE_PR_MODE (values "draft"/"ready", anything else ignored)
+    overrides the config value when set.  Falls back to cfg["case_pr_mode"]
+    which defaults to "draft" when absent.
+    """
+    env_val = os.environ.get("CODEX_CASE_PR_MODE", "").strip().lower()
+    if env_val in ("draft", "ready"):
+        return env_val
+    return str(cfg.get("case_pr_mode", "draft"))
+
+
 def _load_attempted_episodes(root: Path) -> set[str]:
     """Return set of 'TICKER_YYYY' keys that should be EXCLUDED from the queue.
 
     FIX 1 — retryable transient failures:
     Exclusion applies only when an episode has:
-      (a) at least one row with status in {"pr_opened", "audit_failed", "generated"}, OR
+      (a) at least one row with status in _TERMINAL_STATUSES, OR
       (b) >= 3 rows of any status (bounded retry to avoid poison-pill episodes).
     Episodes with only 'skipped' rows below the 3-attempt bound are NOT excluded,
     so transient failures (e.g. codex not installed, timeout) are retryable.
     """
-    _TERMINAL_STATUSES = {"pr_opened", "audit_failed", "generated", "pr_exists_closed"}
     # episode -> list of statuses
     ep_rows: dict[str, list[str]] = {}
     path = root / _ATTEMPTS_REL
@@ -155,6 +181,29 @@ def _load_attempted_episodes(root: Path) -> set[str]:
         elif len(statuses) >= 3:
             excluded.add(ep)
     return excluded
+
+
+def _read_episode_rows(root: Path, episode: str) -> list[str]:
+    """Return the list of status strings recorded for a single episode. NEVER raises."""
+    try:
+        path = root / _ATTEMPTS_REL
+        if not path.exists():
+            return []
+        statuses: list[str] = []
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                    if row.get("episode") == episode:
+                        statuses.append(row.get("status", ""))
+                except Exception:  # noqa: BLE001
+                    continue
+        return statuses
+    except Exception:  # noqa: BLE001
+        return []
 
 
 def _append_attempt(root: Path, episode: str, status: str, pr_url: str | None, detail: str) -> None:
@@ -1080,8 +1129,8 @@ def _pr_recovery_sweep(root: Path, cfg: dict) -> None:
     try:
         _fallback = os.environ.get("GH_TOKEN_FALLBACK", "") or None
 
-        # Load ledger: track pr_opened-with-url episodes, pr_exists_closed episodes,
-        # and total row counts per episode (for the cross-run bound).
+        # Load ledger: track pr_opened-with-url episodes, pr_exists_closed/pr_closed_ci_failed
+        # episodes, and total row counts per episode (for the cross-run bound).
         _pr_opened_with_url: set[str] = set()
         _pr_exists_closed: set[str] = set()
         _ep_row_counts: dict[str, int] = {}
@@ -1102,7 +1151,7 @@ def _pr_recovery_sweep(root: Path, cfg: dict) -> None:
                             status = row.get("status", "")
                             if status == "pr_opened" and row.get("pr_url"):
                                 _pr_opened_with_url.add(ep)
-                            if status == "pr_exists_closed":
+                            if status in ("pr_exists_closed", "pr_closed_ci_failed"):
                                 _pr_exists_closed.add(ep)
                         except Exception:
                             continue
@@ -1131,7 +1180,7 @@ def _pr_recovery_sweep(root: Path, cfg: dict) -> None:
             if ref.startswith(prefix):
                 branches.append(ref[len(prefix):])
 
-        draft = cfg.get("case_pr_mode", "draft") == "draft"
+        draft = _case_pr_mode(cfg) == "draft"
         sweep_count = 0
 
         for branch in branches:
@@ -1249,6 +1298,327 @@ def _pr_recovery_sweep(root: Path, cfg: dict) -> None:
         log.warning("codex_case_lane: _pr_recovery_sweep unexpected error (%s); continuing", exc)
 
 
+# ---------------------------------------------------------------------------
+# FIX 2 — PR resolution sweep (autonomous case-PR resolution)
+# ---------------------------------------------------------------------------
+
+def _pr_resolution_sweep(root: Path, cfg: dict) -> dict:
+    """Autonomously resolve open codex case PRs.
+
+    Gated: runs ONLY when env CODEX_CASE_AUTORESOLVE == "on" (exact string;
+    absent/other → return {"skipped": True} — fail-closed).
+
+    Behavior per open PR:
+      GREEN  → gh pr ready (if draft), then gh pr merge --squash --delete-branch
+      FAILED → gh pr close with comment; append pr_closed_ci_failed ledger row
+      PENDING → skip
+
+    "Workers Builds" checks are ignored (known-spurious, house ops law).
+    Zero checks + PR age > 30 min → treat GREEN.
+    Zero checks + young PR → PENDING.
+
+    Cap: at most 15 PRs listed, 15 processed per run.
+    NEVER raises.
+    """
+    _gate = os.environ.get("CODEX_CASE_AUTORESOLVE", "").strip()
+    if _gate != "on":
+        return {"skipped": True}
+
+    _FAILED_STATES: set[str] = {
+        "FAILURE", "ERROR", "CANCELLED", "TIMED_OUT",
+        "ACTION_REQUIRED", "STARTUP_FAILURE", "STALE",
+    }
+    _PENDING_STATES: set[str] = {
+        "PENDING", "QUEUED", "IN_PROGRESS", "EXPECTED", "WAITING", "REQUESTED",
+    }
+    _GREEN_STATES: set[str] = {"SUCCESS", "NEUTRAL", "SKIPPED", "PASS"}
+    _env_base = dict(os.environ)
+    _fallback = os.environ.get("GH_TOKEN_FALLBACK", "") or None
+
+    # Cache repo URL once per sweep (for constructing pr_url from number if needed)
+    _repo_url: str | None = None
+    try:
+        _rv = subprocess.run(  # noqa: S603
+            ["gh", "repo", "view", "--json", "url", "--jq", ".url"],
+            cwd=str(root), capture_output=True, text=True, timeout=20,
+            env=_env_base,
+        )
+        if _rv.returncode == 0:
+            _repo_url = _rv.stdout.strip() or None
+    except Exception:  # noqa: BLE001
+        pass
+
+    def _gh_run(args: list[str], timeout: int = 30) -> subprocess.CompletedProcess:
+        """Run a gh command with token fallback. Returns the CompletedProcess."""
+        for attempt_env in (
+            [_env_base]
+            + ([{**_env_base, "GH_TOKEN": _fallback}] if _fallback and _fallback != _env_base.get("GH_TOKEN", "") else [])
+        ):
+            try:
+                r = subprocess.run(  # noqa: S603
+                    args, cwd=str(root), capture_output=True, text=True,
+                    timeout=timeout, env=attempt_env,
+                )
+                if r.returncode == 0:
+                    return r
+            except Exception as exc:  # noqa: BLE001
+                log.warning("codex_case_lane: _gh_run %s failed (%s)", args[:3], exc)
+        # Return last attempt result (may have failed)
+        try:
+            return subprocess.run(  # noqa: S603
+                args, cwd=str(root), capture_output=True, text=True,
+                timeout=timeout, env=_env_base,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("codex_case_lane: _gh_run final fallback failed (%s)", exc)
+            # Return a minimal failed-result object; subprocess.CompletedProcess not constructable
+            # without args so we use a simple namespace instead.
+            import types as _types  # noqa: PLC0415
+            _r = _types.SimpleNamespace(returncode=1, stdout="", stderr=str(exc))
+            return _r  # type: ignore[return-value]
+
+    summary = {"merged": 0, "closed": 0, "pending": 0, "skipped_spurious_only": 0}
+    _now = datetime.now(timezone.utc)
+
+    try:
+        # 1. List open codex case PRs (cap 30 from gh, then cap 15 in python)
+        list_r = _gh_run([
+            "gh", "pr", "list",
+            "--state", "open",
+            "--limit", "30",
+            "--json", "number,headRefName,baseRefName,isDraft,createdAt",
+        ])
+        if list_r.returncode != 0:
+            log.warning("codex_case_lane: resolution sweep: gh pr list failed rc=%d: %s",
+                        list_r.returncode, (list_r.stderr or "")[:300])
+            return {**summary, "error": "list_failed"}
+
+        try:
+            all_prs: list[dict] = json.loads(list_r.stdout.strip() or "[]")
+        except json.JSONDecodeError as exc:
+            log.warning("codex_case_lane: resolution sweep: gh pr list JSON parse failed (%s)", exc)
+            return {**summary, "error": "list_json_parse_failed"}
+
+        # Filter to codex/case-* branches (in python for robustness)
+        case_prs = [pr for pr in all_prs if str(pr.get("headRefName", "")).startswith("codex/case-")]
+        case_prs = case_prs[:15]
+
+        import re as _re  # noqa: PLC0415
+        _BRANCH_RE = _re.compile(r"^codex/case-[a-z0-9.\-]+-\d{4}$")
+
+        for pr in case_prs:
+            pr_number = pr.get("number")
+            head_ref = str(pr.get("headRefName", ""))
+            base_ref = str(pr.get("baseRefName", ""))
+            is_draft = bool(pr.get("isDraft", False))
+            created_at_str = str(pr.get("createdAt", ""))
+
+            if pr_number is None:
+                log.warning("codex_case_lane: resolution sweep: PR has no number field; skipping")
+                continue
+
+            # F3 — strict branch shape; skip entirely if pattern doesn't match
+            # (remove full-ref fallback — only well-formed branches proceed)
+            if not _BRANCH_RE.match(head_ref):
+                log.warning(
+                    "codex_case_lane: resolution sweep: PR #%s headRefName %r does not match "
+                    "^codex/case-[a-z0-9.\\-]+-\\d{4}$ — skipping entirely",
+                    pr_number, head_ref,
+                )
+                continue
+
+            # Derive episode key from headRefName (guaranteed to match at this point)
+            _branch_tail = head_ref[len("codex/case-"):]
+            _dash_parts = _branch_tail.rsplit("-", 1)
+            episode = f"{_dash_parts[0].upper()}_{_dash_parts[1]}"
+
+            # Construct pr_url from repo URL + number (best-effort)
+            pr_url: str | None = None
+            if _repo_url and pr_number is not None:
+                pr_url = f"{_repo_url}/pull/{pr_number}"
+
+            # F2 (a) — base branch guard: only merge PRs targeting main
+            if base_ref != "main":
+                log.warning(
+                    "codex_case_lane: resolution sweep: PR #%s (%s) targets base branch %r != 'main' — skipping",
+                    pr_number, episode, base_ref,
+                )
+                continue
+
+            # F2 (b) — file scope guard: fetch changed files and validate they are
+            # research/winners/cases/<name>.md only.
+            # Author check deliberately omitted: the file-scope guard is the security
+            # boundary, and manual operator-recovery PRs must remain mergeable.
+            try:
+                files_r = _gh_run(
+                    ["gh", "pr", "view", str(pr_number), "--json", "files"],
+                    timeout=20,
+                )
+                if files_r.returncode != 0:
+                    log.warning(
+                        "codex_case_lane: resolution sweep: PR #%s (%s) files fetch failed rc=%d — skipping",
+                        pr_number, episode, files_r.returncode,
+                    )
+                    continue
+                try:
+                    _files_data = json.loads(files_r.stdout.strip() or "{}")
+                    _changed_files: list[str] = [
+                        f.get("path", "") for f in _files_data.get("files", [])
+                    ]
+                except (json.JSONDecodeError, ValueError, AttributeError) as exc:
+                    log.warning(
+                        "codex_case_lane: resolution sweep: PR #%s (%s) files JSON parse failed (%s) — skipping",
+                        pr_number, episode, exc,
+                    )
+                    continue
+            except Exception as exc:  # noqa: BLE001
+                log.warning(
+                    "codex_case_lane: resolution sweep: PR #%s (%s) files fetch exception (%s) — skipping",
+                    pr_number, episode, exc,
+                )
+                continue
+
+            _FILE_RE = _re.compile(r"^research/winners/cases/[^/]+\.md$")
+            if not _changed_files or not all(_FILE_RE.match(p) for p in _changed_files):
+                log.warning(
+                    "codex_case_lane: resolution sweep: PR #%s (%s) out-of-scope diff (%s) — skipping",
+                    pr_number, episode,
+                    [p for p in _changed_files if not _FILE_RE.match(p)][:5] if _changed_files else "empty",
+                )
+                continue
+
+            # F6 — count prior merge_failed rows; if >= 3 skip (stuck PR — operator must intervene)
+            _prior_rows = _read_episode_rows(root, episode)
+            _merge_failed_count = sum(1 for _s in _prior_rows if _s == "merge_failed")
+            if _merge_failed_count >= 3:
+                log.warning(
+                    "codex_case_lane: resolution sweep: PR #%s (%s) has %d merge_failed rows "
+                    "(>= 3 limit) — skipping; check ledger for details",
+                    pr_number, episode, _merge_failed_count,
+                )
+                continue
+
+            # 2. Fetch check status
+            try:
+                checks_r = _gh_run(["gh", "pr", "checks", str(pr_number), "--json", "name,state"], timeout=30)
+                checks_raw = checks_r.stdout.strip() or "[]"
+                try:
+                    checks: list[dict] = json.loads(checks_raw)
+                except (json.JSONDecodeError, ValueError) as exc:
+                    log.warning("codex_case_lane: resolution sweep: PR #%s checks JSON parse failed (%s); skipping", pr_number, exc)
+                    summary["pending"] += 1
+                    continue
+            except Exception as exc:  # noqa: BLE001
+                log.warning("codex_case_lane: resolution sweep: PR #%s checks fetch failed (%s); skipping", pr_number, exc)
+                summary["pending"] += 1
+                continue
+
+            # Classify checks — ignore "Workers Builds" (known-spurious, house ops law)
+            relevant_checks = [c for c in checks if "Workers Builds" not in str(c.get("name", ""))]
+
+            if not relevant_checks:
+                # Zero relevant checks: classify by PR age
+                try:
+                    created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+                    age_minutes = (_now - created_at).total_seconds() / 60
+                except (ValueError, TypeError):
+                    age_minutes = 0.0
+
+                if age_minutes > 30:
+                    classification = "GREEN"
+                    log.info("codex_case_lane: resolution sweep: PR #%s (%s) zero relevant checks + age=%.0fmin → GREEN",
+                             pr_number, episode, age_minutes)
+                else:
+                    classification = "PENDING"
+                    log.info("codex_case_lane: resolution sweep: PR #%s (%s) zero relevant checks + age=%.0fmin (young) → PENDING",
+                             pr_number, episode, age_minutes)
+            else:
+                # Classify based on check states
+                states_upper = {str(c.get("state", "")).upper() for c in relevant_checks}
+                if states_upper & _FAILED_STATES:
+                    classification = "FAILED"
+                elif states_upper & _PENDING_STATES:
+                    classification = "PENDING"
+                elif states_upper and states_upper.issubset(_GREEN_STATES):
+                    classification = "GREEN"
+                else:
+                    # Unknown or empty-string state present → treat as PENDING
+                    _unknown = states_upper - _FAILED_STATES - _PENDING_STATES - _GREEN_STATES
+                    log.warning(
+                        "codex_case_lane: resolution sweep: PR #%s (%s) unrecognized check state(s) %s — treating PENDING",
+                        pr_number, episode, sorted(_unknown),
+                    )
+                    classification = "PENDING"
+
+            # 3-5. Act on classification
+            if classification == "GREEN":
+                # Mark ready first (if draft)
+                if is_draft:
+                    ready_r = _gh_run(["gh", "pr", "ready", str(pr_number)])
+                    if ready_r.returncode != 0:
+                        log.warning(
+                            "codex_case_lane: resolution sweep: PR #%s gh pr ready failed rc=%d: %s; "
+                            "proceeding to merge anyway",
+                            pr_number, ready_r.returncode, (ready_r.stderr or "")[:200],
+                        )
+
+                # Merge
+                merge_r = _gh_run(["gh", "pr", "merge", str(pr_number), "--squash", "--delete-branch"])
+                if merge_r.returncode == 0:
+                    log.info("codex_case_lane: resolution sweep: PR #%s (%s) merged (squash)", pr_number, episode)
+                    _append_attempt(root, episode, "merged", pr_url, "auto-resolved: checks green")
+                    summary["merged"] += 1
+                else:
+                    _merge_stderr_tail = (merge_r.stderr or "")[:200]
+                    log.warning(
+                        "codex_case_lane: resolution sweep: PR #%s (%s) merge failed rc=%d: %s; "
+                        "recorded merge_failed row; leaving for next tick",
+                        pr_number, episode, merge_r.returncode, _merge_stderr_tail,
+                    )
+                    _append_attempt(
+                        root, episode, "merge_failed", pr_url,
+                        f"merge failed rc={merge_r.returncode}: {_merge_stderr_tail}",
+                    )
+
+            elif classification == "FAILED":
+                # Identify failing check names (up to 3) for comment
+                failing_names = [
+                    str(c.get("name", "<unknown>"))
+                    for c in relevant_checks
+                    if str(c.get("state", "")).upper() in _FAILED_STATES
+                ][:3]
+                failing_detail = ", ".join(failing_names) if failing_names else "unknown"
+
+                close_r = _gh_run([
+                    "gh", "pr", "close", str(pr_number),
+                    "--comment",
+                    "Auto-resolve: CI checks failed — closing per CODEX_CASE_AUTORESOLVE "
+                    "(case parked; episode remains terminal).",
+                ])
+                if close_r.returncode == 0:
+                    log.info("codex_case_lane: resolution sweep: PR #%s (%s) closed (CI failed: %s)",
+                             pr_number, episode, failing_detail)
+                else:
+                    log.warning("codex_case_lane: resolution sweep: PR #%s close failed rc=%d: %s",
+                                pr_number, close_r.returncode, (close_r.stderr or "")[:300])
+
+                _append_attempt(
+                    root, episode, "pr_closed_ci_failed", None,
+                    f"auto-resolved: CI checks failed ({failing_detail})",
+                )
+                summary["closed"] += 1
+
+            else:  # PENDING
+                log.info("codex_case_lane: resolution sweep: PR #%s (%s) checks PENDING — skipping", pr_number, episode)
+                summary["pending"] += 1
+
+        return summary
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("codex_case_lane: _pr_resolution_sweep unexpected error (%s); continuing", exc)
+        return {**summary, "error": str(exc)}
+
+
 def _count_pr_opened(root: Path) -> int:
     """Count case_attempts.jsonl rows with status='pr_opened'. NEVER raises."""
     try:
@@ -1303,8 +1673,17 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
         cfg = _load_cfg(r)
 
         # FIX B — PR recovery sweep (before queue build; skip in dry_run)
+        _resolve_summary: dict = {"skipped": True}
         if not dry_run:
             _pr_recovery_sweep(r, cfg)
+            # FIX 2 — PR resolution sweep (autonomous merge/close; gated on CODEX_CASE_AUTORESOLVE=on)
+            _resolve_summary = _pr_resolution_sweep(r, cfg)
+            if not _resolve_summary.get("skipped"):
+                _n_merged = _resolve_summary.get("merged", 0)
+                _n_closed = _resolve_summary.get("closed", 0)
+                if _n_merged or _n_closed:
+                    log.info("codex_case_lane: resolution sweep: merged=%d closed=%d pending=%d",
+                             _n_merged, _n_closed, _resolve_summary.get("pending", 0))
 
         # FIX 10 — track cadence
         pr_opened_count = _count_pr_opened(r)
@@ -1554,7 +1933,7 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
 
         # 7. Open PR (not in dry_run — already handled above)
         audit_summary = "Deterministic audit: PASS. Codex audit: PASS."
-        draft = cfg.get("case_pr_mode", "draft") == "draft"
+        draft = _case_pr_mode(cfg) == "draft"
         pr_url = _open_pr(r, ticker, year, case_path, audit_summary, draft=draft)
 
         # FIX B(a): distinguish pr_create_failed (retryable) from pr_opened (terminal)
@@ -1571,10 +1950,16 @@ def run_once(root: Path | str | None = None, dry_run: bool = False) -> dict:
             }
 
         _append_attempt(r, episode_key, "pr_opened", pr_url, f"PR opened: {pr_url}{_wt_violations_detail}")
+        _resolve_note = ""
+        if not _resolve_summary.get("skipped"):
+            _rm = _resolve_summary.get("merged", 0)
+            _rc = _resolve_summary.get("closed", 0)
+            if _rm or _rc:
+                _resolve_note = f"; resolved: {_rm} merged, {_rc} closed"
         return {
             "ok": True,
             "action": "pr_opened",
-            "detail": f"case {episode_key} passed audit; PR={pr_url}",
+            "detail": f"case {episode_key} passed audit; PR={pr_url}{_resolve_note}",
             "episode": episode_key,
             "pr_url": pr_url,
         }
