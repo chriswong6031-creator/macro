@@ -333,6 +333,29 @@ def append_board(
         return 0
     m = market.upper()
 
+    # PR-R10: lane gates — prevent duplicate-row writes on re-renders.
+    # HK appends gated on asia_advance_enabled() (CN_LANE=asia).
+    # CA appends gated on nightly_advance_enabled() (COLLECT_LANE=nightly).
+    try:
+        from engine.ledger_lane import asia_advance_enabled, nightly_advance_enabled  # noqa: PLC0415
+        if m == "HK" and not asia_advance_enabled():
+            log.info(
+                "board_ledger.append_board(HK): off-lane (CN_LANE != asia) — "
+                "skip write; read paths unaffected (PR-R10)"
+            )
+            return 0
+        if m == "CA" and not nightly_advance_enabled():
+            log.info(
+                "board_ledger.append_board(CA): off-lane (COLLECT_LANE != nightly) — "
+                "skip write; read paths unaffected (PR-R10)"
+            )
+            return 0
+    except Exception as _lane_exc:  # noqa: BLE001
+        # If ledger_lane import fails, treat as off-lane (fail-closed — PR-R10)
+        log.warning("board_ledger.append_board: ledger_lane import failed (%s) — "
+                    "treating as off-lane (fail-closed)", _lane_exc)
+        return 0
+
     # Stamp the US regime vector once per append_board call (same asof for all rows)
     rv_stamp = _regime_stamp_for_date(str(asof))
 

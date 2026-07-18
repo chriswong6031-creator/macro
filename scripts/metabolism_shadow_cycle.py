@@ -876,6 +876,67 @@ def _run_audit_due_probe(
         return {"status": "failed", "artifact": None, "note": str(exc)}
 
 
+def _run_pick_autopsy_probe(
+    shadow_root: Path,
+    real_root: Path,
+    cycle_id: str,
+) -> dict[str, Any]:
+    """SA-W5 shadow probe: dry_run call to run_pick_autopsies with injected fake caller.
+
+    This is a SENSE-tier probe — exercises the autopsy stage plumbing without
+    touching real stores or making real LLM calls.  The injected model_caller
+    returns a minimal valid JSON payload so _invoke_autopsy_llm can parse it.
+
+    run_pick_autopsies(dry_run=True) writes artifacts to the SHADOW dir only
+    (via _shadow_base()), not the real data/standout_audit/pick_autopsies/.
+
+    NEVER raises.
+    """
+    stage = "pick_autopsy_probe"
+    try:
+        from engine.metabolism.standout_auditor import run_pick_autopsies  # type: ignore[import]
+
+        def _stub_caller(prompt: str) -> tuple[str, object, object]:
+            """Minimal stub: one valid autopsy result per call."""
+            payload = (
+                '[{"pick_index": 1, "root_cause": "shadow probe stub", '
+                '"mitigation_verdict": "not_a_failure", '
+                '"lesson": "no lesson (shadow)", "engines_credit": "none"}]'
+            )
+            return payload, None, None
+
+        results: dict[str, Any] = {}
+        for market in ("us", "cn"):
+            try:
+                result = run_pick_autopsies(
+                    market, cycle_id,
+                    model_caller=_stub_caller,
+                    root=real_root,
+                    dry_run=True,
+                )
+                results[market] = {
+                    "status": result.get("status"),
+                    "note": result.get("note", ""),
+                    "n_written": len(result.get("written", [])),
+                }
+            except Exception as exc:  # noqa: BLE001
+                results[market] = {"status": "error", "note": str(exc), "n_written": 0}
+
+        return {
+            "status": "ok",
+            "artifact": None,
+            "note": (
+                f"pick_autopsy probe: us={results.get('us', {}).get('status')} "
+                f"cn={results.get('cn', {}).get('status')}; "
+                f"real_stores_untouched=True (dry_run writes to shadow dir only); "
+                f"us_detail={results.get('us', {})}; cn_detail={results.get('cn', {})}"
+            ),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("shadow_cycle[%s]: %s", stage, exc)
+        return {"status": "failed", "artifact": None, "note": str(exc)}
+
+
 def _run_dream(
     shadow_root: Path,
     real_root: Path,
@@ -1058,6 +1119,9 @@ def run_shadow_cycle(
 
     # ── Stage: audit_due_probe (SA-W3 — deterministic, no LLM call) ──────────
     stages["audit_due_probe"] = _run_audit_due_probe(shadow_root, real_root, cycle_id)
+
+    # ── Stage: pick_autopsy_probe (SA-W5 — injected fake caller, dry_run) ────
+    stages["pick_autopsy_probe"] = _run_pick_autopsy_probe(shadow_root, real_root, cycle_id)
 
     # ── Stage: dream ──────────────────────────────────────────────────────────
     stages["dream"] = _run_dream(shadow_root, real_root, cycle_id, today)

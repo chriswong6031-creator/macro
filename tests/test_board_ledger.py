@@ -32,13 +32,22 @@ def _no_real_regime_vector(monkeypatch):
     data/regime/regime_vector.parquet when it exists. Results must not depend
     on whether that file is present on the machine running the tests, so the
     default here is the file-absent path (a null stamp). Tests that exercise
-    the stamping logic itself re-patch get_vector_for_date over this."""
+    the stamping logic itself re-patch get_vector_for_date over this.
+
+    PR-R10 lane gate: arm both HK (CN_LANE=asia) and CA (COLLECT_LANE=nightly) for
+    all tests in this file so existing tests continue to pass after the lane gates
+    were added.  Tests that specifically test the gate-refused path use their own
+    monkeypatching to override this fixture's settings."""
     import engine.regime_vector as rv
 
     def _absent(*_a, **_k):
         raise FileNotFoundError("hermetic tests: real regime_vector.parquet is off-limits")
 
     monkeypatch.setattr(rv, "get_vector_for_date", _absent)
+
+    # PR-R10: arm lane gates so append_board writes in hermetic tests
+    monkeypatch.setenv("CN_LANE", "asia")
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
 
 
 # ---------------------------------------------------------------------------

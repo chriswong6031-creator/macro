@@ -1074,6 +1074,49 @@ charters:
     owner_program: thematic-intelligence
     notes: Seeded from synapse.yml by V2-C build. tier is read-mirrored from synapse;
       do not edit independently.
+  prophet:
+    lobe_id: prophet
+    tier: display
+    lifecycle_state: active
+    information_domain: standout_governance
+    # PR-W2: Prophet is the NW governor lobe federating the standout accountability
+    # machinery across US/CN/HK/CA/intl (PR-R1). Dict-form fitness_sensors promote
+    # prophet to loop-manageable (R-V4-10 charter mechanism). Roster: 65 → 66 of 66
+    # (PR-R1; the roster is now FULL — operator directive 2026-07-17).
+    # All sensors accruing: prophet cross-market reads accrue alongside each market's
+    # own sensor maturity. Store = committed artifact written by prophet_governor.py.
+    fitness_sensors:
+    - id: process_integrity_xmkt
+      store: data/neuralweb/prophet_status.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Cross-market process fault rate across US/CN/HK/CA boards; data_gap sentinel count (PR-R5; no pooled returns).
+    - id: suggestion_throughput
+      store: data/neuralweb/prophet_suggestions.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Count of non-zero high-severity suggestions emitted per cycle; proxy for dashboard-integrity health (PR-R6).
+    - id: autopsy_coverage
+      store: data/neuralweb/prophet_status.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Fraction of matured picks with a committed autopsy artifact; rises as pick lab fires mature (PR-R3).
+    - id: dashboard_freshness
+      store: data/neuralweb/prophet_status.json
+      maturity_date: '2026-09-15'
+      accruing: true
+      description: Fraction of monitored artifacts within SLA across all markets (PR-R6 dashboard-integrity).
+    owner_program: neural-web
+    notes: >-
+      PR-W2: Prophet NW governor lobe (PR-R1/R4/R5/R6/R10). Federates US/CN/HK/CA/intl
+      standout accountability — reads each market's committed stores, emits cross-market
+      integrity reports and Mastermind suggestions. Does NOT replace site-us-standouts or
+      site-china-standouts (those keep their charters); Prophet is the governor above them.
+      Roster: 66 of 66 — FULL per operator directive 2026-07-17 (any further lobe genesis
+      requires an operator cap raise in metabolism_budget.yml). tier read-mirrored from
+      synapse.yml (display); do not edit independently. Sensors all accruing (SA-R10 floors
+      not yet met; proposals must carry check_by >= 2026-09-15).
+
   site-us-standouts:
     lobe_id: site-us-standouts
     tier: display

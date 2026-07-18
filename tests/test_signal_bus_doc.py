@@ -73,9 +73,10 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 476, (
-        f"Expected 476 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 479, (
+        f"Expected 479 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        "(Prophet W2 added prophet-status, prophet-suggestions, prophet-pick-autopsies = 476->479;"
         "(SS-NW-W1 added special-sits-context-latest = 475->476;"
         "(FWS B4 added site-factor-seasonality, site-momentum-display = 473->475;"
         "(CA-W3-E added crossasset-history, crossasset-shadow-latest = 471->473;"

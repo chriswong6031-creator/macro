@@ -13847,3 +13847,91 @@ artifacts:
       or template reads; CN act-now/stance surfaces read other stores).
       Display-only; nothing here ranks, gates, sizes, or escalates.
       CONST-ART2 authority: false. authority.may_rank/gate/size/escalate=false.
+
+  # --- Prophet W2: governor lobe artifacts ---
+
+  prophet-status:
+    path: data/neuralweb/prophet_status.json
+    format: json
+    producer: engine/neuralweb/prophet_governor.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: prophet.status/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Prophet NW lobe governor artifact (PR-R1/R4/R5/R6). Cross-market accountability
+      summary: per-market blocks for us/cn/hk/ca/intl with benchmark, fill_basis,
+      ledger_born, maturity state, and data_gap sentinels (SA-R15; absent => data_gap,
+      never fabricated zeros). cross_market block contains counts/coverage/process-fault
+      rates ONLY — no pooled return statistics across fill conventions (PR-R5 hard law).
+      dashboard_integrity block per market: artifact freshness vs SLA, data_gap counts,
+      stale-store flags. momoedge_trade_plans block: display-only crosslink to Prophet
+      trade plans (PR-R2). Single writer (SA-R14). Never-raise + freshness stamp (SA-R16).
+      Authority: all five booleans false (context-only).
+      Reader lands in PR-W3 (admin Prophet page).
+
+  prophet-suggestions:
+    path: data/neuralweb/prophet_suggestions.json
+    format: json
+    producer: engine/neuralweb/prophet_governor.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: prophet.suggestions/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Prophet NW lobe suggestion artifact (PR-R4). Deterministic detections converted to
+      suggestion rows mirroring the Mastermind nudge schema (kind in {contract_drift,
+      coverage_gap, staleness, lobe_request, other}; severity in {high, medium, low};
+      detail <= 160 chars; <= 10 rows). Sources: SLA breaches, data_gap clusters,
+      ledger freeze detection, lane-gate violations. Stable codes for dedup across nights.
+      High-severity rows also emitted to insight_bus (freshness_sla_breach/contradiction/
+      health_transition). Single writer (SA-R14). Never-raise (SA-R16).
+      Authority: all five booleans false.
+      Reader lands in PR-W3 (admin Prophet page).
+
+  prophet-pick-autopsies:
+    path: data/standout_audit/pick_autopsies/<market>/<pick_id>.json
+    format: json
+    producer: engine/metabolism/standout_auditor.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 9999
+    schema: prophet.pick_autopsy/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Per-pick postmortem artifacts (PR-R3). One file per selected pick at
+      data/standout_audit/pick_autopsies/<market>/<pick_id>.json. Schema prophet.pick_autopsy/v1:
+      attribution row verbatim (deterministic), LLM prose block (root_cause, mitigation_verdict
+      from closed enum, lesson, engines_credit), model, cycle_id, asof. LLM writes prose and
+      closed-enum verdict ONLY — no numerics in LLM output (NW-ART1). Extremes-first pick
+      selection (top-K winners, bottom-K losers, all gate_suppressed, all data_fault rows),
+      capped at prophet.autopsy_cap_per_cycle (default 12). AUTONOMY_PAUSED-gated for armed
+      runs. Pattern path — each file has a unique <market>/<pick_id> suffix; <ID> is
+      stable across cycles for the same pick. SA-R14 one-grader law; SA-R15 absent => data_gap;
+      SA-R16 never-raise.

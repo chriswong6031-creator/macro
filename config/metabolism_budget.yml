@@ -51,6 +51,15 @@ lobe_caps:
     per_cycle_token_cap: 25000000
     max_docket_size: 5
     breaker_trip: 3
+  # PR-W2: Prophet governor lobe (PR-R1; operator directive 2026-07-17).
+  # This PR is a session PR on operator order — modifications to operator-tap files
+  # are legal for session PRs (SA precedent); this file is fenced against LOOP-authored
+  # PRs only. Roster: 65 → 66 of 66 — the roster is now FULL.
+  prophet:
+    per_cycle_usd_cap: 25
+    per_cycle_token_cap: 25000000
+    max_docket_size: 5
+    breaker_trip: 3
 
 # ── Circuit breaker config ───────────────────────────────────────────────────
 
@@ -81,7 +90,7 @@ budget_ledger_path: data/metabolism/budget_ledger.json
 #
 # These values are IMMUTABLE (loop PRs cannot modify them; R-V2-8).
 # An operator raises them via a T2 tap-gated human PR.
-max_active_nonscored_lobes: 66    # 65 current (SA-W3 adds site-china-standouts) + 1 headroom (SA-R1; operator-ratified 2026-07-10 base was 63+3)
+max_active_nonscored_lobes: 66    # 66 of 66 — FULL (PR-W2 adds prophet; SA-W3 was 65; base 63+3; operator directive 2026-07-17)
 max_probation_lobes: 5            # max simultaneous probation lobes (anti-cascade)
 
 # ── Genesis-specific caps (R-V6-3 — W2 genesis gauntlet) ─────────────────────
