@@ -20,6 +20,15 @@ llm_models:
   extraction: "claude-haiku-4-5"                 # qual_extraction.v1 8-K lane + catalyst_tone
   classify:   "claude-haiku-4-5"                 # news_llm batch summaries + tag labels
 
+# ---------------------------------------------------------------------------
+# prophet — Prophet NW lobe governor config (PR-W2/PR-R3/PR-R8)
+# ---------------------------------------------------------------------------
+prophet:
+  # Per-cycle cap on per-pick autopsy artifacts (PR-R3 token economy).
+  # K extremes-first winners + K losers + all gate_suppressed + all data_fault,
+  # total hard-capped at this value per audit cycle.
+  autopsy_cap_per_cycle: 12
+
 storage:
   data_dir: data
   holdings_dir: data/holdings

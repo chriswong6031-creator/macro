@@ -54,7 +54,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | momoedge | 8 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
-| neural-web | 61 |
+| neural-web | 64 |
 | next3 | 3 |
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 5 |
@@ -94,7 +94,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 302 |
+| display | 305 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 70 |
@@ -103,7 +103,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 449 |
+| git | 452 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -437,13 +437,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | commodity-latest | `data/commodity/latest.json` | json | daily-engine | display | 4 | 0 |
 | transmission-latest | `data/transmission/latest.json` | json | daily-engine | display | 4 | 0 |
 | forex-latest | `data/forex/latest.json` | json | daily-engine | display | 3 | 0 |
+| macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
 | bond-health | `data/bonds/bond_health.json` | json | daily-engine | display | 2 | 0 |
 | canada-regime-latest | `data/canada_regime/latest.json` | json | daily-engine | display | 2 | 0 |
 | china-regime-latest | `data/china_regime/latest.json` | json | asia-close | display | 2 | 0 |
 | crossasset-latest | `data/crossasset/latest.json` | json | daily-engine | display | 2 | 0 |
 | hk-regime-latest | `data/hk_regime/latest.json` | json | asia-close | display | 2 | 0 |
 | macro-snapshots-latest | `data/macro_snapshots/latest.json` | json | daily-engine | display | 2 | 0 |
-| macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 2 | 0 |
 | macro-transitions | `data/macro_snapshots/transitions.jsonl` | jsonl | daily-engine | display | 2 | 0 |
 | site-factor-series | `site/factordata/factor_series.json` | json | daily-engine | display | 2 | 0 |
 | site-alerts-triage | `site/factordata/alerts_triage.json` | json | daily-engine | display | 1 | 0 |
@@ -605,6 +605,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | ops-push-healthcheck | `data/alert_triage/push_sent_healthcheck.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-nw-health | `data/alert_triage/push_sent_nw_health.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
 | ops-push-signal-sanity | `data/alert_triage/push_sent_signal_sanity.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| prophet-status | `data/neuralweb/prophet_status.json` | json | daily-engine | display | 1 | 0 |
+| prophet-suggestions | `data/neuralweb/prophet_suggestions.json` | json | daily-engine | display | 1 | 0 |
 | reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
@@ -622,6 +624,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | entity-thesis-mechanism-registry | `data/neuralweb/entity_thesis_mechanism_registry.json` | json | daily-engine | infrastructure | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
+| prophet-pick-autopsies | `data/standout_audit/pick_autopsies/<market>/<pick_id>.json` | json | daily-engine | display | 0 | 0 |
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
 | rule-experiment-summaries | `data/rule_experiments/results/<EXP_ID>_summary.json` | json | on-demand | display | 0 | 0 |

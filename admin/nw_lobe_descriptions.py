@@ -352,6 +352,21 @@ LOBE_DESCRIPTIONS = {
         "full": "Each day this feed assembles raw options-market readings for each stock: implied volatility, skew, dealer positioning, open interest, gamma regime, and distance to key price levels. By design no composite or combined score may be built from this data — each field must stand alone. Some fields stay unavailable until a future data backfill lands. When source data is missing, fields are left null rather than filled with a neutral placeholder.",
         "src_fp": "e421e596e477494c",
     },
+    "prophet-pick-autopsies": {
+        "short": "One postmortem file per selected pick, written after the pick matures, naming what drove the outcome and whether a better process could have changed it.",
+        "full": "After a standout pick matures, the audit lane selects a subset for individual review — favouring the biggest winners, the worst losers, any picks that were held back by a data problem, and any that barely missed the board. For each selected pick, one artifact records the deterministic performance numbers alongside a plain-language postmortem: what drove the result, whether it was a process misstep or simply unforeseeable, which signals performed well and which were late, and what a future board should keep in mind. The verdict falls into one of five closed categories ranging from a correctable process fault to a result that was simply outside anyone's control. These files accrue as picks mature and are read by the Prophet governor when compiling the cross-market health report.",
+        "src_fp": "0ac50e4ed40f3d3c",
+    },
+    "prophet-status": {
+        "short": "Cross-market accountability summary: what each standout board has accrued, which inputs are healthy, and how the whole system is holding up.",
+        "full": "This artifact is the Prophet lobe's nightly health report for the entire standout system. It reads the committed records for every market — US, China, Hong Kong, Canada, and the international dashboard — and compiles a single document that captures how many picks have matured and been graded in each market, which artifacts are fresh or overdue, how many data gaps exist per market, and what the overall process-fault picture looks like. Importantly, each market's numbers stay in its own block: the US and Canada boards fill at a different price than the China board, and those fill conventions are never mixed together. The cross-market section shows counts and coverage only. A separate section records the freshness of every monitored artifact against its stated deadline and flags anything that has fallen behind.",
+        "src_fp": "605499777a168d14",
+    },
+    "prophet-suggestions": {
+        "short": "Coded recommendations from the Prophet lobe to the Master Brain, flagging stale data, coverage gaps, and system drift.",
+        "full": "Each night the Prophet governor scans the dashboard health report for deterministic findings worth surfacing to the wider system. When it finds an artifact that has gone stale, a cluster of missing data in one market, or signs that a board ledger has not been updated recently, it writes a suggestion row here. The rows follow the same format as the Mastermind feedback nudges: a stable code, a short severity label, the affected market, and a plain-language description of the problem capped at one hundred and sixty characters. High-severity findings are also sent to the shared inter-lobe channel so the Master Brain can see them without polling this file directly. The suggestions accumulate across nights but are deduplicated by their stable codes, so the same recurring problem appears once with its original discovery date.",
+        "src_fp": "754cc8ae5ccd850f",
+    },
     "reflex-firings-commodity-shock": {
         "short": "Log of commodity shock events detected by the automated sentinel, graded over short horizons.",
         "full": "Each time the commodity shock sentinel detects a genuine new state transition — a shock or a recovery — a record is appended here. Duplicate detection prevents the same event from being logged twice. Shock states carry a bearish direction; recovery and normal states carry a neutral direction. The log is graded against a commodity benchmark at one-day and five-day horizons, but the sample is still small and no conclusion can yet be drawn.",

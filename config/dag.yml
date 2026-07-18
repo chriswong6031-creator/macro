@@ -945,6 +945,24 @@ lanes:
           site/us_track_record.html.
           Never-raise contract (SA-R16): absent inputs emit data_gap sentinels.
           Arrow one-shot: hard_exit(0) at end.
+      - id: prophet_governor
+        module: engine.neuralweb.prophet_governor
+        note: >
+          Prophet W2 — cross-market governor (PR-R1/R4/R5/R6). Read-only over committed
+          stores (no ledger writes, no network, no data/ mutations except the two new
+          output artifacts). Reads: data/us_board_ledger/retro_grades.parquet,
+          site/factordata/us_board_track.json, site/factordata/us_board_outcomes.json,
+          site/factordata/us_audit_scoreboard.json, data/metabolism/fitness/standouts_us.json,
+          site/factordata/us_track_history.json, data/china_standout_track/board.parquet,
+          data/metabolism/fitness/standouts_cn.json, data/board_ledger/hk_board.parquet,
+          data/board_ledger/ca_board.parquet (via board_ledger.scorecard()),
+          site/factordata/intl_setups.json, data/prophet/ledger.jsonl,
+          site/prophet/index.json, site/labdata/pick_lab.json,
+          site/labdata/china_pick_lab.json.
+          Writes: data/neuralweb/prophet_status.json, data/neuralweb/prophet_suggestions.json.
+          Never-raise contract (SA-R16): absent inputs emit data_gap sentinels (SA-R15).
+          Cross-market honesty: no pooled return statistics (PR-R5).
+          Arrow one-shot: hard_exit(0) at end.
 
   # ── daily.yml / oracle_offrender ────────────────────────────────────────
   # Oracle off-render job: panel rebuild + episodes + Time Machine + Ratio Lens.

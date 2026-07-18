@@ -1,0 +1,278 @@
+{
+  "schema": "prophet.status/v1",
+  "as_of": "2026-07-18T08:41:53+00:00",
+  "built_by": "engine.neuralweb.prophet_governor",
+  "markets": {
+    "us": {
+      "market": "us",
+      "benchmark": "SPY",
+      "fill_basis": "next_bar_close",
+      "ledger_born": "2026-07-10",
+      "data_gaps": [],
+      "maturity_state": "accruing",
+      "retro_grades": {
+        "total_rows": 1411,
+        "matured_rows": 1411,
+        "graded_col_counts": {
+          "excess_spy": 1411,
+          "mae_close_excess_spy": 1411,
+          "excess_sector": 1410,
+          "mae_close_excess_sector": 1410
+        },
+        "note": "one-grader law (SA-R14); win_rate from committed scoreboard only"
+      },
+      "board_track": {
+        "status": null,
+        "as_of": null,
+        "n_matured": null,
+        "horizons_available": []
+      },
+      "board_outcomes": {
+        "as_of": "2026-07-17",
+        "n_picks": null,
+        "status": null
+      },
+      "audit_scoreboard": {
+        "as_of": "2026-07-18",
+        "status": null,
+        "n_matured": null,
+        "win_rate": null
+      },
+      "fitness_card": {
+        "as_of": "2026-07-18",
+        "hit_quality": null,
+        "coverage_health": null,
+        "process_integrity": null
+      },
+      "track_history": {
+        "as_of": "2026-07-18",
+        "n_cohorts": null,
+        "status": null
+      }
+    },
+    "cn": {
+      "market": "cn",
+      "benchmark": "CSI300",
+      "fill_basis": "t1_hl2",
+      "ledger_born": "2026-07-12",
+      "data_gaps": [],
+      "maturity_state": "accruing",
+      "cn_board": {
+        "total_rows": 722,
+        "matured_rows": 0,
+        "fill_basis_note": "t1_hl2 \u2014 accruing"
+      },
+      "fitness_card": {
+        "as_of": "2026-07-17",
+        "hit_quality": null,
+        "process_integrity": null
+      },
+      "audit_scoreboard": {
+        "as_of": "2026-07-18",
+        "status": null,
+        "n_matured": null
+      }
+    },
+    "hk": {
+      "market": "hk",
+      "benchmark": "_HSI",
+      "fill_basis": "next_bar_close",
+      "ledger_born": "2026-06-01",
+      "data_gaps": [],
+      "maturity_state": "accruing",
+      "scorecard": {
+        "status": "accruing",
+        "n_matured": null,
+        "as_of": null,
+        "survivorship_note": null
+      }
+    },
+    "ca": {
+      "market": "ca",
+      "benchmark": "_GSPTSE",
+      "fill_basis": "next_bar_close",
+      "ledger_born": "2026-06-01",
+      "data_gaps": [],
+      "maturity_state": "accruing",
+      "scorecard": {
+        "status": "accruing",
+        "n_matured": null,
+        "as_of": null,
+        "survivorship_note": null
+      }
+    },
+    "intl": {
+      "market": "intl",
+      "benchmark": null,
+      "fill_basis": "n/a \u2014 no intl stock-level forward ledger",
+      "ledger_born": null,
+      "data_gaps": [],
+      "maturity_state": "no_stock_ledger",
+      "disclosure": "Intl has no stock-level forward ledger. The residual-alpha base score is a ranking context leg, NOT a validated ranker \u2014 a modest, regime-decayed edge. See engine/residual_alpha.py. No return statistics are computed.",
+      "coverage": {
+        "n_markets": 0,
+        "as_of": null,
+        "status": null
+      }
+    }
+  },
+  "cross_market": {
+    "markets_covered": 5,
+    "markets_with_data_gaps": 0,
+    "total_data_gap_count": 0,
+    "per_market_receipts": {
+      "us": {
+        "data_gap_count": 0,
+        "fill_basis": "next_bar_close",
+        "maturity_state": "accruing",
+        "benchmark": "SPY"
+      },
+      "cn": {
+        "data_gap_count": 0,
+        "fill_basis": "t1_hl2",
+        "maturity_state": "accruing",
+        "benchmark": "CSI300"
+      },
+      "hk": {
+        "data_gap_count": 0,
+        "fill_basis": "next_bar_close",
+        "maturity_state": "accruing",
+        "benchmark": "_HSI"
+      },
+      "ca": {
+        "data_gap_count": 0,
+        "fill_basis": "next_bar_close",
+        "maturity_state": "accruing",
+        "benchmark": "_GSPTSE"
+      },
+      "intl": {
+        "data_gap_count": 0,
+        "fill_basis": "n/a \u2014 no intl stock-level forward ledger",
+        "maturity_state": "no_stock_ledger",
+        "benchmark": null
+      }
+    },
+    "cross_market_honesty_note": "No pooled return statistics across fill conventions (PR-R5 hard law). CN uses T+1 HL2; US/HK/CA use next-bar-close; intl has no stock ledger. Per-market return statistics live in each market's own block only."
+  },
+  "dashboard_integrity": {
+    "us": {
+      "market": "us",
+      "artifact_checks": [
+        {
+          "artifact": "us-audit-scoreboard",
+          "path": "site/factordata/us_audit_scoreboard.json",
+          "status": "ok",
+          "age_hours": 8.7,
+          "sla_hours": 48.0
+        },
+        {
+          "artifact": "us-track-history",
+          "path": "site/factordata/us_track_history.json",
+          "status": "ok",
+          "age_hours": 8.7,
+          "sla_hours": 48.0
+        },
+        {
+          "artifact": "us-board-outcomes",
+          "path": "site/factordata/us_board_outcomes.json",
+          "status": "ok",
+          "age_hours": 32.7,
+          "sla_hours": 48
+        }
+      ],
+      "data_gap_count": 0,
+      "overall_health": "ok"
+    },
+    "cn": {
+      "market": "cn",
+      "artifact_checks": [
+        {
+          "artifact": "site-china-standouts",
+          "path": "data/metabolism/fitness/standouts_cn.json",
+          "status": "stale",
+          "age_hours": 32.7,
+          "sla_hours": 30.0
+        }
+      ],
+      "data_gap_count": 0,
+      "overall_health": "degraded"
+    },
+    "hk": {
+      "market": "hk",
+      "artifact_checks": [
+        {
+          "artifact": "hk-board-ledger",
+          "path": "data/board_ledger/hk_board.parquet",
+          "status": "ok",
+          "age_hours": 0.0,
+          "sla_hours": 48
+        }
+      ],
+      "data_gap_count": 0,
+      "overall_health": "ok"
+    },
+    "ca": {
+      "market": "ca",
+      "artifact_checks": [
+        {
+          "artifact": "ca-board-ledger",
+          "path": "data/board_ledger/ca_board.parquet",
+          "status": "ok",
+          "age_hours": 0.0,
+          "sla_hours": 48
+        }
+      ],
+      "data_gap_count": 0,
+      "overall_health": "ok"
+    },
+    "intl": {
+      "market": "intl",
+      "artifact_checks": [
+        {
+          "artifact": "intl-setups",
+          "path": "site/factordata/intl_setups.json",
+          "status": "ok",
+          "age_hours": 0.3,
+          "sla_hours": 48
+        }
+      ],
+      "data_gap_count": 0,
+      "overall_health": "ok"
+    }
+  },
+  "momoedge_trade_plans": {
+    "block_id": "momoedge_trade_plans",
+    "note": "Cross-connected Mastermind-Charts lane. Prophet manages US buy-lane \u2192 trade-plan envelopes. Display-only crosslink; Prophet reads, never writes these stores (PR-R2).",
+    "data_gaps": [],
+    "ledger": {
+      "total_rows_sampled": 5,
+      "open_count": 0,
+      "closed_count": 5,
+      "outcome_mix": {
+        "EXPIRED": 2,
+        "INVALIDATED": 2,
+        "T1_HIT": 1
+      }
+    },
+    "index": {
+      "as_of": null,
+      "plan_count": 34
+    }
+  },
+  "pick_lab": {
+    "block_id": "pick_lab",
+    "data_gaps": [],
+    "us_lab": {
+      "as_of": "2026-07-17",
+      "book_count": null,
+      "fire_count": 0,
+      "status": null
+    },
+    "cn_lab": {
+      "as_of": "2026-07-17",
+      "book_count": null,
+      "fire_count": 0,
+      "status": null
+    }
+  }
+}
