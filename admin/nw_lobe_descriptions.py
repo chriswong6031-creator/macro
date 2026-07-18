@@ -577,11 +577,6 @@ LOBE_DESCRIPTIONS = {
         "full": "Each day the engine scores US stocks and writes the resulting standout list to the public site. This feed is the anchor contract for the Terminal product's stock screener — any downstream tool that reads standout data relies on it. It has 16 consumers, making it one of the most widely read feeds in the system.",
         "src_fp": "257c11198cf0dda2",
     },
-    "special-sits-context-latest": {
-        "short": "",
-        "full": "",
-        "src_fp": "f646afda96a036a5",
-    },
     "spine-index": {
         "short": "The master searchable table joining every engine's recent signal history, rebuilt fresh each night.",
         "full": "Each night the system rebuilds a unified table that joins signal history from all major engines: US, Hong Kong, Canada, and China boards, the signal ledger, and sector-cycle forward logs. It also pulls in graded rows from the track-record store. Because it is a fully rebuilt derived view rather than a running ledger, overwriting it each night is correct. Several source ledgers are still pending formal registration in a future cleanup sweep.",

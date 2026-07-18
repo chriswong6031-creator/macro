@@ -733,6 +733,37 @@ def build_providers(
 # Deliberation model selector (PR-R8 — Prophet / Fable grant)
 # --------------------------------------------------------------------------- #
 
+def deliberation_spend_today(
+    delib_model_id: str,
+    root=None,
+) -> dict:
+    """Return today's token + USD spend for the deliberation model.
+
+    Reads only today's rows (days=1 via read_usage) so the result is truly
+    today-scoped, not a 30-day aggregate.  Matches any model whose lower-case
+    id starts with *delib_model_id* lower-case, or contains "fable".
+
+    Returns {tokens: int, usd: float}.  Never raises — returns zeros on error.
+    """
+    try:
+        import pathlib as _pl  # noqa: PLC0415
+        _root = _pl.Path(root) if root is not None else _pl.Path(__file__).resolve().parent.parent
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        rows = _ac.read_usage(root=_root, days=1)
+        delib_lower = str(delib_model_id or "").lower()
+        tokens = 0
+        usd = 0.0
+        for row in rows:
+            mk = str(row.get("model") or "").lower()
+            if "fable" in mk or (delib_lower and mk.startswith(delib_lower)):
+                tokens += int(row.get("input_tokens") or 0) + int(row.get("output_tokens") or 0)
+                usd += float(row.get("est_cost_usd") or 0.0)
+        return {"tokens": tokens, "usd": round(usd, 6)}
+    except Exception as exc:  # noqa: BLE001
+        log.debug("deliberation_spend_today: failed (%s) → zeros", exc)
+        return {"tokens": 0, "usd": 0.0}
+
+
 def deliberation_model(default: str = "claude-opus-4-8") -> str:
     """Return the configured deliberation model if the daily token budget is not
     exhausted; fall back to *default* on any error or when Fable is disabled.
@@ -740,8 +771,8 @@ def deliberation_model(default: str = "claude-opus-4-8") -> str:
     Logic (all fail-soft — any error returns *default*):
       1. Read config.yml prophet.fable_enabled.  False → return default.
       2. Read config.yml llm_models.deliberation.  Absent → return default.
-      3. Sum today's output+input tokens for the deliberation model prefix from
-         lib.ai_costs.summarize().
+      3. Sum today's input+output tokens for the deliberation model prefix via
+         deliberation_spend_today() (days=1 window — truly today-scoped).
       4. Compare against prophet.deliberation_daily_token_cap.
          Exhausted → return default.
       5. Return the deliberation model id.
@@ -785,19 +816,9 @@ def deliberation_model(default: str = "claude-opus-4-8") -> str:
             log.debug("deliberation_model: cap=0 → default")
             return default
 
-        # --- check budget ---
-        from lib import ai_costs as _ac  # noqa: PLC0415
-        summary = _ac.summarize(root=_root)
-        by_model = summary.get("by_model") or {}
-        today_tokens = 0
-        delib_lower = delib.lower()
-        for model_key, bucket in by_model.items():
-            mk = str(model_key or "").lower()
-            if "fable" in mk or mk.startswith(delib_lower):
-                today_tokens += (
-                    int(bucket.get("input_tokens") or 0) +
-                    int(bucket.get("output_tokens") or 0)
-                )
+        # --- check today's budget (days=1 window, not 30d aggregate) ---
+        spend = deliberation_spend_today(delib, root=_root)
+        today_tokens = spend["tokens"]
 
         if today_tokens >= cap:
             log.info(

@@ -354,70 +354,165 @@ def test_deliberation_model_any_error_returns_default():
 
 
 def test_deliberation_model_budget_exhausted_returns_default():
-    """When today's token sum >= cap, deliberation_model returns default."""
-    import yaml
-    cfg = _make_config(fable_enabled=True, cap=1_000_000)
-    exhausted = _exhausted_summary(model="claude-fable-5", tokens=2_000_000)
+    """When today's token spend >= cap, deliberation_model returns default.
 
-    with patch("yaml.safe_load", return_value=cfg), \
-         patch("pathlib.Path.exists", return_value=True), \
-         patch("pathlib.Path.read_text", return_value=yaml.dump(cfg)):
-        # Patch lib.ai_costs.summarize to return exhausted summary
-        with patch.dict("sys.modules", {
-            "lib.ai_costs": MagicMock(summarize=lambda root=None: exhausted)
-        }):
-            # Force reimport so the patched module is seen
-            import importlib
-            import engine.llm_auth as _lauth
-            importlib.reload(_lauth)
-            result = _lauth.deliberation_model(default="claude-opus-4-8")
-        # Budget exhausted → default
-        # (reload ensures fresh imports)
-        # We accept either the default or the delib model here depending on
-        # whether the reload worked; test the core contract only.
-        assert result in ("claude-opus-4-8", "claude-fable-5")
+    Patches both lib.config.load (to give cap=1_000_000) and
+    deliberation_spend_today (to return 2_000_000 tokens already spent today).
+    """
+    from engine.llm_auth import deliberation_model as dm
+
+    cfg_exhausted = {
+        "prophet": {
+            "fable_enabled": True,
+            "deliberation_daily_token_cap": 1_000_000,
+        },
+        "llm_models": {"deliberation": "claude-fable-5"},
+    }
+    # Simulate 2_000_000 tokens already spent today (> cap)
+    with patch("lib.config.load", return_value=cfg_exhausted), \
+         patch("engine.llm_auth.deliberation_spend_today",
+               return_value={"tokens": 2_000_000, "usd": 10.0}):
+        result = dm(default="claude-opus-4-8")
+
+    # 2_000_000 tokens spent today vs cap=1_000_000 → must return default
+    assert result == "claude-opus-4-8", (
+        f"Expected default 'claude-opus-4-8' when budget exhausted, got {result!r}"
+    )
+
+
+def test_deliberation_model_budget_zero_returns_default():
+    """cap=0 → deliberation_model returns default regardless of spend.
+
+    Patches lib.config.load so deliberation_model() sees cap=0 in its config
+    (the function prefers lib.config.load over reading config.yml directly).
+    """
+    from engine.llm_auth import deliberation_model as dm
+
+    cfg_zero_cap = {
+        "prophet": {
+            "fable_enabled": True,
+            "deliberation_daily_token_cap": 0,
+        },
+        "llm_models": {"deliberation": "claude-fable-5"},
+    }
+    with patch("lib.config.load", return_value=cfg_zero_cap):
+        result = dm(default="claude-opus-4-8")
+
+    assert result == "claude-opus-4-8", (
+        f"Expected default for cap=0, got {result!r}"
+    )
+
+
+def test_deliberation_model_fable_disabled_returns_default():
+    """fable_enabled=false in config → deliberation_model returns default (real config branch)."""
+    from engine.llm_auth import deliberation_model as dm
+
+    cfg_disabled = {
+        "prophet": {
+            "fable_enabled": False,
+            "deliberation_daily_token_cap": 2_000_000,
+        },
+        "llm_models": {"deliberation": "claude-fable-5"},
+    }
+    with patch("lib.config.load", return_value=cfg_disabled):
+        result = dm(default="claude-opus-4-8")
+
+    assert result == "claude-opus-4-8", (
+        f"Expected default when fable_enabled=false, got {result!r}"
+    )
 
 
 def test_deliberation_model_enabled_within_budget():
-    """With fable_enabled=True and budget not exhausted, return the deliberation model."""
-    import yaml
-    cfg = _make_config(fable_enabled=True, cap=2_000_000, delib_model="claude-fable-5")
-    empty = _empty_summary()
+    """With fable_enabled=True, a valid delib model, and zero spend today, return the deliberation model."""
+    from engine.llm_auth import deliberation_model as dm
 
-    with patch("yaml.safe_load", return_value=cfg), \
-         patch("pathlib.Path.exists", return_value=True), \
-         patch("pathlib.Path.read_text", return_value=yaml.dump(cfg)):
-        with patch.dict("sys.modules", {
-            "lib.ai_costs": MagicMock(summarize=lambda root=None: empty),
-        }):
-            import importlib
-            import engine.llm_auth as _lauth2
-            importlib.reload(_lauth2)
-            result = _lauth2.deliberation_model(default="claude-opus-4-8")
-        # Either the fable model (if all mocks worked) or default is acceptable;
-        # the critical invariant is it never raises and is a string.
-        assert isinstance(result, str)
+    cfg_within = {
+        "prophet": {
+            "fable_enabled": True,
+            "deliberation_daily_token_cap": 2_000_000,
+        },
+        "llm_models": {"deliberation": "claude-fable-5"},
+    }
+    # Zero tokens spent today
+    with patch("lib.config.load", return_value=cfg_within), \
+         patch("engine.llm_auth.deliberation_spend_today",
+               return_value={"tokens": 0, "usd": 0.0}):
+        result = dm(default="claude-opus-4-8")
+
+    # Zero spend, cap=2M → must return the deliberation model
+    assert result == "claude-fable-5", (
+        f"Expected 'claude-fable-5' with zero spend and cap=2M, got {result!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Deliverable 2 (model-not-found retry): injected fake call_fn
 # ---------------------------------------------------------------------------
 
-def test_model_not_found_retry_with_opus():
-    """When the deliberation model returns text=None (model-not-found), the caller
-    should retry once with Opus. This tests the retry path in standout_auditor."""
-    # We test the retry pattern by calling the _get_deliberation_model helper
-    # and checking it always returns a string without raising.
-    from engine.metabolism.standout_auditor import _get_deliberation_model as sa_get
-    from engine.metabolism.propose import _get_deliberation_model as prop_get
-    from engine.metabolism.adjudicate import _get_deliberation_model as adj_get
+def test_model_not_found_retry_with_opus_propose():
+    """When the fable/deliberation model raises (model-not-found), _invoke_llm in
+    propose retries exactly ONCE with the Opus fallback and returns that text.
 
-    # All three must return a non-empty string without raising, even with
-    # no valid providers configured.
-    for getter in (sa_get, prop_get, adj_get):
-        result = getter()
-        assert isinstance(result, str)
-        assert len(result) > 0
+    Setup:
+    - active_model = "claude-fable-5-20251201" (deliberation model)
+    - first make_call raises RuntimeError (simulates SDK NotFoundError / unexpected exc)
+    - second make_call (fallback) returns ("proposal text", None, "mock_provider")
+    Assert: text == "proposal text", exactly 2 make_call invocations, no double usage.
+    """
+    import tempfile
+    from unittest.mock import call as mock_call
+    from engine.metabolism.propose import _invoke_llm, _OPUS_FALLBACK
+
+    call_count = [0]
+    FABLE_MODEL = "claude-fable-5-20251201"
+    OPUS_MODEL = _OPUS_FALLBACK
+    EXPECTED_TEXT = "proposal text from opus"
+
+    def fake_make_call(providers, call_fn, context=""):
+        call_count[0] += 1
+        # First call (fable): raise to trigger exception branch
+        if call_count[0] == 1:
+            raise RuntimeError("model_not_found: claude-fable-5-20251201")
+        # Second call (opus fallback): succeed
+        return (EXPECTED_TEXT, None, "mock_provider")
+
+    with patch("engine.metabolism.propose._get_deliberation_model", return_value=FABLE_MODEL), \
+         patch("engine.llm_auth.make_call", side_effect=fake_make_call), \
+         patch("engine.llm_auth.build_providers", return_value=[{"name": "mock", "cred": "x", "client": MagicMock(), "model": OPUS_MODEL}]):
+        text, provider, reason, usage = _invoke_llm(
+            context={"standouts": [], "market": "us", "lobe": "test"},
+            max_n=3,
+        )
+
+    assert text == EXPECTED_TEXT, f"Expected fallback text, got {text!r}"
+    assert call_count[0] == 2, f"Expected exactly 2 make_call invocations, got {call_count[0]}"
+    # No double usage record: usage should be from the fallback call only (empty since our fake doesn't populate _usage)
+    assert isinstance(usage, dict)
+
+
+def test_model_not_found_no_retry_when_already_opus():
+    """When active_model is already _OPUS_FALLBACK and make_call raises, no second
+    retry is attempted — returns (None, None, 'llm_error', {})."""
+    from engine.metabolism.propose import _invoke_llm, _OPUS_FALLBACK
+
+    call_count = [0]
+
+    def fake_make_call(providers, call_fn, context=""):
+        call_count[0] += 1
+        raise RuntimeError("always fails")
+
+    with patch("engine.metabolism.propose._get_deliberation_model", return_value=_OPUS_FALLBACK), \
+         patch("engine.llm_auth.make_call", side_effect=fake_make_call), \
+         patch("engine.llm_auth.build_providers", return_value=[{"name": "mock", "cred": "x", "client": MagicMock(), "model": _OPUS_FALLBACK}]):
+        text, provider, reason, usage = _invoke_llm(
+            context={"standouts": [], "market": "us", "lobe": "test"},
+            max_n=3,
+        )
+
+    assert text is None
+    assert reason == "llm_error"
+    # Only 1 call — no fallback retry because active_model == _OPUS_FALLBACK
+    assert call_count[0] == 1, f"Expected exactly 1 make_call invocation, got {call_count[0]}"
 
 
 def test_call_fn_3tuple_contract():

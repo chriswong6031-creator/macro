@@ -883,6 +883,7 @@ def _invoke_role_llm(
                     deepseek_model=fb_conf2.get("deepseek_model"),
                 )
                 if fb_prov2:
+                    _usage.clear()  # discard any partial usage from the failed call
                     text2, reason2, _prov2 = _la2.make_call(
                         fb_prov2, _do_call,
                         context=f"metabolism_adjudicate_{role}_fallback"

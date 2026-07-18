@@ -183,24 +183,11 @@ def _track_record(repo: Path) -> dict | None:
 def _fable_spend(repo: Path, cap: int) -> dict:
     """Today's deliberation token spend vs the daily cap.
 
-    Reads lib.ai_costs.summarize() and filters by:
-    - model containing 'fable' OR matching config llm_models.deliberation
-    - OR lane in the deliberation lane prefixes
+    Uses engine.llm_auth.deliberation_spend_today() (days=1 window) so the
+    panel and the gate always see the same truly today-scoped figure.
 
     Fail-soft: any error → spend unknown, returns a note.
     """
-    try:
-        import sys as _sys
-        import importlib as _il
-        _repo_str = str(repo)
-        if _repo_str not in _sys.path:
-            _sys.path.insert(0, _repo_str)
-        _ac = _il.import_module("lib.ai_costs")
-        summary = _ac.summarize(root=repo)
-    except Exception as exc:  # noqa: BLE001
-        log.debug("prophet.panel: ai_costs unavailable (%s)", exc)
-        return {"error": "ai_costs unavailable", "cap": cap}
-
     # Determine deliberation model ID from config
     try:
         from admin import config_store as _cs  # noqa: PLC0415
@@ -209,42 +196,28 @@ def _fable_spend(repo: Path, cap: int) -> dict:
     except Exception:  # noqa: BLE001
         delib_model = _DELIBERATION_MODEL_DEFAULT
 
-    # Sum today's tokens for deliberation model or deliberation lanes
-    today_tokens = 0
-    today_usd = 0.0
-    by_model = summary.get("by_model") or {}
-    by_lane  = summary.get("by_lane") or {}
+    # Use the shared helper so gate and panel can never diverge
+    try:
+        import sys as _sys  # noqa: PLC0415
+        _repo_str = str(repo)
+        if _repo_str not in _sys.path:
+            _sys.path.insert(0, _repo_str)
+        from engine import llm_auth as _la  # noqa: PLC0415
+        spend = _la.deliberation_spend_today(delib_model, root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("prophet.panel: deliberation_spend_today unavailable (%s)", exc)
+        return {"error": "spend helper unavailable", "cap": cap}
 
-    # Model-based: any model prefixed with delib_model OR containing "fable"
-    for model_key, bucket in by_model.items():
-        mk = str(model_key or "").lower()
-        if "fable" in mk or (delib_model and mk.startswith(delib_model.lower())):
-            today_tokens += (bucket.get("input_tokens") or 0) + (bucket.get("output_tokens") or 0)
-            today_usd    += float(bucket.get("usd") or 0.0)
-
-    # Lane-based: any deliberation lane (additive; deduplicated by recorder, not here)
-    for lane_key, bucket in by_lane.items():
-        lk = str(lane_key or "")
-        if any(lk.startswith(p) for p in _DELIBERATION_LANE_PREFIXES):
-            today_tokens += (bucket.get("input_tokens") or 0) + (bucket.get("output_tokens") or 0)
-            today_usd    += float(bucket.get("usd") or 0.0)
-
-    # Deduplicate: if the same call appears in both by_model and by_lane, we
-    # over-count here.  The conservative approach is to report them separately.
-    delib_model_bucket = {}
-    for model_key, bucket in by_model.items():
-        mk = str(model_key or "").lower()
-        if "fable" in mk or (delib_model and mk.startswith(delib_model.lower())):
-            delib_model_bucket = bucket
-            break
+    today_tokens = spend["tokens"]
+    today_usd = spend["usd"]
 
     return {
         "deliberation_model": delib_model,
-        "today_tokens_model": (delib_model_bucket.get("input_tokens") or 0) + (delib_model_bucket.get("output_tokens") or 0),
-        "today_usd_model": round(float(delib_model_bucket.get("usd") or 0.0), 6),
+        "today_tokens_model": today_tokens,
+        "today_usd_model": round(today_usd, 6),
         "cap": cap,
         "budget_pct": round(
-            min(100, 100 * ((delib_model_bucket.get("input_tokens") or 0) + (delib_model_bucket.get("output_tokens") or 0)) / max(1, cap)),
+            min(100, 100 * today_tokens / max(1, cap)),
             1,
         ),
     }

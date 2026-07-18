@@ -2746,7 +2746,7 @@ RENDER.prophet = async () => {
            <div class="kv"><span>Fill basis</span><b>${esc(blk.fill_basis || "—")}</b></div>
            <div class="kv"><span>Benchmark</span><b>${esc(blk.benchmark || "—")}</b></div>
            ${sb.win_rate != null ? `<div class="kv"><span>Win rate</span><b>${(sb.win_rate * 100).toFixed(1)}%</b></div>` : ""}
-           ${sb.n_matured != null ? `<div class="kv"><span>Matured picks</span><b>${sb.n_matured}</b></div>` : ""}
+           ${sb.n_matured != null ? `<div class="kv"><span>Matured picks</span><b>${Number(sb.n_matured)}</b></div>` : ""}
            ${gaps.length ? `<div class="note muted" style="margin-top:4px">${gaps.length} data gap${gaps.length > 1 ? "s" : ""}: ${esc(gaps.slice(0,2).join(", "))}${gaps.length > 2 ? "…" : ""}</div>` : ""}
            ${blk.maturity_state === "accruing" ? `<div class="note muted">ACCRUING — not enough matured picks yet</div>` : ""}
          </div>`;
@@ -2764,7 +2764,7 @@ RENDER.prophet = async () => {
          return `<tr>
            <td class="mono"><b>${esc(mk)}</b></td>
            <td class="sub">${ib.freshness_hours != null ? `${Number(ib.freshness_hours).toFixed(1)}h old` : "—"}</td>
-           <td class="r mono">${ib.data_gap_count != null ? ib.data_gap_count : "—"}</td>
+           <td class="r mono">${ib.data_gap_count != null ? Number(ib.data_gap_count) : "—"}</td>
            <td><span class="statpill ${ib.ok ? "s-ok" : "s-bad"}">${esc(ib.status || (ib.ok ? "ok" : "stale"))}</span></td>
          </tr>`;
        }).join("")}
@@ -2807,7 +2807,7 @@ RENDER.prophet = async () => {
           <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
             <b>${esc(p.market || "—")}</b>
             <span class="sub mono">${esc(p.as_of || "")}</span>
-            ${p.matured_n != null ? `<span class="statpill s-mut">${p.matured_n} matured</span>` : ""}
+            ${p.matured_n != null ? `<span class="statpill s-mut">${Number(p.matured_n)} matured</span>` : ""}
           </div>
           ${p.narrative_excerpt ? `<div class="note" style="margin-top:4px">${esc(p.narrative_excerpt)}${p.narrative_excerpt.length >= 200 ? "…" : ""}</div>` : ""}
         </div>`).join("")
@@ -2823,11 +2823,11 @@ RENDER.prophet = async () => {
       ${card("US fitness", `<div class="kv"><span>Lobe</span><b>${esc(fitUs.lobe || "site-us-standouts")}</b></div>
         <div class="kv"><span>Maturity</span><b>${esc(fitUs.maturity || "accruing")}</b></div>
         <div class="kv"><span>As of</span><b>${esc(fitUs.as_of || "—")}</b></div>
-        <div class="note muted">Last audit: ${esc((astUs.last_run_utc || "—").slice(0, 16).replace("T", " "))} · attributed ${astUs.rows_attributed_total || 0}</div>`)}
+        <div class="note muted">Last audit: ${esc((astUs.last_run_utc || "—").slice(0, 16).replace("T", " "))} · attributed ${Number(astUs.rows_attributed_total || 0)}</div>`)}
       ${card("CN fitness", `<div class="kv"><span>Lobe</span><b>${esc(fitCn.lobe || "site-china-standouts")}</b></div>
         <div class="kv"><span>Maturity</span><b>${esc(fitCn.maturity || "accruing")}</b></div>
         <div class="kv"><span>As of</span><b>${esc(fitCn.as_of || "—")}</b></div>
-        <div class="note muted">Last audit: ${esc((astCn.last_run_utc || "—").slice(0, 16).replace("T", " "))} · attributed ${astCn.rows_attributed_total || 0}</div>`)}
+        <div class="note muted">Last audit: ${esc((astCn.last_run_utc || "—").slice(0, 16).replace("T", " "))} · attributed ${Number(astCn.rows_attributed_total || 0)}</div>`)}
     </div>`;
 
   /* --- Track record summary --- */
@@ -2836,7 +2836,7 @@ RENDER.prophet = async () => {
        <div class="card">
          <div class="kv"><span>As of</span><b>${esc(tr.as_of || "—")}</b></div>
          <div class="kv"><span>Horizons</span><b>${esc((tr.horizons || []).join(", ") || "—")}</b></div>
-         ${tr.h21_effective_n != null ? `<div class="kv"><span>21d effective n</span><b>${tr.h21_effective_n}</b></div>` : ""}
+         ${tr.h21_effective_n != null ? `<div class="kv"><span>21d effective n</span><b>${Number(tr.h21_effective_n)}</b></div>` : ""}
          ${tr.h21_win_rate != null ? `<div class="kv"><span>21d win rate</span><b>${(tr.h21_win_rate * 100).toFixed(1)}%</b></div>` : ""}
          ${tr.accruing ? `<div class="note muted">All horizons accruing — effective-N floors not yet met.</div>` : ""}
        </div>`
@@ -2849,7 +2849,7 @@ RENDER.prophet = async () => {
     <div class="note muted" style="margin-top:4px">Est. cost today: $${Number(sp.today_usd_model || 0).toFixed(4)} &mdash; cap ${(sp.cap || 0).toLocaleString()} tokens/day (config.yml <code>prophet.deliberation_daily_token_cap</code>)</div>`;
 
   /* --- Settings form --- */
-  const numInputP = (key, val, lo, hi) => `<input type="number" data-prophset="${key}" data-prev="${val}" min="${lo}" max="${hi}" value="${val != null ? val : ''}" style="width:120px">`;
+  const numInputP = (key, val, lo, hi) => `<input type="number" data-prophset="${esc(key)}" data-prev="${esc(String(val != null ? val : ''))}" min="${Number(lo)}" max="${Number(hi)}" value="${esc(String(val != null ? val : ''))}" style="width:120px">`;
   const boolSwitchP = (key, val) => `<label class="switch"><input type="checkbox" data-prophsetb="${key}" ${val ? "checked" : ""}><span class="slider"></span></label>`;
   const settingsHtml = `<div class="section">Settings <span class="cnt">config.yml &middot; prophet</span></div>
     <div class="row">${boolSwitchP("fable_enabled", cfg.fable_enabled)}
