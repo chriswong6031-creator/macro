@@ -39,6 +39,7 @@ Drop order for macro_slice (lowest priority first):
    5. factor_weather
    4. cross_asset_flows
    3. liquidity_plumbing
+   2d. market_structure  (MSP-W3 display context; absent = drops cleanly)
    2c. special_situations  (SS-NW-W1; absent = drops cleanly)
    2b. fx_dollar  (FX/dollar transmission context; absent = drops cleanly)
    2. contradictions
@@ -81,6 +82,7 @@ _SLA_HOURS: dict[str, float] = {
     "mastermind_context":       30.0,
     "fx_dollar":                30.0,
     "theme_rotation":           28.0,
+    "market_structure":         30.0,  # MSP-W3 SLA (market-structure-latest cadence: daily-engine)
 }
 
 _DEFAULT_SLA_HOURS: float = 30.0
@@ -1026,6 +1028,70 @@ def _block_theme_rotation(ws: dict | None) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Market-structure context block (reads world_state.market_structure)
+# ---------------------------------------------------------------------------
+
+def _block_market_structure(ws: dict | None) -> dict | None:
+    """Block market_structure: MSP-W3 dealer/flow/dispersion context from world_state.market_structure.
+
+    Budget: ~0.5 KB.  Returns None when the block is entirely null/absent so
+    it drops cleanly from macro_slice (absent-file / pre-MSP-W1 build).
+
+    MSP-R3 FUSION LAW: no fused composite is emitted.  VC and CTA are carried
+    separately; only the categorical agreement enum appears.
+    Deterministic numeric text only — engine-computed re-projection.  No LLM content.
+    """
+    if ws is None:
+        return None
+    ms = ws.get("market_structure")
+    if not ms or not isinstance(ms, dict) or ms.get("absent"):
+        return None
+
+    g   = (ms.get("gamma") or {}) if isinstance(ms.get("gamma"), dict) else {}
+    sys = (ms.get("systematic") or {}) if isinstance(ms.get("systematic"), dict) else {}
+    v   = (ms.get("vol") or {}) if isinstance(ms.get("vol"), dict) else {}
+    d   = (ms.get("dispersion") or {}) if isinstance(ms.get("dispersion"), dict) else {}
+    asof = ms.get("asof")
+
+    gamma_regime = g.get("regime")
+    agreement    = sys.get("agreement")
+    cor1m_regime = d.get("cor1m_regime")
+    state_changes = ms.get("state_changes") or []
+
+    # Drop cleanly when all key fields are null/absent
+    if all(v is None for v in [gamma_regime, agreement, cor1m_regime]) \
+            and not state_changes:
+        return None
+
+    return {
+        "display_only":       True,
+        "is_context_only":    True,
+        "_tape_family":       "market_structure",
+        "_lead_lag":          "coincident",
+        "as_of":              asof,
+        "stale":              _is_stale(asof, "market_structure"),
+        # gamma: plain-word regime + distance to flip + days in regime
+        "gamma_regime":       gamma_regime,
+        "dist_to_flip_pct":   g.get("dist_to_flip_pct"),
+        "days_in_regime":     g.get("days_in_regime"),
+        # machine money: categorical agreement (VC and CTA separate per MSP-R3)
+        "vc_state":           sys.get("vc_state"),
+        "cta_state":          sys.get("cta_state"),
+        "agreement":          agreement,
+        # vol: realized-vol regime
+        "rv_cross_state":     v.get("rv_cross_state"),
+        # dispersion: correlation regime
+        "cor1m_regime":       cor1m_regime,
+        # state changes (≤3 compact notes)
+        "state_change_notes": state_changes[:3] if isinstance(state_changes, list) else None,
+        "honesty_note": (
+            "context only — gamma/VC/CTA are model estimates, not observed books; "
+            "fusion into any score is illegal (MSP-R3)"
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
 # macro_slice
 # ---------------------------------------------------------------------------
 
@@ -1043,6 +1109,7 @@ _MACRO_DROP_ORDER = [
     "factor_weather",    # 6
     "cross_asset_flows", # 3
     "liquidity_plumbing",# 4
+    "market_structure",  # 2d — MSP-W3 market-structure context block (drops before special_situations)
     "special_situations", # 2c — SS-NW-W1 event context block (drops before fx_dollar)
     "fx_dollar",         # 2b — FX/dollar transmission context block
     "contradictions",    # 2
@@ -1140,6 +1207,10 @@ def _build_macro_slice(root: Path) -> dict:
     _theme_rot = _block_theme_rotation(ws)
     if _theme_rot is not None:
         result["theme_rotation"] = _theme_rot
+    # MSP-W3 market-structure context block — None when absent/pre-MSP-W1, drops cleanly
+    _ms = _block_market_structure(ws)
+    if _ms is not None:
+        result["market_structure"] = _ms
 
     # Enforce budget
     _enforce_budget(result, _MACRO_CAP, _MACRO_DROP_ORDER)

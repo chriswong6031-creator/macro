@@ -160,6 +160,19 @@ _RR_MIN_N = 5
 # How many top scares to surface per market (by alert count)
 _RR_TOP_SCARES_N = 2
 
+# Market-structure standing law (MSP-W3, MSP-R2/R3 — display context only)
+# Embedding this in the lobe ensures every consumer that loads the lobe also loads the law.
+_MARKET_STRUCTURE_STANDING_LAW = (
+    "market_structure is DISPLAY/CONTEXT ONLY (MSP-R1). "
+    "Positioning keys (vc_*, cta_*, agreement) are model estimates of mechanical behavior "
+    "(vol-control proxies, CTA trend models) — NOT observed dealer or fund books. "
+    "FUSION LAW (MSP-R2/R3, Signal Commons restated): fusing gamma, VC, or CTA keys into "
+    "any score, regime verdict, rank, gate, or allocation is ILLEGAL. "
+    "VC and CTA are context only — always shown side-by-side, never blended into a composite. "
+    "No LLM may originate, escalate, or de-escalate from these keys. "
+    "Nothing here may gate, rank, size, or escalate any authority surface."
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -1322,6 +1335,65 @@ def _summarize_theme_rotation(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_market_structure(repo: Path) -> tuple[dict, str | None]:
+    """Distil world_state.market_structure into the market_structure lobe.
+
+    Source: data/neuralweb/world_state.json (market_structure sub-block, composed
+    by world_state._compose_market_structure from data/market_structure/latest.json).
+    All fields are engine-originated, is_context_only=True, display_only=True.
+    LLM consumers read this — they never originate or escalate from it.
+    Fail-soft: absent world_state or absent market_structure sub-block → empty lobe
+    with gap note.
+
+    Standing law (_MARKET_STRUCTURE_STANDING_LAW — MSP-R2/R3):
+    - Positioning keys (vc_*, cta_*, agreement) are model estimates, NOT observed books.
+    - Fusion into any score/regime verdict is ILLEGAL (Signal Commons restated).
+    - 100% deterministic re-projection; no LLM-originated content.
+    - Nothing here may gate, rank, size, or escalate any authority surface.
+    - The word 'validated' is banned from all emitted text.
+    """
+    ws_path = repo / "data" / "neuralweb" / "world_state.json"
+    ws = _read_json(ws_path)
+    if ws is None:
+        return {}, "data/neuralweb/world_state.json absent or unreadable"
+
+    ms = (ws.get("market_structure") or {}) if isinstance(ws, dict) else {}
+    if not ms or ms.get("absent"):
+        return {}, "world_state.market_structure absent (pre-MSP-W1 build)"
+
+    g   = (ms.get("gamma") or {}) if isinstance(ms.get("gamma"), dict) else {}
+    sys = (ms.get("systematic") or {}) if isinstance(ms.get("systematic"), dict) else {}
+    v   = (ms.get("vol") or {}) if isinstance(ms.get("vol"), dict) else {}
+    d   = (ms.get("dispersion") or {}) if isinstance(ms.get("dispersion"), dict) else {}
+
+    lobe: dict = {
+        "is_context_only":    True,
+        "display_only":       True,
+        "asof":               ms.get("asof"),
+        # gamma sub-block (compact)
+        "gamma_regime":       g.get("regime"),
+        "net_gex_bn":         g.get("net_gex_bn"),
+        "net_gex_pctile":     g.get("net_gex_pctile"),
+        "dist_to_flip_pct":   g.get("dist_to_flip_pct"),
+        "days_in_regime":     g.get("days_in_regime"),
+        # systematic sub-block (MSP-R3: VC and CTA separate, no fused composite)
+        "vc_state":           sys.get("vc_state"),
+        "vc_alloc_bn":        sys.get("vc_alloc_bn"),
+        "cta_state":          sys.get("cta_state"),
+        "cta_z":              sys.get("cta_z"),
+        "agreement":          sys.get("agreement"),
+        # vol sub-block
+        "rv_cross_state":     v.get("rv_cross_state"),
+        # dispersion sub-block
+        "cor1m_regime":       d.get("cor1m_regime"),
+        "cor1m_pctile_2y":    d.get("cor1m_pctile_2y"),
+        # standing law (embedded so every consumer carries it)
+        "standing_law":       _MARKET_STRUCTURE_STANDING_LAW,
+        "honesty_note":       "context only — model estimates, never observed books or signal inputs",
+    }
+    return lobe, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -1341,6 +1413,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "fx_dollar": _summarize_fx_dollar,  # FX/dollar transmission context lobe
     "special_sits": _summarize_special_sits,  # SS-NW-W1 special-situations event context lobe
     "theme_rotation": _summarize_theme_rotation,  # theme_context.v1 NW integration
+    "market_structure": _summarize_market_structure,  # MSP-W3 market-structure context lobe
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -1361,6 +1434,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "fx_dollar": ["world-state"],  # reads world_state.fx_dollar (from data/forex/latest.json)
     "special_sits": ["special-sits-context-latest"],  # SS-NW-W1: reads context artifact directly
     "theme_rotation": ["theme-context-latest"],  # reads world_state.theme_rotation
+    "market_structure": ["market-structure-latest"],  # MSP-W3: reads world_state.market_structure
 }
 
 

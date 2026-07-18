@@ -35,6 +35,7 @@ DESIGN (adjudicated W1 PR1)
 R5 macro lobes (PR-B — display_only=True; all fail-open):
 * rates_transmission — data/transmission/latest.json
 * fx_dollar          — data/forex/latest.json
+* market_structure   — data/market_structure/latest.json (MSP-W3)
 * rates_credit       — data/bonds/bond_health.json
 * global_regimes     — data/{china,hk,canada}_regime/latest.json + regime block
 * commodity_context  — data/commodity/latest.json
@@ -1855,6 +1856,106 @@ def _compose_special_situations(root: "Path | str | None" = None) -> "dict | Non
     except Exception as exc:  # noqa: BLE001
         log.warning("world_state: special_situations compose failed — %s", exc)
         return None
+
+
+def _compose_market_structure(root: "Path | str | None" = None) -> dict:
+    """Compose market_structure lobe from data/market_structure/latest.json (MSP-W3).
+
+    Display-only context feed (market_structure_context.v1). Projects compact
+    context keys from four sub-blocks: gamma, systematic, vol, dispersion.
+    History arrays (up to 500 rows each) are EXCLUDED — compact context only.
+
+    Fail-open contract: absent/corrupt file → {"absent": True, ...} honest-null
+    block; caller always gets a dict, never None or raises.
+
+    MSP-R3 LAW: no fused positioning key is emitted (no combined_z, no spi,
+    no composite_z, no blended score). VC and CTA are projected separately;
+    only the categorical agreement enum is included.
+    MSP-R5 LAW: does not recompute radar legs — re-projects stored values only.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "market_structure" / "latest.json"
+
+    null_out: dict = {
+        "absent": True,
+        "asof": None,
+        "gamma": None,
+        "systematic": None,
+        "vol": None,
+        "dispersion": None,
+        "state_changes": None,
+        "display_only": True,
+        "is_context_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        g_raw   = raw.get("gamma") or {}
+        sys_raw = raw.get("systematic") or {}
+        v_raw   = raw.get("vol") or {}
+        d_raw   = raw.get("dispersion") or {}
+        sc_raw  = raw.get("state_changes") or {}
+
+        vc_raw  = sys_raw.get("vc") or {}
+        cta_raw = sys_raw.get("cta") or {}
+
+        gamma = {
+            "regime":          _clean(g_raw.get("regime")),
+            "net_gex_bn":      _clean(g_raw.get("net_gex_bn")),
+            "net_gex_pctile":  _clean(g_raw.get("net_gex_pctile")),
+            "dist_to_flip_pct": _clean(g_raw.get("dist_to_flip_pct")),
+            "days_in_regime":  _clean(g_raw.get("days_in_regime")),
+        }
+
+        # MSP-R3: VC and CTA are projected separately; no fused composite
+        systematic = {
+            "vc_state":     _clean(vc_raw.get("state")),
+            "vc_alloc_bn":  _clean(vc_raw.get("alloc_bn")),
+            "vc_flow_5d_bn": _clean(vc_raw.get("flow_5d_bn")),
+            "cta_state":    _clean(cta_raw.get("state")),
+            "cta_z":        _clean(cta_raw.get("z")),
+            "cta_flow_5d":  _clean(cta_raw.get("flow_5d")),
+            "agreement":    _clean(sys_raw.get("agreement")),
+        }
+
+        vol = {
+            "rv21":           _clean(v_raw.get("rv21")),
+            "rv63":           _clean(v_raw.get("rv63")),
+            "rv_cross_state": _clean(v_raw.get("rv_cross_state")),
+            "vix_curve_slope": _clean(v_raw.get("vix_curve_slope")),
+        }
+
+        dispersion = {
+            "cor1m":          _clean(d_raw.get("cor1m")),
+            "cor1m_regime":   _clean(d_raw.get("cor1m_regime")),
+            "cor1m_pctile_2y": _clean(d_raw.get("cor1m_pctile_2y")),
+        }
+
+        # state_changes: compact list of recent diffs (same-day-idempotent pattern)
+        sc_items_raw = sc_raw.get("items") or []
+        state_changes: list[dict] | None = None
+        if isinstance(sc_items_raw, list) and sc_items_raw:
+            state_changes = [
+                {k: _clean(v) for k, v in item.items()}
+                for item in sc_items_raw[:6]
+                if isinstance(item, dict)
+            ]
+
+        return _display_only({
+            "asof":          _clean(raw.get("asof")),
+            "gamma":         gamma,
+            "systematic":    systematic,
+            "vol":           vol,
+            "dispersion":    dispersion,
+            "state_changes": state_changes,
+            "is_context_only": True,
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("market_structure: compose failed — %s", exc)
+        return null_out
 
 
 def _compose_intl_risk(root: "Path | str | None" = None) -> dict:
@@ -3823,6 +3924,21 @@ def build_world_state(
     # theme_context.json is optional (produced by build_baskets); absence is expected
     # until theme_context.v1 producer is wired. Matches the intl_risk pattern.
 
+    # MSP-W3: market_structure context lobe (display-only, fail-open)
+    _ms_path = data_dir / "market_structure" / "latest.json"
+    try:
+        market_structure_block: dict = _compose_market_structure(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: market_structure lobe failed — %s", exc)
+        gaps.append(f"market_structure: {exc}")
+        market_structure_block = {"absent": True, "asof": None, "gamma": None,
+                                  "systematic": None, "vol": None, "dispersion": None,
+                                  "state_changes": None, "display_only": True,
+                                  "is_context_only": True}
+    sources[str(_ms_path.relative_to(repo))] = (market_structure_block or {}).get("asof")
+    # No gap appended when file absent: artifact is optional until MSP-W1 producer lands.
+    # The honest-null block (absent=True) communicates absence; matches intl_risk pattern.
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "verdict": verdict_block,
@@ -3866,6 +3982,7 @@ def build_world_state(
         "contagion_regime": contagion_regime_block,  # CSP-W1 display-only lobe
         "special_situations": special_situations_block,  # SS-NW-W1 display-only lobe (None until first nightly run)
         "theme_rotation": theme_rotation_block,  # theme_context.v1 NW integration (display-only)
+        "market_structure": market_structure_block,  # MSP-W3 market-structure context lobe (display-only)
         "gaps": gaps,
         "sources": sources,
     }
