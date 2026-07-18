@@ -1194,8 +1194,10 @@ checks:
   - law_id: governance.model_routing
     summary: >
       Agent/Task spawns must name an explicit model or use a pinned agent type
-      (builder/reviewer). Fable spawns are banned. Workflow scripts whose agent()
-      calls carry no model:/agentType: routing are denied.
+      (builder/reviewer). Fable runs only via orchestrator+FABLE-WHY (spawns) or
+      a script-level FABLE-WHY line (workflow stages — operator re-enable
+      2026-07-18 'fable ultracode'). Workflow scripts whose agent() calls carry
+      no model:/agentType: routing are denied.
       Law source: CLAUDE.md §Model routing, enforcement via PreToolUse hook.
     source_ref:
       - .claude/hooks/model_routing_guard.py

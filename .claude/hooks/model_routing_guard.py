@@ -3,9 +3,10 @@
 
 Deny only the clear violations (missing model on default agent types, fable
 spawns outside the orchestrator+FABLE-WHY gate, fable-pinned agent frontmatter
-outside that gate, workflow scripts with un-routed or fable-routed agent()
-calls). Fail OPEN on anything ambiguous or on internal error — a guard that
-bricks the harness is worse than a missed warning.
+outside that gate, workflow scripts with un-routed agent() calls, and
+fable-routed workflow stages missing a script-level FABLE-WHY line). Fail
+OPEN on anything ambiguous or on internal error — a guard that bricks the
+harness is worse than a missed warning.
 """
 import json
 import os
@@ -142,18 +143,31 @@ def main():
                     allow()
             else:
                 allow()  # predefined {name: ...} workflow — vetted elsewhere
-        if re.search(r"model\s*:\s*['\"][^'\"]*fable[^'\"]*['\"]", script):
-            deny(
-                "Blocked: workflow script routes an agent to fable — workflows "
-                "are fable-free; fable-grade synthesis happens in the main "
-                "loop after the workflow returns. " + RULE
-            )
-        if re.search(r"agentType\s*:\s*['\"]orchestrator['\"]", script):
-            deny(
-                "Blocked: workflow script uses agentType 'orchestrator' — the "
-                "fable exception applies to single Agent spawns only, never "
-                "workflow stages. " + RULE
-            )
+        # Fable in workflows is GATED, not banned (operator re-enable
+        # 2026-07-18, "reenable fable ultracode"): a script may route stages
+        # to fable ONLY when it carries the same FABLE-WHY justification line
+        # the Agent-spawn gate requires. The line is the audit trail — grep
+        # for drift. Reserve fable stages for judge/synthesis work, never
+        # bulk xN mechanical fan-outs.
+        script_has_fable_why = bool(FABLE_WHY_RE.search(script))
+        if re.search(r"model\s*:\s*['\"`][^'\"`]*fable[^'\"`]*['\"`]", script, re.I):
+            if not script_has_fable_why:
+                deny(
+                    "Blocked: workflow script routes an agent to fable without "
+                    "a script-level FABLE-WHY line (category + specific "
+                    "reason, >=20 chars). Add \"// FABLE-WHY: "
+                    "<orchestration|brainstorm|creative>: <reason>\" to the "
+                    "script, and reserve fable for judge/synthesis stages — "
+                    "never bulk xN mechanical fan-outs. " + RULE
+                )
+        if re.search(r"agentType\s*:\s*['\"`]orchestrator['\"`]", script, re.I):
+            if not script_has_fable_why:
+                deny(
+                    "Blocked: workflow script uses agentType 'orchestrator' "
+                    "without a script-level FABLE-WHY line. Add the "
+                    "justification line or route the stage to sonnet/opus. "
+                    + RULE
+                )
         if "agent(" in script and "model" not in script and "agentType" not in script:
             deny(
                 "Blocked: workflow script calls agent() with no model:/agentType "
