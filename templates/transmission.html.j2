@@ -11,8 +11,19 @@
 {%- elif verdict == 'INVERTED' -%}<span class="lvg vg-inverted" title="measured the opposite way">⤫</span>
 {%- else -%}<span class="lvg vg-context" title="weak / context only">·</span>{%- endif -%}
 {%- endmacro %}
+{# Chain asset chip — plain label + verdict glyph at rest; the measured coefficient
+   lives in the hover receipt (EN-only title=, per the i18n title law). #}
 {% macro effchip(cell) -%}
-<span class="achip {{ 'ac-tail' if cell.effect=='tailwind' else 'ac-head' if cell.effect=='headwind' else 'ac-neut' }}">{{ cell.label }}{% if cell.ic is not none %} <b>{{ '%+.2f'|format(cell.ic) }}</b>{% endif %}{{ vg(cell.verdict) }}</span>
+<span class="achip {{ 'ac-tail' if cell.effect=='tailwind' else 'ac-head' if cell.effect=='headwind' else 'ac-neut' }}"{% if cell.ic is not none %} title="measured effect {{ '%+.2f'|format(cell.ic) }} ({{ cell.verdict|lower }})"{% endif %}>{{ cell.label }}{{ vg(cell.verdict) }}</span>
+{%- endmacro %}
+{# The signature flow-line: a current travelling through a wire. Shape encodes
+   direction (up / down / flat); hue encodes the channel; reduced-motion → static. #}
+{% macro flowline(dirkey, ch) -%}
+{% set paths = {'up':'M0,36 C60,36 95,31 135,24 S225,10 300,7','down':'M0,7 C60,7 95,12 135,20 S225,33 300,36','flat':'M0,22 C50,22 75,17 105,22 S155,27 185,22 235,17 265,22 300,22'} %}
+<svg class="txflow" viewBox="0 0 300 44" preserveAspectRatio="none" aria-hidden="true">
+  <path class="txflow-base" d="{{ paths[dirkey] }}" pathLength="100"/>
+  <path class="txflow-pulse ch-{{ ch }}" d="{{ paths[dirkey] }}" pathLength="100"/>
+</svg>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -21,15 +32,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% include "_interfonts.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Rate & Inflation Transmission — {{ as_of }}</title>
-{% set seo_title = 'Rate & Inflation Transmission | Mastermind' %}{% set seo_desc = 'How interest rates and inflation drive every asset class — headwinds, tailwinds, and regime-aware transmission reads.' %}{% set seo_path = 'transmission.html' %}
+<title>Transmission — {{ as_of }}</title>
+{% set seo_title = 'Transmission — Rates, Inflation & the Dollar | Mastermind' %}{% set seo_desc = 'The three forces that move every asset — interest rates, inflation and the dollar — read in plain words: what each is doing, who benefits, who gets hurt, and what changed.' %}{% set seo_path = 'transmission.html' %}
 {% include "_seo_head.html.j2" %}
 <style>
 :root{
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
   --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}}; --green:{{C.green}}; --teal:{{C.teal}};
   --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+  /* channel identity hues — every element belonging to a channel wears its hue */
+  --ch-rates:#4559DC; --ch-infl:#B45309; --ch-usd:#0F766E;
 }
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;
+  --ch-rates:#8b96f8;--ch-infl:#fbbf24;--ch-usd:#2dd4bf}
 *{box-sizing:border-box}
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
@@ -37,85 +52,157 @@ html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsof
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:var(--blue);text-decoration:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
-.grid{display:grid;gap:18px}
-.cols-2{grid-template-columns:1fr 1fr}.cols-3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
-.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:30px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:6px}
+
+/* ---------- hero ---------- */
+.tx-hero{padding:26px 0 4px;animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.tx-brand{font-weight:800;font-size:26px;color:var(--ink);letter-spacing:-.02em}
+.tx-brand .gn{background:linear-gradient(92deg,var(--ch-rates),var(--ch-infl) 55%,var(--ch-usd));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tx-sub{color:var(--muted);font-size:14px;margin:4px 0 0}
+.tx-verdict{font-size:clamp(21px,3.2vw,30px);font-weight:800;color:var(--ink);letter-spacing:-.022em;line-height:1.28;margin:18px 0 6px;max-width:900px}
+.tx-asof{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:4px}
+.tx-asof .txdot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:txBreathe 2.8s ease-in-out infinite}
+
+/* ---------- what changed ---------- */
+.tx-changes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:18px 0 4px}
+.tx-changes .tc-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.tc-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;border:1px solid var(--grid);background:var(--card);font-size:12.5px;font-weight:600;color:var(--ink)}
+.tc-chip .txdot{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:txBreathe 2.2s ease-in-out infinite;flex:none}
+.tc-chip.calm .txdot{background:var(--green)}
+.tc-chip.calm{color:var(--muted);font-weight:500}
+
+/* ---------- channel rail ---------- */
+.tx-rail{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px}
+@media(max-width:940px){.tx-rail{grid-template-columns:1fr}}
+.tx-ch{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px 22px 18px;overflow:hidden;
+  transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease;animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.tx-ch:nth-child(2){animation-delay:.06s}.tx-ch:nth-child(3){animation-delay:.12s}
+.tx-ch:hover{transform:translateY(-2px);box-shadow:0 10px 28px -14px rgba(9,17,40,.28)}
+.tx-ch::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--chc)}
+.tx-ch.ch-rates{--chc:var(--ch-rates)}.tx-ch.ch-infl{--chc:var(--ch-infl)}.tx-ch.ch-usd{--chc:var(--ch-usd)}
+.tx-ch .ch-eyebrow{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--chc)}
+.tx-ch .ch-state{font-size:29px;font-weight:800;letter-spacing:-.028em;color:var(--ink);line-height:1.12;margin:10px 0 2px}
+.tx-ch .ch-dir{font-size:12.5px;color:var(--muted);font-weight:600}
+.txflow{display:block;width:100%;height:44px;margin:10px 0 6px}
+.txflow-base{fill:none;stroke:var(--grid);stroke-width:2}
+.txflow-pulse{fill:none;stroke:var(--chc,var(--blue));stroke-width:2.4;stroke-linecap:round;stroke-dasharray:16 84;stroke-dashoffset:100;animation:txFlow 3.6s linear infinite;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--chc,var(--blue)) 55%,transparent))}
+.txflow-pulse.ch-rates{--chc:var(--ch-rates)}.txflow-pulse.ch-infl{--chc:var(--ch-infl)}.txflow-pulse.ch-usd{--chc:var(--ch-usd)}
+.ch-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 2px}
+@media(max-width:420px){.ch-facts{grid-template-columns:1fr 1fr}}
+.chf .chf-l{font-size:11px;color:var(--muted);line-height:1.3}
+.chf .chf-v{font-size:17px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;margin:1px 0}
+.chf .chf-m{font-size:11px;color:var(--faint);line-height:1.35}
+.ch-extra{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.5}
+.ch-extra b{color:var(--ink)}
+.ch-dots{display:inline-flex;gap:4px;margin-right:7px;vertical-align:middle}
+.ch-dots i{width:8px;height:8px;border-radius:50%;background:var(--grid);display:inline-block}
+.ch-dots i.on{background:var(--red)}
+.ch-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--grid)}
+.ch-stance{display:inline-block;padding:5px 13px;border-radius:999px;font-size:12.5px;font-weight:700;
+  background:color-mix(in srgb,var(--chc) 11%,var(--card));color:var(--chc);border:1px solid color-mix(in srgb,var(--chc) 30%,var(--grid))}
+.ch-more{font-size:12px;color:var(--muted);white-space:nowrap}
+.ch-more:hover{color:var(--blue)}
+.ch-minichips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.mchip{display:inline-block;padding:2px 9px;border-radius:7px;font-size:11.5px;font-weight:600}
+.mchip.down{background:rgba(211,11,11,.09);color:var(--red)}
+.mchip.up{background:rgba(26,127,67,.11);color:var(--green)}
+/* the ? help tip — CSS-only bilingual popover (Tier-2 home for mechanics) */
+.txq{position:relative;display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;
+  border:1px solid var(--grid);color:var(--muted);font-size:11px;font-weight:700;cursor:help;flex:none}
+.txq .txq-tip{display:none;position:absolute;top:22px;right:-8px;z-index:30;width:250px;padding:10px 12px;border-radius:11px;
+  background:var(--card);border:1px solid var(--grid);box-shadow:0 12px 30px -12px rgba(9,17,40,.35);
+  font-size:12px;font-weight:500;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0}
+.txq:hover .txq-tip,.txq:focus .txq-tip{display:block}
+
+/* ---------- pressure map ---------- */
+.sec-head{display:flex;align-items:baseline;gap:10px;font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;margin:34px 0 4px}
+.sec-sub{font-size:13px;color:var(--muted);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
-.brand .gn{color:var(--blue)}
-.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
-.sub{font-size:13px;color:var(--muted)}.faint{color:var(--faint)}
-.state-val{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1;margin:4px 0 6px}
-.state-val small{font-size:15px;color:var(--muted);font-weight:700}
-.band-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12.5px;font-weight:700;color:#fff;letter-spacing:.01em;margin:2px 0}
-.kpis{display:flex;gap:14px 20px;flex-wrap:wrap;margin-top:14px}
-.kpi{font-size:12px;color:var(--muted)}.kpi b{display:block;font-size:16px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
-.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#eef1f6;color:var(--ink);margin:2px 4px 2px 0}
-html[data-theme="dark"] .pill{background:#222732}
-.flag{display:inline-block;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:10px;line-height:1.4}
-.flag.warn{background:rgba(245,173,66,.16);color:#9a6a10}
-.flag.alarm{background:rgba(211,11,11,.13);color:var(--red)}
-.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
-.flag.ok{background:rgba(26,127,67,.12);color:var(--green)}
-.note{font-size:13px;color:var(--muted);line-height:1.6}.note b{color:var(--ink)}
-.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
-.lvg{margin-left:4px;font-weight:800;font-size:11px;cursor:help}
-.vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
-/* per-asset headwind/tailwind bars */
-.tbar{display:grid;grid-template-columns:150px 1fr 58px;align-items:center;gap:10px;font-size:12.5px;padding:5px 0}
-.tbar .tname{color:var(--text);font-weight:600}
-.tbar .ttrack{position:relative;height:9px;background:#eef1f6;border-radius:5px}
-html[data-theme="dark"] .tbar .ttrack{background:#222732}
-.tbar .tmid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.5}
-.tbar .tfill{position:absolute;top:0;bottom:0;border-radius:5px}
-.tbar .tfill.head{right:50%;background:var(--red)}
-.tbar .tfill.tail{left:50%;background:var(--green)}
-.tbar .tval{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
-.tdrv{font-size:11px;color:var(--faint);margin:1px 0 0 150px}
-/* chain cascade */
-.chain{margin-bottom:16px}
-.chain.dim{opacity:.55}
-.chain-head{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px}
-.chain-state{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}
+.pm-row{display:grid;grid-template-columns:150px 1fr 56px;align-items:center;gap:12px;padding:7px 0}
+@media(max-width:560px){.pm-row{grid-template-columns:104px 1fr 48px}}
+.pm-row .pm-name{font-size:12.5px;font-weight:600;color:var(--text)}
+.pm-track{position:relative;height:12px;background:color-mix(in srgb,var(--grid) 55%,var(--card));border-radius:6px}
+.pm-track .pm-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--faint);opacity:.55}
+.pm-fill{position:absolute;top:0;bottom:0;border-radius:6px;animation:txGrow .8s cubic-bezier(.2,.7,.3,1) both}
+.pm-fill.neg{right:50%;background:linear-gradient(270deg,color-mix(in srgb,var(--red) 72%,transparent),var(--red));transform-origin:right}
+.pm-fill.pos{left:50%;background:linear-gradient(90deg,color-mix(in srgb,var(--green) 72%,transparent),var(--green));transform-origin:left}
+.pm-val{text-align:right;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.pm-val.neg{color:var(--red)}.pm-val.pos{color:var(--green)}
+.pm-axis{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:2px 0 8px}
+.pm-axis .ax-l{color:var(--red)}.pm-axis .ax-r{color:var(--green)}
+.pm-foot{font-size:12px;color:var(--faint);margin-top:10px}
+
+/* ---------- chains ---------- */
+.chain{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px 22px;margin-bottom:14px;position:relative;overflow:hidden}
+.chain.live::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--blue)}
+.chain-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.chain-state{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
 .chain-state.on{background:rgba(40,95,255,.12);color:var(--blue)}
-.chain-state.off{background:#eef1f6;color:var(--faint)}
-html[data-theme="dark"] .chain-state.off{background:#222732}
-.order{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--grid)}
-.order:last-child{border-bottom:none}
-.order .onum{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+.chain-state.on i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-right:5px;animation:txBreathe 2s ease-in-out infinite}
+.order{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:11px 0;position:relative}
+.order+.order{border-top:1px dashed var(--grid)}
+.order .onum{width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--blue) 14%,var(--card));border:1px solid color-mix(in srgb,var(--blue) 35%,var(--grid));color:var(--blue);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
 .order .otext{font-size:13.5px;color:var(--text);line-height:1.5}
 .order .ocells{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
-.achip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:600;background:#eef1f6;color:var(--text)}
-html[data-theme="dark"] .achip{background:#222732}
-.achip.ac-head{background:rgba(211,11,11,.10);color:var(--red)}
-.achip.ac-tail{background:rgba(26,127,67,.12);color:var(--green)}
-.achip b{font-variant-numeric:tabular-nums}
-/* scenario */
-.scen{border:1px solid var(--grid);border-radius:13px;padding:15px;margin-bottom:14px}
-.scen h3{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--ink)}
+.achip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:11.5px;font-weight:600;background:color-mix(in srgb,var(--grid) 55%,var(--card));color:var(--text);cursor:default}
+.achip.ac-head{background:rgba(211,11,11,.09);color:var(--red)}
+.achip.ac-tail{background:rgba(26,127,67,.11);color:var(--green)}
+.lvg{margin-left:2px;font-weight:800;font-size:11px;cursor:help}
+.vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
+.chain-quiet{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:8px 22px;margin-bottom:14px}
+.cq-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;font-size:13.5px;color:var(--muted)}
+.cq-row+.cq-row{border-top:1px solid var(--grid)}
+.cq-row b{color:var(--text);font-weight:600}
+.cq-tag{font-size:11px;font-weight:700;color:var(--faint);padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card));white-space:nowrap}
+
+/* ---------- scenarios ---------- */
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.cols-2{grid-template-columns:1fr}}
+.scen{border:1px solid var(--grid);background:var(--card);border-radius:16px;padding:17px 18px}
+.scen h3{margin:0 0 10px;font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
 .scen-row{display:flex;flex-wrap:wrap;gap:14px}
-.scen-col{flex:1;min-width:180px}
-.scen-col .scl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.scen-col{flex:1;min-width:170px}
+.scen-col .scl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 .scen-col.head .scl{color:var(--red)}.scen-col.tail .scl{color:var(--green)}
 .smv{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0}
 .smv b{font-variant-numeric:tabular-nums}
 .smv .neg{color:var(--red)}.smv .pos{color:var(--green)}
-/* decomposition */
+
+/* ---------- study shelf ---------- */
+.shelf{margin-top:34px}
+.shelf details{background:var(--card);border:1px solid var(--grid);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.shelf summary{list-style:none;cursor:pointer;padding:16px 22px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;color:var(--ink);transition:background .18s}
+.shelf summary::-webkit-details-marker{display:none}
+.shelf summary:hover{background:color-mix(in srgb,var(--blue) 5%,var(--card))}
+.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;background:color-mix(in srgb,var(--blue) 10%,var(--card))}
+.shelf summary .sh-hint{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--faint)}
+.shelf summary .sh-caret{flex:none;font-size:11px;color:var(--faint);transition:transform .25s}
+.shelf details[open] summary .sh-caret{transform:rotate(90deg)}
+.shelf .sh-body{padding:6px 22px 22px;border-top:1px solid var(--grid)}
+.sub{font-size:13px;color:var(--muted)}.faint{color:var(--faint)}
+.note{font-size:13px;color:var(--muted);line-height:1.6}.note b{color:var(--ink)}
+.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
+.tx-disclosure{font-size:12.5px;color:var(--muted);margin:26px 0 0;padding-top:14px;border-top:1px solid var(--grid)}
+
+/* ---------- legacy tier-3 components (yield curve / expectations / receipts) ---------- */
+.state-val{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1;margin:4px 0 6px;color:var(--ink)}
+.state-val small{font-size:15px;color:var(--muted);font-weight:700}
+.band-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12.5px;font-weight:700;color:#fff;letter-spacing:.01em;margin:2px 0}
+.kpis{display:flex;gap:14px 20px;flex-wrap:wrap;margin-top:14px}
+.kpi{font-size:12px;color:var(--muted)}.kpi b{display:block;font-size:16px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.flag{display:inline-block;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:10px;line-height:1.4}
+.flag.warn{background:rgba(245,173,66,.16);color:#9a6a10}
+.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
+.flag.ok{background:rgba(26,127,67,.12);color:var(--green)}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cols-3{grid-template-columns:1fr}}
 .decomp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:6px}
-.decomp .dc{padding:11px 13px;border-radius:11px;background:#eef1f6}
-html[data-theme="dark"] .decomp .dc{background:#222732}
+.decomp .dc{padding:11px 13px;border-radius:11px;background:color-mix(in srgb,var(--grid) 45%,var(--card))}
 .decomp .dc .dcl{font-size:11.5px;color:var(--muted);margin-bottom:3px}
 .decomp .dc .dcv{font-size:19px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
 .decomp .dc .dcn{font-size:11px;color:var(--faint);margin-top:2px}
-.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
-table.gate{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
-table.gate th,table.gate td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid)}
-table.gate th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em}
-table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
-/* === yield-curve scorecards === */
 .pcabar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 4px;border:1px solid var(--grid)}
 .pcabar span{display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
 .pcabar .pc-l{background:var(--indigo)}.pcabar .pc-s{background:var(--blue)}.pcabar .pc-c{background:var(--teal)}.pcabar .pc-r{background:var(--faint)}
@@ -129,8 +216,7 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 .tkpill.fav{background:rgba(26,127,67,.12);color:var(--green)}
 .tkpill.pres{background:rgba(211,11,11,.10);color:var(--red)}
 .recgauges{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:8px 0 4px}
-.recg{padding:9px 11px;border-radius:11px;background:#eef1f6}
-html[data-theme="dark"] .recg{background:#222732}
+.recg{padding:9px 11px;border-radius:11px;background:color-mix(in srgb,var(--grid) 45%,var(--card))}
 .recg .rgl{font-size:11px;color:var(--muted);line-height:1.3}
 .recg .rgv{font-size:18px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:1px}
 .recg.flag-on{background:rgba(211,11,11,.12)}
@@ -138,8 +224,7 @@ html[data-theme="dark"] .recg{background:#222732}
 .sectilt{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;margin-top:8px}
 .stile{padding:7px 9px;border-radius:10px;font-size:12px;border:1px solid var(--grid);background:var(--card)}
 .stile .se{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
-.stile .sb{float:right;font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .stile .sb{background:#222732}
+.stile .sb{float:right;font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;background:color-mix(in srgb,var(--grid) 55%,var(--card));color:var(--muted)}
 .stile .sb.meas{background:rgba(26,127,67,.14);color:var(--green)}
 .stile .sm{font-size:10.5px;color:var(--faint);margin-top:3px;line-height:1.35}
 .stile.tail{background:rgba(26,127,67,.07);border-color:rgba(26,127,67,.28)}
@@ -153,10 +238,35 @@ table.slopes td{font-variant-numeric:tabular-nums;color:var(--text)}
 table.slopes td.nm{color:var(--ink);font-weight:600}
 table.slopes td.inv{color:var(--red);font-weight:700}
 .facrow{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
-.facpill{display:inline-flex;flex-direction:column;padding:7px 13px;border-radius:11px;background:#eef1f6;min-width:120px}
-html[data-theme="dark"] .facpill{background:#222732}
+.facpill{display:inline-flex;flex-direction:column;padding:7px 13px;border-radius:11px;background:color-mix(in srgb,var(--grid) 45%,var(--card));min-width:120px}
 .facpill .fk{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
 .facpill .fv{font-size:15px;font-weight:800;color:var(--ink)}
+table.gate{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+table.gate th,table.gate td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid)}
+table.gate th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em}
+table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
+.bdkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:12px;margin:10px 0 4px}
+.bd-tag{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--grid);color:var(--ink)}
+.bd-tag.bd-fall{background:rgba(211,11,11,.10);color:var(--red)}
+.bd-tag.bd-rise{background:rgba(26,127,67,.12);color:var(--green)}
+.bd b.dn{color:var(--red)} .bd b.up{color:var(--green)}
+.bd-badge{margin-top:12px;padding:12px 14px;border-radius:12px;border-left:4px solid var(--faint);background:color-mix(in srgb,var(--grid) 40%,var(--card))}
+.bd-badge-h{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.bd-liquidity{border-left-color:var(--red)} .bd-growth{border-left-color:var(--amber)}
+.bd-real_rate{border-left-color:var(--amber)} .bd-oil{border-left-color:var(--teal)}
+.bd-reflation{border-left-color:var(--blue)} .bd-quiet{border-left-color:var(--faint)}
+.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
+
+/* ---------- motion ---------- */
+@keyframes txFlow{to{stroke-dashoffset:0}}
+@keyframes txBreathe{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes txUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes txGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion: reduce){
+  .txflow-pulse,.txdot,.tc-chip .txdot,.chain-state.on i{animation:none}
+  .tx-hero,.tx-ch,.pm-fill{animation:none}
+  *{transition:none!important}
+}
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
@@ -176,265 +286,140 @@ html[data-theme="dark"] .facpill{background:#222732}
 </nav>
 
 <div class="wrap">
-  <div class="brand">🔀 {{ t('Rate & Inflation', '利率与通胀') }} <span class="gn">{{ t('Transmission', '传导') }}</span></div>
-  <p class="lead">{{ t('How the interest-rate, rate-expectations and inflation (CPI · core PCE) state propagates — first, second and third order — into every asset class we track: the full yield-curve read (shape, regime, recession & cross-asset signals), the headwind / tailwind each asset faces now, the causal chains behind it, and what a rate or inflation shock would imply. Coefficients are MEASURED (split-half forward IC); display-only, never a trade call — repricing is reactive.', '利率、利率预期与通胀（CPI · 核心PCE）的当前状态如何一阶、二阶、三阶地传导至我们跟踪的每一类资产：完整的收益率曲线解读（形态、状态、衰退与跨资产信号）、各资产当前面临的逆风/顺风、其背后的因果链，以及一次利率或通胀冲击意味着什么。系数均为实测（前后半段前瞻IC）；仅供展示，绝非交易建议——重定价是被动的。') }}
-  <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
-
   {% set S = tx.state %}
-  <!-- ===================== CURRENT STATE ===================== -->
-  <div class="grid cols-3" style="margin-bottom:6px">
-    <div class="card">
-      <h2>{{ t('Interest rates', '利率') }}</h2>
-      <div class="state-val">{{ '%.2f'|format(S.rates.real_10y) if S.rates.real_10y is not none else '—' }}<small>% {{ t('real 10y', '实际10年') }}</small></div>
-      {% set rr = S.rates.regime %}
-      <span class="band-chip" style="background:{{ C.red if rr=='restrictive' else C.green if rr=='accommodative' else C.muted }}">{{ t(rr, {'restrictive':'偏紧','accommodative':'宽松','neutral':'中性'}[rr]) }} · {{ t(S.rates.direction, {'rising':'上行','falling':'下行','stable':'平稳'}[S.rates.direction]) }}</span>
-      <div class="kpis">
-        <div class="kpi">{{ t('Nominal 10y','名义10年') }}<b>{{ '%.2f'|format(S.rates.nominal_10y) if S.rates.nominal_10y is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('2s10s curve','2-10年曲线') }}<b>{{ '%.2f'|format(S.rates.curve_2s10s) if S.rates.curve_2s10s is not none else '—' }}</b></div>
-        <div class="kpi">{{ t('Real 10y %ile','实际10年分位') }}<b>{{ (S.rates.real_10y_pctile*100)|round|int if S.rates.real_10y_pctile is not none else '—' }}</b></div>
-        <div class="kpi">{{ t('Policy gap (2y−ff)','政策缺口') }}<b>{{ '%.2f'|format(S.rates.policy_gap) if S.rates.policy_gap is not none else '—' }}</b></div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>{{ t('Inflation', '通胀') }}</h2>
-      <div class="state-val">{{ '%.1f'|format(S.inflation.core_pce_yoy) if S.inflation.core_pce_yoy is not none else '—' }}<small>% {{ t('core PCE YoY', '核心PCE同比') }}</small></div>
-      {% set ir = S.inflation.regime %}
-      <span class="band-chip" style="background:{{ C.red if ir=='above target' else C.green if ir=='below target' else C.muted }}">{{ t(ir, {'above target':'高于目标','at target':'达标','below target':'低于目标'}[ir]) }} · {{ t(S.inflation.direction, {'re-accelerating':'再加速','cooling':'降温','steady':'平稳'}[S.inflation.direction]) }}</span>
-      <div class="kpis">
-        <div class="kpi">{{ t('Core CPI','核心CPI') }}<b>{{ '%.1f'|format(S.inflation.core_cpi_yoy) if S.inflation.core_cpi_yoy is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('Headline CPI','整体CPI') }}<b>{{ '%.1f'|format(S.inflation.headline_cpi_yoy) if S.inflation.headline_cpi_yoy is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('Core PPI','核心PPI') }}<b>{{ '%.1f'|format(S.inflation.ppi_core_yoy) if S.inflation.ppi_core_yoy is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('ECI wages','ECI薪酬') }}<b>{{ '%.1f'|format(S.inflation.eci_comp_yoy) if S.inflation.eci_comp_yoy is not none else '—' }}%</b></div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>{{ t('Expectations', '通胀预期') }}</h2>
-      <div class="state-val">{{ '%.2f'|format(S.expectations.breakeven_5y5y) if S.expectations.breakeven_5y5y is not none else '—' }}<small>% {{ t('5y5y breakeven', '5年5年盈亏平衡') }}</small></div>
-      {% set an = S.expectations.anchoring %}
-      <span class="band-chip" style="background:{{ C.red if an=='drifting up' else C.amber if an=='drifting down' else C.green }}">{{ t(an, {'drifting up':'上行脱锚','drifting down':'下行','anchored':'锚定'}[an]) }}</span>
-      <div class="kpis">
-        <div class="kpi">{{ t('10y breakeven','10年盈亏平衡') }}<b>{{ '%.2f'|format(S.expectations.breakeven_10y) if S.expectations.breakeven_10y is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('Model 5y','模型5年') }}<b>{{ '%.2f'|format(S.expectations.model_5y) if S.expectations.model_5y is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('Survey 1y','调查1年') }}<b>{{ '%.1f'|format(S.expectations.survey_1y) if S.expectations.survey_1y is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('Mkt−model','市场−模型') }}<b>{{ S.expectations.market_minus_model_bp|round|int if S.expectations.market_minus_model_bp is not none else '—' }}bp</b></div>
-      </div>
-    </div>
-  </div>
 
-  {% set D = tx.inflation_decomposition %}
-  <div class="card" style="margin-top:12px">
-    <h2>{{ t('Inflation decomposition', '通胀分解') }}</h2>
-    <div class="decomp">
-      <div class="dc"><div class="dcl">{{ t('Headline − core CPI','整体−核心CPI') }}</div><div class="dcv">{{ '%+.2f'|format(D.headline_minus_core) if D.headline_minus_core is not none else '—' }}</div><div class="dcn">{{ t('food / energy push','食品/能源推动') }}</div></div>
-      <div class="dc"><div class="dcl">{{ t('Core services YoY','核心服务同比') }}</div><div class="dcv">{{ '%.2f'|format(D.core_services_yoy) if D.core_services_yoy is not none else '—' }}</div><div class="dcn">{{ t('the sticky leg','粘性部分') }}</div></div>
-      <div class="dc"><div class="dcl">{{ t('Shelter YoY','住房同比') }}</div><div class="dcv">{{ '%.2f'|format(D.shelter_yoy) if D.shelter_yoy is not none else '—' }}</div><div class="dcn">{{ t('lagging rent','滞后的租金') }}</div></div>
-      <div class="dc"><div class="dcl">{{ t('Core PCE − core CPI','核心PCE−核心CPI') }}</div><div class="dcv">{{ '%+.2f'|format(D.pce_minus_cpi) if D.pce_minus_cpi is not none else '—' }}</div><div class="dcn">{{ t('basket / weight gap','篮子/权重差') }}</div></div>
-      <div class="dc"><div class="dcl">{{ t('Actual − market-priced','实际−市场定价') }}</div><div class="dcv">{{ D.actual_vs_market_bp|round|int if D.actual_vs_market_bp is not none else '—' }}bp</div><div class="dcn">{{ t('core CPI vs 10y breakeven','核心CPI vs 10年盈亏平衡') }}</div></div>
-    </div>
-  </div>
+  <!-- ===================== HERO ===================== -->
+  <header class="tx-hero">
+    <div class="tx-brand">🔀 <span class="gn">{{ t('Transmission', '传导') }}</span></div>
+    <p class="tx-sub">{{ t('How rates, inflation and the dollar push on every asset we track.', '利率、通胀与美元如何推动我们跟踪的每一类资产。') }}</p>
+    {% if hero and hero.line %}<div class="tx-verdict">{{ b(hero.line) }}</div>{% endif %}
+    <div class="tx-asof"><span class="txdot"></span>{{ t('As of', '截至') }} {{ as_of }} · {{ t('context, not trade calls', '仅为背景，非交易信号') }}</div>
+  </header>
 
-  {% if tx.breakeven_decomp %}
-  {% set BD = tx.breakeven_decomp %}
-  {% set cz = BD.cause_badge.cause %}
-  <style>
-  .bdkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:12px;margin:10px 0 4px}
-  .bd-tag{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--grid);color:var(--ink)}
-  .bd-tag.bd-fall{background:rgba(211,11,11,.10);color:var(--red)}
-  .bd-tag.bd-rise{background:rgba(26,127,67,.12);color:var(--green)}
-  .bd b.dn{color:var(--red)} .bd b.up{color:var(--green)}
-  .bd-badge{margin-top:12px;padding:12px 14px;border-radius:12px;border-left:4px solid var(--faint);background:#f3f5f9}
-  html[data-theme="dark"] .bd-badge{background:#1c212b}
-  .bd-badge-h{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
-  .bd-liquidity{border-left-color:var(--red)} .bd-growth{border-left-color:var(--amber)}
-  .bd-real_rate{border-left-color:var(--amber)} .bd-oil{border-left-color:var(--teal)}
-  .bd-reflation{border-left-color:var(--blue)} .bd-quiet{border-left-color:var(--faint)}
-  </style>
-  <div class="card bd" style="margin-top:12px">
-    <h2>{{ t('Breakeven velocity & cause — visibility only', '盈亏平衡速度与成因 — 仅供观察') }}</h2>
-    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;margin:2px 0 4px">
-      <div class="state-val" style="margin:0">{{ '%.2f'|format(BD.level) if BD.level is not none else '—' }}<small>% {{ t('10y breakeven','10年盈亏平衡') }}</small></div>
-      <span class="bd-tag bd-{{ 'fall' if BD.direction=='falling' else 'rise' if BD.direction=='rising' else 'flat' }}">
-        {{ t('falling','下行') if BD.direction=='falling' else t('rising','上行') if BD.direction=='rising' else t('flat','平稳') }} ·
-        {{ t('downtrend','下降趋势') if BD.trend=='downtrend' else t('uptrend','上升趋势') if BD.trend=='uptrend' else t('choppy','震荡') }}{% if BD.is_fast %} · <b>{{ t('FAST','快速') }}</b>{% endif %}
-      </span>
-    </div>
-    <div class="bdkpis">
-      <div class="kpi">{{ t('5d','5日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_5d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_5d_bp|int) if BD.velocity_bp.chg_5d_bp is not none else '—' }}bp</b></div>
-      <div class="kpi">{{ t('10d','10日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_10d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_10d_bp|int) if BD.velocity_bp.chg_10d_bp is not none else '—' }}bp</b></div>
-      <div class="kpi">{{ t('20d','20日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_20d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_20d_bp|int) if BD.velocity_bp.chg_20d_bp is not none else '—' }}bp</b></div>
-      <div class="kpi">{{ t('63d','63日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_63d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_63d_bp|int) if BD.velocity_bp.chg_63d_bp is not none else '—' }}bp</b></div>
-      <div class="kpi">{{ t('Accel 10d','10日加速') }}<b class="{{ 'dn' if (BD.accel_10d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.accel_10d_bp|int) if BD.accel_10d_bp is not none else '—' }}bp</b></div>
-      <div class="kpi">{{ t('Speed pctile','速度分位') }}<b>{{ (BD.fall_speed_pctile*100)|round|int if BD.fall_speed_pctile is not none else '—' }}</b></div>
-      <div class="kpi">{{ t('5y5y 20d','5y5y 20日') }}<b class="{{ 'dn' if (BD.cross_check_5y5y_chg_20d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.cross_check_5y5y_chg_20d_bp|int) if BD.cross_check_5y5y_chg_20d_bp is not none else '—' }}bp</b></div>
-    </div>
-    <div class="bd-badge bd-{{ cz }}">
-      <div class="bd-badge-h">{{ t('Cause','成因') }}: {{ cz|replace('_',' ')|upper }}</div>
-      <div>{{ b(BD.cause_badge) }}</div>
-    </div>
-    {% if BD.tips_liquidity_flag %}<p class="sub" style="color:var(--red);margin-top:8px">⚠ {{ b(BD.tips_liquidity_flag) }}</p>{% endif %}
-    <div class="sub faint" style="margin-top:8px">{{ t('Co-state','联动状态') }}:
-      {{ t('oil','油') }} {{ '%+.0f'|format(BD.costate.oil_chg_20d_pct) if BD.costate.oil_chg_20d_pct is not none else '—' }}% ·
-      {{ t('real 10y','实际10年') }} {{ '%+d'|format(BD.costate.real10y_chg_20d_bp|int) if BD.costate.real10y_chg_20d_bp is not none else '—' }}bp ·
-      {{ t('nom 10y','名义10年') }} {{ '%+d'|format(BD.costate.nom10y_chg_20d_bp|int) if BD.costate.nom10y_chg_20d_bp is not none else '—' }}bp ·
-      {{ t('HY-OAS z','高收益OAS z') }} {{ BD.costate.hy_oas_z if BD.costate.hy_oas_z is not none else '—' }} ·
-      VIX {{ (BD.costate.vix_pctile*100)|round|int if BD.costate.vix_pctile is not none else '—' }}pct</div>
-    <p class="sub" style="margin-top:8px">{{ b(BD.caveat) }}</p>
+  <!-- ===================== WHAT CHANGED ===================== -->
+  {% if changes and changes.vs_asof %}
+  <div class="tx-changes">
+    <span class="tc-eyebrow">{{ t('What changed', '最新变化') }}</span>
+    {% if changes['items'] %}
+      {% for it in changes['items'] %}
+      <span class="tc-chip"><span class="txdot"></span>{{ t(it.en, it.zh) }}</span>
+      {% endfor %}
+    {% else %}
+      <span class="tc-chip calm"><span class="txdot"></span>{{ t('No regime changes since ' ~ changes.vs_asof ~ '.', '自 ' ~ changes.vs_asof ~ ' 以来无状态变化。') }}</span>
+    {% endif %}
   </div>
   {% endif %}
 
-  {% if yc %}
-  <!-- ===================== YIELD CURVE ===================== -->
-  <div class="sec-head">{{ t('Yield curve — shape, regime, recession & cross-asset signals', '收益率曲线 — 形态、状态、衰退与跨资产信号') }}</div>
-  <p class="sub" style="margin:-4px 0 14px">{{ b(yc.signals.core_macro) }}</p>
-  <div class="grid cols-3">
-    <!-- ---- Curve shape & decomposition ---- -->
-    <div class="card">
-      <h2>{{ t('Curve shape', '曲线形态') }}</h2>
-      {% set SH = yc.shape %}
-      <div class="decomp" style="grid-template-columns:1fr 1fr 1fr">
-        <div class="dc"><div class="dcl">{{ t('Level (avg yield)','水平（平均收益率）') }}</div><div class="dcv">{{ '%.2f'|format(SH.level.value) if SH.level.value is not none else '—' }}<small style="font-size:11px;color:var(--muted)">%</small></div><div class="dcn">{{ t('pctile','分位') }} {{ pct(SH.level.pctile) }} · {{ '%+d'|format(SH.level.chg_63d|int) if SH.level.chg_63d is not none else '—' }}bp/63d</div></div>
-        <div class="dc"><div class="dcl">{{ t('Slope (2s10s)','斜率（2-10年）') }}</div><div class="dcv">{{ '%+.2f'|format(SH.slope_2s10s.value) if SH.slope_2s10s.value is not none else '—' }}</div><div class="dcn">{{ t('pctile','分位') }} {{ pct(SH.slope_2s10s.pctile) }} · {{ '%+d'|format(SH.slope_2s10s.chg_63d|int) if SH.slope_2s10s.chg_63d is not none else '—' }}bp/63d</div></div>
-        <div class="dc"><div class="dcl">{{ t('Curvature (2s5s10s fly)','曲率（2-5-10年蝶式）') }}</div><div class="dcv">{{ '%+.2f'|format(SH.fly_2s5s10s.value) if SH.fly_2s5s10s.value is not none else '—' }}</div><div class="dcn">{{ t('pctile','分位') }} {{ pct(SH.fly_2s5s10s.pctile) }} · {{ t('+ humped / − bowed','+隆起／−凹陷') }}</div></div>
+  <!-- ===================== CHANNEL RAIL ===================== -->
+  <div class="tx-rail">
+
+    <!-- Rates -->
+    <section class="tx-ch ch-rates">
+      <div class="ch-eyebrow">{{ t('Rates', '利率') }}
+        <span class="txq" tabindex="0">?<span class="txq-tip">{{ t('The real 10-year yield is the interest rate after inflation — the true cost of money. High and rising real yields pull money out of risk assets; falling ones push it back in.', '实际10年利率 = 名义利率减去通胀，即资金的真实成本。实际利率上行会从风险资产抽走资金，下行则相反。') }}</span></span>
       </div>
-      {% if SH.pca and SH.pca.factors %}
-      <div style="margin-top:12px">
-        <div class="sub" style="font-size:11.5px">{{ t('Principal components of daily curve changes (Litterman-Scheinkman)','日度曲线变动的主成分（Litterman-Scheinkman）') }}</div>
-        <div class="pcabar">
-          {% for fct in SH.pca.factors %}<span class="{{ 'pc-l' if fct.key=='level' else 'pc-s' if fct.key=='slope' else 'pc-c' }}" style="width:{{ (fct.var_explained*100)|round(1) }}%">{{ (fct.var_explained*100)|round|int }}%</span>{% endfor %}
-          {% set resid = 1 - SH.pca.first3_var %}{% if resid and resid > 0.005 %}<span class="pc-r" style="width:{{ (resid*100)|round(1) }}%"></span>{% endif %}
-        </div>
-        <div class="pcalegend"><span><i style="background:var(--indigo)"></i>{{ t('Level','水平') }}</span><span><i style="background:var(--blue)"></i>{{ t('Slope','斜率') }}</span><span><i style="background:var(--teal)"></i>{{ t('Curvature','曲率') }}</span></div>
-        <p class="sub" style="font-size:11px;margin-top:6px">{{ t('The three classic factors span','三个经典因子合计解释') }} <b>{{ (SH.pca.first3_var*100)|round(1) }}%</b> {{ t('of curve variance — the textbook result, measured on our data.','的曲线方差——教科书结论，在我方数据上实测。') }}</p>
+      {% if hero %}<div class="ch-state">{{ b(hero.rates.state) }}</div>{% endif %}
+      <div class="ch-dir">{{ '%.2f'|format(S.rates.real_10y) if S.rates.real_10y is not none else '—' }}% {{ t('real 10-year yield', '实际10年利率') }}{% if S.rates.real_10y_pctile is not none %} · {{ t('higher than ' ~ ((S.rates.real_10y_pctile*100)|round|int) ~ '% of the past decade', '高于过去十年' ~ ((S.rates.real_10y_pctile*100)|round|int) ~ '%的时间') }}{% endif %}</div>
+      {{ flowline({'rising':'up','falling':'down','stable':'flat'}.get(S.rates.direction,'flat'), 'rates') }}
+      <div class="ch-facts">
+        <div class="chf"><div class="chf-l">{{ t('10-year rate', '10年利率') }}</div><div class="chf-v">{{ '%.2f'|format(S.rates.nominal_10y) if S.rates.nominal_10y is not none else '—' }}%</div><div class="chf-m">{{ t('what the market charges', '市场定价') }}</div></div>
+        <div class="chf"><div class="chf-l">{{ t('Yield curve', '收益率曲线') }}</div><div class="chf-v">{{ '%+.2f'|format(S.rates.curve_2s10s) if S.rates.curve_2s10s is not none else '—' }}</div><div class="chf-m">{{ t('inverted — short above long', '倒挂——短端高于长端') if S.rates.curve_2s10s is not none and S.rates.curve_2s10s < 0 else t('upward-sloping — normal', '向上倾斜——正常') }}</div></div>
+        <div class="chf"><div class="chf-l">{{ t('Fed stance', '美联储立场') }}</div><div class="chf-v">{{ t({'restrictive':'Tight','accommodative':'Easy','neutral':'Neutral'}.get(S.rates.regime, S.rates.regime|capitalize), {'restrictive':'偏紧','accommodative':'宽松','neutral':'中性'}.get(S.rates.regime, S.rates.regime)) }}</div><div class="chf-m">{{ t({'rising':'and pressing harder','falling':'and easing off','stable':'and holding'}.get(S.rates.direction,''), {'rising':'且仍在收紧','falling':'且正在放松','stable':'且保持不变'}.get(S.rates.direction,'')) }}</div></div>
+      </div>
+      {% if yc and yc.recession %}
+      <div class="ch-extra"><span class="ch-dots">{% for i in range(4) %}<i class="{{ 'on' if i < yc.recession.n_flags }}"></i>{% endfor %}</span>{{ t((yc.recession.n_flags|string) ~ ' of 4 recession warning signs lit', '4项衰退预警中亮起' ~ yc.recession.n_flags ~ '项') }}</div>
+      {% endif %}
+      <div class="ch-foot">
+        {% if hero %}<span class="ch-stance">{{ b(hero.rates.stance) }}</span>{% endif %}
+        <a class="ch-more" href="#shelf-yc">{{ t('Full curve detail ↓', '曲线详情 ↓') }}</a>
+      </div>
+    </section>
+
+    <!-- Inflation -->
+    <section class="tx-ch ch-infl">
+      <div class="ch-eyebrow">{{ t('Inflation', '通胀') }}
+        <span class="txq" tabindex="0">?<span class="txq-tip">{{ t('Core PCE is the Fed\'s preferred inflation gauge; its 2% target drives rate policy. "Anchored" expectations mean markets still trust that target — the single most important thing to watch.', '核心PCE是美联储最看重的通胀指标，2%目标决定利率政策。“预期锚定”表示市场仍相信该目标——这是最关键的观察点。') }}</span></span>
+      </div>
+      {% if hero %}<div class="ch-state">{{ b(hero.inflation.state) }}</div>{% endif %}
+      <div class="ch-dir">{{ '%.1f'|format(S.inflation.core_pce_yoy) if S.inflation.core_pce_yoy is not none else '—' }}% {{ t('core inflation', '核心通胀') }}{% if S.inflation.core_pce_yoy is not none %} · {% set gap = S.inflation.core_pce_yoy - 2.0 %}{{ t(('%.1f'|format(gap|abs)) ~ 'pp ' ~ ('above' if gap > 0.05 else 'below' if gap < -0.05 else 'at') ~ " the Fed's 2% goal", ('高于' if gap > 0.05 else '低于' if gap < -0.05 else '正处') ~ '美联储2%目标' ~ ('%.1f'|format(gap|abs)) ~ '个百分点') }}{% endif %}</div>
+      {{ flowline({'re-accelerating':'up','cooling':'down','steady':'flat'}.get(S.inflation.direction,'flat'), 'infl') }}
+      <div class="ch-facts">
+        <div class="chf"><div class="chf-l">{{ t('Core CPI', '核心CPI') }}</div><div class="chf-v">{{ '%.1f'|format(S.inflation.core_cpi_yoy) if S.inflation.core_cpi_yoy is not none else '—' }}%</div><div class="chf-m">{{ t('the headline cousin', '常见口径') }}</div></div>
+        <div class="chf"><div class="chf-l">{{ t('Direction', '方向') }}</div><div class="chf-v">{{ t({'re-accelerating':'Heating','cooling':'Cooling','steady':'Steady'}.get(S.inflation.direction, S.inflation.direction|capitalize), {'re-accelerating':'升温','cooling':'降温','steady':'平稳'}.get(S.inflation.direction, S.inflation.direction)) }}</div><div class="chf-m">{{ t('trend over recent months', '近几个月趋势') }}</div></div>
+        <div class="chf"><div class="chf-l">{{ t('Expectations', '通胀预期') }}</div><div class="chf-v">{{ t({'anchored':'Anchored','drifting up':'Drifting up','drifting down':'Drifting down'}.get(S.expectations.anchoring, S.expectations.anchoring|capitalize), {'anchored':'锚定','drifting up':'上行脱锚','drifting down':'下移'}.get(S.expectations.anchoring, S.expectations.anchoring)) }}</div><div class="chf-m">{{ t('what markets price long-run', '市场的长期定价') }}</div></div>
+      </div>
+      {% if tx.inflation_decomposition and tx.inflation_decomposition.shelter_yoy is not none %}
+      <div class="ch-extra">{{ t('The sticky part: housing costs still running', '最具粘性的部分：住房成本仍达') }} <b>{{ '%.1f'|format(tx.inflation_decomposition.shelter_yoy) }}%</b>{{ t(' — rents adjust slowly.', '——租金调整缓慢。') }}</div>
+      {% endif %}
+      <div class="ch-foot">
+        {% if hero %}<span class="ch-stance">{{ b(hero.inflation.stance) }}</span>{% endif %}
+        <a class="ch-more" href="#shelf-infl">{{ t('Full detail ↓', '详情 ↓') }}</a>
+      </div>
+    </section>
+
+    <!-- Dollar -->
+    <section class="tx-ch ch-usd">
+      <div class="ch-eyebrow">{{ t('Dollar', '美元') }}
+        <span class="txq" tabindex="0">{{ '?' }}<span class="txq-tip">{{ t('Most world trade and debt is priced in dollars, so a strong dollar squeezes commodities, emerging markets and US exporters; a weak one relieves them. Read from the broad trade-weighted dollar index.', '全球多数贸易与债务以美元计价：美元走强会挤压大宗商品、新兴市场与美国出口商，走弱则相反。数据取自广义贸易加权美元指数。') }}</span></span>
+      </div>
+      {% if dx %}
+      {% if dx.state %}<div class="ch-state">{{ b(dx.state) }}</div>{% endif %}
+      <div class="ch-dir">{% if dx.roc_pct is not none %}{{ '%+.1f'|format(dx.roc_pct) }}% {{ t('over the past month', '近一个月') }}{% else %}{{ t('broad trade-weighted dollar', '广义贸易加权美元') }}{% endif %}</div>
+      {{ flowline({'strengthening':'up','weakening':'down','flat':'flat'}.get(dx.usd_dir,'flat'), 'usd') }}
+      <div class="ch-facts">
+        <div class="chf"><div class="chf-l">{{ t('Trend', '趋势') }}</div><div class="chf-v">{{ t({'strengthening':'Rising','weakening':'Falling','flat':'Flat'}.get(dx.usd_dir,'—'), {'strengthening':'走强','weakening':'走软','flat':'横盘'}.get(dx.usd_dir,'—')) }}</div><div class="chf-m">{{ t('vs major trade partners', '相对主要贸易伙伴') }}</div></div>
+        {# dollar_desk 'dir' vocabulary is DOLLAR-framed: supportive = net liquidity
+           draining (USD up) · soft = adding (USD-soft) — see forex_dollar.liquidity() #}
+        <div class="chf"><div class="chf-l">{{ t('Fed liquidity', '美元流动性') }}</div><div class="chf-v">{{ t({'supportive':'Draining','soft':'Adding','neutral':'Flat'}.get(dx.liquidity_dir, dx.liquidity_dir|capitalize if dx.liquidity_dir else '—'), {'supportive':'抽紧','soft':'投放','neutral':'持平'}.get(dx.liquidity_dir, dx.liquidity_dir if dx.liquidity_dir else '—')) }}</div><div class="chf-m">{{ t('fuel for risk assets', '风险资产的燃料') }}</div></div>
+        <div class="chf"><div class="chf-l">{{ t('FX stress', '汇市压力') }}</div><div class="chf-v">{{ b(dx.scenario.label) if dx.scenario and dx.scenario.label else t('None', '无') }}</div><div class="chf-m">{{ t('stress scenario active now', '当前触发的压力情景') if dx.scenario else t('no stress scenario active', '无压力情景触发') }}</div></div>
+      </div>
+      {% if dx.headwind_for or dx.tailwind_for %}
+      <div class="ch-minichips">
+        {% for a in (dx.headwind_for or [])[:3] %}<span class="mchip down">▾ {{ b(a) }}</span>{% endfor %}
+        {% for a in (dx.tailwind_for or [])[:3] %}<span class="mchip up">▴ {{ b(a) }}</span>{% endfor %}
       </div>
       {% endif %}
-    </div>
-    <!-- ---- Curve regime ---- -->
-    <div class="card">
-      <h2>{{ t('Curve regime', '曲线状态') }}</h2>
-      {% set RG = yc.regime %}
-      {% if RG.key %}
-      {% set rc = {'bull_steepener': C.green, 'bear_steepener': C.amber, 'bull_flattener': C.indigo, 'bear_flattener': C.red} %}
-      <div class="curve-regime">
-        <span class="regchip" style="background:{{ rc.get(RG.key, C.muted) }}">{{ b(RG.label) }}</span>
-        <div class="sub" style="line-height:1.45">{{ b(RG.desc) }}</div>
-        <div class="sub" style="font-size:11.5px"><b style="color:var(--ink)">{{ t('Fed-cycle phase','美联储周期阶段') }}:</b> {{ b(RG.fed_phase) }}{% if RG.slope_chg_bp is not none %} · {{ t('slope','斜率') }} {{ '%+d'|format(RG.slope_chg_bp|int) }}bp/{{ RG.window_d }}d{% endif %}{% if RG.term_premium_dir %} · {{ t('term premium','期限溢价') }} {{ t(RG.term_premium_dir, {'rising':'上行','falling':'下行','stable':'平稳'}.get(RG.term_premium_dir, RG.term_premium_dir)) }}{% endif %}</div>
-        {% if RG.favored %}<div class="favrow"><span class="fl fav">{{ t('Favoured','受益') }}</span>{% for tk in RG.favored %}<span class="tkpill fav">{{ tk }}</span>{% endfor %}</div>{% endif %}
-        {% if RG.pressured %}<div class="favrow"><span class="fl pres">{{ t('Pressured','承压') }}</span>{% for tk in RG.pressured %}<span class="tkpill pres">{{ tk }}</span>{% endfor %}</div>{% endif %}
-        <p class="note" style="font-size:12px;margin-top:4px">{{ b(RG.note) }}</p>
+      <div class="ch-foot">
+        {% if hero %}<span class="ch-stance">{{ b(hero.dollar.stance) }}</span>{% endif %}
+        <a class="ch-more" href="forex.html">{{ t('Full dollar desk →', '美元台 →') }}</a>
       </div>
-      {% else %}<p class="sub">{{ t('Curve move indeterminate right now.','当前曲线移动不明确。') }}</p>{% endif %}
-    </div>
-    <!-- ---- Recession dashboard ---- -->
-    <div class="card">
-      <h2>{{ t('Recession dashboard', '衰退面板') }}</h2>
-      {% set RC = yc.recession %}
-      {% set rkc = {'low': C.green, 'watch': C.amber, 'elevated': C.amber, 'high': C.red} %}
-      <span class="band-chip" style="background:{{ rkc.get(RC.risk, C.muted) }}">{{ t(RC.risk, {'low':'低','watch':'观察','elevated':'升高','high':'高'}.get(RC.risk, RC.risk)) }} · {{ RC.n_flags }}/4 {{ t('flags','项亮起') }}</span>
-      <div class="recgauges">
-        <div class="recg {{ 'flag-on' if 'ntfs' in RC.flags else '' }}"><div class="rgl">{{ t('Near-term fwd spread','近端远期利差') }}</div><div class="rgv">{{ '%+.2f'|format(RC.ntfs) if RC.ntfs is not none else '—' }}</div></div>
-        <div class="recg {{ 'flag-on' if 'probit' in RC.flags else '' }}"><div class="rgl">{{ t('NY Fed 10y-3m probit','纽约联储10年-3月概率') }}</div><div class="rgv">{{ RC.nyfed_prob|int if RC.nyfed_prob is not none else '—' }}%</div></div>
-        <div class="recg {{ 'flag-on' if 'uninversion' in RC.flags else '' }}"><div class="rgl">{{ t('Un-inversion alarm','重新变陡警报') }}</div><div class="rgv">{{ t('YES','是') if RC.uninversion else t('no','否') }}</div></div>
-        <div class="recg {{ 'flag-on' if 'tp_adj' in RC.flags else '' }}"><div class="rgl">{{ t('TP-adjusted 2s10s','期限溢价调整2-10年') }}</div><div class="rgv">{{ '%+.2f'|format(RC.tp_adj_curve) if RC.tp_adj_curve is not none else '—' }}</div></div>
-      </div>
-      {% if RC.policy_stance %}{% set PS = RC.policy_stance %}<div class="flag {{ 'warn' if PS.stance=='restrictive' else 'ok' if PS.stance=='accommodative' else 'info' }}" style="display:block;margin:2px 0 6px">{{ t('Policy stance','政策立场') }}: <b>{{ '%.2f'|format(PS.fed_funds) }}%</b> {{ t('funds vs','基金 vs') }} ~{{ '%.1f'|format(PS.neutral_anchor) }}% = {{ t(PS.stance, {'restrictive':'偏紧','accommodative':'宽松','neutral':'中性'}.get(PS.stance, PS.stance)) }} ({{ '%+.2f'|format(PS.gap_pp) }}pp)</div>{% endif %}
-      <p class="note" style="font-size:11.5px;margin-top:4px">{{ b(RC.lead_time_note) }}{% if RC.policy_stance %} {{ b(RC.policy_stance.note) }}{% endif %}</p>
-    </div>
+      {% else %}
+      <div class="ch-state">{{ t('No read', '暂无读数') }}</div>
+      <p class="sub" style="margin-top:8px">{{ t('The dollar read is unavailable this build. It returns on the next nightly update.', '本次构建暂无美元读数，下一次夜间更新恢复。') }}</p>
+      <div class="ch-foot"><span></span><a class="ch-more" href="forex.html">{{ t('Full dollar desk →', '美元台 →') }}</a></div>
+      {% endif %}
+    </section>
   </div>
 
-  <!-- ---- slopes table + forwards ---- -->
-  <div class="grid cols-2" style="margin-top:14px">
-    <div class="card">
-      <h2>{{ t('Slopes & momentum', '斜率与动能') }}</h2>
-      <table class="slopes">
-        <tr><th>{{ t('Spread','利差') }}</th><th>{{ t('Level','水平') }}</th><th>{{ t('%ile','分位') }}</th><th>{{ t('63d Δ','63日变动') }}</th></tr>
-        {% for k, s in yc.slopes.items() %}
-        <tr><td class="nm">{{ b(s.label) }}</td><td class="{{ 'inv' if s.inverted else '' }}">{{ '%+.2f'|format(s.value) if s.value is not none else '—' }}</td><td>{{ pct(s.pctile) }}</td><td>{{ '%+d'|format(s.chg_63d_bp|int) if s.chg_63d_bp is not none else '—' }}bp</td></tr>
-        {% endfor %}
-      </table>
-      {% set M = yc.momentum %}
-      <p class="sub" style="font-size:11.5px;margin-top:8px">{{ t('Curve speed (63d)','曲线速度（63日）') }}: {{ t('real 10y','实际10年') }} {{ '%+d'|format(M.real10y_speed_bp|int) if M.real10y_speed_bp is not none else '—' }}bp · {{ t('front 2y','前端2年') }} {{ '%+d'|format(M.front2y_speed_bp|int) if M.front2y_speed_bp is not none else '—' }}bp · {{ t('|real-speed| pctile','|实际速度|分位') }} {{ pct(M.real_speed_pctile) }}. {{ t('Rate-of-change beats level — the SPEED of a real-yield move breaks equities more than its level.','变动速度胜过水平——实际收益率移动的速度比其水平更能冲击股票。') }}</p>
-      {% if M.trend_spread is not none %}<p class="sub" style="font-size:11.5px;margin-top:4px">{{ t('Term-spread trend (2y smooth)','期限利差趋势（2年平滑）') }}: <b style="color:var(--ink)">{{ '%+.2f'|format(M.trend_spread) }}</b>{% if M.trend_spread_dir %} · {{ t(M.trend_spread_dir, {'rising':'上行','falling':'下行','flat':'平稳'}.get(M.trend_spread_dir, M.trend_spread_dir)) }}{% endif %}. {{ t('The literature flags the smoothed, business-cycle-frequency component of the 3m10y spread as the curve read with genuine equity-premium content (Faria-Verona 2020) — but OUR calibration finds it regime-dependent (the IC sign flips post-2015), so we carry it as context, never a timing signal.','文献认为3月-10年利差经平滑的商业周期频率成分是收益率曲线中具有真正股权溢价含义的读数（Faria-Verona 2020）——但我方校准发现其依赖状态（IC符号在2015年后翻转），故仅作背景，绝非择时信号。') }}</p>{% endif %}
+  <!-- ===================== PRESSURE MAP ===================== -->
+  {% set prows = ((tx.headwinds or []) + (tx.tailwinds or []))|sort(attribute='net') %}
+  {% if prows %}
+  <div class="sec-head">{{ t('Who benefits · who gets hurt', '谁受益 · 谁承压') }}</div>
+  <p class="sec-sub">{{ t('The net force of today\'s rate and inflation state on each asset.', '当前利率与通胀状态对各资产的净作用力。') }}</p>
+  <div class="card">
+    <div class="pm-axis"><span class="ax-l">{{ t('◂ pushed down', '◂ 承压') }}</span><span class="ax-r">{{ t('pushed up ▸', '推升 ▸') }}</span></div>
+    {% set pabs = prows|map(attribute='net')|map('abs')|list %}
+    {% set pscale = pabs|max if pabs else 1 %}
+    {% for h in prows %}
+    {% set w = ((h.net|abs) / pscale * 46)|round(1) if pscale else 0 %}
+    <div class="pm-row"{% if h.top_drivers %} title="drivers: {% for p in h.top_drivers %}{{ p.label }} ({{ p.verdict|lower }}){% if not loop.last %} · {% endif %}{% endfor %}"{% endif %}>
+      <span class="pm-name"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span>
+      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill {{ 'neg' if h.net < 0 else 'pos' }}" style="width:{{ w }}%;animation-delay:{{ loop.index0 * 60 }}ms"></span></span>
+      <span class="pm-val {{ 'neg' if h.net < 0 else 'pos' }}">{{ '%+.2f'|format(h.net) }}</span>
     </div>
-    <div class="card">
-      <h2>{{ t('Forward rates & carry', '远期利率与持有收益') }}</h2>
-      {% set FW = yc.forwards %}
-      <div class="kpis">
-        <div class="kpi">{{ t('1y1y fwd','1年1年远期') }}<b>{{ '%.2f'|format(FW.f_1y1y) if FW.f_1y1y is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('2y1y fwd','2年1年远期') }}<b>{{ '%.2f'|format(FW.f_2y1y) if FW.f_2y1y is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('5y5y fwd','5年5年远期') }}<b>{{ '%.2f'|format(FW.f_5y5y) if FW.f_5y5y is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('10y carry','10年持有') }}<b>{{ '%.2f'|format(FW.carry_10y_pct) if FW.carry_10y_pct is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('10y roll-down','10年滚动') }}<b>{{ '%+.2f'|format(FW.rolldown_10y_pct) if FW.rolldown_10y_pct is not none else '—' }}%</b></div>
-        <div class="kpi">{{ t('carry + roll','持有＋滚动') }}<b>{{ '%.2f'|format(FW.carry_roll_10y_pct) if FW.carry_roll_10y_pct is not none else '—' }}%</b></div>
-      </div>
-      <p class="note" style="font-size:12px;margin-top:10px">{{ b(FW.note) }}</p>
-    </div>
-  </div>
-
-  <!-- ---- signal families: sector tilt + factor + market tendency ---- -->
-  <div class="card" style="margin-top:14px">
-    <h2>{{ t('Curve signals — sector, style & market tendency', '曲线信号 — 板块、风格与市场倾向') }}</h2>
-    {% set SG = yc.signals %}
-    <div class="sub" style="font-size:11.5px">{{ t('Per-sector curve tilt under the current regime. ✓meas = a calibrated forward-IC edge in the transmission matrix; ·thy = textbook channel only.','当前状态下各板块的曲线倾向。✓实测＝传导矩阵中存在校准的前瞻IC优势；·理论＝仅教科书传导。') }}</div>
-    <div class="sectilt">
-      {% for s in SG.sector %}
-      <div class="stile {{ 'tail' if s.tilt=='tailwind' else 'head' if s.tilt=='headwind' else '' }}">
-        <span class="se">{{ s.etf }}</span><span class="sb {{ 'meas' if s.basis=='measured' else '' }}" title="{{ 'measured forward IC ('+(s.verdict|lower)+')' if s.basis=='measured' else 'textbook channel, no measured edge' }}">{{ '✓'+(s.ic_driver or '')+' '+('%+.2f'|format(s.ic) if s.ic is not none else '') if s.basis=='measured' else '·thy' }}</span>
-        <div class="sm">{{ t(s.tilt, {'tailwind':'顺风','headwind':'逆风','neutral':'中性'}.get(s.tilt,s.tilt)) }} · {{ t(s.duration, {'long':'长久期','short':'短久期','neutral':'久期中性'}.get(s.duration,s.duration)) }}<br>{{ b(s.mech) }}</div>
-      </div>
-      {% endfor %}
-    </div>
-    <div style="margin-top:16px">
-      <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)">{{ t('Equity style / factor','股票风格／因子') }}</div>
-      {% set FC = SG.stock_factor %}
-      <div class="facrow">
-        <div class="facpill"><span class="fk">{{ t('Value vs growth','价值vs成长') }}</span><span class="fv">{{ t(FC.value_vs_growth|capitalize, {'value':'价值','growth':'成长','neutral':'中性'}.get(FC.value_vs_growth, FC.value_vs_growth)) }}</span></div>
-        <div class="facpill"><span class="fk">{{ t('Size','规模') }}</span><span class="fv">{{ t({'small':'Small caps','large':'Large caps','neutral':'Neutral'}.get(FC.size, FC.size), {'small':'小盘','large':'大盘','neutral':'中性'}.get(FC.size, FC.size)) }}</span></div>
-        <div class="facpill"><span class="fk">{{ t('Duration factor','久期因子') }}</span><span class="fv">{{ t(FC.duration_factor, {'headwind':'逆风','tailwind':'顺风','neutral':'中性'}.get(FC.duration_factor, FC.duration_factor)) }}</span></div>
-      </div>
-      <p class="note" style="font-size:12px">{{ b(FC.note) }}</p>
-    </div>
-    <div style="margin-top:12px">
-      <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)">{{ t('Market tendency (curve-speed → drawdown risk)','市场倾向（曲线速度→回撤风险）') }}</div>
-      {% set MT = SG.market_tendency %}
-      {% set mtc = {'calm': C.green, 'watch': C.amber, 'elevated': C.red} %}
-      <span class="band-chip" style="background:{{ mtc.get(MT.drawdown_risk, C.muted) }};margin:6px 0">{{ t(MT.drawdown_risk, {'calm':'平静','watch':'观察','elevated':'升高'}.get(MT.drawdown_risk, MT.drawdown_risk)) }}</span>
-      <p class="note" style="font-size:12px">{{ b(MT.label) }}</p>
-    </div>
-    <div class="flag info" style="display:block;margin-top:10px">{{ b(yc.scored_status) }}</div>
+    {% endfor %}
+    <p class="pm-foot">{{ t('Bar length = combined strength of the measured forces acting on that asset now. Hover a row for its drivers; full receipts in the study shelf below.', '柱长＝当前作用于该资产的实测力量之和。悬停查看驱动因素，完整依据见下方深度研究区。') }}</p>
   </div>
   {% endif %}
 
-  <!-- ===================== CROSS-ASSET HEADWIND / TAILWIND ===================== -->
-  <div class="sec-head">{{ t('Cross-asset transmission — what each asset faces now', '跨资产传导 — 各资产当前所面对的') }}</div>
-  <div class="grid cols-2">
-    <div class="card">
-      <h2 style="color:var(--red)">{{ t('Headwinds', '逆风') }}</h2>
-      {% if tx.headwinds %}{% for h in tx.headwinds %}
-      <div class="tbar"><span class="tname"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill head" style="width:{{ [(h.net|abs)*90, 50]|min }}%"></span></span>
-        <span class="tval" style="color:var(--red)">{{ '%.2f'|format(h.net) }}</span></div>
-      <div class="tdrv">{% for p in h.top_drivers %}{{ p.label }}{{ vg(p.verdict) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
-      {% endfor %}{% else %}<p class="sub">{{ t('No clear rate/inflation headwind right now.', '当前无明显的利率/通胀逆风。') }}</p>{% endif %}
-    </div>
-    <div class="card">
-      <h2 style="color:var(--green)">{{ t('Tailwinds', '顺风') }}</h2>
-      {% if tx.tailwinds %}{% for h in tx.tailwinds %}
-      <div class="tbar"><span class="tname"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span>
-        <span class="ttrack"><span class="tmid"></span><span class="tfill tail" style="width:{{ [(h.net|abs)*90, 50]|min }}%"></span></span>
-        <span class="tval" style="color:var(--green)">{{ '%+.2f'|format(h.net) }}</span></div>
-      <div class="tdrv">{% for p in h.top_drivers %}{{ p.label }}{{ vg(p.verdict) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
-      {% endfor %}{% else %}<p class="sub">{{ t('No clear rate/inflation tailwind right now.', '当前无明显的利率/通胀顺风。') }}</p>{% endif %}
-    </div>
-  </div>
-  <p class="sub" style="margin-top:8px">{{ t('Net = the sum of each active driver’s current extension × its measured forward IC for that asset (the change / gap drivers only; raw levels are excluded as co-trend). ✓ confirmed split-half · ~ directional · ⤫ inverted (effect measured opposite the chain direction) · · context.', '净值＝各活跃驱动的当前偏离度 × 其对该资产的实测前瞻IC之和（仅取变动/缺口类驱动；原始水平因共趋势而剔除）。✓ 前后半段确认 · ~ 有方向 · ⤫ 反向（实测效应与链条方向相反）· · 仅背景。') }}</p>
-
-  <!-- ===================== TRANSMISSION CHAINS ===================== -->
-  <div class="sec-head">{{ t('Transmission chains — first → second → third order', '传导链 — 一阶 → 二阶 → 三阶') }}</div>
-  {% for ch in tx.chains %}
-  <div class="card chain {{ '' if ch.active else 'dim' }}" style="margin-bottom:14px">
+  <!-- ===================== CHAINS ===================== -->
+  <div class="sec-head">{{ t('How a shock travels', '冲击如何传导') }}</div>
+  <p class="sec-sub">{{ t('First the direct hit, then the knock-on effects, in order.', '先是直接冲击，随后按顺序层层传导。') }}</p>
+  {% for ch in tx.chains if ch.active %}
+  <div class="chain live">
     <div class="chain-head">
       <span><span class="l-en">{{ ch.title.en }}</span><span class="l-zh">{{ ch.title.zh }}</span></span>
-      <span class="chain-state {{ 'on' if ch.active else 'off' }}">{{ t('ACTIVE','活跃') if ch.active else t('dormant','静默') }}{% if ch.trigger_z is not none %} · {{ ch.trigger_label }} {{ '%+.1f'|format(ch.trigger_z) }}σ{% endif %}</span>
+      <span class="chain-state on"><i></i>{{ t('Active now', '当前活跃') }}</span>
     </div>
     {% for o in ch.orders %}
     <div class="order">
@@ -447,44 +432,241 @@ html[data-theme="dark"] .facpill{background:#222732}
     {% endfor %}
   </div>
   {% endfor %}
+  {% set quiet = tx.chains|rejectattr('active')|list %}
+  {% if quiet %}
+  <div class="chain-quiet">
+    {% for ch in quiet %}
+    <div class="cq-row"><b><span class="l-en">{{ ch.title.en }}</span><span class="l-zh">{{ ch.title.zh }}</span></b><span class="cq-tag">{{ t('quiet now', '暂时静默') }}</span></div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   <!-- ===================== SCENARIOS ===================== -->
-  <div class="sec-head">{{ t('Conditional scenarios — if this shock holds a quarter', '情景推演 — 若该冲击持续一个季度') }}</div>
+  <div class="sec-head">{{ t('If this holds for three months', '若持续三个月') }}</div>
+  <p class="sec-sub">{{ t('What each shock has historically meant for asset prices — illustrations, not forecasts.', '各类冲击在历史上对资产价格的含义——仅为示意，并非预测。') }}</p>
   <div class="grid cols-2">
   {% for sc in tx.scenarios %}
     <div class="scen">
       <h3><span class="l-en">{{ sc.label.en }}</span><span class="l-zh">{{ sc.label.zh }}</span></h3>
       <div class="scen-row">
         <div class="scen-col head"><div class="scl">{{ t('Pressured','承压') }}</div>
-          {% for m in sc.headwinds %}<div class="smv"><span><span class="l-en">{{ m.label.en }}</span><span class="l-zh">{{ m.label.zh }}</span></span><b class="neg">{{ '%.1f'|format(m.implied_move_pct) }}%</b></div>{% else %}<div class="sub">—</div>{% endfor %}
+          {% for m in sc.headwinds %}<div class="smv"><span>{{ m.label.en if m.label is mapping else m.label }}</span><b class="neg">{{ '%.1f'|format(m.implied_move_pct) }}%</b></div>{% else %}<div class="sub">—</div>{% endfor %}
         </div>
         <div class="scen-col tail"><div class="scl">{{ t('Favoured','受益') }}</div>
-          {% for m in sc.tailwinds %}<div class="smv"><span><span class="l-en">{{ m.label.en }}</span><span class="l-zh">{{ m.label.zh }}</span></span><b class="pos">+{{ '%.1f'|format(m.implied_move_pct) }}%</b></div>{% else %}<div class="sub">—</div>{% endfor %}
+          {% for m in sc.tailwinds %}<div class="smv"><span>{{ m.label.en if m.label is mapping else m.label }}</span><b class="pos">+{{ '%.1f'|format(m.implied_move_pct) }}%</b></div>{% else %}<div class="sub">—</div>{% endfor %}
         </div>
       </div>
     </div>
   {% endfor %}
   </div>
-  <p class="sub" style="margin-top:6px">{{ t('Implied move = the asset’s MEASURED contemporaneous 63-day beta to that driver × the shock. Illustrative & regime-dependent — not a forecast, and the shock must actually persist.', '隐含涨跌＝该资产对此驱动实测的同期63日beta × 冲击幅度。仅为示意且依赖状态——并非预测，且冲击须真实持续。') }}</p>
 
-  <!-- ===================== HONESTY / SCORED-LEG GATE ===================== -->
-  <div class="card" style="margin-top:22px">
-    <h2>{{ t('How this is graded · and what it is not', '如何评级 · 以及它不是什么') }}</h2>
-    <div class="flag info" style="display:block;margin-bottom:10px"><span class="l-en">{{ tx.scored_status.en }}</span><span class="l-zh">{{ tx.scored_status.zh }}</span></div>
-    {% if gate %}
-    <table class="gate">
-      <tr><th>{{ t('Candidate leg','候选腿') }}</th><th>{{ t('Verdict','判定') }}</th><th class="num">{{ t('IC dd (f/pre/post)','IC回撤(全/前/后)') }}</th><th class="num">{{ t('hi-tercile edge','高三分位超额') }}</th><th>{{ t('scored?','计分?') }}</th></tr>
-      {% for k, s in gate.items() %}
-      <tr><td>{{ s.label }}</td><td>{{ s.verdict }}</td><td class="num">{{ s.ic_dd_full }}/{{ s.ic_dd_pre }}/{{ s.ic_dd_post }}</td><td class="num">{{ s.conditional.high_edge_pp if s.conditional else '—' }}pp</td><td>{{ '✅' if s.scored_eligible else '—' }}</td></tr>
-      {% endfor %}
-    </table>
+  <!-- ===================== STUDY SHELF (tier 3) ===================== -->
+  <div class="sec-head" id="shelf">{{ t('The study shelf', '深度研究区') }}</div>
+  <p class="sec-sub">{{ t('Everything above, with the machinery showing — for readers who want the receipts.', '以上全部内容的完整技术细节——供想查看依据的读者。') }}</p>
+  <div class="shelf">
+
+    {% if yc %}
+    <details id="shelf-yc">
+      <summary><span class="sh-ic">📈</span>{{ t('Yield curve — the full read', '收益率曲线——完整解读') }}<span class="sh-hint">{{ t('shape · regime · recession · signals', '形态 · 状态 · 衰退 · 信号') }}</span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+      <p class="sub" style="margin:12px 0 14px">{{ b(yc.signals.core_macro) }}</p>
+      <div class="grid cols-3">
+        <div class="card">
+          <h2>{{ t('Curve shape', '曲线形态') }}</h2>
+          {% set SH = yc.shape %}
+          <div class="decomp" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="dc"><div class="dcl">{{ t('Level (avg yield)','水平（平均收益率）') }}</div><div class="dcv">{{ '%.2f'|format(SH.level.value) if SH.level.value is not none else '—' }}<small style="font-size:11px;color:var(--muted)">%</small></div><div class="dcn">{{ t('pctile','分位') }} {{ pct(SH.level.pctile) }} · {{ '%+d'|format(SH.level.chg_63d|int) if SH.level.chg_63d is not none else '—' }}bp/63d</div></div>
+            <div class="dc"><div class="dcl">{{ t('Slope (2s10s)','斜率（2-10年）') }}</div><div class="dcv">{{ '%+.2f'|format(SH.slope_2s10s.value) if SH.slope_2s10s.value is not none else '—' }}</div><div class="dcn">{{ t('pctile','分位') }} {{ pct(SH.slope_2s10s.pctile) }} · {{ '%+d'|format(SH.slope_2s10s.chg_63d|int) if SH.slope_2s10s.chg_63d is not none else '—' }}bp/63d</div></div>
+            <div class="dc"><div class="dcl">{{ t('Curvature (2s5s10s fly)','曲率（2-5-10年蝶式）') }}</div><div class="dcv">{{ '%+.2f'|format(SH.fly_2s5s10s.value) if SH.fly_2s5s10s.value is not none else '—' }}</div><div class="dcn">{{ t('pctile','分位') }} {{ pct(SH.fly_2s5s10s.pctile) }} · {{ t('+ humped / − bowed','+隆起／−凹陷') }}</div></div>
+          </div>
+          {% if SH.pca and SH.pca.factors %}
+          <div style="margin-top:12px">
+            <div class="sub" style="font-size:11.5px">{{ t('Principal components of daily curve changes (Litterman-Scheinkman)','日度曲线变动的主成分（Litterman-Scheinkman）') }}</div>
+            <div class="pcabar">
+              {% for fct in SH.pca.factors %}<span class="{{ 'pc-l' if fct.key=='level' else 'pc-s' if fct.key=='slope' else 'pc-c' }}" style="width:{{ (fct.var_explained*100)|round(1) }}%">{{ (fct.var_explained*100)|round|int }}%</span>{% endfor %}
+              {% set resid = 1 - SH.pca.first3_var %}{% if resid and resid > 0.005 %}<span class="pc-r" style="width:{{ (resid*100)|round(1) }}%"></span>{% endif %}
+            </div>
+            <div class="pcalegend"><span><i style="background:var(--indigo)"></i>{{ t('Level','水平') }}</span><span><i style="background:var(--blue)"></i>{{ t('Slope','斜率') }}</span><span><i style="background:var(--teal)"></i>{{ t('Curvature','曲率') }}</span></div>
+            <p class="sub" style="font-size:11px;margin-top:6px">{{ t('The three classic factors span','三个经典因子合计解释') }} <b>{{ (SH.pca.first3_var*100)|round(1) }}%</b> {{ t('of curve variance — the textbook result, measured on our data.','的曲线方差——教科书结论，在我方数据上实测。') }}</p>
+          </div>
+          {% endif %}
+        </div>
+        <div class="card">
+          <h2>{{ t('Curve regime', '曲线状态') }}</h2>
+          {% set RG = yc.regime %}
+          {% if RG.key %}
+          {% set rc = {'bull_steepener': C.green, 'bear_steepener': C.amber, 'bull_flattener': C.indigo, 'bear_flattener': C.red} %}
+          <div class="curve-regime">
+            <span class="regchip" style="background:{{ rc.get(RG.key, C.muted) }}">{{ b(RG.label) }}</span>
+            <div class="sub" style="line-height:1.45;margin-top:8px">{{ b(RG.desc) }}</div>
+            <div class="sub" style="font-size:11.5px"><b style="color:var(--ink)">{{ t('Fed-cycle phase','美联储周期阶段') }}:</b> {{ b(RG.fed_phase) }}{% if RG.slope_chg_bp is not none %} · {{ t('slope','斜率') }} {{ '%+d'|format(RG.slope_chg_bp|int) }}bp/{{ RG.window_d }}d{% endif %}{% if RG.term_premium_dir %} · {{ t('term premium','期限溢价') }} {{ t(RG.term_premium_dir, {'rising':'上行','falling':'下行','stable':'平稳'}.get(RG.term_premium_dir, RG.term_premium_dir)) }}{% endif %}</div>
+            {% if RG.favored %}<div class="favrow"><span class="fl fav">{{ t('Favoured','受益') }}</span>{% for tk in RG.favored %}<span class="tkpill fav">{{ tk }}</span>{% endfor %}</div>{% endif %}
+            {% if RG.pressured %}<div class="favrow"><span class="fl pres">{{ t('Pressured','承压') }}</span>{% for tk in RG.pressured %}<span class="tkpill pres">{{ tk }}</span>{% endfor %}</div>{% endif %}
+            <p class="note" style="font-size:12px;margin-top:4px">{{ b(RG.note) }}</p>
+          </div>
+          {% else %}<p class="sub">{{ t('Curve move indeterminate right now.','当前曲线移动不明确。') }}</p>{% endif %}
+        </div>
+        <div class="card">
+          <h2>{{ t('Recession dashboard', '衰退面板') }}</h2>
+          {% set RC = yc.recession %}
+          {% set rkc = {'low': C.green, 'watch': C.amber, 'elevated': C.amber, 'high': C.red} %}
+          <span class="band-chip" style="background:{{ rkc.get(RC.risk, C.muted) }}">{{ t(RC.risk, {'low':'低','watch':'观察','elevated':'升高','high':'高'}.get(RC.risk, RC.risk)) }} · {{ RC.n_flags }}/4 {{ t('flags','项亮起') }}</span>
+          <div class="recgauges">
+            <div class="recg {{ 'flag-on' if 'ntfs' in RC.flags else '' }}"><div class="rgl">{{ t('Near-term fwd spread','近端远期利差') }}</div><div class="rgv">{{ '%+.2f'|format(RC.ntfs) if RC.ntfs is not none else '—' }}</div></div>
+            <div class="recg {{ 'flag-on' if 'probit' in RC.flags else '' }}"><div class="rgl">{{ t('NY Fed 10y-3m probit','纽约联储10年-3月概率') }}</div><div class="rgv">{{ RC.nyfed_prob|int if RC.nyfed_prob is not none else '—' }}%</div></div>
+            <div class="recg {{ 'flag-on' if 'uninversion' in RC.flags else '' }}"><div class="rgl">{{ t('Un-inversion alarm','重新变陡警报') }}</div><div class="rgv">{{ t('YES','是') if RC.uninversion else t('no','否') }}</div></div>
+            <div class="recg {{ 'flag-on' if 'tp_adj' in RC.flags else '' }}"><div class="rgl">{{ t('TP-adjusted 2s10s','期限溢价调整2-10年') }}</div><div class="rgv">{{ '%+.2f'|format(RC.tp_adj_curve) if RC.tp_adj_curve is not none else '—' }}</div></div>
+          </div>
+          {% if RC.policy_stance %}{% set PS = RC.policy_stance %}<div class="flag {{ 'warn' if PS.stance=='restrictive' else 'ok' if PS.stance=='accommodative' else 'info' }}" style="display:block;margin:2px 0 6px">{{ t('Policy stance','政策立场') }}: <b>{{ '%.2f'|format(PS.fed_funds) }}%</b> {{ t('funds vs','基金 vs') }} ~{{ '%.1f'|format(PS.neutral_anchor) }}% = {{ t(PS.stance, {'restrictive':'偏紧','accommodative':'宽松','neutral':'中性'}.get(PS.stance, PS.stance)) }} ({{ '%+.2f'|format(PS.gap_pp) }}pp)</div>{% endif %}
+          <p class="note" style="font-size:11.5px;margin-top:4px">{{ b(RC.lead_time_note) }}{% if RC.policy_stance %} {{ b(RC.policy_stance.note) }}{% endif %}</p>
+        </div>
+      </div>
+      <div class="grid cols-2" style="margin-top:14px">
+        <div class="card">
+          <h2>{{ t('Slopes & momentum', '斜率与动能') }}</h2>
+          <table class="slopes">
+            <tr><th>{{ t('Spread','利差') }}</th><th>{{ t('Level','水平') }}</th><th>{{ t('%ile','分位') }}</th><th>{{ t('63d Δ','63日变动') }}</th></tr>
+            {% for k, s in yc.slopes.items() %}
+            <tr><td class="nm">{{ b(s.label) }}</td><td class="{{ 'inv' if s.inverted else '' }}">{{ '%+.2f'|format(s.value) if s.value is not none else '—' }}</td><td>{{ pct(s.pctile) }}</td><td>{{ '%+d'|format(s.chg_63d_bp|int) if s.chg_63d_bp is not none else '—' }}bp</td></tr>
+            {% endfor %}
+          </table>
+          {% set M = yc.momentum %}
+          <p class="sub" style="font-size:11.5px;margin-top:8px">{{ t('Curve speed (63d)','曲线速度（63日）') }}: {{ t('real 10y','实际10年') }} {{ '%+d'|format(M.real10y_speed_bp|int) if M.real10y_speed_bp is not none else '—' }}bp · {{ t('front 2y','前端2年') }} {{ '%+d'|format(M.front2y_speed_bp|int) if M.front2y_speed_bp is not none else '—' }}bp · {{ t('|real-speed| pctile','|实际速度|分位') }} {{ pct(M.real_speed_pctile) }}. {{ t('Rate-of-change beats level — the SPEED of a real-yield move breaks equities more than its level.','变动速度胜过水平——实际收益率移动的速度比其水平更能冲击股票。') }}</p>
+          {% if M.trend_spread is not none %}<p class="sub" style="font-size:11.5px;margin-top:4px">{{ t('Term-spread trend (2y smooth)','期限利差趋势（2年平滑）') }}: <b style="color:var(--ink)">{{ '%+.2f'|format(M.trend_spread) }}</b>{% if M.trend_spread_dir %} · {{ t(M.trend_spread_dir, {'rising':'上行','falling':'下行','flat':'平稳'}.get(M.trend_spread_dir, M.trend_spread_dir)) }}{% endif %}. {{ t('The literature flags the smoothed, business-cycle-frequency component of the 3m10y spread as the curve read with genuine equity-premium content (Faria-Verona 2020) — but OUR calibration finds it regime-dependent (the IC sign flips post-2015), so we carry it as context, never a timing signal.','文献认为3月-10年利差经平滑的商业周期频率成分是收益率曲线中具有真正股权溢价含义的读数（Faria-Verona 2020）——但我方校准发现其依赖状态（IC符号在2015年后翻转），故仅作背景，绝非择时信号。') }}</p>{% endif %}
+        </div>
+        <div class="card">
+          <h2>{{ t('Forward rates & carry', '远期利率与持有收益') }}</h2>
+          {% set FW = yc.forwards %}
+          <div class="kpis">
+            <div class="kpi">{{ t('1y1y fwd','1年1年远期') }}<b>{{ '%.2f'|format(FW.f_1y1y) if FW.f_1y1y is not none else '—' }}%</b></div>
+            <div class="kpi">{{ t('2y1y fwd','2年1年远期') }}<b>{{ '%.2f'|format(FW.f_2y1y) if FW.f_2y1y is not none else '—' }}%</b></div>
+            <div class="kpi">{{ t('5y5y fwd','5年5年远期') }}<b>{{ '%.2f'|format(FW.f_5y5y) if FW.f_5y5y is not none else '—' }}%</b></div>
+            <div class="kpi">{{ t('10y carry','10年持有') }}<b>{{ '%.2f'|format(FW.carry_10y_pct) if FW.carry_10y_pct is not none else '—' }}%</b></div>
+            <div class="kpi">{{ t('10y roll-down','10年滚动') }}<b>{{ '%+.2f'|format(FW.rolldown_10y_pct) if FW.rolldown_10y_pct is not none else '—' }}%</b></div>
+            <div class="kpi">{{ t('carry + roll','持有＋滚动') }}<b>{{ '%.2f'|format(FW.carry_roll_10y_pct) if FW.carry_roll_10y_pct is not none else '—' }}%</b></div>
+          </div>
+          <p class="note" style="font-size:12px;margin-top:10px">{{ b(FW.note) }}</p>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2>{{ t('Curve signals — sector, style & market tendency', '曲线信号 — 板块、风格与市场倾向') }}</h2>
+        {% set SG = yc.signals %}
+        <div class="sub" style="font-size:11.5px">{{ t('Per-sector curve tilt under the current regime. ✓meas = a calibrated forward-IC edge in the transmission matrix; ·thy = textbook channel only.','当前状态下各板块的曲线倾向。✓实测＝传导矩阵中存在校准的前瞻IC优势；·理论＝仅教科书传导。') }}</div>
+        <div class="sectilt">
+          {% for s in SG.sector %}
+          <div class="stile {{ 'tail' if s.tilt=='tailwind' else 'head' if s.tilt=='headwind' else '' }}">
+            <span class="se">{{ s.etf }}</span><span class="sb {{ 'meas' if s.basis=='measured' else '' }}" title="{{ 'measured forward IC ('+(s.verdict|lower)+')' if s.basis=='measured' else 'textbook channel, no measured edge' }}">{{ '✓'+(s.ic_driver or '')+' '+('%+.2f'|format(s.ic) if s.ic is not none else '') if s.basis=='measured' else '·thy' }}</span>
+            <div class="sm">{{ t(s.tilt, {'tailwind':'顺风','headwind':'逆风','neutral':'中性'}.get(s.tilt,s.tilt)) }} · {{ t(s.duration, {'long':'长久期','short':'短久期','neutral':'久期中性'}.get(s.duration,s.duration)) }}<br>{{ b(s.mech) }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div style="margin-top:16px">
+          <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)">{{ t('Equity style / factor','股票风格／因子') }}</div>
+          {% set FC = SG.stock_factor %}
+          <div class="facrow">
+            <div class="facpill"><span class="fk">{{ t('Value vs growth','价值vs成长') }}</span><span class="fv">{{ t(FC.value_vs_growth|capitalize, {'value':'价值','growth':'成长','neutral':'中性'}.get(FC.value_vs_growth, FC.value_vs_growth)) }}</span></div>
+            <div class="facpill"><span class="fk">{{ t('Size','规模') }}</span><span class="fv">{{ t({'small':'Small caps','large':'Large caps','neutral':'Neutral'}.get(FC.size, FC.size), {'small':'小盘','large':'大盘','neutral':'中性'}.get(FC.size, FC.size)) }}</span></div>
+            <div class="facpill"><span class="fk">{{ t('Duration factor','久期因子') }}</span><span class="fv">{{ t(FC.duration_factor, {'headwind':'逆风','tailwind':'顺风','neutral':'中性'}.get(FC.duration_factor, FC.duration_factor)) }}</span></div>
+          </div>
+          <p class="note" style="font-size:12px">{{ b(FC.note) }}</p>
+        </div>
+        <div style="margin-top:12px">
+          <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)">{{ t('Market tendency (curve-speed → drawdown risk)','市场倾向（曲线速度→回撤风险）') }}</div>
+          {% set MT = SG.market_tendency %}
+          {% set mtc = {'calm': C.green, 'watch': C.amber, 'elevated': C.red} %}
+          <span class="band-chip" style="background:{{ mtc.get(MT.drawdown_risk, C.muted) }};margin:6px 0">{{ t(MT.drawdown_risk, {'calm':'平静','watch':'观察','elevated':'升高'}.get(MT.drawdown_risk, MT.drawdown_risk)) }}</span>
+          <p class="note" style="font-size:12px">{{ b(MT.label) }}</p>
+        </div>
+        <div class="flag info" style="display:block;margin-top:10px">{{ b(yc.scored_status) }}</div>
+      </div>
+      </div>
+    </details>
     {% endif %}
-    <div class="note" style="margin-top:12px">
-      {% for c in tx.caveats %}<p>• <span class="l-en">{{ c.en }}</span><span class="l-zh">{{ c.zh }}</span></p>{% endfor %}
-      <p><b>{{ t('Data.','数据。') }}</b> {{ t('Free / keyless FRED: full Treasury curve, real yields (TIPS), 5y/10y/5y5y breakevens, term premium; headline & core CPI, headline & core PCE (the Fed’s 2% target gauge), PPI, ECI wage growth, shelter & core-services CPI; Cleveland model + UMich survey inflation expectations. All point-in-time vintaged for honest backtests.', '免费/无密钥的FRED：完整国债曲线、实际利率(TIPS)、5/10年与5年5年盈亏平衡、期限溢价；整体与核心CPI、整体与核心PCE（美联储2%目标）、PPI、ECI工资增长、住房与核心服务CPI；克利夫兰模型与密歇根调查通胀预期。均按时点存档以便诚实回测。') }}</p>
-      <p class="meta-foot">{{ t('Calibration','校准') }}: scripts/calibrate_rate_inflation.py · {{ t('report','报告') }} reports/rate-inflation-transmission-calibration.md · {{ t('History','历史') }} {{ span }} · {{ t('built','构建于') }} {{ built }}</p>
-    </div>
+
+    <details id="shelf-infl">
+      <summary><span class="sh-ic">🌡️</span>{{ t('Inflation & expectations — the deep read', '通胀与预期——深入解读') }}<span class="sh-hint">{{ t('decomposition · breakeven velocity', '分解 · 盈亏平衡速度') }}</span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+      {% set D = tx.inflation_decomposition %}
+      <div class="card" style="margin-top:12px">
+        <h2>{{ t('Inflation decomposition', '通胀分解') }}</h2>
+        <div class="decomp">
+          <div class="dc"><div class="dcl">{{ t('Headline − core CPI','整体−核心CPI') }}</div><div class="dcv">{{ '%+.2f'|format(D.headline_minus_core) if D.headline_minus_core is not none else '—' }}</div><div class="dcn">{{ t('food / energy push','食品/能源推动') }}</div></div>
+          <div class="dc"><div class="dcl">{{ t('Core services YoY','核心服务同比') }}</div><div class="dcv">{{ '%.2f'|format(D.core_services_yoy) if D.core_services_yoy is not none else '—' }}</div><div class="dcn">{{ t('the sticky leg','粘性部分') }}</div></div>
+          <div class="dc"><div class="dcl">{{ t('Shelter YoY','住房同比') }}</div><div class="dcv">{{ '%.2f'|format(D.shelter_yoy) if D.shelter_yoy is not none else '—' }}</div><div class="dcn">{{ t('lagging rent','滞后的租金') }}</div></div>
+          <div class="dc"><div class="dcl">{{ t('Core PCE − core CPI','核心PCE−核心CPI') }}</div><div class="dcv">{{ '%+.2f'|format(D.pce_minus_cpi) if D.pce_minus_cpi is not none else '—' }}</div><div class="dcn">{{ t('basket / weight gap','篮子/权重差') }}</div></div>
+          <div class="dc"><div class="dcl">{{ t('Actual − market-priced','实际−市场定价') }}</div><div class="dcv">{{ D.actual_vs_market_bp|round|int if D.actual_vs_market_bp is not none else '—' }}bp</div><div class="dcn">{{ t('core CPI vs 10y breakeven','核心CPI vs 10年盈亏平衡') }}</div></div>
+        </div>
+        <div class="kpis" style="margin-top:14px">
+          <div class="kpi">{{ t('10y breakeven','10年盈亏平衡') }}<b>{{ '%.2f'|format(S.expectations.breakeven_10y) if S.expectations.breakeven_10y is not none else '—' }}%</b></div>
+          <div class="kpi">{{ t('5y5y breakeven','5年5年盈亏平衡') }}<b>{{ '%.2f'|format(S.expectations.breakeven_5y5y) if S.expectations.breakeven_5y5y is not none else '—' }}%</b></div>
+          <div class="kpi">{{ t('Model 5y','模型5年') }}<b>{{ '%.2f'|format(S.expectations.model_5y) if S.expectations.model_5y is not none else '—' }}%</b></div>
+          <div class="kpi">{{ t('Survey 1y','调查1年') }}<b>{{ '%.1f'|format(S.expectations.survey_1y) if S.expectations.survey_1y is not none else '—' }}%</b></div>
+          <div class="kpi">{{ t('Mkt−model','市场−模型') }}<b>{{ S.expectations.market_minus_model_bp|round|int if S.expectations.market_minus_model_bp is not none else '—' }}bp</b></div>
+          <div class="kpi">{{ t('Core PPI','核心PPI') }}<b>{{ '%.1f'|format(S.inflation.ppi_core_yoy) if S.inflation.ppi_core_yoy is not none else '—' }}%</b></div>
+          <div class="kpi">{{ t('ECI wages','ECI薪酬') }}<b>{{ '%.1f'|format(S.inflation.eci_comp_yoy) if S.inflation.eci_comp_yoy is not none else '—' }}%</b></div>
+        </div>
+      </div>
+      {% if tx.breakeven_decomp %}
+      {% set BD = tx.breakeven_decomp %}
+      {% set cz = BD.cause_badge.cause %}
+      <div class="card bd" style="margin-top:12px">
+        <h2>{{ t('Breakeven velocity & cause — visibility only', '盈亏平衡速度与成因 — 仅供观察') }}</h2>
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;margin:2px 0 4px">
+          <div class="state-val" style="margin:0">{{ '%.2f'|format(BD.level) if BD.level is not none else '—' }}<small>% {{ t('10y breakeven','10年盈亏平衡') }}</small></div>
+          <span class="bd-tag bd-{{ 'fall' if BD.direction=='falling' else 'rise' if BD.direction=='rising' else 'flat' }}">
+            {{ t('falling','下行') if BD.direction=='falling' else t('rising','上行') if BD.direction=='rising' else t('flat','平稳') }} ·
+            {{ t('downtrend','下降趋势') if BD.trend=='downtrend' else t('uptrend','上升趋势') if BD.trend=='uptrend' else t('choppy','震荡') }}{% if BD.is_fast %} · <b>{{ t('FAST','快速') }}</b>{% endif %}
+          </span>
+        </div>
+        <div class="bdkpis">
+          <div class="kpi">{{ t('5d','5日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_5d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_5d_bp|int) if BD.velocity_bp.chg_5d_bp is not none else '—' }}bp</b></div>
+          <div class="kpi">{{ t('10d','10日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_10d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_10d_bp|int) if BD.velocity_bp.chg_10d_bp is not none else '—' }}bp</b></div>
+          <div class="kpi">{{ t('20d','20日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_20d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_20d_bp|int) if BD.velocity_bp.chg_20d_bp is not none else '—' }}bp</b></div>
+          <div class="kpi">{{ t('63d','63日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_63d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_63d_bp|int) if BD.velocity_bp.chg_63d_bp is not none else '—' }}bp</b></div>
+          <div class="kpi">{{ t('Accel 10d','10日加速') }}<b class="{{ 'dn' if (BD.accel_10d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.accel_10d_bp|int) if BD.accel_10d_bp is not none else '—' }}bp</b></div>
+          <div class="kpi">{{ t('Speed pctile','速度分位') }}<b>{{ (BD.fall_speed_pctile*100)|round|int if BD.fall_speed_pctile is not none else '—' }}</b></div>
+          <div class="kpi">{{ t('5y5y 20d','5y5y 20日') }}<b class="{{ 'dn' if (BD.cross_check_5y5y_chg_20d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.cross_check_5y5y_chg_20d_bp|int) if BD.cross_check_5y5y_chg_20d_bp is not none else '—' }}bp</b></div>
+        </div>
+        <div class="bd-badge bd-{{ cz }}">
+          <div class="bd-badge-h">{{ t('Cause','成因') }}: {{ cz|replace('_',' ')|upper }}</div>
+          <div>{{ b(BD.cause_badge) }}</div>
+        </div>
+        {% if BD.tips_liquidity_flag %}<p class="sub" style="color:var(--red);margin-top:8px">⚠ {{ b(BD.tips_liquidity_flag) }}</p>{% endif %}
+        <div class="sub faint" style="margin-top:8px">{{ t('Co-state','联动状态') }}:
+          {{ t('oil','油') }} {{ '%+.0f'|format(BD.costate.oil_chg_20d_pct) if BD.costate.oil_chg_20d_pct is not none else '—' }}% ·
+          {{ t('real 10y','实际10年') }} {{ '%+d'|format(BD.costate.real10y_chg_20d_bp|int) if BD.costate.real10y_chg_20d_bp is not none else '—' }}bp ·
+          {{ t('nom 10y','名义10年') }} {{ '%+d'|format(BD.costate.nom10y_chg_20d_bp|int) if BD.costate.nom10y_chg_20d_bp is not none else '—' }}bp ·
+          {{ t('HY-OAS z','高收益OAS z') }} {{ BD.costate.hy_oas_z if BD.costate.hy_oas_z is not none else '—' }} ·
+          VIX {{ (BD.costate.vix_pctile*100)|round|int if BD.costate.vix_pctile is not none else '—' }}pct</div>
+        <p class="sub" style="margin-top:8px">{{ b(BD.caveat) }}</p>
+      </div>
+      {% endif %}
+      </div>
+    </details>
+
+    <details id="shelf-gate">
+      <summary><span class="sh-ic">🧾</span>{{ t('How we measure — receipts & caveats', '测量方法——依据与告诫') }}<span class="sh-hint">{{ t('every tested signal, including the failures', '每个被检验的信号，包括失败的') }}</span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+      <p class="note" style="margin-top:12px">{{ t('We tested every rate and inflation driver on this page for real predictive edge. None passed the bar to be scored — so everything here is shown as context to explain moves, never as a signal to trade on. The table below is the full honest record.', '我们对页面上每个利率与通胀驱动都做了预测优势检验，无一通过计分门槛——因此本页内容仅为解释行情的背景，绝非交易信号。下表为完整的诚实记录。') }}</p>
+      <div class="flag info" style="display:block;margin-bottom:10px"><span class="l-en">{{ tx.scored_status.en }}</span><span class="l-zh">{{ tx.scored_status.zh }}</span></div>
+      {% if gate %}
+      <table class="gate">
+        <tr><th>{{ t('Candidate leg','候选腿') }}</th><th>{{ t('Verdict','判定') }}</th><th class="num">{{ t('IC dd (f/pre/post)','IC回撤(全/前/后)') }}</th><th class="num">{{ t('hi-tercile edge','高三分位超额') }}</th><th>{{ t('scored?','计分?') }}</th></tr>
+        {% for k, s in gate.items() %}
+        <tr><td>{{ s.label }}</td><td>{{ s.verdict }}</td><td class="num">{{ s.ic_dd_full }}/{{ s.ic_dd_pre }}/{{ s.ic_dd_post }}</td><td class="num">{{ s.conditional.high_edge_pp if s.conditional else '—' }}pp</td><td>{{ '✅' if s.scored_eligible else '—' }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+      <div class="note" style="margin-top:12px">
+        {% for c in tx.caveats %}<p>• <span class="l-en">{{ c.en }}</span><span class="l-zh">{{ c.zh }}</span></p>{% endfor %}
+        <p><b>{{ t('Data.','数据。') }}</b> {{ t('Free / keyless FRED: full Treasury curve, real yields (TIPS), 5y/10y/5y5y breakevens, term premium; headline & core CPI, headline & core PCE (the Fed’s 2% target gauge), PPI, ECI wage growth, shelter & core-services CPI; Cleveland model + UMich survey inflation expectations. All point-in-time vintaged for honest backtests. Dollar read: broad trade-weighted dollar + the Dollar Desk on the Forex page.', '免费/无密钥的FRED：完整国债曲线、实际利率(TIPS)、5/10年与5年5年盈亏平衡、期限溢价；整体与核心CPI、整体与核心PCE（美联储2%目标）、PPI、ECI工资增长、住房与核心服务CPI；克利夫兰模型与密歇根调查通胀预期。均按时点存档以便诚实回测。美元读数：广义贸易加权美元及外汇页的美元台。') }}</p>
+        <p class="meta-foot">{{ t('Calibration','校准') }}: scripts/calibrate_rate_inflation.py · {{ t('report','报告') }} reports/rate-inflation-transmission-calibration.md · {{ t('History','历史') }} {{ span }} · {{ t('built','构建于') }} {{ built }}</p>
+      </div>
+      </div>
+    </details>
   </div>
+
+  <p class="tx-disclosure">{{ t('Everything on this page is a measured relationship shown to explain market moves — none of it is a prediction or a trade signal. When a relationship failed our tests, we say so in the receipts above.', '本页所有内容均为用于解释行情的实测关联——皆非预测或交易信号。未通过检验的关联，已在上方依据中如实注明。') }}</p>
 </div>
 
 <script src="theme.js"></script>

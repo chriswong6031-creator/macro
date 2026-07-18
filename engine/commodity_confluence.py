@@ -38,30 +38,30 @@ log = logging.getLogger(__name__)
 # --------------------------------------------------------------------------- #
 _LABELS: dict[str, tuple[str, str]] = {
     # BOTTOM capitulation group
-    "shock_bottom":      ("Exogenous washout / 外生冲击洗盘", "外生冲击洗盘"),
-    "oversold_ltf":      ("Oversold short-term / 短周期超卖", "短周期超卖"),
-    "oversold_htf":      ("Oversold longer-term / 中周期超卖", "中周期超卖"),
-    "cot_short":         ("COT crowded short / COT大幅偏空", "COT大幅偏空"),
-    "stretch_below":     ("Deeply below its 200-day trend / 深跌破200日均线", "深跌破200日均线"),
+    "shock_bottom":      ("Exogenous washout", "外生冲击洗盘"),
+    "oversold_ltf":      ("Oversold short-term", "短周期超卖"),
+    "oversold_htf":      ("Oversold longer-term", "中周期超卖"),
+    "cot_short":         ("COT crowded short", "COT大幅偏空"),
+    "stretch_below":     ("Deeply below its 200-day trend", "深跌破200日均线"),
     # BOTTOM turn group
-    "curl":              ("Momentum curl up / 动量上钩", "动量上钩"),
-    "armed":             ("Technical arm triggered / 技术触发", "技术触发"),
-    "bc_conf":           ("Bottom-confidence high / 底部信心高", "底部信心高"),
-    "cycle_bottom":      ("Cycle in trough/recovery / 周期处于低谷/复苏", "周期处于低谷/复苏"),
+    "curl":              ("Momentum curl up", "动量上钩"),
+    "armed":             ("Technical arm triggered", "技术触发"),
+    "bc_conf":           ("Bottom-confidence high", "底部信心高"),
+    "cycle_bottom":      ("Cycle in trough/recovery", "周期处于低谷/复苏"),
     # INDEX-only bottom
-    "breadth_bottom":    ("Sector breadth washout / 板块广度超卖", "板块广度超卖"),
+    "breadth_bottom":    ("Sector breadth washout", "板块广度超卖"),
     # TOP euphoria group
-    "shock_top":         ("Exogenous blow-off bid / 外生吹顶买盘", "外生吹顶买盘"),
-    "overbought_ltf":    ("Overbought short-term / 短周期超买", "短周期超买"),
-    "overbought_htf":    ("Overbought longer-term / 中周期超买", "中周期超买"),
-    "cot_long":          ("COT crowded long / COT大幅偏多", "COT大幅偏多"),
-    "stretch":           ("Price stretched above 200-day / 价格大幅偏离200日均线", "价格大幅偏离200日均线"),
+    "shock_top":         ("Exogenous blow-off bid", "外生吹顶买盘"),
+    "overbought_ltf":    ("Overbought short-term", "短周期超买"),
+    "overbought_htf":    ("Overbought longer-term", "中周期超买"),
+    "cot_long":          ("COT crowded long", "COT大幅偏多"),
+    "stretch":           ("Price stretched above 200-day", "价格大幅偏离200日均线"),
     # TOP rollover group
-    "curl_dn":           ("Momentum rolling over / 动量下钩", "动量下钩"),
-    "divergence":        ("Momentum diverging from trend / 动量与趋势背离", "动量与趋势背离"),
-    "cycle_top":         ("Cycle at peak/downturn / 周期处于顶峰/下行", "周期处于顶峰/下行"),
+    "curl_dn":           ("Momentum rolling over", "动量下钩"),
+    "divergence":        ("Momentum diverging from trend", "动量与趋势背离"),
+    "cycle_top":         ("Cycle at peak/downturn", "周期处于顶峰/下行"),
     # INDEX-only top
-    "breadth_top":       ("Sector breadth euphoric / 板块广度亢奋", "板块广度亢奋"),
+    "breadth_top":       ("Sector breadth euphoric", "板块广度亢奋"),
 }
 
 

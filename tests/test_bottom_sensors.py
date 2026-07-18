@@ -1,7 +1,8 @@
 """tests/test_bottom_sensors.py — Unit tests for engine/neuralweb/bottom_sensors.py
 
 Amendment 1, Lane B0, PR-1.  Tests cover:
-  1. Label-precedence for every state in the frozen labels_v1 decision table.
+  1. Label-precedence for every state in the frozen decision table (labels_v2:
+     same table/thresholds as v1; DEAD_MONEY_RISK binds signed ret_since_anchor_pct).
   2. Three adversarial cases from the amendment review:
      (a) launched name with a new fresh fire
      (b) ticks > 2 with tiny dist_21d_low
@@ -451,6 +452,7 @@ EXPECTED_SCHEMA_COLS = {
     # here so schema drift is caught in CI.
     "hold_days_basing",
     "hold_maxup_pct",
+    "hold_ret_since_anchor_pct",
     "knife_score",
     "bars_to_cross",
 }
@@ -497,8 +499,9 @@ class TestSchemaConsistency:
         assert abs(d) < 0.01
 
     def test_labels_version_constant(self):
-        """LABELS_VERSION is frozen to 'labels_v1'."""
-        assert LABELS_VERSION == "labels_v1"
+        """LABELS_VERSION is 'labels_v2' (DEAD_MONEY_RISK binds signed
+        ret_since_anchor_pct; version change logged in the amendment doc)."""
+        assert LABELS_VERSION == "labels_v2"
 
     def test_is_display_only_constant(self):
         """IS_DISPLAY_ONLY is True."""
@@ -533,6 +536,7 @@ class TestSchemaConsistency:
                                "fire_ticks": 1, "fire_src": "m1d",
                                "washout_ctx": True, "bonus": 0.25, "div": False, "cohort": 0.4},
                     "hold": {"state": "intact", "days_basing": 5, "maxup_pct": 1.0,
+                             "ret_since_anchor_pct": 0.5,
                              "anchor": "2026-07-01", "anchor_src": "take",
                              "invalidation": 140.0, "ob_persist": False, "provisional": False},
                     "signal": {"tier_cascade": "T1", "ticks": 0, "bars_to_cross": None,
@@ -601,7 +605,7 @@ class TestSchemaConsistency:
         )
 
         # labels_version and is_display_only stamped on every row
-        assert (df["labels_version"] == "labels_v1").all()
+        assert (df["labels_version"] == "labels_v2").all()
         assert (df["is_display_only"] == True).all()  # noqa: E712
 
         # rs_repair_state and sponsorship_state unavailable
@@ -620,6 +624,64 @@ class TestSchemaConsistency:
             and not (isinstance(fake_overlay_raw, float) and fake_overlay_raw != fake_overlay_raw)
         ) else ""
         assert "EVENT_BLACKOUT" not in fake_overlay
+
+
+class TestDeadMoneySignedBinding:
+    """labels_v2: DEAD_MONEY_RISK binds hold.py's SIGNED ret_since_anchor_pct.
+
+    The retired labels_v1 maxup_pct proxy (max favorable excursion, always ≳ 0)
+    could not see underwater names: AMKR on 2026-07-17 was down 30.4% since its
+    hold anchor yet carried maxup_pct=3.42 → |3.42| < 4 → mislabeled
+    DEAD_MONEY_RISK.  These tests pin the v2 binding end-to-end through
+    assemble(): underwater ≠ dead money; genuinely flat = dead money; a pre-v2
+    hold dict without the field degrades to NOT firing (never proxy fallback).
+    """
+
+    def _run_assemble(self, tmp_path, hold_extra: dict):
+        import json
+
+        from engine.neuralweb.bottom_sensors import assemble
+
+        sg = {
+            "as_of": "2026-07-02",
+            # No trigger tier + stale ticks so precedence reaches DEAD_MONEY_RISK.
+            "verdicts": {"HODL": {"tier_cascade": None, "ticks": 8,
+                                  "bars_to_cross": None, "eligible": False,
+                                  "tier_sub": None, "provisional": False}},
+        }
+        hold = {"state": "intact", "days_basing": 20, "anchor": "2026-06-01",
+                "anchor_src": "cross", "invalidation": 40.0,
+                "ob_persist": False, "provisional": False, **hold_extra}
+        us = {"as_of": "2026-07-02", "donor": {},
+              "buy": [{"ticker": "HODL", "hold": hold}],
+              "watch": [], "laggards": []}
+        fd = tmp_path / "site" / "factordata"
+        fd.mkdir(parents=True)
+        (fd / "signal_gate.json").write_text(json.dumps(sg))
+        (fd / "us_standouts.json").write_text(json.dumps(us))
+        df = assemble(root=tmp_path, today=datetime.date(2026, 7, 5))
+        return df.loc["HODL"]
+
+    def test_underwater_name_not_dead_money(self, tmp_path):
+        """AMKR-class: maxup small but truly down 30% → NOT DEAD_MONEY_RISK."""
+        row = self._run_assemble(
+            tmp_path, {"maxup_pct": 3.42, "ret_since_anchor_pct": -30.42})
+        assert row["hold_ret_since_anchor_pct"] == -30.42
+        assert row["bottom_state"] != "DEAD_MONEY_RISK"
+        assert row["bottom_state"] == "WATCH"
+
+    def test_flat_name_is_dead_money(self, tmp_path):
+        """Genuinely flat since anchor (|ret| < 4%) → DEAD_MONEY_RISK fires."""
+        row = self._run_assemble(
+            tmp_path, {"maxup_pct": 2.0, "ret_since_anchor_pct": 1.2})
+        assert row["bottom_state"] == "DEAD_MONEY_RISK"
+
+    def test_missing_signed_field_degrades(self, tmp_path):
+        """Pre-v2 hold dict (no ret_since_anchor_pct) → gate must NOT fire and
+        must NOT fall back to the maxup proxy (§C2 binding law)."""
+        row = self._run_assemble(tmp_path, {"maxup_pct": 2.0})
+        assert row["hold_ret_since_anchor_pct"] is None
+        assert row["bottom_state"] != "DEAD_MONEY_RISK"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

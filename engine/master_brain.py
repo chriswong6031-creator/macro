@@ -932,6 +932,63 @@ def gather_state(root: Path | None = None) -> dict:
             "FX risk-off/dollar read is a COINCIDENT fragility gauge — moves with prices, "
             "not ahead of them. Do not treat it as independent of the equity regime."
         )
+        # MSX-1 §2.2 additions — null-tolerant; absent keys degrade to None
+        # state_changes: flips and regime ages are DESCRIPTIVE context, not predictors
+        _sc = fx.get("state_changes") or {}
+        fx_block["state_changes"] = {
+            "_tape_family": "price_regime",
+            "_lead_lag": "coincident",
+            "_tape_note": (
+                "State-change durations (days_in_state) describe how long the current "
+                "regime has been in place — DESCRIPTIVE context only, not a predictor "
+                "of flips. Do not infer reversion risk from age alone."
+            ),
+            "data": _sc if _sc else None,
+        }
+        # dominant stress scenario: context for narration, not a trading signal
+        _rr_raw = fx.get("regime_radar") or {}
+        _scenarios = _rr_raw.get("scenarios") or [] if isinstance(_rr_raw, dict) else []
+        _dominant_key = _rr_raw.get("dominant") if isinstance(_rr_raw, dict) else None
+        _dom_sc: dict | None = None
+        for _sc_item in _scenarios:
+            if isinstance(_sc_item, dict) and (
+                _sc_item.get("key") == _dominant_key or _sc_item.get("active")
+            ):
+                _prob = _sc_item.get("prob") or {}
+                _dom_sc = {
+                    "key": _sc_item.get("key"),
+                    "intensity": _sc_item.get("intensity"),
+                    "p_cond": _prob.get("p_cond"),
+                    "base_rate": _prob.get("base_rate"),
+                    "_tape_family": "price_regime",
+                    "_lead_lag": "coincident",
+                    "_tape_note": (
+                        "Stress-scenario intensity is a DESCRIPTIVE severity label — "
+                        "not a probability of adverse outcome. Narrate; do not escalate."
+                    ),
+                }
+                break
+        fx_block["dominant_stress_scenario"] = _dom_sc
+        # strength extremes: directional context, coincident with price moves
+        _st_raw = fx.get("strength") or {}
+        _st_default = _st_raw.get("default") or "1m"
+        _st_horizons = _st_raw.get("horizons") or {}
+        _st_list = _st_horizons.get(_st_default) or []
+        _st_sorted = sorted(
+            [h for h in _st_list if isinstance(h, dict) and h.get("strength") is not None],
+            key=lambda h: h.get("strength", 0),
+        ) if _st_list else []
+        fx_block["strength_extremes"] = {
+            "strongest": _st_sorted[-1] if _st_sorted else None,
+            "weakest": _st_sorted[0] if _st_sorted else None,
+            "horizon": _st_default,
+            "_tape_family": "price_regime",
+            "_lead_lag": "coincident",
+            "_tape_note": (
+                "Currency strength extremes are COINCIDENT with price moves — "
+                "not predictive. Use for narrative context only."
+            ),
+        } if _st_sorted else None
         state["forex"] = fx_block
     # Bonds: the leading-family credit/curve/rates-vol backdrop — built (drivers_for)
     # for exactly this synthesis, but never wired in until now.

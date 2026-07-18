@@ -229,11 +229,114 @@ def dollar_events(dollar: pd.DataFrame | None) -> list[dict]:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# MSX-1 desk-level event types (additive)
+# --------------------------------------------------------------------------- #
+
+def desk_smile_regime_events(dollar: pd.DataFrame | None) -> list[dict]:
+    """Smile-regime flip events — rebuilt historically from the full _dollar frame
+    (same as dollar_events but under type 'smile_regime_flip' for downstream routing).
+    Kept separate from the existing 'smile_regime' type to avoid id collisions."""
+    if dollar is None or dollar.empty or "smile_regime" not in dollar.columns:
+        return []
+    out = []
+    for ts, frm, to in _transitions(dollar["smile_regime"]):
+        out.append(_ev(None, "smile_regime_flip", ts, "high",
+                       f"Dollar smile flipped: {frm} → {to}",
+                       f"The dollar-smile decomposition regime changed: {frm} → {to}. "
+                       f"This shifts the structural USD bias — "
+                       f"{'safe-haven bid active' if to == 'Risk-off haven bid' else 'see dollar desk for context'}.",
+                       {"from": frm, "to": to}, to,
+                       headline_zh=f"美元微笑翻转：{_z(frm)} → {_z(to)}",
+                       detail_zh=f"美元微笑分解格局变化：{_z(frm)} → {_z(to)}。"
+                       f"{'避险买盘启动。' if to == 'Risk-off haven bid' else '详见美元总台。'}"))
+    return out
+
+
+def desk_triple_red_events(dollar: pd.DataFrame | None, desk: dict | None) -> list[dict]:
+    """Triple-red onset/clear: USD + equities + Treasuries all falling simultaneously.
+
+    triple_red is a scalar snapshot (no historical series), so only emit for the
+    current session and rely on dedup-by-id for idempotency.
+    """
+    if not desk:
+        return []
+    sm = desk.get("smile") or {}
+    triple_red = sm.get("triple_red")
+    if triple_red is None:
+        return []
+    # Use today's date as the event timestamp (scalar snapshot, not historical series)
+    ts = pd.Timestamp.now(tz="UTC").normalize()
+    to = "active" if triple_red else "clear"
+    if triple_red:
+        return [_ev(None, "triple_red", ts, "high",
+                    "Triple-red: USD, equities, and Treasuries all declining",
+                    "The dollar is not acting as a safe haven: USD, S&P 500, and "
+                    "Treasuries (prices) have all fallen over the past month. "
+                    "This is a potential stress-selling signal — watch for forced deleveraging.",
+                    {"triple_red": True}, to,
+                    headline_zh="三重下跌：美元、股市、国债同步下行",
+                    detail_zh="美元未发挥避险功能：美元、标普500及美债（价格）过去一月均下跌。"
+                    "警惕强制去杠杆风险。")]
+    else:
+        return [_ev(None, "triple_red", ts, "info",
+                    "Triple-red cleared: safe-haven function may be restoring",
+                    "The dollar, equities, and Treasuries are no longer all declining together. "
+                    "The acute co-movement stress has eased.",
+                    {"triple_red": False}, to,
+                    headline_zh="三重下跌解除：避险功能可能恢复",
+                    detail_zh="美元、股市、国债不再同步下跌，极端同向压力已缓解。")]
+
+
+def desk_scenario_events(regime: dict | None) -> list[dict]:
+    """Stress-scenario activation: emit current-day event when a scenario becomes active.
+
+    Only the current snapshot is available (no historical activation series), so
+    only current-day events are emitted; dedup-by-id keeps this idempotent.
+    """
+    if not regime or not regime.get("scenarios"):
+        return []
+    out = []
+    ts = pd.Timestamp.now(tz="UTC").normalize()
+    for s in regime["scenarios"]:
+        if not s.get("active"):
+            continue
+        key = s.get("key", "unknown")
+        name_en = s.get("name_en", key)
+        name_zh = s.get("name_zh", key)
+        intensity = s.get("intensity_today") or 0.0
+        illus = s.get("illustrative", False)
+        prob = s.get("prob") or {}
+        p_cond = prob.get("p_cond")
+        sev = "high" if intensity >= 60 else "medium"
+        prob_txt = (f" Historical conditional frequency: {p_cond:.0%}."
+                    if p_cond is not None else "")
+        illus_note = " (Scenario is illustrative — history is limited.)" if illus else ""
+        out.append(_ev(None, "scenario_active", ts, sev,
+                       f"Stress scenario active: {name_en} ({intensity:.0f}%)",
+                       f"The '{name_en}' scenario is active at {intensity:.0f}% intensity."
+                       f"{prob_txt}{illus_note}",
+                       {"key": key, "intensity": round(float(intensity), 1),
+                        "illustrative": illus}, key,
+                       headline_zh=f"压力情景激活：{name_zh}（{intensity:.0f}%）",
+                       detail_zh=f"「{name_zh}」情景当前激活，强度 {intensity:.0f}%。"
+                       f"{'历史条件频率：' + f'{p_cond:.0%}。' if p_cond is not None else ''}"
+                       f"{'（情景为示意性 — 历史样本有限。）' if illus else ''}"))
+    return out
+
+
 def _path():
     return config.data_dir() / "forex" / "alerts.jsonl"
 
 
-def compute_all_events(results: dict, cfg: dict | None = None) -> list[dict]:
+def compute_all_events(results: dict, cfg: dict | None = None,
+                       desk: dict | None = None,
+                       regime: dict | None = None) -> list[dict]:
+    """Compute all FX alert events from signal frames + optional desk/regime context.
+
+    MSX-1 additive: desk and regime are optional; existing callers without these
+    args continue to work (all three new event generators degrade to [] when absent).
+    """
     cfg = cfg or config.load()["forex"]
     labels = _labels(cfg)
     out: list[dict] = []
@@ -241,7 +344,12 @@ def compute_all_events(results: dict, cfg: dict | None = None) -> list[dict]:
         if pair == "_dollar":
             continue
         out += _pair_events(pair, df, labels.get(pair, {"label": pair, "base": pair}))
-    out += dollar_events(results.get("_dollar"))
+    dol = results.get("_dollar")
+    out += dollar_events(dol)
+    # MSX-1: desk-level event types (additive)
+    out += desk_smile_regime_events(dol)
+    out += desk_triple_red_events(dol, desk)
+    out += desk_scenario_events(regime)
     by_id = {e["id"]: e for e in out}
     existing = load_events()
     for e in existing:
@@ -272,8 +380,13 @@ def load_events() -> list[dict]:
     return out
 
 
-def rebuild(results: dict) -> list[dict]:
-    events = compute_all_events(results)
+def rebuild(results: dict, desk: dict | None = None, regime: dict | None = None) -> list[dict]:
+    """Rebuild alerts.jsonl deterministically from signal frames.
+
+    MSX-1: desk and regime are optional keyword arguments so existing callers
+    (test fixtures, manual invocations without desk/regime) continue to work.
+    """
+    events = compute_all_events(results, desk=desk, regime=regime)
     write_events(events)
     log.info("forex alerts: %d events, latest %s", len(events), events[0]["ts"] if events else "none")
     return events

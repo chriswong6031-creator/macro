@@ -16,12 +16,11 @@
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Commodities — {{ as_of }}</title>
 {% set seo_title = 'Commodities Sector Intelligence — Mastermind' %}
-{% set seo_desc = 'Live commodity sector read: sector stance, index breadth, bottoms & tops confluence board, trend-diversity heat grid, and per-commodity detail for all 17 members.' %}
+{% set seo_desc = 'Live commodity sector read: sector stance, index breadth, bottoms & tops early-warning board, trend-diversity heat grid, and per-commodity detail for all 17 members.' %}
 {% set seo_path = 'commodities.html' %}
 {% include "_seo_head.html.j2" %}
-{# Plotly deliberately NOT loaded: this page renders zero Plotly charts (stance
-   board + heat grid are pure HTML/SVG). Re-include '_plotly_head.html.j2' only
-   if a real chart returns. #}
+{# Plotly deliberately NOT loaded: this page renders zero Plotly charts.
+   Re-include '_plotly_head.html.j2' only if a real chart returns. #}
 <style>
 /* ── base vars — dark-default ──────────────────────────────── */
 :root {
@@ -30,13 +29,20 @@
   --up:#37d07f; --dn:#ff6a6a; --amb:#f2b24d; --gold:#d6ab5c; --blue:#5d8bff; --pur:#9b8cff;
   --ink:#e3e9f2;
   --font-ui: Inter, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* glass */
+  --glass-bg: rgba(16,22,30,.55);
+  --glass-border: rgba(255,255,255,.10);
+  --glass-hi: rgba(255,255,255,.06);
 }
-/* light-theme overrides — mirrors theme.css flip */
+/* light-theme overrides */
 [data-theme='light']:root, [data-theme='light'] {
   --bg:#f7f8fa; --panel:#ffffff; --panel2:#f0f2f5; --line:#e1e7ef; --line2:#c8d0dc;
   --tx:#1a2133; --mut:#5c6b80; --faint:#8b96a8;
   --up:#1a7f43; --dn:#c0392b; --amb:#9a6800; --gold:#a07820; --blue:#285fff; --pur:#6c5ce7;
   --ink:#1a2133;
+  --glass-bg: rgba(255,255,255,.75);
+  --glass-border: rgba(0,0,0,.10);
+  --glass-hi: rgba(255,255,255,.90);
 }
 *, *::before, *::after { box-sizing: border-box; }
 html:not([data-lang="zh"]) .l-zh { display: none; }
@@ -48,25 +54,88 @@ body {
   -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums;
 }
 a { color: var(--blue); text-decoration: none; }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px 60px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px 60px; position: relative; z-index: 1; }
 /* ── typography helpers ─── */
 .kick { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
         color: var(--faint); margin: 0 0 10px; }
 .mut { color: var(--mut); } .faint { color: var(--faint); } .up { color: var(--up); }
 .dn { color: var(--dn); } .amb { color: var(--amb); } .gold { color: var(--gold); }
-/* ── panel / grid ─── */
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+
+/* ── AURORA (ambient breathing layer) ───────────────────────── */
+body.page-commod .aurora {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+}
+/* Base blobs — green family (watch/act default) */
+body.page-commod .aurora::before {
+  content: ""; position: absolute; top: -180px; left: 8%;
+  width: 780px; height: 540px; border-radius: 50%; filter: blur(90px);
+  background: radial-gradient(ellipse, rgba(55,208,127,.10) 0%, transparent 70%);
+  animation: au-drift-a 28s ease-in-out infinite alternate;
+}
+body.page-commod .aurora::after {
+  content: ""; position: absolute; bottom: -80px; right: -60px;
+  width: 660px; height: 560px; border-radius: 50%; filter: blur(90px);
+  background: radial-gradient(ellipse, rgba(93,139,255,.08) 0%, transparent 70%);
+  animation: au-drift-b 34s ease-in-out infinite alternate;
+}
+body.page-commod .aurora .au-a3 {
+  position: absolute; top: 42%; left: 52%; transform: translate(-50%,-50%);
+  width: 580px; height: 480px; border-radius: 50%; filter: blur(90px);
+  background: radial-gradient(ellipse, rgba(55,208,127,.06) 0%, transparent 70%);
+  animation: au-breathe 22s ease-in-out infinite;
+}
+/* State tint: amber (watch / protect) */
+body.page-commod .aurora.au-amber::before { background: radial-gradient(ellipse, rgba(242,178,77,.10) 0%, transparent 70%); }
+body.page-commod .aurora.au-amber .au-a3   { background: radial-gradient(ellipse, rgba(242,178,77,.06) 0%, transparent 70%); }
+/* State tint: red (protect gains / sell) */
+body.page-commod .aurora.au-red::before { background: radial-gradient(ellipse, rgba(255,106,106,.10) 0%, transparent 70%); }
+body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, rgba(255,106,106,.06) 0%, transparent 70%); }
+/* Light-mode — much fainter */
+[data-theme='light'] body.page-commod .aurora::before { background: radial-gradient(ellipse, rgba(55,208,127,.04) 0%, transparent 70%); }
+[data-theme='light'] body.page-commod .aurora .au-a3  { background: radial-gradient(ellipse, rgba(55,208,127,.025) 0%, transparent 70%); }
+[data-theme='light'] body.page-commod .aurora.au-amber::before { background: radial-gradient(ellipse, rgba(156,98,18,.04) 0%, transparent 70%); }
+[data-theme='light'] body.page-commod .aurora.au-amber .au-a3  { background: radial-gradient(ellipse, rgba(156,98,18,.025) 0%, transparent 70%); }
+[data-theme='light'] body.page-commod .aurora.au-red::before { background: radial-gradient(ellipse, rgba(192,57,43,.04) 0%, transparent 70%); }
+[data-theme='light'] body.page-commod .aurora.au-red .au-a3  { background: radial-gradient(ellipse, rgba(192,57,43,.025) 0%, transparent 70%); }
+@keyframes au-drift-a { from{transform:translate(0,0)} to{transform:translate(40px,30px)} }
+@keyframes au-drift-b { from{transform:translate(0,0)} to{transform:translate(-35px,25px)} }
+@keyframes au-breathe { 0%,100%{opacity:.7} 50%{opacity:1} }
+@media(prefers-reduced-motion:reduce) {
+  body.page-commod .aurora, body.page-commod .aurora::before, body.page-commod .aurora::after, body.page-commod .aurora .au-a3 { animation:none; }
+}
+
+/* ── GLASS panels ─── */
+.panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.45), 0 1.5px 0 var(--glass-hi) inset;
+  padding: 16px 18px;
+  transition: box-shadow .2s, transform .2s, border-color .2s;
+}
+.panel.interactive:hover {
+  border-color: rgba(93,139,255,.30);
+  box-shadow: 0 6px 22px rgba(0,0,0,.30);
+  transform: translateY(-1px);
+}
+[data-theme='light'] .panel {
+  box-shadow: 0 4px 18px rgba(0,0,0,.10), 0 1px 0 rgba(255,255,255,.9) inset;
+}
 .panel2 { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 13px 15px; }
 .grid { display: grid; gap: 14px; }
 .g2 { grid-template-columns: 1.35fr 1fr; }
 .g2e { grid-template-columns: 1fr 1fr; }
 @media(max-width:780px){ .g2, .g2e { grid-template-columns: 1fr; } }
-/* ── header ─── */
+
+/* ── page header ─── */
 .hd { display: flex; justify-content: space-between; align-items: flex-end;
       margin-bottom: 18px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
 .hd h1 { font-size: 15px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
           color: var(--mut); margin: 0 0 2px; }
 .asof { font-size: 12px; color: var(--faint); }
+
 /* ── section header ─── */
 .sechd { display: flex; align-items: center; gap: 9px; margin: 22px 0 2px; }
 .sechd h2 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: .01em; }
@@ -76,42 +145,109 @@ a { color: var(--blue); text-decoration: none; }
 .sechd .sub { font-size: 12px; color: var(--faint); margin: 0; }
 .tierlabel { font-size: 10.5px; color: var(--faint); border: 1px solid var(--line2);
              border-radius: 5px; padding: 1px 6px; margin-left: auto; }
-/* ── SECTION 1 — stance hero ─── */
+
+/* ── HERO ─── */
 .hero { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; margin-bottom: 14px; }
 @media(max-width:780px){ .hero { grid-template-columns: 1fr; } }
-.stance-word { font-size: 30px; font-weight: 600; letter-spacing: -.01em; margin: 2px 0 6px; }
-.stance-word.t-watch    { color: var(--amb); }
-.stance-word.t-protect  { color: var(--dn); }
-.stance-word.t-getready { color: var(--up); }
-.stance-word.t-act      { color: var(--up); }
-.stance-word.t-standaside { color: var(--mut); }
-.stance-sub { font-size: 14px; color: var(--tx); max-width: 44ch; line-height: 1.55; }
-.stance-tag { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
-              font-size: 12px; color: var(--faint); border: 1px solid var(--line2);
-              border-radius: 20px; padding: 4px 11px; }
-/* dot bars */
+
+/* Big stance word — the anchor */
+.big-stance {
+  font-size: 50px; font-weight: 800; letter-spacing: -.025em;
+  line-height: .95; margin: 4px 0 10px;
+}
+.big-stance.t-watch    { color: var(--amb); text-shadow: 0 0 36px rgba(242,178,77,.35); }
+.big-stance.t-protect  { color: var(--dn);  text-shadow: 0 0 36px rgba(255,106,106,.35); }
+.big-stance.t-getready { color: var(--up);  text-shadow: 0 0 36px rgba(55,208,127,.35); }
+.big-stance.t-act      { color: var(--up);  text-shadow: 0 0 36px rgba(55,208,127,.35); }
+.big-stance.t-standaside { color: var(--mut); text-shadow: none; }
+@media(max-width:560px){ .big-stance { font-size: 36px; } }
+
+.stance-sub { font-size: 14px; color: var(--tx); max-width: 44ch; line-height: 1.55; margin-bottom: 12px; }
+.stance-tag {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+  font-size: 12px; color: var(--faint); border: 1px solid var(--line2);
+  border-radius: 20px; padding: 4px 11px;
+}
+
+/* Quadrant tooltip text injected via data-tip-en/zh — plain words per quadrant */
+
+/* ── KPI RAIL (4 tiles under hero) ─── */
+.kpi-rail {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px;
+}
+@media(max-width:640px){ .kpi-rail { grid-template-columns: repeat(2,1fr); } }
+.kpi-tile {
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 12px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  padding: 10px 13px;
+}
+[data-theme='light'] .kpi-tile { background: rgba(255,255,255,.8); }
+.kpi-lbl { font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+           color: var(--faint); margin-bottom: 4px; }
+.kpi-val { font-size: 18px; font-weight: 700; line-height: 1.1; }
+.kpi-sub { font-size: 11px; color: var(--mut); margin-top: 2px; }
+
+/* ── LIVE PRICE STRIP ─── */
+.live-strip {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px;
+}
+@media(max-width:640px){ .live-strip { grid-template-columns: repeat(2,1fr); } }
+.live-tile {
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 12px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  padding: 11px 13px; position: relative;
+}
+[data-theme='light'] .live-tile { background: rgba(255,255,255,.8); }
+.live-tile .lt-sym { font-size: 10.5px; font-weight: 700; letter-spacing: .8px;
+                     text-transform: uppercase; color: var(--mut); }
+.live-tile .lt-name { font-size: 9.5px; color: var(--faint); text-transform: uppercase;
+                      letter-spacing: .5px; margin-top: 1px; }
+.live-tile .lt-px {
+  font-size: 20px; font-weight: 700; margin-top: 7px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.live-tile .lt-chg { font-size: 12px; font-weight: 650; margin-top: 1px; }
+.live-tile .lt-chg.up  { color: var(--up); }
+.live-tile .lt-chg.dn  { color: var(--dn); }
+/* live pill */
+.lt-pill {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px;
+  letter-spacing: .6px; color: var(--faint); border: 1px solid var(--line);
+  padding: 1px 7px; border-radius: 999px; margin-top: 4px; opacity: .55;
+  text-transform: uppercase;
+}
+.lt-pill .d { width: 5px; height: 5px; border-radius: 50%; background: var(--faint); }
+.lt-pill.on { opacity: 1; color: var(--up); border-color: rgba(55,208,127,.4); }
+.lt-pill.on .d { background: var(--up); box-shadow: 0 0 5px var(--up); }
+
+/* ── dot bars (breadth panel) ─── */
 .dotwrap { margin-top: 4px; }
-.dotrow { display: flex; align-items: center; gap: 12px; margin: 9px 0; }
-.dotrow .lbl { width: 155px; font-size: 12.5px; color: var(--mut); flex-shrink: 0; }
+.dotrow { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.dotrow .lbl { width: 148px; font-size: 12px; color: var(--mut); flex-shrink: 0; }
 .dots { display: flex; gap: 3px; flex: 1; }
-.dot { flex: 1; height: 14px; border-radius: 3px; background: var(--line); }
+.dot {
+  flex: 1; height: 15px; border-radius: 3px; background: var(--line);
+  opacity: 0; transition: opacity .3s;
+}
+.dot.vis { opacity: 1; }
 .dot.on-up  { background: var(--up); }
 .dot.on-amb { background: var(--amb); }
 .dotrow .cnt { width: 60px; text-align: right; font-size: 13px; font-weight: 600; flex-shrink: 0; }
 .diverge { margin-top: 10px; font-size: 12.5px; color: var(--amb); display: flex; gap: 7px; align-items: flex-start; }
-/* ── SECTION 2 — index card ─── */
+
+/* ── index card ─── */
 .idx-top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
 .idx-val { font-size: 26px; font-weight: 600; }
 .idx-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .chip { font-size: 11.5px; padding: 3px 9px; border-radius: 7px;
         border: 1px solid var(--line2); color: var(--mut); }
 .chip b { color: var(--tx); font-weight: 600; }
-/* spark */
-.spark { height: 44px; margin-top: 12px; display: flex; align-items: flex-end; gap: 2px; overflow: hidden; }
-.spark i { flex: 1; background: linear-gradient(180deg,#26406e,#1a2b4d); border-radius: 2px 2px 0 0;
-           display: block; min-width: 3px; }
-[data-theme='light'] .spark i { background: linear-gradient(180deg,#b8c6fa,#8fa5f6); }
-/* cycle chips */
+
+/* ── SVG sparkline (area chart) ─── */
+.spark-wrap { height: 52px; margin-top: 12px; position: relative; overflow: hidden; }
+#idx-spark-svg { width: 100%; height: 100%; display: block; }
+
+/* ── cycle chips ─── */
 .cyc-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .cyc-chip { font-size: 11.5px; padding: 3px 9px; border-radius: 7px;
             border: 1px solid var(--line2); color: var(--mut); }
@@ -121,7 +257,8 @@ a { color: var(--blue); text-decoration: none; }
 .cyc-chip.ph-downturn b { color: var(--amb); }
 .cyc-chip.ph-expansion b { color: var(--up); }
 .cyc-chip.ph-peak b { color: var(--dn); }
-/* ── SECTION 3 — board ─── */
+
+/* ── BOTTOMS & TOPS BOARD ─── */
 .board { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
 @media(max-width:640px){ .board { grid-template-columns: 1fr; } }
 .bcol .bh { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600;
@@ -136,10 +273,11 @@ a { color: var(--blue); text-decoration: none; }
 .brow .nm { width: 88px; font-weight: 600; font-size: 13px; flex-shrink: 0; line-height: 1.3; }
 .brow .st { flex: 1; font-size: 12px; color: var(--mut); line-height: 1.45; }
 .rcpt-list { margin-top: 3px; font-size: 11px; color: var(--faint); }
+/* animated meter */
 .meter { width: 80px; height: 7px; border-radius: 4px; background: var(--line); overflow: hidden; flex-shrink: 0; }
-.meter i { display: block; height: 100%; border-radius: 4px; }
-.meter.t i { background: var(--dn); }
-.meter.b i { background: var(--up); }
+.meter i { display: block; height: 100%; border-radius: 4px; width: 0; transition: width .7s ease-out; }
+.meter.t i { background: linear-gradient(90deg, var(--amb), var(--dn)); }
+.meter.b i { background: linear-gradient(90deg, var(--blue), var(--up)); }
 .brow .sc { width: 28px; text-align: right; font-size: 12.5px; font-weight: 600; flex-shrink: 0; }
 .badge { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 5px;
          letter-spacing: .02em; display: inline-block; margin-top: 2px; }
@@ -147,13 +285,19 @@ a { color: var(--blue); text-decoration: none; }
 .badge.euf  { background: rgba(255,106,106,.16); color: var(--dn); }
 .badge.wash { background: rgba(93,139,255,.16); color: var(--blue); }
 .badge.neut { background: var(--line); color: var(--faint); }
-/* ── SECTION 4 — heat grid ─── */
+
+/* ── HEAT GRID ─── */
 .legend { display: flex; gap: 16px; font-size: 11.5px; color: var(--faint); margin: 2px 0 12px; flex-wrap: wrap; }
 .legend span { display: flex; align-items: center; gap: 6px; }
 .sw { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 .hgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 9px; }
-.cell { background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--line2);
-        border-radius: 8px; padding: 9px 11px; }
+.cell {
+  background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--line2);
+  border-radius: 8px; padding: 9px 11px; position: relative; overflow: hidden;
+  transition: transform .15s, border-color .15s, box-shadow .15s;
+  cursor: default;
+}
+.cell:hover { transform: translateY(-1px); border-color: var(--line2); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .cell.c-up   { border-left-color: var(--up); }
 .cell.c-dn   { border-left-color: var(--dn); }
 .cell.c-wash { border-left-color: var(--blue); }
@@ -164,20 +308,35 @@ a { color: var(--blue); text-decoration: none; }
 .cell .cmeta { display: flex; justify-content: space-between; margin-top: 5px;
                font-size: 11px; color: var(--faint); }
 .cell .cst { margin-top: 4px; font-size: 11px; color: var(--mut); }
+/* 1m% bar at bottom of cell */
+.cell .chg-bar {
+  position: absolute; bottom: 0; left: 0; height: 3px; border-radius: 0 0 0 0;
+  max-width: 100%; transition: width .7s ease-out;
+}
+.cell.c-up .chg-bar, .cell.c-flat.pos .chg-bar  { background: var(--up); }
+.cell.c-dn .chg-bar, .cell.c-wash .chg-bar, .cell.c-flat.neg .chg-bar { background: var(--dn); }
 .grp { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
        color: var(--faint); margin: 16px 0 8px; }
-/* ── SECTION 5 — detail ─── */
-.dtabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 14px 0 0; }
-.dtab { font: inherit; font-size: 13px; font-weight: 600; background: var(--panel2);
-        border: 1px solid var(--line2); border-radius: 8px; padding: 6px 13px;
-        color: var(--mut); cursor: pointer; transition: border-color .1s, color .1s; }
+
+/* ── DETAIL TABS ─── */
+.dtabs { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; margin: 14px 0 0;
+         scrollbar-width: none; -ms-overflow-style: none; }
+.dtabs::-webkit-scrollbar { display: none; }
+.dtab {
+  font: inherit; font-size: 13px; font-weight: 600;
+  background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border); border-radius: 999px; padding: 6px 15px;
+  color: var(--mut); cursor: pointer; transition: border-color .1s, color .1s, background .1s;
+  white-space: nowrap; flex-shrink: 0;
+}
 .dtab:hover { border-color: var(--blue); color: var(--tx); }
 .dtab.active { border-color: var(--blue); color: var(--blue); background: var(--panel); }
 .dpanel { margin-top: 14px; }
 .dpanel[hidden] { display: none; }
 .det { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media(max-width:640px){ .det { grid-template-columns: 1fr; } }
-/* MTF table */
+
+/* MTF table — plain headers */
 .mtf { width: 100%; border-collapse: collapse; font-size: 12px; }
 .mtf th { text-align: left; color: var(--faint); font-weight: 500; padding: 5px 6px;
           border-bottom: 1px solid var(--line); }
@@ -187,29 +346,49 @@ a { color: var(--blue); text-decoration: none; }
 .pill.u { background: rgba(55,208,127,.14); color: var(--up); }
 .pill.d { background: rgba(255,106,106,.14); color: var(--dn); }
 .pill.n { background: var(--line); color: var(--mut); }
+
 /* cycle clock arc */
 .clock-wrap { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
 .arc { width: 70px; height: 70px; border-radius: 50%; border: 6px solid var(--line);
        border-top-color: var(--dn); border-right-color: var(--dn); flex-shrink: 0; }
 .arc.arc-up   { border-top-color: var(--up); border-right-color: var(--up); }
 .arc.arc-amb  { border-top-color: var(--amb); border-right-color: var(--amb); }
-/* receipt popovers (rpop-compatible) */
-.rcpt-toggle { font-size: 11px; color: var(--blue); cursor: pointer; margin-top: 3px;
-               display: inline-block; border: none; background: none; padding: 0; font: inherit; }
-/* conviction badge (core4) */
-.conv-badge { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 8px;
+
+/* conviction badge */
+.conv-badge { font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 8px;
               color: #fff; display: inline-block; }
 .conv-sbuy { background: #0f8a4f; } .conv-buy { background: #3aa66f; }
 .conv-hold { background: #8a93a1; } .conv-sell { background: #e0744b; }
 .conv-ssell { background: var(--dn); }
-/* ── shared ─── */
+/* conviction lean pill */
+.lean-pill { font-size: 11.5px; padding: 3px 10px; border-radius: 7px; font-weight: 600; }
+.lean-pos  { background: rgba(55,208,127,.14); color: var(--up); }
+.lean-neg  { background: rgba(255,106,106,.14); color: var(--dn); }
+.lean-neut { background: var(--line); color: var(--mut); }
+
+/* shared verdict */
 .verdict { display: inline-block; padding: 3px 9px; border-radius: 7px; font-size: 11px;
            font-weight: 700; white-space: nowrap; }
 .v-conf { background: rgba(55,208,127,.14); color: var(--up); }
 .v-dir  { background: rgba(242,178,77,.14); color: var(--amb); }
 .v-inv  { background: rgba(255,106,106,.14); color: var(--dn); }
 .v-ctx  { background: var(--line); color: var(--faint); }
-/* ── alert timeline ─── */
+
+/* ── CATALYSTS ─── */
+.cat-list { display: flex; flex-direction: column; gap: 0; }
+.cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px;
+           border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.cat-row:last-child { border: none; }
+.cat-date { font-weight: 700; color: var(--tx); font-size: 13px; min-width: 128px; }
+.cat-cd { font-size: 11px; color: var(--faint); margin-left: 4px; font-weight: 600; }
+.cat-type { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 7px; }
+.ct-FOMC    { background: rgba(242,178,77,.14); color: var(--amb); }
+.ct-OPEC    { background: rgba(255,106,106,.14); color: var(--dn); }
+.ct-EIA_WPSR{ background: rgba(93,139,255,.14); color: var(--blue); }
+.cat-label { flex: 1; font-size: 13.5px; color: var(--tx); min-width: 160px; }
+.disclaimer { margin-top: 12px; font-size: 12px; color: var(--faint); line-height: 1.6; font-style: italic; }
+
+/* ── ALERT TIMELINE ─── */
 .tl-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
 .tlf { padding: 6px 14px; border-radius: 9px; background: var(--line); color: var(--mut);
        font-weight: 700; font-size: 13px; cursor: pointer; border: none; font: inherit; }
@@ -250,31 +429,28 @@ a { color: var(--blue); text-decoration: none; }
 .tl-more button .tl-hide { display: none; }
 .tl-more button.is-expanded .tl-show { display: none; }
 .tl-more button.is-expanded .tl-hide { display: inline; }
-/* catalysts */
-.cat-list { display: flex; flex-direction: column; gap: 2px; }
-.cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px;
-           border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-.cat-row:last-child { border: none; }
-.cat-date { font-weight: 700; color: var(--tx); font-size: 13px; min-width: 128px; }
-.cat-type { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 7px; }
-.ct-FOMC    { background: rgba(242,178,77,.14); color: var(--amb); }
-.ct-OPEC    { background: rgba(255,106,106,.14); color: var(--dn); }
-.ct-EIA_WPSR{ background: rgba(93,139,255,.14); color: var(--blue); }
-.cat-label { flex: 1; font-size: 13.5px; color: var(--tx); min-width: 160px; }
-.disclaimer { margin-top: 12px; font-size: 12px; color: var(--faint); line-height: 1.6; font-style: italic; }
 /* foot */
 .foot { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--line);
         font-size: 12px; color: var(--faint); line-height: 1.7; }
-/* nav / site utilities (preserve existing patterns) */
+/* nav / site utilities */
 html:not([data-lang="zh"]) .l-zh { display: none; }
 html[data-lang="zh"] .l-en { display: none; }
 .section-title { font-size: 13px; font-weight: 700; color: var(--mut); text-transform: uppercase;
                  letter-spacing: .05em; margin: 30px 4px 12px; }
+/* receipt popovers */
+.rcpt-toggle { font-size: 11px; color: var(--blue); cursor: pointer; margin-top: 3px;
+               display: inline-block; border: none; background: none; padding: 0; font: inherit; }
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
-<body>
+<body class="page-commod">
 {% include "_site_nav.html.j2" %}
+
+{# Aurora layer — class keyed to stance tone; protect=red wins, watch=amber, else blank #}
+{% if vm and vm.stance %}
+{% set _au = 'au-red' if vm.stance.tone == 'protect' else ('au-amber' if vm.stance.tone == 'watch' else '') %}
+{% else %}{% set _au = '' %}{% endif %}
+<div class="aurora {{ _au }}"><div class="au-a3"></div></div>
 
 <div class="wrap">
 
@@ -282,11 +458,7 @@ html[data-lang="zh"] .l-en { display: none; }
 <div class="hd">
   <div>
     <h1>{{ t('Commodities', '大宗商品') }}</h1>
-    <div class="asof">{{ t('Sector intelligence · as of', '板块智能 · 截至') }} {{ as_of }}</div>
-  </div>
-  <div class="faint" style="font-size:12px;text-align:right">
-    17 {{ t('commodities · energy · metals · grains · softs', '品种 · 能源 · 金属 · 谷物 · 软商品') }}<br>
-    <span class="mut">{{ t('Bilingual EN / 中文 · dark / light', '中英双语 · 深色/浅色') }}</span>
+    <div class="asof">{{ t('Sector read · as of', '板块读数 · 截至') }} {{ as_of }}</div>
   </div>
 </div>
 
@@ -295,23 +467,43 @@ html[data-lang="zh"] .l-en { display: none; }
 {% set ix = vm.index %}
 {% set st = vm.stance %}
 
-<!-- ========================= SECTION 1 — SECTOR GLANCE ========================= -->
+<!-- ========================= SECTION 1 — HERO ========================= -->
 <div class="hero">
-  <!-- stance hero -->
+  <!-- stance hero (left) -->
   <div class="panel">
     <p class="kick">{{ t('Where commodities stand today', '大宗商品今日处境') }}</p>
-    <div class="stance-word t-{{ st.tone }}">{{ t(st.word_en, st.word_zh) }}</div>
+    <div class="big-stance t-{{ st.tone }}">{{ t(st.word_en, st.word_zh) }}</div>
     <div class="stance-sub">{{ t(st.sub_en, st.sub_zh) }}</div>
     <div class="stance-tag">
       <span class="faint">{{ t('Macro backdrop', '宏观背景') }}</span> ·
       {{ t('dollar', '美元') }} <b>{{ td(complex.dollar_dir) }}</b> ·
       {{ t('growth', '增长') }} <b>{{ td(complex.growth_dir) }}</b>
-      <span class="faint" data-tip-en="{{ complex.regime }} quadrant (dollar/growth axis)" data-tip-zh="{{ complex.regime }} 象限（美元/增长轴）"> · {{ td(complex.regime) }} ⓘ</span>
+      {# Plain-word quadrant tips per quadrant (spec item D / plain-language) #}
+      {% set _qtip_en = {
+        'Reflation':      'Dollar softening while growth picks up — tends to lift most commodities.',
+        'Stagflation':    'Growth slowing but inflation sticky — gold and silver usually hold up; oil mixed.',
+        'Goldilocks':     'Growth improving while the dollar stays calm — usually a mild tailwind for metals.',
+        'Deflation-scare':'Growth falling and dollar rising — most commodities face headwinds.',
+        'Neutral':        'No clear macro signal — wait for one axis to break.'
+      } %}
+      {% set _qtip_zh = {
+        'Reflation':      '美元走软同时增长回升——通常提振多数商品。',
+        'Stagflation':    '增长放缓但通胀黏性——黄金白银通常能守住；原油走势分化。',
+        'Goldilocks':     '增长改善且美元平稳——通常对金属温和有利。',
+        'Deflation-scare':'增长下行且美元走强——多数商品面临逆风。',
+        'Neutral':        '暂无明确宏观信号——等待某一轴线突破。'
+      } %}
+      <span class="faint"
+        data-tip-en="{{ _qtip_en.get(complex.regime, complex.regime ~ ' quadrant') }}"
+        data-tip-zh="{{ _qtip_zh.get(complex.regime, complex.regime) }}">
+        · {{ td(complex.regime) }} ⓘ
+      </span>
     </div>
+    <div class="asof" style="margin-top:10px;font-size:11px">{{ t('as of','截至') }} {{ as_of }}</div>
   </div>
-  <!-- breadth panel -->
+  <!-- breadth panel (right) -->
   <div class="panel">
-    <p class="kick">{{ t('Breadth — how many agree', '广度——有多少品种共振') }}</p>
+    <p class="kick">{{ t('How many agree', '多少品种共振') }}</p>
     <div class="dotwrap">
       <div class="dotrow">
         <span class="lbl">{{ t('12-month trend up', '12个月趋势向上') }}</span>
@@ -349,6 +541,88 @@ html[data-lang="zh"] .l-en { display: none; }
   </div>
 </div>
 
+<!-- ========================= KPI RAIL ========================= -->
+<div class="kpi-rail" style="margin-bottom:14px">
+  {# 1 — 1-month change #}
+  <div class="kpi-tile">
+    <div class="kpi-lbl">{{ t('1-month change', '1个月涨跌') }}</div>
+    {% if ix.chg_1m_pct is not none %}
+    <div class="kpi-val {{ 'up' if ix.chg_1m_pct >= 0 else 'dn' }}">{{ '%+.1f'|format(ix.chg_1m_pct) }}%</div>
+    <div class="kpi-sub">{{ t('commodity index', '商品指数') }}</div>
+    {% else %}
+    <div class="kpi-val mut">—</div>
+    {% endif %}
+  </div>
+  {# 2 — breadth #}
+  <div class="kpi-tile">
+    <div class="kpi-lbl">{{ t('Breadth', '广度') }}</div>
+    <div class="kpi-val">{{ (br.n_up_trend or 0)|int }} {{ t('of','/') }} {{ (br.n_members or 17)|int }}</div>
+    <div class="kpi-sub">{{ t('trending up', '趋势向上') }}</div>
+  </div>
+  {# 3 — dominant cycle phase (max-count entry pre-computed in build_commodities.py) #}
+  <div class="kpi-tile">
+    <div class="kpi-lbl">{{ t('Long cycle', '长周期') }}</div>
+    {% if vm.cycle_dominant %}
+    {% set _dom = vm.cycle_dominant %}
+    <div class="kpi-val" style="font-size:15px;font-weight:700">
+      <span class="l-en">{{ _dom.phase_en }}</span><span class="l-zh">{{ _dom.phase_zh }}</span>
+    </div>
+    <div class="kpi-sub">{{ t('dominant phase', '主导阶段') }}</div>
+    {% else %}
+    <div class="kpi-val mut" style="font-size:15px">—</div>
+    {% endif %}
+  </div>
+  {# 4 — shock state #}
+  <div class="kpi-tile">
+    <div class="kpi-lbl">{{ t('Shock', '冲击') }}</div>
+    {% if ix.shock_state and ix.shock_state != 'normal' %}
+    <div class="kpi-val amb" style="font-size:15px">
+      <span class="l-en">{{ ix.shock_en }}</span><span class="l-zh">{{ ix.shock_zh }}</span>
+    </div>
+    {% else %}
+    <div class="kpi-val up" style="font-size:15px">{{ t('Calm', '平稳') }}</div>
+    {% endif %}
+    <div class="kpi-sub">{{ t('market calm = no shock', '市场平稳=无冲击') }}</div>
+  </div>
+</div>
+
+<!-- ========================= LIVE PRICE STRIP ========================= -->
+<div class="live-strip" style="margin-bottom:20px">
+  {% set _lp = [
+    ('GC=F', 'Gold',   '黄金', 'XAU'),
+    ('SI=F', 'Silver', '白银', 'XAG'),
+    ('HG=F', 'Copper', '铜',   'HG'),
+    ('CL=F', 'Oil · WTI', '原油', 'CL'),
+  ] %}
+  {# Build a price lookup from assets list (core-4); price_fmt is pre-formatted Python-side #}
+  {% set _price_map = {} %}
+  {% set _chg_map = {} %}
+  {% for a in assets %}
+    {% if a.key == 'gold'   %}{% if _price_map.update({'GC=F': a.price_fmt, 'GC=F_chg': a.chg}) %}{% endif %}{% endif %}
+    {% if a.key == 'silver' %}{% if _price_map.update({'SI=F': a.price_fmt, 'SI=F_chg': a.chg}) %}{% endif %}{% endif %}
+    {% if a.key == 'copper' %}{% if _price_map.update({'HG=F': a.price_fmt, 'HG=F_chg': a.chg}) %}{% endif %}{% endif %}
+    {% if a.key == 'oil'    %}{% if _price_map.update({'CL=F': a.price_fmt, 'CL=F_chg': a.chg}) %}{% endif %}{% endif %}
+  {% endfor %}
+  {% for sym, name_en, name_zh, abbr in _lp %}
+  {% set _px  = _price_map.get(sym) %}
+  {% set _chg = _price_map.get(sym ~ '_chg') %}
+  <div class="live-tile">
+    <div class="lt-sym">{{ abbr }}</div>
+    <div class="lt-name"><span class="l-en">{{ name_en }}</span><span class="l-zh">{{ name_zh }}</span></div>
+    <div class="lt-px nb-px" data-sym="{{ sym }}" data-mkt="fut">
+      {% if _px is not none %}{{ _px }}{% else %}—{% endif %}
+    </div>
+    <div class="lt-chg nb-chg {{ 'up' if (_chg or 0) >= 0 else 'dn' }}" data-sym="{{ sym }}" data-mkt="fut">
+      {% if _chg is not none %}{{ '%+.1f'|format(_chg) }}%{% else %}—{% endif %}
+    </div>
+    <div class="lt-pill" data-live-pill="{{ sym }}">
+      <span class="d"></span>
+      <span class="l-en">live</span><span class="l-zh">实时</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
 <!-- ========================= SECTION 2 — SECTOR INDEX ========================= -->
 <div class="grid g2" style="margin-bottom:4px">
   <!-- index card -->
@@ -364,15 +638,17 @@ html[data-lang="zh"] .l-en { display: none; }
           </span>
           {% endif %}
         </div>
-        <div class="faint" style="font-size:12px;margin-top:2px">{{ t('Equal-weight, chain-linked · 17 members since 2000', '等权链式指数 · 17个品种，自2000年') }}</div>
+        <div class="faint" style="font-size:12px;margin-top:2px">
+          {{ t('17 commodities, weighted equally · tracked since 2000', '17个品种等权平均 · 自2000年跟踪') }}
+        </div>
       </div>
       <div style="text-align:right">
         <div class="mut" style="font-size:12px">{{ t('Do the signals agree?', '各周期是否共振？') }}</div>
         <div style="font-weight:600;color:var(--amb)">{{ t(ix.mtf_en, ix.mtf_zh) }}</div>
       </div>
     </div>
-    <!-- simple bar sparkline (built in JS from serialized data) -->
-    <div class="spark" id="idx-spark"></div>
+    <!-- SVG area sparkline (drawn in JS from the serialized series) -->
+    <div class="spark-wrap"><svg id="idx-spark-svg" preserveAspectRatio="none"></svg></div>
     <div class="idx-chips">
       {% if ix.ts_trend %}
       <span class="chip">{{ t('12-mo trend', '12月趋势') }}
@@ -385,15 +661,19 @@ html[data-lang="zh"] .l-en { display: none; }
       <span class="chip">{{ t('Shock', '冲击') }} <b>{{ t(ix.shock_en, ix.shock_zh) }}</b></span>
       {% endif %}
       {% if ix.velocity_20 is not none %}
-      <span class="chip" data-tip-en="20-day velocity: {{ '%+.1f'|format(ix.velocity_20) }}%" data-tip-zh="20日动能：{{ '%+.1f'|format(ix.velocity_20) }}%">
-        {{ t('Velocity 20d', '20日动能') }}
+      <span class="chip"
+        data-tip-en="How fast the index has moved in the last 20 days, compared with its own history."
+        data-tip-zh="过去20天指数的移动速度，与其自身历史相比。">
+        {{ t('Pace (20 days)', '节奏（20天）') }}
         <b class="{{ 'up' if ix.velocity_20 >= 0 else 'dn' }}">{{ t('quick','快') if (ix.velocity_20|abs) > 1 else t('flat','平') }}</b>
       </span>
       {% endif %}
       {% if br.trend_diversity is not none %}
-      <span class="chip" data-tip-en="Trend diversity score: {{ br.trend_diversity }}" data-tip-zh="趋势分散度：{{ br.trend_diversity }}">
-        {{ t('Trend diversity', '趋势分散度') }}
-        <b>{{ t('wide', '宽') if (br.trend_diversity or 0) > 0.4 else t('narrow', '窄') }}</b>
+      <span class="chip"
+        data-tip-en="Whether the 17 commodities are moving together or telling different stories. Together = one macro force (often the dollar). Different = pick your spots."
+        data-tip-zh="17个品种是步调一致还是各说各话。一致=单一宏观驱动（常为美元）。分化=精选品种。">
+        {{ t('One story or many?', '步调一致还是分化？') }}
+        <b>{{ t('many trends','多方向') if (br.trend_diversity or 0) > 0.4 else t('one trend','一致') }}</b>
       </span>
       {% endif %}
       {% for bname, bdata in ix.benchmarks.items() %}
@@ -403,9 +683,9 @@ html[data-lang="zh"] .l-en { display: none; }
       {% endfor %}
     </div>
   </div>
-  <!-- structural cycle summary -->
+  <!-- long-cycle card -->
   <div class="panel">
-    <p class="kick">{{ t('Structural cycle — where each member sits', '结构性周期——各品种所处位置') }}</p>
+    <p class="kick">{{ t('The long cycle — where each commodity sits', '长周期——各品种所处位置') }}</p>
     <div class="cyc-chips">
       {% for cs in vm.cycle_summary %}
       <span class="cyc-chip ph-{{ cs.phase|lower }}">
@@ -419,18 +699,16 @@ html[data-lang="zh"] .l-en { display: none; }
       <span class="faint" style="font-size:12px">{{ t('Cycle data pending', '周期数据待更新') }}</span>
       {% endif %}
     </div>
-    <div class="faint" style="font-size:12px;margin-top:12px;line-height:1.6">
-      {{ t('The structural clock feeds each commodity\'s bottom/top read in the board below.',
-           '结构性时钟为下方底部/顶部面板中的各品种判断提供依据。') }}
-    </div>
   </div>
 </div>
 
 <!-- ========================= SECTION 3 — BOTTOMS & TOPS BOARD ========================= -->
 <div class="sechd">
-  <h2>{{ t('Bottoms & tops forming', '底部与顶部形成中') }}</h2>
-  <span class="q" data-tip-en="Confluence read — oversold/overbought, shock, positioning, cycle. Watch-list only, not a trade trigger." data-tip-zh="共振判读——超卖/超买、冲击、持仓、周期。仅供观察，非交易触发。">?</span>
-  <p class="sub">{{ t('how the signals line up — oversold/overbought, shock, positioning, cycle', '引擎信号汇总——超卖/超买、冲击、持仓、周期') }}</p>
+  <h2>{{ t('Early warnings forming', '早期预警形成中') }}</h2>
+  <span class="q"
+    data-tip-en="Early-warning list: signs of a durable bottom (or an overheated top) stacking up. A heads-up, not a buy signal."
+    data-tip-zh="早期预警：持久底部（或过热顶部）信号堆积。提前预警，非买入信号。">?</span>
+  <p class="sub">{{ t('signals lining up — oversold/overbought, shock, positioning, cycle', '引擎信号汇总——超卖/超买、冲击、持仓、周期') }}</p>
   <span class="tierlabel">{{ t('watch-list, not a trade trigger', '观察清单，非交易触发') }}</span>
 </div>
 <div class="board">
@@ -457,14 +735,14 @@ html[data-lang="zh"] .l-en { display: none; }
         <div class="st">
           {{ t(row.action_en, row.action_zh) }}
           {% if row.receipt %}
-          <div class="rcpt-list">{{ t('fired:','触发:') }}
+          <div class="rcpt-list">{{ t('stacking up:','已出现：') }}
             {% for rc in row.receipt[:4] %}
               <span class="l-en">{{ rc.label_en }}</span><span class="l-zh">{{ rc.label_zh }}</span>{% if not loop.last %} · {% endif %}
             {% endfor %}
           </div>
           {% endif %}
         </div>
-        <div class="meter t" style="margin-top:2px"><i style="width:{{ [row.score or 0, 100]|min }}%"></i></div>
+        <div class="meter t" style="margin-top:2px"><i data-w="{{ [row.score or 0, 100]|min }}"></i></div>
         <span class="sc dn">{{ row.score|int if row.score is not none else '—' }}</span>
       </div>
       {% endfor %}
@@ -497,14 +775,14 @@ html[data-lang="zh"] .l-en { display: none; }
         <div class="st">
           {{ t(row.action_en, row.action_zh) }}
           {% if row.receipt %}
-          <div class="rcpt-list">{{ t('fired:','触发:') }}
+          <div class="rcpt-list">{{ t('stacking up:','已出现：') }}
             {% for rc in row.receipt[:4] %}
               <span class="l-en">{{ rc.label_en }}</span><span class="l-zh">{{ rc.label_zh }}</span>{% if not loop.last %} · {% endif %}
             {% endfor %}
           </div>
           {% endif %}
         </div>
-        <div class="meter b" style="margin-top:2px"><i style="width:{{ [row.score or 0, 100]|min }}%"></i></div>
+        <div class="meter b" style="margin-top:2px"><i data-w="{{ [row.score or 0, 100]|min }}"></i></div>
         <span class="sc mut">{{ row.score|int if row.score is not none else '—' }}</span>
       </div>
       {% endfor %}
@@ -519,7 +797,7 @@ html[data-lang="zh"] .l-en { display: none; }
 <!-- ========================= SECTION 4 — HEAT GRID ========================= -->
 <div class="sechd">
   <h2>{{ t('Every commodity at a glance', '一眼看遍所有品种') }}</h2>
-  <p class="sub">{{ t('1-month move · short-term momentum · structural cycle', '1月涨跌 · 短期动量 · 结构性周期') }}</p>
+  <p class="sub">{{ t('1-month move · short-term momentum · long cycle', '1月涨跌 · 短期动量 · 长周期') }}</p>
 </div>
 <div class="legend">
   <span><span class="sw" style="background:var(--up)"></span>{{ t('Trending up','趋势向上') }}</span>
@@ -531,7 +809,7 @@ html[data-lang="zh"] .l-en { display: none; }
 <div class="grp"><span class="l-en">{{ grp.group_en }}</span><span class="l-zh">{{ grp.group_zh }}</span></div>
 <div class="hgrid">
   {% for m in grp.members %}
-  <div class="cell {{ m.tone or 'c-flat' }}">
+  <div class="cell {{ m.tone or 'c-flat' }} {{ m.chg_sign or '' }}">
     <div class="cn">
       <span class="cnm"><span class="l-en">{{ m.label_en }}</span><span class="l-zh">{{ m.label_zh }}</span></span>
       {% if m.chg_1m_pct is not none %}
@@ -545,6 +823,10 @@ html[data-lang="zh"] .l-en { display: none; }
     <div class="cst">
       <span class="l-en">{{ m.state_short_en or '—' }}</span><span class="l-zh">{{ m.state_short_zh or '—' }}</span>
     </div>
+    {# 1m% bar at bottom of cell — width capped at 100%, ∝|chg| with scale ~10% = 100% #}
+    {% if m.chg_1m_pct is not none %}
+    <div class="chg-bar" data-w="{{ [((m.chg_1m_pct|abs) * 10)|round|int, 100]|min }}"></div>
+    {% endif %}
   </div>
   {% endfor %}
 </div>
@@ -581,11 +863,11 @@ html[data-lang="zh"] .l-en { display: none; }
         <span class="badge wash">{{ t('Bottom watch','底部关注') }} · {{ d.bot_score|int }}</span>
         {% endif %}
       </div>
-      <!-- confluence receipt -->
+      <!-- stacking-up receipt -->
       {% set show_fired = (d.top_fired if (d.top_score or 0) >= (d.bot_score or 0) else d.bottom_fired) %}
       {% if show_fired %}
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
-        {{ t('Conditions:', '触发条件:') }}
+        {{ t('stacking up:','已出现：') }}
         {% for rc in show_fired[:6] %}
           <span class="l-en">{{ rc.label_en }}</span><span class="l-zh">{{ rc.label_zh }}</span>{% if not loop.last %} · {% endif %}
         {% endfor %}
@@ -601,7 +883,7 @@ html[data-lang="zh"] .l-en { display: none; }
         {% set arc_cls = 'arc-up' if d.cycle_phase in ['Recovery','Expansion'] else ('arc-amb' if d.cycle_phase == 'Downturn' else '') %}
         <div class="arc {{ arc_cls }}"></div>
         <div>
-          <div class="faint" style="font-size:11px">{{ t('structural cycle','结构性周期') }}</div>
+          <div class="faint" style="font-size:11px">{{ t('long cycle','长周期') }}</div>
           <div style="font-weight:600">
             <span class="l-en">{{ d.cycle_phase_en }}</span><span class="l-zh">{{ d.cycle_phase_zh }}</span>
             {% if d.cycle_hazard %}<span class="badge top" style="margin-left:6px">{{ t('hazard','风险') }}</span>{% endif %}
@@ -614,33 +896,52 @@ html[data-lang="zh"] .l-en { display: none; }
         </div>
         {% else %}
         <div style="color:var(--faint);font-size:12px">
-          {{ t('No structural cycle data for this commodity.', '此品种无结构性周期数据。') }}
+          {{ t('No long-cycle data for this commodity.', '此品种无长周期数据。') }}
         </div>
         {% endif %}
       </div>
-      <!-- core4 conviction badge -->
+      <!-- model lean (conviction) -->
       {% if d.is_core4 and d.conviction and d.conviction.action %}
       {% set cv = d.conviction %}
+      {% set _cv_action_upper = cv.action | upper %}
+      {% set _cv_lbl_en = conviction_labels.get(_cv_action_upper, (_cv_action_upper, _cv_action_upper))[0] %}
+      {% set _cv_lbl_zh = conviction_labels.get(_cv_action_upper, (_cv_action_upper, _cv_action_upper))[1] %}
+      {% set _lean_dir = 'pos' if cv.score is not none and cv.score > 5 else ('neg' if cv.score is not none and cv.score < -5 else 'neut') %}
+      {% set _lean_word_en = 'positive' if _lean_dir == 'pos' else ('negative' if _lean_dir == 'neg' else 'neutral') %}
+      {% set _lean_word_zh = '正面' if _lean_dir == 'pos' else ('负面' if _lean_dir == 'neg' else '中性') %}
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
-        <div class="faint" style="font-size:11px;margin-bottom:5px">{{ t('Calibrated conviction', '校准后裁决') }}</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span class="conv-badge conv-{{ cv.action_css }}">{{ t(cv.action, cv.action_zh) }}</span>
-          <span style="font-weight:600;color:var(--tx)">{{ '%+d'|format(cv.score|round|int) }}<span class="faint" style="font-size:12px"> / 100</span></span>
-          <span class="faint" style="font-size:11.5px">{{ (cv.confidence*100)|round|int }}% {{ t('confidence','置信度') }}</span>
+        <div class="faint" style="font-size:11px;margin-bottom:5px">{{ t('Model lean', '模型倾向') }}</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="conv-badge conv-{{ cv.action_css }}">
+            <span class="l-en">{{ _cv_lbl_en }}</span><span class="l-zh">{{ _cv_lbl_zh }}</span>
+          </span>
+          <span class="lean-pill lean-{{ _lean_dir }}">
+            {{ '%+d'|format(cv.score|round|int) }} / 100
+          </span>
         </div>
-        {% if cv.sub %}<div style="margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.55">{{ t(cv.sub, cv.sub_zh) }}</div>{% endif %}
+        <div style="margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.55">
+          {{ t(
+            'The model leans ' ~ _lean_word_en ~ ' (' ~ ('%+d'|format(cv.score|round|int)) ~ ' on a −100…+100 scale), weighted by how these calls have actually worked out.',
+            '模型倾向' ~ _lean_word_zh ~ '（在−100到+100的尺度上为' ~ ('%+d'|format(cv.score|round|int)) ~ '），权重依据历史实际效果。'
+          ) }}
+        </div>
+        {% if cv.sub %}<div style="margin-top:5px;font-size:12px;color:var(--faint)">{{ t(cv.sub, cv.sub_zh) }}</div>{% endif %}
       </div>
       {% endif %}
     </div>
-    <!-- right: MTF signals table -->
+    <!-- right: MTF signals table — plain headers -->
     <div class="panel">
       <p class="kick">{{ t('Do the signals agree?', '各周期是否共振？') }}</p>
       {% if d.mtf_rows %}
-      {% set tfc = {'up':'var(--up)','down':'var(--dn)','flat':'var(--line2)'} %}
       {% set mc  = {'up':'u','pos':'u','down':'d','neg':'d'} %}
-      {% set mlab = {'up':'cross ↑','pos':'+','down':'cross ↓','neg':'−'} %}
       <table class="mtf">
-        <tr><th>{{ t('Timeframe','周期') }}</th><th>{{ t('Trend','趋势') }}</th><th>RSI</th><th>{{ t('Stoch','随机') }}</th><th>MACD</th></tr>
+        <tr>
+          <th>{{ t('Timeframe','周期') }}</th>
+          <th>{{ t('Trend','趋势') }}</th>
+          <th data-tip-en="Momentum — RSI oscillator. High (≥70) = overbought, low (≤30) = oversold." data-tip-zh="动量——RSI震荡指标。高(≥70)=超买，低(≤30)=超卖。">{{ t('Momentum','动量') }}</th>
+          <th data-tip-en="Stretch — Stochastic. High (≥80) = stretched up, low (≤20) = stretched down." data-tip-zh="拉伸——随机指标。高(≥80)=超拉伸，低(≤20)=超拉伸。">{{ t('Stretch','拉伸') }}</th>
+          <th data-tip-en="Turn — MACD. Shows whether momentum is turning up or down." data-tip-zh="转折——MACD。显示动量是否正在转向。">{{ t('Turn','转折') }}</th>
+        </tr>
         {% for r in d.mtf_rows %}
         <tr>
           <td>{{ t(r.label, r.label_zh) }}</td>
@@ -649,7 +950,12 @@ html[data-lang="zh"] .l-en { display: none; }
           </span></td>
           <td style="color:{{ 'var(--dn)' if (r.rsi14 or 50)>=70 else ('var(--up)' if (r.rsi14 or 50)<=30 else 'var(--tx)') }}">{{ r.rsi14 if r.rsi14 is not none else '—' }}</td>
           <td style="color:{{ 'var(--dn)' if (r.stoch or 50)>=80 else ('var(--up)' if (r.stoch or 50)<=20 else 'var(--tx)') }}">{{ r.stoch if r.stoch is not none else '—' }}</td>
-          <td><span class="pill {{ mc.get(r.macd,'n') }}">{{ mlab.get(r.macd,'—') }}</span></td>
+          <td><span class="pill {{ mc.get(r.macd,'n') }}">
+            {% if r.macd == 'up' %}{{ t('turning up','转折向上') }}
+            {% elif r.macd == 'down' %}{{ t('turning down','转折向下') }}
+            {% elif r.macd == 'pos' %}{{ t('+','正') }}
+            {% else %}{{ t('−','负') }}{% endif %}
+          </span></td>
         </tr>
         {% endfor %}
       </table>
@@ -682,20 +988,34 @@ html[data-lang="zh"] .l-en { display: none; }
 {% endif %}
 
 <!-- ========================= UPCOMING CATALYSTS ========================= -->
-<div class="section-title">{{ t('Upcoming catalysts · OPEC · FOMC · EIA', '即将到来的催化剂 · OPEC · 美联储 · EIA') }}</div>
+<div class="section-title">{{ t('Upcoming events', '即将到来的市场事件') }}</div>
 <div class="panel">
   {% if catalysts %}
   <div class="cat-list">
     {% for c in catalysts %}
     <div class="cat-row">
-      <span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}</span>
-      <span class="cat-type ct-{{ c.type }}">{{ td(c.type.replace('_',' ')) }}</span>
+      <span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}
+      </span>
+      <span class="cat-type ct-{{ c.type }}">
+        <span class="l-en">{{ c.type_en }}</span><span class="l-zh">{{ c.type_zh }}</span>
+      </span>
       <span class="cat-label">{{ td(c.label) }}</span>
       <span class="faint" style="font-size:12px">{% for a in c.assets %}{{ td(a|capitalize) }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
+      {% if c.days_out is not none %}
+      <span class="faint" style="font-size:11px">
+        {%- if c.days_out == 0 -%}
+          <span class="l-en">today</span><span class="l-zh">今天</span>
+        {%- elif c.days_out == 1 -%}
+          <span class="l-en">tomorrow</span><span class="l-zh">明天</span>
+        {%- else -%}
+          <span class="l-en">in {{ c.days_out }} days</span><span class="l-zh">{{ c.days_out }}天后</span>
+        {%- endif -%}
+      </span>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
-  {% else %}<div class="faint" style="font-size:13px">{{ t('No scheduled OPEC/FOMC/EIA catalysts in the window.', '窗口内无预定的 OPEC/美联储/EIA 催化剂。') }}</div>{% endif %}
+  {% else %}<div class="faint" style="font-size:13px">{{ t('No events scheduled in the next 14 days.', '未来14天内无预定市场事件。') }}</div>{% endif %}
   <div class="disclaimer">{{ news_disclaimer }}</div>
 </div>
 
@@ -718,7 +1038,9 @@ html[data-lang="zh"] .l-en { display: none; }
       <details class="tl-item" data-f="{{ e.filter }}">
         <summary>
           <span class="tl-node n-{{ e.severity }}"></span>
-          <span class="tl-chip f-{{ e.filter }}">{{ e.label }}</span>
+          <span class="tl-chip f-{{ e.filter }}">
+            <span class="l-en">{{ e.label }}</span><span class="l-zh">{{ e.label_zh }}</span>
+          </span>
           {% if e.asset_label %}<span class="tl-asset">{{ td(e.asset_label) }}</span>{% endif %}
           <span class="tl-head">{{ t(e.headline, e.headline_zh) }}</span>
           <span class="tl-time">{{ e.time }}</span>
@@ -726,7 +1048,11 @@ html[data-lang="zh"] .l-en { display: none; }
         <div class="tl-detail">{{ t(e.detail, e.detail_zh) }}
           {% if e.news %}
           <div class="tl-news">
-            <div class="tl-news-h">{{ t('Context — news, not a signal', '背景 — 新闻，非信号') }}{% if e.news.likely_cause and e.news.likely_cause.cause != 'unknown' %} · {{ t('likely:', '可能：') }} <b>{{ e.news.likely_cause.cause|replace('_',' ') }}</b>{% endif %}</div>
+            <div class="tl-news-h">{{ t('Context — news, not a signal', '背景 — 新闻，非信号') }}
+              {% if e.cause_en is defined %}
+               · {{ t('likely:', '可能：') }} <b><span class="l-en">{{ e.cause_en }}</span><span class="l-zh">{{ e.cause_zh }}</span></b>
+              {% endif %}
+            </div>
             {% for h in e.news.headlines[:4] %}<a class="tl-news-item" href="{{ h.url }}" target="_blank" rel="noopener">{{ h.title }} <span class="faint">— {{ h.domain }}</span></a>{% endfor %}
           </div>
           {% endif %}
@@ -749,7 +1075,7 @@ html[data-lang="zh"] .l-en { display: none; }
 </div>
 
 <div class="foot">
-  Commodities · {{ t('built','生成于') }} {{ built }} · {{ t('data as of','数据截至') }} {{ as_of }}<br>
+  {{ t('Commodities','大宗商品') }} · {{ t('built','生成于') }} {{ built }} · {{ t('data as of','数据截至') }} {{ as_of }}<br>
   <span style="font-size:11px">© 2026 Mastermind Inc</span>
 </div>
 </div>{# /wrap #}
@@ -764,6 +1090,7 @@ html[data-lang="zh"] .l-en { display: none; }
     panels.forEach(function(p){ p.hidden = p.dataset.detpanel!==k; });
   });});
 })();
+
 /* ── alert timeline filter + more ── */
 (function(){
   var fil=document.querySelectorAll('.tlf'), items=[].slice.call(document.querySelectorAll('.tl-item'));
@@ -793,25 +1120,119 @@ html[data-lang="zh"] .l-en { display: none; }
   if(more){ more.addEventListener('click',function(){ state.expanded=!state.expanded; applyTimeline(); }); }
   applyTimeline();
 })();
-/* ── simple spark for the index (bars) — real idx_ew series ── */
+
+/* ── SVG area sparkline for the index ── */
 (function(){
   try {
-    var el=document.getElementById('idx-spark');
-    if(!el) return;
+    var svg = document.getElementById('idx-spark-svg');
+    if (!svg) return;
     {% if idx_ew_spark %}
-    var raw={{ idx_ew_spark | tojson }};
-    /* convert rebased values to bar heights (0–100%) */
-    var vals=raw.filter(function(v){return v!=null;});
-    if(vals.length===0) return;
-    var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals);
-    var rng=mx-mn||1;
-    raw.forEach(function(v){
-      var i=document.createElement('i');
-      i.style.height=(v==null?0:Math.max(2,Math.round(100*(v-mn)/rng)))+'%';
-      el.appendChild(i);
+    var raw = {{ idx_ew_spark | tojson }};
+    var vals = raw.filter(function(v){ return v != null; });
+    if (vals.length < 4) return;
+    var mn = Math.min.apply(null,vals), mx = Math.max.apply(null,vals);
+    var rng = mx - mn || 1;
+    var W = 600, H = 52;
+    svg.setAttribute('viewBox','0 0 ' + W + ' ' + H);
+    var n = raw.length;
+    var pts = raw.map(function(v, i){
+      var x = (i/(n-1)) * W;
+      var y = v == null ? H : H - Math.max(2, Math.round((v-mn)/rng*(H-6)));
+      return [x, y];
     });
+    /* area path */
+    var d = 'M' + pts[0][0] + ',' + pts[0][1];
+    for (var i=1; i<pts.length; i++) {
+      if (raw[i] == null) continue;
+      d += ' L' + pts[i][0] + ',' + pts[i][1];
+    }
+    var areaD = d + ' L' + pts[pts.length-1][0] + ',' + H + ' L' + pts[0][0] + ',' + H + ' Z';
+    var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    var lineColor = isDark ? 'rgba(55,208,127,.85)' : 'rgba(26,127,67,.85)';
+    var gradId = 'sg' + Math.random().toString(36).slice(2,7);
+    svg.innerHTML =
+      '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="' + lineColor + '" stop-opacity="0.25"/>' +
+        '<stop offset="100%" stop-color="' + lineColor + '" stop-opacity="0.02"/>' +
+      '</linearGradient><filter id="sfglow"><feGaussianBlur stdDeviation="1.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
+      '<path d="'+areaD+'" fill="url(#'+gradId+')" stroke="none"/>' +
+      '<path id="spark-line" d="'+d+'" fill="none" stroke="'+lineColor+'" stroke-width="2" filter="url(#sfglow)" stroke-linecap="round" stroke-linejoin="round"/>';
+    /* draw-in animation via stroke-dashoffset */
+    var line = svg.getElementById('spark-line');
+    if (line && line.getTotalLength) {
+      try {
+        var len = line.getTotalLength();
+        line.style.strokeDasharray = len;
+        line.style.strokeDashoffset = len;
+        line.style.transition = 'stroke-dashoffset 1.1s ease-out';
+        requestAnimationFrame(function(){ line.style.strokeDashoffset = '0'; });
+      } catch(e){}
+    }
+    /* endpoint pulse dot */
+    var last = pts[pts.length-1];
+    var dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx', last[0]); dot.setAttribute('cy', last[1]);
+    dot.setAttribute('r','4'); dot.setAttribute('fill', lineColor);
+    dot.style.cssText = 'animation: dot-pulse 2s ease-in-out infinite';
+    svg.appendChild(dot);
+    var sty = document.createElement('style');
+    sty.textContent = '@keyframes dot-pulse{0%,100%{r:3;opacity:.8}50%{r:5;opacity:1}}@media(prefers-reduced-motion:reduce){circle[cx]{animation:none}}';
+    document.head.appendChild(sty);
     {% endif %}
   } catch(e){}
+})();
+
+/* ── staggered dot fade-in on load ── */
+(function(){
+  var dots = [].slice.call(document.querySelectorAll('.dot'));
+  dots.forEach(function(d,i){
+    setTimeout(function(){ d.classList.add('vis'); }, 20 + i * 8);
+  });
+})();
+
+/* ── animated meter bars ── */
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.meter i[data-w]').forEach(function(el){
+      var w = parseFloat(el.getAttribute('data-w')) || 0;
+      el.style.width = '0';
+      requestAnimationFrame(function(){
+        el.style.width = Math.min(w, 100) + '%';
+      });
+    });
+  });
+  /* fallback if DOMContentLoaded already fired */
+  if (document.readyState !== 'loading'){
+    document.querySelectorAll('.meter i[data-w]').forEach(function(el){
+      requestAnimationFrame(function(){ el.style.width = Math.min(parseFloat(el.getAttribute('data-w'))||0,100)+'%'; });
+    });
+  }
+})();
+
+/* ── heat grid 1m% bar animation ── */
+(function(){
+  function animateBars(){
+    document.querySelectorAll('.chg-bar[data-w]').forEach(function(el){
+      var w = parseFloat(el.getAttribute('data-w')) || 0;
+      el.style.width = Math.min(w, 100) + '%';
+    });
+  }
+  if (document.readyState !== 'loading') { requestAnimationFrame(animateBars); }
+  else { document.addEventListener('DOMContentLoaded', animateBars); }
+})();
+
+/* ── live pill observer: light up when live.js patches a price ── */
+(function(){
+  var syms = ['GC=F','SI=F','HG=F','CL=F'];
+  syms.forEach(function(sym){
+    var pill = document.querySelector('[data-live-pill="'+sym+'"]');
+    var px   = document.querySelector('.nb-px[data-sym="'+sym+'"]');
+    if (!pill || !px) return;
+    var obs = new MutationObserver(function(){
+      pill.classList.add('on');
+    });
+    obs.observe(px, {childList:true, characterData:true, subtree:true});
+  });
 })();
 </script>
 <script src="theme.js"></script>

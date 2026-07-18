@@ -321,8 +321,8 @@ def _summarize_market(repo: Path) -> tuple[dict, str | None]:
     lobe: dict = {}
     # liquidity_plumbing: RRP/TGA/netliq quality numbers so bot/ask surfaces
     # can cite them (already display-only labels upstream — no recompute here).
-    for key in ("verdict", "radar", "vol", "breadth", "rotation", "liquidity",
-                "liquidity_plumbing",
+    for key in ("verdict", "radar", "vol", "breadth", "rotation", "rotation_events",
+                "liquidity", "liquidity_plumbing",
                 "alerts", "data_health", "contradictions", "live_overlay", "sources"):
         v = ws.get(key)
         if v is not None:
@@ -503,11 +503,37 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
         # ── FX block from world_state fx_dollar lobe ──────────────────────────
         fx_ws = ws.get("fx_dollar") or {}
         tx_ws = fx_ws.get("transmission") or {}
+        fx_deltas = fx_ws.get("deltas") or {}
+        # MSX-1 additions — null-tolerant; keys absent in old artifacts degrade to None
+        _fx_sc = fx_ws.get("state_changes") or {}
+        _fx_dom_sc = fx_ws.get("regime_radar_dominant_scenario") or {}
+        _fx_st_ext = fx_ws.get("strength_extremes") or {}
         fx_block = {
             "regime": fx_ws.get("regime"),
             "usd_trend": (fx_ws.get("dollar_desk") or {}).get("trend"),
             "headwind_for": (tx_ws.get("headwind_for") or [])[:5],
             "tailwind_for": (tx_ws.get("tailwind_for") or [])[:5],
+            # v2 compact delta fields for LLM context
+            # calendar days from streak start to latest ledger asof (inclusive)
+            "usd_trend_days": (fx_deltas.get("usd_trend") or {}).get("days_in_state"),
+            "regime_since": (fx_deltas.get("usd_regime") or {}).get("since"),
+            "top_scenario": (
+                (fx_ws.get("scenario_intensity") or [{}])[0].get("name")
+                if fx_ws.get("scenario_intensity") else None
+            ),
+            # MSX-1: state_changes compact summary (current states only; producer-
+            # stamped flips — complements the ledger-derived delta fields above)
+            "state_changes_summary": {
+                k: (v.get("current") if isinstance(v, dict) else None)
+                for k, v in _fx_sc.items()
+            } if _fx_sc else None,
+            # dominant stress scenario + intensity
+            "dominant_stress_scenario": _fx_dom_sc.get("key"),
+            "dominant_stress_intensity": _fx_dom_sc.get("intensity"),
+            # strength extremes
+            "strength_strongest": _fx_st_ext.get("strongest"),
+            "strength_weakest": _fx_st_ext.get("weakest"),
+            "strength_horizon": _fx_st_ext.get("horizon"),
         }
 
         # ── Rates block from world_state rates_transmission + rates_credit ────
@@ -536,9 +562,23 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
 
         # ── Commodity block from commodity_context ────────────────────────────
         cc_ws = ws.get("commodity_context") or {}
+        cc_deltas = cc_ws.get("deltas") or {}
+        cc_conf = cc_ws.get("confluence") or {}
+        cc_breadth = cc_ws.get("breadth") or {}
+        cc_ratios = cc_ws.get("ratios") or {}
         commodity_block = {
             "regime": cc_ws.get("regime"),
             "favored": cc_ws.get("favored"),
+            # v2 compact fields for LLM context
+            "breadth_bucket": cc_breadth.get("bucket"),
+            "shock_state": (cc_ws.get("index") or {}).get("shock_state"),
+            "shock_state_days": (cc_deltas.get("commodity_shock_state") or {}).get("days_in_state"),
+            "confluence_standouts": [
+                {"name": s.get("name"), "state": s.get("state")}
+                for s in (cc_conf.get("standouts") or [])[:3]
+            ],
+            "copper_gold_dir": (cc_ratios.get("copper_gold") or {}).get("dir"),
+            "gold_silver_dir": (cc_ratios.get("gold_silver") or {}).get("dir"),
         }
 
         # ── Cross-asset block from cross_asset_flows (R6) ─────────────────────
@@ -1099,6 +1139,55 @@ def _summarize_contagion(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_fx_dollar(repo: Path) -> tuple[dict, str | None]:
+    """Distil world_state.fx_dollar into the fx_dollar lobe.
+
+    Source: data/neuralweb/world_state.json (fx_dollar sub-block, composed by
+    world_state._compose_fx_dollar from data/forex/latest.json).
+    All fields are engine-originated, is_context_only=True, display_only=True.
+    LLM consumers read this — they never originate or escalate from it.
+    Fail-soft: absent world_state or absent fx_dollar sub-block → empty lobe
+    with gap note.
+
+    Standing laws:
+    - 100% deterministic re-projection of already-computed RSR organs.
+    - No LLM-originated content; no invented scores.
+    - Nothing here may gate, rank, size, or escalate any authority surface.
+    - The word 'validated' is banned from all emitted text.
+    """
+    ws_path = repo / "data" / "neuralweb" / "world_state.json"
+    ws = _read_json(ws_path)
+    if ws is None:
+        return {}, "data/neuralweb/world_state.json absent or unreadable"
+
+    fx = (ws.get("fx_dollar") or {}) if isinstance(ws, dict) else {}
+    if not fx:
+        return {}, "world_state.fx_dollar absent (pre-FX-transmission build)"
+
+    tx  = (fx.get("transmission") or {}) if isinstance(fx.get("transmission"), dict) else {}
+    dd  = (fx.get("dollar_desk") or {}) if isinstance(fx.get("dollar_desk"), dict) else {}
+    rr  = (fx.get("regime_radar") or {}) if isinstance(fx.get("regime_radar"), dict) else {}
+    asof = fx.get("asof")
+
+    lobe: dict = {
+        "is_context_only":    True,
+        "display_only":       True,
+        "asof":               asof,
+        "usd_dir":            tx.get("usd_dir"),
+        "lean":               dd.get("lean"),
+        "real_rate_regime":   dd.get("real_rate_regime"),
+        "usd_valuation":      dd.get("usd_valuation"),
+        "trend":              dd.get("trend"),
+        "fed_path_lean":      dd.get("fed_path_lean"),
+        "liquidity_dir":      dd.get("liquidity_dir"),
+        "headwind_for":       (tx.get("headwind_for") or [])[:4],
+        "tailwind_for":       (tx.get("tailwind_for") or [])[:4],
+        "fx_stress_dominant": rr.get("dominant"),
+        "honesty_note":       "context only — measured correlations, not a trade signal",
+    }
+    return lobe, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -1115,6 +1204,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "mastermind_ai": _summarize_mastermind_ai,
     "risk_radar_reliability": _summarize_risk_radar_reliability,
     "contagion": _summarize_contagion,  # CSP-W1 contagion context lobe
+    "fx_dollar": _summarize_fx_dollar,  # FX/dollar transmission context lobe
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -1132,6 +1222,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "mastermind_ai": ["mastermind-feedback-summary"],
     "risk_radar_reliability": ["site-riskdata-scorecard"],
     "contagion": ["world-state"],  # CSP-W1: reads world_state.contagion_regime
+    "fx_dollar": ["world-state"],  # reads world_state.fx_dollar (from data/forex/latest.json)
 }
 
 

@@ -104,7 +104,7 @@ def hold_state(
     dict | None
         None when no anchor can be established.
         Else: {state, anchor, anchor_src, days_basing, invalidation,
-               maxup_pct, ob_persist, provisional}
+               maxup_pct, ret_since_anchor_pct, ob_persist, provisional}
     """
     try:
         c = daily_close.dropna()
@@ -169,6 +169,10 @@ def hold_state(
         # maxup = max(close[ai..now]) / Pc - 1
         maxup = float(np.nanmax(fwd) / Pc - 1.0) if len(fwd) > 0 else 0.0
 
+        # ret_since_anchor = close[now] / Pc - 1 — SIGNED, unlike maxup which is
+        # the max favorable excursion and cannot see a name that is underwater.
+        ret_since_anchor = float(c_arr[-1] / Pc - 1.0)
+
         # OB-persist: any bar in [ai..now] has 3D StochRSI k or d >= OB_THRESH (sticky)
         ob_persist = False
         for j in range(ai, n):
@@ -203,6 +207,7 @@ def hold_state(
             "days_basing":  days_basing,
             "invalidation": round(float(trough * TROUGH_TOL), 2),
             "maxup_pct":    round(float(maxup * 100), 2),
+            "ret_since_anchor_pct": round(float(ret_since_anchor * 100), 2),
             "ob_persist":   ob_persist,
             "provisional":  provisional,
         }
