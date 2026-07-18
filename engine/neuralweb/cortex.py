@@ -2098,7 +2098,7 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (25): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (29): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
@@ -2107,6 +2107,8 @@ READ (25): read_world_state, query_spine, read_kernel, read_graph, read_contradi
            read_context_candidates, read_causal_candidates,
            read_liquidity_plumbing, read_china_decision_packet,
            read_theme_state, read_theme_thesis, read_theme_pathways,
+           read_theme_asymmetry, read_theme_options_witness,
+           read_theme_clinical, read_theme_trade_flows,
            read_master_brain_theses, read_master_brain_brief
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
