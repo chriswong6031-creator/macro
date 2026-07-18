@@ -729,15 +729,30 @@ def grade(market: str) -> dict:
     # A row is "still unstamped" if us_rate_pressure is still null after backfill
     n_unstamped = int(df["us_rate_pressure"].isna().sum()) if "us_rate_pressure" in df.columns else 0
 
-    # Write back with all updates
+    # Write back with all updates — lane-gated like append_board (PR-R10): grade()
+    # is keep-FRESH so the in-memory frame (and every scorecard() read) stays fully
+    # graded off-lane; only the parquet PERSIST is producer-lane-only. Without this
+    # gate every reader (prophet_governor, re-render lanes, tests) rewrites the
+    # committed store as a side effect (MM_DATA_GUARD catch, 2026-07-18).
     if spine_updates or n_backfilled > 0:
         try:
-            for col in (*_PORT_STAMPS, *_GATE_STAMPS):
-                if col in df.columns:
-                    df[col] = df[col].astype("boolean")
-            df.to_parquet(p, index=False)
-        except Exception as e:  # noqa: BLE001
-            log.warning("board_ledger (%s): grade write-back failed: %s", m, e)
+            from engine.ledger_lane import asia_advance_enabled, nightly_advance_enabled  # noqa: PLC0415
+            write_ok = (asia_advance_enabled() if m == "HK"
+                        else nightly_advance_enabled() if m == "CA"
+                        else False)
+        except Exception:  # noqa: BLE001
+            write_ok = False  # fail-closed, matching append_board
+        if write_ok:
+            try:
+                for col in (*_PORT_STAMPS, *_GATE_STAMPS):
+                    if col in df.columns:
+                        df[col] = df[col].astype("boolean")
+                df.to_parquet(p, index=False)
+            except Exception as e:  # noqa: BLE001
+                log.warning("board_ledger (%s): grade write-back failed: %s", m, e)
+        else:
+            log.info("board_ledger.grade(%s): off-lane — stamps computed in memory, "
+                     "parquet write-back skipped (PR-R10)", m)
 
     out["n_unstamped"] = n_unstamped
     if n_backfilled:
