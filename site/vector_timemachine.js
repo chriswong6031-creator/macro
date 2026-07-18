@@ -118,7 +118,7 @@
       i = j + 1;
     }
 
-    // Gated spans overlay (proprietary cycle timer active)
+    // Gated spans overlay (timing model holding the strategy out)
     if (D.gated && D.gated.length === N) {
       ctx.fillStyle = 'rgba(224, 164, 58, 0.9)';  // amber at ~0.9 alpha
       var k = 0;
@@ -205,7 +205,7 @@
     elPrice.textContent = money(D.price[idx]);
     if (elAlloc) {
       elAlloc.textContent = (D.alloc[idx] == null ? '—' : D.alloc[idx] + '% BTC');
-      // Lazy-create and manage the gated chip (proprietary cycle timer active)
+      // Lazy-create and manage the gated chip (timing model holding the strategy out)
       if (!elGated && D.gated && D.gated.length === N) {
         elGated = document.createElement('span');
         elGated.id = 'vtm-gated';
@@ -225,10 +225,10 @@
         elGated.style.background = 'color-mix(in srgb, ' + amber + ' 16%, transparent)';
         if (isGated) {
           elGated.style.display = '';
-          elGated.textContent = lang() === 'zh' ? '周期计时器生效中' : 'cycle timer active';
+          elGated.textContent = lang() === 'zh' ? '择时模型：暂时观望' : 'timing model: staying out';
           elGated.title = lang() === 'zh'
-            ? '此区间的配置由专有周期计时器强制持币观望——非引擎实时判断。'
-            : 'Allocation is held flat by the proprietary cycle timer during this span — not a live engine read.';
+            ? '这段时间内，择时模型让策略暂时离场，配置保持不变——这是模型的既定规则，非实时判断。'
+            : 'During this span the timing model keeps the strategy out of the market, so the allocation holds flat — a standing model rule, not a live read.';
         } else {
           elGated.style.display = 'none';
         }

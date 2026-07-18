@@ -39,6 +39,7 @@ Drop order for macro_slice (lowest priority first):
    5. factor_weather
    4. cross_asset_flows
    3. liquidity_plumbing
+   2b. fx_dollar  (FX/dollar transmission context; absent = drops cleanly)
    2. contradictions
    1c. global_regimes
    1b. contagion  (CSP-W1; absent = drops cleanly)
@@ -77,6 +78,7 @@ _SLA_HOURS: dict[str, float] = {
     "causal_lab_state":         36.0,
     "cortex_memo":              30.0,
     "mastermind_context":       30.0,
+    "fx_dollar":                30.0,
 }
 
 _DEFAULT_SLA_HOURS: float = 30.0
@@ -702,6 +704,64 @@ def _block_contagion(ws: dict | None) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# FX Dollar context block (reads world_state.fx_dollar)
+# ---------------------------------------------------------------------------
+
+def _block_fx_dollar(ws: dict | None) -> dict | None:
+    """Block fx_dollar: FX/dollar transmission context from world_state.fx_dollar.
+
+    Budget: ~0.5 KB.  Returns None when the block is entirely null/degraded so
+    it drops cleanly from the macro_slice.
+
+    Deterministic numeric text only — engine-computed fields re-projected to
+    the AI context plane.  No LLM-originated content.  Mirrors _block_contagion
+    in style (CSP-W1 pattern).
+
+    honesty_note: "context only — measured correlations, not a trade signal"
+    """
+    if ws is None:
+        return None
+    fx = ws.get("fx_dollar")
+    if not fx or not isinstance(fx, dict):
+        return None
+
+    tx   = (fx.get("transmission") or {}) if isinstance(fx.get("transmission"), dict) else {}
+    dd   = (fx.get("dollar_desk") or {}) if isinstance(fx.get("dollar_desk"), dict) else {}
+    rr   = (fx.get("regime_radar") or {}) if isinstance(fx.get("regime_radar"), dict) else {}
+
+    usd_dir        = tx.get("usd_dir")
+    lean           = dd.get("lean")
+    real_rate_reg  = dd.get("real_rate_regime")
+    liquidity_dir  = dd.get("liquidity_dir")
+    headwind_for   = (tx.get("headwind_for") or [])[:4]
+    tailwind_for   = (tx.get("tailwind_for") or [])[:4]
+    fx_stress_dom  = rr.get("dominant")
+    asof           = fx.get("asof")
+
+    # Drop when all key fields are null/absent
+    if all(v is None for v in [usd_dir, lean, real_rate_reg, liquidity_dir, fx_stress_dom]) \
+            and not headwind_for and not tailwind_for:
+        return None
+
+    return {
+        "display_only":        True,
+        "is_context_only":     True,
+        "_tape_family":        "fx_dollar",
+        "_lead_lag":           "coincident",
+        "as_of":               asof,
+        "stale":               _is_stale(asof, "fx_dollar"),
+        "usd_dir":             usd_dir,
+        "lean":                lean,
+        "real_rate_regime":    real_rate_reg,
+        "liquidity_dir":       liquidity_dir,
+        "headwind_for":        headwind_for,
+        "tailwind_for":        tailwind_for,
+        "fx_stress_dominant":  fx_stress_dom,
+        "honesty_note":        "context only — measured correlations, not a trade signal",
+    }
+
+
+# ---------------------------------------------------------------------------
 # macro_slice
 # ---------------------------------------------------------------------------
 
@@ -717,6 +777,7 @@ _MACRO_DROP_ORDER = [
     "factor_weather",    # 6
     "cross_asset_flows", # 3
     "liquidity_plumbing",# 4
+    "fx_dollar",         # 2b — FX/dollar transmission context block
     "contradictions",    # 2
     "global_regimes",    # 5
     "contagion",         # 1c — CSP-W1 context block
@@ -795,6 +856,10 @@ def _build_macro_slice(root: Path) -> dict:
     _contagion = _block_contagion(ws)
     if _contagion is not None:
         result["contagion"]     = _contagion
+    # FX/dollar transmission context block — None when null/degraded, drops cleanly
+    _fx_dollar = _block_fx_dollar(ws)
+    if _fx_dollar is not None:
+        result["fx_dollar"]     = _fx_dollar
 
     # Enforce budget
     _enforce_budget(result, _MACRO_CAP, _MACRO_DROP_ORDER)

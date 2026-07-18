@@ -3471,6 +3471,73 @@ def _master_brief_vm() -> dict:
     return {}
 
 
+def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None":
+    """Thread the DISPLAY-ONLY board attaches onto us_standouts buy cards — W4
+    stock-personality chips + RLT-R6 sector-stance labels. Mutates and returns `doc`
+    (None passes through). Each attach is fail-open: a missing or malformed sidecar
+    just omits its chip and never breaks the build. Factored so the first-pass render
+    and the post-build_library re-render (one-build-lag fix) share ONE enrichment path
+    and can never silently diverge (e.g. drop chips on the re-render)."""
+    if not doc:
+        return doc
+    # W4 stock-personality slim attach: thread chart+mode chips into buy cards
+    # (inside .nb-more expander only per guardrail 16; fail-open if JSON absent/malformed).
+    _sp_path = site / "factordata" / "stock_personality.json"
+    _sp_per_ticker: dict = {}
+    if _sp_path.exists():
+        try:
+            _sp_doc = json.loads(_sp_path.read_text())
+            _sp_per_ticker = _sp_doc.get("per_ticker") or {}
+        except Exception as _spe:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_personality.json unreadable for board attach (%s)", _spe)
+    if _sp_per_ticker:
+        try:
+            for _card in (doc.get("buy") or []):
+                _tk = _card.get("ticker")
+                _sp_slim = _sp_per_ticker.get(_tk)
+                if _sp_slim:
+                    _chart = _sp_slim.get("chart") or []
+                    _modes = _sp_slim.get("modes") or []
+                    _mode1 = next((m for m in _modes if m != "normal"), None)
+                    _card["personality"] = {
+                        "chart": _chart[0] if _chart else None,
+                        "mode": _mode1,
+                    }
+        except Exception as _spe2:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_personality board attach failed (%s)", _spe2)
+    # RLT-R6 sector-stance disclosure: join sector_central verdicts onto buy-board rows.
+    # DISPLAY-ONLY — zero effect on selection, rank, or gating. Missing sector or
+    # sector_central data -> field absent, chip silently omitted. Ordering: sector_central.json
+    # is written by build_sector_rotation before build_site.main() runs (nightly DAG order).
+    _sc_path = site / "sectordata" / "sector_central.json"
+    if _sc_path.exists():
+        try:
+            _sc_doc = json.loads(_sc_path.read_text())
+            # Build ETF-ticker -> (label_en, label_zh) from the sectors list
+            _sc_by_etf: dict[str, tuple[str, str]] = {}
+            for _sec in (_sc_doc.get("sectors") or []):
+                _etf = _sec.get("ticker")
+                _conv = _sec.get("conviction") or {}
+                if _etf and _conv.get("label_en"):
+                    _sc_by_etf[_etf] = (
+                        _conv["label_en"],
+                        _conv.get("label_zh") or _conv["label_en"],
+                    )
+            # GICS sector string -> SPDR ETF (canonical map from engine/spotlight.py)
+            from engine.spotlight import GICS_TO_ETF as _GICS_ETF
+            # Only buy lane has card rendering; watch rows are not rendered as cards.
+            for _card in (doc.get("buy") or []):
+                _gics = _card.get("sector") or ""
+                _etf = _GICS_ETF.get(_gics)
+                if _etf and _etf in _sc_by_etf:
+                    _lbl_en, _lbl_zh = _sc_by_etf[_etf]
+                    _card["sector_stance"] = _lbl_en
+                    _card["sector_stance_zh"] = _lbl_zh
+        except Exception as _rlt6e:  # noqa: BLE001 — additive, never fatal
+            log.warning("RLT-R6 sector-stance enrich failed (%s)", _rlt6e)
+    return doc
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
@@ -3644,72 +3711,10 @@ def main() -> int:
             us_standouts = json.loads(_us.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_standouts.json unreadable (%s)", e)
-    # W4 stock-personality slim attach: thread chart+mode chips into us_standouts buy cards
-    # (inside .nb-more expander only per guardrail 16; fail-open if JSON absent or malformed).
-    _sp_path = site / "factordata" / "stock_personality.json"
-    _sp_per_ticker: dict = {}
-    if _sp_path.exists():
-        try:
-            _sp_doc = json.loads(_sp_path.read_text())
-            _sp_per_ticker = _sp_doc.get("per_ticker") or {}
-        except Exception as _spe:  # noqa: BLE001 — additive, never fatal
-            log.warning("stock_personality.json unreadable for board attach (%s)", _spe)
-    if us_standouts and _sp_per_ticker:
-        try:
-            for _card in (us_standouts.get("buy") or []):
-                _tk = _card.get("ticker")
-                _sp_slim = _sp_per_ticker.get(_tk)
-                if _sp_slim:
-                    _chart = _sp_slim.get("chart") or []
-                    _modes = _sp_slim.get("modes") or []
-                    _mode1 = next((m for m in _modes if m != "normal"), None)
-                    _card["personality"] = {
-                        "chart": _chart[0] if _chart else None,
-                        "mode": _mode1,
-                    }
-        except Exception as _spe2:  # noqa: BLE001 — additive, never fatal
-            log.warning("stock_personality board attach failed (%s)", _spe2)
-    # RLT-R6 sector-stance disclosure: join sector_central verdicts onto buy-board rows.
-    # DISPLAY-ONLY — zero effect on selection, rank, or gating.
-    # Missing sector or missing sector_central data -> field absent, chip silently omitted.
-    # Ordering dependency: sector_central.json must be written by build_sector_rotation
-    # before build_site.main() runs (nightly DAG step order enforces this).
-    _sc_path = site / "sectordata" / "sector_central.json"
-    if us_standouts and _sc_path.exists():
-        try:
-            _sc_doc = json.loads(_sc_path.read_text())
-            # Build ETF-ticker -> (label_en, label_zh) from the sectors list
-            _sc_by_etf: dict[str, tuple[str, str]] = {}
-            for _sec in (_sc_doc.get("sectors") or []):
-                _etf = _sec.get("ticker")
-                _conv = _sec.get("conviction") or {}
-                if _etf and _conv.get("label_en"):
-                    _sc_by_etf[_etf] = (
-                        _conv["label_en"],
-                        _conv.get("label_zh") or _conv["label_en"],
-                    )
-            # GICS sector string -> SPDR ETF (canonical map from engine/spotlight.py)
-            from engine.spotlight import GICS_TO_ETF as _GICS_ETF
-            # Only buy lane has card rendering; watch rows are not rendered as cards.
-            for _card in (us_standouts.get("buy") or []):
-                _gics = _card.get("sector") or ""
-                _etf = _GICS_ETF.get(_gics)
-                if _etf and _etf in _sc_by_etf:
-                    _lbl_en, _lbl_zh = _sc_by_etf[_etf]
-                    _card["sector_stance"] = _lbl_en
-                    _card["sector_stance_zh"] = _lbl_zh
-        except Exception as _rlt6e:  # noqa: BLE001 — additive, never fatal
-            log.warning("RLT-R6 sector-stance enrich failed (%s)", _rlt6e)
-    # W2 surfaced-outcome strip (written by grade_us_board.py --nightly).
-    # Absent on first run or before grade_us_board runs. Additive, never fatal.
-    us_board_outcomes = None
-    _ubo = site / "factordata" / "us_board_outcomes.json"
-    if _ubo.exists():
-        try:
-            us_board_outcomes = json.loads(_ubo.read_text())
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.warning("us_board_outcomes.json unreadable (%s)", e)
-
+    # DISPLAY-ONLY board attaches (personality chips + RLT-R6 sector-stance) — factored
+    # into _attach_board_display_chips so the post-build_library re-render (one-build-lag
+    # fix, below) reuses the EXACT same enrichment and can never silently diverge.
+    us_standouts = _attach_board_display_chips(site, us_standouts)
     # W2 outcomes strip — names that left the buy board in the last 21 board dates,
     # with their pct return since first surfaced. Written by grade_us_board --nightly.
     # Absent on first run or when the nightly hasn't run yet → strip degrades silently.
@@ -4570,6 +4575,50 @@ def main() -> int:
             log.warning("profile translation step failed (%s); blurbs stay English", e)
         from scripts.build_stock_library import main as build_library
         build_library()
+
+        # One-build-lag fix (us_stocks staleness banner): build_library() just wrote
+        # THIS build's fresh factordata/us_standouts.json + setups.json, but macro.html
+        # and us_stocks.html were already rendered above from the PRIOR build's boards
+        # (read at the top of main(), one-build lag). When tonight's data advanced the
+        # board, re-render just those two pages from the fresh boards so the live board —
+        # and its CSP-W5 staleness banner — reflects current data instead of lagging a
+        # full build. Cheap: rendering from the already-assembled vm is ~<1s/page (the
+        # ~4min cost is vm assembly, already done). Guarded on as_of/staleness change:
+        # an unchanged board skips the re-render; an age_days tick on a still-stale board
+        # refreshes the banner (wanted). Scope: this re-renders the two dashboard pages
+        # only — the landing-hub standout COUNT (data/us_stocks/latest.json, written above
+        # from the first-pass board) can still lag one build, but it is a stable count that
+        # does not signal staleness, so it is intentionally left. This removes only the
+        # RENDER-side lag — the banner still fires whenever the DATA itself is genuinely
+        # stale (CSP-W5 disclosure unchanged; never fail-dark, per CSP-R1). Fail-soft: any
+        # error leaves the first-pass pages in place.
+        try:
+            _us_path = site / "factordata" / "us_standouts.json"
+            _fresh_su = _attach_board_display_chips(
+                site, json.loads(_us_path.read_text())) if _us_path.exists() else None
+            _prior_as_of = (us_standouts or {}).get("as_of")
+            _prior_stale = (us_standouts or {}).get("staleness") or {}
+            if _fresh_su and (
+                    _fresh_su.get("as_of") != _prior_as_of
+                    or (_fresh_su.get("staleness") or {}) != _prior_stale):
+                vm["us_standouts"] = _fresh_su
+                _setups_path = site / "factordata" / "setups.json"
+                if _setups_path.exists():
+                    try:
+                        vm["top_setups"] = json.loads(_setups_path.read_text())
+                    except Exception:  # noqa: BLE001 — keep prior setups on parse error
+                        pass
+                _dash = env.get_template("dashboard.html.j2")
+                write_page(site / "macro.html", _dash.render(**vm, mode="macro"))
+                write_page(site / "us_stocks.html", _dash.render(**vm, mode="stocks"))
+                log.info(
+                    "one-build-lag fix: re-rendered macro/us_stocks from fresh board "
+                    "(as_of %s -> %s, delayed %s -> %s)",
+                    _prior_as_of, _fresh_su.get("as_of"),
+                    _prior_stale.get("delayed"),
+                    (_fresh_su.get("staleness") or {}).get("delayed"))
+        except Exception as _rr_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("one-build-lag re-render skipped (%s)", _rr_e)
 
         # Bespoke single-stock chart data: a compact per-ticker OHLC JSON
         # (site/ohlc/<T>.json) read client-side by chart.js. Pure serialisation of
