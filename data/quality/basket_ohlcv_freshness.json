@@ -1,0 +1,18 @@
+{
+  "status": "stale",
+  "checked_at": "2026-07-18T00:26:17.494283+00:00",
+  "threshold_sessions": 3,
+  "store_max": "2026-07-17",
+  "n_members": 683,
+  "n_stale": 1,
+  "n_behind_within_threshold": 0,
+  "stale": {
+    "BLD": {
+      "last": "2026-07-02",
+      "sessions_behind": 10
+    }
+  },
+  "missing": [
+    "MMC"
+  ]
+}

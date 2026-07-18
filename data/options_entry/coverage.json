@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-17T09:11:12.747784+00:00",
-  "as_of": "2026-07-17",
+  "generated_at": "2026-07-18T00:37:51.011983+00:00",
+  "as_of": "2026-07-18",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 403,
@@ -358,8 +358,8 @@
       "null_share": 1.0,
       "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
       "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
-      "current_opex_days": 0,
-      "next_opex_date": "2026-07-17",
+      "current_opex_days": 25,
+      "next_opex_date": "2026-08-21",
       "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
     },
     "gamma_regime_constancy": {
@@ -375,10 +375,10 @@
   "consistency": [
     {
       "check": "bh_test_count_drift",
-      "registry_registered": 28,
+      "registry_registered": 36,
       "gate_json_family_size": 22,
-      "validate_docstring_count": 22,
-      "note": "BH test-count drift: registry after #1674 = 28 tests; gate.json fdr_family.family_size = 22; validate_options_entry.py FDR docstring = 22. These are TEST counts (the BH family size), not bucket counts. Discrepancy is printed only \u2014 fix owned by W-OVC as first obligation (RUL-U5)."
+      "validate_docstring_count": 36,
+      "note": "BH test-count drift: registry after FS-3 (2026-07-13) = 36 tests (28 OVC + 8 S-FLOWML cells); gate.json fdr_family.family_size = 22; validate_options_entry.py FDR family_size = 36. These are TEST counts (the BH family size), not bucket counts. Reconciled to 36 by W-OVC fix per RUL-U5 obligation."
     },
     {
       "check": "stale_asof_ages",
@@ -386,38 +386,37 @@
         {
           "source": "options_entry/state.parquet",
           "latest_as_of": "2026-07-16",
-          "age_days_from_today": 1,
+          "age_days_from_today": 2,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
           "latest_as_of": "2026-07-17 03:52 UTC",
-          "age_days_from_today": 0,
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-07-06",
-          "age_days_from_today": 11,
+          "age_days_from_today": 12,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-17T09:11:12.713562+00:00",
+      "generated_at": "2026-07-18T00:37:50.970445+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
-        "CHAINS AT LIMIT: latest chain file is 2026-07-16 (exactly 1 trading day(s) behind last_td=2026-07-17) \u2014 OK today but will trip if tomorrow's accrual is missed",
         "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
       ]
     }
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-17T09:11:12.747777+00:00",
-    "as_of": "2026-07-17",
+    "generated_at_utc": "2026-07-18T00:37:51.011975+00:00",
+    "as_of": "2026-07-18",
     "absent_stores": []
   }
 }
