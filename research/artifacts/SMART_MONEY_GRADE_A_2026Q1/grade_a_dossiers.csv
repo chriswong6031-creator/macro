@@ -1,0 +1,17 @@
+rank,slug,name,grade,quality_z,n_buys,n_buys_h,n_trades,median_buy_excess,avg_buy_excess,avg_buy_excess_h,buy_hit_rate,coverage_pct
+1,bakerbros,Baker Bros. Advisors,A,1.93,19,18,31,0.1454,0.0999,-0.0329,0.632,7.7
+2,casdin,Casdin Capital,A,1.64,31,27,61,0.1039,0.3865,0.0688,0.677,28.1
+3,himalaya,Himalaya Capital (Li Lu),A,1.56,6,1,13,0.0924,-0.0079,0.1231,0.667,68.4
+4,whalerock,Whale Rock Capital,A,1.35,132,112,305,0.0622,0.304,0.0744,0.515,75.1
+5,baupost,Baupost Group (Klarman),A,1.2,55,34,114,0.0418,0.0371,0.0015,0.509,63.0
+6,duquesne,Duquesne Family Office (Druckenmiller),A,1.19,244,195,510,0.04,0.4627,0.0339,0.516,63.0
+7,elliott,Elliott Investment Management,A,1.13,122,100,237,0.0306,0.4463,0.0148,0.566,74.3
+8,fairholme,Fairholme Capital (Berkowitz),A,1.1,18,10,36,0.0275,-0.0096,-0.0232,0.556,67.9
+9,basswood,Basswood Capital Management,A,1.06,162,130,336,0.0215,0.0105,-0.011,0.562,50.6
+10,sachem,Sachem Head Capital,A,0.9,72,61,130,-0.0015,0.4552,0.006,0.472,70.7
+11,lightstreet,Light Street Capital,A,0.87,98,85,200,-0.0064,0.2765,0.0307,0.5,77.2
+12,racapital,RA Capital Management,A,0.74,25,20,40,-0.0244,0.067,-0.1639,0.48,9.9
+13,corvex,Corvex Management,A,0.7,71,58,137,-0.0301,0.0863,0.0166,0.423,60.4
+14,soros,Soros Fund Management,A,0.68,661,505,1242,-0.0329,0.1558,0.0099,0.458,57.5
+15,altimeter,Altimeter Capital,A,0.61,76,69,136,-0.0436,0.2605,0.0561,0.447,78.2
+16,starboard,Starboard Value,A,0.5,44,31,106,-0.0588,0.0114,0.0019,0.432,69.7

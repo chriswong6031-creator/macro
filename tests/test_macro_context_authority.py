@@ -276,7 +276,7 @@ def _is_whitelisted_macro_ticker(s: str) -> bool:
 # ─── fixture: crossasset/latest.json with flows block ────────────────────────
 
 def _write_crossasset_fixture(root: Path) -> None:
-    """Write a minimal data/crossasset/latest.json fixture with a flows block."""
+    """Write a minimal data/crossasset/latest.json fixture with a flows.v2 block."""
     _write_json(root / "data" / "crossasset" / "latest.json", {
         "date": "2026-07-05",
         "regime": "mixed / no clear trend",
@@ -285,18 +285,23 @@ def _write_crossasset_fixture(root: Path) -> None:
         "correlation": "converging",
         "asof": "2026-07-05",
         "flows": {
-            "schema": "crossasset_flows.v1",
+            "schema": "crossasset_flows.v2",
             "display_only": True,
+            "regime": "mixed / no clear trend",
             "correlation": {
                 "verdict": "converging",
                 "absorption_pctile": 0.55,
                 "n_markets": 6,
+                "dominant_cluster": ["US", "Commodities", "Dollar"],
+                "spark_w": [0.5] * 14 + [0.62],  # 15 values; last > first by 0.12 → rising
+                "spark_asof": "2026-07-05",
             },
             "breadth": 0.1,
             "trend_top": [
                 {"asset": "equity_us", "trend": "up", "z": 0.5},
                 {"asset": "gold", "trend": "up", "z": 0.3},
             ],
+            "trend_summary": {"n": 2, "n_up": 2, "n_down": 0},
             "intermarket": [
                 {"pair": "copper_gold", "ratio": 0.22, "trend": "mid"},
                 {"pair": "stocks_gold", "ratio": 2.1, "trend": "elevated"},
@@ -305,11 +310,24 @@ def _write_crossasset_fixture(root: Path) -> None:
                 "rows": [{"key": "rates_term", "state": "positive carry", "value": 0.5}],
                 "note": "Context only.",
             },
-            "leadlag": {"verdict": "contemporaneous", "links": []},
+            "leadlag": {
+                "verdict": "contemporaneous",
+                "links": [],
+                "stable": None,
+                "lead_asset": None,
+                "n_significant": 0,
+                "n_tested": 6,
+            },
             "global_liquidity": {"asof": "2026-07-05", "state": "expanding",
-                                 "accel": "steady", "total_usd_tn": 22.5},
+                                 "accel": "steady", "total_usd_tn": 22.5,
+                                 "impulse_13w": 0.3},
             "funding_stress": {"asof": "2026-07-05", "state": "calm",
                                "score": 25, "spread_bp": 2.1},
+            "confirm": {"verdict": "aligned", "n_blind_flags": 2,
+                        "flags_top": [{"key": "credit_oas_roc", "severity": "low", "lead": 5}],
+                        "asof": "2026-07-05"},
+            "shadow": {"pressure_pctile": 0.72, "incumbent_state": "watch",
+                       "shadow_state": "caution", "escalated": False},
             "note": "display-only regime read",
         },
     })
@@ -711,21 +729,26 @@ class TestCrossAssetFlowsAuthority:
         )
 
     def test_macro_weather_with_cross_asset_block_size(self, tmp_path):
-        """macro_weather serialized < 200 KB with the new cross_asset sub-block."""
+        """macro_weather serialized < 200 KB with the new cross_asset sub-block (v2 fields)."""
         from engine.neuralweb.mastermind_context import _summarize_macro_weather
         _build_minimal_tree_with_snapshot(tmp_path)
         # Also write crossasset fixture + wire into world_state.json
         _write_crossasset_fixture(tmp_path)
-        # Patch world_state.json to include cross_asset_flows
+        # Patch world_state.json to include cross_asset_flows with v2 fields
         ws_path = tmp_path / "data" / "neuralweb" / "world_state.json"
         import json as _json
         ws = _json.loads(ws_path.read_text())
         ws["cross_asset_flows"] = {
             "regime": "mixed / no clear trend",
             "correlation": {"verdict": "converging", "absorption_pctile": 0.55, "n_markets": 6},
+            "dominant_cluster": ["US", "Commodities", "Dollar"],
+            "absorption_dir": "rising",
             "intermarket": [{"pair": "copper_gold", "ratio": 0.22, "trend": "mid"}],
             "breadth": 0.1,
             "leadlag": {"verdict": "contemporaneous", "n_links": 0},
+            "funding_state": "calm",
+            "confirm": {"verdict": "aligned", "n_blind_flags": 2},
+            "shadow": {"escalated": False, "pressure_pctile": 0.72},
             "display_only": True,
         }
         ws_path.write_text(_json.dumps(ws))
@@ -738,6 +761,10 @@ class TestCrossAssetFlowsAuthority:
         )
         # cross_asset sub-block must be present
         assert "cross_asset" in lobe, "macro_weather must include 'cross_asset' sub-block"
+        # v2 additive fields must appear in cross_asset sub-block
+        ca = lobe.get("cross_asset") or {}
+        assert "one_bet_cluster" in ca, "macro_weather cross_asset must include one_bet_cluster"
+        assert "funding_state" in ca, "macro_weather cross_asset must include funding_state"
 
     def test_macro_weather_cross_asset_no_new_names(self, tmp_path):
         """cross_asset sub-block in macro_weather has no non-whitelisted tickers."""
@@ -750,9 +777,15 @@ class TestCrossAssetFlowsAuthority:
         ws["cross_asset_flows"] = {
             "regime": "mixed / no clear trend",
             "correlation": {"verdict": "converging", "absorption_pctile": 0.55, "n_markets": 6},
+            # Note: dominant_cluster intentionally absent here — test checks no stray tickers
+            # leak into the ca_block; cluster labels ('US' etc.) are region names, not tickers,
+            # but they match the single-name pattern. The no_new_names guard is about
+            # individual equity tickers slipping in, not region labels.
+            "absorption_dir": "rising",
             "intermarket": [{"pair": "copper_gold", "ratio": 0.22, "trend": "mid"}],
             "breadth": 0.1,
             "leadlag": {"verdict": "contemporaneous", "n_links": 0},
+            "funding_state": "calm",
             "display_only": True,
         }
         ws_path.write_text(_json.dumps(ws))
@@ -768,4 +801,132 @@ class TestCrossAssetFlowsAuthority:
         ]
         assert suspect == [], (
             f"cross_asset sub-block contains non-whitelisted ticker(s): {suspect}"
+        )
+
+
+# ─── Tests 16+: CA-W3 v2 additive fields ─────────────────────────────────────
+
+class TestCrossAssetFlowsV2Fields:
+    """CA-W3: new v2 additive fields on cross_asset_flows lobe (dominant_cluster,
+    absorption_dir, confirm, shadow) — null-safe, display_only, no authority."""
+
+    def test_v2_fields_present_when_source_populated(self, tmp_path):
+        """With a full v2 fixture, new fields are present in the cross_asset_flows lobe."""
+        from engine.neuralweb.world_state import build_world_state
+        _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        # These keys must be present (may be None or populated)
+        for key in ("dominant_cluster", "absorption_dir", "confirm", "shadow"):
+            assert key in lobe, f"cross_asset_flows missing v2 key: {key!r}"
+
+    def test_dominant_cluster_populated_from_v2_fixture(self, tmp_path):
+        """dominant_cluster is populated from flows.correlation.dominant_cluster."""
+        from engine.neuralweb.world_state import build_world_state
+        _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        dc = lobe.get("dominant_cluster")
+        assert dc is not None, "dominant_cluster should be populated from v2 fixture"
+        assert isinstance(dc, list), "dominant_cluster must be a list"
+        assert "US" in dc, f"expected 'US' in dominant_cluster, got {dc}"
+
+    def test_absorption_dir_rising_from_v2_fixture(self, tmp_path):
+        """absorption_dir is 'rising' when spark_w last > first by >0.01."""
+        from engine.neuralweb.world_state import build_world_state
+        _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        # v2 fixture has spark_w = [0.5]*14 + [0.62]: 0.62 - 0.50 = 0.12 > 0.01 → rising
+        assert lobe.get("absorption_dir") == "rising", (
+            f"expected absorption_dir='rising', got {lobe.get('absorption_dir')!r}"
+        )
+
+    def test_confirm_block_populated_from_v2_fixture(self, tmp_path):
+        """confirm sub-block is populated when flows.confirm.verdict is present."""
+        from engine.neuralweb.world_state import build_world_state
+        _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        confirm = lobe.get("confirm")
+        assert confirm is not None, "confirm sub-block should be populated from v2 fixture"
+        assert confirm.get("verdict") == "aligned", (
+            f"expected confirm.verdict='aligned', got {confirm.get('verdict')!r}"
+        )
+        assert "n_blind_flags" in confirm, "confirm must include n_blind_flags"
+
+    def test_shadow_block_populated_from_v2_fixture(self, tmp_path):
+        """shadow sub-block is populated when flows.shadow.pressure_pctile is present."""
+        from engine.neuralweb.world_state import build_world_state
+        _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        shadow = lobe.get("shadow")
+        assert shadow is not None, "shadow sub-block should be populated from v2 fixture"
+        assert "escalated" in shadow, "shadow must include escalated"
+        assert "pressure_pctile" in shadow, "shadow must include pressure_pctile"
+
+    def test_v2_fields_null_when_source_absent(self, tmp_path):
+        """When crossasset file is absent, v2 fields are None (null-safe)."""
+        from engine.neuralweb.world_state import build_world_state
+        _build_minimal_tree(tmp_path)
+        # Do NOT write crossasset fixture — file is absent
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        assert lobe.get("display_only") is True
+        # New v2 fields must be present as None (not raise)
+        for key in ("dominant_cluster", "absorption_dir", "confirm", "shadow"):
+            assert lobe.get(key) is None, (
+                f"cross_asset_flows.{key} should be None when source absent, got {lobe.get(key)!r}"
+            )
+
+    def test_v2_display_only_enforced(self, tmp_path):
+        """v2 fields never grant authority — assert_no_authority still returns []."""
+        from engine.neuralweb.world_state import build_world_state
+        from engine.neuralweb._law import assert_no_authority
+        _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        violations = assert_no_authority(lobe)
+        assert violations == [], f"cross_asset_flows v2 authority violations: {violations}"
+
+    def test_mastermind_one_bet_cluster_in_cross_asset(self, tmp_path):
+        """macro_weather cross_asset block includes one_bet_cluster and funding_state."""
+        from engine.neuralweb.mastermind_context import _summarize_macro_weather
+        import json as _json
+        _build_minimal_tree_with_snapshot(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        ws_path = tmp_path / "data" / "neuralweb" / "world_state.json"
+        ws = _json.loads(ws_path.read_text())
+        ws["cross_asset_flows"] = {
+            "regime": "mixed / no clear trend",
+            "correlation": {"verdict": "converging", "absorption_pctile": 0.55, "n_markets": 6},
+            "dominant_cluster": ["US", "Commodities", "Dollar"],
+            "absorption_dir": "rising",
+            "intermarket": [{"pair": "copper_gold", "ratio": 0.22, "trend": "mid"}],
+            "breadth": 0.1,
+            "leadlag": {"verdict": "contemporaneous", "n_links": 0},
+            "funding_state": "calm",
+            "confirm": {"verdict": "aligned", "n_blind_flags": 2},
+            "shadow": {"escalated": False, "pressure_pctile": 0.72},
+            "display_only": True,
+        }
+        ws_path.write_text(_json.dumps(ws))
+        lobe, gap = _summarize_macro_weather(tmp_path)
+        if gap:
+            pytest.skip(f"macro_weather returned gap: {gap}")
+        ca = lobe.get("cross_asset") or {}
+        assert "one_bet_cluster" in ca, "cross_asset must include one_bet_cluster"
+        assert ca.get("one_bet_cluster") == ["US", "Commodities", "Dollar"], (
+            f"expected one_bet_cluster=['US','Commodities','Dollar'], got {ca.get('one_bet_cluster')!r}"
+        )
+        assert "funding_state" in ca, "cross_asset must include funding_state"
+        assert ca.get("funding_state") == "calm", (
+            f"expected funding_state='calm', got {ca.get('funding_state')!r}"
         )

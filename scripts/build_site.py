@@ -4099,6 +4099,31 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — additive, never break the build
         pass
 
+    # CA-W3: cross_asset radar chip — display-only concentration context.
+    # Sources: data/regime/latest.json["cross_asset"] + data/crossasset_shadow/latest.json
+    # Both fail-open; skips attach entirely if no data.
+    try:
+        if _us_ms_view and isinstance(_us_ms_view.get("radar"), dict):
+            _regime_path = config.data_dir() / "regime" / "latest.json"
+            _shadow_path = config.data_dir() / "crossasset_shadow" / "latest.json"
+            _ca_regime_blk: dict = {}
+            _ca_shadow_blk: dict = {}
+            if _regime_path.exists():
+                _regime_art = json.loads(_regime_path.read_text(encoding="utf-8"))
+                _ca_regime_blk = _regime_art.get("cross_asset") or {}
+            if _shadow_path.exists():
+                _ca_shadow_blk = json.loads(_shadow_path.read_text(encoding="utf-8"))
+            if _ca_regime_blk:
+                _dc_raw = _ca_regime_blk.get("dominant_cluster") or []
+                _us_ms_view["radar"]["cross_asset"] = {
+                    "verdict": _ca_regime_blk.get("verdict"),
+                    "absorption_pctile": _ca_regime_blk.get("absorption_pctile_5y"),
+                    "dominant_cluster": _dc_raw[:3] if isinstance(_dc_raw, list) else [],
+                    "shadow_escalated": _ca_shadow_blk.get("escalated") if _ca_shadow_blk else None,
+                }
+    except Exception:  # noqa: BLE001 — additive, never break the build
+        pass
+
     vm = dict(
         latest=latest,
         mtf=mtf_data,

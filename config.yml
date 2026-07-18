@@ -3144,6 +3144,10 @@ cross_asset:
     dollar:     [yahoo, "DX-Y.NYB", close, fx]
     bond_10y:   [fred,  "DGS10",    us10y, rates]   # traded as -duration*Δyield proxy
     crypto:     [yahoo, "BTC-USD",  close, crypto]
+    # CA-W3-R5 display-board legs (NOT in the phase0 calibration window below)
+    equity_intl: [yahoo, "EFA",     close, equity]
+    equity_em:   [yahoo, "EEM",     close, equity]
+    duration:    [yahoo, "TLT",     close, rates]
   tsmom:
     lookbacks_d: [63, 126, 252]      # 3/6/12-month TSMOM, equal-weight blend of signs
     skip_d: 5                        # skip most-recent week (dodge 1-week reversal)

@@ -32,27 +32,40 @@ from lib import config, store
 log = logging.getLogger(__name__)
 
 # universe fallback if config.cross_asset.universe is absent: name -> (group, key, col, class)
+# CA-W3-R5: trend universe expanded with EFA/EEM/TLT legs (display regime read).
+# NOTE: DEFAULT_MARKETS in engine.cross_asset (concentration universe) is FROZEN — do NOT touch it.
 _DEFAULT_UNIVERSE = {
-    "equity_us": ("yahoo", "SPY", "close", "equity"),
-    "equity_sm": ("yahoo", "IWM", "close", "equity"),
-    "credit_hy": ("yahoo", "HYG", "close", "credit"),
-    "gold":      ("yahoo", "GC=F", "close", "commodity"),
-    "silver":    ("yahoo", "SI=F", "close", "commodity"),
-    "copper":    ("yahoo", "HG=F", "close", "commodity"),
-    "oil":       ("yahoo", "CL=F", "close", "commodity"),
-    "dollar":    ("yahoo", "DX-Y.NYB", "close", "fx"),
-    "bond_10y":  ("fred", "DGS10", "us10y", "rates"),     # duration-return proxy
-    "crypto":    ("yahoo", "BTC-USD", "close", "crypto"),
+    "equity_us":    ("yahoo", "SPY",       "close", "equity"),
+    "equity_sm":    ("yahoo", "IWM",       "close", "equity"),
+    "equity_intl":  ("yahoo", "EFA",       "close", "equity"),   # CA-W3-R5
+    "equity_em":    ("yahoo", "EEM",       "close", "equity"),   # CA-W3-R5
+    "credit_hy":    ("yahoo", "HYG",       "close", "credit"),
+    "gold":         ("yahoo", "GC=F",      "close", "commodity"),
+    "silver":       ("yahoo", "SI=F",      "close", "commodity"),
+    "copper":       ("yahoo", "HG=F",      "close", "commodity"),
+    "oil":          ("yahoo", "CL=F",      "close", "commodity"),
+    "dollar":       ("yahoo", "DX-Y.NYB",  "close", "fx"),
+    "bond_10y":     ("fred",  "DGS10",     "us10y", "rates"),    # duration-return proxy
+    "duration":     ("yahoo", "TLT",       "close", "rates"),    # CA-W3-R5
+    "crypto":       ("yahoo", "BTC-USD",   "close", "crypto"),
 }
 _CLASS_LABEL = {"equity": ("Equity", "股票"), "credit": ("Credit", "信用"),
                 "commodity": ("Commodity", "商品"), "fx": ("Dollar", "美元"),
                 "rates": ("Rates", "利率"), "crypto": ("Crypto", "加密")}
 _NAME_LABEL = {
-    "equity_us": ("S&P 500", "标普500"), "equity_sm": ("Small caps", "小盘股"),
-    "credit_hy": ("High yield", "高收益债"), "gold": ("Gold", "黄金"),
-    "silver": ("Silver", "白银"), "copper": ("Copper", "铜"), "oil": ("Crude oil", "原油"),
-    "dollar": ("US dollar", "美元"), "bond_10y": ("10Y Treasury", "10年美债"),
-    "crypto": ("Bitcoin", "比特币"),
+    "equity_us":   ("S&P 500",          "标普500"),
+    "equity_sm":   ("Small caps",        "小盘股"),
+    "equity_intl": ("Intl stocks (DM)",  "国际发达股市"),   # CA-W3-R5
+    "equity_em":   ("EM stocks",         "新兴市场股市"),   # CA-W3-R5
+    "credit_hy":   ("High yield",        "高收益债"),
+    "gold":        ("Gold",              "黄金"),
+    "silver":      ("Silver",            "白银"),
+    "copper":      ("Copper",            "铜"),
+    "oil":         ("Crude oil",         "原油"),
+    "dollar":      ("US dollar",         "美元"),
+    "bond_10y":    ("10Y Treasury",      "10年美债"),
+    "duration":    ("Long Treasuries",   "长期美债"),        # CA-W3-R5
+    "crypto":      ("Bitcoin",           "比特币"),
 }
 _BOND_DURATION = 7.0   # approx modified duration of the 10y for the -D·Δy return proxy
 

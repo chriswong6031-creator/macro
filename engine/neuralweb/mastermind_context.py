@@ -585,6 +585,9 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
         ca_ws = ws.get("cross_asset_flows") or {}
         ca_corr = ca_ws.get("correlation") or {}
         ca_im_raw = ca_ws.get("intermarket") or []
+        # one_bet_cluster: dominant_cluster[:3] (flows.v2 additive, None-safe)
+        _dc_raw = ca_ws.get("dominant_cluster")
+        _one_bet_cluster = _dc_raw[:3] if isinstance(_dc_raw, list) and _dc_raw else None
         ca_block = {
             "regime": ca_ws.get("regime"),
             "correlation_concentration": ca_corr.get("verdict") if isinstance(ca_corr, dict) else None,
@@ -592,6 +595,8 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
             "intermarket_top": ca_im_raw[:3] if isinstance(ca_im_raw, list) else [],
             "breadth": ca_ws.get("breadth"),
             "leadlag_verdict": (ca_ws.get("leadlag") or {}).get("verdict"),
+            "one_bet_cluster": _one_bet_cluster,
+            "funding_state": ca_ws.get("funding_state"),
         }
 
         # ── Label deltas from macro_deltas ────────────────────────────────────

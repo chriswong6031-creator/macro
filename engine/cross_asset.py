@@ -149,6 +149,17 @@ def snapshot() -> dict:
         headline = (f"CONVERGING — cross-asset correlation is mid-range; the dominant "
                     f"cluster ({', '.join(cluster) or '—'}) is partly one bet.")
 
+    # absorption_spark_w: weekly (W-FRI last) resample of ar_hist, tail 104, rounded 3dp
+    _ar_spark_w: list = []
+    _ar_spark_asof: str | None = None
+    if len(ar_hist):
+        try:
+            _weekly = ar_hist.resample("W-FRI").last().dropna().tail(104)
+            _ar_spark_w = [round(float(v), 3) for v in _weekly]
+            _ar_spark_asof = str(_weekly.index[-1].date()) if len(_weekly) else None
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            pass
+
     return {
         "asof": str(aligned.index[-1].date()),
         "verdict": verdict,                 # diversified | converging | concentrated | unknown
@@ -167,6 +178,9 @@ def snapshot() -> dict:
         "top_pairs": top_correlated_pairs(recent, k=6, thresh=0.5),
         "corr_matrix": {a: {b: round(float(corr.loc[a, b]), 2) for b in corr.columns}
                         for a in corr.columns},
+        # Weekly absorption sparkline (zero new compute — resampled from ar_hist above)
+        "absorption_spark_w": _ar_spark_w,
+        "absorption_spark_asof": _ar_spark_asof,
         "evidence": ("Absorption ratio = PC1 variance share (Kritzman-Page 2010): high/rising "
                      "absorption marks a fragile one-factor regime that has historically led "
                      "drawdowns. Daily closes across US/Asia/24-7 crypto carry a timezone "

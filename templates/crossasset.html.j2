@@ -6,31 +6,180 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cross-Asset Vector — trend · ratios · correlation regime</title>
+<title>Cross-Asset — one trade or many? Trend, dollar, plumbing</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
-  body{background:var(--bg);color:var(--text);font:14px/1.5 Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;margin:0;padding:18px}
+  body{background:var(--bg);color:var(--text);font:14px/1.5 var(--font-ui,Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif);margin:0;padding:18px}
   @media(min-width:1100px){body{padding:26px max(20px,calc((100vw - 1180px)/2))}}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
-  h2{font-size:15px;font-weight:700;margin:0 0 10px}
   .ca-wrap{max-width:1180px;margin:0 auto;padding:0 4px}
-  .ca-hero{font-size:26px;font-weight:800;margin:2px 0 4px}
-  .ca-sub{color:var(--muted);font-size:13px;margin:0 0 6px}
-  .ca-note{color:var(--muted);font-size:12px;line-height:1.5;border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
-  .ca-verdict{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:6px;background:var(--amber-bg,rgba(217,160,60,.16));color:var(--amber,#c98a2e)}
+
+  /* ── Glass card ── */
+  .card{
+    background:color-mix(in srgb,var(--panel) 75%,transparent);
+    -webkit-backdrop-filter:blur(20px) saturate(1.3);
+    backdrop-filter:blur(20px) saturate(1.3);
+    border:1px solid color-mix(in srgb,var(--text) 11%,transparent);
+    border-radius:18px;
+    padding:24px 28px;
+    margin-bottom:16px;
+    position:relative;
+    overflow:hidden;
+    transition:transform .18s ease,box-shadow .18s ease;
+  }
+  .card::before{
+    content:'';
+    position:absolute;
+    top:0;left:0;right:60%;bottom:70%;
+    background:linear-gradient(135deg,color-mix(in srgb,#fff 7%,transparent),transparent);
+    pointer-events:none;
+    border-radius:18px 0 0 0;
+  }
+  .card:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(0,0,0,.18)}
+
+  /* ── Section headers (forex idiom) ── */
+  .section-h{display:flex;align-items:baseline;gap:8px;margin:28px 0 6px;flex-wrap:wrap}
+  .section-h .sn{color:var(--info,#5b9bf0);font-weight:800;font-size:13px}
+  .section-h h2{margin:0;font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+  .section-h .sh-sub{font-size:12px;color:var(--muted);margin-left:2px}
+
+  /* ── Typography ── */
+  h2.card-h{font-size:15px;font-weight:700;margin:0 0 12px;color:var(--text)}
+  .ca-hero-hl{font-size:28px;font-weight:800;line-height:1.1;margin:0 0 4px}
+  .ca-sub{color:var(--muted);font-size:13px;margin:0 0 8px;line-height:1.5}
+  .ca-note{color:var(--muted);font-size:12px;line-height:1.5;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);margin-top:14px;padding-top:10px}
+  .muted{color:var(--muted)}.sm{font-size:12px}
+  .pos{color:var(--up,#45b873)}.neg{color:var(--down,#e06464)}
+
+  /* ── Stance pill ── */
+  .stance-pill{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.02em;padding:4px 14px;border-radius:999px;margin-top:6px}
+  .stance-up{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+  .stance-warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+  .stance-down{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
+  .stance-muted{background:color-mix(in srgb,var(--muted) 14%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 30%,transparent)}
+
+  /* ── Hero layout ── */
+  .hero-inner{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+  @media(max-width:820px){.hero-inner{grid-template-columns:1fr}}
+
+  /* ── SVG Arc gauge ── */
+  .gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
+  .gauge-label{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:center}
+
+  /* breathing glow @keyframes */
+  @keyframes ca-gentle{0%,100%{opacity:1}50%{opacity:.7}}
+  @media(prefers-reduced-motion:reduce){.ca-breathe{animation:none!important}}
+
+  /* ── Fragility chip ── */
+  .frag-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+    background:color-mix(in srgb,var(--warn) 10%,transparent);
+    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent);
+    border-radius:10px;padding:6px 12px;margin-top:10px}
+
+  /* ── Trend board ── */
   table.ca{border-collapse:collapse;width:100%;font-size:13px}
-  table.ca th,table.ca td{text-align:left;padding:5px 9px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.ca th,table.ca td{text-align:left;padding:6px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);vertical-align:middle}
   table.ca th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
   table.ca td.r,table.ca th.r{text-align:right;font-variant-numeric:tabular-nums}
-  .trend-up{color:var(--up,#16a34a);font-weight:700}.trend-down{color:var(--down,#dc2626);font-weight:700}.trend-mixed{color:var(--muted)}
-  .sbar{display:inline-block;width:64px;height:7px;border-radius:4px;background:var(--line);position:relative;vertical-align:middle;margin-right:6px}
-  .sbar i{position:absolute;top:0;height:7px;border-radius:4px}
-  .chip{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:5px;background:var(--line);color:var(--muted)}
-  .st-elevated{background:rgba(220,38,38,.16);color:#dc2626}.st-depressed{background:rgba(22,163,74,.16);color:#16a34a}
-  .cmat td,.cmat th{padding:3px 7px;font-size:12px;text-align:center;border:1px solid var(--line)}
-  .pos{color:var(--up,#16a34a)}.neg{color:var(--down,#dc2626)}.muted{color:var(--muted)}.sm{font-size:12px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  table.ca tr[data-rpop]{cursor:default}
+  table.ca tr[data-rpop]:hover>td{background:color-mix(in srgb,var(--panel2,#1e222a) 55%,transparent)}
+
+  .trend-up{color:var(--up,#45b873);font-weight:700}
+  .trend-down{color:var(--down,#e06464);font-weight:700}
+  .trend-flat{color:var(--muted)}
+
+  /* 5-dot strength bar */
+  .dots{display:inline-flex;gap:3px;align-items:center;vertical-align:middle}
+  .dot{width:7px;height:7px;border-radius:50%;background:color-mix(in srgb,var(--muted) 30%,transparent);transition:background .15s}
+  .dot.on-up{background:var(--up,#45b873)}
+  .dot.on-dn{background:var(--down,#e06464)}
+
+  /* ── Flow strip (lead/lag) ── */
+  .flow-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 6px;font-size:13px;font-weight:600}
+  .flow-node{padding:4px 12px;border-radius:8px;background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--info,#5b9bf0);font-weight:700}
+  .flow-arrow{color:var(--muted);font-size:16px}
+  .flow-stable{font-size:11px;color:var(--muted);font-weight:400}
+
+  /* ── Confirm meter ── */
+  .agree-meter{height:6px;border-radius:4px;background:color-mix(in srgb,var(--muted) 20%,transparent);overflow:hidden;margin:4px 0 2px;width:160px}
+  .agree-meter-fill{height:100%;border-radius:4px;background:var(--up,#45b873);transition:width .4s ease}
+
+  /* ── Verdict chip (agree/diverge) ── */
+  .verdict-chip{display:inline-block;font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;margin-bottom:8px}
+  .vc-agree{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
+  .vc-diverge{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent)}
+  .vc-mixed{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+
+  /* severity dots */
+  .sev{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;flex:none}
+  .sev-high{background:var(--down,#e06464)}
+  .sev-medium{background:var(--warn,#e0a030)}
+  .sev-low{background:var(--muted)}
+
+  /* ── Dollar HW/TW chips ── */
+  .hw-chip{display:inline-block;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;margin:2px 3px 2px 0;cursor:default}
+  .hw-head{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 25%,transparent)}
+  .hw-tail{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
+
+  /* ── Mini-cards grid (ratios / carry) ── */
+  .mini-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
+  @media(max-width:820px){.mini-grid{grid-template-columns:1fr}}
+  .mini-card{background:color-mix(in srgb,var(--panel2,#1e222a) 50%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 50%,transparent);
+    border-radius:12px;padding:14px 16px;position:relative}
+  .mini-card-q{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+  .mini-card-val{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text)}
+  .mini-card-pos{font-size:12px;color:var(--muted);margin-top:3px}
+  .mini-card-arrow{font-size:14px;font-weight:700;position:absolute;top:14px;right:16px}
+
+  /* ── Plumbing grid ── */
+  .plumb-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.plumb-grid{grid-template-columns:1fr}}
+  .plumb-tile{background:color-mix(in srgb,var(--panel2,#1e222a) 50%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 55%,transparent);
+    border-radius:14px;padding:16px 18px}
+  .plumb-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px}
+  .plumb-val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .plumb-sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .plumb-spark{display:block;margin-top:8px}
+
+  /* ── ? help chip ── */
+  .qm{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+    border-radius:50%;border:1px solid color-mix(in srgb,var(--muted) 50%,transparent);
+    color:var(--muted);font-size:10px;font-weight:700;cursor:help;vertical-align:middle;
+    margin-left:5px;user-select:none;transition:border-color .15s,color .15s}
+  .qm:hover,.qm:focus{border-color:var(--info,#5b9bf0);color:var(--info,#5b9bf0);outline:none}
+
+  /* ── Carry strip ── */
+  .carry-strip{margin-top:10px;padding:10px 0 2px;border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+  .carry-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px}
+
+  /* ── Absorb sparkline label line ── */
+  .spark-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 6px}
+  .spark-label{font-size:12px;color:var(--muted)}
+  .spark-svg{flex:none}
+
+  /* ── Cluster chips ── */
+  .cluster-strip{margin:8px 0 4px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:12px}
+  .cluster-lbl{color:var(--muted);font-weight:600;margin-right:2px}
+  .cluster-chip{display:inline-block;padding:3px 9px;border-radius:7px;font-size:11.5px;font-weight:700;
+    background:color-mix(in srgb,var(--info) 10%,transparent);
+    color:var(--info,#5b9bf0);border:1px solid color-mix(in srgb,var(--info) 22%,transparent)}
+
+  /* ── popin entrance ── */
+  @keyframes ca-popin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .ca-wrap .card{animation:ca-popin .22s ease-out both}
+  @media(prefers-reduced-motion:reduce){.ca-wrap .card{animation:none}}
+
+  /* ── layout utils ── */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+
+  /* ── scrollable corr matrix ── */
+  .cmat-wrap{overflow-x:auto;margin-top:10px;font-size:12px}
+  .cmat{border-collapse:collapse}
+  .cmat td,.cmat th{padding:4px 7px;text-align:center;border:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-variant-numeric:tabular-nums}
+  .cmat th{color:var(--muted);font-size:10.5px;font-weight:700}
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
@@ -51,221 +200,622 @@
 
 <div class="wrap ca-wrap">
 
-  <!-- ===================== REGIME HERO ===================== -->
-  {% set bcol = 'var(--up,#16a34a)' if (breadth or 0) >= 0.34 else 'var(--down,#dc2626)' if (breadth or 0) <= -0.34 else 'var(--muted)' %}
-  <div class="card">
-    <div class="ca-sub">🧭 {{ t('Cross-Asset Vector', '跨资产向量') }} · {{ t('as of', '截至') }} {{ as_of }}</div>
-    <div class="ca-hero" style="color:{{ bcol }}">{{ td(regime) }}</div>
-    <div class="ca-sub">{{ t('Trend breadth', '趋势广度') }}
-      <b style="color:{{ bcol }}">{{ '%+.2f'|format(breadth) }}</b>
-      <span class="muted">({{ trend.n_up }} {{ t('up', '上行') }} / {{ trend.n_down }} {{ t('down', '下行') }} {{ t('of', '/共') }} {{ trend.n }})</span>
-    </div>
-    <p class="ca-note">
-      <span class="ca-verdict">{{ t('contested', '存疑') }}</span>
-      {{ t('Cross-asset TREND = time-series momentum (sign of the trailing 3/6/12-month return). The timing carries REAL skill — it beats a permutation null (p≈0.01) — but after an 8bps cost it only matches an equal-weight buy&hold and does NOT clear the Deflated-Sharpe multiple-testing bar (DSR≈0.80). So it is shown here as a REGIME / CONTEXT read of what is trending across asset classes — NOT a strategy or a buy list. AQR’s widely-quoted gross ~1.8 Sharpe is contested and gross-of-cost; our honest after-cost number is in scripts/cross_asset_phase0.py → reports/cross-asset-phase0.md.',
-         '跨资产趋势 = 时间序列动量（过去 3/6/12 个月收益的符号）。其择时确有真实技能——能击败置换检验零假设（p≈0.01）——但在扣除 8bps 成本后仅与等权买入持有持平，且无法通过 Deflated-Sharpe 的多重检验门槛（DSR≈0.80）。因此这里仅作为「各资产类别在趋势什么」的体制/背景判读——并非策略或买入清单。AQR 常被引用的约 1.8 夏普为毛收益且存在争议；我们扣费后的诚实数值见 scripts/cross_asset_phase0.py → reports/cross-asset-phase0.md。') }}
-    </p>
-  </div>
+{# ── §HERO — glass card, one-bet meter, stance ─────────────────────────── #}
+{% set _hero_tone = hero.tone if hero is not none and hero.tone is not none else 'neutral' %}
+{% set _hero_col = 'var(--up,#45b873)' if _hero_tone == 'green' else 'var(--down,#e06464)' if _hero_tone == 'red' else 'var(--warn,#e0a030)' if _hero_tone == 'amber' else 'var(--muted)' %}
+{% set _hero_stance_cls = 'stance-up' if _hero_tone == 'green' else 'stance-down' if _hero_tone == 'red' else 'stance-warn' if _hero_tone == 'amber' else 'stance-muted' %}
 
-  <!-- ===================== GLOBAL CB LIQUIDITY ===================== -->
-  {% if liquidity %}
-  {% set i13 = liquidity.impulse_pct.get('13w') %}
-  {% set icol = 'var(--up,#16a34a)' if (i13 or 0) > 0 else 'var(--down,#dc2626)' if (i13 or 0) < 0 else 'var(--muted)' %}
-  <div class="card">
-    <h2>{{ t('Global central-bank liquidity', '全球央行流动性') }}</h2>
-    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-      <div class="ca-hero" style="font-size:22px;margin:0">${{ liquidity.total_usd_tn }}T</div>
-      <div>
-        <span class="chip" style="background:rgba(125,141,163,.16);color:{{ icol }}">{{ t(liquidity.state, {'expanding':'扩张','contracting':'收缩','flat':'持平'}.get(liquidity.state, liquidity.state)) }} · {{ t(liquidity.accel, {'accelerating':'加速','decelerating':'减速','steady':'平稳'}.get(liquidity.accel, liquidity.accel)) }}</span>
-        <div class="muted sm" style="margin-top:4px">
-          {% for w, v in liquidity.impulse_pct.items() %}{{ w }} <b style="color:{{ 'var(--up,#16a34a)' if (v or 0)>=0 else 'var(--down,#dc2626)' }}">{{ ('%+.1f%%'|format(v)) if v is not none else '—' }}</b>{% if not loop.last %} · {% endif %}{% endfor %}
-        </div>
+{# Absorption pctile for gauge (0-1) — engine snapshot key is absorption_pctile_5y #}
+{% set _abs_raw = None %}
+{% if correlation is not none and correlation.absorption_pctile_5y is not none %}
+  {% set _abs_raw = correlation.absorption_pctile_5y %}
+{% endif %}
+{% set _abs_pct = ((_abs_raw or 0) * 100) | round | int %}
+{% set _frac = [(_abs_raw or 0), 0.0] | max %}
+{% set _frac = [_frac, 1.0] | min %}
+
+{# Gauge uses stroke-dasharray on a circle r=44, cx=55,cy=55.
+   Full circle circumference = 2*PI*44 ≈ 276.46.
+   We only show a 240° arc (2/3 of circle = 184.3px).
+   The circle is rotated so the gap faces the bottom (rotate -210° around center).
+   Track: dasharray=184.3 offset=0  (draws 240° arc)
+   Fill:  dasharray=(184.3*frac) (184.3*(1-frac)+92.16) — the gap outside fills the rest.
+   stroke-dashoffset is unused (we use dasharray gap). #}
+{% set _circ = 276.46 %}
+{% set _arc = 184.31 %}
+{% set _fill_len = (_arc * _frac) | round(2) %}
+{% set _fill_gap = (_circ - _fill_len) | round(2) %}
+
+<div class="card" style="--hero-col:{{ _hero_col }}">
+  <div class="ca-sub" style="margin-bottom:12px">
+    {{ t('Cross-Asset', '跨资产') }} · {{ t('as of', '截至') }} {{ as_of }}
+  </div>
+  <div class="hero-inner">
+    <div>
+      {# Headline #}
+      <div class="ca-hero-hl" style="color:{{ _hero_col }};text-shadow:0 0 36px color-mix(in srgb,{{ _hero_col }} 30%,transparent)">
+        {% if hero is not none and hero.headline_en is not none %}
+          {{ t(hero.headline_en, hero.headline_zh if hero.headline_zh is not none else hero.headline_en) }}
+        {% else %}
+          {{ td(regime) }}
+        {% endif %}
       </div>
-      {% if liq_spark %}<svg width="184" height="40" style="margin-left:auto"><polyline points="{{ liq_spark }}" fill="none" stroke="{{ icol }}" stroke-width="1.6"/></svg>{% endif %}
-    </div>
-    <table class="ca" style="margin-top:8px">
-      <tr><th>{{ t('central bank', '央行') }}</th><th class="r">{{ t('assets ($T)', '资产($万亿)') }}</th><th class="r">{{ t('share', '占比') }}</th><th style="width:38%"></th></tr>
-      {% for b in liquidity.banks %}
-      {% set _asof_age = '' %}
-      {% if b.raw_asof %}
-        {% set _asof_label %}<span class="muted sm" style="font-weight:400;margin-left:4px">{{ b.raw_asof }}</span>{% endset %}
-      {% else %}
-        {% set _asof_label = '' %}
+      {# Sub #}
+      <div class="ca-sub" style="max-width:42ch">
+        {% if hero is not none and hero.sub_en is not none %}
+          {{ t(hero.sub_en, hero.sub_zh if hero.sub_zh is not none else hero.sub_en) }}
+        {% else %}
+          {{ t('Trend breadth', '趋势广度') }}
+          {% if breadth is not none %}
+            <b style="color:{{ _hero_col }}">{{ '%+.2f' | format(breadth) }}</b>
+          {% endif %}
+        {% endif %}
+      </div>
+      {# Stance pill #}
+      {% if hero is not none and hero.stance_en is not none %}
+      <span class="stance-pill {{ _hero_stance_cls }}">
+        {{ t(hero.stance_en, hero.stance_zh if hero.stance_zh is not none else hero.stance_en) }}
+      </span>
       {% endif %}
-      <tr><td><b>{{ t(b.label_en, b.label_zh) }}</b>{{ _asof_label|safe }}</td>
-        <td class="r">{{ b.usd_tn }}</td><td class="r muted">{{ b.share }}%</td>
-        <td><span class="sbar" style="width:100%"><i style="left:0;width:{{ b.share|round|int }}%;background:var(--muted)"></i></span></td></tr>
-      {% endfor %}
-    </table>
-    <p class="ca-note">{{ t(liquidity.note, '全球央行资产负债表流动性（美联储+欧洲央行+日本央行），以美元汇总。其变化率（脉冲）以可变滞后（数周至数月）领先风险资产；上升=流动性顺风。仅作背景，非信号：英格兰银行（FRED 仅年度）与中国央行（无无密钥序列）未纳入。') }}</p>
-  </div>
-  {% endif %}
-
-  <!-- ===================== FUNDING / REPO STRESS ===================== -->
-  {% if funding %}
-  {% set fcol = 'var(--down,#dc2626)' if funding.state == 'stressed' else 'var(--amber,#c98a2e)' if funding.state == 'watch' else 'var(--up,#16a34a)' %}
-  <div class="card">
-    <h2>{{ t('Funding & repo plumbing', '资金与回购管道') }}</h2>
-    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-      <div class="ca-hero" style="font-size:20px;margin:0;color:{{ fcol }}">{{ t(funding.state, {'calm':'平静','watch':'关注','stressed':'紧张'}.get(funding.state, funding.state)) }}</div>
-      <div class="muted sm">{{ t('stress score', '压力分') }} <b style="color:{{ fcol }}">{{ funding.score }}</b>/100 · {{ t('SOFR−EFFR', 'SOFR−联邦基金') }} <b>{{ '%+.0f'|format(funding.spread_bp) }}bp</b>{% if funding.dispersion_bp is not none %} · {{ t('dispersion', '离散度') }} <b>{{ funding.dispersion_bp }}bp</b>{% endif %}</div>
-      {% if fund_spark %}<svg width="184" height="40" style="margin-left:auto"><polyline points="{{ fund_spark }}" fill="none" stroke="{{ fcol }}" stroke-width="1.6"/></svg>{% endif %}
-    </div>
-    <table class="ca" style="margin-top:8px">
-      <tr><th>{{ t('gauge', '指标') }}</th><th class="r">{{ t('value', '数值') }}</th><th class="r">{{ t('%ile (2y)', '分位(2年)') }}</th><th style="width:34%"></th></tr>
-      {% for r in funding.rows %}
-      <tr title="{{ r.note }}"><td><b>{{ t(r.label_en, r.label_zh) }}</b><div class="muted sm">{{ r.note }}</div></td>
-        <td class="r">{{ r.value }}{{ r.unit }}</td><td class="r muted">{{ (r.pctile|round|int) if r.pctile is not none else '—' }}</td>
-        <td><span class="sbar" style="width:100%"><i style="left:0;width:{{ (r.pctile|round|int) if r.pctile is not none else 0 }}%;background:{{ fcol }}"></i></span></td></tr>
-      {% endfor %}
-    </table>
-    {% if funding.levels %}<div class="muted sm" style="margin-top:6px">{% for l in funding.levels %}{{ l.label }} <b>{{ l.value }}%</b>{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
-    <p class="ca-note">{{ t(funding.note, '来自 OFR 纽约联储参考利率（无密钥）的资金/回购管道。SOFR 高于 EFFR 且 SOFR 分布走阔预示准备金稀缺/回购紧张（2019年9月的信号）。各项按其约2年区间打分。仅作背景，非信号——从不进入任何评分。') }}</p>
-  </div>
-  {% endif %}
-
-  <!-- ===================== TREND BOARD ===================== -->
-  <div class="card">
-    <h2>{{ t('Trend board — time-series momentum by asset', '趋势看板 — 各资产时间序列动量') }}</h2>
-    <table class="ca">
-      <tr><th>{{ t('asset', '资产') }}</th><th>{{ t('class', '类别') }}</th><th>{{ t('trend', '趋势') }}</th>
-        <th>{{ t('strength', '强度') }}</th><th class="r">{{ t('3m', '3月') }}</th><th class="r">{{ t('6m', '6月') }}</th><th class="r">{{ t('12m', '12月') }}</th></tr>
-      {% for r in trend.rows %}
-      {% set tc = 'trend-up' if r.trend=='up' else 'trend-down' if r.trend=='down' else 'trend-mixed' %}
-      {% set sc = 'var(--up,#16a34a)' if r.score>0 else 'var(--down,#dc2626)' if r.score<0 else 'var(--muted)' %}
-      <tr>
-        <td><b>{{ t(r.name_en, r.name_zh) }}</b></td>
-        <td class="muted sm">{{ t(r.class_en, r.class_zh) }}</td>
-        <td class="{{ tc }}">{{ '▲' if r.trend=='up' else '▼' if r.trend=='down' else '◦' }} {{ t(r.trend, {'up':'上行','down':'下行','mixed':'分化'}.get(r.trend, r.trend)) }}</td>
-        <td><span class="sbar"><i style="{{ 'left:50%' if r.score>=0 else 'right:50%' }};width:{{ (r.score|abs*50)|round(0)|int }}%;background:{{ sc }}"></i></span><span class="muted sm">{{ '%+.2f'|format(r.score) }}</span></td>
-        {% for rv in [r.ret_3m, r.ret_6m, r.ret_12m] %}
-        <td class="r {{ 'pos' if (rv or 0)>=0 else 'neg' }}">{{ ('%+.0f%%'|format(rv)) if rv is not none else '—' }}</td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </table>
-    <p class="ca-note">{{ t('Trend = average sign of the trailing 3/6/12-month return (most-recent week skipped). ▲ up = the trend is positive across most horizons. Returns are price-only; the bond leg is a duration-return proxy (−7·Δyield) and the dollar leg trends the DXY level. Context, not a buy list.',
-       '趋势 = 过去 3/6/12 个月收益符号的平均（跳过最近一周）。▲上行表示多数周期趋势为正。收益仅为价格收益；债券为久期收益代理（−7·Δ收益率），美元为 DXY 水平趋势。仅作背景，非买入清单。') }}</p>
-  </div>
-
-  {% if dollar_factor and dollar_factor.rows %}
-  <!-- ===================== DOLLAR FACTOR ===================== -->
-  <div class="card">
-    <h2>{{ t('Dollar factor — what a stronger USD pushes on', '美元因子 — 强势美元冲击的资产') }}</h2>
-    <div class="ca-sub">{{ t('Live 63-day correlation of each market to the broad dollar', '各市场对广义美元的63日实测相关性') }}{% if dollar_factor.usd_dir %} · {{ t('USD now', '当前美元') }} <b>{{ t(dollar_factor.usd_dir, {'strengthening':'走强','weakening':'走软','flat':'横盘'}.get(dollar_factor.usd_dir, dollar_factor.usd_dir)) }}</b>{% endif %}</div>
-    <table class="ca">
-      <tr><th>{{ t('market', '市场') }}</th><th class="r">{{ t('corr to USD', '对美元相关') }}</th><th>{{ t('if USD ↑', '若美元↑') }}</th><th>{{ t('stability', '稳定性') }}</th></tr>
-      {% for r in dollar_factor.rows %}
-      <tr>
-        <td><b>{{ t(r.label, r.label_zh) }}</b></td>
-        <td class="r {{ 'neg' if r.corr<0 else 'pos' }}">{{ '%+.2f'|format(r.corr) }}</td>
-        <td class="{{ 'neg' if r.corr<0 else 'pos' }}">{{ t('headwind', '逆风') if r.corr<0 else t('tailwind', '顺风') }}</td>
-        <td class="muted sm">{{ t('stable', '稳定') if r.stable else t('flipping', '翻转') }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    <p class="ca-note">{{ t('Contemporaneous co-movement, not a forecast — a stronger dollar tightens global conditions, but the dollar move is often the same risk/tightening impulse. The full panel (stability dots, calm/stress splits, gold\'s real-rate leg) is on the Forex page.', '同步共动，非预测 — 美元走强收紧全球条件，但美元波动往往就是同一风险/紧缩脉冲。完整面板（稳定性、平静/压力分解、黄金实际利率项）见外汇页。') }} <a href="forex.html">{{ t('Forex →', '外汇 →') }}</a></p>
-  </div>
-  {% endif %}
-
-  <div class="grid2">
-    <!-- ===================== INTERMARKET RATIOS ===================== -->
-    <div class="card">
-      <h2>{{ t('Intermarket ratios', '跨市场比价') }}</h2>
-      <table class="ca">
-        <tr><th>{{ t('ratio', '比价') }}</th><th class="r">{{ t('value', '数值') }}</th><th class="r">{{ t('%ile (2y)', '分位(2年)') }}</th><th class="r">{{ t('3m', '3月') }}</th></tr>
-        {% for r in ratios %}
-        <tr title="{{ r.note }}">
-          <td><b>{{ t(r.label_en, r.label_zh) }}</b>
-            {% if r.state != 'mid' %}<span class="chip st-{{ r.state }}">{{ t(r.state, {'elevated':'偏高','depressed':'偏低'}.get(r.state, r.state)) }}</span>{% endif %}
-            <div class="muted sm">{{ r.note }}</div></td>
-          <td class="r">{{ r.value }}</td>
-          <td class="r muted">{{ (r.pctile|round|int) if r.pctile is not none else '—' }}</td>
-          <td class="r {{ 'pos' if (r.chg_3m or 0)>=0 else 'neg' }}">{{ ('%+.0f%%'|format(r.chg_3m)) if r.chg_3m is not none else '—' }}</td>
-        </tr>
-        {% endfor %}
-      </table>
+      {# As-of stamp #}
+      <div class="muted sm" style="margin-top:10px">{{ t('Updated', '更新于') }} {{ as_of }}</div>
     </div>
 
-    <!-- ===================== CARRY CONTEXT ===================== -->
-    <div class="card">
-      <h2>{{ t('Carry — current state', '套息 — 当前状态') }}</h2>
-      <table class="ca">
-        <tr><th>{{ t('source', '来源') }}</th><th class="r">{{ t('carry', '套息') }}</th><th>{{ t('state', '状态') }}</th></tr>
-        {% for r in carry.rows %}
-        <tr><td>{{ t(r.label_en, r.label_zh) }}</td>
-          <td class="r {{ 'pos' if r.value>=0 else 'neg' }}">{{ r.value }}{{ r.unit }}</td>
-          <td class="muted sm">{{ r.state }}</td></tr>
-        {% endfor %}
-      </table>
-      <p class="ca-note">{{ t(carry.note, '仅为当前状态的套息背景。利率期限利差历史悠久；商品展期收益由近月合约重建、历史不足两年，故未作因子回测。仅作背景。') }}</p>
+    {# ONE-BET METER — SVG arc gauge #}
+    <div class="gauge-wrap">
+      <div class="gauge-label">{{ t('One bet?', '同一笔押注？') }}</div>
+      {# Gauge: circle r=44, cx=55,cy=55.
+         Rotated -120° (to start at bottom-left, end at bottom-right, gap faces bottom).
+         Track arc = 240° = 184.31px of 276.46px circumference.
+         Fill uses stroke-dasharray: fill_len (gap filler) so only fill_len px of color shows. #}
+      <svg width="110" height="100" viewBox="0 0 110 100" aria-label="Correlation absorption gauge" role="img"
+           class="ca-breathe" style="animation:ca-gentle 3.8s ease-in-out infinite;filter:drop-shadow(0 0 10px color-mix(in srgb,{{ _hero_col }} 30%,transparent))">
+        <g transform="rotate(-120 55 55)">
+          {# Background track (240° arc) #}
+          <circle cx="55" cy="55" r="44" fill="none"
+            stroke="color-mix(in srgb,var(--muted) 25%,transparent)" stroke-width="9" stroke-linecap="round"
+            stroke-dasharray="{{ _arc }} {{ (_circ - _arc) | round(2) }}"/>
+          {# Fill arc #}
+          {% if _frac > 0.005 %}
+          <circle cx="55" cy="55" r="44" fill="none"
+            stroke="{{ _hero_col }}" stroke-width="9" stroke-linecap="round"
+            stroke-dasharray="{{ _fill_len }} {{ _fill_gap }}"/>
+          {% endif %}
+        </g>
+        {# Zone labels positioned outside — bottom-left, top, bottom-right #}
+        <text x="8"  y="94" font-size="8" fill="var(--up,#45b873)"   text-anchor="start" font-weight="600" class="l-en">Indep.</text>
+        <text x="8"  y="94" font-size="8" fill="var(--up,#45b873)"   text-anchor="start" font-weight="600" class="l-zh">各自</text>
+        <text x="55" y="14" font-size="8" fill="var(--muted)"         text-anchor="middle" font-weight="600" class="l-en">Mixed</text>
+        <text x="55" y="14" font-size="8" fill="var(--muted)"         text-anchor="middle" font-weight="600" class="l-zh">联动</text>
+        <text x="102" y="94" font-size="8" fill="var(--down,#e06464)" text-anchor="end"   font-weight="600" class="l-en">One bet</text>
+        <text x="102" y="94" font-size="8" fill="var(--down,#e06464)" text-anchor="end"   font-weight="600" class="l-zh">同一押注</text>
+        {# Center pctile #}
+        <text x="55" y="55" font-size="18" font-weight="800" fill="{{ _hero_col }}" text-anchor="middle" dominant-baseline="middle" font-variant-numeric="tabular-nums">{{ _abs_pct }}%</text>
+        <text x="55" y="68" font-size="8.5" fill="var(--muted)" text-anchor="middle" class="l-en">vs 5y</text>
+        <text x="55" y="68" font-size="8.5" fill="var(--muted)" text-anchor="middle" class="l-zh">5年分位</text>
+      </svg>
+      <div class="gauge-label" style="max-width:96px">
+        {% if _abs_pct >= 80 %}{{ t('Markets moving together', '各市场同步运动') }}
+        {% elif _abs_pct >= 50 %}{{ t('Partial overlap', '部分联动') }}
+        {% else %}{{ t('Mostly independent', '大体独立') }}{% endif %}
+      </div>
     </div>
   </div>
 
-  <!-- ===================== CORRELATION REGIME ===================== -->
-  {% if correlation and correlation.verdict and correlation.verdict != 'unknown' %}
-  {% set vc = {'concentrated':'var(--down,#dc2626)','converging':'var(--amber,#c98a2e)','diversified':'var(--up,#16a34a)'} %}
-  <div class="card">
-    <h2>{{ t('Correlation regime — are the markets one bet?', '相关性体制 — 各市场是否同一笔交易') }}</h2>
-    <div class="ca-hero" style="font-size:18px;color:{{ vc.get(correlation.verdict,'var(--muted)') }}">{{ t(correlation.verdict, {'concentrated':'高度集中','converging':'趋于收敛','diversified':'分散'}.get(correlation.verdict, correlation.verdict)) }}</div>
-    <div class="ca-sub">{{ t('Absorption ratio', '吸收比率') }} <b>{{ correlation.absorption_ratio }}</b>
-      <span class="muted">({{ t('PC1 variance share; floor', 'PC1 方差占比；下限') }} {{ correlation.absorption_floor }})</span>
-      {% if correlation.dominant_cluster %} · {{ t('dominant cluster', '主导集群') }}: <b>{{ correlation.dominant_cluster|join(', ') }}</b>{% endif %}
-    </div>
-    {% if correlation.corr_matrix %}
-    <div style="overflow-x:auto;margin-top:8px">
-      <table class="cmat"><tr><th></th>{% for a in correlation.markets %}<th>{{ a }}</th>{% endfor %}</tr>
-        {% for a in correlation.markets %}<tr><th>{{ a }}</th>
-          {% for b in correlation.markets %}{% set v = correlation.corr_matrix[a][b] %}
-          <td style="background:rgba({{ '220,38,38' if v>0 else '22,163,74' }},{{ (v|abs*0.5)|round(2) }})">{{ '%.2f'|format(v) }}</td>{% endfor %}
-        </tr>{% endfor %}
-      </table>
-    </div>
-    {% endif %}
-    <p class="ca-note">{{ t(correlation.headline, '') }}</p>
-  </div>
-  {% endif %}
-
-  <!-- ===================== LEAD / LAG TRANSMISSION ===================== -->
-  {% if leadlag and leadlag.verdict and leadlag.verdict != 'unknown' %}
-  {% set lv = {'lead':'var(--up,#16a34a)','weak_lead':'var(--amber,#c98a2e)','contemporaneous':'var(--muted)'} %}
-  <div class="card">
-    <h2>{{ t('Lead / lag transmission — what moves first?', '领先/滞后传导 — 谁先动？') }}</h2>
-    <div class="ca-hero" style="font-size:18px;color:{{ lv.get(leadlag.verdict,'var(--muted)') }}">{{ t(
-      {'lead':'Lead detected','weak_lead':'Tentative lead','contemporaneous':'No stable lead'}.get(leadlag.verdict, leadlag.verdict),
-      {'lead':'检测到领先','weak_lead':'暂定领先','contemporaneous':'无稳定领先'}.get(leadlag.verdict, leadlag.verdict)) }}</div>
-    <div class="ca-sub">{{ t('Window', '窗口') }} {{ leadlag.window_d }}d ·
-      {{ leadlag.n_significant }}/{{ leadlag.n_tested }} {{ t('pairs survive HAC + FDR', '对通过 HAC + FDR') }}
-      {% if leadlag.lead_asset and leadlag.lead_asset.n_followers >= 2 %} · {{ t('lead asset', '领先资产') }}: <b>{{ leadlag.lead_asset.name }}</b>{% endif %}</div>
-    <p class="ca-note" style="border-top:none;margin:2px 0 0;padding-top:0">{{ t(leadlag.headline, '') }}</p>
-    {% if leadlag.links %}
-    <div style="overflow-x:auto;margin-top:8px">
-      <table class="ca">
-        <tr><th>{{ t('leader → follower', '领先 → 滞后') }}</th><th class="r">{{ t('lag', '滞后') }}</th>
-            <th class="r">r</th><th class="r">{{ t('HAC t', 'HAC t') }}</th><th class="r">{{ t('FDR q', 'FDR q') }}</th></tr>
-        {% for l in leadlag.links %}
-        <tr><td><b>{{ l.leader }}</b> → {{ l.follower }}</td>
-            <td class="r">{{ l.lag }}d</td>
-            <td class="r {{ 'pos' if l.r >= 0 else 'neg' }}">{{ '%+.2f'|format(l.r) }}</td>
-            <td class="r">{{ '%+.1f'|format(l.t) }}</td>
-            <td class="r">{{ l.q }}</td></tr>
-        {% endfor %}
-      </table>
-    </div>
-    {% endif %}
-    <p class="ca-note">{{ t(leadlag.evidence, '') }}
-      {{ t('Validation: scripts/cross_asset_leadlag_phase0.py — only timezone lag-1 links are split-half stable.',
-           '验证：scripts/cross_asset_leadlag_phase0.py — 仅时区滞后1日链路两半稳定。') }}</p>
-  </div>
-  {% endif %}
-
-  <div class="card">
-    <p class="muted sm" style="margin:0">{{ t(note, '') }} {{ t('Generated', '生成于') }} {{ built }}.
-      {{ t('Source: engine/cross_asset_trend.py + the cross-asset correlation leaf, over keyless price stores. Validation: scripts/cross_asset_phase0.py.',
-         '来源：engine/cross_asset_trend.py 及跨资产相关性叶子模块，覆盖无密钥价格库。验证：scripts/cross_asset_phase0.py。') }}</p>
-  </div>
-
+  {# Merged plain footnote with ? receipt #}
+  <p class="ca-note">
+    {{ t('A market-weather read, not a buy list — in our tests, trend timing only matched simple buy-and-hold after costs.',
+        '这是市场天气判读，不是买入清单——测试中趋势择时扣费后仅与简单买入持有持平。') }}
+    <span class="qm" tabindex="0"
+      data-tip-en="Net Sharpe 0.54 vs 0.56 buy-and-hold; fails the multiple-testing bar (Deflated-Sharpe ≈ 0.80). Full workup: reports/cross-asset-phase0.md."
+      data-tip-zh="净夏普比率 0.54，买入持有为 0.56；未通过多重检验门槛（Deflated-Sharpe ≈ 0.80）。完整报告：reports/cross-asset-phase0.md。">?</span>
+  </p>
 </div>
+
+{# Fragility watch chip (shadow escalated) #}
+{% if shadow is not none and shadow.escalated is not none and shadow.escalated %}
+<div class="frag-chip">
+  ⚠
+  {{ t('Fragility watch: crowding is extreme — a test version of our risk radar would be one notch more cautious. Not live.',
+      '脆弱性观察：拥挤度极高——风险雷达的测试版会更谨慎一档。尚未启用。') }}
+</div>
+{% endif %}
+
+{# ── §01 WHAT'S TRENDING ──────────────────────────────────────────────────── #}
+{% if trend and trend.rows %}
+<div class="section-h">
+  <span class="sn">§01</span>
+  <h2>{{ t("What's trending", '趋势行情') }}</h2>
+  <span class="sh-sub">{{ t('which assets are rising or falling', '哪些资产在上行或下行') }}</span>
+</div>
+<div class="card">
+  {# Summary chip #}
+  {% set _n_up = trend.n_up if trend.n_up is not none else 0 %}
+  {% set _n_dn = trend.n_down if trend.n_down is not none else 0 %}
+  {% set _n_tot = trend.n if trend.n is not none else 0 %}
+  <div style="margin-bottom:12px">
+    <span class="stance-pill stance-up">{{ _n_up }} {{ t('rising', '上行') }}</span>
+    <span class="stance-pill stance-down" style="margin-left:4px">{{ _n_dn }} {{ t('falling', '下行') }}</span>
+    <span class="muted sm" style="margin-left:6px">{{ t('of', '/共') }} {{ _n_tot }}</span>
+  </div>
+  <table class="ca">
+    <tr>
+      <th>{{ t('Asset', '资产') }}</th>
+      <th>{{ t('Trend', '趋势') }}</th>
+      <th>{{ t('Strength', '强度') }}</th>
+      <th class="r">{{ t('3m', '3月') }}</th>
+      <th class="r">{{ t('6m', '6月') }}</th>
+      <th class="r">{{ t('12m', '12月') }}</th>
+    </tr>
+    {% for r in trend.rows %}
+    {% set _tc = 'trend-up' if r.trend == 'up' else 'trend-down' if r.trend == 'down' else 'trend-flat' %}
+    {% set _tw = '▲' if r.trend == 'up' else '▼' if r.trend == 'down' else '◦' %}
+    {% set _trend_en = 'Rising' if r.trend == 'up' else 'Falling' if r.trend == 'down' else 'Flat' %}
+    {% set _trend_zh = '上行' if r.trend == 'up' else '下行' if r.trend == 'down' else '走平' %}
+    {% set _sc = r.score if r.score is not none else 0 %}
+    {% set _ndots = [(_sc | abs * 5) | round | int, 5] | min %}
+    {% set _dot_cls = 'on-up' if _sc > 0 else 'on-dn' if _sc < 0 else '' %}
+    <tr data-rpop>
+      <td><b>{{ t(r.name_en, r.name_zh if r.name_zh is not none else r.name_en) }}</b>
+          <div class="muted sm">{{ t(r.class_en, r.class_zh if r.class_zh is not none else r.class_en) }}</div>
+      </td>
+      <td class="{{ _tc }}">{{ _tw }} {{ t(_trend_en, _trend_zh) }}</td>
+      <td>
+        <span class="dots">
+          {% for i in range(5) %}<span class="dot {% if i < _ndots %}{{ _dot_cls }}{% endif %}"></span>{% endfor %}
+        </span>
+      </td>
+      {% for rv in [r.ret_3m, r.ret_6m, r.ret_12m] %}
+      <td class="r {{ 'pos' if (rv or 0) >= 0 else 'neg' }}">{{ ('%+.0f%%' | format(rv)) if rv is not none else '—' }}</td>
+      {% endfor %}
+      {# Hidden receipt for row-pop #}
+      <td style="display:none" class="rp-src">
+        <div class="row-pop-hd">
+          <span class="row-pop-name">{{ t(r.name_en, r.name_zh if r.name_zh is not none else r.name_en) }}</span>
+          <span class="row-pop-kind">{{ t(r.class_en, r.class_zh if r.class_zh is not none else r.class_en) }}</span>
+        </div>
+        <div class="row-pop-grid">
+          <div class="row-pop-cell">
+            <span class="row-pop-lbl">{{ t('Score', '动量得分') }}</span>
+            <span class="row-pop-val">{{ ('%+.3f' | format(_sc)) }}</span>
+          </div>
+          <div class="row-pop-cell">
+            <span class="row-pop-lbl">{{ t('3m return', '3月收益') }}</span>
+            <span class="row-pop-val {{ 'pos' if (r.ret_3m or 0) >= 0 else 'neg' }}">{{ ('%+.1f%%' | format(r.ret_3m)) if r.ret_3m is not none else '—' }}</span>
+          </div>
+          <div class="row-pop-cell">
+            <span class="row-pop-lbl">{{ t('6m return', '6月收益') }}</span>
+            <span class="row-pop-val {{ 'pos' if (r.ret_6m or 0) >= 0 else 'neg' }}">{{ ('%+.1f%%' | format(r.ret_6m)) if r.ret_6m is not none else '—' }}</span>
+          </div>
+          <div class="row-pop-cell">
+            <span class="row-pop-lbl">{{ t('12m return', '12月收益') }}</span>
+            <span class="row-pop-val {{ 'pos' if (r.ret_12m or 0) >= 0 else 'neg' }}">{{ ('%+.1f%%' | format(r.ret_12m)) if r.ret_12m is not none else '—' }}</span>
+          </div>
+          <div class="row-pop-cell wide">
+            <span class="row-pop-lbl">{{ t('Method', '方法') }}</span>
+            <span class="row-pop-val mut">{{ t('Sign of average 3/6/12m return. Most-recent week skipped.', '3/6/12月收益符号均值。跳过最近一周。') }}</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="ca-note">
+    {{ t('Trend = sign of the trailing 3/6/12-month return averaged across horizons. Context — not a buy list.',
+        '趋势 = 过去3/6/12个月收益符号均值。仅作背景，非买入清单。') }}
+  </p>
+</div>
+{% endif %}
+
+{# ── §02 ONE TRADE OR MANY ────────────────────────────────────────────────── #}
+<div class="section-h">
+  <span class="sn">§02</span>
+  <h2>{{ t('One trade or many?', '一笔交易还是多笔？') }}</h2>
+  <span class="sh-sub">{{ t('how much markets move as one', '市场同涨同跌的程度') }}</span>
+</div>
+<div class="card">
+  {% if correlation is not none and correlation.verdict is not none and correlation.verdict != 'unknown' %}
+    {% set _corr_map = {'concentrated': ('var(--down,#e06464)', 'Markets moving as one trade. Diversification is thin right now.', '市场如同一笔交易，分散化效果薄弱。'), 'converging': ('var(--warn,#e0a030)', 'Markets are converging — correlation is rising.', '市场相关性上升，逐渐趋同。'), 'diversified': ('var(--up,#45b873)', 'Markets are behaving independently. Diversification is working.', '市场各自独立运行，分散化效果良好。')} %}
+    {% set _ccol = _corr_map.get(correlation.verdict, ('var(--muted)', 'Mixed read', '信号混合')) %}
+    <p style="font-size:14px;color:var(--text);margin:0 0 10px;font-weight:500">
+      {{ t(_ccol[1], _ccol[2]) }}
+    </p>
+
+    {# Absorption sparkline if available #}
+    {% if ar_spark is not none and ar_spark != '' %}
+    <div class="spark-row">
+      <span class="spark-label">{{ t('How synced markets are — last 2 years', '市场同步程度 — 近2年') }}
+        <span class="qm" tabindex="0"
+          data-tip-en="Correlation absorption (Kritzman-Page) — the share of variance explained by the first PC of weekly returns. High values mean markets are moving as one trade."
+          data-tip-zh="相关性吸收率（Kritzman-Page）——周度收益第一主成分解释的方差比例。高值意味着市场如同一笔交易同步运动。">?</span>
+      </span>
+      <svg class="spark-svg" width="200" height="36" viewBox="0 0 200 36" aria-hidden="true">
+        <polyline points="{{ ar_spark }}" fill="none" stroke="{{ _ccol[0] }}" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    {% endif %}
+
+    {# Dominant cluster #}
+    {% if correlation.dominant_cluster is not none and correlation.dominant_cluster | length > 0 %}
+    {% set _name_map = {'US': 'US stocks', 'Crypto': 'Bitcoin', 'HK': 'Hong Kong', 'China': 'China A', 'Commodities': 'Copper', 'Dollar': 'Dollar'} %}
+    {% set _name_map_zh = {'US': '美股', 'Crypto': '比特币', 'HK': '港股', 'China': 'A股', 'Commodities': '铜', 'Dollar': '美元'} %}
+    <div class="cluster-strip">
+      <span class="cluster-lbl">{{ t('Moving together now:', '当前同步：') }}</span>
+      {% for mk in correlation.dominant_cluster %}
+      <span class="cluster-chip">{{ t(_name_map.get(mk, mk), _name_map_zh.get(mk, mk)) }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Corr matrix inside <details> #}
+    {% if correlation.corr_matrix is not none %}
+    <details style="margin-top:12px">
+      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);list-style:none;display:flex;align-items:center;gap:6px">
+        <span>&#9654;</span>{{ t('The numbers', '详细数据') }}
+      </summary>
+      <div class="cmat-wrap">
+        <table class="cmat" style="margin-top:8px">
+          <tr><th></th>
+            {% for a in correlation.markets %}<th>{{ a }}</th>{% endfor %}
+          </tr>
+          {% for a in correlation.markets %}
+          <tr><th>{{ a }}</th>
+            {% for b in correlation.markets %}
+            {% set _v = correlation.corr_matrix[a][b] %}
+            <td style="background:color-mix(in srgb,{{ 'var(--down,#dc2626)' if _v > 0 else 'var(--up,#16a34a)' }} {{ (_v | abs * 45) | round | int }}%,transparent)">{{ '%.2f' | format(_v) }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </details>
+    {% endif %}
+  {% else %}
+    <p class="muted sm">{{ t('Correlation data not available this build.', '本次构建暂无相关性数据。') }}</p>
+  {% endif %}
+  <p class="ca-note">
+    {{ t('Concentration rises when assets move together — good for momentum, bad for diversification.',
+        '当各资产同步运动时集中度上升——对动量有利，对分散化不利。') }}
+  </p>
+</div>
+
+{# Plain-name maps reused in §03 lead/lag rows (same as §02 cluster chips) #}
+{% set _ll_name_en = {'US': 'US stocks', 'Crypto': 'Bitcoin', 'HK': 'Hong Kong', 'China': 'China A', 'Commodities': 'Copper', 'Dollar': 'Dollar'} %}
+{% set _ll_name_zh = {'US': '美股', 'Crypto': '比特币', 'HK': '港股', 'China': 'A股', 'Commodities': '铜', 'Dollar': '美元'} %}
+
+{# ── §03 WHO MOVES FIRST ──────────────────────────────────────────────────── #}
+<div class="section-h">
+  <span class="sn">§03</span>
+  <h2>{{ t('Who moves first?', '谁先动？') }}</h2>
+  <span class="sh-sub">{{ t('who tends to move first', '谁通常先动') }}</span>
+</div>
+<div class="card">
+  {% if leadlag is not none and leadlag.verdict is not none and leadlag.verdict in ('lead', 'weak_lead') %}
+    {# Show a flow strip #}
+    {% set _ll_stable = leadlag.stability is not none and leadlag.stability == 'stable' %}
+    <div class="flow-strip">
+      <span class="flow-node">{{ t('US close', '美股收盘') }}</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node">{{ t('Asia, next day', '亚洲市场（次日）') }}</span>
+      {% if _ll_stable %}
+        <span class="flow-stable">{{ t('held up recently', '近期稳定') }}</span>
+      {% else %}
+        <span class="flow-stable">{{ t('tentative', '暂定') }}</span>
+      {% endif %}
+    </div>
+    {# Top links if available #}
+    {% if leadlag.links and leadlag.links | length > 0 %}
+    <div style="margin:6px 0 10px">
+      {% for l in leadlag.links[:3] %}
+      <div style="font-size:12.5px;padding:3px 0;color:var(--text)">
+        <b>{{ t(_ll_name_en.get(l.leader, l.leader), _ll_name_zh.get(l.leader, l.leader)) }}</b>
+        <span class="muted"> → </span>
+        <b>{{ t(_ll_name_en.get(l.follower, l.follower), _ll_name_zh.get(l.follower, l.follower)) }}</b>
+        <span class="muted sm" style="margin-left:6px">{{ l.lag }}d {{ t('lag', '滞后') }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {# Technical table inside details #}
+    {% if leadlag.links and leadlag.links | length > 0 %}
+    <details style="margin-top:4px">
+      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);list-style:none;display:flex;align-items:center;gap:6px">
+        <span>&#9654;</span>{{ t('Technical detail', '技术细节') }}
+      </summary>
+      <div style="overflow-x:auto;margin-top:8px">
+        <table class="ca" style="font-size:12px">
+          <tr>
+            <th>{{ t('Leader → Follower', '领先 → 滞后') }}</th>
+            <th class="r">{{ t('Lag', '滞后') }}</th>
+            <th class="r">r</th>
+          </tr>
+          {% for l in leadlag.links %}
+          <tr>
+            <td><b>{{ t(_ll_name_en.get(l.leader, l.leader), _ll_name_zh.get(l.leader, l.leader)) }}</b> → {{ t(_ll_name_en.get(l.follower, l.follower), _ll_name_zh.get(l.follower, l.follower)) }}</td>
+            <td class="r">{{ l.lag }}d</td>
+            <td class="r {{ 'pos' if (l.r or 0) >= 0 else 'neg' }}">{{ ('%+.2f' | format(l.r)) if l.r is not none else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </details>
+    {% endif %}
+  {% else %}
+    <p style="font-size:14px;color:var(--text);margin:0 0 8px;font-weight:500">
+      {{ t('No one leads right now — big moves hit markets at the same time.',
+          '当前无领先者——大幅波动同时冲击各市场。') }}
+    </p>
+  {% endif %}
+  <p class="ca-note">
+    {{ t('Mostly the clock, not prophecy — the US closes before Asia opens.',
+        '主要是时区效应，而非预言——美股收盘早于亚洲开盘。') }}
+  </p>
+</div>
+
+{# ── §04 DO BONDS & CURRENCIES AGREE — conditional #}
+{% if confirm is not none %}
+<div class="section-h">
+  <span class="sn">§04</span>
+  <h2>{{ t('Do bonds & currencies agree with stocks?', '债券与汇率是否与股票一致？') }}</h2>
+  <span class="sh-sub">{{ t('do the fast markets agree with stocks?', '快速市场是否认同股市判断') }}</span>
+</div>
+<div class="card">
+  {% set _cv_map = {'confirm': ('vc-agree', 'They agree', '一致'), 'diverge': ('vc-diverge', 'They disagree', '出现分歧'), 'mixed': ('vc-mixed', 'Split', '部分分歧')} %}
+  {% set _cvm = _cv_map.get(confirm.verdict, ('vc-mixed', 'Mixed read', '信号混合')) %}
+  <span class="verdict-chip {{ _cvm[0] }}">{{ t(_cvm[1], _cvm[2]) }}</span>
+
+  {% if confirm.agree_pct is not none %}
+  <div style="font-size:12px;color:var(--muted);margin-bottom:4px">
+    {{ confirm.agree_pct | round | int }}% {{ t('of fast signals agree', '的快速信号一致') }}
+  </div>
+  <div class="agree-meter">
+    <div class="agree-meter-fill" style="width:{{ confirm.agree_pct | round | int }}%"></div>
+  </div>
+  {% endif %}
+
+  {% if confirm.flags_top is not none and confirm.flags_top | length > 0 %}
+  <div style="margin-top:10px">
+    {% for f in confirm.flags_top %}
+    {# at rest: the plain clause only (engine strings carry technical parentheticals — Tier-2) #}
+    {% set _fen = (f.en if f.en is not none else (f.key if f.key is not none else '')) %}
+    {% set _fzh = (f.zh if f.zh is not none else _fen) %}
+    <div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0;font-size:13px"
+         {% if ' (' in _fen %}data-tip-en="{{ _fen }}" data-tip-zh="{{ _fzh }}"{% endif %}>
+      <span class="sev sev-{{ f.severity if f.severity is not none else 'low' }}" style="margin-top:4px"></span>
+      <span>{{ t(_fen.split(' (')[0], _fzh.split('（')[0].split(' (')[0]) }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="ca-note">
+    {{ t('An attention cue, not a forecast — in our tests it added nothing beyond the risk gauges we already run.',
+        '仅为提示，并非预测——测试中它并未超越我们已有的风险仪表。') }}
+    <span class="qm" tabindex="0"
+      data-tip-en="Incremental IC ≈ 0 in the modern half. Full workup: reports/cross-asset-confirm-phase0.md."
+      data-tip-zh="近半段增量IC≈0。完整报告：reports/cross-asset-confirm-phase0.md。">?</span>
+  </p>
+</div>
+{% endif %}
+
+{# ── §05 DOLLAR PRESSURE ─────────────────────────────────────────────────── #}
+{% if dollar_factor and dollar_factor.rows %}
+<div class="section-h">
+  <span class="sn">§05</span>
+  <h2>{{ t('Dollar pressure', '美元压力') }}</h2>
+  <span class="sh-sub">{{ t('who feels a stronger USD', '谁承受强势美元') }}</span>
+</div>
+<div class="card">
+  {# USD direction plain #}
+  {% if dollar_factor.usd_dir is not none %}
+  {% set _udmap = {'strengthening': ('pos', 'USD now: strengthening', '美元当前：走强'),
+                   'weakening':     ('neg', 'USD now: weakening',     '美元当前：走软'),
+                   'flat':          ('muted', 'USD now: flat',        '美元当前：横盘')} %}
+  {% set _ud = _udmap.get(dollar_factor.usd_dir, ('muted', 'Mixed read', '信号混合')) %}
+  <div style="font-size:15px;font-weight:700;margin-bottom:12px" class="{{ _ud[0] }}">
+    {{ t(_ud[1], _ud[2]) }}
+  </div>
+  {% endif %}
+
+  {# Headwind / tailwind chips #}
+  <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px">
+    <div>
+      <div class="muted sm" style="margin-bottom:5px">{{ t('Headwinds (stronger USD hurts)', '逆风（美元走强承压）') }}</div>
+      {% for r in dollar_factor.rows %}
+        {% if r.corr is not none and r.corr < 0 %}
+        <span class="hw-chip hw-head"
+          data-tip-en="{{ r.label }} corr {{ '%+.2f' | format(r.corr) }}{% if r.stable is not none %} · {{ 'stable' if r.stable else 'flipping' }}{% endif %}"
+          data-tip-zh="{{ r.label_zh if r.label_zh is not none else r.label }} 相关 {{ '%+.2f' | format(r.corr) }}{% if r.stable is not none %} · {{ '稳定' if r.stable else '不稳定' }}{% endif %}">
+          {{ t(r.label, r.label_zh if r.label_zh is not none else r.label) }}
+        </span>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div>
+      <div class="muted sm" style="margin-bottom:5px">{{ t('Tailwinds (stronger USD helps)', '顺风（美元走强受益）') }}</div>
+      {% for r in dollar_factor.rows %}
+        {% if r.corr is not none and r.corr >= 0 %}
+        <span class="hw-chip hw-tail"
+          data-tip-en="{{ r.label }} corr {{ '%+.2f' | format(r.corr) }}{% if r.stable is not none %} · {{ 'stable' if r.stable else 'flipping' }}{% endif %}"
+          data-tip-zh="{{ r.label_zh if r.label_zh is not none else r.label }} 相关 {{ '%+.2f' | format(r.corr) }}{% if r.stable is not none %} · {{ '稳定' if r.stable else '不稳定' }}{% endif %}">
+          {{ t(r.label, r.label_zh if r.label_zh is not none else r.label) }}
+        </span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {# FX stress scenario from dollar.v2 if available #}
+  {% if dollar is not none and dollar.fx_stress is not none and dollar.fx_stress.dominant is not none %}
+  <div style="font-size:12.5px;color:var(--muted);margin-top:6px">
+    {{ t('Dominant FX stress: ', '主要汇率压力：') }}<b style="color:var(--text)">{{ t(dollar.fx_stress.dominant, dollar.fx_stress.dominant) }}</b>
+  </div>
+  {% endif %}
+
+  <p class="ca-note">
+    {{ t('These usually move with the dollar — a pattern, not a forecast.', '这些资产通常随美元波动——是规律，非预测。') }}
+    <a href="forex.html" style="color:var(--link)">{{ t('Full currency desk → forex.html', '完整外汇页面 → forex.html') }}</a>
+  </p>
+</div>
+{% endif %}
+
+{# ── §06 MONEY & PLUMBING ─────────────────────────────────────────────────── #}
+{% if liquidity or funding %}
+<div class="section-h">
+  <span class="sn">§06</span>
+  <h2>{{ t('Money & plumbing', '资金与管道') }}</h2>
+  <span class="sh-sub">{{ t('is money getting easier or tighter?', '资金环境在宽松还是收紧？') }}</span>
+</div>
+<div class="plumb-grid">
+  {# Liquidity tile #}
+  {% if liquidity %}
+  {% set _i13 = liquidity.impulse_pct.get('13w') if liquidity.impulse_pct is not none else None %}
+  {% set _lcol = 'var(--up,#45b873)' if (_i13 or 0) > 0 else 'var(--down,#e06464)' if (_i13 or 0) < 0 else 'var(--muted)' %}
+  {% set _lword_en = 'Expanding' if liquidity.state == 'expanding' else 'Contracting' if liquidity.state == 'contracting' else 'Flat' %}
+  {% set _lword_zh = '扩张' if liquidity.state == 'expanding' else '收缩' if liquidity.state == 'contracting' else '持平' %}
+  <div class="plumb-tile">
+    <div class="plumb-label">{{ t('Global CB Liquidity', '全球央行流动性') }}</div>
+    <div class="plumb-val" style="color:{{ _lcol }}">${{ liquidity.total_usd_tn }}T</div>
+    <div class="plumb-sub">
+      <b>{{ t(_lword_en, _lword_zh) }}</b>
+      {% if _i13 is not none %} · 13w <span style="color:{{ _lcol }}">{{ ('%+.1f%%' | format(_i13)) }}</span>{% endif %}
+    </div>
+    {% if liq_spark %}<svg class="plumb-spark" width="160" height="32" viewBox="0 0 160 32" aria-hidden="true"><polyline points="{{ liq_spark }}" fill="none" stroke="{{ _lcol }}" stroke-width="1.5"/></svg>{% endif %}
+    <div class="muted sm" style="margin-top:8px">
+      {{ t('Rising CB assets = liquidity tailwind for risk.', '央行资产增加 = 风险资产流动性顺风。') }}
+      <span class="qm" tabindex="0"
+        data-tip-en="{{ liquidity.note if liquidity.note is not none else 'Fed + ECB + BoJ assets in USD. Rate-of-change leads risk assets with variable lag.' }}"
+        data-tip-zh="美联储+欧洲央行+日本央行资产（美元计）。变化率以可变滞后领先风险资产。">?</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {# Funding tile #}
+  {% if funding %}
+  {% set _fcol = 'var(--down,#e06464)' if funding.state == 'stressed' else 'var(--warn,#e0a030)' if funding.state == 'watch' else 'var(--up,#45b873)' %}
+  {% set _fword_en = 'Stressed' if funding.state == 'stressed' else 'Watch' if funding.state == 'watch' else 'Calm' %}
+  {% set _fword_zh = '紧张' if funding.state == 'stressed' else '关注' if funding.state == 'watch' else '平静' %}
+  <div class="plumb-tile">
+    <div class="plumb-label">{{ t('Funding & Repo', '资金与回购') }}</div>
+    <div class="plumb-val" style="color:{{ _fcol }}">{{ t(_fword_en, _fword_zh) }}</div>
+    <div class="plumb-sub">
+      {% if funding.state == 'stressed' %}
+        {{ t('Short-term funding markets are under pressure.', '短期资金市场承压。') }}
+      {% elif funding.state == 'watch' %}
+        {{ t('Short-term funding markets need watching.', '短期资金市场需关注。') }}
+      {% else %}
+        {{ t('Short-term funding markets look calm.', '短期资金市场平静。') }}
+      {% endif %}
+    </div>
+    {% if fund_spark %}<svg class="plumb-spark" width="160" height="32" viewBox="0 0 160 32" aria-hidden="true"><polyline points="{{ fund_spark }}" fill="none" stroke="{{ _fcol }}" stroke-width="1.5"/></svg>{% endif %}
+    <div class="muted sm" style="margin-top:8px">
+      <span class="qm" tabindex="0"
+        data-tip-en="SOFR−EFFR spread: {{ ('%+.0f' | format(funding.spread_bp)) if funding.spread_bp is not none else '—' }}bp. {{ funding.note if funding.note is not none else 'SOFR above EFFR and widening SOFR distribution signals reserve scarcity (Sep 2019 precursor).' }}"
+        data-tip-zh="SOFR−联邦基金利差：{{ ('%+.0f' | format(funding.spread_bp)) if funding.spread_bp is not none else '—' }}bp。SOFR高于EFFR且分布走阔预示准备金稀缺（2019年9月前兆信号）。">?</span>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── §07 GROWTH VS SAFETY ────────────────────────────────────────────────── #}
+{% if ratios and ratios | length > 0 %}
+<div class="section-h">
+  <span class="sn">§07</span>
+  <h2>{{ t('Growth vs safety', '增长与避险') }}</h2>
+  <span class="sh-sub">{{ t('growth bets vs safe havens', '增长押注对避险资产') }}</span>
+</div>
+
+{# Ratio question map #}
+{% set _ratio_q = {
+  'copper_gold': ('Is growth beating gold?', '增长是否跑赢黄金？'),
+  'stocks_gold': ('Stocks or gold?', '股票还是黄金？'),
+  'oil_gold':    ('Energy demand vs safety', '能源需求对避险'),
+  'gold_silver': ('Defensive metals bid?', '防御性金属受捧？')
+} %}
+{% set _pos_words = {'elevated': ('High vs 2y range', '高于近两年区间'), 'mid': ('Mid of 2y range', '处于近两年区间'), 'depressed': ('Low vs 2y range', '低于近两年区间')} %}
+{# Per-ratio bilingual tooltip map (4 known keys; unknown key → omit tip) #}
+{% set _ratio_tip_en = {
+  'copper_gold': 'Copper/Gold ratio — rising means growth demand outpacing safe-haven. Tracks industrial cycle.',
+  'stocks_gold': 'Stocks/Gold ratio — rising means risk appetite up; falling means safety bid dominating.',
+  'oil_gold':    'Oil/Gold ratio — rising means energy demand up relative to safe-haven; proxy for nominal growth.',
+  'gold_silver': 'Gold/Silver ratio — rising means defensive metals demand up vs industrial (silver). Flight-to-safety signal.'
+} %}
+{% set _ratio_tip_zh = {
+  'copper_gold': '铜金比——上升代表增长需求超越避险需求，追踪工业周期。',
+  'stocks_gold': '股金比——上升代表风险偏好上升；下降代表避险需求主导。',
+  'oil_gold':    '油金比——上升代表能源需求相对避险上升，是名义增长的代理指标。',
+  'gold_silver': '金银比——上升代表防御性金属需求高于工业金属（白银），是避险信号。'
+} %}
+
+<div class="mini-grid">
+  {% for r in ratios %}
+  {% set _rq = _ratio_q.get(r.slug if r.slug is not none else '', (r.label_en, r.label_zh if r.label_zh is not none else r.label_en)) %}
+  {% set _rpos = _pos_words.get(r.state, ('', '')) %}
+  {% set _r3col = 'pos' if (r.chg_3m or 0) >= 0 else 'neg' %}
+  {% set _rslug = r.slug if r.slug is not none else r.key if r.key is not none else '' %}
+  <div class="mini-card"
+    {% if _rslug in _ratio_tip_en %}data-tip-en="{{ _ratio_tip_en[_rslug] }}" data-tip-zh="{{ _ratio_tip_zh[_rslug] }}"{% endif %}>
+    <div class="mini-card-q">{{ t(_rq[0], _rq[1]) }}</div>
+    <div class="mini-card-val">{{ r.value }}</div>
+    <div class="mini-card-pos muted sm">{{ t(_rpos[0], _rpos[1]) }}</div>
+    <div class="mini-card-arrow {{ _r3col }}">
+      {{ '▲' if (r.chg_3m or 0) >= 0 else '▼' }}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# Carry strip #}
+{% if carry and carry.rows %}
+<div class="card">
+  <h2 class="card-h">{{ t('Carry context', '套息背景') }}</h2>
+  {# Term spread plain sentence #}
+  {% for cr in carry.rows %}
+  {% if cr.label_en and ('term' in cr.label_en.lower() or 'spread' in cr.label_en.lower()) %}
+    {% set _ts_pos = cr.value is not none and cr.value > 0 %}
+    <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:8px">
+      {% if _ts_pos %}
+        {{ t('Long rates pay more than cash.', '长期利率高于现金。') }}
+      {% else %}
+        {{ t('Cash pays more than 10-year bonds — an inverted curve.', '现金收益高于10年期债券——收益率曲线倒挂。') }}
+      {% endif %}
+    </div>
+  {% endif %}
+  {% endfor %}
+
+  <div class="carry-strip">
+    {% for cr in carry.rows %}
+    <div class="carry-row">
+      <span style="font-size:13px">{{ t(cr.label_en, cr.label_zh if cr.label_zh is not none else cr.label_en) }}</span>
+      <span class="{{ 'pos' if (cr.value or 0) >= 0 else 'neg' }}" style="font-weight:700;font-variant-numeric:tabular-nums">
+        {{ cr.value }}{{ cr.unit if cr.unit is not none else '' }}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="ca-note">
+    {{ t('Carry is background only — short history, not a tested signal.', '套息仅为背景——历史较短，非经检验的信号。') }}
+    {% if carry.note is not none %}
+    <span class="qm" tabindex="0"
+      data-tip-en="{{ carry.note }}"
+      data-tip-zh="{{ carry.note }}">?</span>
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+{% endif %}
+
+{# ── FOOTER ───────────────────────────────────────────────────────────────── #}
+<div class="card" style="margin-top:8px">
+  <p class="muted sm" style="margin:0;line-height:1.6">
+    {{ t('Source: cross-asset trend engine + keyless price stores + funding/liquidity feeds. Technical receipts live behind the ? marks.',
+        '来源：跨资产趋势引擎 + 无密钥价格库 + 资金/流动性数据源。技术细节见 ? 提示。') }}
+    {{ t('Generated', '生成于') }} {{ built }}.
+  </p>
+</div>
+
+</div><!-- .ca-wrap -->
 <script src="theme.js"></script>
 </body>
 </html>
