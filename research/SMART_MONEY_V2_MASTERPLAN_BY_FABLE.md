@@ -252,3 +252,43 @@ coverage?}`. `history_quarters: 12`, `backfill_quarters: 13`.
   full gauntlet with time-preserving nulls.
 - 2027-01: program review — 126d legs, roster pruning (funds failing verification/filing lapses),
   manager_quality.py deprecation decision (SM2-R8), optional options-flow axis on the dossier.
+
+---
+
+## 9. SM3 Amendment — operator-ordered ranked Follow Desk (2026-07-18, appended by Fable)
+
+**Trigger.** Operator order 2026-07-18 ("identify the best funds to follow… pinpoint the best
+possible stocks to buy… ranked, concrete, actionable boards; surface asymmetric small/mid-cap
+high-conviction buys by proven managers; sector rotation by proven rotators; ignore consistent
+losers") + NEW evidence: the Grade-A Q1-2026 60D assessment
+(`SMART_MONEY_GRADE_A_MANAGERS_2026Q1_60D_ASSESSMENT.md`, artifacts under
+`research/artifacts/SMART_MONEY_GRADE_A_2026Q1/`) — position-level demonstration that
+within-cohort outcomes diverge massively by manager (Casdin +41.7pp vs Corvex −10.5pp at 60D)
+and by sleeve (New vs Add: Altimeter +35.5% / −8.0%). This is exactly the "NEW evidence + explicit
+operator ruling" the DO_NOT_REBUILD preamble requires to touch a settled boundary.
+
+**SM3-R1 (scope of supersession).** SM2-R2's *display boundary* (no ranked-conviction default, no
+consensus best-ideas view) is SUPERSEDED for the new Follow Desk boards (Best Buys, Small/Mid
+Asymmetric, Sector Rotation Consensus) and the Follow Score leaderboard. The *authority-tier* law
+is NOT touched: WA-R2 / NEXTL-U13 stand — 13F remains struck as a positive signal for any
+detector, fingerprint, NW organ, calibrated key, allocation, gate, or escalation. The Follow Desk
+is a display-tier research surface: ranked ordering is an attention allocator with printed
+receipts, never a promoted signal. Nothing here may ever be cited as gauntlet evidence.
+
+**SM3-R2 (axis purity retained).** SM2-R3 stands in full. Follow Score, Rotation IQ, Front-Run
+rate and every board rank derive from the 13F axis alone. Insider / 13D-G / short data appear only
+as separate context columns, never inside a score.
+
+**SM3-R3 (fade tier).** Funds with ≥3 consecutive negative quarters (or follow_score < 35) are
+tiered `fade` and EXCLUDED from consensus/best-buys math (excluded counts printed). This is the
+operator's "ignore consistent losers" — a descriptive screen on a display surface, n's printed,
+survivor-cohort caveat retained from SM2-R6.
+
+**SM3-R4 (honesty form).** Every board carries: filing-lag stamp (~45d), per-score n, the
+plain-word null ("13F crowding historically warns more than it confirms; ranked order is where to
+research first, not a buy list"), and the frozen-study framing on the Grade-A report card (one
+quarter, one cohort — an anecdote with receipts, not a base rate).
+
+**SM3-R5 (classification).** `Unclassified` sector fallthrough (18.4% of book value at ruling
+time) is fixed via two appended fallback sources (curated override map + theme→sector inference,
+inference-flagged). Display-tier metadata; no epistemic weight.
