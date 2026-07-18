@@ -125,7 +125,8 @@ def test_canada_stocks_template_renders():
     # stocks mode = the new TSX Stock Dashboard: standout cards + show-more, no regime hero
     html = _env().get_template("canada.html.j2").render(**_vm(), mode="stocks")
     assert "TSX Stock Dashboard" in html
-    assert "ripe-list screen" in html                   # Branch-B board header (C7 verdict)
+    assert "Prophet Stock Signals" in html              # Prophet rebrand header (PR-R2 Amendment 1)
+    assert "TSX ripe list" in html                      # ripe-list contract still present after rebrand
     assert "TD Bank" in html                            # the standout setup renders here
     # Branch B: composite 0-100 chip SUPPRESSED, rank pill + accruing screen badge present
     assert "rankpill" in html and ">#1<" in html

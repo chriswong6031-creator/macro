@@ -1735,7 +1735,7 @@
         <span class="badge" style="background:var(--panel2);color:var(--text)">{{ t('Posture', '姿态') }}: {{ td(pb.dial.posture) }}</span>{{ help("How to TRADE the current regime — a defensive → aggressive stance dial (Defensive · Careful · Neutral · Constructive · Aggressive) set by the playbook. “Careful” means lean cautious: favour quality and good entries, keep gross moderate. It sizes risk; it is not a buy/sell or stock-selection call. The full dial with its reasoning lives on the Macro dashboard.", "如何“交易”当前周期 — 一个防御→进取的姿态刻度（防御·谨慎·中性·建设性·进取），由策略手册设定。“谨慎”意为偏审慎：偏好质量与好的入场点，总仓位保持适中。它用于调整风险敞口，并非买卖或选股建议。完整刻度及其推理见宏观看板。") }}
       </span>{% endif %}
     </div>
-    <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}
+    <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — Prophet signals, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 先知选股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}
       <a href="macro.html" style="color:var(--link);font-weight:600">← {{ t('Macro regime dashboard', '宏观周期看板') }}</a>
       &nbsp;·&nbsp;
       <a href="us_stocks_lab.html" style="color:var(--link);font-weight:600">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
@@ -12535,7 +12535,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% if _su or action_board.notable %}
     <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-        <h2 style="margin:0">{{ t('Standout individual stocks', '表现突出的个股') }}</h2>
+        <h2 style="margin:0">{{ t('Prophet Stock Signals', '先知选股') }}</h2>
         {# W8-R6: grid/table view toggle (US market) #}
         {% if _su %}
         <span class="st-view-toggle" id="us-st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
@@ -12873,7 +12873,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
              Contract ruling (P2.4 §4.2, adjudicated): "server-rendered-but-collapsed" DOM-present
              satisfies contract for ext_z and 200DMA± chips (contracts.md finding #3).
              HOISTED out of {% if c %}. Inner sections that need c are wrapped in {% if c %}. #}
-          <div class="nb-more" role="dialog" aria-label="Standout detail">
+          <div class="nb-more" role="dialog" aria-label="Prophet detail">
           <button type="button" class="nb-more-x" aria-label="Close details">&times;</button>
           {% if c %}
           {% set al = c.alignment %}

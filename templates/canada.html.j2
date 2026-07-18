@@ -1430,7 +1430,7 @@
 </div>
 {% endif %}
 <div class="panel" id="standouts">
-  <h2>{{ t('⚡ Standout TSX names — ripe-list screen', '⚡ 突出的 TSX 个股 — 成熟清单筛选') }}
+  <h2>{{ t('⚡ Prophet Stock Signals — TSX ripe list', '⚡ 先知选股 — TSX 成熟清单') }}
     {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('bottoming and turning up (not still falling)', '筑底并开始转向（而非仍在下跌）') }}</span>{% endif %}
     {{ help('Ranks bottoming TSX names: buyable now first, then names still setting up. # is order, not probability.', '排列正在筑底的 TSX 个股：可买的在前，仍在蓄势的在后。# 是顺序，不是概率。') }}
     {# W8-G: grid/table view toggle #}

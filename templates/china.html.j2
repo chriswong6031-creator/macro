@@ -2604,7 +2604,7 @@
   {% set _n_ran = (_ran_late_rows | length) + (_ran | length) %}
   {% set _stf_default = 'entry' if _n_entry else 'all' %}
   <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}">
-    <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
+    <h2>{{ t('⚡ Prophet Stock Signals', '⚡ 先知选股') }}
       {{ help("How to read this board. Each card is an A-share name that sold off hard, settled, and just turned back up (the system grades that washout → base → fresh-turn sequence, T1–T4). Score 0–100 = buy-readiness: how ready it looks to buy, not a win-rate or a guarantee. Rank puts the cleanest setups first. Two gauges show setup quality and entry timing (buy now vs wait for a pullback). It is a research shortlist, not a buy list — and its track record is still accruing.", "如何看这个榜单。每张卡片都是一只大幅回调、企稳后刚刚回升的A股（系统按 洗盘→筑底→新转向 顺序分级，T1–T4）。评分0–100＝买入就绪度：该股离买点有多近，并非胜率或保证。排序把形态最干净的排在前面。两个量表显示形态质量与入场时机（现在买还是等回调）。这是研究备选清单，而非买入清单——其成绩仍在累积。") }}
       {# W8-E: grid/table view toggle #}
       <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">

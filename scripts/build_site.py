@@ -4986,7 +4986,7 @@ def main() -> int:
     _ts = top_setups or {}
     _n = (len((us_standouts or {}).get("buy") or [])
           or len(_ts.get("buy") or []) or len(_ab.get("notable") or []))
-    _us_label = (f"{_n} standout stocks" if _n else "Stock signals & flows")
+    _us_label = (f"{_n} Prophet stock signals" if _n else "Prophet · sectors · flows")
     usdir = config.data_dir() / "us_stocks"
     usdir.mkdir(parents=True, exist_ok=True)
     (usdir / "latest.json").write_text(json.dumps(
