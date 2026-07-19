@@ -2929,46 +2929,95 @@ function mktStack(label, value) {
   return `<div class="mkt-stack"><div class="mkt-stack-lab">${esc(label)}</div><div class="mkt-stack-val">${esc(value != null && value !== "" ? value : "—")}</div></div>`;
 }
 
-/* Flywheel SVG — 9-step growth loop ring diagram */
+/* Growth-loop steps — shared by the wheel SVG and the HTML legend */
+const FLYWHEEL_STEPS = [
+  { label: "Radar",     color: "#6a8dff", desc: "spots opportunities" },
+  { label: "Studio",    color: "#38e0d4", desc: "creates content" },
+  { label: "Broadcast", color: "#b18cff", desc: "posts to 6 desks" },
+  { label: "Funnel",    color: "#ffb84d", desc: "converts readers" },
+  { label: "Lab",       color: "#3ddc84", desc: "measures results" },
+  { label: "Sentinel",  color: "#ff6b6b", desc: "watches accuracy" },
+  { label: "Workshop",  color: "#4ad6a0", desc: "builds tools" },
+  { label: "Allies",    color: "#f78fff", desc: "grows partners" },
+  { label: "Engine",    color: "#8b98ad", desc: "keeps it running" },
+];
+
+/* Lighten a hex color toward white by amt (0..1) — for segment gradients */
+function mktTint(hex, amt) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  const m = c => Math.round(c + (255 - c) * amt).toString(16).padStart(2, "0");
+  return "#" + m(r) + m(g) + m(b);
+}
+
+/* Flywheel SVG — animated growth loop. Labels live in the HTML legend
+   (mktFlywheelLegend), so nothing clips and the type can be full size. */
 function mktFlywheelSVG() {
-  const cx = 160, cy = 160, R = 120, r = 36;
-  const steps = [
-    { label: "Radar",     color: "#6a8dff", desc: "spots opportunities" },
-    { label: "Studio",    color: "#38e0d4", desc: "creates content" },
-    { label: "Broadcast", color: "#b18cff", desc: "posts to 6 desks" },
-    { label: "Funnel",    color: "#ffb84d", desc: "converts readers" },
-    { label: "Lab",       color: "#3ddc84", desc: "measures results" },
-    { label: "Sentinel",  color: "#ff6b6b", desc: "watches accuracy" },
-    { label: "Workshop",  color: "#4ad6a0", desc: "builds tools" },
-    { label: "Allies",    color: "#f78fff", desc: "grows partners" },
-    { label: "Engine",    color: "#8b98ad", desc: "keeps it running" },
-  ];
-  const n = steps.length;
-  let arcs = "", labels = "";
+  const CX = 130, CY = 130, R = 96, SW = 15;
+  const pt = (deg, rad) => { const a = deg * Math.PI / 180; return [CX + rad * Math.cos(a), CY + rad * Math.sin(a)]; };
+  const steps = FLYWHEEL_STEPS, n = steps.length, span = 360 / n, gap = 8;
+  let defs = "", segs = "", ticks = "", nums = "";
+
+  // faint tick rim (slow-spinning "flywheel turning" cue)
+  const tickN = 72;
+  for (let i = 0; i < tickN; i++) {
+    const a = (i / tickN) * 360, major = i % 6 === 0;
+    const [x1, y1] = pt(a, R + 16), [x2, y2] = pt(a, major ? R + 8 : R + 12);
+    ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#2b3444" stroke-width="${major ? 1.4 : 0.8}"/>`;
+  }
+
   steps.forEach((s, i) => {
-    const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
-    const nextAngle = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
-    const midAngle = (angle + nextAngle) / 2;
-    // arc segment
-    const x1 = cx + R * Math.cos(angle), y1 = cy + R * Math.sin(angle);
-    const x2 = cx + R * Math.cos(nextAngle), y2 = cy + R * Math.sin(nextAngle);
-    const gap = 0.06;
-    const ag1 = angle + gap, ag2 = nextAngle - gap;
-    const ax1 = cx + R * Math.cos(ag1), ay1 = cy + R * Math.sin(ag1);
-    const ax2 = cx + R * Math.cos(ag2), ay2 = cy + R * Math.sin(ag2);
-    arcs += `<path d="M ${ax1.toFixed(1)} ${ay1.toFixed(1)} A ${R} ${R} 0 0 1 ${ax2.toFixed(1)} ${ay2.toFixed(1)}" stroke="${s.color}" stroke-width="18" fill="none" stroke-linecap="round" opacity=".85"/>`;
-    // label outside ring
-    const lx = cx + (R + 36) * Math.cos(midAngle), ly = cy + (R + 36) * Math.sin(midAngle);
-    labels += `<text x="${lx.toFixed(1)}" y="${(ly - 5).toFixed(1)}" text-anchor="middle" fill="${s.color}" font-size="10" font-weight="700" font-family="-apple-system,sans-serif">${s.label}</text>`;
-    labels += `<text x="${lx.toFixed(1)}" y="${(ly + 7).toFixed(1)}" text-anchor="middle" fill="#93a0b4" font-size="8.5" font-family="-apple-system,sans-serif">${s.desc}</text>`;
+    const start = i * span + gap / 2 - 90, end = (i + 1) * span - gap / 2 - 90, mid = (start + end) / 2;
+    const [x1, y1] = pt(start, R), [x2, y2] = pt(end, R);
+    const large = (end - start) > 180 ? 1 : 0;
+    defs += `<linearGradient id="fwg${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${mktTint(s.color, 0.45)}"/><stop offset="1" stop-color="${s.color}"/></linearGradient>`;
+    segs += `<path class="mkt-fw-seg" data-step="${i}" style="--c:${s.color};--d:${(i * 0.09).toFixed(2)}s" d="M ${x1.toFixed(1)} ${y1.toFixed(1)} A ${R} ${R} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" pathLength="100" stroke="url(#fwg${i})" stroke-width="${SW}" fill="none" stroke-linecap="round"/>`;
+    const [nx, ny] = pt(mid, R - 33);
+    nums += `<text class="mkt-fw-segnum" x="${nx.toFixed(1)}" y="${(ny + 2.8).toFixed(1)}" text-anchor="middle" fill="${s.color}">${i + 1}</text>`;
   });
-  return `<svg viewBox="0 0 320 320" width="280" height="280" xmlns="http://www.w3.org/2000/svg" aria-label="Growth flywheel diagram">
-    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#1e2332" stroke-width="22"/>
-    ${arcs}
-    ${labels}
-    <text x="${cx}" y="${cy - 8}" text-anchor="middle" fill="#e8edf5" font-size="11" font-weight="700" font-family="-apple-system,sans-serif">GROWTH</text>
-    <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="#38e0d4" font-size="10" font-family="-apple-system,sans-serif">FLYWHEEL</text>
+
+  const [hx, hy] = pt(-90, R);
+  const [tx1, ty1] = pt(-90 - 36, R), [tx2, ty2] = pt(-90 - 2, R);
+  return `<svg class="mkt-fw-svg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Growth flywheel — a nine-step loop that repeats and compounds">
+   <defs>${defs}
+    <linearGradient id="fwComet" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#bff4ff" stop-opacity="0"/><stop offset=".7" stop-color="#d6f7ff" stop-opacity=".55"/><stop offset="1" stop-color="#eafdff" stop-opacity=".95"/></linearGradient>
+    <radialGradient id="fwGlow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6a8dff" stop-opacity=".20"/><stop offset=".6" stop-color="#38e0d4" stop-opacity=".07"/><stop offset="1" stop-color="#6a8dff" stop-opacity="0"/></radialGradient>
+    <filter id="fwSoft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.4"/></filter>
+   </defs>
+   <circle class="mkt-fw-glow" cx="${CX}" cy="${CY}" r="${R + 24}" fill="url(#fwGlow)"/>
+   <g class="mkt-fw-ticks">${ticks}</g>
+   <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#161b26" stroke-width="${SW + 4}"/>
+   <g class="mkt-fw-segs">${segs}</g>
+   <g class="mkt-fw-segnums">${nums}</g>
+   <g class="mkt-fw-comet">
+     <path d="M ${tx1.toFixed(1)} ${ty1.toFixed(1)} A ${R} ${R} 0 0 1 ${tx2.toFixed(1)} ${ty2.toFixed(1)}" stroke="url(#fwComet)" stroke-width="${SW - 2}" fill="none" stroke-linecap="round" filter="url(#fwSoft)"/>
+     <circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="7" fill="#eafdff" opacity=".55" filter="url(#fwSoft)"/>
+     <circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="3.1" fill="#f2feff"/>
+   </g>
+   <g class="mkt-fw-hub">
+     <circle cx="${CX}" cy="${CY}" r="60" fill="#0c0f16" stroke="#222a38" stroke-width="1"/>
+     <circle class="mkt-fw-hub-ring" cx="${CX}" cy="${CY}" r="52" fill="none" stroke="#2c3648" stroke-width="1" stroke-dasharray="2 7"/>
+     <text class="mkt-fw-hub-t1" x="${CX}" y="${CY - 3}" text-anchor="middle">GROWTH</text>
+     <text class="mkt-fw-hub-t2" x="${CX}" y="${CY + 14}" text-anchor="middle">FLYWHEEL</text>
+   </g>
   </svg>`;
+}
+
+/* HTML legend for the flywheel — full-size, never-clipping step labels */
+function mktFlywheelLegend() {
+  return `<div class="mkt-fw-legend"><ol class="mkt-fw-steps">${FLYWHEEL_STEPS.map((s, i) =>
+    `<li class="mkt-fw-step" data-step="${i}" style="--c:${s.color};--d:${(0.12 + i * 0.055).toFixed(2)}s"><span class="mkt-fw-node"></span><span class="mkt-fw-num">${i + 1}</span><span class="mkt-fw-label">${esc(s.label)}</span><span class="mkt-fw-desc">${esc(s.desc)}</span></li>`).join("")}
+  </ol><div class="mkt-fw-loopback"><span class="mkt-fw-loopback-ic">↻</span> then it repeats — a little smarter each turn</div></div>`;
+}
+
+/* Hover cross-highlight: hovering a wheel segment lights its legend row and
+   vice versa. Generated (one pair per step) so it stays in sync with colors. */
+function mktFlywheelHoverCSS() {
+  return "<style>" + FLYWHEEL_STEPS.map((s, i) =>
+    `.mkt-fw-viz:has([data-step="${i}"]:hover) .mkt-fw-seg[data-step="${i}"]{stroke-width:20;filter:drop-shadow(0 0 7px ${s.color})}` +
+    `.mkt-fw-viz:has([data-step="${i}"]:hover) .mkt-fw-step[data-step="${i}"]{background:color-mix(in srgb,${s.color} 13%,transparent)}` +
+    `.mkt-fw-viz:has([data-step="${i}"]:hover) .mkt-fw-step[data-step="${i}"] .mkt-fw-node{transform:scale(1.4)}`
+  ).join("") + "</style>";
 }
 
 /* Content-type color lookup (falls back gracefully) */
@@ -3121,17 +3170,21 @@ RENDER.marketing_overview = async () => {
       <span class="statpill s-mut">${esc(activeVariant)}</span>
       <div class="note" style="margin-left:8px">Active trial measurement window.</div></div>`;
 
-  /* Flywheel illustration */
+  /* Flywheel illustration — animated growth loop + linked legend */
   const flywheelHtml = `<div class="section">How the machine works</div>
-    <div class="card">
-      <div class="mkt-flywheel">${mktFlywheelSVG()}</div>
-      <p style="font-size:13px;line-height:1.65;color:var(--muted);margin:10px 0 0">
-        The growth loop runs like this: <b style="color:var(--text)">Radar</b> spots what investors are curious about right now.
-        <b style="color:var(--text)">Studio</b> turns those insights into posts — anchored on Prophet signal alerts with cashtags, mixed with charts, explainers, and macro notes.
-        <b style="color:var(--text)">Broadcast</b> publishes across six desks, each with its own voice so the same signal reads differently per desk.
-        <b style="color:var(--text)">Funnel</b> turns engaged readers into trial users.
-        <b style="color:var(--text)">Lab</b> measures what actually drove the conversion, kills the myths, and feeds findings back into strategy.
-        <b style="color:var(--text)">Sentinel</b> watches the whole loop for accuracy and compliance — it can pause anything.
+    ${mktFlywheelHoverCSS()}
+    <div class="card mkt-fw-card">
+      <div class="mkt-fw-viz">
+        <div class="mkt-fw-wheel">${mktFlywheelSVG()}</div>
+        ${mktFlywheelLegend()}
+      </div>
+      <p class="mkt-fw-copy">
+        <b>Radar</b> spots what investors are curious about right now.
+        <b>Studio</b> turns those insights into posts — anchored on Prophet signal alerts with cashtags, mixed with charts, explainers, and macro notes.
+        <b>Broadcast</b> publishes across six desks, each with its own voice so the same signal reads differently per desk.
+        <b>Funnel</b> turns engaged readers into trial users.
+        <b>Lab</b> measures what actually drove the conversion, kills the myths, and feeds findings back into strategy.
+        <b>Sentinel</b> watches the whole loop for accuracy and compliance — it can pause anything.
         The loop repeats, gets smarter, and compounds.
       </p>
     </div>`;
