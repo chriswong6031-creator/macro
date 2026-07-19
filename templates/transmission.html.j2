@@ -11,11 +11,6 @@
 {%- elif verdict == 'INVERTED' -%}<span class="lvg vg-inverted" title="measured the opposite way">⤫</span>
 {%- else -%}<span class="lvg vg-context" title="weak / context only">·</span>{%- endif -%}
 {%- endmacro %}
-{# Chain asset chip — plain label + verdict glyph at rest; the measured coefficient
-   lives in the hover receipt (EN-only title=, per the i18n title law). #}
-{% macro effchip(cell) -%}
-<span class="achip {{ 'ac-tail' if cell.effect=='tailwind' else 'ac-head' if cell.effect=='headwind' else 'ac-neut' }}"{% if cell.ic is not none %} title="measured effect {{ '%+.2f'|format(cell.ic) }} ({{ cell.verdict|lower }})"{% endif %}>{{ cell.label }}{{ vg(cell.verdict) }}</span>
-{%- endmacro %}
 {# The signature flow-line: a current travelling through a wire. Shape encodes
    direction (up / down / flat); hue encodes the channel; reduced-motion → static. #}
 {% macro flowline(dirkey, ch) -%}
@@ -114,61 +109,18 @@ a{color:var(--blue);text-decoration:none}
   font-size:12px;font-weight:500;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0}
 .txq:hover .txq-tip,.txq:focus .txq-tip{display:block}
 
-/* ---------- pressure map ---------- */
+/* ---------- section chrome + shared chip system (used by revamp + study shelf) ---------- */
 .sec-head{display:flex;align-items:baseline;gap:10px;font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;margin:34px 0 4px}
 .sec-sub{font-size:13px;color:var(--muted);margin:0 0 14px}
 .card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.pm-row{display:grid;grid-template-columns:150px 1fr 56px;align-items:center;gap:12px;padding:7px 0}
-@media(max-width:560px){.pm-row{grid-template-columns:104px 1fr 48px}}
-.pm-row .pm-name{font-size:12.5px;font-weight:600;color:var(--text)}
-.pm-track{position:relative;height:12px;background:color-mix(in srgb,var(--grid) 55%,var(--card));border-radius:6px}
-.pm-track .pm-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--faint);opacity:.55}
-.pm-fill{position:absolute;top:0;bottom:0;border-radius:6px;animation:txGrow .8s cubic-bezier(.2,.7,.3,1) both}
-.pm-fill.neg{right:50%;background:linear-gradient(270deg,color-mix(in srgb,var(--red) 72%,transparent),var(--red));transform-origin:right}
-.pm-fill.pos{left:50%;background:linear-gradient(90deg,color-mix(in srgb,var(--green) 72%,transparent),var(--green));transform-origin:left}
-.pm-val{text-align:right;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
-.pm-val.neg{color:var(--red)}.pm-val.pos{color:var(--green)}
-.pm-axis{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:2px 0 8px}
-.pm-axis .ax-l{color:var(--red)}.pm-axis .ax-r{color:var(--green)}
 .pm-foot{font-size:12px;color:var(--faint);margin-top:10px}
-
-/* ---------- chains ---------- */
-.chain{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px 22px;margin-bottom:14px;position:relative;overflow:hidden}
-.chain.live::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--blue)}
-.chain-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
-.chain-state{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
-.chain-state.on{background:rgba(40,95,255,.12);color:var(--blue)}
-.chain-state.on i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-right:5px;animation:txBreathe 2s ease-in-out infinite}
-.order{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:11px 0;position:relative}
-.order+.order{border-top:1px dashed var(--grid)}
-.order .onum{width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--blue) 14%,var(--card));border:1px solid color-mix(in srgb,var(--blue) 35%,var(--grid));color:var(--blue);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
-.order .otext{font-size:13.5px;color:var(--text);line-height:1.5}
-.order .ocells{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
 .achip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:11.5px;font-weight:600;background:color-mix(in srgb,var(--grid) 55%,var(--card));color:var(--text);cursor:default}
-.achip.ac-head{background:rgba(211,11,11,.09);color:var(--red)}
-.achip.ac-tail{background:rgba(26,127,67,.11);color:var(--green)}
 .lvg{margin-left:2px;font-weight:800;font-size:11px;cursor:help}
 .vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
-.chain-quiet{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:8px 22px;margin-bottom:14px}
-.cq-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;font-size:13.5px;color:var(--muted)}
-.cq-row+.cq-row{border-top:1px solid var(--grid)}
-.cq-row b{color:var(--text);font-weight:600}
-.cq-tag{font-size:11px;font-weight:700;color:var(--faint);padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card));white-space:nowrap}
-
-/* ---------- scenarios ---------- */
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1fr 1fr}
 @media(max-width:900px){.cols-2{grid-template-columns:1fr}}
-.scen{border:1px solid var(--grid);background:var(--card);border-radius:16px;padding:17px 18px}
-.scen h3{margin:0 0 10px;font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
-.scen-row{display:flex;flex-wrap:wrap;gap:14px}
-.scen-col{flex:1;min-width:170px}
-.scen-col .scl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-.scen-col.head .scl{color:var(--red)}.scen-col.tail .scl{color:var(--green)}
-.smv{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0}
-.smv b{font-variant-numeric:tabular-nums}
-.smv .neg{color:var(--red)}.smv .pos{color:var(--green)}
 
 /* ---------- study shelf ---------- */
 .shelf{margin-top:34px}
@@ -257,7 +209,98 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 .bd-reflation{border-left-color:var(--blue)} .bd-quiet{border-left-color:var(--faint)}
 .site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
 
+/* ============ REVAMP — soft palette + shared panel chrome (matches the channel rail) ============ */
+:root{--drag:#c65b6e;--lift:#2f9270}
+html[data-theme="dark"]{--drag:#e58a97;--lift:#54c39a}
+.sec-head .sh-dot{width:8px;height:8px;border-radius:3px;background:var(--sh-c,var(--faint));display:inline-block;align-self:center}
+.rv-card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px;position:relative;overflow:hidden;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.rv-card::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--accent,var(--blue))}
+.rv-take{display:flex;align-items:center;gap:12px 14px;flex-wrap:wrap;margin:0 0 15px}
+.rv-take .ln{font-size:13.5px;color:var(--text);font-weight:500;line-height:1.45;flex:1;min-width:240px}
+.rv-take .ln b{color:var(--ink);font-weight:800}
+.rv-stance{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;
+  background:color-mix(in srgb,var(--accent,var(--blue)) 11%,var(--card));color:var(--accent,var(--blue));border:1px solid color-mix(in srgb,var(--accent,var(--blue)) 28%,var(--grid))}
+.rv-stance .txdot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:txBreathe 2.4s ease-in-out infinite;flex:none}
+
+/* ---------- pressure board ---------- */
+.pb-axis{display:flex;justify-content:space-between;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin:2px 0 8px;color:var(--faint)}
+.pb-axis .l{color:var(--drag)}.pb-axis .r{color:var(--lift)}
+.pb-row{display:grid;grid-template-columns:minmax(138px,1fr) 1.75fr 84px;align-items:center;gap:14px;padding:8px 0}
+.pb-row+.pb-row{border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+@media(max-width:560px){.pb-row{grid-template-columns:1fr 74px}.pb-track{display:none}}
+.pb-name{font-size:13px;font-weight:700;color:var(--ink);line-height:1.18}
+.pb-name .sub{display:block;font-size:10.5px;font-weight:500;color:var(--faint);margin-top:1px}
+.pb-track{position:relative;height:9px;background:color-mix(in srgb,var(--grid) 50%,var(--card));border-radius:999px}
+.pb-track .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.4}
+.pb-fill{position:absolute;top:0;bottom:0;border-radius:999px;animation:txGrow .8s cubic-bezier(.2,.7,.3,1) both}
+.pb-fill.d{right:50%;background:linear-gradient(270deg,color-mix(in srgb,var(--drag) 58%,transparent),color-mix(in srgb,var(--drag) 20%,transparent));transform-origin:right}
+.pb-fill.u{left:50%;background:linear-gradient(90deg,color-mix(in srgb,var(--lift) 58%,transparent),color-mix(in srgb,var(--lift) 20%,transparent));transform-origin:left}
+.pb-str{justify-self:end;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;cursor:help;white-space:nowrap}
+.pb-str.d{color:var(--drag)}.pb-str.u{color:var(--lift)}
+.pb-str .ar{font-size:9px}
+
+/* ---------- cascade (how a shock travels) ---------- */
+.cx-wrap{display:grid;gap:14px}
+.cx-card{--accent:var(--ch-rates);overflow:visible}
+.cx-card::before{border-radius:18px 18px 0 0}
+.cx-card.c-infl{--accent:var(--ch-infl)}
+.cx-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.cx-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.cx-title{font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.15}
+.cx-live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--accent);
+  padding:3px 11px;border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+.cx-live i{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:txBreathe 2s ease-in-out infinite}
+.cx-trigger{font-size:12px;color:var(--muted);margin:7px 0 2px}
+.cx-trigger b{color:var(--text);font-weight:600}
+.cx-flow{margin-top:15px}
+.cx-step{display:grid;grid-template-columns:30px 1fr;gap:14px;position:relative;padding-bottom:15px}
+.cx-step:last-child{padding-bottom:0}
+.cx-step:not(:last-child)::before{content:'';position:absolute;left:14px;top:30px;bottom:-3px;width:2px;border-radius:2px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 60%,transparent) 0%,color-mix(in srgb,var(--accent) 13%,var(--grid)) 26%,color-mix(in srgb,var(--accent) 13%,var(--grid)) 100%);
+  background-size:100% 230%;animation:cxFlow 2.5s linear infinite}
+.cx-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;z-index:1;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 32%,var(--grid))}
+.cx-phrase{font-size:14px;font-weight:700;color:var(--ink);line-height:1.35;display:flex;align-items:flex-start;gap:6px;padding-top:5px}
+.cx-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.cx-chips .achip{background:color-mix(in srgb,var(--grid) 45%,var(--card));font-weight:600}
+.cx-chips .achip.ac-head{color:var(--drag);background:color-mix(in srgb,var(--drag) 11%,var(--card))}
+.cx-chips .achip.ac-tail{color:var(--lift);background:color-mix(in srgb,var(--lift) 12%,var(--card))}
+.cx-chips .achip.ac-neut{color:var(--muted);opacity:.75}
+.cx-quiet{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:4px 20px;margin-top:14px}
+.cx-quiet .q{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;font-size:13px}
+.cx-quiet .q+.q{border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+.cx-quiet .q .nm{font-weight:600;color:var(--text)}
+.cx-quiet .q .nm .em{margin-right:9px;opacity:.8}
+.cx-quiet .q .tag{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+
+/* ---------- scenarios (if this holds for three months) ---------- */
+.sx-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.sx-grid{grid-template-columns:1fr}}
+.sx-card{--accent:var(--ch-rates)}
+.sx-card.c-infl{--accent:var(--ch-infl)}
+.sx-head{display:flex;align-items:flex-start;gap:11px}
+.sx-mark{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;
+  background:color-mix(in srgb,var(--accent) 12%,var(--card))}
+.sx-title{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.2}
+.sx-spec{font-size:11.5px;color:var(--muted);margin-top:2px}
+.sx-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:15px}
+@media(max-width:420px){.sx-cols{grid-template-columns:1fr}}
+.sx-col .cl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.sx-col.h .cl{color:var(--drag)}.sx-col.t .cl{color:var(--lift)}
+.sx-item{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:8px;padding:4px 0 5px}
+.sx-item .nm{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sx-item .v{font-variant-numeric:tabular-nums;font-weight:700;font-size:11.5px}
+.sx-item .v.d{color:var(--drag)}.sx-item .v.u{color:var(--lift)}
+.sx-bar{grid-column:1/-1;height:4px;border-radius:2px;background:color-mix(in srgb,var(--grid) 55%,var(--card));overflow:hidden;margin-top:2px}
+.sx-bar i{display:block;height:100%;border-radius:2px;animation:txGrow .7s ease both;transform-origin:left}
+.sx-bar i.d{background:color-mix(in srgb,var(--drag) 52%,transparent)}
+.sx-bar i.u{background:color-mix(in srgb,var(--lift) 52%,transparent)}
+.sx-more{font-size:11px;color:var(--faint);margin-top:6px}
+.sx-none{font-size:12px;color:var(--faint);padding:4px 0}
+
 /* ---------- motion ---------- */
+@keyframes cxFlow{from{background-position:0 -55%}to{background-position:0 165%}}
 @keyframes txFlow{to{stroke-dashoffset:0}}
 @keyframes txBreathe{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
 @keyframes txUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -265,6 +308,8 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion: reduce){
   .txflow-pulse,.txdot,.tc-chip .txdot,.chain-state.on i{animation:none}
   .tx-hero,.tx-ch,.pm-fill{animation:none}
+  .rv-card,.pb-fill,.sx-bar i,.cx-live i,.rv-stance .txdot{animation:none}
+  .cx-step:not(:last-child)::before{background:color-mix(in srgb,var(--accent) 20%,var(--grid));animation:none}
   *{transition:none!important}
 }
 </style>
@@ -287,6 +332,34 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 
 <div class="wrap">
   {% set S = tx.state %}
+
+  {# ---- plain-language maps (Tier-1 rewrites; machine receipts stay on hover) ---- #}
+  {% set CH_META = {
+    'real_rate':       {'ti':{'en':'Higher real rates','zh':'实际利率走高'},          'ch':'rates','trig':{'en':'the real 10-year yield rising fast','zh':'实际10年期收益率快速上行'}},
+    'sticky_inflation':{'ti':{'en':'Sticky inflation','zh':'通胀粘性'},               'ch':'infl', 'trig':{'en':'core inflation stuck above the 2% goal','zh':'核心通胀高于2%目标'}},
+    'policy_easing':   {'ti':{'en':'Rate cuts & a steeper curve','zh':'降息与曲线变陡'}, 'ch':'rates','trig':{'en':'the market starting to price rate cuts','zh':'市场开始计入降息'}},
+    'expectations':    {'ti':{'en':'Inflation expectations drifting','zh':'通胀预期漂移'},   'ch':'infl', 'trig':{'en':'expectations pulling above model & survey','zh':'预期高于模型与调查'}}
+  } %}
+  {% set CH_STEP = {
+    'real_rate':        {1:{'en':'Long-lived assets fall first','zh':'长久期资产首先承压'},
+                         2:{'en':'A firmer dollar squeezes commodities & emerging markets','zh':'美元走强挤压大宗与新兴市场'},
+                         3:{'en':'Cyclicals lag; financials are relatively spared','zh':'周期股落后，金融相对抗跌'}},
+    'sticky_inflation': {1:{'en':'Markets price rates higher for longer','zh':'市场定价利率更高更久'},
+                         2:{'en':'Small caps & rate-sensitive borrowers get squeezed','zh':'小盘与利率敏感借款方承压'},
+                         3:{'en':'Defensives hold up better','zh':'防御板块相对抗跌'}},
+    'policy_easing':    {1:{'en':'Short-term rates fall; long bonds rally','zh':'短端下行，久期资产上涨'},
+                         2:{'en':'Banks & rate-sensitive property improve','zh':'银行与利率敏感地产改善'},
+                         3:{'en':'Small caps & cyclicals lead a risk-on turn','zh':'小盘与周期股领涨风险偏好'}},
+    'expectations':     {1:{'en':'Un-anchoring risk; the dollar firms','zh':'脱锚风险，美元走强'},
+                         2:{'en':'Real yields rise; growth stocks fall, defensives favoured','zh':'实际收益率上行，成长承压、防御受青睐'},
+                         3:{'en':'Gold, the classic inflation hedge, is unreliable here','zh':'黄金这一经典通胀对冲在此并不可靠'}}
+  } %}
+  {% set SC_META = {
+    'real_up50':{'ti':{'en':'If real rates rise further','zh':'若实际利率进一步走高'}, 'em':'📈','ch':'rates','spec':{'en':'real 10-year yield up ~0.5%','zh':'实际10年利率上行约0.5%'}},
+    'real_dn50':{'ti':{'en':'If rates ease off','zh':'若利率回落'},               'em':'📉','ch':'rates','spec':{'en':'real 10-year yield down ~0.5%','zh':'实际10年利率下行约0.5%'}},
+    'be_up30':  {'ti':{'en':'If an inflation scare hits','zh':'若通胀预期升温'},    'em':'🔥','ch':'infl', 'spec':{'en':'inflation expectations up ~0.3%','zh':'通胀预期上行约0.3%'}},
+    'steepen':  {'ti':{'en':'If cuts steepen the curve','zh':'若降息使曲线变陡'},    'em':'📐','ch':'rates','spec':{'en':'yield curve steepens ~0.5%','zh':'收益率曲线变陡约0.5%'}}
+  } %}
 
   <!-- ===================== HERO ===================== -->
   <header class="tx-hero">
@@ -394,66 +467,111 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
   <!-- ===================== PRESSURE MAP ===================== -->
   {% set prows = ((tx.headwinds or []) + (tx.tailwinds or []))|sort(attribute='net') %}
   {% if prows %}
-  <div class="sec-head">{{ t('Who benefits · who gets hurt', '谁受益 · 谁承压') }}</div>
-  <p class="sec-sub">{{ t('The net force of today\'s rate and inflation state on each asset.', '当前利率与通胀状态对各资产的净作用力。') }}</p>
-  <div class="card">
-    <div class="pm-axis"><span class="ax-l">{{ t('◂ pushed down', '◂ 承压') }}</span><span class="ax-r">{{ t('pushed up ▸', '推升 ▸') }}</span></div>
-    {% set pabs = prows|map(attribute='net')|map('abs')|list %}
-    {% set pscale = pabs|max if pabs else 1 %}
+  {# true counts from the uncapped read (the headwinds/tailwinds lists are capped at 6) #}
+  {% set _tv = (tx.transmission.values()|list) if tx.transmission else [] %}
+  {% set n_head = (_tv|selectattr('verdict','equalto','headwind')|list|length) or ((tx.headwinds or [])|length) %}
+  {% set n_tail = (_tv|selectattr('verdict','equalto','tailwind')|list|length) or ((tx.tailwinds or [])|length) %}
+  {% set n_uni = (_tv|length) or ((tx.headwinds or [])|length + (tx.tailwinds or [])|length) %}
+  <div class="sec-head"><span class="sh-dot" style="--sh-c:var(--blue)"></span>{{ t('Who benefits · who gets hurt', '谁受益 · 谁承压') }}</div>
+  <p class="sec-sub">{{ t('The combined push of today\'s rates and inflation on each asset we track.', '当前利率与通胀对我们跟踪的每类资产的综合作用。') }}</p>
+  <div class="rv-card" style="--accent:var(--blue)">
+    <div class="rv-take">
+      <div class="ln">
+        {% if n_head and n_tail %}
+        <span class="l-en">Rates and inflation are the dominant force today — <b>{{ n_head }} of {{ n_uni }} assets</b> pushed down, only <b>{{ n_tail }} getting a lift</b>.</span>
+        <span class="l-zh">当前利率与通胀是主导力量——<b>{{ n_uni }} 类资产中 {{ n_head }} 类承压</b>，仅 <b>{{ n_tail }} 类受益</b>。</span>
+        {% elif n_tail %}
+        <span class="l-en">Everything we track is <b>catching a lift</b> from today's rate and inflation mix.</span>
+        <span class="l-zh">当前利率与通胀组合下，我们跟踪的资产<b>普遍受益</b>。</span>
+        {% else %}
+        <span class="l-en">Everything we track is <b>under pressure</b> from today's rate and inflation mix.</span>
+        <span class="l-zh">当前利率与通胀组合下，我们跟踪的资产<b>普遍承压</b>。</span>
+        {% endif %}
+      </div>
+      <span class="rv-stance"><span class="txdot"></span>{% if n_head >= n_tail %}{{ t('Broad pressure — watch, don\'t chase', '普遍承压——观望，勿追') }}{% else %}{{ t('Turning supportive — don\'t chase', '转向支撑——勿追高') }}{% endif %}</span>
+    </div>
+    <div class="pb-axis"><span class="l">◂ {{ t('pushed down','承压') }}</span><span class="r">{{ t('pushed up','推升') }} ▸</span></div>
+    {% set allabs = prows|map(attribute='net')|map('abs')|list %}{% set pscale = (allabs|max) or 1 %}
     {% for h in prows %}
-    {% set w = ((h.net|abs) / pscale * 46)|round(1) if pscale else 0 %}
-    <div class="pm-row"{% if h.top_drivers %} title="drivers: {% for p in h.top_drivers %}{{ p.label }} ({{ p.verdict|lower }}){% if not loop.last %} · {% endif %}{% endfor %}"{% endif %}>
-      <span class="pm-name"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span>
-      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill {{ 'neg' if h.net < 0 else 'pos' }}" style="width:{{ w }}%;animation-delay:{{ loop.index0 * 60 }}ms"></span></span>
-      <span class="pm-val {{ 'neg' if h.net < 0 else 'pos' }}">{{ '%+.2f'|format(h.net) }}</span>
+    {% set w = ((h.net|abs) / pscale * 48)|round(1) %}
+    {% set frac = (h.net|abs) / pscale %}
+    {% set up = h.net >= 0 %}
+    {% set zl = h.label.zh.replace('(','（').replace(')','）') %}
+    <div class="pb-row">
+      <span class="pb-name">
+        <span class="l-en">{{ h.label.en.split(' (')[0] }}{% if ' (' in h.label.en %}<span class="sub">{{ h.label.en.split(' (',1)[1][:-1] }}</span>{% endif %}</span>
+        <span class="l-zh">{{ zl.split('（')[0] }}{% if '（' in zl %}<span class="sub">{{ zl.split('（',1)[1].replace('）','') }}</span>{% endif %}</span>
+      </span>
+      <span class="pb-track"><span class="mid"></span><span class="pb-fill {{ 'u' if up else 'd' }}" style="width:{{ w }}%;animation-delay:{{ loop.index0 * 55 }}ms"></span></span>
+      <span class="pb-str {{ 'u' if up else 'd' }}"{% if h.top_drivers %} title="net force {{ '%+.2f'|format(h.net) }} · drivers: {% for p in h.top_drivers %}{{ p.label }} ({{ p.verdict|lower }}){% if not loop.last %} · {% endif %}{% endfor %}"{% endif %}><span class="ar">{{ '▲' if up else '▼' }}</span><span class="l-en">{{ 'Strong' if frac>=0.7 else 'Moderate' if frac>=0.4 else 'Mild' }}</span><span class="l-zh">{{ '强' if frac>=0.7 else '中等' if frac>=0.4 else '轻微' }}</span></span>
     </div>
     {% endfor %}
-    <p class="pm-foot">{{ t('Bar length = combined strength of the measured forces acting on that asset now. Hover a row for its drivers; full receipts in the study shelf below.', '柱长＝当前作用于该资产的实测力量之和。悬停查看驱动因素，完整依据见下方深度研究区。') }}</p>
+    <p class="pm-foot">{{ t('Showing the strongest movers on each side. Bar length = how hard the measured forces are pushing; hover a label for the exact score and its drivers.', '仅显示各方向最强的资产。柱长＝实测力量推动的强度；悬停标签查看精确评分与驱动因素。') }}</p>
   </div>
   {% endif %}
 
   <!-- ===================== CHAINS ===================== -->
-  <div class="sec-head">{{ t('How a shock travels', '冲击如何传导') }}</div>
-  <p class="sec-sub">{{ t('First the direct hit, then the knock-on effects, in order.', '先是直接冲击，随后按顺序层层传导。') }}</p>
+  <div class="sec-head"><span class="sh-dot" style="--sh-c:var(--ch-rates)"></span>{{ t('How a shock travels', '冲击如何传导') }}</div>
+  <p class="sec-sub">{{ t('The direct hit first, then the knock-on effects in order. Hover a step for the full mechanism.', '先是直接冲击，再按顺序层层传导。悬停某一步查看完整机制。') }}</p>
+  <div class="cx-wrap">
   {% for ch in tx.chains if ch.active %}
-  <div class="chain live">
-    <div class="chain-head">
-      <span><span class="l-en">{{ ch.title.en }}</span><span class="l-zh">{{ ch.title.zh }}</span></span>
-      <span class="chain-state on"><i></i>{{ t('Active now', '当前活跃') }}</span>
+  {% set meta = CH_META.get(ch.id, {'ti':ch.title,'ch':'rates','trig':none}) %}
+  <div class="rv-card cx-card c-{{ meta.ch }}">
+    <div class="cx-head">
+      <span class="cx-eyebrow">{{ t('Rates channel','利率通道') if meta.ch=='rates' else t('Inflation channel','通胀通道') if meta.ch=='infl' else t('Dollar channel','美元通道') }}</span>
+      <span class="cx-title">{{ b(meta.ti) }}</span>
+      <span class="cx-live"><i></i>{{ t('Active now','当前活跃') }}</span>
     </div>
+    {% if meta.trig %}<div class="cx-trigger">{{ t('Triggered by','触发因素：') }} <b>{{ b(meta.trig) }}</b></div>{% endif %}
+    <div class="cx-flow">
     {% for o in ch.orders %}
-    <div class="order">
-      <span class="onum">{{ o.order }}</span>
+    {% set phrase = CH_STEP.get(ch.id, {}).get(o.order) %}
+    <div class="cx-step">
+      <span class="cx-num">{{ o.order }}</span>
       <div>
-        <div class="otext"><span class="l-en">{{ o.text.en }}</span><span class="l-zh">{{ o.text.zh }}</span></div>
-        <div class="ocells">{% for c in o.assets %}{{ effchip(c) }}{% endfor %}</div>
+        <div class="cx-phrase">{% if phrase %}<span>{{ b(phrase) }}</span><span class="txq" tabindex="0">?<span class="txq-tip">{{ b(o.text) }}</span></span>{% else %}<span><span class="l-en">{{ o.text.en }}</span><span class="l-zh">{{ o.text.zh }}</span></span>{% endif %}</div>
+        <div class="cx-chips">{% for c in o.assets %}<span class="achip {{ 'ac-tail' if c.effect=='tailwind' else 'ac-head' if c.effect=='headwind' else 'ac-neut' }}"{% if c.ic is not none %} title="measured effect {{ '%+.2f'|format(c.ic) }} ({{ c.verdict|lower }})"{% endif %}>{{ c.label.split(' (')[0] }}{{ vg(c.verdict) }}</span>{% endfor %}</div>
       </div>
     </div>
     {% endfor %}
+    </div>
   </div>
   {% endfor %}
+  </div>
   {% set quiet = tx.chains|rejectattr('active')|list %}
   {% if quiet %}
-  <div class="chain-quiet">
+  <div class="cx-quiet">
     {% for ch in quiet %}
-    <div class="cq-row"><b><span class="l-en">{{ ch.title.en }}</span><span class="l-zh">{{ ch.title.zh }}</span></b><span class="cq-tag">{{ t('quiet now', '暂时静默') }}</span></div>
+    {% set meta = CH_META.get(ch.id, {'ti':ch.title,'ch':'rates'}) %}
+    <div class="q"><span class="nm"><span class="em">{{ '💧' if ch.id=='policy_easing' else '🧭' if ch.id=='expectations' else '•' }}</span>{{ b(meta.ti) }}</span><span class="tag">{{ t('quiet now', '暂时静默') }}</span></div>
     {% endfor %}
   </div>
   {% endif %}
 
   <!-- ===================== SCENARIOS ===================== -->
-  <div class="sec-head">{{ t('If this holds for three months', '若持续三个月') }}</div>
-  <p class="sec-sub">{{ t('What each shock has historically meant for asset prices — illustrations, not forecasts.', '各类冲击在历史上对资产价格的含义——仅为示意，并非预测。') }}</p>
-  <div class="grid cols-2">
+  <div class="sec-head"><span class="sh-dot" style="--sh-c:var(--ch-infl)"></span>{{ t('If this holds for three months', '若持续三个月') }}</div>
+  <p class="sec-sub">{{ t('What each shock has historically meant for prices — illustrations from past episodes, not forecasts.', '各类冲击在历史上对价格的含义——取自过往情形的示意，并非预测。') }}</p>
+  <div class="sx-grid">
   {% for sc in tx.scenarios %}
-    <div class="scen">
-      <h3><span class="l-en">{{ sc.label.en }}</span><span class="l-zh">{{ sc.label.zh }}</span></h3>
-      <div class="scen-row">
-        <div class="scen-col head"><div class="scl">{{ t('Pressured','承压') }}</div>
-          {% for m in sc.headwinds %}<div class="smv"><span>{{ m.label.en if m.label is mapping else m.label }}</span><b class="neg">{{ '%.1f'|format(m.implied_move_pct) }}%</b></div>{% else %}<div class="sub">—</div>{% endfor %}
+  {% set meta = SC_META.get(sc.key, {'ti':sc.label,'em':'•','ch':'rates','spec':none}) %}
+  {% set allm = (sc.headwinds + sc.tailwinds)|map(attribute='implied_move_pct')|map('abs')|list %}{% set smax = (allm|max) or 1 %}
+    <div class="rv-card sx-card c-{{ meta.ch }}">
+      <div class="sx-head">
+        <span class="sx-mark">{{ meta.em }}</span>
+        <div><div class="sx-title">{{ b(meta.ti) }}</div>{% if meta.spec %}<div class="sx-spec">{{ b(meta.spec) }}</div>{% endif %}</div>
+      </div>
+      <div class="sx-cols">
+        <div class="sx-col h"><div class="cl">{{ t('Pressured','承压') }}</div>
+          {% for m in sc.headwinds[:4] %}
+          <div class="sx-item"><span class="nm">{{ (m.label.en if m.label is mapping else m.label).split(' (')[0] }}</span><span class="v d">{{ '%.1f'|format(m.implied_move_pct) }}%</span><span class="sx-bar"><i class="d" style="width:{{ ((m.implied_move_pct|abs)/smax*100)|round(1) }}%"></i></span></div>
+          {% else %}<div class="sx-none">{{ t('none','无') }}</div>{% endfor %}
+          {% if sc.headwinds|length > 4 %}<div class="sx-more">+{{ sc.headwinds|length - 4 }} {{ t('more','项') }}</div>{% endif %}
         </div>
-        <div class="scen-col tail"><div class="scl">{{ t('Favoured','受益') }}</div>
-          {% for m in sc.tailwinds %}<div class="smv"><span>{{ m.label.en if m.label is mapping else m.label }}</span><b class="pos">+{{ '%.1f'|format(m.implied_move_pct) }}%</b></div>{% else %}<div class="sub">—</div>{% endfor %}
+        <div class="sx-col t"><div class="cl">{{ t('Favoured','受益') }}</div>
+          {% for m in sc.tailwinds[:4] %}
+          <div class="sx-item"><span class="nm">{{ (m.label.en if m.label is mapping else m.label).split(' (')[0] }}</span><span class="v u">+{{ '%.1f'|format(m.implied_move_pct) }}%</span><span class="sx-bar"><i class="u" style="width:{{ ((m.implied_move_pct|abs)/smax*100)|round(1) }}%"></i></span></div>
+          {% else %}<div class="sx-none">{{ t('none','无') }}</div>{% endfor %}
+          {% if sc.tailwinds|length > 4 %}<div class="sx-more">+{{ sc.tailwinds|length - 4 }} {{ t('more','项') }}</div>{% endif %}
         </div>
       </div>
     </div>
