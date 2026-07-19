@@ -187,6 +187,16 @@ _BRAIN_TOOLS = frozenset({
     "get_symbol_backtest",
     "screen_universe",
     "annotate_chart",
+    # Finance tool suite (W6d) — read-only reads over calibrated nightly artifacts
+    "get_fundamentals",
+    "get_earnings",
+    "get_insider_activity",
+    "get_congress_trades",
+    "get_smart_money",
+    "get_stage_peers",
+    "get_movers",
+    "get_house_view",
+    "get_watchlist",
     # Inline chart rendering (all pages — renders SVG inside the chat reply)
     "render_inline_chart",
     # Chart-command bus (W6b): client-executed, terminal page only
@@ -203,6 +213,16 @@ _BRAIN_ONLY_TOOLS = frozenset({
     "get_symbol_backtest",
     "screen_universe",
     "annotate_chart",
+    # Finance tool suite (W6d)
+    "get_fundamentals",
+    "get_earnings",
+    "get_insider_activity",
+    "get_congress_trades",
+    "get_smart_money",
+    "get_stage_peers",
+    "get_movers",
+    "get_house_view",
+    "get_watchlist",
     # Inline chart rendering (all pages)
     "render_inline_chart",
     # Chart-command bus (W6b)
@@ -255,6 +275,11 @@ HOW TO STAY HONEST (this constrains HOW you answer, never WHETHER):
   SETUP appears in your reply; then explain what it shows.
 - Respond in the user's language (English or Chinese). Be concrete and concise. Do NOT
   append boilerplate disclaimers — the interface already shows the research-context note.
+
+End EVERY answer with a [NEXT] block: the marker [NEXT] alone on its own line, then exactly
+3 short follow-up questions (one per line) the user would naturally ask next — concrete,
+plain-word, tied to the data you just cited. The interface turns them into buttons; they are
+never shown as prose.
 """
 
 # Research mode directive — prepended to system prompt when mode='research' (W6b)
@@ -482,6 +507,127 @@ def _brain_tool_schemas() -> list[dict]:
                 "required": ["symbol", "annotations"],
             },
         },
+        # ---- Finance tool suite (W6d) ----
+        {
+            "name": "get_fundamentals",
+            "description": (
+                "Read the fundamentals dossier for a stock: profile (name, sector, market cap), "
+                "valuation (trailing/forward P/E, P/B, P/S, value_z), financials (margins, ROE, "
+                "growth, multi-year revenue/EPS + CAGRs, Piotroski, Altman Z), accounting-quality "
+                "verdict, analyst rating/target, and estimate revisions. Call when the user asks "
+                "about a company's fundamentals, valuation, margins, growth, or financial health."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"symbol": {"type": "string", "description": "Ticker (e.g. 'AAPL')"}},
+                "required": ["symbol"],
+            },
+        },
+        {
+            "name": "get_earnings",
+            "description": (
+                "With a symbol: that ticker's next earnings date/time, EPS forecast, recent "
+                "surprise history, and (when available) the earnings-call quality snapshot. "
+                "Without a symbol: a 10-day forward earnings CALENDAR across all tickers. "
+                "Call when the user asks when a company reports, its earnings surprises, or "
+                "what's on the earnings calendar this/next week."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"symbol": {"type": "string", "description": "Ticker (optional — omit for the calendar)"}},
+                "required": [],
+            },
+        },
+        {
+            "name": "get_insider_activity",
+            "description": (
+                "Corporate-insider (officers/directors/10%-owners) buying and selling for a stock. "
+                "Reports TWO lanes separately: the daily feed (last 180 days, ~1d lag) and the "
+                "quarterly SEC aggregate (~45d lag). Call when the user asks whether insiders are "
+                "buying or selling a name."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"symbol": {"type": "string", "description": "Ticker (e.g. 'NVDA')"}},
+                "required": ["symbol"],
+            },
+        },
+        {
+            "name": "get_congress_trades",
+            "description": (
+                "US Congress (House/Senate) stock disclosures. With a symbol: that ticker's "
+                "disclosures over 24 months plus buy/sell counts. Without a symbol: the last "
+                "14 days across all tickers with party/chamber breakdown. Call when the user "
+                "asks what Congress or a specific representative traded."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"symbol": {"type": "string", "description": "Ticker (optional — omit for recent-across-all)"}},
+                "required": [],
+            },
+        },
+        {
+            "name": "get_smart_money",
+            "description": (
+                "Institutional 13F holdings for a stock: number of funds holding, total value, "
+                "the largest holders, and the latest-quarter adds and trims. Call when the user "
+                "asks who owns a name, which funds are buying/selling it, or about institutional "
+                "positioning. Filings lag the quarter by ~45 days."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"symbol": {"type": "string", "description": "Ticker (e.g. 'META')"}},
+                "required": ["symbol"],
+            },
+        },
+        {
+            "name": "get_stage_peers",
+            "description": (
+                "Weinstein stage analysis for a stock (Stage 1 basing / 2 advancing / 3 topping / "
+                "4 declining, SATA score, Mansfield RS, industry percentile) plus its factor "
+                "composite and same-sector composite peers. Call when the user asks what stage a "
+                "stock is in, its relative strength, or how it ranks vs sector peers."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"symbol": {"type": "string", "description": "Ticker (e.g. 'AMD')"}},
+                "required": ["symbol"],
+            },
+        },
+        {
+            "name": "get_movers",
+            "description": (
+                "The engine's calibrated boards as of the last close: the ignition/impulse buy "
+                "list, the US standouts buy board + laggards, the alerts-triage stance, and the "
+                "Mag-7 regime run. Call when the user asks what's moving, what the engine likes "
+                "right now, or the market's current board stance. NOT raw intraday % movers."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        {
+            "name": "get_house_view",
+            "description": (
+                "The house's own trade plans (Prophet: entry, invalidation, targets, phase, "
+                "what-to-do-now) plus a mandatory honesty note on the tiny closed sample, and the "
+                "separate stock-desk track record. With a symbol: plans for that asset. Call when "
+                "the user asks what the house/desk thinks or if there's a plan on a name."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {"symbol": {"type": "string", "description": "Ticker (optional — omit for the top plans)"}},
+                "required": [],
+            },
+        },
+        {
+            "name": "get_watchlist",
+            "description": (
+                "The signed-in user's own watchlist and open portfolio positions, overlaid with "
+                "NAMED board states (on the buy board / on watch / lagging) and plain-word stage. "
+                "Call when the user asks about 'my watchlist', 'my positions', or 'my portfolio'. "
+                "No arguments — the user is resolved from the session. Never blends a fused risk score."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
         {
             "name": "render_inline_chart",
             "description": (
@@ -659,6 +805,881 @@ def _tool_screen_universe(params: dict, terminal_data_dir: Path) -> dict:
         }
     except Exception as exc:  # noqa: BLE001
         return {"available": False, "note": f"read error: {exc}"}
+
+
+# ---------------------------------------------------------------------------
+# Finance tool suite (W6d) — nine read-only tools over calibrated nightly
+# artifacts.  Every tool caps list sizes, cites its source path(s), and returns
+# {"available": False, "note": ...} when the artifact is missing (a null NEVER
+# crashes — pandas/pyarrow are lazy-imported so a missing dep degrades too).
+# ---------------------------------------------------------------------------
+
+def _en(value: Any) -> Any:
+    """Guard against the {en,zh}-blob trap: a dict with 'en'/'zh' keys → take ['en'].
+
+    Bilingual fields sometimes ship as {"en": "...", "zh": "..."}; the model wants the
+    English string, not the repr of the dict.  Non-dict (or dict without 'en'/'zh')
+    values pass through unchanged.
+    """
+    if isinstance(value, dict) and ("en" in value or "zh" in value):
+        return value.get("en")
+    return value
+
+
+def _scalar(value: Any) -> Any:
+    """Surface a scalar from a {v, med, cheap}-style valuation dict.
+
+    Several stockdata valuation fields (trailing_pe, price_to_book, price_to_sales)
+    ship as {"v": 40.5, "med": ..., "cheap": ...}.  The model wants the value; return
+    ['v'] when the field is such a dict, else the value unchanged.
+    """
+    if isinstance(value, dict) and "v" in value:
+        return value.get("v")
+    return value
+
+
+def _tool_get_fundamentals(params: dict, root: Path) -> dict:
+    """Read site/stockdata/{SYM}.json — profile, valuation, financials, quality, revisions.
+
+    Baked nightly by the SEO ticker-pages program.  {en,zh}-blob fields are un-nested to
+    English; description is truncated to 400 chars; missing keys are omitted, never raise.
+    """
+    symbol = _safe_symbol(params.get("symbol") or "")
+    if not symbol:
+        return {"error": "symbol required"}
+    path = root / "site" / "stockdata" / f"{symbol}.json"
+    src = f"site/stockdata/{symbol}.json"
+    if not path.exists():
+        return {"symbol": symbol, "available": False, "note": f"{src} not found (baked nightly)"}
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {"symbol": symbol, "available": False, "note": f"read error: {exc}"}
+
+    prof = d.get("profile") or {}
+    val = d.get("valuation") or {}
+    fin = d.get("financials") or {}
+    my = fin.get("multiyear") or {}
+    aq = d.get("accounting_quality") or {}
+    an = d.get("analyst") or {}
+    rev = d.get("revisions") or {}
+
+    desc = _en(prof.get("description"))
+    if isinstance(desc, str) and len(desc) > 400:
+        desc = desc[:400]
+
+    pio = my.get("piotroski") if isinstance(my.get("piotroski"), dict) else None
+    alt = my.get("altman") if isinstance(my.get("altman"), dict) else None
+
+    out: dict = {
+        "symbol": symbol,
+        "available": True,
+        "asof": d.get("asof"),
+        "profile": {
+            "name": _en(d.get("name")) or _en(prof.get("name")),
+            "sector": _en(prof.get("sector")) or _en(d.get("sector")),
+            "mktcap_bn": prof.get("mktcap_bn"),
+            "description": desc,
+        },
+        "valuation": {
+            "trailing_pe": _scalar(val.get("trailing_pe")),
+            "forward_pe": _scalar(val.get("forward_pe")),
+            "price_to_book": _scalar(val.get("price_to_book")),
+            "price_to_sales": _scalar(val.get("price_to_sales")),
+            "value_z": val.get("value_z"),
+            "forward_tier": _en(val.get("forward_tier")),
+        },
+        "financials": {
+            "gross_margin": fin.get("gross_margin"),
+            "net_margin": fin.get("net_margin"),
+            "fcf_margin": fin.get("fcf_margin"),
+            "roe": fin.get("roe"),
+            "rev_growth": fin.get("rev_growth"),
+            "ni_growth": fin.get("ni_growth"),
+            "multiyear": {
+                "years": my.get("years"),
+                "revenue": my.get("revenue"),
+                "eps": my.get("eps"),
+                "rev_cagr": my.get("rev_cagr"),
+                "eps_cagr": my.get("eps_cagr"),
+            },
+            "piotroski": ({"score": pio.get("score"), "of": pio.get("of")} if pio else None),
+            "altman": ({"z": alt.get("z"), "zone": _en(alt.get("zone"))} if alt else None),
+        },
+        "accounting_quality": {
+            "verdict": _en(aq.get("verdict")),
+            "headline": _en(aq.get("headline")),
+            "n_caution": aq.get("n_caution"),
+        },
+        "analyst": {
+            "rating": _en(an.get("rating")),
+            "target": an.get("target"),
+            "tier": _en(an.get("tier")),
+        },
+        "revisions": {
+            "breadth": rev.get("breadth"),
+            "est_chg_30d": rev.get("est_chg_30d"),
+            "net_up_30d": rev.get("net_up_30d"),
+            "n_analysts": rev.get("n_analysts"),
+        },
+        "source": src,
+    }
+    return out
+
+
+def _tool_get_earnings(params: dict, root: Path) -> dict:
+    """Read data/earnings/earnings.parquet (index=ticker). With symbol → next date +
+    surprise history; without → a 10-day forward calendar (cap 20).  Also joins the
+    one-time equitydesk earnings-call quality snapshot when a symbol is given."""
+    symbol = _safe_symbol(params.get("symbol") or "")
+    try:
+        import pandas as pd  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return {"available": False, "note": "pandas unavailable"}
+
+    path = root / "data" / "earnings" / "earnings.parquet"
+    src = "data/earnings/earnings.parquet"
+    if not path.exists():
+        return {"available": False, "note": f"{src} not found"}
+    try:
+        df = pd.read_parquet(path)
+    except Exception as exc:  # noqa: BLE001
+        return {"available": False, "note": f"read error: {exc}"}
+
+    if symbol:
+        if symbol not in df.index:
+            out = {"symbol": symbol, "available": False, "note": f"no earnings row for {symbol}", "source": src}
+        else:
+            row = df.loc[symbol]
+            if hasattr(row, "iloc") and getattr(row, "ndim", 1) > 1:
+                row = row.iloc[0]
+            surprises: list = []
+            raw = row.get("surprises_json")
+            if isinstance(raw, str) and raw.strip():
+                try:
+                    parsed = json.loads(raw)
+                    if isinstance(parsed, list):
+                        surprises = parsed
+                except Exception:  # noqa: BLE001
+                    surprises = []
+            out = {
+                "symbol": symbol,
+                "available": True,
+                "next_date": row.get("next_date"),
+                "next_time": row.get("next_time"),
+                "eps_forecast": row.get("eps_forecast"),
+                "surprises": surprises,
+                "as_of": row.get("as_of"),
+                "source": src,
+            }
+        # Earnings-call quality snapshot (one-time backfill; as_of 2026-07-17)
+        cq_path = root / "data" / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+        if symbol and cq_path.exists():
+            try:
+                edf = pd.read_parquet(cq_path)
+                sub = edf[edf["ticker"] == symbol] if "ticker" in edf.columns else edf.iloc[0:0]
+                if len(sub):
+                    r = sub.iloc[0]
+                    out["call_quality"] = {
+                        "earnings_call_sent": r.get("earnings_call_sent"),
+                        "earnings_call_perf": r.get("earnings_call_perf"),
+                        "earnings_call_combined": r.get("earnings_call_combined"),
+                        "call_date": r.get("call_date"),
+                        "note": "one-time backfill snapshot as of 2026-07-17 — not a live feed",
+                    }
+            except Exception:  # noqa: BLE001
+                pass
+        return out
+
+    # Calendar mode: rows with next_date in [today, today+10d]
+    try:
+        from datetime import date, timedelta  # noqa: PLC0415
+        today = date.today()
+        horizon = today + timedelta(days=10)
+        cal: list = []
+        for tkr, row in df.iterrows():
+            nd = row.get("next_date")
+            if not nd:
+                continue
+            try:
+                nd_d = pd.to_datetime(nd, errors="coerce")
+            except Exception:  # noqa: BLE001
+                continue
+            if nd_d is None or pd.isna(nd_d):
+                continue
+            d0 = nd_d.date()
+            if today <= d0 <= horizon:
+                cal.append({
+                    "ticker": tkr,
+                    "next_date": str(nd),
+                    "next_time": row.get("next_time"),
+                    "eps_forecast": row.get("eps_forecast"),
+                })
+        cal.sort(key=lambda x: x["next_date"])
+        return {
+            "available": True,
+            "mode": "calendar",
+            "window": "today..+10d",
+            "count": len(cal),
+            "calendar": cal[:20],
+            "source": src,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {"available": False, "note": f"calendar error: {exc}", "source": src}
+
+
+def _tool_get_insider_activity(params: dict, root: Path) -> dict:
+    """Two-lane insider read: daily Quiver feed (data/quiver/insiders.parquet, ~1d lag)
+    aggregated over 180d, and quarterly SEC aggregate (data/sec_insider/insider.parquet,
+    ~45d lag).  The two lanes are reported SEPARATELY — never blended."""
+    symbol = _safe_symbol(params.get("symbol") or "")
+    if not symbol:
+        return {"error": "symbol required"}
+    try:
+        import pandas as pd  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return {"available": False, "note": "pandas unavailable"}
+
+    note = ("Two lanes reported separately: daily feed (~1d lag) vs "
+            "quarterly SEC aggregate (~45d lag) — never blended.")
+    out: dict = {"symbol": symbol, "note": note, "source": []}
+    any_data = False
+
+    # Lane 1: daily Quiver feed
+    daily_path = root / "data" / "quiver" / "insiders.parquet"
+    if daily_path.exists():
+        try:
+            df = pd.read_parquet(daily_path)
+            sub = df[df["Ticker"] == symbol].copy()
+            if len(sub):
+                sub = sub.drop_duplicates(subset=["Ticker", "Date", "Name", "TransactionCode", "Shares"])
+                sub["_dt"] = pd.to_datetime(sub["Date"], errors="coerce")
+                cutoff = pd.Timestamp.now() - pd.Timedelta(days=180)
+                sub = sub[sub["_dt"] >= cutoff]
+            if len(sub):
+                buys = sub[sub["TransactionCode"] == "P"]
+                sells = sub[sub["TransactionCode"] == "S"]
+
+                def _usd(frame):
+                    tot = 0.0
+                    for _, rr in frame.iterrows():
+                        sh, pr = rr.get("Shares"), rr.get("PricePerShare")
+                        if pd.isna(sh) or pd.isna(pr):
+                            continue
+                        tot += float(sh) * float(pr)
+                    return round(tot, 2)
+
+                recent = []
+                for _, rr in sub.sort_values("_dt", ascending=False).head(6).iterrows():
+                    title = rr.get("officerTitle")
+                    if not title:
+                        if rr.get("isDirector"):
+                            title = "Director"
+                        elif rr.get("isTenPercentOwner"):
+                            title = "10% owner"
+                        else:
+                            title = None
+                    sh, pr = rr.get("Shares"), rr.get("PricePerShare")
+                    usd = (float(sh) * float(pr)) if (not pd.isna(sh) and not pd.isna(pr)) else None
+                    recent.append({
+                        "date": str(rr.get("Date")),
+                        "name": rr.get("Name"),
+                        "title": title,
+                        "code": rr.get("TransactionCode"),
+                        "shares": (None if pd.isna(sh) else float(sh)),
+                        "price": (None if pd.isna(pr) else float(pr)),
+                        "usd": (round(usd, 2) if usd is not None else None),
+                    })
+                out["daily_feed"] = {
+                    "n_buys": int(len(buys)),
+                    "n_sells": int(len(sells)),
+                    "buy_usd": _usd(buys),
+                    "sell_usd": _usd(sells),
+                    "recent": recent,
+                    "window_days": 180,
+                }
+                any_data = True
+            out["source"].append("data/quiver/insiders.parquet")
+        except Exception:  # noqa: BLE001
+            pass
+
+    # Lane 2: quarterly SEC aggregate
+    sec_path = root / "data" / "sec_insider" / "insider.parquet"
+    if sec_path.exists():
+        try:
+            sdf = pd.read_parquet(sec_path)
+            if symbol in sdf.index:
+                r = sdf.loc[symbol]
+                if hasattr(r, "iloc") and getattr(r, "ndim", 1) > 1:
+                    r = r.iloc[0]
+                out["quarterly_aggregate"] = {
+                    "buy_usd": r.get("buy_usd"),
+                    "sell_usd": r.get("sell_usd"),
+                    "n_buys": r.get("n_buys"),
+                    "n_sells": r.get("n_sells"),
+                    "net_usd": r.get("net_usd"),
+                    "quarter": r.get("quarter"),
+                }
+                any_data = True
+            out["source"].append("data/sec_insider/insider.parquet")
+        except Exception:  # noqa: BLE001
+            pass
+
+    if not any_data:
+        out["available"] = False
+        out.setdefault("note", note)
+        if not out.get("note", "").startswith("No insider"):
+            out["note"] = f"No insider rows for {symbol}. " + note
+        return out
+    out["available"] = True
+    return out
+
+
+def _tool_get_congress_trades(params: dict, root: Path) -> dict:
+    """Read data/quiver/congress.parquet.  With symbol → that ticker's disclosures over
+    24 months (top 15); without → the last 14 days across all tickers (top 15).
+    ExcessReturn/PriceChange are DELIBERATELY omitted (horizon-inconsistent)."""
+    symbol = _safe_symbol(params.get("symbol") or "")
+    try:
+        import pandas as pd  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return {"available": False, "note": "pandas unavailable"}
+    path = root / "data" / "quiver" / "congress.parquet"
+    src = "data/quiver/congress.parquet"
+    if not path.exists():
+        return {"available": False, "note": f"{src} not found"}
+    try:
+        df = pd.read_parquet(path)
+        df["_report_dt"] = pd.to_datetime(df.get("ReportDate"), errors="coerce")
+    except Exception as exc:  # noqa: BLE001
+        return {"available": False, "note": f"read error: {exc}"}
+
+    def _txn_kind(t: Any) -> str:
+        s = str(t or "").lower()
+        if "purchase" in s or "buy" in s:
+            return "buy"
+        if "sale" in s or "sell" in s:
+            return "sell"
+        return "other"
+
+    def _row(rr) -> dict:
+        return {
+            "representative": rr.get("Representative"),
+            "party": rr.get("Party"),
+            "house": rr.get("House"),
+            "transaction": rr.get("Transaction"),
+            "range": rr.get("Range"),
+            "transaction_date": str(rr.get("TransactionDate")) if rr.get("TransactionDate") is not None else None,
+            "report_date": str(rr.get("ReportDate")) if rr.get("ReportDate") is not None else None,
+        }
+
+    if symbol:
+        sub = df[df["Ticker"] == symbol].copy()
+        cutoff = pd.Timestamp.now() - pd.DateOffset(months=24)
+        sub = sub[sub["_report_dt"] >= cutoff]
+        sub = sub.sort_values("_report_dt", ascending=False)
+        trades = [_row(rr) for _, rr in sub.head(15).iterrows()]
+        n_buys = int(sum(1 for _, rr in sub.iterrows() if _txn_kind(rr.get("Transaction")) == "buy"))
+        n_sells = int(sum(1 for _, rr in sub.iterrows() if _txn_kind(rr.get("Transaction")) == "sell"))
+        if not len(sub):
+            return {"symbol": symbol, "available": False, "note": f"no congress trades for {symbol} in 24 months", "source": src}
+        return {
+            "symbol": symbol,
+            "available": True,
+            "trades": trades,
+            "counts": {"n_buys": n_buys, "n_sells": n_sells},
+            "window": "24 months",
+            "source": src,
+        }
+
+    # Recent-across-all mode: last 14 days
+    cutoff = pd.Timestamp.now() - pd.Timedelta(days=14)
+    sub = df[df["_report_dt"] >= cutoff].copy().sort_values("_report_dt", ascending=False)
+    trades = [dict(_row(rr), ticker=rr.get("Ticker")) for _, rr in sub.head(15).iterrows()]
+    by_party: dict = {}
+    by_chamber: dict = {}
+    for _, rr in sub.iterrows():
+        p = str(rr.get("Party") or "?")
+        c = str(rr.get("House") or "?")
+        by_party[p] = by_party.get(p, 0) + 1
+        by_chamber[c] = by_chamber.get(c, 0) + 1
+    return {
+        "available": True,
+        "mode": "recent",
+        "window": "14 days",
+        "count": int(len(sub)),
+        "trades": trades,
+        "by_party": by_party,
+        "by_chamber": by_chamber,
+        "source": src,
+    }
+
+
+def _tool_get_smart_money(params: dict, root: Path) -> dict:
+    """13F institutional holdings for a symbol from data/quiver/sec13f.parquet plus the
+    latest-quarter adds/trims from data/quiver/sec13f_changes.parquet.  Filings lag the
+    quarter end by ~45 days (stated in the note)."""
+    symbol = _safe_symbol(params.get("symbol") or "")
+    if not symbol:
+        return {"error": "symbol required"}
+    try:
+        import pandas as pd  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return {"available": False, "note": "pandas unavailable"}
+
+    note = "13F filings lag the quarter end by ~45 days."
+    out: dict = {"symbol": symbol, "note": note, "source": []}
+    any_data = False
+
+    hold_path = root / "data" / "quiver" / "sec13f.parquet"
+    if hold_path.exists():
+        try:
+            df = pd.read_parquet(hold_path)
+            sub = df[df["Ticker"] == symbol].copy()
+            if len(sub) and "ReportPeriod" in sub.columns:
+                rp = sub["ReportPeriod"].max()
+                sub = sub[sub["ReportPeriod"] == rp]
+                top = sub.sort_values("Value", ascending=False).head(8)
+                out["holdings"] = {
+                    "n_funds": int(sub["Fund"].nunique()),
+                    "total_value_usd_k": float(sub["Value"].sum()),
+                    "report_period": str(rp),
+                    "top_holders": [
+                        {"fund": r.get("Fund"), "value_usd_k": r.get("Value"), "shares": r.get("Shares")}
+                        for _, r in top.iterrows()
+                    ],
+                }
+                any_data = True
+            out["source"].append("data/quiver/sec13f.parquet")
+        except Exception:  # noqa: BLE001
+            pass
+
+    chg_path = root / "data" / "quiver" / "sec13f_changes.parquet"
+    if chg_path.exists():
+        try:
+            cdf = pd.read_parquet(chg_path)
+            csub = cdf[cdf["Ticker"] == symbol].copy()
+            if len(csub) and "ReportPeriod" in csub.columns:
+                rp = csub["ReportPeriod"].max()
+                csub = csub[csub["ReportPeriod"] == rp]
+
+                def _chg_row(r) -> dict:
+                    cp = r.get("Change_Pct")
+                    return {
+                        "fund": r.get("Fund"),
+                        "change_usd_k": r.get("Change"),
+                        "change_pct": ("new position" if (cp is None or pd.isna(cp)) else cp),
+                    }
+
+                adds = csub.sort_values("Change", ascending=False).head(5)
+                trims = csub.sort_values("Change", ascending=True).head(5)
+                out["changes"] = {
+                    "report_period": str(rp),
+                    "top_adds": [_chg_row(r) for _, r in adds.iterrows()],
+                    "top_trims": [_chg_row(r) for _, r in trims.iterrows()],
+                }
+                any_data = True
+            out["source"].append("data/quiver/sec13f_changes.parquet")
+        except Exception:  # noqa: BLE001
+            pass
+
+    if not any_data:
+        out["available"] = False
+        out["note"] = f"No 13F rows for {symbol}. " + note
+        return out
+    out["available"] = True
+    return out
+
+
+def _tool_get_stage_peers(params: dict, root: Path) -> dict:
+    """Weinstein stage + factor composite for a symbol, plus same-sector composite peers.
+    Reads data/stage_analysis/backfill/equitydesk_overview.parquet and
+    site/factordata/factors.json."""
+    symbol = _safe_symbol(params.get("symbol") or "")
+    if not symbol:
+        return {"error": "symbol required"}
+    try:
+        import pandas as pd  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return {"available": False, "note": "pandas unavailable"}
+
+    stage_map = {
+        1: "Stage 1 — basing",
+        2: "Stage 2 — advancing",
+        3: "Stage 3 — topping",
+        4: "Stage 4 — declining",
+    }
+    out: dict = {"symbol": symbol, "source": []}
+    any_data = False
+
+    stage_path = root / "data" / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+    if stage_path.exists():
+        try:
+            edf = pd.read_parquet(stage_path)
+            sub = edf[edf["ticker"] == symbol] if "ticker" in edf.columns else edf.iloc[0:0]
+            if len(sub):
+                r = sub.iloc[0]
+                sflag = r.get("stage_flag")
+                try:
+                    sflag_i = int(sflag) if sflag is not None and not pd.isna(sflag) else None
+                except Exception:  # noqa: BLE001
+                    sflag_i = None
+                out["stage"] = {
+                    "stage": stage_map.get(sflag_i) if sflag_i is not None else None,
+                    "stage_detailed": r.get("stage_detailed"),
+                    "weeks_in_stage": r.get("weeks_in_stage"),
+                    "sata_score": r.get("sata_score"),
+                    "mansfield_rs": r.get("mansfield_rs"),
+                    "industry_percentile": r.get("industry_percentile"),
+                    "as_of_date": str(r.get("as_of_date")) if r.get("as_of_date") is not None else None,
+                }
+                any_data = True
+            out["source"].append("data/stage_analysis/backfill/equitydesk_overview.parquet")
+        except Exception:  # noqa: BLE001
+            pass
+
+    factors_path = root / "site" / "factordata" / "factors.json"
+    if factors_path.exists():
+        try:
+            fj = json.loads(factors_path.read_text(encoding="utf-8"))
+            table = fj.get("table") or []
+            self_row = None
+            for row in table:
+                if str(row.get("ticker") or "").upper() == symbol:
+                    self_row = row
+                    break
+            if self_row is not None:
+                z_keys = ("value", "quality", "profitability", "payout", "low_vol", "short_interest", "sue")
+                zs = {}
+                for k in z_keys:
+                    v = self_row.get(k)
+                    if v is not None and not (isinstance(v, float) and v != v):  # skip None + NaN
+                        zs[k] = v
+                sector = self_row.get("sector")
+                out["factors"] = {
+                    "composite": self_row.get("composite"),
+                    "composite_rank": self_row.get("composite_rank"),
+                    "sector": sector,
+                    "factor_z": zs,
+                }
+                # Same-sector peers by composite desc, exclude self, top 5
+                peers = [
+                    r for r in table
+                    if r.get("sector") == sector and str(r.get("ticker") or "").upper() != symbol
+                    and r.get("composite") is not None and not (isinstance(r.get("composite"), float) and r.get("composite") != r.get("composite"))
+                ]
+                peers.sort(key=lambda r: r.get("composite"), reverse=True)
+                out["peers"] = [
+                    {"ticker": r.get("ticker"), "name": r.get("name"), "composite_rank": r.get("composite_rank")}
+                    for r in peers[:5]
+                ]
+                any_data = True
+            out["source"].append("site/factordata/factors.json")
+        except Exception:  # noqa: BLE001
+            pass
+
+    if not any_data:
+        out["available"] = False
+        out["note"] = f"no stage or factor data for {symbol}"
+        return out
+    out["available"] = True
+    return out
+
+
+def _tool_get_movers(params: dict, root: Path) -> dict:
+    """The engine's calibrated boards (ignition/standouts/alerts/mag7 regime) as of the
+    last close — NOT raw intraday % movers.  Each section is read independently: a missing
+    artifact simply drops that section."""
+    out: dict = {
+        "note": "These are the engine's calibrated boards (as of last close), not raw intraday % movers.",
+        "source": [],
+    }
+
+    # 1. Impulse / ignition
+    p = root / "site" / "factordata" / "impulse.json"
+    if p.exists():
+        try:
+            imp = json.loads(p.read_text(encoding="utf-8"))
+            buy = imp.get("buy") or []
+            out["ignition"] = {
+                "as_of": imp.get("as_of"),
+                "buy": [
+                    {
+                        "ticker": r.get("ticker"),
+                        "name": _en(r.get("name")),
+                        "impulse_score": r.get("impulse_score"),
+                        "state": r.get("state"),
+                        "rvol": r.get("rvol"),
+                        "note": _en(r.get("note")),
+                    }
+                    for r in buy[:8]
+                ],
+            }
+            out["source"].append("site/factordata/impulse.json")
+        except Exception:  # noqa: BLE001
+            pass
+
+    # 2. US standouts
+    p = root / "site" / "factordata" / "us_standouts.json"
+    if p.exists():
+        try:
+            so = json.loads(p.read_text(encoding="utf-8"))
+            buy = so.get("buy") or []
+            lag = so.get("laggards") or []
+            out["standouts"] = {
+                "as_of": so.get("as_of"),
+                "gate_go": so.get("gate_go"),
+                "buy_board": [
+                    {
+                        "ticker": r.get("ticker"),
+                        "name": _en(r.get("name")),
+                        "label": r.get("label"),
+                        "urgency": r.get("urgency"),
+                        "sector": _en(r.get("sector")),
+                    }
+                    for r in buy[:10]
+                ],
+                "laggards": [
+                    {"ticker": r.get("ticker"), "name": _en(r.get("name"))}
+                    for r in lag[:5]
+                ],
+                "lane_counts": so.get("lane_counts"),
+            }
+            out["source"].append("site/factordata/us_standouts.json")
+        except Exception:  # noqa: BLE001
+            pass
+
+    # 3. Alerts triage
+    p = root / "site" / "factordata" / "alerts_triage.json"
+    if p.exists():
+        try:
+            al = json.loads(p.read_text(encoding="utf-8"))
+            summ = al.get("summary") or {}
+            board = al.get("board_read") or {}
+            out["alerts"] = {
+                "asof": al.get("asof"),
+                "summary": {
+                    "total": summ.get("total"),
+                    "critical": summ.get("critical"),
+                    "actionable": summ.get("actionable"),
+                },
+                "board_stance": _en(board.get("stance")),
+            }
+            out["source"].append("site/factordata/alerts_triage.json")
+        except Exception:  # noqa: BLE001
+            pass
+
+    # 4. Mag7 regime
+    p = root / "data" / "mag7_regime" / "latest.json"
+    if p.exists():
+        try:
+            m = json.loads(p.read_text(encoding="utf-8"))
+            run = m.get("run") or {}
+            members = m.get("members") or []
+            leaders = sorted(
+                [mm for mm in members if isinstance(mm, dict) and mm.get("r10") is not None],
+                key=lambda mm: mm.get("r10"), reverse=True,
+            )[:3]
+            out["mag7"] = {
+                "as_of": m.get("as_of"),
+                "trend_state": m.get("trend_state"),
+                "run": {"sessions": run.get("sessions"), "cw_ret": run.get("cw_ret"), "spy_ret": run.get("spy_ret")},
+                "leaders": [{"sym": mm.get("sym"), "r10": mm.get("r10"), "w": mm.get("w")} for mm in leaders],
+            }
+            out["source"].append("data/mag7_regime/latest.json")
+        except Exception:  # noqa: BLE001
+            pass
+
+    if not out["source"]:
+        return {"available": False, "note": "no board artifacts available"}
+    out["available"] = True
+    return out
+
+
+def _tool_get_house_view(params: dict, root: Path) -> dict:
+    """Prophet trade plans + the mandatory honesty block (closed sample far too small to
+    cite a win rate).  Also the separate stock-desk track record.  Reads
+    site/prophet/index.json, data/prophet/ledger.jsonl, data/stock_desk/track_record.json."""
+    symbol = _safe_symbol(params.get("symbol") or "")
+    idx_path = root / "site" / "prophet" / "index.json"
+    src = "site/prophet/index.json"
+    out: dict = {"source": []}
+    any_data = False
+
+    gate_go = None
+    if idx_path.exists():
+        try:
+            idx = json.loads(idx_path.read_text(encoding="utf-8"))
+            gate_go = idx.get("gate_go")
+            plans = idx.get("plans") or []
+            if symbol:
+                plans = [p for p in plans if str(p.get("asset") or "").upper() == symbol]
+            plans = sorted(plans, key=lambda p: (p.get("_conviction_score") or 0), reverse=True)[:8]
+            out["plans"] = [
+                {
+                    "id": p.get("id"),
+                    "asset": p.get("asset"),
+                    "direction": p.get("direction"),
+                    "phase": p.get("phase"),
+                    "entry": p.get("entry"),
+                    "invalidation": p.get("invalidation"),
+                    "targets": p.get("targets"),
+                    "what_to_do_now": p.get("what_to_do_now"),
+                    "conviction_score": p.get("_conviction_score"),
+                    "signal_date": p.get("_signal_date") or p.get("signal_date"),
+                }
+                for p in plans
+            ]
+            out["source"].append(src)
+            any_data = True
+        except Exception:  # noqa: BLE001
+            pass
+
+    # Honesty block (mandatory): closed sample count
+    closed_n = 0
+    ledger_path = root / "data" / "prophet" / "ledger.jsonl"
+    if ledger_path.exists():
+        try:
+            closed_n = sum(
+                1 for line in ledger_path.read_text(encoding="utf-8").splitlines()
+                if line.strip() and not line.strip().startswith("#")
+            )
+        except Exception:  # noqa: BLE001
+            closed_n = 0
+    out["honesty"] = {
+        "closed_n": closed_n,
+        "gate_go": gate_go,
+        "note": (
+            f"Program is young — closed sample (n={closed_n}) is far too small to cite a win rate. "
+            f"gate_go={gate_go}; plans are display-tier research context."
+        ),
+    }
+
+    # Stock-desk track record lane
+    td_path = root / "data" / "stock_desk" / "track_record.json"
+    if td_path.exists():
+        try:
+            td = json.loads(td_path.read_text(encoding="utf-8"))
+            overall = td.get("overall") or {}
+            scored_total = td.get("scored_total")
+            out["stock_desk_track_record"] = {
+                "scored_total": scored_total,
+                "hit_rate": overall.get("hit_rate"),
+                "dir_accuracy": overall.get("dir_accuracy"),
+                "as_of": td.get("as_of"),
+                "note": f"separate stock-desk lane, n={scored_total}",
+            }
+            out["source"].append("data/stock_desk/track_record.json")
+            any_data = True
+        except Exception:  # noqa: BLE001
+            pass
+
+    out["available"] = any_data
+    if not any_data:
+        out["note"] = "no house-view artifacts available"
+    return out
+
+
+def _tool_get_watchlist(params: dict, root: Path, user_id: str = "") -> dict:
+    """The signed-in user's watchlist + open portfolio positions, overlaid with NAMED
+    board states (buy/watch/lagging) and plain-word stage — NO fused per-position risk
+    numbers (PRD-R2: named states + lane counts ONLY).  Reads Supabase via _sb_get."""
+    if not user_id:
+        return {"available": False, "note": "no user_id — sign in to load your watchlist"}
+    import urllib.parse as _up  # noqa: PLC0415
+
+    uid = _up.quote(str(user_id))
+    # Table/column names mirror site/watchstore.js exactly.
+    lists = _sb_get(f"watchlists?user_id=eq.{uid}&select=id,name,position&order=position")
+    if lists is None:
+        return {"available": False, "note": "watchlist store unreachable"}
+
+    list_ids = [str(r.get("id")) for r in lists if isinstance(r, dict) and r.get("id") is not None]
+    symbols: list[str] = []
+    if list_ids:
+        id_filter = ",".join(list_ids)
+        rows = _sb_get(f"watchlist_symbols?watchlist_id=in.({id_filter})&select=symbol,position&order=position")
+        if rows:
+            seen: set = set()
+            for r in rows:
+                s = r.get("symbol") if isinstance(r, dict) else None
+                if s and s not in seen:
+                    seen.add(s)
+                    symbols.append(s)
+
+    # Open portfolio positions (PRD-R2: NO fused per-position risk numbers)
+    positions: list[dict] = []
+    pos_rows = _sb_get(f"portfolio_positions?user_id=eq.{uid}&status=eq.open&select=ticker,shares,entry_price,entry_date")
+    if pos_rows:
+        for r in pos_rows[:30]:
+            if not isinstance(r, dict):
+                continue
+            positions.append({
+                "ticker": r.get("ticker"),
+                "shares": r.get("shares"),
+                "entry": r.get("entry_price"),
+            })
+
+    # Overlay: named board state + plain-word stage per symbol (cap 30)
+    board_state: dict = {}
+    try:
+        so_path = root / "site" / "factordata" / "us_standouts.json"
+        if so_path.exists():
+            so = json.loads(so_path.read_text(encoding="utf-8"))
+            for r in (so.get("buy") or []):
+                if r.get("ticker"):
+                    board_state[str(r["ticker"]).upper()] = "on the buy board"
+            for r in (so.get("watch") or []):
+                if r.get("ticker"):
+                    board_state.setdefault(str(r["ticker"]).upper(), "on watch")
+            for r in (so.get("laggards") or []):
+                if r.get("ticker"):
+                    board_state.setdefault(str(r["ticker"]).upper(), "lagging")
+    except Exception:  # noqa: BLE001
+        pass
+
+    stage_by_sym: dict = {}
+    watch_syms = [_safe_symbol(s) for s in symbols[:30] if s]
+    if watch_syms:
+        try:
+            import pandas as pd  # noqa: PLC0415
+            eq_path = root / "data" / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+            if eq_path.exists():
+                edf = pd.read_parquet(eq_path)
+                stage_map = {1: "basing", 2: "advancing", 3: "topping", 4: "declining"}
+                want = set(watch_syms)
+                if "ticker" in edf.columns:
+                    hit = edf[edf["ticker"].isin(want)]
+                    for _, r in hit.iterrows():
+                        sf = r.get("stage_flag")
+                        try:
+                            sfi = int(sf) if sf is not None and not pd.isna(sf) else None
+                        except Exception:  # noqa: BLE001
+                            sfi = None
+                        stage_by_sym[str(r.get("ticker")).upper()] = stage_map.get(sfi)
+        except Exception:  # noqa: BLE001
+            pass
+
+    watch_overlay = []
+    for s in symbols[:30]:
+        su = str(s).upper()
+        watch_overlay.append({
+            "symbol": s,
+            "board_state": board_state.get(su),
+            "stage": stage_by_sym.get(su),
+        })
+
+    return {
+        "available": True,
+        "symbols": symbols,
+        "watchlist": watch_overlay,
+        "positions": positions,
+        "counts": {"n_symbols": len(symbols), "n_open_positions": len(positions)},
+        "note": ("Named states + lane counts only — no fused per-position risk score "
+                 "(PRD-R2). Board state is as of last close; stage is weekly."),
+        "source": ["supabase:watchlists", "supabase:watchlist_symbols",
+                   "supabase:portfolio_positions", "site/factordata/us_standouts.json"],
+    }
 
 
 def _tool_set_chart_symbol(params: dict) -> dict:
@@ -860,11 +1881,13 @@ def _dispatch_brain_tool(
     root: Path,
     terminal_data_dir: Path,
     terminal_hub_url: str,
+    user_id: str = "",
 ) -> dict:
     """Dispatch a brain gateway tool call.
 
     Brain-only tools are handled here; ask_brain read tools are delegated.
     Anything not in _BRAIN_TOOLS is refused and logged (A7 idiom).
+    user_id is threaded through so get_watchlist can scope to the signed-in user.
     """
     if tool_name not in _BRAIN_TOOLS:
         log.warning("brain_gateway: REFUSED tool %r (not in allowlist)", tool_name)
@@ -881,6 +1904,25 @@ def _dispatch_brain_tool(
             return _tool_screen_universe(tool_params, terminal_data_dir)
         if tool_name == "annotate_chart":
             return _tool_annotate_chart(tool_params)
+        # Finance tool suite (W6d)
+        if tool_name == "get_fundamentals":
+            return _tool_get_fundamentals(tool_params, root)
+        if tool_name == "get_earnings":
+            return _tool_get_earnings(tool_params, root)
+        if tool_name == "get_insider_activity":
+            return _tool_get_insider_activity(tool_params, root)
+        if tool_name == "get_congress_trades":
+            return _tool_get_congress_trades(tool_params, root)
+        if tool_name == "get_smart_money":
+            return _tool_get_smart_money(tool_params, root)
+        if tool_name == "get_stage_peers":
+            return _tool_get_stage_peers(tool_params, root)
+        if tool_name == "get_movers":
+            return _tool_get_movers(tool_params, root)
+        if tool_name == "get_house_view":
+            return _tool_get_house_view(tool_params, root)
+        if tool_name == "get_watchlist":
+            return _tool_get_watchlist(tool_params, root, user_id=user_id)
         if tool_name == "render_inline_chart":
             return _tool_render_inline_chart(tool_params, root)
         # Chart-command bus (W6b)
@@ -1576,6 +2618,7 @@ def _run_brain_loop(
     mode: str = "chat",
     image_blocks: list[dict] | None = None,
     providers: list[dict] | None = None,
+    user_id: str = "",
 ) -> tuple[str, list[dict], list[dict], list[dict], dict, list[dict]]:
     """Run the bounded tool loop.
 
@@ -1595,6 +2638,8 @@ def _run_brain_loop(
     safe_sym = _safe_symbol(raw_sym) if raw_sym else ""
     # page: allow alnum, space, hyphen only; cap at 64 chars
     safe_page = re.sub(r"[^A-Za-z0-9 \-]", "", raw_page).strip()[:64]
+    # panel: the on-page sub-view (e.g. a specific board/dialog); lowercase slug, cap 40
+    safe_panel = re.sub(r"[^a-z0-9\-]", "", str((context or {}).get("panel") or "").lower())[:40]
 
     # Chart-command tools gated to terminal page
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page)
@@ -1607,6 +2652,8 @@ def _run_brain_loop(
         hints.append(f"symbol={safe_sym}")
     if safe_page:
         hints.append(f"page={safe_page}")
+    if safe_panel:
+        hints.append(f"panel={safe_panel}")
     if hints:
         user_content = f"[Context: {', '.join(hints)}]\n\n{message}"
     # Prepend the current calibrated-state digest so the model always answers from real
@@ -1682,7 +2729,7 @@ def _run_brain_loop(
             tool_params = block.input or {}
             tool_id = block.id
 
-            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url)
+            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id)
 
             # Collect annotate_chart payloads for the response
             if tool_name == "annotate_chart" and result.get("client_executed"):
@@ -1704,7 +2751,7 @@ def _run_brain_loop(
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": tool_id,
-                "content": json.dumps(result, default=str),
+                "content": json.dumps(_json_safe(result), default=str),
             })
 
         tool_call_count += 1
@@ -1751,10 +2798,12 @@ def _run_brain_loop_stream(
     mode: str = "chat",
     image_blocks: list[dict] | None = None,
     providers: list[dict] | None = None,
+    user_id: str = "",
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
-    Event sequence: meta (first) → tool*/annotate*/command* (0+) → delta → done (last).
+    Event sequence: meta (first) → tool*/annotate*/command*/chart* (0+) → delta →
+    suggest (0/1, W6d) → done (last).
     Filter must run on full answer before any delta bytes are emitted (same constraint
     as ask_brain: advice cannot be un-sent once on the wire).
     usage_out: optional single-element list; if provided, usage_dict is placed in [0]
@@ -1777,6 +2826,8 @@ def _run_brain_loop_stream(
     raw_page = (context or {}).get("page") or ""
     safe_sym = _safe_symbol(raw_sym) if raw_sym else ""
     safe_page = re.sub(r"[^A-Za-z0-9 \-]", "", raw_page).strip()[:64]
+    # panel: the on-page sub-view (e.g. a specific board/dialog); lowercase slug, cap 40
+    safe_panel = re.sub(r"[^a-z0-9\-]", "", str((context or {}).get("panel") or "").lower())[:40]
 
     # Chart-command tools gated to terminal page; research mode system prompt
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page)
@@ -1788,6 +2839,8 @@ def _run_brain_loop_stream(
         hints.append(f"symbol={safe_sym}")
     if safe_page:
         hints.append(f"page={safe_page}")
+    if safe_panel:
+        hints.append(f"panel={safe_panel}")
     if hints:
         user_content = f"[Context: {', '.join(hints)}]\n\n{message}"
     # Prepend the current calibrated-state digest so the model always answers from real
@@ -1859,7 +2912,7 @@ def _run_brain_loop_stream(
             # Emit tool progress event
             yield f"data: {json.dumps({'type': 'tool', 'name': tool_name})}\n\n"
 
-            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url)
+            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id)
 
             if tool_name == "annotate_chart" and result.get("client_executed"):
                 annotations.append(result)
@@ -1886,7 +2939,7 @@ def _run_brain_loop_stream(
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": tool_id,
-                "content": json.dumps(result, default=str),
+                "content": json.dumps(_json_safe(result), default=str),
             })
 
         tool_call_count += 1
@@ -1962,9 +3015,16 @@ def _run_brain_loop_stream(
 
     citations = _extract_citations_brain(messages)
     filtered_answer, was_filtered = _post_filter_advice(full_answer, citations)
+    # Split off the [NEXT] suggestion block (W6d): the delta carries only the CLEAN text;
+    # suggestions are emitted as their own event AFTER the delta and BEFORE done.
+    filtered_answer, suggestions = _split_suggestions(filtered_answer)
 
     # Emit delta (full answer, buffered)
     yield f"data: {json.dumps({'type': 'delta', 'text': filtered_answer})}\n\n"
+
+    # Emit suggestions (W6d) — between delta and done, only when non-empty
+    if suggestions:
+        yield f"data: {json.dumps({'type': 'suggest', 'items': suggestions})}\n\n"
 
     # Emit done
     yield f"data: {json.dumps({'type': 'done', 'citations': citations, 'quota': meta_event.get('quota', {}), 'usage': usage_dict, 'filtered': was_filtered, 'degraded': False, 'is_context_only': True})}\n\n"
@@ -1976,6 +3036,64 @@ def _run_brain_loop_stream(
     # assistant turn (the streamed text lives only on the wire otherwise).
     if answer_out is not None:
         answer_out.append(filtered_answer)
+
+
+def _json_safe(obj: Any) -> Any:
+    """Recursively scrub a tool result for JSON: NaN/NaT → None, numpy scalars →
+    native Python. Prevents bare `NaN` tokens (invalid JSON) and quoted numpy ints
+    from reaching the model in tool_result content — the pandas-heavy W6d tools
+    would otherwise emit them via json.dumps(default=str)."""
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, float):
+        return obj if obj == obj and obj not in (float("inf"), float("-inf")) else None
+    item = getattr(obj, "item", None)  # numpy scalar → native (np.float64/int64/bool_)
+    if item is not None and not isinstance(obj, (str, bytes)):
+        try:
+            return _json_safe(item())
+        except Exception:  # noqa: BLE001
+            return str(obj)
+    return obj
+
+
+# ---------------------------------------------------------------------------
+# [NEXT] suggestions contract (W6d) — split follow-up buttons off the reply
+# ---------------------------------------------------------------------------
+
+def _split_suggestions(text: str) -> tuple[str, list[str]]:
+    """Split a reply into (clean_text, suggestions).
+
+    Finds the LAST line that is exactly '[NEXT]' (stripped).  clean_text is everything
+    before it (rstripped); suggestions are the non-empty lines after it, each stripped of
+    leading bullets/numbers ('-', '•', '*', '1.', '1)'), capped at 3 and truncated to 140
+    chars.  No marker → (text, []).
+    """
+    if not text:
+        return text, []
+    lines = text.split("\n")
+    marker_idx = -1
+    for i, ln in enumerate(lines):
+        if ln.strip() == "[NEXT]":
+            marker_idx = i  # keep scanning → LAST occurrence wins
+    if marker_idx < 0:
+        return text, []
+
+    clean_text = "\n".join(lines[:marker_idx]).rstrip()
+    candidates: list[str] = []
+    for ln in lines[marker_idx + 1:]:
+        s = ln.strip()
+        if not s:
+            continue
+        # Strip a leading bullet or ordinal marker: '-', '•', '*', '1.', '1)'
+        s = re.sub(r"^\s*(?:[-•*]|\d+[.)])\s*", "", s).strip()
+        if not s:
+            continue
+        candidates.append(s[:140])
+        if len(candidates) >= 3:
+            break
+    return clean_text, candidates
 
 
 # ---------------------------------------------------------------------------
@@ -2006,8 +3124,8 @@ def chat(
           normal Pro turn — no new quota bucket).
 
     Response shape:
-        ok, reply, citations, annotations?, commands?, charts?, symbol?, lane, model, thread_id,
-        quota: {lane, remaining, limit, period}, filtered, degraded, is_context_only
+        ok, reply, citations, annotations?, commands?, charts?, suggestions?, symbol?, lane, model,
+        thread_id, quota: {lane, remaining, limit, period}, filtered, degraded, is_context_only
     """
     from engine.neuralweb.ask_brain import _post_filter_advice  # noqa: PLC0415
     from lib import ai_costs as _ac  # noqa: PLC0415
@@ -2155,6 +3273,7 @@ def chat(
             root, terminal_data_dir, terminal_hub_url,
             client, model, max_tokens, tool_budget,
             mode=mode, image_blocks=image_blocks, providers=turn_providers,
+            user_id=user_id,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: loop failed (%s) — degraded reply", exc)
@@ -2171,10 +3290,12 @@ def chat(
             "is_context_only": True,
         }
 
-    # 7. Post-filter
+    # 7. Post-filter, then split off the [NEXT] suggestion block (W6d). The CLEAN text is
+    #    what we persist and return as the reply; suggestions become interface buttons.
     answer_text, was_filtered = _post_filter_advice(answer_text, citations)
+    answer_text, suggestions = _split_suggestions(answer_text)
 
-    # 8. Thread message persistence (best-effort)
+    # 8. Thread message persistence (best-effort) — persist the CLEAN text (no [NEXT] block)
     if effective_thread_id:
         _append_message(effective_thread_id, "user", clean_msg + ("\n\n[image attached]" if image_blocks else ""))
         _append_message(effective_thread_id, "assistant", answer_text)
@@ -2225,6 +3346,9 @@ def chat(
     # Inline charts (W6c): include chart payloads in non-stream response
     if charts:
         result["charts"] = charts
+    # Follow-up suggestions (W6d): omit the key entirely when there are none
+    if suggestions:
+        result["suggestions"] = suggestions
     if context and context.get("symbol"):
         # Reflect the SANITIZED symbol, never the raw client input (latent-hazard hygiene).
         result["symbol"] = _safe_symbol(str(context["symbol"]))
@@ -2256,6 +3380,7 @@ def chat_stream(
         {"type":"command","action":...}  (chart-command bus W6b, 0+)
         {"type":"chart","ticker":...,"timeframe":...,"svg":...}  (inline chart W6c, 0+)
         {"type":"delta","text":...}      (buffered full answer, after tool/annotate/command/chart)
+        {"type":"suggest","items":[...]} (follow-up buttons W6d, 0/1, after delta, before done)
         {"type":"done",...}              (always last)
 
     mode: 'chat' (default) or 'research' (W6b Deep Research).
@@ -2389,6 +3514,7 @@ def chat_stream(
             usage_out,
             answer_out,
             mode=mode, image_blocks=image_blocks, providers=turn_providers,
+            user_id=user_id,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: stream loop failed (%s)", exc)
