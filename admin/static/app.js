@@ -2919,6 +2919,7 @@ const MKT_DEPT_ICONS = {
   ecosystem:     "🤝",
   growth_science:"🔬",
   trust_office:  "🛡️",
+  seo_organics:  "🔍",
 };
 
 function mktLifecyclePill(lc) { return `<span class="statpill ${MKT_LIFECYCLE_CLS[lc] || "s-mut"}">${esc(lc || "chartered")}</span>`; }

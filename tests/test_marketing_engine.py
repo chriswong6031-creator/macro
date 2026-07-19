@@ -2,7 +2,7 @@
 
 Spec §1 test list:
 - state builds without error
-- 10 departments chartered with required charter fields
+- 11 departments chartered with required charter fields
 - authority ladder has G0..G7
 - opportunity scoring monotonic in expected_value
 - campaign distinctness flags identical variants and passes distinct ones
@@ -62,12 +62,12 @@ def test_build_state_no_error_key():
 
 
 # ---------------------------------------------------------------------------
-# 2. 10 departments chartered with required charter fields
+# 2. 11 departments chartered with required charter fields
 # ---------------------------------------------------------------------------
 
 def test_ten_departments():
     from engine.marketing.departments import DEPARTMENT_CHARTERS
-    assert len(DEPARTMENT_CHARTERS) == 10
+    assert len(DEPARTMENT_CHARTERS) == 11
 
 
 def test_department_required_fields():
@@ -103,6 +103,7 @@ def test_department_short_names():
         "ecosystem": "Allies",
         "growth_science": "Lab",
         "trust_office": "Sentinel",
+        "seo_organics": "Beacon",
     }
     for dept_id, expected_name in expected.items():
         dept = _DEPT_BY_ID[dept_id]
@@ -125,6 +126,7 @@ def test_department_icons():
         "ecosystem": "allies",
         "growth_science": "lab",
         "trust_office": "sentinel",
+        "seo_organics": "beacon",
     }
     for dept_id, expected_icon in expected_icons.items():
         dept = _DEPT_BY_ID[dept_id]
