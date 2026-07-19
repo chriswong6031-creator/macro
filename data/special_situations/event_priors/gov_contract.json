@@ -2,7 +2,7 @@
   "event_type": "gov_contract",
   "schema": "ss_event_priors.v2",
   "is_context_only": true,
-  "generated_at": "2026-07-12 10:00 UTC",
+  "generated_at": "2026-07-19 09:52 UTC",
   "insufficient": true,
   "null_reason": "No awardee-ticker mapping available: sam_gov data is theme-level (keyed by basket_id, no individual company tickers). Gov-contract event study deferred to W6 data-gap pass.",
   "priors": {}

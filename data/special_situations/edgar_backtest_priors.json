@@ -1,171 +1,162 @@
 {
   "schema": "ss_edgar_backtest_priors.v1",
   "is_context_only": true,
-  "generated_at": "2026-07-12 10:00 UTC",
-  "n_situations": 1876,
+  "generated_at": "2026-07-19 09:52 UTC",
+  "n_situations": 1675,
   "entry": "first close on/after the EDGAR filing date",
   "by_category_stage": {
     "Capital Returns \u00b7 announced": {
       "category": "Capital Returns",
       "stage": "announced",
-      "n": 383,
-      "med_ret_20d_pct": 0.9,
-      "win_20d_pct": 53.0,
-      "med_excess_20d_pct": -1.5,
-      "med_ret_60d_pct": 5.4
+      "n": 274,
+      "med_ret_20d_pct": -0.8,
+      "win_20d_pct": 48.0,
+      "med_excess_20d_pct": -1.9,
+      "med_ret_60d_pct": -0.3
     },
     "Acquisitions \u00b7 announced": {
       "category": "Acquisitions",
       "stage": "announced",
-      "n": 191,
-      "med_ret_20d_pct": 0.1,
-      "win_20d_pct": 50.0,
-      "med_excess_20d_pct": -2.7,
-      "med_ret_60d_pct": -0.8
+      "n": 205,
+      "med_ret_20d_pct": -0.1,
+      "win_20d_pct": 49.0,
+      "med_excess_20d_pct": -3.4,
+      "med_ret_60d_pct": -0.3
     },
     "Divestitures \u00b7 announced": {
       "category": "Divestitures",
       "stage": "announced",
-      "n": 168,
-      "med_ret_20d_pct": -3.6,
+      "n": 159,
+      "med_ret_20d_pct": -3.1,
       "win_20d_pct": 40.0,
-      "med_excess_20d_pct": -4.1,
-      "med_ret_60d_pct": -6.1
+      "med_excess_20d_pct": -3.4,
+      "med_ret_60d_pct": -6.4
     },
     "Acquisitions \u00b7 closed": {
       "category": "Acquisitions",
       "stage": "closed",
-      "n": 145,
-      "med_ret_20d_pct": -0.9,
-      "win_20d_pct": 47.0,
-      "med_excess_20d_pct": -2.4,
-      "med_ret_60d_pct": 1.2
+      "n": 144,
+      "med_ret_20d_pct": -0.1,
+      "win_20d_pct": 50.0,
+      "med_excess_20d_pct": -2.2,
+      "med_ret_60d_pct": 1.7
     },
     "Other \u00b7 announced": {
       "category": "Other",
       "stage": "announced",
-      "n": 135,
-      "med_ret_20d_pct": 0.0,
+      "n": 140,
+      "med_ret_20d_pct": -0.1,
       "win_20d_pct": 50.0,
-      "med_excess_20d_pct": -2.3,
+      "med_excess_20d_pct": -2.8,
       "med_ret_60d_pct": null
     },
     "Delistings \u00b7 notice": {
       "category": "Delistings",
       "stage": "notice",
-      "n": 108,
-      "med_ret_20d_pct": -3.4,
-      "win_20d_pct": 45.0,
-      "med_excess_20d_pct": -2.0,
-      "med_ret_60d_pct": -17.5
-    },
-    "Restructuring \u00b7 announced": {
-      "category": "Restructuring",
-      "stage": "announced",
-      "n": 73,
-      "med_ret_20d_pct": -3.0,
-      "win_20d_pct": 39.0,
-      "med_excess_20d_pct": -7.5,
-      "med_ret_60d_pct": -6.5
-    },
-    "Issuer Tenders \u00b7 live": {
-      "category": "Issuer Tenders",
-      "stage": "live",
-      "n": 65,
-      "med_ret_20d_pct": 3.6,
-      "win_20d_pct": 62.0,
-      "med_excess_20d_pct": 0.9,
-      "med_ret_60d_pct": 74.8
+      "n": 90,
+      "med_ret_20d_pct": -1.5,
+      "win_20d_pct": 48.0,
+      "med_excess_20d_pct": -1.2,
+      "med_ret_60d_pct": -16.8
     },
     "Strategic Reviews \u00b7 initiated": {
       "category": "Strategic Reviews",
       "stage": "initiated",
-      "n": 64,
-      "med_ret_20d_pct": -6.5,
-      "win_20d_pct": 33.0,
-      "med_excess_20d_pct": -6.4,
-      "med_ret_60d_pct": -9.6
+      "n": 59,
+      "med_ret_20d_pct": -7.7,
+      "win_20d_pct": 29.0,
+      "med_excess_20d_pct": -6.8,
+      "med_ret_60d_pct": -10.1
     },
     "Divestitures \u00b7 closed": {
       "category": "Divestitures",
       "stage": "closed",
-      "n": 56,
-      "med_ret_20d_pct": 4.6,
-      "win_20d_pct": 67.0,
-      "med_excess_20d_pct": 3.5,
-      "med_ret_60d_pct": 5.3
+      "n": 59,
+      "med_ret_20d_pct": 4.9,
+      "win_20d_pct": 66.0,
+      "med_excess_20d_pct": 3.7,
+      "med_ret_60d_pct": 4.9
     },
-    "Spin-Offs \u00b7 announced": {
-      "category": "Spin-Offs",
+    "Issuer Tenders \u00b7 live": {
+      "category": "Issuer Tenders",
+      "stage": "live",
+      "n": 57,
+      "med_ret_20d_pct": 1.7,
+      "win_20d_pct": 62.0,
+      "med_excess_20d_pct": 0.5,
+      "med_ret_60d_pct": 18.4
+    },
+    "Restructuring \u00b7 announced": {
+      "category": "Restructuring",
       "stage": "announced",
-      "n": 56,
+      "n": 52,
       "med_ret_20d_pct": -2.2,
-      "win_20d_pct": 42.0,
-      "med_excess_20d_pct": -2.6,
-      "med_ret_60d_pct": -0.5
-    },
-    "Spin-Offs \u00b7 closed": {
-      "category": "Spin-Offs",
-      "stage": "closed",
-      "n": 49,
-      "med_ret_20d_pct": -1.9,
-      "win_20d_pct": 37.0,
-      "med_excess_20d_pct": -4.3,
-      "med_ret_60d_pct": 1.4
+      "win_20d_pct": 39.0,
+      "med_excess_20d_pct": -8.3,
+      "med_ret_60d_pct": -0.3
     },
     "Activist Campaigns \u00b7 proxy-fight": {
       "category": "Activist Campaigns",
       "stage": "proxy-fight",
-      "n": 48,
-      "med_ret_20d_pct": 0.8,
+      "n": 46,
+      "med_ret_20d_pct": 1.2,
       "win_20d_pct": 58.0,
       "med_excess_20d_pct": -3.1,
-      "med_ret_60d_pct": 7.8
+      "med_ret_60d_pct": 5.3
+    },
+    "Spin-Offs \u00b7 closed": {
+      "category": "Spin-Offs",
+      "stage": "closed",
+      "n": 46,
+      "med_ret_20d_pct": -2.0,
+      "win_20d_pct": 32.0,
+      "med_excess_20d_pct": -4.5,
+      "med_ret_60d_pct": 1.4
+    },
+    "Spin-Offs \u00b7 announced": {
+      "category": "Spin-Offs",
+      "stage": "announced",
+      "n": 44,
+      "med_ret_20d_pct": -3.1,
+      "win_20d_pct": 43.0,
+      "med_excess_20d_pct": -2.1,
+      "med_ret_60d_pct": -2.4
     },
     "Acquisitions \u00b7 registered": {
       "category": "Acquisitions",
       "stage": "registered",
-      "n": 38,
-      "med_ret_20d_pct": 2.5,
-      "win_20d_pct": 56.0,
-      "med_excess_20d_pct": -2.2,
-      "med_ret_60d_pct": 19.9
-    },
-    "Acquisitions \u00b7 vote-scheduled": {
-      "category": "Acquisitions",
-      "stage": "vote-scheduled",
       "n": 33,
-      "med_ret_20d_pct": 0.4,
-      "win_20d_pct": 58.0,
-      "med_excess_20d_pct": -5.1,
-      "med_ret_60d_pct": -3.4
+      "med_ret_20d_pct": 2.7,
+      "win_20d_pct": 68.0,
+      "med_excess_20d_pct": -1.4,
+      "med_ret_60d_pct": 10.1
     },
     "Delistings \u00b7 live": {
       "category": "Delistings",
       "stage": "live",
-      "n": 32,
-      "med_ret_20d_pct": -4.3,
-      "win_20d_pct": 17.0,
-      "med_excess_20d_pct": -2.8,
-      "med_ret_60d_pct": -5.3
+      "n": 31,
+      "med_ret_20d_pct": -2.6,
+      "win_20d_pct": 25.0,
+      "med_excess_20d_pct": -1.8,
+      "med_ret_60d_pct": -6.8
+    },
+    "Acquisitions \u00b7 vote-scheduled": {
+      "category": "Acquisitions",
+      "stage": "vote-scheduled",
+      "n": 30,
+      "med_ret_20d_pct": -0.2,
+      "win_20d_pct": 44.0,
+      "med_excess_20d_pct": -5.0,
+      "med_ret_60d_pct": -3.4
     },
     "Tender Offers \u00b7 live": {
       "category": "Tender Offers",
       "stage": "live",
-      "n": 31,
-      "med_ret_20d_pct": -8.7,
-      "win_20d_pct": 32.0,
-      "med_excess_20d_pct": -7.2,
-      "med_ret_60d_pct": -6.4
-    },
-    "Acquisitions \u00b7 terminated": {
-      "category": "Acquisitions",
-      "stage": "terminated",
-      "n": 21,
+      "n": 28,
       "med_ret_20d_pct": -11.0,
-      "win_20d_pct": 24.0,
-      "med_excess_20d_pct": -17.4,
-      "med_ret_60d_pct": -4.3
+      "win_20d_pct": 31.0,
+      "med_excess_20d_pct": -7.9,
+      "med_ret_60d_pct": -6.4
     },
     "Tender Offers \u00b7 target-response": {
       "category": "Tender Offers",
@@ -185,55 +176,55 @@
       "med_excess_20d_pct": -4.8,
       "med_ret_60d_pct": null
     },
-    "Deal Terminations \u00b7 terminated": {
-      "category": "Deal Terminations",
+    "Acquisitions \u00b7 terminated": {
+      "category": "Acquisitions",
       "stage": "terminated",
       "n": 15,
-      "med_ret_20d_pct": -4.6,
-      "win_20d_pct": 40.0,
-      "med_excess_20d_pct": -2.2,
-      "med_ret_60d_pct": -10.8
-    },
-    "Going-Private \u00b7 closed": {
-      "category": "Going-Private",
-      "stage": "closed",
-      "n": 15,
-      "med_ret_20d_pct": 0.6,
-      "win_20d_pct": 85.0,
-      "med_excess_20d_pct": -1.2,
-      "med_ret_60d_pct": 2.8
-    },
-    "Rights Offerings \u00b7 live": {
-      "category": "Rights Offerings",
-      "stage": "live",
-      "n": 14,
-      "med_ret_20d_pct": 0.0,
-      "win_20d_pct": 45.0,
-      "med_excess_20d_pct": 1.3,
-      "med_ret_60d_pct": -2.6
+      "med_ret_20d_pct": -5.0,
+      "win_20d_pct": 18.0,
+      "med_excess_20d_pct": -13.7,
+      "med_ret_60d_pct": 0.5
     },
     "Tender Offers \u00b7 closed": {
       "category": "Tender Offers",
       "stage": "closed",
-      "n": 14,
-      "med_ret_20d_pct": -0.9,
-      "win_20d_pct": 43.0,
-      "med_excess_20d_pct": -5.6,
+      "n": 15,
+      "med_ret_20d_pct": -0.5,
+      "win_20d_pct": 47.0,
+      "med_excess_20d_pct": -6.8,
       "med_ret_60d_pct": -10.1
+    },
+    "Deal Terminations \u00b7 terminated": {
+      "category": "Deal Terminations",
+      "stage": "terminated",
+      "n": 14,
+      "med_ret_20d_pct": -4.9,
+      "win_20d_pct": 33.0,
+      "med_excess_20d_pct": -0.4,
+      "med_ret_60d_pct": -10.8
+    },
+    "Rights Offerings \u00b7 live": {
+      "category": "Rights Offerings",
+      "stage": "live",
+      "n": 12,
+      "med_ret_20d_pct": -4.9,
+      "win_20d_pct": 45.0,
+      "med_excess_20d_pct": -0.4,
+      "med_ret_60d_pct": -2.6
     },
     "SPACs \u00b7 de-SPAC": {
       "category": "SPACs",
       "stage": "de-SPAC",
       "n": 11,
       "med_ret_20d_pct": -0.1,
-      "win_20d_pct": 20.0,
-      "med_excess_20d_pct": 2.0,
-      "med_ret_60d_pct": 0.1
+      "win_20d_pct": 30.0,
+      "med_excess_20d_pct": 2.3,
+      "med_ret_60d_pct": 0.2
     },
     "Going-Private \u00b7 live": {
       "category": "Going-Private",
       "stage": "live",
-      "n": 11,
+      "n": 9,
       "med_ret_20d_pct": 2.7,
       "win_20d_pct": 80.0,
       "med_excess_20d_pct": 2.4,
@@ -257,50 +248,32 @@
       "med_excess_20d_pct": -5.6,
       "med_ret_60d_pct": null
     },
-    "Going-Private \u00b7 announced": {
+    "Going-Private \u00b7 closed": {
       "category": "Going-Private",
-      "stage": "announced",
+      "stage": "closed",
       "n": 7,
-      "med_ret_20d_pct": 0.3,
+      "med_ret_20d_pct": 0.6,
+      "win_20d_pct": 80.0,
+      "med_excess_20d_pct": -1.2,
+      "med_ret_60d_pct": null
+    },
+    "Acquisitions \u00b7 initiated": {
+      "category": "Acquisitions",
+      "stage": "initiated",
+      "n": 6,
+      "med_ret_20d_pct": 2.6,
       "win_20d_pct": 100.0,
-      "med_excess_20d_pct": -5.9,
+      "med_excess_20d_pct": 2.7,
       "med_ret_60d_pct": null
     },
     "Delistings \u00b7 completed": {
       "category": "Delistings",
       "stage": "completed",
       "n": 6,
-      "med_ret_20d_pct": 4.5,
-      "win_20d_pct": 80.0,
-      "med_excess_20d_pct": 8.1,
+      "med_ret_20d_pct": 3.2,
+      "win_20d_pct": 67.0,
+      "med_excess_20d_pct": 6.2,
       "med_ret_60d_pct": -5.7
-    },
-    "Strategic Reviews \u00b7 announced": {
-      "category": "Strategic Reviews",
-      "stage": "announced",
-      "n": 3,
-      "med_ret_20d_pct": 1.8,
-      "win_20d_pct": 100.0,
-      "med_excess_20d_pct": 4.1,
-      "med_ret_60d_pct": 2.8
-    },
-    "Acquisitions \u00b7 initiated": {
-      "category": "Acquisitions",
-      "stage": "initiated",
-      "n": 3,
-      "med_ret_20d_pct": 4.0,
-      "win_20d_pct": 100.0,
-      "med_excess_20d_pct": 2.7,
-      "med_ret_60d_pct": null
-    },
-    "Activist Campaigns \u00b7 initiated": {
-      "category": "Activist Campaigns",
-      "stage": "initiated",
-      "n": 3,
-      "med_ret_20d_pct": 3.1,
-      "win_20d_pct": 100.0,
-      "med_excess_20d_pct": 1.3,
-      "med_ret_60d_pct": null
     },
     "Issuer Tenders \u00b7 announced": {
       "category": "Issuer Tenders",
@@ -320,31 +293,13 @@
       "med_excess_20d_pct": 12.9,
       "med_ret_60d_pct": 3.8
     },
-    "Restructuring \u00b7 live": {
-      "category": "Restructuring",
-      "stage": "live",
+    "Liquidations \u00b7 initiated": {
+      "category": "Liquidations",
+      "stage": "initiated",
       "n": 2,
-      "med_ret_20d_pct": 92.2,
-      "win_20d_pct": 100.0,
-      "med_excess_20d_pct": 79.4,
-      "med_ret_60d_pct": null
-    },
-    "Spin-Offs \u00b7 terminated": {
-      "category": "Spin-Offs",
-      "stage": "terminated",
-      "n": 2,
-      "med_ret_20d_pct": -15.8,
+      "med_ret_20d_pct": -2.9,
       "win_20d_pct": 0.0,
-      "med_excess_20d_pct": -16.0,
-      "med_ret_60d_pct": -39.4
-    },
-    "Deal Terminations \u00b7 announced": {
-      "category": "Deal Terminations",
-      "stage": "announced",
-      "n": 2,
-      "med_ret_20d_pct": -3.5,
-      "win_20d_pct": 0.0,
-      "med_excess_20d_pct": -1.4,
+      "med_excess_20d_pct": -4.7,
       "med_ret_60d_pct": null
     },
     "Other \u00b7 initiated": {
@@ -356,27 +311,72 @@
       "med_excess_20d_pct": null,
       "med_ret_60d_pct": null
     },
-    "Liquidations \u00b7 initiated": {
-      "category": "Liquidations",
+    "Activist Campaigns \u00b7 initiated": {
+      "category": "Activist Campaigns",
       "stage": "initiated",
       "n": 2,
-      "med_ret_20d_pct": -2.9,
-      "win_20d_pct": 0.0,
-      "med_excess_20d_pct": -4.7,
+      "med_ret_20d_pct": -0.6,
+      "win_20d_pct": 50.0,
+      "med_excess_20d_pct": -2.3,
       "med_ret_60d_pct": null
     },
-    "Divestitures \u00b7 terminated": {
-      "category": "Divestitures",
-      "stage": "terminated",
-      "n": 1,
-      "med_ret_20d_pct": -9.3,
+    "Deal Terminations \u00b7 announced": {
+      "category": "Deal Terminations",
+      "stage": "announced",
+      "n": 2,
+      "med_ret_20d_pct": -3.5,
       "win_20d_pct": 0.0,
-      "med_excess_20d_pct": -13.1,
-      "med_ret_60d_pct": -3.3
+      "med_excess_20d_pct": -1.4,
+      "med_ret_60d_pct": null
     },
-    "Divestitures \u00b7 initiated": {
-      "category": "Divestitures",
-      "stage": "initiated",
+    "Strategic Reviews \u00b7 announced": {
+      "category": "Strategic Reviews",
+      "stage": "announced",
+      "n": 2,
+      "med_ret_20d_pct": 1.8,
+      "win_20d_pct": 100.0,
+      "med_excess_20d_pct": 4.1,
+      "med_ret_60d_pct": 2.8
+    },
+    "Spin-Offs \u00b7 terminated": {
+      "category": "Spin-Offs",
+      "stage": "terminated",
+      "n": 2,
+      "med_ret_20d_pct": -15.8,
+      "win_20d_pct": 0.0,
+      "med_excess_20d_pct": -16.0,
+      "med_ret_60d_pct": -39.4
+    },
+    "Going-Private \u00b7 announced": {
+      "category": "Going-Private",
+      "stage": "announced",
+      "n": 2,
+      "med_ret_20d_pct": 0.9,
+      "win_20d_pct": 100.0,
+      "med_excess_20d_pct": 0.6,
+      "med_ret_60d_pct": null
+    },
+    "Restructuring \u00b7 live": {
+      "category": "Restructuring",
+      "stage": "live",
+      "n": 2,
+      "med_ret_20d_pct": 92.2,
+      "win_20d_pct": 100.0,
+      "med_excess_20d_pct": 79.4,
+      "med_ret_60d_pct": null
+    },
+    "Spin-Offs \u00b7 registered": {
+      "category": "Spin-Offs",
+      "stage": "registered",
+      "n": 1,
+      "med_ret_20d_pct": -10.3,
+      "win_20d_pct": 0.0,
+      "med_excess_20d_pct": -6.7,
+      "med_ret_60d_pct": -11.5
+    },
+    "Delistings \u00b7 announced": {
+      "category": "Delistings",
+      "stage": "announced",
       "n": 1,
       "med_ret_20d_pct": null,
       "win_20d_pct": null,
@@ -392,17 +392,8 @@
       "med_excess_20d_pct": 3.0,
       "med_ret_60d_pct": null
     },
-    "Delistings \u00b7 announced": {
-      "category": "Delistings",
-      "stage": "announced",
-      "n": 1,
-      "med_ret_20d_pct": null,
-      "win_20d_pct": null,
-      "med_excess_20d_pct": null,
-      "med_ret_60d_pct": null
-    },
-    "Spin-Offs \u00b7 initiated": {
-      "category": "Spin-Offs",
+    "Divestitures \u00b7 initiated": {
+      "category": "Divestitures",
       "stage": "initiated",
       "n": 1,
       "med_ret_20d_pct": null,
@@ -410,14 +401,14 @@
       "med_excess_20d_pct": null,
       "med_ret_60d_pct": null
     },
-    "Spin-Offs \u00b7 registered": {
-      "category": "Spin-Offs",
-      "stage": "registered",
+    "Divestitures \u00b7 terminated": {
+      "category": "Divestitures",
+      "stage": "terminated",
       "n": 1,
-      "med_ret_20d_pct": -10.3,
+      "med_ret_20d_pct": -9.3,
       "win_20d_pct": 0.0,
-      "med_excess_20d_pct": -6.7,
-      "med_ret_60d_pct": -11.5
+      "med_excess_20d_pct": -13.1,
+      "med_ret_60d_pct": -3.3
     },
     "Restructuring \u00b7 initiated": {
       "category": "Restructuring",
@@ -428,13 +419,13 @@
       "med_excess_20d_pct": null,
       "med_ret_60d_pct": null
     },
-    "Other \u00b7 de-SPAC": {
-      "category": "Other",
-      "stage": "de-SPAC",
+    "Spin-Offs \u00b7 initiated": {
+      "category": "Spin-Offs",
+      "stage": "initiated",
       "n": 1,
-      "med_ret_20d_pct": null,
-      "win_20d_pct": null,
-      "med_excess_20d_pct": null,
+      "med_ret_20d_pct": 6.2,
+      "win_20d_pct": 100.0,
+      "med_excess_20d_pct": 4.5,
       "med_ret_60d_pct": null
     }
   },

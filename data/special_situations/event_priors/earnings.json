@@ -2,7 +2,7 @@
   "event_type": "earnings",
   "schema": "ss_event_priors.v2",
   "is_context_only": true,
-  "generated_at": "2026-07-12 10:00 UTC",
+  "generated_at": "2026-07-19 09:52 UTC",
   "insufficient": true,
   "null_reason": "asof_date in eps_quarterly.parquet is period_end + exactly 60 calendar days (verified: min=median=max=60d offset across all rows). This is a synthetic placeholder, not a real SEC filing date or earnings-announcement date. Re-enable once EDGAR 8-K timestamps or a vendor announcement-date feed is wired.",
   "priors": {}
