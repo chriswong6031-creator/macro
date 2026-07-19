@@ -361,6 +361,20 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
         result["lobe_path"] = str(lobe_path)
         log.info("marketing_governor: wrote %s", lobe_path)
 
+        # Build allies target ledger + kits (fail-soft — must not break the governor)
+        try:
+            from engine.marketing.allies import build_allies
+            allies_result = build_allies(r)
+            result["allies"] = allies_result
+            log.info(
+                "marketing_governor: allies — %d targets, %d kits",
+                allies_result.get("targets", 0),
+                allies_result.get("kits", 0),
+            )
+        except Exception as _allies_exc:  # noqa: BLE001
+            log.warning("marketing_governor: allies build failed: %s", _allies_exc)
+            result["allies"] = {"error": str(_allies_exc)}
+
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing_governor: build_and_write failed: %s", exc, exc_info=True)
         result["error"] = str(exc)

@@ -1,6 +1,6 @@
 # MKT-D11 — Allies W1: Creator / Partner / Community Scaffold
 
-**Department:** Allies (ecosystem) · **Priority: P3** · **Status: scaffold buildable now; all outreach is operator-gated**
+**Department:** Allies (ecosystem) · **Priority: P3** · **Status: W1 SHIPPED 2026-07-19 (#3058)** — 68-target scored ledger (51 funds from `config.yml smart_money.funds` — the W1 in-repo subset of the 356-link corpus — + 11 rule-cited communities via `config/allies_communities.yml` + 5 newsletters + 1 creator), 68 materials kits with honest graded-receipt stats, paper-only referral schema (code/cut unset — operator decisions), admin Allies page with operator-only status transitions. Outreach remains 100% operator-gated; StockTwits/Discord excluded until their rules can be verified. Next wave: operator-supplied creator lists + affiliate program shape ruling.
 **Charter:** id=`ecosystem` ("Creator, Partner & Community Infrastructure", wave 5, 11 chartered engines — stubs).
 
 ## Why
