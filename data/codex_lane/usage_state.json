@@ -1,6 +1,6 @@
 {
   "schema": "codex_lane.usage_state.v1",
-  "updated_at": "2026-07-19T19:32:57.121989+00:00",
+  "updated_at": "2026-07-19T21:07:24.641013+00:00",
   "rate_limits": {
     "primary": {
       "used_percent": 85.0,
@@ -9,7 +9,7 @@
     },
     "secondary": null,
     "plan_type": "pro",
-    "fetched_at": "2026-07-19T19:32:55.927415+00:00"
+    "fetched_at": "2026-07-19T21:07:23.871782+00:00"
   },
   "token_usage_last": {
     "input_tokens": 182116,
