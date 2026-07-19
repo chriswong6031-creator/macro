@@ -14,6 +14,7 @@
 <meta property="og:description" content="Per-stock research dossiers for S&P 500 members: signals, options positioning, factor profile, themes. Updated nightly.">
 <meta property="og:url" content="{{ canonical_url }}">
 <meta property="og:type" content="website">
+<script data-dbase src="../data_base.js"></script>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <style>
@@ -22,42 +23,111 @@ body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Seg
 @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
 a { text-decoration:none; color:inherit; }
 h1 { font-size:22px; margin:0 0 4px; }
-.muted { color:var(--muted); } .sm { font-size:12px; }
+.muted { color:var(--muted); } .sm { font-size:12px; } .pos { color:var(--up); } .neg { color:var(--down); }
 .back { font-size:12.5px; color:var(--muted); }
 .back:hover { color:var(--link); }
-.chip { display:inline-block; font-size:11px; padding:1px 7px; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+
+/* hero stats bar */
+.hero-bar { display:flex; gap:24px; margin:16px 0 20px; flex-wrap:wrap; }
+.hero-stat { display:flex; flex-direction:column; gap:2px; }
+.hero-stat .hn { font-size:22px; font-weight:720; font-variant-numeric:tabular-nums; }
+.hero-stat .hk { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+
+/* filter controls */
+.filter-bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+.search-box { background:var(--panel); border:1px solid var(--line); border-radius:8px; color:var(--text); font-size:13px; padding:6px 12px; outline:none; min-width:180px; }
+.search-box:focus { border-color:var(--link); }
+.sector-chips { display:flex; gap:6px; flex-wrap:wrap; }
+
+/* chips */
+.chip { display:inline-block; font-size:11px; padding:2px 8px; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; cursor:pointer; transition:border-color .12s; }
+.chip:hover { border-color:var(--muted); }
+.chip.active { background:color-mix(in srgb,var(--link) 15%,var(--panel2)); border-color:var(--link); color:var(--link); }
 .chip.pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,var(--line)); background:color-mix(in srgb,var(--up) 10%,var(--panel2)); }
 .chip.neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); background:color-mix(in srgb,var(--down) 10%,var(--panel2)); }
 .chip.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 38%,var(--line)); background:color-mix(in srgb,var(--warn) 10%,var(--panel2)); }
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; margin-top:14px; }
-.card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; }
-.card:hover { border-color:var(--muted); }
+
+/* grid */
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-top:4px; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; transition:border-color .12s, transform .1s; }
+.card:hover { border-color:var(--muted); transform:translateY(-1px); }
 .card a { display:block; }
-.card .ticker { font-size:15px; font-weight:720; color:var(--link); }
+.card .ticker { font-size:16px; font-weight:720; color:var(--link); font-variant-numeric:tabular-nums; }
 .card .name { font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.card .meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.card .price-row { display:flex; align-items:baseline; gap:7px; margin-top:3px; }
+.card .price { font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
+.card .ytd { font-size:11px; font-weight:600; }
+.card .meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:2px; }
 .card .sector { font-size:11px; color:var(--muted); }
+
+/* no results */
+.no-results { padding:32px 0; color:var(--muted); text-align:center; font-size:14px; display:none; }
+
 footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; }
 @media (max-width:600px) {
   body { padding:12px; }
   .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .hero-bar { gap:16px; }
+  .hero-stat .hn { font-size:18px; }
 }
 </style>
 </head>
 <body>
+{% include "_site_nav.html.j2" %}
+<div style="padding-top:8px;">
 <p class="back"><a href="../stock.html">{{ t('← Analyzer', '← 分析器') }}</a></p>
 
 <h1>{{ t('Stock Coverage', '股票覆盖范围') }}</h1>
-<p class="sm muted">{{ t('S&P 500 research dossiers — signals, options positioning, factor profile. Updated nightly.', 'S&P 500 研究报告 — 信号、期权持仓、因子概况。每日更新。') }}
-{{ n_total }} {{ t('tickers', '只股票') }}</p>
+<p class="sm muted">{{ t('S&P 500 research dossiers — signals, options positioning, factor profile. Updated nightly.', 'S&P 500 研究报告 — 信号、期权持仓、因子概况。每日更新。') }}</p>
 
-<div class="grid">
+<!-- hero count stats -->
+{%- set n_pos = rows | selectattr('stance_class', 'eq', 'pos') | list | length -%}
+{%- set n_neg = rows | selectattr('stance_class', 'eq', 'neg') | list | length -%}
+{%- set n_warn = rows | selectattr('stance_class', 'eq', 'warn') | list | length -%}
+<div class="hero-bar">
+  <div class="hero-stat">
+    <span class="hn">{{ n_total }}</span>
+    <span class="hk">{{ t('Stocks covered', '覆盖股票') }}</span>
+  </div>
+  <div class="hero-stat">
+    <span class="hn pos">{{ n_pos }}</span>
+    <span class="hk">{{ t('Uptrend / bullish', '上涨/看涨') }}</span>
+  </div>
+  <div class="hero-stat">
+    <span class="hn neg">{{ n_neg }}</span>
+    <span class="hk">{{ t('Downtrend / defensive', '下跌/防御') }}</span>
+  </div>
+  <div class="hero-stat">
+    <span class="hn muted">{{ n_warn }}</span>
+    <span class="hk">{{ t('Mixed / watch', '混杂/观察') }}</span>
+  </div>
+</div>
+
+<!-- filter controls -->
+{%- set sectors = rows | map(attribute='sector') | select | unique | sort | list -%}
+<div class="filter-bar">
+  <input class="search-box" type="search" id="stk-search" placeholder="Search / 搜索" autocomplete="off">
+  <div class="sector-chips" id="sec-chips">
+    <span class="chip active" data-sec="">{{ t('All', '全部') }}</span>
+    {% for sec in sectors %}
+    <span class="chip" data-sec="{{ sec }}">{{ sec }}</span>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="grid" id="stk-grid">
   {% for row in rows %}
-  <div class="card">
+  <div class="card" data-ticker="{{ row.ticker }}" data-name="{{ row.name | lower }}" data-sec="{{ row.sector or '' }}">
     <a href="{{ row.ticker }}.html">
       <div class="ticker">{{ row.ticker }}</div>
       <div class="name">{{ row.name }}</div>
     </a>
+    {% if row.price or row.ytd %}
+    <div class="price-row">
+      {% if row.price %}<span class="price">{{ row.price }}</span>{% endif %}
+      {% if row.ytd %}<span class="ytd {{ 'pos' if row.ytd_pos else 'neg' }}">{{ row.ytd }}</span>{% endif %}
+    </div>
+    {% endif %}
     <div class="meta">
       {% if row.sector %}<span class="sector">{{ row.sector }}</span>{% endif %}
       <span class="chip {{ row.stance_class }}">
@@ -67,10 +137,46 @@ footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px s
   </div>
   {% endfor %}
 </div>
+<div class="no-results" id="no-results">{{ t('No stocks match your filter.', '没有符合条件的股票。') }}</div>
 
 <footer>
   <p>{{ t('Research context only — not investment advice.', '仅供研究参考，不构成投资建议。') }}</p>
   <p class="sm muted">{{ t('Generated', '生成') }} {{ generated_utc }}</p>
 </footer>
+
+<script>
+(function(){
+  var search = document.getElementById('stk-search');
+  var chips = document.querySelectorAll('#sec-chips .chip');
+  var cards = document.querySelectorAll('#stk-grid .card');
+  var noRes = document.getElementById('no-results');
+  var activeSec = '';
+
+  function filter(){
+    var q = (search.value || '').toLowerCase().trim();
+    var shown = 0;
+    cards.forEach(function(c){
+      var matchSec = !activeSec || c.dataset.sec === activeSec;
+      var matchQ = !q || c.dataset.ticker.toLowerCase().includes(q) || c.dataset.name.includes(q);
+      var show = matchSec && matchQ;
+      c.style.display = show ? '' : 'none';
+      if(show) shown++;
+    });
+    noRes.style.display = shown === 0 ? 'block' : 'none';
+  }
+
+  chips.forEach(function(chip){
+    chip.addEventListener('click', function(){
+      chips.forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+      activeSec = chip.dataset.sec;
+      filter();
+    });
+  });
+
+  search.addEventListener('input', filter);
+})();
+</script>
+</div>
 </body>
 </html>
