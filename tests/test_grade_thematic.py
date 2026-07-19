@@ -1050,6 +1050,15 @@ class TestFalsifierEvaluator:
 
 class TestRunStage:
 
+    @pytest.fixture(autouse=True)
+    def _redirect_data_dir(self, tmp_path, monkeypatch):
+        """Stage 1's attention append resolves through lib.config.data_dir(),
+        NOT the root passed to run_stage — without this redirect the tests
+        advance the real data/foresight/earliness_log.jsonl ledger
+        (MM_DATA_GUARD store-mutation class, #2609)."""
+        from lib import config as cfg_mod
+        monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path / "data")
+
     def test_run_stage_empty_stores(self, tmp_path):
         """run_stage() completes without raising on entirely empty stores."""
         from scripts.grade_thematic import run_stage
