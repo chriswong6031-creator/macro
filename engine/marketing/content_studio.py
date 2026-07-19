@@ -1121,9 +1121,32 @@ def content_plan(
                 item_dict["_receipt"] = _receipt
 
             # Phase 2: build all contexts for this account (preserves type counter ordering)
+            # Pre-compute market/sector/breadth/event facts once per account (not per item).
+            # These are the fact sources for non-ticker content types (macro/event/watchlist).
+            _mkt_root: str = str(root) if root is not None else "."
+            _macro_facts_cache: dict = {}
+            _sector_facts_cache: dict = {}
+            _breadth_facts_cache: dict = {}
+            _event_facts_cache: dict = {}
+            try:
+                from engine.marketing.market_facts import (
+                    macro_facts as _macro_facts_fn,
+                    sector_facts as _sector_facts_fn,
+                    breadth_facts as _breadth_facts_fn,
+                    event_facts as _event_facts_fn,
+                    merge_facts as _merge_facts_fn,
+                )
+                _macro_facts_cache = _macro_facts_fn(_mkt_root)
+                _sector_facts_cache = _sector_facts_fn(_mkt_root)
+                _breadth_facts_cache = _breadth_facts_fn(_mkt_root)
+                _event_facts_cache = _event_facts_fn(_mkt_root)
+            except Exception:  # noqa: BLE001
+                pass
+
             contexts: list[dict] = []
             for item_dict in queue:
                 ticker = item_dict.get("ticker", "")
+                type_id = item_dict.get("type", "")
                 facts_data: dict = {}
                 if ticker and closes_loader is not None:
                     try:
@@ -1134,6 +1157,21 @@ def content_plan(
                         if _ohlcv is not None:
                             _od, _oo, _oh, _ol, _oc, _ov = _ohlcv
                             facts_data = compute_facts(ticker, _od, _oo, _oh, _ol, _oc, _ov)
+                    except Exception:  # noqa: BLE001
+                        pass
+                elif not ticker:
+                    # Non-ticker post: attach market/regime/breadth facts by type
+                    try:
+                        from engine.marketing.market_facts import merge_facts as _merge_facts_fn
+                        if type_id == "macro":
+                            facts_data = _macro_facts_cache
+                        elif type_id == "event":
+                            facts_data = _event_facts_cache
+                        elif type_id == "watchlist":
+                            facts_data = _merge_facts_fn(
+                                _breadth_facts_cache, _sector_facts_cache
+                            )
+                        # education posts: no market facts (conceptual, not data-driven)
                     except Exception:  # noqa: BLE001
                         pass
 

@@ -835,131 +835,121 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
     ],
 
-    # ── macro (all voices) ────────────────────────────────────────────────────
+    # ── macro (all voices) — {top_fact} carries the real regime/tape number ────
     ("macro", "authoritative desk"): [
         (
-            "Macro backdrop this week",
-            "The regime is shifting. What it means for risk assets: quality over leverage, "
-            "patience over chasing. Watch the next data point carefully.",
+            "Macro backdrop: what the data shows",
+            "{top_fact} That's the read. Quality over leverage, patience over chasing.",
         ),
         (
             "What the macro is saying right now",
-            "Rates, liquidity, and positioning are telling three different stories. "
-            "Here's how we're reading the confluence.",
+            "{top_fact} Here's how we're positioning around it.",
         ),
         (
-            "The one macro signal we're watching",
-            "Of everything on the dashboard, this is the signal that matters most right now. "
-            "Here's why and what it changes.",
+            "The macro read this week",
+            "{top_fact} The backdrop sets the context for everything else on the board.",
         ),
         (
-            "Macro note: the setup for the week",
-            "The backdrop is nuanced. One clear read: "
-            "momentum is bifurcated, and that historically resolves in one direction.",
+            "Macro note: regime update",
+            "{top_fact} Watch how this resolves — it changes the risk picture.",
+        ),
+        (
+            "Regime check | what changed",
+            "{top_fact} That's the signal that matters most right now.",
+        ),
+        (
+            "Macro | the honest read",
+            "{top_fact} One data point, no spin.",
         ),
     ],
     ("macro", "dry, receipts-forward"): [
         (
-            "Macro: current regime",
-            "Regime read: constructive but not broadly. "
-            "Tracking the key signals. Will update when the picture changes.",
+            "Macro: what the data shows",
+            "{top_fact} Tracking the key signals. Will update when the picture changes.",
         ),
         (
-            "Macro update | this is where we stand",
-            "Two things are true right now. Tracking the resolution between them.",
+            "Macro update | current read",
+            "{top_fact} Net read: selective on risk until this resolves.",
         ),
         (
-            "The macro scorecard this week",
-            "Rates: noted. Liquidity: noted. Positioning: noted. "
-            "Net read: cautious on leverage, selective on risk.",
+            "Regime scorecard",
+            "{top_fact} Logged. Watching for the next move.",
         ),
         (
-            "Regime check",
-            "The environment has changed since last month. Here's the updated read.",
+            "Macro | numbers first",
+            "{top_fact} That's the state of the backdrop.",
         ),
     ],
     ("macro", "specialist"): [
         (
-            "Macro note for this sector",
-            "The macro backdrop matters more for this vertical than most. "
-            "Here's the read that's driving our positioning.",
+            "Macro note for the vertical",
+            "{top_fact} The backdrop has direct implications for this sector.",
         ),
         (
-            "How macro is affecting our sector right now",
-            "Rates and liquidity have direct implications for this vertical. "
-            "Here's how we're thinking about it.",
+            "How macro is affecting our sector",
+            "{top_fact} Here's what it means for positioning in this vertical.",
         ),
         (
-            "Sector macro alignment: this week",
-            "The macro is supportive for this theme. That alignment doesn't happen often — "
-            "here's what changes if it breaks.",
+            "Sector macro alignment this week",
+            "{top_fact} That's the tailwind (or headwind) the sector is working with.",
         ),
         (
-            "The macro tailwind (or headwind) this vertical is facing",
-            "One factor is dominating the macro backdrop for our sector. "
-            "Here's what it is and what to watch.",
+            "The macro factor driving our sector",
+            "{top_fact} One factor is dominating. Here's how we're reading it.",
         ),
     ],
     ("macro", "educational"): [
         (
-            "What the macro says right now — plain English",
-            "Breaking down the current environment without the jargon: "
-            "here's the one-sentence read and what it has historically meant for prices.",
+            "What the macro says — plain English",
+            "{top_fact} Here's what that has historically meant for markets.",
         ),
         (
-            "How to read the macro backdrop",
-            "Most macro coverage is noise. Here's the signal: "
-            "the three indicators we watch and what they're saying.",
+            "Breaking down the macro backdrop",
+            "{top_fact} That's the signal. Everything else is noise.",
         ),
         (
-            "The thing most people get wrong about the macro",
-            "The macro doesn't tell you what to buy. It tells you what environment you're trading in. "
-            "Here's the distinction and why it matters.",
+            "Macro 101: what this regime means",
+            "{top_fact} The regime doesn't tell you what to buy — it tells you the environment.",
         ),
         (
             "Plain-English macro update",
-            "Rates are doing one thing. Liquidity is doing another. "
-            "Here's what the gap between them usually means.",
+            "{top_fact} Here's why that matters for how you size risk.",
         ),
     ],
     ("macro", "fast, reactive"): [
         (
-            "Macro update | fast",
-            "Regime: constructive with caveats. Key signal flipped. Adjusting accordingly.",
+            "Fast macro read",
+            "{top_fact} Adjusting accordingly.",
         ),
         (
-            "Quick macro read",
-            "Two things changed in the macro backdrop this week. Here's the short version.",
+            "Macro | quick update",
+            "{top_fact} That's the short version.",
         ),
         (
             "Macro | what just changed",
-            "The data shifted. Here's the fast read on what it means for risk assets.",
+            "{top_fact} Fast read: risk assets need to process this.",
         ),
         (
-            "Fast macro note",
-            "The backdrop is different from last week. One signal stands out. Here's what it is.",
+            "Regime note | fast",
+            "{top_fact} One signal. That's what stands out.",
         ),
     ],
     ("macro", "pattern/history"): [
         (
-            "Macro analogue: this has happened before",
-            "The current environment has a historical parallel. "
-            "Here's what the market did then and what's different now.",
+            "Macro analogue: what the data rhymes with",
+            "{top_fact} The current setup has a historical parallel worth knowing.",
         ),
         (
-            "Historical read on the macro backdrop",
-            "Last time rates + liquidity looked like this was [year]. "
-            "The chart context from that episode is worth knowing.",
+            "Historical read on this regime",
+            "{top_fact} Last time this signal looked like this, here's what followed.",
         ),
         (
             "The macro rhyme — what history says",
-            "We're not predicting a repeat. But the setup has familiar features. "
-            "Here's the base rate from comparable backdrops.",
+            "{top_fact} Not predicting a repeat. Pointing at the base rate.",
         ),
         (
-            "Macro precedent: what this regime historically meant",
-            "Not every macro regime has a clean analogue. "
-            "This one does — and the signal it sent then is worth knowing.",
+            "Macro precedent | what history shows",
+            "{top_fact} This regime has a track record. Here's the read.",
         ),
     ],
 
@@ -1086,249 +1076,239 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ],
 
     # ── watchlist (all voices) ────────────────────────────────────────────────
+    # ── watchlist (all voices) — {top_fact} carries breadth/sector context ──────
     ("watchlist", "authoritative desk"): [
         (
             "On our radar this week",
-            "Names we're watching but haven't acted on. The setup isn't complete — "
-            "when it is, we'll post the entry.",
+            "{top_fact} Names we're watching but haven't acted on. "
+            "The setup isn't complete — when it is, we'll post the entry.",
         ),
         (
             "Watch list | not yet",
-            "These names are interesting. None have triggered an entry yet. "
+            "{top_fact} These names are interesting. None have triggered an entry yet. "
             "Watching the levels.",
         ),
         (
             "What's on the desk this week",
-            "A few names are close to completing setups. Not acting yet. "
+            "{top_fact} A few names are close to completing setups. Not acting yet. "
             "Keeping the list transparent.",
         ),
         (
-            "Under observation: this week's names",
-            "The board has gaps that could fill. These names are in contention. "
-            "Entry conditions not met — yet.",
+            "Under observation this week",
+            "{top_fact} The board has gaps that could fill. Entry conditions not met — yet.",
+        ),
+        (
+            "Radar names | context first",
+            "{top_fact} Against that backdrop, here are the names close to triggering.",
         ),
     ],
     ("watchlist", "dry, receipts-forward"): [
         (
             "Watch list | no position",
-            "Watching these. No entry yet. Will post when something triggers.",
+            "{top_fact} Watching these. No entry yet. Will post when something triggers.",
         ),
         (
             "Radar: names we're monitoring",
-            "On the list, not on the board. The setup isn't complete. Watching.",
+            "{top_fact} On the list, not on the board. The setup isn't complete.",
         ),
         (
             "Watchlist update | not triggered",
-            "These names are close. Haven't acted. Will post the entry if the setup completes.",
+            "{top_fact} These names are close. Haven't acted. Entry post coming.",
         ),
         (
             "Under watch | positions not open",
-            "Tracking these. No entry taken. Conditions not met.",
+            "{top_fact} Tracking these. No entry taken. Conditions not met.",
         ),
     ],
     ("watchlist", "specialist"): [
         (
             "Vertical watch list this week",
-            "Names in our sector that are setting up but haven't triggered. "
-            "Close — not close enough.",
+            "{top_fact} Names in our sector setting up but not triggered yet. Close.",
         ),
         (
             "Sector radar | watching not acting",
-            "The vertical has a few names near entry conditions. Not acting yet. "
-            "Will post if one triggers.",
+            "{top_fact} The vertical has a few names near entry conditions. Not acting yet.",
         ),
         (
             "What's near entry in the sector",
-            "Three names in the vertical are worth watching. Setup not complete — "
-            "but we're close on at least one.",
+            "{top_fact} Setup not complete in the sector — but we're close on at least one.",
         ),
         (
-            "Specialist watch: this week's setups in progress",
-            "Monitoring these in the sector. The macro backdrop helps but entry isn't clean yet.",
+            "Specialist watch: setups in progress",
+            "{top_fact} Monitoring these in the sector. Entry isn't clean yet.",
         ),
     ],
     ("watchlist", "educational"): [
         (
             "What goes on a watch list — and why",
-            "Not every interesting name makes the board. "
-            "The ones on this list are interesting — just not ready.",
+            "{top_fact} Not every interesting name makes the board. These are interesting — just not ready.",
         ),
         (
-            "The watch list: a real example of how we filter",
-            "Here are the names we're monitoring and what's missing before they get an entry. "
-            "This is the filter in action.",
+            "The watch list: how we filter",
+            "{top_fact} Here are the names we're monitoring and what's missing before they trigger.",
         ),
         (
             "Why we publish the watch list",
-            "Transparency on what almost made it is as useful as the actual signals. "
-            "Here's what we're close on.",
+            "{top_fact} Transparency on what almost made it. Here's what we're close on.",
         ),
         (
             "On our radar | here's what we're waiting for",
-            "These names are interesting. Here's exactly what needs to happen for each "
-            "to make it onto the board.",
+            "{top_fact} These names are interesting. Here's what needs to happen for each to trigger.",
         ),
     ],
     ("watchlist", "fast, reactive"): [
         (
             "Quick radar | watching these",
-            "These are on the list right now. Not triggered. Watching.",
+            "{top_fact} These are on the list right now. Not triggered. Watching.",
         ),
         (
             "Watching | not acting",
-            "Fast watch list: close setups, no entry yet. Will post when one triggers.",
+            "{top_fact} Close setups, no entry yet. Will post when one triggers.",
         ),
         (
             "Watch list update",
-            "A few names near entry conditions. Nothing triggered. On watch.",
+            "{top_fact} A few names near entry conditions. Nothing triggered. On watch.",
         ),
         (
             "Radar check | names close to entry",
-            "These are the names near setup completion. Haven't acted. Watching.",
+            "{top_fact} These names are near setup completion. Haven't acted. Watching.",
         ),
     ],
     ("watchlist", "pattern/history"): [
         (
             "Pattern watch list | not triggered",
-            "Names tracing patterns worth monitoring. Historical context says these "
-            "could be close. Not acting yet.",
+            "{top_fact} Names tracing patterns worth monitoring. Not acting yet.",
         ),
         (
             "Historical watch: patterns in progress",
-            "These names are in the middle of setups that have historical analogues. "
-            "No entry yet — watching the completion.",
+            "{top_fact} These names have historical analogues. No entry yet.",
         ),
         (
             "Watch list | the rhymes in progress",
-            "A few names are tracing patterns we've tracked before. "
-            "Watching for the setup to complete.",
+            "{top_fact} A few names are tracing patterns we've tracked before. "
+            "Watching for setup completion.",
         ),
         (
-            "Monitoring setups with historical support",
-            "Not every pattern completes. These are the ones we think have a shot. "
-            "No entry — yet.",
+            "Monitoring setups with context",
+            "{top_fact} Not every setup completes. These are the ones worth watching.",
         ),
     ],
 
-    # ── event (all voices) ────────────────────────────────────────────────────
+    # ── event (all voices) — {top_fact} carries today's catalyst read ────────
     ("event", "authoritative desk"): [
         (
             "Market event: our read",
-            "Today's move has a read: the price says one thing and the data says another. "
-            "We watch for the resolution.",
+            "{top_fact} Here's how we're reading the price action around it.",
         ),
         (
             "What just happened — and what it changes",
-            "The event hit. Here's our read on what it actually means versus what the "
-            "first-hour reaction suggested.",
+            "{top_fact} Here's our read on what it means versus the first-hour reaction.",
         ),
         (
             "Event reaction | the desk's take",
-            "Fast-moving events get two reads: the knee-jerk and the considered one. "
+            "{top_fact} Fast-moving events get two reads: the knee-jerk and the considered one. "
             "Here's ours.",
         ),
         (
             "Post-event: what we're watching now",
-            "The event is in the books. Here's what the next session should clarify.",
+            "{top_fact} The event is in the books. Here's what the next session should clarify.",
+        ),
+        (
+            "Event context | one clear read",
+            "{top_fact} That's the signal. Watch for the follow-through.",
         ),
     ],
     ("event", "dry, receipts-forward"): [
         (
             "Event reaction | numbers first",
-            "Event happened. Numbers changed. Here's what changed and what it does "
-            "to our current positions.",
+            "{top_fact} Here's what changed and what it does to our positions.",
         ),
         (
-            "Post-event | the scorecard update",
-            "Event logged. Here's the impact on the board.",
+            "Post-event | scorecard update",
+            "{top_fact} Event logged. Here's the impact on the board.",
         ),
         (
             "What the event changed",
-            "Not much drama — here's the actual data and what it shifts.",
+            "{top_fact} Not much drama — here's what it shifts.",
         ),
         (
             "Event: reaction logged",
-            "Reaction noted. Positions unaffected unless the next session confirms the move.",
+            "{top_fact} Reaction noted. Watching for confirmation next session.",
         ),
     ],
     ("event", "specialist"): [
         (
             "Event impact on our sector",
-            "Today's event has direct implications for the vertical. Here's the read.",
+            "{top_fact} Today's catalyst has direct implications for the vertical.",
         ),
         (
             "How this event hits our theme",
-            "The sector absorbs events differently than the broad market. "
-            "Here's what this one changes for us.",
+            "{top_fact} The sector absorbs events differently than the broad market. "
+            "Here's what this one changes.",
         ),
         (
             "Sector event reaction",
-            "The event moved the vertical. Here's whether that move makes sense to us.",
+            "{top_fact} Here's whether the move in the vertical makes sense to us.",
         ),
         (
             "Event + sector: our take",
-            "The vertical reacted. Here's our read on whether the reaction is right.",
+            "{top_fact} The vertical reacted. Here's our read.",
         ),
     ],
     ("event", "educational"): [
         (
             "What today's event means — plain English",
-            "Big event today. Here's what it actually means for markets, "
-            "without the noise.",
+            "{top_fact} Here's what it actually means for markets without the noise.",
         ),
         (
             "Why events move markets — and this one in particular",
-            "Markets move on surprises relative to expectations. Here's what was expected, "
-            "what happened, and why the gap matters.",
+            "{top_fact} Markets move on surprises. Here's the read on this one.",
         ),
         (
             "Event 101: how to read what just happened",
-            "Events get oversimplified in both directions. Here's the clean read on "
-            "what actually matters.",
+            "{top_fact} Events get oversimplified in both directions. Here's the clean read.",
         ),
         (
             "Breaking down today's event",
-            "Event happened. A lot of commentary, most of it noise. "
+            "{top_fact} A lot of commentary today, most of it noise. "
             "Here's the signal.",
         ),
     ],
     ("event", "fast, reactive"): [
         (
             "Reaction: what just happened",
-            "Fast take: the move was X. The read is Y. What to watch next: Z.",
+            "{top_fact} Fast take: that's the move. Here's what to watch next.",
         ),
         (
             "Event | quick read",
-            "Event in. Reaction: fast. Considered read: here it is.",
+            "{top_fact} Reaction: fast. Here's the considered read.",
         ),
         (
             "What just moved and why",
-            "Event catalyst confirmed. Here's the fast version of what it means.",
+            "{top_fact} Here's the fast version of what it means.",
         ),
         (
-            "Fast reaction | event live",
-            "Event hit. Price moved. Here's what the tape is saying.",
+            "Fast reaction | event context",
+            "{top_fact} Price moved. Here's what the tape is saying.",
         ),
     ],
     ("event", "pattern/history"): [
         (
             "Historical read on today's event",
-            "This event type has a track record. Here's what history says about "
-            "the aftermath — and what's different this time.",
+            "{top_fact} This event type has a track record. "
+            "Here's what history says about the aftermath.",
         ),
         (
             "What the playbook says about events like this",
-            "Not all events are created equal. This one rhymes with something. "
-            "Here's the historical base rate.",
+            "{top_fact} This one rhymes with something. Here's the historical base rate.",
         ),
         (
             "Event analogue: what happened last time",
-            "The setup before this event had a precedent. "
-            "Here's what the chart looked like then and now.",
+            "{top_fact} The setup before this event had a precedent worth knowing.",
         ),
         (
             "The historical pattern after events like this",
-            "Comparable events have a consistent pattern in the aftermath. "
+            "{top_fact} Comparable events have a consistent pattern. "
             "Not predicting — pointing at the base rate.",
         ),
     ],

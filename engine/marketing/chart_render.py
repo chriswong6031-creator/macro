@@ -630,7 +630,7 @@ def render_chart_v2(
 
     # ── Layout ──────────────────────────────────────────────────────────────
     HEADER_H = 64          # header band height (taller for logo breathing room)
-    FOOTER_H = 28
+    FOOTER_H = 58  # room for the CTA pill + large URL line
     PAD_L = 14             # left padding (no left axis)
     PAD_R = 72             # right axis labels
     PAD_TOP = HEADER_H + 12  # extra padding so logo band breathes
@@ -1047,12 +1047,23 @@ def render_chart_v2(
         f'{_xesc(timeframe.upper())}</text>'
     )
 
-    # ── Footer: URL bottom-left + copyright bottom-right ────────────────────
-    footer_y = height - 8
+    # ── Footer: CTA tagline + large URL bottom-left, copyright bottom-right ──
+    # The footer is the ad: a soft-glow pill with the offer tagline, then the
+    # brand URL big enough to read in a timeline screenshot.
+    footer_y = height - 10
+    cta_text = "Powerful stock signals · free 14-day trial"
+    cta_w = 8 + int(len(cta_text) * 6.6) + 8
     footer_svg = (
+        # tagline pill (accent-tinted, rounded)
+        f'<rect x="{PAD_L + 2}" y="{footer_y - 30}" width="{cta_w}" height="19" rx="9.5" '
+        f'fill="#3b82f6" fill-opacity="0.16" stroke="#5b9dff" stroke-opacity="0.45" stroke-width="1"/>'
+        f'<text x="{PAD_L + 10}" y="{footer_y - 16.5}" '
+        f'fill="#9db8e8" font-size="11" font-family="sans-serif" letter-spacing="0.3">'
+        f'{_xesc(cta_text)}</text>'
+        # big brand URL
         f'<text x="{PAD_L + 4}" y="{footer_y}" '
-        f'fill="#4a5568" font-size="12" font-family="sans-serif">'
-        f'mastermind-x.com</text>'
+        f'fill="#7f97c4" font-size="16" font-weight="bold" font-family="sans-serif" '
+        f'letter-spacing="0.4">mastermind-x.com</text>'
         f'<text x="{width - PAD_R - 4}" y="{footer_y}" '
         f'fill="#3a4466" font-size="10" text-anchor="end" '
         f'font-family="sans-serif">© 2026 Mastermind</text>'
@@ -1151,35 +1162,76 @@ def render_earnings_card(
     company_name: str,
     eps_actual: float,
     eps_est: float,
-    rev_actual: float,
-    rev_est: float,
+    rev_actual: float | None,
+    rev_est: float | None,
     *,
+    quarter: str | None = None,
+    logo_datauri: str | None = None,
+    logo_root: "Path | str | None" = None,
     width: int = 1000,
     height: int = 560,
 ) -> str:
     """Render a branded earnings illustration SVG.
 
-    Dark card, big ticker + company name, EPS/Rev actual vs est with beat/miss
-    green/red chips, Mastermind lockup, footer.
+    Dark card (#0E1420), real Mastermind favicon lockup top-left + wordmark,
+    giant white company logo (centered hero when logo_datauri / logo_root provided),
+    big TICKER EARNINGS header + quarter label, two stat blocks (EPS + Revenue) with
+    BEAT/MISS/INLINE chips (green/red/grey) + surprise %, revenue column suppressed
+    when rev_actual/rev_est are None (EPS-only card), branded footer CTA.
 
-    Returns self-contained SVG. No <script>. All text _xesc'd.
+    Args:
+        ticker: Stock ticker symbol.
+        company_name: Full company display name.
+        eps_actual: Reported EPS.
+        eps_est: Consensus EPS estimate.
+        rev_actual: Reported revenue in dollars, or None to omit revenue block.
+        rev_est: Consensus revenue estimate in dollars, or None to omit.
+        quarter: Quarter label, e.g. "Q2 2026". Shown below ticker.
+        logo_datauri: Pre-resolved whitened data URI for company logo.
+        logo_root: If logo_datauri is None and logo_root is provided, calls
+            resolve_logo(ticker, logo_root) to auto-fetch + cache.
+        width: Card width in px (default 1000).
+        height: Card height in px (default 560).
+
+    Returns:
+        Self-contained SVG string. No <script>. All text _xesc'd. < 60 KB with logo.
     """
-    eps_beat = eps_actual >= eps_est
-    rev_beat = rev_actual >= rev_est
+    # ── Auto-resolve logo ────────────────────────────────────────────────────
+    if logo_datauri is None and logo_root is not None:
+        logo_datauri = resolve_logo(ticker, logo_root)
 
-    eps_color = "#4CAF50" if eps_beat else "#E23B3B"
-    rev_color = "#4CAF50" if rev_beat else "#E23B3B"
-    eps_label = "BEAT" if eps_beat else "MISS"
-    rev_label = "BEAT" if rev_beat else "MISS"
+    # ── Unique id suffix (deterministic, collision-safe) ────────────────────
+    ec_uid = str(abs(hash(ticker + "ec")) % 10_000_000)
 
-    def _chip(label: str, color: str, cx: float, cy: float) -> str:
-        cw, ch = 52, 22
+    # ── Beat/miss/inline classification ─────────────────────────────────────
+    def _classify(actual: float, est: float) -> tuple[str, str, float]:
+        """Returns (label, color, surprise_pct)."""
+        if est == 0:
+            surp = 0.0
+        else:
+            surp = (actual - est) / abs(est) * 100.0
+        if abs(surp) < 0.5:
+            return "INLINE", "#6b7a99", surp
+        return ("BEAT", "#4CAF50", surp) if actual > est else ("MISS", "#E23B3B", surp)
+
+    eps_label, eps_color, eps_surp = _classify(eps_actual, eps_est)
+    has_rev = rev_actual is not None and rev_est is not None
+
+    # ── Helper: wide chip (BEAT/MISS/INLINE) with surprise % below ──────────
+    def _stat_chip(label: str, color: str, surp: float, cx: float, cy: float) -> str:
+        cw, ch = 72, 26
+        sign = "+" if surp >= 0 else ""
+        surp_text = f"{sign}{surp:.1f}%"
         return (
             f'<rect x="{cx - cw / 2:.1f}" y="{cy - ch / 2:.1f}" '
-            f'width="{cw}" height="{ch}" rx="4" fill="{color}"/>'
-            f'<text x="{cx:.1f}" y="{cy + 5:.1f}" fill="#fff" '
-            f'font-size="11" font-weight="bold" text-anchor="middle">'
+            f'width="{cw}" height="{ch}" rx="5" fill="{color}" fill-opacity="0.18" '
+            f'stroke="{color}" stroke-width="1.2"/>'
+            f'<text x="{cx:.1f}" y="{cy + 5:.1f}" fill="{color}" '
+            f'font-size="12" font-weight="bold" text-anchor="middle">'
             f'{_xesc(label)}</text>'
+            f'<text x="{cx:.1f}" y="{cy + 22:.1f}" fill="{color}" '
+            f'font-size="10" text-anchor="middle" opacity="0.85">'
+            f'{_xesc(surp_text)}</text>'
         )
 
     def _fmt_rev(v: float) -> str:
@@ -1191,67 +1243,148 @@ def render_earnings_card(
             return f"${v / 1e6:.2f}M"
         return f"${v:,.2f}"
 
-    # Real favicon logomark for brand lockup
-    ec_uid = str(abs(hash(ticker + "ec")) % 10_000_000)
+    # ── Brand lockup (top-left) ──────────────────────────────────────────────
     ec_logo_tile = 30.0
+    logo_cx_brand = 14 + ec_logo_tile / 2
+    logo_cy_brand = 14 + ec_logo_tile / 2
     ec_logo_defs, ec_logo_group = _favicon_logomark(
-        8 + ec_logo_tile / 2, 8 + ec_logo_tile / 2, size=ec_logo_tile, uid=ec_uid
+        logo_cx_brand, logo_cy_brand, size=ec_logo_tile, uid=ec_uid
     )
+    wordmark_x = logo_cx_brand + ec_logo_tile / 2 + 8
+    wordmark_y = logo_cy_brand + 7
     wordmark_svg = (
-        f'<text x="{8 + ec_logo_tile + 6:.1f}" y="{8 + ec_logo_tile / 2 + 6:.1f}" '
-        f'fill="#ffffff" font-size="18" '
+        f'<text x="{wordmark_x:.1f}" y="{wordmark_y:.1f}" '
+        f'fill="#ffffff" font-size="17" '
         f'font-weight="900" font-family="sans-serif" letter-spacing="0.07em">'
         f'MASTERMIND</text>'
     )
 
-    # Earnings content block (center of card)
-    center_x = width / 2
-    # Card columns: EPS left, Rev right
-    col_l = width * 0.28
-    col_r = width * 0.72
+    # ── Header band (dark strip) ─────────────────────────────────────────────
+    header_h = 60
+    header_bg = (
+        f'<rect x="0" y="0" width="{width}" height="{header_h}" '
+        f'fill="#0A1020" opacity="0.92"/>'
+    )
 
-    content = (
-        # Header
-        f'<text x="{center_x:.1f}" y="90" fill="#8899bb" font-size="15" '
-        f'text-anchor="middle" letter-spacing="2">REPORTS EARNINGS</text>'
-        f'<text x="{center_x:.1f}" y="145" fill="#ffffff" font-size="52" '
-        f'font-weight="bold" text-anchor="middle">{_xesc(ticker.upper())}</text>'
-        f'<text x="{center_x:.1f}" y="180" fill="#8899bb" font-size="16" '
-        f'text-anchor="middle">{_xesc(company_name)}</text>'
-        # Divider
-        f'<line x1="{width * 0.15:.1f}" y1="205" x2="{width * 0.85:.1f}" y2="205" '
+    # ── Company logo (hero, centered below header) ───────────────────────────
+    logo_svg = ""
+    if logo_datauri:
+        logo_area_top = header_h + 8
+        logo_area_h = height * 0.30          # 30% of card height
+        logo_w = width * 0.32
+        logo_x_pos = (width - logo_w) / 2
+        logo_svg = (
+            f'<image href="{logo_datauri}" '
+            f'x="{logo_x_pos:.1f}" y="{logo_area_top:.1f}" '
+            f'width="{logo_w:.1f}" height="{logo_area_h:.1f}" '
+            f'opacity="0.92" preserveAspectRatio="xMidYMid meet"/>'
+        )
+
+    # ── Main heading ─────────────────────────────────────────────────────────
+    center_x = width / 2
+    # Push content down when logo is present
+    content_top = header_h + (height * 0.34 if logo_datauri else 24)
+
+    ticker_y = content_top + 44
+    heading_label = f"{ticker.upper()} EARNINGS"
+    heading_size = max(32, min(52, int(width * 0.048)))
+    heading_svg = (
+        f'<text x="{center_x:.1f}" y="{ticker_y:.1f}" fill="#ffffff" '
+        f'font-size="{heading_size}" font-weight="bold" '
+        f'text-anchor="middle" font-family="sans-serif">'
+        f'{_xesc(heading_label)}</text>'
+    )
+
+    # Quarter label
+    quarter_svg = ""
+    if quarter:
+        quarter_y = ticker_y + 28
+        quarter_svg = (
+            f'<text x="{center_x:.1f}" y="{quarter_y:.1f}" fill="#8899bb" '
+            f'font-size="15" text-anchor="middle" letter-spacing="1" '
+            f'font-family="sans-serif">{_xesc(quarter.upper())}</text>'
+        )
+        company_y = ticker_y + 52
+    else:
+        company_y = ticker_y + 30
+    company_svg = (
+        f'<text x="{center_x:.1f}" y="{company_y:.1f}" fill="#6b7a99" '
+        f'font-size="14" text-anchor="middle" font-family="sans-serif">'
+        f'{_xesc(company_name)}</text>'
+    )
+
+    # ── Stat blocks ──────────────────────────────────────────────────────────
+    stat_top = company_y + 28
+    divider_y = stat_top - 8
+
+    # Horizontal divider above stat blocks
+    divider_svg = (
+        f'<line x1="{width * 0.12:.1f}" y1="{divider_y:.1f}" '
+        f'x2="{width * 0.88:.1f}" y2="{divider_y:.1f}" '
         f'stroke="#232A3D" stroke-width="1"/>'
-        # EPS column header
-        f'<text x="{col_l:.1f}" y="240" fill="#6b7a99" font-size="12" '
-        f'text-anchor="middle" letter-spacing="1">EPS</text>'
-        # EPS actual
-        f'<text x="{col_l:.1f}" y="285" fill="#ffffff" font-size="36" '
-        f'font-weight="bold" text-anchor="middle">'
-        f'{_xesc(f"${eps_actual:.2f}")}</text>'
-        # EPS vs est
-        f'<text x="{col_l:.1f}" y="310" fill="#6b7a99" font-size="12" '
-        f'text-anchor="middle">Est: {_xesc(f"${eps_est:.2f}")}</text>'
-        # EPS beat/miss chip
-    ) + _chip(eps_label, eps_color, col_l, 340) + (
-        # Revenue column header
-        f'<text x="{col_r:.1f}" y="240" fill="#6b7a99" font-size="12" '
-        f'text-anchor="middle" letter-spacing="1">REVENUE</text>'
-        # Rev actual
-        f'<text x="{col_r:.1f}" y="285" fill="#ffffff" font-size="36" '
-        f'font-weight="bold" text-anchor="middle">'
-        f'{_xesc(_fmt_rev(rev_actual))}</text>'
-        # Rev vs est
-        f'<text x="{col_r:.1f}" y="310" fill="#6b7a99" font-size="12" '
-        f'text-anchor="middle">Est: {_xesc(_fmt_rev(rev_est))}</text>'
-    ) + _chip(rev_label, rev_color, col_r, 340) + (
-        # Vertical divider between columns
-        f'<line x1="{center_x:.1f}" y1="220" x2="{center_x:.1f}" y2="360" '
-        f'stroke="#232A3D" stroke-width="1"/>'
-        # Footer cite slot
-        f'<text x="{center_x:.1f}" y="{height - 30}" fill="#3a4466" '
-        f'font-size="11" text-anchor="middle">Source: Company IR</text>'
-        f'<text x="{width - 12}" y="{height - 12}" fill="#3a4466" '
-        f'font-size="10" text-anchor="end">© 2026 Mastermind</text>'
+    )
+
+    if has_rev:
+        # Two columns: EPS left, Revenue right
+        col_l = width * 0.28
+        col_r = width * 0.72
+        rev_label, rev_color, rev_surp = _classify(rev_actual, rev_est)
+
+        stat_svg = (
+            # ── EPS column ──
+            f'<text x="{col_l:.1f}" y="{stat_top + 16:.1f}" fill="#6b7a99" '
+            f'font-size="11" text-anchor="middle" letter-spacing="2" '
+            f'font-family="sans-serif">EPS</text>'
+            f'<text x="{col_l:.1f}" y="{stat_top + 54:.1f}" fill="#ffffff" '
+            f'font-size="34" font-weight="bold" text-anchor="middle" '
+            f'font-family="sans-serif">{_xesc(f"${eps_actual:.2f}")}</text>'
+            f'<text x="{col_l:.1f}" y="{stat_top + 76:.1f}" fill="#6b7a99" '
+            f'font-size="12" text-anchor="middle" font-family="sans-serif">'
+            f'Est: {_xesc(f"${eps_est:.2f}")}</text>'
+        ) + _stat_chip(eps_label, eps_color, eps_surp, col_l, stat_top + 108) + (
+            # ── Vertical divider ──
+            f'<line x1="{center_x:.1f}" y1="{stat_top:.1f}" '
+            f'x2="{center_x:.1f}" y2="{stat_top + 140:.1f}" '
+            f'stroke="#232A3D" stroke-width="1"/>'
+            # ── Revenue column ──
+            f'<text x="{col_r:.1f}" y="{stat_top + 16:.1f}" fill="#6b7a99" '
+            f'font-size="11" text-anchor="middle" letter-spacing="2" '
+            f'font-family="sans-serif">REVENUE</text>'
+            f'<text x="{col_r:.1f}" y="{stat_top + 54:.1f}" fill="#ffffff" '
+            f'font-size="34" font-weight="bold" text-anchor="middle" '
+            f'font-family="sans-serif">{_xesc(_fmt_rev(rev_actual))}</text>'
+            f'<text x="{col_r:.1f}" y="{stat_top + 76:.1f}" fill="#6b7a99" '
+            f'font-size="12" text-anchor="middle" font-family="sans-serif">'
+            f'Est: {_xesc(_fmt_rev(rev_est))}</text>'
+        ) + _stat_chip(rev_label, rev_color, rev_surp, col_r, stat_top + 108)
+    else:
+        # EPS-only: centered single column
+        stat_svg = (
+            f'<text x="{center_x:.1f}" y="{stat_top + 16:.1f}" fill="#6b7a99" '
+            f'font-size="11" text-anchor="middle" letter-spacing="2" '
+            f'font-family="sans-serif">EARNINGS PER SHARE</text>'
+            f'<text x="{center_x:.1f}" y="{stat_top + 62:.1f}" fill="#ffffff" '
+            f'font-size="44" font-weight="bold" text-anchor="middle" '
+            f'font-family="sans-serif">{_xesc(f"${eps_actual:.2f}")}</text>'
+            f'<text x="{center_x:.1f}" y="{stat_top + 86:.1f}" fill="#6b7a99" '
+            f'font-size="13" text-anchor="middle" font-family="sans-serif">'
+            f'vs. Est {_xesc(f"${eps_est:.2f}")}</text>'
+        ) + _stat_chip(eps_label, eps_color, eps_surp, center_x, stat_top + 116)
+
+    # ── Footer CTA ───────────────────────────────────────────────────────────
+    footer_y = height - 10
+    cta_text = "mastermind-x.com · free 14-day trial"
+    cta_w = 8 + int(len(cta_text) * 6.4) + 8
+    footer_svg = (
+        f'<rect x="14" y="{footer_y - 28}" width="{cta_w}" height="18" rx="9" '
+        f'fill="#3b82f6" fill-opacity="0.14" stroke="#5b9dff" '
+        f'stroke-opacity="0.4" stroke-width="1"/>'
+        f'<text x="22" y="{footer_y - 14:.1f}" fill="#9db8e8" '
+        f'font-size="11" font-family="sans-serif" letter-spacing="0.3">'
+        f'{_xesc(cta_text)}</text>'
+        f'<text x="{width - 14}" y="{footer_y - 4}" fill="#3a4466" '
+        f'font-size="9" text-anchor="end" font-family="sans-serif">'
+        f'© 2026 Mastermind · Source: Company IR</text>'
     )
 
     svg = (
@@ -1259,12 +1392,23 @@ def render_earnings_card(
         f'xmlns="http://www.w3.org/2000/svg" '
         f'width="{width}" height="{height}">\n'
         f'  <defs>{ec_logo_defs}</defs>\n'
+        f'  <!-- background -->\n'
         f'  <rect width="{width}" height="{height}" fill="#0E1420"/>\n'
-        f'  <!-- brand lockup -->\n'
+        f'  <!-- company logo hero -->\n'
+        f'  {logo_svg}\n'
+        f'  <!-- main heading -->\n'
+        f'  {heading_svg}\n'
+        f'  {quarter_svg}\n'
+        f'  {company_svg}\n'
+        f'  <!-- stat blocks -->\n'
+        f'  {divider_svg}\n'
+        f'  {stat_svg}\n'
+        f'  <!-- header band (on top) -->\n'
+        f'  {header_bg}\n'
         f'  {ec_logo_group}\n'
         f'  {wordmark_svg}\n'
-        f'  <!-- earnings content -->\n'
-        f'  {content}\n'
+        f'  <!-- footer -->\n'
+        f'  {footer_svg}\n'
         f'</svg>'
     )
     return svg
