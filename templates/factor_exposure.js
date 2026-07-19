@@ -250,7 +250,9 @@
 
   function render(panel, tickers, data) {
     if (!data || !data.factors) { panel.style.display = 'none'; return; }
-    var a = aggregate(tickers, data, loadW());
+    // AUTO_W (from portfolio.js dollar values) takes precedence over manual editor weights
+    var wmap = AUTO_W ? AUTO_W : loadW();
+    var a = aggregate(tickers, data, wmap);
     if (!a.ok) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
     panel.innerHTML = '<h2>' + S('title') + '</h2>'
@@ -261,6 +263,7 @@
 
   // --- public seam ---------------------------------------------------------
   var PANEL = null;
+  var AUTO_W = null;  // {ticker->dollarValue} pushed by portfolio.js; null = equal-weight
   function panelEl() { if (!PANEL) PANEL = document.getElementById('fx_panel'); return PANEL; }
   window.FX = {
     update: function (tickers) {
@@ -268,7 +271,14 @@
       var p = panelEl(); if (!p) return;
       load().then(function (data) { render(p, LAST, data); });
     },
-    refresh: function () { window.FX.update(LAST); }
+    refresh: function () { window.FX.update(LAST); },
+    // Called by portfolio.js after every render.
+    // w = {ticker: dollarValue} for open holdings with shares + price; null resets to equal-weight.
+    setAutoWeights: function (w) {
+      AUTO_W = w || null;
+      var p = panelEl(); if (!p || !LAST.length) return;
+      load().then(function (data) { render(p, LAST, data); });
+    }
   };
   document.addEventListener('click', function (e) {
     if (e.target && e.target.classList && e.target.classList.contains('lang-btn')) {

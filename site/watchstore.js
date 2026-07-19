@@ -406,6 +406,8 @@
   window.WatchStore = {
     status: status,
     pull: pull,
+    user: function () { return user; },
+    portfolioOk: function () { return portfolioOk; },
     portfolio: {
       list: portfolioList,
       upsert: portfolioUpsert,
@@ -425,9 +427,11 @@
       queuedBlob = null;
       portfolioOk = true;
       showSignedOut();
+      document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: null } }));
       return;
     }
     showAccount(user.email || '');
+    document.dispatchEvent(new CustomEvent('wl-auth', { detail: { user: user } }));
     // Resolve the shared Supabase client then kick off the initial pull
     var getClient = window.getSupabaseClient;
     if (!getClient) { setPill('offline'); warnOnce('no-client', 'getSupabaseClient not found'); return; }
