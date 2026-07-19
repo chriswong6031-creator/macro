@@ -15,3 +15,9 @@ anthropic>=0.28,<1.0
 # Optional GeoIP country lookup for the site-access gate.
 # The gate imports maxminddb lazily; startup succeeds if the library is absent.
 maxminddb>=1.4
+# Inline chart rendering (W6c): render_inline_chart tool in brain_gateway calls
+# engine.marketing.chart_render which needs pandas + pyarrow to load parquet bars.
+# Imported lazily inside _chart_for_chat — startup succeeds if absent (chart
+# gracefully unavailable rather than crashing the API process).
+pandas>=2.2
+pyarrow>=16

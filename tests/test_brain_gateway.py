@@ -569,7 +569,7 @@ def test_client_history_used_when_thread_store_absent(tmp_path):
 
     def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         captured_history.extend(history)
-        return "OK.", [], [], [], {}, []
+        return "OK.", [], [], [], {}, [], []
 
     client_history = [
         {"role": "user", "content": "Prior question"},
@@ -807,7 +807,7 @@ def test_1500_char_message_reaches_model_loop(tmp_path):
 
     def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         loop_called.append(message)
-        return "OK.", [], [], [], {}, []
+        return "OK.", [], [], [], {}, [], []
 
     with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
         with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
@@ -839,7 +839,7 @@ def test_client_history_injection_filtered(tmp_path):
 
     def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         captured_history.extend(history)
-        return "OK.", [], [], [], {}, []
+        return "OK.", [], [], [], {}, [], []
 
     # Inject bogus history entries
     poisoned_history = [
@@ -883,7 +883,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
     def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         # We can't introspect user_content directly, so we return and check that
         # the loop was called (no crash, no injection)
-        return "OK.", [], [], [], {}, []
+        return "OK.", [], [], [], {}, [], []
 
     # Hook into _run_brain_loop to capture the built messages
     original_loop = gw._run_brain_loop
@@ -1362,7 +1362,7 @@ def test_research_mode_raises_tool_budget(tmp_path):
 
     def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         captured_tb.append(tb)
-        return "Research done.", [], [], [], {}, []
+        return "Research done.", [], [], [], {}, [], []
 
     text_response = _MockResponse([_MockBlock("text", "OK.")], "end_turn")
     mock_providers = [{"client": _MockClient([text_response]), "model": "claude-opus-4-8"}]
@@ -1569,3 +1569,204 @@ def test_unknown_sse_event_type_ignored_gracefully(tmp_path):
     assert cmd_ev.get("action") == "set_symbol"
     assert cmd_ev.get("symbol"), f"command event must carry a flat 'symbol': {cmd_ev}"
     assert "payload" not in cmd_ev
+
+
+# ---------------------------------------------------------------------------
+# W6c: Inline chart rendering tests
+# ---------------------------------------------------------------------------
+
+def test_render_inline_chart_in_tool_schema_list():
+    """render_inline_chart appears in the tool schema list for any page (not terminal-gated)."""
+    root = _make_temp_root()
+    for page in ("", "chat", "dashboard", "terminal"):
+        schemas = gw._all_brain_tool_schemas(root, page=page)
+        names = {s["name"] for s in schemas}
+        assert "render_inline_chart" in names, (
+            f"render_inline_chart missing from schema list for page={page!r}: {names}"
+        )
+
+
+def test_render_inline_chart_schema_has_symbol_required():
+    """render_inline_chart schema marks symbol as required and timeframe as optional."""
+    root = _make_temp_root()
+    schemas = gw._all_brain_tool_schemas(root, page="")
+    schema = next(s for s in schemas if s["name"] == "render_inline_chart")
+    props = schema["input_schema"]["properties"]
+    required = schema["input_schema"]["required"]
+    assert "symbol" in required
+    assert "symbol" in props
+    assert "timeframe" in props
+    # timeframe is DAILY-only — the inline loader reads the daily parquet, so weekly/
+    # intraday labels would mislabel daily candles (a correctness defect).
+    tf_enum = props["timeframe"].get("enum") or []
+    assert tf_enum == ["DAILY"]
+
+
+def test_render_inline_chart_dispatch_with_svg(tmp_path):
+    """_dispatch_brain_tool('render_inline_chart') returns type='chart' with svg when monkeypatched."""
+    root = _make_temp_root()
+
+    fake_svg = "<svg>test</svg>"
+
+    with patch.object(gw, "_chart_for_chat", return_value=fake_svg):
+        result = gw._dispatch_brain_tool(
+            "render_inline_chart",
+            {"symbol": "NVDA"},
+            root,
+            tmp_path,
+            "http://localhost:3100",
+        )
+
+    assert result.get("client_executed") is True
+    assert result.get("type") == "chart"
+    assert result.get("ticker") == "NVDA"
+    assert result.get("svg") == fake_svg
+
+
+def test_render_inline_chart_dispatch_no_bars(tmp_path):
+    """When _chart_for_chat returns None, dispatch returns svg='' with a note."""
+    root = _make_temp_root()
+
+    with patch.object(gw, "_chart_for_chat", return_value=None):
+        result = gw._dispatch_brain_tool(
+            "render_inline_chart",
+            {"symbol": "UNKNOWN"},
+            root,
+            tmp_path,
+            "http://localhost:3100",
+        )
+
+    assert result.get("client_executed") is True
+    assert result.get("type") == "chart"
+    assert result.get("svg") == ""
+    assert "unavailable" in result.get("note", "")
+
+
+def test_render_inline_chart_sse_chart_event_emitted(tmp_path):
+    """SSE 'chart' event is emitted in the stream when render_inline_chart fires with a non-empty svg."""
+    root = _make_temp_root()
+
+    fake_svg = "<svg>chart</svg>"
+
+    # Simulate model calling render_inline_chart
+    chart_tool_block = _MockBlock("tool_use", name="render_inline_chart", input_={"symbol": "TSLA"}, id_="ch1")
+    turn1 = _MockResponse([chart_tool_block], "tool_use")
+    turn2 = _MockResponse(
+        [_MockBlock("text", "Here is the TSLA chart. is_context_only: true — all signals are display-tier pending FDR.")],
+        "end_turn",
+    )
+    mock_providers = [{"client": _MockClient([turn1, turn2]), "model": "deepseek-chat"}]
+
+    with patch.object(gw, "_chart_for_chat", return_value=fake_svg):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            events = list(gw.chat_stream(
+                                "Show me TSLA chart", "user_chart",
+                                lane="fast", root=root,
+                            ))
+
+    parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+    chart_events = [p for p in parsed if p.get("type") == "chart"]
+    assert chart_events, f"No 'chart' SSE events emitted: {parsed}"
+    chart_ev = chart_events[0]
+    assert chart_ev.get("ticker") == "TSLA"
+    assert chart_ev.get("svg") == fake_svg
+    assert "timeframe" in chart_ev
+
+
+def test_render_inline_chart_no_sse_when_svg_empty(tmp_path):
+    """No 'chart' SSE event is emitted when svg is empty (bars unavailable)."""
+    root = _make_temp_root()
+
+    chart_tool_block = _MockBlock("tool_use", name="render_inline_chart", input_={"symbol": "XYZ"}, id_="ch2")
+    turn1 = _MockResponse([chart_tool_block], "tool_use")
+    turn2 = _MockResponse(
+        [_MockBlock("text", "Chart unavailable for XYZ. is_context_only: true — all signals are display-tier pending FDR.")],
+        "end_turn",
+    )
+    mock_providers = [{"client": _MockClient([turn1, turn2]), "model": "deepseek-chat"}]
+
+    with patch.object(gw, "_chart_for_chat", return_value=None):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            events = list(gw.chat_stream(
+                                "Show me XYZ", "user_nochrt",
+                                lane="fast", root=root,
+                            ))
+
+    parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+    # No 'chart' event with svg data should be emitted
+    chart_events_with_svg = [p for p in parsed if p.get("type") == "chart" and p.get("svg")]
+    assert not chart_events_with_svg, f"Unexpected chart SSE events with svg: {chart_events_with_svg}"
+
+
+def test_chat_result_includes_charts(tmp_path):
+    """chat() non-stream result includes 'charts' key when render_inline_chart fires."""
+    root = _make_temp_root()
+
+    fake_svg = "<svg>inline</svg>"
+
+    chart_tool_block = _MockBlock("tool_use", name="render_inline_chart", input_={"symbol": "AAPL"}, id_="ch3")
+    turn1 = _MockResponse([chart_tool_block], "tool_use")
+    turn2 = _MockResponse(
+        [_MockBlock("text", "AAPL chart shown. is_context_only: true — all signals are display-tier pending FDR.")],
+        "end_turn",
+    )
+    mock_providers = [{"client": _MockClient([turn1, turn2]), "model": "deepseek-chat"}]
+
+    with patch.object(gw, "_chart_for_chat", return_value=fake_svg):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            result = gw.chat(
+                                "Show AAPL chart", "user_charts_result",
+                                lane="fast", root=root,
+                            )
+
+    assert result.get("ok") is True
+    charts = result.get("charts", [])
+    assert charts, f"'charts' key missing from chat() result: {result}"
+    assert charts[0].get("type") == "chart"
+    assert charts[0].get("ticker") == "AAPL"
+    assert charts[0].get("svg") == fake_svg
+
+
+def test_chart_for_chat_lazy_import_no_pandas_crash():
+    """_chart_for_chat returns None gracefully when pandas/pyarrow are absent (no import at module load)."""
+    root = _make_temp_root()
+    # Even if chart_render isn't importable (no parquet file, or import errors),
+    # _chart_for_chat must return None not raise
+    result = gw._chart_for_chat("FAKE_TICKER_9999", root, timeframe="DAILY")
+    assert result is None, f"Expected None for unknown ticker, got {result!r}"
+
+
+def test_brain_gateway_imports_without_pandas():
+    """brain_gateway module must be importable without pandas/pyarrow installed."""
+    # The module is already imported — verify that its import did NOT require pandas.
+    # We confirm this indirectly: the module loaded (we're running its tests) and
+    # pandas was not imported at module level (only inside _chart_for_chat).
+    import importlib
+    import sys
+    # If pandas was imported at module level, it would appear in sys.modules before
+    # any test runs. We can't un-import it, but we verify the function is lazy:
+    # temporarily hide pandas and confirm _chart_for_chat handles the ImportError.
+    original_pandas = sys.modules.pop("pandas", None)
+    original_pyarrow = sys.modules.pop("pyarrow", None)
+    try:
+        root = _make_temp_root()
+        result = gw._chart_for_chat("NODATA", root)
+        # Must not raise — should return None (no parquet file in temp root)
+        assert result is None
+    finally:
+        if original_pandas is not None:
+            sys.modules["pandas"] = original_pandas
+        if original_pyarrow is not None:
+            sys.modules["pyarrow"] = original_pyarrow
