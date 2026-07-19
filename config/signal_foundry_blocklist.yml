@@ -412,12 +412,13 @@ entries:
   - id: BL-G013
     match:
       any_of:
-        - 'held.{0,30}position.{0,30}ledger'
+        - 'fused.{0,30}position.{0,30}composite'
     reason: >
-      FORBIDDEN — build lives in Mastermind repo; restates
-      NWC-U4/NWP-U18/RUL-F3.2. Fused per-position risk score also
-      struck
-    source: 'PRD-R1/PRD-R2, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md`'
+      FORBIDDEN — aggregates are printed lane counts + named role
+      ladders only. (PRD-R1 placement exclusivity struck by operator
+      override 2026-07-18, PRD Amendment 1 — user-facing display-tier
+      watchlist+por
+    source: 'PRD-R2 + Amendment 1, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md`; UWP-R1..R7, `UNIFIED_WATCHLIST_PORTFOLIO_MASTERPLAN_BY_FABLE.md`'
 
   - id: BL-G014
     match:
