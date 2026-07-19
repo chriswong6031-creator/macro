@@ -33,7 +33,7 @@ Strategy corpus (read the one your docket cites): `research/NEURAL_WEB_AUTONOMOU
 | [D02](D02_X_ACTUATION_COMPUTER_CONTROL.md) | X actuation: outbox + computer-control posting loop | Broadcast | **P0** | — | W1 accounts; **W0 merged #3056** |
 | [D08](D08_SENTINEL_TRUST_OFFICE_W1.md) | Sentinel W1: pre-publication policy gate + ban-risk rails | Sentinel | **P0** | — | No — build before launch |
 | [D03](D03_ENGAGEMENT_TELEMETRY_LAB.md) | Engagement telemetry → Lab learning loop | Lab | P1 | D02 live | Analytics access for W1 |
-| [D04](D04_INDICATORS_M2_VWAP_VOLUME_PROFILE.md) | Indicators M2: VWAP / AVWAP / Volume Profile / POC | Workshop + Studio | P1 | — | No |
+| [D04](D04_INDICATORS_M2_VWAP_VOLUME_PROFILE.md) | Indicators M2: VWAP / AVWAP / Volume Profile / POC — **W1–W3 built 2026-07-19; Terminal port pending** | Workshop + Studio | P1 | — | No |
 | [D05](D05_BREAKING_DESKS.md) | Breaking desks: news / policy-feed ingestion + cite cards | Radar + Studio | P1 | feeds D01 | No for W0 |
 | [D06](D06_RADAR_INTELLIGENCE_W1.md) | Radar W1: real opportunity feeds + cashtag traffic tiers | Radar | P2 | — | No |
 | [D07](D07_FUNNEL_LIFECYCLE_MNZ.md) | Funnel W1: UTM attribution + trial-conversion join (MNZ) | Funnel | P2 | D02 live for real data | Analytics/Supabase join |

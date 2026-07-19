@@ -1,6 +1,6 @@
 # MKT-D04 — Indicators M2: VWAP / Anchored VWAP / Volume Profile / Point of Control
 
-**Department:** Workshop (products) + Studio · **Priority: P1** · **Status: ready now, no operator input**
+**Department:** Workshop (products) + Studio · **Priority: P1** · **Status: W1–W3 BUILT 2026-07-19 (this PR) — engine/indicators_m2.py (6 signals, 2 families, daily-only legs) + tech_catalog/miner registration + fingerprint-cached site/factordata/m2_profiles.json in tech_lab_offrender (render-path delta 0) + chart AVWAP/POC/VA overlays (opus taste gate PASSED) + chart_facts emitters. Come-back: first nightly bakes M2 legs into tech_confluence.json combos + m2_profiles artifact. Remaining: W3.7 Terminal port (separate charting-app PR, shared parity fixture tests/fixtures/tech_parity/expected_m2.json).**
 **Playbook (read it):** `research/MARKETING_TRENDSPIDER_PLAYBOOK_AND_CHART_ENGINE_BY_FABLE.md` — M2 is the named indicator gap vs. TrendSpider after M1 (MACD/RSI/StochRSI crosses) shipped in #2971.
 
 ## Why

@@ -23,6 +23,7 @@ Legacy (pre-integration) modules:
 - engine.rsi_stack_signals       (rsi_stack family)
 - engine.bollinger_event_signals (bollinger_events family)
 - engine.momentum_events         (macd_events / rsi_events / stoch_events / stoch_events_2w)
+- engine.indicators_m2           (vwap_events / volume_profile_events — daily-only, D04)
 
 Technical Lab modules (integrated in this PR):
 - engine.trend_strength_signals   (directional_trend / trend_recency / price_pressure families)
@@ -435,7 +436,7 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
         ("engine.momentum_events",         "momentum_events"),
     ]
 
-    # New Technical Lab modules
+    # New Technical Lab modules (D04: indicators_m2 uses full descriptors in-module — no backfill)
     lab_modules = [
         ("engine.trend_strength_signals",    "trend_strength_signals"),
         ("engine.compression_signals",       "compression_signals"),
@@ -447,6 +448,8 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
         ("engine.bar_structure_signals",     "bar_structure_signals"),
         ("engine.fractal_pivot_signals",     "fractal_pivot_signals"),
         ("engine.challenger_signals",        "challenger_signals"),
+        # Indicators M2: VWAP / Anchored VWAP / Volume Profile (D04)
+        ("engine.indicators_m2",             "indicators_m2"),
     ]
 
     source_modules = legacy_modules + lab_modules

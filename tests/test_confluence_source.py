@@ -570,6 +570,134 @@ def test_eligibility_gate_still_excludes_invalidated_plans(tmp_path):
     assert "QCOM" not in chart_tickers, "Invalidated QCOM plan leaked into charts"
 
 
+# ---------------------------------------------------------------------------
+# F2: leg_families emitted + drives M2 overlay liveness
+# ---------------------------------------------------------------------------
+
+def test_fired_combos_emit_leg_families():
+    """Every fired combo carries leg_families mapped from the legs catalog."""
+    from engine.marketing.confluence_source import fired_combo_signals
+    conf = _make_fake_conf()
+    fired = fired_combo_signals(conf, top_n=20, today="2026-07-18")
+    assert fired, "expected fired combos"
+    for sig in fired:
+        assert "leg_families" in sig, "leg_families missing from fired combo"
+        assert isinstance(sig["leg_families"], list)
+    # L0001 has legs [0,1,2] → families ma_crosses, trend, momentum
+    aapl = next(s for s in fired if s["combo_id"] == "L0001")
+    assert aapl["leg_families"] == ["ma_crosses", "trend", "momentum"], (
+        f"leg_families wrong for L0001: {aapl['leg_families']}"
+    )
+
+
+def _make_m2_conf(family: str, ticker: str = "ZM2T") -> dict:
+    """A fake conf whose single fired combo has ONE M2 leg of the given family.
+
+    last_fire is computed fresh (1 day ago) so the content_studio freshness gate
+    (max_age_days=10, evaluated against the real 'now') always passes.
+    """
+    from datetime import datetime, timedelta, timezone as _tz
+    fresh_fire = (datetime.now(_tz.utc).date() - timedelta(days=1)).isoformat()
+    legs = [
+        {"leg_id": f"{family}_leg@D", "signal_id": f"{family}_leg", "tf": "D",
+         "kind": "event", "family": family, "direction": 1,
+         "display_en": "Signal Stack Leg", "display_zh": "信号"},
+    ]
+    combo = {
+        "id": "M2X1", "legs": [0], "dir": 1, "name_en": "M2 combo",
+        "h10": {"n": 80, "wr": 0.62, "wr_mc_test": 0.80, "n_test": 15, "months_test": 12},
+        "h21": {"n": 80, "wr": 0.65, "wr_mc_test": 0.85, "n_test": 15, "months_test": 12},
+        "edge_wr_test": 0.30, "rank_score": 0.18, "n_fires": 80, "n_tickers": 60,
+        "fires_last3y": 8, "last_fire": fresh_fire, "first_fire": "2022-01-01",
+        "active_now": [ticker], "recent_fires": [],
+    }
+    return {"generated_utc": "2026-07-18T04:01:46Z", "legs": legs,
+            "combos": {"long": [combo], "short": []}}
+
+
+def _capture_render(monkeypatch):
+    """Monkeypatch chart_render so load_ohlcv/build_m2_overlays are synthetic and
+    render_chart_v2 records the overlay kwargs it receives. Returns the capture list.
+    """
+    import engine.marketing.chart_render as cr
+
+    captured: list[dict] = []
+
+    def _fake_load_ohlcv(ticker, root, n=90):
+        m = 60
+        dates = [f"2026-04-{(i % 27) + 1:02d}" for i in range(m)]
+        c = [100.0 + i * 0.2 for i in range(m)]
+        o = [c[0]] + c[:-1]
+        h = [ci + 1.0 for ci in c]
+        l = [ci - 1.0 for ci in c]
+        v = [1_000_000.0] * m
+        return dates, o, h, l, c, v
+
+    def _fake_build(ticker, dates, o, h, l, c, v, root):
+        return {
+            "avwap_overlay": {"values": [None] * len(c), "label": "AVWAP · Apr 24"},
+            "poc_overlay": {"poc": 105.0, "va_low": 103.0, "va_high": 108.0,
+                            "label": "POC 105.00"},
+        }
+
+    def _fake_render(*args, **kwargs):
+        captured.append({
+            "avwap_overlay": kwargs.get("avwap_overlay"),
+            "poc_overlay": kwargs.get("poc_overlay"),
+            "ticker": kwargs.get("ticker"),
+        })
+        return "<svg></svg>"
+
+    monkeypatch.setattr(cr, "load_ohlcv", _fake_load_ohlcv)
+    monkeypatch.setattr(cr, "build_m2_overlays", _fake_build)
+    monkeypatch.setattr(cr, "render_chart_v2", _fake_render)
+    return captured
+
+
+def _run_conf_plan(monkeypatch, tmp_path, family: str):
+    captured = _capture_render(monkeypatch)
+    conf_dir = tmp_path / "site" / "factordata"
+    conf_dir.mkdir(parents=True)
+    (conf_dir / "tech_confluence.json").write_text(json.dumps(_make_m2_conf(family)))
+    from engine.marketing.content_studio import content_plan
+    cfg = {"desk_network": {"stage": "A", "accounts": _sample_accounts()}}
+    content_plan(cfg, _sample_plans(), closes_loader=None, root=tmp_path)
+    # Only the confluence ticker's render call matters.
+    return [c for c in captured if c["ticker"] == "ZM2T"]
+
+
+def test_m2_liveness_volume_profile_leg_gets_poc_only(monkeypatch, tmp_path):
+    """A fired combo with a volume_profile_events leg → poc_overlay ONLY."""
+    conf_renders = _run_conf_plan(monkeypatch, tmp_path, "volume_profile_events")
+    assert conf_renders, "confluence chart was never rendered"
+    r = conf_renders[0]
+    assert r["poc_overlay"] is not None, "poc_overlay missing for volume_profile_events leg"
+    assert r["avwap_overlay"] is None, (
+        "avwap_overlay attached though no vwap_events leg fired"
+    )
+
+
+def test_m2_liveness_vwap_leg_gets_avwap_only(monkeypatch, tmp_path):
+    """A fired combo with a vwap_events leg → avwap_overlay ONLY."""
+    conf_renders = _run_conf_plan(monkeypatch, tmp_path, "vwap_events")
+    assert conf_renders, "confluence chart was never rendered"
+    r = conf_renders[0]
+    assert r["avwap_overlay"] is not None, "avwap_overlay missing for vwap_events leg"
+    assert r["poc_overlay"] is None, (
+        "poc_overlay attached though no volume_profile_events leg fired"
+    )
+
+
+def test_m2_liveness_non_m2_leg_gets_no_overlays(monkeypatch, tmp_path):
+    """A fired combo with only a non-M2 leg → no overlays attached (both None)."""
+    conf_renders = _run_conf_plan(monkeypatch, tmp_path, "ma_crosses")
+    assert conf_renders, "confluence chart was never rendered"
+    r = conf_renders[0]
+    assert r["avwap_overlay"] is None and r["poc_overlay"] is None, (
+        f"overlays attached for a non-M2 leg: {r}"
+    )
+
+
 def test_win_rate_hook_on_real_fired_combos():
     """If real tech_confluence.json exists, verify hooks for actual fired combos are clean."""
     from engine.marketing.confluence_source import load_confluence, fired_combo_signals, win_rate_hook

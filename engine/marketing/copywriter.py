@@ -129,6 +129,81 @@ def verify_signal_live(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Fact polarity filter (directional-post safety)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Legacy text markers — used ONLY for facts that carry no structured "polarity"
+# key (non-M2 facts). Matched at WORD BOUNDARIES so "anchored" can never match
+# "red" and "highlight" can never match "high" (the F1 polarity bug: the "red "
+# substring in "anchored VWAP" mis-tagged bullish AVWAP facts as bearish).
+_BEAR_MARKERS = ("lost", "below", "off its high", "down", "red",
+                 "biggest down", "52-week low", "worst")
+_BULL_MARKERS = ("reclaimed", "above", "high", "up", "green",
+                 "record", "surge", "streak")
+
+
+def _marker_hits(text: str, markers: tuple[str, ...]) -> bool:
+    """True if any marker appears in *text* at a word boundary (case-insensitive).
+
+    Multi-word markers ("off its high") are matched as phrases; single-word
+    markers use \\b...\\b so substrings inside larger words never trip
+    (e.g. "red" must not fire inside "anchored").
+    """
+    low = text.lower()
+    for m in markers:
+        pattern = r"\b" + r"\s+".join(re.escape(w) for w in m.split()) + r"\b"
+        if re.search(pattern, low):
+            return True
+    return False
+
+
+def _filter_facts_by_polarity(all_facts: list[dict], direction: str) -> list[dict]:
+    """Filter chart facts so a directional post never leads with a clashing fact.
+
+    Two lanes:
+      • Facts carrying a structured "polarity" (+1/0/-1) are filtered by that key
+        alone — never text-matched. A BULL post keeps +1/0; a BEAR post keeps
+        -1/0. This is the M2 path and is immune to the "red"/"anchored" bug.
+      • Facts WITHOUT "polarity" (legacy facts) fall back to word-boundary marker
+        matching: drop a fact whose text hits the opposing-direction markers.
+
+    Empty-result fallback: if the filter drops everything, prefer neutral /
+    unknown-polarity facts (polarity 0, or legacy facts that don't hit either
+    marker set) before falling back to the full list — so a BULL post can never
+    be forced to lead with a structured -1 (bearish) fact.
+    """
+    is_bear = direction == "BEAR"
+    opposing = _BULL_MARKERS if is_bear else _BEAR_MARKERS
+
+    kept: list[dict] = []
+    neutral_pool: list[dict] = []  # safe fallback: neutral / non-clashing facts
+    for f in all_facts:
+        pol = f.get("polarity")
+        if pol is not None:
+            # Structured path: bull keeps +1/0, bear keeps -1/0.
+            if pol == 0:
+                kept.append(f)
+                neutral_pool.append(f)
+            elif (pol > 0) != is_bear:
+                # +1 on a bull post, or -1 on a bear post → aligned, keep.
+                kept.append(f)
+            # else: clashing structured fact → excluded from both kept and pool
+        else:
+            # Legacy text-marker path (word-boundary).
+            if _marker_hits(f.get("text", ""), opposing):
+                continue  # clashes with the post direction → drop
+            kept.append(f)
+            neutral_pool.append(f)
+
+    if kept:
+        return kept
+    # Prefer neutral/non-clashing facts over reinstating clashing ones.
+    if neutral_pool:
+        return neutral_pool
+    return all_facts
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # build_context
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -173,14 +248,7 @@ def build_context(
         item_type = item.get("type", "")
         direction = str(plan.get("direction", "") or item.get("direction", "BULL")).upper()
         if item_type == "signal":
-            _BEAR_MARKERS = ("lost", "below", "off its high", "down ", "red ",
-                             "biggest down", "52-week low", "worst")
-            _BULL_MARKERS = ("reclaimed", "above", "high", "up ", "green ",
-                             "record", "surge", "streak")
-            markers = _BEAR_MARKERS if direction != "BEAR" else _BULL_MARKERS
-            filtered = [f for f in all_facts
-                        if not any(m in f.get("text", "").lower() for m in markers)]
-            top_facts = (filtered or all_facts)[:3]
+            top_facts = _filter_facts_by_polarity(all_facts, direction)[:3]
         else:
             top_facts = all_facts[:3]
         whitelist = list(facts.get("numbers_whitelist", []))

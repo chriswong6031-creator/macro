@@ -26,6 +26,14 @@ Fixtures written
   tests/fixtures/tech_parity/expected_bollinger.json
       Per-bar Bollinger Band values: upper, mid, lower (SMA(20), 2*std).
 
+  tests/fixtures/tech_parity/expected_m2.json
+      Per-bar Indicators M2 values (daily-bar approximations over typical price):
+        rolling_vwap_n20      — rolling VWAP (n=20), null during warmup
+        week_anchored_vwap    — week-anchored VWAP (resets each W-FRI period)
+        anchored_vwap_pos50   — anchored VWAP from positional index 50 inclusive
+        rolling_poc_w126_b24  — rolling POC (window=126, bins=24), null during warmup
+        volume_profile_final  — volume_profile dict for the final bar (full 500-bar window)
+
 Tolerance contract
 ------------------
 See tests/fixtures/tech_parity/README.md — 1e-6 relative tolerance.
@@ -263,6 +271,71 @@ def _compute_bollinger(df: pd.DataFrame) -> dict[str, list[float | None]]:
 
 
 # ---------------------------------------------------------------------------
+# Indicators M2 computation (VWAP / Volume Profile)
+# ---------------------------------------------------------------------------
+
+def _compute_m2(df: pd.DataFrame) -> dict[str, Any]:
+    """Compute Indicators M2 values using engine.indicators_m2.
+
+    Returns dict with full-length arrays (null during warmup) for:
+      rolling_vwap_n20      : rolling VWAP, n=20
+      week_anchored_vwap    : week-anchored VWAP (resets each W-FRI period)
+      anchored_vwap_pos50   : anchored VWAP from positional index 50 inclusive
+      rolling_poc_w126_b24  : rolling POC (window=126, bins=24)
+      volume_profile_final  : volume_profile dict for the full 500-bar window
+
+    All values are daily-bar approximations over typical price (H+L+C)/3.
+    """
+    from engine.indicators_m2 import (  # noqa: PLC0415
+        rolling_vwap,
+        week_anchored_vwap,
+        anchored_vwap,
+        rolling_poc,
+        volume_profile,
+    )
+
+    rv = rolling_vwap(df, n=20)
+    wv = week_anchored_vwap(df)
+    av = anchored_vwap(df, anchor=50)
+    rp = rolling_poc(df, window=126, bins=24)
+
+    # Final-bar volume profile over the full available window (all 500 bars)
+    vp = volume_profile(df, window=len(df), bins=24)
+    # Serialize volume_profile dict: convert numpy floats to plain Python floats for JSON
+    if vp is not None:
+        vp_serialized = {
+            "poc": float(vp["poc"]),
+            "va_low": float(vp["va_low"]),
+            "va_high": float(vp["va_high"]),
+            "total_volume": float(vp["total_volume"]),
+            "bin_edges": [float(x) for x in vp["bin_edges"]],
+            "bin_volumes": [float(x) for x in vp["bin_volumes"]],
+            "window_used": int(vp["window_used"]),
+        }
+    else:
+        vp_serialized = None
+
+    return {
+        "rolling_vwap_n20": _series_to_list(rv),
+        "week_anchored_vwap": _series_to_list(wv),
+        "anchored_vwap_pos50": _series_to_list(av),
+        "rolling_poc_w126_b24": _series_to_list(rp),
+        "volume_profile_final": vp_serialized,
+        "_params": {
+            "rolling_vwap_n": 20,
+            "week_anchored_vwap_period": "W-FRI",
+            "anchored_vwap_anchor_pos": 50,
+            "rolling_poc_window": 126,
+            "rolling_poc_bins": 24,
+            "volume_profile_window": len(df),
+            "volume_profile_bins": 24,
+            "typical_price": "(H+L+C)/3",
+            "note": "Daily-bar approximation over typical price — not intraday-true VWAP",
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # OHLCV serializer
 # ---------------------------------------------------------------------------
 
@@ -334,6 +407,14 @@ def build_fixtures(output_dir: Path) -> None:
         json.dump(bb_data, fh, indent=2)
     log.info("Wrote %s", bb_path)
 
+    # Indicators M2 (VWAP / Volume Profile)
+    log.info("Computing Indicators M2 (VWAP / Volume Profile)…")
+    m2_data = _compute_m2(df)
+    m2_path = output_dir / "expected_m2.json"
+    with open(m2_path, "w") as fh:
+        json.dump(m2_data, fh, indent=2)
+    log.info("Wrote %s", m2_path)
+
     log.info("All fixtures written to %s", output_dir)
     print(f"\n[build_tech_parity_fixtures] {_N_BARS} bars, seed={_RNG_SEED}")
     print(f"  ohlcv.json:              {ohlcv_path}")
@@ -341,6 +422,7 @@ def build_fixtures(output_dir: Path) -> None:
     print(f"  expected_ribbon.json:    {rib_path}")
     print(f"  expected_rsi.json:       {rsi_path}")
     print(f"  expected_bollinger.json: {bb_path}")
+    print(f"  expected_m2.json:        {m2_path}")
 
 
 def main(argv: list[str] | None = None) -> None:

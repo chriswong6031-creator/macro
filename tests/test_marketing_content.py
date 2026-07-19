@@ -922,3 +922,127 @@ def test_content_plan_featured_charts_use_v2_when_ohlcv_available():
     # All v2 charts must have MASTERMIND
     for fc in v2_charts:
         assert "MASTERMIND" in fc["svg"], f"MASTERMIND missing from v2 chart {fc['id']}"
+
+
+# ---------------------------------------------------------------------------
+# F1: build_context fact-polarity filter (directional-post safety)
+# ---------------------------------------------------------------------------
+
+def _signal_item(direction: str = "BULL") -> dict:
+    """A minimal signal ContentItem-like dict for build_context."""
+    return {
+        "ticker": "AMD",
+        "type": "signal",
+        "account": "flagship",
+        "direction": direction,
+        "_plan": {"direction": direction, "entry": 100.0, "targets": [120.0],
+                  "invalidation": 90.0},
+    }
+
+
+def test_polarity_filter_bull_drops_bearish_poc_keeps_reclaim_and_neutral():
+    """BULL signal post: keep +1 (reclaim) and 0 (in_value_area); drop -1 (poc_level below)."""
+    from engine.marketing.copywriter import build_context
+    facts = {
+        "facts": [
+            {"id": "avwap_reclaim", "text": "AMD reclaimed the anchored VWAP from the Jun 26 volume-spike anchor",
+             "salience": 8, "polarity": 1, "numbers": ["100.00", "26"]},
+            {"id": "poc_level", "text": "Volume point of control sits at 90.00 — price is 11.1% above it",
+             "salience": 5, "polarity": -1, "numbers": ["90.00", "11.1%"]},
+            {"id": "in_value_area", "text": "Trading inside the value area (95.00–110.00)",
+             "salience": 3, "polarity": 0, "numbers": ["95.00", "110.00"]},
+        ],
+        "numbers_whitelist": ["100.00", "26", "90.00", "11.1%", "95.00", "110.00"],
+    }
+    ctx = build_context(_signal_item("BULL"), facts=facts)
+    ids = [f["id"] for f in ctx["top_facts"]]
+    assert "avwap_reclaim" in ids, f"bull post dropped its aligned +1 fact: {ids}"
+    assert "in_value_area" in ids, f"bull post dropped the neutral (0) fact: {ids}"
+    assert "poc_level" not in ids, (
+        f"bull post kept a structured bearish (-1) fact: {ids}"
+    )
+
+
+def test_polarity_filter_bear_keeps_bearish_drops_bullish():
+    """BEAR signal post: keep -1 (poc_level below) and 0; drop +1 (reclaim)."""
+    from engine.marketing.copywriter import build_context
+    facts = {
+        "facts": [
+            {"id": "avwap_reclaim", "text": "AMD reclaimed the anchored VWAP",
+             "salience": 8, "polarity": 1, "numbers": []},
+            {"id": "poc_level", "text": "Volume point of control sits at 110.00 — price is 9.1% below it",
+             "salience": 5, "polarity": -1, "numbers": ["110.00", "9.1%"]},
+            {"id": "in_value_area", "text": "Trading inside the value area (95.00–110.00)",
+             "salience": 3, "polarity": 0, "numbers": ["95.00", "110.00"]},
+        ],
+        "numbers_whitelist": [],
+    }
+    ctx = build_context(_signal_item("BEAR"), facts=facts)
+    ids = [f["id"] for f in ctx["top_facts"]]
+    assert "poc_level" in ids and "in_value_area" in ids, f"bear post dropped aligned facts: {ids}"
+    assert "avwap_reclaim" not in ids, f"bear post kept a structured bullish (+1) fact: {ids}"
+
+
+def test_polarity_filter_anchored_does_not_trip_red_marker():
+    """The word 'anchored' must NOT match the bear marker 'red' (the F1 substring bug).
+
+    A structured +1 AVWAP fact whose text contains 'anchored' must survive a BULL
+    post; the legacy substring path used to drop it because 'red ' ⊂ 'ancho-red-'.
+    """
+    from engine.marketing.copywriter import build_context
+    facts = {
+        "facts": [
+            {"id": "avwap_hold",
+             "text": "Held the anchored VWAP from the Jun 26 volume-spike anchor for 15 straight sessions",
+             "salience": 6, "polarity": 1, "numbers": ["15", "26"]},
+        ],
+        "numbers_whitelist": ["15", "26"],
+    }
+    ctx = build_context(_signal_item("BULL"), facts=facts)
+    ids = [f["id"] for f in ctx["top_facts"]]
+    assert "avwap_hold" in ids, (
+        f"'anchored' text tripped the bear 'red' marker and dropped a +1 fact: {ids}"
+    )
+
+
+def test_polarity_filter_legacy_no_polarity_word_boundary():
+    """Legacy (no-polarity) facts still use marker matching — at word boundaries.
+
+    'lost its 50-day' hits the bear marker 'lost' → dropped on a BULL post (legacy
+    behaviour pinned). 'anchored' (no polarity key) must NOT be dropped by 'red'.
+    """
+    from engine.marketing.copywriter import build_context
+    facts = {
+        "facts": [
+            {"id": "sma_50_loss", "text": "AMD lost its 50-day average (98.00) — first time since May 2026",
+             "salience": 8, "numbers": ["98.00", "May 2026"]},
+            {"id": "legacy_anchor_note", "text": "AMD is anchored above a rising base",
+             "salience": 4, "numbers": []},
+        ],
+        "numbers_whitelist": ["98.00"],
+    }
+    ctx = build_context(_signal_item("BULL"), facts=facts)
+    ids = [f["id"] for f in ctx["top_facts"]]
+    assert "sma_50_loss" not in ids, f"legacy bear 'lost' fact leaked into bull post: {ids}"
+    assert "legacy_anchor_note" in ids, (
+        f"legacy 'anchored' fact wrongly dropped by 'red' substring: {ids}"
+    )
+
+
+def test_polarity_filter_empty_prefers_neutral_over_bearish():
+    """When aligned facts are empty, prefer a neutral (0) fact over a structured -1."""
+    from engine.marketing.copywriter import build_context
+    facts = {
+        "facts": [
+            {"id": "poc_level", "text": "Volume point of control sits at 90.00 — price is 11.1% above it",
+             "salience": 5, "polarity": -1, "numbers": ["90.00", "11.1%"]},
+            {"id": "in_value_area", "text": "Trading inside the value area (95.00–110.00)",
+             "salience": 3, "polarity": 0, "numbers": ["95.00", "110.00"]},
+        ],
+        "numbers_whitelist": [],
+    }
+    ctx = build_context(_signal_item("BULL"), facts=facts)
+    ids = [f["id"] for f in ctx["top_facts"]]
+    # Only aligned fact is the neutral one; the -1 must never lead a bull post.
+    assert ids[0] == "in_value_area", f"bull post led with a bearish fact: {ids}"
+    assert "poc_level" not in ids, f"bull post reinstated a structured -1 fact: {ids}"

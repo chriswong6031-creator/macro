@@ -69,6 +69,7 @@ class TestFixtureDeterminism:
         "expected_ribbon.json",
         "expected_rsi.json",
         "expected_bollinger.json",
+        "expected_m2.json",
     ])
     def test_byte_identical(self, regenerated_dir, filename):
         """Regenerated file must be byte-identical to the committed fixture."""
@@ -206,6 +207,83 @@ class TestFixtureStructure:
     def test_params_documented(self):
         """Each fixture should document its _params."""
         for name in ["expected_ichimoku.json", "expected_ribbon.json",
-                     "expected_rsi.json", "expected_bollinger.json"]:
+                     "expected_rsi.json", "expected_bollinger.json",
+                     "expected_m2.json"]:
             d = _load_fixture(name)
             assert "_params" in d, f"{name}: missing _params documentation"
+
+    # ---- expected_m2.json structural checks --------------------------------
+
+    def test_m2_fields(self):
+        """expected_m2.json has all required array keys."""
+        d = _load_fixture("expected_m2.json")
+        n_bars = _load_fixture("ohlcv.json")["n_bars"]
+        for key in ["rolling_vwap_n20", "week_anchored_vwap",
+                    "anchored_vwap_pos50", "rolling_poc_w126_b24"]:
+            assert key in d, f"expected_m2.json: missing key {key}"
+            assert len(d[key]) == n_bars, \
+                f"expected_m2.json {key}: expected {n_bars} bars, got {len(d[key])}"
+
+    def test_m2_volume_profile_final_present(self):
+        """volume_profile_final key is present and non-null."""
+        d = _load_fixture("expected_m2.json")
+        assert "volume_profile_final" in d, "expected_m2.json: missing volume_profile_final"
+        vp = d["volume_profile_final"]
+        assert vp is not None, "volume_profile_final should be non-null for 500 bars"
+        for key in ("poc", "va_low", "va_high", "total_volume", "bin_edges",
+                    "bin_volumes", "window_used"):
+            assert key in vp, f"volume_profile_final: missing key {key}"
+
+    def test_m2_rolling_vwap_warmup_nulls(self):
+        """rolling_vwap_n20: first 19 bars null (warmup = n-1 = 19)."""
+        d = _load_fixture("expected_m2.json")
+        rv = d["rolling_vwap_n20"]
+        for i in range(19):
+            assert rv[i] is None, f"rolling_vwap_n20[{i}] should be null (warmup)"
+        assert rv[19] is not None, "rolling_vwap_n20[19] should be non-null"
+
+    def test_m2_anchored_vwap_pos50_warmup_nulls(self):
+        """anchored_vwap_pos50: bars 0..49 are null (before anchor)."""
+        d = _load_fixture("expected_m2.json")
+        av = d["anchored_vwap_pos50"]
+        for i in range(50):
+            assert av[i] is None, f"anchored_vwap_pos50[{i}] should be null (before anchor)"
+        assert av[50] is not None, "anchored_vwap_pos50[50] should be non-null"
+
+    def test_m2_rolling_poc_warmup_nulls(self):
+        """rolling_poc_w126_b24: first 126 bars null (warmup = window = 126)."""
+        d = _load_fixture("expected_m2.json")
+        rp = d["rolling_poc_w126_b24"]
+        for i in range(126):
+            assert rp[i] is None, f"rolling_poc_w126_b24[{i}] should be null (warmup)"
+        assert rp[126] is not None, "rolling_poc_w126_b24[126] should be non-null"
+
+    def test_m2_week_anchored_vwap_no_leading_nulls(self):
+        """week_anchored_vwap has no warmup: first bar is always non-null."""
+        d = _load_fixture("expected_m2.json")
+        wv = d["week_anchored_vwap"]
+        assert wv[0] is not None, "week_anchored_vwap[0] should be non-null (no warmup)"
+
+    def test_m2_rolling_vwap_positive_values(self):
+        """rolling_vwap values (where non-null) should be positive (price > 0)."""
+        d = _load_fixture("expected_m2.json")
+        for i, v in enumerate(d["rolling_vwap_n20"]):
+            if v is not None:
+                assert v > 0.0, f"rolling_vwap_n20[{i}]={v} should be positive"
+
+    def test_m2_volume_profile_va_gte_70pct(self):
+        """volume_profile_final: VA volume >= 70% of total."""
+        d = _load_fixture("expected_m2.json")
+        vp = d["volume_profile_final"]
+        assert vp is not None
+        edges = vp["bin_edges"]
+        bin_vols = vp["bin_volumes"]
+        va_low = vp["va_low"]
+        va_high = vp["va_high"]
+        total = vp["total_volume"]
+        included = sum(
+            bv for i, bv in enumerate(bin_vols)
+            if edges[i] >= va_low - 1e-9 and edges[i + 1] <= va_high + 1e-9
+        )
+        assert included >= 0.70 * total, \
+            f"VA volume {included} < 70% of {total}"

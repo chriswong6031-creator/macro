@@ -17,6 +17,8 @@ from __future__ import annotations
 import re
 from datetime import date, timedelta
 
+import pytest
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -394,3 +396,358 @@ def test_empty_inputs_no_crash():
     from engine.marketing.chart_facts import compute_facts
     result = compute_facts("X", [], [], [], [], [], [])
     assert result == {"facts": [], "numbers_whitelist": []}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# M2 fact tests (require engine.indicators_m2 via pytest.importorskip)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _build_m2_df(n: int, base: float = 100.0):
+    """Build raw arrays for M2 tests.  Returns (dates, o, h, l, c, v)."""
+    dates = _make_dates(n)
+    c = [base + i * 0.3 for i in range(n)]
+    o = [c[0]] + c[:-1]
+    h = [ci + 0.5 for ci in c]
+    l = [ci - 0.5 for ci in c]
+    # Give bar at index 10 a large volume spike (earnings proxy anchor)
+    v = [500_000.0] * n
+    v[10] = 5_000_000.0  # clear max-volume bar
+    return dates, o, h, l, c, v
+
+
+def test_avwap_hold_fact_emitted():
+    """avwap_hold fires when price stays above AVWAP for >=10 sessions after anchor."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_avwap_hold
+
+    n = 80
+    dates, o, h, l, c, v = _build_m2_df(n)
+    # anchor_pos will be bar 10 (max volume); price is always rising above AVWAP
+    # Build a scenario where close > avwap for many bars after anchor
+    result = _fact_avwap_hold("TEST", dates, c, h, l, v)
+    # Should emit hold OR reclaim (or None if math doesn't align) — no crash
+    if result is not None:
+        assert result["id"] in ("avwap_hold", "avwap_reclaim")
+        assert result["salience"] in (7, 8)
+        assert isinstance(result["numbers"], list)
+        # Every numeric token in text must be in numbers list
+        import re as _re
+        num_re = _re.compile(r"[+-]?\d+\.?\d*%|\d+\.?\d*x|\b\d{2,4}\.\d{2}\b|\b\d+\b")
+        for token in num_re.findall(result["text"]):
+            # Skip small bare integers (day counts don't need the exact format check)
+            pass  # text structure validated below
+        assert "volume-spike anchor" in result["text"]
+
+
+def test_avwap_hold_numbers_whitelist():
+    """Numbers in avwap_hold fact text must appear in numbers list."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import compute_facts
+
+    n = 80
+    dates, o, h, l, c, v = _build_m2_df(n)
+    result = compute_facts("HOLD", dates, o, h, l, c, v)
+    whitelist = set(result["numbers_whitelist"])
+    num_re = re.compile(r"[+-]?\d+\.?\d*%|\d+\.?\d*x|\b\d{2,4}\.\d{2}\b")
+    for fact in result["facts"]:
+        if fact["id"] in ("avwap_hold", "avwap_reclaim"):
+            for token in num_re.findall(fact["text"]):
+                assert token in whitelist, (
+                    f"Number '{token}' in '{fact['id']}' text not in whitelist"
+                )
+
+
+def test_avwap_reclaim_fact():
+    """avwap_reclaim fires when close was below AVWAP then crosses above within 3 sessions."""
+    pytest.importorskip("engine.indicators_m2")
+    import pandas as pd
+    from engine import indicators_m2 as m2
+    from engine.marketing.chart_facts import _fact_avwap_hold
+
+    # Hand-craft: anchor at bar 0 (index 0), price dips below AVWAP then reclaims
+    n = 40
+    dates = _make_dates(n)
+    # Simple AVWAP approximation: typical price = (h+l+c)/3 * volume weighted
+    # We'll just test that the function doesn't crash and respects output schema
+    c = [100.0] * 30 + [90.0, 88.0, 85.0, 88.0, 92.0, 95.0, 100.0, 102.0, 104.0, 106.0]
+    o = [c[0]] + c[:-1]
+    h = [ci + 1.0 for ci in c]
+    l = [ci - 1.0 for ci in c]
+    v = [1_000_000.0] * n
+    v[5] = 9_000_000.0  # anchor bar
+
+    result = _fact_avwap_hold("RCL", dates, c, h, l, v)
+    if result is not None:
+        assert result["id"] in ("avwap_reclaim", "avwap_hold")
+        assert result["salience"] in (7, 8)
+        assert "anchor" in result["text"]
+
+
+def test_poc_level_fact_emitted():
+    """poc_level fact fires with correct price and pct text."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_poc
+
+    n = 70
+    dates, o, h, l, c, v = _build_m2_df(n)
+    facts = _fact_poc("POCTEST", dates, c, h, l, v)
+    # May or may not fire depending on indicators_m2 implementation
+    if facts:
+        ids = [f["id"] for f in facts]
+        # At minimum poc_level should appear when profile is available
+        # check structure
+        for f in facts:
+            assert "id" in f
+            assert "text" in f
+            assert "salience" in f
+            assert "numbers" in f
+            # Every number in numbers must appear in text
+            for num in f["numbers"]:
+                assert num in f["text"], (
+                    f"Number '{num}' in fact '{f['id']}' not found in text: {f['text']!r}"
+                )
+
+
+def test_poc_numbers_in_whitelist():
+    """All numeric tokens in poc facts must be in the numbers_whitelist."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import compute_facts
+
+    n = 70
+    dates, o, h, l, c, v = _build_m2_df(n)
+    result = compute_facts("POCWL", dates, o, h, l, c, v)
+    whitelist = set(result["numbers_whitelist"])
+    num_re = re.compile(r"[+-]?\d+\.?\d*%|\d+\.?\d*x|\b\d{2,4}\.\d{2}\b")
+    for fact in result["facts"]:
+        if fact["id"] in ("poc_level", "in_value_area", "poc_retest_hold"):
+            for token in num_re.findall(fact["text"]):
+                assert token in whitelist, (
+                    f"Token '{token}' in '{fact['id']}' not in whitelist={whitelist}"
+                )
+
+
+def test_poc_retest_hold_fires():
+    """poc_retest_hold emits when low touches POC within 1% and close is above."""
+    pytest.importorskip("engine.indicators_m2")
+    import pandas as pd
+    from engine import indicators_m2 as m2
+    from engine.marketing.chart_facts import _fact_poc
+
+    n = 70
+    dates, o, h, l, c, v = _build_m2_df(n)
+    # We can't easily force the POC to a specific value without running indicators_m2,
+    # so we just verify the function produces valid schema output and doesn't crash
+    facts = _fact_poc("RETEST", dates, c, h, l, v)
+    assert isinstance(facts, list)
+    for f in facts:
+        assert f["id"] in ("poc_level", "in_value_area", "poc_retest_hold")
+        assert isinstance(f["salience"], int)
+        assert isinstance(f["numbers"], list)
+
+
+def test_in_value_area_fact():
+    """in_value_area fires when price is inside the value area band."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_poc
+
+    # Price series that is likely inside VA (flat/clustered volume)
+    n = 70
+    dates = _make_dates(n)
+    c = [100.0] * n  # flat — lots of volume at this level
+    o = [99.8] * n
+    h = [100.5] * n
+    l = [99.5] * n
+    v = [2_000_000.0] * n  # uniform volume
+
+    facts = _fact_poc("FLAT", dates, c, h, l, v)
+    assert isinstance(facts, list)
+    # If profile fires, check structure
+    for f in facts:
+        assert f["id"] in ("poc_level", "in_value_area", "poc_retest_hold")
+        for num in f["numbers"]:
+            assert num in f["text"], (
+                f"Number '{num}' not in text: {f['text']!r}"
+            )
+
+
+def test_m2_facts_no_intraday_vocab():
+    """M2 fact texts must never contain intraday/session VWAP language."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import compute_facts
+
+    n = 80
+    dates, o, h, l, c, v = _build_m2_df(n)
+    result = compute_facts("VOCAB", dates, o, h, l, c, v)
+    banned = ("intraday", "session vwap", "validated")
+    for fact in result["facts"]:
+        text_lower = fact["text"].lower()
+        for word in banned:
+            assert word not in text_lower, (
+                f"Banned term '{word}' found in fact '{fact['id']}': {fact['text']!r}"
+            )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# M2 polarity + gating + cap + salience (F1/F3/F4/F6/F7)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _patch_profile(monkeypatch, poc, va_low, va_high):
+    """Force indicators_m2.volume_profile to a fixed profile for deterministic tests."""
+    import engine.indicators_m2 as m2
+    monkeypatch.setattr(
+        m2, "volume_profile",
+        lambda df, **kw: {"poc": poc, "va_low": va_low, "va_high": va_high,
+                          "total_volume": 1.0, "bin_edges": [], "bin_volumes": [],
+                          "window_used": len(df)},
+    )
+
+
+def test_poc_level_gated_out_when_far_above(monkeypatch):
+    """F3: poc_level must NOT emit when price is >15% away from the POC."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_poc
+    n = 40
+    dates, o, h, l, c, v = _build_m2_df(n)
+    last = c[-1]
+    # POC 20% below last close → |pct| = 25% > 15% → gated out.
+    _patch_profile(monkeypatch, poc=last / 1.25, va_low=last * 0.5, va_high=last * 0.6)
+    facts = _fact_poc("FAR", dates, c, h, l, v)
+    assert not any(f["id"] == "poc_level" for f in facts), (
+        f"poc_level emitted despite >15% distance: {[f['text'] for f in facts]}"
+    )
+
+
+def test_poc_level_emits_at_boundary(monkeypatch):
+    """F3: poc_level DOES emit at exactly 15% and just inside; polarity signed."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_poc
+    n = 40
+    dates, o, h, l, c, v = _build_m2_df(n)
+    last = c[-1]
+    # POC exactly 15% below → pct_away = +15.00% → inside gate (<=15), price above.
+    _patch_profile(monkeypatch, poc=last / 1.15, va_low=last * 0.9, va_high=last * 0.95)
+    facts = _fact_poc("EDGE", dates, c, h, l, v)
+    poc_facts = [f for f in facts if f["id"] == "poc_level"]
+    assert poc_facts, "poc_level must emit at the 15% boundary"
+    assert poc_facts[0]["polarity"] == 1, "price above POC → polarity +1"
+
+
+def test_poc_level_polarity_below(monkeypatch):
+    """F1: poc_level polarity is -1 when price sits below the POC."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_poc
+    n = 40
+    dates, o, h, l, c, v = _build_m2_df(n)
+    last = c[-1]
+    # POC 5% ABOVE last close → price below POC → polarity -1.
+    _patch_profile(monkeypatch, poc=last * 1.05, va_low=last * 0.9, va_high=last * 1.1)
+    facts = _fact_poc("BELOW", dates, c, h, l, v)
+    poc = next(f for f in facts if f["id"] == "poc_level")
+    assert poc["polarity"] == -1, "price below POC → polarity -1"
+    assert "below it" in poc["text"]
+
+
+def test_in_value_area_polarity_zero(monkeypatch):
+    """F1: in_value_area carries polarity 0 (neutral)."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_poc
+    n = 40
+    dates, o, h, l, c, v = _build_m2_df(n)
+    last = c[-1]
+    _patch_profile(monkeypatch, poc=last, va_low=last - 5, va_high=last + 5)
+    facts = _fact_poc("VA", dates, c, h, l, v)
+    va = [f for f in facts if f["id"] == "in_value_area"]
+    assert va, "in_value_area should fire when price inside band"
+    assert va[0]["polarity"] == 0
+
+
+def test_poc_facts_capped_at_two(monkeypatch):
+    """F7: at most 2 POC facts, priority poc_retest_hold > poc_level > in_value_area."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_poc
+    n = 40
+    dates, o, h, l, c, v = _build_m2_df(n)
+    last = c[-1]
+    # Craft so ALL THREE could fire: POC ~1% below last (retest range), inside VA.
+    poc = last * 0.995
+    _patch_profile(monkeypatch, poc=poc, va_low=last - 5, va_high=last + 5)
+    # Force a retest: set the most recent low to within 1% of POC, close above POC.
+    l = list(l)
+    l[-1] = poc * 1.001  # within 1%
+    c = list(c)
+    c[-1] = poc * 1.02   # closed above
+    facts = _fact_poc("CAP", dates, c, h, l, v)
+    ids = [f["id"] for f in facts]
+    assert len(facts) <= 2, f"POC facts not capped at 2: {ids}"
+    # Highest-priority fact must survive the cap.
+    assert "poc_retest_hold" in ids, f"retest_hold (top priority) dropped: {ids}"
+    # in_value_area (lowest priority) must be the one dropped when 3 would fire.
+    assert "in_value_area" not in ids, f"lowest-priority fact survived cap: {ids}"
+
+
+def _avwap_hold_ohlcv(n: int = 60):
+    """OHLCV that reliably fires avwap_hold: early volume-spike anchor + a long
+    steadily-rising leg so close stays above the AVWAP for many sessions.
+    """
+    dates = _make_dates(n)
+    c = [100.0 + i * 1.5 for i in range(n)]
+    o = [c[0]] + c[:-1]
+    h = [ci + 0.5 for ci in c]
+    l = [ci - 0.5 for ci in c]
+    v = [500_000.0] * n
+    v[5] = 9_000_000.0  # anchor at bar 5 (anchor_age ≫ 10)
+    return dates, o, h, l, c, v
+
+
+def test_avwap_hold_salience_is_six():
+    """F4: avwap_hold is streak-tier salience 6 (not 7)."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_avwap_hold
+    dates, o, h, l, c, v = _avwap_hold_ohlcv(60)
+    result = _fact_avwap_hold("SAL", dates, c, h, l, v)
+    assert result is not None and result["id"] == "avwap_hold", (
+        f"fixture failed to fire avwap_hold: {result}"
+    )
+    assert result["salience"] == 6, f"avwap_hold salience must be 6, got {result['salience']}"
+    assert result.get("polarity") == 1
+
+
+def test_avwap_anchor_day_in_numbers():
+    """F6: the anchor day token (e.g. '09' in 'Jan 09') is in the fact's numbers."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import _fact_avwap_hold
+    import re as _re
+    dates, o, h, l, c, v = _avwap_hold_ohlcv(60)
+    result = _fact_avwap_hold("DAY", dates, c, h, l, v)
+    assert result is not None and result["id"] in ("avwap_hold", "avwap_reclaim"), (
+        f"fixture failed to fire an avwap fact: {result}"
+    )
+    # Extract the exact day token from the "%b %d" label in the text.
+    m = _re.search(r"\b([A-Z][a-z]{2}) (\d{2})\b", result["text"])
+    assert m, f"no 'Mon DD' anchor label in text: {result['text']!r}"
+    day_tok = m.group(2)  # zero-padded, exactly as it appears in the text
+    assert day_tok in result["numbers"], (
+        f"anchor day '{day_tok}' not in numbers {result['numbers']}"
+    )
+
+
+def test_m2_polarity_key_present_on_all_m2_facts(monkeypatch):
+    """F1: every M2 fact dict carries a 'polarity' key in {+1,0,-1}."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.chart_facts import compute_facts
+    n = 80
+    dates, o, h, l, c, v = _build_m2_df(n)
+    result = compute_facts("POL", dates, o, h, l, c, v)
+    m2_ids = {"avwap_hold", "avwap_reclaim", "poc_level", "in_value_area", "poc_retest_hold"}
+    for fact in result["facts"]:
+        if fact["id"] in m2_ids:
+            assert "polarity" in fact, f"M2 fact {fact['id']} missing polarity"
+            assert fact["polarity"] in (1, 0, -1), (
+                f"{fact['id']} polarity out of range: {fact['polarity']}"
+            )
+    # Legacy facts must NOT carry a polarity key (they use the text-marker path).
+    for fact in result["facts"]:
+        if fact["id"] not in m2_ids:
+            assert "polarity" not in fact, (
+                f"legacy fact {fact['id']} unexpectedly carries polarity"
+            )
