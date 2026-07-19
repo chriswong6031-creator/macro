@@ -86,7 +86,8 @@ def test_futures_jsonp_parse():
     assert df["close"].iloc[-1] == 3178.0 and df["hold"].iloc[-1] == 1642243.0
 
 
-def test_cgb_field_map():
+def test_cgb_field_map(monkeypatch):
+    monkeypatch.setenv("EASTMONEY_WEB_TOKEN", "test-token-0")  # HTTP mocked; gate only
     a = ChinaPropertyAdapter()
     payload = {"result": {"pages": 1, "data": [
         {"SOLAR_DATE": "2026-06-12 00:00:00", "EMM00588704": 1.29, "EMM00166462": 1.48,

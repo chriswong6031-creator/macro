@@ -171,6 +171,9 @@ jobs:
           SAM_API_KEY: ${{ secrets.SAM_API_KEY }}           # SAM.gov pre-award solicitations (collectors/sam_gov.py); free key (entity reg); absent -> 'blocked', non-fatal
           GITHUB_TOKEN: ${{ github.token }}                 # GitHub star velocity (collectors/github_repos.py); the auto-injected workflow token reads public-repo metadata at 1000/hr — no new secret needed
           TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}       # gated CN moneyflow/chips/margin plane (collectors/tushare_*.py); silently no-ops absent — was frozen 2026-06-21→ (CHINA_ENGINE_REASSESSMENT)
+          AMPLIFY_FIREBASE_KEY: ${{ secrets.AMPLIFY_FIREBASE_KEY }}  # Amplify public Firestore holdings feed (collectors/etf_holdings.py); absent -> amplify funds skip, non-fatal (was a source literal — CXI tripwire 2026-07-18)
+          EASTMONEY_WEB_TOKEN: ${{ secrets.EASTMONEY_WEB_TOKEN }}    # Eastmoney legacy-datacenter web token (collectors/china_property.py cgb); asia-lane collector — here for manual/full runs
+          EASTMONEY_UT_TOKEN: ${{ secrets.EASTMONEY_UT_TOKEN }}      # Eastmoney push2ex ut token (collectors/china_flows.py limit_breadth); asia-lane collector — here for manual/full runs
           COLLECT_LANE: nightly  # lane sentinel: forward-ledger graders (grade_breadth_divergence,
                                  # grade_policy_calendar) check COLLECT_LANE==nightly before writing;
                                  # asia-close/weekly/intl_etf leave it unset → no-op in those lanes.

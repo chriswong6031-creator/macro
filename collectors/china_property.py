@@ -29,6 +29,7 @@ import logging
 import pandas as pd
 
 from collectors.base import Adapter
+from lib import config
 
 log = logging.getLogger(__name__)
 
@@ -38,8 +39,8 @@ _DC = "https://datacenter-web.eastmoney.com/api/data/v1/get"        # newer data
 _DC_LEGACY = "https://datacenter.eastmoney.com/api/data/get"        # token-style datacenter
 _SINA = ("https://stock2.finance.sina.com.cn/futures/api/jsonp.php/"
          "var%20_x=/InnerFuturesNewService.getDailyKLine")
-# public WEB token for the legacy datacenter China/US-treasury report
-_TOKEN = "894050c76af8597a853f5b408b759f5d"
+# the legacy datacenter needs the WEB token from Eastmoney's public page JS —
+# read via EASTMONEY_WEB_TOKEN (env/.env) per CXI credential tripwire
 
 TIER1 = {"北京", "上海", "广州", "深圳"}     # 一线城市 — the leadership cohort
 
@@ -144,12 +145,15 @@ class ChinaPropertyAdapter(Adapter):
         (RPTA_WEB_TREASURYYIELD) — JSON, no chinabond legacy-SSL scrape needed.
         Incremental runs read the newest page (~500 trading days, sorted desc);
         the store keeps the deep history a full run backfills to 2002."""
+        token = config.secret("EASTMONEY_WEB_TOKEN")
+        if not token:
+            raise ValueError("cgb: EASTMONEY_WEB_TOKEN not set — series skipped")
         max_pages = 40 if full_history else 1
         rows: list[dict] = []
         page_no = 1
         while page_no <= max_pages:
             params = {"type": "RPTA_WEB_TREASURYYIELD", "sty": "ALL", "st": "SOLAR_DATE",
-                      "sr": "-1", "token": _TOKEN, "ps": 500,
+                      "sr": "-1", "token": token, "ps": 500,
                       "p": page_no, "pageNo": page_no, "pageNum": page_no}
             r = self.http_get(_DC_LEGACY, params=params, retries=3,
                               headers={"User-Agent": _UA}, timeout=30)
