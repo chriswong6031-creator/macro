@@ -1530,6 +1530,65 @@ def _compose_rates_transmission(root: "Path | str | None" = None) -> dict:
         return null_out
 
 
+def _compose_rates_command(root: "Path | str | None" = None) -> dict:
+    """Compose rates_command lobe from data/rates_command/latest.json.
+
+    RIC-R1 compliant: display_only=True, authority=False throughout.
+    Fail-open: absent/corrupt file -> null-shaped dict, never raises.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "rates_command" / "latest.json"
+
+    null_out: dict = {
+        "asof": None,
+        "net_state": None,
+        "state_label": None,
+        "hawk_score": None,
+        "ease_score": None,
+        "stance_en": None,
+        "stance_zh": None,
+        "implied_m12": None,
+        "policy_rate": None,
+        "display_only": True,
+        "authority": False,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        ep = (raw.get("expectations_pressure") or {})
+        sl = (ep.get("state_label") or {})
+        mc = (raw.get("market_check") or {})
+        fut = (mc.get("futures") or {})
+        st = (raw.get("stance") or {})
+        rpr = ((raw.get("board") or {}).get("rate_path_row") or {})
+
+        out = {
+            "asof": _clean(raw.get("asof")),
+            "net_state": _clean(ep.get("net_state")),
+            "state_label_en": _clean(sl.get("en")),
+            "state_label_zh": _clean(sl.get("zh")),
+            "hawk_score": ep.get("hawk_score"),
+            "ease_score": ep.get("ease_score"),
+            "stance_en": _clean(st.get("en")),
+            "stance_zh": _clean(st.get("zh")),
+            "implied_m12": fut.get("m12"),
+            "policy_rate": rpr.get("policy_rate"),
+            "path_plain_en": (rpr.get("path_plain") or {}).get("en"),
+            "path_plain_zh": (rpr.get("path_plain") or {}).get("zh"),
+            "futures_plain_en": fut.get("plain_read_en"),
+            "futures_plain_zh": fut.get("plain_read_zh"),
+            "display_only": True,
+            "authority": False,
+        }
+        return _display_only(out)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("rates_command: compose failed — %s", exc)
+        return null_out
+
+
 def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
     """Compose fx_dollar lobe from data/forex/latest.json.
 
@@ -3711,6 +3770,20 @@ def build_world_state(
     elif not _tx_path.exists():
         gaps.append("data/transmission/latest.json: missing or unreadable")
 
+    # rates_command (Forward Path board)
+    _rc_path = data_dir / "rates_command" / "latest.json"
+    try:
+        rates_command_block: dict = _compose_rates_command(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: rates_command lobe failed — %s", exc)
+        gaps.append(f"rates_command: {exc}")
+        rates_command_block = {"asof": None, "net_state": None, "state_label_en": None,
+                               "stance_en": None, "implied_m12": None, "display_only": True,
+                               "authority": False}
+    sources[str(_rc_path.relative_to(repo))] = (rates_command_block or {}).get("asof")
+    if not _rc_path.exists():
+        pass  # absent until first build — expected, not a gap
+
     # fx_dollar
     _fx_path = data_dir / "forex" / "latest.json"
     try:
@@ -3983,6 +4056,7 @@ def build_world_state(
         "special_situations": special_situations_block,  # SS-NW-W1 display-only lobe (None until first nightly run)
         "theme_rotation": theme_rotation_block,  # theme_context.v1 NW integration (display-only)
         "market_structure": market_structure_block,  # MSP-W3 market-structure context lobe (display-only)
+        "rates_command": rates_command_block,  # RCB Forward Path board lobe (display-only)
         "gaps": gaps,
         "sources": sources,
     }

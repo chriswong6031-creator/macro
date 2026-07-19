@@ -709,6 +709,27 @@ lanes:
                     data/release_forecast/forward_ledger.jsonl,
                     data/release_forecast/scoreboard.json,
                     site/macrodata/release_forecast.json]
+      - id: build_rates_command
+        module: scripts.build_rates_command
+        note: >
+          non-fatal; RIC W7 P5 Forward Path board (rates_command.v1). Deterministic
+          read-only join — fed_path implied vs dots, MRI CPI/NFP projections,
+          breakevens, curve regime, oil, market_state, policy conditions — plus the
+          expectations-pressure gauge (hawkish vs easing legs) and frozen divergence
+          flags. Deliberately AFTER build_release_forecast and the market clusters so
+          every joined input is same-night fresh. display_only=True; authority False
+          (RIC-R1/R9); prediction markets are context-only benchmark (MRI-R16).
+          forward_log.jsonl append is COLLECT_LANE=nightly gated, keep-FIRST.
+          inputs: [data/bonds/bond_health.json,
+                   data/transmission/latest.json,
+                   data/release_forecast/latest.json,
+                   data/rate_futures/zq_path.parquet,
+                   data/market_state/latest.json,
+                   data/commodity/latest.json,
+                   data/policy/intel.json,
+                   data/prediction_markets/snapshots.parquet]
+          outputs: [data/rates_command/latest.json,
+                    data/rates_command/forward_log.jsonl]
       - id: signal_sanity
         module: scripts.signal_sanity
       - id: build_whitehouse_page_only
@@ -1763,6 +1784,8 @@ lanes:
         module: scripts.calibrate_rate_inflation
       - id: build_transmission
         module: scripts.build_transmission
+      - id: build_rates_command
+        module: scripts.build_rates_command
       - id: calibrate_vector
         module: scripts.calibrate_vector
       - id: validate_gex

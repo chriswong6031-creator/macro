@@ -145,6 +145,7 @@ jobs:
           run_py "build bonds" scripts.build_bonds
           run_py "calibrate rate/inflation transmission" scripts.calibrate_rate_inflation
           run_py "build transmission" scripts.build_transmission
+          run_py "forward path board (build_rates_command)" scripts.build_rates_command
           run_py "calibrate vector" scripts.calibrate_vector
           run_py "validate gex (forward-RV gate)" scripts.validate_gex
           run_py "build vector + landing hub" scripts.build_vector

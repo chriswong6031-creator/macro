@@ -73,9 +73,10 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 484, (
-        f"Expected 484 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 485, (
+        f"Expected 485 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        "(RIC-W7 added rates-command-latest = 484->485;"
         "(Marketing lobe added marketing-state, marketing-lobe = 482->484;"
         "(MSP W1 added market-structure-latest, market-structure-history,"
         " market-structure-ledger = 479->482;"
