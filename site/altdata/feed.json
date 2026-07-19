@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-19T03:07:04.162544+00:00",
+  "generated_utc": "2026-07-19T03:57:42.721471+00:00",
   "as_of": "2026-07-19",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -46966,14 +46966,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",
@@ -48998,16 +48998,6 @@
           "material_8k"
         ],
         "why": "activist_13d: 13D activist campaign \u00b7 material_8k: 2 material 8-Ks (items 5.02, 7.01)"
-      },
-      {
-        "ticker": "NVS",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 10 new Phase-3, 7 halt(s) \u00b7 fda_label_expansion: KISQALI FEMARA CO-PACK (COPACKAGED)"
       }
     ]
   }

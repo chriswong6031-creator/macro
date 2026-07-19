@@ -1142,7 +1142,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-17 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-19 03:43 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-17 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-19 05:22 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
@@ -1279,6 +1279,18 @@
 }
 </script>
 
+
+<div class="panel" style="border-color:color-mix(in srgb,var(--warn) 40%,var(--line))">
+  <div class="row" style="gap:8px">
+    <b style="color:var(--warn)">⚠ <span class="l-en">Data health</span><span class="l-zh">数据健康</span></b>
+    <span class="muted small"><span class="l-en">some board inputs are degraded — the affected axes are suppressed, not silently filled</span><span class="l-zh">部分榜单输入已降级 — 受影响的轴已抑制，而非静默填充</span></span>
+  </div>
+  <div class="row small" style="gap:6px; margin-top:6px">
+    
+    <span class="chip off"><span class="l-en">Board ledger (append wrote 0 rows — see build log)</span><span class="l-zh">榜单账本（写入 0 行 — 查看构建日志）</span> <b>· ERROR</b> <span class="muted">(2026-07-17)</span></span>
+    
+  </div>
+</div>
 
 <div class="panel" id="standouts">
   <h2><span class="l-en">⚡ Prophet Stock Signals — TSX ripe list</span><span class="l-zh">⚡ 先知选股 — TSX 成熟清单</span>
@@ -2900,6 +2912,5 @@
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
