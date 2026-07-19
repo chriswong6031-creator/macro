@@ -30,7 +30,7 @@ Strategy corpus (read the one your docket cites): `research/NEURAL_WEB_AUTONOMOU
 | ID | Title | Dept | Priority | Depends on | Blocked on operator? |
 |---|---|---|---|---|---|
 | [D01](D01_REALTIME_FASTLANE.md) | Real-time fast lane (earnings/breaking instant publish) | Engine Room + Broadcast | **P0** | — | W1 host; W0 buildable now |
-| [D02](D02_X_ACTUATION_COMPUTER_CONTROL.md) | X actuation: outbox + computer-control posting loop | Broadcast | **P0** | — | W1 accounts; W0 buildable now |
+| [D02](D02_X_ACTUATION_COMPUTER_CONTROL.md) | X actuation: outbox + computer-control posting loop | Broadcast | **P0** | — | W1 accounts; **W0 merged #3056** |
 | [D08](D08_SENTINEL_TRUST_OFFICE_W1.md) | Sentinel W1: pre-publication policy gate + ban-risk rails | Sentinel | **P0** | — | No — build before launch |
 | [D03](D03_ENGAGEMENT_TELEMETRY_LAB.md) | Engagement telemetry → Lab learning loop | Lab | P1 | D02 live | Analytics access for W1 |
 | [D04](D04_INDICATORS_M2_VWAP_VOLUME_PROFILE.md) | Indicators M2: VWAP / AVWAP / Volume Profile / POC | Workshop + Studio | P1 | — | No |
