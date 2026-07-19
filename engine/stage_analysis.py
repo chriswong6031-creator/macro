@@ -408,6 +408,13 @@ def _load_earnings_scores(dr: Path) -> dict[str, dict]:
         quarter = None if (qv is None or (not isinstance(qv, str) and pd.isna(qv))) else str(qv)
         tone = r.get("tone_word")
         tone = str(tone) if (tone is not None and not pd.isna(tone)) else _tone_word(sent)
+        summ = r.get("summary")
+        # Truncate to ~280 chars for the card; None when absent or NaN.
+        if summ is None or (not isinstance(summ, str) and pd.isna(summ)):
+            summ_card = None
+        else:
+            s = str(summ).strip()
+            summ_card = (s[:277] + "…") if len(s) > 280 else (s or None)
         out[tk] = {
             "present": True,
             "sentiment": sent,
@@ -415,6 +422,7 @@ def _load_earnings_scores(dr: Path) -> dict[str, dict]:
             "tone_word": tone,
             "tags": tags,
             "quarter": quarter,
+            "summary": summ_card,  # SGA W5: call_summary truncated to 280 chars
         }
     return out
 
@@ -445,7 +453,7 @@ def _coerce_tags(tags: Any) -> list[str]:
 
 def _empty_earnings() -> dict:
     return {"present": False, "sentiment": None, "performance": None,
-            "tone_word": None, "tags": [], "quarter": None}
+            "tone_word": None, "tags": [], "quarter": None, "summary": None}
 
 
 # ---------------------------------------------------------------------------

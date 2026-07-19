@@ -45,7 +45,8 @@
         "performance": 8.2,
         "tone_word": "upbeat",
         "tags": ["guidance_raised", "demand_acceleration"],
-        "quarter": "Q2 2026"
+        "quarter": "Q2 2026",
+        "summary": "Data center revenue of $22.6B rose 16% sequentially and 154% YoY, surpassing all estimates. Blackwell supply continues to ramp. Management guided Q3 revenue to approximately $28B, well above consensus of $25B."
       },
       "why": [
         "Early in its climb — 6 weeks up so far",
@@ -80,7 +81,8 @@
         "performance": 6.4,
         "tone_word": "steady",
         "tags": ["margin_expansion"],
-        "quarter": "Q2 2026"
+        "quarter": "Q2 2026",
+        "summary": "AI revenue exceeded $4B for the first time. Custom silicon with hyperscalers tracking ahead of plan. Management flagged some near-term softness in legacy networking while maintaining full-year AI semiconductor outlook."
       },
       "why": [
         "Early in its climb — 9 weeks up so far",

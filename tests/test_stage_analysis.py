@@ -501,9 +501,11 @@ def test_fixture_is_schema_valid():
     # 2 fresh stage2 with earnings sub-dicts.
     fresh = [r for r in fx["top_stage2"] if r["fresh"]]
     assert len(fresh) == 2
+    _EARNINGS_REQUIRED = {"present", "sentiment", "performance", "tone_word", "tags", "quarter"}
     for r in fresh:
-        assert "earnings" in r and set(r["earnings"].keys()) == {
-            "present", "sentiment", "performance", "tone_word", "tags", "quarter"}
+        assert "earnings" in r
+        # "summary" is an optional W5 addition — only check required keys are present
+        assert _EARNINGS_REQUIRED.issubset(set(r["earnings"].keys()))
     # Change items + sectors present.
     assert fx["changes"]["n"] == len(fx["changes"]["items"]) > 0
     assert len(fx["sectors"]) >= 1

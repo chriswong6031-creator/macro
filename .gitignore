@@ -399,3 +399,9 @@ data/flow_signals/models/
 # TRAP (masterplan §7): data/earnings/ is the CALENDAR store (committed parquet)
 # and must NOT be ignored — only data/earnings_calls/ is the R2-transported lane.
 data/earnings_calls/
+# SGA W5: backfill_analysis.parquet is large (gitignored); equitydesk_overview.parquet
+# is the COMMITTED yardstick (negation rule keeps it tracked).
+data/earnings_calls/backfill_analysis.parquet
+# data/stage_analysis/ is NOT ignored globally; only the large derived backfill artifact:
+# (equitydesk_overview.parquet is small enough to commit and is the calibration yardstick)
+# No negation needed — data/stage_analysis/ is not in a broader ignore pattern above.
