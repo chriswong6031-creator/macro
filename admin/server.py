@@ -423,6 +423,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(marketing.lobes())
             if path == "/api/marketing/content":
                 return self._json(marketing.content())
+            if path == "/api/marketing/lab":
+                return self._json(marketing.lab())
             if path == "/api/marketing/department":
                 dept_id = (q.get("id") or [None])[0]
                 return self._json(marketing.department(dept_id=dept_id))

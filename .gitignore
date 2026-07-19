@@ -405,3 +405,10 @@ data/earnings_calls/backfill_analysis.parquet
 # data/stage_analysis/ is NOT ignored globally; only the large derived backfill artifact:
 # (equitydesk_overview.parquet is small enough to commit and is the calibration yardstick)
 # No negation needed — data/stage_analysis/ is not in a broader ignore pattern above.
+
+# D01 Marketing fast lane — daemon-local intraday state (never committed).
+# Nightly is the sole advancer of forward ledgers; the daemon is an intraday lane.
+data/marketing/fastlane_seen.jsonl
+data/marketing/fastlane_quarantine.jsonl
+data/marketing/outbox/
+data/marketing/fastlane_heartbeat.txt
