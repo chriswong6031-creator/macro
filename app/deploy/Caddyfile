@@ -187,7 +187,7 @@
 	}
 }
 
-mastermind-x.com, www.mastermind-x.com {
+www.mastermind-x.com {
 	import mastermind_static
 
 	header {
@@ -205,6 +205,23 @@ mastermind-x.com, www.mastermind-x.com {
 	# crashes startup. journald is the idiomatic, sandbox-safe sink.
 }
 
+# ---- apex mastermind-x.com - DIRECT redirect to the CDN-fronted www --------
+# The apex A record points straight at this origin (it CANNOT be a CNAME to the
+# EdgeOne edge, because mastermind-x.com also carries the MX for email; a CNAME
+# at the apex illegally shadows MX and makes mail flap). So the apex is a direct
+# host here: Caddy issues a REAL public Let's Encrypt cert (ACME HTTP-01 on :80
+# works because apex A -> this box) and 301s everything to https://www, which
+# stays behind EdgeOne. Kept OUT of the www serving block above so EdgeOne's www
+# origin-pull (Host: www.mastermind-x.com) can never land on this redirect+loop.
+http://mastermind-x.com {
+	redir https://www.mastermind-x.com{uri} permanent
+}
+
+mastermind-x.com {
+	header Strict-Transport-Security "max-age=31536000"
+	redir https://www.mastermind-x.com{uri} permanent
+}
+
 # ---- plain-HTTP (:80) mirror — the 2026-07-11 /china.html poisoning fix ------
 # With `auto_https disable_redirects` and https-only site blocks, Caddy answered
 # ANY plain-HTTP request for these hosts with its IMPLICIT catch-all: an empty
@@ -217,7 +234,7 @@ mastermind-x.com, www.mastermind-x.com {
 # real page bounded by max-age=60. Deliberately NOT a redirect: if the edge's
 # origin-pull were ever http-only, an origin http->https redirect would loop
 # (see the header notes above) — the edge console owns Force-HTTPS.
-http://mastermind-x.com, http://www.mastermind-x.com {
+http://www.mastermind-x.com {
 	import mastermind_static
 }
 
