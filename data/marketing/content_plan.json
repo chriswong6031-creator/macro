@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "produced_by": "engine/marketing/content_studio.py",
-  "produced_at": "2026-07-19T02:03:30Z",
+  "produced_at": "2026-07-19T02:09:43Z",
   "tier": "display",
   "schema": "marketing.content/v1",
   "as_of": "2026-07-19",
