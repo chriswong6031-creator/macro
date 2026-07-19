@@ -567,7 +567,7 @@ def test_client_history_used_when_thread_store_absent(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -805,7 +805,7 @@ def test_1500_char_message_reaches_model_loop(tmp_path):
 
     loop_called = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
         loop_called.append(message)
         return "OK.", [], [], [], {}, [], []
 
@@ -837,7 +837,7 @@ def test_client_history_injection_filtered(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -880,7 +880,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
 
     captured_messages: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
         # We can't introspect user_content directly, so we return and check that
         # the loop was called (no crash, no injection)
         return "OK.", [], [], [], {}, [], []
@@ -889,7 +889,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
     original_loop = gw._run_brain_loop
     built_contents: list[str] = []
 
-    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
         # Re-run the actual loop with a mock client that ends immediately
         return _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode=mode)
 
@@ -1360,7 +1360,7 @@ def test_research_mode_raises_tool_budget(tmp_path):
     root = _make_temp_root()
     captured_tb: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
         captured_tb.append(tb)
         return "Research done.", [], [], [], {}, [], []
 
@@ -1858,7 +1858,7 @@ def test_chat_with_image_routes_fast_to_vision_provider(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -1871,11 +1871,12 @@ def test_chat_with_image_routes_fast_to_vision_provider(tmp_path):
     with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
         with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
             with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
-                with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
-                    with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
-                        with patch("lib.ai_costs.record_usage", return_value=True):
-                            gw.chat("what pattern is this?", "user_vis", lane="fast",
-                                    images=[_TINY_PNG_DATA_URI], root=root)
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_get_allowance", return_value={"limit": 100, "remaining": 100, "period": "month"}):
+                        with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                            with patch("lib.ai_costs.record_usage", return_value=True):
+                                gw.chat("what pattern is this?", "user_vis", lane="fast",
+                                        images=[_TINY_PNG_DATA_URI], root=root)
 
     assert captured["model"] == "claude-haiku-4-5", "Fast image turn must route to Haiku (DeepSeek is text-only)"
     assert captured["client"] == "HAIKU"
@@ -1887,7 +1888,7 @@ def test_chat_no_image_stays_on_deepseek(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
         captured["model"] = model
         captured["image_blocks"] = image_blocks
         return "OK. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
@@ -1920,7 +1921,7 @@ def test_chat_fast_image_borrows_pro_vision_when_no_in_lane_claude(tmp_path):
             "pro": [{"client": "OPUS", "model": "claude-opus-4-8"}],
         }[lane]
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -1929,12 +1930,121 @@ def test_chat_fast_image_borrows_pro_vision_when_no_in_lane_claude(tmp_path):
     with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
         with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
             with patch.object(gw, "_build_lane_providers", side_effect=_providers):
-                with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
-                    with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
-                        with patch("lib.ai_costs.record_usage", return_value=True):
-                            gw.chat("what is this?", "user_fallback", lane="fast",
-                                    images=[_TINY_PNG_DATA_URI], root=root)
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_get_allowance", return_value={"limit": 100, "remaining": 100, "period": "month"}):
+                        with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                            with patch("lib.ai_costs.record_usage", return_value=True):
+                                gw.chat("what is this?", "user_fallback", lane="fast",
+                                        images=[_TINY_PNG_DATA_URI], root=root)
 
     assert captured["model"] == "claude-opus-4-8", "Fast image turn must borrow Pro's Opus when no in-lane vision provider"
     assert captured["client"] == "OPUS"
     assert captured["image_blocks"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W6c-harden: OAuth-token failover + vision Pro-gating
+# ─────────────────────────────────────────────────────────────────────────────
+
+class _RaiseThenClient:
+    """Mock Anthropic client: raise `exc` on create, or return `resp`."""
+    def __init__(self, exc=None, resp=None):
+        self._exc = exc
+        self._resp = resp
+        self.messages = self
+
+    def create(self, **kw):
+        if self._exc is not None:
+            raise self._exc
+        return self._resp
+
+
+def test_is_retryable_provider_error_classification():
+    class R429(Exception):
+        status_code = 429
+    assert gw._is_retryable_provider_error(R429())
+    assert gw._is_retryable_provider_error(Exception("Error code: 529 - overloaded"))
+    assert gw._is_retryable_provider_error(Exception("rate_limit_error"))
+    # a dead/timing-out token must fail over too, not fail the whole turn
+    assert gw._is_retryable_provider_error(Exception("Connection error"))
+    assert gw._is_retryable_provider_error(Exception("Request timed out"))
+
+    class Bad(Exception):
+        status_code = 400
+    assert not gw._is_retryable_provider_error(Bad("bad request"))
+    # a status number embedded in an unrelated message must NOT false-trigger
+    assert not gw._is_retryable_provider_error(Exception("prompt exceeded 8500 tokens"))
+
+
+def test_create_failover_skips_throttled_provider():
+    class Rate(Exception):
+        status_code = 429
+    ok = _MockResponse([_MockBlock("text", "served")], "end_turn")
+    cands = [
+        {"client": _RaiseThenClient(exc=Rate("429")), "model": "claude-opus-4-8"},
+        {"client": _RaiseThenClient(resp=ok), "model": "claude-opus-4-8"},
+    ]
+    resp, used = gw._create_failover(cands, max_tokens=10, system="", tools=[], messages=[])
+    assert used == "claude-opus-4-8"
+    assert resp.content[0].text == "served"
+
+
+def test_create_failover_reraises_non_retryable():
+    class Bad(Exception):
+        status_code = 400
+    cands = [
+        {"client": _RaiseThenClient(exc=Bad("bad")), "model": "m1"},
+        {"client": _RaiseThenClient(resp=_MockResponse([_MockBlock("text", "x")])), "model": "m2"},
+    ]
+    with pytest.raises(Bad):
+        gw._create_failover(cands, max_tokens=10, system="", tools=[], messages=[])
+
+
+def test_run_brain_loop_fails_over_to_next_provider():
+    """A 429 on the first OAuth token must fail over to the next — not fail the turn."""
+    class Rate(Exception):
+        status_code = 429
+    ok = _MockResponse([_MockBlock("text", "answer. is_context_only: true — pending FDR.")], "end_turn")
+    providers = [
+        {"client": _RaiseThenClient(exc=Rate("429")), "model": "claude-opus-4-8"},
+        {"client": _RaiseThenClient(resp=ok), "model": "claude-opus-4-8"},
+    ]
+    root = _make_temp_root()
+    ans, *_ = gw._run_brain_loop(
+        "hi", "pro", [], {}, root, root, "http://x",
+        None, "claude-opus-4-8", 100, 3, providers=providers,
+    )
+    assert "answer" in ans
+
+
+def test_chat_free_tier_image_is_gated_text_only(tmp_path):
+    """Vision is Pro-only (operator decision): a Free user's image is dropped and the
+    turn stays on the Fast primary (text-only)."""
+    root = _make_temp_root()
+    captured = {}
+
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+        captured["image_blocks"] = image_blocks
+        captured["model"] = model
+        return "text answer. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
+
+    def _alw(tier, status, lane, root=None):
+        # Free: fast quota available, but NOT pro-eligible → vision gated.
+        return {"limit": 0 if lane == "pro" else 100, "remaining": 100, "period": "month"}
+
+    mock_providers = [
+        {"client": "DS", "model": "deepseek-chat"},
+        {"client": "HAIKU", "model": "claude-haiku-4-5"},
+    ]
+    with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_get_allowance", side_effect=_alw):
+                        with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                            with patch("lib.ai_costs.record_usage", return_value=True):
+                                gw.chat("what is this?", "user_free_vis", lane="fast",
+                                        images=[_TINY_PNG_DATA_URI], root=root)
+
+    assert not captured["image_blocks"], "Free-tier image must be gated (dropped) — vision is Pro-only"
+    assert captured["model"] == "deepseek-chat", "gated image turn stays on the Fast primary"

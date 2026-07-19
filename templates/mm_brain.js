@@ -270,7 +270,7 @@
 
   /* ── state ── */
   var lane = 'fast', researchMode = false, threadId = null, streaming = false,
-      quotas = {}, authed = false, ctxSymbol = '', streamAbort = null, pendingImages = [];
+      quotas = {}, authed = false, ctxSymbol = '', streamAbort = null, pendingImages = [], proEligible = false;
   var MAX_IMAGES = 4;
 
   function esc(s) { var d = DOC.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
@@ -304,8 +304,9 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d) return; quotas = d.quotas || {};
-        researchBtn.classList.toggle('mmb-off', !(quotas.pro && quotas.pro.limit > 0));
-        if (!(quotas.pro && quotas.pro.limit > 0) && researchMode) setResearch(false);
+        proEligible = !!(quotas.pro && quotas.pro.limit > 0);
+        researchBtn.classList.toggle('mmb-off', !proEligible);
+        if (!proEligible && researchMode) setResearch(false);
         renderQuota();
       }).catch(function () {});
   }
@@ -447,8 +448,15 @@
   }
   function showUpgrade(d) {
     upgradeEl.style.display = 'block';
-    upgradeEl.innerHTML = '<strong>' + L('Quota reached', '配额已用尽') + '</strong> — ' +
-      L('upgrade to keep chatting. ', '升级以继续对话。') + '<a href="' + (ANCHOR === 'top' ? 'https://mastermind-x.com/' : '') + 'plans.html" target="_blank">' + L('See plans', '查看套餐') + '</a>';
+    var plansHref = (ANCHOR === 'top' ? 'https://mastermind-x.com/' : '') + 'plans.html';
+    var link = '<a href="' + plansHref + '" target="_blank">' + L('See plans', '查看套餐') + '</a>';
+    if (d && d.feature === 'vision') {
+      upgradeEl.innerHTML = '<strong>' + L('Image analysis is a Pro feature', '图像分析为 Pro 功能') + '</strong> — ' +
+        L('upgrade to attach charts and screenshots. ', '升级即可上传图表与截图。') + link;
+    } else {
+      upgradeEl.innerHTML = '<strong>' + L('Quota reached', '配额已用尽') + '</strong> — ' +
+        L('upgrade to keep chatting. ', '升级以继续对话。') + link;
+    }
   }
 
   /* ── toggles ── */
@@ -494,7 +502,7 @@
     else if (a === 'new') newChat(); else if (a === 'research') setResearch(!researchMode);
     else if (a === 'home') location.href = (ANCHOR === 'top' ? 'https://mastermind-x.com/' : '') + 'macro.html';
     else if (a === 'voice') startVoice();
-    else if (a === 'attach') fileEl.click();
+    else if (a === 'attach') { if (proEligible) fileEl.click(); else showUpgrade({ feature: 'vision' }); }
     else if (a === 'signin') { if (window.MDXAuth) window.MDXAuth.open('signin'); }
   });
   fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
