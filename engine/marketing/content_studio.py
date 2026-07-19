@@ -785,6 +785,17 @@ def content_plan(
                 if len(closes) < 10:
                     continue
 
+                # LIVE gate for charts too: a featured chart is the loudest post
+                # we make — an underwater/runaway/stale signal must never get one
+                # (the BA case: down 5.5% from entry yet still charted with a BUY).
+                try:
+                    from engine.marketing.copywriter import verify_signal_live as _vsl
+                    _ok_live, _ = _vsl(plan_match, closes_result, today=today)
+                except Exception:  # noqa: BLE001
+                    _ok_live = True  # fail-open only if the gate itself is broken
+                if not _ok_live:
+                    continue
+
                 # Place the BUY marker at the REAL signal — the Prophet signal
                 # date — first. That is the honest anchor and it avoids marking a
                 # cosmetic local peak. Only if the signal date is out of the chart
@@ -831,10 +842,11 @@ def content_plan(
                             timeframe="DAILY",
                             marker_index=ohlcv_marker,
                             highlight_index=ohlcv_marker,
-                            pct_from_index=ohlcv_marker,
+                            pct_from_index=(ohlcv_marker if (len(ohlcv_c) - 1 - (ohlcv_marker or 0)) >= 5 else None),
                             show_indicators=True,
                             indicators=("volume", "macd"),
                             company_name=ticker,
+                            logo_root=_ohlcv_root,
                         )
 
                 # Fallback: v1 render (marker-only) so nothing breaks
@@ -976,10 +988,11 @@ def content_plan(
                             timeframe="DAILY",
                             marker_index=conf_marker,
                             highlight_index=conf_marker,
-                            pct_from_index=conf_marker,
+                            pct_from_index=(conf_marker if (len(ohlcv_c) - 1 - (conf_marker or 0)) >= 5 else None),
                             show_indicators=True,
                             indicators=("volume", "macd"),
                             company_name=conf_ticker,
+                            logo_root=_ohlcv_root_conf,
                         )
 
                         conf_item.chart_id = chart_id
@@ -1017,6 +1030,158 @@ def content_plan(
     except Exception:  # noqa: BLE001
         # Fail-soft: confluence unavailable — Prophet posts unchanged
         pass
+
+    # ── Copywriter pass — replaces bot-voice templates with real copy ─────────
+    # Runs AFTER all queue items are settled (Prophet + confluence).
+    # For signal items: verify live price gate; demote failed items to watchlist.
+    # For receipt items: attach graded receipt; reallocate if none available.
+    # For all items: build_context → write_posts_deterministic → replace headline/body.
+    _copy_n_validated = 0
+    _copy_n_fallback = 0
+    _copy_violations_fixed = 0
+    _copy_mode = "deterministic"
+    _copy_signal_killed = 0
+    _copy_n_receipts = 0
+
+    try:
+        from engine.marketing.copywriter import (
+            verify_signal_live,
+            build_context,
+            write_posts_deterministic,
+        )
+        from engine.marketing.receipt_source import graded_receipts
+
+        _graded_receipts_list = graded_receipts(plans or [], today=today)
+        _copy_n_receipts = len(_graded_receipts_list)
+        _receipts_by_ticker: dict[str, dict] = {
+            r["ticker"]: r for r in _graded_receipts_list
+        }
+
+        # Build a ticker→plan lookup for fast signal matching
+        _plan_by_ticker: dict[str, dict] = {}
+        for _p in (plans or []):
+            _pt = _p.get("asset", "")
+            if _pt and _pt not in _plan_by_ticker:
+                _plan_by_ticker[_pt] = _p
+
+        # Build account id → acct_cfg lookup for persona resolution
+        _acct_cfg_by_id: dict[str, dict] = {
+            a.get("id", ""): a for a in raw_accounts
+        }
+
+        for acct_row in account_rows:
+            acct_id = acct_row.get("id", "")
+            acct_cfg = _acct_cfg_by_id.get(acct_id, {})
+            voice = acct_cfg.get("voice", "authoritative desk")
+            _personas_cfg = (cfg or {}).get("copywriter", {}).get("personas", {})
+            persona = _personas_cfg.get(acct_id) or _personas_cfg.get(voice) or {}
+
+            queue = acct_row.get("queue", [])
+
+            # Phase 1: apply live gate and receipt attachment (mutates type in-place)
+            for item_dict in queue:
+                type_id = item_dict.get("type", "")
+                ticker = item_dict.get("ticker", "")
+
+                # --- Signal live gate (production only: closes_loader available) ---
+                # Confluence-sourced signals are EXEMPT: they have no Prophet
+                # entry/target, and fired_combo_signals() already freshness-gates
+                # them on last_fire. Applying the entry-price gate to them killed
+                # the highest-value posts (the $VST 86% combo demoted to watchlist).
+                if (
+                    type_id == "signal" and ticker and closes_loader is not None
+                    and item_dict.get("source") != "confluence"
+                ):
+                    _plan = _plan_by_ticker.get(ticker) or {}
+                    closes_result = closes_loader(ticker)
+                    ok, reason = verify_signal_live(_plan, closes_result, today=today)
+                    if not ok:
+                        # Demote to watchlist — dead/runaway/stale signal
+                        item_dict["type"] = "watchlist"
+                        item_dict["_live_gate_fail"] = reason
+                        type_id = "watchlist"
+                        _copy_signal_killed += 1
+
+                # --- Receipt attachment (only demote if closes_loader is available
+                #     and we could verify but have nothing; skip in test mode) ---
+                _receipt = {}
+                if type_id == "receipt" and ticker and closes_loader is not None:
+                    _receipt = _receipts_by_ticker.get(ticker) or {}
+                    if not _receipt:
+                        # No graded receipt — reallocate to watchlist
+                        item_dict["type"] = "watchlist"
+                        type_id = "watchlist"
+                elif type_id == "receipt" and ticker:
+                    # Test mode: attach receipt if exists, else keep as receipt
+                    _receipt = _receipts_by_ticker.get(ticker) or {}
+
+                # Enrich item_dict with plan and receipt for build_context
+                _plan = _plan_by_ticker.get(ticker) or {}
+                item_dict["_plan"] = _plan
+                item_dict["_receipt"] = _receipt
+
+            # Phase 2: build all contexts for this account (preserves type counter ordering)
+            contexts: list[dict] = []
+            for item_dict in queue:
+                ticker = item_dict.get("ticker", "")
+                facts_data: dict = {}
+                if ticker and closes_loader is not None:
+                    try:
+                        from engine.marketing.chart_facts import compute_facts
+                        from engine.marketing.chart_render import load_ohlcv
+                        _ohlcv_root_cw: str = str(root) if root is not None else "."
+                        _ohlcv = load_ohlcv(ticker, _ohlcv_root_cw, n=90)
+                        if _ohlcv is not None:
+                            _od, _oo, _oh, _ol, _oc, _ov = _ohlcv
+                            facts_data = compute_facts(ticker, _od, _oo, _oh, _ol, _oc, _ov)
+                    except Exception:  # noqa: BLE001
+                        pass
+
+                ctx = build_context(
+                    item_dict,
+                    persona=persona or None,
+                    facts=facts_data or None,
+                    extra=None,
+                )
+                # Ensure voice and type are set on context for template lookup
+                ctx["type"] = item_dict.get("type", ctx.get("type", ""))
+                ctx["voice"] = voice
+                # Carry slot for hash-based selection on ticker posts
+                ctx["slot"] = item_dict.get("slot", "")
+                contexts.append(ctx)
+
+            # Phase 3: batch call — preserves rotating counter across all items
+            posts = write_posts_deterministic(contexts)
+            for item_dict, post in zip(queue, posts):
+                # Confluence signal posts keep the win_rate_hook copy — it is the
+                # crown-jewel framing ("worked 86% of the time historically") and
+                # the generic signal templates would inject empty Prophet fields
+                # ("Entry . T1 .") since combos have no entry/target.
+                if item_dict.get("source") == "confluence" and item_dict.get("type") == "signal":
+                    _copy_n_validated += 1
+                    continue
+                new_headline = post.get("headline", "")
+                new_body = post.get("body", "")
+                violations = post.get("violations", [])
+                if new_headline and new_body:
+                    item_dict["headline"] = new_headline
+                    item_dict["body"] = new_body
+                    item_dict["_copy_mode"] = post.get("mode", "deterministic")
+                    item_dict["_copy_violations"] = violations
+                    if violations:
+                        _copy_violations_fixed += len(violations)
+                    _copy_n_validated += 1
+                else:
+                    _copy_n_fallback += 1
+
+            # Recount mix after type changes (signal→watchlist / receipt→watchlist)
+            from collections import Counter as _Counter
+            type_counts = _Counter(d.get("type", "") for d in queue)
+            acct_row["mix_observed"] = dict(type_counts)
+
+    except Exception:  # noqa: BLE001
+        # Fail-soft: copywriter unavailable — old template copy survives
+        _copy_mode = "fallback"
 
     # Distinctness check
     dist = distinctness(all_items)
@@ -1063,6 +1228,19 @@ def content_plan(
                     f"({conf_charts_added} charts)."
                     if confluence_posts_added
                     else "No fresh fired confluence combos today — Prophet posts only."
+                ),
+            },
+            "copy": {
+                "mode": _copy_mode,
+                "n_validated": _copy_n_validated,
+                "n_fallback": _copy_n_fallback,
+                "violations_fixed": _copy_violations_fixed,
+                "signals_killed_by_gate": _copy_signal_killed,
+                "graded_receipts": _copy_n_receipts,
+                "note": (
+                    f"{_copy_n_validated} posts written by copywriter; "
+                    f"{_copy_n_fallback} fell back to templates; "
+                    f"{_copy_signal_killed} signals killed by live gate."
                 ),
             },
         },
