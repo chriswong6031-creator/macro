@@ -10,17 +10,7 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "PDD": {
-      "asof": "2026-07-17",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "KWEB": {
-      "asof": "2026-07-17",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "BIDU": {
+    "BABA": {
       "asof": "2026-07-17",
       "lag_days": 0,
       "state": "fresh"
@@ -30,7 +20,17 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "BABA": {
+    "PDD": {
+      "asof": "2026-07-17",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "BIDU": {
+      "asof": "2026-07-17",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "KWEB": {
       "asof": "2026-07-17",
       "lag_days": 0,
       "state": "fresh"
