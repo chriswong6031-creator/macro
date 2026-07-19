@@ -567,9 +567,9 @@ def test_client_history_used_when_thread_store_absent(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         captured_history.extend(history)
-        return "OK.", [], [], []
+        return "OK.", [], [], [], {}, []
 
     client_history = [
         {"role": "user", "content": "Prior question"},
@@ -805,9 +805,9 @@ def test_1500_char_message_reaches_model_loop(tmp_path):
 
     loop_called = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         loop_called.append(message)
-        return "OK.", [], [], [], {}
+        return "OK.", [], [], [], {}, []
 
     with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
         with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
@@ -837,9 +837,9 @@ def test_client_history_injection_filtered(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         captured_history.extend(history)
-        return "OK.", [], [], [], {}
+        return "OK.", [], [], [], {}, []
 
     # Inject bogus history entries
     poisoned_history = [
@@ -880,18 +880,18 @@ def test_hostile_context_symbol_neutralized(tmp_path):
 
     captured_messages: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         # We can't introspect user_content directly, so we return and check that
         # the loop was called (no crash, no injection)
-        return "OK.", [], [], [], {}
+        return "OK.", [], [], [], {}, []
 
     # Hook into _run_brain_loop to capture the built messages
     original_loop = gw._run_brain_loop
     built_contents: list[str] = []
 
-    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb):
+    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
         # Re-run the actual loop with a mock client that ends immediately
-        return _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb)
+        return _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode=mode)
 
     hostile_context = {
         "symbol": "../../../../etc/passwd",
@@ -1165,3 +1165,382 @@ def test_context_sanitization_reaches_loop(tmp_path):
     assert "<inject>" not in user_content, (
         f"raw '<inject>' tag survived sanitization in user_content: {user_content!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# W6b: Chart-command bus tests
+# ---------------------------------------------------------------------------
+
+def test_chart_command_tools_offered_on_terminal_page(tmp_path):
+    """Chart-command tools appear in the schema list ONLY when page='terminal'."""
+    root = _make_temp_root()
+    schemas_terminal = gw._all_brain_tool_schemas(root, page="terminal")
+    schemas_chat = gw._all_brain_tool_schemas(root, page="chat")
+    schemas_empty = gw._all_brain_tool_schemas(root, page="")
+
+    terminal_names = {s["name"] for s in schemas_terminal}
+    chat_names = {s["name"] for s in schemas_chat}
+    empty_names = {s["name"] for s in schemas_empty}
+
+    # All four chart-command tools must appear on terminal page
+    for tool in ("set_chart_symbol", "set_chart_timeframe", "toggle_chart_indicator", "run_chart_detection"):
+        assert tool in terminal_names, f"{tool} not in terminal schemas"
+        assert tool not in chat_names, f"{tool} leaked into chat schemas"
+        assert tool not in empty_names, f"{tool} leaked into empty-page schemas"
+
+
+def test_set_chart_symbol_emits_command(tmp_path):
+    """set_chart_symbol returns client_executed=True with action=set_symbol."""
+    result = gw._tool_set_chart_symbol({"symbol": "nvda"})
+    assert result.get("client_executed") is True
+    assert result.get("action") == "set_symbol"
+    assert result.get("symbol") == "NVDA"  # sanitized to uppercase
+
+
+def test_set_chart_symbol_requires_symbol():
+    """set_chart_symbol returns error when symbol is empty."""
+    result = gw._tool_set_chart_symbol({})
+    assert "error" in result
+
+
+def test_set_chart_timeframe_valid(tmp_path):
+    """set_chart_timeframe accepts known timeframes."""
+    for tf in ("1m", "5m", "D", "W", "1M"):
+        result = gw._tool_set_chart_timeframe({"tf": tf})
+        assert result.get("client_executed") is True
+        assert result.get("action") == "set_timeframe"
+        assert result.get("tf") == tf
+
+
+def test_set_chart_timeframe_rejects_unknown():
+    """set_chart_timeframe rejects unknown timeframe codes."""
+    result = gw._tool_set_chart_timeframe({"tf": "2h"})
+    assert "error" in result
+    assert "2h" in result["error"]
+
+
+def test_toggle_chart_indicator_valid():
+    """toggle_chart_indicator accepts known indicators."""
+    result = gw._tool_toggle_chart_indicator({"indicator": "rsi", "on": True})
+    assert result.get("client_executed") is True
+    assert result.get("action") == "toggle_indicator"
+    assert result.get("indicator") == "rsi"
+    assert result.get("on") is True
+
+
+def test_toggle_chart_indicator_off():
+    """toggle_chart_indicator with on=False emits on=False."""
+    result = gw._tool_toggle_chart_indicator({"indicator": "macd", "on": False})
+    assert result.get("on") is False
+
+
+def test_toggle_chart_indicator_rejects_unknown():
+    """toggle_chart_indicator rejects unknown indicator names."""
+    result = gw._tool_toggle_chart_indicator({"indicator": "magic_oscillator", "on": True})
+    assert "error" in result
+
+
+def test_run_chart_detection_valid():
+    """run_chart_detection accepts known detection kinds."""
+    for kind in ("sr", "fib", "trendlines", "clearAll"):
+        result = gw._tool_run_chart_detection({"kind": kind})
+        assert result.get("client_executed") is True
+        assert result.get("action") == "run_detection"
+        assert result.get("kind") == kind
+
+
+def test_run_chart_detection_rejects_unknown():
+    """run_chart_detection rejects unknown detection kinds."""
+    result = gw._tool_run_chart_detection({"kind": "magic_detection"})
+    assert "error" in result
+
+
+def test_chart_command_emitted_as_sse_event_in_stream(tmp_path):
+    """When set_chart_symbol is called in a terminal context, a 'command' SSE event is emitted."""
+    root = _make_temp_root()
+
+    # Simulate model calling set_chart_symbol tool
+    chart_cmd_block = _MockBlock("tool_use", name="set_chart_symbol", input_={"symbol": "AAPL"}, id_="cmd1")
+    tool_result_block = _MockBlock("text", text="Switched to AAPL.")
+
+    # Turn 1: model calls set_chart_symbol
+    turn1 = _MockResponse([chart_cmd_block], "tool_use")
+    # Turn 2: model answers after tool result
+    turn2 = _MockResponse([_MockBlock("text", "Now showing AAPL. is_context_only: true — all signals are display-tier pending FDR.")], "end_turn")
+
+    mock_providers = [{"client": _MockClient([turn1, turn2]), "model": "deepseek-chat"}]
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        events = list(gw.chat_stream(
+                            "Switch to AAPL", "user1", lane="fast",
+                            context={"page": "terminal"},
+                            root=root,
+                        ))
+
+    parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+    command_events = [p for p in parsed if p.get("type") == "command"]
+    assert command_events, f"No 'command' SSE events emitted: {parsed}"
+    cmd = command_events[0]
+    assert cmd.get("action") == "set_symbol"
+    payload = cmd.get("payload", {})
+    assert payload.get("symbol") == "AAPL"
+
+
+def test_chart_command_returned_in_chat_result(tmp_path):
+    """chat() returns commands list when chart-command tools are called (terminal context)."""
+    root = _make_temp_root()
+
+    chart_cmd_block = _MockBlock("tool_use", name="set_chart_timeframe", input_={"tf": "W"}, id_="tf1")
+    turn1 = _MockResponse([chart_cmd_block], "tool_use")
+    turn2 = _MockResponse([_MockBlock("text", "Switched to weekly timeframe. is_context_only: true — all signals are display-tier pending FDR.")], "end_turn")
+
+    mock_providers = [{"client": _MockClient([turn1, turn2]), "model": "deepseek-chat"}]
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        result = gw.chat(
+                            "Show weekly chart", "user1", lane="fast",
+                            context={"page": "terminal"},
+                            root=root,
+                        )
+
+    assert result.get("ok") is True
+    commands = result.get("commands", [])
+    assert commands, f"No commands in chat() result: {result}"
+    assert commands[0].get("action") == "set_timeframe"
+    assert commands[0].get("tf") == "W"
+
+
+# ---------------------------------------------------------------------------
+# W6b: Deep Research mode tests
+# ---------------------------------------------------------------------------
+
+def test_research_mode_forces_pro_lane(tmp_path):
+    """mode='research' forces lane='pro' regardless of the requested lane."""
+    root = _make_temp_root()
+    text_response = _MockResponse(
+        [_MockBlock("text", "Research analysis. is_context_only: true — all signals are display-tier pending FDR.")],
+        "end_turn",
+    )
+    mock_providers = [{"client": _MockClient([text_response]), "model": "claude-opus-4-8"}]
+
+    captured_lane: list = []
+
+    def _mock_providers(lane, root=None):
+        captured_lane.append(lane)
+        return mock_providers
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", side_effect=_mock_providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        result = gw.chat(
+                            "Deep research please", "user_research",
+                            lane="fast",   # explicitly requesting fast, should be overridden
+                            mode="research",
+                            root=root,
+                        )
+
+    # The provider must have been built for 'pro', not 'fast'
+    assert "pro" in captured_lane, f"Expected pro lane for research mode, got: {captured_lane}"
+    assert result.get("ok") is True
+
+
+def test_research_mode_raises_tool_budget(tmp_path):
+    """mode='research' raises tool_budget to config research.tool_budget (20)."""
+    root = _make_temp_root()
+    captured_tb: list = []
+
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
+        captured_tb.append(tb)
+        return "Research done.", [], [], [], {}, []
+
+    text_response = _MockResponse([_MockBlock("text", "OK.")], "end_turn")
+    mock_providers = [{"client": _MockClient([text_response]), "model": "claude-opus-4-8"}]
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            gw.chat(
+                                "Deep pass", "user_tb",
+                                mode="research",
+                                root=root,
+                            )
+
+    assert captured_tb, "Loop never called"
+    # Default pro tool_budget is 10; research raises to 20
+    assert captured_tb[0] >= 20, f"Expected tool_budget >= 20 for research mode, got {captured_tb[0]}"
+
+
+def test_research_mode_blocked_for_non_pro_tier(tmp_path):
+    """mode='research' returns 402 shape when tier has pro quota limit=0."""
+    root = _make_temp_root()
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
+            with patch("lib.ai_costs.record_usage", return_value=True):
+                result = gw.chat(
+                    "Research please", "user_free",
+                    mode="research",
+                    root=root,
+                )
+
+    assert result.get("quota_exhausted") is True
+    assert result.get("mode") == "research"
+    assert result.get("lane") == "pro"
+    assert "/plans.html" in result.get("upgrade", "")
+
+
+def test_research_mode_blocked_when_pro_quota_exhausted(tmp_path):
+    """mode='research' returns 402 when pro quota is exhausted (remaining=0)."""
+    root = _make_temp_root()
+    mock_cfg = {
+        "lanes": {"pro": {"max_tokens": 8000, "tool_budget": 10, "usage_lane": "brain-pro"}},
+        "quotas": {"pro": {"fast": {"limit": 1000, "period": "month"}, "pro": {"limit": 1, "period": "month"}}},
+        "token_ceilings": {"fast": 5_000_000, "pro": 2_000_000},
+        "tier_cache_ttl_seconds": 60,
+        "research": {"tool_budget": 20, "max_tokens": 8000},
+    }
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_load_brain_config", return_value=mock_cfg):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch("lib.ai_costs.record_usage", return_value=True):
+                    # Exhaust the pro quota first
+                    gw.chat("Normal pro call", "user_exhaust", lane="pro", root=root)
+                    # Now try research — should 402
+                    result = gw.chat("Research", "user_exhaust", mode="research", root=root)
+
+    assert result.get("quota_exhausted") is True
+
+
+def test_research_mode_consumes_pro_quota(tmp_path):
+    """mode='research' consumes exactly one pro quota slot (same ledger as normal pro)."""
+    root = _make_temp_root()
+    text_response = _MockResponse(
+        [_MockBlock("text", "Research. is_context_only: true — all signals are display-tier pending FDR.")],
+        "end_turn",
+    )
+    mock_providers = [{"client": _MockClient([text_response]), "model": "claude-opus-4-8"}]
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        gw.chat("Research pass", "user_consume", mode="research", root=root)
+
+    # Check that the pro quota ledger file was written
+    import re as _re
+    from datetime import datetime, timezone
+    month_key = datetime.now(timezone.utc).strftime("%Y-%m")
+    safe_uid = _re.sub(r"[^a-zA-Z0-9_-]", "_", "user_consume")[:64]
+    qf = tmp_path / f"q_{safe_uid}_pro_{month_key}.json"
+    assert qf.exists(), f"Pro quota ledger not written for research mode: {list(tmp_path.iterdir())}"
+    data = json.loads(qf.read_text())
+    assert data.get("count") == 1, f"Expected count=1, got {data}"
+
+
+def test_research_mode_post_filter_still_applies(tmp_path):
+    """Research mode output still goes through the post-filter (governance unchanged)."""
+    root = _make_temp_root()
+    advice_text = "You should buy NVDA immediately. is_context_only: true — all signals are display-tier pending FDR."
+    text_response = _MockResponse([_MockBlock("text", advice_text)], "end_turn")
+    mock_providers = [{"client": _MockClient([text_response]), "model": "claude-opus-4-8"}]
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        result = gw.chat(
+                            "Should I buy NVDA?", "user_filter",
+                            mode="research",
+                            root=root,
+                        )
+
+    assert result.get("filtered") is True
+    assert result.get("is_context_only") is True
+
+
+def test_research_system_prompt_contains_directive():
+    """_build_system_prompt('research') prepends the research directive to the base prompt."""
+    prompt = gw._build_system_prompt("research")
+    assert "RESEARCH MODE" in prompt
+    assert "Regime" in prompt
+    assert "Contradictions" in prompt
+    assert "is_context_only" in prompt.lower() or "is_context_only" in prompt
+    # Base prompt content is also present
+    assert "ABSOLUTE PROHIBITIONS" in prompt
+
+
+def test_chat_mode_system_prompt_unchanged():
+    """_build_system_prompt('chat') returns base prompt without research directive."""
+    prompt = gw._build_system_prompt("chat")
+    assert "RESEARCH MODE" not in prompt
+    assert "ABSOLUTE PROHIBITIONS" in prompt
+
+
+def test_research_stream_blocked_for_free_tier(tmp_path):
+    """chat_stream() with mode='research' emits quota_exhausted done event for free tier."""
+    root = _make_temp_root()
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
+            with patch("lib.ai_costs.record_usage", return_value=True):
+                events = list(gw.chat_stream(
+                    "Deep research on US macro", "user_free_stream",
+                    mode="research",
+                    root=root,
+                ))
+
+    parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+    assert parsed[0].get("type") == "meta", f"First event not meta: {parsed[0]}"
+    done = next((p for p in parsed if p.get("type") == "done"), None)
+    assert done is not None
+    assert done.get("quota_exhausted") is True
+    assert done.get("upgrade") == "/plans.html"
+
+
+def test_unknown_sse_event_type_ignored_gracefully(tmp_path):
+    """Unknown SSE event types (e.g. 'command' on dashboard) are silently ignored by the client contract."""
+    # Verify the gateway emits a command event that a client could receive
+    root = _make_temp_root()
+    chart_cmd_block = _MockBlock("tool_use", name="set_chart_symbol", input_={"symbol": "TSLA"}, id_="cc1")
+    turn1 = _MockResponse([chart_cmd_block], "tool_use")
+    turn2 = _MockResponse(
+        [_MockBlock("text", "Switched to TSLA. is_context_only: true — all signals are display-tier pending FDR.")],
+        "end_turn",
+    )
+    mock_providers = [{"client": _MockClient([turn1, turn2]), "model": "deepseek-chat"}]
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        events = list(gw.chat_stream(
+                            "Switch to TSLA", "user_cmd",
+                            context={"page": "terminal"},
+                            root=root,
+                        ))
+
+    parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+    event_types = {p.get("type") for p in parsed}
+    # Both 'command' (new W6b) and standard types must be present
+    assert "meta" in event_types
+    assert "done" in event_types
+    assert "command" in event_types, f"Expected 'command' event type, got: {event_types}"
+    # Verify 'command' event has expected shape
+    cmd_ev = next(p for p in parsed if p.get("type") == "command")
+    assert cmd_ev.get("action") == "set_symbol"

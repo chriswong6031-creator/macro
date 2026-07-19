@@ -176,6 +176,30 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
 .lane-btn.active { background: var(--link); color: #fff; }
 #quota-info { display: flex; align-items: center; gap: 6px; }
 
+/* ── deep research toggle (W6b) ─────────────────────────────────────────── */
+#research-toggle {
+  display: none; /* shown only when pro quota > 0 */
+  align-items: center; gap: 6px;
+}
+#research-toggle.visible { display: flex; }
+#research-btn {
+  border: 1px solid var(--line); border-radius: 99px;
+  padding: 4px 11px; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: background .13s, border-color .13s;
+  color: var(--muted); background: var(--panel);
+}
+#research-btn.active {
+  background: color-mix(in srgb, #8b5cf6 15%, var(--panel));
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+#research-btn:disabled { opacity: .45; cursor: not-allowed; }
+/* research progress label */
+#research-progress {
+  display: none; font-size: 11.5px; color: #8b5cf6; font-style: italic;
+}
+#research-progress.visible { display: inline; }
+
 #msg-input {
   flex: 1; background: var(--panel); border: 1px solid var(--line);
   border-radius: 12px; padding: 10px 14px; font: 14px/1.5 inherit;
@@ -676,6 +700,15 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
           <span id="quota-fast" class="quota-chip" style="display:none"></span>
           <span id="quota-pro" class="quota-chip" style="display:none"></span>
         </div>
+        <!-- Deep Research toggle (W6b) — shown only when pro quota limit > 0 -->
+        <div id="research-toggle" role="group" aria-label="Deep Research mode">
+          <button id="research-btn" type="button" aria-pressed="false">
+            🔬 <span class="l-en">Deep Research</span><span class="l-zh">深度研究</span>
+          </button>
+          <span id="research-progress">
+            <span class="l-en">researching…</span><span class="l-zh">深度研究中…</span>
+          </span>
+        </div>
         <span id="sym-ctx-label" style="font-size:12px;color:var(--muted);display:none">
           <span class="l-en">Symbol context:</span><span class="l-zh">标的上下文：</span>
           <strong id="sym-ctx-name" style="color:var(--link)"></strong>
@@ -724,6 +757,7 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
   var ctxSymbol = null;  // active ticker context
   var quotas = { fast: null, pro: null };  // {remaining, limit, period}
   var annotations = [];  // [{type, price, label}]
+  var researchMode = false;  // Deep Research toggle (W6b)
 
   /* ── DOM refs ───────────────────────────────────────────────────────────── */
   var shell = document.getElementById('chat-shell');
@@ -744,6 +778,10 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
   var ctxPanel = document.getElementById('ctx-panel');
   var ctxSymHead = document.getElementById('ctx-sym-head');
   var ctxAnns = document.getElementById('ctx-anns');
+  /* Deep Research (W6b) */
+  var researchToggle = document.getElementById('research-toggle');
+  var researchBtn = document.getElementById('research-btn');
+  var researchProgress = document.getElementById('research-progress');
 
   /* ── helpers ────────────────────────────────────────────────────────────── */
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
@@ -852,6 +890,14 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
         quotas.fast = d.quotas && d.quotas.fast;
         quotas.pro = d.quotas && d.quotas.pro;
         renderQuotas();
+        /* Deep Research toggle (W6b): show when pro quota limit > 0 */
+        if (quotas.pro && quotas.pro.limit > 0) {
+          researchToggle.classList.add('visible');
+        } else {
+          researchToggle.classList.remove('visible');
+          /* also reset research mode if it was on and pro is gone */
+          if (researchMode) setResearchMode(false);
+        }
       }).catch(function () {});
   }
   function renderQuotas() {
@@ -876,6 +922,24 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
       quotaPro.style.display = '';
     }
   }
+
+  /* ── deep research toggle (W6b) ─────────────────────────────────────────── */
+  function setResearchMode(on) {
+    researchMode = !!on;
+    researchBtn.classList.toggle('active', researchMode);
+    researchBtn.setAttribute('aria-pressed', researchMode ? 'true' : 'false');
+    /* When research is on, force pro lane */
+    if (researchMode) {
+      lane = 'pro';
+      document.querySelectorAll('.lane-btn').forEach(function (b) {
+        b.classList.toggle('active', b.dataset.lane === 'pro');
+      });
+    }
+  }
+  researchBtn.addEventListener('click', function () {
+    if (streaming) return;
+    setResearchMode(!researchMode);
+  });
 
   /* ── threads ────────────────────────────────────────────────────────────── */
   function loadThreads() {
@@ -1115,9 +1179,16 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
     var replyBubble = null;
     var replyText = '';
 
+    /* Show research progress affordance */
+    if (researchMode) {
+      researchProgress.classList.add('visible');
+      researchBtn.disabled = true;
+    }
+
     var body = JSON.stringify({
       message: text,
-      lane: lane,
+      lane: researchMode ? 'pro' : lane,
+      mode: researchMode ? 'research' : 'chat',
       thread_id: threadId || undefined,
       context: ctxSymbol ? { symbol: ctxSymbol, page: 'chat' } : { page: 'chat' }
     });
@@ -1140,19 +1211,23 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
         return;
       }
       if (res.status === 402) {
-        /* quota exhausted */
+        /* quota exhausted — including research mode 402 */
         return res.json().then(function (d) {
           var typing = document.getElementById('typing-msg');
           if (typing) msgList.removeChild(typing);
           upgradeCard.style.display = '';
           streaming = false;
           sendBtn.disabled = !msgInput.value.trim();
+          researchProgress.classList.remove('visible');
+          researchBtn.disabled = false;
         }).catch(function () {
           var typing = document.getElementById('typing-msg');
           if (typing) msgList.removeChild(typing);
           upgradeCard.style.display = '';
           streaming = false;
           sendBtn.disabled = !msgInput.value.trim();
+          researchProgress.classList.remove('visible');
+          researchBtn.disabled = false;
         });
       }
       if (!res.ok) {
@@ -1162,6 +1237,8 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
           appendError(L('Something went wrong. Please try again.', '出错了，请重试。'));
           streaming = false;
           sendBtn.disabled = !msgInput.value.trim();
+          researchProgress.classList.remove('visible');
+          researchBtn.disabled = false;
         });
       }
 
@@ -1224,6 +1301,9 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
             annotations = annotations.concat(ev.annotations);
             renderAnnotations();
           }
+        } else if (ev.type === 'command') {
+          /* Chart-command bus (W6b): dashboard ignores command events (no chart controller here).
+             Unknown event types are silently ignored per contract. */
         } else if (ev.type === 'done') {
           if (ev.quota) {
             if (lane === 'fast') quotas.fast = ev.quota;
@@ -1266,7 +1346,11 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
         if (typing) msgList.removeChild(typing);
         streaming = false;
         sendBtn.disabled = !msgInput.value.trim();
+        /* Reset research progress affordance */
+        researchProgress.classList.remove('visible');
+        researchBtn.disabled = false;
         loadThreads();
+        loadQuotas();
       }
 
       read();
@@ -1276,6 +1360,8 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
       appendError(L('Network error. Please check your connection and try again.', '网络错误，请检查连接后重试。'));
       streaming = false;
       sendBtn.disabled = !msgInput.value.trim();
+      researchProgress.classList.remove('visible');
+      researchBtn.disabled = false;
     });
   }
 
