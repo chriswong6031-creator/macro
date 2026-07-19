@@ -501,4 +501,51 @@ LEX: dict[str, str] = {
     "Broad Mania": "全面亢奋",
     "Forced Deleveraging": "强制去杠杆",
     "Unclear": "不明朗",
+    # --- SGA Stage Analysis page (Weinstein 4-stage cycle) --------------------
+    # page + section labels
+    "Stage Analysis": "阶段分析",
+    # stage names (as plain-word cycle labels)
+    "Building a base": "筑底",
+    "Advancing": "上升期",
+    "Topping out": "见顶",
+    "Declining": "下跌期",
+    "Base": "筑底",
+    "Advance": "上升",
+    "Top": "见顶",
+    "Decline": "下跌",
+    # stage events (plain words)
+    "Fresh breakout": "新突破",
+    "Recaptured line": "重回均线",
+    "Resumed": "回踩后回升",
+    # stances (doctrine six — the ones this page uses)
+    "Watch — don't chase": "观察—勿追高",
+    "Get ready": "做好准备",
+    "Protect gains": "保护利润",
+    # earnings-call tone words (finite vocab — engine/earnings_qual._TONE_WORDS
+    # ∪ engine/stage_analysis._tone_word outputs; every one needs a ZH twin)
+    "confident": "信心十足",
+    "upbeat": "乐观",
+    "steady": "稳健",
+    "cautious": "谨慎",
+    "defensive": "防守",
+    "mixed": "喜忧参半",
+    "guarded": "谨慎",
+    "downbeat": "偏空",
+    "reassuring": "安抚",
+    "uncertain": "不确定",
+    # earnings tag plain-language labels (tag taxonomy → EN plain label; ZH here)
+    "Raised guidance": "上调指引",
+    "Cut guidance": "下调指引",
+    "Beat and raised": "超预期并上调",
+    "Missed and cut": "不及预期并下调",
+    "Margins expanding": "利润率扩张",
+    "Margins shrinking": "利润率收窄",
+    "Demand picking up": "需求回暖",
+    "Demand slowing": "需求放缓",
+    "Supply tight": "供给偏紧",
+    "New product": "新产品",
+    "Buyback / dividend": "回购／分红",
+    "Regulatory headwind": "监管逆风",
+    "Competitive threat": "竞争压力",
+    "Macro-sensitive": "受宏观影响",
 }

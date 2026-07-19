@@ -483,6 +483,16 @@ lanes:
             - scripts.build_rotation_events
           cl_special:
             - scripts.build_special_situations
+          cl_stage:
+            # SGA (Stage Analysis — research/STAGE_ANALYSIS_MASTERPLAN.md): earnings-call
+            # scores fetched from R2 (Windows-PC Qwen worker seam, SGA-R6; fail-open
+            # no-op without creds), then the Weinstein stage engine over baskets/ohlcv
+            # ∪ SP1500 (~10 min, hidden under the special-sits ceiling), then the page.
+            # Engine is daily-only (forward-ledger single-writer); render lanes carry
+            # only the page builder.
+            - scripts.fetch_earnings_scores
+            - scripts.build_stage_analysis
+            - scripts.build_stage_analysis_page
           cl_misc:
             - scripts.build_seasonality
             - scripts.build_reports
@@ -1484,6 +1494,8 @@ lanes:
             - scripts.build_reports
             - scripts.build_policy_watch
             - scripts.build_index_changes
+            # SGA page-only re-render (committed artifact); engine stays daily-only.
+            - scripts.build_stage_analysis_page
       # serial post-band (composition order: spine; band; central; hub; us_pages; libs)
       # NOTE: build_sector_central runs via central() and build_vector via hub().
       # After the W5a parser fix (_collect() no longer treats single-line function
@@ -1598,6 +1610,8 @@ lanes:
             - engine.policy_intent_desk
             - scripts.build_policy_watch
             - scripts.build_index_changes
+            # SGA page-only re-render (committed artifact); engine stays daily-only.
+            - scripts.build_stage_analysis_page
       # serial post-band (composition order: spine; band; central; hub; us_pages; libs)
       # NOTE: build_sector_central runs via central() and build_vector via hub().
       # After the W5a parser fix, both are visible and declared here.

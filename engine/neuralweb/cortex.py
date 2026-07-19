@@ -137,6 +137,8 @@ _READ_TOOLS = frozenset({
     "read_master_brain_brief",
     # SS-NW-W1: read-only special-situations event context (display/context only)
     "read_special_situations",
+    # SGA-W2: read-only Weinstein stage-analysis context (display/context only)
+    "read_stage_analysis",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -978,6 +980,18 @@ def _tool_read_special_situations_cx(root: Path, params: dict) -> dict:
     return _f(root, params)
 
 
+def _tool_read_stage_analysis_cx(root: Path, params: dict) -> dict:
+    """Read Weinstein stage-analysis context (SGA-W2, delegates to ask_brain).
+
+    Reads data/stage_analysis/context/latest.json (stage_context.v1): market
+    stage weather, the Fresh Stage 2 board, and the same-day change feed.
+    DISPLAY-ONLY ceiling: context only — never a signal, rank, or sizing input.
+    is_context_only always true. Fails open when absent.
+    """
+    from engine.neuralweb.ask_brain import _tool_read_stage_analysis as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
 def _tool_read_china_decision_packet_cx(root: Path, params: dict) -> dict:
     """Read the China decision packet summary (delegates to ask_brain)."""
     from engine.neuralweb.ask_brain import _tool_read_china_decision_packet as _f  # noqa: PLC0415
@@ -1572,6 +1586,9 @@ def dispatch_tool(
     elif tool_name == "read_special_situations":
         # SS-NW-W1: special-situations event context (display/context only)
         return _tool_read_special_situations_cx(root, tool_params)
+    elif tool_name == "read_stage_analysis":
+        # SGA-W2: Weinstein stage-analysis context (display/context only)
+        return _tool_read_stage_analysis_cx(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -2052,6 +2069,52 @@ def _tool_schemas() -> list[dict]:
                 "required": [],
             },
         },
+        # --- SGA-W2: Weinstein stage-analysis context read tool ---
+        {
+            "name": "read_stage_analysis",
+            "description": (
+                "Read data/stage_analysis/context/latest.json — the nightly "
+                "Weinstein 4-stage classification context feed (stage_context.v1): "
+                "market stage weather (pct of universe in Stage 2 / Stage 4, SPY "
+                "stage), the Fresh Stage 2 board (top_stage2 with ticker, sector, "
+                "weeks-in-stage, display-tier sga_score, event chip, T-cascade "
+                "gate_tier, blackout flag, and plain-EN why list), counts "
+                "(total/stage1..4/stage2_fresh/too_young/new_today), and the "
+                "same-day change feed (entered/left Stage 2, breakout, topping, "
+                "entered Stage 4 since prior day). Optional params: ticker (str) — "
+                "filter to that ticker; stage (int 1-4) — filter to that stage; "
+                "min_score (num) — floor on the display-tier sga_score; "
+                "fresh_only (bool) — keep only fresh Stage 2 names. "
+                "DISPLAY-ONLY ceiling (SGA-R4/R5): context only — never a signal, "
+                "rank, or sizing input. The sga_score is display-tier context, not a "
+                "calibrated signal; earnings-call scores are context-only chips. "
+                "LLMs may only de-escalate, never originate. is_context_only: true. "
+                "Fails open with available=False when absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "ticker": {
+                        "type": "string",
+                        "description": "Optional: single ticker to filter the Stage 2 board to",
+                    },
+                    "stage": {
+                        "type": "integer",
+                        "description": "Optional: Weinstein stage to filter to (1-4)",
+                        "enum": [1, 2, 3, 4],
+                    },
+                    "min_score": {
+                        "type": "number",
+                        "description": "Optional: floor on the display-tier sga_score",
+                    },
+                    "fresh_only": {
+                        "type": "boolean",
+                        "description": "Optional: keep only fresh Stage 2 names (fresh=true)",
+                    },
+                },
+                "required": [],
+            },
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -2155,7 +2218,7 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (30): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (31): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
@@ -2167,7 +2230,7 @@ READ (30): read_world_state, query_spine, read_kernel, read_graph, read_contradi
            read_theme_asymmetry, read_theme_options_witness,
            read_theme_clinical, read_theme_trade_flows,
            read_master_brain_theses, read_master_brain_brief,
-           read_special_situations
+           read_special_situations, read_stage_analysis
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CAUSAL CANDIDATES (CHF W5): read_causal_candidates returns inert CHF mechanism cards

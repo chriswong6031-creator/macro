@@ -1296,6 +1296,69 @@ def _summarize_special_sits(repo: Path) -> tuple[dict, str | None]:
         return lobe, None
     except Exception as exc:  # noqa: BLE001
         return {}, f"special_sits summarize failed: {exc}"
+
+
+def _summarize_stage_analysis(repo: Path) -> tuple[dict, str | None]:
+    """Distil stage_analysis context into the stage_analysis lobe (SGA program).
+
+    Source: data/stage_analysis/context/latest.json (stage_context.v1).
+    Written by scripts/build_stage_analysis.py; absent until first nightly run.
+    Fail-soft: absent or unreadable artifact → empty lobe with gap note.
+
+    Standing laws:
+    - 100% deterministic re-projection; no LLM-originated content.
+    - Nothing here may gate, rank, size, or escalate any authority surface
+      (SGA-R4: sga_score is display-tier only; SGA-R5: earnings scores context-only).
+    - The word 'validated' is banned from all emitted text.
+    - is_context_only=True always; display_only=True always.
+    """
+    ctx_path = repo / "data" / "stage_analysis" / "context" / "latest.json"
+    raw = _read_json(ctx_path)
+    if raw is None:
+        return {}, "data/stage_analysis/context/latest.json absent or unreadable"
+
+    try:
+        counts = raw.get("counts") or {}
+        market = raw.get("market") or {}
+        top_raw = raw.get("top_stage2") or []
+        changes = (raw.get("changes") or {}).get("items") or []
+
+        lobe: dict = {
+            "is_context_only": True,
+            "display_only": True,
+            "asof": raw.get("asof"),
+            "counts": {
+                "total": counts.get("total"),
+                "stage2": counts.get("stage2"),
+                "stage2_fresh": counts.get("stage2_fresh"),
+                "stage4": counts.get("stage4"),
+                "new_today": counts.get("new_today"),
+            },
+            "market": {
+                "pct_stage2": market.get("pct_stage2"),
+                "pct_stage4": market.get("pct_stage4"),
+                "weather": market.get("weather"),
+                "spy_stage": market.get("spy_stage"),
+            },
+            "top_stage2": [
+                {
+                    k: s.get(k)
+                    for k in (
+                        "ticker", "company", "sector", "stage", "weeks_in_stage",
+                        "fresh", "sga_score", "event", "gate_tier", "blackout", "why",
+                    )
+                }
+                for s in top_raw[:6]
+                if isinstance(s, dict)
+            ],
+            "n_changes": len(changes) if isinstance(changes, list) else 0,
+            "honesty_note": "context only — stage classification display, never a signal or sizing input",
+        }
+        return lobe, None
+    except Exception as exc:  # noqa: BLE001
+        return {}, f"stage_analysis summarize failed: {exc}"
+
+
 def _summarize_theme_rotation(repo: Path) -> tuple[dict, str | None]:
     """Distil world_state.theme_rotation into the theme_rotation lobe.
 
@@ -1459,6 +1522,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "contagion": _summarize_contagion,  # CSP-W1 contagion context lobe
     "fx_dollar": _summarize_fx_dollar,  # FX/dollar transmission context lobe
     "special_sits": _summarize_special_sits,  # SS-NW-W1 special-situations event context lobe
+    "stage_analysis": _summarize_stage_analysis,  # SGA-W2 Weinstein stage classification context lobe
     "theme_rotation": _summarize_theme_rotation,  # theme_context.v1 NW integration
     "market_structure": _summarize_market_structure,  # MSP-W3 market-structure context lobe
     "rates_command": _summarize_rates_command,  # RCB Forward Path board lobe
@@ -1481,6 +1545,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "contagion": ["world-state"],  # CSP-W1: reads world_state.contagion_regime
     "fx_dollar": ["world-state"],  # reads world_state.fx_dollar (from data/forex/latest.json)
     "special_sits": ["special-sits-context-latest"],  # SS-NW-W1: reads context artifact directly
+    "stage_analysis": ["stage-analysis-context-latest"],  # SGA-W2: reads context artifact directly
     "theme_rotation": ["theme-context-latest"],  # reads world_state.theme_rotation
     "market_structure": ["market-structure-latest"],  # MSP-W3: reads world_state.market_structure
     "rates_command": ["rates-command-latest"],  # RCB: reads world_state.rates_command (data/rates_command/latest.json)

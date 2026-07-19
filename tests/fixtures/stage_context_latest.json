@@ -1,0 +1,215 @@
+{
+  "schema": "stage_context.v1",
+  "asof": "2026-07-17",
+  "built": "2026-07-17T09:12:04Z",
+  "is_context_only": true,
+  "display_only": true,
+  "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
+  "counts": {
+    "total": 9,
+    "stage1": 2,
+    "stage2": 4,
+    "stage2_fresh": 2,
+    "stage3": 1,
+    "stage4": 2,
+    "too_young": 1,
+    "new_today": 2
+  },
+  "market": {
+    "pct_stage2": 44.4,
+    "pct_stage4": 22.2,
+    "weather": "advancing",
+    "spy_stage": 2,
+    "spy_weeks": 31
+  },
+  "top_stage2": [
+    {
+      "ticker": "NVDA",
+      "company": "NVIDIA",
+      "sector": "Information Technology",
+      "stage": 2,
+      "weeks_in_stage": 6,
+      "fresh": true,
+      "sga_score": 84,
+      "ma30_slope_pct5w": 3.42,
+      "pct_vs_ma30": 8.9,
+      "mansfield_rs": 12.4,
+      "vol_ratio": 1.72,
+      "event": "breakout",
+      "gate_tier": "T1",
+      "blackout": false,
+      "arc_pos": 0.31,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.58,
+        "performance": 8.2,
+        "tone_word": "upbeat",
+        "tags": ["guidance_raised", "demand_acceleration"],
+        "quarter": "Q2 2026"
+      },
+      "why": [
+        "Early in its climb — 6 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 6 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ]
+    },
+    {
+      "ticker": "AVGO",
+      "company": "Broadcom",
+      "sector": "Information Technology",
+      "stage": 2,
+      "weeks_in_stage": 9,
+      "fresh": true,
+      "sga_score": 71,
+      "ma30_slope_pct5w": 2.11,
+      "pct_vs_ma30": 5.3,
+      "mansfield_rs": 6.7,
+      "vol_ratio": 1.31,
+      "event": "trendline_recapture",
+      "gate_tier": "T2",
+      "blackout": true,
+      "arc_pos": 0.38,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.12,
+        "performance": 6.4,
+        "tone_word": "steady",
+        "tags": ["margin_expansion"],
+        "quarter": "Q2 2026"
+      },
+      "why": [
+        "Early in its climb — 9 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Earnings soon — wait, don't chase"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 9 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "财报临近 — 先等待，不要追高"
+      ]
+    },
+    {
+      "ticker": "COST",
+      "company": "Costco Wholesale",
+      "sector": "Consumer Staples",
+      "stage": 2,
+      "weeks_in_stage": 22,
+      "fresh": false,
+      "sga_score": 44,
+      "ma30_slope_pct5w": 1.05,
+      "pct_vs_ma30": 4.1,
+      "mansfield_rs": 2.2,
+      "vol_ratio": 0.98,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.46,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null
+      },
+      "why": [
+        "Climbing for 22 weeks now",
+        "Trading above its 30-week line — the trend is with it"
+      ],
+      "why_zh": [
+        "已上行 22 周",
+        "位于 30 周均线之上 — 趋势向好"
+      ]
+    },
+    {
+      "ticker": "WMT",
+      "company": "Walmart",
+      "sector": "Consumer Staples",
+      "stage": 2,
+      "weeks_in_stage": 40,
+      "fresh": false,
+      "sga_score": 28,
+      "ma30_slope_pct5w": 0.88,
+      "pct_vs_ma30": 18.7,
+      "mansfield_rs": -1.1,
+      "vol_ratio": 0.91,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.49,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null
+      },
+      "why": [
+        "Climbing for 40 weeks now",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "已上行 40 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ]
+    }
+  ],
+  "warnings_stage3": [
+    {
+      "ticker": "MMM",
+      "company": "3M",
+      "weeks_in_stage": 4,
+      "sga_score": 12
+    }
+  ],
+  "sectors": [
+    {"sector": "Information Technology", "n": 2, "pct_stage2": 100.0, "trend": "up"},
+    {"sector": "Consumer Staples", "n": 3, "pct_stage2": 66.7, "trend": "up"},
+    {"sector": "Industrials", "n": 2, "pct_stage2": 0.0, "trend": "down"},
+    {"sector": "Health Care", "n": 2, "pct_stage2": 0.0, "trend": "flat"}
+  ],
+  "roster": {
+    "NVDA": [2, 6],
+    "AVGO": [2, 9],
+    "COST": [2, 22],
+    "WMT": [2, 40],
+    "MMM": [3, 4],
+    "PFE": [4, 11],
+    "INTC": [4, 25],
+    "KO": [1, 8],
+    "GE": [1, 3]
+  },
+  "changes": {
+    "items": [
+      {"kind": "entered_stage2", "ticker": "NVDA", "detail": "Moved into an advancing stage"},
+      {"kind": "breakout", "ticker": "NVDA", "detail": "Broke out of its base on volume"},
+      {"kind": "topping", "ticker": "MMM", "detail": "Advance is stalling — topping out"}
+    ],
+    "n": 3
+  },
+  "prev_state": {
+    "asof": "2026-07-16",
+    "by_key": {
+      "NVDA": {"stage": 1, "fresh": false, "event": null},
+      "AVGO": {"stage": 2, "fresh": true, "event": "trendline_recapture"},
+      "MMM": {"stage": 2, "fresh": false, "event": null}
+    }
+  },
+  "_current_by_key": {
+    "NVDA": {"stage": 2, "fresh": true, "event": "breakout"},
+    "AVGO": {"stage": 2, "fresh": true, "event": "trendline_recapture"},
+    "COST": {"stage": 2, "fresh": false, "event": null},
+    "WMT": {"stage": 2, "fresh": false, "event": null},
+    "MMM": {"stage": 3, "fresh": false, "event": null},
+    "PFE": {"stage": 4, "fresh": false, "event": null},
+    "INTC": {"stage": 4, "fresh": false, "event": null},
+    "KO": {"stage": 1, "fresh": false, "event": null},
+    "GE": {"stage": 1, "fresh": false, "event": null}
+  }
+}

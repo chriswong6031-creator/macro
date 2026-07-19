@@ -382,6 +382,11 @@ LOBE_DESCRIPTIONS = {
         "full": "Each night the Prophet governor scans the dashboard health report for deterministic findings worth surfacing to the wider system. When it finds an artifact that has gone stale, a cluster of missing data in one market, or signs that a board ledger has not been updated recently, it writes a suggestion row here. The rows follow the same format as the Mastermind feedback nudges: a stable code, a short severity label, the affected market, and a plain-language description of the problem capped at one hundred and sixty characters. High-severity findings are also sent to the shared inter-lobe channel so the Master Brain can see them without polling this file directly. The suggestions accumulate across nights but are deduplicated by their stable codes, so the same recurring problem appears once with its original discovery date.",
         "src_fp": "70b5d3d3d3e798f2",
     },
+    "rates-command-latest": {
+        "short": "",
+        "full": "",
+        "src_fp": "25b9a58f1a1147cb",
+    },
     "reflex-firings-commodity-shock": {
         "short": "Log of commodity shock events detected by the automated sentinel, graded over short horizons.",
         "full": "Each time the commodity shock sentinel detects a genuine new state transition — a shock or a recovery — a record is appended here. Duplicate detection prevents the same event from being logged twice. Shock states carry a bearish direction; recovery and normal states carry a neutral direction. The log is graded against a commodity benchmark at one-day and five-day horizons, but the sample is still small and no conclusion can yet be drawn.",
@@ -601,6 +606,11 @@ LOBE_DESCRIPTIONS = {
         "short": "The master searchable table joining every engine's recent signal history, rebuilt fresh each night.",
         "full": "Each night the system rebuilds a unified table that joins signal history from all major engines: US, Hong Kong, Canada, and China boards, the signal ledger, and sector-cycle forward logs. It also pulls in graded rows from the track-record store. Because it is a fully rebuilt derived view rather than a running ledger, overwriting it each night is correct. Several source ledgers are still pending formal registration in a future cleanup sweep.",
         "src_fp": "7a23127513aaf65e",
+    },
+    "stage-analysis-context-latest": {
+        "short": "Nightly Weinstein 4-stage read across the whole equity universe — which stocks are basing, advancing, topping, or declining — plus a Fresh Stage 2 board, display tier only, no score or ranking authority.",
+        "full": "Each night the stage-analysis builder classifies every stock in the universe into one of the four Weinstein stages (basing, advancing, topping, declining) using completed weekly bars and a 30-week trend line, then writes a context snapshot. It summarizes the market weather (what share of stocks is advancing versus declining, and which stage the broad market is in), lists the freshest early-advance names on a Fresh Stage 2 board, and tracks which sectors are strengthening. Each board name carries a display-tier quality score, an early-advance freshness flag, a relative-strength chip, and — where a call has been read — an earnings-tone chip; none of these may be used as a signal or position-sizing input, and the earnings-call scores stay context-only until a separate promotion test clears. A same-day change-feed distinguishes fresh entries, exits, breakouts, and stage transitions from the prior state. The artifact carries an explicit is_context_only flag, and every consumer fails open when the file is absent, so it is harmless until the builder first runs.",
+        "src_fp": "6eb0fa06009819fe",
     },
     "theme-asymmetry": {
         "short": "Per-leg asymmetry panel for each canonical theme — bottleneck, consensus gap, dislocation, crowding, and orthogonality — no fused score.",

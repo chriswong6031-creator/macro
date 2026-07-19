@@ -1,0 +1,55 @@
+# Earnings-call qualitative scorer — config (SGA W4, rulings SGA-R5/R6).
+#
+# The scorer harness (engine/earnings_qual.py) reads this to know which provider
+# to try first, the local Qwen endpoint, model names, the daily call cap, and the
+# prompt version.  It is provider-agnostic: the SAME harness runs on the operator's
+# Windows PC against a LOCAL OpenAI-compatible endpoint (llama.cpp / LM Studio /
+# vLLM serving Qwen3-14B-Q4) and — as a cloud fallback, off the render path — on
+# Anthropic/DeepSeek via engine/llm_auth.make_call().
+#
+# SGA-R5: all output is context-only (is_context_only:true) — never a signal,
+# never a gate, never a sizing input, until the promotion gauntlet passes.
+# SGA-R6: the Windows worker is producer-only — it writes R2, NEVER git.
+
+# Provider waterfall.  'openai_compat' is the local Qwen path (base_url below).
+# 'anthropic'/'deepseek' route through engine/llm_auth (cloud fallback lane).
+# The harness tries providers in this order and stops at the first that answers.
+provider_order:
+  - openai_compat        # local Qwen on the PC (primary — free, private)
+  - deepseek             # cheapest cloud fallback (metered)
+  - anthropic            # last-resort cloud fallback (Haiku, metered)
+
+# --- local OpenAI-compatible endpoint (the Qwen path) ---------------------------
+# base_url is a PLACEHOLDER — the worker overrides it from its own env/args when it
+# runs on the PC.  Default points at a locally-served llama.cpp / LM Studio server.
+openai_compat:
+  base_url: "http://localhost:8000/v1"   # placeholder; PC worker overrides
+  model: "qwen3-14b"                       # LM Studio / llama.cpp model id
+  api_key_env: "LOCAL_LLM_API_KEY"        # optional; most local servers ignore it
+  timeout_s: 120
+  max_tokens: 1200
+
+# --- cloud fallback model ids (routed via engine/llm_auth) -----------------------
+# Cheapest lane only — earnings scoring is off the render-critical path.
+opus_model: "claude-haiku-4-5"            # 'anthropic' provider (cheap Haiku)
+deepseek_model: "deepseek-v4-pro"          # 'deepseek' provider
+# llm_auth env-var names (waterfall credential lookups):
+oauth_token_env: "CLAUDE_CODE_OAUTH_TOKEN"
+api_key_env: "ANTHROPIC_API_KEY"
+deepseek_key_env: "DEEPSEEK_API_KEY"
+deepseek_base_url: "https://api.deepseek.com/anthropic"
+
+# --- run economics ---------------------------------------------------------------
+# ~7 calls/day rolling covers the 2,552-name/yr earnings cadence (masterplan §4).
+daily_cap: 8                               # max scores per score_new() invocation
+max_chars: 24000                           # transcript is truncated to this length
+retry_on_bad_json: 1                       # one retry when the model returns non-JSON
+
+# --- prompt version --------------------------------------------------------------
+# Bump when tools/earnings_worker/prompts.py changes materially.  Stored on every
+# row's scored_at context (not the row itself) and surfaced in the manifest so
+# scores from different prompt generations can be told apart at promotion time.
+prompt_version: "equal-v1"
+
+# --- usage attribution (ai_costs ledger, cloud lanes only) -----------------------
+usage_lane: "earnings_qual"

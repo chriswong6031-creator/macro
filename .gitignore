@@ -177,6 +177,9 @@ data/hk_stocks_ext/*.parquet
 # publish_r2 --dirs attention. Recover locally: python -m scripts.fetch_r2 --dirs attention
 data/attention/*.parquet
 
+# Per-ticker Google Trends attention parquets (R2-class local store; not tracked).
+data/google_trends/
+
 # Massive.com whole-market daily OHLCV derived store (R2-only; Setup-Species §7 W0.6a).
 # Per-ticker parquets published via scripts/publish_r2 --dirs massive_stock_day.
 # Committed: data/massive_stock_day/_manifest.json (freshness anchor for audit_r2)
@@ -387,3 +390,12 @@ data/odds_ohlcv/*.parquet
 data/flow_signals/models/
 # CXI-1: derived context index DB (never committed)
 .context-index/
+
+# SGA W4 — earnings-call qualitative scores (rulings SGA-R5/R6).
+# Produced OFF the render path by the Windows-PC Qwen worker (and cloud-fallback
+# on the Mac), transported via R2 (scripts/publish_earnings_r2.py /
+# fetch_earnings_scores.py), joined into Stage Analysis at nightly time. NEVER
+# git-committed — the worker is producer-only (SGA-R6).
+# TRAP (masterplan §7): data/earnings/ is the CALENDAR store (committed parquet)
+# and must NOT be ignored — only data/earnings_calls/ is the R2-transported lane.
+data/earnings_calls/

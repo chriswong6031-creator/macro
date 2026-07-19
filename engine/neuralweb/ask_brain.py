@@ -210,6 +210,8 @@ _ASK_READ_TOOLS = frozenset({
     "read_theme_trade_flows",
     # SS-NW-W1: special-situations event context read tool (display/context only)
     "read_special_situations",
+    # SGA-W2: Weinstein stage-analysis context read tool (display/context only)
+    "read_stage_analysis",
 })
 
 # Thematic Intelligence trigger terms (TIL W5 NW citizenship).
@@ -1575,6 +1577,99 @@ def _tool_read_special_situations(root: Path, params: dict) -> dict:
         return {**_null, "note": f"read error: {exc}"}
 
 
+def _tool_read_stage_analysis(root: Path, params: dict) -> dict:
+    """Tool handler: return Weinstein stage-analysis event context (SGA program).
+
+    Reads data/stage_analysis/context/latest.json (stage_context.v1) — the nightly
+    stage classification feed: market stage weather, the Fresh Stage 2 board
+    (top_stage2, display-tier sga_score only), and the same-day change feed.
+
+    Optional params:
+      ticker (str)    — filter top_stage2 to that single ticker
+      stage (int)     — filter top_stage2 to that Weinstein stage (1-4)
+      min_score (num) — floor on the display-tier sga_score
+      fresh_only (bool) — keep only fresh Stage 2 names (fresh=True)
+
+    Authority: display/context only (SGA-R4/R5). is_context_only=True ALWAYS.
+    The sga_score is display-tier context, NOT a calibrated signal; earnings-call
+    scores are context-only chips. LLMs may only de-escalate, never originate.
+    Absent file => {'available': False, 'note': ...}. No write path.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    p = params if isinstance(params, dict) else {}
+    ticker_filter: str | None = p.get("ticker")
+    stage_filter = p.get("stage")
+    min_score_filter = p.get("min_score")
+    fresh_only: bool = bool(p.get("fresh_only"))
+
+    ctx_path = root / "data" / "stage_analysis" / "context" / "latest.json"
+
+    _null = {
+        "available": False,
+        "is_context_only": True,
+        "display_only": True,
+        "note": (
+            "data/stage_analysis/context/latest.json absent — "
+            "run scripts/build_stage_analysis.py to populate"
+        ),
+    }
+
+    if not ctx_path.exists():
+        return dict(_null)
+
+    try:
+        raw = json.loads(ctx_path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {**_null, "note": "context/latest.json is not a dict"}
+
+        top_raw = raw.get("top_stage2") or []
+        top_raw = [s for s in top_raw if isinstance(s, dict)]
+
+        if ticker_filter:
+            _tf = str(ticker_filter).strip().upper()
+            top_raw = [s for s in top_raw
+                       if str(s.get("ticker") or "").strip().upper() == _tf]
+        if stage_filter is not None:
+            try:
+                _sv = int(stage_filter)
+                top_raw = [s for s in top_raw if s.get("stage") == _sv]
+            except (TypeError, ValueError):
+                pass
+        if min_score_filter is not None:
+            try:
+                _mv = float(min_score_filter)
+                top_raw = [
+                    s for s in top_raw
+                    if isinstance(s.get("sga_score"), (int, float))
+                    and float(s.get("sga_score")) >= _mv
+                ]
+            except (TypeError, ValueError):
+                pass
+        if fresh_only:
+            top_raw = [s for s in top_raw if s.get("fresh") is True]
+
+        changes_items = (raw.get("changes") or {}).get("items") or []
+
+        out: dict = {
+            "available": True,
+            "is_context_only": True,
+            "display_only": True,
+            "asof": raw.get("asof"),
+            "counts": raw.get("counts"),
+            "market": raw.get("market"),
+            "top_stage2": top_raw[:8],
+            "changes": changes_items[:8],
+            "note": "context only — stage classification display, never a signal or sizing input",
+        }
+        return out
+    except Exception as exc:  # noqa: BLE001
+        return {**_null, "note": f"read error: {exc}"}
+
+
 def _read_tool_schemas() -> list[dict]:
     """Return read-tool schemas (write tools excluded structurally).
 
@@ -1834,6 +1929,9 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
     elif tool_name == "read_special_situations":
         # SS-NW-W1: special-situations event context (display/context only)
         return _tool_read_special_situations(root, tool_params)
+    elif tool_name == "read_stage_analysis":
+        # SGA-W2: Weinstein stage-analysis context (display/context only)
+        return _tool_read_stage_analysis(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 
