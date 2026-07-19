@@ -957,7 +957,7 @@ def _rich_ctx() -> dict:
     """Build a minimal but rich context that exercises all sections."""
     from datetime import date
     today = date.today().isoformat()
-    chart_obj = type("C", (), {"has_candles": True, "svg_present": False, "svg": None})()
+    chart_obj = type("C", (), {"has_candles": True, "svg_present": True, "svg": "<svg viewBox=\"0 0 10 10\"></svg>"})()
     return {
         "ticker": "AAPL",
         "name": "Apple Inc.",
@@ -1213,16 +1213,21 @@ class TestTemplateRender:
         ctx = _rich_ctx()
         html = tmpl.render(**ctx)
         # Use section id anchors — these appear once in the body, in section order
+        # Yahoo-layout main-column order (v5): chart -> stats -> performance ->
+        # technicals -> earnings -> valuation -> financials -> gauges -> why ->
+        # options -> ownership -> history (rail sections excluded)
         order = [
-            'id="gauges"',
+            'id="chart"',
+            'id="stats"',
             'id="performance"',
-            'id="seasonality"',
-            'id="financials"',
-            'id="valuation"',
-            'id="earnings"',
             'id="technicals"',
-            'id="options"',
+            'id="earnings"',
+            'id="valuation"',
+            'id="financials"',
+            'id="gauges"',
             'id="why"',
+            'id="options"',
+            'id="ownership"',
             'id="history"',
         ]
         positions = [html.index(s) for s in order]

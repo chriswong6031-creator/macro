@@ -56,7 +56,22 @@ a{text-decoration:none;color:inherit;}
 .aurora.au-warn::before{background:radial-gradient(ellipse,color-mix(in srgb,var(--warn) 11%,transparent) 0%,transparent 70%);}
 .aurora.au-neg::before{background:radial-gradient(ellipse,color-mix(in srgb,var(--down) 11%,transparent) 0%,transparent 70%);}
 .page-wrap{position:relative;z-index:1;}
-/* deck: the modular scorecard grid */
+/* Yahoo-style layout: slim left nav · main column · right rail */
+.yq{display:grid;grid-template-columns:132px minmax(0,1fr) 296px;gap:26px;margin-top:14px;align-items:start;}
+.yq-nav{position:sticky;top:56px;display:flex;flex-direction:column;gap:2px;font-size:12.5px;padding-top:4px;}
+.yq-nav a{padding:5px 10px;border-left:2px solid transparent;color:var(--muted);border-radius:0 7px 7px 0;}
+.yq-nav a:hover{color:var(--text);border-left-color:var(--acc);background:color-mix(in srgb,var(--acc) 6%,transparent);}
+.yq-main{min-width:0;display:flex;flex-direction:column;gap:18px;}
+.yq-rail{min-width:0;display:flex;flex-direction:column;gap:18px;}
+@media(max-width:1180px){.yq{grid-template-columns:minmax(0,1fr) 280px;}.yq-nav{display:none;}}
+@media(max-width:880px){.yq{grid-template-columns:minmax(0,1fr);}.yq-rail{grid-row:auto;}}
+.mod{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius);box-shadow:var(--glass-shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:18px 20px 16px;min-width:0;overflow:hidden;}
+.mod section{margin:0;}
+.mod h2{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+.mod h2::before{content:'';width:10px;height:1px;background:var(--acc);flex-shrink:0;}
+.mod h2::after{content:'';flex:1;height:1px;background:var(--hair);}
+@media(max-width:600px){.mod{padding:14px 13px 12px;border-radius:14px;}}
+/* deck: the modular scorecard grid (legacy — deck removed) */
 .deck{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;margin-top:16px;}
 .card{grid-column:span 3;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius);box-shadow:var(--glass-shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:16px 17px 14px;display:flex;flex-direction:column;gap:8px;min-width:0;cursor:pointer;transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;}
 .card:hover{background:var(--glass-hover-bg);border-color:var(--glass-hover-border);box-shadow:var(--glass-hover-shadow);transform:translateY(-1px);}
@@ -561,197 +576,43 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
 </section>
 
 
-{% macro dcard(dlg, size='') -%}
-<div class="card {{ size }}" role="button" tabindex="0" aria-haspopup="dialog"
-     onclick="dsrOpenDlg('dlg-{{ dlg }}')"
-     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dsrOpenDlg('dlg-{{ dlg }}');}">
-{%- endmacro %}
-
-<!-- ── Scorecard deck: one-glance reads; detail opens in dialogs ── -->
-<div class="deck">
-
-  {% if chart and chart.svg_present %}
-  {{ dcard('chart', 'c6') }}
-    <div class="card-eyebrow"><span>{{ t('Price chart', '价格图表') }}</span><span class="ce-hint">{{ t('Expand →', '展开 →') }}</span></div>
-    <div class="card-chart-mini">{{ chart.svg | safe }}</div>
-  </div>
-  {% endif %}
-
-  {% if performance %}
-  {{ dcard('performance', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Performance', '价格表现') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {%- set p1y = performance | selectattr('label_en', 'equalto', '1 Year') | list | first -%}
-    {%- set pytd = performance | selectattr('label_en', 'equalto', 'Year to date') | list | first -%}
-    {% if p1y %}<div class="card-big num {{ 'pos' if p1y.positive else 'neg' }}">{{ p1y.ticker_ret }}</div>
-    <div class="card-fact"><span>{{ t('1 year', '近1年') }}</span>{% if p1y.spy_ret %}<b>{{ t('S&P', '标普') }} {{ p1y.spy_ret }}</b>{% endif %}</div>{% endif %}
-    {% if pytd %}<div class="card-fact"><span>{{ t('Year to date', '年初至今') }}</span><b class="{{ 'pos' if pytd.positive else 'neg' }}">{{ pytd.ticker_ret }}</b></div>{% endif %}
-    {% if p1y and p1y.verdict_en %}<div class="card-stance muted">{{ t(p1y.verdict_en, p1y.verdict_zh) }}</div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if gauges %}
-  {{ dcard('gauges', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Quality & value', '质量与估值') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if gauges.valuation %}<div class="card-big">{{ t(gauges.valuation.verdict_en, gauges.valuation.verdict_zh) }}</div>{% endif %}
-    {% if gauges.health %}<div class="card-fact"><span>{{ t('Financial health', '财务健康') }}</span><b>{{ gauges.health.piotroski }}/{{ gauges.health.piotroski_of or 9 }}</b></div>{% endif %}
-    {% if gauges.beta %}<div class="card-fact"><span>{{ t('Market beta', '贝塔') }}</span><b>{{ gauges.beta.beta }}×</b></div>{% endif %}
-    {% if gauges.dividend and gauges.dividend.yield_str %}<div class="card-fact"><span>{{ t('Dividend', '股息') }}</span><b>{{ gauges.dividend.yield_str }}</b></div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if earnings %}
-  {{ dcard('earnings', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Earnings', '财报') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if earnings.days_to_next is not none %}<div class="card-big num">{{ earnings.days_to_next }}<span class="sm muted" style="font-weight:500;"> {{ t('days', '天') }}</span></div>
-    <div class="card-fact"><span>{{ t('Until next report', '距下次财报') }}</span><b>{{ earnings.next_date }}</b></div>{% endif %}
-    {% if earnings.revision_en %}<div class="card-stance muted">{{ t(earnings.revision_en, earnings.revision_zh) }}</div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if technicals %}
-  {{ dcard('technicals', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Technicals', '技术面') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if technicals.entry_headline_en %}<div class="card-big">{{ t(technicals.entry_headline_en, technicals.entry_headline_zh) }}</div>{% endif %}
-    {% if technicals.ma200_en %}<div class="card-fact"><span>{{ t('Trend', '趋势') }}</span><b>{{ technicals.ma200_en }}</b></div>{% endif %}
-    {% if technicals.rsi %}<div class="card-fact"><span>RSI</span><b>{{ technicals.rsi }} · {{ t(technicals.rsi_zone_en, technicals.rsi_zone_zh) }}</b></div>{% endif %}
-    {% if technicals.active_signals %}<div class="card-fact"><span>{{ t('Active signals', '活跃信号') }}</span><b>{{ technicals.active_signals | length }}</b></div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if why_moving %}
-  {{ dcard('why', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Why is it moving', '为何波动') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {%- set active_rows = why_moving | selectattr('state', 'equalto', 'active') | list -%}
-    {% if active_rows %}<div class="card-big">{{ active_rows | length }} {{ t('active drivers', '个活跃驱动') }}</div>
-    <div class="card-stance">{{ t(active_rows[0].line_en, active_rows[0].line_zh) }}</div>
-    {% else %}<div class="card-big muted">{{ t('Quiet', '平静') }}</div>
-    <div class="card-stance muted">{{ t('No confirmed driver today', '今日无明确驱动') }}</div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if ownership %}
-  {{ dcard('ownership', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Smart money', '聪明钱') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if ownership.holders %}<div class="card-big">{{ ownership.holders | length }} {{ t('tracked funds', '家跟踪基金') }}</div>
-    <div class="card-fact"><span>{{ ownership.holders[0].fund_name }}</span><b>{{ t(ownership.holders[0].action_en, ownership.holders[0].action_zh) }}</b></div>{% endif %}
-    {% if ownership.insider_en %}<div class="card-stance muted">{{ t(ownership.insider_en, ownership.insider_zh) }}</div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if financials %}
-  {{ dcard('financials', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Financials', '财务') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if financials.rev_cagr %}<div class="card-big num">{{ financials.rev_cagr }}</div>
-    <div class="card-fact"><span>{{ t('Revenue growth (5y)', '营收增速(5年)') }}</span></div>{% endif %}
-    {% if financials.net_margin %}<div class="card-fact"><span>{{ t('Net margin', '净利率') }}</span><b>{{ financials.net_margin[-1] if financials.net_margin is iterable and financials.net_margin is not string else financials.net_margin }}</b></div>{% endif %}
-    {% if financials.roe %}<div class="card-fact"><span>{{ t('Return on equity', '净资产收益率') }}</span><b>{{ financials.roe }}%</b></div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if valuation %}
-  {{ dcard('valuation', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Valuation', '估值') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {%- set pe_row = valuation | selectattr('label_en', 'equalto', 'P/E (trailing)') | list | first -%}
-    {%- if not pe_row and valuation -%}{%- set pe_row = valuation[0] -%}{%- endif -%}
-    {% if pe_row %}<div class="card-big num">{{ pe_row.value }}</div>
-    <div class="card-fact"><span>{{ t(pe_row.label_en, pe_row.label_zh) }}</span><b>{{ t('sector', '行业') }} {{ pe_row.sector_med }}</b></div>{% endif %}
-    {% if placeholders and placeholders.analyst_targets %}<div class="card-stance muted">{{ t('Analyst targets — coming soon', '分析师目标价——即将上线') }}</div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if options %}
-  {{ dcard('options', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Options', '期权') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if options.em_weekly_pct %}<div class="card-big num">±{{ options.em_weekly_pct }}%</div>
-    <div class="card-fact"><span>{{ t('Expected weekly move', '预期周波动') }}</span></div>{% endif %}
-    {% if options.call_wall %}<div class="card-fact"><span>{{ t('Call wall', '看涨墙') }}</span><b>${{ options.call_wall }}</b></div>{% endif %}
-    {% if options.put_wall %}<div class="card-fact"><span>{{ t('Put wall', '看跌墙') }}</span><b>${{ options.put_wall }}</b></div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if themes %}
-  {{ dcard('themes', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Themes', '主题') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if themes.rows %}<div class="card-big">{{ themes.rows[0].name }}</div>
-    <div class="card-fact"><span>{{ t(themes.rows[0].band_en, themes.rows[0].band_zh) }}</span></div>
-    <div class="card-fact"><span>{{ t('Member of', '所属篮子') }}</span><b>{{ themes.rows | length }} {{ t('baskets', '个') }}</b></div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if signal_history %}
-  {{ dcard('history', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Signal history', '信号历史') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if signal_history.ladder_label %}<div class="card-big">{{ t(signal_history.ladder_label, signal_history.ladder_label_zh) }}</div>{% endif %}
-    {% if signal_history.events %}<div class="card-stance muted">{{ signal_history.events[0].date }} · <span class="l-en">{{ signal_history.events[0].headline }}</span><span class="l-zh">{{ signal_history.events[0].headline_zh }}</span></div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if seasonality %}
-  {{ dcard('seasonality', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Seasonality', '季节性') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if seasonality.this_label %}<div class="card-stance">{{ t(seasonality.this_label, seasonality.this_label_zh) }}</div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if peers %}
-  {{ dcard('peers', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Peers', '同业') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    <div class="card-big">{{ peers[0].ticker }}</div>
-    <div class="card-fact"><span>{{ peers[0].name }}</span><b>{{ peers[0].mktcap }}</b></div>
-    <div class="card-fact"><span>{{ t('Closest by size in sector', '行业内规模最接近') }}</span></div>
-  </div>
-  {% endif %}
-
-  {% if profile_extras %}
-  {{ dcard('profile', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Company', '公司') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if hero.arch_label_en %}<div class="card-big">{{ t(hero.arch_label_en, hero.arch_label_zh) }}</div>{% endif %}
-    {% if profile_extras.gov_tier_en %}<div class="card-fact"><span>{{ t('Gov. exposure', '政府敞口') }}</span><b>{{ t(profile_extras.gov_tier_en, profile_extras.gov_tier_zh) }}</b></div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if news %}
-  {{ dcard('news', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('News', '新闻') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    <div class="card-stance">{{ news[0].title }}</div>
-    <div class="card-fact"><span>{{ news[0].source }}</span><b>{{ news[0].published }}</b></div>
-  </div>
-  {% endif %}
-
-  {% if brief %}
-  {{ dcard('brief', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('AI brief', 'AI简报') }}</span><span class="ce-hint">{{ t('Read →', '阅读 →') }}</span></div>
-    <div class="card-stance muted">{{ brief.summary[:120] }}{% if brief.summary | length > 120 %}…{% endif %}</div>
-  </div>
-  {% endif %}
-
-  {% if stats %}
-  {{ dcard('stats', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('All statistics', '全部统计') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if stats.mktcap %}<div class="card-fact"><span>{{ t('Market cap', '市值') }}</span><b>{{ stats.mktcap }}</b></div>{% endif %}
-    {% if stats.trailing_pe %}<div class="card-fact"><span>{{ t('P/E', '市盈率') }}</span><b>{{ stats.trailing_pe }}</b></div>{% endif %}
-    {% if stats.range_52w_en %}<div class="card-fact"><span>{{ t('52-week', '52周') }}</span><b class="sm">{{ t(stats.range_52w_en, stats.range_52w_zh) }}</b></div>{% endif %}
-  </div>
-  {% endif %}
-
-  {% if factors %}
-  {{ dcard('factors', 'c3') }}
-    <div class="card-eyebrow"><span>{{ t('Factor profile', '因子画像') }}</span><span class="ce-hint">{{ t('Details →', '详情 →') }}</span></div>
-    {% if factors.fundamental_score is not none %}<div class="card-big num {{ 'pos' if factors.fundamental_score > 0 else 'neg' }}">{{ factors.fundamental_score }}</div>
-    <div class="card-fact"><span>{{ t('Fundamental score (−100 to +100)', '基本面得分（−100至+100）') }}</span></div>{% endif %}
-  </div>
-  {% endif %}
-
-</div>
 
 <!-- ── KEY STATISTICS ── -->
+
+<div class="yq">
+  <nav class="yq-nav" aria-label="Sections">
+    <a href="#chart"><span class="l-en">Chart</span><span class="l-zh">图表</span></a>
+    <a href="#stats"><span class="l-en">Statistics</span><span class="l-zh">统计</span></a>
+    <a href="#performance"><span class="l-en">Performance</span><span class="l-zh">表现</span></a>
+    <a href="#technicals"><span class="l-en">Technicals</span><span class="l-zh">技术面</span></a>
+    <a href="#earnings"><span class="l-en">Earnings</span><span class="l-zh">财报</span></a>
+    <a href="#valuation"><span class="l-en">Valuation</span><span class="l-zh">估值</span></a>
+    <a href="#financials"><span class="l-en">Financials</span><span class="l-zh">财务</span></a>
+    <a href="#why"><span class="l-en">Why moving</span><span class="l-zh">为何波动</span></a>
+    <a href="#options"><span class="l-en">Options</span><span class="l-zh">期权</span></a>
+    <a href="#ownership"><span class="l-en">Holders</span><span class="l-zh">持仓</span></a>
+    <a href="#history"><span class="l-en">Signals</span><span class="l-zh">信号</span></a>
+    <a href="#profile"><span class="l-en">Profile</span><span class="l-zh">档案</span></a>
+    <a href="#news"><span class="l-en">News</span><span class="l-zh">新闻</span></a>
+  </nav>
+  <main class="yq-main">
+{% if chart and chart.svg_present %}
+<div class="mod"><section id="chart">
+<h2>{{ t('Price Chart', '价格图表') }}</h2>
+<div class="panel chart-wrap">
+  {% if chart.svg_present %}
+  <div class="chart-svg-box">{{ chart.svg | safe }}</div>
+  {% endif %}
+  <div class="chart-actions">
+    <button class="btn-ghost" id="chart-lazy-btn" onclick="loadInteractiveChart(this)" style="cursor:pointer;">{{ t('Interactive chart', '互动图表') }}</button>
+    <a class="btn-ghost" href="https://app.mastermind-x.com/terminal?sym={{ ticker }}&from=macro" rel="noopener noreferrer" target="_blank">{{ t('Full chart in Terminal', '终端完整图表') }} ↗</a>
+  </div>
+  <div id="chart-mount"></div>
+</div>
+</section></div>
+{% endif %}
 {% if stats %}
-<div class="dsr-dlg" id="dlg-stats" role="dialog" aria-labelledby="dlg-stats-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-stats-title"><span class="l-en">Key Statistics</span><span class="l-zh">关键统计</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="stats">
+<div class="mod"><section id="stats">
 <h2>{{ t('Key Statistics', '关键统计') }}</h2>
 <div class="stat-grid">
   {% if stats.price %}
@@ -822,131 +683,10 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
   </div>
   {% endif %}
 </div>
-</section>
-    </div>
-  </div>
-</div>
+</section></div>
 {% endif %}
-
-<!-- ── CHART ── -->
-{% if chart %}
-<div class="dsr-dlg" id="dlg-chart" role="dialog" aria-labelledby="dlg-chart-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-chart-title"><span class="l-en">Price Chart</span><span class="l-zh">价格图表</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="chart">
-<h2>{{ t('Price Chart', '价格图表') }}</h2>
-<div class="panel chart-wrap">
-  {% if chart.svg_present %}
-  <div class="chart-svg-box">{{ chart.svg | safe }}</div>
-  {% endif %}
-  <div class="chart-actions">
-    <button class="btn-ghost" id="chart-lazy-btn" onclick="loadInteractiveChart(this)" style="cursor:pointer;">{{ t('Interactive chart', '互动图表') }}</button>
-    <a class="btn-ghost" href="https://app.mastermind-x.com/terminal?sym={{ ticker }}&from=macro" rel="noopener noreferrer" target="_blank">{{ t('Full chart in Terminal', '终端完整图表') }} ↗</a>
-  </div>
-  <div id="chart-mount"></div>
-</div>
-</section>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- ── GAUGES ── -->
-{% if gauges %}
-<div class="dsr-dlg" id="dlg-gauges" role="dialog" aria-labelledby="dlg-gauges-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-gauges-title"><span class="l-en">Quality & Value</span><span class="l-zh">质量与估值</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="gauges">
-<h2>{{ t('Snapshot Gauges', '综合指标') }}</h2>
-<div class="gauge-grid">
-  {% if gauges.valuation %}
-  <div class="gauge-card">
-    <div class="gauge-title">{{ t('Valuation vs Sector', '估值相对行业') }}</div>
-    {%- set vpct = gauges.valuation.pct | float(0) -%}
-    <div class="gauge-val {{ 'pos' if vpct > 55 else ('neg' if vpct < 30 else '') }}">
-      {{ t(gauges.valuation.verdict_en, gauges.valuation.verdict_zh) }}
-    </div>
-    {# marker: cheap percentile plots toward the green (cheap) end #}
-    <div class="val-bar-wrap">
-      <div class="val-bar-marker" style="left:{{ '%.0f' | format(100 - ([0, [vpct, 100] | min] | max)) }}%;"></div>
-    </div>
-    <div class="gauge-sub">{{ t(gauges.valuation.sub_en, gauges.valuation.sub_zh) }}</div>
-  </div>
-  {% endif %}
-
-  {% if gauges.beta %}
-  <div class="gauge-card">
-    <div class="gauge-title">{{ t('Beta', '市场敏感度') }}</div>
-    {%- set bval = gauges.beta.beta | float(1) -%}
-    <div class="gauge-val">{{ gauges.beta.beta }}×</div>
-    {%- if gauges.beta.gauge_pct_override is defined and gauges.beta.gauge_pct_override is not none -%}
-      {%- set bpct = gauges.beta.gauge_pct_override | int -%}
-    {%- else -%}
-      {%- set bclamp = ([0.2, [bval, 3.0] | min] | max) -%}
-      {%- set bpct = ((bclamp - 0.2) / 2.8 * 100) | int -%}
-    {%- endif -%}
-    <div class="beta-track-wrap">
-      <div class="beta-track">
-        <div class="beta-thumb" style="left:{{ bpct }}%;"></div>
-        <div class="beta-mid"></div>
-      </div>
-      <div class="beta-labels"><span>0.2</span><span>1×</span><span>3×</span></div>
-    </div>
-    <div class="gauge-sub">{{ t(gauges.beta.label_en, gauges.beta.label_zh) }}</div>
-  </div>
-  {% endif %}
-
-  {% if gauges.health %}
-  <div class="gauge-card">
-    <div class="gauge-title">{{ t('Financial Health', '财务健康') }}</div>
-    {%- set pio_parts = (gauges.health.piotroski or '0/9').split('/') -%}
-    {%- set pio_n = pio_parts[0] | int(0) -%}
-    {%- set pio_of = pio_parts[1] | int(9) if pio_parts | length > 1 else 9 -%}
-    <div class="gauge-val {{ 'pos' if pio_n >= 7 else ('warn' if pio_n >= 5 else 'neg') }}">
-      {{ gauges.health.piotroski }}
-    </div>
-    <div class="pio-dots">
-      {% for i in range(pio_of) %}<div class="pio-dot {{ 'on' if i < pio_n else '' }}"></div>{% endfor %}
-    </div>
-    {% if gauges.health.altman_zone %}
-    <div><span class="chip {{ 'pos' if gauges.health.altman_zone == 'safe' else ('warn' if gauges.health.altman_zone == 'grey' else 'neg') }}">{{ t('Altman', '阿尔特曼') }}: {{ gauges.health.altman_zone }}</span></div>
-    {% endif %}
-    <div class="gauge-sub">{{ t(gauges.health.verdict_en, gauges.health.verdict_zh) }}</div>
-  </div>
-  {% endif %}
-
-  {% if gauges.dividend %}
-  <div class="gauge-card">
-    <div class="gauge-title">{{ t('Dividend', '分红') }}</div>
-    <div class="gauge-val pos">{{ gauges.dividend.yield_str }}</div>
-    <div class="gauge-sub">{{ t(gauges.dividend.verdict_en, gauges.dividend.verdict_zh) }}</div>
-  </div>
-  {% else %}
-  <div class="gauge-card">
-    <div class="gauge-title">{{ t('Dividend', '分红') }}</div>
-    <div class="gauge-val muted">—</div>
-    <div class="gauge-sub">{{ t('Does not pay a dividend', '不派发股息') }}</div>
-  </div>
-  {% endif %}
-</div>
-</section>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- ── PERFORMANCE ── -->
 {% if performance %}
-<div class="dsr-dlg" id="dlg-performance" role="dialog" aria-labelledby="dlg-performance-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-performance-title"><span class="l-en">Performance</span><span class="l-zh">价格表现</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="performance">
+<div class="mod"><section id="performance">
 <h2>{{ t('Performance', '价格表现') }}</h2>
 <div class="panel">
   <table class="perf-table">
@@ -969,60 +709,150 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
     </tbody>
   </table>
 </div>
-</section>
-    </div>
-  </div>
-</div>
+</section></div>
 {% endif %}
-
-<!-- ── SEASONALITY ── -->
-{% if seasonality %}
-<div class="dsr-dlg" id="dlg-seasonality" role="dialog" aria-labelledby="dlg-seasonality-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-seasonality-title"><span class="l-en">Seasonality</span><span class="l-zh">季节性规律</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="seasonality">
-<h2>{{ t('Seasonality', '季节性规律') }}</h2>
+{% if technicals %}
+<div class="mod"><section id="technicals">
+<h2>{{ t('Technicals', '技术面') }}</h2>
 <div class="panel">
-  {% if seasonality.this_label %}
-  <p class="sm"><span class="pos">{{ t('This month:', '本月：') }}</span> <span class="chip muted">{{ t(seasonality.blob_window_en or 'Full history', seasonality.blob_window_zh or '完整历史') }}</span> {{ t(seasonality.this_label, seasonality.this_label_zh) }}</p>
+  {% if technicals.active_signals %}
+  <div class="panel-hd">{{ t('Active signals', '活跃信号') }}</div>
+  <div class="chip-row">{% for sig in technicals.active_signals %}<span class="chip">{{ sig }}</span>{% endfor %}</div>
   {% endif %}
-  {% if seasonality.next_label %}
-  <p class="sm muted">{{ t('Next month:', '下月：') }} {{ t(seasonality.next_label, seasonality.next_label_zh) }}</p>
-  {% endif %}
-  {% if seasonality.monthly %}
-  {%- set cur_month_idx = freshness[5:7] | int(1) - 1 -%}
-  <p class="sm muted" style="margin-bottom:4px;">{{ t(seasonality.computed_window_en or 'Last ~5 years of daily data', seasonality.computed_window_zh or '近约5年日线数据') }}</p>
-  <div class="season-strip">
-    {% for m in seasonality.monthly %}
-    {%- set wr = m.win_rate | float(0) -%}
-    {%- set is_cur = loop.index0 == cur_month_idx -%}
-    <div>
-      <div class="season-cell {{ 'season-this' if is_cur else '' }}"
-           style="background:{% if wr >= 70 %}color-mix(in srgb,var(--up) {{ ((wr-50)*2)|int }}%,var(--panel2)){% elif wr < 40 %}color-mix(in srgb,var(--down) {{ ((50-wr)*2)|int }}%,var(--panel2)){% else %}var(--panel2){% endif %};">
-        {% if m.win_rate is not none %}{{ '%.0f'|format(wr) }}%{% else %}—{% endif %}
-      </div>
-      <div class="season-label">{{ m.month }}</div>
+  <div style="margin-top:12px;">
+    {% if technicals.rsi %}
+    <div class="tech-row">
+      <span class="tk">{{ t('RSI (14)', 'RSI（14）') }}</span>
+      <span>{{ technicals.rsi }}</span>
+      {% if technicals.rsi_zone_en %}<span class="chip {{ 'neg' if technicals.rsi_zone_en == 'Overbought' else ('pos' if technicals.rsi_zone_en == 'Oversold' else '') }}">{{ t(technicals.rsi_zone_en, technicals.rsi_zone_zh) }}</span>{% endif %}
     </div>
-    {% endfor %}
+    {% endif %}
+    {% if technicals.ma50_en %}
+    <div class="tech-row">
+      <span class="tk">{{ t('vs 50-day', '相对50日均线') }}</span>
+      <span class="{{ 'pos' if technicals.above50 else 'neg' }}">{{ technicals.ma50_en }}</span>
+    </div>
+    {% endif %}
+    {% if technicals.ma200_en %}
+    <div class="tech-row">
+      <span class="tk">{{ t('vs 200-day', '相对200日均线') }}</span>
+      <span class="{{ 'pos' if technicals.above200 else 'neg' }}">{{ technicals.ma200_en }}</span>
+    </div>
+    {% endif %}
+    {% if technicals.adx %}
+    <div class="tech-row">
+      <span class="tk">{{ t('Trend strength (ADX)', '趋势强度（ADX）') }}</span>
+      <span>{{ technicals.adx }}</span>
+      {% if technicals.adx_word_en %}<span class="muted sm">{{ t(technicals.adx_word_en, technicals.adx_word_zh) }}</span>{% endif %}
+    </div>
+    {% endif %}
+    {% if technicals.hv_pctile %}
+    <div class="tech-row">
+      <span class="tk">{{ t('Volatility rank', '波动率分位') }}</span>
+      <span>{{ technicals.hv_pctile }}{{ t(' percentile', ' 分位') }}</span>
+    </div>
+    {% endif %}
+    {% if technicals.squeeze_en %}
+    <div class="tech-row">
+      <span class="tk">{{ t('Vol squeeze', '波动压缩') }}</span>
+      <span class="warn">{{ t(technicals.squeeze_en, technicals.squeeze_zh) }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% if technicals.buy_zone or technicals.chase_above or technicals.stop %}
+  <div style="margin-top:14px;">
+    <div class="sm muted" style="margin-bottom:6px;">{{ t('Engine reference levels — not advice', '引擎参考水平 — 非投资建议') }}</div>
+    <div class="levels-row">
+      {% if technicals.buy_zone %}<div class="level-card entry"><div class="level-k">{{ t('Buy zone', '买入区间') }}</div><div class="level-v pos">{{ technicals.buy_zone }}</div></div>{% endif %}
+      {% if technicals.chase_above %}<div class="level-card chase"><div class="level-k">{{ t("Don't chase above", '不追高于') }}</div><div class="level-v warn">{{ technicals.chase_above }}</div></div>{% endif %}
+      {% if technicals.stop %}<div class="level-card stop"><div class="level-k">{{ t('Stop', '止损') }}</div><div class="level-v neg">{{ technicals.stop }}</div></div>{% endif %}
+    </div>
+    {% if technicals.entry_headline_en %}<div class="sm muted" style="margin-top:6px;">{{ t(technicals.entry_headline_en, technicals.entry_headline_zh) }}</div>{% endif %}
   </div>
   {% endif %}
 </div>
-</section>
-    </div>
-  </div>
-</div>
+</section></div>
 {% endif %}
-
-<!-- ── FINANCIALS ── -->
+{% if earnings %}
+<div class="mod"><section id="earnings">
+<h2>{{ t('Earnings', '财务业绩') }}</h2>
+<div class="panel">
+  {% if earnings.days_to_next is not none and earnings.days_to_next >= 0 %}
+  <div class="earns-countdown">
+    <div class="days">{{ earnings.days_to_next }}</div>
+    <div class="days-label">{{ t('days until next report', '天后公布财报') }}</div>
+    {% if earnings.next_date %}<div class="sm muted" style="margin-top:4px">{{ earnings.next_date }}</div>{% endif %}
+  </div>
+  {% elif earnings.last_date %}
+  <div class="panel-hd">{{ t('Last reported:', '上次报告：') }} {{ earnings.last_date }}</div>
+  {% endif %}
+  {% if earnings.rev_en %}<p class="sm" style="margin-top:10px;">{{ t(earnings.rev_en, earnings.rev_zh) }}</p>{% endif %}
+  {% if earnings.sue_en %}<p class="sm">{{ t(earnings.sue_en, earnings.sue_zh) }}</p>{% endif %}
+  {% if earnings.pead_en %}<p class="sm muted">{{ t(earnings.pead_en, earnings.pead_zh) }}</p>{% endif %}
+  {% if earnings.surprises %}
+  <table class="surprise-table">
+    <thead><tr>
+      <th>{{ t('Quarter', '季度') }}</th>
+      <th>EPS</th>
+      <th>{{ t('Consensus', '预期') }}</th>
+      <th>{{ t('Surprise', '超预期') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for s in earnings.surprises %}
+    <tr>
+      <td>{{ s.qtr }}</td>
+      <td>${{ '%.2f'|format(s.eps|float(0)) }}</td>
+      <td class="muted">${{ '%.2f'|format(s.consensus|float(0)) }}</td>
+      <td class="{{ 'pos' if s.surprise_pct|float(0) > 0 else 'neg' }}" style="font-weight:700;">
+        {{ '+' if s.surprise_pct|float(0) > 0 else '' }}{{ '%.1f'|format(s.surprise_pct|float(0)) }}%
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if earnings.avg_surprise_pct %}<p class="sm muted" style="margin-top:6px;">{{ t('Average surprise', '平均超预期') }}: {{ earnings.avg_surprise_pct }}</p>{% endif %}
+  {% endif %}
+  {% if placeholders and placeholders.transcripts %}
+  <div class="placeholder-line">{{ t('Earnings call transcripts — coming soon', '财报电话会议记录 — 即将上线') }}</div>
+  {% endif %}
+</div>
+</section></div>
+{% endif %}
+{% if valuation %}
+<div class="mod"><section id="valuation">
+<h2>{{ t('Valuation', '估值') }}</h2>
+<div class="panel">
+  <table class="val-table">
+    <thead><tr>
+      <th>{{ t('Multiple', '指标') }}</th>
+      <th>{{ ticker }}</th>
+      <th>{{ t('Sector median', '行业中位') }}</th>
+      <th>{{ t('Cheaper than', '相对便宜') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for row in valuation %}
+    <tr>
+      <td class="muted">{{ t(row.label_en, row.label_zh) }}</td>
+      <td style="font-weight:700;">{{ row.value }}</td>
+      <td class="muted">{{ row.sector_med if row.sector_med else '—' }}</td>
+      <td>
+        {% if row.cheap is not none %}
+        <div class="cheap-bar-bg"><div class="cheap-bar-fill" style="width:{{ row.cheap }}%;background:{% if row.cheap >= 55 %}var(--up){% elif row.cheap <= 30 %}var(--down){% else %}var(--warn){% endif %};height:100%;border-radius:3px;"></div></div>
+        <span class="sm muted" style="margin-left:4px;">{{ '%.0f'|format(row.cheap) }}%</span>
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if placeholders and placeholders.analyst_targets %}
+  <div class="placeholder-line">{{ t('Analyst price targets — coming soon', '分析师目标价 — 即将上线') }}</div>
+  {% endif %}
+</div>
+</section></div>
+{% endif %}
 {% if financials %}
-<div class="dsr-dlg" id="dlg-financials" role="dialog" aria-labelledby="dlg-financials-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-financials-title"><span class="l-en">Financials</span><span class="l-zh">财务</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="financials">
+<div class="mod"><section id="financials">
 <h2>{{ t('Financials', '财务数据') }}</h2>
 <div class="panel">
   {%- set fyears = financials.years -%}
@@ -1120,190 +950,100 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
     {% if financials.aq_headline_en %}<span class="chip warn">{{ t(financials.aq_headline_en, financials.aq_headline_zh) }}</span>{% endif %}
   </div>
 </div>
-</section>
-    </div>
-  </div>
-</div>
+</section></div>
 {% endif %}
+{% if gauges %}
+<div class="mod"><section id="gauges">
+<h2>{{ t('Snapshot Gauges', '综合指标') }}</h2>
+<div class="gauge-grid">
+  {% if gauges.valuation %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Valuation vs Sector', '估值相对行业') }}</div>
+    {%- set vpct = gauges.valuation.pct | float(0) -%}
+    <div class="gauge-val {{ 'pos' if vpct > 55 else ('neg' if vpct < 30 else '') }}">
+      {{ t(gauges.valuation.verdict_en, gauges.valuation.verdict_zh) }}
+    </div>
+    {# marker: cheap percentile plots toward the green (cheap) end #}
+    <div class="val-bar-wrap">
+      <div class="val-bar-marker" style="left:{{ '%.0f' | format(100 - ([0, [vpct, 100] | min] | max)) }}%;"></div>
+    </div>
+    <div class="gauge-sub">{{ t(gauges.valuation.sub_en, gauges.valuation.sub_zh) }}</div>
+  </div>
+  {% endif %}
 
-<!-- ── VALUATION ── -->
-{% if valuation %}
-<div class="dsr-dlg" id="dlg-valuation" role="dialog" aria-labelledby="dlg-valuation-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-valuation-title"><span class="l-en">Valuation</span><span class="l-zh">估值</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="valuation">
-<h2>{{ t('Valuation', '估值') }}</h2>
+  {% if gauges.beta %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Beta', '市场敏感度') }}</div>
+    {%- set bval = gauges.beta.beta | float(1) -%}
+    <div class="gauge-val">{{ gauges.beta.beta }}×</div>
+    {%- if gauges.beta.gauge_pct_override is defined and gauges.beta.gauge_pct_override is not none -%}
+      {%- set bpct = gauges.beta.gauge_pct_override | int -%}
+    {%- else -%}
+      {%- set bclamp = ([0.2, [bval, 3.0] | min] | max) -%}
+      {%- set bpct = ((bclamp - 0.2) / 2.8 * 100) | int -%}
+    {%- endif -%}
+    <div class="beta-track-wrap">
+      <div class="beta-track">
+        <div class="beta-thumb" style="left:{{ bpct }}%;"></div>
+        <div class="beta-mid"></div>
+      </div>
+      <div class="beta-labels"><span>0.2</span><span>1×</span><span>3×</span></div>
+    </div>
+    <div class="gauge-sub">{{ t(gauges.beta.label_en, gauges.beta.label_zh) }}</div>
+  </div>
+  {% endif %}
+
+  {% if gauges.health %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Financial Health', '财务健康') }}</div>
+    {%- set pio_parts = (gauges.health.piotroski or '0/9').split('/') -%}
+    {%- set pio_n = pio_parts[0] | int(0) -%}
+    {%- set pio_of = pio_parts[1] | int(9) if pio_parts | length > 1 else 9 -%}
+    <div class="gauge-val {{ 'pos' if pio_n >= 7 else ('warn' if pio_n >= 5 else 'neg') }}">
+      {{ gauges.health.piotroski }}
+    </div>
+    <div class="pio-dots">
+      {% for i in range(pio_of) %}<div class="pio-dot {{ 'on' if i < pio_n else '' }}"></div>{% endfor %}
+    </div>
+    {% if gauges.health.altman_zone %}
+    <div><span class="chip {{ 'pos' if gauges.health.altman_zone == 'safe' else ('warn' if gauges.health.altman_zone == 'grey' else 'neg') }}">{{ t('Altman', '阿尔特曼') }}: {{ gauges.health.altman_zone }}</span></div>
+    {% endif %}
+    <div class="gauge-sub">{{ t(gauges.health.verdict_en, gauges.health.verdict_zh) }}</div>
+  </div>
+  {% endif %}
+
+  {% if gauges.dividend %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Dividend', '分红') }}</div>
+    <div class="gauge-val pos">{{ gauges.dividend.yield_str }}</div>
+    <div class="gauge-sub">{{ t(gauges.dividend.verdict_en, gauges.dividend.verdict_zh) }}</div>
+  </div>
+  {% else %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Dividend', '分红') }}</div>
+    <div class="gauge-val muted">—</div>
+    <div class="gauge-sub">{{ t('Does not pay a dividend', '不派发股息') }}</div>
+  </div>
+  {% endif %}
+</div>
+</section></div>
+{% endif %}
+{% if why_moving %}
+<div class="mod"><section id="why">
+<h2>{{ t('Why Is It Moving', '为何波动') }}</h2>
 <div class="panel">
-  <table class="val-table">
-    <thead><tr>
-      <th>{{ t('Multiple', '指标') }}</th>
-      <th>{{ ticker }}</th>
-      <th>{{ t('Sector median', '行业中位') }}</th>
-      <th>{{ t('Cheaper than', '相对便宜') }}</th>
-    </tr></thead>
-    <tbody>
-    {% for row in valuation %}
-    <tr>
-      <td class="muted">{{ t(row.label_en, row.label_zh) }}</td>
-      <td style="font-weight:700;">{{ row.value }}</td>
-      <td class="muted">{{ row.sector_med if row.sector_med else '—' }}</td>
-      <td>
-        {% if row.cheap is not none %}
-        <div class="cheap-bar-bg"><div class="cheap-bar-fill" style="width:{{ row.cheap }}%;background:{% if row.cheap >= 55 %}var(--up){% elif row.cheap <= 30 %}var(--down){% else %}var(--warn){% endif %};height:100%;border-radius:3px;"></div></div>
-        <span class="sm muted" style="margin-left:4px;">{{ '%.0f'|format(row.cheap) }}%</span>
-        {% else %}—{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  {% if placeholders and placeholders.analyst_targets %}
-  <div class="placeholder-line">{{ t('Analyst price targets — coming soon', '分析师目标价 — 即将上线') }}</div>
-  {% endif %}
-</div>
-</section>
-    </div>
+  {% for row in why_moving %}
+  <div class="why-row">
+    <div class="why-dot {{ row.state }}"></div>
+    <span class="why-cat muted">{{ t(row.category_en, row.category_zh) }}</span>
+    <span class="why-line">{{ t(row.line_en, row.line_zh) }}</span>
   </div>
+  {% endfor %}
 </div>
+</section></div>
 {% endif %}
-
-<!-- ── EARNINGS ── -->
-{% if earnings %}
-<div class="dsr-dlg" id="dlg-earnings" role="dialog" aria-labelledby="dlg-earnings-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-earnings-title"><span class="l-en">Earnings</span><span class="l-zh">财报</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="earnings">
-<h2>{{ t('Earnings', '财务业绩') }}</h2>
-<div class="panel">
-  {% if earnings.days_to_next is not none and earnings.days_to_next >= 0 %}
-  <div class="earns-countdown">
-    <div class="days">{{ earnings.days_to_next }}</div>
-    <div class="days-label">{{ t('days until next report', '天后公布财报') }}</div>
-    {% if earnings.next_date %}<div class="sm muted" style="margin-top:4px">{{ earnings.next_date }}</div>{% endif %}
-  </div>
-  {% elif earnings.last_date %}
-  <div class="panel-hd">{{ t('Last reported:', '上次报告：') }} {{ earnings.last_date }}</div>
-  {% endif %}
-  {% if earnings.rev_en %}<p class="sm" style="margin-top:10px;">{{ t(earnings.rev_en, earnings.rev_zh) }}</p>{% endif %}
-  {% if earnings.sue_en %}<p class="sm">{{ t(earnings.sue_en, earnings.sue_zh) }}</p>{% endif %}
-  {% if earnings.pead_en %}<p class="sm muted">{{ t(earnings.pead_en, earnings.pead_zh) }}</p>{% endif %}
-  {% if earnings.surprises %}
-  <table class="surprise-table">
-    <thead><tr>
-      <th>{{ t('Quarter', '季度') }}</th>
-      <th>EPS</th>
-      <th>{{ t('Consensus', '预期') }}</th>
-      <th>{{ t('Surprise', '超预期') }}</th>
-    </tr></thead>
-    <tbody>
-    {% for s in earnings.surprises %}
-    <tr>
-      <td>{{ s.qtr }}</td>
-      <td>${{ '%.2f'|format(s.eps|float(0)) }}</td>
-      <td class="muted">${{ '%.2f'|format(s.consensus|float(0)) }}</td>
-      <td class="{{ 'pos' if s.surprise_pct|float(0) > 0 else 'neg' }}" style="font-weight:700;">
-        {{ '+' if s.surprise_pct|float(0) > 0 else '' }}{{ '%.1f'|format(s.surprise_pct|float(0)) }}%
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  {% if earnings.avg_surprise_pct %}<p class="sm muted" style="margin-top:6px;">{{ t('Average surprise', '平均超预期') }}: {{ earnings.avg_surprise_pct }}</p>{% endif %}
-  {% endif %}
-  {% if placeholders and placeholders.transcripts %}
-  <div class="placeholder-line">{{ t('Earnings call transcripts — coming soon', '财报电话会议记录 — 即将上线') }}</div>
-  {% endif %}
-</div>
-</section>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- ── TECHNICALS ── -->
-{% if technicals %}
-<div class="dsr-dlg" id="dlg-technicals" role="dialog" aria-labelledby="dlg-technicals-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-technicals-title"><span class="l-en">Technicals</span><span class="l-zh">技术面</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="technicals">
-<h2>{{ t('Technicals', '技术面') }}</h2>
-<div class="panel">
-  {% if technicals.active_signals %}
-  <div class="panel-hd">{{ t('Active signals', '活跃信号') }}</div>
-  <div class="chip-row">{% for sig in technicals.active_signals %}<span class="chip">{{ sig }}</span>{% endfor %}</div>
-  {% endif %}
-  <div style="margin-top:12px;">
-    {% if technicals.rsi %}
-    <div class="tech-row">
-      <span class="tk">{{ t('RSI (14)', 'RSI（14）') }}</span>
-      <span>{{ technicals.rsi }}</span>
-      {% if technicals.rsi_zone_en %}<span class="chip {{ 'neg' if technicals.rsi_zone_en == 'Overbought' else ('pos' if technicals.rsi_zone_en == 'Oversold' else '') }}">{{ t(technicals.rsi_zone_en, technicals.rsi_zone_zh) }}</span>{% endif %}
-    </div>
-    {% endif %}
-    {% if technicals.ma50_en %}
-    <div class="tech-row">
-      <span class="tk">{{ t('vs 50-day', '相对50日均线') }}</span>
-      <span class="{{ 'pos' if technicals.above50 else 'neg' }}">{{ technicals.ma50_en }}</span>
-    </div>
-    {% endif %}
-    {% if technicals.ma200_en %}
-    <div class="tech-row">
-      <span class="tk">{{ t('vs 200-day', '相对200日均线') }}</span>
-      <span class="{{ 'pos' if technicals.above200 else 'neg' }}">{{ technicals.ma200_en }}</span>
-    </div>
-    {% endif %}
-    {% if technicals.adx %}
-    <div class="tech-row">
-      <span class="tk">{{ t('Trend strength (ADX)', '趋势强度（ADX）') }}</span>
-      <span>{{ technicals.adx }}</span>
-      {% if technicals.adx_word_en %}<span class="muted sm">{{ t(technicals.adx_word_en, technicals.adx_word_zh) }}</span>{% endif %}
-    </div>
-    {% endif %}
-    {% if technicals.hv_pctile %}
-    <div class="tech-row">
-      <span class="tk">{{ t('Volatility rank', '波动率分位') }}</span>
-      <span>{{ technicals.hv_pctile }}{{ t(' percentile', ' 分位') }}</span>
-    </div>
-    {% endif %}
-    {% if technicals.squeeze_en %}
-    <div class="tech-row">
-      <span class="tk">{{ t('Vol squeeze', '波动压缩') }}</span>
-      <span class="warn">{{ t(technicals.squeeze_en, technicals.squeeze_zh) }}</span>
-    </div>
-    {% endif %}
-  </div>
-  {% if technicals.buy_zone or technicals.chase_above or technicals.stop %}
-  <div style="margin-top:14px;">
-    <div class="sm muted" style="margin-bottom:6px;">{{ t('Engine reference levels — not advice', '引擎参考水平 — 非投资建议') }}</div>
-    <div class="levels-row">
-      {% if technicals.buy_zone %}<div class="level-card entry"><div class="level-k">{{ t('Buy zone', '买入区间') }}</div><div class="level-v pos">{{ technicals.buy_zone }}</div></div>{% endif %}
-      {% if technicals.chase_above %}<div class="level-card chase"><div class="level-k">{{ t("Don't chase above", '不追高于') }}</div><div class="level-v warn">{{ technicals.chase_above }}</div></div>{% endif %}
-      {% if technicals.stop %}<div class="level-card stop"><div class="level-k">{{ t('Stop', '止损') }}</div><div class="level-v neg">{{ technicals.stop }}</div></div>{% endif %}
-    </div>
-    {% if technicals.entry_headline_en %}<div class="sm muted" style="margin-top:6px;">{{ t(technicals.entry_headline_en, technicals.entry_headline_zh) }}</div>{% endif %}
-  </div>
-  {% endif %}
-</div>
-</section>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- ── OPTIONS ── -->
 {% if options %}
-<div class="dsr-dlg" id="dlg-options" role="dialog" aria-labelledby="dlg-options-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-options-title"><span class="l-en">Options Positioning</span><span class="l-zh">期权持仓</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="options">
+<div class="mod"><section id="options">
 <h2>{{ t('Options Positioning', '期权持仓') }}</h2>
 <div class="panel">
   {% if options.regime_en %}<p>{{ t(options.regime_en, options.regime_zh) }}</p>{% endif %}
@@ -1330,44 +1070,10 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
   </div>
   {% endif %}
 </div>
-</section>
-    </div>
-  </div>
-</div>
+</section></div>
 {% endif %}
-
-<!-- ── WHY MOVING ── -->
-{% if why_moving %}
-<div class="dsr-dlg" id="dlg-why" role="dialog" aria-labelledby="dlg-why-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-why-title"><span class="l-en">Why Is It Moving</span><span class="l-zh">为何波动</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="why">
-<h2>{{ t('Why Is It Moving', '为何波动') }}</h2>
-<div class="panel">
-  {% for row in why_moving %}
-  <div class="why-row">
-    <div class="why-dot {{ row.state }}"></div>
-    <span class="why-cat muted">{{ t(row.category_en, row.category_zh) }}</span>
-    <span class="why-line">{{ t(row.line_en, row.line_zh) }}</span>
-  </div>
-  {% endfor %}
-</div>
-</section>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- ── OWNERSHIP ── -->
 {% if ownership %}
-<div class="dsr-dlg" id="dlg-ownership" role="dialog" aria-labelledby="dlg-ownership-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-ownership-title"><span class="l-en">Ownership & Smart Money</span><span class="l-zh">持仓与聪明钱</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="ownership">
+<div class="mod"><section id="ownership">
 <h2>{{ t('Ownership & Smart Money', '持仓与聪明钱') }}</h2>
 <div class="panel">
   {% if ownership.insider_en %}
@@ -1399,84 +1105,10 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
   </table>
   {% endif %}
 </div>
-</section>
-    </div>
-  </div>
-</div>
+</section></div>
 {% endif %}
-
-<!-- ── PEERS ── -->
-{% if peers %}
-<div class="dsr-dlg" id="dlg-peers" role="dialog" aria-labelledby="dlg-peers-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-peers-title"><span class="l-en">Peers</span><span class="l-zh">同业公司</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="peers">
-<h2>{{ t('Peers', '同业比较') }}</h2>
-<div class="peers-grid">
-  {% for p in peers %}
-  <a class="peer-card" href="{{ p.href }}">
-    <div class="ptk">{{ p.ticker }}</div>
-    <div class="pnm">{{ p.name }}</div>
-    {% if p.mktcap %}<div class="sm muted" style="margin-top:3px;">{{ p.mktcap }}</div>{% endif %}
-  </a>
-  {% endfor %}
-</div>
-</section>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- ── THEMES & BASKETS ── -->
-{% if themes %}
-<div class="dsr-dlg" id="dlg-themes" role="dialog" aria-labelledby="dlg-themes-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-themes-title"><span class="l-en">Themes & Baskets</span><span class="l-zh">主题与篮子</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="themes">
-<h2>{{ t('Themes & Baskets', '主题与篮子') }}</h2>
-<div class="panel">
-  {% if themes.baskets %}
-  {% for b in themes.baskets %}
-  <div class="basket-row">
-    <a class="basket-name" href="../baskets/{{ b.id }}.html">{{ t(b.name_en, b.name_zh) }}</a>
-    <span class="basket-theme">{{ b.theme if b.theme else b.rationale }}</span>
-    {% if b.band_en %}<span class="chip">{{ t(b.band_en, b.band_zh) }}</span>{% endif %}
-  </div>
-  {% endfor %}
-  {% endif %}
-  {% if themes.basket_alloc %}
-  <div class="sm muted" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px;">
-    {{ t('Primary basket:', '主要篮子：') }} {{ t(themes.basket_alloc.name_en, themes.basket_alloc.name_zh) }}
-    — {{ t('rank', '排名') }} #{{ themes.basket_alloc.rank }},
-    {{ t(themes.basket_alloc.label_en, themes.basket_alloc.label_zh if themes.basket_alloc.label_zh else themes.basket_alloc.label_en) }}
-  </div>
-  {% endif %}
-  {% if themes.sector_pulse %}
-  <div class="sm muted" style="margin-top:6px;">
-    {{ t('Sector theme:', '行业主题：') }} {{ t(themes.sector_pulse.theme_name, themes.sector_pulse.theme_name_zh) }}
-    — #{{ themes.sector_pulse.rank }} {{ t('of', '共') }} {{ themes.sector_pulse.n_themes }}
-    <span class="chip {{ 'pos' if themes.sector_pulse.heat in ('hot','heating') else ('neg' if themes.sector_pulse.heat in ('cold','cooling') else '') }}">{{ themes.sector_pulse.heat }}</span>
-  </div>
-  {% endif %}
-</div>
-</section>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- ── SIGNAL HISTORY ── -->
 {% if signal_history %}
-<div class="dsr-dlg" id="dlg-history" role="dialog" aria-labelledby="dlg-history-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-history-title"><span class="l-en">Signal History</span><span class="l-zh">信号历史</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="history">
+<div class="mod"><section id="history">
 <h2>{{ t('Signal History', '信号历史') }}</h2>
 <div class="panel">
   {% if signal_history.pinned %}
@@ -1516,20 +1148,29 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
   </div>
   {% endif %}
 </div>
-</section>
-    </div>
-  </div>
-</div>
+</section></div>
 {% endif %}
-
-<!-- ── COMPANY PROFILE ── -->
-{% if profile_extras or (hero and hero.desc_en) %}
-<div class="dsr-dlg" id="dlg-profile" role="dialog" aria-labelledby="dlg-profile-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-profile-title"><span class="l-en">Company Profile</span><span class="l-zh">公司档案</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="profile">
+{% if factors %}
+<div class="mod"><section id="factors">
+<h2>{{ t('Factor Profile', '因子特征') }}</h2>
+<div class="panel">
+  {% if factors.composite is not none %}
+  <div class="panel-hd">{{ t('Composite factor score', '综合因子得分') }}: <strong class="{{ 'pos' if factors.composite > 0.3 else ('neg' if factors.composite < -0.3 else '') }}">{{ '%.2f'|format(factors.composite) }}</strong></div>
+  {% endif %}
+  {% for row in factors.rows %}
+  <div class="factor-row2">
+    <span class="muted" style="width:140px;flex-shrink:0;font-size:12px;">{{ t(row.label_en, row.label_zh) }}</span>
+    <div class="factor-bar-bg">
+      <div class="factor-bar-fill {{ 'pos' if row.positive else 'neg' }}" style="width:{{ [row.z|abs * 33, 100]|min }}%;"></div>
+    </div>
+    <span class="{{ 'pos' if row.positive else 'neg' }}" style="font-size:12px;font-weight:600;width:40px;text-align:right;">{{ '%+.1f'|format(row.z) }}</span>
+  </div>
+  {% endfor %}
+</div>
+</section></div>
+{% endif %}
+{% if profile_extras %}
+<div class="mod"><section id="profile">
 <h2>{{ t('Company Profile', '公司档案') }}</h2>
 <div class="panel">
   {% if hero and hero.desc_en %}
@@ -1551,49 +1192,10 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
   {% endif %}
   {% endif %}
 </div>
-</section>
-    </div>
-  </div>
-</div>
+</section></div>
 {% endif %}
-
-<!-- ── FACTOR PROFILE ── -->
-{% if factors %}
-<div class="dsr-dlg" id="dlg-factors" role="dialog" aria-labelledby="dlg-factors-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-factors-title"><span class="l-en">Factor Profile</span><span class="l-zh">因子画像</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="factors">
-<h2>{{ t('Factor Profile', '因子特征') }}</h2>
-<div class="panel">
-  {% if factors.composite is not none %}
-  <div class="panel-hd">{{ t('Composite factor score', '综合因子得分') }}: <strong class="{{ 'pos' if factors.composite > 0.3 else ('neg' if factors.composite < -0.3 else '') }}">{{ '%.2f'|format(factors.composite) }}</strong></div>
-  {% endif %}
-  {% for row in factors.rows %}
-  <div class="factor-row2">
-    <span class="muted" style="width:140px;flex-shrink:0;font-size:12px;">{{ t(row.label_en, row.label_zh) }}</span>
-    <div class="factor-bar-bg">
-      <div class="factor-bar-fill {{ 'pos' if row.positive else 'neg' }}" style="width:{{ [row.z|abs * 33, 100]|min }}%;"></div>
-    </div>
-    <span class="{{ 'pos' if row.positive else 'neg' }}" style="font-size:12px;font-weight:600;width:40px;text-align:right;">{{ '%+.1f'|format(row.z) }}</span>
-  </div>
-  {% endfor %}
-</div>
-</section>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- ── AI RESEARCH BRIEF ── -->
 {% if brief %}
-<div class="dsr-dlg" id="dlg-brief" role="dialog" aria-labelledby="dlg-brief-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-brief-title"><span class="l-en">AI Research Brief</span><span class="l-zh">AI研究简报</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="brief">
+<div class="mod"><section id="brief">
 <h2>{{ t('AI Research Brief', 'AI研究简报') }}</h2>
 <div class="panel brief-section">
   <div class="brief-body">
@@ -1615,20 +1217,10 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
   {% if brief.disclaimer %}<div class="brief-disc">{{ brief.disclaimer }}</div>{% endif %}
   {% if brief.as_of %}<p class="sm muted">{{ t('Generated', '生成于') }} {{ brief.as_of }}</p>{% endif %}
 </div>
-</section>
-    </div>
-  </div>
-</div>
+</section></div>
 {% endif %}
-
-<!-- ── NEWS ── -->
 {% if news %}
-<div class="dsr-dlg" id="dlg-news" role="dialog" aria-labelledby="dlg-news-title">
-  <div class="dsr-dlg-backdrop"></div>
-  <div class="dsr-dlg-panel">
-    <div class="dsr-dlg-header"><span class="dsr-dlg-title" id="dlg-news-title"><span class="l-en">Recent News</span><span class="l-zh">最新动态</span></span><button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">×</button></div>
-    <div class="dsr-dlg-body">
-<section id="news">
+<div class="mod"><section id="news">
 <h2>{{ t('Recent News', '最新动态') }}</h2>
 <div class="panel">
   {% for h in news %}
@@ -1639,10 +1231,175 @@ footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid 
   </div>
   {% endfor %}
 </div>
-</section>
+</section></div>
+{% endif %}
+  </main>
+  <aside class="yq-rail">
+{% if seasonality %}
+<div class="mod"><section id="seasonality">
+<h2>{{ t('Seasonality', '季节性规律') }}</h2>
+<div class="panel">
+  {% if seasonality.this_label %}
+  <p class="sm"><span class="pos">{{ t('This month:', '本月：') }}</span> <span class="chip muted">{{ t(seasonality.blob_window_en or 'Full history', seasonality.blob_window_zh or '完整历史') }}</span> {{ t(seasonality.this_label, seasonality.this_label_zh) }}</p>
+  {% endif %}
+  {% if seasonality.next_label %}
+  <p class="sm muted">{{ t('Next month:', '下月：') }} {{ t(seasonality.next_label, seasonality.next_label_zh) }}</p>
+  {% endif %}
+  {% if seasonality.monthly %}
+  {%- set cur_month_idx = freshness[5:7] | int(1) - 1 -%}
+  <p class="sm muted" style="margin-bottom:4px;">{{ t(seasonality.computed_window_en or 'Last ~5 years of daily data', seasonality.computed_window_zh or '近约5年日线数据') }}</p>
+  <div class="season-strip">
+    {% for m in seasonality.monthly %}
+    {%- set wr = m.win_rate | float(0) -%}
+    {%- set is_cur = loop.index0 == cur_month_idx -%}
+    <div>
+      <div class="season-cell {{ 'season-this' if is_cur else '' }}"
+           style="background:{% if wr >= 70 %}color-mix(in srgb,var(--up) {{ ((wr-50)*2)|int }}%,var(--panel2)){% elif wr < 40 %}color-mix(in srgb,var(--down) {{ ((50-wr)*2)|int }}%,var(--panel2)){% else %}var(--panel2){% endif %};">
+        {% if m.win_rate is not none %}{{ '%.0f'|format(wr) }}%{% else %}—{% endif %}
+      </div>
+      <div class="season-label">{{ m.month }}</div>
     </div>
+    {% endfor %}
   </div>
+  {% endif %}
 </div>
+</section></div>
+{% endif %}
+{% if themes %}
+<div class="mod"><section id="themes">
+<h2>{{ t('Themes & Baskets', '主题与篮子') }}</h2>
+<div class="panel">
+  {% if themes.baskets %}
+  {% for b in themes.baskets %}
+  <div class="basket-row">
+    <a class="basket-name" href="../baskets/{{ b.id }}.html">{{ t(b.name_en, b.name_zh) }}</a>
+    <span class="basket-theme">{{ b.theme if b.theme else b.rationale }}</span>
+    {% if b.band_en %}<span class="chip">{{ t(b.band_en, b.band_zh) }}</span>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% if themes.basket_alloc %}
+  <div class="sm muted" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px;">
+    {{ t('Primary basket:', '主要篮子：') }} {{ t(themes.basket_alloc.name_en, themes.basket_alloc.name_zh) }}
+    — {{ t('rank', '排名') }} #{{ themes.basket_alloc.rank }},
+    {{ t(themes.basket_alloc.label_en, themes.basket_alloc.label_zh if themes.basket_alloc.label_zh else themes.basket_alloc.label_en) }}
+  </div>
+  {% endif %}
+  {% if themes.sector_pulse %}
+  <div class="sm muted" style="margin-top:6px;">
+    {{ t('Sector theme:', '行业主题：') }} {{ t(themes.sector_pulse.theme_name, themes.sector_pulse.theme_name_zh) }}
+    — #{{ themes.sector_pulse.rank }} {{ t('of', '共') }} {{ themes.sector_pulse.n_themes }}
+    <span class="chip {{ 'pos' if themes.sector_pulse.heat in ('hot','heating') else ('neg' if themes.sector_pulse.heat in ('cold','cooling') else '') }}">{{ themes.sector_pulse.heat }}</span>
+  </div>
+  {% endif %}
+</div>
+</section></div>
+{% endif %}
+{% if peers %}
+<div class="mod"><section id="peers">
+<h2>{{ t('Peers', '同业比较') }}</h2>
+<div class="peers-grid">
+  {% for p in peers %}
+  <a class="peer-card" href="{{ p.href }}">
+    <div class="ptk">{{ p.ticker }}</div>
+    <div class="pnm">{{ p.name }}</div>
+    {% if p.mktcap %}<div class="sm muted" style="margin-top:3px;">{{ p.mktcap }}</div>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+</section></div>
+{% endif %}
+  </aside>
+</div>
+
+<!-- ── CHART ── -->
+{% if chart %}
+
+{% endif %}
+
+<!-- ── GAUGES ── -->
+{% if gauges %}
+
+{% endif %}
+
+<!-- ── PERFORMANCE ── -->
+{% if performance %}
+
+{% endif %}
+
+<!-- ── SEASONALITY ── -->
+{% if seasonality %}
+
+{% endif %}
+
+<!-- ── FINANCIALS ── -->
+{% if financials %}
+
+{% endif %}
+
+<!-- ── VALUATION ── -->
+{% if valuation %}
+
+{% endif %}
+
+<!-- ── EARNINGS ── -->
+{% if earnings %}
+
+{% endif %}
+
+<!-- ── TECHNICALS ── -->
+{% if technicals %}
+
+{% endif %}
+
+<!-- ── OPTIONS ── -->
+{% if options %}
+
+{% endif %}
+
+<!-- ── WHY MOVING ── -->
+{% if why_moving %}
+
+{% endif %}
+
+<!-- ── OWNERSHIP ── -->
+{% if ownership %}
+
+{% endif %}
+
+<!-- ── PEERS ── -->
+{% if peers %}
+
+{% endif %}
+
+<!-- ── THEMES & BASKETS ── -->
+{% if themes %}
+
+{% endif %}
+
+<!-- ── SIGNAL HISTORY ── -->
+{% if signal_history %}
+
+{% endif %}
+
+<!-- ── COMPANY PROFILE ── -->
+{% if profile_extras or (hero and hero.desc_en) %}
+
+{% endif %}
+
+<!-- ── FACTOR PROFILE ── -->
+{% if factors %}
+
+{% endif %}
+
+<!-- ── AI RESEARCH BRIEF ── -->
+{% if brief %}
+
+{% endif %}
+
+<!-- ── NEWS ── -->
+{% if news %}
+
 {% endif %}
 
 <!-- ── CTA BAND ── -->
@@ -1703,68 +1460,5 @@ window.loadInteractiveChart = (function(){
 })();
 </script>
 
-<script>
-/* dsrOpenDlg — the macro.html mx5 dialog system, adapted (focus trap, scroll
-   lock on <html>, double-rAF entrance, animated close, Escape + backdrop). */
-(function(){
-  var _active=null,_trigger=null,_scrollY=0;
-  function _reduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches);}
-  function _focusables(d){return d.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');}
-  function _trap(d,e){
-    if(e.key!=='Tab')return;
-    var f=_focusables(d);if(!f.length)return;
-    var first=f[0],last=f[f.length-1];
-    if(e.shiftKey){if(document.activeElement===first){e.preventDefault();last.focus();}}
-    else{if(document.activeElement===last){e.preventDefault();first.focus();}}
-  }
-  function _teardown(d){
-    d.classList.remove('open','dsr-in','dsr-closing');
-    d.removeAttribute('aria-modal');
-    if(d._trapH){d.removeEventListener('keydown',d._trapH);delete d._trapH;}
-    var bd=d.querySelector('.dsr-dlg-backdrop');
-    if(bd&&bd._h){bd.removeEventListener('click',bd._h);delete bd._h;}
-    if(d._timer){clearTimeout(d._timer);delete d._timer;}
-  }
-  function _release(){
-    document.documentElement.classList.remove('dsr-dlg-lock');
-    document.body.style.top='';
-    window.scrollTo(0,_scrollY);
-  }
-  window.dsrOpenDlg=function(id){
-    if(_active){_teardown(_active);_active=null;}
-    var d=document.getElementById(id);if(!d)return;
-    _trigger=document.activeElement;_active=d;
-    d.classList.remove('dsr-closing');
-    d.classList.add('open');d.setAttribute('aria-modal','true');
-    if(!document.documentElement.classList.contains('dsr-dlg-lock')){
-      _scrollY=window.pageYOffset||document.documentElement.scrollTop||0;
-      document.body.style.top=(-_scrollY)+'px';
-      document.documentElement.classList.add('dsr-dlg-lock');
-    }
-    if(_reduced()){d.classList.add('dsr-in');}
-    else{requestAnimationFrame(function(){requestAnimationFrame(function(){if(_active===d)d.classList.add('dsr-in');});});}
-    var f=_focusables(d);if(f.length)f[0].focus();
-    d._trapH=function(e){_trap(d,e);};d.addEventListener('keydown',d._trapH);
-    var bd=d.querySelector('.dsr-dlg-backdrop');
-    if(bd){bd._h=function(){window.dsrCloseDlg();};bd.addEventListener('click',bd._h);}
-  };
-  window.dsrCloseDlg=function(){
-    if(!_active)return;
-    var d=_active;_active=null;_release();
-    var trig=_trigger;_trigger=null;
-    var refocus=function(){if(trig&&typeof trig.focus==='function')trig.focus();};
-    if(_reduced()){_teardown(d);refocus();return;}
-    d.classList.add('dsr-closing');d.classList.remove('dsr-in');
-    var done=function(){_teardown(d);refocus();};
-    d._timer=setTimeout(done,340);
-  };
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'&&_active){e.stopImmediatePropagation();window.dsrCloseDlg();}
-  },true);
-  /* hash deep-link: /stocks/NVDA.html#dlg-earnings opens the dialog */
-  function _hash(){var h=(location.hash||'').slice(1);if(h&&h.indexOf('dlg-')===0)window.dsrOpenDlg(h);}
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',_hash);}else{_hash();}
-})();
-</script>
 </body>
 </html>
