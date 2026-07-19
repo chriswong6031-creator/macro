@@ -1489,7 +1489,7 @@
           "id": "seed-opp-001",
           "problem_or_desire": "Why did yields spike 20bp today and who are the winners/losers?",
           "expected_value": 0.7,
-          "score": 1.8e-05,
+          "score": 1.2e-05,
           "half_life_class": "breaking_event",
           "status": "open"
         },
@@ -1497,7 +1497,7 @@
           "id": "seed-opp-002",
           "problem_or_desire": "How exposed is my portfolio to the current rate regime?",
           "expected_value": 0.6,
-          "score": 0.473544,
+          "score": 0.473378,
           "half_life_class": "evergreen_comparison",
           "status": "open"
         },
@@ -1505,7 +1505,7 @@
           "id": "seed-opp-003",
           "problem_or_desire": "Semis sector rotation: who is leading and who is lagging?",
           "expected_value": 0.5,
-          "score": 0.280706,
+          "score": 0.279439,
           "half_life_class": "weekly_signal",
           "status": "open"
         }
@@ -1778,7 +1778,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-19T06:11:44Z",
-  "inputs_hash": "sha256:cbce96288beee928de8bde06878808708c27a2d0284354a337fe664977091d0c",
+  "produced_at": "2026-07-19T07:17:30Z",
+  "inputs_hash": "sha256:c5646fdb2b01734bffa597ba703611229802a231fc740522c03b5e830f986e3a",
   "tier": "display"
 }
