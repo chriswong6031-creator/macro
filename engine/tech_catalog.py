@@ -206,6 +206,8 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
         ("engine.trend_ribbon_signals",    "trend_ribbon_signals"),
         ("engine.rsi_stack_signals",       "rsi_stack_signals"),
         ("engine.bollinger_event_signals", "bollinger_event_signals"),
+        # Momentum cross events (macd_events / rsi_events / stoch_events / stoch_events_2w)
+        ("engine.momentum_events",         "momentum_events"),
     ]
 
     for module_path, label in source_modules:
