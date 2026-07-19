@@ -698,6 +698,10 @@ def main() -> int:
         # filings. Fingerprint = latest (period, filing_date, n_rows) per fund +
         # FOLLOW_VERSION; reuse the committed artifact when it matches and is
         # under _FOLLOW_CACHE_MAX_AGE_D old (bounds fixed-horizon drift to a week).
+        # NOTE (SM4-R2): the memory block's "last 4 settled quarters" also advances
+        # with price_thru (calendar time), which the fingerprint does NOT track — a
+        # quarter that settles mid-week appears only when a filing lands or the 7-day
+        # age cap forces a recompute. Staleness is bounded to <= 7 days; accepted.
         # The boards below are ALWAYS rebuilt fresh — they use daily inputs.
         import hashlib as _hl
         from engine.fund_followability import FOLLOW_VERSION as _FV
@@ -720,6 +724,8 @@ def main() -> int:
 
         _followability = None
         _follow_computed_at = None
+        _memory: dict = {}
+        _cache_hit = False
         try:
             _prev = json.loads((_site_dir() / "smartmoney_follow.json").read_text())
             _pm = _prev.get("meta") or {}
@@ -731,6 +737,10 @@ def main() -> int:
             if _pm.get("fingerprint") == _fingerprint and _age_ok and _prev.get("followability"):
                 _followability = _prev["followability"]
                 _follow_computed_at = _pm.get("computed_at")
+                # SM4-R2: reuse memory block from prior artifact on cache hit
+                if _prev.get("memory"):
+                    _memory = _prev["memory"]
+                    _cache_hit = True
                 log.info("follow-desk: followability cache HIT (fp=%s, computed %s) — boards fresh",
                          _fingerprint, _follow_computed_at)
         except Exception:  # noqa: BLE001
@@ -742,6 +752,35 @@ def main() -> int:
                 price_loader=_cached_price_loader,
             )
             _follow_computed_at = datetime.now(timezone.utc).isoformat()
+
+        # SM4-R2: 4-quarter fund memory (compute when cache miss or memory absent)
+        if not _cache_hit:
+            try:
+                from engine.fund_memory import compute_memory as _compute_memory
+                _lb_rows = {r.get("slug"): r for r in (tracker or {}).get("leaderboard", [])}
+                _fund_names_mem = {
+                    slug: (spec.get("name") or slug)
+                    for slug, spec in ((config.load().get("smart_money", {}) or {}).get("funds", {}) or {}).items()
+                }
+                _fund_grades_mem = {
+                    slug: _lb_rows.get(slug, {}).get("grade")
+                    for slug in _slugs
+                }
+                _memory = _compute_memory(
+                    slugs=_slugs,
+                    fund_names=_fund_names_mem,
+                    fund_grades=_fund_grades_mem,
+                    books_by_fund=_books_by_fund,
+                    price_loader=_cached_price_loader,
+                )
+                log.info(
+                    "follow-desk: fund memory computed — %d quarters, %d ranked funds",
+                    len((_memory or {}).get("quarters", [])),
+                    len((_memory or {}).get("board", [])),
+                )
+            except Exception as _e_mem:  # noqa: BLE001 — NEVER-BREAK
+                log.warning("follow-desk: fund_memory compute failed — degrading: %s", _e_mem)
+                _memory = {}
 
         # Derive sector_flows from the already-computed flow["sector"] output
         # shape: {key: {net_pp: float, ...}} — net_pp > 0 means net inflow
@@ -823,6 +862,7 @@ def main() -> int:
             "small_mid": _small_mid,
             "sector_consensus": _consensus,
             "grade_a": _grade_a,
+            "memory": _memory,  # SM4-R2: 4-quarter fund memory block
             "meta": {
                 "n_follow": _tier_counts["follow"],
                 "n_watch": _tier_counts["watch"],
