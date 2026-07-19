@@ -1330,13 +1330,15 @@
         "voice": "authoritative desk",
         "corpus": "full",
         "tilt": {
-          "signal": 0.38,
-          "chart": 0.12,
-          "education": 0.1,
-          "macro": 0.18,
-          "receipt": 0.1,
-          "watchlist": 0.06,
-          "event": 0.06
+          "signal": 0.32,
+          "chart": 0.1,
+          "education": 0.08,
+          "macro": 0.14,
+          "receipt": 0.08,
+          "watchlist": 0.05,
+          "event": 0.05,
+          "mover": 0.1,
+          "theme_list": 0.08
         },
         "mix_observed": {},
         "stage": "A",
@@ -1356,13 +1358,15 @@
         "voice": "dry, receipts-forward",
         "corpus": "full",
         "tilt": {
-          "signal": 0.3,
-          "chart": 0.22,
-          "education": 0.06,
-          "macro": 0.08,
-          "receipt": 0.22,
-          "watchlist": 0.06,
-          "event": 0.06
+          "signal": 0.26,
+          "chart": 0.18,
+          "education": 0.05,
+          "macro": 0.07,
+          "receipt": 0.18,
+          "watchlist": 0.05,
+          "event": 0.05,
+          "mover": 0.08,
+          "theme_list": 0.08
         },
         "mix_observed": {},
         "stage": "A",
@@ -1382,13 +1386,15 @@
         "voice": "specialist",
         "corpus": "full",
         "tilt": {
-          "signal": 0.36,
-          "chart": 0.12,
-          "education": 0.1,
-          "macro": 0.1,
-          "receipt": 0.08,
-          "watchlist": 0.06,
-          "event": 0.18
+          "signal": 0.28,
+          "chart": 0.1,
+          "education": 0.08,
+          "macro": 0.08,
+          "receipt": 0.06,
+          "watchlist": 0.05,
+          "event": 0.14,
+          "mover": 0.1,
+          "theme_list": 0.11
         },
         "mix_observed": {},
         "stage": "A",
@@ -1408,13 +1414,15 @@
         "voice": "educational",
         "corpus": "full",
         "tilt": {
-          "signal": 0.28,
-          "chart": 0.1,
-          "education": 0.22,
-          "macro": 0.24,
-          "receipt": 0.06,
-          "watchlist": 0.06,
-          "event": 0.04
+          "signal": 0.24,
+          "chart": 0.08,
+          "education": 0.18,
+          "macro": 0.2,
+          "receipt": 0.05,
+          "watchlist": 0.05,
+          "event": 0.03,
+          "mover": 0.1,
+          "theme_list": 0.07
         },
         "mix_observed": {},
         "stage": "A",
@@ -1434,13 +1442,15 @@
         "voice": "fast, reactive",
         "corpus": "full",
         "tilt": {
-          "signal": 0.4,
-          "chart": 0.22,
-          "education": 0.06,
-          "macro": 0.08,
-          "receipt": 0.08,
-          "watchlist": 0.06,
-          "event": 0.1
+          "signal": 0.3,
+          "chart": 0.16,
+          "education": 0.04,
+          "macro": 0.06,
+          "receipt": 0.06,
+          "watchlist": 0.04,
+          "event": 0.08,
+          "mover": 0.14,
+          "theme_list": 0.12
         },
         "mix_observed": {},
         "stage": "A",
@@ -1460,13 +1470,15 @@
         "voice": "pattern/history",
         "corpus": "full",
         "tilt": {
-          "signal": 0.3,
-          "chart": 0.26,
-          "education": 0.08,
-          "macro": 0.08,
-          "receipt": 0.06,
-          "watchlist": 0.16,
-          "event": 0.06
+          "signal": 0.26,
+          "chart": 0.22,
+          "education": 0.06,
+          "macro": 0.06,
+          "receipt": 0.05,
+          "watchlist": 0.13,
+          "event": 0.05,
+          "mover": 0.1,
+          "theme_list": 0.07
         },
         "mix_observed": {},
         "stage": "A",
@@ -1489,7 +1501,7 @@
           "id": "seed-opp-001",
           "problem_or_desire": "Why did yields spike 20bp today and who are the winners/losers?",
           "expected_value": 0.7,
-          "score": 1.2e-05,
+          "score": 6e-06,
           "half_life_class": "breaking_event",
           "status": "open"
         },
@@ -1497,7 +1509,7 @@
           "id": "seed-opp-002",
           "problem_or_desire": "How exposed is my portfolio to the current rate regime?",
           "expected_value": 0.6,
-          "score": 0.473378,
+          "score": 0.473077,
           "half_life_class": "evergreen_comparison",
           "status": "open"
         },
@@ -1505,7 +1517,7 @@
           "id": "seed-opp-003",
           "problem_or_desire": "Semis sector rotation: who is leading and who is lagging?",
           "expected_value": 0.5,
-          "score": 0.279439,
+          "score": 0.277167,
           "half_life_class": "weekly_signal",
           "status": "open"
         }
@@ -1764,8 +1776,8 @@
   ],
   "content": {
     "total_posts": 130,
-    "signal_posts": 46,
-    "charts": 4,
+    "signal_posts": 38,
+    "charts": 5,
     "accounts": 6,
     "state": "present",
     "as_of": "2026-07-19"
@@ -1778,7 +1790,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-19T07:17:30Z",
-  "inputs_hash": "sha256:c5646fdb2b01734bffa597ba703611229802a231fc740522c03b5e830f986e3a",
+  "produced_at": "2026-07-19T09:16:14Z",
+  "inputs_hash": "sha256:726938aea880190326c0cef3aff5176867ff159b74a0dedf4a9be4230368255d",
   "tier": "display"
 }

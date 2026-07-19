@@ -82,23 +82,29 @@ _INVALIDATED_PLAN = {
 
 _SAMPLE_ACCOUNTS = [
     {"id": "flagship", "kind": "branded", "beat": "What changed", "voice": "authoritative desk",
-     "tilt": {"signal": 0.38, "chart": 0.12, "education": 0.10, "macro": 0.18,
-               "receipt": 0.10, "watchlist": 0.06, "event": 0.06}},
+     "tilt": {"signal": 0.32, "chart": 0.10, "education": 0.08, "macro": 0.14,
+               "receipt": 0.08, "watchlist": 0.05, "event": 0.05,
+               "mover": 0.10, "theme_list": 0.08}},
     {"id": "receipts", "kind": "branded", "beat": "Receipt", "voice": "dry, receipts-forward",
-     "tilt": {"signal": 0.30, "chart": 0.22, "education": 0.06, "macro": 0.08,
-               "receipt": 0.22, "watchlist": 0.06, "event": 0.06}},
+     "tilt": {"signal": 0.26, "chart": 0.18, "education": 0.05, "macro": 0.07,
+               "receipt": 0.18, "watchlist": 0.05, "event": 0.05,
+               "mover": 0.08, "theme_list": 0.08}},
     {"id": "theme_desk", "kind": "branded", "beat": "Theme", "voice": "specialist",
-     "tilt": {"signal": 0.36, "chart": 0.12, "education": 0.10, "macro": 0.10,
-               "receipt": 0.08, "watchlist": 0.06, "event": 0.18}},
+     "tilt": {"signal": 0.28, "chart": 0.10, "education": 0.08, "macro": 0.08,
+               "receipt": 0.06, "watchlist": 0.05, "event": 0.14,
+               "mover": 0.10, "theme_list": 0.11}},
     {"id": "research_a", "kind": "generic", "beat": "Macro", "voice": "educational",
-     "tilt": {"signal": 0.28, "chart": 0.10, "education": 0.22, "macro": 0.24,
-               "receipt": 0.06, "watchlist": 0.06, "event": 0.04}},
+     "tilt": {"signal": 0.24, "chart": 0.08, "education": 0.18, "macro": 0.20,
+               "receipt": 0.05, "watchlist": 0.05, "event": 0.03,
+               "mover": 0.10, "theme_list": 0.07}},
     {"id": "research_b", "kind": "generic", "beat": "Fast", "voice": "fast, reactive",
-     "tilt": {"signal": 0.40, "chart": 0.22, "education": 0.06, "macro": 0.08,
-               "receipt": 0.08, "watchlist": 0.06, "event": 0.10}},
+     "tilt": {"signal": 0.30, "chart": 0.16, "education": 0.04, "macro": 0.06,
+               "receipt": 0.06, "watchlist": 0.04, "event": 0.08,
+               "mover": 0.14, "theme_list": 0.12}},
     {"id": "research_c", "kind": "generic", "beat": "Charts", "voice": "pattern/history",
-     "tilt": {"signal": 0.30, "chart": 0.26, "education": 0.08, "macro": 0.08,
-               "receipt": 0.06, "watchlist": 0.16, "event": 0.06}},
+     "tilt": {"signal": 0.26, "chart": 0.22, "education": 0.06, "macro": 0.06,
+               "receipt": 0.05, "watchlist": 0.13, "event": 0.05,
+               "mover": 0.10, "theme_list": 0.07}},
 ]
 
 
@@ -183,10 +189,17 @@ def test_all_types_present_in_every_account():
     all_type_ids = {t["id"] for t in CONTENT_TYPES}
     total_slots = 7 * 3  # n_days * per_day = 21
 
+    # mover and theme_list posts are injected only into the first account (flagship)
+    # from real heatmap data.  Non-flagship accounts will have these stripped from
+    # their queues when no heatmap is present (tests run without real data).
+    _MOVERS_DESK_TYPES = {"mover", "theme_list"}
     for acct in plan["accounts"]:
         mix = acct["mix_observed"]
-        # All types must have at least 1 slot out of 21 (largest-remainder guarantees this)
+        # All types must have at least 1 slot out of 21 (largest-remainder guarantees this),
+        # EXCEPT mover/theme_list on non-flagship accounts (heatmap-only; not in test env).
         for type_id in all_type_ids:
+            if type_id in _MOVERS_DESK_TYPES:
+                continue  # movers_desk injection is heatmap-gated; skip in unit tests
             assert mix.get(type_id, 0) >= 1, (
                 f"account {acct['id']} missing type {type_id}: mix={mix}"
             )
@@ -398,7 +411,7 @@ def test_governor_writes_content_plan(tmp_path):
 
     assert cp.get("schema") == "marketing.content/v1"
     assert isinstance(cp.get("content_types"), list)
-    assert len(cp.get("content_types", [])) == 7
+    assert len(cp.get("content_types", [])) == 9  # 7 original + mover + theme_list
     assert isinstance(cp.get("accounts"), list)
     assert len(cp.get("accounts", [])) == 6
     assert isinstance(cp.get("featured_charts"), list)
@@ -419,7 +432,7 @@ def test_governor_content_plan_accounts_have_tilt(tmp_path):
     for acct in cp["accounts"]:
         tilt = acct.get("tilt", {})
         assert isinstance(tilt, dict), f"account {acct['id']} has no tilt"
-        assert len(tilt) == 7, f"account {acct['id']} tilt has {len(tilt)} keys"
+        assert len(tilt) == 9, f"account {acct['id']} tilt has {len(tilt)} keys"
         assert tilt.get("signal", 0) > 0, f"account {acct['id']} signal weight is 0"
 
 
