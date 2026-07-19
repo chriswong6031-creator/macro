@@ -142,14 +142,23 @@ def build_context(
     """Build the full writer context dict.
 
     item: ContentItem-like dict (ticker, type, account, plan fields, receipt, ...)
+         For theme_list items, item may contain "cashtags": [str] (list of cashtags).
     persona: persona card from marketing.yml copywriter.personas.<id>
-    facts: output of chart_facts.compute_facts()
+    facts: output of chart_facts.compute_facts() or theme_facts/mover_facts
     extra: any additional data (combo win_rate for confluence, etc.)
 
     Returns a dict with every field the writer is allowed to use.
     """
     ticker = item.get("ticker", "")
     cashtag = f"${ticker}" if ticker else ""
+
+    # Multi-cashtag support for theme_list items
+    cashtags_list: list[str] = item.get("cashtags") or []
+    if cashtag and cashtag not in cashtags_list:
+        # single-cashtag types: expose as a single-element list for uniformity
+        pass
+    cashtag_list_str = " ".join(cashtags_list)  # "$NVDA $AMD $SMCI ..."
+
     plan = item.get("_plan") or {}
     receipt = item.get("_receipt") or {}
 
@@ -239,10 +248,48 @@ def build_context(
         else:
             emoji_budget = 1
 
+    # For theme_list items: add member cashtag % strings to whitelist
+    # (these appear in the body as "$NVDA -2.1% $AMD -4.3% ...")
+    theme_data = item.get("_theme_data") or {}
+    theme_members = theme_data.get("members") or []
+    _theme_member_pcts: list[str] = []
+    for _tm in theme_members:
+        _tm_pct = _tm.get("pct")
+        if _tm_pct is not None:
+            try:
+                _tm_s = f"{float(_tm_pct):+.1f}%"
+                if _tm_s not in whitelist:
+                    whitelist.append(_tm_s)
+                _theme_member_pcts.append(_tm_s)
+            except (TypeError, ValueError):
+                pass
+    # Also add agg_pct for theme
+    _agg = theme_data.get("agg_pct")
+    if _agg is not None:
+        try:
+            _agg_s = f"{float(_agg):+.1f}%"
+            if _agg_s not in whitelist:
+                whitelist.append(_agg_s)
+        except (TypeError, ValueError):
+            pass
+
+    # For mover items: add mover pct to whitelist
+    mover_data = item.get("_mover_data") or {}
+    _mv_pct = mover_data.get("pct")
+    if _mv_pct is not None:
+        try:
+            _mv_s = f"{float(_mv_pct):+.1f}%"
+            if _mv_s not in whitelist:
+                whitelist.append(_mv_s)
+        except (TypeError, ValueError):
+            pass
+
     return {
         # Identity
         "ticker": ticker,
         "cashtag": cashtag,
+        "cashtags": cashtags_list,         # list of "$TICKER" strings (theme_list)
+        "cashtag_list": cashtag_list_str,  # space-joined "$A $B $C"
         "type": item.get("type", ""),
         "account": item.get("account", ""),
         # Persona
@@ -272,6 +319,12 @@ def build_context(
         # Slot / plan meta
         "direction": plan.get("direction") or item.get("direction", ""),
         "signal_date": str(plan.get("_signal_date") or item.get("_signal_date") or "")[:10],
+        # Theme/mover extras
+        "theme_name": theme_data.get("theme", ""),
+        "theme_direction": theme_data.get("direction", ""),
+        "theme_question": theme_data.get("question", ""),
+        "theme_agg_pct": (f"{float(_agg):+.1f}%" if _agg is not None else ""),
+        "mover_pct": (f"{float(_mv_pct):+.1f}%" if _mv_pct is not None else ""),
     }
 
 
@@ -321,13 +374,36 @@ def validate_copy(
     """
     violations: list[str] = []
     full_text = f"{headline} {body}"
+    item_type = ctx.get("type", "")
 
     # 1. Cashtag on every ticker post
     ticker = ctx.get("ticker", "")
-    if ticker and ctx.get("type") in ("signal", "chart", "receipt", "watchlist"):
+    if ticker and item_type in ("signal", "chart", "receipt", "watchlist", "mover"):
         cashtag = f"${ticker}"
         if cashtag not in full_text:
             violations.append(f"missing cashtag {cashtag}")
+
+    # 1b. theme_list: multi-cashtag rules
+    if item_type == "theme_list":
+        cashtags_in_ctx = ctx.get("cashtags") or []
+        # Count cashtags present in full_text
+        present_cashtags = [ct for ct in cashtags_in_ctx if ct in full_text]
+        if len(present_cashtags) < 4:
+            violations.append(
+                f"theme_list post must contain ≥4 cashtags; found {len(present_cashtags)}"
+            )
+        # Cashtags must all be from the approved member list
+        import re as _re_local
+        all_cashtags_in_text = _re_local.findall(r"\$[A-Z]{1,5}", full_text)
+        invalid_cashtags = [ct for ct in all_cashtags_in_text if ct not in cashtags_in_ctx]
+        if invalid_cashtags:
+            violations.append(
+                f"theme_list cashtags not in member list: {invalid_cashtags[:3]}"
+            )
+        # theme_list body MUST end with a question mark (reply-bait)
+        body_stripped = body.strip()
+        if not body_stripped.endswith("?"):
+            violations.append("theme_list body must end with a question mark (reply-bait)")
 
     # 2. Length > 275 characters
     total_len = len(headline) + 1 + len(body)
@@ -1075,6 +1151,251 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
     ],
 
+    # ── theme_list (all voices) — THE reach king: multi-cashtag + reply-bait ──
+    # MUST contain ≥4 cashtags from {cashtag_list} and end with "?"
+    # {cashtag_list} = "$NVDA $AMD $SMCI $AVGO"
+    # {theme_name} = "Artificial Intelligence"
+    # {theme_direction} = "down" | "up"
+    # {theme_agg_pct} = "-2.1%"
+    # {theme_question} = "Which one comes back first?"
+    # {top_fact} = theme aggregate text
+    ("theme_list", "authoritative desk"): [
+        (
+            "{theme_name} taking damage today",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} | whole theme moving",
+            "{cashtag_list}\nEvery name in this theme is {theme_direction}. {top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} {theme_agg_pct} avg today",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} rolling over | ranked by damage",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "The whole {theme_name} theme just moved",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} theme is {theme_direction} across the board",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+    ],
+    ("theme_list", "dry, receipts-forward"): [
+        (
+            "{theme_name} | {theme_agg_pct} avg",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "Ranked: {theme_name} names by today's move",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} scorecard | all names",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} theme tape",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+    ],
+    ("theme_list", "specialist"): [
+        (
+            "{theme_name} vertical is getting hit",
+            "{cashtag_list}\nThis sector doesn't move like this on nothing. {top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} | sector-wide pressure",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "Every {theme_name} name is moving today",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} theme | sector tape",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+    ],
+    ("theme_list", "educational"): [
+        (
+            "When a whole theme moves — {theme_name} today",
+            "{cashtag_list}\nTheme-level moves tell you more than any single stock. {top_fact} {theme_question}",
+        ),
+        (
+            "Here's what theme-wide selling looks like",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} | what a theme move looks like",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "The {theme_name} theme is showing something today",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+    ],
+    ("theme_list", "fast, reactive"): [
+        (
+            "{theme_name} getting smoked 👀",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "Every {theme_name} name is {theme_direction} right now",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} | tape check",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} carnage | ranked",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+    ],
+    ("theme_list", "pattern/history"): [
+        (
+            "{theme_name} | theme-wide move — historical context",
+            "{cashtag_list}\nLast time this theme moved like this, it marked something. {top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} theme under pressure | historical read",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} | the rhyme worth watching",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+        (
+            "{theme_name} selling off | what history says",
+            "{cashtag_list}\n{top_fact} {theme_question}",
+        ),
+    ],
+
+    # ── mover (all voices) — biggest single mover, charted, bearish framing ok ──
+    # {cashtag} = "$ISRG"  {top_fact} = "ISRG fell -14.2% today (Healthcare)."
+    # {mover_pct} = "-14.2%"
+    ("mover", "authoritative desk"): [
+        (
+            "{cashtag} {mover_pct} today — here's the chart",
+            "{top_fact} Overreaction or the start of something?",
+        ),
+        (
+            "{cashtag} just did something worth watching",
+            "{top_fact} One of today's biggest moves in the index.",
+        ),
+        (
+            "{cashtag} | {mover_pct} today",
+            "{top_fact} The chart tells the story. Selling pressure or value emerging?",
+        ),
+        (
+            "{cashtag} | the biggest move in the index today",
+            "{top_fact} This is what a real move looks like on a chart.",
+        ),
+        (
+            "{cashtag} — {mover_pct} | what happened",
+            "{top_fact} The chart is below. Make of it what you will.",
+        ),
+        (
+            "{cashtag} flagged — {mover_pct} move today",
+            "{top_fact} These are the ones worth knowing about the same day.",
+        ),
+    ],
+    ("mover", "dry, receipts-forward"): [
+        (
+            "{cashtag} | {mover_pct} today",
+            "{top_fact} Logged.",
+        ),
+        (
+            "{cashtag} {mover_pct} | charted",
+            "{top_fact} Numbers on the tape. Chart below.",
+        ),
+        (
+            "{cashtag} — mover of the day | {mover_pct}",
+            "{top_fact} In the log.",
+        ),
+        (
+            "{cashtag} | biggest move today: {mover_pct}",
+            "{top_fact} Noted.",
+        ),
+    ],
+    ("mover", "specialist"): [
+        (
+            "{cashtag} {mover_pct} | sector context matters here",
+            "{top_fact} Moves like this in this vertical are never random. Chart below.",
+        ),
+        (
+            "{cashtag} | {mover_pct} — and here's what it means for the sector",
+            "{top_fact} The chart below.",
+        ),
+        (
+            "{cashtag} just moved {mover_pct} — sector read",
+            "{top_fact} This one has implications beyond the single stock.",
+        ),
+        (
+            "{cashtag} | {mover_pct} — vertical impact",
+            "{top_fact} Chart and sector context below.",
+        ),
+    ],
+    ("mover", "educational"): [
+        (
+            "What a {mover_pct} move looks like — {cashtag}",
+            "{top_fact} This is what a real single-day move looks like on a chart. Study it.",
+        ),
+        (
+            "{cashtag} down {mover_pct} — what that tells you",
+            "{top_fact} Moves like this are information. Here's how to read it.",
+        ),
+        (
+            "How to read a move like {cashtag} today",
+            "{top_fact} Single-day moves this size have a pattern. Chart below.",
+        ),
+        (
+            "{cashtag} | {mover_pct} today — what to look at next",
+            "{top_fact} The first 24 hours after a move this size are the most informative.",
+        ),
+    ],
+    ("mover", "fast, reactive"): [
+        (
+            "{cashtag} {mover_pct} 👀",
+            "{top_fact} Charted. What's your read?",
+        ),
+        (
+            "{cashtag} | {mover_pct} — fast chart",
+            "{top_fact} Make your own call.",
+        ),
+        (
+            "{cashtag} moving {mover_pct} today",
+            "{top_fact} Chart below. Buyers or sellers win from here?",
+        ),
+        (
+            "Mover: {cashtag} {mover_pct}",
+            "{top_fact} Tape check.",
+        ),
+    ],
+    ("mover", "pattern/history"): [
+        (
+            "{cashtag} {mover_pct} — what happens next historically",
+            "{top_fact} Moves like this have a documented pattern. Chart and context below.",
+        ),
+        (
+            "{cashtag} | {mover_pct} — the historical base rate",
+            "{top_fact} Last time we saw a move this size, here's what the tape did next.",
+        ),
+        (
+            "{cashtag} — {mover_pct} today | pattern read",
+            "{top_fact} Not predicting. Pointing at the precedent.",
+        ),
+        (
+            "Historical read: {cashtag} {mover_pct} move",
+            "{top_fact} Rhyme, not repeat.",
+        ),
+    ],
+
     # ── watchlist (all voices) ────────────────────────────────────────────────
     # ── watchlist (all voices) — {top_fact} carries breadth/sector context ──────
     ("watchlist", "authoritative desk"): [
@@ -1329,6 +1650,26 @@ _CHART_VOICE_FILLER: dict[str, str] = {
     "pattern/history": "This chart shape has a documented history worth knowing",
 }
 
+# Filler for theme_list when top_fact is empty (theme agg context)
+_THEME_VOICE_FILLER: dict[str, str] = {
+    "authoritative desk": "This theme is moving across the board today.",
+    "dry, receipts-forward": "Theme-wide move logged.",
+    "specialist": "The sector is setting up a theme-level move.",
+    "educational": "When the whole theme moves, pay attention.",
+    "fast, reactive": "Whole theme is on the tape right now.",
+    "pattern/history": "This theme has moved like this before.",
+}
+
+# Filler for mover when top_fact is empty
+_MOVER_VOICE_FILLER: dict[str, str] = {
+    "authoritative desk": "One of today's biggest moves in the index.",
+    "dry, receipts-forward": "Move logged. Chart below.",
+    "specialist": "Biggest move in the vertical today.",
+    "educational": "A real single-day move worth studying.",
+    "fast, reactive": "Biggest mover on the tape right now.",
+    "pattern/history": "A move this size has a documented base rate.",
+}
+
 # When receipt has no graded data (gain/loss both absent), use this filler
 # to keep bodies distinct across voices (pending outcome)
 _RECEIPT_VOICE_PENDING: dict[str, str] = {
@@ -1359,7 +1700,13 @@ def _render_template(template: str, ctx: dict) -> str:
         # Substitute a voice-specific filler so bodies stay distinct per-voice
         # even when no OHLCV data is available (test mode / missing parquet)
         voice = ctx.get("voice", "authoritative desk")
-        filler = _CHART_VOICE_FILLER.get(voice, _CHART_VOICE_FILLER["authoritative desk"])
+        item_type_for_filler = ctx.get("type", "")
+        if item_type_for_filler == "theme_list":
+            filler = _THEME_VOICE_FILLER.get(voice, _THEME_VOICE_FILLER["authoritative desk"])
+        elif item_type_for_filler == "mover":
+            filler = _MOVER_VOICE_FILLER.get(voice, _MOVER_VOICE_FILLER["authoritative desk"])
+        else:
+            filler = _CHART_VOICE_FILLER.get(voice, _CHART_VOICE_FILLER["authoritative desk"])
         result = result.replace("{top_fact}", filler)
     else:
         result = result.replace("{top_fact}", top_fact)
@@ -1380,6 +1727,13 @@ def _render_template(template: str, ctx: dict) -> str:
         "{stop}": ctx.get("stop_str", ""),
         "{target_label}": ctx.get("target_label", "T1"),
         "{win_rate}": ctx.get("win_rate_str", ""),
+        # theme_list / mover tokens
+        "{cashtag_list}": ctx.get("cashtag_list", ""),
+        "{theme_name}": ctx.get("theme_name", ""),
+        "{theme_direction}": ctx.get("theme_direction", ""),
+        "{theme_agg_pct}": ctx.get("theme_agg_pct", ""),
+        "{theme_question}": ctx.get("theme_question", ""),
+        "{mover_pct}": ctx.get("mover_pct", ""),
     }
     for token, value in substitutions.items():
         result = result.replace(token, value or "")

@@ -73,19 +73,35 @@ CONTENT_TYPES: list[dict] = [
         "desc": "A fast-turnaround post reacting to a market-moving event with context and what we'd watch next.",
         "color": "#34d399",
     },
+    {
+        "id": "mover",
+        "name": "Mover of the Day",
+        "desc": "The day's single biggest mover — charted, on its cashtag, with the real move %.",
+        "color": "#fb923c",
+    },
+    {
+        "id": "theme_list",
+        "name": "Theme Tape",
+        "desc": "One post tagged with 6-10 cashtags covering a theme that's moving — the reach king at 0 followers.",
+        "color": "#f472b6",
+    },
 ]
 
 _TYPE_IDS = [t["id"] for t in CONTENT_TYPES]
 
-# Default tilt when config is absent
+# Default tilt when config is absent.
+# mover + theme_list get REACH weight (0.10 each); shaved from education/receipt
+# so signal stays the largest and all weights sum to 1.0.
 _DEFAULT_TILT: dict[str, float] = {
-    "signal": 0.35,
-    "chart": 0.15,
-    "education": 0.13,
-    "macro": 0.13,
-    "receipt": 0.10,
-    "watchlist": 0.07,
-    "event": 0.07,
+    "signal": 0.30,
+    "chart": 0.13,
+    "education": 0.10,
+    "macro": 0.11,
+    "receipt": 0.08,
+    "watchlist": 0.06,
+    "event": 0.06,
+    "mover": 0.10,
+    "theme_list": 0.06,
 }
 
 # Per-account voice copy templates — (type_id, voice) -> (headline_template, body_template)
@@ -1031,11 +1047,236 @@ def content_plan(
         # Fail-soft: confluence unavailable — Prophet posts unchanged
         pass
 
+    # ── Movers/theme desk — inject mover + theme_list items ──────────────────
+    # Load heatmap data once; attach movers summary to content.movers block.
+    # mover items get a real ticker from top_movers; theme_list items carry
+    # a cashtags list (multi-cashtag). Both are descriptive ("here's what moved")
+    # — NO live Prophet entry gate. Charts for mover items use the featured-chart
+    # path (v2 candlestick). theme_list items get no chart (the list is the content).
+    _movers_data: dict | None = None
+    _movers_summary: dict = {
+        "movers": [],
+        "theme_lists": [],
+        "note": "Heatmap data unavailable — mover/theme posts not generated.",
+    }
+    _mover_item_counter = 1
+
+    try:
+        from engine.marketing.movers_source import (
+            load_movers,
+            top_movers as _top_movers_fn,
+            theme_lists as _theme_lists_fn,
+            mover_facts as _mover_facts_fn,
+            theme_facts as _theme_facts_fn,
+        )
+        _ohlcv_root_mv: str = str(root) if root is not None else "."
+        _movers_data = load_movers(_ohlcv_root_mv)
+
+        if _movers_data is not None:
+            _mv_result = _top_movers_fn(_movers_data)
+            _tl_result = _theme_lists_fn(_movers_data)
+
+            # Determine the single biggest mover (prefer loser for reach — crashes > rallies)
+            _all_movers_flat = _mv_result.get("losers", []) + _mv_result.get("gainers", [])
+            _all_movers_flat.sort(key=lambda x: abs(x.get("pct", 0)), reverse=True)
+
+            _mover_tickers_used: set[str] = set()
+            _mover_items_for_queue: list[dict] = []
+
+            # Build mover queue items — one per big mover (up to 2, biggest first)
+            for _mv in _all_movers_flat[:2]:
+                _mv_ticker = _mv["ticker"]
+                if not _mv_ticker or _mv_ticker in _mover_tickers_used:
+                    continue
+                _mover_tickers_used.add(_mv_ticker)
+                _mv_facts = _mover_facts_fn(_mv, _movers_data)
+                _mv_top_fact = _mv_facts["facts"][0]["text"] if _mv_facts["facts"] else ""
+                _mv_pct_str = f"{_mv['pct']:+.1f}%"
+                _mv_headline = f"${_mv_ticker} {_mv_pct_str} today"
+                _mv_body = (
+                    f"{_mv_top_fact} Here's the chart. "
+                    f"Overreaction or the start of something?"
+                )
+                _mover_item_dict = {
+                    "id": f"post-mover-{_mover_item_counter:03d}",
+                    "type": "mover",
+                    "account": account_rows[0]["id"] if account_rows else "flagship",
+                    "cashtag": f"${_mv_ticker}",
+                    "ticker": _mv_ticker,
+                    "headline": _mv_headline,
+                    "body": _mv_body,
+                    "provenance": "movers_desk",
+                    "chart_id": None,
+                    "slot": f"MOVER-{_mover_item_counter:02d}",
+                    "status": "drafted",
+                    "_mover_facts": _mv_facts,
+                    "_mover_data": _mv,
+                }
+                _mover_items_for_queue.append(_mover_item_dict)
+                _mover_item_counter += 1
+
+            # Build theme_list queue items
+            _theme_items_for_queue: list[dict] = []
+            for _tl in _tl_result[:4]:
+                _tl_ticker = f"theme_{_tl['theme'].lower().replace(' ', '_').replace('/', '_')}"
+                _tl_facts = _theme_facts_fn(_tl)
+                _tl_members = _tl["members"]
+                _cashtags = [f"${m['ticker']}" for m in _tl_members[:10]]
+                _cashtag_list_str = " ".join(_cashtags)
+                _agg_str = f"{_tl['agg_pct']:+.1f}%"
+                _member_list = " ".join(
+                    f"${m['ticker']} {m['pct']:+.1f}%" for m in _tl_members[:8]
+                    if m.get("pct") is not None
+                )
+                _tl_tone = _tl.get("tone") or ("selling off" if _tl["direction"] == "down" else "ripping")
+                _tl_headline = f"{_tl['theme']} {_tl_tone} — {_agg_str} avg today"
+                _tl_body = f"{_member_list} {_tl['question']}"
+                _tl_item_dict = {
+                    "id": f"post-theme-{_mover_item_counter:03d}",
+                    "type": "theme_list",
+                    "account": account_rows[0]["id"] if account_rows else "flagship",
+                    "cashtag": _cashtags[0] if _cashtags else "",
+                    "cashtags": _cashtags,
+                    "ticker": "",
+                    "headline": _tl_headline,
+                    "body": _tl_body,
+                    "provenance": "movers_desk",
+                    "chart_id": None,
+                    "slot": f"THEME-{_mover_item_counter:02d}",
+                    "status": "drafted",
+                    "_theme_data": _tl,
+                    "_theme_facts": _tl_facts,
+                }
+                _theme_items_for_queue.append(_tl_item_dict)
+                _mover_item_counter += 1
+
+            # Distribute reach items round-robin across the desks so the WHOLE
+            # network posts reach content — and each desk gets a DISTINCT theme /
+            # mover (different cashtags => inherently distinctness-safe, no
+            # substantially-similar cross-account risk). Cold-start reach comes
+            # from breadth of coverage across the network, not one desk.
+            if account_rows:
+                _n_acct = len(account_rows)
+                # Interleave movers and themes so early desks get a mix.
+                from itertools import zip_longest as _zip_longest  # noqa: PLC0415
+                _reach_items = []
+                for _m, _t in _zip_longest(_mover_items_for_queue, _theme_items_for_queue):
+                    if _t is not None:
+                        _reach_items.append(_t)
+                    if _m is not None:
+                        _reach_items.append(_m)
+                for _idx, _item in enumerate(_reach_items):
+                    _acct = account_rows[_idx % _n_acct]
+                    _item["account"] = _acct.get("id", "flagship")
+                    _acct["queue"].append(_item)
+
+            _movers_summary = {
+                "movers": [
+                    {
+                        "ticker": it["ticker"],
+                        "pct": it["_mover_data"]["pct"],
+                        "sector": it["_mover_data"].get("sector", ""),
+                    }
+                    for it in _mover_items_for_queue
+                ],
+                "theme_lists": [
+                    {
+                        "theme": it["_theme_data"]["theme"],
+                        "direction": it["_theme_data"]["direction"],
+                        "agg_pct": it["_theme_data"]["agg_pct"],
+                        "n_members": len(it["_theme_data"]["members"]),
+                    }
+                    for it in _theme_items_for_queue
+                ],
+                "note": (
+                    f"{len(_mover_items_for_queue)} mover posts, "
+                    f"{len(_theme_items_for_queue)} theme_list posts generated "
+                    f"from heatmap data."
+                ),
+            }
+
+            # mover items: attempt v2 chart (same as Prophet signal flow)
+            if closes_loader is not None:
+                from engine.marketing.chart_render import load_ohlcv, render_chart_v2, render_signal_chart
+                for _mv_item in _mover_items_for_queue:
+                    _mv_ticker = _mv_item["ticker"]
+                    if len(featured_charts) >= _TOTAL_CHART_CAP:
+                        break
+                    _mv_closes = closes_loader(_mv_ticker)
+                    if _mv_closes is None:
+                        continue
+                    _mv_dates, _mv_cls = _mv_closes
+                    if len(_mv_cls) < 10:
+                        continue
+                    chart_id = f"chart-{chart_id_counter:03d}"
+                    svg: str | None = None
+                    ohlcv = load_ohlcv(_mv_ticker, _ohlcv_root_mv, n=90)
+                    if ohlcv is not None:
+                        od, oo, oh, ol, oc, ov = ohlcv
+                        svg = render_chart_v2(
+                            ticker=_mv_ticker,
+                            dates=od,
+                            o=oo,
+                            h=oh,
+                            l=ol,
+                            c=oc,
+                            volume=ov,
+                            timeframe="DAILY",
+                            marker_index=len(od) - 1,
+                            highlight_index=len(od) - 1,
+                            show_indicators=True,
+                            indicators=("volume",),
+                            company_name=_mv_ticker,
+                            logo_root=_ohlcv_root_mv,
+                        )
+                    if svg is None:
+                        svg = render_signal_chart(
+                            ticker=_mv_ticker,
+                            dates=_mv_dates,
+                            closes=_mv_cls,
+                            marker_index=len(_mv_cls) - 1,
+                            subtitle=f"${_mv_ticker} · mover",
+                        )
+                    _mv_item["chart_id"] = chart_id
+                    featured_charts.append({
+                        "id": chart_id,
+                        "ticker": _mv_ticker,
+                        "account": _mv_item["account"],
+                        "cashtag": f"${_mv_ticker}",
+                        "marker_source": "latest",
+                        "marker_date": _mv_dates[-1] if _mv_dates else "",
+                        "marker_price": round(_mv_cls[-1], 4) if _mv_cls else 0.0,
+                        "svg": svg,
+                        "headline": _mv_item["headline"],
+                        "body": _mv_item["body"],
+                        "source": "mover",
+                    })
+                    chart_id_counter += 1
+
+    except Exception:  # noqa: BLE001
+        pass  # fail-soft — movers unavailable; Prophet posts unchanged
+
+    # ── Strip neural_web mover/theme_list stubs ──────────────────────────────
+    # The tilt-based queue builder creates stub mover/theme_list items for every
+    # account.  These have no real data and would produce empty-token copy.
+    # The movers injection block above has already added real movers_desk items
+    # to account_rows[0].  Remove all neural_web mover/theme_list items so only
+    # movers_desk items represent those types in the final plan.
+    for _acct_row in account_rows:
+        _acct_row["queue"] = [
+            _it for _it in _acct_row["queue"]
+            if not (
+                _it.get("type") in ("mover", "theme_list")
+                and _it.get("provenance") != "movers_desk"
+            )
+        ]
+
     # ── Copywriter pass — replaces bot-voice templates with real copy ─────────
-    # Runs AFTER all queue items are settled (Prophet + confluence).
+    # Runs AFTER all queue items are settled (Prophet + confluence + movers).
     # For signal items: verify live price gate; demote failed items to watchlist.
     # For receipt items: attach graded receipt; reallocate if none available.
     # For all items: build_context → write_posts_deterministic → replace headline/body.
+    # mover/theme_list items go through a dedicated copywriter path (movers_facts).
     _copy_n_validated = 0
     _copy_n_fallback = 0
     _copy_violations_fixed = 0
@@ -1198,6 +1439,29 @@ def content_plan(
                 if item_dict.get("source") == "confluence" and item_dict.get("type") == "signal":
                     _copy_n_validated += 1
                     continue
+                # mover/theme_list items keep their movers-desk copy (the real
+                # ticker/% are already in the headline/body from movers_source) —
+                # but they STILL pass through validate_copy so the safety net
+                # (banned vocab, invented numbers, cashtag rules, reply-bait "?")
+                # gates them. A malformed reach post must never ship silently.
+                if item_dict.get("provenance") == "movers_desk":
+                    try:
+                        from engine.marketing.copywriter import (  # noqa: PLC0415
+                            build_context as _bc, validate_copy as _vc,
+                        )
+                        _mctx = _bc(item_dict, persona=persona,
+                                    facts=item_dict.get("_theme_facts")
+                                    or item_dict.get("_mover_facts"),
+                                    extra=None)
+                        _mviol = _vc(item_dict.get("headline", ""),
+                                     item_dict.get("body", ""), _mctx)
+                    except Exception:  # noqa: BLE001
+                        _mviol = []
+                    if _mviol:
+                        item_dict["_copy_violations"] = _mviol
+                        _copy_violations_fixed += len(_mviol)
+                    _copy_n_validated += 1
+                    continue
                 new_headline = post.get("headline", "")
                 new_body = post.get("body", "")
                 violations = post.get("violations", [])
@@ -1257,6 +1521,7 @@ def content_plan(
             "accounts": len(account_rows),
         },
         "content": {
+            "movers": _movers_summary,
             "confluence": {
                 "fired_combos": len(confluence_posts_added),
                 "charts": conf_charts_added,
