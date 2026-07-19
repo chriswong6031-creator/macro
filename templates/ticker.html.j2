@@ -1,13 +1,16 @@
-{% macro t(en, zh='') -%}
+{%- macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
-{%- endmacro %}
+{%- endmacro -%}
+{%- macro td(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro -%}
 {% set nav_prefix = '../' %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ ticker }} stock analysis — {{ name }}: signals, options positioning, factor profile | Mastermind</title>
+<title>{{ ticker }} — {{ name }}: signals, options &amp; factor profile | Mastermind</title>
 {% if stale %}<meta name="robots" content="noindex">{% endif %}
 <meta name="description" content="{{ meta_desc }}">
 <link rel="canonical" href="{{ canonical_url }}">
@@ -15,294 +18,1113 @@
 <meta property="og:description" content="{{ meta_desc }}">
 <meta property="og:url" content="{{ canonical_url }}">
 <meta property="og:type" content="article">
+<link rel="dns-prefetch" href="https://app.mastermind-x.com">
 <script type="application/ld+json">{{ jsonld_str | safe }}</script>
+<script data-dbase src="../data_base.js"></script>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <style>
-* { box-sizing:border-box; }
-body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-@media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
-a { text-decoration:none; color:inherit; }
-h1 { font-size:22px; margin:0; }
-h2 { font-size:15px; margin:26px 0 6px; display:flex; align-items:center; gap:8px; }
-.muted { color:var(--muted); } .sm { font-size:12px; }
-.pos { color:var(--up); } .neg { color:var(--down); } .warn { color:var(--warn); } .neu { color:var(--muted); }
-.back { font-size:12.5px; color:var(--muted); }
-.back:hover { color:var(--link); }
-.chip { display:inline-block; font-size:11px; padding:1px 8px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
-.chip.pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,var(--line)); background:color-mix(in srgb,var(--up) 10%,var(--panel2)); }
-.chip.neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); background:color-mix(in srgb,var(--down) 10%,var(--panel2)); }
-.chip.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 38%,var(--line)); background:color-mix(in srgb,var(--warn) 10%,var(--panel2)); }
-.panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:10px; }
-.panel-lead { font-size:13px; color:var(--muted); margin-bottom:10px; }
-.hero { padding:14px 0 6px; }
-.hero h1 a { color:inherit; font-size:20px; }
-.hero h1 a:hover { color:var(--link); }
-.hero .subtitle { font-size:14px; margin:5px 0 0; line-height:1.45; max-width:80ch; }
-.hero .asof { font-size:11.5px; color:var(--muted); margin-top:8px; }
-.stance-chip { display:inline-flex; align-items:center; font-size:12px; font-weight:700; padding:3px 11px; border-radius:10px; margin-top:8px; }
-.stance-chip.pos { background:color-mix(in srgb,var(--up) 12%,var(--panel)); border:1px solid color-mix(in srgb,var(--up) 35%,var(--line)); color:var(--up); }
-.stance-chip.neg { background:color-mix(in srgb,var(--down) 12%,var(--panel)); border:1px solid color-mix(in srgb,var(--down) 35%,var(--line)); color:var(--down); }
-.stance-chip.warn { background:color-mix(in srgb,var(--warn) 12%,var(--panel)); border:1px solid color-mix(in srgb,var(--warn) 35%,var(--line)); color:var(--warn); }
-.stance-chip.neu { background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
-.factor-row { display:flex; align-items:baseline; gap:10px; padding:4px 0; border-top:1px solid var(--line); font-size:13px; }
-.factor-row:first-child { border-top:0; }
-.factor-label { flex:1; }
-.factor-dot { font-size:10px; margin-right:3px; }
-.rs-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin-top:4px; }
-.rs-card { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 12px; }
-.rs-card .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-.rs-card .v { font-size:14px; font-weight:700; margin-top:2px; }
-.gex-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-top:8px; }
-.gex-cell { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:8px 12px; }
-.gex-cell .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-.gex-cell .v { font-size:15px; font-weight:720; font-variant-numeric:tabular-nums; margin-top:2px; }
-.timeline .ev { display:flex; gap:10px; padding:5px 0; border-top:1px solid var(--line); font-size:12.5px; align-items:baseline; }
-.timeline .ev:first-child { border-top:0; }
-.timeline .dt { color:var(--muted); width:84px; flex:0 0 84px; font-variant-numeric:tabular-nums; }
-.timeline .type.buy { color:var(--up); font-weight:700; }
-.timeline .type.sell { color:var(--down); font-weight:700; }
-.timeline .type.cut { color:var(--warn); font-weight:700; }
-.timeline .type.rebuy { color:var(--up); }
-.timeline .reason { color:var(--muted); font-size:12px; }
-.basket-row { display:flex; align-items:center; gap:10px; padding:5px 0; border-top:1px solid var(--line); font-size:13px; }
-.basket-row:first-child { border-top:0; }
-.basket-name a { color:var(--link); font-weight:600; }
-.basket-name a:hover { text-decoration:underline; }
-.news-row { padding:6px 0; border-top:1px solid var(--line); font-size:13px; }
-.news-row:first-child { border-top:0; }
-.news-row a { color:var(--link); }
-.news-row a:hover { text-decoration:underline; }
-.news-src { color:var(--muted); font-size:11.5px; }
-.news-date { color:var(--muted); font-size:11.5px; margin-left:6px; }
-.alt-row { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:13px; }
-.brief-body { font-size:13px; line-height:1.6; color:var(--text); }
-.brief-section h3 { font-size:13px; font-weight:700; margin:12px 0 4px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-.brief-section ul { margin:0; padding-left:18px; }
-.brief-section li { margin:2px 0; }
-.brief-disclaimer { font-size:11.5px; color:var(--muted); margin-top:10px; padding:7px 10px; background:var(--panel2); border-radius:7px; border:1px solid var(--line); }
-.invalidation { font-size:11.5px; color:var(--muted); margin-top:6px; padding:5px 8px; border-left:2px solid var(--line); }
-footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
-@media (max-width:720px) {
-  body { padding:12px; font-size:13px; }
-  h1 { font-size:19px; }
-  .gex-grid,.rs-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+/* ── reset ── */
+*{box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;margin:0;padding:0;}
+a{text-decoration:none;color:inherit;}
+h2{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:28px 0 8px;display:flex;align-items:center;gap:8px;}
+h2::before{content:'';display:inline-block;width:3px;height:13px;background:var(--link);border-radius:2px;flex-shrink:0;}
+.muted{color:var(--muted);}.sm{font-size:12px;}.pos{color:var(--up);}.neg{color:var(--down);}.warn{color:var(--warn);}.neu{color:var(--muted);}
+
+/* ── layout ── */
+.page-wrap{max-width:1240px;margin:0 auto;padding:0 22px 48px;}
+@media(min-width:1100px){.page-wrap{padding:0 40px 56px;}}
+@media(max-width:600px){.page-wrap{padding:0 14px 36px;}}
+
+/* ── sticky strip ── */
+.sticky-strip{position:sticky;top:0;z-index:200;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:0 22px;display:flex;align-items:center;gap:14px;height:44px;overflow:hidden;}
+@media(min-width:1100px){.sticky-strip{padding:0 40px;}}
+@media(max-width:600px){.sticky-strip{padding:0 14px;gap:8px;}}
+.strip-ticker{font-size:15px;font-weight:800;letter-spacing:.01em;}
+.strip-price{font-size:14px;font-variant-numeric:tabular-nums;font-weight:600;}
+.strip-spacer{flex:1;}
+.strip-btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;background:var(--link);color:#fff;white-space:nowrap;}
+.strip-btn:hover{opacity:.88;}
+@media(max-width:480px){.strip-ticker-name,.strip-sep{display:none;}}
+
+/* ── section nav ── */
+.section-nav{display:flex;gap:6px;flex-wrap:wrap;padding:16px 0 6px;overflow-x:auto;scrollbar-width:none;}
+.section-nav::-webkit-scrollbar{display:none;}
+.snav-chip{display:inline-flex;align-items:center;font-size:11.5px;padding:4px 11px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);white-space:nowrap;cursor:pointer;}
+.snav-chip:hover{border-color:var(--muted);color:var(--text);}
+[id]{scroll-margin-top:56px;}
+
+/* ── hero ── */
+.breadcrumb{font-size:12px;color:var(--muted);padding:14px 0 0;}
+.breadcrumb a:hover{color:var(--link);}
+.hero{padding:14px 0 18px;}
+.hero-top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+.hero h1{font-size:26px;font-weight:800;margin:0;letter-spacing:-.01em;}
+.hero h1 a{color:inherit;}
+.hero h1 a:hover{color:var(--link);}
+.hero-name{font-size:15px;color:var(--muted);font-weight:500;}
+.price-block{display:flex;align-items:baseline;gap:10px;margin:10px 0 4px;flex-wrap:wrap;}
+.price-big{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.price-chg{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;}
+.stance-chip{display:inline-flex;align-items:center;font-size:12.5px;font-weight:700;padding:4px 13px;border-radius:10px;margin:6px 0;}
+.stance-chip.pos{background:color-mix(in srgb,var(--up) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--up) 35%,var(--line));color:var(--up);}
+.stance-chip.neg{background:color-mix(in srgb,var(--down) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--down) 35%,var(--line));color:var(--down);}
+.stance-chip.warn{background:color-mix(in srgb,var(--warn) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--warn) 35%,var(--line));color:var(--warn);}
+.stance-chip.neu{background:var(--panel2);border:1px solid var(--line);color:var(--muted);}
+/* one restrained pulse on the stance chip for the live-price freshness dot */
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--up);display:inline-block;margin-left:6px;animation:livepulse 3s ease-in-out infinite;}
+@keyframes livepulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hero-desc{font-size:13.5px;color:var(--muted);margin:4px 0 6px;max-width:72ch;line-height:1.55;}
+.hero-inv{font-size:12.5px;color:var(--muted);border-left:2px solid var(--warn);padding:5px 10px;margin:8px 0;max-width:70ch;}
+.hero-asof{font-size:11.5px;color:var(--muted);margin-top:6px;}
+.chip-row{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0;}
+.chip{display:inline-flex;align-items:center;font-size:11px;padding:2px 9px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);}
+.chip.pos{color:var(--up);border-color:color-mix(in srgb,var(--up) 38%,var(--line));background:color-mix(in srgb,var(--up) 10%,var(--panel2));}
+.chip.neg{color:var(--down);border-color:color-mix(in srgb,var(--down) 38%,var(--line));background:color-mix(in srgb,var(--down) 10%,var(--panel2));}
+.chip.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 38%,var(--line));background:color-mix(in srgb,var(--warn) 10%,var(--panel2));}
+.cta-row{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px;}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:8px 18px;border-radius:10px;background:var(--link);color:#fff;transition:opacity .15s;}
+.btn-primary:hover{opacity:.88;}
+.btn-ghost{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);transition:border-color .15s,color .15s;}
+.btn-ghost:hover{border-color:var(--muted);color:var(--text);}
+
+/* ── panel ── */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin-top:8px;transition:border-color .15s;}
+.panel:hover{border-color:color-mix(in srgb,var(--muted) 60%,var(--line));}
+.panel-hd{font-size:11.5px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+/* ── stat grid ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
+@media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.stat-grid{grid-template-columns:1fr 1fr;}}
+.stat-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;transition:transform .15s,border-color .15s;}
+.stat-card:hover{transform:translateY(-1px);border-color:var(--muted);}
+.stat-k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.stat-v{font-size:16px;font-weight:720;font-variant-numeric:tabular-nums;}
+.stat-sub{font-size:10.5px;color:var(--muted);margin-top:2px;}
+
+/* ── chart ── */
+.chart-wrap{margin-top:8px;}
+.chart-svg-box{width:100%;overflow:hidden;border-radius:10px;}
+.chart-svg-box svg{width:100%;height:auto;display:block;}
+.chart-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+#chart-mount{display:none;margin-top:10px;height:340px;border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+
+/* ── gauge row ── */
+.gauge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
+@media(max-width:900px){.gauge-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.gauge-grid{grid-template-columns:1fr 1fr;}}
+.gauge-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px 14px;display:flex;flex-direction:column;gap:8px;transition:transform .15s,border-color .15s;}
+.gauge-card:hover{transform:translateY(-1px);border-color:var(--muted);}
+.gauge-title{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.gauge-val{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;}
+.gauge-sub{font-size:11.5px;color:var(--muted);line-height:1.4;}
+/* gradient bar for valuation */
+.val-bar-wrap{position:relative;height:6px;border-radius:3px;background:linear-gradient(to right,var(--up),var(--warn),var(--down));margin:4px 0;}
+.val-bar-marker{position:absolute;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4);}
+/* beta arc */
+.beta-track-wrap{margin:8px 0;}
+.beta-track{position:relative;height:6px;background:var(--line);border-radius:3px;margin-bottom:4px;}
+.beta-thumb{position:absolute;top:-4px;width:14px;height:14px;background:var(--link);border-radius:50%;transform:translateX(-50%);box-shadow:0 0 0 2px var(--panel);}
+.beta-mid{position:absolute;top:-3px;left:calc((1 - 0.2) / 2.8 * 100%);width:2px;height:12px;background:var(--muted);border-radius:1px;opacity:.5;}
+.beta-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);}
+/* piotroski dots */
+.pio-dots{display:flex;gap:3px;flex-wrap:wrap;}
+.pio-dot{width:10px;height:10px;border-radius:50%;background:var(--line);}
+.pio-dot.on{background:var(--up);}
+
+/* ── performance ── */
+.perf-table{width:100%;border-collapse:collapse;font-size:13px;}
+.perf-table th{font-size:10.5px;color:var(--muted);font-weight:600;text-align:left;padding:4px 8px 6px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line);}
+.perf-table td{padding:6px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);vertical-align:middle;}
+.perf-bar{display:inline-block;height:5px;border-radius:2px;vertical-align:middle;margin-left:6px;min-width:2px;}
+.season-strip{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:8px;}
+.season-cell{border-radius:4px;padding:5px 2px;text-align:center;font-size:9.5px;font-weight:600;}
+.season-label{font-size:9px;color:var(--muted);text-align:center;margin-top:2px;}
+.season-this{outline:2px solid var(--link);outline-offset:-1px;}
+
+/* ── financials ── */
+.fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px;}
+@media(max-width:900px){.fin-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.fin-grid{grid-template-columns:1fr;}}
+.fin-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+.fin-card-title{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.fin-bars{display:flex;align-items:flex-end;gap:3px;height:52px;}
+.fin-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.fin-bar{background:var(--link);border-radius:2px 2px 0 0;min-height:2px;width:100%;opacity:.8;}
+.fin-bar-label{font-size:8.5px;color:var(--muted);text-align:center;white-space:nowrap;}
+.fin-bar-val{font-size:8.5px;color:var(--text);text-align:center;white-space:nowrap;margin-top:2px;}
+.kv-table{width:100%;font-size:12.5px;border-collapse:collapse;margin-top:6px;}
+.kv-table td{padding:4px 0;vertical-align:top;}
+.kv-table td:first-child{color:var(--muted);width:55%;padding-right:6px;}
+.kv-table td:last-child{font-weight:600;text-align:right;}
+.kv-sep{border-top:1px solid var(--line);}
+.margin-bar-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;}
+.margin-bar-row .mbr-k{color:var(--muted);flex:1;}
+.margin-bar-bg{flex:2;height:5px;border-radius:3px;background:var(--line);overflow:hidden;}
+.margin-bar-fill{height:100%;border-radius:3px;background:var(--link);}
+.margin-bar-val{width:40px;text-align:right;font-weight:600;font-size:12px;}
+.cagr-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.cagr-chip{display:inline-flex;flex-direction:column;align-items:center;padding:6px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;}
+.cagr-chip .cv{font-size:16px;font-weight:800;}
+.cagr-chip .ck{font-size:10px;color:var(--muted);}
+
+/* ── valuation ── */
+.val-table{width:100%;border-collapse:collapse;font-size:13px;}
+.val-table th{font-size:10.5px;color:var(--muted);font-weight:600;padding:4px 8px 6px;text-align:left;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line);}
+.val-table td{padding:6px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);vertical-align:middle;}
+.val-table td:last-child{text-align:right;}
+.cheap-bar-bg{display:inline-block;width:60px;height:5px;border-radius:3px;background:var(--line);vertical-align:middle;overflow:hidden;}
+.cheap-bar-fill{height:100%;border-radius:3px;}
+
+/* ── earnings ── */
+.earns-countdown{text-align:center;padding:18px 10px 10px;background:var(--panel2);border-radius:10px;border:1px solid var(--line);}
+.earns-countdown .days{font-size:36px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;}
+.earns-countdown .days-label{font-size:12px;color:var(--muted);margin-top:3px;}
+.surprise-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;}
+.surprise-table td,.surprise-table th{padding:5px 8px;text-align:right;}
+.surprise-table th{font-size:10.5px;color:var(--muted);font-weight:600;text-align:left;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em;}
+.surprise-table td:first-child{text-align:left;color:var(--muted);}
+.surprise-bar{display:inline-block;height:4px;border-radius:2px;vertical-align:middle;margin-left:4px;min-width:2px;}
+
+/* ── technicals ── */
+.tech-consensus-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:8px 0;}
+.tech-consensus-fill{height:100%;border-radius:4px;background:var(--up);}
+.tech-row{display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:13px;}
+.tech-row:last-child{border-bottom:0;}
+.tech-row .tk{color:var(--muted);flex:1;font-size:12px;}
+.levels-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
+.level-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 11px;text-align:center;}
+.level-k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.level-v{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;}
+.level-card.entry{border-color:color-mix(in srgb,var(--up) 40%,var(--line));}
+.level-card.chase{border-color:color-mix(in srgb,var(--warn) 40%,var(--line));}
+.level-card.stop{border-color:color-mix(in srgb,var(--down) 40%,var(--line));}
+
+/* ── options ── */
+.gex-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
+@media(max-width:600px){.gex-grid{grid-template-columns:repeat(2,1fr);}}
+.gex-cell{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;}
+.gex-k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.gex-v{font-size:15px;font-weight:720;font-variant-numeric:tabular-nums;}
+
+/* ── why moving ── */
+.why-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:13px;}
+.why-row:last-child{border-bottom:0;}
+.why-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.why-dot.active{background:var(--up);}
+.why-dot.quiet{background:var(--line);}
+.why-cat{color:var(--muted);width:90px;flex-shrink:0;font-size:12px;}
+.why-line{flex:1;line-height:1.45;}
+
+/* ── ownership ── */
+.holder-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.holder-table th{font-size:10.5px;color:var(--muted);font-weight:600;padding:4px 8px 6px;text-align:left;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line);}
+.holder-table td{padding:6px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);vertical-align:middle;}
+.grade-chip{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;font-size:11px;font-weight:700;}
+.grade-chip.A{background:color-mix(in srgb,var(--up) 18%,var(--panel2));color:var(--up);}
+.grade-chip.B{background:color-mix(in srgb,var(--warn) 18%,var(--panel2));color:var(--warn);}
+.grade-chip.C{background:var(--panel2);color:var(--muted);}
+
+/* ── peers ── */
+.peers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:8px;}
+.peer-card{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;transition:transform .15s,border-color .15s;}
+.peer-card:hover{transform:translateY(-1px);border-color:var(--muted);}
+.peer-card .ptk{font-size:14px;font-weight:720;color:var(--link);}
+.peer-card .pnm{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── themes ── */
+.basket-row{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:13px;}
+.basket-row:last-child{border-bottom:0;}
+.basket-name{font-weight:600;color:var(--link);}
+.basket-name:hover{text-decoration:underline;}
+.basket-theme{font-size:12px;color:var(--muted);flex:1;}
+
+/* ── signal history ── */
+.pinned-bar{background:color-mix(in srgb,var(--warn) 10%,var(--panel2));border:1px solid color-mix(in srgb,var(--warn) 30%,var(--line));border-radius:10px;padding:12px 14px;margin-top:8px;}
+.pinned-hl{font-size:13px;font-weight:700;}
+.pinned-detail{font-size:12.5px;color:var(--muted);margin-top:4px;}
+.timeline .ev{display:flex;gap:10px;padding:5px 0;border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:12.5px;align-items:flex-start;}
+.timeline .ev:first-child{border-top:0;}
+.timeline .dt{color:var(--muted);width:82px;flex:0 0 82px;font-size:11.5px;font-variant-numeric:tabular-nums;padding-top:2px;}
+.ev-dir{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.ev-dir.up{background:var(--up);}
+.ev-dir.down{background:var(--down);}
+.ev-dir.caution{background:var(--warn);}
+.ev-dir.neutral{background:var(--muted);}
+.ev-body{flex:1;}
+.ev-hl{font-weight:600;line-height:1.35;}
+.ev-detail{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+/* ── company profile ── */
+.profile-text{font-size:13.5px;line-height:1.65;color:var(--text);margin-top:6px;}
+.falsifier-list{list-style:none;padding:0;margin:8px 0;display:flex;flex-direction:column;gap:4px;}
+.falsifier-list li{font-size:12.5px;color:var(--muted);padding-left:16px;position:relative;}
+.falsifier-list li::before{content:'!';position:absolute;left:0;color:var(--warn);font-weight:700;}
+
+/* ── AI brief ── */
+.brief-body{font-size:13px;line-height:1.6;}
+.brief-section h3{font-size:12px;font-weight:700;margin:12px 0 4px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.brief-section ul{margin:0;padding-left:18px;}
+.brief-section li{margin:2px 0;}
+.brief-disc{font-size:11px;color:var(--muted);margin-top:10px;padding:6px 10px;background:var(--panel2);border-radius:6px;border:1px solid var(--line);}
+
+/* ── CTA band ── */
+.cta-band{background:linear-gradient(135deg,color-mix(in srgb,var(--link) 18%,var(--panel)),color-mix(in srgb,var(--link) 8%,var(--panel2)));border:1px solid color-mix(in srgb,var(--link) 25%,var(--line));border-radius:14px;padding:28px 30px;margin:36px 0 0;}
+.cta-inner{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+.cta-copy{flex:1;min-width:240px;}
+.cta-hl{font-size:18px;font-weight:720;margin-bottom:6px;}
+.cta-sub{font-size:13px;color:var(--muted);line-height:1.5;}
+.cta-actions{display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap;}
+.cta-btn-primary{padding:10px 22px;background:var(--link);color:#fff;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;transition:opacity .15s;}
+.cta-btn-primary:hover{opacity:.85;}
+.cta-btn-secondary{padding:10px 22px;background:transparent;color:var(--text);border:1px solid var(--line);border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;transition:border-color .15s;}
+.cta-btn-secondary:hover{border-color:var(--muted);}
+.site-footer{margin-top:40px;border-top:1px solid var(--line);padding:18px 0 32px;color:var(--muted);font-size:12px;line-height:1.7;}
+.footer-inner a{color:var(--link);}
+.footer-inner a:hover{text-decoration:underline;}
+
+/* ── news ── */
+.news-row{padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:13px;}
+.news-row:last-child{border-bottom:0;}
+.news-row a{color:var(--link);}
+.news-row a:hover{text-decoration:underline;}
+.news-src{color:var(--muted);font-size:11.5px;margin-left:6px;}
+.news-date{color:var(--muted);font-size:11.5px;margin-left:6px;}
+
+/* ── factor profile ── */
+.factor-row2{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:13px;}
+.factor-row2:last-child{border-bottom:0;}
+.factor-bar-bg{flex:1;height:5px;border-radius:3px;background:var(--line);overflow:hidden;max-width:100px;}
+.factor-bar-fill{height:100%;border-radius:3px;}
+.factor-bar-fill.pos{background:var(--up);}
+.factor-bar-fill.neg{background:var(--down);}
+
+/* ── footer ── */
+footer{color:var(--muted);font-size:11.5px;margin-top:28px;border-top:1px solid var(--line);padding-top:14px;max-width:95ch;}
+/* ── misc ── */
+.placeholder-line{font-size:12px;color:var(--muted);padding:8px 0;border-top:1px solid var(--line);margin-top:6px;}
+@media(max-width:720px){
+  .gauge-grid,.fin-grid,.gex-grid,.levels-row{grid-template-columns:repeat(2,1fr);}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .perf-table td,.perf-table th{padding:4px 5px;}
+  .cta-band{padding:16px 16px;}
 }
 </style>
 </head>
 <body>
-<p class="back"><a href="../stocks/index.html">{{ t('← All coverage', '← 所有股票') }}</a>
-{% if sector %} · <span class="muted">{{ sector }}</span>{% endif %}
+{% include "_site_nav.html.j2" %}
+<main>
+
+<!-- ── Sticky strip ── -->
+<div class="sticky-strip">
+  <span class="strip-ticker">{{ ticker }}</span>
+  <span class="strip-ticker-name muted sm">{{ name }}</span>
+  <span class="strip-sep muted">·</span>
+  <span class="strip-price">
+    {%- if hero and hero.price -%}
+    <span class="nb-px" data-sym="{{ ticker }}" data-mkt="us">${{ hero.price }}</span>
+    {%- endif -%}
+  </span>
+  {% if hero %}<span class="stance-chip {{ hero.stance_class or 'neu' }}" style="font-size:11px;padding:2px 9px;">{{ t(hero.stance_en, hero.stance_zh) }}</span>{% endif %}
+  <span class="strip-spacer"></span>
+  <a class="strip-btn" href="https://app.mastermind-x.com/terminal?sym={{ ticker }}&from=macro" rel="noopener noreferrer" target="_blank">{{ t('Terminal', '终端') }} ↗</a>
+</div>
+
+<div class="page-wrap">
+
+<!-- ── Breadcrumb ── -->
+<p class="breadcrumb">
+  <a href="../stocks/index.html">{{ t('All coverage', '所有股票') }}</a>
+  {% if hero and hero.sector %} · <span class="muted">{{ hero.sector }}</span>{% endif %}
 </p>
 
-<section class="hero">
-  <h1><a href="../stock.html#{{ ticker }}">{{ ticker }}</a> — {{ name }}</h1>
-  <div class="subtitle">{{ t(hero_desc_en, hero_desc_zh) }}</div>
-  <div>
-    <span class="stance-chip {{ stance_class }}">
-      {{ t(stance_en, stance_zh) }}
+<!-- ── Hero ── -->
+<section class="hero" id="hero">
+  <div class="hero-top">
+    <h1><a href="https://app.mastermind-x.com/terminal?sym={{ ticker }}&from=macro" rel="noopener noreferrer" target="_blank">{{ ticker }}</a></h1>
+    <span class="hero-name">{{ name }}</span>
+  </div>
+
+  <div class="price-block">
+    <span class="price-big">
+      {%- if hero and hero.price -%}
+      $<span class="nb-px" data-sym="{{ ticker }}" data-mkt="us">{{ hero.price }}</span>
+      {%- else -%}—
+      {%- endif -%}
+    </span>
+    {% if not stale %}<span class="live-dot" title="Updated intraday"></span>{% endif %}
+  </div>
+
+  {% if hero %}
+  <div style="margin:2px 0 6px;">
+    <span class="stance-chip {{ hero.stance_class or 'neu' }}">
+      {{ t(hero.stance_en, hero.stance_zh) }}
     </span>
   </div>
-  {% if invalidation_en %}
-  <div class="invalidation"><span class="l-en">{{ invalidation_en }}</span><span class="l-zh">{{ invalidation_zh }}</span></div>
+
+  {% if hero.inv_en %}
+  <div class="hero-inv"><span class="l-en">{{ hero.inv_en }}</span><span class="l-zh">{{ hero.inv_zh }}</span></div>
   {% endif %}
-  <div class="asof">{{ t('Data through', '数据截至') }} {{ freshness }} · {{ t('regenerated nightly', '每日更新') }}</div>
+
+  {% if hero.desc_en %}
+  <div class="hero-desc">{{ t(hero.desc_en, hero.desc_zh) }}</div>
+  {% endif %}
+
+  <div class="chip-row">
+    {% if hero.arch_label_en %}<span class="chip">{{ t(hero.arch_label_en, hero.arch_label_zh) }}</span>{% endif %}
+    {% if hero.mktcap_label_en %}<span class="chip">{{ t(hero.mktcap_label_en, hero.mktcap_label_zh) }}</span>{% endif %}
+    {% if hero.sector %}<span class="chip">{{ hero.sector }}</span>{% endif %}
+    {% if stats and stats.mktcap %}<span class="chip">{{ stats.mktcap }}</span>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="hero-asof">
+    {{ t('Data through', '数据截至') }} {{ freshness }}
+    {% if stale %}<span class="warn"> · {{ t('DATA MAY BE STALE', '数据可能已过期') }}</span>{% endif %}
+  </div>
+
+  <div class="cta-row">
+    <a class="btn-primary" href="https://app.mastermind-x.com/terminal?sym={{ ticker }}&from=macro" rel="noopener noreferrer" target="_blank">{{ t('Open in Terminal', '打开终端') }} ↗</a>
+    <button class="btn-ghost" onclick="(function(){var u=window.location.href;if(navigator.clipboard){navigator.clipboard.writeText(u);}else{var t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);}this.textContent=document.documentElement.getAttribute('data-lang')==='zh'?'已复制!':'Copied!';})()" style="cursor:pointer;">{{ t('Copy link', '复制链接') }}</button>
+    <a class="btn-ghost" href="../stocks/index.html">{{ t('All coverage', '所有股票') }}</a>
+  </div>
 </section>
 
-{% if factors %}
-<h2>{{ t('Market Position', '市场定位') }}</h2>
-<div class="panel">
-  <div class="panel-lead">
-    {% if factors.sector %}<span class="chip">{{ factors.sector }}</span>{% endif %}
-    {% if factors.mktcap %}<span class="chip">{{ factors.mktcap }}</span>{% endif %}
-    {% if factors.as_of %}<span class="chip sm">{{ t('as of', '数据日期') }} {{ factors.as_of }}</span>{% endif %}
-  </div>
-  {% for row in factors.rows %}
-  <div class="factor-row">
-    <span class="factor-dot {{ 'pos' if row.positive else 'neg' }}">{{ '▲' if row.positive else '▼' }}</span>
-    <span class="factor-label">{{ t(row.en, row.zh) }}</span>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
+<!-- ── Section nav ── -->
+<nav class="section-nav" aria-label="Jump to section">
+  <a class="snav-chip" href="#stats">{{ t('Stats', '统计') }}</a>
+  {% if chart %}<a class="snav-chip" href="#chart">{{ t('Chart', '图表') }}</a>{% endif %}
+  {% if gauges %}<a class="snav-chip" href="#gauges">{{ t('Gauges', '指标') }}</a>{% endif %}
+  {% if performance %}<a class="snav-chip" href="#performance">{{ t('Performance', '表现') }}</a>{% endif %}
+  {% if financials %}<a class="snav-chip" href="#financials">{{ t('Financials', '财务') }}</a>{% endif %}
+  {% if valuation %}<a class="snav-chip" href="#valuation">{{ t('Valuation', '估值') }}</a>{% endif %}
+  {% if earnings %}<a class="snav-chip" href="#earnings">{{ t('Earnings', '财报') }}</a>{% endif %}
+  {% if technicals %}<a class="snav-chip" href="#technicals">{{ t('Technicals', '技术面') }}</a>{% endif %}
+  {% if options %}<a class="snav-chip" href="#options">{{ t('Options', '期权') }}</a>{% endif %}
+  {% if why_moving %}<a class="snav-chip" href="#why">{{ t('Why Moving', '为何波动') }}</a>{% endif %}
+  {% if ownership %}<a class="snav-chip" href="#ownership">{{ t('Ownership', '持仓') }}</a>{% endif %}
+  {% if peers %}<a class="snav-chip" href="#peers">{{ t('Peers', '同业') }}</a>{% endif %}
+  {% if themes %}<a class="snav-chip" href="#themes">{{ t('Themes', '主题') }}</a>{% endif %}
+  {% if signal_history %}<a class="snav-chip" href="#history">{{ t('History', '历史信号') }}</a>{% endif %}
+  {% if profile_extras %}<a class="snav-chip" href="#profile">{{ t('Profile', '公司档案') }}</a>{% endif %}
+  {% if brief %}<a class="snav-chip" href="#brief">{{ t('AI Brief', 'AI简报') }}</a>{% endif %}
+</nav>
 
-{% if alpha %}
-<h2>{{ t('Relative Strength', '相对强弱') }}</h2>
-<div class="panel">
-  <div class="panel-lead">
-    {% if alpha.alpha_str %}<span class="chip {{ 'pos' if alpha.alpha_str.startswith('+') else 'neg' }}">{{ t('Alpha', '超额') }} {{ alpha.alpha_str }}</span>{% endif %}
-    {% if alpha.entry_en %}<span class="chip">{{ t(alpha.entry_en, alpha.entry_zh) }}</span>{% endif %}
-    {% if alpha.as_of %}<span class="chip sm">{{ t('as of', '数据日期') }} {{ alpha.as_of }}</span>{% endif %}
+<!-- ── KEY STATISTICS ── -->
+{% if stats %}
+<section id="stats">
+<h2>{{ t('Key Statistics', '关键统计') }}</h2>
+<div class="stat-grid">
+  {% if stats.price %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('Price', '价格') }}</div>
+    <div class="stat-v">$<span class="nb-px" data-sym="{{ ticker }}" data-mkt="us">{{ stats.price }}</span></div>
+    {% if stats.range_52w_en %}<div class="stat-sub">{{ t(stats.range_52w_en, stats.range_52w_zh) }}</div>{% endif %}
   </div>
-  <div class="rs-grid">
-    {% if alpha.rs_pctile_en %}
-    <div class="rs-card">
-      <div class="k">{{ t('1-month RS', '1月相对强弱') }}</div>
-      <div class="v">{{ t(alpha.rs_pctile_en, alpha.rs_pctile_zh) }}</div>
-    </div>
-    {% endif %}
-    {% if alpha.rs3m_en %}
-    <div class="rs-card">
-      <div class="k">{{ t('3-month RS', '3月相对强弱') }}</div>
-      <div class="v">{{ t(alpha.rs3m_en, alpha.rs3m_zh) }}</div>
-    </div>
-    {% endif %}
-    {% if alpha.rs6m_en %}
-    <div class="rs-card">
-      <div class="k">{{ t('6-month RS', '6月相对强弱') }}</div>
-      <div class="v">{{ t(alpha.rs6m_en, alpha.rs6m_zh) }}</div>
-    </div>
-    {% endif %}
-    {% if alpha.rs12m_en %}
-    <div class="rs-card">
-      <div class="k">{{ t('12-month RS', '12月相对强弱') }}</div>
-      <div class="v">{{ t(alpha.rs12m_en, alpha.rs12m_zh) }}</div>
-    </div>
-    {% endif %}
+  {% endif %}
+  {% if stats.mktcap %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('Market Cap', '市值') }}</div>
+    <div class="stat-v">{{ stats.mktcap }}</div>
+    {% if stats.volume_en %}<div class="stat-sub">{{ t(stats.volume_en, stats.volume_zh) }}</div>{% endif %}
   </div>
-  {% if alpha.sector_rank and alpha.sector_n %}
-  <p class="sm muted" style="margin-top:8px">
-    {{ t('Sector rank', '板块排名') }}: #{{ alpha.sector_rank }} {{ t('of', '共') }} {{ alpha.sector_n }} {{ t('in', '，在') }} {{ factors.sector if factors else '' }}
-  </p>
+  {% endif %}
+  {% if stats.trailing_pe %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('P/E Ratio', '市盈率') }}</div>
+    <div class="stat-v">{{ stats.trailing_pe }}</div>
+    {% if stats.trailing_pe_med %}<div class="stat-sub">{{ stats.trailing_pe_med }}</div>{% endif %}
+  </div>
+  {% endif %}
+  {% if stats.forward_pe %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('Forward P/E', '预测市盈率') }}</div>
+    <div class="stat-v">{{ stats.forward_pe }}</div>
+    {% if stats.eps %}<div class="stat-sub">{{ t('EPS', '每股收益') }} {{ stats.eps }}</div>{% endif %}
+  </div>
+  {% endif %}
+  {% if stats.beta %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('Beta', '贝塔') }}</div>
+    <div class="stat-v">{{ stats.beta }}</div>
+    {% if stats.beta_en %}<div class="stat-sub">{{ t(stats.beta_en, stats.beta_zh) }}</div>{% endif %}
+  </div>
+  {% endif %}
+  {% if stats.div_yield %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('Dividend Yield', '股息收益率') }}</div>
+    <div class="stat-v">{{ stats.div_yield }}</div>
+  </div>
+  {% endif %}
+  {% if stats.rsi %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('RSI (14)', 'RSI（14）') }}</div>
+    <div class="stat-v">{{ stats.rsi }}</div>
+    {% if stats.rsi_zone_en %}<div class="stat-sub">{{ t(stats.rsi_zone_en, stats.rsi_zone_zh) }}</div>{% endif %}
+  </div>
+  {% endif %}
+  {% if stats.next_earnings %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('Next Earnings', '下次财报') }}</div>
+    <div class="stat-v" style="font-size:13px;">{{ stats.next_earnings }}</div>
+  </div>
+  {% endif %}
+  {% if stats.hv_pctile %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('Volatility Rank', '波动率分位') }}</div>
+    <div class="stat-v">{{ stats.hv_pctile }}</div>
+    <div class="stat-sub">{{ t('hist. vol. percentile', '历史波动率分位数') }}</div>
+  </div>
+  {% endif %}
+  {% if stats.short_pct_float %}
+  <div class="stat-card">
+    <div class="stat-k">{{ t('Short Interest', '空头兴趣') }}</div>
+    <div class="stat-v" style="font-size:13px;">{{ stats.short_pct_float }}</div>
+  </div>
   {% endif %}
 </div>
+</section>
 {% endif %}
 
-{% if gex %}
-<h2>{{ t('Options Positioning', '期权持仓') }}</h2>
-<div class="panel">
-  <div class="panel-lead">
-    {% if gex.as_of %}<span class="chip sm">{{ t('as of', '数据日期') }} {{ gex.as_of }}</span>{% endif %}
+<!-- ── CHART ── -->
+{% if chart %}
+<section id="chart">
+<h2>{{ t('Price Chart', '价格图表') }}</h2>
+<div class="panel chart-wrap">
+  {% if chart.svg_present %}
+  <div class="chart-svg-box">{{ chart.svg | safe }}</div>
+  {% endif %}
+  <div class="chart-actions">
+    <button class="btn-ghost" id="chart-lazy-btn" onclick="loadInteractiveChart(this)" style="cursor:pointer;">{{ t('Interactive chart', '互动图表') }}</button>
+    <a class="btn-ghost" href="https://app.mastermind-x.com/terminal?sym={{ ticker }}&from=macro" rel="noopener noreferrer" target="_blank">{{ t('Full chart in Terminal', '终端完整图表') }} ↗</a>
   </div>
-  {% if gex.regime_en %}<p>{{ t(gex.regime_en, gex.regime_zh) }}</p>{% endif %}
-  <div class="gex-grid">
-    {% if gex.em_daily_pct %}
-    <div class="gex-cell">
-      <div class="k">{{ t('Expected daily move', '预期日波动') }}</div>
-      <div class="v">±{{ gex.em_daily_pct }}%</div>
-    </div>
-    {% endif %}
-    {% if gex.em_weekly_pct %}
-    <div class="gex-cell">
-      <div class="k">{{ t('Expected weekly move', '预期周波动') }}</div>
-      <div class="v">±{{ gex.em_weekly_pct }}%</div>
-    </div>
-    {% endif %}
-    {% if gex.call_wall %}
-    <div class="gex-cell">
-      <div class="k">{{ t('Heavy call interest at', '看涨期权密集区') }}</div>
-      <div class="v">${{ gex.call_wall }}</div>
-    </div>
-    {% endif %}
-    {% if gex.put_wall %}
-    <div class="gex-cell">
-      <div class="k">{{ t('Heavy put interest at', '看跌期权密集区') }}</div>
-      <div class="v">${{ gex.put_wall }}</div>
-    </div>
-    {% endif %}
-    {% if gex.iv30 %}
-    <div class="gex-cell">
-      <div class="k">{{ t('Implied volatility (30d)', '隐含波动率(30天)') }}</div>
-      <div class="v">{{ gex.iv30 }}%</div>
-    </div>
-    {% endif %}
-    {% if gex.iv_rank_pct %}
-    <div class="gex-cell">
-      <div class="k">{{ t('IV rank', 'IV历史分位') }}</div>
-      <div class="v">{{ gex.iv_rank_pct }}%</div>
-    </div>
-    {% endif %}
-  </div>
+  <div id="chart-mount"></div>
 </div>
+</section>
 {% endif %}
 
-{% if flow %}
-<h2>{{ t('Options Flow', '期权资金流向') }}</h2>
-<div class="panel">
-  {% if flow.as_of %}<div class="panel-lead"><span class="chip sm">{{ t('as of', '数据日期') }} {{ flow.as_of }}</span></div>{% endif %}
-  <p>{{ t(flow.en, flow.zh) }}</p>
-  {% if flow.net_premium_mn %}
-  <p class="sm muted">{{ t('Net premium', '净权利金') }}: ${{ flow.net_premium_mn }}M
-  {% if flow.pc_ratio %} · {{ t('P/C ratio', '看跌/看涨比') }}: {{ flow.pc_ratio }}{% endif %}
-  </p>
+<!-- ── GAUGES ── -->
+{% if gauges %}
+<section id="gauges">
+<h2>{{ t('Snapshot Gauges', '综合指标') }}</h2>
+<div class="gauge-grid">
+  {% if gauges.valuation %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Valuation vs Sector', '估值相对行业') }}</div>
+    {%- set vpct = gauges.valuation.pct | float(0) -%}
+    <div class="gauge-val {{ 'pos' if vpct > 55 else ('neg' if vpct < 30 else '') }}">
+      {{ '%.0f' | format(vpct) }}%{{ t(' cheaper', '更便宜') }}
+    </div>
+    <div class="val-bar-wrap">
+      <div class="val-bar-marker" style="left:{{ '%.0f' | format([0, [vpct, 100] | min] | max) }}%;"></div>
+    </div>
+    <div class="gauge-sub">{{ t(gauges.valuation.verdict_en, gauges.valuation.verdict_zh) }}</div>
+  </div>
+  {% endif %}
+
+  {% if gauges.beta %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Beta', '市场敏感度') }}</div>
+    {%- set bval = gauges.beta.beta | float(1) -%}
+    <div class="gauge-val">{{ gauges.beta.beta }}×</div>
+    {%- if gauges.beta.gauge_pct_override is defined and gauges.beta.gauge_pct_override is not none -%}
+      {%- set bpct = gauges.beta.gauge_pct_override | int -%}
+    {%- else -%}
+      {%- set bclamp = ([0.2, [bval, 3.0] | min] | max) -%}
+      {%- set bpct = ((bclamp - 0.2) / 2.8 * 100) | int -%}
+    {%- endif -%}
+    <div class="beta-track-wrap">
+      <div class="beta-track">
+        <div class="beta-thumb" style="left:{{ bpct }}%;"></div>
+        <div class="beta-mid"></div>
+      </div>
+      <div class="beta-labels"><span>0.2</span><span>1×</span><span>3×</span></div>
+    </div>
+    <div class="gauge-sub">{{ t(gauges.beta.label_en, gauges.beta.label_zh) }}</div>
+  </div>
+  {% endif %}
+
+  {% if gauges.health %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Financial Health', '财务健康') }}</div>
+    {%- set pio_parts = (gauges.health.piotroski or '0/9').split('/') -%}
+    {%- set pio_n = pio_parts[0] | int(0) -%}
+    {%- set pio_of = pio_parts[1] | int(9) if pio_parts | length > 1 else 9 -%}
+    <div class="gauge-val {{ 'pos' if pio_n >= 7 else ('warn' if pio_n >= 5 else 'neg') }}">
+      {{ gauges.health.piotroski }}
+    </div>
+    <div class="pio-dots">
+      {% for i in range(pio_of) %}<div class="pio-dot {{ 'on' if i < pio_n else '' }}"></div>{% endfor %}
+    </div>
+    {% if gauges.health.altman_zone %}
+    <div><span class="chip {{ 'pos' if gauges.health.altman_zone == 'safe' else ('warn' if gauges.health.altman_zone == 'grey' else 'neg') }}">{{ t('Altman', '阿尔特曼') }}: {{ gauges.health.altman_zone }}</span></div>
+    {% endif %}
+    <div class="gauge-sub">{{ t(gauges.health.verdict_en, gauges.health.verdict_zh) }}</div>
+  </div>
+  {% endif %}
+
+  {% if gauges.dividend %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Dividend', '分红') }}</div>
+    <div class="gauge-val pos">{{ gauges.dividend.yield_str }}</div>
+    <div class="gauge-sub">{{ t(gauges.dividend.verdict_en, gauges.dividend.verdict_zh) }}</div>
+  </div>
+  {% else %}
+  <div class="gauge-card">
+    <div class="gauge-title">{{ t('Dividend', '分红') }}</div>
+    <div class="gauge-val muted">—</div>
+    <div class="gauge-sub">{{ t('Does not pay a dividend', '不派发股息') }}</div>
+  </div>
   {% endif %}
 </div>
+</section>
 {% endif %}
 
-{% if signals %}
-<h2>{{ t('Signal History', '信号历史') }}</h2>
+<!-- ── PERFORMANCE ── -->
+{% if performance %}
+<section id="performance">
+<h2>{{ t('Performance', '价格表现') }}</h2>
 <div class="panel">
-  <div class="panel-lead">
-    <span class="chip {{ 'pos' if signals.above200 else 'neg' }}">{{ t('Above 200d avg', '200日均线以上') if signals.above200 else t('Below 200d avg', '200日均线以下') }}</span>
-    {% if signals.weekly_bull %}<span class="chip pos">{{ t('Weekly trend up', '周趋势向上') }}</span>{% endif %}
-    {% if signals.trail_stop %}<span class="chip">{{ t('Trail stop', '追踪止损') }}: ${{ signals.trail_stop }}</span>{% endif %}
-    {% if signals.as_of %}<span class="chip sm">{{ t('as of', '数据日期') }} {{ signals.as_of }}</span>{% endif %}
-  </div>
-  {% if signals.markers %}
-  <div class="timeline">
-    {% for m in signals.markers | reverse %}
-    <div class="ev">
-      <span class="dt">{{ m.date }}</span>
-      <span class="type {{ m.type }}">{{ m.type | upper }}</span>
-      {% if m.reason %}<span class="reason">{{ m.reason }}</span>{% endif %}
+  <table class="perf-table">
+    <thead>
+      <tr>
+        <th>{{ t('Period', '周期') }}</th>
+        <th>{{ ticker }}</th>
+        {% if performance[0].spy_ret %}<th>S&amp;P 500</th>{% endif %}
+        <th>{{ t('vs Index', '对比指数') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in performance %}
+    <tr>
+      <td class="muted">{{ t(row.label_en, row.label_zh) }}</td>
+      <td class="{{ 'pos' if row.positive else 'neg' }}" style="font-weight:700;">{{ row.ticker_ret }}</td>
+      {% if row.spy_ret %}<td class="muted">{{ row.spy_ret }}</td>{% elif performance[0].spy_ret %}<td></td>{% endif %}
+      <td class="muted sm">{{ t(row.verdict_en, row.verdict_zh) if row.verdict_en else '—' }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+</section>
+{% endif %}
+
+<!-- ── SEASONALITY ── -->
+{% if seasonality %}
+<section id="seasonality">
+<h2>{{ t('Seasonality', '季节性规律') }}</h2>
+<div class="panel">
+  {% if seasonality.this_label %}
+  <p class="sm"><span class="pos">{{ t('This month:', '本月：') }}</span> <span class="chip muted">{{ t(seasonality.blob_window_en or 'Full history', seasonality.blob_window_zh or '完整历史') }}</span> {{ t(seasonality.this_label, seasonality.this_label_zh) }}</p>
+  {% endif %}
+  {% if seasonality.next_label %}
+  <p class="sm muted">{{ t('Next month:', '下月：') }} {{ t(seasonality.next_label, seasonality.next_label_zh) }}</p>
+  {% endif %}
+  {% if seasonality.monthly %}
+  {%- set cur_month_idx = freshness[5:7] | int(1) - 1 -%}
+  <p class="sm muted" style="margin-bottom:4px;">{{ t(seasonality.computed_window_en or 'Last ~5 years of daily data', seasonality.computed_window_zh or '近约5年日线数据') }}</p>
+  <div class="season-strip">
+    {% for m in seasonality.monthly %}
+    {%- set wr = m.win_rate | float(0) -%}
+    {%- set is_cur = loop.index0 == cur_month_idx -%}
+    <div>
+      <div class="season-cell {{ 'season-this' if is_cur else '' }}"
+           style="background:{% if wr >= 70 %}color-mix(in srgb,var(--up) {{ ((wr-50)*2)|int }}%,var(--panel2)){% elif wr < 40 %}color-mix(in srgb,var(--down) {{ ((50-wr)*2)|int }}%,var(--panel2)){% else %}var(--panel2){% endif %};">
+        {% if m.win_rate is not none %}{{ '%.0f'|format(wr) }}%{% else %}—{% endif %}
+      </div>
+      <div class="season-label">{{ m.month }}</div>
     </div>
     {% endfor %}
-    {% if signals.n_total_markers > 12 %}
-    <p class="sm muted" style="margin-top:6px">{{ t('Showing last 12 of', '显示最近12条，共') }} {{ signals.n_total_markers }} {{ t('signals', '条信号') }}</p>
+  </div>
+  {% endif %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── FINANCIALS ── -->
+{% if financials %}
+<section id="financials">
+<h2>{{ t('Financials', '财务数据') }}</h2>
+<div class="panel">
+  {%- set fyears = financials.years -%}
+  {%- set n_years = fyears | length -%}
+  <div class="fin-grid">
+    {% if financials.revenue and financials.revenue | select('ne', '') | list %}
+    <div class="fin-card">
+      <div class="fin-card-title">{{ t('Revenue', '营业收入') }}</div>
+      {%- set rev_max = namespace(v=1) -%}
+      {%- for v in financials.revenue -%}{%- if v -%}{%- set vn = v|replace('$','')|replace('B','')|replace('M','')|replace('T','')|float(0) -%}{%- if vn > rev_max.v -%}{%- set rev_max.v = vn -%}{%- endif -%}{%- endif -%}{%- endfor -%}
+      <div class="fin-bars">
+        {% for i in range(n_years) %}
+        {%- set rv = financials.revenue[i] if i < financials.revenue|length else '' -%}
+        {%- set rv_n = rv|replace('$','')|replace('B','')|replace('M','')|replace('T','')|float(0) if rv else 0 -%}
+        <div class="fin-bar-wrap">
+          <div class="fin-bar-val">{{ rv if rv else '' }}</div>
+          <div class="fin-bar" style="height:{{ [((rv_n / rev_max.v) * 50)|int, 2]|max }}px;"></div>
+          <div class="fin-bar-label">{{ fyears[i] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if financials.rev_cagr %}<div class="sm muted" style="margin-top:6px">{{ t('5yr CAGR', '5年复合增速') }}: <strong>{{ financials.rev_cagr }}</strong></div>{% endif %}
+    </div>
+    {% endif %}
+    {% if financials.eps and financials.eps | select('ne', '') | list %}
+    <div class="fin-card">
+      <div class="fin-card-title">{{ t('Earnings Per Share', '每股收益') }}</div>
+      {%- set eps_max = namespace(v=0.01) -%}
+      {%- for v in financials.eps -%}{%- if v -%}{%- set vn = v|float(0)|abs -%}{%- if vn > eps_max.v -%}{%- set eps_max.v = vn -%}{%- endif -%}{%- endif -%}{%- endfor -%}
+      <div class="fin-bars">
+        {% for i in range(n_years) %}
+        {%- set ev = financials.eps[i] if i < financials.eps|length else '' -%}
+        {%- set ev_n = ev|float(0) if ev else 0 -%}
+        <div class="fin-bar-wrap">
+          <div class="fin-bar-val">{{ '$'+ev if ev else '' }}</div>
+          <div class="fin-bar {% if ev_n < 0 %}neg{% endif %}" style="height:{{ [(ev_n|abs / eps_max.v * 50)|int, 2]|max }}px;{% if ev_n < 0 %}background:var(--down);{% endif %}"></div>
+          <div class="fin-bar-label">{{ fyears[i] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if financials.eps_cagr %}<div class="sm muted" style="margin-top:6px">{{ t('5yr CAGR', '5年复合增速') }}: <strong>{{ financials.eps_cagr }}</strong></div>{% endif %}
+    </div>
+    {% endif %}
+    {% if financials.fcf and financials.fcf | select('ne', '') | list %}
+    <div class="fin-card">
+      <div class="fin-card-title">{{ t('Free Cash Flow', '自由现金流') }}</div>
+      {%- set fcf_max = namespace(v=0.01) -%}
+      {%- for v in financials.fcf -%}{%- if v -%}{%- set vn = v|replace('$','')|replace('B','')|replace('M','')|float(0)|abs -%}{%- if vn > fcf_max.v -%}{%- set fcf_max.v = vn -%}{%- endif -%}{%- endif -%}{%- endfor -%}
+      <div class="fin-bars">
+        {% for i in range(n_years) %}
+        {%- set fv = financials.fcf[i] if i < financials.fcf|length else '' -%}
+        {%- set fv_n = fv|replace('$','')|replace('B','')|replace('M','')|float(0) if fv else 0 -%}
+        <div class="fin-bar-wrap">
+          <div class="fin-bar-val">{{ fv if fv else '' }}</div>
+          <div class="fin-bar" style="height:{{ [(fv_n|abs / fcf_max.v * 50)|int, 2]|max }}px;"></div>
+          <div class="fin-bar-label">{{ fyears[i] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% if financials.margins %}
+  <div style="margin-top:16px;">
+    <div class="sm muted" style="margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">{{ t('Margins', '利润率') }}</div>
+    {% for k, lbl_en, lbl_zh in [('gross_margin','Gross margin','毛利率'),('op_margin','Operating margin','营业利润率'),('net_margin','Net margin','净利率'),('fcf_margin','FCF margin','自由现金流利润率')] %}
+    {%- set mv = financials.margins[k] -%}
+    {%- if mv is not none -%}
+    <div class="margin-bar-row">
+      <span class="mbr-k">{{ t(lbl_en, lbl_zh) }}</span>
+      <div class="margin-bar-bg"><div class="margin-bar-fill" style="width:{{ [mv|float(0)|abs, 100]|min }}%;"></div></div>
+      <span class="margin-bar-val">{{ '%.1f'|format(mv|float(0)) }}%</span>
+    </div>
+    {%- endif -%}
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if financials.roe is not none or financials.roa is not none %}
+  <div class="cagr-row" style="margin-top:12px;">
+    {% if financials.roe is not none %}<div class="cagr-chip"><span class="cv {{ 'pos' if financials.roe|float(0) > 15 else '' }}">{{ '%.1f'|format(financials.roe|float(0)) }}%</span><span class="ck">{{ t('Return on Equity', '股本回报率') }}</span></div>{% endif %}
+    {% if financials.roa is not none %}<div class="cagr-chip"><span class="cv">{{ '%.1f'|format(financials.roa|float(0)) }}%</span><span class="ck">{{ t('Return on Assets', '资产回报率') }}</span></div>{% endif %}
+  </div>
+  {% endif %}
+  {% if financials.leverage_rows %}
+  <div class="sm muted" style="margin-top:16px;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">{{ t('Leverage', '杠杆') }}</div>
+  <table class="kv-table">{% for row in financials.leverage_rows %}<tr><td>{{ t(row.label_en, row.label_zh) }}</td><td>{{ row.value }}</td></tr>{% endfor %}</table>
+  {% endif %}
+  {% if financials.cap_rows %}
+  <div class="sm muted" style="margin-top:14px;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">{{ t('Capital Allocation', '资本配置') }}</div>
+  <table class="kv-table">{% for row in financials.cap_rows %}<tr><td>{{ t(row.label_en, row.label_zh) }}</td><td>{{ row.value }}</td></tr>{% endfor %}</table>
+  {% endif %}
+  <div class="chip-row" style="margin-top:12px;">
+    {% if financials.piotroski is not none %}<span class="chip {{ 'pos' if financials.piotroski >= 7 else ('warn' if financials.piotroski >= 5 else 'neg') }}">{{ t('Piotroski','皮奥特罗斯基') }} {{ financials.piotroski }}/{{ financials.piotroski_of or 9 }}</span>{% endif %}
+    {% if financials.altman_zone %}<span class="chip {{ 'pos' if financials.altman_zone=='safe' else ('warn' if financials.altman_zone=='grey' else 'neg') }}">{{ t('Altman Z','阿尔特曼Z') }}: {{ financials.altman_zone }}{% if financials.altman_z %} ({{ '%.1f'|format(financials.altman_z|float(0)) }}){% endif %}</span>{% endif %}
+    {% if financials.aq_headline_en %}<span class="chip warn">{{ t(financials.aq_headline_en, financials.aq_headline_zh) }}</span>{% endif %}
+  </div>
+</div>
+</section>
+{% endif %}
+
+<!-- ── VALUATION ── -->
+{% if valuation %}
+<section id="valuation">
+<h2>{{ t('Valuation', '估值') }}</h2>
+<div class="panel">
+  <table class="val-table">
+    <thead><tr>
+      <th>{{ t('Multiple', '指标') }}</th>
+      <th>{{ ticker }}</th>
+      <th>{{ t('Sector median', '行业中位') }}</th>
+      <th>{{ t('Cheaper than', '相对便宜') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for row in valuation %}
+    <tr>
+      <td class="muted">{{ t(row.label_en, row.label_zh) }}</td>
+      <td style="font-weight:700;">{{ row.value }}</td>
+      <td class="muted">{{ row.sector_med if row.sector_med else '—' }}</td>
+      <td>
+        {% if row.cheap is not none %}
+        <div class="cheap-bar-bg"><div class="cheap-bar-fill" style="width:{{ row.cheap }}%;background:{% if row.cheap >= 55 %}var(--up){% elif row.cheap <= 30 %}var(--down){% else %}var(--warn){% endif %};height:100%;border-radius:3px;"></div></div>
+        <span class="sm muted" style="margin-left:4px;">{{ '%.0f'|format(row.cheap) }}%</span>
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if placeholders and placeholders.analyst_targets %}
+  <div class="placeholder-line">{{ t('Analyst price targets — coming soon', '分析师目标价 — 即将上线') }}</div>
+  {% endif %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── EARNINGS ── -->
+{% if earnings %}
+<section id="earnings">
+<h2>{{ t('Earnings', '财务业绩') }}</h2>
+<div class="panel">
+  {% if earnings.days_to_next is not none and earnings.days_to_next >= 0 %}
+  <div class="earns-countdown">
+    <div class="days">{{ earnings.days_to_next }}</div>
+    <div class="days-label">{{ t('days until next report', '天后公布财报') }}</div>
+    {% if earnings.next_date %}<div class="sm muted" style="margin-top:4px">{{ earnings.next_date }}</div>{% endif %}
+  </div>
+  {% elif earnings.last_date %}
+  <div class="panel-hd">{{ t('Last reported:', '上次报告：') }} {{ earnings.last_date }}</div>
+  {% endif %}
+  {% if earnings.rev_en %}<p class="sm" style="margin-top:10px;">{{ t(earnings.rev_en, earnings.rev_zh) }}</p>{% endif %}
+  {% if earnings.sue_en %}<p class="sm">{{ t(earnings.sue_en, earnings.sue_zh) }}</p>{% endif %}
+  {% if earnings.pead_en %}<p class="sm muted">{{ t(earnings.pead_en, earnings.pead_zh) }}</p>{% endif %}
+  {% if earnings.surprises %}
+  <table class="surprise-table">
+    <thead><tr>
+      <th>{{ t('Quarter', '季度') }}</th>
+      <th>EPS</th>
+      <th>{{ t('Consensus', '预期') }}</th>
+      <th>{{ t('Surprise', '超预期') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for s in earnings.surprises %}
+    <tr>
+      <td>{{ s.qtr }}</td>
+      <td>${{ '%.2f'|format(s.eps|float(0)) }}</td>
+      <td class="muted">${{ '%.2f'|format(s.consensus|float(0)) }}</td>
+      <td class="{{ 'pos' if s.surprise_pct|float(0) > 0 else 'neg' }}" style="font-weight:700;">
+        {{ '+' if s.surprise_pct|float(0) > 0 else '' }}{{ '%.1f'|format(s.surprise_pct|float(0)) }}%
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if earnings.avg_surprise_pct %}<p class="sm muted" style="margin-top:6px;">{{ t('Average surprise', '平均超预期') }}: {{ earnings.avg_surprise_pct }}</p>{% endif %}
+  {% endif %}
+  {% if placeholders and placeholders.transcripts %}
+  <div class="placeholder-line">{{ t('Earnings call transcripts — coming soon', '财报电话会议记录 — 即将上线') }}</div>
+  {% endif %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── TECHNICALS ── -->
+{% if technicals %}
+<section id="technicals">
+<h2>{{ t('Technicals', '技术面') }}</h2>
+<div class="panel">
+  {% if technicals.active_signals %}
+  <div class="panel-hd">{{ t('Active signals', '活跃信号') }}</div>
+  <div class="chip-row">{% for sig in technicals.active_signals %}<span class="chip">{{ sig }}</span>{% endfor %}</div>
+  {% endif %}
+  <div style="margin-top:12px;">
+    {% if technicals.rsi %}
+    <div class="tech-row">
+      <span class="tk">{{ t('RSI (14)', 'RSI（14）') }}</span>
+      <span>{{ technicals.rsi }}</span>
+      {% if technicals.rsi_zone_en %}<span class="chip {{ 'neg' if technicals.rsi_zone_en == 'Overbought' else ('pos' if technicals.rsi_zone_en == 'Oversold' else '') }}">{{ t(technicals.rsi_zone_en, technicals.rsi_zone_zh) }}</span>{% endif %}
+    </div>
+    {% endif %}
+    {% if technicals.ma50_en %}
+    <div class="tech-row">
+      <span class="tk">{{ t('vs 50-day', '相对50日均线') }}</span>
+      <span class="{{ 'pos' if technicals.above50 else 'neg' }}">{{ technicals.ma50_en }}</span>
+    </div>
+    {% endif %}
+    {% if technicals.ma200_en %}
+    <div class="tech-row">
+      <span class="tk">{{ t('vs 200-day', '相对200日均线') }}</span>
+      <span class="{{ 'pos' if technicals.above200 else 'neg' }}">{{ technicals.ma200_en }}</span>
+    </div>
+    {% endif %}
+    {% if technicals.adx %}
+    <div class="tech-row">
+      <span class="tk">{{ t('Trend strength (ADX)', '趋势强度（ADX）') }}</span>
+      <span>{{ technicals.adx }}</span>
+      {% if technicals.adx_word_en %}<span class="muted sm">{{ t(technicals.adx_word_en, technicals.adx_word_zh) }}</span>{% endif %}
+    </div>
+    {% endif %}
+    {% if technicals.hv_pctile %}
+    <div class="tech-row">
+      <span class="tk">{{ t('Volatility rank', '波动率分位') }}</span>
+      <span>{{ technicals.hv_pctile }}{{ t(' percentile', ' 分位') }}</span>
+    </div>
+    {% endif %}
+    {% if technicals.squeeze_en %}
+    <div class="tech-row">
+      <span class="tk">{{ t('Vol squeeze', '波动压缩') }}</span>
+      <span class="warn">{{ t(technicals.squeeze_en, technicals.squeeze_zh) }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% if technicals.buy_zone or technicals.chase_above or technicals.stop %}
+  <div style="margin-top:14px;">
+    <div class="sm muted" style="margin-bottom:6px;">{{ t('Engine reference levels — not advice', '引擎参考水平 — 非投资建议') }}</div>
+    <div class="levels-row">
+      {% if technicals.buy_zone %}<div class="level-card entry"><div class="level-k">{{ t('Buy zone', '买入区间') }}</div><div class="level-v pos">{{ technicals.buy_zone }}</div></div>{% endif %}
+      {% if technicals.chase_above %}<div class="level-card chase"><div class="level-k">{{ t("Don't chase above", '不追高于') }}</div><div class="level-v warn">{{ technicals.chase_above }}</div></div>{% endif %}
+      {% if technicals.stop %}<div class="level-card stop"><div class="level-k">{{ t('Stop', '止损') }}</div><div class="level-v neg">{{ technicals.stop }}</div></div>{% endif %}
+    </div>
+    {% if technicals.entry_headline_en %}<div class="sm muted" style="margin-top:6px;">{{ t(technicals.entry_headline_en, technicals.entry_headline_zh) }}</div>{% endif %}
+  </div>
+  {% endif %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── OPTIONS ── -->
+{% if options %}
+<section id="options">
+<h2>{{ t('Options Positioning', '期权持仓') }}</h2>
+<div class="panel">
+  {% if options.regime_en %}<p>{{ t(options.regime_en, options.regime_zh) }}</p>{% endif %}
+  <div class="gex-grid">
+    {% if options.em_daily_pct %}<div class="gex-cell"><div class="gex-k">{{ t('Expected daily move', '预期日波动') }}</div><div class="gex-v">±{{ options.em_daily_pct }}%</div></div>{% endif %}
+    {% if options.em_weekly_pct %}<div class="gex-cell"><div class="gex-k">{{ t('Expected weekly move', '预期周波动') }}</div><div class="gex-v">±{{ options.em_weekly_pct }}%</div></div>{% endif %}
+    {% if options.call_wall %}<div class="gex-cell"><div class="gex-k">{{ t('Call wall', '看涨密集区') }}</div><div class="gex-v">${{ options.call_wall }}</div></div>{% endif %}
+    {% if options.put_wall %}<div class="gex-cell"><div class="gex-k">{{ t('Put wall', '看跌密集区') }}</div><div class="gex-v">${{ options.put_wall }}</div></div>{% endif %}
+    {% if options.gamma_flip %}<div class="gex-cell"><div class="gex-k">{{ t('Gamma flip', '伽玛翻转') }}</div><div class="gex-v">${{ options.gamma_flip }}</div></div>{% endif %}
+    {% if options.iv_rank_pct %}<div class="gex-cell"><div class="gex-k">{{ t('IV rank', 'IV历史分位') }}</div><div class="gex-v">{{ options.iv_rank_pct }}%</div></div>{% endif %}
+    {% if options.rr_25d %}<div class="gex-cell"><div class="gex-k">{{ t('25d risk reversal', '25d风险逆转') }}</div><div class="gex-v {{ 'neg' if options.rr_25d and '-' in options.rr_25d else '' }}">{{ options.rr_25d }}</div></div>{% endif %}
+    {% if options.max_pain %}<div class="gex-cell"><div class="gex-k">{{ t('Max pain', '最大痛苦价') }}</div><div class="gex-v">${{ options.max_pain }}</div></div>{% endif %}
+    {% if options.pc_ratio %}<div class="gex-cell"><div class="gex-k">{{ t('P/C OI ratio', 'P/C未平仓比') }}</div><div class="gex-v">{{ options.pc_ratio }}</div></div>{% endif %}
+  </div>
+  {% if options.flow_en %}
+  <div style="margin-top:12px;">
+    <div class="sm muted" style="margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">{{ t('Flow', '资金流向') }}</div>
+    <p class="sm">{{ t(options.flow_en, options.flow_zh) }}</p>
+  </div>
+  {% endif %}
+  {% if options.skew_tone %}
+  <div class="chip-row" style="margin-top:8px;">
+    <span class="chip {{ 'neg' if options.skew_tone == 'fear' else ('pos' if options.skew_tone == 'greed' else '') }}">{{ t('Skew: ', '偏斜：') }}{{ options.skew_tone }}</span>
+  </div>
+  {% endif %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── WHY MOVING ── -->
+{% if why_moving %}
+<section id="why">
+<h2>{{ t('Why Is It Moving', '为何波动') }}</h2>
+<div class="panel">
+  {% for row in why_moving %}
+  <div class="why-row">
+    <div class="why-dot {{ row.state }}"></div>
+    <span class="why-cat muted">{{ t(row.category_en, row.category_zh) }}</span>
+    <span class="why-line">{{ t(row.line_en, row.line_zh) }}</span>
+  </div>
+  {% endfor %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── OWNERSHIP ── -->
+{% if ownership %}
+<section id="ownership">
+<h2>{{ t('Ownership & Smart Money', '持仓与聪明钱') }}</h2>
+<div class="panel">
+  {% if ownership.insider_en %}
+  <div class="panel-hd">
+    {{ t('Insider activity', '内部人员活动') }}: {{ t(ownership.insider_en, ownership.insider_zh) }}
+  </div>
+  {% endif %}
+  {% if ownership.hhi_en %}<div class="sm muted" style="margin-bottom:8px;">{{ t(ownership.hhi_en, ownership.hhi_zh) }}</div>{% endif %}
+  {% if ownership.holders %}
+  <table class="holder-table">
+    <thead><tr>
+      <th>{{ t('Fund', '基金') }}</th>
+      <th>{{ t('Grade', '评级') }}</th>
+      <th>{{ t('Activity', '动作') }}</th>
+      <th>{{ t('% of portfolio', '组合占比') }}</th>
+      <th>{{ t('As of', '截至') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for h in ownership.holders %}
+    <tr>
+      <td>{{ h.fund_name }}</td>
+      <td><span class="grade-chip {{ h.fund_grade }}">{{ h.fund_grade }}</span></td>
+      <td class="{{ 'pos' if h.action_en in ('New position','Adding','Buying') else ('neg' if h.action_en in ('Exited','Selling','Reducing') else '') }}">{{ t(h.action_en, h.action_zh) }}</td>
+      <td class="muted">{{ h.shares_pct }}</td>
+      <td class="muted sm">{{ h.period_end }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── PEERS ── -->
+{% if peers %}
+<section id="peers">
+<h2>{{ t('Peers', '同业比较') }}</h2>
+<div class="peers-grid">
+  {% for p in peers %}
+  <a class="peer-card" href="{{ p.href }}">
+    <div class="ptk">{{ p.ticker }}</div>
+    <div class="pnm">{{ p.name }}</div>
+    {% if p.mktcap %}<div class="sm muted" style="margin-top:3px;">{{ p.mktcap }}</div>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── THEMES & BASKETS ── -->
+{% if themes %}
+<section id="themes">
+<h2>{{ t('Themes & Baskets', '主题与篮子') }}</h2>
+<div class="panel">
+  {% if themes.baskets %}
+  {% for b in themes.baskets %}
+  <div class="basket-row">
+    <a class="basket-name" href="../baskets/{{ b.id }}.html">{{ t(b.name_en, b.name_zh) }}</a>
+    <span class="basket-theme">{{ b.theme if b.theme else b.rationale }}</span>
+    {% if b.band_en %}<span class="chip">{{ t(b.band_en, b.band_zh) }}</span>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% if themes.basket_alloc %}
+  <div class="sm muted" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px;">
+    {{ t('Primary basket:', '主要篮子：') }} {{ t(themes.basket_alloc.name_en, themes.basket_alloc.name_zh) }}
+    — {{ t('rank', '排名') }} #{{ themes.basket_alloc.rank }},
+    {{ t(themes.basket_alloc.label_en, themes.basket_alloc.label_zh if themes.basket_alloc.label_zh else themes.basket_alloc.label_en) }}
+  </div>
+  {% endif %}
+  {% if themes.sector_pulse %}
+  <div class="sm muted" style="margin-top:6px;">
+    {{ t('Sector theme:', '行业主题：') }} {{ t(themes.sector_pulse.theme_name, themes.sector_pulse.theme_name_zh) }}
+    — #{{ themes.sector_pulse.rank }} {{ t('of', '共') }} {{ themes.sector_pulse.n_themes }}
+    <span class="chip {{ 'pos' if themes.sector_pulse.heat in ('hot','heating') else ('neg' if themes.sector_pulse.heat in ('cold','cooling') else '') }}">{{ themes.sector_pulse.heat }}</span>
+  </div>
+  {% endif %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── SIGNAL HISTORY ── -->
+{% if signal_history %}
+<section id="history">
+<h2>{{ t('Signal History', '信号历史') }}</h2>
+<div class="panel">
+  {% if signal_history.pinned %}
+  {%- set pn = signal_history.pinned -%}
+  <div class="pinned-bar">
+    <div class="pinned-hl {{ 'pos' if pn.dir == 'up' else ('neg' if pn.dir == 'down' else 'warn') }}">
+      {{ t(pn.headline, pn.headline_zh) if pn.headline_zh else pn.headline }}
+    </div>
+    {% if pn.detail %}<div class="pinned-detail">{{ t(pn.detail, pn.detail_zh) if pn.detail_zh else pn.detail }}</div>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if signal_history.ladder_state %}
+  <div class="chip-row" style="margin:10px 0 4px;">
+    <span class="chip {{ 'pos' if signal_history.ladder_state in ('UPTREND','RALLY ON') else ('neg' if signal_history.ladder_state == 'DOWNTREND' else 'warn') }}">
+      {{ signal_history.ladder_state }}
+    </span>
+    {% if signal_history.ladder_label %}<span class="chip">{{ signal_history.ladder_label }}</span>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if signal_history.events %}
+  <div class="timeline" style="margin-top:10px;">
+    {% for ev in signal_history.events %}
+    <div class="ev">
+      <span class="dt">{{ ev.date }}</span>
+      <div class="ev-dir {{ ev.dir or 'neutral' }}"></div>
+      <div class="ev-body">
+        <div class="ev-hl">{{ t(ev.headline, ev.headline_zh) if ev.headline_zh else ev.headline }}</div>
+        {% if ev.detail %}<div class="ev-detail">{{ t(ev.detail, ev.detail_zh) if ev.detail_zh else ev.detail }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    {% if signal_history.n_total > 15 %}
+    <p class="sm muted" style="margin-top:6px;">{{ t('Showing last 15 of', '显示最近15条，共') }} {{ signal_history.n_total }} {{ t('signals', '条信号') }}</p>
     {% endif %}
   </div>
   {% endif %}
 </div>
+</section>
 {% endif %}
 
-{% if baskets %}
-<h2>{{ t('Themes & Baskets', '主题与篮子') }}</h2>
+<!-- ── COMPANY PROFILE ── -->
+{% if profile_extras or (hero and hero.desc_en) %}
+<section id="profile">
+<h2>{{ t('Company Profile', '公司档案') }}</h2>
 <div class="panel">
-  {% for b in baskets %}
-  <div class="basket-row">
-    <span class="basket-name"><a href="{{ b.href }}">{{ t(b.name, b.name_zh) }}</a></span>
-    {% if b.band_en %}<span class="chip {{ 'pos' if b.tone == 'pos' else ('neg' if b.tone == 'neg' else 'neu') }}">{{ t(b.band_en, b.band_zh) }}</span>{% endif %}
-    {% if b.rs_rank is not none %}<span class="chip sm">{{ t('RS rank', 'RS排名') }} {{ "%.0f"|format(b.rs_rank * 100) }}%</span>{% endif %}
+  {% if hero and hero.desc_en %}
+  <div class="profile-text">{{ t(hero.desc_en, hero.desc_zh) }}</div>
+  {% endif %}
+  {% if profile_extras %}
+  {% if profile_extras.demand_chain_en %}
+  <div class="sm muted" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px;">
+    {{ t('Demand chain:', '需求链：') }} {{ t(profile_extras.demand_chain_en, profile_extras.demand_chain_zh if profile_extras.demand_chain_zh else profile_extras.demand_chain_en) }}
   </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-{% if news %}
-<h2>{{ t('Recent News', '最新动态') }}</h2>
-<div class="panel">
-  {% for h in news %}
-  <div class="news-row">
-    <a href="{{ h.url }}" rel="noopener noreferrer" target="_blank">{{ h.title }}</a>
-    <span class="news-src">{{ h.source }}</span>
-    {% if h.published %}<span class="news-date">{{ h.published }}</span>{% endif %}
+  {% endif %}
+  {% if profile_extras.active_falsifiers %}
+  <div style="margin-top:10px;">
+    <div class="sm muted" style="margin-bottom:4px;font-weight:600;">{{ t('Watch items — what could change the thesis', '关注项 — 可能改变论点的因素') }}</div>
+    <ul class="falsifier-list">
+      {% for f in profile_extras.active_falsifiers %}<li>{{ f }}</li>{% endfor %}
+    </ul>
   </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-{% if alt %}
-<h2>{{ t('Alternative Data', '另类数据') }}</h2>
-<div class="panel">
-  {% for ch in alt.channels %}
-  <div class="alt-row">
-    <span class="chip">{{ t(ch.en, ch.zh) }}</span>
-  </div>
-  {% endfor %}
-  {% if alt.congress_net %}
-  <p class="sm muted" style="margin-top:6px">
-    {{ t('Congressional net trades', '国会净交易') }}: {{ alt.congress_net }}
-    {% if alt.congress_members %} ({{ alt.congress_members }} {{ t('members', '位议员') }}){% endif %}
-  </p>
+  {% endif %}
   {% endif %}
 </div>
+</section>
 {% endif %}
 
+<!-- ── FACTOR PROFILE ── -->
+{% if factors %}
+<section id="factors">
+<h2>{{ t('Factor Profile', '因子特征') }}</h2>
+<div class="panel">
+  {% if factors.composite is not none %}
+  <div class="panel-hd">{{ t('Composite factor score', '综合因子得分') }}: <strong class="{{ 'pos' if factors.composite > 0.3 else ('neg' if factors.composite < -0.3 else '') }}">{{ '%.2f'|format(factors.composite) }}</strong></div>
+  {% endif %}
+  {% for row in factors.rows %}
+  <div class="factor-row2">
+    <span class="muted" style="width:140px;flex-shrink:0;font-size:12px;">{{ t(row.label_en, row.label_zh) }}</span>
+    <div class="factor-bar-bg">
+      <div class="factor-bar-fill {{ 'pos' if row.positive else 'neg' }}" style="width:{{ [row.z|abs * 33, 100]|min }}%;"></div>
+    </div>
+    <span class="{{ 'pos' if row.positive else 'neg' }}" style="font-size:12px;font-weight:600;width:40px;text-align:right;">{{ '%+.1f'|format(row.z) }}</span>
+  </div>
+  {% endfor %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── AI RESEARCH BRIEF ── -->
 {% if brief %}
+<section id="brief">
 <h2>{{ t('AI Research Brief', 'AI研究简报') }}</h2>
 <div class="panel brief-section">
   <div class="brief-body">
-    <p class="l-en">{{ brief.summary }}</p>
+    {% if brief.summary %}<p class="l-en">{{ brief.summary }}</p>{% endif %}
     {% if brief.zh_summary %}<p class="l-zh">{{ brief.zh_summary }}</p>{% endif %}
     {% if brief.drivers %}
     <h3>{{ t('Key drivers', '主要驱动因素') }}</h3>
@@ -317,20 +1139,84 @@ footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px s
     <ul class="l-en">{% for c in brief.catalysts %}<li>{{ c }}</li>{% endfor %}</ul>
     {% endif %}
   </div>
-  <div class="brief-disclaimer">
-    {{ brief.disclaimer }}
-  </div>
+  {% if brief.disclaimer %}<div class="brief-disc">{{ brief.disclaimer }}</div>{% endif %}
   {% if brief.as_of %}<p class="sm muted">{{ t('Generated', '生成于') }} {{ brief.as_of }}</p>{% endif %}
 </div>
+</section>
 {% endif %}
 
-<footer>
-  <p>
-    {{ t('Research context only — not investment advice.', '仅供研究参考，不构成投资建议。') }}
-    · <a href="../stocks/index.html">{{ t('All coverage', '全部覆盖') }}</a>
-    · <a href="../stock.html#{{ ticker }}">{{ t('Interactive analyzer', '交互分析器') }}</a>
-  </p>
-  <p class="sm muted">{{ t('Generated', '生成') }} {{ generated_utc }}</p>
+<!-- ── NEWS ── -->
+{% if news %}
+<section id="news">
+<h2>{{ t('Recent News', '最新动态') }}</h2>
+<div class="panel">
+  {% for h in news %}
+  <div class="news-row">
+    <a href="{{ h.url }}" rel="noopener noreferrer" target="_blank">{{ h.title }}</a>
+    {% if h.source %}<span class="news-src">{{ h.source }}</span>{% endif %}
+    {% if h.published %}<span class="news-date">{{ h.published }}</span>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+</section>
+{% endif %}
+
+<!-- ── CTA BAND ── -->
+<section class="cta-band">
+  <div class="cta-inner">
+    <div class="cta-copy">
+      <div class="cta-hl">{{ t('Get the full picture', '获取完整视图') }}</div>
+      <div class="cta-sub">{{ t('Nightly signals, options flow, and factor analysis across all S&P 500 names.', '每日更新的信号、期权资金流向和因子分析，覆盖所有标普500成分股。') }}</div>
+    </div>
+    <div class="cta-actions">
+      <a href="../stock.html" class="cta-btn-primary">{{ t('Open Analyzer', '打开分析器') }}</a>
+      <a href="index.html" class="cta-btn-secondary">{{ t('Browse All Stocks', '浏览所有股票') }}</a>
+    </div>
+  </div>
+</section>
+
+</div><!-- end .page-wrap -->
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>{{ t('Research context only — not investment advice. Past patterns do not guarantee future results.', '仅供研究参考，不构成投资建议。历史规律不代表未来表现。') }}</p>
+    <p class="sm muted">{{ t('Data as of', '数据截至') }} {{ freshness }} · {{ t('Generated', '生成于') }} {{ generated_utc }}</p>
+    <p class="sm muted"><a href="../stocks/index.html">{{ t('S&amp;P 500 Coverage', '标普500覆盖') }}</a> · <a href="../stock.html">{{ t('Analyzer', '分析器') }}</a></p>
+  </div>
 </footer>
+
+<!-- lazy chart loader -->
+<script>
+window.loadInteractiveChart = (function(){
+  var _loaded = false;
+  return function(btn){
+    if(_loaded) return;
+    _loaded = true;
+    btn.disabled = true;
+    btn.textContent = '...';
+    var s1 = document.createElement('script');
+    s1.src = '../lightweight-charts-v5.js';
+    s1.onload = function(){
+      var s2 = document.createElement('script');
+      s2.src = '../chart.js';
+      s2.onload = function(){
+        var mount = document.getElementById('chart-mount');
+        if(mount && window.StockChart){
+          mount.style.display = 'block';
+          window.StockChart.mount(mount, '{{ ticker }}', {
+            name: '{{ name | replace("'", "\\'") }}',
+            ohlcDir: '../ohlc'
+          });
+          btn.style.display = 'none';
+        }
+      };
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s1);
+  };
+})();
+</script>
 </body>
 </html>

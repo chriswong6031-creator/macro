@@ -885,6 +885,10 @@ jobs:
           run_py "news suite (build_news)" scripts.build_news
           run_py "news event calibration (grade_news_events)" scripts.grade_news_events
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
+          # Ticker dossier pages (v2) — engine-internal, reads fresh site/stockdata/*.json
+          # written by build_site above; rides the engine "commit engine outputs" git add.
+          # Non-fatal: ::warning on failure, never aborts the render.
+          python -m scripts.build_ticker_pages || echo "::warning title=ticker_pages::dossier render failed (non-fatal)"
           # Index Leadership rotation board — DEAD-WIRE FIX 2026-07-16: this builder had NO
           # workflow caller since its 2026-07-01 hand-run, so site/marketdata/index_leadership.json
           # (subsectors.html client fetch + group_context's 0.10-weight rotation source + the
@@ -3328,52 +3332,3 @@ jobs:
             echo "heartbeat push attempt $i lost a race; re-syncing"; sleep $((i * 5))
           done
           echo "::warning::could not push heartbeat state after 3 attempts (non-fatal)"
-
-  # ── ticker_pages — static SEO dossier pages (off render path) ─────────────
-  # Reads committed artifacts from the engine job, renders site/stocks/<T>.html
-  # per active sp500 ticker + index + sitemap update. Display-only; non-fatal.
-  # Pattern: tech_lab_offrender (needs: engine, if: always()).
-  ticker_pages:
-    needs: [engine, publish]
-    if: always()
-    runs-on: [self-hosted, macstudio]
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-      - run: git pull origin main
-      - name: python 3.12 (Homebrew venv — self-hosted runner)
-        run: |
-          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
-          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
-          echo "$VENV/bin" >> "$GITHUB_PATH"
-          "$VENV/bin/python" -m pip install --quiet --upgrade pip
-      - run: pip install -r requirements.txt
-      - name: build static per-ticker SEO dossier pages
-        run: |
-          set +e
-          python -m scripts.build_ticker_pages; rc=$?
-          if [ "$rc" -ne 0 ]; then
-            echo "::warning title=ticker_pages::build_ticker_pages rc=$rc (artifacts may be stale)"
-          fi
-          exit 0
-      - name: commit ticker page artifacts
-        run: |
-          git config user.name "dashboard-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add site/stocks/ site/sitemap.xml 2>/dev/null || true
-          if git diff --cached --quiet; then echo "no ticker-page artifact changes"; exit 0; fi
-          git commit -m "ticker-pages: nightly SEO dossier refresh $(date -u +%F)"
-          for i in 1 2 3 4 5; do
-            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
-            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
-                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
-              | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed ticker-page artifacts on attempt $i"; exit 0
-            fi
-            git rebase --abort 2>/dev/null || true
-            echo "ticker-pages push attempt $i lost a race; re-syncing"; sleep $((i * 7))
-          done
-          echo "::warning::could not push ticker-page artifacts after 5 attempts (non-fatal)"
