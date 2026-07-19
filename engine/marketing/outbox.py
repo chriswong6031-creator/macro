@@ -52,8 +52,10 @@ TRANSITIONS: dict[str, frozenset[str]] = {
     "quarantined": frozenset(),   # terminal
 }
 
-# Default cap: conservative hardcode until docket D08 Sentinel lands (which
-# will own per-account risk budgets and velocity controls end-to-end).
+# Last-resort fallback ceiling only. D08 Sentinel owns the real cap
+# (config/marketing.yml sentinel: max_posts_per_account_per_day) — see
+# effective_cap(). Docket law: the actuator reads its caps from Sentinel
+# config, never its own constants.
 DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY: int = 8
 
 
@@ -79,14 +81,23 @@ def outbox_dir(root: Path | str | None = None) -> Path:
 def effective_cap(cfg: dict) -> int:
     """Return the effective per-account-per-day cap.
 
-    Config may lower the cap (via outbox.max_posts_per_account_per_day) but
-    never raise it above DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY (8).
+    The authoritative cap is the D08 Sentinel one
+    (sentinel.max_posts_per_account_per_day — ships at the weeks_1_2
+    new-account tier). outbox.max_posts_per_account_per_day may LOWER it
+    further, never raise it; DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY (8) is
+    the last-resort ceiling when no config is present at all.
     """
     try:
-        val = int(cfg.get("outbox", {}).get("max_posts_per_account_per_day", DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY))
-        return min(val, DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY)
+        sentinel_cap = int((cfg.get("sentinel") or {}).get(
+            "max_posts_per_account_per_day", DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY))
     except Exception:  # noqa: BLE001
-        return DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY
+        sentinel_cap = DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY
+    try:
+        outbox_cap = int((cfg.get("outbox") or {}).get(
+            "max_posts_per_account_per_day", sentinel_cap))
+    except Exception:  # noqa: BLE001
+        outbox_cap = sentinel_cap
+    return max(0, min(outbox_cap, sentinel_cap, DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -480,10 +491,13 @@ def emit_from_content_plan(
 
     Only processes items whose slot startswith f"{day_prefix}-".
     Items with a truthy "_live_gate_fail" field are skipped (never queue stale
-    or invalidated signals).
+    or invalidated signals). Items the D08 Sentinel gate quarantined
+    (status == "quarantined") or left unverified (sentinel_ok is False — the
+    gate's crash path stamps this) are skipped too: quarantined items surface
+    on the admin Sentinel/Outbox views with reasons, never as queueable posts.
 
     Returns a summary dict: {emitted, skipped_dupe, skipped_cap, skipped_gate,
-    skipped_invalid, media_written, by_account}.
+    skipped_sentinel, skipped_invalid, media_written, by_account}.
     """
     ts_now = now if now is not None else datetime.now(timezone.utc)
     as_of: str = plan.get("as_of") or ts_now.strftime("%Y-%m-%d")
@@ -500,6 +514,7 @@ def emit_from_content_plan(
         "skipped_dupe": 0,
         "skipped_cap": 0,
         "skipped_gate": 0,
+        "skipped_sentinel": 0,
         "skipped_invalid": 0,
         "media_written": 0,
         "by_account": {},
@@ -520,6 +535,13 @@ def emit_from_content_plan(
                 # Skip items that failed the live gate
                 if qi.get("_live_gate_fail"):
                     counts["skipped_gate"] += 1
+                    continue
+
+                # Skip items the D08 Sentinel gate quarantined or left
+                # unverified (crash path stamps sentinel_ok=False). A missing
+                # sentinel_ok field (pre-D08 plan) passes through.
+                if qi.get("status") == "quarantined" or qi.get("sentinel_ok") is False:
+                    counts["skipped_sentinel"] += 1
                     continue
 
                 # Build text from headline + body
