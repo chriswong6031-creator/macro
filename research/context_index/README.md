@@ -2,7 +2,18 @@
 
 ## Version
 
-v1, frozen 2026-07-18, 81 questions (CTX-001..CTX-081).
+v1.1, frozen 2026-07-18, 81 questions (CTX-001..CTX-081).
+
+### Amendment log
+
+- **v1.1 (2026-07-18, adjudicated):** CTX-010 regolded and CTX-068 notes amended after the
+  UWP operator override (#2967, PRD Amendment 1) struck the PRD-R1 placement ban the same
+  day as the v1 freeze. CTX-010 is now a supersession test (`required_status: superseded`):
+  correct retrieval must surface the amended registry row + UWP masterplan, not the
+  pre-override prohibition. Status histogram: 47 active / 14 forbidden / 9 killed /
+  1 superseded / 10 no_answer. This event is itself evidence for the program: a governance
+  golden went stale in under 24 hours, which is exactly the freshness/authority problem the
+  Context Index exists to surface (docket §5, Failure 4).
 
 ## required_status vocabulary
 
@@ -42,8 +53,7 @@ Promotion gates (from research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md CXI-
 ## Append-only policy
 
 This file is append-only after a freeze tag. Rows are never edited post-freeze except by
-adjudicated fix passes. This pass (v1 freeze, 2026-07-18) is the first and only adjudicated
-fix pass for the v1 benchmark.
+adjudicated fix passes (see Amendment log).
 
 Future questions append after CTX-081 and receive the next sequential id. A new eval run
 records a new version tag; prior runs remain unchanged.
