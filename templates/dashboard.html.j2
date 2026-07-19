@@ -13579,6 +13579,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             {% endif %}
           </div>
           {% endif %}
+          {# --- Details dropdown (button + panel) — REMOVED on us_stocks.html (mode=='stocks')
+             per operator request 2026-07-19; retained on macro.html. Gate wraps BOTH the
+             toggle button and the .nb-more panel so no dead/unreachable markup ships on stocks. #}
+          {% if mode != 'stocks' %}
           {# --- Expander toggle button (≥32px tall per spec, delegated handler below).
              role="button" + aria-expanded per spec §6. l-en/l-zh spans, no CJK in title=.
              HOISTED out of {% if c %}: button always present so layout is consistent. #}
@@ -13817,6 +13821,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             {% endif %}
           {% endif %}
           </div>{# end .nb-more #}
+          {% endif %}{# end mode != 'stocks' details-dropdown gate #}
         </div>{# end .nbcard div #}
         {% endif %}{# end if not heading #}
       {% endfor %}{# end for n in _render_list.items #}
