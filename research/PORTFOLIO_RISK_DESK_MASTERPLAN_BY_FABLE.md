@@ -178,4 +178,35 @@ followed). Descriptive only; feeds the PRD-R10 gate whenever a promotion is prop
 
 No automatic sell/trim; no sizing; no short signals (GAP-RUL-3); no NW/board/alert-triage
 feeds; no new data collectors; no paid-data assumptions; no macro-repo held-book surface of
-any kind; no "validated" claims.
+any kind (superseded by Amendment 1 for the user-facing display tier only); no "validated"
+claims.
+
+## 12. Amendment 1 (2026-07-18) — operator override: macro-repo user-facing surface carve-out
+
+Operator directive (2026-07-18 session): the `DO_NOT_REBUILD.md` row derived from PRD-R1
+("Held-position ledger / live position monitor / held-risk engine inside Macro Dashboard")
+is **struck** and removed from the registry. The operator judged the placement exclusivity
+over-broad for the product direction: a user-facing unified watchlist + portfolio dashboard
+on the macro site (subscribers' own self-entered holdings, not the operator held-book).
+
+**Now allowed in the macro repo:** a display-tier, user-facing watchlist + portfolio tracker
+surface — chartered as the Unified Watchlist & Portfolio program
+(`UNIFIED_WATCHLIST_PORTFOLIO_MASTERPLAN_BY_FABLE.md`) — whose per-user state lives ONLY in
+Supabase under owner-scoped RLS.
+
+**Remains in force (NOT struck):**
+- **PRD-R2** — no fused per-position composite risk number at any grain (registry row
+  re-scoped to this clause alone).
+- **PRD-R7** — privacy: nothing position-derived is ever committed to any repo, logged with
+  values, or written into macro-repo artifacts.
+- **NWC-U4** (two-organisms law) — no Mastermind `bot.db` bridge; user holdings never feed
+  the macro signal path, boards, Neural Web, or any scored artifact (restated as UWP-R2).
+- **NWP-U18** — no portfolio construction/sizing in this repo.
+- **RUL-F3.2** engine-display clause — *engine* surfaces (Exit/Trim tapes, boards) still may
+  not read as live position monitors; the carve-out covers only a user's own self-entered
+  holdings view, labeled as such.
+- The operator held-risk desk itself (§5–§9: lanes, roles, alerts, scheduler) stays in the
+  Mastermind repo unchanged.
+
+§3's placement-REJECT row and §11's "no macro-repo held-book surface" clause are superseded
+to the extent above; historical text retained as adjudication record.
