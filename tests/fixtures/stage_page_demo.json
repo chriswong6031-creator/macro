@@ -24,11 +24,11 @@
   },
   "top_stage2": [
     {"ticker": "PLTR", "company": "Palantir Technologies", "sector": "Information Technology", "stage": 2, "weeks_in_stage": 3, "fresh": true, "sga_score": 94, "ma30_slope_pct5w": 4.1, "pct_vs_ma30": 9.2, "mansfield_rs": 22.7, "vol_ratio": 2.3, "event": "breakout", "gate_tier": "T1", "blackout": false, "arc_pos": 0.28,
-      "earnings": {"present": true, "sentiment": 0.62, "performance": 8.4, "tone_word": "confident", "tags": ["guidance_raised", "demand_acceleration", "margin_expansion"], "quarter": "Q1 2026"},
+      "earnings": {"present": true, "sentiment": 0.62, "performance": 8.4, "tone_word": "confident", "tags": ["guidance_raised", "demand_acceleration", "margin_expansion"], "quarter": "Q1 2026", "summary": "Revenue grew 39% YoY to $884M, beating consensus by 6%. U.S. commercial revenue accelerated to 55% growth. Management raised full-year guidance and highlighted strong AI platform adoption across government and enterprise customers."},
       "why": ["Fresh breakout on 2.3x volume", "Price 9% above its 30-week line", "Extra confirmation from our checks"],
       "why_zh": ["放量突破，成交量为均量2.3倍", "价格高于30周线9%", "多项验证给出额外确认"]},
     {"ticker": "VST", "company": "Vistra Corp", "sector": "Utilities", "stage": 2, "weeks_in_stage": 2, "fresh": true, "sga_score": 91, "ma30_slope_pct5w": 3.6, "pct_vs_ma30": 6.8, "mansfield_rs": 18.4, "vol_ratio": 1.9, "event": "breakout", "gate_tier": "T1", "blackout": false, "arc_pos": 0.27,
-      "earnings": {"present": true, "sentiment": 0.48, "performance": 7.2, "tone_word": "steady", "tags": ["beat_and_raise", "demand_acceleration"], "quarter": "Q1 2026"},
+      "earnings": {"present": true, "sentiment": 0.48, "performance": 7.2, "tone_word": "steady", "tags": ["beat_and_raise", "demand_acceleration"], "quarter": "Q1 2026", "summary": "Q1 adjusted EBITDA of $942M exceeded the high end of guidance. Nuclear fleet availability improved to 94%. Management pointed to continued power demand growth from data centers as a key tailwind for the rest of 2026."},
       "why": ["Fresh breakout above the 10-week high", "Rising 30-week line", "Extra confirmation from our checks"],
       "why_zh": ["突破10周新高", "30周线上行", "多项验证给出额外确认"]},
     {"ticker": "ANET", "company": "Arista Networks", "sector": "Information Technology", "stage": 2, "weeks_in_stage": 5, "fresh": true, "sga_score": 88, "ma30_slope_pct5w": 2.9, "pct_vs_ma30": 7.4, "mansfield_rs": 14.1, "vol_ratio": 1.6, "event": "trendline_recapture", "gate_tier": "T2", "blackout": false, "arc_pos": 0.31,

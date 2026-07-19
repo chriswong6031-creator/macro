@@ -525,6 +525,7 @@ def score_text(
         "tags": [],
         "source_sha256": sha,
         "scored_at": datetime.now(timezone.utc).isoformat(),
+        "summary": None,           # SGA W5: call_summary from the model (optional)
         "is_context_only": True,   # SGA-R5 — ALWAYS context-only
         "degraded_reason": None,
     }
@@ -629,6 +630,7 @@ _STORE_COLUMNS = [
     "sentiment", "performance", "confidence", "tone_word",
     "positive_highlights", "negative_highlights", "tags",
     "source_sha256", "scored_at",
+    "summary",   # SGA W5: model call_summary (str, nullable); live scorer fills if present
 ]
 # JSON-encoded columns (stored as strings in parquet for portability).
 _JSON_COLUMNS = ("positive_highlights", "negative_highlights", "tags")

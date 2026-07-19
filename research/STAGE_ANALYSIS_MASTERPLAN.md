@@ -139,10 +139,20 @@ regulatory_headwind, competitor_threat, macro_sensitivity.
   (fail-open, pytrends, expected_failure), wiki pageviews activation for top stage-2 names.
   TikTok: **deferred** — no lawful API; revisit if a vendor appears. Reddit: **reuse Quiver
   WSB** (already collected) — a separate Reddit collector adds little and double-counts.
-- **W5 (post-login, separate PR)** — competitor backfill: their CSV exports + earnings
-  summaries imported to `data/stage_analysis/backfill/` as a calibration yardstick
-  (side-by-side stage agreement %, score correlation), NOT as a data dependency.
-  ToS/IP consideration flagged to operator 2026-07-19 — proceed only per operator call.
+- **W5 (DONE 2026-07-19, operator-directed "take it all")** — competitor backfill:
+  full Supabase pull via authenticated REST (6,536 overview rows USA 2,566 / EUROPE 799
+  / ASIA 3,171 + 3,431 earnings calls incl. structured `unified_analysis` Gemini objects),
+  persisted to `~/Documents/Cluade/equitydesk_backfill/`. `scripts/import_equitydesk_backfill.py`
+  → committed yardstick `data/stage_analysis/backfill/equitydesk_overview.parquet`,
+  gitignored full-analysis store, and a seeded `data/earnings_calls/scores.parquet`
+  (their sub-scores mapped to our −1..1 / 0..10 scales; pinned mapping in the script
+  docstring). `scripts/calibrate_stage_vs_equitydesk.py` →
+  `research/reports/sga_calibration.md`: **73.3% exact stage agreement, 86.4% ±1
+  adjacency, SMA-30w r=1.0 (0.12% median abs diff), Mansfield RS r=0.9953** on 1,837
+  shared US names — Stage 2 (their core state) agrees 85%. Reverse-engineered
+  (CONFIRMED 3431/3431): `EC_sent = call_positivity + management_confidence +
+  future_outlook − analyst_criticism` (max 30, their ≥24 gate); `EC_combined = sent + perf`.
+  PowerPoints skipped per operator; summaries kept (surfaced on the page's earnings desk).
 - **W6 (later PRs)** — Qwen worker live on the PC (ops), transcript vendor decision
   (Finnhub paid vs FMP vs EDGAR-only), shadow-ledger maturation → promotion gauntlet →
   `blend_sorted(bonus_of=…)` ≤0.10 stage-confirmation bonus IF the prereg passes; EU/Asia

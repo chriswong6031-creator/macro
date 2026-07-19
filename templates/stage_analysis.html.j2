@@ -158,6 +158,11 @@ html[data-lang="zh"] [data-tip-en]:hover::after{content:attr(data-tip-zh)}
 .ed-hi .mk{flex:none;font-weight:800}
 .ed-hi.plus .mk{color:var(--s2)} .ed-hi.minus .mk{color:var(--s4)}
 .ed-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:9px}
+/* earnings call summary (SGA W5) */
+.ed-summ{margin:8px 0 4px;padding:6px 9px;background:var(--panel2,var(--card,#0e1420));border-radius:7px;cursor:default}
+.ed-summ-label{display:block;font-size:10px;font-weight:700;color:var(--mut,#8a97ac);letter-spacing:.04em;margin-bottom:3px;text-transform:uppercase}
+.ed-summ-body{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px;color:var(--tx);line-height:1.5}
+.ed-summ-null{padding:4px 0}
 /* sector weather */
 .sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
 .sw{border:1px solid var(--line,#1d2740);border-radius:11px;padding:12px 14px;background:var(--panel,var(--card,#111826))}
@@ -423,6 +428,18 @@ html[data-lang="zh"] [data-tip-en]:hover::after{content:attr(data-tip-zh)}
     {% if pos_tags | length > 0 %}<div class="ed-hi plus"><span class="mk">+</span><span>{{ td(TL[pos_tags[0]]) if pos_tags[0] in TL else td(pos_tags[0]) }}</span></div>{% endif %}
     {% if neg_tags | length > 0 %}<div class="ed-hi minus"><span class="mk">−</span><span>{{ td(TL[neg_tags[0]]) if neg_tags[0] in TL else td(neg_tags[0]) }}</span></div>{% endif %}
     {% if (pos_tags|length + neg_tags|length) == 0 %}<div class="ed-hi"><span class="mut">{{ t('Call analyzed — no standout call-outs', '已分析 — 无突出要点') }}</span></div>{% endif %}
+    {# SGA W5: call summary hover — English source text; ZH gets localized label + EN body #}
+    {% set summ = en.summary if (en.summary is defined and en.summary is not none and en.summary) else none %}
+    {% if summ is not none %}
+    <div class="ed-summ"
+      data-tip-en="Call summary (language-model read — context only, not a fact about the company): {{ summ }}"
+      data-tip-zh="财报电话会议摘要（英文）（语言模型判读 — 仅供参考，非关于公司的事实）: {{ summ }}">
+      <span class="ed-summ-label">{{ t('Summary', '摘要') }}</span>
+      <span class="ed-summ-body">{{ summ }}</span>
+    </div>
+    {% else %}
+    <div class="ed-summ ed-summ-null"><span class="mut">{{ t('No call analyzed yet — summary will appear here after the next earnings report.', '尚无财报分析 — 下次财报后摘要将显示于此。') }}</span></div>
+    {% endif %}
     <div class="ed-tags">
       {% for tg in tags[:4] %}<span class="chip">{{ td(TL[tg]) if tg in TL else td(tg) }}</span>{% endfor %}
     </div>
