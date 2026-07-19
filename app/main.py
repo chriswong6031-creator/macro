@@ -543,6 +543,135 @@ def ask_brain_stream(body: AskRequest, user: dict = Depends(require_user)):
 
 
 # ---------------------------------------------------------------------------
+# /api/brain/* — MNZ-W6a brain gateway (§3.5 + Amendment 2)
+# ---------------------------------------------------------------------------
+
+class BrainChatRequest(BaseModel):
+    message: str = Field(..., max_length=2000, description="User message (max 2000 chars)")
+    lane: str = Field("fast", description="'fast' or 'pro'")
+    thread_id: str | None = Field(None, description="Optional thread id for conversation continuity")
+    history: list[dict] | None = Field(None, description="Client-sent fallback history (max 12 turns; used only when thread store is absent)")
+    context: dict | None = Field(None, description="Optional page/symbol context hint")
+
+
+_SSE_BRAIN_HEADERS = {
+    "Cache-Control": "no-cache",
+    "X-Accel-Buffering": "no",
+}
+
+
+def _brain_module():
+    """Lazy import brain_gateway; raises HTTP 503 if unavailable."""
+    try:
+        from engine.neuralweb import brain_gateway  # noqa: PLC0415
+        return brain_gateway
+    except ImportError as exc:
+        raise HTTPException(503, f"brain_gateway unavailable: {exc}") from exc
+
+
+@app.post("/api/brain/chat")
+def brain_chat(body: BrainChatRequest, user: dict = Depends(require_user)):
+    """Brain chat — non-streaming.
+
+    POST body: {message, lane?, thread_id?, history?, context?}
+    Response: {ok, reply, citations, annotations?, symbol?, lane, model, thread_id,
+               quota: {lane, remaining, limit, period}, filtered, degraded, is_context_only}
+    HTTP 402 when quota exhausted.
+    """
+    gw = _brain_module()
+    lane = body.lane if body.lane in ("fast", "pro") else "fast"
+    user_id = user.get("id") or user.get("email") or "unknown"
+
+    # History cap: max 12 turns (24 messages)
+    history = (body.history or [])[:24]
+
+    result = gw.chat(
+        message=body.message,
+        user_id=user_id,
+        lane=lane,
+        thread_id=body.thread_id,
+        history=history,
+        context=body.context,
+        root=REPO,
+    )
+
+    if result.get("quota_exhausted"):
+        raise HTTPException(402, detail=result)
+
+    return result
+
+
+@app.post("/api/brain/stream")
+def brain_stream(body: BrainChatRequest, user: dict = Depends(require_user)):
+    """Brain chat — SSE streaming.
+
+    POST body: same as /api/brain/chat.
+    SSE events (always in this order):
+        {"type":"meta","lane":...,"model":...,"thread_id":...,"quota":{...}}
+        {"type":"tool","name":"..."}            (progress, 0+ — during tool-calling phase)
+        {"type":"annotate","symbol":...,...}    (when annotate_chart called, 0+)
+        {"type":"delta","text":"..."}           (full buffered answer, after all tool turns)
+        {"type":"done","citations":[...],"quota":{...},"usage":{...},"filtered":false,"degraded":false,"is_context_only":true}
+    """
+    gw = _brain_module()
+    lane = body.lane if body.lane in ("fast", "pro") else "fast"
+    user_id = user.get("id") or user.get("email") or "unknown"
+    history = (body.history or [])[:24]
+
+    def _gen():
+        yield from gw.chat_stream(
+            message=body.message,
+            user_id=user_id,
+            lane=lane,
+            thread_id=body.thread_id,
+            history=history,
+            context=body.context,
+            root=REPO,
+        )
+
+    return StreamingResponse(_gen(), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
+
+
+@app.get("/api/brain/me")
+def brain_me(user: dict = Depends(require_user)):
+    """Return tier + quota status for both lanes.
+
+    Response: {tier, quotas: {fast: {remaining, limit, period}, pro: {...}}}
+    """
+    gw = _brain_module()
+    user_id = user.get("id") or user.get("email") or "unknown"
+    return gw.get_user_quotas(user_id, root=REPO)
+
+
+@app.get("/api/brain/threads")
+def brain_threads(user: dict = Depends(require_user)):
+    """Return thread list for the authenticated user.
+
+    Response: {threads: [{id, title, lane, updated_at}]}
+    Empty list when thread store is absent or user has no threads.
+    """
+    gw = _brain_module()
+    user_id = user.get("id") or user.get("email") or "unknown"
+    threads = gw.list_threads(user_id)
+    return {"threads": threads}
+
+
+@app.get("/api/brain/threads/{thread_id}")
+def brain_thread_detail(thread_id: str, user: dict = Depends(require_user)):
+    """Return thread + messages for thread_id owned by the authenticated user.
+
+    Response: {thread: {...}, messages: [{role, content, created_at}]}
+    HTTP 404 if not found or not owner.
+    """
+    gw = _brain_module()
+    user_id = user.get("id") or user.get("email") or "unknown"
+    result = gw.get_thread(thread_id, user_id)
+    if result is None:
+        raise HTTPException(404, "thread not found or not authorized")
+    return result
+
+
+# ---------------------------------------------------------------------------
 # /api/flow/* — live options-flow feed (unauthenticated read-through of R2)
 # ---------------------------------------------------------------------------
 

@@ -9,6 +9,14 @@ $49/$69 per-month billed annually; annual shown by default with savings %), OD2 
 **Pro**, OD3 mirror **stays as-is** (leak risk accepted), OD4 Terminal **free for everyone
 incl. unregistered** with only its live-options surface gated (paid tiers + trial). §7 has the
 resolutions; MNZ-R2 and W1 amended accordingly.
+**Amendment 2 (2026-07-18, operator ratification — chat lanes):** the Mastermind Chat ships as
+**two model lanes, not per-tier models**: **Fast** (DeepSeek V4, Haiku fallback) and **Pro**
+(Opus 4.8, Sonnet fallback). Every account tier holds a per-period *message allowance* per lane
+(all config, MNZ-R12; defaults in §3.5): Free 5 Fast/week · Trial 25 Fast + 3 Pro per trial ·
+Insider 300 Fast + 10 Pro per month · Pro 1000 Fast + 150 Pro per month. Token budgets remain
+as per-user monthly backstop ceilings (MNZ-R10 settlement unchanged). §2.1 chat row and §3.5
+amended accordingly; W6 build starts as **W6a — brain gateway** (one brain for dashboard +
+Terminal; the Terminal copilot becomes a thin proxy, Terminal-repo lane).
 **Authority:** program charter + rulings MNZ-R1..R12. Waves land as separate PRs citing this doc.
 **Relationship to prior work:**
 - Supersedes the build slices (§5) of `research/SAAS_MVP_PLAN.md` (2026-06-27); inherits its
@@ -79,7 +87,7 @@ not a new system.** Every wave below is measured against that.
 | Dashboards | Glance tier: `macro.html`, `index.html`, news pages, `methodology.html`, one sample report | All markets, all desks, heatmaps, baskets, sector central, options/flow, smart money, cycle, vector… | Everything in Insider |
 | Research reports | 1 sample (`report_second_act.html` teaser or one full report) | All `report_*.html`, `reports.html`, `state_of_themes.html`, `intelligence_hub.html` | Everything |
 | Committee / NW / aibrief / track record | ✕ (teaser) | ✓ | ✓ |
-| Mastermind Chat | ~10 msgs/mo on **Haiku 4.5** (taste) | **Sonnet 4.6**, 2M tokens/mo | **Opus 4.8**, 1.5M tokens/mo + Sonnet 4.6, 3M tokens/mo (both config, MNZ-R12) |
+| Mastermind Chat (Amendment 2) | 5 **Fast** msgs/week | 300 **Fast** + 10 **Pro** msgs/mo | 1000 **Fast** + 150 **Pro** msgs/mo (trial: 25 Fast + 3 Pro; all config, MNZ-R12) |
 | Watchlist sync | ✓ (existing) | ✓ | ✓ |
 | Terminal (app.mastermind-x.com) | ✓ — public for everyone, even unregistered (Amendment 1) | ✓ | ✓ |
 | Terminal live options | ✕ | ✓ (incl. trial week) | ✓ (incl. trial week) |
@@ -318,9 +326,14 @@ on Stripe keeps Pro).
 
 Build on the existing `/api/ask` seed, not beside it.
 
-- **Models by tier** (per-tier routing in macro-api): Free → `claude-haiku-4-5` (message-capped);
-  Insider → `claude-sonnet-4-6`; Pro → `claude-opus-4-8` with automatic Sonnet fallback when
-  the Opus budget is spent. Model IDs current as of 2026-07 (claude-api skill).
+- **Model lanes (Amendment 2):** two user-selectable lanes, allowances by tier. **Fast** →
+  DeepSeek V4 (`deepseek-chat` via the Anthropic-compatible endpoint; Haiku 4.5 fallback when
+  the DeepSeek key is absent/dead) — quick data pulls, chart commands, simple screens.
+  **Pro** → `claude-opus-4-8` (Sonnet 4.6 fallback) — deep research and synthesis. Message
+  allowances per tier (config defaults; Amendment 2): Free 5 Fast/week · Trial 25 Fast + 3 Pro
+  per trial · Insider 300 Fast + 10 Pro /mo · Pro 1000 Fast + 150 Pro /mo. Per-user monthly
+  token ceilings back-stop each lane (fast 5M / pro 2M, config) — first limit hit wins.
+  Model IDs current as of 2026-07 (claude-api skill).
 - **Metering:** `user_token_usage (user_id, period_start, model_class, tokens_prompt,
   tokens_completion, hard_limit)` keyed by `date_trunc('month', now())` — auto-shards monthly,
   no reset cron. Pre-call: 402 + upgrade CTA when spent; pass

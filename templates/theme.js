@@ -2855,10 +2855,122 @@
     initListCollapse();
     initListOverlay();
     initRowPop();
+    initChatLauncher();
     themeCharts();
   });
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load
   window.addEventListener('load', function () { themeCharts(); wrapTables(); });
+
+  /* ---- floating chat launcher ------------------------------------------------
+     Bottom-right glass pill (above the back-to-top FAB at z-index:960). Hidden
+     on chat.html itself, on admin.* subdomains, and on print. Carries ?symbol=
+     when window.MDXActiveSymbol is set by the host page. Responds to langchange
+     so the label switches without a page reload. */
+  function initChatLauncher() {
+    var h = location.hostname || '';
+    // suppress on admin subdomain, on chat.html itself, and in print context
+    if (h.split('.')[0] === 'admin') return;
+    if (/\/chat\.html([?#]|$)/.test(location.pathname + location.search + location.hash)) return;
+    if (document.getElementById('chat-launcher-fab')) return;
+
+    var CSS = [
+      '#chat-launcher-fab{',
+        'display:flex;align-items:center;gap:7px;',
+        'position:fixed;right:14px;',
+        'bottom:calc(80px + env(safe-area-inset-bottom,0px));',
+        'z-index:959;',
+        /* frosted glass matching the site's --glass-bg token */
+        'background:var(--glass-bg,color-mix(in srgb,var(--panel,#151820) 86%,transparent));',
+        'border:1px solid var(--glass-brd,color-mix(in srgb,var(--text,#c8d0dc) 10%,transparent));',
+        'backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);',
+        'border-radius:999px;padding:8px 14px 8px 10px;',
+        'color:var(--text);font:600 13px/1 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;',
+        'cursor:pointer;text-decoration:none;',
+        'box-shadow:0 8px 24px -8px rgba(16,24,40,.32),0 2px 6px rgba(16,24,40,.18),',
+          'inset 0 1px 0 rgba(255,255,255,.10);',
+        'transition:opacity .2s,transform .2s,box-shadow .2s;',
+        '-webkit-tap-highlight-color:transparent;',
+      '}',
+      '#chat-launcher-fab:hover{',
+        'opacity:.92;transform:translateY(-2px);',
+        'box-shadow:0 14px 32px -10px rgba(16,24,40,.40),0 3px 8px rgba(16,24,40,.22),',
+          'inset 0 1px 0 rgba(255,255,255,.14);',
+      '}',
+      '#chat-launcher-fab:active{transform:scale(.94)}',
+      '#chat-launcher-fab .clf-ic{',
+        'width:22px;height:22px;flex:none;',
+        'background:var(--link,#3b82f6);border-radius:50%;',
+        'display:flex;align-items:center;justify-content:center;',
+      '}',
+      '#chat-launcher-fab .clf-ic svg{width:12px;height:12px;color:#fff}',
+      /* hide on print */
+      '@media print{#chat-launcher-fab{display:none!important}}',
+      /* JS-driven hide when nav flyout is open — applied via .clf-nav-hidden class
+         (CSS descendant selector .nav-open #chat-launcher-fab is dead because the
+         launcher is a body sibling of nav, not a descendant) */
+      '#chat-launcher-fab.clf-nav-hidden{opacity:0;pointer-events:none}'
+    ].join('');
+
+    if (!document.getElementById('chat-launcher-css')) {
+      var st = document.createElement('style');
+      st.id = 'chat-launcher-css';
+      st.textContent = CSS;
+      (document.head || document.documentElement).appendChild(st);
+    }
+
+    var fab = document.createElement('a');
+    fab.id = 'chat-launcher-fab';
+    fab.setAttribute('aria-label', 'Open Mastermind Chat');
+
+    var ic = document.createElement('span');
+    ic.className = 'clf-ic';
+    ic.setAttribute('aria-hidden', 'true');
+    ic.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+
+    var lbl = document.createElement('span');
+    lbl.className = 'clf-lbl';
+
+    fab.appendChild(ic);
+    fab.appendChild(lbl);
+    document.body.appendChild(fab);
+
+    function updateLabel() {
+      var zh = (document.documentElement.getAttribute('data-lang') || 'en') === 'zh';
+      lbl.textContent = zh ? '对话' : 'Chat';
+      fab.setAttribute('aria-label', zh ? '打开操盘大脑对话' : 'Open Mastermind Chat');
+    }
+    updateLabel();
+    document.addEventListener('langchange', updateLabel);
+
+    function updateHref() {
+      var sym = (typeof window.MDXActiveSymbol === 'string' && window.MDXActiveSymbol)
+             || (typeof window.ACTIVE_SYMBOL === 'string' && window.ACTIVE_SYMBOL)
+             || '';
+      fab.href = sym ? ('chat.html?symbol=' + encodeURIComponent(sym)) : 'chat.html';
+    }
+    updateHref();
+    // re-evaluate on hashchange (stock analyzers expose symbol via hash)
+    window.addEventListener('hashchange', updateHref);
+    // also check once on load in case the page sets the global after DOMContentLoaded
+    window.addEventListener('load', updateHref);
+
+    // Hide launcher when the mobile nav flyout is open. The launcher is a body
+    // child (sibling of nav), so a CSS descendant selector off nav.nav-open can
+    // never reach it. Mirror how paintTotop handles nav-totop-fab: use a JS
+    // MutationObserver on nav.classList so the hide/show is immediate and stays
+    // in sync with every code path that toggles the flyout (btn click, Escape,
+    // outside-tap, resize).
+    (function wireNavHide() {
+      var nav = document.querySelector('.site-nav, .topbar');
+      if (!nav) return;
+      function syncFabVisibility() {
+        fab.classList.toggle('clf-nav-hidden', nav.classList.contains('nav-open'));
+      }
+      syncFabVisibility();
+      var mo = new MutationObserver(syncFabVisibility);
+      mo.observe(nav, { attributes: true, attributeFilter: ['class'] });
+    })();
+  }
 })();
 
 /* ---- i18n tooltip: [data-tip-en] / [data-tip-zh] ----------------------------------
