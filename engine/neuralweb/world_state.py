@@ -3303,6 +3303,102 @@ def _compose_theme_rotation(root: "Path | str | None" = None) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Stage-analysis lobe (stage_context.v1 NW integration — SGA program W2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _compose_stage_analysis(root: "Path | str | None" = None) -> dict:
+    """Compose stage_analysis lobe from data/stage_analysis/context/latest.json.
+
+    Weinstein 4-stage classification context feed (stage_context.v1, SGA program).
+    Follows the _compose_theme_rotation discipline:
+    - all IO inside this function
+    - _clean() on every scalar value
+    - display_only=True + is_context_only=True ALWAYS, including the null fallback
+    - absent artifact → honest-null block, no raise (caller appends NO gap)
+
+    Fields exposed (compact projection; heavy roster/sectors arrays EXCLUDED):
+        as_of, counts (total/stage1..4/stage2_fresh/too_young/new_today),
+        market {pct_stage2, pct_stage4, weather, spy_stage, spy_weeks},
+        top_stage2 (cap 6, each trimmed to a plain display subset),
+        changes (compact change-feed items, cap 8), display_only, is_context_only.
+
+    Standing laws (SGA-R4/R5): sga_score is display-tier only — never a signal,
+    rank, or sizing input; earnings-call scores are context-only chips. LLM
+    consumers read this and may only de-escalate, never originate.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "stage_analysis" / "context" / "latest.json"
+
+    null_out: dict = {
+        "as_of": None,
+        "counts": None,
+        "market": None,
+        "top_stage2": None,
+        "changes": None,
+        "display_only": True,
+        "is_context_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        # counts — pass through the compact count dict, cleaned
+        counts_raw = raw.get("counts") or {}
+        counts_out: dict | None = None
+        if isinstance(counts_raw, dict) and counts_raw:
+            counts_out = {k: _clean(v) for k, v in counts_raw.items()}
+
+        # market — stage weather summary
+        market_raw = raw.get("market") or {}
+        market_out: dict | None = None
+        if isinstance(market_raw, dict) and market_raw:
+            market_out = {
+                "pct_stage2": _clean(market_raw.get("pct_stage2")),
+                "pct_stage4": _clean(market_raw.get("pct_stage4")),
+                "weather": _clean(market_raw.get("weather")),
+                "spy_stage": _clean(market_raw.get("spy_stage")),
+                "spy_weeks": _clean(market_raw.get("spy_weeks")),
+            }
+
+        # top_stage2 — Fresh Stage 2 board, capped [:6], trimmed to display subset
+        _STAGE_KEEP = (
+            "ticker", "company", "sector", "stage", "weeks_in_stage", "fresh",
+            "sga_score", "event", "gate_tier", "blackout", "why",
+        )
+        top_raw = raw.get("top_stage2") or []
+        top_out: list[dict] = []
+        if isinstance(top_raw, list):
+            for s in top_raw[:6]:
+                if not isinstance(s, dict):
+                    continue
+                top_out.append({k: _clean(s.get(k)) for k in _STAGE_KEEP})
+
+        # changes — compact change-feed items, cap 8
+        changes_raw = (raw.get("changes") or {}).get("items") or []
+        changes_out: list[dict] = []
+        if isinstance(changes_raw, list):
+            for item in changes_raw[:8]:
+                if not isinstance(item, dict):
+                    continue
+                changes_out.append({k: _clean(v) for k, v in item.items()})
+
+        return {
+            "as_of": _clean(raw.get("asof")),
+            "counts": counts_out,
+            "market": market_out,
+            "top_stage2": top_out,
+            "changes": changes_out,
+            "display_only": True,
+            "is_context_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("stage_analysis: compose failed — %s", exc)
+        return null_out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Liquidity Plumbing lobe (neuralweb.liquidity_plumbing.v1)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -4012,6 +4108,23 @@ def build_world_state(
     # No gap appended when file absent: artifact is optional until MSP-W1 producer lands.
     # The honest-null block (absent=True) communicates absence; matches intl_risk pattern.
 
+    # SGA-W2: stage_analysis context lobe (stage_context.v1, display-only, fail-open)
+    _sga_path = data_dir / "stage_analysis" / "context" / "latest.json"
+    try:
+        stage_analysis_block: dict = _compose_stage_analysis(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: stage_analysis lobe failed — %s", exc)
+        gaps.append(f"stage_analysis: {exc}")
+        stage_analysis_block = {
+            "as_of": None, "counts": None, "market": None, "top_stage2": None,
+            "changes": None, "display_only": True, "is_context_only": True,
+        }
+    sources[str(_sga_path.relative_to(repo))] = (stage_analysis_block or {}).get("as_of")
+    # Intentionally no gap appended when the artifact is absent: the honest-null
+    # block communicates absence via display_only=True + all fields None. The
+    # producer (scripts/build_stage_analysis.py) is optional until its first
+    # nightly run. Matches the theme_rotation / intl_risk optional-artifact pattern.
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "verdict": verdict_block,
@@ -4056,6 +4169,7 @@ def build_world_state(
         "special_situations": special_situations_block,  # SS-NW-W1 display-only lobe (None until first nightly run)
         "theme_rotation": theme_rotation_block,  # theme_context.v1 NW integration (display-only)
         "market_structure": market_structure_block,  # MSP-W3 market-structure context lobe (display-only)
+        "stage_analysis": stage_analysis_block,  # SGA-W2 stage_context.v1 lobe (display-only, None-fields until first run)
         "rates_command": rates_command_block,  # RCB Forward Path board lobe (display-only)
         "gaps": gaps,
         "sources": sources,

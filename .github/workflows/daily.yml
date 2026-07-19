@@ -1057,6 +1057,13 @@ jobs:
           MASSIVE_S3_ACCESS_KEY_ID: ${{ secrets.MASSIVE_S3_ACCESS_KEY_ID }}
           MASSIVE_S3_SECRET_ACCESS_KEY: ${{ secrets.MASSIVE_S3_SECRET_ACCESS_KEY }}
           MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
+          # SGA (Stage Analysis): earnings-call scores arrive via R2 from the standalone
+          # Qwen worker (SGA-R6, producer-only — research/STAGE_ANALYSIS_MASTERPLAN.md).
+          # fetch_earnings_scores inside cl_stage no-ops gracefully when these are absent.
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
           COLLECT_LANE: nightly  # lane sentinel: basket_turn_watch.stamp_ledger + other engine
                                  # nightly-only ledger writers check COLLECT_LANE==nightly before
                                  # writing; render/earlyclose/asia-close lanes leave it unset → no-op.
@@ -1128,6 +1135,17 @@ jobs:
             brun nasdaq_internals "nasdaq-100 archetype-group internals (build_nasdaq_internals)" scripts.build_nasdaq_internals
           }
           cl_special() { brun special "special situations desk (build_special_situations)" scripts.build_special_situations; }
+          cl_stage() {
+            # SGA W1 (research/STAGE_ANALYSIS_MASTERPLAN.md): Weinstein stage engine over
+            # the ~2.8k-name baskets/ohlcv ∪ SP1500 universe (~10 min at 4 cores), hidden
+            # under the special-sits cluster's ~28-min ceiling — zero critical-path cost.
+            # Reads TONIGHT's signal_gate.json (build_site above) for the T-tier chip and
+            # joins earnings-call scores fetched from R2 (fail-open: absent scores just
+            # print the plain-word null). Page renders from the fresh context artifact.
+            python -m scripts.fetch_earnings_scores || echo "::warning title=fetch_earnings_scores::rc≠0 (non-fatal — earnings context absent this render)"
+            brun stage_analysis "Stage Analysis context engine (build_stage_analysis)" scripts.build_stage_analysis
+            brun stage_analysis_page "Stage Analysis page (build_stage_analysis_page)" scripts.build_stage_analysis_page
+          }
           cl_misc() {
             brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
             brun reports       "research reports section (build_reports)"     scripts.build_reports
@@ -1157,11 +1175,11 @@ jobs:
             brun cycle_pattern_state "CPI NW adapter (build_cycle_pattern_state)" scripts.build_cycle_pattern_state
           }
           # launch every cluster concurrently, then barrier before the hub (build_vector, below)
-          cl_markets & cl_gex & cl_baskets & cl_special & cl_misc &
+          cl_markets & cl_gex & cl_baskets & cl_special & cl_misc & cl_stage &
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stage_analysis stage_analysis_page"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

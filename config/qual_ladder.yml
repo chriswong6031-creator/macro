@@ -593,3 +593,39 @@ narrative_flare_state.excess:
     as per-horizon {n, excess_values[], mean_excess} arrays. No pass/fail verdict
     (NAR-R5 — descriptive accrual only). CONFIRMER question earliest ~2026-10
     (n_dates>=25 on the state family; masterplan §10).
+
+# ---------------------------------------------------------------------------
+# STAGE ANALYSIS — Weinstein 4-stage classification (SGA program)
+# ---------------------------------------------------------------------------
+stage_analysis.sga_score:
+  field: sga_score
+  artifact_glob: "data/stage_analysis/context/latest.json"
+  producer: scripts/build_stage_analysis.py
+  claim_family: stage_analysis
+  ladder_state: DISPLAY
+  max_weight: 0.0
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    SGA-R4. Deterministic display-tier quality composite (0-100) that ranks ONLY
+    the Stage Analysis page (stage-2 freshness, ma30 slope pctile, Mansfield RS>0,
+    volume confirmation, extension penalty, T-cascade presence). No LLM input at
+    launch. Feeds no scored surface, gate, or sizing (max_weight 0.0). SGA-R7
+    shadow ledger accrues fresh-Stage-2 entries from day 1; promotion to a capped
+    (<=0.10) confluence bonus only if SGA-H1 prereg passes at n_dates>=25.
+
+earnings_qualitative.sentiment:
+  field: sentiment
+  artifact_glob: "data/earnings_calls/scores.parquet"
+  producer: engine/earnings_qual.py
+  claim_family: earnings_qualitative
+  ladder_state: DISPLAY
+  max_weight: 0.0
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    SGA-R5. LLM-scored earnings-call sentiment/performance/tags, context-only chips
+    on the Stage Analysis earnings desk. is_context_only=True — EXCLUDED from
+    sga_score and every scored surface (max_weight 0.0) until the promotion gate
+    passes (SGA-H2 prereg: n_graded>=25 dates, Wilson-CI lower bound>0). LLMs never
+    originate ranking authority (NW Article 1/2); scores may only de-escalate.

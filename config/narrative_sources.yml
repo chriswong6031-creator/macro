@@ -135,6 +135,64 @@ hn_keywords:
     - "Netflix AI"
     - "Netflix recommendation"
 
+# ── Google Trends term map ────────────────────────────────────────────────────
+# ticker -> ONE consumer search term (a brand or product) whose Google search
+# interest is a meaningful demand / attention proxy. Weekly relative-interest 0-100
+# is collected by collectors/google_trends.py (pytrends, ~20/night rotating) into
+# data/google_trends/<TICKER>.parquet; the Stage Analysis page reads it via
+# engine/altdata_stage.py as a DISPLAY-ONLY fade-risk / crowding CAUTION chip
+# (never a gate — SGA-R2/R4). Curation gate: only liquid, brand-name tickers where a
+# consumer searches the PRODUCT (not the ticker) — search interest is noise for
+# B2B / holding-co / commodity names, so those are deliberately absent. The map is
+# small on purpose and GROWS with the fresh-Stage-2 board as brand-name names surface.
+google_trends:
+  terms:
+    AAPL: "iphone"
+    TSLA: "tesla"
+    AMZN: "amazon"
+    GOOGL: "google"
+    META: "instagram"
+    MSFT: "xbox"
+    NFLX: "netflix"
+    DIS: "disney plus"
+    NVDA: "nvidia"
+    AMD: "amd gpu"
+    SBUX: "starbucks"
+    NKE: "nike"
+    MCD: "mcdonalds"
+    CMG: "chipotle"
+    LULU: "lululemon"
+    ABNB: "airbnb"
+    UBER: "uber"
+    LYFT: "lyft"
+    DASH: "doordash"
+    SHOP: "shopify"
+    ETSY: "etsy"
+    RBLX: "roblox"
+    SPOT: "spotify"
+    SNAP: "snapchat"
+    PINS: "pinterest"
+    COIN: "coinbase"
+    HOOD: "robinhood"
+    PYPL: "paypal"
+    SQ: "cash app"
+    F: "ford"
+    GM: "chevrolet"
+    RIVN: "rivian"
+    LCID: "lucid motors"
+    HIMS: "hims"
+    CVNA: "carvana"
+    CROX: "crocs"
+    ELF: "elf cosmetics"
+    WMT: "walmart"
+    TGT: "target"
+    COST: "costco"
+    HD: "home depot"
+    PTON: "peloton"
+    DKNG: "draftkings"
+    W: "wayfair"
+    CHWY: "chewy"
+
 # ── EDGAR 8-K velocity universe note ─────────────────────────────────────────
 # The Edgar8kVelocityAdapter uses the same SP1500 large-cap universe as the
 # polygon_news breadth universe (data/{breadth,midcap_breadth,smallcap_breadth}/

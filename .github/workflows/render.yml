@@ -367,10 +367,13 @@ jobs:
               brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
               brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
               brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
+              # SGA: page-only re-render from the committed data/stage_analysis/context/latest.json.
+              # The stage ENGINE is daily-only (forward-ledger single-writer law) — never add it here.
+              brun stage_analysis_page "Stage Analysis page (build_stage_analysis_page)" scripts.build_stage_analysis_page
             }
             cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_misc &
             wait
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow options_skew options_ivspread options_entry baskets news methodology seasonality reports sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow options_skew options_ivspread options_entry baskets news methodology seasonality reports sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
