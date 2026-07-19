@@ -6,7 +6,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Watchlist — your holdings &amp; their signals</title>
+<title>Watchlist &amp; Portfolio — your list, your holdings, their signals</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script>
@@ -143,6 +143,133 @@
           padding:5px 11px; border-radius:8px; font:inherit; font-size:12px; cursor:pointer; }
   .fx-wreset:hover { border-color:color-mix(in srgb,var(--link) 55%,var(--line)); }
   @media (max-width:480px){ .fx-row{ grid-template-columns:92px 40px 1fr 36px; gap:7px; } }
+
+  /* ---- mx5 dialog system (minimal subset) ---- */
+  html.mx5-dlg-lock{ overflow:hidden; }
+  html.mx5-dlg-lock body{ overflow:hidden; position:fixed; width:100%; }
+  .mx5-dlg{
+    display:none;position:fixed;inset:0;z-index:200;
+    align-items:center;justify-content:center;
+  }
+  .mx5-dlg.open{ display:flex; }
+  .mx5-dlg-backdrop{
+    position:absolute;inset:0;
+    background:rgba(3,6,10,.58);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+  }
+  .mx5-dlg-panel{
+    position:relative;z-index:1;
+    max-width:980px;width:calc(100% - 48px);
+    max-height:82vh;
+    background:rgba(13,17,24,.88);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:18px;
+    backdrop-filter:blur(28px) saturate(1.4);
+    -webkit-backdrop-filter:blur(28px) saturate(1.4);
+    box-shadow:0 40px 120px rgba(0,0,0,.72),
+               0 2px 0 rgba(255,255,255,.06) inset,
+               0 0 0 1px rgba(255,255,255,.04);
+    overflow-y:auto;
+    display:flex;flex-direction:column;
+  }
+  [data-theme="light"] .mx5-dlg-panel{
+    background:#ffffff;
+    border-color:rgba(255,255,255,.6);
+    box-shadow:0 32px 96px rgba(0,0,0,.18),
+               0 1px 0 rgba(255,255,255,.9) inset,
+               0 0 0 1px rgba(0,0,0,.04);
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .mx5-dlg-panel{background:rgba(13,18,26,.98);}
+    [data-theme="light"] .mx5-dlg-panel{background:rgba(255,255,255,.98);}
+  }
+  .mx5-dlg-panel-narrow{ max-width:640px; }
+  .mx5-dlg-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 26px 16px;
+    position:sticky;top:0;z-index:2;
+    background:rgba(13,17,24,.92);
+    backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
+    border-bottom:1px solid rgba(255,255,255,.07);
+  }
+  [data-theme="light"] .mx5-dlg-header{
+    background:#ffffff;border-bottom-color:rgba(0,0,0,.07);
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .mx5-dlg-header{background:rgba(13,18,26,.98);}
+    [data-theme="light"] .mx5-dlg-header{background:rgba(255,255,255,.98);}
+  }
+  .mx5-dlg-title{
+    font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  .mx5-dlg-close{
+    display:flex;align-items:center;justify-content:center;
+    width:32px;height:32px;border-radius:50%;
+    background:rgba(255,255,255,.07);border:none;cursor:pointer;
+    color:var(--muted);font-size:18px;line-height:1;
+    font-family:inherit;flex-shrink:0;transition:background .15s;
+  }
+  .mx5-dlg-close:hover{background:rgba(255,255,255,.14);}
+  .mx5-dlg-close:focus-visible{outline:2px solid var(--link);outline-offset:2px;}
+  .mx5-dlg-body{ padding:24px 26px 28px;flex:1;overflow-y:auto; }
+  @media(max-width:700px){
+    .mx5-dlg{ align-items:flex-end; }
+    .mx5-dlg-panel{width:calc(100% - 24px);max-width:none;max-height:85vh;
+      border-radius:18px 18px 0 0;margin:0 12px;}
+    .mx5-dlg-close{width:44px;height:44px;font-size:22px;}
+    .mx5-dlg-body{padding:20px 18px 28px;overflow-x:hidden;}
+    .mx5-dlg-header{padding:16px 18px 12px;}
+  }
+  @media(max-width:360px){
+    .mx5-dlg-panel{margin:0 6px;width:calc(100% - 12px);}
+  }
+
+  /* ---- portfolio section ---- */
+  #pf_section .pf-sh { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  #pf_section .pf-sh h2 { font-size:15px; margin:0; color:var(--text); text-transform:none;
+    letter-spacing:0; }
+  #pf_section .pf-help { background:transparent; border:none; cursor:pointer;
+    color:var(--muted); font-size:13px; padding:0 3px; }
+  #pf_signedout { padding:10px 0; }
+  #pf_signedout p { margin:0 0 9px; color:var(--muted); font-size:13px; }
+  #pf_empty { padding:10px 0; display:none; }
+  #pf_empty p { margin:0 0 9px; color:var(--muted); font-size:13px; }
+  #pf_err_inline { display:none; color:var(--down,#ef4444); font-size:13px; padding:8px 0; }
+  #pf_add { margin-top:10px; }
+  /* table */
+  .ts { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .ts table { border-collapse:collapse; width:100%; min-width:560px; }
+  .ts th { font-size:11.5px; font-weight:700; color:var(--muted); text-align:right;
+    padding:5px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .ts th:first-child, .ts th:nth-child(2) { text-align:left; }
+  .ts td { padding:7px 10px; border-bottom:1px solid var(--line); font-size:13px;
+    vertical-align:middle; }
+  .ts td:first-child { font-weight:700; }
+  .ts td.tabnum { text-align:right; font-variant-numeric:tabular-nums; }
+  .ts tr:last-child td { border-bottom:none; }
+  #pf_closed { margin-top:12px; }
+  #pf_closed summary { cursor:pointer; font-size:13px; font-weight:600;
+    color:var(--muted); padding:4px 0; }
+  #pf_foot { display:block; margin-top:9px; font-size:11.5px; color:var(--muted); }
+  /* modal form rows */
+  .pfm-row { margin-bottom:13px; }
+  .pfm-row label { display:block; font-size:12px; font-weight:600; color:var(--muted);
+    margin-bottom:4px; }
+  .pfm-row input, .pfm-row select { width:100%; }
+  #pfm_hint { font-size:11.5px; color:var(--muted); margin-top:3px; display:none; }
+  #pfm_sugg { position:absolute; top:104%; left:0; right:0; background:var(--panel);
+    border:1px solid var(--line); border-radius:10px; z-index:50; max-height:220px;
+    overflow:auto; display:none; box-shadow:var(--popover-shadow,0 8px 32px rgba(0,0,0,.4)); }
+  #pfm_sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
+  #pfm_sugg div:hover, #pfm_sugg div.sel { background:var(--panel2); }
+  #pfm_sugg b { min-width:58px; flex:none; }
+  #pfm_sugg small { color:var(--muted); flex:1; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pfm-ticker-wrap { position:relative; }
+  #pfm_err { display:none; color:var(--down,#ef4444); font-size:12.5px; margin-top:8px; }
+  @media(max-width:640px){ .mx5-dlg-panel-narrow{ width:calc(100% - 12px); } }
 </style>
 </head>
 <body>
@@ -164,7 +291,7 @@
 
   <div class="panel">
     <div class="topline">
-      <h1>📋 {{ t('Watchlist', '持仓清单') }}</h1>
+      <h1>{{ t('Watchlist &amp; Portfolio', '自选与持仓') }}</h1>
       <div class="searchwrap">
         <input id="wl_q" autocomplete="off">
         <div id="wl_sugg"></div>
@@ -172,11 +299,8 @@
       <span id="wl_count"></span>
     </div>
     <p class="muted" style="margin:8px 0 0">{{ t(
-      'Your holdings, each with its current signal from the analyzer — bottoming, buy-zone, uptrend
-       or avoid — plus momentum across timeframes. Saved in this browser; sign in to sync across
-       devices. Add equities, ETFs, commodities or crypto with the search above.',
-      '你的持仓，每个都带有来自分析器的当前信号——筑底、买入区、上涨趋势或回避——以及跨周期动量。
-       保存在本浏览器中；登录后可跨设备同步。用上方搜索添加股票、ETF、大宗商品或加密货币。') }}</p>
+      'Your list and holdings with tonight\'s signals — synced to your account.',
+      '你的自选与持仓，附今晚信号——与账户同步。') }}</p>
   </div>
 
   <!-- sync / account bar (hidden entirely when Supabase isn't configured) -->
@@ -200,10 +324,6 @@
 
   <div id="wl_banner" class="wl-banner"></div>
 
-  <!-- Portfolio factor exposure — your book's hidden bet (factor_exposure.js fills
-       it client-side from factor_betas.json; hidden until ≥2 covered holdings) -->
-  <div class="panel" id="fx_panel" style="display:none"></div>
-
   <div class="wl-controls" id="wl_controls" style="display:none">
     <label><span id="wl_sortlbl"></span>
       <select id="wl_sort">
@@ -225,6 +345,129 @@
         : 'Your watchlist is empty. Search above to add a holding — equity, ETF, commodity or crypto.');</script>
   </div>
 
+  <!-- ---- Portfolio section ---- -->
+  <div class="panel" id="pf_section">
+    <div class="pf-sh">
+      <h2>{{ t('Portfolio', '持仓') }}</h2>
+      <button class="pf-help" aria-label="About portfolio"
+        data-tip-en="Track your open and closed positions. Prices shown are the last nightly close — not live. Your holdings are stored privately in your account and sync across devices when signed in. Add a position with the button below."
+        data-tip-zh="记录你的开仓和已平仓持仓。显示的价格为最近夜间收盘价——非实时。你的持仓仅保存在账户中，登录后跨设备同步。点击下方按钮添加持仓。">?</button>
+    </div>
+
+    <!-- signed-out state -->
+    <div id="pf_signedout">
+      <p>{{ t('Sign in to track your holdings — synced across your devices.', '登录以记录持仓——多设备同步。') }}</p>
+      <button class="wl-btn" id="pf_signin_btn" onclick="window.MDXAuth && MDXAuth.open('signin')">{{ t('Sign in', '登录') }}</button>
+    </div>
+
+    <!-- inline error -->
+    <div id="pf_err_inline"></div>
+
+    <!-- empty state -->
+    <div id="pf_empty" style="display:none">
+      <p>{{ t('No holdings yet — add your first.', '还没有持仓——添加第一笔。') }}</p>
+      <button class="wl-btn" id="pf_add_first">{{ t('Add holding', '添加持仓') }}</button>
+    </div>
+
+    <!-- table desk -->
+    <div id="pf_desk" style="display:none">
+      <div class="ts">
+        <table>
+          <thead>
+            <tr>
+              <th id="pf_th_ticker"></th>
+              <th id="pf_th_name"></th>
+              <th id="pf_th_signal"></th>
+              <th id="pf_th_shares" style="text-align:right"></th>
+              <th id="pf_th_entry" style="text-align:right"></th>
+              <th id="pf_th_date"></th>
+              <th id="pf_th_last" style="text-align:right"></th>
+              <th id="pf_th_since" style="text-align:right"></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pf_rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- add button -->
+    <button class="wl-btn" id="pf_add" style="display:none; margin-top:10px">{{ t('Add holding', '添加持仓') }}</button>
+
+    <!-- closed positions -->
+    <details id="pf_closed" style="display:none; margin-top:12px">
+      <summary><span>{{ t('Closed', '已平仓') }}</span> <span id="pf_closed_n"></span></summary>
+      <div class="ts" style="margin-top:8px">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ t('Ticker', '代码') }}</th>
+              <th>{{ t('Name', '名称') }}</th>
+              <th style="text-align:right">{{ t('Shares', '股数') }}</th>
+              <th style="text-align:right">{{ t('Entry', '成本') }}</th>
+              <th>{{ t('Date', '日期') }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pf_closed_rows"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- as-of footnote -->
+    <small id="pf_foot" class="muted">{{ t('Prices are the last nightly close (as of ', '价格为最近夜间收盘（截至 ') }}<span id="pf_asof">—</span>{{ t('). Holdings are stored privately in your account.', '）。持仓仅保存在你的账户中。') }}</small>
+  </div>
+
+  <!-- Portfolio factor exposure — your book's hidden bet (factor_exposure.js fills
+       it client-side from factor_betas.json; hidden until ≥2 covered holdings) -->
+  <div class="panel" id="fx_panel" style="display:none"></div>
+
+  <!-- ---- Holding modal ---- -->
+  <div id="dlg-holding" class="mx5-dlg" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="mx5-dlg-backdrop" data-close></div>
+    <div class="mx5-dlg-panel mx5-dlg-panel-narrow">
+      <div class="mx5-dlg-header">
+        <span class="mx5-dlg-title" id="pfm_title">{{ t('Add holding', '添加持仓') }}</span>
+        <button class="mx5-dlg-close" data-close aria-label="{{ t('Close', '关闭') }}">✕</button>
+      </div>
+      <div class="mx5-dlg-body">
+        <div class="pfm-row">
+          <label id="pfm_lbl_ticker" for="pfm_ticker">{{ t('Ticker', '代码') }}</label>
+          <div class="pfm-ticker-wrap">
+            <input class="wl-in" id="pfm_ticker" type="text" autocomplete="off" autocapitalize="characters">
+            <div id="pfm_sugg" style="display:none"></div>
+          </div>
+          <div id="pfm_hint"></div>
+        </div>
+        <div class="pfm-row">
+          <label id="pfm_lbl_shares" for="pfm_shares">{{ t('Shares', '股数') }}</label>
+          <input class="wl-in" id="pfm_shares" type="number" step="any" min="0">
+        </div>
+        <div class="pfm-row">
+          <label id="pfm_lbl_entry" for="pfm_price">{{ t('Entry price', '入场价') }}</label>
+          <input class="wl-in" id="pfm_price" type="number" step="any">
+        </div>
+        <div class="pfm-row">
+          <label id="pfm_lbl_date" for="pfm_date">{{ t('Entry date', '入场日期') }}</label>
+          <input class="wl-in" id="pfm_date" type="date">
+        </div>
+        <div class="pfm-row">
+          <label id="pfm_lbl_notes" for="pfm_notes">{{ t('Notes', '备注') }}</label>
+          <input class="wl-in" id="pfm_notes" type="text">
+        </div>
+        <div class="pfm-row" id="pfm_status_row" style="display:none">
+          <label id="pfm_lbl_status" for="pfm_status">{{ t('Status', '状态') }}</label>
+          <select class="wl-in" id="pfm_status">
+            <option value="open">{{ t('Open', '开仓') }}</option>
+            <option value="closed">{{ t('Closed', '已平仓') }}</option>
+          </select>
+        </div>
+        <div id="pfm_err"></div>
+        <button class="wl-btn" id="pfm_save">{{ t('Save', '保存') }}</button>
+      </div>
+    </div>
+  </div>
+
   <details class="panel">
     <summary style="cursor:pointer; font-weight:600">{{ t('Export / import (move to another device)', '导出 / 导入（迁移到其他设备）') }}</summary>
     <p class="muted" style="font-size:12.5px; margin:8px 0">{{ t(
@@ -243,9 +486,10 @@
   <div id="wl_toast" class="wl-toast"></div>
 
 <script src="stockdata.js"></script>
-<script src="watchlist.js"></script>
-<script src="factor_exposure.js"></script>
-<script src="watchstore.js?v=1"></script>
+<script src="watchlist.js?v=2"></script>
+<script src="factor_exposure.js?v=2"></script>
+<script src="watchstore.js?v=2"></script>
+<script src="portfolio.js?v=1"></script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
 <p class="muted" style="font-size:12px">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
