@@ -437,9 +437,11 @@ def build_all(
             if days_low is not None:
                 acc["all_days_since"].append(days_low)
 
-            # Per-fire forward metrics
+            # Per-fire forward metrics (P0-1: thread direction from catalog descriptor)
             try:
-                m = tech_stars.compute_fire_metrics(df, event_pos, horizon=_HORIZON)
+                m = tech_stars.compute_fire_metrics(
+                    df, event_pos, horizon=_HORIZON, direction=direction
+                )
                 if not m.empty:
                     acc["all_metrics"].append(m)
             except Exception:
@@ -548,28 +550,50 @@ def build_all(
             signals_lab[sid] = _null_lab_entry(sig, kind)
             continue
 
-        pooled = pd.concat(all_metrics, axis=0).sort_index()
+        pooled_full = pd.concat(all_metrics, axis=0).sort_index()
+        n_fires_total_sig = len(pooled_full)
 
-        # Cap fires if needed
-        if len(pooled) > _FIRE_CAP:
-            log.info(
-                "Lab: %s has %d fires (> cap %d); sampling most recent %d",
-                sid, len(pooled), _FIRE_CAP, _FIRE_CAP,
-            )
-            pooled = pooled.iloc[-_FIRE_CAP:]
-
-        n_fires = len(pooled)
-        if n_fires > 0:
-            span_days = (pooled.index[-1] - pooled.index[0]).days
-            n_months = max(1, round(span_days / 30))
+        # P0-3: compute n_months on the FULL pooled set (before cap) as distinct
+        # calendar months containing >=1 fire, not span/30 on the capped slice.
+        if n_fires_total_sig > 0:
+            months_with_fires = pooled_full.index.to_period("M").unique()
+            n_months = len(months_with_fires)
+            first_fire = str(pooled_full.index[0].date())
+            last_fire = str(pooled_full.index[-1].date())
         else:
             n_months = 0
+            first_fire = None
+            last_fire = None
 
-        wr_21d = float(pooled["win"].mean()) if n_fires > 0 else None
-        mean_21d = float(pooled["fwd_ret"].mean()) if n_fires > 0 else None
-        mfe_mae_vals = pooled["mfe_mae"].dropna()
+        # P0-3: top_fire_days — 5 calendar dates with the most simultaneous fires
+        if n_fires_total_sig > 0:
+            daily_counts = pooled_full.groupby(pooled_full.index.normalize()).size()
+            top5 = daily_counts.nlargest(5)
+            top_fire_days = [
+                {"date": str(d.date()), "n_fires": int(c)} for d, c in top5.items()
+            ]
+        else:
+            top_fire_days = []
+
+        # Cap fires for per-fire detail storage (stats computed on FULL set above)
+        truncated = n_fires_total_sig > _FIRE_CAP
+        if truncated:
+            log.info(
+                "Lab: %s has %d fires (> cap %d); capping to most recent %d for detail",
+                sid, n_fires_total_sig, _FIRE_CAP, _FIRE_CAP,
+            )
+            pooled = pooled_full.iloc[-_FIRE_CAP:]
+        else:
+            pooled = pooled_full
+
+        # P0-3: all summary stats on the FULL set, not the capped slice
+        n_fires = n_fires_total_sig
+        wr_21d = float(pooled_full["win"].mean()) if n_fires > 0 else None
+        # P0-1 fix: use signed_return (direction-adjusted) for mean; fwd_ret is stored per-fire
+        mean_21d = float(pooled_full["signed_return"].mean()) if n_fires > 0 else None
+        mfe_mae_vals = pooled_full["mfe_mae"].dropna()
         mfe_mae_med = float(mfe_mae_vals.median()) if len(mfe_mae_vals) > 0 else None
-        durable_rate = float(pooled["durable"].mean()) if n_fires > 0 else None
+        durable_rate = float(pooled_full["durable"].mean()) if n_fires > 0 else None
 
         med_lag = float(np.median(all_lag_pcts)) if all_lag_pcts else None
         med_days = float(np.median(all_days_since)) if all_days_since else None
@@ -582,8 +606,8 @@ def build_all(
         else:
             up_tape_pct = None
 
-        # Era split
-        wr_pre2010, wr_post2010 = _era_wr(pooled, _ERA_SPLIT)
+        # Era split — use full pooled set (P0-3)
+        wr_pre2010, wr_post2010 = _era_wr(pooled_full, _ERA_SPLIT)
 
         # Base rate: random ticker-day sampling (same logic as before, seeded identically)
         rng = np.random.default_rng(42)
@@ -605,15 +629,24 @@ def build_all(
 
         base_wr = float(np.mean([r > 0 for r in sample_rets])) if sample_rets else None
         base_mean = float(np.mean(sample_rets)) if sample_rets else None
+        # P0-1: the signal stats are direction-signed, so the random baseline must be
+        # signed the same way — shorting random bars wins at (1 - base_wr) and earns
+        # -base_mean. Stored base_* values are the direction-adjusted comparators.
+        if direction < 0 and base_wr is not None:
+            base_wr = 1.0 - base_wr
+        if direction < 0 and base_mean is not None:
+            base_mean = -base_mean
         edge_wr = (round(wr_21d - base_wr, 6) if wr_21d is not None and base_wr is not None else None)
         edge_mean = (round(mean_21d - base_mean, 6) if mean_21d is not None and base_mean is not None else None)
 
-        signals_lab[sid] = {
+        entry: dict = {
             "display_en": display_en,
             "family": family,
             "direction": direction,
             "n_fires": n_fires,
             "n_months": n_months,
+            "first_fire": first_fire,
+            "last_fire": last_fire,
             "wr_21d": round(wr_21d, 6) if wr_21d is not None else None,
             "mean_21d": round(mean_21d, 6) if mean_21d is not None else None,
             "base_wr": round(base_wr, 6) if base_wr is not None else None,
@@ -628,7 +661,13 @@ def build_all(
             "wr_pre2010": round(wr_pre2010, 6) if wr_pre2010 is not None else None,
             "wr_post2010": round(wr_post2010, 6) if wr_post2010 is not None else None,
             "kind": kind,
+            "top_fire_days": top_fire_days,
         }
+        # P0-3: truncation disclosure when cap binds
+        if truncated:
+            entry["truncated"] = True
+            entry["n_fires_total"] = n_fires_total_sig
+        signals_lab[sid] = entry
 
     total_fires = sum(v["n_fires"] for v in signals_lab.values())
 

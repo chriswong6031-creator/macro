@@ -147,15 +147,29 @@ class TestComputeFireMetricsExact:
         assert len(result) == 0
 
     def test_fire_at_boundary_valid(self):
-        """Fire at position that produces a valid forward window."""
+        """Fire at position that produces a valid forward window.
+
+        P0-6 fix: exit_t >= len(close_idx) is now excluded (incomplete horizon).
+        With n=100 and horizon=5:
+          fire at bar i: exit_t = i+1+5 = i+6
+          Valid condition: exit_t < len=100 → i+6 < 100 → i <= 93
+          Bar 94: exit_t=100 == len=100 → EXCLUDED (was wrongly included before P0-6)
+          Bar 93: exit_t=99 < 100 → INCLUDED
+        """
         cfm = _get_compute_fire_metrics()
         df = _make_controlled_frame()  # 100 bars, indices 0..99
-        # horizon=5: fire at bar i needs entry_t=i+1, exit_t=i+1+5=i+6
-        # exit_t <= len(close_idx)=100 → i+6 <= 100 → i <= 94
-        pos = _make_pos_series([94], len(df), df.index)
+        # Last valid fire is at bar 93 (exit_t=99 < 100=len)
+        pos = _make_pos_series([93], len(df), df.index)
 
         result = cfm(df, pos, horizon=5)
         assert len(result) == 1
+
+        # Confirm bar 94 is now excluded (P0-6: exit_t=100 == len → rejected)
+        pos_boundary = _make_pos_series([94], len(df), df.index)
+        result_boundary = cfm(df, pos_boundary, horizon=5)
+        assert len(result_boundary) == 0, (
+            "P0-6: fire at bar 94 (exit_t=100==len) must be excluded as incomplete horizon"
+        )
 
     def test_win_false_for_falling_prices(self):
         """Build a strictly declining series and verify win=False."""

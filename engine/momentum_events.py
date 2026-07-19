@@ -183,6 +183,38 @@ def stoch_rsi_cross_up_2w(
     return out
 
 
+def stoch_rsi_cross_dn_2w(
+    df: pd.DataFrame, *, n: int = 14, k: int = 3,
+    upper_band: float | None = None, resample: str = "2W-FRI", **kw
+) -> pd.Series:
+    """2-week Stochastic-RSI bearish cross, mapped back onto the daily index.
+
+    Symmetric counterpart to stoch_rsi_cross_up_2w. Registered as a DAILY leg
+    (family stoch_events_2w, NOT weekly-eligible). Fires on the first daily bar
+    at/after each completed 2-week %K-below-%D bearish cross while %K is in the
+    upper band. PIT-clean.
+    """
+    ub = (100.0 - _STOCH_LOWER_BAND) if upper_band is None else float(upper_band)
+    close = _close(df)
+    if not isinstance(df.index, pd.DatetimeIndex):
+        return pd.Series(0.0, index=df.index)
+    bw = close.resample(resample).last().dropna()
+    if len(bw) < (n + n + _STOCH_D_SMOOTH):
+        return pd.Series(0.0, index=df.index)
+    pk, pd_ = _stoch_kd(bw, n=n, k=k)
+    fired_bw = (_cross_below(pk, pd_).astype(bool) & (pk > ub)).astype(float)
+
+    out = pd.Series(0.0, index=df.index)
+    daily_pos = df.index
+    for ts, v in fired_bw.items():
+        if v <= 0:
+            continue
+        loc = daily_pos.searchsorted(ts, side="left")
+        if loc < len(daily_pos):
+            out.iloc[loc] = 1.0
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
@@ -227,5 +259,11 @@ SIGNALS: dict[str, dict[str, Any]] = {
         "default_params": {"n": 14, "k": 3, "lower_band": _STOCH_LOWER_BAND, "resample": "2W-FRI"},
         "display": _disp("Bi-weekly Stochastic-RSI bullish cross", "双周随机 RSI 金叉"),
         "glyph": "arrow_up",
+    },
+    "stoch_rsi_cross_dn_2w": {
+        "fn": stoch_rsi_cross_dn_2w, "kind": "event", "family": "stoch_events_2w", "direction": -1,
+        "default_params": {"n": 14, "k": 3, "upper_band": 100.0 - _STOCH_LOWER_BAND, "resample": "2W-FRI"},
+        "display": _disp("Bi-weekly Stochastic-RSI bearish cross", "双周随机 RSI 死叉"),
+        "glyph": "arrow_down",
     },
 }

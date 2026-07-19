@@ -5,6 +5,7 @@ families, parameters, and how to compute them on an OHLCV DataFrame.
 
 AGGREGATION SOURCES
 -------------------
+Legacy (pre-integration) modules:
 - engine.ma_crosses     SIGNALS dict  (ma_crosses, ma_price families)
 - engine.pivots         SIGNALS dict  (pivots family)
 - engine.rsi_signals    SIGNALS dict  (rsi_bands family)
@@ -17,6 +18,24 @@ AGGREGATION SOURCES
 - engine.tech_stars     golden_star_signal / death_star_signal wrappers (tech_stars family)
   Pre-registered MA pairs: (7,35), (21,100), (50,200) for both Golden Star and Death Star.
   Also includes 'new_golden_star': freshly-fired Golden Star age <= 1 trading day.
+- engine.ichimoku_signals        (ichimoku family)
+- engine.trend_ribbon_signals    (trend_ribbon family)
+- engine.rsi_stack_signals       (rsi_stack family)
+- engine.bollinger_event_signals (bollinger_events family)
+- engine.momentum_events         (macd_events / rsi_events / stoch_events / stoch_events_2w)
+
+Technical Lab modules (integrated in this PR):
+- engine.trend_strength_signals   (directional_trend / trend_recency / price_pressure families)
+- engine.compression_signals      (compression_release / trend_efficiency / breakout_channel / volatility_range)
+- engine.volume_flow_signals      (volume_money_flow / volume_participation)
+- engine.adaptive_trend_signals   (adaptive_trend / atr_adaptive_trend)
+- engine.rank_momentum_signals    (rsi_mean_reversion / rank_trend)
+- engine.path_risk_signals        (downside_path_risk / volatility_regime / volatility_range)
+- engine.momentum_context_signals (multi_horizon_momentum / benchmark_relative_strength / volatility_channel)
+- engine.bar_structure_signals    (pattern_structure)
+- engine.fractal_pivot_signals    (fractal_structure)
+- engine.challenger_signals       (multi_horizon_momentum / double_smoothed_momentum / cycle_transform /
+                                   rsi_composite / macd_cycle / gap_imbalance — challenger_only=True)
 
 NAMESPACING
 -----------
@@ -29,6 +48,26 @@ HONESTY CONTRACT
 ----------------
 Display-only / research. No 'validated' claim in any user-facing string.
 No LLM-originated signals, scores, or escalations.
+
+DESCRIPTOR KEYS
+---------------
+Required keys (enforced by _build_catalog):
+  fn              : callable(df, **params) -> pd.Series
+  kind            : 'event' | 'state'
+  family          : str (source module family name)
+  direction       : int  +1 / -1 / 0
+  default_params  : dict
+  display         : {'en': str, 'zh': str}
+  glyph           : str
+  dependency_family : str (signal cluster for confluence grammar)
+  role            : 'context'|'setup'|'trigger'|'participation'|'risk'
+
+Optional keys:
+  screener_firing    : bool (override inference; see is_screener_firing())
+  entry_stack_blocked: bool (default False; True signals must not compound with same entry)
+  challenger_only    : bool (default False; True = held-out during primary combo search)
+  provenance         : str (author/publication + source URL)
+  actionable_lag     : int (bars delay before signal is actionable; 0 = same bar)
 """
 from __future__ import annotations
 
@@ -42,12 +81,197 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Required descriptor keys — enforced by the catalog loader
 # ---------------------------------------------------------------------------
-_REQUIRED_KEYS: frozenset[str] = frozenset({"fn", "kind", "family", "direction", "default_params", "display", "glyph"})
+_REQUIRED_KEYS: frozenset[str] = frozenset({
+    "fn", "kind", "family", "direction", "default_params", "display", "glyph",
+    "dependency_family", "role",
+})
 
-# Optional descriptor keys (not enforced):
-#   screener_firing : bool
-#       Whether this signal belongs in the screener's "who's firing now" lists
-#       (see is_screener_firing() below). Absent → inferred from kind/direction.
+# ---------------------------------------------------------------------------
+# Legacy metadata backfill
+# ---------------------------------------------------------------------------
+# Legacy source modules predate the extended descriptor contract (dependency_family,
+# role, entry_stack_blocked, challenger_only, provenance, actionable_lag). Rather than
+# editing every source module, we maintain a backfill table here keyed by signal_id
+# (or by family where all members share the same metadata). Applied in _build_catalog().
+#
+# Cluster assignments follow the brief:
+#   ma_crosses / ma_price / trend / trend_ribbon / tech_stars → 'moving_average_trend'
+#   pivots / formations → 'pattern_structure'
+#   rsi_bands / rsi_events / rsi_stack → 'rsi_mean_reversion'
+#   bollinger_events → 'volatility_channel'
+#   macd_events → 'macd_ma_spread'
+#   stoch_events / stoch_events_2w → 'stochastic_oscillator'
+#   ichimoku → 'cloud_trend'  (entry_stack_blocked=True per RUL-33-OSCSPECIES)
+#   performance → 'multi_horizon_momentum'
+#   fundamental_valuation → 'fundamental_value'
+#   insider → 'insider_flow'
+#
+# Default role: events → 'trigger', states → 'context'
+# Overrides: rsi oversold/overbought states → 'setup'; rsi_stack_oversold/overbought → 'setup'
+
+_LEGACY_META_BY_FAMILY: dict[str, dict[str, Any]] = {
+    "ma_crosses":         {"dependency_family": "moving_average_trend", "role": "trigger",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Murphy, J.J. (1999) Technical Analysis of the Financial Markets",
+                           "actionable_lag": 0},
+    "ma_price":           {"dependency_family": "moving_average_trend", "role": "trigger",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Murphy, J.J. (1999) Technical Analysis of the Financial Markets",
+                           "actionable_lag": 0},
+    "tech_stars":         {"dependency_family": "moving_average_trend", "role": "trigger",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Adapted Golden/Death Cross composite (internal)",
+                           "actionable_lag": 0},
+    "trend":              {"dependency_family": "moving_average_trend", "role": "context",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Murphy, J.J. (1999) Technical Analysis of the Financial Markets",
+                           "actionable_lag": 0},
+    "trend_ribbon":       {"dependency_family": "moving_average_trend",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Darvas, N. (1960) How I Made 2,000,000 in the Stock Market",
+                           "actionable_lag": 0},
+    "pivots":             {"dependency_family": "pattern_structure", "role": "setup",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Williams, L. (1999) Long-Term Secrets to Short-Term Trading",
+                           "actionable_lag": 0},
+    "formations":         {"dependency_family": "pattern_structure", "role": "trigger",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Edwards, R.D. & Magee, J. (1948) Technical Analysis of Stock Trends",
+                           "actionable_lag": 0},
+    "rsi_bands":          {"dependency_family": "rsi_mean_reversion",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Wilder, J.W. (1978) New Concepts in Technical Trading Systems",
+                           "actionable_lag": 0},
+    "rsi_events":         {"dependency_family": "rsi_mean_reversion", "role": "trigger",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Wilder, J.W. (1978) New Concepts in Technical Trading Systems",
+                           "actionable_lag": 0},
+    "rsi_stack":          {"dependency_family": "rsi_mean_reversion",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Wilder, J.W. (1978) New Concepts in Technical Trading Systems",
+                           "actionable_lag": 0},
+    "bollinger_events":   {"dependency_family": "volatility_channel",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Bollinger, J. (2002) Bollinger on Bollinger Bands",
+                           "actionable_lag": 0},
+    "macd_events":        {"dependency_family": "macd_ma_spread", "role": "trigger",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Appel, G. (2005) Technical Analysis: Power Tools for Active Investors",
+                           "actionable_lag": 0},
+    "stoch_events":       {"dependency_family": "stochastic_oscillator", "role": "trigger",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Lane, G.C. (1984) Lane's Stochastics, Technical Analysis of Stocks & Commodities",
+                           "actionable_lag": 0},
+    "stoch_events_2w":    {"dependency_family": "stochastic_oscillator", "role": "trigger",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Lane, G.C. (1984) Lane's Stochastics, Technical Analysis of Stocks & Commodities",
+                           "actionable_lag": 0},
+    "ichimoku":           {"dependency_family": "cloud_trend",
+                           "entry_stack_blocked": True, "challenger_only": False,
+                           "provenance": "Ichimoku, H. (1969) Ichimoku Kinko Hyo (one-look equilibrium chart)",
+                           "actionable_lag": 0},
+    "performance":        {"dependency_family": "multi_horizon_momentum",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Internal performance composite",
+                           "actionable_lag": 0},
+    "fundamental_valuation": {"dependency_family": "fundamental_value",
+                              "entry_stack_blocked": False, "challenger_only": False,
+                              "provenance": "Fama, E.F. & French, K.R. (1992) The Cross-Section of Expected Stock Returns",
+                              "actionable_lag": 0},
+    "insider":            {"dependency_family": "insider_flow",
+                           "entry_stack_blocked": False, "challenger_only": False,
+                           "provenance": "Seyhun, H.N. (1998) Investment Intelligence from Insider Trading",
+                           "actionable_lag": 0},
+}
+
+# Per-signal role overrides (applied after family defaults)
+_LEGACY_ROLE_OVERRIDE: dict[str, str] = {
+    # trend states
+    "trend_rising_short": "context",
+    "trend_falling_short": "context",
+    "trend_rising_long": "context",
+    "trend_falling_long": "context",
+    # trend_ribbon states
+    "ribbon_up": "context",
+    "ribbon_down": "context",
+    "ribbon_flip_up": "trigger",
+    "ribbon_flip_down": "trigger",
+    # rsi_bands: oversold/overbought are setups (zones entered before reversal)
+    "rsi14_oversold": "setup",
+    "rsi14_overbought": "setup",
+    "rsi21_oversold": "setup",
+    "rsi21_overbought": "setup",
+    # rsi_stack states
+    "rsi_stack_oversold": "setup",
+    "rsi_stack_overbought": "setup",
+    "rsi_stack_curl_up": "trigger",
+    "rsi_stack_curl_down": "trigger",
+    # bollinger states vs events
+    "bb_band_walk_up": "context",
+    "bb_band_walk_down": "context",
+    "bb_upper_rejection": "trigger",
+    "bb_lower_reclaim": "trigger",
+    # ichimoku states vs events
+    "ichimoku_above_cloud": "context",
+    "ichimoku_below_cloud": "context",
+    "ichimoku_tk_cross_up": "trigger",
+    "ichimoku_tk_cross_down": "trigger",
+    "ichimoku_cloud_breakout_up": "trigger",
+    "ichimoku_cloud_breakdown": "trigger",
+    # performance states
+    "is_strong_move": "context",
+    "return_1d": "context",
+    "possible_runners": "trigger",
+    # fundamental states
+    "valuation_pctile": "context",
+    "undervalued_state": "setup",
+    "overvalued_state": "setup",
+    # insider
+    "insider_power_state": "context",
+    "insider_buy": "participation",
+    "insider_sell": "participation",
+    # pivots are setups
+    "pivot_bottom": "setup",
+    "pivot_top": "setup",
+}
+
+
+def _apply_legacy_meta(sid: str, descriptor: dict[str, Any]) -> dict[str, Any]:
+    """Backfill extended descriptor keys for a legacy signal that lacks them.
+
+    Modifies descriptor IN PLACE and returns it.  Only fills keys that are absent
+    — if the source module already set them (new modules), we leave them alone.
+    """
+    fam = descriptor.get("family", "")
+    meta = _LEGACY_META_BY_FAMILY.get(fam, {})
+
+    for key in ("dependency_family", "entry_stack_blocked", "challenger_only",
+                "provenance", "actionable_lag"):
+        if key not in descriptor:
+            descriptor[key] = meta.get(key, _LEGACY_DEFAULTS[key])
+
+    if "role" not in descriptor:
+        # Per-signal override first, then family default, then kind-based default
+        if sid in _LEGACY_ROLE_OVERRIDE:
+            descriptor["role"] = _LEGACY_ROLE_OVERRIDE[sid]
+        elif "role" in meta:
+            descriptor["role"] = meta["role"]
+        else:
+            # kind-based default: events → 'trigger', states → 'context'
+            descriptor["role"] = "trigger" if descriptor.get("kind") == "event" else "context"
+
+    return descriptor
+
+
+_LEGACY_DEFAULTS: dict[str, Any] = {
+    "dependency_family": "unknown",
+    "role": "context",
+    "entry_stack_blocked": False,
+    "challenger_only": False,
+    "provenance": "",
+    "actionable_lag": 0,
+}
+
 
 # ---------------------------------------------------------------------------
 # Import source-module SIGNALS dicts
@@ -193,7 +417,8 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
     catalog: dict[str, dict[str, Any]] = {}
     missing_modules: list[str] = []
 
-    source_modules = [
+    # Legacy source modules (pre-integration)
+    legacy_modules = [
         ("engine.ma_crosses",          "ma_crosses"),
         ("engine.pivots",              "pivots"),
         ("engine.rsi_signals",         "rsi_signals"),
@@ -210,10 +435,28 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
         ("engine.momentum_events",         "momentum_events"),
     ]
 
+    # New Technical Lab modules
+    lab_modules = [
+        ("engine.trend_strength_signals",    "trend_strength_signals"),
+        ("engine.compression_signals",       "compression_signals"),
+        ("engine.volume_flow_signals",       "volume_flow_signals"),
+        ("engine.adaptive_trend_signals",    "adaptive_trend_signals"),
+        ("engine.rank_momentum_signals",     "rank_momentum_signals"),
+        ("engine.path_risk_signals",         "path_risk_signals"),
+        ("engine.momentum_context_signals",  "momentum_context_signals"),
+        ("engine.bar_structure_signals",     "bar_structure_signals"),
+        ("engine.fractal_pivot_signals",     "fractal_pivot_signals"),
+        ("engine.challenger_signals",        "challenger_signals"),
+    ]
+
+    source_modules = legacy_modules + lab_modules
+    legacy_labels = {label for _, label in legacy_modules}
+
     for module_path, label in source_modules:
         sigs = _safe_import_signals(module_path, label)
         if not sigs:
             missing_modules.append(label)
+        is_legacy = label in legacy_labels
         for sid, descriptor in sigs.items():
             if sid in catalog:
                 log.error(
@@ -221,9 +464,11 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
                     sid, module_path,
                 )
                 raise ValueError(f"Duplicate signal id in tech catalog: '{sid}' from {module_path}")
+            if is_legacy:
+                _apply_legacy_meta(sid, descriptor)
             catalog[sid] = descriptor
 
-    # tech_stars built separately
+    # tech_stars built separately (also legacy — apply meta backfill)
     star_sigs = _build_tech_stars_signals()
     if not star_sigs:
         missing_modules.append("tech_stars")
@@ -231,6 +476,7 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
         if sid in catalog:
             log.error("tech_catalog: DUPLICATE signal id '%s' from tech_stars", sid)
             raise ValueError(f"Duplicate signal id in tech catalog: '{sid}' from tech_stars")
+        _apply_legacy_meta(sid, descriptor)
         catalog[sid] = descriptor
 
     if missing_modules:
@@ -238,6 +484,20 @@ def _build_catalog() -> dict[str, dict[str, Any]]:
             "tech_catalog: the following source modules could not be loaded and their "
             "signals are absent from the catalog: %s",
             missing_modules,
+        )
+
+    # ---------------------------------------------------------------------------
+    # Validation loop — enforce _REQUIRED_KEYS on every entry
+    # ---------------------------------------------------------------------------
+    offenders: list[str] = []
+    for sid, descriptor in catalog.items():
+        missing_keys = _REQUIRED_KEYS - set(descriptor.keys())
+        if missing_keys:
+            offenders.append(f"'{sid}': missing {sorted(missing_keys)}")
+    if offenders:
+        raise ValueError(
+            "tech_catalog: the following signals are missing required descriptor keys:\n"
+            + "\n".join(offenders)
         )
 
     return catalog
