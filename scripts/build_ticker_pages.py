@@ -774,11 +774,14 @@ def _render_chart(ticker: str, ohlc_bars: list, is_candle: bool, company_name: s
             l_arr = [float(b[3]) for b in bars]
             c_arr = [float(b[4]) for b in bars]
             vol_arr = [float(b[5]) for b in bars]
-            return render_chart_v2(
+            svg = render_chart_v2(
                 ticker, dates, o_arr, h_arr, l_arr, c_arr, vol_arr,
                 company_name=company_name, show_indicators=True, indicators=("volume", "macd"),
                 footer_cta="Research dossier · regenerated nightly",
             )
+            # Strip fixed px dimensions (viewBox remains) so the SVG is fluid
+            # in ANY container — the mobile-bleed class of bug dies here.
+            return re.sub(r'(<svg[^>]*?)\s+width="\d+"\s+height="\d+"', r"\1", svg, count=1)
         else:
             # Fallback: line chart via render_signal_chart
             if len(bars[0]) >= 6:
