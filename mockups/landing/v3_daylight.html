@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mastermind — Regime first. Stocks second. Noise never.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   MASTERMIND — v3 "Daylight Report"
+   Swiss institutional-research aesthetic. Light public face,
+   dark product plates. Archivo Expanded display + Inter body.
+   ============================================================ */
+
+:root{
+  /* surfaces */
+  --bg:        #f7f8fa;   /* porcelain */
+  --panel:     #ffffff;   /* white cards */
+  --panel-2:   #fbfcfd;   /* faint tinted panel */
+  --hair:      #eaecf0;   /* hairline */
+  --hair-2:    #dfe3e9;   /* stronger hairline */
+
+  /* ink */
+  --ink:       #1c2430;
+  --ink-soft:  #34404f;
+  --muted:     #5d6b7e;
+  --faint:     #8a95a4;
+
+  /* accent */
+  --blue:      #285fff;   /* ink-blue: links, CTA */
+  --blue-ink:  #1c47cc;   /* pressed / hover blue */
+  --blue-wash: #eef2ff;
+
+  /* quadrant / data accents ONLY */
+  --q-green:  #1f8b41;    /* Goldilocks */
+  --q-gold:   #b07d05;    /* Reflation */
+  --q-red:    #c12f2f;    /* Stagflation */
+  --q-blue:   #2f63c4;    /* Deflation */
+
+  /* shadow system */
+  --sh-card:  0 1px 3px rgba(20,30,50,.07), 0 1px 2px rgba(20,30,50,.04);
+  --sh-lift:  0 10px 30px -12px rgba(20,30,50,.20), 0 2px 6px rgba(20,30,50,.06);
+  --sh-plate: 0 24px 60px -20px rgba(18,26,45,.34), 0 6px 16px -6px rgba(18,26,45,.14);
+
+  --r-sm: 6px;
+  --r:    10px;
+  --r-lg: 16px;
+
+  --maxw: 1200px;
+  --gutter: clamp(20px, 5vw, 64px);
+}
+
+*{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  font-size:16px;
+  line-height:1.5;
+  font-feature-settings:"cv05" 1,"ss01" 1;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+img{ max-width:100%; display:block; }
+a{ color:var(--blue); text-decoration:none; }
+a:hover{ color:var(--blue-ink); }
+
+.tnum{ font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+
+/* ---- type scale ---------------------------------------------------- */
+.display{
+  font-family:'Archivo Expanded','Archivo',sans-serif;
+  font-weight:800;
+  letter-spacing:-.02em;
+  line-height:.98;
+  color:var(--ink);
+}
+.kicker{
+  font-family:'Archivo',sans-serif;
+  font-weight:700;
+  font-size:.72rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.eyebrow-num{
+  font-family:'Archivo',sans-serif;
+  font-weight:700;
+  font-size:.72rem;
+  letter-spacing:.12em;
+  color:var(--blue);
+}
+
+/* ---- layout -------------------------------------------------------- */
+.wrap{ width:100%; max-width:var(--maxw); margin-inline:auto; padding-inline:var(--gutter); }
+section{ position:relative; }
+.section-pad{ padding-block:clamp(64px,9vw,120px); }
+.hair-top{ border-top:1px solid var(--hair); }
+
+.sec-head{ max-width:760px; margin-bottom:44px; }
+.sec-head .kicker{ display:block; margin-bottom:16px; }
+.sec-title{
+  font-family:'Archivo Expanded','Archivo',sans-serif;
+  font-weight:700; letter-spacing:-.02em; line-height:1.02;
+  font-size:clamp(1.9rem,4vw,3rem);
+  margin:0 0 14px;
+}
+.sec-sub{ color:var(--muted); font-size:1.06rem; max-width:60ch; margin:0; }
+
+/* ============================================================ NAV */
+.nav{
+  position:sticky; top:0; z-index:60;
+  background:rgba(247,248,250,.82);
+  backdrop-filter:saturate(140%) blur(14px);
+  -webkit-backdrop-filter:saturate(140%) blur(14px);
+  border-bottom:1px solid var(--hair);
+}
+.nav-in{
+  display:flex; align-items:center; gap:24px;
+  height:66px;
+  width:100%; max-width:var(--maxw); margin-inline:auto; padding-inline:var(--gutter);
+}
+.brand{ display:flex; align-items:center; gap:11px; margin-right:6px; }
+.glyph{
+  width:30px; height:30px; border-radius:8px; flex:0 0 auto;
+  display:grid; place-items:center;
+  background:var(--ink); color:#fff;
+  font-family:'Archivo Expanded','Archivo',sans-serif; font-weight:900;
+  font-size:1rem; letter-spacing:-.03em;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.wordmark{
+  font-family:'Archivo Expanded','Archivo',sans-serif;
+  font-weight:800; letter-spacing:.02em; font-size:.98rem; color:var(--ink);
+}
+.nav-links{ display:flex; align-items:center; gap:4px; margin-inline:auto; }
+.nav-links a{
+  color:var(--ink-soft); font-weight:500; font-size:.9rem;
+  padding:8px 12px; border-radius:7px; white-space:nowrap;
+  transition:background .15s,color .15s;
+}
+.nav-links a:hover{ background:var(--panel); color:var(--ink); box-shadow:var(--sh-card); }
+.nav-right{ display:flex; align-items:center; gap:8px; }
+.lang{
+  display:flex; align-items:center; gap:2px;
+  border:1px solid var(--hair-2); border-radius:99px; padding:3px;
+  background:var(--panel);
+}
+.lang button{
+  font:inherit; font-size:.76rem; font-weight:600; letter-spacing:.02em;
+  border:0; background:transparent; color:var(--muted);
+  padding:3px 9px; border-radius:99px; cursor:pointer;
+}
+.lang button.on{ background:var(--ink); color:#fff; }
+.link-btn{
+  font-weight:600; font-size:.88rem; color:var(--ink-soft);
+  padding:8px 12px; border-radius:8px;
+}
+.link-btn:hover{ color:var(--ink); background:var(--panel); }
+.btn{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:'Inter',sans-serif; font-weight:600; font-size:.9rem;
+  border-radius:9px; padding:10px 17px; cursor:pointer;
+  border:1px solid transparent; white-space:nowrap;
+  transition:transform .12s ease, box-shadow .15s ease, background .15s;
+}
+.btn-primary{ background:var(--blue); color:#fff; box-shadow:0 1px 2px rgba(40,95,255,.35), 0 6px 16px -8px rgba(40,95,255,.6); }
+.btn-primary:hover{ background:var(--blue-ink); color:#fff; transform:translateY(-1px); }
+.btn-ghost{ background:var(--panel); color:var(--ink); border-color:var(--hair-2); box-shadow:var(--sh-card); }
+.btn-ghost:hover{ color:var(--ink); border-color:#cdd4de; transform:translateY(-1px); }
+.btn-lg{ padding:13px 22px; font-size:.98rem; }
+.nav-burger{ display:none; }
+
+/* ============================================================ HERO */
+.hero{ padding-top:clamp(52px,8vw,92px); padding-bottom:clamp(40px,6vw,68px); }
+.hero-grid{
+  display:grid; grid-template-columns:minmax(0,1.02fr) minmax(0,1.18fr);
+  gap:clamp(32px,5vw,64px); align-items:center;
+}
+.hero-kicker{ display:flex; align-items:center; gap:12px; margin-bottom:26px; }
+.hero-kicker .dot{ width:6px; height:6px; border-radius:50%; background:var(--blue); }
+.hero-h1{
+  font-family:'Archivo Expanded','Archivo',sans-serif;
+  font-weight:800; letter-spacing:-.025em; line-height:.99;
+  font-size:clamp(2.6rem,6vw,4.3rem);
+  margin:0 0 22px;
+}
+.hero-h1 .b1{ color:var(--ink); }
+.hero-h1 .b2{ color:var(--ink); }
+.hero-h1 .b3{ color:var(--faint); }
+.hero-sub{
+  font-size:1.14rem; color:var(--ink-soft); max-width:46ch; margin:0 0 30px;
+  line-height:1.55;
+}
+.hero-cta{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.hero-meta{
+  margin-top:30px; display:flex; gap:26px; flex-wrap:wrap;
+  color:var(--muted); font-size:.86rem;
+}
+.hero-meta b{ color:var(--ink); font-weight:650; }
+.hero-meta .mi{ display:flex; align-items:baseline; gap:7px; }
+
+/* dark plate frame */
+.plate{
+  position:relative; border-radius:var(--r-lg); overflow:hidden;
+  border:1px solid rgba(20,30,50,.10);
+  background:#0d1524;
+  box-shadow:var(--sh-plate);
+}
+.plate img{ width:100%; height:auto; display:block; }
+.plate.crop{ }
+.plate.crop img{ width:100%; }
+.hero-plate{ transform:perspective(1600px) rotateY(-.6deg); }
+.plate-tag{
+  position:absolute; left:14px; bottom:12px; z-index:2;
+  display:inline-flex; align-items:center; gap:7px;
+  font-family:'Archivo',sans-serif; font-weight:600; font-size:.68rem; letter-spacing:.1em;
+  text-transform:uppercase; color:#cfd8e6;
+  background:rgba(13,21,36,.7); backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.08); border-radius:99px; padding:5px 11px;
+}
+.plate-tag .live{ width:6px; height:6px; border-radius:50%; background:#37d67a; box-shadow:0 0 0 3px rgba(55,214,122,.22); }
+
+/* ============================================================ STAT STRIP */
+.stats{ border-block:1px solid var(--hair); background:var(--panel-2); }
+.stats-in{
+  display:grid; grid-template-columns:repeat(5,1fr);
+  width:100%; max-width:var(--maxw); margin-inline:auto;
+}
+.stat{
+  padding:26px var(--gutter); text-align:left;
+  border-left:1px solid var(--hair);
+}
+.stat:first-child{ border-left:0; }
+.stat .n{
+  font-family:'Archivo Expanded','Archivo',sans-serif; font-weight:800;
+  font-size:clamp(1.5rem,2.4vw,2rem); letter-spacing:-.02em; line-height:1;
+  color:var(--ink);
+}
+.stat .l{ color:var(--muted); font-size:.78rem; margin-top:7px; letter-spacing:.01em; }
+.stat .n .u{ font-size:.62em; color:var(--faint); font-weight:700; margin-left:2px; }
+
+/* ============================================================ REGIME FIELD (SIGNATURE) */
+.regime{ }
+.regime-layout{
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,360px);
+  gap:clamp(30px,5vw,60px); align-items:center;
+}
+.field-wrap{ position:relative; }
+.field{
+  position:relative; width:100%; aspect-ratio:1/1; max-width:560px; margin-inline:auto;
+  border:1px solid var(--hair-2); border-radius:var(--r);
+  background:var(--panel); box-shadow:var(--sh-card);
+  overflow:hidden;
+}
+.field svg{ display:block; width:100%; height:100%; }
+.field-cap{
+  display:flex; justify-content:space-between; gap:14px;
+  max-width:560px; margin:14px auto 0; color:var(--faint);
+  font-size:.72rem; letter-spacing:.06em; text-transform:uppercase;
+  font-family:'Archivo',sans-serif; font-weight:600;
+}
+/* axis labels */
+.ax{ font-family:'Archivo',sans-serif; font-weight:700; font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+
+/* annotation card tethered to Today */
+.today-note{
+  border:1px solid var(--hair-2); border-radius:var(--r);
+  background:var(--panel); box-shadow:var(--sh-lift); padding:22px 22px 20px;
+  max-width:400px;
+}
+.today-note .tn-k{
+  font-family:'Archivo',sans-serif; font-weight:700; font-size:.68rem;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+  display:flex; align-items:center; gap:8px; margin-bottom:16px;
+}
+.today-note .pulse-ico{ width:9px; height:9px; border-radius:50%; background:var(--ink); position:relative; }
+.today-note .pulse-ico::after{ content:""; position:absolute; inset:-6px; border-radius:50%; border:1.5px solid var(--ink); opacity:.5; animation:ring 2.6s ease-out infinite; }
+.tn-score{ display:flex; align-items:baseline; gap:12px; margin-bottom:6px; }
+.tn-score .val{
+  font-family:'Archivo Expanded','Archivo',sans-serif; font-weight:800;
+  font-size:3.4rem; line-height:.9; letter-spacing:-.03em; color:var(--ink);
+}
+.tn-score .of{ color:var(--faint); font-size:1rem; font-weight:600; }
+.tn-stance{ font-size:1.06rem; font-weight:650; color:var(--ink); margin-bottom:4px; }
+.tn-stance .q{ color:var(--q-gold); }
+.tn-line{ color:var(--muted); font-size:.92rem; line-height:1.5; margin:10px 0 0; }
+.tn-foot{
+  margin-top:16px; padding-top:14px; border-top:1px solid var(--hair);
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  color:var(--faint); font-size:.74rem;
+}
+.tn-foot .asof{ letter-spacing:.02em; }
+.legend-row{ display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:22px; }
+.lg{ display:flex; align-items:center; gap:7px; font-size:.8rem; color:var(--ink-soft); font-weight:500; }
+.lg i{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+
+/* ============================================================ BENTO */
+.bento{
+  display:grid; grid-template-columns:repeat(6,1fr);
+  grid-auto-rows:auto; gap:18px;
+}
+.cell{
+  position:relative; background:var(--panel);
+  border:1px solid var(--hair); border-radius:var(--r-lg);
+  box-shadow:var(--sh-card); overflow:hidden;
+  display:flex; flex-direction:column;
+  transition:transform .16s ease, box-shadow .16s ease, border-color .16s;
+}
+.cell:hover{ transform:translateY(-2px); box-shadow:var(--sh-lift); border-color:var(--hair-2); }
+.cell-body{ padding:24px 24px 8px; }
+.cell-num{ font-family:'Archivo',sans-serif; font-weight:700; font-size:.72rem; color:var(--blue); letter-spacing:.1em; }
+.cell h3{
+  font-family:'Archivo Expanded','Archivo',sans-serif; font-weight:700; letter-spacing:-.01em;
+  font-size:1.22rem; margin:12px 0 8px; color:var(--ink);
+}
+.cell p{ color:var(--muted); font-size:.92rem; margin:0; line-height:1.5; }
+.cell .stance-chip{
+  display:inline-flex; align-items:center; gap:7px; margin-top:14px;
+  font-size:.76rem; font-weight:600; color:var(--ink-soft);
+  background:var(--panel-2); border:1px solid var(--hair); border-radius:99px; padding:4px 11px;
+}
+.cell .stance-chip .d{ width:7px; height:7px; border-radius:50%; }
+.cell-shot{
+  margin-top:auto; position:relative;
+  background:#0d1524; border-top:1px solid rgba(20,30,50,.08);
+}
+.cell-shot .frame{
+  position:relative; overflow:hidden; height:230px;
+}
+.cell-shot img{ width:100%; height:100%; object-fit:cover; object-position:top left; display:block; }
+/* bento spans (desktop) */
+.c-regime{ grid-column:span 4; }
+.c-lanes { grid-column:span 2; }
+.c-baskets{ grid-column:span 2; }
+.c-intel { grid-column:span 2; }
+.c-ai    { grid-column:span 2; }
+.c-term  { grid-column:span 6; }
+.c-regime .cell-shot .frame{ height:300px; }
+.c-lanes  .cell-shot .frame{ height:220px; }
+.c-baskets .cell-shot .frame{ height:220px; object-position:top center; }
+.c-baskets .cell-shot img{ object-position:top center; }
+.c-intel  .cell-shot .frame{ height:220px; }
+.c-ai     .cell-shot .frame{ height:220px; object-position:center; }
+.c-ai     .cell-shot img{ object-position:center; }
+.c-term{ display:grid; grid-template-columns:1.05fr 1.3fr; align-items:stretch; }
+.c-term .cell-body{ padding:32px; align-self:center; }
+.c-term .cell-shot{ margin-top:0; border-top:0; border-left:1px solid rgba(20,30,50,.08); }
+.c-term .cell-shot .frame{ height:100%; min-height:300px; }
+.c-term .free-badge{
+  display:inline-flex; align-items:center; gap:7px; margin-bottom:14px;
+  font-family:'Archivo',sans-serif; font-weight:700; font-size:.68rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--q-green);
+  background:rgba(31,139,65,.08); border:1px solid rgba(31,139,65,.2); border-radius:99px; padding:4px 11px;
+}
+
+/* ============================================================ HOW IT WORKS */
+.how{ background:var(--panel-2); border-block:1px solid var(--hair); }
+.steps{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+  border:1px solid var(--hair); border-radius:var(--r-lg); overflow:hidden;
+  background:var(--panel); box-shadow:var(--sh-card);
+}
+.step{ padding:30px 26px; border-left:1px solid var(--hair); position:relative; }
+.step:first-child{ border-left:0; }
+.step .clock{
+  font-family:'Archivo',sans-serif; font-weight:700; font-size:.72rem; letter-spacing:.08em;
+  color:var(--blue); margin-bottom:20px; display:flex; align-items:center; gap:8px;
+}
+.step .clock .tick{ flex:1; height:1px; background:var(--hair); }
+.step .st-ico{ width:36px; height:36px; margin-bottom:16px; color:var(--ink); }
+.step h4{
+  font-family:'Archivo Expanded','Archivo',sans-serif; font-weight:700; font-size:1.05rem;
+  letter-spacing:-.01em; margin:0 0 8px; color:var(--ink);
+}
+.step p{ color:var(--muted); font-size:.88rem; margin:0; line-height:1.5; }
+.step .arrow{
+  position:absolute; right:-9px; top:52px; z-index:3; color:var(--faint);
+  background:var(--panel); width:18px; height:18px; display:grid; place-items:center;
+}
+
+/* ============================================================ HONESTY */
+.honest-layout{
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(32px,5vw,60px); align-items:center;
+}
+.honest-card{
+  border:1px solid var(--hair-2); border-radius:var(--r-lg); background:var(--panel);
+  box-shadow:var(--sh-lift); overflow:hidden;
+}
+.hc-head{
+  padding:16px 20px; border-bottom:1px solid var(--hair);
+  display:flex; align-items:center; gap:10px; background:var(--panel-2);
+}
+.hc-head .dot-y{ width:9px; height:9px; border-radius:50%; background:var(--q-gold); }
+.hc-head .t{ font-family:'Archivo',sans-serif; font-weight:700; font-size:.76rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink); }
+.hc-head .asof{ margin-left:auto; color:var(--faint); font-size:.72rem; }
+.hc-body{ padding:22px 20px; }
+.hc-signal{ font-size:1.02rem; font-weight:650; color:var(--ink); margin:0 0 6px; }
+.hc-null{
+  display:inline-flex; align-items:center; gap:8px; margin:6px 0 14px;
+  font-size:.78rem; font-weight:600; color:var(--muted);
+  background:var(--panel-2); border:1px dashed var(--hair-2); border-radius:99px; padding:5px 12px;
+}
+.hc-plain{ color:var(--ink-soft); font-size:.96rem; line-height:1.55; margin:0 0 14px; }
+.hc-receipt{
+  margin-top:14px; padding-top:14px; border-top:1px solid var(--hair);
+  color:var(--faint); font-size:.78rem; line-height:1.5;
+  font-variant-numeric:tabular-nums;
+}
+.hc-receipt b{ color:var(--muted); font-weight:600; }
+.honest-copy .sec-title{ margin-bottom:18px; }
+.honest-list{ list-style:none; padding:0; margin:24px 0 0; display:grid; gap:14px; }
+.honest-list li{ display:flex; gap:13px; align-items:flex-start; color:var(--ink-soft); font-size:1rem; }
+.honest-list .mk{ flex:0 0 auto; width:22px; height:22px; border-radius:6px; background:var(--blue-wash); color:var(--blue); display:grid; place-items:center; margin-top:1px; }
+.honest-list b{ color:var(--ink); font-weight:650; }
+
+/* ============================================================ PRICING */
+.price-head{ text-align:center; max-width:640px; margin:0 auto 18px; }
+.price-head .sec-title{ margin-bottom:12px; }
+.bill-toggle{
+  display:inline-flex; align-items:center; gap:0; margin:8px auto 44px;
+  border:1px solid var(--hair-2); border-radius:99px; padding:4px; background:var(--panel);
+  box-shadow:var(--sh-card); position:relative; left:50%; transform:translateX(-50%);
+}
+.bill-toggle button{
+  font:inherit; font-weight:600; font-size:.85rem; color:var(--muted);
+  border:0; background:transparent; padding:8px 18px; border-radius:99px; cursor:pointer;
+  transition:color .15s;
+}
+.bill-toggle button.on{ background:var(--ink); color:#fff; }
+.bill-toggle .save{ font-size:.68rem; color:var(--q-green); font-weight:700; margin-left:5px; }
+.bill-toggle button.on .save{ color:#8fe6ab; }
+.plans{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; align-items:start; }
+.plan{
+  border:1px solid var(--hair); border-radius:var(--r-lg); background:var(--panel);
+  box-shadow:var(--sh-card); padding:30px 26px; display:flex; flex-direction:column;
+}
+.plan.feat{
+  border:1.5px solid var(--blue); box-shadow:var(--sh-lift);
+  position:relative; transform:translateY(-6px);
+}
+.plan.feat::before{
+  content:"Most popular"; position:absolute; top:-11px; left:50%; transform:translateX(-50%);
+  font-family:'Archivo',sans-serif; font-weight:700; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase;
+  background:var(--blue); color:#fff; padding:4px 13px; border-radius:99px; white-space:nowrap;
+}
+.plan .pname{ font-family:'Archivo Expanded','Archivo',sans-serif; font-weight:700; font-size:1.15rem; color:var(--ink); letter-spacing:-.01em; }
+.plan .pdesc{ color:var(--muted); font-size:.88rem; margin:8px 0 22px; min-height:38px; line-height:1.45; }
+.plan .prow{ display:flex; align-items:baseline; gap:4px; }
+.plan .cur{ font-family:'Archivo',sans-serif; font-weight:700; font-size:1.3rem; color:var(--ink); align-self:flex-start; margin-top:6px; }
+.plan .amt{ font-family:'Archivo Expanded','Archivo',sans-serif; font-weight:800; font-size:2.9rem; line-height:1; letter-spacing:-.03em; color:var(--ink); }
+.plan .per{ color:var(--muted); font-size:.9rem; font-weight:500; }
+.plan .billnote{ color:var(--faint); font-size:.76rem; margin-top:9px; min-height:18px; }
+.plan .btn{ width:100%; justify-content:center; margin-top:22px; }
+.plan ul{ list-style:none; margin:24px 0 0; padding:22px 0 0; border-top:1px solid var(--hair); display:grid; gap:12px; }
+.plan li{ display:flex; gap:11px; align-items:flex-start; color:var(--ink-soft); font-size:.9rem; line-height:1.45; }
+.plan li .chk{ flex:0 0 auto; margin-top:2px; color:var(--blue); }
+.plan.feat li .chk{ color:var(--blue); }
+.plan li.muted{ color:var(--faint); }
+.plan li.muted .chk{ color:var(--faint); }
+
+/* ============================================================ FINAL CTA */
+.final{ }
+.final-card{
+  background:var(--ink); color:#fff; border-radius:var(--r-lg);
+  padding:clamp(44px,6vw,72px); text-align:center; position:relative; overflow:hidden;
+  box-shadow:var(--sh-plate);
+}
+.final-card::before{
+  content:""; position:absolute; inset:0; z-index:0; opacity:.9;
+  background:
+    radial-gradient(600px 300px at 20% 0%, rgba(40,95,255,.28), transparent 60%),
+    radial-gradient(500px 260px at 88% 100%, rgba(176,125,5,.16), transparent 60%);
+}
+.final-card > *{ position:relative; z-index:1; }
+.final-card .kicker{ color:#9fb0d8; }
+.final-h{
+  font-family:'Archivo Expanded','Archivo',sans-serif; font-weight:800; letter-spacing:-.02em;
+  font-size:clamp(2rem,4.4vw,3.2rem); line-height:1; margin:16px 0 16px; color:#fff;
+}
+.final-sub{ color:#c3ccdc; font-size:1.08rem; max-width:52ch; margin:0 auto 30px; }
+.final .hero-cta{ justify-content:center; }
+.final .btn-ghost{ background:rgba(255,255,255,.06); color:#fff; border-color:rgba(255,255,255,.18); box-shadow:none; }
+.final .btn-ghost:hover{ background:rgba(255,255,255,.12); color:#fff; }
+.final-note{ margin-top:20px; color:#8a97b0; font-size:.82rem; }
+
+/* ============================================================ FOOTER */
+.foot{ border-top:1px solid var(--hair); background:var(--panel-2); }
+.foot-in{ display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:36px; padding-block:56px 30px; }
+.foot .brand{ margin-bottom:14px; }
+.foot-tag{ color:var(--muted); font-size:.9rem; max-width:34ch; line-height:1.55; margin:0; }
+.foot h5{ font-family:'Archivo',sans-serif; font-weight:700; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin:0 0 16px; }
+.foot ul{ list-style:none; margin:0; padding:0; display:grid; gap:11px; }
+.foot ul a{ color:var(--ink-soft); font-size:.9rem; }
+.foot ul a:hover{ color:var(--ink); }
+.foot-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  padding-block:22px; border-top:1px solid var(--hair); color:var(--faint); font-size:.82rem;
+}
+.foot-bar .r{ display:flex; gap:20px; }
+
+/* ============================================================ RESPONSIVE */
+@media (max-width:1000px){
+  .nav-links{ display:none; }
+  .nav-burger{ display:inline-grid; place-items:center; width:40px; height:40px; border-radius:9px; border:1px solid var(--hair-2); background:var(--panel); cursor:pointer; }
+  .nav-in{ gap:12px; }
+  .nav .link-btn{ display:none; }             /* Log in lives in the menu on mobile */
+  .nav-right{ margin-left:auto; gap:6px; }
+  .hero-grid{ grid-template-columns:1fr; }
+  .hero-plate{ transform:none; order:2; }
+  .regime-layout{ grid-template-columns:1fr; }
+  .today-note{ max-width:560px; margin-inline:auto; }
+  .honest-layout{ grid-template-columns:1fr; }
+  .steps{ grid-template-columns:repeat(2,1fr); }
+  .step:nth-child(3){ border-left:0; }
+  .step:nth-child(-n+2){ border-bottom:1px solid var(--hair); }
+  .step .arrow{ display:none; }
+  .c-term{ grid-template-columns:1fr; }
+  .c-term .cell-shot{ border-left:0; border-top:1px solid rgba(20,30,50,.08); }
+  .stats-in{ grid-template-columns:repeat(3,1fr); }
+  .stat:nth-child(4){ border-left:0; }
+  .stat:nth-child(n+4){ border-top:1px solid var(--hair); }
+}
+@media (max-width:760px){
+  .bento{ grid-template-columns:1fr; }
+  .c-regime,.c-lanes,.c-baskets,.c-intel,.c-ai,.c-term{ grid-column:span 1; }
+  .plans{ grid-template-columns:1fr; }
+  .plan.feat{ transform:none; order:-1; }
+  .foot-in{ grid-template-columns:1fr 1fr; gap:28px; }
+}
+@media (max-width:460px){
+  .nav-in{ height:60px; gap:8px; }
+  .nav .wordmark{ display:none; }            /* glyph carries the brand on narrow screens */
+  .nav-right .btn-primary{ padding:9px 14px; font-size:.86rem; }
+  .hero-cta{ width:100%; }
+  .hero-cta .btn{ flex:1 1 auto; justify-content:center; }
+  .stats-in{ grid-template-columns:1fr 1fr; }
+  .stat{ border-left:1px solid var(--hair); }
+  .stat:nth-child(odd){ border-left:0; }
+  .stat:nth-child(n+3){ border-top:1px solid var(--hair); }
+  .steps{ grid-template-columns:1fr; }
+  .step{ border-left:0; border-top:1px solid var(--hair); }
+  .step:first-child{ border-top:0; }
+  .step:nth-child(-n+2){ border-bottom:0; }
+  .foot-in{ grid-template-columns:1fr; }
+  .hero-meta{ gap:16px 20px; }
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none !important; transition:none !important; }
+}
+
+@keyframes ring{
+  0%{ transform:scale(.5); opacity:.7; }
+  70%{ transform:scale(2.4); opacity:0; }
+  100%{ transform:scale(2.4); opacity:0; }
+}
+@keyframes pulse-dot{
+  0%,100%{ r:5; opacity:1; }
+  50%{ r:6.4; opacity:.85; }
+}
+
+/* focus */
+a:focus-visible,button:focus-visible,.btn:focus-visible{
+  outline:2.5px solid var(--blue); outline-offset:3px; border-radius:8px;
+}
+.nav .btn:focus-visible{ outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <nav class="nav-in" aria-label="Primary">
+    <a class="brand" href="#top" aria-label="Mastermind home">
+      <span class="glyph">M</span>
+      <span class="wordmark">MASTERMIND</span>
+    </a>
+    <div class="nav-links">
+      <a href="#suite">Product</a>
+      <a href="#regime">Markets</a>
+      <a href="#terminal">Terminal</a>
+      <a href="#how">Track record</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <div class="lang" role="group" aria-label="Language">
+        <button class="on" aria-pressed="true">EN</button>
+        <button aria-pressed="false" lang="zh">中文</button>
+      </div>
+      <a class="link-btn" href="#">Log in</a>
+      <a class="btn btn-primary" href="#pricing">Get started</a>
+      <button class="nav-burger" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 5h14M2 9h14M2 13h14"/></svg>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+
+<!-- ============ HERO ============ -->
+<section class="hero wrap" aria-labelledby="hero-h1">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <div class="hero-kicker">
+        <span class="dot"></span>
+        <span class="kicker">Global macro · Market cycles · EN/中文</span>
+      </div>
+      <h1 class="hero-h1" id="hero-h1">
+        <span class="b1">Regime first.</span><br>
+        <span class="b2">Stocks second.</span><br>
+        <span class="b3">Noise never.</span>
+      </h1>
+      <p class="hero-sub">A research desk that rebuilds itself every night — the regime, the leaders, and a plain-word stance for every signal, across the US, China and Hong Kong.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="#pricing">Get started free</a>
+        <a class="btn btn-ghost btn-lg" href="#regime">View a live dashboard →</a>
+      </div>
+      <div class="hero-meta tnum">
+        <span class="mi"><b>22</b> signal engines</span>
+        <span class="mi"><b>4</b> markets</span>
+        <span class="mi"><b>~2,700</b> names staged nightly</span>
+      </div>
+    </div>
+    <div class="hero-plate">
+      <div class="plate hero-plate-frame">
+        <span class="plate-tag"><span class="live"></span>Live · Macro dashboard</span>
+        <img src="assets/macro_hero.png" alt="The Mastermind macro dashboard: a 0–100 regime gauge reading 50 · Mixed, a 15-session score path, and index tiles." width="2880" height="1800" loading="eager">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STAT STRIP ============ -->
+<section class="stats" aria-label="Coverage at a glance">
+  <div class="stats-in tnum">
+    <div class="stat"><div class="n">22</div><div class="l">Signal engines, cross-checked</div></div>
+    <div class="stat"><div class="n">34</div><div class="l">Theme baskets tracked</div></div>
+    <div class="stat"><div class="n">~1,500</div><div class="l">Full stock dossiers</div></div>
+    <div class="stat"><div class="n">4</div><div class="l">Markets · US · CN · HK · CA</div></div>
+    <div class="stat"><div class="n">1,363<span class="u">×</span></div><div class="l">Cross-checks in the Neural Web</div></div>
+  </div>
+</section>
+
+<!-- ============ REGIME FIELD — SIGNATURE ============ -->
+<section class="regime section-pad wrap" id="regime" aria-labelledby="regime-title">
+  <div class="sec-head">
+    <span class="kicker">Where we are in the cycle</span>
+    <h2 class="sec-title" id="regime-title">The four-season field</h2>
+    <p class="sec-sub">Every regime lives in one of four quadrants. The dot is where the machine reads the market today — plotted from growth and inflation, scored 0 to 100.</p>
+  </div>
+
+  <div class="regime-layout">
+    <div class="field-wrap">
+      <div class="field" role="img" aria-label="A 2 by 2 regime field. The horizontal axis runs from falling to rising inflation; the vertical axis from slowing to rising growth. Quadrants: top-left Goldilocks, top-right Reflation, bottom-right Stagflation, bottom-left Deflation. The Today marker sits near the centre, slightly into the Reflation quadrant, reading 50 · Mixed.">
+        <svg viewBox="0 0 560 560" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <!-- quadrant tints at ~6% -->
+            <clipPath id="fieldClip"><rect x="60" y="52" width="440" height="440" rx="4"/></clipPath>
+          </defs>
+
+          <g clip-path="url(#fieldClip)">
+            <!-- quadrant fills: Goldilocks(TL green), Reflation(TR gold), Deflation(BL blue), Stagflation(BR red) -->
+            <rect x="60"  y="52"  width="220" height="220" fill="#1f8b41" fill-opacity="0.06"/>
+            <rect x="280" y="52"  width="220" height="220" fill="#b07d05" fill-opacity="0.06"/>
+            <rect x="60"  y="272" width="220" height="220" fill="#2f63c4" fill-opacity="0.06"/>
+            <rect x="280" y="272" width="220" height="220" fill="#c12f2f" fill-opacity="0.06"/>
+
+            <!-- fine grid ticks -->
+            <g stroke="#dfe3e9" stroke-width="1">
+              <line x1="60" y1="107" x2="500" y2="107"/><line x1="60" y1="162" x2="500" y2="162"/>
+              <line x1="60" y1="217" x2="500" y2="217"/><line x1="60" y1="327" x2="500" y2="327"/>
+              <line x1="60" y1="382" x2="500" y2="382"/><line x1="60" y1="437" x2="500" y2="437"/>
+              <line x1="115" y1="52" x2="115" y2="492"/><line x1="170" y1="52" x2="170" y2="492"/>
+              <line x1="225" y1="52" x2="225" y2="492"/><line x1="335" y1="52" x2="335" y2="492"/>
+              <line x1="390" y1="52" x2="390" y2="492"/><line x1="445" y1="52" x2="445" y2="492"/>
+            </g>
+          </g>
+
+          <!-- frame + centre axes -->
+          <rect x="60" y="52" width="440" height="440" rx="4" fill="none" stroke="#c7cdd6" stroke-width="1.4"/>
+          <line x1="280" y1="52" x2="280" y2="492" stroke="#b6bdc8" stroke-width="1.2"/>
+          <line x1="60" y1="272" x2="500" y2="272" stroke="#b6bdc8" stroke-width="1.2"/>
+
+          <!-- quadrant labels -->
+          <text class="ax" x="76" y="80"  fill="#1f8b41">GOLDILOCKS</text>
+          <text class="ax" x="76" y="97"  fill="#8a95a4" font-size="9.5" letter-spacing="0.03em">Growth up · inflation cooling</text>
+
+          <text class="ax" x="484" y="80" text-anchor="end" fill="#b07d05">REFLATION</text>
+          <text class="ax" x="484" y="97" text-anchor="end" fill="#8a95a4" font-size="9.5" letter-spacing="0.03em">Growth up · inflation up</text>
+
+          <text class="ax" x="76" y="470" fill="#2f63c4">DEFLATION</text>
+          <text class="ax" x="76" y="486" fill="#8a95a4" font-size="9.5" letter-spacing="0.03em">Growth down · inflation down</text>
+
+          <text class="ax" x="484" y="470" text-anchor="end" fill="#c12f2f">STAGFLATION</text>
+          <text class="ax" x="484" y="486" text-anchor="end" fill="#8a95a4" font-size="9.5" letter-spacing="0.03em">Growth down · inflation up</text>
+
+          <!-- axis captions outside the plot frame -->
+          <text class="ax" x="280" y="34" text-anchor="middle" fill="#5d6b7e" font-size="10.5">GROWTH ↑</text>
+          <text class="ax" x="280" y="518" text-anchor="middle" fill="#5d6b7e" font-size="10.5">GROWTH ↓</text>
+          <text class="ax" x="42" y="276" text-anchor="middle" fill="#5d6b7e" font-size="10.5" transform="rotate(-90 42 276)">INFLATION ←</text>
+          <text class="ax" x="518" y="276" text-anchor="middle" fill="#5d6b7e" font-size="10.5" transform="rotate(90 518 276)">INFLATION →</text>
+
+          <!-- 30-day drift trail toward Today -->
+          <path d="M244 316 C 258 300, 274 292, 296 284 C 310 279, 316 268, 314 256"
+                fill="none" stroke="#1c2430" stroke-opacity="0.18" stroke-width="1.6" stroke-dasharray="3 4"/>
+          <circle cx="244" cy="316" r="2.4" fill="#1c2430" fill-opacity="0.28"/>
+          <circle cx="296" cy="284" r="2.4" fill="#1c2430" fill-opacity="0.4"/>
+
+          <!-- Today: pulse ring + ink dot, just into Reflation, near centre -->
+          <circle cx="314" cy="256" r="0" fill="none" stroke="#1c2430" stroke-width="1.5">
+            <animate attributeName="r" values="8;30" dur="2.6s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.55;0" dur="2.6s" repeatCount="indefinite"/>
+          </circle>
+          <circle class="today-dot" cx="314" cy="256" r="5.4" fill="#1c2430"/>
+          <!-- tether to annotation edge -->
+          <line x1="319" y1="256" x2="500" y2="230" stroke="#1c2430" stroke-opacity="0.35" stroke-width="1" stroke-dasharray="2 3"/>
+          <circle cx="500" cy="230" r="2.2" fill="#1c2430" fill-opacity="0.5"/>
+          <text class="ax" x="322" y="248" fill="#1c2430" font-size="9.5" letter-spacing="0.08em">TODAY</text>
+        </svg>
+      </div>
+      <div class="field-cap">
+        <span>Cooling ← inflation → rising</span>
+        <span>Read nightly</span>
+      </div>
+    </div>
+
+    <div class="regime-side">
+      <div class="today-note">
+        <div class="tn-k"><span class="pulse-ico"></span>Today's read</div>
+        <div class="tn-score tnum">
+          <span class="val">50</span>
+          <span class="of">/ 100</span>
+        </div>
+        <div class="tn-stance"><span class="q">Mixed</span> — trade smaller, favour quality.</div>
+        <p class="tn-line">The signals disagree, so the machine sizes down. No chase, no all-clear — a plain stance instead of a guess.</p>
+        <div class="tn-foot">
+          <span class="asof tnum">As of 2026‑07‑17 close</span>
+          <span>Reflation edge</span>
+        </div>
+      </div>
+      <div class="legend-row" aria-hidden="true">
+        <span class="lg"><i style="background:#1f8b41"></i>Goldilocks</span>
+        <span class="lg"><i style="background:#b07d05"></i>Reflation</span>
+        <span class="lg"><i style="background:#c12f2f"></i>Stagflation</span>
+        <span class="lg"><i style="background:#2f63c4"></i>Deflation</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURE BENTO ============ -->
+<section class="suite section-pad wrap hair-top" id="suite" aria-labelledby="suite-title">
+  <div class="sec-head">
+    <span class="kicker">The suite</span>
+    <h2 class="sec-title" id="suite-title">One desk. Every signal, read for you.</h2>
+    <p class="sec-sub">Twenty-two engines run each night and hand back plates you can read in seconds — the map, the lanes, the leaders, and the receipts behind them.</p>
+  </div>
+
+  <div class="bento">
+    <!-- Regime map (wide) -->
+    <article class="cell c-regime">
+      <div class="cell-body">
+        <span class="cell-num">01</span>
+        <h3>Regime map &amp; score</h3>
+        <p>A single 0–100 score with a plain-word stance, the market's leadership, and the 15-session path — the whole macro read on one screen.</p>
+        <span class="stance-chip"><span class="d" style="background:var(--q-gold)"></span>50 · Mixed — trade smaller</span>
+      </div>
+      <div class="cell-shot"><div class="frame"><img src="assets/macro_full.png" alt="Macro dashboard with regime gauge, score path, and index tiles."></div></div>
+    </article>
+
+    <!-- Action lanes -->
+    <article class="cell c-lanes">
+      <div class="cell-body">
+        <span class="cell-num">02</span>
+        <h3>Action lanes</h3>
+        <p>Every name sorted into a plain lane: Buy now · Almost ready · In favour · Take profits · Stand aside.</p>
+        <span class="stance-chip"><span class="d" style="background:var(--q-green)"></span>Buy now · 6 names</span>
+      </div>
+      <div class="cell-shot"><div class="frame"><img src="assets/stock_lanes.png" alt="Action-lane board sorting stocks into five plain lanes."></div></div>
+    </article>
+
+    <!-- Theme baskets -->
+    <article class="cell c-baskets">
+      <div class="cell-body">
+        <span class="cell-num">03</span>
+        <h3>Theme baskets</h3>
+        <p>34 baskets show where money is rotating — leaders, laggards, and the story behind each move.</p>
+        <span class="stance-chip"><span class="d" style="background:var(--q-blue)"></span>Money is rotating</span>
+      </div>
+      <div class="cell-shot"><div class="frame"><img src="assets/baskets_full.png" alt="Thematic baskets board showing rotation across 34 themes."></div></div>
+    </article>
+
+    <!-- Insider & Congress intel -->
+    <article class="cell c-intel">
+      <div class="cell-body">
+        <span class="cell-num">04</span>
+        <h3>Insider &amp; Congress desks</h3>
+        <p>Insider buys, Congress trades and 13F fund memory — the smart-money tape, read for signal not noise.</p>
+        <span class="stance-chip"><span class="d" style="background:var(--muted)"></span>Neutral by default</span>
+      </div>
+      <div class="cell-shot"><div class="frame"><img src="assets/stock_cards.png" alt="Signal-card grid with per-name reads and stances."></div></div>
+    </article>
+
+    <!-- Mastermind AI + Neural Web -->
+    <article class="cell c-ai">
+      <div class="cell-body">
+        <span class="cell-num">05</span>
+        <h3>Mastermind AI &amp; the Neural Web</h3>
+        <p>22 engines · 168 nodes · 1,363 edges cross-check every signal — and the AI copilot explains any read in plain words.</p>
+        <span class="stance-chip"><span class="d" style="background:var(--blue)"></span>Ask the desk anything</span>
+      </div>
+      <div class="cell-shot"><div class="frame"><img src="assets/synapse_map.png" alt="The Neural Web constellation cross-checking engines, nodes and edges."></div></div>
+    </article>
+
+    <!-- Terminal (full width) -->
+    <article class="cell c-term" id="terminal">
+      <div class="cell-body">
+        <span class="free-badge"><span style="width:6px;height:6px;border-radius:50%;background:var(--q-green);display:inline-block"></span>Free · No account gate</span>
+        <span class="cell-num">06</span>
+        <h3>The charting Terminal</h3>
+        <p>A real-time charting desk with candles, moving averages, RSI and a research panel — free to use, and the same data the machine reads at night.</p>
+        <a class="btn btn-ghost" href="#" style="margin-top:16px">Open the Terminal →</a>
+      </div>
+      <div class="cell-shot"><div class="frame"><img src="assets/terminal_live.png" alt="The Mastermind charting Terminal with a live candle chart and research panel."></div></div>
+    </article>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="how" id="how" aria-labelledby="how-title">
+  <div class="wrap section-pad">
+    <div class="sec-head">
+      <span class="kicker">How the machine works</span>
+      <h2 class="sec-title" id="how-title">Markets close. The desk goes to work.</h2>
+      <p class="sec-sub">No live guessing. Every night the machine reads the full tape, cross-checks itself, and leaves one clear verdict for the morning.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="clock">16:00 ET<span class="tick"></span></div>
+        <svg class="st-ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 24h24M8 24V14M14 24V8M20 24v-6M26 24V11"/></svg>
+        <h4>Markets close</h4>
+        <p>The day's prices, breadth, flow and options settle. The tape stops moving — so the read can be honest.</p>
+        <div class="arrow"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2l4 4-4 4"/></svg></div>
+      </div>
+      <div class="step">
+        <div class="clock">Overnight<span class="tick"></span></div>
+        <svg class="st-ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="16" cy="16" r="4"/><path d="M16 4v4M16 24v4M4 16h4M24 16h4M7 7l3 3M22 22l3 3M25 7l-3 3M10 22l-3 3"/></svg>
+        <h4>22 engines run</h4>
+        <p>Price, breadth, flow, options, insiders, Congress, 13F, factors and seasonality — across four markets.</p>
+        <div class="arrow"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2l4 4-4 4"/></svg></div>
+      </div>
+      <div class="step">
+        <div class="clock">Cross-check<span class="tick"></span></div>
+        <svg class="st-ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><circle cx="24" cy="8" r="3"/><circle cx="16" cy="24" r="3"/><path d="M10.5 9.5L14 22M21.5 9.5L18 22M11 8h10"/></svg>
+        <h4>The Neural Web checks itself</h4>
+        <p>1,363 edges test every signal against the others. Where they disagree, the stance says so.</p>
+        <div class="arrow"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 2l4 4-4 4"/></svg></div>
+      </div>
+      <div class="step">
+        <div class="clock">By morning<span class="tick"></span></div>
+        <svg class="st-ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 17l6 6 14-14"/></svg>
+        <h4>One clear verdict</h4>
+        <p>A regime score, the leaders, and a plain stance for every panel — waiting before the open.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HONESTY ============ -->
+<section class="honest section-pad wrap" aria-labelledby="honest-title">
+  <div class="honest-layout">
+    <div class="honest-copy">
+      <span class="kicker">The part nobody else prints</span>
+      <h2 class="sec-title" id="honest-title">We print our nulls.</h2>
+      <p class="sec-sub">When a signal has no edge, the machine says so — out loud, on the panel. "Watch — don't chase" is a complete answer. No panel leaves you to do the analyst's job.</p>
+      <ul class="honest-list">
+        <li><span class="mk"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 6.5L5 9l4.5-5.5"/></svg></span><span><b>Every panel ends in a stance</b> — Act, Get ready, Watch, Protect gains, or Stand aside.</span></li>
+        <li><span class="mk"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 6.5L5 9l4.5-5.5"/></svg></span><span><b>Numbers arrive with meaning</b> — "about 6 in 10 faded within a day," not a bare percentage.</span></li>
+        <li><span class="mk"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 6.5L5 9l4.5-5.5"/></svg></span><span><b>The receipt is one hover away</b> — the sample, the window, the source, if you want to check the work.</span></li>
+      </ul>
+    </div>
+
+    <div class="honest-visual">
+      <div class="honest-card">
+        <div class="hc-head">
+          <span class="dot-y"></span>
+          <span class="t">Early turn signs</span>
+          <span class="asof tnum">as of 07‑17</span>
+        </div>
+        <div class="hc-body">
+          <p class="hc-signal">Memory &amp; Storage · bounce attempt, still rated Hold.</p>
+          <span class="hc-null">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="6" r="4.5"/><path d="M6 3.5v3M6 8.3v.1"/></svg>
+            Not a buy signal
+          </span>
+          <p class="hc-plain">In 26 past cases, about 6 in 10 of these early signs faded within a day. If the turn is real, the lanes upgrade on their own — <b>watch, don't chase.</b></p>
+          <p class="hc-receipt"><b>Receipt:</b> basket-level turn = null edge · 26 past cases · window 2021–2026 · slow labels unchanged · display tier.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section class="pricing section-pad wrap hair-top" id="pricing" aria-labelledby="pricing-title">
+  <div class="price-head">
+    <span class="kicker">Pricing</span>
+    <h2 class="sec-title" id="pricing-title">Start free. Add the desks when you want them.</h2>
+    <p class="sec-sub" style="margin-inline:auto">The Terminal and daily dashboards are free, forever. Upgrade for the intel desks and the AI copilot.</p>
+  </div>
+
+  <div class="bill-toggle" role="group" aria-label="Billing period">
+    <button id="bill-month" aria-pressed="false" onclick="setBilling('month')">Monthly</button>
+    <button id="bill-year" class="on" aria-pressed="true" onclick="setBilling('year')">Annual<span class="save">save ~22%</span></button>
+  </div>
+
+  <div class="plans">
+    <!-- Free -->
+    <div class="plan">
+      <div class="pname">Free</div>
+      <p class="pdesc">Terminal charting and the daily dashboards, in full.</p>
+      <div class="prow tnum"><span class="cur">$</span><span class="amt">0</span><span class="per">/forever</span></div>
+      <div class="billnote">No card required.</div>
+      <a class="btn btn-ghost" href="#">Get started</a>
+      <ul>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Real-time charting Terminal</li>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Daily regime &amp; market dashboards</li>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Action lanes &amp; theme baskets</li>
+        <li class="muted"><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7l8 0"/></svg></span>Intel desks &amp; AI copilot</li>
+      </ul>
+    </div>
+
+    <!-- Insider -->
+    <div class="plan">
+      <div class="pname">Insider</div>
+      <p class="pdesc">The smart-money desks — insider, Congress and fund memory.</p>
+      <div class="prow tnum"><span class="cur">$</span><span class="amt" data-month="59" data-year="49">49</span><span class="per">/mo</span></div>
+      <div class="billnote" data-month="Billed monthly." data-year="Billed annually · $588/yr.">Billed annually · $588/yr.</div>
+      <a class="btn btn-ghost" href="#">Choose Insider</a>
+      <ul>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Everything in Free</li>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Insider-buying desk</li>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Congress-trades desk</li>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>13F fund-memory desk</li>
+      </ul>
+    </div>
+
+    <!-- Pro (featured) -->
+    <div class="plan feat">
+      <div class="pname">Pro</div>
+      <p class="pdesc">The full desk — every signal, plus the Mastermind AI copilot.</p>
+      <div class="prow tnum"><span class="cur">$</span><span class="amt" data-month="89" data-year="69">69</span><span class="per">/mo</span></div>
+      <div class="billnote" data-month="Billed monthly." data-year="Billed annually · $828/yr.">Billed annually · $828/yr.</div>
+      <a class="btn btn-primary" href="#">Choose Pro</a>
+      <ul>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Everything in Insider</li>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Mastermind AI copilot</li>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Options &amp; flow desk</li>
+        <li><span class="chk"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7.5L6 10.5l5-6"/></svg></span>Full intel &amp; ~1,500 dossiers</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final section-pad wrap" aria-labelledby="final-title">
+  <div class="final-card">
+    <span class="kicker">Get started</span>
+    <h2 class="final-h" id="final-title">Read the regime<br>before the open.</h2>
+    <p class="final-sub">Free Terminal, free daily dashboards, no card. Add the desks the day you want them.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary btn-lg" href="#">Get started free</a>
+      <a class="btn btn-ghost btn-lg" href="#regime">View a live dashboard →</a>
+    </div>
+    <p class="final-note">EN / 中文 · US · China · Hong Kong · Canada</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-in">
+      <div class="foot-brand">
+        <a class="brand" href="#top">
+          <span class="glyph">M</span>
+          <span class="wordmark">MASTERMIND</span>
+        </a>
+        <p class="foot-tag">Global macro regime and market-cycle intelligence. Rebuilt every night — the regime, the leaders, and a plain-word stance for every signal.</p>
+      </div>
+      <div>
+        <h5>Product</h5>
+        <ul>
+          <li><a href="#suite">Regime map</a></li>
+          <li><a href="#suite">Action lanes</a></li>
+          <li><a href="#suite">Theme baskets</a></li>
+          <li><a href="#terminal">Terminal</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Markets</h5>
+        <ul>
+          <li><a href="#regime">United States</a></li>
+          <li><a href="#regime">China</a></li>
+          <li><a href="#regime">Hong Kong</a></li>
+          <li><a href="#regime">Canada</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#">Log in</a></li>
+          <li><a href="#" lang="zh">中文</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bar tnum">
+      <span>© 2026 Mastermind · mastermind-x.com</span>
+      <span class="r">
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="#">Method</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Billing toggle — swaps the price digits + note, no framework.
+  function setBilling(period){
+    var isYear = period === 'year';
+    document.getElementById('bill-year').classList.toggle('on', isYear);
+    document.getElementById('bill-month').classList.toggle('on', !isYear);
+    document.getElementById('bill-year').setAttribute('aria-pressed', String(isYear));
+    document.getElementById('bill-month').setAttribute('aria-pressed', String(!isYear));
+    document.querySelectorAll('.amt[data-month]').forEach(function(el){
+      el.textContent = isYear ? el.dataset.year : el.dataset.month;
+    });
+    document.querySelectorAll('.billnote[data-month]').forEach(function(el){
+      el.textContent = isYear ? el.dataset.year : el.dataset.month;
+    });
+  }
+  // Language chip (visual only in the mockup)
+  document.querySelectorAll('.lang button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.lang button').forEach(function(x){ x.classList.remove('on'); x.setAttribute('aria-pressed','false'); });
+      b.classList.add('on'); b.setAttribute('aria-pressed','true');
+    });
+  });
+</script>
+</body>
+</html>

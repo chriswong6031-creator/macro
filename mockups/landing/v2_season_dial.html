@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mastermind — Markets have seasons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============ tokens ============ */
+:root{
+  --ink:#0a0a0e;
+  --ink-2:#101017;
+  --ink-3:#15151d;
+  --line:#26262f;
+  --line-2:#33333f;
+  --paper:#f4eee2;
+  --muted:#9a938a;
+  --muted-2:#6f6a63;
+  --amber:#e8a33d;
+  --amber-soft:#c9893180;
+  /* four seasons — micro-accents only */
+  --green:#2fae62;
+  --gold:#d9a52a;
+  --red:#d1524a;
+  --blue:#4a7de0;
+
+  --serif:'Fraunces',Georgia,serif;
+  --sans:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+
+  --maxw:1160px;
+  --gut:clamp(20px,5vw,64px);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--ink);color:var(--paper);
+  font-family:var(--sans);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:400;letter-spacing:-.01em;overflow-wrap:break-word;text-wrap:balance}
+.mono{font-family:var(--mono)}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-left:var(--gut);padding-right:var(--gut)}
+
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:2px}
+
+/* eyebrow — structural label, letterspaced caps */
+.eyebrow{
+  font-family:var(--sans);font-size:11px;font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--muted);
+  display:inline-flex;align-items:center;gap:.6em;
+}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--amber);opacity:.8}
+
+/* ============ nav ============ */
+.nav{
+  position:sticky;top:0;z-index:50;
+  background:color-mix(in srgb,var(--ink) 82%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.nav-in{display:flex;align-items:center;gap:22px;height:64px;max-width:var(--maxw);margin:0 auto;padding:0 var(--gut)}
+.brand{display:flex;align-items:center;gap:11px;margin-right:8px}
+.glyph{
+  width:30px;height:30px;border:1px solid var(--amber);border-radius:7px;
+  display:grid;place-items:center;font-family:var(--serif);font-size:18px;color:var(--amber);
+  background:radial-gradient(120% 120% at 30% 20%,#e8a33d22,transparent 70%);
+}
+.wordmark{font-family:var(--sans);font-weight:600;letter-spacing:.14em;font-size:13px}
+.nav-links{display:flex;gap:26px;margin:0 auto}
+.nav-links a{font-size:13.5px;color:var(--muted);transition:color .18s}
+.nav-links a:hover{color:var(--paper)}
+.nav-right{display:flex;align-items:center;gap:14px}
+.lang{
+  font-size:12px;color:var(--muted);border:1px solid var(--line-2);
+  border-radius:999px;padding:4px 11px;cursor:pointer;background:none;font-family:var(--sans);
+  transition:border-color .18s,color .18s;
+}
+.lang:hover{color:var(--paper);border-color:var(--muted)}
+.lang b{color:var(--paper);font-weight:600}
+.login{font-size:13.5px;color:var(--muted)}
+.login:hover{color:var(--paper)}
+.btn{
+  font-family:var(--sans);font-size:13.5px;font-weight:600;cursor:pointer;
+  border-radius:8px;padding:9px 17px;border:1px solid transparent;
+  display:inline-flex;align-items:center;gap:7px;transition:transform .16s,background .18s,box-shadow .18s;
+}
+.btn-primary{background:var(--paper);color:#141017;box-shadow:0 1px 0 #fff3 inset}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-amber{background:var(--amber);color:#20140a;box-shadow:0 6px 24px -10px #e8a33d}
+.btn-amber:hover{transform:translateY(-1px)}
+.btn-ghost{background:none;border-color:var(--line-2);color:var(--paper)}
+.btn-ghost:hover{border-color:var(--muted)}
+
+/* ============ reveal (serif fade-rise) ============ */
+.rise{opacity:0;transform:translateY(16px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
+.rise.in{opacity:1;transform:none}
+.rise.d1{transition-delay:.08s}.rise.d2{transition-delay:.16s}.rise.d3{transition-delay:.24s}.rise.d4{transition-delay:.32s}
+
+/* ============ hero ============ */
+.hero{position:relative;padding-top:clamp(52px,8vh,104px);padding-bottom:clamp(30px,5vh,56px)}
+.hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(24px,4vw,64px);align-items:center}
+.hero h1{
+  font-size:clamp(46px,7.4vw,104px);line-height:.96;letter-spacing:-.028em;
+  font-optical-sizing:auto;
+}
+.hero h1 .it{font-style:italic;color:var(--paper)}
+.hero h1 .l2{color:var(--muted);display:block}
+.hero-sub{
+  margin-top:26px;max-width:34ch;color:var(--muted);font-size:clamp(15px,1.5vw,18px);line-height:1.6;
+}
+.hero-sub b{color:var(--paper);font-weight:500}
+.hero-cta{margin-top:32px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.hero-cta .btn{padding:12px 22px;font-size:15px}
+.text-link{
+  font-size:14.5px;color:var(--paper);border-bottom:1px solid var(--amber);
+  padding-bottom:2px;transition:gap .2s;display:inline-flex;gap:5px;align-items:center;
+}
+.text-link:hover{color:var(--amber)}
+.hero-tags{margin-top:34px;display:flex;gap:10px 20px;flex-wrap:wrap;font-size:12.5px;color:var(--muted-2)}
+.hero-tags span{display:inline-flex;align-items:center;gap:7px}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+
+/* ---- the dial (signature) ---- */
+.dial-stage{position:relative;display:flex;flex-direction:column;align-items:center}
+.dial-wrap{width:100%;max-width:490px;position:relative}
+.dial-svg{width:100%;height:auto;display:block}
+#needle{transform-box:fill-box;transform-origin:center bottom;}
+.dial-verdict{
+  margin-top:-6px;text-align:center;font-family:var(--mono);font-size:clamp(11.5px,1.4vw,14px);
+  color:var(--paper);letter-spacing:.01em;max-width:100%;line-height:1.5;
+  padding:0 4px;
+}
+.dial-verdict .n{color:var(--amber);font-weight:500}
+.dial-verdict .sep{color:var(--muted-2);margin:0 .3em}
+.dial-verdict .st{color:var(--muted)}
+.dial-caption{margin-top:12px;text-align:center;font-size:11px;color:var(--muted-2);letter-spacing:.02em}
+.dial-caption .live{color:var(--green)}
+
+/* proof frame under hero */
+.proof{margin-top:clamp(44px,6vh,84px)}
+.proof-frame{
+  border:1px solid var(--line-2);border-radius:14px;overflow:hidden;
+  background:var(--ink-2);position:relative;box-shadow:0 40px 90px -60px #000;
+}
+.proof-bar{display:flex;align-items:center;gap:7px;padding:11px 15px;border-bottom:1px solid var(--line)}
+.proof-bar i{width:10px;height:10px;border-radius:50%;background:var(--line-2);display:inline-block}
+.proof-bar .u{margin-left:12px;font-family:var(--mono);font-size:11.5px;color:var(--muted-2)}
+.proof-shot{aspect-ratio:2880/1500;overflow:hidden}
+.proof-shot img{width:100%;height:100%;object-fit:cover;object-position:top center}
+.proof-cap{margin-top:14px;text-align:center;font-size:12.5px;color:var(--muted-2)}
+
+/* ============ coverage strip ============ */
+.strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:clamp(52px,7vh,96px)}
+.strip-in{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+.stat{background:var(--ink);padding:30px var(--gut)}
+.stat:nth-child(1),.stat:nth-child(2),.stat:nth-child(3),.stat:nth-child(4){padding:30px clamp(18px,3vw,34px)}
+.stat .k{font-family:var(--serif);font-size:clamp(30px,4vw,46px);line-height:1;letter-spacing:-.02em;color:var(--paper)}
+.stat .k em{font-style:normal;color:var(--amber)}
+.stat .l{margin-top:9px;font-size:12.5px;color:var(--muted);line-height:1.45}
+.markets{padding:18px var(--gut);display:flex;align-items:center;justify-content:center;gap:26px;flex-wrap:wrap;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.markets b{color:var(--paper);font-weight:500}
+.markets .flag{display:inline-flex;align-items:center;gap:7px}
+
+/* ============ section frame ============ */
+.section{padding-top:clamp(64px,10vh,128px);padding-bottom:clamp(10px,2vh,24px)}
+.sec-head{max-width:640px}
+.sec-head h2{font-size:clamp(30px,4.4vw,54px);line-height:1.02;letter-spacing:-.02em;margin-top:18px}
+.sec-head h2 .it{font-style:italic;color:var(--amber)}
+.sec-head p{margin-top:16px;color:var(--muted);font-size:16px;max-width:52ch}
+
+/* ============ bento ============ */
+.bento{margin-top:44px;display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.cell{
+  border:1px solid var(--line);border-radius:14px;background:var(--ink-2);
+  overflow:hidden;display:flex;flex-direction:column;position:relative;
+  transition:border-color .22s,transform .22s;
+}
+.cell:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.cell-txt{padding:24px 24px 20px}
+.cell-txt h3{font-size:22px;line-height:1.1;letter-spacing:-.01em}
+.cell-txt .lede{margin-top:9px;color:var(--muted);font-size:13.5px;line-height:1.5}
+.cell-stance{
+  margin-top:16px;display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--paper);
+  border:1px solid var(--line-2);border-radius:999px;padding:5px 11px;
+}
+.cell-stance .d{width:6px;height:6px;border-radius:50%}
+.cell-shot{margin-top:auto;overflow:hidden;border-top:1px solid var(--line);background:var(--ink-3)}
+.cell-shot img{width:100%;height:100%;object-fit:cover;display:block}
+/* spans */
+.c-6{grid-column:span 6}.c-4{grid-column:span 4}.c-3{grid-column:span 3}.c-2{grid-column:span 2}
+.shot-lg{height:280px}.shot-md{height:210px}.shot-sm{height:170px}
+/* dial cell — feature, tall, screenshot fills */
+.cell.feature{grid-row:span 2}
+.cell.feature .cell-shot{height:100%;min-height:300px}
+.cell.feature .cell-shot img{object-position:top left}
+
+/* lane chips inside AI/lanes cell */
+.lanechips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.lc{font-family:var(--mono);font-size:10.5px;color:var(--muted);border:1px solid var(--line-2);border-radius:6px;padding:4px 8px;display:inline-flex;gap:6px;align-items:center}
+
+/* ============ how it works ============ */
+.how{margin-top:46px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--ink-2)}
+.step{padding:30px 26px 34px;border-right:1px solid var(--line);position:relative}
+.step:last-child{border-right:none}
+.step .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em}
+.step h3{font-size:21px;margin-top:16px;line-height:1.12}
+.step p{margin-top:11px;color:var(--muted);font-size:13.5px;line-height:1.55}
+.step .clk{margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--muted-2);letter-spacing:.03em}
+.step::after{content:"→";position:absolute;right:-9px;top:34px;color:var(--line-2);font-size:15px;z-index:2}
+.step:last-child::after{display:none}
+
+/* ============ candle divider (Primora homage) ============ */
+.divider{margin-top:clamp(64px,9vh,110px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;background:linear-gradient(180deg,var(--ink),#0c0c12)}
+.divider svg{display:block;width:100%;height:120px}
+.divider-cap{text-align:center;padding:16px var(--gut) 0;font-family:var(--serif);font-style:italic;font-size:clamp(17px,2.4vw,26px);color:var(--muted);letter-spacing:-.01em}
+.divider-sub{text-align:center;padding:6px var(--gut) 22px;font-size:12.5px;color:var(--muted-2)}
+
+/* ============ honesty ============ */
+.honesty{padding-top:clamp(64px,10vh,128px)}
+.honesty-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,72px);align-items:center}
+.honesty h2{font-size:clamp(30px,4.6vw,58px);line-height:1;letter-spacing:-.02em}
+.honesty h2 .it{font-style:italic}
+.honesty p{margin-top:20px;color:var(--muted);font-size:16px;line-height:1.65;max-width:44ch}
+.honesty p b{color:var(--paper);font-weight:500}
+/* the printed-null card — a real product panel, rendered as artifact */
+.nullcard{
+  border:1px solid var(--line-2);border-radius:14px;background:var(--ink-2);
+  padding:26px 26px 24px;box-shadow:0 40px 90px -70px #000;
+}
+.nullcard .tt{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:19px}
+.nullcard .tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--gold);border:1px solid #d9a52a55;border-radius:5px;padding:3px 7px}
+.nullcard .body{margin-top:15px;color:var(--muted);font-size:14px;line-height:1.6}
+.nullcard .body b{color:var(--paper);font-weight:500}
+.nullcard .stance-line{
+  margin-top:18px;padding-top:16px;border-top:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;
+}
+.nullcard .stance-line .lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)}
+.nullcard .stance-line .val{font-family:var(--serif);font-style:italic;font-size:20px;color:var(--amber)}
+.nullcard .receipt{margin-top:14px;font-family:var(--mono);font-size:10.5px;color:var(--muted-2);line-height:1.55}
+
+/* ============ pricing ============ */
+.pricing{padding-top:clamp(64px,10vh,128px)}
+.toggle{margin-top:26px;display:inline-flex;align-items:center;gap:0;border:1px solid var(--line-2);border-radius:999px;padding:4px;background:var(--ink-2)}
+.toggle button{font-family:var(--sans);font-size:12.5px;font-weight:500;color:var(--muted);background:none;border:none;cursor:pointer;padding:7px 15px;border-radius:999px;transition:color .2s,background .2s}
+.toggle button.on{background:var(--paper);color:#141017}
+.toggle .save{font-size:10.5px;color:var(--green);margin-left:2px}
+.tiers{margin-top:32px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+.tier{border:1px solid var(--line);border-radius:16px;background:var(--ink-2);padding:28px 26px 30px;display:flex;flex-direction:column;min-height:100%}
+.tier.hi{border-color:var(--amber-soft);background:linear-gradient(180deg,#16110a,var(--ink-2));box-shadow:0 40px 100px -70px #e8a33d99}
+.tier .name{font-family:var(--serif);font-size:23px}
+.tier .who{margin-top:6px;color:var(--muted);font-size:13px;min-height:38px;line-height:1.45}
+.tier .price{margin-top:20px;display:flex;align-items:baseline;gap:6px}
+.tier .price .amt{font-family:var(--serif);font-size:44px;letter-spacing:-.02em;line-height:1}
+.tier .price .amt em{font-style:normal}
+.tier .price .per{color:var(--muted);font-size:13px}
+.tier .billed{margin-top:7px;font-family:var(--mono);font-size:11px;color:var(--muted-2);min-height:15px}
+.tier .btn{margin-top:22px;width:100%;justify-content:center;padding:11px}
+.tier ul{margin:22px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+.tier li{font-size:13.5px;color:var(--muted);display:flex;gap:10px;line-height:1.4}
+.tier li::before{content:"";width:15px;height:15px;flex:0 0 15px;margin-top:2px;border-radius:50%;background:radial-gradient(circle at 50% 50%,var(--amber) 0 2.4px,transparent 3px),transparent;border:1px solid var(--line-2)}
+.tier.hi .badge{position:absolute;top:-11px;left:26px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#20140a;background:var(--amber);padding:4px 10px;border-radius:999px}
+.tier{position:relative}
+
+/* ============ final cta ============ */
+.final{margin-top:clamp(72px,11vh,150px);padding:clamp(56px,9vh,120px) 0;text-align:center;border-top:1px solid var(--line);position:relative;overflow:hidden}
+.final::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 120% at 50% 0%,#e8a33d14,transparent 60%);pointer-events:none}
+.final h2{font-size:clamp(34px,6vw,74px);line-height:1;letter-spacing:-.025em;position:relative}
+.final h2 .it{font-style:italic;color:var(--amber)}
+.final p{margin-top:20px;color:var(--muted);font-size:16px;position:relative}
+.final .hero-cta{justify-content:center;margin-top:34px;position:relative}
+
+/* ============ footer ============ */
+.foot{border-top:1px solid var(--line);padding:44px 0 40px;margin-top:0}
+.foot-in{display:flex;justify-content:space-between;gap:34px;flex-wrap:wrap}
+.foot .brand{margin-bottom:14px}
+.foot-tag{color:var(--muted);font-size:13px;max-width:32ch;line-height:1.55}
+.foot-cols{display:flex;gap:56px;flex-wrap:wrap}
+.foot-col h4{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin:0 0 14px;font-family:var(--sans);font-weight:600}
+.foot-col a{display:block;font-size:13.5px;color:var(--muted);margin-bottom:10px;transition:color .18s}
+.foot-col a:hover{color:var(--paper)}
+.foot-base{max-width:var(--maxw);margin:36px auto 0;padding:20px var(--gut) 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted-2)}
+
+/* ============ responsive ============ */
+@media(max-width:900px){
+  .nav-links{display:none}
+  .hero-grid{grid-template-columns:1fr;gap:8px}
+  .dial-stage{order:-1;margin-bottom:8px}
+  .dial-wrap{max-width:380px}
+  .strip-in{grid-template-columns:repeat(2,1fr)}
+  .bento{grid-template-columns:repeat(2,1fr)}
+  .c-6,.c-4,.c-3,.c-2{grid-column:span 2}
+  .cell.feature{grid-row:auto}
+  .cell.feature .cell-shot{min-height:0;height:220px}
+  .how{grid-template-columns:1fr 1fr}
+  .step:nth-child(2){border-right:none}
+  .step:nth-child(1),.step:nth-child(2){border-bottom:1px solid var(--line)}
+  .step::after{display:none}
+  .honesty-grid{grid-template-columns:1fr;gap:32px}
+  .tiers{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .strip-in{grid-template-columns:1fr 1fr}
+  .bento{grid-template-columns:1fr}
+  .c-6,.c-4,.c-3,.c-2{grid-column:span 1}
+  .how{grid-template-columns:1fr}
+  .step{border-right:none;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:none}
+  .nav-right .login{display:none}
+  .hero h1{font-size:clamp(38px,10.5vw,54px)}
+  .sec-head h2{font-size:clamp(27px,7.6vw,40px)}
+  .honesty h2{font-size:clamp(30px,9vw,44px)}
+  .final h2{font-size:clamp(32px,9vw,48px)}
+  .markets{gap:14px 18px}
+  .dial-wrap{max-width:340px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rise{opacity:1;transform:none;transition:none}
+  #needle{transition:none !important;animation:none !important}
+  .cell:hover,.btn:hover{transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <nav class="nav-in" aria-label="Primary">
+    <a class="brand" href="#top" aria-label="Mastermind home">
+      <span class="glyph">M</span>
+      <span class="wordmark">MASTERMIND</span>
+    </a>
+    <div class="nav-links">
+      <a href="#product">Product</a>
+      <a href="#markets">Markets</a>
+      <a href="#terminal">Terminal</a>
+      <a href="#track">Track record</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <button class="lang" aria-label="Switch language"><b>EN</b> · 中文</button>
+      <a class="login" href="#">Log in</a>
+      <a class="btn btn-primary" href="#pricing">Get started</a>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+
+<!-- ============ HERO ============ -->
+<section class="hero wrap" id="product">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow rise">Global macro regime intelligence</span>
+      <h1>
+        <span class="rise d1">Markets have</span>
+        <span class="rise d1"> seasons.</span>
+        <span class="l2 rise d2"><span class="it">Know which one</span></span>
+        <span class="l2 rise d2"><span class="it">you're in.</span></span>
+      </h1>
+      <p class="hero-sub rise d3">
+        <b>One number every night</b> — where the cycle sits, which groups
+        lead, and whether to act or stand aside.
+      </p>
+      <div class="hero-cta rise d3">
+        <a class="btn btn-primary" href="#pricing">Get started</a>
+        <a class="text-link" href="#how">See tonight's read <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="hero-tags rise d4">
+        <span><i class="dot" style="background:var(--green)"></i> 22 signal engines</span>
+        <span><i class="dot" style="background:var(--blue)"></i> US · China · HK · Canada</span>
+        <span><i class="dot" style="background:var(--amber)"></i> Read fresh every night</span>
+      </div>
+    </div>
+
+    <!-- ===== SIGNATURE: THE SEASON DIAL ===== -->
+    <div class="dial-stage rise d2">
+      <div class="dial-wrap">
+        <svg class="dial-svg" viewBox="0 0 460 300" role="img"
+             aria-label="Regime dial reading 50 out of 100 — Mixed. Trade smaller, favour quality.">
+          <defs>
+            <radialGradient id="needleGlow" cx="50%" cy="90%" r="60%">
+              <stop offset="0%" stop-color="#e8a33d" stop-opacity="0.5"/>
+              <stop offset="100%" stop-color="#e8a33d" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="needleGrad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#e8a33d" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#f6c674"/>
+            </linearGradient>
+          </defs>
+
+          <!-- glow behind needle -->
+          <ellipse cx="230" cy="230" rx="150" ry="100" fill="url(#needleGlow)"/>
+
+          <!-- ===== season arc segments (r=180, cx=230, cy=230) ===== -->
+          <!-- each spans 45deg. angle measured from left(180) to right(0). -->
+          <!-- Deflation 180-135 (blue) | Stagflation 135-90 (red) | Reflation 90-45 (gold) | Goldilocks 45-0 (green) -->
+          <g fill="none" stroke-width="15" stroke-linecap="butt" opacity="0.62">
+            <path d="M 50 230 A 180 180 0 0 1 102.72 102.72" stroke="var(--blue)"/>
+            <path d="M 102.72 102.72 A 180 180 0 0 1 230 50" stroke="var(--red)"/>
+            <path d="M 230 50 A 180 180 0 0 1 357.28 102.72" stroke="var(--gold)"/>
+            <path d="M 357.28 102.72 A 180 180 0 0 1 410 230" stroke="var(--green)"/>
+          </g>
+          <!-- hairline over-stroke for crispness -->
+          <path d="M 50 230 A 180 180 0 0 1 410 230" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+          <!-- inner hairline -->
+          <path d="M 68 230 A 162 162 0 0 1 392 230" fill="none" stroke="#ffffff" stroke-opacity="0.05" stroke-width="1"/>
+
+          <!-- ===== tick marks (every 10, ticks at r 188->198; every 50 longer) ===== -->
+          <g id="ticks" stroke="#f4eee2" stroke-opacity="0.32"></g>
+
+          <!-- ===== season names along arc ===== -->
+          <g font-family="Inter, sans-serif" font-size="9.5" font-weight="600" letter-spacing="1.4" text-anchor="middle" fill="var(--muted)">
+            <text x="86"  y="128" transform="rotate(-45 86 128)">DEFLATION</text>
+            <text x="163" y="70"  transform="rotate(-16 163 70)">STAGFLATION</text>
+            <text x="297" y="70"  transform="rotate(16 297 70)">REFLATION</text>
+            <text x="374" y="128" transform="rotate(45 374 128)">GOLDILOCKS</text>
+          </g>
+
+          <!-- ===== scale numerals ===== -->
+          <g font-family="'JetBrains Mono', monospace" font-size="10" fill="var(--muted-2)" text-anchor="middle">
+            <text x="38" y="248">0</text>
+            <text x="230" y="30">50</text>
+            <text x="422" y="248">100</text>
+          </g>
+
+          <!-- ===== needle (points at 50 = straight up) ===== -->
+          <g id="needle">
+            <line x1="230" y1="230" x2="230" y2="72" stroke="url(#needleGrad)" stroke-width="2.4" stroke-linecap="round"/>
+            <circle cx="230" cy="72" r="4.5" fill="#f6c674"/>
+          </g>
+          <!-- hub -->
+          <circle cx="230" cy="230" r="9" fill="var(--ink-2)" stroke="var(--amber)" stroke-width="1.4"/>
+          <circle cx="230" cy="230" r="2.6" fill="var(--amber)"/>
+
+          <!-- big reading numeral -->
+          <text x="230" y="205" text-anchor="middle" font-family="Fraunces, serif" font-size="60" font-weight="400" fill="var(--paper)" letter-spacing="-1">50</text>
+          <text x="230" y="226" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" letter-spacing="3" fill="var(--amber)">MIXED</text>
+        </svg>
+      </div>
+      <div class="dial-verdict">
+        <span class="n">50</span><span class="sep">·</span><span>Mixed</span><span class="sep">—</span><span class="st">trade smaller, favour quality</span>
+      </div>
+      <div class="dial-caption">Tonight's read · <span class="live">live</span> · US market · as of 07-17</div>
+    </div>
+  </div>
+
+  <!-- proof screenshot -->
+  <div class="proof rise">
+    <div class="proof-frame">
+      <div class="proof-bar">
+        <i></i><i></i><i></i>
+        <span class="u">mastermind-x.com / dashboard</span>
+      </div>
+      <div class="proof-shot">
+        <img src="assets/macro_hero.png" alt="Mastermind dashboard — regime gauge reading 50 Mixed and the 15-session path chart" loading="lazy">
+      </div>
+    </div>
+    <p class="proof-cap">The dashboard behind the dial — the gauge, the session path, and what to do about it.</p>
+  </div>
+</section>
+
+<!-- ============ COVERAGE STRIP ============ -->
+<section class="strip" id="markets" aria-label="Coverage at a glance">
+  <div class="strip-in">
+    <div class="stat"><div class="k"><em>22</em></div><div class="l">signal engines read every night — price, breadth, flow, options, insiders, Congress, 13F, factors, seasonality</div></div>
+    <div class="stat"><div class="k">~2,700</div><div class="l">US names staged nightly into plain-English action lanes</div></div>
+    <div class="stat"><div class="k">~1,500</div><div class="l">full stock dossiers — one page per name, refreshed</div></div>
+    <div class="stat"><div class="k">34</div><div class="l">theme baskets tracked, ranked, and told where they sit in the cycle</div></div>
+  </div>
+  <div class="markets">
+    <span class="flag"><i class="dot" style="background:var(--green)"></i> <b>United States</b></span>
+    <span class="flag"><i class="dot" style="background:var(--red)"></i> <b>China</b></span>
+    <span class="flag"><i class="dot" style="background:var(--gold)"></i> <b>Hong Kong</b></span>
+    <span class="flag"><i class="dot" style="background:var(--blue)"></i> <b>Canada</b></span>
+    <span>·</span>
+    <span>Cross-checked by a Neural Web of <b>168 nodes · 1,363 edges</b></span>
+  </div>
+</section>
+
+<!-- ============ FEATURE BENTO ============ -->
+<section class="section wrap">
+  <div class="sec-head rise">
+    <span class="eyebrow">The suite</span>
+    <h2>Everything the machine sees, <span class="it">and what to do with it.</span></h2>
+    <p>The dial is the headline. Underneath sit the desks that build it — each one ends in a stance, not a chart to interpret.</p>
+  </div>
+
+  <div class="bento">
+
+    <!-- Regime dial (feature, tall) -->
+    <article class="cell feature c-3 rise">
+      <div class="cell-txt">
+        <h3>The regime dial</h3>
+        <p class="lede">A 0–100 score with a plain-word stance and the four-season quadrant behind it. Where the cycle sits — Goldilocks, Reflation, Stagflation or Deflation.</p>
+        <span class="cell-stance"><span class="d" style="background:var(--amber)"></span> 50 · Mixed — trade smaller</span>
+      </div>
+      <div class="cell-shot"><img src="assets/macro_full.png" alt="Full macro dashboard with regime gauge and market panels" loading="lazy"></div>
+    </article>
+
+    <!-- Action lanes -->
+    <article class="cell c-3 rise d1">
+      <div class="cell-txt">
+        <h3>Plain-English action lanes</h3>
+        <p class="lede">Every name sorted into one of five lanes. No jargon — the lane name is the instruction.</p>
+        <div class="lanechips">
+          <span class="lc">🟢 Buy now</span>
+          <span class="lc">🔵 Almost ready</span>
+          <span class="lc">🏃 In favour</span>
+          <span class="lc">🟠 Take profits</span>
+          <span class="lc">⚪ Stand aside</span>
+        </div>
+      </div>
+      <div class="cell-shot shot-md"><img src="assets/stock_lanes.png" alt="Action lanes board sorting stocks into buy, almost ready, in favour, take profits and stand aside" loading="lazy" style="object-position:top left"></div>
+    </article>
+
+    <!-- Theme baskets -->
+    <article class="cell c-3 rise">
+      <div class="cell-txt">
+        <h3>Theme baskets</h3>
+        <p class="lede">34 baskets — from AI infrastructure to GLP-1 — ranked and placed on the cycle. See what's leading and what's rolling over.</p>
+        <span class="cell-stance"><span class="d" style="background:var(--green)"></span> Money is rotating</span>
+      </div>
+      <div class="cell-shot shot-md"><img src="assets/baskets_full.png" alt="Thematic baskets board ranking 34 themes by cycle position" loading="lazy" style="object-position:top center"></div>
+    </article>
+
+    <!-- Insider & Congress -->
+    <article class="cell c-3 rise d1">
+      <div class="cell-txt">
+        <h3>Insider &amp; Congress desks</h3>
+        <p class="lede">What executives, lawmakers and 13F funds are actually buying — with fund-memory that remembers who was early.</p>
+        <span class="cell-stance"><span class="d" style="background:var(--blue)"></span> Follow the money, quietly</span>
+      </div>
+      <div class="cell-shot shot-md"><img src="assets/stock_cards.png" alt="Signal card grid for individual stocks with stance labels" loading="lazy" style="object-position:top left"></div>
+    </article>
+
+    <!-- Mastermind AI + neural web (wide) -->
+    <article class="cell c-4 rise">
+      <div class="cell-txt">
+        <h3>Mastermind AI &amp; the Neural Web</h3>
+        <p class="lede">Ask the copilot in plain language and get a straight answer, drawn from a web of 22 engines · 168 nodes · 1,363 edges that cross-check every signal against the others before it reaches you.</p>
+        <span class="cell-stance"><span class="d" style="background:var(--red)"></span> One brain, every desk</span>
+      </div>
+      <div class="cell-shot shot-lg"><img src="assets/synapse_map.png" alt="Neural Web constellation graph — engines, regimes and sectors linked by cross-checking edges" loading="lazy" style="object-position:center"></div>
+    </article>
+
+    <!-- Terminal -->
+    <article class="cell c-2 rise d1" id="terminal">
+      <div class="cell-txt">
+        <h3>The Terminal</h3>
+        <p class="lede">A real-time charting terminal — indicators, watchlists, the copilot on the side. Free, forever.</p>
+        <span class="cell-stance"><span class="d" style="background:var(--gold)"></span> Free · app.mastermind-x.com</span>
+      </div>
+      <div class="cell-shot shot-lg"><img src="assets/terminal_live.png" alt="Mastermind Terminal — NVDA candlestick chart with indicators and a watchlist" loading="lazy" style="object-position:top left"></div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="section wrap" id="how">
+  <div class="sec-head rise">
+    <span class="eyebrow">How the machine works</span>
+    <h2>It runs overnight, <span class="it">so you don't have to.</span></h2>
+    <p>No dashboards to babysit. The work happens after the close; the verdict is waiting in the morning.</p>
+  </div>
+
+  <div class="how">
+    <div class="step rise">
+      <div class="no">01 · EVENING</div>
+      <h3>Markets close</h3>
+      <p>The day's tape is in. Prices, breadth, options, insider filings and fund flows across four markets are pulled together.</p>
+      <div class="clk">~ 5:00 PM ET onward</div>
+    </div>
+    <div class="step rise d1">
+      <div class="no">02 · OVERNIGHT</div>
+      <h3>22 engines run</h3>
+      <p>Each engine reads its own slice — one for breadth, one for seasonality, one for smart-money 13F, and so on across the suite.</p>
+      <div class="clk">price · flow · insiders · factors</div>
+    </div>
+    <div class="step rise d2">
+      <div class="no">03 · CROSS-CHECK</div>
+      <h3>The web agrees or argues</h3>
+      <p>The Neural Web weighs the engines against each other. Signals that only one engine sees get demoted; agreement gets weight.</p>
+      <div class="clk">168 nodes · 1,363 edges</div>
+    </div>
+    <div class="step rise d3">
+      <div class="no">04 · MORNING</div>
+      <h3>One clear verdict</h3>
+      <p>You wake to a single number, a season, a stance, and the lanes — act, get ready, or stand aside.</p>
+      <div class="clk">waiting before the open</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CANDLE DIVIDER (Primora homage) ============ -->
+<div class="divider" aria-hidden="true">
+  <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+    <!-- baseline -->
+    <line x1="0" y1="82" x2="1200" y2="82" stroke="#26262f" stroke-width="1"/>
+    <g id="candles"></g>
+  </svg>
+  <p class="divider-cap">Four seasons, one tape.</p>
+  <p class="divider-sub">Every candle a session — the colour is the season it fell in.</p>
+</div>
+
+<!-- ============ HONESTY ============ -->
+<section class="honesty wrap">
+  <div class="honesty-grid">
+    <div class="rise">
+      <span class="eyebrow">The honest part</span>
+      <h2>We print <span class="it">our nulls.</span></h2>
+      <p>Most tools only show you the signals that fire. Ours shows you the ones that <b>didn't</b> — because a false green is worse than an honest blank.</p>
+      <p>When a signal has no edge, the panel says so in plain words. <b>"Watch — don't chase" is a complete answer.</b> Every panel ends in a stance, even when the stance is to do nothing.</p>
+      <p style="font-family:var(--serif);font-style:italic;font-size:22px;color:var(--paper);max-width:30ch;line-height:1.3">Not the read you hoped for. The read that's true.</p>
+    </div>
+
+    <!-- a real product panel, rendered as artifact -->
+    <div class="nullcard rise d1" role="figure" aria-label="Example panel showing an honest null">
+      <div class="tt"><span>Early turn signs</span> <span class="tag">HEADS-UP</span></div>
+      <div class="body">
+        Bounce attempts in groups we still rate <b>Hold / Avoid</b>.
+        In 26 past cases, about <b>6 in 10</b> of these early signs faded
+        within a day. Not a buy signal.
+      </div>
+      <div class="stance-line">
+        <span class="lab">Stance</span>
+        <span class="val">Watch — don't chase</span>
+      </div>
+      <div class="receipt">If the turn is real, the lanes below upgrade on their own · receipt on hover</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section class="pricing wrap" id="pricing">
+  <div class="sec-head rise">
+    <span class="eyebrow">Pricing</span>
+    <h2>Start free. <span class="it">Add desks when you're ready.</span></h2>
+    <p>The charting Terminal and the daily dashboards cost nothing. Paid tiers open the intel desks and the copilot.</p>
+    <div class="toggle" role="group" aria-label="Billing period">
+      <button data-bill="mo" class="on">Monthly</button>
+      <button data-bill="yr">Annual <span class="save">save ~17%</span></button>
+    </div>
+  </div>
+
+  <div class="tiers">
+    <!-- Free -->
+    <div class="tier">
+      <div class="name">Free</div>
+      <div class="who">The Terminal and the daily read — for anyone finding their feet.</div>
+      <div class="price"><span class="amt"><em>$</em>0</span><span class="per">/ forever</span></div>
+      <div class="billed">no card required</div>
+      <a class="btn btn-ghost" href="#">Open the Terminal</a>
+      <ul>
+        <li>Real-time charting Terminal</li>
+        <li>Daily regime dial &amp; dashboards</li>
+        <li>Action lanes, read-only</li>
+        <li>Bilingual EN / 中文</li>
+      </ul>
+    </div>
+
+    <!-- Pro (highlighted, center) -->
+    <div class="tier hi">
+      <span class="badge">Most popular</span>
+      <div class="name">Pro</div>
+      <div class="who">Everything, plus the copilot and the full intel stack.</div>
+      <div class="price"><span class="amt"><em>$</em><span data-p="pro">89</span></span><span class="per">/ mo</span></div>
+      <div class="billed" data-b="pro">billed monthly</div>
+      <a class="btn btn-amber" href="#">Get started</a>
+      <ul>
+        <li>Everything in Insider</li>
+        <li>Mastermind AI copilot</li>
+        <li>Options &amp; flow desk</li>
+        <li>Full intel: all ~1,500 dossiers</li>
+        <li>Neural Web deep views</li>
+      </ul>
+    </div>
+
+    <!-- Insider -->
+    <div class="tier">
+      <div class="name">Insider</div>
+      <div class="who">The follow-the-money desks — insiders, Congress, fund memory.</div>
+      <div class="price"><span class="amt"><em>$</em><span data-p="ins">59</span></span><span class="per">/ mo</span></div>
+      <div class="billed" data-b="ins">billed monthly</div>
+      <a class="btn btn-ghost" href="#">Choose Insider</a>
+      <ul>
+        <li>Everything in Free</li>
+        <li>Insider trading desk</li>
+        <li>Congress trades desk</li>
+        <li>Smart-money 13F fund memory</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final">
+  <div class="wrap">
+    <h2 class="rise">Know which season <span class="it">you're in.</span></h2>
+    <p class="rise d1">Tonight the machine reads again. Wake up to one number and a plain answer.</p>
+    <div class="hero-cta rise d2">
+      <a class="btn btn-amber" href="#" style="padding:13px 26px;font-size:15px">Get started free</a>
+      <a class="text-link" href="#terminal">Open the Terminal <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <a class="brand" href="#top" aria-label="Mastermind home">
+        <span class="glyph">M</span><span class="wordmark">MASTERMIND</span>
+      </a>
+      <p class="foot-tag">Global macro regime &amp; market-cycle intelligence. Read fresh every night, in plain words.</p>
+    </div>
+    <div class="foot-cols">
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="#product">Regime dial</a>
+        <a href="#markets">Markets</a>
+        <a href="#terminal">Terminal</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <a href="#track">Track record</a>
+        <a href="#">How it works</a>
+        <a href="#">Honesty policy</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="foot-col">
+        <h4>Access</h4>
+        <a href="#">Log in</a>
+        <a href="#pricing">Get started</a>
+        <a href="#">中文</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-base">
+    <span>© 2026 Mastermind · mastermind-x.com</span>
+    <span>Intelligence, not advice. Markets carry risk.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- draw dial tick marks ---- */
+  var ticks = document.getElementById('ticks');
+  if(ticks){
+    var cx=230, cy=230;
+    for(var v=0; v<=100; v+=5){
+      // value 0 -> angle 180deg (left), value 100 -> 0deg (right)
+      var ang = Math.PI * (1 - v/100);
+      var long = (v%25===0);
+      var r1 = 189, r2 = long ? 202 : 196;
+      var x1 = cx + r1*Math.cos(ang), y1 = cy - r1*Math.sin(ang);
+      var x2 = cx + r2*Math.cos(ang), y2 = cy - r2*Math.sin(ang);
+      var ln = document.createElementNS('http://www.w3.org/2000/svg','line');
+      ln.setAttribute('x1',x1.toFixed(2)); ln.setAttribute('y1',y1.toFixed(2));
+      ln.setAttribute('x2',x2.toFixed(2)); ln.setAttribute('y2',y2.toFixed(2));
+      ln.setAttribute('stroke-width', long ? '1.4':'1');
+      ln.setAttribute('stroke-opacity', long ? '0.5':'0.28');
+      ticks.appendChild(ln);
+    }
+  }
+
+  /* ---- needle settle on load ---- */
+  var needle = document.getElementById('needle');
+  if(needle && !reduce){
+    // needle points up = value 50. animate from ~ -34deg (value ~11) settling to 0.
+    needle.style.transition='none';
+    needle.style.transform='rotate(-34deg)';
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        needle.style.transition='transform 1.5s cubic-bezier(.16,1,.3,1)';
+        needle.style.transform='rotate(0deg)';
+      });
+    });
+  }
+
+  /* ---- draw quiet candle strip (season colours) ---- */
+  var cg = document.getElementById('candles');
+  if(cg){
+    var W=1200, base=82, N=64, gap=W/N;
+    var seasons=[
+      getComputedStyle(document.documentElement).getPropertyValue('--blue').trim(),
+      getComputedStyle(document.documentElement).getPropertyValue('--red').trim(),
+      getComputedStyle(document.documentElement).getPropertyValue('--gold').trim(),
+      getComputedStyle(document.documentElement).getPropertyValue('--green').trim()
+    ];
+    // deterministic pseudo-random so it looks like a tape, not noise
+    var seed=7;
+    function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
+    var y=52;
+    for(var i=0;i<N;i++){
+      var x = i*gap + gap*0.5;
+      var drift = (rnd()-0.46)*13;
+      y = Math.max(24, Math.min(70, y+drift));
+      var body = 5 + rnd()*13;
+      var wick = body + 5 + rnd()*9;
+      // pick season in soft bands across the strip
+      var seg = Math.floor((i/N)*4)%4;
+      // occasional off-season candle for texture
+      var col = seasons[ (rnd()>0.82) ? (seg+1)%4 : seg ];
+      var top = y - body/2;
+      // wick
+      var wk = document.createElementNS('http://www.w3.org/2000/svg','line');
+      wk.setAttribute('x1',x); wk.setAttribute('x2',x);
+      wk.setAttribute('y1', y - wick/2); wk.setAttribute('y2', y + wick/2);
+      wk.setAttribute('stroke', col); wk.setAttribute('stroke-opacity','0.32'); wk.setAttribute('stroke-width','1');
+      cg.appendChild(wk);
+      // body
+      var r = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      r.setAttribute('x', (x-2.4).toFixed(1)); r.setAttribute('y', top.toFixed(1));
+      r.setAttribute('width','4.8'); r.setAttribute('height', body.toFixed(1)); r.setAttribute('rx','1');
+      r.setAttribute('fill', col); r.setAttribute('fill-opacity','0.5');
+      cg.appendChild(r);
+    }
+  }
+
+  /* ---- reveal on scroll ---- */
+  if(reduce){
+    document.querySelectorAll('.rise').forEach(function(e){e.classList.add('in')});
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, {threshold:0.12, rootMargin:'0px 0px -8% 0px'});
+    document.querySelectorAll('.rise').forEach(function(e){io.observe(e)});
+    // hero rises fire immediately
+    setTimeout(function(){
+      document.querySelectorAll('.hero .rise, .dial-stage.rise').forEach(function(e){e.classList.add('in')});
+    }, 60);
+  }
+
+  /* ---- pricing toggle ---- */
+  var priceMap = { pro:{mo:89,yr:69}, ins:{mo:59,yr:49} };
+  var btns = document.querySelectorAll('.toggle button');
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      btns.forEach(function(x){x.classList.remove('on')});
+      b.classList.add('on');
+      var bill = b.getAttribute('data-bill');
+      document.querySelectorAll('[data-p]').forEach(function(el){
+        el.textContent = priceMap[el.getAttribute('data-p')][bill];
+      });
+      document.querySelectorAll('[data-b]').forEach(function(el){
+        el.textContent = (bill==='yr') ? 'billed annually' : 'billed monthly';
+      });
+    });
+  });
+
+  /* ---- lang chip (visual only) ---- */
+  var lang = document.querySelector('.lang');
+  if(lang){
+    var en=true;
+    lang.addEventListener('click', function(){
+      en=!en;
+      lang.innerHTML = en ? '<b>EN</b> · 中文' : 'EN · <b>中文</b>';
+    });
+  }
+})();
+</script>
+</body>
+</html>

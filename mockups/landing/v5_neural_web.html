@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mastermind — the market, as one connected mind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b0716;
+    --bg-2:#0e0a1e;
+    --panel:rgba(22,15,38,.8);
+    --panel-solid:#160f26;
+    --line:rgba(180,160,255,.12);
+    --line-2:rgba(180,160,255,.22);
+    --violet:#8b7cf6;
+    --violet-deep:#6d5de0;
+    --cyan:#22d3ee;
+    --amber:#f59e0b;
+    --tx:#ece9f7;
+    --mut:#9a92b8;
+    --mut-2:#6e6690;
+    --ok:#34d399;
+    --font-d:'Unbounded',system-ui,sans-serif;
+    --font-b:'Inter',system-ui,sans-serif;
+    --font-m:'JetBrains Mono',ui-monospace,monospace;
+    --maxw:1180px;
+    --r:16px;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--tx);
+    font-family:var(--font-b);
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  /* Ambient bioluminescent field behind the whole page */
+  body::before{
+    content:"";
+    position:fixed; inset:0; z-index:-2;
+    background:
+      radial-gradient(60% 45% at 74% 8%, rgba(139,124,246,.20), transparent 62%),
+      radial-gradient(50% 40% at 12% 22%, rgba(34,211,238,.10), transparent 60%),
+      radial-gradient(70% 55% at 50% 108%, rgba(109,93,224,.16), transparent 60%),
+      var(--bg);
+  }
+  body::after{
+    content:"";
+    position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image:radial-gradient(rgba(180,160,255,.05) 1px, transparent 1.4px);
+    background-size:34px 34px;
+    mask-image:radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 78%);
+    -webkit-mask-image:radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 78%);
+  }
+
+  a{color:inherit;text-decoration:none}
+  img{display:block;max-width:100%}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+  .eyebrow{
+    font-family:var(--font-d);
+    font-weight:600;
+    font-size:12px;
+    letter-spacing:.34em;
+    text-transform:uppercase;
+    color:var(--violet);
+  }
+  .mono{font-family:var(--font-m)}
+
+  /* ---------- focus ---------- */
+  a:focus-visible, button:focus-visible{
+    outline:2px solid var(--cyan);
+    outline-offset:3px;
+    border-radius:6px;
+  }
+
+  /* ---------- NAV ---------- */
+  .nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(11,7,22,.72);
+    backdrop-filter:blur(16px) saturate(1.3);
+    -webkit-backdrop-filter:blur(16px) saturate(1.3);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-in{
+    max-width:var(--maxw); margin:0 auto; padding:0 24px;
+    height:66px; display:flex; align-items:center; gap:28px;
+  }
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--font-d);font-weight:700;letter-spacing:.14em;font-size:14px}
+  .brand-mark{
+    width:30px;height:30px;border-radius:9px;flex:none;
+    display:grid;place-items:center;
+    font-family:var(--font-d);font-weight:800;font-size:15px;color:#0b0716;
+    background:linear-gradient(150deg,var(--violet),var(--cyan));
+    box-shadow:0 0 18px rgba(139,124,246,.55);
+  }
+  .nav-links{display:flex;gap:26px;margin-left:12px}
+  .nav-links a{font-size:14px;color:var(--mut);font-weight:500;transition:color .18s}
+  .nav-links a:hover{color:var(--tx)}
+  .nav-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .lang{
+    font-family:var(--font-m);font-size:12px;color:var(--mut);
+    border:1px solid var(--line);border-radius:20px;padding:5px 11px;cursor:pointer;background:transparent;
+    transition:border-color .18s,color .18s;
+  }
+  .lang:hover{color:var(--tx);border-color:var(--line-2)}
+  .login{font-size:14px;color:var(--mut);font-weight:500}
+  .login:hover{color:var(--tx)}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--font-b);font-weight:600;font-size:14px;
+    border-radius:11px;padding:10px 18px;cursor:pointer;border:1px solid transparent;
+    transition:transform .16s ease, box-shadow .2s ease, background .2s;
+    white-space:nowrap;
+  }
+  .btn-primary{
+    color:#0b0716;
+    background:linear-gradient(150deg,var(--violet),var(--violet-deep));
+    box-shadow:0 6px 22px rgba(139,124,246,.38);
+  }
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(139,124,246,.5)}
+  .btn-ghost{color:var(--tx);border-color:var(--line-2);background:rgba(180,160,255,.05)}
+  .btn-ghost:hover{border-color:var(--violet);background:rgba(139,124,246,.12)}
+  .btn-lg{padding:14px 24px;font-size:15px}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative;padding:70px 0 34px}
+  .hero-copy{max-width:760px;position:relative;z-index:3}
+  .hero h1{
+    font-family:var(--font-d);
+    font-weight:700;
+    font-size:clamp(34px,5.4vw,66px);
+    line-height:1.02;
+    letter-spacing:-.01em;
+    margin:20px 0 0;
+  }
+  .hero h1 .accent{
+    background:linear-gradient(100deg,var(--violet) 20%,var(--cyan));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero-sub{
+    margin:22px 0 0;font-size:clamp(15px,1.5vw,18.5px);color:var(--mut);max-width:600px;line-height:1.6;
+  }
+  .hero-sub b{color:var(--tx);font-weight:600}
+  .hero-cta{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap}
+  .hero-trust{
+    margin-top:22px;display:flex;gap:8px 22px;flex-wrap:wrap;
+    font-family:var(--font-m);font-size:12px;color:var(--mut-2);
+  }
+  .hero-trust span{display:inline-flex;align-items:center;gap:7px}
+  .hero-trust .dot{width:6px;height:6px;border-radius:50%;background:var(--violet)}
+
+  /* Hero visual — synapse map + overlaid verdict */
+  .hero-stage{position:relative;margin-top:44px}
+  .hero-map{
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:22px;
+    overflow:hidden;
+    background:var(--bg-2);
+    box-shadow:0 40px 120px -40px rgba(20,10,50,.9), inset 0 0 90px rgba(11,7,22,.7);
+  }
+  .hero-map img{
+    width:100%;display:block;
+    /* vignette the edges into the page so it feels native */
+    -webkit-mask-image:radial-gradient(130% 120% at 40% 45%, #000 52%, transparent 92%);
+    mask-image:radial-gradient(130% 120% at 40% 45%, #000 52%, transparent 92%);
+    opacity:.96;
+  }
+  .hero-map::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(11,7,22,.28),transparent 22%,transparent 72%,rgba(11,7,22,.55));
+  }
+
+  /* SVG pulse overlay drawn from map toward the verdict card */
+  .hero-pulse{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+  .pulse-line{fill:none;stroke-width:1.4;stroke-linecap:round;opacity:.42}
+  .pulse-packet{fill:none;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:5 220;}
+  @media (prefers-reduced-motion:no-preference){
+    .pulse-packet{animation:packetdrift 3.4s linear infinite}
+    .pulse-packet.p2{animation-delay:1.1s}
+    .pulse-packet.p3{animation-delay:2.2s}
+  }
+  @keyframes packetdrift{
+    from{stroke-dashoffset:225}
+    to{stroke-dashoffset:-40}
+  }
+
+  /* Verdict card floating over the map */
+  .verdict{
+    position:absolute;
+    right:4.5%; top:48%; transform:translateY(-50%);
+    width:min(296px,40%);
+    z-index:3;
+    background:rgba(14,10,30,.82);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line-2);
+    border-radius:18px;
+    padding:18px 20px;
+    box-shadow:0 24px 70px -24px rgba(6,2,20,.9);
+  }
+  .verdict-eyebrow{
+    font-family:var(--font-m);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--amber);display:flex;align-items:center;gap:8px;
+  }
+  .verdict-eyebrow .live{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
+  @media (prefers-reduced-motion:no-preference){.verdict-eyebrow .live{animation:breathe 2.6s ease-in-out infinite}}
+  .verdict-score{display:flex;align-items:baseline;gap:12px;margin-top:12px}
+  .verdict-num{font-family:var(--font-d);font-weight:800;font-size:52px;line-height:1;color:var(--tx)}
+  .verdict-arc{width:56px;height:34px;flex:none}
+  .verdict-state{font-family:var(--font-d);font-weight:700;font-size:17px;color:var(--amber);margin-top:8px}
+  .verdict-line{font-size:13px;color:var(--mut);margin-top:6px;line-height:1.45}
+  .verdict-foot{
+    margin-top:14px;padding-top:12px;border-top:1px solid var(--line);
+    font-family:var(--font-m);font-size:10.5px;color:var(--mut-2);letter-spacing:.02em;
+  }
+
+  @keyframes breathe{0%,100%{opacity:.55;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
+
+  /* ---------- SIGNATURE: engines → verdict flow band ---------- */
+  .flow{padding:62px 0 20px;position:relative}
+  .flow-head{max-width:640px;margin-bottom:26px}
+  .flow-head h2{font-family:var(--font-d);font-weight:600;font-size:clamp(22px,2.6vw,30px);margin:12px 0 8px;line-height:1.12}
+  .flow-head p{color:var(--mut);font-size:15px;margin:0}
+  .flowband{
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:linear-gradient(160deg,rgba(22,15,38,.6),rgba(14,10,30,.75));
+    padding:26px 22px;
+    overflow:hidden;
+  }
+  .flowband-inner{position:relative;display:grid;grid-template-columns:1fr 236px;gap:8px;align-items:center}
+  .flow-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+  .flow-edge{fill:none;stroke-width:1.3;opacity:.42}
+  .flow-pkt{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:4 150}
+  @media (prefers-reduced-motion:no-preference){
+    .flow-pkt{animation:flowpkt 3.6s linear infinite}
+  }
+  @keyframes flowpkt{from{stroke-dashoffset:154}to{stroke-dashoffset:-30}}
+
+  .chips{position:relative;z-index:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .chip{
+    display:flex;align-items:center;gap:9px;
+    background:rgba(11,7,22,.62);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px 11px;
+    font-family:var(--font-m);
+    font-size:11.5px;
+    color:var(--tx);
+    letter-spacing:.01em;
+    transition:border-color .2s, background .2s;
+  }
+  .chip:hover{border-color:var(--line-2);background:rgba(22,15,38,.85)}
+  .chip .nd{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 8px currentColor}
+  .nd.v{background:var(--violet);color:var(--violet)}
+  .nd.c{background:var(--cyan);color:var(--cyan)}
+  .nd.a{background:var(--amber);color:var(--amber)}
+  @media (prefers-reduced-motion:no-preference){
+    .chip .nd{animation:nodeglow 3.4s ease-in-out infinite}
+    .chip:nth-child(2n) .nd{animation-delay:.7s}
+    .chip:nth-child(3n) .nd{animation-delay:1.4s}
+  }
+  @keyframes nodeglow{0%,100%{box-shadow:0 0 4px currentColor;opacity:.72}50%{box-shadow:0 0 12px currentColor;opacity:1}}
+
+  .flow-verdict{
+    position:relative;z-index:2;
+    background:rgba(245,158,11,.06);
+    border:1px solid rgba(245,158,11,.32);
+    border-radius:12px;
+    padding:16px 15px;
+    text-align:center;
+    box-shadow:0 0 40px -12px rgba(245,158,11,.4);
+  }
+  .flow-verdict .lab{font-family:var(--font-m);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--amber)}
+  .flow-verdict .n{font-family:var(--font-d);font-weight:800;font-size:38px;line-height:1;margin:8px 0 4px;color:var(--tx)}
+  .flow-verdict .s{font-family:var(--font-d);font-weight:600;font-size:14px;color:var(--amber)}
+  .flow-verdict .d{font-size:11px;color:var(--mut);margin-top:6px;line-height:1.35}
+
+  /* ---------- ENGINE STATS strip ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:52px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--line)}
+  .stat{background:var(--bg-2);padding:22px 20px}
+  .stat b{font-family:var(--font-d);font-weight:700;font-size:clamp(24px,3vw,34px);color:var(--tx);display:block;line-height:1}
+  .stat b .u{font-size:15px;color:var(--violet);font-weight:600}
+  .stat span{font-size:12.5px;color:var(--mut);margin-top:8px;display:block}
+
+  /* ---------- SECTION scaffold ---------- */
+  section{position:relative}
+  .sec{padding:88px 0}
+  .sec-head{max-width:660px;margin-bottom:44px}
+  .sec-head h2{font-family:var(--font-d);font-weight:600;font-size:clamp(26px,3.4vw,40px);line-height:1.08;margin:14px 0 14px;letter-spacing:-.01em}
+  .sec-head p{color:var(--mut);font-size:16.5px;margin:0;line-height:1.6}
+  .sec-head.center{margin:0 auto 50px;text-align:center}
+
+  /* ---------- ONE BRAIN story ---------- */
+  .brain{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+  .brain-img{
+    border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+    background:var(--bg-2);box-shadow:0 30px 80px -40px rgba(10,4,30,.9);position:relative;
+    aspect-ratio:16/11;
+  }
+  .brain-img img{width:100%;height:100%;object-fit:cover;object-position:center 42%;opacity:.95}
+  .brain-img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(11,7,22,.5))}
+  .brain-steps{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:2px}
+  .brain-step{display:flex;gap:16px;padding:16px 0;border-top:1px solid var(--line)}
+  .brain-step:last-child{border-bottom:1px solid var(--line)}
+  .brain-step .k{font-family:var(--font-m);font-size:12px;color:var(--violet);flex:none;width:26px;padding-top:2px}
+  .brain-step h4{font-family:var(--font-b);font-weight:600;font-size:16px;margin:0 0 4px}
+  .brain-step p{margin:0;font-size:14px;color:var(--mut);line-height:1.5}
+
+  /* ---------- FEATURE BENTO ---------- */
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;grid-auto-rows:minmax(0,auto)}
+  .card{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    transition:transform .22s ease, border-color .22s, box-shadow .22s;
+  }
+  .card:hover{transform:translateY(-4px);border-color:var(--line-2);box-shadow:0 26px 60px -30px rgba(10,4,30,.85)}
+  .card-body{padding:22px 22px 20px}
+  .card .tag{font-family:var(--font-m);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--violet)}
+  .card h3{font-family:var(--font-d);font-weight:600;font-size:19px;margin:11px 0 8px;line-height:1.14}
+  .card p{margin:0;font-size:14px;color:var(--mut);line-height:1.52}
+  .card-shot{
+    position:relative;margin-top:auto;overflow:hidden;
+    border-top:1px solid var(--line);background:var(--bg-2);
+  }
+  .card-shot img{width:100%;display:block;object-fit:cover;object-position:top center}
+  .card-shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(11,7,22,.42))}
+
+  /* bento placement */
+  .c-dial{grid-column:span 2;grid-row:span 2}
+  .c-dial .card-shot img{height:200px}
+  .c-lanes{grid-column:span 4}
+  .c-lanes{flex-direction:row}
+  .c-lanes .card-body{flex:1.1;display:flex;flex-direction:column;justify-content:center}
+  .c-lanes .card-shot{flex:1.4;margin-top:0;border-top:none;border-left:1px solid var(--line)}
+  .c-lanes .card-shot img{height:100%;min-height:210px;object-position:left top}
+  .c-baskets{grid-column:span 2}
+  .c-baskets .card-shot img{height:150px}
+  .c-intel{grid-column:span 2}
+  .c-intel .card-shot img{height:150px}
+  .c-ai{grid-column:span 2}
+  .c-terminal{grid-column:span 6;flex-direction:row}
+  .c-terminal .card-body{flex:.85;display:flex;flex-direction:column;justify-content:center}
+  .c-terminal .card-shot{flex:1.6;margin-top:0;border-top:none;border-left:1px solid var(--line)}
+  .c-terminal .card-shot img{height:100%;min-height:250px;object-position:left top}
+  .free-flag{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-family:var(--font-m);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);border:1px solid rgba(34,211,238,.3);border-radius:20px;padding:5px 12px;align-self:flex-start}
+
+  /* lanes mini-legend inside card */
+  .lane-legend{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .lane-pill{font-size:11.5px;font-weight:500;color:var(--mut);display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:16px;padding:4px 9px}
+
+  /* ---------- HONESTY ---------- */
+  .honesty{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(14,10,30,.4),transparent)}
+  .honesty-in{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+  .honesty h2{font-family:var(--font-d);font-weight:600;font-size:clamp(26px,3.4vw,40px);line-height:1.08;margin:14px 0 18px}
+  .honesty p{color:var(--mut);font-size:16px;line-height:1.65;margin:0 0 16px;max-width:440px}
+  .honesty p b{color:var(--tx);font-weight:600}
+  .honest-quote{
+    border:1px solid var(--line-2);border-radius:var(--r);
+    background:rgba(14,10,30,.7);
+    padding:26px 26px 22px;
+  }
+  .hq-row{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px dashed var(--line)}
+  .hq-row:last-child{border-bottom:none}
+  .hq-ic{font-family:var(--font-m);font-size:11px;flex:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;margin-top:1px}
+  .hq-ic.a{background:rgba(245,158,11,.14);color:var(--amber)}
+  .hq-ic.v{background:rgba(139,124,246,.16);color:var(--violet)}
+  .hq-ic.c{background:rgba(34,211,238,.14);color:var(--cyan)}
+  .hq-row .t{font-weight:600;font-size:14.5px}
+  .hq-row .d{font-size:13px;color:var(--mut);margin-top:3px;line-height:1.45}
+
+  /* ---------- PRICING ---------- */
+  .price-toggle{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:24px;background:var(--panel);margin:0 auto 12px;position:relative}
+  .price-toggle button{
+    font-family:var(--font-b);font-weight:600;font-size:13px;color:var(--mut);
+    background:transparent;border:none;border-radius:20px;padding:8px 18px;cursor:pointer;transition:color .2s;
+  }
+  .price-toggle button.on{color:#0b0716;background:linear-gradient(150deg,var(--violet),var(--violet-deep))}
+  .save-note{font-family:var(--font-m);font-size:12px;color:var(--cyan);text-align:center;margin-bottom:38px}
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
+  .plan{
+    background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 26px;
+    display:flex;flex-direction:column;position:relative;
+  }
+  .plan.hot{
+    border-color:rgba(139,124,246,.5);
+    background:linear-gradient(180deg,rgba(139,124,246,.09),rgba(22,15,38,.85));
+    box-shadow:0 0 60px -24px rgba(139,124,246,.55);
+  }
+  .plan-flag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-family:var(--font-m);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#0b0716;background:linear-gradient(150deg,var(--violet),var(--cyan));padding:5px 14px;border-radius:20px;font-weight:700}
+  .plan-name{font-family:var(--font-d);font-weight:600;font-size:20px}
+  .plan-desc{font-size:13.5px;color:var(--mut);margin:8px 0 20px;min-height:38px;line-height:1.45}
+  .plan-price{display:flex;align-items:baseline;gap:4px}
+  .plan-price .amt{font-family:var(--font-d);font-weight:800;font-size:42px;line-height:1}
+  .plan-price .per{font-size:14px;color:var(--mut)}
+  .plan-bill{font-family:var(--font-m);font-size:11.5px;color:var(--mut-2);margin-top:8px;min-height:16px}
+  .plan ul{list-style:none;margin:22px 0 24px;padding:0;display:grid;gap:11px}
+  .plan li{font-size:14px;color:var(--tx);display:flex;gap:10px;align-items:flex-start;line-height:1.4}
+  .plan li::before{content:"";width:16px;height:16px;flex:none;margin-top:2px;border-radius:5px;background:rgba(139,124,246,.14);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.2l2.7 2.7 6.1-6.1' fill='none' stroke='%238b7cf6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+  .plan li.dim{color:var(--mut-2)}
+  .plan li.dim::before{background:rgba(180,160,255,.06);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8h7' fill='none' stroke='%236e6690' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")}
+  .plan .btn{margin-top:auto;justify-content:center;width:100%}
+
+  /* ---------- FINAL CTA ---------- */
+  .finalcta{text-align:center;padding:100px 0}
+  .finalcta-card{
+    position:relative;max-width:820px;margin:0 auto;
+    border:1px solid var(--line-2);border-radius:26px;
+    background:radial-gradient(120% 140% at 50% 0%, rgba(139,124,246,.16), rgba(14,10,30,.85));
+    padding:56px 40px;overflow:hidden;
+  }
+  .finalcta-card h2{font-family:var(--font-d);font-weight:700;font-size:clamp(28px,4vw,46px);line-height:1.05;margin:0 0 16px;letter-spacing:-.01em}
+  .finalcta-card p{color:var(--mut);font-size:17px;max-width:520px;margin:0 auto 30px}
+  .finalcta .hero-cta{justify-content:center}
+  .finalcta-card .spark{position:absolute;inset:0;pointer-events:none;opacity:.5}
+
+  /* ---------- FOOTER ---------- */
+  footer{border-top:1px solid var(--line);padding:52px 0 40px}
+  .foot-in{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px}
+  .foot-brand p{color:var(--mut);font-size:13.5px;max-width:260px;margin:14px 0 0;line-height:1.55}
+  .foot-col h5{font-family:var(--font-m);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut-2);margin:0 0 14px}
+  .foot-col a{display:block;font-size:14px;color:var(--mut);margin-bottom:10px;transition:color .16s}
+  .foot-col a:hover{color:var(--tx)}
+  .foot-bottom{max-width:var(--maxw);margin:36px auto 0;padding:22px 24px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--mut-2)}
+  .foot-bottom .mono{font-family:var(--font-m)}
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width:960px){
+    .nav-links{display:none}
+    .brain{grid-template-columns:1fr;gap:30px}
+    .honesty-in{grid-template-columns:1fr;gap:32px}
+    .bento{grid-template-columns:repeat(2,1fr)}
+    .c-dial,.c-lanes,.c-baskets,.c-intel,.c-ai,.c-terminal{grid-column:span 2;grid-row:auto}
+    .c-lanes,.c-terminal{flex-direction:column}
+    .c-lanes .card-shot,.c-terminal .card-shot{border-left:none;border-top:1px solid var(--line)}
+    .c-lanes .card-shot img,.c-terminal .card-shot img{height:210px;min-height:0}
+    .plans{grid-template-columns:1fr;max-width:420px;margin:0 auto}
+    .foot-in{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:640px){
+    .wrap{padding:0 18px}
+    .nav-in{padding:0 18px;gap:14px}
+    .sec{padding:60px 0}
+    .hero{padding:44px 0 24px}
+    .verdict{position:static;transform:none;width:auto;margin:14px 18px 18px;top:auto}
+    .hero-stage{margin-top:30px}
+    .hero-map{border-radius:16px}
+    .hero-pulse{display:none}
+    .flowband-inner{grid-template-columns:1fr;gap:18px}
+    .chips{grid-template-columns:1fr}
+    .flow-svg{display:none}
+    .flow-verdict{max-width:260px;margin:0 auto}
+    .stats{grid-template-columns:1fr 1fr}
+    .honesty p{max-width:none}
+    .foot-in{grid-template-columns:1fr;gap:26px}
+    .login{display:none}
+    .brand span.wm{display:none}
+  }
+  @media (max-width:390px){
+    .hero h1{font-size:31px}
+    .stat b{font-size:24px}
+    .nav-right{gap:9px}
+    .btn{padding:9px 13px;font-size:13px}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="#top" aria-label="Mastermind home">
+      <span class="brand-mark">M</span><span class="wm">MASTERMIND</span>
+    </a>
+    <div class="nav-links">
+      <a href="#product">Product</a>
+      <a href="#markets">Markets</a>
+      <a href="#terminal">Terminal</a>
+      <a href="#honesty">Track record</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <button class="lang" aria-label="Switch language">EN · 中文</button>
+      <a class="login" href="#">Log in</a>
+      <a class="btn btn-primary" href="#pricing">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<span id="top"></span>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-copy">
+      <div class="eyebrow">Global macro &amp; market-cycle intelligence</div>
+      <h1>The market, as <span class="accent">one connected mind.</span></h1>
+      <p class="hero-sub">
+        <b>22 engines</b> — price, breadth, flow, insiders, Congress, options, factors —
+        wired into one brain that <b>shows its work</b> every night, across the US, China, Hong Kong and Canada.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="#pricing">Get started free</a>
+        <a class="btn btn-ghost btn-lg" href="#product">Watch it think →</a>
+      </div>
+      <div class="hero-trust">
+        <span><i class="dot"></i>168 nodes · 1,363 cross-checks</span>
+        <span><i class="dot"></i>Re-run every night</span>
+        <span><i class="dot"></i>Bilingual EN · 中文</span>
+      </div>
+    </div>
+
+    <!-- Hero stage: real constellation graph + drawn verdict overlay -->
+    <div class="hero-stage">
+      <div class="hero-map">
+        <img src="assets/synapse_map.png" alt="The Neural Web — 22 signal engines drawn as a glowing graph of 168 connected nodes on deep violet" loading="eager" width="2360" height="1500" />
+      </div>
+
+      <!-- pulse lines converging from the map's bright centre node toward the verdict card -->
+      <svg class="hero-pulse" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="pl1" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#22d3ee" stop-opacity="0"/>
+            <stop offset=".55" stop-color="#8b7cf6" stop-opacity=".6"/>
+            <stop offset="1" stop-color="#f59e0b"/>
+          </linearGradient>
+        </defs>
+        <!-- start at the "Neural Web" centre node (~x420,y300), land on card left edge (~x700,y310) -->
+        <path class="pulse-line" d="M420,300 C560,260 620,296 700,300" stroke="url(#pl1)"/>
+        <path class="pulse-line" d="M420,300 C560,300 630,312 700,312" stroke="url(#pl1)"/>
+        <path class="pulse-line" d="M420,300 C560,340 620,326 700,324" stroke="url(#pl1)"/>
+        <path class="pulse-packet"    d="M420,300 C560,260 620,296 700,300" stroke="#8b7cf6"/>
+        <path class="pulse-packet p2" d="M420,300 C560,300 630,312 700,312" stroke="#22d3ee"/>
+        <path class="pulse-packet p3" d="M420,300 C560,340 620,326 700,324" stroke="#f59e0b"/>
+      </svg>
+
+      <!-- floating glass verdict card -->
+      <aside class="verdict" aria-label="Tonight's read">
+        <div class="verdict-eyebrow"><span class="live"></span>Tonight's read</div>
+        <div class="verdict-score">
+          <span class="verdict-num">50</span>
+          <svg class="verdict-arc" viewBox="0 0 56 34" aria-hidden="true">
+            <path d="M4 32 A24 24 0 0 1 52 32" fill="none" stroke="rgba(180,160,255,.18)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M4 32 A24 24 0 0 1 28 8" fill="none" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="verdict-state">Mixed</div>
+        <div class="verdict-line">Trade smaller, favour quality — the engines disagree, so we don't force a call.</div>
+        <div class="verdict-foot">SCORE 0–100 · US regime · as of tonight's run</div>
+      </aside>
+    </div>
+  </div>
+</header>
+
+<!-- SIGNATURE: engines → verdict flow -->
+<section class="flow" id="product">
+  <div class="wrap">
+    <div class="flow-head">
+      <div class="eyebrow">The Neural Web</div>
+      <h2>Every engine gets a vote. One read comes out.</h2>
+      <p>Twelve signal families flow into one graph. When they agree, you get conviction. When they don't, you hear it plainly.</p>
+    </div>
+
+    <div class="flowband">
+      <svg class="flow-svg" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="fe" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#8b7cf6" stop-opacity="0"/>
+            <stop offset=".5" stop-color="#8b7cf6" stop-opacity=".55"/>
+            <stop offset="1" stop-color="#f59e0b"/>
+          </linearGradient>
+          <linearGradient id="fp" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#22d3ee"/>
+            <stop offset="1" stop-color="#f59e0b"/>
+          </linearGradient>
+        </defs>
+        <!-- edges converge from the chip grid (left) to verdict (right ~880,150) -->
+        <path class="flow-edge" d="M470,30  C700,30 760,150 880,150" stroke="url(#fe)"/>
+        <path class="flow-edge" d="M470,72  C700,72 760,150 880,150" stroke="url(#fe)"/>
+        <path class="flow-edge" d="M470,110 C700,110 770,150 880,150" stroke="url(#fe)"/>
+        <path class="flow-edge" d="M470,150 C720,150 770,150 880,150" stroke="url(#fe)"/>
+        <path class="flow-edge" d="M470,190 C700,190 770,150 880,150" stroke="url(#fe)"/>
+        <path class="flow-edge" d="M470,228 C700,228 760,150 880,150" stroke="url(#fe)"/>
+        <path class="flow-edge" d="M470,270 C700,270 760,150 880,150" stroke="url(#fe)"/>
+        <path class="flow-pkt"    d="M470,30  C700,30 760,150 880,150" stroke="url(#fp)" style="animation-delay:0s"/>
+        <path class="flow-pkt"    d="M470,110 C700,110 770,150 880,150" stroke="url(#fp)" style="animation-delay:1.2s"/>
+        <path class="flow-pkt"    d="M470,228 C700,228 760,150 880,150" stroke="url(#fp)" style="animation-delay:2.4s"/>
+      </svg>
+
+      <div class="flowband-inner">
+        <div class="chips">
+          <span class="chip"><i class="nd v"></i>Price &amp; Trend</span>
+          <span class="chip"><i class="nd c"></i>Breadth</span>
+          <span class="chip"><i class="nd a"></i>Options &amp; Flow</span>
+          <span class="chip"><i class="nd v"></i>Insider tape</span>
+          <span class="chip"><i class="nd c"></i>Congress</span>
+          <span class="chip"><i class="nd a"></i>Smart-money 13F</span>
+          <span class="chip"><i class="nd v"></i>Factor weather</span>
+          <span class="chip"><i class="nd c"></i>Seasonality</span>
+          <span class="chip"><i class="nd a"></i>News &amp; Events</span>
+          <span class="chip"><i class="nd v"></i>Cross-asset</span>
+          <span class="chip"><i class="nd c"></i>China desk</span>
+          <span class="chip"><i class="nd a"></i>Crypto</span>
+        </div>
+
+        <div class="flow-verdict" aria-label="Regime verdict">
+          <div class="lab">Regime score</div>
+          <div class="n">50</div>
+          <div class="s">Mixed</div>
+          <div class="d">Trade smaller,<br/>favour quality</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- engine stat strip -->
+    <div class="stats">
+      <div class="stat"><b>22</b><span>Signal engines, cross-checking each other nightly</span></div>
+      <div class="stat"><b>1,363</b><span>Edges — the checks between engines that catch disagreement</span></div>
+      <div class="stat"><b>~2,700</b><span>US names staged every night into plain action lanes</span></div>
+      <div class="stat"><b>4</b><span>Markets covered: US · China · Hong Kong · Canada</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ONE BRAIN story -->
+<section class="sec" id="markets">
+  <div class="wrap brain">
+    <div>
+      <div class="eyebrow">One brain, not 22 dashboards</div>
+      <h2 style="font-family:var(--font-d);font-weight:600;font-size:clamp(26px,3.4vw,40px);line-height:1.08;margin:14px 0 16px;letter-spacing:-.01em">Most tools hand you signals. Mastermind reconciles them.</h2>
+      <p style="color:var(--mut);font-size:16.5px;line-height:1.62;margin:0;max-width:480px">
+        A price breakout means one thing when insiders are buying and breadth is widening —
+        and something else entirely when they aren't. The Neural Web wires all 22 engines into
+        a single graph so every signal is checked against the others before it reaches you.
+      </p>
+      <ol class="brain-steps">
+        <li class="brain-step"><span class="k">01</span><div><h4>Every engine reports in</h4><p>Price, breadth, flow, insiders, Congress, factors and more — each scores what it sees.</p></div></li>
+        <li class="brain-step"><span class="k">02</span><div><h4>The graph cross-checks them</h4><p>1,363 edges test where engines confirm each other and where they contradict.</p></div></li>
+        <li class="brain-step"><span class="k">03</span><div><h4>One read, in plain words</h4><p>A 0–100 score, a stance you can act on, and — when it's honest to — "trade smaller."</p></div></li>
+      </ol>
+    </div>
+    <div class="brain-img">
+      <img src="assets/committee_full.png" alt="The full Neural Web page: engines drawn as connected nodes with confirm and contradict edges" loading="lazy" />
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE BENTO -->
+<section class="sec" style="padding-top:0" id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">What you get</div>
+      <h2>One read, then everything behind it.</h2>
+      <p>The glance answer up top. Every desk, basket and dossier one click deeper.</p>
+    </div>
+
+    <div class="bento">
+      <!-- Regime dial (big) -->
+      <article class="card c-dial">
+        <div class="card-body">
+          <span class="tag">Regime dial</span>
+          <h3>Is it risk-on or risk-off?</h3>
+          <p>A single 0–100 score with a plain stance and the 15-session path that got there — the first thing you see, every day.</p>
+        </div>
+        <div class="card-shot"><img src="assets/macro_hero.png" alt="Regime dial reading 50 · Mixed, with the 15-session score path" loading="lazy" /></div>
+      </article>
+
+      <!-- Action lanes (wide) -->
+      <article class="card c-lanes">
+        <div class="card-body">
+          <span class="tag">Action lanes</span>
+          <h3>What to actually do — in five plain lanes</h3>
+          <p>~2,700 US names sorted nightly into lanes you can read at a glance. No jargon, no homework.</p>
+          <div class="lane-legend">
+            <span class="lane-pill">🟢 Buy now</span>
+            <span class="lane-pill">🔵 Almost ready</span>
+            <span class="lane-pill">🏃 In favour</span>
+            <span class="lane-pill">🟠 Take profits</span>
+            <span class="lane-pill">⚪ Stand aside</span>
+          </div>
+        </div>
+        <div class="card-shot"><img src="assets/stock_lanes.png" alt="The action-lane board: names sorted into Buy now, Almost ready, In favour, Take profits and Stand aside" loading="lazy" /></div>
+      </article>
+
+      <!-- Theme baskets -->
+      <article class="card c-baskets">
+        <div class="card-body">
+          <span class="tag">Theme baskets</span>
+          <h3>See where money is rotating</h3>
+          <p>34 theme baskets ranked by strength, so you spot the leaders before they're obvious.</p>
+        </div>
+        <div class="card-shot"><img src="assets/baskets_full.png" alt="Theme baskets ranked by strength" loading="lazy" /></div>
+      </article>
+
+      <!-- Insider & Congress -->
+      <article class="card c-intel">
+        <div class="card-body">
+          <span class="tag">Insider · Congress · 13F</span>
+          <h3>Follow the people who know</h3>
+          <p>Insider tape, Congress filings and fund-memory desks — read as signals, not spreadsheets.</p>
+        </div>
+        <div class="card-shot"><img src="assets/stock_cards.png" alt="Signal cards showing insider and setup context per name" loading="lazy" /></div>
+      </article>
+
+      <!-- Mastermind AI -->
+      <article class="card c-ai">
+        <div class="card-body">
+          <span class="tag">Mastermind AI</span>
+          <h3>Ask the brain anything</h3>
+          <p>A copilot that reads the whole Neural Web — “why is my name in Take profits?” gets a real answer, with the receipts.</p>
+        </div>
+      </article>
+
+      <!-- Terminal (wide) -->
+      <article class="card c-terminal" id="terminal">
+        <div class="card-body">
+          <span class="tag">Terminal</span>
+          <h3>A real-time charting terminal — free</h3>
+          <p>Live charts, indicators and multi-timeframe views on any stock, ETF or crypto. The dashboards feed straight in.</p>
+          <span class="free-flag"><i class="nd c" style="width:8px;height:8px;border-radius:50%;background:var(--cyan)"></i>Free forever</span>
+        </div>
+        <div class="card-shot"><img src="assets/terminal_live.png" alt="The Mastermind Terminal: live candlestick chart with indicators and a watchlist" loading="lazy" /></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- HONESTY -->
+<section class="honesty" id="honesty">
+  <div class="wrap sec honesty-in">
+    <div>
+      <div class="eyebrow">The differentiator</div>
+      <h2>When the engines disagree, we tell you.</h2>
+      <p>Most tools hide uncertainty behind a confident-looking arrow. We don't. <b>When the signals split, Mastermind says "Mixed — trade smaller"</b> instead of forcing a call.</p>
+      <p>The machine <b>prints its nulls.</b> If a signal found no edge, you read that in plain words — not buried in an asterisk. <b>"Watch — don't chase" is a complete answer.</b></p>
+    </div>
+    <div class="honest-quote">
+      <div class="hq-row">
+        <span class="hq-ic a">50</span>
+        <div><div class="t">Mixed — trade smaller, favour quality</div><div class="d">The regime score, when engines split. An honest shrug beats a false arrow.</div></div>
+      </div>
+      <div class="hq-row">
+        <span class="hq-ic v">◔</span>
+        <div><div class="t">Watch — don't chase</div><div class="d">A real stance. Sometimes the right move is no move, and the board says so.</div></div>
+      </div>
+      <div class="hq-row">
+        <span class="hq-ic c">∅</span>
+        <div><div class="t">"A heads-up, not a buy signal"</div><div class="d">When a signal found no edge, we print the null in plain words — receipts one click away.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="sec" id="pricing">
+  <div class="wrap">
+    <div class="sec-head center">
+      <div class="eyebrow">Pricing</div>
+      <h2>Start free. Upgrade when it pays for itself.</h2>
+    </div>
+
+    <div style="text-align:center">
+      <div class="price-toggle" role="tablist" aria-label="Billing period">
+        <button id="pt-mo" role="tab" aria-selected="false">Monthly</button>
+        <button id="pt-yr" class="on" role="tab" aria-selected="true">Annual</button>
+      </div>
+      <div class="save-note" id="save-note">Billed annually — save up to 22%</div>
+    </div>
+
+    <div class="plans">
+      <!-- Free -->
+      <div class="plan">
+        <div class="plan-name">Free</div>
+        <div class="plan-desc">The Terminal and daily dashboards, forever.</div>
+        <div class="plan-price"><span class="amt">$0</span></div>
+        <div class="plan-bill">No card needed</div>
+        <ul>
+          <li>Real-time charting Terminal</li>
+          <li>Daily regime dial &amp; action lanes</li>
+          <li>34 theme baskets</li>
+          <li class="dim">Insider, Congress &amp; fund desks</li>
+          <li class="dim">Mastermind AI copilot</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Get started free</a>
+      </div>
+
+      <!-- Insider -->
+      <div class="plan">
+        <div class="plan-name">Insider</div>
+        <div class="plan-desc">The intel desks: who's buying, and who knows.</div>
+        <div class="plan-price"><span class="amt" data-mo="59" data-yr="49">49</span><span class="per">/mo</span></div>
+        <div class="plan-bill" data-bill-yr="Billed annually" data-bill-mo="Billed monthly">Billed annually</div>
+        <ul>
+          <li>Everything in Free</li>
+          <li>Insider trading desk</li>
+          <li>Congress filings desk</li>
+          <li>Smart-money fund-memory (13F)</li>
+          <li class="dim">Mastermind AI &amp; options flow</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Choose Insider</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="plan hot">
+        <div class="plan-flag">Most popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-desc">The whole brain — copilot, flow and full intel.</div>
+        <div class="plan-price"><span class="amt" data-mo="89" data-yr="69">69</span><span class="per">/mo</span></div>
+        <div class="plan-bill" data-bill-yr="Billed annually" data-bill-mo="Billed monthly">Billed annually</div>
+        <ul>
+          <li>Everything in Insider</li>
+          <li>Mastermind AI copilot</li>
+          <li>Options &amp; flow</li>
+          <li>Full intel &amp; dossiers</li>
+          <li>Priority nightly refresh</li>
+        </ul>
+        <a class="btn btn-primary" href="#">Get Pro</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="finalcta">
+  <div class="wrap">
+    <div class="finalcta-card">
+      <svg class="spark" viewBox="0 0 820 260" preserveAspectRatio="none" aria-hidden="true">
+        <defs><radialGradient id="sg" cx="50%" cy="0%" r="80%"><stop offset="0" stop-color="#8b7cf6" stop-opacity=".4"/><stop offset="1" stop-color="#8b7cf6" stop-opacity="0"/></radialGradient></defs>
+        <circle cx="140" cy="60" r="2.5" fill="#22d3ee"/><circle cx="680" cy="90" r="2.5" fill="#f59e0b"/>
+        <circle cx="420" cy="40" r="2" fill="#8b7cf6"/><circle cx="250" cy="150" r="2" fill="#8b7cf6"/><circle cx="600" cy="180" r="2" fill="#22d3ee"/>
+        <path d="M140,60 L420,40 L680,90" fill="none" stroke="url(#sg)" stroke-width="1"/>
+      </svg>
+      <div class="eyebrow">mastermind-x.com</div>
+      <h2>See what the brain reads tonight.</h2>
+      <p>Free forever on the Terminal and daily dashboards. Upgrade the day it earns its keep.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="#pricing">Get started free</a>
+        <a class="btn btn-ghost btn-lg" href="#product">Watch it think →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot-in">
+    <div class="foot-brand">
+      <a class="brand" href="#top"><span class="brand-mark">M</span><span>MASTERMIND</span></a>
+      <p>Global macro &amp; market-cycle intelligence. The market, as one connected mind. Bilingual EN · 中文.</p>
+    </div>
+    <div class="foot-col">
+      <h5>Product</h5>
+      <a href="#product">The Neural Web</a>
+      <a href="#features">Action lanes</a>
+      <a href="#markets">Theme baskets</a>
+      <a href="#terminal">Terminal</a>
+    </div>
+    <div class="foot-col">
+      <h5>Markets</h5>
+      <a href="#">United States</a>
+      <a href="#">China</a>
+      <a href="#">Hong Kong</a>
+      <a href="#">Canada</a>
+    </div>
+    <div class="foot-col">
+      <h5>Company</h5>
+      <a href="#honesty">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#">Log in</a>
+      <a href="#">中文</a>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 Mastermind · mastermind-x.com</span>
+    <span class="mono">Not investment advice. Signals are information, not instructions.</span>
+  </div>
+</footer>
+
+<script>
+  // Pricing toggle — annual default
+  (function(){
+    var mo = document.getElementById('pt-mo');
+    var yr = document.getElementById('pt-yr');
+    var note = document.getElementById('save-note');
+    function set(annual){
+      yr.classList.toggle('on', annual);
+      mo.classList.toggle('on', !annual);
+      yr.setAttribute('aria-selected', annual);
+      mo.setAttribute('aria-selected', !annual);
+      note.textContent = annual ? 'Billed annually — save up to 22%' : 'Billed month to month';
+      document.querySelectorAll('.plan-price .amt[data-mo]').forEach(function(el){
+        el.textContent = annual ? el.dataset.yr : el.dataset.mo;
+      });
+      document.querySelectorAll('.plan-bill[data-bill-yr]').forEach(function(el){
+        el.textContent = annual ? el.dataset.billYr : el.dataset.billMo;
+      });
+    }
+    mo.addEventListener('click', function(){set(false);});
+    yr.addEventListener('click', function(){set(true);});
+    set(true);
+  })();
+</script>
+</body>
+</html>
