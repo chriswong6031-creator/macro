@@ -1,4 +1,4 @@
-"""engine.marketing.departments — 10 chartered departments.
+"""engine.marketing.departments — 11 chartered departments.
 
 Department charters are seeded here from the docket (§7) and strategy doc (§8).
 Config overrides in config/marketing.yml are applied at runtime via registry().
@@ -76,7 +76,7 @@ class Department:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Seed charters (10 departments)
+# Seed charters (11 departments)
 # ─────────────────────────────────────────────────────────────────────────────
 
 _REVIEW_CADENCE = "weekly"
@@ -613,6 +613,63 @@ DEPARTMENT_CHARTERS: list[Department] = [
             authority_level="G2",
         ),
         wave=0,
+    ),
+
+    Department(
+        id="seo_organics",
+        name="Beacon",
+        formal_name="Organic Search & Public Pages",
+        tagline=(
+            "Pulls durable organic and AI-assistant traffic through public evidence pages "
+            "that earn their ranking honestly."
+        ),
+        icon="beacon",
+        director_model="opus",
+        primary_outcome=(
+            "Durable organic search and AI-assistant referral traffic via per-ticker dossier "
+            "pages, finite receipt-SEO templates, structured data, sitemap curation, and "
+            "freshness/noindex policing — never thin auto-generated article volume."
+        ),
+        non_goals=[
+            "Paid search or retargeting of any kind.",
+            "Editorial voice and chart creation (Studio owns).",
+            "Subscription conversion (Funnel owns).",
+            "Originating any market signal or score.",
+        ],
+        engines=[
+            {"id": "ticker_dossier_renderer", "name": "Dossier Pages", "does": "Builds the public one-page dossier for each covered ticker from committed engine artifacts."},
+            {"id": "sitemap_builder", "name": "Sitemap Builder", "does": "Regenerates sitemap.xml every publish cycle so new and updated pages get crawled fast."},
+            {"id": "structured_data_injector", "name": "Schema Injector", "does": "Puts machine-readable JSON-LD on every eligible page so search and AI engines can quote us precisely."},
+            {"id": "freshness_noindex_guard", "name": "Freshness Guard", "does": "Marks any page whose evidence has gone stale as noindex and restores it when data is current again."},
+            {"id": "canonical_url_manager", "name": "Canonical Manager", "does": "Enforces one canonical URL per page family to prevent duplicate-content dilution."},
+            {"id": "internal_link_graph", "name": "Link Graph", "does": "Weaves dossiers, baskets, and sector pages into one dense crawlable graph."},
+            {"id": "receipt_seo_templates", "name": "Receipt Templates", "does": "Maintains the finite what-changed, why-moving, and compare page families, each gated on unique evidence."},
+            {"id": "search_demand_feedback", "name": "Demand Feedback", "does": "Reads search impression and click data and feeds query gaps back to Radar as opportunities."},
+            {"id": "crawl_error_monitor", "name": "Crawl Watch", "does": "Watches crawl errors and soft-404s before they compound into ranking losses."},
+            {"id": "page_speed_audit", "name": "Speed Auditor", "does": "Audits page weight and Core Web Vitals on dossier pages so they load fast enough to rank."},
+        ],
+        authority_level="G1",
+        lifecycle_state="chartered",
+        budget=dict(_DEFAULT_BUDGET),
+        model_mix={"director": "opus", "workers": "sonnet", "extraction": "haiku"},
+        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": "2026-07-25"},
+        retirement_test=(
+            "Retire if indexed dossier pages produce fewer than 10 qualified organic "
+            "acquisition events per month for 60 consecutive days."
+        ),
+        scorecard=Scorecard(
+            primary_metric="qualified organic sessions driving acquisition per week",
+            leading=[
+                "indexed_page_count",
+                "impressions_growth",
+                "stale_page_noindex_rate",
+            ],
+            trust_health="clean",
+            experiment_velocity=0,
+            learning_quality="seeding",
+            authority_level="G1",
+        ),
+        wave=4,
     ),
 ]
 

@@ -124,7 +124,7 @@ _WAVES: list[dict] = [
     {
         "id": "wave4",
         "title": "Owned media machine",
-        "status": "planned",
+        "status": "in_progress",
         "goal": (
             "Make one worthy opportunity become a coherent owned distribution bundle: "
             "newsletter, flagship X desk, chart/receipt X desk, YouTube shorts, "

@@ -917,6 +917,32 @@ lanes:
           data/stocks/ parquets (committed, ~219 tickers). Non-fatal: exits 0
           on script error, commits only if artifacts changed.
 
+  # ── daily.yml / ticker_pages ────────────────────────────────────────────
+  # Static SEO dossier pages from committed artifacts, off render path,
+  # display-tier, non-fatal. Outputs site/stocks/*.html + site/sitemap.xml.
+  # Needs engine (factordata/alpha/gex/signals/flow artifacts committed by
+  # engine job). v1 = active sp500 (~509 tickers). Min-info gate ≥3 sections.
+  - workflow: .github/workflows/daily.yml
+    job: ticker_pages
+    steps:
+      - id: build_ticker_pages
+        module: scripts.build_ticker_pages
+        note: >
+          Static SEO dossier pages (site/stocks/<TICKER>.html + index.html +
+          sitemap.xml update). Reads committed artifacts: data/universe/membership.parquet,
+          site/factordata/factors.json, site/factordata/alpha.json,
+          site/gex/<T>.json, site/signals/<T>.json, site/flow/<T>.json,
+          site/stockbrief/<T>.json, site/basketdata/member_context.json,
+          site/intelligence/by_ticker.json, site/news/by_ticker.json,
+          site/altdata/by_ticker.json. Display-only (is_context_only=True);
+          no gauntlet-promotion; non-fatal (exits 0 on script error). Arrow
+          one-shot: hard_exit(0) at end (reads membership.parquet via pyarrow).
+          v1 universe = active sp500 members. Min-information gate ≥3 sections
+          required per ticker (SEO §7.4). Freshness gate: noindex + sitemap
+          exclusion when newest as_of > 14d. Sitemap preserves non-/stocks/
+          entries byte-faithfully, drops stale /stocks/ entries, appends
+          current indexable pages.
+
   # ── daily.yml / standout_audit_us ───────────────────────────────────────
   # SA-W1: US two-axis attribution organ. Off-render, reads committed
   # retro_grades.parquet from the engine job. Writes evidence packs, scoreboard,
