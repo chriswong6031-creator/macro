@@ -1457,22 +1457,82 @@ def _pick_vision_provider(providers: list[dict]) -> dict | None:
     return None
 
 
-def _vision_provider(lane: str, providers: list[dict], root: Path | None) -> dict | None:
-    """Resolve a vision-capable provider for an image turn.
+def _vision_providers(lane: str, providers: list[dict], root: Path | None) -> list[dict]:
+    """Ordered list of vision-capable (claude-*) providers for an image turn.
 
-    Prefer an in-lane claude provider (Haiku on Fast when an Anthropic key exists).
-    When the lane has none — e.g. Fast with only DeepSeek (text-only) and no Haiku
-    key — borrow the Pro lane's vision provider (Opus via OAuth) so image turns work
-    regardless of lane. The turn is still metered against the caller's lane/quota.
-    Returns None only when no vision provider exists anywhere (→ turn goes text-only).
+    In-lane claude providers first (Haiku on Fast when an Anthropic key exists). When
+    the lane has none — Fast with only DeepSeek (text-only) and no Haiku key — borrow
+    the Pro lane's claude providers (Opus via OAuth) so image turns work regardless of
+    lane. Multiple entries enable OAuth-token failover on 429. [] when none exist.
     """
-    vp = _pick_vision_provider(providers)
-    if vp is None and lane != "pro":
+    claude = [p for p in providers
+              if str(p.get("model") or "").startswith("claude") and p.get("client") is not None]
+    if claude:
+        return claude
+    if lane != "pro":
         try:
-            vp = _pick_vision_provider(_build_lane_providers("pro", root))
+            pro = _build_lane_providers("pro", root)
+            return [p for p in pro
+                    if str(p.get("model") or "").startswith("claude") and p.get("client") is not None]
         except Exception:  # noqa: BLE001
-            vp = None
-    return vp
+            return []
+    return []
+
+
+# ---------------------------------------------------------------------------
+# Provider failover — waterfall across OAuth tokens / providers on 429 / 5xx
+# ---------------------------------------------------------------------------
+
+_RETRYABLE_STATUS = {429, 500, 502, 503, 529}
+
+
+def _is_retryable_provider_error(exc: Exception) -> bool:
+    """True for transient provider errors worth failing over to the next token/provider:
+    a 429 rate-limit, a 5xx, an 'overloaded'/'rate_limit' message, or a
+    connection/timeout error (a dead token must fail over, not fail the turn)."""
+    code = getattr(exc, "status_code", None)
+    if isinstance(code, int) and code in _RETRYABLE_STATUS:
+        return True
+    s = str(exc).lower()
+    if ("overloaded" in s or "rate_limit" in s or "timeout" in s
+            or "timed out" in s or "connection" in s):
+        return True
+    # word-boundary status match so "8500 tokens" / "req_529…" don't false-trigger
+    return bool(re.search(r"\b(429|500|502|503|529)\b", s))
+
+
+def _turn_providers(client: Any, model: str, providers: list[dict] | None) -> list[dict]:
+    """Ordered candidate providers for a turn — the explicit list when given (enables
+    failover across OAuth tokens), else the single (client, model) the caller resolved."""
+    if providers:
+        cands = [p for p in providers if p.get("client") is not None]
+        if cands:
+            return cands
+    return [{"client": client, "model": model}]
+
+
+def _create_failover(cands: list[dict], **kwargs) -> tuple[Any, str]:
+    """Call messages.create across candidate providers in order; on a retryable error
+    (429/5xx/overloaded) fall through to the next token/provider. Returns (resp,
+    used_model). Raises the last error when the final candidate fails or the error is
+    non-retryable — so a single throttled OAuth token no longer fails the whole turn."""
+    last: Exception | None = None
+    for i, p in enumerate(cands):
+        cl = p.get("client")
+        if cl is None:
+            continue
+        try:
+            resp = cl.messages.create(model=p.get("model"), **kwargs)
+            return resp, (p.get("model") or "")
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+            if not _is_retryable_provider_error(exc) or i >= len(cands) - 1:
+                raise
+            log.warning("brain_gateway: provider %s create failed (%s) — failover to next",
+                        p.get("model"), str(exc)[:80])
+    if last:
+        raise last
+    raise RuntimeError("brain_gateway: no usable provider")
 
 
 # ---------------------------------------------------------------------------
@@ -1515,6 +1575,7 @@ def _run_brain_loop(
     tool_budget: int,
     mode: str = "chat",
     image_blocks: list[dict] | None = None,
+    providers: list[dict] | None = None,
 ) -> tuple[str, list[dict], list[dict], list[dict], dict, list[dict]]:
     """Run the bounded tool loop.
 
@@ -1583,11 +1644,12 @@ def _run_brain_loop(
     answer_text = ""
     tool_call_count = 0
     last_resp = None  # track to extract usage from final response
+    _cands = _turn_providers(client, model, providers)  # failover order (OAuth tokens)
 
     while tool_call_count < tool_budget:
         try:
-            resp = client.messages.create(
-                model=model,
+            resp, model = _create_failover(
+                _cands,
                 max_tokens=max_tokens,
                 system=system_prompt,
                 tools=tool_schemas,
@@ -1688,6 +1750,7 @@ def _run_brain_loop_stream(
     answer_out: list | None = None,
     mode: str = "chat",
     image_blocks: list[dict] | None = None,
+    providers: list[dict] | None = None,
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
@@ -1761,10 +1824,11 @@ def _run_brain_loop_stream(
     resp = None  # initialise so post-loop guard is safe
 
     # Phase 1: tool-calling turns (blocking, no streaming)
+    _cands = _turn_providers(client, model, providers)  # failover order (OAuth tokens)
     while tool_call_count < tool_budget:
         try:
-            resp = client.messages.create(
-                model=model,
+            resp, model = _create_failover(
+                _cands,
                 max_tokens=max_tokens,
                 system=system_prompt,
                 tools=tool_schemas,
@@ -1841,28 +1905,46 @@ def _run_brain_loop_stream(
     need_synthesis = last_stop == "tool_use"
     if need_synthesis:
         messages.append({"role": "user", "content": "Please synthesize your findings and answer my question."})
-        try:
-            with client.messages.stream(
-                model=model,
-                max_tokens=max_tokens,
-                system=system_prompt,
-                tools=tool_schemas,
-                messages=messages,
-            ) as s:
-                for chunk in s.text_stream:
-                    full_answer += chunk
-            final_resp = s.get_final_message()
-            u = getattr(final_resp, "usage", None)
-            if u:
-                usage_dict = {
-                    "input_tokens": getattr(u, "input_tokens", 0),
-                    "output_tokens": getattr(u, "output_tokens", 0),
-                }
-        except Exception as exc:  # noqa: BLE001
-            log.warning("brain_gateway: stream synthesis failed (%s) — fallback", exc)
-            for block in last_resp_content:
-                if getattr(block, "type", "") == "text":
-                    full_answer += block.text
+        # Stream with OAuth-token failover: the answer is buffered server-side (emitted
+        # as one delta below), so a candidate that 429s on open is retried from scratch
+        # with a fresh buffer — no partial/duplicated text reaches the client.
+        _last_err: Exception | None = None
+        for _i, _p in enumerate(_cands):
+            _cl = _p.get("client")
+            if _cl is None:
+                continue
+            full_answer = ""
+            try:
+                with _cl.messages.stream(
+                    model=_p.get("model"),
+                    max_tokens=max_tokens,
+                    system=system_prompt,
+                    tools=tool_schemas,
+                    messages=messages,
+                ) as s:
+                    for chunk in s.text_stream:
+                        full_answer += chunk
+                final_resp = s.get_final_message()
+                u = getattr(final_resp, "usage", None)
+                if u:
+                    usage_dict = {
+                        "input_tokens": getattr(u, "input_tokens", 0),
+                        "output_tokens": getattr(u, "output_tokens", 0),
+                    }
+                model = _p.get("model") or model
+                break
+            except Exception as exc:  # noqa: BLE001
+                _last_err = exc
+                if _is_retryable_provider_error(exc) and _i < len(_cands) - 1:
+                    log.warning("brain_gateway: stream provider %s failed (%s) — failover",
+                                _p.get("model"), str(exc)[:80])
+                    continue
+                log.warning("brain_gateway: stream synthesis failed (%s) — fallback", exc)
+                full_answer = ""
+                for block in last_resp_content:
+                    if getattr(block, "type", "") == "text":
+                        full_answer += block.text
+                break
     else:
         for block in last_resp_content:
             if getattr(block, "type", "") == "text":
@@ -2019,15 +2101,19 @@ def chat(
     client = providers[0].get("client")
     model = providers[0].get("model") or "unknown"
 
-    # 4b. Vision routing (W6c): DeepSeek (Fast primary) is text-only, so an image
-    # turn is served by a vision-capable provider (in-lane Haiku when a key exists,
-    # else the Pro lane's Opus via OAuth). Invalid/oversized dropped; none → text-only.
+    # 4b. Vision (W6c): Pro-gated (operator decision) — Free/Trial answer text-only.
+    # An image turn is served by a claude vision model (in-lane Haiku when a key exists,
+    # else the Pro lane's Opus via OAuth), with OAuth-token failover across them.
     image_blocks = _image_blocks(images)
+    turn_providers = providers
+    if image_blocks and _get_allowance(tier, status, "pro", root).get("limit", 0) <= 0:
+        image_blocks = []  # not Pro-eligible → drop attachments
     if image_blocks:
-        vp = _vision_provider(lane, providers, root)
-        if vp is not None:
-            client = vp.get("client") or client
-            model = vp.get("model") or model
+        vprovs = _vision_providers(lane, providers, root)
+        if vprovs:
+            client = vprovs[0].get("client") or client
+            model = vprovs[0].get("model") or model
+            turn_providers = vprovs
         else:
             image_blocks = []
 
@@ -2068,7 +2154,7 @@ def chat(
             clean_msg, lane, active_history, context or {},
             root, terminal_data_dir, terminal_hub_url,
             client, model, max_tokens, tool_budget,
-            mode=mode, image_blocks=image_blocks,
+            mode=mode, image_blocks=image_blocks, providers=turn_providers,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: loop failed (%s) — degraded reply", exc)
@@ -2237,15 +2323,20 @@ def chat_stream(
     client = providers[0].get("client")
     model = providers[0].get("model") or "unknown"
 
-    # 3b. Vision routing (W6c): route image turns to a vision-capable provider
-    # (in-lane Haiku when a key exists — DeepSeek is text-only; else Pro's Opus via
-    # OAuth). Done before the meta event so the reported model serves the turn.
+    # 3b. Vision (W6c): Pro-gated (operator decision) — Free/Trial answer text-only.
+    # Image turns are served by a claude vision model (in-lane Haiku when a key exists,
+    # else Pro's Opus via OAuth) with token failover. Resolved before the meta event so
+    # the reported model serves the turn.
     image_blocks = _image_blocks(images)
+    turn_providers = providers
+    if image_blocks and _get_allowance(tier, status, "pro", root).get("limit", 0) <= 0:
+        image_blocks = []  # not Pro-eligible → drop attachments
     if image_blocks:
-        vp = _vision_provider(lane, providers, root)
-        if vp is not None:
-            client = vp.get("client") or client
-            model = vp.get("model") or model
+        vprovs = _vision_providers(lane, providers, root)
+        if vprovs:
+            client = vprovs[0].get("client") or client
+            model = vprovs[0].get("model") or model
+            turn_providers = vprovs
         else:
             image_blocks = []
 
@@ -2297,7 +2388,7 @@ def chat_stream(
             meta_event,
             usage_out,
             answer_out,
-            mode=mode, image_blocks=image_blocks,
+            mode=mode, image_blocks=image_blocks, providers=turn_providers,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: stream loop failed (%s)", exc)
