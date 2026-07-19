@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-19",
+  "as_of": "2026-07-20",
   "horizon_days": 45,
   "display_only": true,
   "upcoming": [
@@ -14,7 +14,7 @@
       "provisional": true,
       "display_only": true,
       "date": "2026-08-31",
-      "days_until": 43,
+      "days_until": 42,
       "imminent": false,
       "dow": "Mon",
       "dow_zh": "\u5468\u4e00",
@@ -23,11 +23,11 @@
     }
   ],
   "imminent": {
-    "en": "Next catalyst: MSCI Index Review \u2014 Aug semi-annual 2026 in 43 days (Aug 31) [provisional].",
-    "zh": "\u4e0b\u4e00\u7ed3\u6784\u6027\u50ac\u5316\uff1aMSCI\u6307\u6570\u68c0\u8ba8 \u2014 2026\u5e748\u6708\uff08semi-annual\uff0943\u5929\u540e\uff088\u670831\u65e5\uff09 [provisional]\u3002",
+    "en": "Next catalyst: MSCI Index Review \u2014 Aug semi-annual 2026 in 42 days (Aug 31) [provisional].",
+    "zh": "\u4e0b\u4e00\u7ed3\u6784\u6027\u50ac\u5316\uff1aMSCI\u6307\u6570\u68c0\u8ba8 \u2014 2026\u5e748\u6708\uff08semi-annual\uff0942\u5929\u540e\uff088\u670831\u65e5\uff09 [provisional]\u3002",
     "type": "MSCI_REVIEW",
     "date": "2026-08-31",
-    "days_until": 43,
+    "days_until": 42,
     "imminent": false,
     "provisional": true,
     "display_only": true
