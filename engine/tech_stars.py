@@ -236,39 +236,51 @@ def compute_fire_metrics(
     horizon: int = 21,
     atr_n: int = ATR_N,
     atr_mult: float = ATR_DURABLE_MULT,
+    direction: int = 1,
 ) -> pd.DataFrame:
-    """Compute per-fire forward metrics for a long-signal position Series.
+    """Compute per-fire forward metrics for a signal position Series.
 
     For each date t where pos[t] == 1.0 (i.e. a confirmed signal fires), compute:
-    - fwd_ret: forward absolute return over [t+1, t+horizon] (close[t+horizon] / close[t+1] - 1)
-      We use t+1 as entry (next bar, matching backtest_core's shift(1)), t+1+horizon as exit.
-      Actually: position is at t's close, enters at t+1's open (approx t+1 close).
-      So fwd_ret = close[t+horizon+1] / close[t+1] - 1 ... but we unify to:
-      entry_close = close[t+1], exit_close = close[t+1+horizon]
-      (horizon bars from entry = the held period).
-    - win: fwd_ret > 0
+    - fwd_ret: forward raw return over [t+1, t+horizon]
+      (close[t+horizon+1] / close[t+1] - 1, using t+1 as entry next-close).
+    - signed_return: direction * fwd_ret (positive = signal was right).
+    - win: signed_return > 0  (for direction=0 falls back to fwd_ret > 0).
     - mfe: max forward excess close over entry_close within window, / entry_close
-    - mae: max adverse close drop from entry_close within window, / entry_close (as positive number)
+    - mae: max adverse close drop from entry_close within window, / entry_close (positive)
     - mfe_mae: mfe / mae (NaN if mae == 0)
     - durable: close never revisits below (signal_day_low - atr_mult * ATR(atr_n)) within window
+
+    P0-1 FIX: direction parameter (default +1, backward compatible).
+      direction=+1  bullish: win = fwd_ret > 0 (unchanged)
+      direction=-1  bearish: win = (-fwd_ret) > 0, i.e. price fell
+      direction=0   neutral: win = fwd_ret > 0; 'direction_neutral': True stamped in each row
+
+    P0-6 FIX: exit_t == len(close_idx) is now rejected (incomplete horizon).
+      The prior code used > which let == slip through; the min() clamp then silently
+      evaluated a shorter window.  We now skip when exit_t >= len(close_idx).
 
     Parameters
     ----------
     df : DataFrame
         OHLCV frame aligned to pos.
     pos : Series
-        Position series from golden_star_signal / placebo_signal.
+        Position series from golden_star_signal / death_star_signal / placebo_signal.
     horizon : int
         Exit horizon in trading days (default 21).
     atr_n : int
         ATR window for durability check (default 14).
     atr_mult : float
         ATR multiplier for the durable-bottom breach level (default 1.0).
+    direction : int
+        Signal direction: +1 (bullish), -1 (bearish), 0 (neutral/display).
+        Default +1 preserves backward-compatible win semantics.
 
     Returns
     -------
     DataFrame with one row per fire date and columns:
-    fire_date, entry_close, exit_close, fwd_ret, win, mfe, mae, mfe_mae, durable.
+    fire_date, entry_close, exit_close, fwd_ret, signed_return, win,
+    mfe, mae, mfe_mae, durable.
+    For direction=0 rows also carry direction_neutral=True.
     """
     from engine.stock_technicals import atr  # noqa: PLC0415
 
@@ -281,24 +293,28 @@ def compute_fire_metrics(
     fire_dates = pos[pos > 0].index
     rows = []
     close_idx = close.index
+    _direction_neutral = (direction == 0)
 
     for fd in fire_dates:
         t = close_idx.get_loc(fd)  # integer position of fire date
         entry_t = t + 1            # entry bar (next close after signal)
         exit_t = entry_t + horizon # exit bar
 
-        if entry_t >= len(close_idx) or exit_t > len(close_idx):
-            continue  # not enough forward bars — skip
+        # P0-6: reject exit_t >= len (was: exit_t > len, letting == slip through)
+        if entry_t >= len(close_idx) or exit_t >= len(close_idx):
+            continue  # incomplete horizon — skip
 
         entry_close = close.iloc[entry_t]
-        exit_close = close.iloc[min(exit_t, len(close_idx) - 1)]
+        exit_close = close.iloc[exit_t]  # P0-6: min() clamp removed (dead after fix)
 
         window_closes = close.iloc[entry_t: entry_t + horizon + 1]
         if len(window_closes) < 2:
             continue
 
         fwd_ret = exit_close / entry_close - 1.0
-        win = bool(fwd_ret > 0)
+        # P0-1: signed return and direction-aware win
+        signed_return = fwd_ret if _direction_neutral else direction * fwd_ret
+        win = bool(signed_return > 0)
 
         mfe = float((window_closes.max() - entry_close) / entry_close)
         mae = float((entry_close - window_closes.min()) / entry_close)
@@ -311,21 +327,26 @@ def compute_fire_metrics(
         window_closes_for_dur = close.iloc[entry_t: entry_t + horizon + 1]
         durable = bool((window_closes_for_dur >= breach_level).all())
 
-        rows.append({
+        row: dict = {
             "fire_date": fd,
             "entry_close": round(entry_close, 4),
             "exit_close": round(exit_close, 4),
             "fwd_ret": round(fwd_ret, 6),
+            "signed_return": round(signed_return, 6),
             "win": win,
             "mfe": round(mfe, 6),
             "mae": round(mae, 6),
             "mfe_mae": round(mfe_mae, 4) if not np.isnan(mfe_mae) else None,
             "durable": durable,
-        })
+        }
+        if _direction_neutral:
+            row["direction_neutral"] = True
+        rows.append(row)
 
     if not rows:
         return pd.DataFrame(columns=["fire_date", "entry_close", "exit_close",
-                                     "fwd_ret", "win", "mfe", "mae", "mfe_mae", "durable"])
+                                     "fwd_ret", "signed_return", "win",
+                                     "mfe", "mae", "mfe_mae", "durable"])
     return pd.DataFrame(rows).set_index("fire_date")
 
 

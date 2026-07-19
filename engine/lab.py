@@ -515,7 +515,10 @@ class Trial:
         dsr = s.get("dsr") or 0.0
         ci_lo = (s.get("sharpe_ci") or [None])[0]
         split_ok = bool(s.get("split_half_consistent", False))
-        mean_ic = s.get("mean_ic") or 0.0
+        # P0-4: backtest() now stores ts_rank_ic_mean (per-ticker time-series IC);
+        # fall back to mean_ic for Trials created outside backtest() (e.g. direct
+        # stat injection in tests).
+        mean_ic = s.get("ts_rank_ic_mean") or s.get("mean_ic") or 0.0
 
         # Delegate band thresholds to the shared validation helper so a single
         # change to dsr_verdict() propagates everywhere.
@@ -696,8 +699,16 @@ def backtest(
             stats["split_half_sr_h2"] = round(float(m2[0]), 4)
 
     # IC summary
+    # P0-4: the per-ticker rank_ic computed above is a TIME-SERIES rank correlation
+    # (signal rank vs fwd-return rank over ALL dates for one ticker), averaged across
+    # tickers.  This is NOT a cross-sectional IC (one date × many tickers).  The key
+    # is renamed 'ts_rank_ic_mean' to prevent confusion with the true cross-sectional
+    # IC produced by characterize().  See characterize() for the proper cross-sectional IC.
     if ics:
         ic_sum = V.ic_summary(ics, periods_per_year=max(1, 252 // fwd_horizon))
+        # Rename mean_ic → ts_rank_ic_mean in the stats dict (P0-4)
+        if "mean_ic" in ic_sum:
+            ic_sum["ts_rank_ic_mean"] = ic_sum.pop("mean_ic")
         stats.update(ic_sum)
         nw = V.newey_west_tstat(ics)
         stats["ic_nw_t"] = nw.get("t")
@@ -1037,16 +1048,24 @@ def catalog_backtest(
         descriptor.get("default_params", {}).get("horizon", 21)
     )
 
+    # P0-2: direction-aware guard — bearish signals cannot be correctly evaluated
+    # by backtest_core (which measures long P&L only).  Raise early so callers
+    # don't silently get inverted win-rates.
+    _direction = int(descriptor.get("direction", 1))
+    if _direction < 0:
+        raise ValueError(
+            f"catalog_backtest: signal '{signal_id}' has direction=-1 (bearish). "
+            "backtest_core measures long-only P&L; for bearish signals use "
+            "compute_fire_metrics(direction=-1) for signed evaluation instead."
+        )
+
     def _expr(df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
         raw = tech_catalog.compute(signal_id, df, **kw)
         raw_filled = raw.reindex(df.index).fillna(0.0)
         # event signals (0/1) double as position; continuous signals need a
-        # threshold — use sign > 0 for direction=+1 or < 0 for direction=-1.
-        direction = descriptor.get("direction", 1)
+        # threshold — use sign > 0 for direction=+1.
         if descriptor.get("kind") == "event":
             pos = raw_filled.clip(0.0, 1.0)
-        elif direction < 0:
-            pos = (raw_filled < 0).astype(float)
         else:
             pos = (raw_filled > 0).astype(float)
         return raw_filled, pos

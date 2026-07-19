@@ -63,7 +63,7 @@ def _print_trial(trial: Any, signal_id: str, universe_key: str,
     _PRIORITY = [
         "dsr", "dsr_verdict", "sharpe_ann", "sharpe_ci",
         "split_half_consistent", "split_half_sr_h1", "split_half_sr_h2",
-        "mean_ic", "ic_nw_t", "ic_nw_p", "n_tickers",
+        "ts_rank_ic_mean", "mean_ic", "ic_nw_t", "ic_nw_p", "n_tickers",
     ]
     shown = set()
     for key in _PRIORITY:

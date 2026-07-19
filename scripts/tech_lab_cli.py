@@ -333,7 +333,10 @@ def cmd_profile(args: argparse.Namespace) -> dict[str, Any]:
         # Compute per-horizon metrics
         for h in horizons:
             try:
-                m = tech_stars.compute_fire_metrics(df, event_pos, horizon=h)
+                # P0-1: thread direction from catalog descriptor
+                m = tech_stars.compute_fire_metrics(
+                    df, event_pos, horizon=h, direction=direction
+                )
                 if not m.empty:
                     all_metrics_by_horizon[h].append(m)
             except Exception:
@@ -365,22 +368,41 @@ def cmd_profile(args: argparse.Namespace) -> dict[str, Any]:
             }
             continue
 
-        pooled = pd.concat(all_metrics).sort_index()
-        if len(pooled) > _FIRE_CAP:
-            pooled = pooled.iloc[-_FIRE_CAP:]
+        pooled_full = pd.concat(all_metrics).sort_index()
+        n_fires_total_h = len(pooled_full)
 
-        n = len(pooled)
-        if n > 0:
-            span_days = (pooled.index[-1] - pooled.index[0]).days
-            n_months = max(1, round(span_days / 30))
+        # P0-3: n_months = distinct calendar months with >=1 fire, on FULL set before cap
+        if n_fires_total_h > 0:
+            months_with_fires = pooled_full.index.to_period("M").unique()
+            n_months = len(months_with_fires)
         else:
             n_months = 0
 
-        wr = float(pooled["win"].mean()) if n > 0 else None
-        mean_ret = float(pooled["fwd_ret"].mean()) if n > 0 else None
-        mfe_mae_vals = pooled["mfe_mae"].dropna()
+        # P0-3: top_fire_days — 5 calendar dates with most simultaneous fires (full set)
+        if n_fires_total_h > 0:
+            daily_counts = pooled_full.groupby(pooled_full.index.normalize()).size()
+            top5 = daily_counts.nlargest(5)
+            top_fire_days = [
+                {"date": str(d.date()), "n_fires": int(c)} for d, c in top5.items()
+            ]
+        else:
+            top_fire_days = []
+
+        # Cap for per-fire detail storage; summary stats computed on full set
+        truncated_h = n_fires_total_h > _FIRE_CAP
+        if truncated_h:
+            pooled = pooled_full.iloc[-_FIRE_CAP:]
+        else:
+            pooled = pooled_full
+
+        # P0-3: summary stats on FULL set
+        n = n_fires_total_h
+        wr = float(pooled_full["win"].mean()) if n > 0 else None
+        # P0-1 fix: use signed_return (direction-adjusted) for mean; fwd_ret stored per-fire
+        mean_ret = float(pooled_full["signed_return"].mean()) if n > 0 else None
+        mfe_mae_vals = pooled_full["mfe_mae"].dropna()
         mfe_mae_med = float(mfe_mae_vals.median()) if len(mfe_mae_vals) > 0 else None
-        durable_rate = float(pooled["durable"].mean()) if n > 0 else None
+        durable_rate = float(pooled_full["durable"].mean()) if n > 0 else None
 
         # Base rate
         rng = np.random.default_rng(42)
@@ -403,15 +425,23 @@ def cmd_profile(args: argparse.Namespace) -> dict[str, Any]:
 
         base_wr = float(np.mean([r > 0 for r in sample_rets])) if sample_rets else None
         base_mean = float(np.mean(sample_rets)) if sample_rets else None
+        # P0-1: baseline signed to match the signal's direction (short random bars
+        # win at 1 - base_wr and earn -base_mean).
+        if direction < 0 and base_wr is not None:
+            base_wr = 1.0 - base_wr
+        if direction < 0 and base_mean is not None:
+            base_mean = -base_mean
         edge_wr = (round(wr - base_wr, 6) if wr is not None and base_wr is not None else None)
         edge_mean = (round(mean_ret - base_mean, 6) if mean_ret is not None and base_mean is not None else None)
 
-        era_split = _era_wr_profile(pooled)
+        # P0-3: era_split on full set
+        era_split = _era_wr_profile(pooled_full)
 
-        horizon_profiles[str(h)] = {
+        h_profile: dict = {
             "horizon_td": h,
             "n_fires": n,
             "n_months": n_months,
+            "top_fire_days": top_fire_days,
             "wr": round(wr, 4) if wr is not None else None,
             "mean_ret": round(mean_ret, 6) if mean_ret is not None else None,
             "mfe_mae_med": round(mfe_mae_med, 4) if mfe_mae_med is not None else None,
@@ -422,6 +452,11 @@ def cmd_profile(args: argparse.Namespace) -> dict[str, Any]:
             "edge_mean": edge_mean,
             "era_split": era_split,
         }
+        # P0-3: truncation disclosure
+        if truncated_h:
+            h_profile["truncated"] = True
+            h_profile["n_fires_total"] = n_fires_total_h
+        horizon_profiles[str(h)] = h_profile
 
     return {
         "tier": "descriptive_profile",

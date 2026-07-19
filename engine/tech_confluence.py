@@ -112,6 +112,23 @@ EXCLUDED_SIGNALS = frozenset({
     "new_golden_star",  # age-window duplicate of golden_star_st_7_35
 })
 
+# ---------------------------------------------------------------------------
+# Combo v1 gate: families eligible for the primary combo miner.
+# Only families present BEFORE the Technical Lab integration are included here.
+# This keeps tonight's off-render miner runtime unchanged.
+# Combo v2 lifts this gate by using the role-grammar search over all families.
+# ---------------------------------------------------------------------------
+LEGACY_COMBO_FAMILIES: frozenset[str] = frozenset({
+    "ma_crosses", "ma_price", "tech_stars", "trend", "trend_ribbon",
+    "pivots", "formations",
+    "rsi_bands", "rsi_events", "rsi_stack",
+    "bollinger_events",
+    "macd_events", "stoch_events", "stoch_events_2w",
+    "ichimoku",
+    "performance",
+    # fundamental_valuation and insider are already excluded via EXCLUDED_FAMILIES
+})
+
 
 # ---------------------------------------------------------------------------
 # Leg enumeration
@@ -119,6 +136,11 @@ EXCLUDED_SIGNALS = frozenset({
 
 def build_leg_defs(tc: Any) -> list[dict[str, Any]]:
     """Enumerate eligible legs from the tech_catalog.
+
+    Combo v1 gate: excludes (a) challenger_only=True signals and (b) any signal
+    whose family is not in LEGACY_COMBO_FAMILIES (the families present before the
+    Technical Lab integration). This keeps the off-render miner runtime unchanged.
+    Combo v2 will lift this gate via the role-grammar search.
 
     Returns a list of dicts: {leg_id, signal_id, tf, kind, family, direction,
     display_en, display_zh}. Directions are ±1 only.
@@ -128,6 +150,11 @@ def build_leg_defs(tc: Any) -> list[dict[str, Any]]:
         sid = sig["signal_id"]
         fam = sig.get("family", "")
         direction = int(sig.get("direction", 0) or 0)
+        # Combo v1 gate: exclude challenger-only signals and new-integration families
+        if sig.get("challenger_only", False):
+            continue
+        if fam not in LEGACY_COMBO_FAMILIES:
+            continue
         if fam in EXCLUDED_FAMILIES or sid in EXCLUDED_SIGNALS or direction == 0:
             continue
         tfs = ["D"] + (["W"] if fam in W_FAMILIES else [])
