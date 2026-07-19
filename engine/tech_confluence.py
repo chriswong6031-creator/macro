@@ -127,6 +127,9 @@ LEGACY_COMBO_FAMILIES: frozenset[str] = frozenset({
     "ichimoku",
     "performance",
     # fundamental_valuation and insider are already excluded via EXCLUDED_FAMILIES
+    # Indicators M2 (D04): VWAP/volume-profile families — daily-only legs (week-anchored VWAP
+    # and rolling-anchor AVWAP need daily bars; families deliberately NOT in W_FAMILIES).
+    "vwap_events", "volume_profile_events",
 })
 
 

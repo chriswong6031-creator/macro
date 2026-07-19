@@ -96,7 +96,9 @@ def fired_combo_signals(
     {
         ticker, combo_id, combo_name, win_rate (h21 wr_mc_test as %),
         edge (pp = edge_wr_test * 100), n_fires, fires_last3y, last_fire,
-        legs_plain: [display_en of each leg], side,
+        legs_plain: [display_en of each leg],
+        leg_families: [family key of each leg — engine-internal, drives M2 overlay
+                       selection; NEVER surfaced in public copy], side,
     }
     """
     if not isinstance(conf, dict):
@@ -161,11 +163,20 @@ def fired_combo_signals(
         combo_edge = combo.get("edge_wr_test") or 0.0
 
         # Map leg indices to display_en names (plain words — no raw signal ids)
+        # AND to leg family keys (the raw signal family, e.g. "vwap_events" /
+        # "volume_profile_events") so the caller can decide which M2 chart overlay
+        # to attach without re-reading the legs catalog. Families are engine-internal
+        # keys — NEVER put them in public copy (that's what legs_plain is for).
         leg_indices = combo.get("legs") or []
         legs_plain: list[str] = []
+        leg_families: list[str] = []
         for idx in leg_indices:
             if 0 <= idx < len(legs_catalog):
-                legs_plain.append(legs_catalog[idx].get("display_en", ""))
+                _leg = legs_catalog[idx]
+                legs_plain.append(_leg.get("display_en", ""))
+                _fam = _leg.get("family", "")
+                if _fam:
+                    leg_families.append(_fam)
 
         results.append({
             "ticker": ticker,
@@ -178,6 +189,7 @@ def fired_combo_signals(
             "last_fire": str(combo.get("last_fire", ""))[:10],
             "first_fire": str(combo.get("first_fire", ""))[:10],
             "legs_plain": legs_plain,
+            "leg_families": leg_families,
             "side": side,
             "n_test": n_test,
             "months_test": months_test,

@@ -847,6 +847,28 @@ def content_plan(
                             ohlcv_marker = ohlcv_dates.index(signal_date)
                         elif marker_index < len(ohlcv_dates):
                             ohlcv_marker = marker_index
+                        # M2 overlays for Prophet-sourced charts.
+                        # Prophet plans carry no confluence leg families, so there is
+                        # no leg-driven liveness signal here (that lives on the
+                        # confluence path). Two ways to attach overlays on this path:
+                        #   (1) DOCUMENTED MANUAL-OVERRIDE SEAM — a caller may
+                        #       pre-compute overlays and attach item_dict["m2_overlays"];
+                        #       whatever it holds is passed straight through.
+                        #   (2) config marketing.m2_overlays_always — force-build BOTH
+                        #       overlays for every Prophet chart (debugging/QA).
+                        _m2_cfg_always = bool(
+                            (cfg or {}).get("marketing", {}).get("m2_overlays_always", False)
+                        )
+                        _m2_ovl = item_dict.get("m2_overlays") or {}  # (1) manual seam
+                        if _m2_cfg_always and not _m2_ovl:
+                            try:
+                                from engine.marketing.chart_render import build_m2_overlays as _bm2
+                                _m2_ovl = _bm2(
+                                    ticker, ohlcv_dates, ohlcv_o, ohlcv_h,
+                                    ohlcv_l, ohlcv_c, ohlcv_v, _ohlcv_root,
+                                )
+                            except Exception:
+                                _m2_ovl = {}
                         svg = render_chart_v2(
                             ticker=ticker,
                             dates=ohlcv_dates,
@@ -863,6 +885,8 @@ def content_plan(
                             indicators=("volume", "macd"),
                             company_name=ticker,
                             logo_root=_ohlcv_root,
+                            avwap_overlay=_m2_ovl.get("avwap_overlay"),
+                            poc_overlay=_m2_ovl.get("poc_overlay"),
                         )
 
                 # Fallback: v1 render (marker-only) so nothing breaks
@@ -992,6 +1016,44 @@ def content_plan(
                         if lf and lf in ohlcv_dates:
                             conf_marker = ohlcv_dates.index(lf)
 
+                        # ── M2 overlays for the confluence chart ──────────────
+                        # Precedence: (1) explicit manual override on the sig dict
+                        # [documented seam — a caller may pre-compute overlays and
+                        # attach sig["m2_overlays"]]; (2) leg-family-driven liveness
+                        # [F2: attach ONLY the overlay whose M2 leg actually fired —
+                        # avwap iff a vwap_events leg fired, poc iff a
+                        # volume_profile_events leg fired]; (3) config
+                        # marketing.m2_overlays_always [force BOTH overlays on every
+                        # confluence chart, for debugging/QA].
+                        _MARKETING_CFG = (cfg or {}).get("marketing", {})
+                        _m2_cfg_always_conf = bool(
+                            _MARKETING_CFG.get("m2_overlays_always", False)
+                        )
+                        _m2_ovl_conf: dict = sig.get("m2_overlays") or {}  # (1) override
+                        if not _m2_ovl_conf:
+                            _leg_fams = set(sig.get("leg_families") or [])
+                            _want_avwap = "vwap_events" in _leg_fams
+                            _want_poc = "volume_profile_events" in _leg_fams
+                            # (2) fire on a live M2 leg, or (3) config force-both.
+                            if _want_avwap or _want_poc or _m2_cfg_always_conf:
+                                try:
+                                    from engine.marketing.chart_render import build_m2_overlays as _bm2c
+                                    _built = _bm2c(
+                                        conf_ticker, ohlcv_dates, ohlcv_o, ohlcv_h,
+                                        ohlcv_l, ohlcv_c, ohlcv_v, _ohlcv_root_conf,
+                                    )
+                                except Exception:
+                                    _built = {}
+                                if _m2_cfg_always_conf:
+                                    # Config override: pass whatever built (both).
+                                    _m2_ovl_conf = _built
+                                else:
+                                    # Liveness: pass ONLY the fired overlay(s).
+                                    _m2_ovl_conf = {
+                                        "avwap_overlay": _built.get("avwap_overlay") if _want_avwap else None,
+                                        "poc_overlay": _built.get("poc_overlay") if _want_poc else None,
+                                    }
+
                         chart_id = f"chart-{chart_id_counter:03d}"
                         svg = render_chart_v2(
                             ticker=conf_ticker,
@@ -1009,6 +1071,8 @@ def content_plan(
                             indicators=("volume", "macd"),
                             company_name=conf_ticker,
                             logo_root=_ohlcv_root_conf,
+                            avwap_overlay=_m2_ovl_conf.get("avwap_overlay"),
+                            poc_overlay=_m2_ovl_conf.get("poc_overlay"),
                         )
 
                         conf_item.chart_id = chart_id

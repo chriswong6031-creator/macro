@@ -2634,6 +2634,14 @@ jobs:
             echo "::warning title=confluence_screener::build_confluence_screener rc=$rc (page may be stale)"
           fi
           exit 0
+      - name: build M2 VWAP/volume-profile level cache (~1-2 min)
+        run: |
+          set +e
+          python scripts/build_m2_profiles.py; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=m2_profiles::build_m2_profiles rc=$rc (M2 artifact may be stale)"
+          fi
+          exit 0
       - name: commit Technical Lab artifacts
         run: |
           git config user.name "dashboard-bot"
@@ -2641,6 +2649,9 @@ jobs:
           git add site/factordata/tech_screener.json site/factordata/tech_lab.json
           if [ -f site/factordata/tech_confluence.json ]; then
             git add site/factordata/tech_confluence.json
+          fi
+          if [ -f site/factordata/m2_profiles.json ]; then
+            git add site/factordata/m2_profiles.json
           fi
           # tech_events is written by a sibling PR (TLT-W3); pick it up once present.
           if [ -d site/factordata/tech_events ]; then

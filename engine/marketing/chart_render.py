@@ -699,6 +699,8 @@ def render_chart_v2(
     width: int = 1000,
     height: int = 850,
     footer_cta: str | None = None,
+    avwap_overlay: dict | None = None,
+    poc_overlay: dict | None = None,
 ) -> str:
     """Render a TrendSpider-grade candlestick SVG chart.
 
@@ -715,6 +717,14 @@ def render_chart_v2(
             upper price area (TrendSpider signature move). Overrides ghost text when set.
         logo_root: if logo_datauri is None but logo_root is provided, calls
             resolve_logo(ticker, logo_root) to auto-fetch + cache the logo.
+        avwap_overlay: {"values": list[float|None], "label": str} — anchored VWAP
+            curve drawn in house indigo (#7c5cff) under candles, over SMA.
+        poc_overlay: {"poc": float, "va_low": float, "va_high": float, "label": str}
+            — volume point-of-control dashed line + value area band.
+        Both default None; None and omitted are byte-identical to each other.
+        NOTE vs pre-M2 output: the SMA layer now paints UNDER the candles (it
+        used to paint over them) so the M2 overlays could slot between —
+        a deliberate, designer-approved z-order change for ALL charts.
 
     Returns self-contained SVG (<60KB). No <script>. All text _xesc'd.
     """
@@ -795,6 +805,17 @@ def render_chart_v2(
     all_l = [l[i] for i in range(warmup, n) if l[i] == l[i]]
     price_max_raw = max(all_h) if all_h else max(c)
     price_min_raw = min(all_l) if all_l else min(c)
+
+    # Extend y-scale to include avwap overlay non-null values so curve is never clipped
+    if avwap_overlay is not None:
+        _avwap_vals = avwap_overlay.get("values") or []
+        # visible (post-warmup) values only — the warmup lead-in is never drawn
+        _avwap_nonnull = [v for i, v in enumerate(_avwap_vals)
+                          if i >= warmup and v is not None and v == v]
+        if _avwap_nonnull:
+            price_max_raw = max(price_max_raw, max(_avwap_nonnull))
+            price_min_raw = min(price_min_raw, min(_avwap_nonnull))
+
     price_range = price_max_raw - price_min_raw or 1.0
     margin = price_range * 0.07
     y_min = price_min_raw - margin
@@ -913,95 +934,198 @@ def render_chart_v2(
     )
     axis_svg = "\n  ".join(axis_parts)
 
+    # ── M2 overlays: AVWAP + POC ──────────────────────────────────────────────
+    # Two layers, deliberately z-split (TrendSpider idiom):
+    #   m2_overlay_svg — geometry (curve, POC line, VA band). Sits UNDER candles so
+    #                    price always wins the foreground; the analytical line reads
+    #                    as a quiet reference, never fights the tape.
+    #   m2_label_svg   — the label chips. Painted in the TOP-MOST band (above candles,
+    #                    axis, callout) so a label is never chopped by a wick or body.
+    # A label is a legend, not decoration: it must be readable at thumbnail size, so
+    # each rides a solid backing plate rather than a bare halo that a busy candle
+    # field defeats.
+    m2_overlay_svg = ""
+    m2_label_svg = ""
+
+    # Right edge where end-anchored chips sit (inside the price panel, clear of axis).
+    _chip_right_x = PAD_L + chart_w - 5
+    # Reserved vertical lanes at the right edge, seeded with the last-price pill band
+    # so no overlay chip is ever drawn on top of the price pill. Each entry is a
+    # (top, bottom) y-span already claimed; a new chip nudges until it clears them.
+    _pill_cy = py_price(c[-1])
+    _claimed_spans: list[tuple[float, float]] = [(_pill_cy - 12, _pill_cy + 12)]
+
+    def _overlay_chip(
+        text: str,
+        cy: float,
+        color: str,
+        *,
+        right_x: float = _chip_right_x,
+        anchor_up: bool = True,
+        leader_to_y: float | None = None,
+    ) -> str:
+        """A quiet legend chip: rounded #0E1420 plate + hairline + colored text,
+        right-anchored, vertically de-conflicted against already-claimed spans.
+
+        cy is the *preferred* baseline centre; anchor_up biases the nudge direction
+        when a collision forces a move. Registers its own span so later chips avoid it.
+
+        leader_to_y: when set, and the chip ends up meaningfully off its preferred
+        centre, draw a short colored leader tick from the chip's left edge to that
+        y (the curve/line endpoint it labels) so the association survives the nudge.
+        """
+        if not text:
+            return ""
+        _cw = int(len(text) * 6.4) + 14      # chip width from glyph count
+        _ch = 17                              # chip height
+        _cy = cy
+        # De-conflict: if the chip's band overlaps a claimed span, step it away.
+        for _ in range(6):
+            _band = (_cy - _ch / 2, _cy + _ch / 2)
+            _hit = None
+            for (st, sb) in _claimed_spans:
+                if _band[0] < sb and st < _band[1]:
+                    _hit = (st, sb)
+                    break
+            if _hit is None:
+                break
+            # Push above or below the obstacle per preferred direction.
+            if anchor_up:
+                _cy = _hit[0] - _ch / 2 - 3
+            else:
+                _cy = _hit[1] + _ch / 2 + 3
+        # Clamp inside the price panel so a chip never escapes into header/subpanels.
+        _cy = max(PAD_TOP + _ch / 2 + 2, min(PAD_TOP + PRICE_H - _ch / 2 - 2, _cy))
+        _claimed_spans.append((_cy - _ch / 2, _cy + _ch / 2))
+        _rx = right_x
+        _lx = _rx - _cw
+        # Optional leader tick: only draw it if the chip was displaced far enough
+        # from its target that the eye needs the tie-back (>6px), so an in-place
+        # chip stays clean.
+        _leader = ""
+        if leader_to_y is not None and abs(leader_to_y - _cy) > 6:
+            _leader = (
+                f'<line x1="{_lx - 5:.1f}" y1="{leader_to_y:.1f}" '
+                f'x2="{_lx:.1f}" y2="{_cy:.1f}" '
+                f'stroke="{color}" stroke-width="1" stroke-opacity="0.5"/>'
+            )
+        return (
+            _leader
+            + f'<rect x="{_lx:.1f}" y="{_cy - _ch / 2:.1f}" '
+            f'width="{_cw}" height="{_ch}" rx="4" '
+            f'fill="#0E1420" fill-opacity="0.82" '
+            f'stroke="{color}" stroke-opacity="0.55" stroke-width="1"/>'
+            f'<text x="{_rx - 7:.1f}" y="{_cy + 4:.1f}" '
+            f'fill="{color}" font-size="11" text-anchor="end" '
+            f'font-family="sans-serif">{_xesc(text)}</text>'
+        )
+
+    # POC / Value-Area overlay ────────────────────────────────────────────────
+    if poc_overlay is not None:
+        _poc = poc_overlay.get("poc")
+        _va_low = poc_overlay.get("va_low")
+        _va_high = poc_overlay.get("va_high")
+        _poc_label = poc_overlay.get("label", "")
+        if _poc is not None and _va_low is not None and _va_high is not None:
+            _poc_in_range = y_min <= _poc <= y_max
+            # Value area band: clamp edges to panel.
+            _band_top_price = min(_va_high, y_max)
+            _band_bot_price = max(_va_low, y_min)
+            if _band_bot_price < _band_top_price:
+                _band_y_top = py_price(_band_top_price)
+                _band_y_bot = py_price(_band_bot_price)
+                # Quiet fill — the wash alone reads as a rendering smudge, so it is
+                # BOUNDED: 1px hairlines at the value-area edges (only when the true
+                # edge is in-panel, not a clamp artefact) + short right-axis edge
+                # ticks. This makes it read as a deliberate zone, not a smear.
+                m2_overlay_svg += (
+                    f'<rect x="{PAD_L:.1f}" y="{_band_y_top:.1f}" '
+                    f'width="{chart_w:.1f}" height="{_band_y_bot - _band_y_top:.1f}" '
+                    f'fill="#5b9dff" fill-opacity="0.06" stroke="none"/>'
+                )
+                _edge_specs = []
+                if _va_high <= y_max:
+                    _edge_specs.append(_band_y_top)
+                if _va_low >= y_min:
+                    _edge_specs.append(_band_y_bot)
+                for _ey in _edge_specs:
+                    # full-width hairline at the edge
+                    m2_overlay_svg += (
+                        f'<line x1="{PAD_L:.1f}" y1="{_ey:.1f}" '
+                        f'x2="{PAD_L + chart_w:.1f}" y2="{_ey:.1f}" '
+                        f'stroke="#5b9dff" stroke-width="1" stroke-opacity="0.32"/>'
+                    )
+                    # stronger 8px edge tick where it meets the right axis
+                    m2_overlay_svg += (
+                        f'<line x1="{PAD_L + chart_w - 8:.1f}" y1="{_ey:.1f}" '
+                        f'x2="{PAD_L + chart_w:.1f}" y2="{_ey:.1f}" '
+                        f'stroke="#5b9dff" stroke-width="1.5" stroke-opacity="0.7"/>'
+                    )
+            # POC dashed line (only when in range).
+            if _poc_in_range:
+                _poc_y = py_price(_poc)
+                m2_overlay_svg += (
+                    f'<line x1="{PAD_L:.1f}" y1="{_poc_y:.1f}" '
+                    f'x2="{PAD_L + chart_w:.1f}" y2="{_poc_y:.1f}" '
+                    f'stroke="#5b9dff" stroke-width="1.5" stroke-dasharray="6 4" '
+                    f'opacity="0.85"/>'
+                )
+                if _poc_label:
+                    # POC chip prefers to sit just BELOW its line (the line is the
+                    # reference; the chip labels it without covering the dashes).
+                    m2_label_svg += _overlay_chip(
+                        _poc_label, _poc_y + 12, "#5b9dff", anchor_up=False
+                    )
+
+    # AVWAP overlay ───────────────────────────────────────────────────────────
+    if avwap_overlay is not None:
+        _avwap_values = avwap_overlay.get("values") or []
+        _avwap_label = avwap_overlay.get("label", "")
+        _avwap_pts: list[str] = []
+        _last_avwap_i: int | None = None
+        _last_avwap_v: float | None = None
+        for _i, _v in enumerate(_avwap_values):
+            # skip the undrawn warmup lead-in — cx_bar(i<warmup) lands off-panel
+            if _i >= warmup and _v is not None and _v == _v:
+                _avwap_pts.append(f"{cx_bar(_i):.1f},{py_price(_v):.1f}")
+                _last_avwap_i = _i
+                _last_avwap_v = _v
+        if len(_avwap_pts) >= 2:
+            m2_overlay_svg += (
+                f'<polyline points="{" ".join(_avwap_pts)}" '
+                f'fill="none" stroke="#7c5cff" stroke-width="2" '
+                f'opacity="0.95" stroke-linejoin="round" stroke-linecap="round"/>'
+            )
+            if _avwap_label and _last_avwap_i is not None and _last_avwap_v is not None:
+                _av_end_y = py_price(_last_avwap_v)
+                # Decide up/down by local candle air near the curve end: sample the
+                # last few bars' body/wick extent and place the chip on the side with
+                # room, so it never lands on the price path.
+                _tail = range(max(0, n - 6), n)
+                _tops = [py_price(h[i]) for i in _tail]           # smaller y = higher
+                _bots = [py_price(l[i]) for i in _tail]
+                _air_above = _av_end_y - min(_tops)   # px of clear space above curve end
+                _air_below = max(_bots) - _av_end_y
+                _up = _air_above >= _air_below
+                _pref_y = _av_end_y - 14 if _up else _av_end_y + 14
+                m2_label_svg += _overlay_chip(
+                    _avwap_label, _pref_y, "#7c5cff", anchor_up=_up
+                )
+
     # ── SMA overlays ────────────────────────────────────────────────────────
-    # The SMA curves paint quiet, UNDER the candles. Their end-labels, however,
-    # are a LEGEND — they must read at thumbnail size — so each rides its own
-    # backing plate (same idiom the M2 chips use) rather than bare text that a
-    # busy candle field and the last-price pill defeat at the panel's right edge.
-    #
-    # This block is deliberately self-contained (no shared overlay helpers /
-    # claim list): it seeds its OWN vertical-lane bookkeeping so it compiles and
-    # renders standalone. Seeds: the last-price pill band and — defensively — the
-    # top-right % callout region, so a chip never lands on either even though the
-    # callout is opt-in and often absent.
+    # The curves paint UNDER the candles (quiet reference). The END-LABELS ride
+    # the SAME reserved-lane chip system as the M2 labels (POC/AVWAP): a solid
+    # backing plate, right-anchored inside the panel, de-conflicted against the
+    # last-price pill and every other claimed span. Bare end-text used to clip at
+    # the right edge and collide with the price pill ("50SMA"/"200SMA" mush) —
+    # the chip lane fixes that on EVERY marketing chart, overlays or not.
     sma_svg = ""
     if show_indicators and n >= 50:
         sma50 = _sma(c, 50)
         sma200 = _sma(c, 200) if n >= 200 else [None] * n
-
-        # Chip geometry — mirrors the quiet legend plate: rounded #0E1420 plate,
-        # 1px accent hairline at reduced opacity, colored 11px text, end-anchored
-        # just inside the panel's right edge (clear of the price axis).
-        _sma_chip_h = 17
-        _sma_right_x = PAD_L + chart_w - 5
-
-        # The chips paint UNDER the candles (this whole layer does), so a chip
-        # dropped at the price-line's end y would be punched through by the last
-        # candle cluster's wicks/bodies and read as chopped — the exact defect we
-        # are fixing. So the chip must land in CLEAR AIR at the right edge: above
-        # the recent highs or below the recent lows, where no candle crosses it.
-        # Build that candle band from the last ~8 bars (in-scope h/l) and reserve
-        # it as a claimed span, alongside the last-price pill band (±12 clearance,
-        # matching the M2 chips) and — defensively — the top-right % callout box
-        # footprint (box_y = PAD_TOP+10, box_h = 42; opt-in, often absent).
-        _sma_pill_cy = py_price(last_close)
-        _tail0 = max(0, n - 8)
-        _tail_top = min(py_price(h[i]) for i in range(_tail0, n))  # smaller y = higher
-        _tail_bot = max(py_price(l[i]) for i in range(_tail0, n))
-        _sma_claimed: list[tuple[float, float]] = [
-            (_tail_top, _tail_bot),                      # the last candle cluster
-            (_sma_pill_cy - 12, _sma_pill_cy + 12),      # last-price pill band
-            (PAD_TOP + 8, PAD_TOP + 54),                 # top-right % callout box
-        ]
-
-        def _sma_chip(text: str, cy: float, color: str, *, nudge_up: bool) -> str:
-            """Quiet amber legend chip, right-anchored, de-conflicted against the
-            candle cluster / pill / callout / the other SMA chip via _sma_claimed.
-
-            cy is the preferred baseline centre (the curve's end y); nudge_up
-            biases which way the chip steps into clear air when a band collision
-            forces a move (50 SMA up, 200 SMA down) so converging lines split
-            their chips apart and neither sits on the tape.
-            """
-            _cw = int(len(text) * 6.4) + 14
-            _cy = cy
-            for _ in range(8):
-                _band = (_cy - _sma_chip_h / 2, _cy + _sma_chip_h / 2)
-                _hit = None
-                for (st, sb) in _sma_claimed:
-                    if _band[0] < sb and st < _band[1]:
-                        _hit = (st, sb)
-                        break
-                if _hit is None:
-                    break
-                if nudge_up:
-                    _cy = _hit[0] - _sma_chip_h / 2 - 3
-                else:
-                    _cy = _hit[1] + _sma_chip_h / 2 + 3
-            # Clamp fully inside the price panel (never spill into header/subpanels).
-            _cy = max(
-                PAD_TOP + _sma_chip_h / 2 + 2,
-                min(PAD_TOP + PRICE_H - _sma_chip_h / 2 - 2, _cy),
-            )
-            _sma_claimed.append((_cy - _sma_chip_h / 2, _cy + _sma_chip_h / 2))
-            _lx = _sma_right_x - _cw
-            return (
-                f'<rect x="{_lx:.1f}" y="{_cy - _sma_chip_h / 2:.1f}" '
-                f'width="{_cw}" height="{_sma_chip_h}" rx="4" '
-                f'fill="#0E1420" fill-opacity="0.82" '
-                f'stroke="{color}" stroke-opacity="0.55" stroke-width="1"/>'
-                f'<text x="{_sma_right_x - 7:.1f}" y="{_cy + 4:.1f}" '
-                f'fill="{color}" font-size="11" text-anchor="end" '
-                f'font-family="sans-serif">{_xesc(text)}</text>'
-            )
-
-        # Draw curves first (under candles), then collect chip specs; emit chips
-        # last so they sit above the curves within this layer and de-conflict in
-        # a stable order (50 SMA claims first, biased up; 200 SMA biased down).
-        _sma_chip_specs: list[tuple[str, float, str, bool]] = []
-        for sma_vals, sma_color, sma_label, _nudge_up in [
-            (sma50, "#F59E0B", "50 SMA", True),
-            (sma200, "#FBBF24", "200 SMA", False),
+        for sma_vals, sma_color, sma_label in [
+            (sma50, "#F59E0B", "50 SMA"),
+            (sma200, "#FBBF24", "200 SMA"),
         ]:
             pts_sma: list[str] = []
             for i, sv in enumerate(sma_vals):
@@ -1014,12 +1138,16 @@ def render_chart_v2(
                     f'fill="none" stroke="{sma_color}" stroke-width="1.2" '
                     f'opacity="0.8" stroke-dasharray="4,2"/>'
                 )
+                # End-label chip in the top-most label band. Its preferred baseline
+                # is the curve's last value; the de-conflict nudge (biased toward the
+                # curve's own side) keeps it near its line while dodging the pill and
+                # sibling chips. A short leader tick ties the chip back to the curve.
                 last_sma = next(sv for sv in reversed(sma_vals) if sv is not None)
-                _sma_chip_specs.append(
-                    (sma_label, py_price(last_sma), sma_color, _nudge_up)
+                _sma_end_y = py_price(last_sma)
+                m2_label_svg += _overlay_chip(
+                    sma_label, _sma_end_y, sma_color,
+                    anchor_up=True, leader_to_y=_sma_end_y,
                 )
-        for _label, _cy, _color, _nudge_up in _sma_chip_specs:
-            sma_svg += _sma_chip(_label, _cy, _color, nudge_up=_nudge_up)
 
     # ── % Change callout box ─────────────────────────────────────────────────
     pct_callout_svg = ""
@@ -1136,11 +1264,13 @@ def render_chart_v2(
             f'x2="{PAD_L + chart_w}" y2="{panel_y}" '
             f'stroke="{divider_color}" stroke-width="1"/>'
         )
-        # Panel label — smaller-caps muted
+        # Panel label — small-caps, muted-blue. #4a5568 was near-invisible at the
+        # ~50% zoom of an X timeline (illegible = defect); #6b7a99 matches the axis
+        # tick ink and survives the downscale while staying quiet under the tape.
         subpanel_svg_parts.append(
             f'<text x="{PAD_L + 4}" y="{panel_y + 13}" '
-            f'fill="#4a5568" font-size="9" font-weight="600" '
-            f'letter-spacing="0.08em">'
+            f'fill="#6b7a99" font-size="9" font-weight="700" '
+            f'letter-spacing="0.12em">'
             f'{_xesc(panel_name.upper())}</text>'
         )
         inner_y = panel_y + 18
@@ -1148,22 +1278,29 @@ def render_chart_v2(
 
         if panel_name == "volume":
             vol_max = max((volume[i] for i in range(warmup, n) if volume[i] > 0), default=1.0)
+            # Reserve 14% headroom so the tallest bar never jams the divider/label —
+            # a full-height block reads as a solid wall; the gap gives it a top edge.
+            vol_span = inner_h * 0.86
             for i in range(warmup, n):
                 vv = volume[i]
                 bx = cx_bar(i)
-                bar_h = (vv / vol_max) * inner_h if vol_max > 0 else 0
+                bar_h = (vv / vol_max) * vol_span if vol_max > 0 else 0
                 bar_y = inner_y + inner_h - bar_h
                 vcolor = "#4CAF50" if c[i] >= o[i] else "#E23B3B"
                 subpanel_svg_parts.append(
                     f'<rect x="{bx - body_w / 2:.1f}" y="{bar_y:.1f}" '
                     f'width="{body_w:.1f}" height="{max(1, bar_h):.1f}" '
-                    f'fill="{vcolor}" opacity="0.6" stroke="none"/>'
+                    f'fill="{vcolor}" opacity="0.55" stroke="none"/>'
                 )
-            # Volume axis (simplified: show max)
+            # Volume axis: peak value at the level the tallest bar actually reaches,
+            # with a "Vol" unit tag so the bare "360.8M" is not a naked number.
             vol_label = f"{vol_max / 1_000_000:.1f}M" if vol_max >= 1_000_000 else f"{vol_max:.0f}"
+            _vol_peak_y = inner_y + inner_h - vol_span
             subpanel_svg_parts.append(
-                f'<text x="{PAD_L + chart_w + 8}" y="{inner_y + 10}" '
-                f'fill="#6b7a99" font-size="9">{_xesc(vol_label)}</text>'
+                f'<text x="{PAD_L + chart_w + 8}" y="{_vol_peak_y + 4:.1f}" '
+                f'fill="#6b7a99" font-size="9" font-family="monospace">{_xesc(vol_label)}</text>'
+                f'<text x="{PAD_L + chart_w + 8}" y="{_vol_peak_y + 15:.1f}" '
+                f'fill="#4a556a" font-size="7" letter-spacing="0.08em">VOL</text>'
             )
 
         elif panel_name == "macd":
@@ -1181,12 +1318,14 @@ def render_chart_v2(
                     center = inner_y + inner_h / 2
                     return center - (v / m_range) * (inner_h / 2) * 0.9
 
-                # Zero line
+                # Zero line — a touch brighter than the divider so it anchors the
+                # warmup region (first ~34 bars have no MACD; a visible baseline
+                # keeps the panel from reading as half-rendered).
                 zero_y = macd_y(0.0)
                 subpanel_svg_parts.append(
                     f'<line x1="{PAD_L}" y1="{zero_y:.1f}" '
                     f'x2="{PAD_L + chart_w}" y2="{zero_y:.1f}" '
-                    f'stroke="#232A3D" stroke-width="1"/>'
+                    f'stroke="#2f3750" stroke-width="1"/>'
                 )
                 # Histogram bars
                 for i, m, s, hv in valid:
@@ -1200,28 +1339,32 @@ def render_chart_v2(
                         f'width="{body_w:.1f}" height="{bar_h_px:.1f}" '
                         f'fill="{hcolor}" opacity="0.5" stroke="none"/>'
                     )
-                # MACD line (blue)
+                # MACD line — house blue (#5b9dff), not raw material-blue, so the
+                # subpanel belongs to the same palette as the rest of the chart and
+                # reads cleanly on #0E1420. Signal line stays amber for contrast.
                 macd_pts = " ".join(
                     f"{cx_bar(i):.1f},{macd_y(m):.1f}" for i, m, s, _ in valid
                 )
                 subpanel_svg_parts.append(
                     f'<polyline points="{macd_pts}" fill="none" '
-                    f'stroke="#2196F3" stroke-width="1.2"/>'
+                    f'stroke="#5b9dff" stroke-width="1.5" '
+                    f'stroke-linejoin="round" stroke-linecap="round"/>'
                 )
-                # Signal line (orange)
+                # Signal line (amber, thinner)
                 sig_pts = " ".join(
                     f"{cx_bar(i):.1f},{macd_y(s):.1f}" for i, m, s, _ in valid
                 )
                 subpanel_svg_parts.append(
                     f'<polyline points="{sig_pts}" fill="none" '
-                    f'stroke="#FF9800" stroke-width="1.0"/>'
+                    f'stroke="#F59E0B" stroke-width="1.2" '
+                    f'stroke-linejoin="round" stroke-linecap="round"/>'
                 )
-                # Right-axis: last MACD value
+                # Right-axis: last MACD value (monospace, like the price axis)
                 last_m = valid[-1][1]
                 mc = "#4CAF50" if last_m >= 0 else "#E23B3B"
                 subpanel_svg_parts.append(
                     f'<text x="{PAD_L + chart_w + 8}" y="{macd_y(last_m) + 4:.1f}" '
-                    f'fill="{mc}" font-size="9">{last_m:.3f}</text>'
+                    f'fill="{mc}" font-size="9" font-family="monospace">{last_m:.3f}</text>'
                 )
 
         elif panel_name == "rsi":
@@ -1364,10 +1507,12 @@ def render_chart_v2(
         f'  {logo_svg}\n'
         f'  <!-- embedded volume (paneless, under candles) -->\n'
         f'  {vol_overlay_svg}\n'
-        f'  <!-- candlesticks -->\n'
-        f'  {candles_svg}\n'
         f'  <!-- SMA overlays -->\n'
         f'  {sma_svg}\n'
+        f'  <!-- M2 overlays: AVWAP + POC (over SMA, under candles) -->\n'
+        f'  {m2_overlay_svg}\n'
+        f'  <!-- candlesticks -->\n'
+        f'  {candles_svg}\n'
         f'  <!-- highlight zone -->\n'
         f'  {highlight_svg_final}\n'
         f'  <!-- price axis -->\n'
@@ -1376,6 +1521,8 @@ def render_chart_v2(
         f'  {pct_callout_svg}\n'
         f'  <!-- date labels -->\n'
         f'  {date_svg}\n'
+        f'  <!-- M2 overlay labels (top-most in price panel, never occluded) -->\n'
+        f'  {m2_label_svg}\n'
         f'  <!-- subpanels -->\n'
         f'  {subpanel_svg}\n'
         f'  <!-- header (rendered last so it sits on top) -->\n'
@@ -1388,6 +1535,95 @@ def render_chart_v2(
         f'</svg>'
     )
     return svg
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# v2: M2 overlay builder (single seam for callers)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def build_m2_overlays(
+    ticker: str,
+    dates: list[str],
+    o: list[float],
+    h: list[float],
+    l: list[float],
+    c: list[float],
+    v: list[float],
+    root: "Path | str",
+) -> dict:
+    """Build AVWAP + POC overlay dicts for render_chart_v2.
+
+    Imports engine.indicators_m2 and calls:
+      - earnings_proxy_anchor(df, lookback=min(63, len-1)) → anchor position
+      - anchored_vwap(df, anchor) → pd.Series aligned to df index
+      - volume_profile(df, window=min(126, len)) → profile dict | None
+
+    Returns {"avwap_overlay": dict|None, "poc_overlay": dict|None}.
+    Both values are None on any failure (fail-soft, logged at debug).
+    Never raises.
+    """
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
+
+    avwap_overlay: dict | None = None
+    poc_overlay: dict | None = None
+
+    try:
+        import pandas as pd
+        from engine import indicators_m2 as _m2
+
+        n = len(c)
+        if n < 2:
+            return {"avwap_overlay": None, "poc_overlay": None}
+
+        df = pd.DataFrame(
+            {"open": o, "high": h, "low": l, "close": c, "volume": v},
+            index=pd.to_datetime(dates),
+        )
+
+        # ── AVWAP overlay ────────────────────────────────────────────────────
+        try:
+            lookback = min(63, n - 1)
+            anchor_pos = _m2.earnings_proxy_anchor(df, lookback=lookback)
+            if anchor_pos is not None:
+                avwap_series = _m2.anchored_vwap(df, anchor_pos)
+                anchor_date = df.index[anchor_pos]
+                anchor_label = anchor_date.strftime("%b %d")
+                avwap_vals = [
+                    float(_av) if not (_av != _av) else None
+                    for _av in avwap_series
+                ]
+                avwap_overlay = {
+                    "values": avwap_vals,
+                    # Tight glance-tier label: "AVWAP · Jun 26" (date only). The
+                    # anchor-kind honesty ("volume-spike anchor") lives in the post
+                    # copy, not on the chart — a long form clutters the right edge and
+                    # collides with the SMA end-labels. Date-only is honest for a daily
+                    # anchor and never implies intraday precision.
+                    "label": f"AVWAP · {anchor_label}",
+                }
+        except Exception as _e:
+            _log.debug("build_m2_overlays: avwap failed: %s", _e)
+
+        # ── POC / Value-Area overlay ─────────────────────────────────────────
+        try:
+            window = min(126, n)
+            profile = _m2.volume_profile(df, window=window)
+            if profile is not None:
+                _poc_price = profile["poc"]
+                poc_overlay = {
+                    "poc": float(_poc_price),
+                    "va_low": float(profile["va_low"]),
+                    "va_high": float(profile["va_high"]),
+                    "label": f"POC {_poc_price:.2f}",
+                }
+        except Exception as _e:
+            _log.debug("build_m2_overlays: poc failed: %s", _e)
+
+    except Exception as _e:
+        _log.debug("build_m2_overlays: outer failure for %s: %s", ticker, _e)
+
+    return {"avwap_overlay": avwap_overlay, "poc_overlay": poc_overlay}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
