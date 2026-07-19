@@ -1,0 +1,147 @@
+# CXI-1 source configuration
+# schema: macro_context_index.config.v1
+# Authority ceiling: agent context support only. Never signal, rank, gate, or scored-path.
+# Private/memory sources: NOT included here — CXI-1 is shared plane only (CXI-4 adds private).
+
+schema: macro_context_index.config.v1
+
+projects:
+  macro-dashboard:
+    description: whole-repo default
+  neural-web:
+    includes_tags: [neural-web, signal-bus, metabolism]
+  china-hk:
+    includes_tags: [china, hk, asia]
+  research-governance:
+    includes_tags: [research, rulings, trials, kills]
+
+sources:
+
+  # A0 — constitutional
+  - id: repo-constitution
+    roots:
+      - CLAUDE.md
+    authority_class: A0
+    visibility: shared
+    chunker: whole_file
+    source_type: config
+
+  # A1 — canonical structured truth (kill registry / ruling graph)
+  - id: repo-do-not-rebuild
+    roots:
+      - research/DO_NOT_REBUILD.md
+    authority_class: A1
+    visibility: shared
+    chunker: registry_rows
+    source_type: ruling
+
+  - id: repo-ruling-config
+    roots:
+      - config/ruling_graph.yml
+      - config/compiled_kill_registry.yml
+      - config/signal_foundry_blocklist.yml
+      - config/synapse.yml
+    authority_class: A1
+    visibility: shared
+    chunker: yaml_keys
+    source_type: config
+
+  - id: repo-config-yml
+    roots:
+      - config/*.yml
+    authority_class: A1
+    visibility: shared
+    chunker: yaml_keys
+    source_type: config
+
+  # A1 — Signal Bus
+  - id: repo-signal-bus
+    roots:
+      - docs/SIGNAL_BUS.md
+    authority_class: A1
+    visibility: shared
+    chunker: markdown_sections
+    source_type: ruling
+
+  # A4 — temporal state (active build map)
+  - id: repo-active-build-map
+    roots:
+      - docs/ACTIVE_BUILD_MAP.md
+    authority_class: A4
+    visibility: shared
+    chunker: markdown_sections
+    source_type: research
+
+  # A3 — durable interpretation (docs + research markdown)
+  - id: repo-docs
+    roots:
+      - docs/**/*.md
+    authority_class: A3
+    visibility: shared
+    chunker: markdown_sections
+    source_type: research
+
+  - id: repo-research
+    roots:
+      - research/**/*.md
+    authority_class: A3
+    visibility: shared
+    chunker: markdown_sections
+    source_type: research
+
+  # A2 — implementation truth (source code)
+  - id: repo-engine
+    roots:
+      - engine/**/*.py
+    authority_class: A2
+    visibility: shared
+    chunker: python_symbols
+    source_type: code
+
+  - id: repo-scripts
+    roots:
+      - scripts/**/*.py
+    authority_class: A2
+    visibility: shared
+    chunker: python_symbols
+    source_type: code
+
+  - id: repo-collectors
+    roots:
+      - collectors/**/*.py
+    authority_class: A2
+    visibility: shared
+    chunker: python_symbols
+    source_type: code
+
+  - id: repo-lib
+    roots:
+      - lib/**/*.py
+    authority_class: A2
+    visibility: shared
+    chunker: python_symbols
+    source_type: code
+
+  # A2 — tests
+  - id: repo-tests
+    roots:
+      - tests/**/*.py
+    authority_class: A2
+    visibility: shared
+    chunker: python_symbols
+    source_type: test
+
+# Deny list (extends hard-deny list in sources.py)
+deny:
+  - "**/.env*"
+  - "**/*credential*"
+  - "**/*secret*"
+  - "**/auth.json"
+  - "site/**"
+  - "data/**"
+  - "**/__pycache__/**"
+  - "**/node_modules/**"
+  - "research/artifacts/**"
+  - "ObsidianBrain/**"
+  - ".context-index/**"
+  - ".git/**"
