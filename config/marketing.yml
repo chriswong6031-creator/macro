@@ -208,3 +208,55 @@ copywriter:
     model_key: "marketing_copy"   # resolved via config.yml llm_models block; sonnet-class
     max_posts_per_run: 60
     daily_token_cap: 300000
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Breaking news ingestion (D05 W0)
+# engine/marketing/breaking_feed.py reads `breaking.sources`
+# engine/marketing/breaking_relevance.py reads `breaking.salience_threshold`
+# engine/marketing/breaking_summary.py reads `breaking.llm`
+# ─────────────────────────────────────────────────────────────────────────────
+breaking:
+  poll_interval_s: 300
+  user_agent: "MastermindBreakingBot/1.0 (+https://mastermind-x.com)"
+  salience_threshold: 60
+  sources:
+    - key: fed_press
+      kind: rss
+      url: "https://www.federalreserve.gov/feeds/press_all.xml"
+      source_name: "Federal Reserve"
+      tier: official
+
+    - key: bls_news
+      kind: rss
+      url: "https://www.bls.gov/feed/news_release.rss"
+      source_name: "Bureau of Labor Statistics"
+      tier: official
+
+    - key: bea_news
+      kind: rss
+      url: "https://apps.bea.gov/rss/rss.xml"
+      source_name: "Bureau of Economic Analysis"
+      tier: official
+
+    - key: whitehouse_actions
+      kind: rss
+      url: "https://www.whitehouse.gov/presidential-actions/feed/"
+      source_name: "White House"
+      tier: official
+
+    - key: cnbc_top
+      kind: rss
+      url: "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+      source_name: "CNBC"
+      tier: wire
+
+    - key: marketwatch_top
+      kind: rss
+      url: "https://feeds.content.dowjones.io/public/rss/mw_topstories"
+      source_name: "MarketWatch"
+      tier: wire
+
+  llm:
+    enabled: true
+    model_key: "marketing_copy"
+    max_tokens: 800
