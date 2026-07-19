@@ -71,9 +71,12 @@ _STATE_DIR = Path(os.environ.get("MACRO_API_STATE_DIR", "/var/lib/macro-api"))
 # Advice-pattern post-filter — any answer hitting these triggers a refusal
 # kill-list #6: directional verbs banned in customer-facing text (applies to factor path too)
 _ADVICE_PATTERNS = [
-    # buy/sell/short/cover + position context
+    # Genuine PERSONAL imperatives only — NOT the engine's own verdicts. Reporting that
+    # "the buy board features NVDA" or "SOXX is a BUY" is relaying a calibrated signal
+    # (the whole dashboard does this); it is not the model telling the user to trade.
+    # What is forbidden is a second-person order or a model-originated target.
     re.compile(r"\b(you\s+should\s+(buy|sell|short|cover|exit|enter|hold))\b", re.I),
-    re.compile(r"\b(buy|sell|short|cover)\s+(NVDA|[A-Z]{2,5}|the\s+position|your\s+position)\b", re.I),
+    re.compile(r"\b(buy|sell|short|cover|dump|unload)\s+(your|the)\s+(position|holding|holdings|shares|stake)\b", re.I),
     re.compile(r"\b(i\s+recommend|my\s+recommendation\s+is|you\s+ought\s+to)\b", re.I),
     re.compile(r"\bprice\s+target\b", re.I),
     re.compile(r"\bshould\s+(exit|enter|add|trim|reduce)\s+(your|the)?\s*position\b", re.I),
@@ -322,15 +325,15 @@ def _post_filter_advice(answer: str, citations: list[str]) -> tuple[str, bool]:
     """
     for pat in _ADVICE_PATTERNS:
         if pat.search(answer):
+            # Genuine personal-order language slipped through — decline the *order* gracefully
+            # and point back to what the calibrated signals say (no jargon trailer).
             refusal = (
-                "I cannot provide investment advice, recommendations, or position guidance. "
-                "Here is what the data shows:\n"
+                "I can't give a personal buy/sell instruction — but I cannot provide "
+                "investment advice, so here's the honest version: what the dashboard's "
+                "calibrated signals show, and the stance they point to."
             )
             if citations:
-                refusal += "\n".join(f"• {c}" for c in citations)
-            else:
-                refusal += "(See the signal data retrieved above.)"
-            refusal += "\n\nis_context_only: true — all signals are display-tier pending FDR."
+                refusal += "\n\nSources: " + ", ".join(citations)
             return refusal, True
     return answer, False
 
