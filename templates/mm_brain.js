@@ -165,6 +165,16 @@
   .mmb-ctx.on{display:flex}
   .mmb-ctx .chip{display:inline-flex;align-items:center;gap:6px;font:600 11px/1 var(--mmb-font);color:color-mix(in srgb,var(--mmb-info) 88%,#fff);
     background:color-mix(in srgb,var(--mmb-info) 12%,transparent);border:1px solid color-mix(in srgb,var(--mmb-info) 26%,transparent);border-radius:999px;padding:4px 10px}
+  .mmb-thumbs{display:none;flex-wrap:wrap;gap:8px;padding:10px 12px 0}
+  .mmb-thumbs.on{display:flex}
+  .mmb-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--mmb-line);background:#0b0e14;flex:none}
+  .mmb-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .mmb-thumb .x{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:50%;cursor:pointer;display:grid;place-items:center;
+    background:rgba(8,10,16,.82);color:#fff;font:700 11px/1 var(--mmb-font);padding:0}
+  .mmb-thumb .x:hover{background:#e05555}
+  /* attached-image thumbs inside a sent user bubble */
+  .mmb-bub .mmb-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .mmb-bub .mmb-imgs img{width:120px;max-width:44vw;height:auto;border-radius:10px;border:1px solid color-mix(in srgb,#fff 18%,transparent);display:block}
   .mmb-ta{width:100%;border:none;background:none;outline:none;resize:none;color:var(--mmb-text);font:15px/1.5 var(--mmb-font);padding:12px 14px 6px;min-height:26px;max-height:150px}
   .mmb-ta::placeholder{color:color-mix(in srgb,var(--mmb-muted) 92%,transparent)}
   .mmb-tools{display:flex;align-items:center;gap:8px;padding:6px 10px 10px}
@@ -234,11 +244,14 @@
         '<div class="mmb-scroll" id="mmb-scroll"></div>' +
         '<div class="mmb-comp"><div class="mmb-upgrade" id="mmb-upgrade"></div>' +
           '<div class="mmb-box"><div class="mmb-ctx" id="mmb-ctx"></div>' +
+            '<div class="mmb-thumbs" id="mmb-thumbs"></div>' +
             '<textarea class="mmb-ta" id="mmb-ta" rows="1" maxlength="2000" placeholder="' + L('Ask about any dashboard, signal, or ticker…', '询问任意看板、信号或标的…') + '"></textarea>' +
+            '<input type="file" id="mmb-file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>' +
             '<div class="mmb-tools">' +
               '<div class="mmb-seg" id="mmb-lane"><button data-lane="fast" class="on">⚡ ' + L('Fast', '快速') + '</button><button data-lane="pro">◈ Pro</button></div>' +
               '<div class="sp"></div>' +
               '<span class="mmb-q" id="mmb-q"></span>' +
+              '<button class="mmb-tbtn" data-act="attach" title="Attach image">' + ic('<path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7l8.5-8.5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3l8-8"/>') + '</button>' +
               '<button class="mmb-tbtn" data-act="voice" title="Voice">' + ic('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/>') + '</button>' +
               '<button class="mmb-send" id="mmb-send" disabled>' + ic('<path d="M5 12h14M13 6l6 6-6 6"/>') + '</button>' +
             '</div></div>' +
@@ -253,11 +266,12 @@
   var scrim = $('#mmb-scrim'), panel = $('#mmb-panel'), scroll = $('#mmb-scroll'),
       ta = $('#mmb-ta'), sendBtn = $('#mmb-send'), qEl = $('#mmb-q'), ctxEl = $('#mmb-ctx'),
       upgradeEl = $('#mmb-upgrade'), tlist = $('#mmb-tlist'), launch = $('#mmb-launch'),
-      researchBtn = $('.mmb-rpill');
+      researchBtn = $('.mmb-rpill'), thumbsEl = $('#mmb-thumbs'), fileEl = $('#mmb-file');
 
   /* ── state ── */
   var lane = 'fast', researchMode = false, threadId = null, streaming = false,
-      quotas = {}, authed = false, ctxSymbol = '', streamAbort = null;
+      quotas = {}, authed = false, ctxSymbol = '', streamAbort = null, pendingImages = [];
+  var MAX_IMAGES = 4;
 
   function esc(s) { var d = DOC.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
   /* markdown-lite: paragraphs, bold, bullet lists — all HTML-escaped */
@@ -366,22 +380,32 @@
 
   /* ── send (SSE) ── */
   function send(text) {
-    text = (text || ta.value).trim(); if (!text || streaming) return;
+    text = (text || ta.value).trim();
+    var imgs = pendingImages.slice();
+    if ((!text && !imgs.length) || streaming) return;
     if (!authed && window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()) { window.MDXAuth.open('signin'); return; }
-    appendMsg('user', text); ta.value = ''; autosize(); sendBtn.disabled = true; streaming = true; upgradeEl.style.display = 'none';
+    var ub = appendMsg('user', text);
+    if (imgs.length) { /* show the attached images at the top of the user bubble */
+      var iw = DOC.createElement('div'); iw.className = 'mmb-imgs';
+      imgs.forEach(function (s) { var im = DOC.createElement('img'); im.src = s; iw.appendChild(im); });
+      ub.insertBefore(iw, ub.firstChild);
+    }
+    pendingImages = []; renderThumbs();
+    ta.value = ''; autosize(); sendBtn.disabled = true; streaming = true; upgradeEl.style.display = 'none';
     var typing = DOC.createElement('div'); typing.className = 'mmb-msg assistant'; typing.innerHTML = '<div class="mmb-bub"><span class="mmb-typing"><span></span><span></span><span></span></span></div>';
     scroll.appendChild(typing); stick();
     var bub = null, acc = '', steps = null;
     var ctx = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) ctx.symbol = ctxSymbol;
-    var body = JSON.stringify({ message: text, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', thread_id: threadId || undefined, context: ctx });
+    var apiText = text || L('Please analyze the attached image.', '请分析所附图片。');
+    var body = JSON.stringify({ message: apiText, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', thread_id: threadId || undefined, context: ctx, images: imgs.length ? imgs : undefined });
     if (streamAbort) streamAbort.abort();
     var ac = (typeof AbortController !== 'undefined') ? new AbortController() : null; streamAbort = ac;
     withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
       return fetch(API + '/api/brain/stream', { method: 'POST', headers: h, credentials: 'include', body: body, signal: ac ? ac.signal : undefined });
     }).then(function (res) {
-      if (res.status === 401) { typing.remove(); streaming = false; sendBtn.disabled = false; if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); return; }
-      if (res.status === 402) { typing.remove(); streaming = false; sendBtn.disabled = false; return res.json().then(showUpgrade).catch(function () { showUpgrade({}); }); }
-      if (!res.ok || !res.body) { typing.remove(); bub = appendMsg('assistant', ''); bub.innerHTML = '<p>' + L('Something went wrong. Please try again.', '出错了，请重试。') + '</p>'; streaming = false; sendBtn.disabled = false; return; }
+      if (res.status === 401) { typing.remove(); streaming = false; syncSend(); if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); return; }
+      if (res.status === 402) { typing.remove(); streaming = false; syncSend(); return res.json().then(showUpgrade).catch(function () { showUpgrade({}); }); }
+      if (!res.ok || !res.body) { typing.remove(); bub = appendMsg('assistant', ''); bub.innerHTML = '<p>' + L('Something went wrong. Please try again.', '出错了，请重试。') + '</p>'; streaming = false; syncSend(); return; }
       var reader = res.body.getReader(), dec = new TextDecoder(), buf = '';
       function ensureBub() { if (!bub) { typing.remove(); bub = appendMsg('assistant', ''); } return bub; }
       function pump() {
@@ -401,9 +425,9 @@
           return pump();
         });
       }
-      function finish() { streaming = false; sendBtn.disabled = !ta.value.trim(); loadThreads(); }
+      function finish() { streaming = false; syncSend(); loadThreads(); }
       return pump();
-    }).catch(function () { typing.remove(); streaming = false; sendBtn.disabled = false; });
+    }).catch(function () { typing.remove(); streaming = false; syncSend(); });
   }
   function addCites(bub, cites) {
     var wrap = DOC.createElement('div'); wrap.className = 'mmb-cites';
@@ -437,7 +461,7 @@
   function toggle() { panel.classList.contains('open') ? close() : open(); }
   function toggleMax() { panel.classList.toggle('max'); panel.classList.remove('show-side'); panel.classList.remove('mmb-top'); }
   function toggleSide() { panel.classList.toggle('show-side'); }
-  function newChat() { threadId = null; root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.remove('on'); }); clearMsgs(); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); }
+  function newChat() { threadId = null; pendingImages = []; renderThumbs(); root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.remove('on'); }); clearMsgs(); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); }
 
   /* ── auth wiring ── */
   function onAuth(user) {
@@ -460,6 +484,8 @@
 
   /* ── events (delegated) ── */
   root.addEventListener('click', function (e) {
+    var rm = e.target.closest('[data-rmimg]');
+    if (rm) { pendingImages.splice(+rm.dataset.rmimg, 1); renderThumbs(); return; }
     var t = e.target.closest('[data-act],[data-p],[data-lane]'); if (!t) return;
     if (t.dataset.p) { ta.value = t.dataset.p; autosize(); send(); return; }
     if (t.dataset.lane) { lane = t.dataset.lane; root.querySelectorAll('#mmb-lane button').forEach(function (b) { b.classList.toggle('on', b === t); }); renderQuota(); return; }
@@ -468,14 +494,67 @@
     else if (a === 'new') newChat(); else if (a === 'research') setResearch(!researchMode);
     else if (a === 'home') location.href = (ANCHOR === 'top' ? 'https://mastermind-x.com/' : '') + 'macro.html';
     else if (a === 'voice') startVoice();
+    else if (a === 'attach') fileEl.click();
     else if (a === 'signin') { if (window.MDXAuth) window.MDXAuth.open('signin'); }
   });
+  fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
   if (launch) launch.addEventListener('click', open);
   scrim.addEventListener('click', close);
   sendBtn.addEventListener('click', function () { send(); });
-  ta.addEventListener('input', function () { autosize(); sendBtn.disabled = !ta.value.trim() || streaming; });
+  ta.addEventListener('input', function () { autosize(); syncSend(); });
   ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+  ta.addEventListener('paste', function (e) { /* paste a screenshot straight in */
+    var items = (e.clipboardData && e.clipboardData.items) || []; var files = [];
+    for (var i = 0; i < items.length; i++) { if (items[i].type && items[i].type.indexOf('image/') === 0) { var f = items[i].getAsFile(); if (f) files.push(f); } }
+    if (files.length) { e.preventDefault(); addFiles(files); }
+  });
   DOC.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
+
+  /* ── vision: attach + downscale images ── */
+  function addFiles(files) {
+    var arr = [].slice.call(files || []);
+    arr.forEach(function (f) {
+      if (!/^image\//.test(f.type) || pendingImages.length >= MAX_IMAGES) return;
+      downscaleImage(f).then(function (dataUri) {
+        if (!dataUri || pendingImages.length >= MAX_IMAGES) return;
+        pendingImages.push(dataUri); renderThumbs();
+      }).catch(function () {});
+    });
+  }
+  /* draw to a canvas capped at 1024px longest side, re-encode JPEG q0.82 → small data URI */
+  function downscaleImage(file) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var max = 1024, w = img.width, h = img.height;
+          if (w > max || h > max) { var s = Math.min(max / w, max / h); w = Math.round(w * s); h = Math.round(h * s); }
+          try {
+            var cv = DOC.createElement('canvas'); cv.width = w; cv.height = h;
+            cv.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(cv.toDataURL('image/jpeg', 0.82));
+          } catch (e) { resolve(fr.result); }
+        };
+        img.onerror = reject; img.src = fr.result;
+      };
+      fr.onerror = reject; fr.readAsDataURL(file);
+    });
+  }
+  function renderThumbs() {
+    if (!pendingImages.length) { thumbsEl.className = 'mmb-thumbs'; thumbsEl.innerHTML = ''; syncSend(); return; }
+    thumbsEl.className = 'mmb-thumbs on'; thumbsEl.innerHTML = '';
+    pendingImages.forEach(function (src, i) {
+      var d = DOC.createElement('div'); d.className = 'mmb-thumb';
+      /* set src via the DOM property (never interpolate a data URI into innerHTML) */
+      var im = DOC.createElement('img'); im.src = src; im.alt = '';
+      var x = DOC.createElement('button'); x.className = 'x'; x.setAttribute('data-rmimg', i); x.title = 'Remove'; x.textContent = '✕';
+      d.appendChild(im); d.appendChild(x); thumbsEl.appendChild(d);
+    });
+    syncSend();
+  }
+  /* send is enabled when there's text OR at least one attached image (and not mid-stream) */
+  function syncSend() { sendBtn.disabled = (!ta.value.trim() && !pendingImages.length) || streaming; }
 
   /* ── voice (best-effort Web Speech) ── */
   function startVoice() {

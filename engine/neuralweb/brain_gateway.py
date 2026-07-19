@@ -26,6 +26,7 @@ DESIGN PRINCIPLES
 """
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import os
@@ -1395,6 +1396,86 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Vision: image attachments (W6c-vision)
+# ---------------------------------------------------------------------------
+
+_VISION_MAX_IMAGES = 4
+_VISION_MAX_BYTES = 3_500_000  # ~3.5MB decoded per image (anthropic hard limit is 5MB)
+_VISION_MEDIA_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+_DATA_URI_RE = re.compile(r"^data:(image/[a-zA-Z0-9.+-]+);base64,(.+)$", re.DOTALL)
+
+
+def _image_blocks(images: list[str] | None) -> list[dict]:
+    """Convert client-supplied images into Anthropic image content blocks.
+
+    Accepts base64 data URIs (``data:image/...;base64,...``) and ``https://`` URLs.
+    Validates media type + decoded size and caps the count. Silently DROPS anything
+    invalid — a bad attachment must never break the chat turn. Returns [] when none
+    are valid, so callers can treat "" and "all-invalid" identically (text-only).
+    """
+    if not images:
+        return []
+    blocks: list[dict] = []
+    for item in images:
+        if len(blocks) >= _VISION_MAX_IMAGES:
+            break
+        if not isinstance(item, str) or not item:
+            continue
+        m = _DATA_URI_RE.match(item.strip())
+        if m:
+            media_type, b64 = m.group(1).lower(), m.group(2)
+            if media_type not in _VISION_MEDIA_TYPES:
+                continue
+            if len(b64) * 3 // 4 > _VISION_MAX_BYTES:  # decoded-size guard
+                continue
+            try:
+                base64.b64decode(b64, validate=True)
+            except Exception:  # noqa: BLE001
+                continue
+            blocks.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": media_type, "data": b64},
+            })
+        elif item.startswith("https://") and len(item) < 2048:
+            # Intentional: an authed API caller may pass an https image URL directly
+            # (the browser widget only ever sends data URIs). Anthropic fetches it on
+            # its own infra — not ours — so this is not a server-side SSRF vector.
+            blocks.append({"type": "image", "source": {"type": "url", "url": item}})
+    return blocks
+
+
+def _pick_vision_provider(providers: list[dict]) -> dict | None:
+    """Return the first vision-capable (claude-*) provider, or None.
+
+    The Fast lane's primary is DeepSeek (text-only), so an image turn must be served
+    by the Anthropic fallback (Haiku 4.5, multimodal). Pro's primary (Opus) is already
+    vision-capable, so this returns providers[0] there.
+    """
+    for p in providers:
+        if str(p.get("model") or "").startswith("claude"):
+            return p
+    return None
+
+
+def _vision_provider(lane: str, providers: list[dict], root: Path | None) -> dict | None:
+    """Resolve a vision-capable provider for an image turn.
+
+    Prefer an in-lane claude provider (Haiku on Fast when an Anthropic key exists).
+    When the lane has none — e.g. Fast with only DeepSeek (text-only) and no Haiku
+    key — borrow the Pro lane's vision provider (Opus via OAuth) so image turns work
+    regardless of lane. The turn is still metered against the caller's lane/quota.
+    Returns None only when no vision provider exists anywhere (→ turn goes text-only).
+    """
+    vp = _pick_vision_provider(providers)
+    if vp is None and lane != "pro":
+        try:
+            vp = _pick_vision_provider(_build_lane_providers("pro", root))
+        except Exception:  # noqa: BLE001
+            vp = None
+    return vp
+
+
+# ---------------------------------------------------------------------------
 # Degraded memo reply (no provider available)
 # ---------------------------------------------------------------------------
 
@@ -1433,6 +1514,7 @@ def _run_brain_loop(
     max_tokens: int,
     tool_budget: int,
     mode: str = "chat",
+    image_blocks: list[dict] | None = None,
 ) -> tuple[str, list[dict], list[dict], list[dict], dict, list[dict]]:
     """Run the bounded tool loop.
 
@@ -1487,9 +1569,16 @@ def _run_brain_loop(
             out.append({"role": role, "content": content})
         return out
 
+    # Vision: attach validated image blocks to the current turn — the content
+    # becomes a [text, image, …] list only when at least one image survived
+    # validation (prior turns stay text-only, so history reload never re-sends blobs).
+    turn_content: Any = user_content
+    if image_blocks:
+        turn_content = [{"type": "text", "text": user_content}, *image_blocks]
+
     # History (up to 12 prior turns) + current message
     messages: list[dict] = _filter_history(history[-24:])   # cap 12 turns = 24 messages
-    messages.append({"role": "user", "content": user_content})
+    messages.append({"role": "user", "content": turn_content})
 
     answer_text = ""
     tool_call_count = 0
@@ -1598,6 +1687,7 @@ def _run_brain_loop_stream(
     usage_out: list | None = None,
     answer_out: list | None = None,
     mode: str = "chat",
+    image_blocks: list[dict] | None = None,
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
@@ -1658,8 +1748,13 @@ def _run_brain_loop_stream(
             out.append({"role": role, "content": content})
         return out
 
+    # Vision: attach validated image blocks to the current turn (see _run_brain_loop).
+    turn_content: Any = user_content
+    if image_blocks:
+        turn_content = [{"type": "text", "text": user_content}, *image_blocks]
+
     messages: list[dict] = _filter_history_stream(history[-24:])
-    messages.append({"role": "user", "content": user_content})
+    messages.append({"role": "user", "content": turn_content})
 
     tool_call_count = 0
     last_resp_content: list = []
@@ -1814,6 +1909,7 @@ def chat(
     context: dict | None = None,
     root: Path | None = None,
     mode: str = "chat",
+    images: list[str] | None = None,
 ) -> dict:
     """Process a brain chat request (non-streaming).
 
@@ -1923,6 +2019,18 @@ def chat(
     client = providers[0].get("client")
     model = providers[0].get("model") or "unknown"
 
+    # 4b. Vision routing (W6c): DeepSeek (Fast primary) is text-only, so an image
+    # turn is served by a vision-capable provider (in-lane Haiku when a key exists,
+    # else the Pro lane's Opus via OAuth). Invalid/oversized dropped; none → text-only.
+    image_blocks = _image_blocks(images)
+    if image_blocks:
+        vp = _vision_provider(lane, providers, root)
+        if vp is not None:
+            client = vp.get("client") or client
+            model = vp.get("model") or model
+        else:
+            image_blocks = []
+
     # 5. Thread store (best-effort; degrade to stateless on failure)
     effective_thread_id: str | None = None
     thread_history: list[dict] = []
@@ -1960,7 +2068,7 @@ def chat(
             clean_msg, lane, active_history, context or {},
             root, terminal_data_dir, terminal_hub_url,
             client, model, max_tokens, tool_budget,
-            mode=mode,
+            mode=mode, image_blocks=image_blocks,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: loop failed (%s) — degraded reply", exc)
@@ -1982,7 +2090,7 @@ def chat(
 
     # 8. Thread message persistence (best-effort)
     if effective_thread_id:
-        _append_message(effective_thread_id, "user", clean_msg)
+        _append_message(effective_thread_id, "user", clean_msg + ("\n\n[image attached]" if image_blocks else ""))
         _append_message(effective_thread_id, "assistant", answer_text)
 
     # 9. Cost settlement from response.usage (fix #1: real tokens, never zeros)
@@ -1991,7 +2099,9 @@ def chat(
     try:
         _ac.record_usage(
             lane=usage_lane,
-            provider="claude_api" if lane == "pro" else "deepseek",
+            # Attribute to the provider that ACTUALLY served the turn, not the lane:
+            # a Fast image turn is served by Haiku (claude_api), not DeepSeek.
+            provider="claude_api" if str(model).startswith("claude") else "deepseek",
             model=model,
             stage="brain-chat",
             input_tokens=in_tok,
@@ -2049,6 +2159,7 @@ def chat_stream(
     context: dict | None = None,
     root: Path | None = None,
     mode: str = "chat",
+    images: list[str] | None = None,
 ) -> Generator[str, None, None]:
     """Process a brain chat request (streaming). Yields SSE strings per contract.
 
@@ -2126,6 +2237,18 @@ def chat_stream(
     client = providers[0].get("client")
     model = providers[0].get("model") or "unknown"
 
+    # 3b. Vision routing (W6c): route image turns to a vision-capable provider
+    # (in-lane Haiku when a key exists — DeepSeek is text-only; else Pro's Opus via
+    # OAuth). Done before the meta event so the reported model serves the turn.
+    image_blocks = _image_blocks(images)
+    if image_blocks:
+        vp = _vision_provider(lane, providers, root)
+        if vp is not None:
+            client = vp.get("client") or client
+            model = vp.get("model") or model
+        else:
+            image_blocks = []
+
     # 4. Thread store
     effective_thread_id: str | None = None
     thread_history: list[dict] = []
@@ -2174,7 +2297,7 @@ def chat_stream(
             meta_event,
             usage_out,
             answer_out,
-            mode=mode,
+            mode=mode, image_blocks=image_blocks,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: stream loop failed (%s)", exc)
@@ -2184,7 +2307,7 @@ def chat_stream(
     #    reload and multi-turn model context see the full conversation (the streamed
     #    assistant text lives only on the SSE wire otherwise).
     if effective_thread_id:
-        _append_message(effective_thread_id, "user", clean_msg)
+        _append_message(effective_thread_id, "user", clean_msg + ("\n\n[image attached]" if image_blocks else ""))
         if answer_out:
             _append_message(effective_thread_id, "assistant", answer_out[0])
 
@@ -2195,7 +2318,9 @@ def chat_stream(
     try:
         _ac.record_usage(
             lane=usage_lane,
-            provider="claude_api" if lane == "pro" else "deepseek",
+            # Attribute to the provider that ACTUALLY served the turn, not the lane:
+            # a Fast image turn is served by Haiku (claude_api), not DeepSeek.
+            provider="claude_api" if str(model).startswith("claude") else "deepseek",
             model=model,
             stage="brain-stream",
             input_tokens=in_tok,

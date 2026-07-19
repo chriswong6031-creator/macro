@@ -57,7 +57,7 @@ from typing import Any
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # Add repo root to sys.path so engine.neuralweb can be imported from /opt/macro
 _REPO_ROOT_FOR_IMPORT = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
@@ -553,6 +553,20 @@ class BrainChatRequest(BaseModel):
     history: list[dict] | None = Field(None, description="Client-sent fallback history (max 12 turns; used only when thread store is absent)")
     context: dict | None = Field(None, description="Optional page/symbol context hint")
     mode: str = Field("chat", description="'chat' (default) or 'research' (W6b Deep Research — forces pro lane, raises tool budget, structured multi-section cited report; requires pro quota)")
+    images: list[str] | None = Field(None, max_length=4, description="Optional image attachments (W6c vision) — base64 data URIs or https URLs; served by a vision model (Haiku on Fast, Opus on Pro). Invalid/oversized dropped. Max 4.")
+
+    @field_validator("images")
+    @classmethod
+    def _bound_images(cls, v: list[str] | None) -> list[str] | None:
+        """Drop oversized image strings at parse time so a giant payload can't ride in.
+
+        The client downscales to ~1024px JPEGs (typically <300KB); ~7M chars ≈ 5MB
+        decoded is a generous per-item ceiling. The gateway's _image_blocks re-checks
+        media type + a 3.5MB decoded cap; this is the outer body-size backstop.
+        """
+        if not v:
+            return v
+        return [s for s in v if isinstance(s, str) and len(s) <= 7_000_000][:4]
 
 
 _SSE_BRAIN_HEADERS = {
@@ -598,6 +612,7 @@ def brain_chat(body: BrainChatRequest, user: dict = Depends(require_user)):
         context=body.context,
         root=REPO,
         mode=mode,
+        images=body.images,
     )
 
     if result.get("quota_exhausted"):
@@ -634,6 +649,7 @@ def brain_stream(body: BrainChatRequest, user: dict = Depends(require_user)):
             context=body.context,
             root=REPO,
             mode=mode,
+            images=body.images,
         )
 
     return StreamingResponse(_gen(), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
