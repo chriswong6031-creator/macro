@@ -2491,3 +2491,39 @@ def test_run_brain_loop_accepts_user_id_kwarg(tmp_path):
             client, "deepseek-chat", 2000, 5, user_id="user-77",
         )
     assert seen.get("user_id") == "user-77"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W6d-loopfix: refusal self-correction hint + non-stream synthesis pass
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_refused_tool_lists_available_tools(tmp_path):
+    """A hallucinated tool name gets the allowlist back so the model can self-correct."""
+    r = gw._dispatch_brain_tool("read_stage_analysis", {}, tmp_path, tmp_path, "")
+    assert "error" in r
+    assert "get_stage_peers" in r.get("available_tools", [])
+    assert "get_fundamentals" in r["available_tools"]
+
+
+def test_nonstream_loop_synthesis_after_budget_exhaustion():
+    """When the tool budget runs out mid-investigation, one final synthesis turn runs
+    so chat() returns an answer, not the model's last narration."""
+    tool_resp = _MockResponse(
+        [_MockBlock("text", "Let me also check CUBI."),
+         _MockBlock("tool_use", name="get_movers", input_={}, id_="t1")],
+        "tool_use",
+    )
+    synth_resp = _MockResponse(
+        [_MockBlock("text", "STLD reports 07-20; the buy board favors CUBI. Watch — don't chase.")],
+        "end_turn",
+    )
+    # budget=2 → two tool turns consumed, loop exits on budget with stop_reason=tool_use,
+    # synthesis pass makes ONE more call → synth_resp.
+    client = _MockClient([tool_resp, tool_resp, synth_resp])
+    root = _make_temp_root()
+    ans, *_ = gw._run_brain_loop(
+        "who reports next?", "fast", [], {}, root, root, "http://x",
+        client, "deepseek-chat", 100, 2,
+    )
+    assert "Watch" in ans and "Let me also check" not in ans
+    assert client._call_count == 3  # 2 tool turns + 1 synthesis
