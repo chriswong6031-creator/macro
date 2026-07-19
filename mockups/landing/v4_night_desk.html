@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mastermind — A terminal with a brain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0a1220; --navy2:#0b1526;
+  --panel:#0f1a2c; --panel2:#0d1727;
+  --line:rgba(140,170,210,.14); --line2:rgba(140,170,210,.08);
+  --teal:#2dd4bf; --teal-dim:#1c8a7d;
+  --up:#22c55e; --down:#ef4444;
+  --text:#dbe7f4; --muted:#7d90aa; --faint:#556a86;
+  --sans:'Inter',system-ui,sans-serif;
+  --disp:'Inter Tight',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --maxw:1200px;
+  --pad:clamp(18px,5vw,64px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; overflow-x:clip}   /* clip: contains decorative bleed, keeps sticky nav working */
+body{
+  margin:0; background:var(--navy); color:var(--text);
+  font-family:var(--sans); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased; overflow-x:clip;
+}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--teal);outline-offset:3px;border-radius:3px}
+
+/* ---- mono utility labels: the structural voice ---- */
+.eyebrow{
+  font-family:var(--mono); font-size:11px; font-weight:600;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--teal);
+}
+.eyebrow.muted{color:var(--muted)}
+.mono{font-family:var(--mono)}
+.up{color:var(--up)} .down{color:var(--down)}
+
+/* ---- shell ---- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad)}
+
+/* ================= NAV ================= */
+.nav{
+  position:sticky; top:0; z-index:60;
+  background:rgba(10,18,32,.82); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.nav-in{
+  max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);
+  height:60px; display:flex; align-items:center; gap:26px;
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:800;letter-spacing:.02em}
+.brand .m{
+  width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+  background:linear-gradient(150deg,var(--teal),var(--teal-dim));
+  color:#04140f;font-family:var(--disp);font-weight:800;font-size:16px;
+  box-shadow:0 0 14px rgba(45,212,191,.35);
+}
+.brand .wm{font-size:15px;letter-spacing:.14em}
+.nav-links{display:flex;gap:22px;margin-left:8px}
+.nav-links a{font-size:13.5px;color:var(--muted);font-weight:500;transition:color .08s}
+.nav-links a:hover{color:var(--text)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.lang{font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--line);
+  border-radius:6px;padding:4px 8px;letter-spacing:.05em;cursor:pointer;transition:.08s}
+.lang:hover{border-color:var(--teal);color:var(--text)}
+.lang b{color:var(--text)}
+.login{font-size:13.5px;color:var(--muted);font-weight:500}
+.login:hover{color:var(--text)}
+.btn{
+  font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.02em;
+  border-radius:8px;padding:9px 15px;cursor:pointer;border:1px solid transparent;
+  transition:transform .08s,box-shadow .08s,background .08s,border-color .08s;
+  display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+}
+.btn-teal{background:var(--teal);color:#04140f;box-shadow:0 0 0 rgba(45,212,191,0)}
+.btn-teal:hover{background:#3ee6d1;box-shadow:0 6px 22px rgba(45,212,191,.28);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--teal);color:#fff;transform:translateY(-1px)}
+.btn .dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
+.nav-burger{display:none}
+
+/* ================= TICKER TAPE ================= */
+.tape{
+  position:sticky; top:60px; z-index:55;
+  background:rgba(11,21,38,.9); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+  overflow:hidden; height:34px;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+}
+.tape-track{
+  display:inline-flex; align-items:center; height:34px; white-space:nowrap;
+  animation:marq 46s linear infinite; will-change:transform;
+}
+.tape:hover .tape-track{animation-play-state:paused}
+.tk{font-family:var(--mono);font-size:12px;padding:0 20px;display:inline-flex;gap:8px;align-items:center;
+  border-right:1px solid var(--line2)}
+.tk .sym{color:var(--muted);font-weight:600;letter-spacing:.04em}
+.tk .px{color:var(--text)}
+@keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ================= HERO ================= */
+.hero{position:relative;padding-top:clamp(48px,7vw,84px);padding-bottom:clamp(30px,4vw,50px)}
+.hero::before{
+  content:"";position:absolute;top:-40px;left:50%;transform:translateX(-50%);
+  width:min(920px,100%);height:520px;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 55% at 50% 40%,rgba(45,212,191,.14),transparent 70%);
+  filter:blur(6px);
+}
+.hero-in{position:relative;z-index:1;text-align:center;max-width:820px;margin:0 auto}
+.hero .kick{display:inline-flex;align-items:center;gap:10px;
+  border:1px solid var(--line);border-radius:20px;padding:5px 13px;margin-bottom:24px;
+  background:var(--panel2)}
+.hero .kick .lv{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.hero .kick span{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+h1{font-family:var(--disp);font-weight:800;letter-spacing:-.03em;line-height:1;
+  font-size:clamp(42px,8vw,84px);margin:0}
+h1 .brainword{
+  background:linear-gradient(120deg,var(--teal),#7ff0e0);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero .sub{
+  font-family:var(--mono);font-size:clamp(13px,1.7vw,15.5px);color:var(--muted);
+  line-height:1.7;max-width:640px;margin:22px auto 0;letter-spacing:.005em;
+}
+.hero .sub b{color:var(--text);font-weight:500}
+.hero-cta{display:flex;gap:12px;justify-content:center;margin-top:30px;flex-wrap:wrap}
+.hero-cta .btn{font-size:13.5px;padding:12px 20px}
+.trust{margin-top:22px;font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.06em}
+.trust b{color:var(--muted)}
+
+/* ================= ANNOTATED TERMINAL (SIGNATURE) ================= */
+.stage{position:relative;z-index:1;margin-top:clamp(36px,5vw,58px)}
+.stage-hd{display:flex;align-items:baseline;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.stage-hd h2{font-family:var(--disp);font-weight:700;font-size:clamp(20px,3vw,26px);margin:0;letter-spacing:-.02em}
+.stage-hd p{color:var(--muted);font-size:14px;margin:0}
+.term-shell{
+  position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  background:var(--panel);
+  box-shadow:0 0 0 1px rgba(45,212,191,.08),0 28px 80px rgba(0,0,0,.55),0 0 60px rgba(45,212,191,.10);
+}
+.term-bar{display:flex;align-items:center;gap:7px;height:34px;padding:0 14px;
+  background:var(--panel2);border-bottom:1px solid var(--line)}
+.term-bar i{width:10px;height:10px;border-radius:50%;background:#25344c}
+.term-bar .u{margin-left:12px;font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em}
+.term-bar .live{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--teal);letter-spacing:.12em;display:flex;align-items:center;gap:6px}
+.term-bar .live .lv{width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 7px var(--teal)}
+.term-img-wrap{position:relative;line-height:0}
+.term-img-wrap img{width:100%;display:block}
+/* on-image target dots (real regions of the screenshot) */
+.tgt{position:absolute;width:9px;height:9px;pointer-events:none;transform:translate(-50%,-50%);z-index:3}
+.tgt::before{content:"";position:absolute;inset:0;border-radius:50%;background:var(--teal);
+  box-shadow:0 0 8px rgba(45,212,191,.9);opacity:0;animation:dotin .3s ease forwards;animation-delay:var(--d,.4s)}
+.tgt::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--teal);
+  opacity:0;animation:halo 2.2s ease-out infinite;animation-delay:calc(var(--d,.4s) + .3s)}
+@keyframes dotin{to{opacity:1}}
+@keyframes halo{0%{opacity:.7;transform:scale(.6)}70%{opacity:0;transform:scale(2.6)}100%{opacity:0;transform:scale(2.6)}}
+/* leader lines + label cards, laid over the whole stage (image + right gutter) */
+.term-stage{position:relative}
+.leaders{position:absolute;inset:0;pointer-events:none;z-index:4;overflow:visible}
+.leaders path{fill:none;stroke:var(--teal);stroke-width:1.4;
+  stroke-dasharray:var(--len);stroke-dashoffset:var(--len);
+  animation:draw .8s cubic-bezier(.55,.06,.3,1) forwards;animation-delay:var(--d,.4s);
+  filter:drop-shadow(0 0 2px rgba(45,212,191,.55))}
+@keyframes draw{to{stroke-dashoffset:0}}
+.callouts{position:absolute;top:0;right:0;width:236px;height:100%;pointer-events:none;z-index:5}
+.callout{position:absolute;right:0;width:236px;transform:translateY(-50%);opacity:0;
+  animation:labin .55s ease forwards;animation-delay:calc(var(--d,.4s) + .3s)}
+.callout .c{display:block;background:rgba(11,21,38,.9);backdrop-filter:blur(6px);
+  border:1px solid var(--line);border-left:2px solid var(--teal);border-radius:8px;padding:10px 13px}
+.callout .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--teal);text-transform:uppercase}
+.callout .h{font-family:var(--mono);font-size:12px;font-weight:600;color:#fff;letter-spacing:.02em;
+  text-transform:uppercase;margin-top:5px;line-height:1.3;display:block}
+.callout .d{font-family:var(--sans);font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.45;display:block;text-transform:none;letter-spacing:0}
+.callout .d b{color:var(--text);font-weight:600}
+@keyframes labin{from{opacity:0;transform:translateY(-50%) translateX(8px)}to{opacity:1;transform:translateY(-50%) translateX(0)}}
+/* mobile fallback caption list for annotations */
+.anno-list{display:none}
+/* desktop: reserve right gutter so callouts sit beside the image, not over it */
+@media(min-width:941px){
+  .term-stage{padding-right:252px}
+  .term-shell{position:relative}
+}
+
+/* ================= SECTION FRAME ================= */
+section{position:relative}
+.rule{border:0;border-top:1px solid var(--line);margin:0}
+.sec{padding-block:clamp(56px,8vw,96px)}
+.sec-hd{max-width:680px;margin-bottom:clamp(28px,4vw,44px)}
+.sec-hd .eyebrow{display:block;margin-bottom:14px}
+.sec-hd h2{font-family:var(--disp);font-weight:800;letter-spacing:-.025em;line-height:1.05;
+  font-size:clamp(28px,4.4vw,42px);margin:0}
+.sec-hd p{color:var(--muted);font-size:clamp(15px,1.9vw,17px);margin:16px 0 0;max-width:600px}
+.sec-hd p b{color:var(--text);font-weight:600}
+
+/* ================= COVERAGE STRIP ================= */
+.cov{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cov .cell{background:var(--panel2);padding:20px 20px 18px}
+.cov .n{font-family:var(--mono);font-weight:700;font-size:clamp(26px,3.6vw,34px);color:var(--text);letter-spacing:-.02em}
+.cov .n .u{font-size:14px;color:var(--muted);font-weight:500}
+.cov .l{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:6px}
+.cov-flags{display:flex;gap:16px;flex-wrap:wrap;margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.cov-flags span{display:inline-flex;align-items:center;gap:7px}
+.cov-flags .fx{width:7px;height:7px;border-radius:50%;background:var(--teal);opacity:.8}
+
+/* ================= BENTO ================= */
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.tile{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;display:flex;flex-direction:column;transition:border-color .1s,transform .1s}
+.tile:hover{border-color:rgba(45,212,191,.4);transform:translateY(-2px)}
+.tile-txt{padding:20px 22px}
+.tile .eyebrow{display:block;margin-bottom:9px}
+.tile h3{font-family:var(--disp);font-weight:700;font-size:19px;margin:0 0 7px;letter-spacing:-.01em}
+.tile p{color:var(--muted);font-size:13.5px;margin:0;line-height:1.55}
+.tile-shot{position:relative;overflow:hidden;flex:1;min-height:150px;background:var(--panel2);
+  border-top:1px solid var(--line)}
+.tile-shot img{width:100%;height:100%;object-fit:cover;object-position:var(--op,top left);opacity:.96}
+.tile-shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(10,18,32,.55))}
+.t-span-6{grid-column:span 6}.t-span-4{grid-column:span 4}.t-span-8{grid-column:span 8}
+.t-span-12{grid-column:span 12}
+/* action-lane mini chips inside a tile */
+.lanes{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.lane{font-family:var(--mono);font-size:11px;letter-spacing:.02em;padding:4px 9px;border-radius:20px;
+  border:1px solid var(--line);color:var(--muted);display:inline-flex;gap:6px;align-items:center;background:var(--panel2)}
+.lane b{color:var(--text);font-weight:600}
+
+/* ================= HOW IT WORKS ================= */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.step{padding:24px 22px 26px;border-right:1px solid var(--line);position:relative;background:var(--panel2)}
+.step:last-child{border-right:0}
+.step .k{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:.12em}
+.step h4{font-family:var(--disp);font-weight:700;font-size:17px;margin:12px 0 8px;letter-spacing:-.01em}
+.step p{color:var(--muted);font-size:13px;margin:0;line-height:1.55}
+.step .arrow{position:absolute;right:-8px;top:30px;color:var(--teal);font-size:14px;z-index:2;
+  background:var(--navy);width:16px;height:16px;border-radius:50%;display:grid;place-items:center}
+
+/* ================= HONESTY ================= */
+.honest{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(28px,5vw,60px);align-items:center}
+.honest-copy h2{font-family:var(--disp);font-weight:800;font-size:clamp(28px,4.2vw,40px);letter-spacing:-.025em;margin:0 0 18px;line-height:1.08}
+.honest-copy p{color:var(--muted);font-size:16px;margin:0 0 14px}
+.honest-copy p b{color:var(--text);font-weight:600}
+.receipt{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  font-family:var(--mono);font-size:13px;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.receipt .rh{padding:11px 16px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;display:flex;justify-content:space-between;background:var(--panel2)}
+.receipt .rb{padding:18px 16px}
+.receipt .verdict{font-size:20px;color:var(--text);font-family:var(--disp);font-weight:700;letter-spacing:-.01em}
+.receipt .verdict .amber{color:#f5b544}
+.receipt .line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line2);color:var(--muted)}
+.receipt .line:last-child{border-bottom:0}
+.receipt .line b{color:var(--text);font-weight:500}
+.receipt .stance{margin-top:14px;padding:11px 13px;border:1px solid rgba(245,181,68,.3);
+  border-radius:8px;background:rgba(245,181,68,.06);color:#f5d08a;font-size:12.5px;line-height:1.5}
+.receipt .stance b{color:#f5b544}
+
+/* ================= PRICING ================= */
+.price-top{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:30px}
+.toggle{display:inline-flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.toggle .sw{width:44px;height:24px;border-radius:20px;background:var(--panel);border:1px solid var(--line);
+  position:relative;cursor:pointer;transition:.12s}
+.toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:var(--teal);transition:.15s;box-shadow:0 0 10px rgba(45,212,191,.5)}
+.toggle input{position:absolute;opacity:0;pointer-events:none}
+.toggle input:checked + .sw{border-color:var(--teal)}
+.toggle input:checked + .sw::after{left:22px}
+.toggle .on{color:var(--text)}
+.save{font-family:var(--mono);font-size:11px;color:var(--teal);border:1px solid rgba(45,212,191,.35);
+  border-radius:20px;padding:3px 9px;letter-spacing:.04em}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 24px;display:flex;flex-direction:column}
+.card.hl{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal),0 24px 60px rgba(45,212,191,.14);position:relative}
+.card.hl::before{content:"MOST POPULAR";position:absolute;top:-1px;right:18px;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:#04140f;background:var(--teal);
+  padding:3px 9px;border-radius:0 0 6px 6px}
+.card .pn{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card.hl .pn{color:var(--teal)}
+.card .pr{font-family:var(--disp);font-weight:800;font-size:38px;letter-spacing:-.03em;margin:14px 0 2px;display:flex;align-items:baseline;gap:4px}
+.card .pr .per{font-family:var(--mono);font-size:13px;color:var(--muted);font-weight:400}
+.card .billed{font-family:var(--mono);font-size:11px;color:var(--faint);min-height:15px;letter-spacing:.02em}
+.card .desc{color:var(--muted);font-size:13.5px;margin:14px 0 18px;line-height:1.5}
+.card ul{list-style:none;padding:0;margin:0 0 22px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card li{font-size:13.5px;color:var(--text);display:flex;gap:10px;align-items:flex-start}
+.card li::before{content:"›";color:var(--teal);font-family:var(--mono);font-weight:700;flex-shrink:0}
+.card .btn{width:100%;justify-content:center;padding:11px}
+
+/* ================= FINAL CTA ================= */
+.final{text-align:center;padding-block:clamp(64px,9vw,110px);position:relative;overflow:hidden}
+.final::before{content:"";position:absolute;inset:0;z-index:0;
+  background:radial-gradient(ellipse 50% 60% at 50% 50%,rgba(45,212,191,.10),transparent 70%)}
+.final-in{position:relative;z-index:1}
+.final h2{font-family:var(--disp);font-weight:800;font-size:clamp(30px,5.5vw,54px);letter-spacing:-.03em;margin:0;line-height:1.02}
+.final .sub{font-family:var(--mono);color:var(--muted);font-size:14px;margin:18px auto 0;max-width:480px;line-height:1.6}
+.final-cta{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+.final-cta .btn{padding:13px 22px;font-size:14px}
+
+/* ================= FOOTER ================= */
+footer{border-top:1px solid var(--line);padding-block:44px 34px;background:var(--panel2)}
+.foot{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:30px}
+.foot .fb .wm{font-size:14px;letter-spacing:.14em}
+.foot p{color:var(--faint);font-size:12.5px;margin:14px 0 0;max-width:250px;line-height:1.6;font-family:var(--mono)}
+.foot .col h5{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+.foot .col a{display:block;color:var(--faint);font-size:13px;margin-bottom:9px;transition:color .08s}
+.foot .col a:hover{color:var(--text)}
+.foot-btm{max-width:var(--maxw);margin:34px auto 0;padding-top:22px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.03em}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:940px){
+  .nav-links,.login{display:none}
+  .nav-in{gap:12px}
+  .honest{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr 1fr}
+  .step:nth-child(2){border-right:0}
+  .step .arrow{display:none}
+  .t-span-8,.t-span-6,.t-span-4{grid-column:span 6}
+  /* below 941px: no gutter — leaders/callouts/dots off, caption list on */
+  .term-stage{padding-right:0}
+  .leaders,.callouts,.tgt{display:none}
+  .anno-list{display:block;margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .anno-list li{list-style:none;display:flex;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line2);
+    font-family:var(--mono);font-size:12px;color:var(--text);align-items:flex-start;text-transform:uppercase;letter-spacing:.02em}
+  .anno-list li:last-child{border-bottom:0}
+  .anno-list li .n{color:var(--teal);flex-shrink:0}
+  .anno-list li small{display:block;color:var(--muted);font-size:11.5px;margin-top:3px;line-height:1.5;
+    text-transform:none;letter-spacing:0;font-family:var(--sans)}
+}
+@media(max-width:720px){
+  .cov{grid-template-columns:1fr 1fr}
+  .cards{grid-template-columns:1fr}
+  .foot{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  .nav-free{display:none}                 /* button reads "Open Terminal" */
+  .brand .wm{font-size:13px;letter-spacing:.1em}
+  .nav-in{gap:10px}
+  .btn{padding:8px 12px;font-size:12px}
+}
+@media(max-width:520px){
+  .bento .tile,.t-span-8,.t-span-6,.t-span-4{grid-column:span 12}
+  .flow{grid-template-columns:1fr}
+  .step{border-right:0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:0}
+  .foot{grid-template-columns:1fr}
+  h1{font-size:clamp(30px,9vw,42px);letter-spacing:-.02em}
+  .hero .sub{font-size:12.5px}
+  .hero .kick{max-width:100%}
+  .hero .kick span{font-size:9.5px;letter-spacing:.08em;white-space:normal}
+}
+@media (prefers-reduced-motion:reduce){
+  .tape-track{animation:none;transform:translateX(0)}
+  .leaders path{animation:none;stroke-dashoffset:0}
+  .callout{animation:none;opacity:1;transform:translateY(-50%)}
+  .tgt::before{animation:none;opacity:1}
+  .tgt::after{animation:none;opacity:0}
+  .hero .kick .lv{animation:none}
+  html{scroll-behavior:auto}
+  .tile:hover,.btn:hover{transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== NAV ===================== -->
+<nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="#top" aria-label="Mastermind home">
+      <span class="m">M</span><span class="wm">MASTERMIND</span>
+    </a>
+    <div class="nav-links">
+      <a href="#terminal">Product</a>
+      <a href="#coverage">Markets</a>
+      <a href="#terminal">Terminal</a>
+      <a href="#how">Track record</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <span class="lang" role="button" tabindex="0"><b>EN</b> / 中文</span>
+      <a class="login" href="#">Log in</a>
+      <a class="btn btn-teal" href="#"><span class="dot"></span>Open Terminal<span class="nav-free">&nbsp;— free</span></a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===================== TICKER TAPE ===================== -->
+<div class="tape" aria-hidden="true">
+  <div class="tape-track" id="tape">
+    <!-- filled by JS (duplicated for seamless loop); static fallback below -->
+    <span class="tk"><span class="sym">SPY</span><span class="px">743.29</span><span class="down">−0.99%</span></span>
+    <span class="tk"><span class="sym">QQQ</span><span class="px">695.33</span><span class="down">−1.50%</span></span>
+    <span class="tk"><span class="sym">NVDA</span><span class="px">202.81</span><span class="down">−2.21%</span></span>
+    <span class="tk"><span class="sym">BTC</span><span class="px">84,546</span><span class="up">+0.91%</span></span>
+    <span class="tk"><span class="sym">ETH</span><span class="px">1,865</span><span class="up">+1.42%</span></span>
+    <span class="tk"><span class="sym">AAPL</span><span class="px">333.74</span><span class="up">+0.42%</span></span>
+  </div>
+</div>
+
+<span id="top"></span>
+
+<!-- ===================== HERO ===================== -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-in">
+      <div class="kick"><span class="lv"></span><span>Live desk · US · China · HK · Canada</span></div>
+      <h1>A terminal with a <span class="brainword">brain</span>.</h1>
+      <p class="sub">Free real-time charts, wired into an engine that reads the whole market
+        every night. <b>Signals on the chart, context in the rail, no guesswork in between.</b></p>
+      <div class="hero-cta">
+        <a class="btn btn-teal" href="#"><span class="dot"></span>Open the Terminal — free</a>
+        <a class="btn btn-ghost" href="#suite">See the intelligence suite</a>
+      </div>
+      <p class="trust"><b>$0 to start</b> · no card · bilingual EN / 中文 · charts + daily dashboards free forever</p>
+    </div>
+
+    <!-- ===== SIGNATURE: ANNOTATED TERMINAL ===== -->
+    <div class="stage" id="terminal">
+      <div class="stage-hd">
+        <span class="eyebrow muted">// what you're looking at</span>
+      </div>
+      <div class="term-stage">
+        <div class="term-shell">
+          <div class="term-bar">
+            <i></i><i></i><i></i>
+            <span class="u">app.mastermind-x.com — NVDA · 1D</span>
+            <span class="live"><span class="lv"></span>LIVE</span>
+          </div>
+          <div class="term-img-wrap">
+            <img src="assets/terminal_live.png" alt="Mastermind Terminal — NVDA candles with moving averages, RSI and stochastic panes, a right-rail watchlist, and an entry-signal oracle chip.">
+            <!-- on-image target dots at real UI regions (image-relative %) -->
+            <span class="tgt" style="left:89.5%;top:4.5%;--d:1.4s"></span> <!-- AI button -->
+            <span class="tgt" style="left:82.5%;top:29%;--d:.6s"></span>   <!-- watchlist -->
+            <span class="tgt" style="left:80.5%;top:57%;--d:.4s"></span>  <!-- oracle chip -->
+            <span class="tgt" style="left:86%;top:65%;--d:1.9s"></span>   <!-- trend / key stats -->
+          </div>
+        </div>
+
+        <!-- leader hairlines over the full stage (image + gutter), % coords -->
+        <svg class="leaders" viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true">
+          <!-- oracle: dot ~ (628,365) → gutter card at y 300 -->
+          <path style="--len:250;--d:.4s" d="M 628 365 H 720 V 300 H 760"/>
+          <!-- watchlist: dot ~ (644,185) → card y 128 -->
+          <path style="--len:240;--d:.6s" d="M 644 185 H 700 V 128 H 760"/>
+          <!-- AI button: dot ~ (698,29) → card y 42 -->
+          <path style="--len:110;--d:1.4s" d="M 698 29 H 730 V 42 H 760"/>
+          <!-- trend: dot ~ (670,416) → card y 470 -->
+          <path style="--len:200;--d:1.9s" d="M 670 416 H 705 V 470 H 760"/>
+        </svg>
+
+        <!-- callout cards in the right gutter -->
+        <div class="callouts">
+          <div class="callout" style="top:6%;--d:1.4s">
+            <span class="c"><span class="k">On the chart</span>
+              <span class="h">Mastermind AI</span>
+              <span class="d">Ask the engine what it sees — without leaving the pane.</span></span>
+          </div>
+          <div class="callout" style="top:20%;--d:.6s">
+            <span class="c"><span class="k">Right rail</span>
+              <span class="h">Watchlist, nightly stances</span>
+              <span class="d">Every name carries last night's read.</span></span>
+          </div>
+          <div class="callout" style="top:47%;--d:.4s">
+            <span class="c"><span class="k">The signature</span>
+              <span class="h">Entry-signal oracle</span>
+              <span class="d">Tells you when <b>not</b> to enter. "Awaiting entry signal" is the chart doing its job.</span></span>
+          </div>
+          <div class="callout" style="top:73%;--d:1.9s">
+            <span class="c"><span class="k">Always in view</span>
+              <span class="h">The regime, pinned</span>
+              <span class="d">Trend and market score never leave the rail.</span></span>
+          </div>
+        </div>
+      </div>
+      <!-- mobile caption fallback -->
+      <ul class="anno-list" aria-label="What's on the Terminal">
+        <li><span class="n">01</span><div>Entry-signal oracle<small>Tells you when <b>not</b> to enter — a chart that says "awaiting entry signal" is doing its job.</small></div></li>
+        <li><span class="n">02</span><div>Watchlist with nightly stances<small>Every name in the rail carries last night's read.</small></div></li>
+        <li><span class="n">03</span><div>Mastermind AI on the chart<small>Ask the engine what it sees, without leaving the pane.</small></div></li>
+        <li><span class="n">04</span><div>Regime always in view<small>Trend and market score stay pinned to the rail.</small></div></li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== COVERAGE STRIP ===================== -->
+<hr class="rule">
+<section class="sec" id="coverage">
+  <div class="wrap">
+    <div class="sec-hd">
+      <span class="eyebrow">// nightly coverage</span>
+      <h2>The whole market, read every night.</h2>
+      <p>Four markets, twenty-two signal engines, one plain-word verdict by morning.
+        <b>Charts are free. The read is the product.</b></p>
+    </div>
+    <div class="cov">
+      <div class="cell"><div class="n">22</div><div class="l">signal engines</div></div>
+      <div class="cell"><div class="n">~2,700</div><div class="l">US names staged</div></div>
+      <div class="cell"><div class="n">34</div><div class="l">theme baskets</div></div>
+      <div class="cell"><div class="n">~1,500</div><div class="l">stock dossiers</div></div>
+    </div>
+    <div class="cov-flags">
+      <span><i class="fx"></i>Price · Breadth · Flow</span>
+      <span><i class="fx"></i>Options · Insiders · Congress</span>
+      <span><i class="fx"></i>Smart-money 13F</span>
+      <span><i class="fx"></i>Factors · Seasonality</span>
+      <span><i class="fx"></i>US · China · Hong Kong · Canada</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== INTELLIGENCE SUITE (BENTO) ===================== -->
+<hr class="rule">
+<section class="sec" id="suite">
+  <div class="wrap">
+    <div class="sec-hd">
+      <span class="eyebrow">// the intelligence suite</span>
+      <h2>Past the chart, an entire desk.</h2>
+      <p>The Terminal is the way in. Behind it: a regime read, plain-English action lanes,
+        theme baskets, insider &amp; Congress desks, and an AI that speaks the engine's language.</p>
+    </div>
+
+    <div class="bento">
+      <!-- Regime dial (wide) -->
+      <div class="tile t-span-8">
+        <div class="tile-txt">
+          <span class="eyebrow">// regime score</span>
+          <h3>One number, one plain stance</h3>
+          <p>A 0–100 score for the market, translated into a sentence you can act on —
+            <b style="color:var(--text)">"50 · Mixed — trade smaller, favour quality."</b>
+            No jargon, no dial-reading homework.</p>
+        </div>
+        <div class="tile-shot" style="min-height:200px"><img src="assets/macro_hero.png" alt="Regime dashboard showing a 0 to 100 score with a plain-word stance." style="--op:top left"></div>
+      </div>
+
+      <!-- Action lanes (tall/narrow) -->
+      <div class="tile t-span-4">
+        <div class="tile-txt">
+          <span class="eyebrow">// action lanes</span>
+          <h3>Names, sorted by what to do</h3>
+          <p>Every name lands in a lane — so the decision is made before you open the chart.</p>
+          <div class="lanes">
+            <span class="lane"><span class="up">●</span><b>Buy now</b></span>
+            <span class="lane"><span style="color:#5aa9ff">●</span><b>Almost ready</b></span>
+            <span class="lane"><span style="color:#f5b544">●</span><b>In favour</b></span>
+            <span class="lane"><span style="color:#f5b544">●</span><b>Take profits</b></span>
+            <span class="lane"><span class="mono" style="color:var(--muted)">●</span><b>Stand aside</b></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Baskets -->
+      <div class="tile t-span-4">
+        <div class="tile-txt">
+          <span class="eyebrow">// theme baskets</span>
+          <h3>34 baskets, ranked</h3>
+          <p>See what's leading and what's rolling over, by theme — not by ticker soup.</p>
+        </div>
+        <div class="tile-shot"><img src="assets/baskets_full.png" alt="Theme baskets ranked by strength." style="--op:top center"></div>
+      </div>
+
+      <!-- Insider & Congress -->
+      <div class="tile t-span-4">
+        <div class="tile-txt">
+          <span class="eyebrow">// insider · congress · funds</span>
+          <h3>Who's actually buying</h3>
+          <p>Insider filings, Congress trades and 13F fund-memory — with a stance, not a raw feed.</p>
+        </div>
+        <div class="tile-shot"><img src="assets/stock_lanes.png" alt="Action board with insider, Congress and fund desks." style="--op:top left"></div>
+      </div>
+
+      <!-- Neural Web / AI -->
+      <div class="tile t-span-4">
+        <div class="tile-txt">
+          <span class="eyebrow">// mastermind ai</span>
+          <h3>An AI that reads the web</h3>
+          <p>22 engines, 168 nodes, 1,363 edges — and a copilot that explains any of it in plain words.</p>
+        </div>
+        <div class="tile-shot"><img src="assets/synapse_map.png" alt="The Neural Web — 22 engines, 168 nodes, 1,363 edges." style="--op:center"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HOW IT WORKS ===================== -->
+<hr class="rule">
+<section class="sec" id="how">
+  <div class="wrap">
+    <div class="sec-hd">
+      <span class="eyebrow">// how the machine works</span>
+      <h2>Markets close. The desk stays up.</h2>
+      <p>The same four steps run every night, in the same order, whether the news is loud or quiet.</p>
+    </div>
+    <div class="flow">
+      <div class="step">
+        <div class="k">21:00 ET</div>
+        <h4>Markets close</h4>
+        <p>The day's prices, flows and filings land — US, China, Hong Kong and Canada.</p>
+        <div class="arrow">→</div>
+      </div>
+      <div class="step">
+        <div class="k">OVERNIGHT</div>
+        <h4>22 engines read</h4>
+        <p>Price, breadth, flow, options, insiders, Congress, 13F, factors and seasonality — each does its pass.</p>
+        <div class="arrow">→</div>
+      </div>
+      <div class="step">
+        <div class="k">CROSS-CHECK</div>
+        <h4>Signals meet</h4>
+        <p>Engines confirm or contradict each other across the web — agreement counts, disagreement is printed.</p>
+        <div class="arrow">→</div>
+      </div>
+      <div class="step">
+        <div class="k">BY MORNING</div>
+        <h4>One verdict</h4>
+        <p>A score, a stance, and action lanes — ready before you sit down.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HONESTY ===================== -->
+<hr class="rule">
+<section class="sec">
+  <div class="wrap">
+    <div class="honest">
+      <div class="honest-copy">
+        <span class="eyebrow">// the differentiator</span>
+        <h2 style="margin-top:14px">We print our nulls.</h2>
+        <p>Most tools sell you a signal on every screen. Ours will tell you, in plain words,
+          when there's nothing to do.</p>
+        <p><b>"Watch — don't chase" is a complete answer.</b> Every panel ends in a stance — even
+          when the honest stance is <i>wait</i>. When the engine finds no edge, it says so and shows
+          its receipts, instead of dressing up noise as a call.</p>
+        <p style="color:var(--faint);font-family:var(--mono);font-size:13px;margin-top:20px">
+          No "predict." No "beat the market." No certainty we don't have.</p>
+      </div>
+      <div class="receipt" role="img" aria-label="Example panel: Early turn signs, stance is watch, don't chase.">
+        <div class="rh"><span>EARLY TURN SIGNS</span><span>AS OF 07-19</span></div>
+        <div class="rb">
+          <div class="verdict"><span class="amber">Watch</span> — don't chase</div>
+          <div class="line"><span>Group</span><b>Memory &amp; Storage</b></div>
+          <div class="line"><span>Current rating</span><b>Still Hold</b></div>
+          <div class="line"><span>Past cases</span><b>26</b></div>
+          <div class="line"><span>Faded within a day</span><b>~6 in 10</b></div>
+          <div class="stance">Not a buy signal — a heads-up. If the turn is real,
+            the action lanes upgrade it on their own. <b>Nothing to do yet.</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PRICING ===================== -->
+<hr class="rule">
+<section class="sec" id="pricing">
+  <div class="wrap">
+    <div class="sec-hd" style="max-width:100%">
+      <span class="eyebrow">// pricing</span>
+      <h2>Start free. Upgrade when the desk earns it.</h2>
+    </div>
+    <div class="price-top">
+      <div class="toggle">
+        <span id="lblMonthly">Monthly</span>
+        <label><input type="checkbox" id="billToggle" checked aria-label="Toggle annual billing"><span class="sw"></span></label>
+        <span class="on" id="lblAnnual">Annual</span>
+        <span class="save">Save ~2 months</span>
+      </div>
+    </div>
+    <div class="cards">
+      <!-- Free -->
+      <div class="card">
+        <div class="pn">Free</div>
+        <div class="pr">$0<span class="per">/mo</span></div>
+        <div class="billed">forever</div>
+        <div class="desc">The Terminal, plus the daily dashboards.</div>
+        <ul>
+          <li>Real-time charting Terminal</li>
+          <li>Watchlist &amp; multi-pane indicators</li>
+          <li>Entry-signal oracle chip</li>
+          <li>Daily regime score &amp; action lanes</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Open the Terminal</a>
+      </div>
+      <!-- Insider -->
+      <div class="card">
+        <div class="pn">Insider</div>
+        <div class="pr"><span class="amt" data-m="59" data-a="49">49</span><span class="per">/mo</span></div>
+        <div class="billed" data-billed>billed annually</div>
+        <div class="desc">The people-flow desks, with a stance on each.</div>
+        <ul>
+          <li>Everything in Free</li>
+          <li>Insider filings desk</li>
+          <li>Congress trades desk</li>
+          <li>Fund-memory (13F) desk</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Choose Insider</a>
+      </div>
+      <!-- Pro -->
+      <div class="card hl">
+        <div class="pn">Pro</div>
+        <div class="pr"><span class="amt" data-m="89" data-a="69">69</span><span class="per">/mo</span></div>
+        <div class="billed" data-billed>billed annually</div>
+        <div class="desc">The whole desk, plus the AI that reads it for you.</div>
+        <ul>
+          <li>Everything in Insider</li>
+          <li>Mastermind AI copilot</li>
+          <li>Options &amp; flow</li>
+          <li>Full intelligence suite, all markets</li>
+        </ul>
+        <a class="btn btn-teal" href="#"><span class="dot"></span>Go Pro</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FINAL CTA ===================== -->
+<hr class="rule">
+<section class="final">
+  <div class="wrap final-in">
+    <h2>Open the Terminal.<br>Meet the brain behind it.</h2>
+    <p class="sub">Free real-time charts today. A whole market, read for you by morning.</p>
+    <div class="final-cta">
+      <a class="btn btn-teal" href="#"><span class="dot"></span>Open the Terminal — free</a>
+      <a class="btn btn-ghost" href="#pricing">Compare plans</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div class="fb">
+        <a class="brand" href="#top"><span class="m">M</span><span class="wm">MASTERMIND</span></a>
+        <p>Global macro regime &amp; market-cycle intelligence, with a free real-time Terminal. mastermind-x.com</p>
+      </div>
+      <div class="col">
+        <h5>Product</h5>
+        <a href="#terminal">Terminal</a>
+        <a href="#suite">Intelligence suite</a>
+        <a href="#coverage">Markets</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+      <div class="col">
+        <h5>Markets</h5>
+        <a href="#">United States</a>
+        <a href="#">China</a>
+        <a href="#">Hong Kong</a>
+        <a href="#">Canada</a>
+      </div>
+      <div class="col">
+        <h5>Company</h5>
+        <a href="#">How it works</a>
+        <a href="#">Track record</a>
+        <a href="#">Log in</a>
+        <a href="#">中文</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-btm">
+    <span>© 2026 Mastermind · app.mastermind-x.com</span>
+    <span>For information only — not investment advice.</span>
+  </div>
+</footer>
+
+<script>
+// ---- ticker tape: duplicate content for a seamless loop ----
+(function(){
+  var t=document.getElementById('tape');
+  if(t){ t.innerHTML = t.innerHTML + t.innerHTML; }
+})();
+
+// ---- pricing toggle (annual default) ----
+(function(){
+  var tog=document.getElementById('billToggle');
+  function apply(){
+    var annual=tog.checked;
+    document.querySelectorAll('.amt').forEach(function(el){
+      el.textContent = annual ? el.dataset.a : el.dataset.m;
+    });
+    document.querySelectorAll('[data-billed]').forEach(function(el){
+      el.textContent = annual ? 'billed annually' : 'billed monthly';
+    });
+    document.getElementById('lblMonthly').classList.toggle('on',!annual);
+    document.getElementById('lblAnnual').classList.toggle('on',annual);
+  }
+  if(tog){ tog.addEventListener('change',apply); apply(); }
+})();
+</script>
+</body>
+</html>
