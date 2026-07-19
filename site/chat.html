@@ -744,6 +744,8 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
     document.getElementById('composer-wrap').style.display = on ? 'none' : '';
     msgList.style.display = on ? 'none' : '';
     document.getElementById('chat-footer').style.display = on ? 'none' : '';
+    /* Show the chat-history rail only when signed in (the auth hero owns the width when out). */
+    document.getElementById('thread-rail').style.display = on ? 'none' : '';
   }
 
   var _authed = false;
@@ -867,9 +869,8 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
       }).catch(function () {});
   }
   function renderThreads(threads) {
-    /* A brand-new user has no threads — collapse the rail so the conversation owns the
-       space instead of sitting beside an empty column. The rail returns once threads exist. */
-    document.getElementById('thread-rail').classList.toggle('collapsed', !threads.length);
+    /* Keep the chat-history rail visible (ChatGPT/Claude-style) — it shows past
+       conversations and the New-chat button; empty is fine for a first-time user. */
     if (!threads.length) {
       threadEmpty.style.display = '';
       return;
