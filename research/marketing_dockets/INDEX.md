@@ -2,6 +2,8 @@
 
 **Author:** Fable (main loop), 2026-07-19. **Purpose:** the Marketing lobe's content stack is built; the rest of the org is chartered scaffolding. Each docket below is a self-contained writeup that a **fresh session can execute cold** — hand one docket to one session. Read this index + the docket + `CLAUDE.md` before building anything.
 
+**Distribution-first acquisition authority:** when the goal is the fastest credible path from zero audience to the first 1,000 qualified leads, read `research/MARKETING_FASTEST_PATH_TO_FIRST_1000_QUALIFIED_LEADS_FOR_FABLE.md` and its named target book, `research/marketing_dockets/MKT_FIRST_1000_DISTRIBUTION_TARGETS.md`. They override generic channel emphasis, not docket build status or standing platform rules; they do not impose an arbitrary one-week deadline.
+
 ---
 
 ## 1. State of the lobe (what is BUILT — do not rebuild)
@@ -21,7 +23,7 @@
 
 Department roster (`engine/marketing/departments.py`): **Command** (office_cmo), **Engine Room** (growth_os, the only one `building`), **Radar** (intelligence), **Workshop** (products), **Studio**, **Broadcast** (distribution), **Funnel** (lifecycle), **Allies** (ecosystem), **Lab** (growth_science), **Sentinel** (trust_office), **Beacon** (seo_organics). Everything except Engine Room + the Studio-adjacent content stack + Beacon's dossiers is **chartered, not built**.
 
-Strategy corpus (read the one your docket cites): `research/NEURAL_WEB_AUTONOMOUS_MARKETING_LOBE_GRANDMASTER_PLAN_FOR_FABLE.md`, `MARKETING_LOBE_GUERRILLA_GROWTH_AND_OPERATIONS_BY_FABLE.md`, `MARKETING_TRENDSPIDER_PLAYBOOK_AND_CHART_ENGINE_BY_FABLE.md`, `MARKETING_REALTIME_FASTLANE_ARCHITECTURE_BY_FABLE.md`, `MARKETING_ZERO_FOLLOWER_TRACTION_PLAYBOOK_BY_FABLE.md`, `TRENDSPIDER_GROWTH_SEO_AND_GUERRILLA_MARKETING_INTELLIGENCE_FOR_FABLE.md`.
+Strategy corpus (read the one your docket cites): `research/MARKETING_FASTEST_PATH_TO_FIRST_1000_QUALIFIED_LEADS_FOR_FABLE.md`, `research/NEURAL_WEB_AUTONOMOUS_MARKETING_LOBE_GRANDMASTER_PLAN_FOR_FABLE.md`, `MARKETING_LOBE_GUERRILLA_GROWTH_AND_OPERATIONS_BY_FABLE.md`, `MARKETING_TRENDSPIDER_PLAYBOOK_AND_CHART_ENGINE_BY_FABLE.md`, `MARKETING_REALTIME_FASTLANE_ARCHITECTURE_BY_FABLE.md`, `MARKETING_ZERO_FOLLOWER_TRACTION_PLAYBOOK_BY_FABLE.md`, `TRENDSPIDER_GROWTH_SEO_AND_GUERRILLA_MARKETING_INTELLIGENCE_FOR_FABLE.md`.
 
 ---
 
