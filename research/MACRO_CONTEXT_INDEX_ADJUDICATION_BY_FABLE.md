@@ -148,3 +148,42 @@ authority, chunking, and packing first (docket §15 closing law, ratified).
 - Next action: dispatch CXI-0b benchmark builder, then CXI-1.
 - Come-back checks: CXI-2 eval report (first Recall@10 by family, nulls printed); CXI-4
   red-team verdict; §15 A/B before any session-contract change.
+
+---
+
+## Amendment 1 (2026-07-18, operator order) — cross-repo corpus: Terminal + Mastermind
+
+Operator directive: include the Terminal charting app and the Mastermind portfolio bot in
+the Context Index. Censuses taken 2026-07-18 (sonnet lanes, both repos read-only):
+
+- **Terminal** = `~/Documents/Cluade/charting-app` (395 tracked files, ~5.8 MiB text;
+  TS/TSX-heavy Next.js app + Python ingest/signal_layer + JS quote-hub + SQL migration +
+  versioned JSON contracts `mastermind.indicator/v1`, `backtest_result/v1`). LIVE SECRETS
+  ON DISK: `/.env` (Supabase PAT + service-role key, Polygon key), `terminal/.env.local`
+  (+DeepSeek key), replicated across ~12 `.claude/worktrees/*` copies. Heavy generated
+  trees: `terminal/public/data` (~653 MiB), `node_modules`, `.next`.
+- **Mastermind** = `~/Documents/Cluade/Mastermind` (606 tracked files; Python brain/
+  portfolio/loop/control_plane + constitution stack CLAUDE.md/AGENTS.md/DOCTRINE.md/
+  MAINTENANCE.md + research masterplans). LIVE SECRETS ON DISK: `.env` + `.env.bak-*`
+  (7 OAuth tokens, Polygon/Tushare, auth tokens); actual position/NAV/fill/decision data
+  throughout `data/` (7 paper books incl. a self-directed sleeve that may mirror real
+  operator holdings); `vendor/` holds a 5.6 GiB macro-repo clone.
+
+### Rulings
+
+| # | Ruling |
+|---|---|
+| **CXI-R13** | **Multi-project corpus ratified.** Projects: `macro-dashboard`, `terminal`, `mastermind` — each with its own repo root (config-declared, env-overridable, host-portable). **One physical SQLite per project** (`shared.sqlite` for macro-dashboard, `terminal.sqlite`, `mastermind.sqlite`); a project's DB is opened only when that project is in query scope. An absent repo root degrades gracefully: the project is skipped with a health-report note, never a build failure (other hosts/CI won't have these checkouts). Cross-project ranking happens in CXI-2 fusion (per-DB ranked lists merged by RRF), not by cross-attached SQL. |
+| **CXI-R14** | **External repos are private-visibility, fail-closed.** `terminal` and `mastermind` documents carry `visibility: private`; the default query scope is `macro-dashboard` only, and external projects join results only by explicit project opt-in (CXI-R10 double-gate discipline). Deny rules (on top of the standing set): both repos' `.env*` anywhere; `**/.claude/**`; Terminal `terminal/public/data/**`, `node_modules/**`, `.next/**`, `data/cache/**`, `web/**` mockups optional-in; Mastermind **`data/**` wholesale** (code/docs/config/sql ONLY — no selective allows in v1 even for "safe-looking" runtime JSON; positions, marks, chat history, key ledger, cost ledgers, backups all live there), `vendor/**` (it is the macro repo — already its own project; indexing it twice is the duplication failure), `catboost_info/**`, `*.parquet`, `*.db`, `*.sqlite`, `prototype/**`. Content tripwires (credential-shaped scan) apply to every external file exactly as to macro sources. Committed artifacts (benchmark rows/results) may reference external-repo PATHS, never external-repo content excerpts. |
+| **CXI-R15** | **Authority is project-scoped; one new chunker.** Within its own project scope, each external repo's constitution stack (Terminal: README/HANDOFF/TERMINAL-ASSESSMENT; Mastermind: CLAUDE.md/AGENTS.md/DOCTRINE.md/MAINTENANCE.md) maps to A0-equivalent; contracts/config/SQL → A1; code → A2; docs/research → A3. Macro's CLAUDE.md remains the only A0 in `macro-dashboard` scope — no cross-project authority bleed. New `code_blocks` chunker for `.ts/.tsx/.js/.mjs/.sql/.sh/.toml`: deterministic heuristic boundaries (top-level export/function/class/CREATE-TABLE markers, size-capped windows with stable `#block-<n>` locators) — NO new parser dependencies; A2 discovery tier only, exact-source opening still mandatory before use. |
+| **CXI-R16** | **Benchmark v1.2 extension rides with CXI-1b:** ≥15 cross-repo questions appended (CTX-082+), same golden-label bar (sonnet mines, Opus reviews, Fable ratifies). Priority families: cross-repo placement/adjudication-replay (the PRD-R1/UWP "which repo owns this" class — now answerable by retrieval), contract (`mastermind.indicator/v1`, `model_slice`, rotation handoff docs), location, gotcha (from their incident docs), ≥3 negative controls. Terminal/Mastermind rows are answerable only with their projects in scope — the eval must run those rows with opt-in enabled and report them as a separate family block. |
+
+### Build-plan impact
+
+CXI-1 (in flight) is unchanged — its single-repo core is repo-root-parameterized by design.
+**CXI-1b** (new, immediately after CXI-1): config `projects:` section + per-project DB
+routing + `code_blocks` chunker + external-repo deny sets + graceful-absence health +
+benchmark v1.2 + this amendment text. CXI-2 fusion gains per-project DB merge (design
+already assumed multi-list RRF). Consumer wiring for Mastermind brain seats / Terminal
+build sessions (both already run Claude on this host) is a CXI-6-class step behind the
+same §15 gates.

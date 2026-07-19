@@ -1,7 +1,12 @@
 """
-CXI-1 ingestion orchestrator.
+CXI-1b ingestion orchestrator (multi-repo).
 
-discover → hash-diff → chunk → transactional write → tombstone → meta stamp
+Per-project flow: discover → hash-diff → chunk → transactional write → tombstone → meta stamp.
+Each project gets its own DB file (shared.sqlite / terminal.sqlite / mastermind.sqlite).
+
+source_uri scheme:
+  macro-dashboard: "repo://<relpath>"         (unchanged from CXI-1)
+  external projects: "repo://<project-key>/<relpath>"
 
 ABSOLUTE RULE: tests must use tmp_path; this code must never be called against
 the real repo's data/ or site/ trees in tests.  The MM_DATA_GUARD tripwire
@@ -30,7 +35,7 @@ from .schema import (
     open_db,
     set_meta,
 )
-from .sources import Config, DiscoveredFile, discover_files
+from .sources import Config, DiscoveredFile, MultiProjectConfig, ProjectConfig, discover_files
 
 # ---------------------------------------------------------------------------
 # Content tripwire patterns (matches → file skipped, never ingested)
@@ -88,7 +93,22 @@ def _chunk_id(document_id: str, locator: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Git SHA
+# source_uri scheme
+# ---------------------------------------------------------------------------
+
+
+def _make_source_uri(project_key: str, rel_path: str) -> str:
+    """
+    macro-dashboard: "repo://<relpath>"  (unchanged for backwards-compat)
+    external projects: "repo://<project-key>/<relpath>"
+    """
+    if project_key == "macro-dashboard":
+        return f"repo://{rel_path}"
+    return f"repo://{project_key}/{rel_path}"
+
+
+# ---------------------------------------------------------------------------
+# Git helpers
 # ---------------------------------------------------------------------------
 
 
@@ -121,7 +141,6 @@ def _git_commit_date(repo_root: Path) -> str:
             timeout=10,
         )
         date = result.stdout.strip() if result.returncode == 0 else ""
-        # Validate YYYY-MM-DD shape
         if date and re.match(r"^\d{4}-\d{2}-\d{2}$", date):
             return date
         return ""
@@ -145,7 +164,7 @@ def _ingest_document(
     Ingest or update one document.  Returns a stats dict.
     All-or-nothing per document (atomic transaction per doc).
     """
-    source_uri = f"repo://{df.rel_path}"
+    source_uri = _make_source_uri(df.project_key, df.rel_path)
     document_id = _document_id(source_uri)
 
     raw_bytes = df.abs_path.read_bytes()
@@ -169,7 +188,6 @@ def _ingest_document(
     ).fetchone()
 
     # Only skip when the row is active (tombstoned=0) AND content is identical.
-    # A tombstoned row with the same hash must still be re-activated and re-chunked.
     if existing and existing["content_hash"] == content_hash and existing["tombstoned"] == 0:
         stats["skipped"] = 1
         return stats
@@ -178,6 +196,9 @@ def _ingest_document(
 
     # Derive title from first line / heading
     title = _derive_title(content_text, df.rel_path)
+
+    # project_ids: JSON list containing the project key
+    project_ids = json.dumps([df.project_key])
 
     # Chunk
     draft_chunks = chunk(df.rel_path, content_text, df.chunker)
@@ -208,7 +229,6 @@ def _ingest_document(
     # Transactional write
     with conn:
         if is_update:
-            # Delete old chunks (FTS triggers handle cleanup)
             conn.execute("DELETE FROM chunks WHERE document_id=?", (document_id,))
             conn.execute(
                 """UPDATE documents SET
@@ -225,7 +245,7 @@ def _ingest_document(
                      git_sha, source_as_of, ingested_at, tombstoned)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,0)""",
                 (
-                    document_id, "[]", df.source_type, source_uri, df.rel_path,
+                    document_id, project_ids, df.source_type, source_uri, df.rel_path,
                     title, df.authority_class, df.visibility, "active",
                     content_hash, git_sha, source_as_of, ingested_at,
                 ),
@@ -289,12 +309,13 @@ def _tombstone_missing(conn: sqlite3.Connection, seen_uris: set[str]) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Public entry point
+# Per-project result
 # ---------------------------------------------------------------------------
 
 
-class IngestResult:
-    def __init__(self) -> None:
+class ProjectIngestResult:
+    def __init__(self, key: str) -> None:
+        self.key = key
         self.new_docs = 0
         self.updated_docs = 0
         self.skipped_docs = 0
@@ -304,47 +325,100 @@ class IngestResult:
         self.tombstoned = 0
         self.total_chunks = 0
         self.rebuilt = False
+        self.indexed_git_sha = ""
 
 
-def run_ingest(
-    repo_root: Path,
-    db_dir: Path,
-    config: Config,
-    rebuild: bool = False,
-    ingested_at: Optional[str] = None,
-) -> IngestResult:
-    """
-    Main ingestion function.
+class IngestResult:
+    """Aggregate result across all indexed projects."""
+    def __init__(self) -> None:
+        self.projects: dict[str, ProjectIngestResult] = {}
+        self.absent_projects: list[str] = []
 
-    rebuild=True: drop and recreate the DB before ingesting.
-    Otherwise: incremental — skip unchanged docs, update changed, tombstone gone.
-    """
-    config_bytes = json.dumps(
-        {"sources": [s._asdict() for s in config.sources], "deny": config.deny},
+    # Legacy convenience properties (single-project callers)
+    @property
+    def new_docs(self) -> int:
+        return sum(r.new_docs for r in self.projects.values())
+
+    @property
+    def updated_docs(self) -> int:
+        return sum(r.updated_docs for r in self.projects.values())
+
+    @property
+    def skipped_docs(self) -> int:
+        return sum(r.skipped_docs for r in self.projects.values())
+
+    @property
+    def tripwire_skips(self) -> int:
+        return sum(r.tripwire_skips for r in self.projects.values())
+
+    @property
+    def denied_count(self) -> int:
+        return sum(r.denied_count for r in self.projects.values())
+
+    @property
+    def symlink_skips(self) -> int:
+        return sum(r.symlink_skips for r in self.projects.values())
+
+    @property
+    def tombstoned(self) -> int:
+        return sum(r.tombstoned for r in self.projects.values())
+
+    @property
+    def total_chunks(self) -> int:
+        return sum(r.total_chunks for r in self.projects.values())
+
+    @property
+    def rebuilt(self) -> bool:
+        return any(r.rebuilt for r in self.projects.values())
+
+
+# ---------------------------------------------------------------------------
+# Per-project ingest
+# ---------------------------------------------------------------------------
+
+
+def _config_hash_for_project(project: ProjectConfig) -> str:
+    """Stable hash of a single project's source + deny config."""
+    data = json.dumps(
+        {
+            "key": project.key,
+            "sources": [s._asdict() for s in project.sources],
+            "deny": project.deny,
+        },
         sort_keys=True,
     ).encode()
-    config_hash = _sha256_bytes(config_bytes)
+    return hashlib.sha256(data).hexdigest()
 
-    conn = open_db(db_dir)
+
+def run_ingest_project(
+    project: ProjectConfig,
+    db_dir: Path,
+    rebuild: bool = False,
+    ingested_at: Optional[str] = None,
+) -> ProjectIngestResult:
+    """
+    Ingest one project into its own DB file.
+    """
+    result = ProjectIngestResult(project.key)
+
+    config_hash = _config_hash_for_project(project)
+    db_file = db_dir / project.db_file
+    conn = open_db_file(db_file)
 
     if rebuild or needs_rebuild(conn, config_hash):
         drop_and_recreate(conn)
-        result = IngestResult()
         result.rebuilt = True
-    else:
-        result = IngestResult()
 
     if ingested_at is None:
         ingested_at = datetime.now(timezone.utc).isoformat()
 
-    git_sha = _git_rev_parse(repo_root)
-    # source_as_of is the indexed commit's date, NOT wall-clock time, so it is
-    # identical across two rebuilds of the same commit (determinism guarantee).
-    source_as_of = _git_commit_date(repo_root) or ingested_at[:10]
+    git_sha = _git_rev_parse(project.root)
+    result.indexed_git_sha = git_sha
+    source_as_of = _git_commit_date(project.root) or ingested_at[:10]
 
     seen_uris: set[str] = set()
 
-    for item, reason in discover_files(repo_root, config):
+    for item, reason in discover_files(project, repo_root=None):
         if item is None:
             assert reason is not None
             if reason.startswith("symlink-escape"):
@@ -353,7 +427,7 @@ def run_ingest(
                 result.denied_count += 1
             continue
 
-        source_uri = f"repo://{item.rel_path}"
+        source_uri = _make_source_uri(item.project_key, item.rel_path)
         seen_uris.add(source_uri)
 
         stats = _ingest_document(conn, item, git_sha, source_as_of, ingested_at)
@@ -364,11 +438,130 @@ def run_ingest(
 
     result.tombstoned = _tombstone_missing(conn, seen_uris)
 
-    # Count total chunks
     row = conn.execute("SELECT COUNT(*) as n FROM chunks").fetchone()
     result.total_chunks = row["n"] if row else 0
 
-    # Stamp meta
+    with conn:
+        set_meta(conn, "schema_version", str(SCHEMA_VERSION))
+        set_meta(conn, "config_hash", config_hash)
+        set_meta(conn, "indexed_git_sha", git_sha)
+        set_meta(conn, "built_at", ingested_at)
+
+    conn.close()
+    return result
+
+
+# ---------------------------------------------------------------------------
+# open_db_file helper (opens a named file, not always shared.sqlite)
+# ---------------------------------------------------------------------------
+
+
+def open_db_file(db_path: Path) -> sqlite3.Connection:
+    """Open (or create) a named SQLite DB file; apply DDL; return connection."""
+    from .schema import _apply_ddl
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(db_path), check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    _apply_ddl(conn)
+    return conn
+
+
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
+
+def run_ingest(
+    repo_root: Path,
+    db_dir: Path,
+    config,  # MultiProjectConfig | Config (legacy single-project)
+    rebuild: bool = False,
+    ingested_at: Optional[str] = None,
+    project_filter: Optional[str] = None,
+) -> IngestResult:
+    """
+    Main ingestion function.
+
+    Accepts MultiProjectConfig (v2) or legacy Config (v1 single-project, for existing tests).
+    rebuild=True: drop and recreate each project's DB before ingesting.
+    project_filter: if set, only ingest the named project key (v2 only).
+    """
+    result = IngestResult()
+
+    if ingested_at is None:
+        ingested_at = datetime.now(timezone.utc).isoformat()
+
+    # --- v2 multi-project path ---
+    if isinstance(config, MultiProjectConfig):
+        result.absent_projects = list(config.absent_projects)
+        for project in config.projects:
+            if project_filter and project.key != project_filter:
+                continue
+            proj_result = run_ingest_project(
+                project, db_dir, rebuild=rebuild, ingested_at=ingested_at
+            )
+            result.projects[project.key] = proj_result
+        return result
+
+    # --- v1 legacy path (Config with sources+deny; used by existing unit tests) ---
+    legacy_result = _run_ingest_legacy(repo_root, db_dir, config, rebuild, ingested_at)
+    result.projects["macro-dashboard"] = legacy_result
+    return result
+
+
+def _run_ingest_legacy(
+    repo_root: Path,
+    db_dir: Path,
+    config: "Config",
+    rebuild: bool,
+    ingested_at: str,
+) -> ProjectIngestResult:
+    """Legacy single-project ingest (Config with sources+deny)."""
+    from .schema import open_db, needs_rebuild, drop_and_recreate, set_meta, SCHEMA_VERSION
+
+    result = ProjectIngestResult("macro-dashboard")
+
+    config_bytes = json.dumps(
+        {"sources": [s._asdict() for s in config.sources], "deny": config.deny},
+        sort_keys=True,
+    ).encode()
+    config_hash = _sha256_bytes(config_bytes)
+
+    conn = open_db(db_dir)
+
+    if rebuild or needs_rebuild(conn, config_hash):
+        drop_and_recreate(conn)
+        result.rebuilt = True
+
+    git_sha = _git_rev_parse(repo_root)
+    result.indexed_git_sha = git_sha
+    source_as_of = _git_commit_date(repo_root) or ingested_at[:10]
+
+    seen_uris: set[str] = set()
+
+    for item, reason in discover_files(config, repo_root=repo_root):
+        if item is None:
+            assert reason is not None
+            if reason.startswith("symlink-escape"):
+                result.symlink_skips += 1
+            else:
+                result.denied_count += 1
+            continue
+
+        source_uri = _make_source_uri(item.project_key, item.rel_path)
+        seen_uris.add(source_uri)
+
+        stats = _ingest_document(conn, item, git_sha, source_as_of, ingested_at)
+        result.new_docs += stats["new"]
+        result.updated_docs += stats["updated"]
+        result.skipped_docs += stats["skipped"]
+        result.tripwire_skips += stats["tripwire"]
+
+    result.tombstoned = _tombstone_missing(conn, seen_uris)
+
+    row = conn.execute("SELECT COUNT(*) as n FROM chunks").fetchone()
+    result.total_chunks = row["n"] if row else 0
+
     with conn:
         set_meta(conn, "schema_version", str(SCHEMA_VERSION))
         set_meta(conn, "config_hash", config_hash)

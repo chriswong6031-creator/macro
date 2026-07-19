@@ -453,6 +453,107 @@ def registry_rows(path: str, content: str) -> List[ChunkDraft]:
 
 
 # ---------------------------------------------------------------------------
+# code_blocks  (.ts/.tsx/.js/.mjs/.sql/.sh/.toml and similar)
+# ---------------------------------------------------------------------------
+
+# Patterns that start a new top-level block (deterministic heuristic boundary detection).
+# SQL patterns are case-insensitive; JS/TS patterns are case-sensitive.
+_CODE_BLOCK_RE = re.compile(
+    r"^(?:"
+    # JS/TS: export (default)? (async)? function|class|const|interface|type|enum
+    r"export\s+(?:default\s+)?(?:async\s+)?(?:function|class|const|interface|type|enum)\b"
+    r"|function\s+\w"
+    r"|class\s+\w"
+    # SQL (case-insensitive via inline flag is not possible in Python alternation;
+    # handled below by compiling a second pattern)
+    r")",
+)
+
+_SQL_BLOCK_RE = re.compile(
+    r"^(?:CREATE\s+(?:TABLE|INDEX|POLICY|TRIGGER|FUNCTION)\b)",
+    re.IGNORECASE,
+)
+
+
+def _is_block_boundary(line: str) -> bool:
+    stripped = line.rstrip()
+    return bool(_CODE_BLOCK_RE.match(stripped) or _SQL_BLOCK_RE.match(stripped))
+
+
+def code_blocks(path: str, content: str) -> List[ChunkDraft]:
+    """
+    Deterministic top-level boundary detection for .ts/.tsx/.js/.mjs/.sql/.sh/.toml.
+
+    Lines matching top-level export/function/class/CREATE TABLE (etc.) start a new block.
+    Blocks are accumulated until they reach _CHUNK_TARGET_MAX chars, then flushed.
+    locator = path#block-<n> where n is the ordinal (stable for unchanged prefixes).
+    heading_path = [first line of block truncated to 80 chars].
+    Fallback: no boundaries found → fixed-size line windows (same as _python_fallback).
+    Never crashes on weird syntax.
+    """
+    lines = content.splitlines(keepends=True)
+    if not lines:
+        return []
+
+    # Collect boundary line indices
+    boundaries: list[int] = []
+    for i, line in enumerate(lines):
+        if _is_block_boundary(line):
+            boundaries.append(i)
+
+    # Fallback: no boundaries found → fixed-size char windows
+    if not boundaries:
+        parts = [content[i:i + _CHUNK_TARGET_MAX] for i in range(0, len(content), _CHUNK_TARGET_MAX)]
+        return [ChunkDraft(locator=f"{path}#block-{n}", text=p)
+                for n, p in enumerate(parts) if p.strip()]
+
+    # Build segments between boundaries; accumulate into size-capped chunks
+    segments: list[tuple[str, str]] = []  # (first_line, text)
+    for idx, start in enumerate(boundaries):
+        end = boundaries[idx + 1] if idx + 1 < len(boundaries) else len(lines)
+        seg_text = "".join(lines[start:end])
+        first_line = lines[start].rstrip()[:80]
+        segments.append((first_line, seg_text))
+
+    # Prepend any leading content before the first boundary
+    if boundaries[0] > 0:
+        preamble = "".join(lines[:boundaries[0]])
+        if preamble.strip():
+            segments.insert(0, (lines[0].rstrip()[:80], preamble))
+
+    # Accumulate segments into target-size chunks; large segments get their own chunk
+    drafts: List[ChunkDraft] = []
+    block_n = 0
+    buf_text = ""
+    buf_heading = ""
+
+    def _flush(text: str, heading: str) -> None:
+        nonlocal block_n
+        if text.strip():
+            drafts.append(ChunkDraft(
+                locator=f"{path}#block-{block_n}",
+                heading_path=[heading] if heading else [],
+                text=text,
+            ))
+            block_n += 1
+
+    for first_line, seg_text in segments:
+        if not buf_text:
+            buf_text = seg_text
+            buf_heading = first_line
+        elif len(buf_text) + len(seg_text) <= _CHUNK_TARGET_MAX:
+            buf_text += seg_text
+        else:
+            _flush(buf_text, buf_heading)
+            buf_text = seg_text
+            buf_heading = first_line
+
+    _flush(buf_text, buf_heading)
+
+    return [d for d in drafts if d.text.strip()]
+
+
+# ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
 
@@ -462,6 +563,7 @@ CHUNKERS = {
     "python_symbols": python_symbols,
     "yaml_keys": yaml_keys,
     "registry_rows": registry_rows,
+    "code_blocks": code_blocks,
 }
 
 
