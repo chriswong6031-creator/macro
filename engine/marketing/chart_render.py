@@ -563,6 +563,114 @@ def resolve_logo(ticker: str, root: Path | str) -> str | None:
         return None
 
 
+def _brand_bar(
+    width: int,
+    height: int,
+    uid: str,
+    *,
+    descriptor: str | None = None,
+    show_url: bool = True,
+    show_button: bool = True,
+    button_label: str = "Start free 14-day trial",
+    copyright_text: str = "© 2026 Mastermind",
+    band_h: int = 46,
+) -> tuple[str, str]:
+    """Bottom brand bar shared by the whole card family — the footer IS the ad
+    unit, so it gets real chrome: a full-bleed #0A1020 band bookending the
+    header, a brand-gradient "laser" hairline dissolving along its top edge,
+    the favicon logomark + URL lockup at left, and one saturated gradient CTA
+    button at right with the copyright tucked beside it.
+
+    The quiet variants encode contracts, not taste: descriptor with no button =
+    informational surfaces (dossier notes); show_url=False = the Sentinel sober
+    form (tragedy items keep brand attribution, lose every pitch element).
+
+    Returns (defs_svg, bar_svg); all gradient ids are uid-suffixed so several
+    cards can share one document (admin galleries).
+    """
+    band_top = height - band_h
+    cy = band_top + band_h / 2.0
+    pad = 14
+
+    laser_id = f"bb_laser_{uid}"
+    btn_id = f"bb_btn_{uid}"
+    btn_sheen_id = f"bb_btnsheen_{uid}"
+    defs = (
+        f'<linearGradient id="{laser_id}" x1="0" y1="0" x2="1" y2="0">'
+        f'<stop offset="0" stop-color="#5b9dff"/>'
+        f'<stop offset="0.35" stop-color="#6366f1"/>'
+        f'<stop offset="0.6" stop-color="#7c5cff"/>'
+        f'<stop offset="0.92" stop-color="#7c5cff" stop-opacity="0"/>'
+        f'</linearGradient>'
+        f'<linearGradient id="{btn_id}" x1="0" y1="0" x2="1" y2="0">'
+        f'<stop offset="0" stop-color="#3b82f6"/>'
+        f'<stop offset="1" stop-color="#7c5cff"/>'
+        f'</linearGradient>'
+        f'<linearGradient id="{btn_sheen_id}" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>'
+        f'<stop offset="0.55" stop-color="#ffffff" stop-opacity="0.02"/>'
+        f'<stop offset="1" stop-color="#ffffff" stop-opacity="0"/>'
+        f'</linearGradient>'
+    )
+
+    bar = (
+        f'<rect x="0" y="{band_top}" width="{width}" height="{band_h}" '
+        f'fill="#0A1020" opacity="0.94"/>'
+        f'<rect x="0" y="{band_top}" width="{width}" height="1.5" '
+        f'fill="url(#{laser_id})"/>'
+    )
+
+    # Left lockup: logomark tile always anchors the brand; URL is the marketing
+    # voice (suppressed on sober cards), descriptor is the quiet second voice.
+    tile = 18.0
+    lm_defs, lm_group = _favicon_logomark(pad + tile / 2, cy, size=tile, uid=f"{uid}bb")
+    defs += lm_defs
+    bar += lm_group
+    x = pad + tile + 9.0
+    if show_url:
+        bar += (
+            f'<text x="{x:.1f}" y="{cy + 5:.1f}" fill="#ffffff" '
+            f'font-size="15" font-weight="800" font-family="sans-serif" '
+            f'letter-spacing="0.3">mastermind-x.com</text>'
+        )
+        x += 152.0
+    if descriptor:
+        if show_url:
+            x += 11.0
+            bar += f'<circle cx="{x:.1f}" cy="{cy:.1f}" r="1.5" fill="#3a4466"/>'
+            x += 11.0
+        bar += (
+            f'<text x="{x:.1f}" y="{cy + 4:.1f}" fill="#8899bb" '
+            f'font-size="11" font-family="sans-serif" letter-spacing="0.2">'
+            f'{_xesc(descriptor)}</text>'
+        )
+
+    # Right cluster: © in whisper ink, then THE one saturated element.
+    right_x = width - pad
+    if show_button:
+        bw = int(len(button_label) * 7.1) + 30
+        bh = 26.0
+        bx = right_x - bw
+        by = cy - bh / 2.0
+        bar += (
+            f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bw}" height="{bh:.0f}" '
+            f'rx="13" fill="url(#{btn_id})"/>'
+            f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bw}" height="{bh:.0f}" '
+            f'rx="13" fill="url(#{btn_sheen_id})" stroke="#ffffff" '
+            f'stroke-opacity="0.16" stroke-width="1"/>'
+            f'<text x="{bx + bw / 2.0:.1f}" y="{cy + 4:.1f}" fill="#ffffff" '
+            f'font-size="12" font-weight="700" font-family="sans-serif" '
+            f'text-anchor="middle" letter-spacing="0.2">{_xesc(button_label)}</text>'
+        )
+        right_x = bx - 14.0
+    bar += (
+        f'<text x="{right_x:.1f}" y="{cy + 3:.1f}" fill="#3a4466" '
+        f'font-size="9" text-anchor="end" font-family="sans-serif">'
+        f'{_xesc(copyright_text)}</text>'
+    )
+    return defs, bar
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # v2: TrendSpider-grade chart renderer
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1182,34 +1290,19 @@ def render_chart_v2(
         f'{_xesc(timeframe.upper())}</text>'
     )
 
-    # ── Footer: CTA tagline + large URL bottom-left, copyright bottom-right ──
-    # The footer is the ad: a soft-glow pill with the offer tagline, then the
-    # brand URL big enough to read in a timeline screenshot.
-    footer_y = height - 10
-    # footer_cta overrides the marketing tagline (dossier pages pass a plain
-    # research note); empty string suppresses the pill entirely
-    cta_text = footer_cta if footer_cta is not None else "Powerful stock signals · free 14-day trial"
-    cta_w = 8 + int(len(cta_text) * 6.6) + 8
-    cta_pill_svg = ""
-    if cta_text:
-        cta_pill_svg = (
-            # tagline pill (accent-tinted, rounded)
-            f'<rect x="{PAD_L + 2}" y="{footer_y - 30}" width="{cta_w}" height="19" rx="9.5" '
-            f'fill="#3b82f6" fill-opacity="0.16" stroke="#5b9dff" stroke-opacity="0.45" stroke-width="1"/>'
-            f'<text x="{PAD_L + 10}" y="{footer_y - 16.5}" '
-            f'fill="#9db8e8" font-size="11" font-family="sans-serif" letter-spacing="0.3">'
-            f'{_xesc(cta_text)}</text>'
+    # ── Footer: brand bar (band + laser hairline + lockup + CTA button) ─────
+    # footer_cta=None → full marketing bar; ""=brand-only (brain/admin);
+    # custom text → quiet informational descriptor, no sales button (dossiers).
+    if footer_cta is None:
+        bar_defs, footer_svg = _brand_bar(
+            width, height, uid, descriptor="Daily stock signals"
         )
-    footer_svg = (
-        cta_pill_svg
-        # big brand URL
-        + f'<text x="{PAD_L + 4}" y="{footer_y}" '
-        f'fill="#7f97c4" font-size="16" font-weight="bold" font-family="sans-serif" '
-        f'letter-spacing="0.4">mastermind-x.com</text>'
-        f'<text x="{width - PAD_R - 4}" y="{footer_y}" '
-        f'fill="#3a4466" font-size="10" text-anchor="end" '
-        f'font-family="sans-serif">© 2026 Mastermind</text>'
-    )
+    elif footer_cta == "":
+        bar_defs, footer_svg = _brand_bar(width, height, uid, show_button=False)
+    else:
+        bar_defs, footer_svg = _brand_bar(
+            width, height, uid, descriptor=footer_cta, show_button=False
+        )
 
     # ── Date labels (bottom of price panel): 4-6 evenly spaced ─────────────
     date_y_pos = PAD_TOP + PRICE_H + 6
@@ -1253,7 +1346,7 @@ def render_chart_v2(
         'url(#arrowhead)', f'url(#arrowhead_{uid})'
     )
 
-    defs_svg = f'<defs>{arrowhead_def}{logo_defs}</defs>'
+    defs_svg = f'<defs>{arrowhead_def}{logo_defs}{bar_defs}</defs>'
 
     # ── Background rect ──────────────────────────────────────────────────────
     bg_rect = f'<rect width="{width}" height="{height}" fill="#0E1420"/>'
@@ -1515,27 +1608,17 @@ def render_earnings_card(
             f'vs. Est {_xesc(f"${eps_est:.2f}")}</text>'
         ) + _stat_chip(eps_label, eps_color, eps_surp, center_x, stat_top + 116)
 
-    # ── Footer CTA ───────────────────────────────────────────────────────────
-    footer_y = height - 10
-    cta_text = "mastermind-x.com · free 14-day trial"
-    cta_w = 8 + int(len(cta_text) * 6.4) + 8
-    footer_svg = (
-        f'<rect x="14" y="{footer_y - 28}" width="{cta_w}" height="18" rx="9" '
-        f'fill="#3b82f6" fill-opacity="0.14" stroke="#5b9dff" '
-        f'stroke-opacity="0.4" stroke-width="1"/>'
-        f'<text x="22" y="{footer_y - 14:.1f}" fill="#9db8e8" '
-        f'font-size="11" font-family="sans-serif" letter-spacing="0.3">'
-        f'{_xesc(cta_text)}</text>'
-        f'<text x="{width - 14}" y="{footer_y - 4}" fill="#3a4466" '
-        f'font-size="9" text-anchor="end" font-family="sans-serif">'
-        f'© 2026 Mastermind · Source: Company IR</text>'
+    # ── Footer: brand bar (Source attribution rides the copyright line) ──────
+    ec_bar_defs, footer_svg = _brand_bar(
+        width, height, ec_uid,
+        copyright_text="© 2026 Mastermind · Source: Company IR",
     )
 
     svg = (
         f'<svg viewBox="0 0 {width} {height}" '
         f'xmlns="http://www.w3.org/2000/svg" '
         f'width="{width}" height="{height}">\n'
-        f'  <defs>{ec_logo_defs}</defs>\n'
+        f'  <defs>{ec_logo_defs}{ec_bar_defs}</defs>\n'
         f'  <!-- background -->\n'
         f'  <rect width="{width}" height="{height}" fill="#0E1420"/>\n'
         f'  <!-- company logo hero -->\n'
@@ -1937,31 +2020,18 @@ def render_breaking_card(
                     )
 
         # ── Footer — CTA collapses to brand mark when suppress_cta (tragedy) ──
-        footer_y = height - 10
         if suppress_cta:
-            # Sentinel tone rule: no trial pitch on human-tragedy items. Footer
-            # collapses to just the brand attribution — no blank CTA pill.
-            footer_svg = (
-                f'<text x="{pad_l}" y="{footer_y - 6:.0f}" fill="{_BREAK_GREY}" '
-                f'font-size="11" font-family="sans-serif" letter-spacing="0.3">'
-                f'MASTERMIND · Market Intelligence</text>'
-                f'<text x="{width - 14}" y="{footer_y - 6:.0f}" fill="#3a4466" '
-                f'font-size="9" text-anchor="end" font-family="sans-serif">'
-                f'© 2026 Mastermind</text>'
+            # Sentinel tone rule: no trial pitch on human-tragedy items. The
+            # brand bar keeps only the sober attribution — no URL, no button.
+            bc_bar_defs, footer_svg = _brand_bar(
+                width, height, bc_uid,
+                descriptor="MASTERMIND · Market Intelligence",
+                show_url=False, show_button=False,
             )
         else:
-            cta_text = "free 14-day trial · mastermind-x.com"
-            cta_w = 8 + int(len(cta_text) * 6.4) + 8
-            footer_svg = (
-                f'<rect x="{pad_l}" y="{footer_y - 24:.0f}" width="{cta_w}" '
-                f'height="18" rx="9" fill="#3b82f6" fill-opacity="0.14" '
-                f'stroke="#5b9dff" stroke-opacity="0.4" stroke-width="1"/>'
-                f'<text x="{pad_l + 8}" y="{footer_y - 10:.0f}" fill="#9db8e8" '
-                f'font-size="11" font-family="sans-serif" letter-spacing="0.3">'
-                f'{_xesc(cta_text)}</text>'
-                f'<text x="{width - 14}" y="{footer_y - 4:.0f}" fill="#3a4466" '
-                f'font-size="9" text-anchor="end" font-family="sans-serif">'
-                f'© 2026 Mastermind · cited source above</text>'
+            bc_bar_defs, footer_svg = _brand_bar(
+                width, height, bc_uid,
+                copyright_text="© 2026 Mastermind · cited source above",
             )
 
         # summary_bottom documents where the summary block ends; the ticker strip
@@ -1972,7 +2042,7 @@ def render_breaking_card(
             f'<svg viewBox="0 0 {width} {height}" '
             f'xmlns="http://www.w3.org/2000/svg" '
             f'width="{width}" height="{height}">\n'
-            f'  <defs>{bc_logo_defs}</defs>\n'
+            f'  <defs>{bc_logo_defs}{bc_bar_defs}</defs>\n'
             f'  <!-- background -->\n'
             f'  <rect width="{width}" height="{height}" fill="#0E1420"/>\n'
             f'  <!-- breaking eyebrow + tier chip + timestamp -->\n'
