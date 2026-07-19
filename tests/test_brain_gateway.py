@@ -1480,16 +1480,19 @@ def test_research_system_prompt_contains_directive():
     assert "RESEARCH MODE" in prompt
     assert "Regime" in prompt
     assert "Contradictions" in prompt
-    assert "is_context_only" in prompt.lower() or "is_context_only" in prompt
-    # Base prompt content is also present
-    assert "ABSOLUTE PROHIBITIONS" in prompt
+    assert "is_context_only" in prompt.lower() or "STANCE" in prompt
+    # Base prompt governance content is also present (answer-first prompt keeps the
+    # never-originate guardrail under a "HOW TO STAY HONEST" section).
+    assert "never originate" in prompt.lower()
 
 
 def test_chat_mode_system_prompt_unchanged():
     """_build_system_prompt('chat') returns base prompt without research directive."""
     prompt = gw._build_system_prompt("chat")
     assert "RESEARCH MODE" not in prompt
-    assert "ABSOLUTE PROHIBITIONS" in prompt
+    # Answer-first prompt: mission + honesty guardrail both present.
+    assert "ANSWER THE QUESTION" in prompt
+    assert "never originate" in prompt.lower()
     # Non-terminal pages must NOT be told about the chart-control tools.
     assert "CHART CONTROL" not in prompt
 
