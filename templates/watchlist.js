@@ -4,11 +4,11 @@
    never the DATA. Every name/state/signal is re-resolved live from the nightly
    stockdata/index.json (+ optional per-ticker JSON) on each load, so a saved
    list can never go stale across the nightly rebuild. The list lives in a single
-   versioned localStorage blob; an optional cloud adapter (auth.js) can later
+   versioned localStorage blob; an optional cloud adapter (watchstore.js) can later
    sync the SAME blob shape without touching this file's UI.
 
    Depends on stockdata.js (window.SD) and mtf.js (window.renderMTF). Exposes
-   window.WL as the store seam auth.js plugs into. */
+   window.WL as the store seam watchstore.js plugs into. */
 (function () {
   'use strict';
 
@@ -451,7 +451,7 @@
     clearTimeout(toastH); toastH = setTimeout(function () { el.className = 'wl-toast'; }, 2600);
   }
 
-  // ---- cloud seam (auth.js attaches here; no-op when not configured) -------
+  // ---- cloud seam (watchstore.js attaches here; no-op when not configured) -------
   function pushCloud() {
     document.dispatchEvent(new CustomEvent('wl-changed'));
     if (window.WLCloud && window.WLCloud.push) window.WLCloud.push(blob);
@@ -465,7 +465,7 @@
     if (stateSig(blob) !== sigBefore) render();   // re-render only on a real peer change
   }
 
-  // ---- public store API (the seam auth.js / cloud adapter plug into) -------
+  // ---- public store API (the seam watchstore.js / cloud adapter plug into) -------
   window.WL = {
     getBlob: function () { return blob; },
     merge: function (other) { var n = mergeInto(migrate(other)); render(); return n; },

@@ -250,17 +250,29 @@
 
   function render(panel, tickers, data) {
     if (!data || !data.factors) { panel.style.display = 'none'; return; }
-    var a = aggregate(tickers, data, loadW());
+    // AUTO_W (from portfolio.js dollar values) takes precedence over manual editor weights.
+    // When AUTO_W is active, use its keys as the universe (not the watchlist tickers arg)
+    // so off-watchlist holdings contribute their real weight and no eqPct fallback applies.
+    var autoMode = AUTO_W !== null;
+    var universe = autoMode ? Object.keys(AUTO_W) : tickers;
+    var wmap = autoMode ? AUTO_W : loadW();
+    var a = aggregate(universe, data, wmap);
     if (!a.ok) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
+    // In auto mode: hide weight editor, show a one-line note instead.
+    var editorOrNote = autoMode
+      ? '<div id="fx_autonote"><span class="l-en">Weighted by your holdings</span>'
+        + '<span class="l-zh">按持仓加权</span></div>'
+      : editorInner(a, data);
     panel.innerHTML = '<h2>' + S('title') + '</h2>'
       + '<div id="fx_results">' + resultsInner(a, data) + '</div>'
-      + editorInner(a, data);
-    bindEditor(panel);
+      + editorOrNote;
+    if (!autoMode) bindEditor(panel);
   }
 
   // --- public seam ---------------------------------------------------------
   var PANEL = null;
+  var AUTO_W = null;  // {ticker->dollarValue} pushed by portfolio.js; null = equal-weight
   function panelEl() { if (!PANEL) PANEL = document.getElementById('fx_panel'); return PANEL; }
   window.FX = {
     update: function (tickers) {
@@ -268,7 +280,14 @@
       var p = panelEl(); if (!p) return;
       load().then(function (data) { render(p, LAST, data); });
     },
-    refresh: function () { window.FX.update(LAST); }
+    refresh: function () { window.FX.update(LAST); },
+    // Called by portfolio.js after every render.
+    // w = {ticker: dollarValue} for open holdings with shares + price; null resets to equal-weight.
+    setAutoWeights: function (w) {
+      AUTO_W = w || null;
+      var p = panelEl(); if (!p || !LAST.length) return;
+      load().then(function (data) { render(p, LAST, data); });
+    }
   };
   document.addEventListener('click', function (e) {
     if (e.target && e.target.classList && e.target.classList.contains('lang-btn')) {

@@ -118,14 +118,36 @@ Supabase (fsldfzlxyavsuwqbceod)                      ┌── Terminal (Next.js
   `templates/uwp_supabase.sql`, applied to prod); new shared `templates/watchstore.js`
   module (supabase-js CRUD for lists/symbols/positions, localStorage cache, blob fold-in,
   cross-tab + refetch-on-focus); retire `auth.js` doc-blob sync; delete
-  `watchlist_supabase.sql`. Tests for fold/merge logic.
-- **W2 — unified dashboard UI:** `watchlist.html.j2` revamp per `docs/DESIGN_DOCTRINE.md`:
-  named watchlists (Terminal parity), portfolio section (add/edit holdings modal:
-  ticker/shares/entry price/date/notes/status), baked-signal join per card, factor-exposure
-  weights fed from `portfolio_positions` (retire `mdash.fx_weights.v1`), sync-state chip,
-  bilingual EN/ZH, logged-out mode. Builder lane (sonnet) + reviewer (opus) per routing law.
+  `watchlist_supabase.sql`. Tests for fold/merge logic. DONE.
+- **W2 — unified dashboard UI:** DONE-pending-merge. Delivered scope:
+  - `watchlist.html.j2` revamp: updated title/h1/subtitle (bilingual), new Portfolio
+    section (`#pf_section`) after card grid and empty-state; section contains signed-out
+    state, error state, empty state, open-positions table, closed-positions `<details>`,
+    add button, as-of footnote; `#fx_panel` repositioned directly after portfolio section
+    (getElementById consumers unaffected); `#dlg-holding` modal (mx5-dlg shell, narrow
+    panel, all `pfm_*` field ids per `portfolio.js` DOM contract); inline mx5 CSS subset
+    (canonical values from `dashboard.html.j2`); portfolio table + modal CSS scoped to
+    `#pf_section`; script tags updated (`watchlist.js?v=2`, `factor_exposure.js?v=2`,
+    `watchstore.js?v=2`, `portfolio.js?v=1` added after watchstore).
+  - FX auto-weights: `portfolio.js` pushes `{ticker->dollarValue}` to
+    `window.FX.setAutoWeights()` after every render (factor exposure panel reflects actual
+    book). Note: `mdash.fx_weights.v1` manual weights are RETAINED as the logged-out /
+    no-portfolio fallback (AUTO takes precedence when ≥2 priced holdings are present);
+    full retirement of the manual editor is deferred.
+  - `watchlist.js` stale `auth.js` comments updated to `watchstore.js` (4 occurrences,
+    comment-only, no code changes).
+  - `site/watchlist.html` re-bakes at first nightly render (render-owned artifact).
+  - Multi-list UI (primary-list sync, named-list switcher) unchanged — deferred to W2.5.
+- **W2.5 — multi-list UI (deferred):** multi-list switcher requires `watchlist.js`
+  parameterization before any list switcher ships: per-list localStorage keys, `listId`
+  in `stateSig` + `storage-event` scoping, share-hash scoping. No UI ships until those
+  seams are in place.
 - **W3 (optional, Terminal repo):** portfolio UI parity in Terminal reading the same
   `portfolio_positions` rows. Out-of-repo lane, tracked here.
+  - Terminal-side symbol aliasing note: futures aliases (`GC=F` → `GC_F`) and caret
+    indices are unsupported in the Terminal symbol resolver. The macro site syncs verbatim
+    tickers; the Terminal shows dash rows for unresolved symbols. Requires Terminal-side
+    alias table before cross-app parity is complete.
 - **W4 (optional, gated on billing decision):** wake `macro-quotes` Worker
   (`LIVE_QUOTES_URL`) for live prices on the dashboard; MNZ decides tier gating.
 - Come-backs: first nightly after W2 (page renders from template change); MNZ W1
