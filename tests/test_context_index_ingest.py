@@ -209,8 +209,12 @@ def test_whole_file_chunking(tmp_path):
 
 def test_registry_rows_status_derivation(tmp_path):
     """DO_NOT_REBUILD-style table rows get correct status derived.
-    Section mapping per CXI-R4/finding-11: §1=forbidden, §2=killed, §4=deferred.
-    §3 (methodology) → unknown regardless of keywords.
+    Section gate per CXI-R4/finding-11, ratified CXI-R17b: §1=forbidden,
+    §2=killed, §3=unknown, §4=deferred — the section IS the status; verdict-cell
+    keywords never override it. Regression cases: a §2 row quoting §1 vocabulary
+    ("STRUCK — positioning-fusion illegal", the WA-R1/CTX-013 mislabel) must stay
+    killed; a §1 row with killed-class-only vocabulary (REJECT-REDUNDANT) must
+    stay forbidden.
     """
     dnr_content = """\
 # DO NOT REBUILD
@@ -221,6 +225,7 @@ def test_registry_rows_status_derivation(tmp_path):
 |---|---|
 | Auto wiki | FORBIDDEN by CXI-R12 |
 | Standalone signal | ILLEGAL construction |
+| Composite scorecard | REJECT-REDUNDANT duplicate of the radar chain |
 
 ## 2. Killed
 
@@ -228,6 +233,7 @@ def test_registry_rows_status_derivation(tmp_path):
 |---|---|
 | Old approach | KILLED after test |
 | Refuted model | REFUTED by data |
+| Fused breakaway score | STRUCK — positioning-fusion illegal + Signal Commons R3 |
 
 ## 3. Methodology laws
 
@@ -258,20 +264,32 @@ Some prose here.
     assert "forbidden" in symbols, f"expected 'forbidden' in {symbols}"
     assert "killed" in symbols, f"expected 'killed' in {symbols}"
     assert "deferred" in symbols, f"expected 'deferred' in {symbols}"
-    # §3 rows must NOT derive 'forbidden' even though verdict cell says FORBIDDEN
-    for r in rows:
-        if "FORBIDDEN estimator" in r["text"]:
-            assert r["symbol"] == "unknown", (
-                f"§3 methodology row must derive 'unknown', got '{r['symbol']}'"
+    by_topic = {r["text"]: r["symbol"] for r in rows}
+    for text, symbol in by_topic.items():
+        if "FORBIDDEN estimator" in text:
+            # §3 rows must NOT derive 'forbidden' even though cell says FORBIDDEN
+            assert symbol == "unknown", (
+                f"§3 methodology row must derive 'unknown', got '{symbol}'"
+            )
+        if "Fused breakaway score" in text:
+            # §2 row quoting §1 vocabulary must NOT flip to forbidden (CTX-013 class)
+            assert symbol == "killed", (
+                f"§2 STRUCK-illegal row must derive 'killed', got '{symbol}'"
+            )
+        if "Composite scorecard" in text:
+            # §1 row with killed-class-only vocabulary must NOT flip to killed
+            assert symbol == "forbidden", (
+                f"§1 REJECT-REDUNDANT row must derive 'forbidden', got '{symbol}'"
             )
 
 
 def test_registry_rows_3col_status_derivation(tmp_path):
     """
-    Finding #9: 3-column tables (Topic | Verdict | Ruling/source) must derive
-    status from the Verdict column (col 1), not from cells[-1] (the Ruling col).
-    Also validates that §4 rows derive 'deferred' when worded HOLD/DEFER, and
-    §3 rows derive 'unknown' regardless of FORBIDDEN keyword.
+    Finding #9 (superseded by the CXI-R17b section gate): 3-column tables
+    (Topic | Verdict | Ruling/source) must derive status from the row's SECTION,
+    never from any cell's keywords — so ruling-column vocabulary can't leak in.
+    Also validates §4 rows derive 'deferred' and §3 rows 'unknown' regardless
+    of FORBIDDEN keyword.
     """
     dnr_content = """\
 # DO NOT REBUILD

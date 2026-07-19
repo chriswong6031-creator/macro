@@ -7,11 +7,16 @@ Usage:
   python3 scripts/context_index_eval.py --include-private
   python3 scripts/context_index_eval.py --output research/context_index/BENCHMARK_RESULTS.md
 
-Grading (per README v1.2):
+Grading (per README v1.4, CXI-R17):
   - A row PASSES Recall@10 when every required_source appears in the top-10 result
     source paths (match on path OR source_uri, tolerate repo:// prefix differences).
   - no_answer rows pass when packet.no_answer_reason is set OR zero results.
-  - required_status must match status of the required source's result row.
+  - required_status binds ONLY to verdict-carrying registry sources
+    (DO_NOT_REBUILD.md, ruling_graph.yml, compiled_kill_registry.yml) among the
+    required sources; all other required sources are graded on presence alone —
+    an active masterplan cannot carry the kill status (CXI-R17a).
+  - required_status: superseded rows are presence-only — the one-status-per-chunk
+    model cannot label a still-live ruling row whose sub-clause was struck (CXI-R17c).
   - Cross-repo rows (CTX-082..096) require --include-private.
 
 Gates reported (PASS/FAIL/NOT-MET):
@@ -136,10 +141,12 @@ def grade_row(row: dict, packet: dict) -> dict:
         }
 
     # For each required source, check if it appears in top-10.
-    # Status check: required_status applies ONLY to registry/verdict sources
-    # (DO_NOT_REBUILD.md, ruling_graph, compiled_kill_registry).
+    # Status check (CXI-R17a, README v1.4): required_status applies ONLY to
+    # registry/verdict sources (DO_NOT_REBUILD.md, ruling_graph, compiled_kill_registry).
     # Active docs required alongside a verdict source are checked for presence only —
     # they are expected to have status="active" which differs from "killed"/"forbidden".
+    # Superseded rows (CXI-R17c) are presence-only: the amended registry row keeps its
+    # live status (e.g. forbidden) while recording the struck sub-clause in its text.
     _VERDICT_PATHS = {
         "research/DO_NOT_REBUILD.md",
         "config/ruling_graph.yml",
@@ -165,8 +172,8 @@ def grade_row(row: dict, packet: dict) -> dict:
             miss_sources.append(req_src)
             continue
 
-        # Status check only for verdict/registry sources
-        if req_status and req_status != "no_answer" and _is_verdict_source(req_src):
+        # Status check only for verdict/registry sources; superseded rows presence-only
+        if req_status and req_status not in ("no_answer", "superseded") and _is_verdict_source(req_src):
             status_ok = any(r.get("status") == req_status for r in matched_in_top10)
             if not status_ok:
                 miss_sources.append(req_src)
@@ -354,10 +361,14 @@ def _write_results_md(s: dict, include_private: bool, path: Path) -> None:
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    lines = [
-        "# Macro Context Index — Benchmark Results",
-        "",
-        f"## Eval run v1 — {now}",
+    # Append-only: prior runs remain unchanged (README §Append-only policy);
+    # each invocation appends a new "## Eval run vN" section.
+    prior = path.read_text(encoding="utf-8") if path.exists() else ""
+    run_n = prior.count("## Eval run ") + 1
+
+    lines = [] if prior else ["# Macro Context Index — Benchmark Results", ""]
+    lines += [
+        f"## Eval run v{run_n} — {now}",
         "",
         "### Index SHAs",
         "",
@@ -446,8 +457,11 @@ def _write_results_md(s: dict, include_private: bool, path: Path) -> None:
         "_Nulls printed per house epistemics. No content excerpts from private projects._",
     ]
 
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Results written to {path}")
+    body = "\n".join(lines) + "\n"
+    if prior:
+        body = prior.rstrip("\n") + "\n\n" + body
+    path.write_text(body, encoding="utf-8")
+    print(f"Results written to {path} (run v{run_n})")
 
 
 def main() -> None:

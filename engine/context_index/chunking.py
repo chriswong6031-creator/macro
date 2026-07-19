@@ -10,7 +10,8 @@ Chunkers:
   python_symbols    — AST-based; falls back to whole-file-split on parse error
   yaml_keys         — top-level + second-level keys; line-based fallback
   registry_rows     — research/DO_NOT_REBUILD.md only: one chunk per table row
-                      within sections 1-4; status derived from verdict cell.
+                      within sections 1-4; status derived from the section number
+                      (§1→forbidden, §2→killed, §3→unknown, §4→deferred).
 """
 
 from __future__ import annotations
@@ -307,47 +308,21 @@ def _yaml_fallback(path: str, content: str) -> List[ChunkDraft]:
 # registry_rows  (research/DO_NOT_REBUILD.md ONLY)
 # ---------------------------------------------------------------------------
 
-# Verdict keywords → status
-_FORBIDDEN_KW = re.compile(
-    r"\b(FORBIDDEN|ILLEGAL|DON[''']T.TEST|DO NOT BUILD)\b", re.I
-)
-_KILLED_KW = re.compile(
-    r"\b(KILLED|STRUCK|FALSIFIED|REFUTED|REJECT|DEAD|RETIRED|NO.GO|ALL.NULL)\b", re.I
-)
-_DEFERRED_KW = re.compile(r"\b(HOLD|DEFER|PARKED|SUSPENDED)\b", re.I)
-
-
-def _derive_status(verdict_cell: str) -> str:
-    if _FORBIDDEN_KW.search(verdict_cell):
-        return "forbidden"
-    if _KILLED_KW.search(verdict_cell):
-        return "killed"
-    if _DEFERRED_KW.search(verdict_cell):
-        return "deferred"
-    return "unknown"
-
-
-def _parse_header_verdict_col(header_line: str) -> int:
-    """
-    Given a markdown table header row, return the 0-based index of the column
-    whose title contains 'verdict' or 'state' (case-insensitive).
-    Falls back to 1 (second column) for 2-column tables or when no match found.
-    """
-    cells = [c.strip() for c in header_line.strip().split("|") if c.strip() != ""]
-    for idx, cell in enumerate(cells):
-        if re.search(r"\b(verdict|state)\b", cell, re.I):
-            return idx
-    # Default: second column (index 1) — covers 2-col tables where cells[-1]==verdict
-    return min(1, len(cells) - 1) if cells else 1
+# Section number → status (CXI-R4/finding-11; ratified section gate, CXI-R17).
+# The registry's own structure is the authority: §1 rows are forbidden-by-ruling,
+# §2 rows are killed/refuted, §3 is methodology (no verdict status), §4 is held.
+# Verdict-cell keywords must NOT override the section — §2 rows routinely quote
+# §1 vocabulary ("STRUCK — positioning-fusion illegal"), which mislabeled them.
+_SECTION_STATUS = {1: "forbidden", 2: "killed", 3: "unknown", 4: "deferred"}
 
 
 def registry_rows(path: str, content: str) -> List[ChunkDraft]:
     """
     Parse research/DO_NOT_REBUILD.md:
-    - Table rows within ATX sections 1-4 → one chunk each, status derived from
-      the Verdict column (found by header parse, not positional cells[-1]).
-    - Section number gates the status: §1→forbidden, §2→killed, §4→deferred.
-      §3 rows default to 'unknown' regardless of keyword to avoid false forbidden.
+    - Table rows within ATX sections 1-4 → one chunk each.
+    - The section number IS the status: §1→forbidden, §2→killed, §3→unknown
+      (methodology), §4→deferred. Verdict-cell keywords are not consulted —
+      cross-section vocabulary in verdict text must not flip the label.
     - Header rows (immediately before a separator row) are skipped.
     - Non-table prose → markdown_sections chunking.
     """
@@ -360,10 +335,6 @@ def registry_rows(path: str, content: str) -> List[ChunkDraft]:
     non_table_parts: list[str] = []
     current_nonblock: list[str] = []
 
-    # Per-table state
-    verdict_col_idx: int = 1   # which column holds the verdict
-    header_row_stripped: str | None = None  # detect and skip header rows
-
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -373,9 +344,6 @@ def registry_rows(path: str, content: str) -> List[ChunkDraft]:
             if current_nonblock:
                 non_table_parts.extend(current_nonblock)
                 current_nonblock = []
-            # Reset per-table state at each new section
-            verdict_col_idx = 1
-            header_row_stripped = None
             num_match = re.match(r"(\d+)", hm.group(2))
             if num_match:
                 current_section_num = int(num_match.group(1))
@@ -393,12 +361,8 @@ def registry_rows(path: str, content: str) -> List[ChunkDraft]:
         if in_section_14 and line.startswith("|"):
             stripped = line.strip()
 
-            # Separator row (|---|---| style) — signals preceding row was a header
+            # Separator row (|---|---| style)
             if re.match(r"^\|[\s\-:|]+\|", stripped):
-                # The previous | row (if any) was the header — parse verdict col
-                if header_row_stripped is not None:
-                    verdict_col_idx = _parse_header_verdict_col(header_row_stripped)
-                    header_row_stripped = None
                 i += 1
                 continue
 
@@ -410,20 +374,13 @@ def registry_rows(path: str, content: str) -> List[ChunkDraft]:
                 while next_i < len(lines) and not lines[next_i].strip():
                     next_i += 1
                 if next_i < len(lines) and re.match(r"^\|[\s\-:|]+\|", lines[next_i].strip()):
-                    # This is the header row — record it, skip (do not emit a chunk
-                    # and do not add to prose reconstruction)
-                    header_row_stripped = stripped
+                    # This is the header row — skip (do not emit a chunk and do
+                    # not add to prose reconstruction)
                     i += 1
                     continue
 
-                # Data row — derive verdict from the correct column
-                verdict_cell = cells[verdict_col_idx] if verdict_col_idx < len(cells) else cells[-1]
-
-                # Section-gated status: §3 (methodology) → always unknown
-                if current_section_num == 3:
-                    status = "unknown"
-                else:
-                    status = _derive_status(verdict_cell)
+                # Data row — the section gates the status (CXI-R4/R17)
+                status = _SECTION_STATUS.get(current_section_num, "unknown")
 
                 row_text = " | ".join(cells)
                 full_heading = " ".join(current_section_heading)
