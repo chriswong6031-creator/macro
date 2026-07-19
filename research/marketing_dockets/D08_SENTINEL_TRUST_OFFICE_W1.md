@@ -1,5 +1,7 @@
 # MKT-D08 — Sentinel W1: Pre-Publication Policy Gate + Ban-Risk Rails
 
+> **Status: W1 SHIPPED 2026-07-19 (PR #3057).** `engine/marketing/sentinel.py` plan-level gate (near-dup/caps/lexicon/disclosure/cherry-pick/stale-receipts + exception queue), kill-switch hierarchy (`MARKETING_PUBLISH_ENABLED` default-off, per-account `disabled:`, fail-closed crash path), red-team appendix `D08_APPENDIX_X_POLICY_REDTEAM.md` sets the caps (config ships at the weeks_1_2 new-account tier), admin `/api/marketing/sentinel`, 63 tests. Come-back: first nightly bakes `data/marketing/sentinel_report.json`. **W2/D02 contract:** the actuator reads caps + ramp from `config/marketing.yml sentinel:` (no own constants), checks `publish_enabled()` + `sentinel_ok` per item, and refuses when report `plan_status != "pass"`. **Red-team R0 (operator go/no-go):** UI-automation posting itself is the pattern X's automation rules prohibit — read appendix §2 R0 + §6 kill criteria before D02 goes live. Cherry-pick detector is partial (fires only on zero losers shown).
+
 **Department:** Sentinel (trust_office) · **Priority: P0 — build BEFORE first live post** · **Status: ready now, no operator input needed**
 **Charter:** `engine/marketing/departments.py` id=`trust_office` ("Autonomous Trust, Policy & Red-Team Office", wave 0, 12 chartered engines — all stubs today).
 
