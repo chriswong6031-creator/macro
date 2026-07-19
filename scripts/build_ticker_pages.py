@@ -696,6 +696,17 @@ def load_all_aggregates(site: Path) -> dict:
     # SPY ohlc for benchmark returns
     spy_ohlc = _load_json(site / "ohlc" / "SPY.json")
     agg["spy_bars"] = (spy_ohlc.get("bars") or []) if spy_ohlc else []
+    if not agg["spy_bars"]:
+        # Fallback: committed data/yahoo/SPY.parquet -> close-format bars
+        try:
+            import pandas as pd
+            spy_df = pd.read_parquet(str(_ROOT / "data" / "yahoo" / "SPY.parquet"))
+            col = "close" if "close" in spy_df.columns else "close_price"
+            agg["spy_bars"] = [
+                [str(idx)[:10], float(v)] for idx, v in spy_df[col].dropna().items()
+            ]
+        except Exception as e:  # noqa: BLE001
+            log.warning("::warning::SPY fallback load failed: %s", e)
 
     return agg
 
@@ -766,6 +777,7 @@ def _render_chart(ticker: str, ohlc_bars: list, is_candle: bool, company_name: s
             return render_chart_v2(
                 ticker, dates, o_arr, h_arr, l_arr, c_arr, vol_arr,
                 company_name=company_name, show_indicators=True, indicators=("volume", "macd"),
+                footer_cta="Research dossier · regenerated nightly",
             )
         else:
             # Fallback: line chart via render_signal_chart
@@ -832,6 +844,113 @@ def _build_meta(
         "stale": stale,
         "generated_utc": generated_utc,
     }
+
+
+def _lvl_float(v: Any) -> float | None:
+    """Normalize an engine level that may be a scalar or a {low,high,...} dict."""
+    if isinstance(v, dict):
+        lo, hi = v.get("low"), v.get("high")
+        try:
+            if lo is not None and hi is not None:
+                return (float(lo) + float(hi)) / 2.0
+            return float(lo if lo is not None else hi)
+        except (TypeError, ValueError):
+            return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _px(v: float) -> str:
+    return f"${v:,.0f}" if v >= 100 else f"${v:,.2f}"
+
+
+def build_level_rail(price: Any, bars: list, blob: dict | None, walls: dict | None = None, signals: dict | None = None) -> dict | None:
+    """Signature hero component: the engine's working levels pinned on the
+    52-week price axis (current price, trail stop, buy zone, don't-chase,
+    call/put walls). Renders only when the axis and >=2 marks exist."""
+    try:
+        p = _lvl_float(price)
+        if not p or not bars:
+            return None
+        lows: list[float] = []
+        highs: list[float] = []
+        for bar in bars[-252:]:
+            try:
+                if len(bar) >= 6:
+                    lows.append(float(bar[3])); highs.append(float(bar[2]))
+                else:
+                    c = float(bar[1]); lows.append(c); highs.append(c)
+            except (TypeError, ValueError, IndexError):
+                continue
+        if len(lows) < 60:
+            return None
+        lo, hi = min(lows + [p]), max(highs + [p])
+        if hi <= lo:
+            return None
+        pad = (hi - lo) * 0.03
+        lo, hi = lo - pad, hi + pad
+        span = hi - lo
+
+        def pct(v: float) -> float:
+            return max(0.0, min(100.0, (v - lo) / span * 100.0))
+
+        blob = blob or {}
+        es = blob.get("entry_signal") or {}
+        sig = signals or {}
+        # Walls from the SAME site/gex artifact the Options section renders —
+        # the blob's own gex block can disagree (different universe/method)
+        gx = walls or {}
+        ticks: list[dict] = [
+            {"pct": round(pct(p), 2), "cls": "now", "price": _px(p),
+             "label_en": "Price", "label_zh": "现价", "lane": "top"},
+        ]
+        # signals trail_stop first — it is what the hero invalidation line quotes
+        stop = _lvl_float(sig.get("trail_stop")) or _lvl_float(es.get("stop"))
+        if stop and lo < stop < hi:
+            ticks.append({"pct": round(pct(stop), 2), "cls": "stop", "price": _px(stop),
+                          "label_en": "Trail stop", "label_zh": "止损线", "lane": "top"})
+        chase = _lvl_float(es.get("chase_above") or es.get("dont_chase_line"))
+        if chase and lo < chase < hi:
+            ticks.append({"pct": round(pct(chase), 2), "cls": "chase", "price": _px(chase),
+                          "label_en": "Don't chase", "label_zh": "勿追高", "lane": "top"})
+        for key, cls, len_, lzh in (("call_wall", "wall", "Call wall", "看涨期权墙"),
+                                    ("put_wall", "wall", "Put wall", "看跌期权墙")):
+            w = _lvl_float(gx.get(key))
+            if w and lo < w < hi:
+                ticks.append({"pct": round(pct(w), 2), "cls": cls, "price": _px(w),
+                              "label_en": len_, "label_zh": lzh, "lane": "bot"})
+        band = None
+        bz = es.get("buy_zone")
+        if isinstance(bz, dict):
+            b_lo, b_hi = _lvl_float(bz.get("low")), _lvl_float(bz.get("high"))
+            if b_lo and b_hi and b_lo < b_hi and b_hi > lo and b_lo < hi:
+                band = {"lo_pct": round(pct(b_lo), 2), "hi_pct": round(pct(b_hi), 2),
+                        "label_en": "Buy zone", "label_zh": "买入区",
+                        "price": f"{_px(b_lo)}–{_px(b_hi)}"}
+        elif (bzv := _lvl_float(bz)) and lo < bzv < hi:
+            ticks.append({"pct": round(pct(bzv), 2), "cls": "buy", "price": _px(bzv),
+                          "label_en": "Buy zone", "label_zh": "买入区", "lane": "bot"})
+        if len(ticks) < 2 and not band:
+            return None
+        # Collision stacking: within each lane, assign each label to the first
+        # tier whose previous label sits >=8% of the axis away (up to 3 tiers).
+        for lane in ("top", "bot"):
+            lane_ticks = sorted([t for t in ticks if t["lane"] == lane], key=lambda t: t["pct"])
+            tier_last: list[float] = []
+            for t in lane_ticks:
+                for ti, last in enumerate(tier_last):
+                    if t["pct"] - last >= 8.0:
+                        tier_last[ti] = t["pct"]
+                        t["tier"] = ti
+                        break
+                else:
+                    t["tier"] = min(len(tier_last), 2)
+                    tier_last.append(t["pct"])
+        return {"lo": _px(lo), "hi": _px(hi), "ticks": ticks, "band": band}
+    except Exception:  # noqa: BLE001 — decorative hero component, never fatal
+        return None
 
 
 def _build_hero(
@@ -1037,6 +1156,8 @@ def _build_gauges(ticker: str, blob: dict | None, factor_betas: dict) -> dict | 
             "pct": round(avg_cheap, 0),
             "verdict_en": vd_en,
             "verdict_zh": vd_zh,
+            "sub_en": f"Cheaper than {avg_cheap:.0f}% of its sector on blended multiples",
+            "sub_zh": f"综合估值倍数低于行业内 {avg_cheap:.0f}% 的公司",
         }
 
     # Beta gauge
@@ -2142,6 +2263,13 @@ def build_page_context(
     # --- Build all sections ---
     meta = _build_meta(ticker, name, blob, stance_en, freshness, stale, generated_utc)
     hero = _build_hero(ticker, name, blob, stance_en, stance_zh, stance_key, inv_en, inv_zh, factor_betas)
+    hero["rail"] = build_level_rail(
+        ((blob or {}).get("tech") or {}).get("price"),
+        per.get("ohlc_bars") or [],
+        blob,
+        walls=(per.get("gex_v1") or {}).get("summary") or {},
+        signals=per.get("signals"),
+    )
     stats = _build_stats(ticker, blob, factor_betas)
     gauges = _build_gauges(ticker, blob, factor_betas)
     performance = _build_performance(ticker, trailing_returns)
