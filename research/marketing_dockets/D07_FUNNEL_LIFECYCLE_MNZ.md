@@ -1,6 +1,6 @@
 # MKT-D07 — Funnel W1: UTM Attribution + Trial-Conversion Join (MNZ)
 
-**Department:** Funnel (lifecycle) · **Priority: P2** · **Status: link plumbing buildable now; conversion join needs operator analytics access**
+**Department:** Funnel (lifecycle) · **Priority: P2** · **Status: W1a DONE #3052 2026-07-19 — links.py canonical UTM on every planned post (verified 112/112, exactly-once, deterministic codes) + static site/go/ short-link lane + attribution.py fixture scaffold/ledger schema (NOT nightly-wired). W1b remaining: operator analytics access → landing-page UTM capture, live signup join, Funnel admin page.**
 **Charter:** id=`lifecycle` ("Lifecycle, Conversion & Monetization", wave 2). **Monetization truth:** the MNZ program (#2923 + #2943) — Insider $59/$49, Pro $89/$69 annual-default, 14-day trial posture; every chart CTA already prints "Powerful stock signals · free 14-day trial · mastermind-x.com".
 
 ## Why
