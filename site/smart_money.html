@@ -674,7 +674,6 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 
 
 
-
 <div class="sm">
 
 
@@ -964,7 +963,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 
 <div class="sm-sec" id="sec-wire">
   <h2><span class="l-en">Ownership event wire</span><span class="l-zh">持仓事件播报</span></h2>
-  <span class="h-note"><span class="l-en">newest events per axis (of 200 in the feed) — each row carries its own clock</span><span class="l-zh">各轴最新事件（数据流共200条）——每行带独立时间戳</span></span>
+  <span class="h-note"><span class="l-en">newest 20 events (of 200 in the feed) — each row carries its own clock</span><span class="l-zh">最新20条事件（数据流共200条）——每行带独立时间戳</span></span>
 </div>
 
 <div class="filters" id="wire-filters">
@@ -976,11 +975,8 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 </div>
 
 <div class="sm-card">
-  <p class="wire-count"><span class="l-en">Showing</span><span class="l-zh">展示</span> <span class="num" id="wire-shown-n">68</span> / <span class="num" id="wire-total-n">200</span> <span class="l-en">— the fold is the newest per axis (balanced); the full feed is loaded on this page</span><span class="l-zh">——默认按轴均衡显示最新事件；完整数据流已加载于本页</span></p>
+  <p class="wire-count"><span class="l-en">Showing</span><span class="l-zh">展示</span> <span class="num" id="wire-shown-n">20</span> / <span class="num" id="wire-total-n">200</span> <span class="l-en">— the newest 20 across all axes; the full feed is loaded on this page</span><span class="l-zh">——所有轴最新20条；完整数据流已加载于本页</span></p>
   <ul class="wire" id="wire-list">
-  
-  
-  
     
     
     
@@ -1841,7 +1837,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">MDLN</span>
@@ -1872,7 +1868,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">WMT</span>
@@ -1903,7 +1899,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">CRWV</span>
@@ -1934,7 +1930,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">AUR</span>
@@ -1965,7 +1961,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">SN</span>
@@ -1996,7 +1992,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">NVDA</span>
@@ -2027,7 +2023,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">SYRE</span>
@@ -2058,7 +2054,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">KYMR</span>
@@ -2089,7 +2085,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">FLY</span>
@@ -2120,7 +2116,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">SNOW</span>
@@ -2151,7 +2147,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">ANET</span>
@@ -2182,7 +2178,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">RKLB</span>
@@ -2213,7 +2209,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">JEF</span>
@@ -2244,7 +2240,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">CELC</span>
@@ -2275,7 +2271,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">ORKA</span>
@@ -2306,7 +2302,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">AVGO</span>
@@ -2337,7 +2333,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">DDOG</span>
@@ -2368,7 +2364,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">HNGE</span>
@@ -2399,7 +2395,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">ABNB</span>
@@ -2430,7 +2426,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="insider" data-fold="1">
+    <li data-axis="insider" data-fold="0" style="display:none">
       <span class="wd num">2026-07-17</span>
       <span class="axis-tag axis-form4">FORM4</span>
       <span class="wtk num">LTH</span>
@@ -4480,7 +4476,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13fa" data-fold="1">
+    <li data-axis="13fa" data-fold="0" style="display:none">
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
@@ -4507,7 +4503,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13fa" data-fold="1">
+    <li data-axis="13fa" data-fold="0" style="display:none">
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
@@ -4534,7 +4530,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13fa" data-fold="1">
+    <li data-axis="13fa" data-fold="0" style="display:none">
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
@@ -4561,7 +4557,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13fa" data-fold="1">
+    <li data-axis="13fa" data-fold="0" style="display:none">
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
@@ -4588,7 +4584,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13fa" data-fold="1">
+    <li data-axis="13fa" data-fold="0" style="display:none">
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
@@ -4615,7 +4611,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13fa" data-fold="1">
+    <li data-axis="13fa" data-fold="0" style="display:none">
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
@@ -4642,7 +4638,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13fa" data-fold="1">
+    <li data-axis="13fa" data-fold="0" style="display:none">
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
@@ -4669,7 +4665,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13fa" data-fold="1">
+    <li data-axis="13fa" data-fold="0" style="display:none">
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
@@ -4808,88 +4804,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
       <span class="wd num">2026-05-20</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
-      <span class="wdesc">Oaktree Capital Management files amendment</span>
-      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
-    </li>
-  
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    <li data-axis="13fa" data-fold="0" style="display:none">
-      <span class="wd num">2026-05-20</span>
-      <span class="axis-tag axis-13f">13F/A</span>
-      <span class="wtk num"></span>
-      <span class="wdesc">Oaktree Capital Management files amendment</span>
-      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
-    </li>
-  
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    <li data-axis="13fa" data-fold="0" style="display:none">
-      <span class="wd num">2026-05-20</span>
-      <span class="axis-tag axis-13f">13F/A</span>
-      <span class="wtk num"></span>
-      <span class="wdesc">Oaktree Capital Management files amendment</span>
-      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
-    </li>
-  
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    <li data-axis="13fa" data-fold="0" style="display:none">
-      <span class="wd num">2026-05-20</span>
-      <span class="axis-tag axis-13f">13F/A</span>
-      <span class="wtk num"></span>
-      <span class="wdesc">Oaktree Capital Management files amendment</span>
+      <span class="wdesc">Oaktree Capital Management files amendment — 145.0pct_shares_change</span>
       <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
     </li>
   
@@ -4970,8 +4885,116 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
       <span class="wd num">2026-05-20</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
-      <span class="wdesc">Oaktree Capital Management files amendment — 145.0pct_shares_change</span>
+      <span class="wdesc">Oaktree Capital Management files amendment</span>
       <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
+    </li>
+  
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    <li data-axis="13fa" data-fold="0" style="display:none">
+      <span class="wd num">2026-05-20</span>
+      <span class="axis-tag axis-13f">13F/A</span>
+      <span class="wtk num"></span>
+      <span class="wdesc">Oaktree Capital Management files amendment</span>
+      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
+    </li>
+  
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    <li data-axis="13fa" data-fold="0" style="display:none">
+      <span class="wd num">2026-05-20</span>
+      <span class="axis-tag axis-13f">13F/A</span>
+      <span class="wtk num"></span>
+      <span class="wdesc">Oaktree Capital Management files amendment</span>
+      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
+    </li>
+  
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    <li data-axis="13fa" data-fold="0" style="display:none">
+      <span class="wd num">2026-05-20</span>
+      <span class="axis-tag axis-13f">13F/A</span>
+      <span class="wtk num"></span>
+      <span class="wdesc">Oaktree Capital Management files amendment</span>
+      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
+    </li>
+  
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    <li data-axis="13fa" data-fold="0" style="display:none">
+      <span class="wd num">2026-05-19</span>
+      <span class="axis-tag axis-13f">13F/A</span>
+      <span class="wtk num"></span>
+      <span class="wdesc">Oaktree Capital Management files amendment — 145.0pct_shares_change</span>
+      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-19</span>
     </li>
   
     
@@ -5020,34 +5043,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13fa" data-fold="0" style="display:none">
-      <span class="wd num">2026-05-19</span>
-      <span class="axis-tag axis-13f">13F/A</span>
-      <span class="wtk num"></span>
-      <span class="wdesc">Oaktree Capital Management files amendment — 145.0pct_shares_change</span>
-      <span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-19</span>
-    </li>
-  
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">GOOG</span>
@@ -5074,7 +5070,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">GOOGL</span>
@@ -5101,7 +5097,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">CVX</span>
@@ -5128,7 +5124,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">STZ</span>
@@ -5155,7 +5151,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">DAL</span>
@@ -5182,7 +5178,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">LEN</span>
@@ -5209,7 +5205,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">LEN-B</span>
@@ -5236,7 +5232,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">M</span>
@@ -5263,7 +5259,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">NYT</span>
@@ -5290,7 +5286,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">NUE</span>
@@ -5317,7 +5313,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">AMZN</span>
@@ -5344,7 +5340,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">BATRK</span>
@@ -5371,7 +5367,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">CHTR</span>
@@ -5398,7 +5394,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">DEO</span>
@@ -5425,7 +5421,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">DPZ</span>
@@ -5452,7 +5448,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">HEI-A</span>
@@ -5479,7 +5475,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">LAMR</span>
@@ -5506,7 +5502,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">FWONK</span>
@@ -5533,7 +5529,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">MA</span>
@@ -5560,7 +5556,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     
     
 
-    <li data-axis="13f" data-fold="1">
+    <li data-axis="13f" data-fold="0" style="display:none">
       <span class="wd num">2026-05-15</span>
       <span class="axis-tag axis-13f">13F</span>
       <span class="wtk num">POOL</span>
@@ -6624,7 +6620,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
   </ul>
   
   <div class="wire-more-row" id="wire-more-row">
-    <button type="button" class="wire-more" id="wire-more-btn"><span class="l-en">See more</span><span class="l-zh">展开更多</span> (<span class="num" id="wire-hidden-n">132</span>)</button>
+    <button type="button" class="wire-more" id="wire-more-btn"><span class="l-en">See more</span><span class="l-zh">展开更多</span> (<span class="num" id="wire-hidden-n">180</span>)</button>
     <button type="button" class="wire-more" id="wire-all-btn"><span class="l-en">Show all</span><span class="l-zh">全部展开</span></button>
     <button type="button" class="wire-more" id="wire-fewer-btn" style="display:none"><span class="l-en">Show fewer</span><span class="l-zh">收起</span></button>
   </div>
@@ -31757,7 +31753,7 @@ inp.addEventListener('keydown',function(e){if(e.key==='Enter'){var v=inp.value.t
 
 
 <div class="disc"><span class="l-en">Track record of curated super-investor 13F trades. Each move is entered on the fund's PUBLIC filing date (look-ahead-free) and scored vs SPY. Funds are ranked on the MEDIAN trade excess (outlier-robust) — the realised 'since' mean uses a variable hold (older trades have run longer) so it is P&L, not skill; the 63-day excess is the fixed-horizon figure. Some off-index names (foreign ADRs, small-caps) cannot be priced and are dropped, so each fund's coverage % is shown. 13F-HR holdings: quarterly, ~45-day lag, long-only US equity stakes >= $100M. No shorts, options detail, or non-US positions. CUSIPs are name-matched to tickers, so some lines are hidden. Context on who holds a name, not a buy list or a real-time signal.</span><span class="l-zh">精选超级投资者 13F 交易的业绩记录。每笔操作以基金的公开申报日为入场点（无前视偏差），并以相对标普500的超额收益评分。基金按交易超额收益的中位数排名（抗异常值）——已实现的“自申报”均值采用可变持有期（较早的交易运行更久），因此是盈亏而非选股能力；63日超额收益为固定持有期口径。部分非指数成分（境外 ADR、小盘股）无法定价而被剔除，故每只基金均标注覆盖率。13F 持仓为季度披露、约45天滞后，仅含 ≥1亿美元的美股多头，不含空头、期权或非美持仓；为背景信息与业绩记录，并非买入建议或实时信号，且从不接入任何评分/配置。</span></div>
-<p class="sub" style="margin-top:8px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-19 03:59 UTC</p>
+<p class="sub" style="margin-top:8px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-19 05:38 UTC</p>
 
 </div>
 
@@ -31784,24 +31780,22 @@ var wireFewerBtn = document.getElementById('wire-fewer-btn');
 var wireShownN = document.getElementById('wire-shown-n');
 var wireTotalN = document.getElementById('wire-total-n');
 var wireHiddenN = document.getElementById('wire-hidden-n');
-var WIRE_STEP = 40;
+var WIRE_FOLD = 20;   /* newest N shown by default, per active axis */
+var WIRE_STEP = 40;   /* rows revealed per "See more" click */
 var wireAxis = 'all';
-var wireExtra = 0; /* non-fold rows revealed beyond the balanced fold */
+var wireExtra = 0; /* rows revealed beyond the first WIRE_FOLD */
 
 function applyWireView(){
   if(!wireList) return;
-  var shownExtra = 0, visible = 0, matching = 0;
+  var visible = 0, matching = 0;
+  var budget = WIRE_FOLD + wireExtra;
+  /* rows are newest-first in the DOM; show the first `budget` that match the
+     active axis, hide the rest. `visible` only climbs on shown rows, so once the
+     budget is spent every later match stays folded. */
   wireList.querySelectorAll('li[data-axis]').forEach(function(li){
     var axisMatch = (wireAxis === 'all') || (li.getAttribute('data-axis') === wireAxis);
-    var show = false;
-    if(axisMatch){
-      matching++;
-      if(li.getAttribute('data-fold') === '1'){
-        show = true;
-      } else if(shownExtra < wireExtra){
-        show = true; shownExtra++;
-      }
-    }
+    if(axisMatch) matching++;
+    var show = axisMatch && (visible < budget);
     li.style.display = show ? '' : 'none';
     if(show) visible++;
   });
