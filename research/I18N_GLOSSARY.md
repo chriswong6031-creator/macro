@@ -39,6 +39,10 @@ NOT price-direction and are left as-is.
 | UPTREND · HOLD | 上涨趋势 · 持有 |
 | NEARING A HIGH · TAKE PROFITS | 接近高点 · 止盈 |
 | TOPPING · SELL SETUP | 做顶中 · 卖出预备 |
+| UNCONFIRMED TURN · HIGH-RISK · NIMBLE ONLY | 未确认转向 · 高风险 · 仅限灵活操作 |
+| TURN IN PROGRESS · WATCH — DON'T CHASE | 转向进行中 · 观察 — 勿追高 |
+| LIMITED (new listing, insufficient history) | 历史不足 |
+| COUNTER-TREND BOUNCE (legacy log label) | 逆势反弹 |
 | daily cycle | 日线周期 |
 | weekly (investor) cycle | 周线（投资者）周期 |
 

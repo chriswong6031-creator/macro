@@ -152,6 +152,37 @@ def test_ladder_log_append_is_idempotent(tmp_path, monkeypatch):
     assert [h["context"]["state"] for h in hist] == ["FRESH BUY"]
 
 
+def _has_cjk(s):
+    return any("一" <= c <= "鿿" for c in s or "")
+
+
+def test_ladder_vocab_translates_to_cjk():
+    # every STATE_DISPLAY label/action must glossary-translate to its zh twin —
+    # a miss leaks EN into detail_zh/headline_zh on every ladder timeline event
+    # (the NVDA "HIGH-RISK · NIMBLE ONLY" leak)
+    from engine.cycles import STATE_DISPLAY
+    for state, d in STATE_DISPLAY.items():
+        for k in ("label", "action"):
+            en, zh = ta._disp(d[k])
+            assert zh == d[f"{k}_zh"] and _has_cjk(zh), f"{state} {k}: {en!r} -> {zh!r}"
+    # legacy vocab frozen in ladder_log.parquet history rows + LIMITED sentinel
+    for legacy in ("COUNTER-TREND BOUNCE", "LIMITED"):
+        en, zh = ta._disp(legacy)
+        assert _has_cjk(zh), f"legacy {en!r} -> {zh!r}"
+
+
+def test_ladder_history_detail_zh_is_chinese(tmp_path, monkeypatch):
+    monkeypatch.setattr(ta, "_ladder_path", lambda: tmp_path / "ladder_log.parquet")
+    ladder = {"state": "COUNTERTREND BOUNCE", "label": "UNCONFIRMED TURN",
+              "action": "HIGH-RISK · NIMBLE ONLY", "dir": "caution", "score": 10,
+              "prev_state": "DECLINE", "signal_date": "2026-06-01",
+              "entry": {"urgency": "watch"}}
+    ta.append_ladder_log("NVDA", ladder, "2026-06-12")
+    hist = ta.ladder_history_events("NVDA")
+    assert hist and hist[0]["detail"] == "HIGH-RISK · NIMBLE ONLY"
+    assert _has_cjk(hist[0]["detail_zh"]) and _has_cjk(hist[0]["headline_zh"])
+
+
 def test_build_feed_shape_and_pinned(tmp_path, monkeypatch):
     monkeypatch.setattr(ta, "_ladder_path", lambda: tmp_path / "ladder_log.parquet")
     ladder = {"state": "BOTTOM WATCH", "label": "NEARING A LOW", "action": "GET READY",
