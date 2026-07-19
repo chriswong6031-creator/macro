@@ -1,7 +1,7 @@
 {
   "schema": "theme_adoption.v1",
-  "as_of": "2026-07-17",
-  "generated_at": "2026-07-18T01:35:04.499804+00:00",
+  "as_of": "2026-07-18",
+  "generated_at": "2026-07-19T01:27:11.525604+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -15,11 +15,11 @@
     "history_note": "Momentum signals are coarse with <90d history. Do not promote to a scored factor until ~2026-09-17."
   },
   "coverage_stats": {
-    "total_rows": 391,
+    "total_rows": 408,
     "unique_tickers": 17,
     "date_range_min": "2026-06-20",
-    "date_range_max": "2026-07-17",
-    "history_days": 27
+    "date_range_max": "2026-07-18",
+    "history_days": 28
   },
   "npm_pypi_note": "npm/PyPI adoption descoped: no collectors exist in collectors/. Future wave: add npm_downloads.py and pypi_stats.py collectors.",
   "history_note": "Momentum signals are coarse with <90d history. Do not promote to a scored factor until ~2026-09-17.",
@@ -27,15 +27,15 @@
   "baskets": {
     "ai_infra": {
       "basket_id": "ai_infra",
-      "star_velocity_7d_z": 0.78,
+      "star_velocity_7d_z": 0.693,
       "n_covered": 2,
       "n_basket_total": 24,
       "covered_tickers": [
         "AMD",
         "NVDA"
       ],
-      "coverage_note": "2/24 basket tickers have GitHub data; velocity window: 7d. History: ~27d (expanding).",
-      "coverage_note_zh": "篮子成员24个，其中2个有GitHub数据；速度窗口：7天；历史长度：约27天（持续扩展）。"
+      "coverage_note": "2/24 basket tickers have GitHub data; velocity window: 7d. History: ~28d (expanding).",
+      "coverage_note_zh": "篮子成员24个，其中2个有GitHub数据；速度窗口：7天；历史长度：约28天（持续扩展）。"
     },
     "ai_neoclouds": {
       "basket_id": "ai_neoclouds",
@@ -48,15 +48,15 @@
     },
     "ai_semiconductors": {
       "basket_id": "ai_semiconductors",
-      "star_velocity_7d_z": 0.78,
+      "star_velocity_7d_z": 0.693,
       "n_covered": 2,
       "n_basket_total": 12,
       "covered_tickers": [
         "AMD",
         "NVDA"
       ],
-      "coverage_note": "2/12 basket tickers have GitHub data; velocity window: 7d. History: ~27d (expanding).",
-      "coverage_note_zh": "篮子成员12个，其中2个有GitHub数据；速度窗口：7天；历史长度：约27天（持续扩展）。"
+      "coverage_note": "2/12 basket tickers have GitHub data; velocity window: 7d. History: ~28d (expanding).",
+      "coverage_note_zh": "篮子成员12个，其中2个有GitHub数据；速度窗口：7天；历史长度：约28天（持续扩展）。"
     },
     "critical_minerals": {
       "basket_id": "critical_minerals",
@@ -69,14 +69,14 @@
     },
     "cybersecurity": {
       "basket_id": "cybersecurity",
-      "star_velocity_7d_z": 2.799,
+      "star_velocity_7d_z": 2.22,
       "n_covered": 1,
       "n_basket_total": 10,
       "covered_tickers": [
         "NET"
       ],
-      "coverage_note": "1/10 basket tickers have GitHub data; velocity window: 7d. History: ~27d (expanding).",
-      "coverage_note_zh": "篮子成员10个，其中1个有GitHub数据；速度窗口：7天；历史长度：约27天（持续扩展）。"
+      "coverage_note": "1/10 basket tickers have GitHub data; velocity window: 7d. History: ~28d (expanding).",
+      "coverage_note_zh": "篮子成员10个，其中1个有GitHub数据；速度窗口：7天；历史长度：约28天（持续扩展）。"
     },
     "data_center_power": {
       "basket_id": "data_center_power",

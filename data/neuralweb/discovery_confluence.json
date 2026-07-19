@@ -1,7 +1,7 @@
 {
   "schema": "discovery_confluence.v1",
-  "as_of": "2026-07-17",
-  "generated_at": "2026-07-18T01:35:04.051687+00:00",
+  "as_of": "2026-07-18",
+  "generated_at": "2026-07-19T01:27:11.138583+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -15,8 +15,8 @@
   },
   "honesty_header": "Two-source confluence: EDGAR phrase acceleration + GitHub adoption velocity. Both legs must accelerate for a confluence flag. Detection is noisy — ~half of flags are real. Early-entry edge ≈ 0. Candidate for curated review only — never auto-promoted.",
   "sources": {
-    "phrase_velocity": "/Users/chriswong/actions-runner-1/_work/macro/macro/site/basketdata/phrase_velocity.json",
-    "github_adoption": "/Users/chriswong/actions-runner-1/_work/macro/macro/site/basketdata/github_adoption.json"
+    "phrase_velocity": "/Users/chriswong/actions-runner/_work/macro/macro/site/basketdata/phrase_velocity.json",
+    "github_adoption": "/Users/chriswong/actions-runner/_work/macro/macro/site/basketdata/github_adoption.json"
   },
   "confluence_candidates": [],
   "single_leg_phrase": [
@@ -89,8 +89,8 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "ai_semiconductors": 0.78,
-        "ai_infra": 0.78
+        "ai_semiconductors": 0.693,
+        "ai_infra": 0.693
       },
       "confidence": "adoption_only"
     },
@@ -103,7 +103,7 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "cybersecurity": 2.799
+        "cybersecurity": 2.22
       },
       "confidence": "adoption_only"
     }

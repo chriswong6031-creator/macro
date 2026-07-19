@@ -1,7 +1,7 @@
 {
   "schema": "theme_options_witness.v1",
-  "as_of": "2026-07-18",
-  "generated_at": "2026-07-18T00:15:05.426043+00:00",
+  "as_of": "2026-07-19",
+  "generated_at": "2026-07-19T01:23:17.485968+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -21,14 +21,14 @@
     "n_themes_suppressed": 3,
     "store_present": true,
     "store_path": "/Users/chriswong/theta-ops-wt/data/thetadata_eod",
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "themes": {
     "ai_semiconductors": {
       "theme_id": "ai_semiconductors",
       "name_en": "AI Semiconductors",
       "name_zh": "AI半导体",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 26,
       "leg_a_call_oi_hhi": {
         "coverage_count": 26,
@@ -37,8 +37,8 @@
         "value_z252": -0.759,
         "band": "normal",
         "stale": false,
-        "note_en": "Median call-OI HHI across 26/26 covered members. HHI=0.036 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "26/26 个成员覆盖的看涨OI HHI中位数。HHI=0.036 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 26/26 members. Strike concentration (median): 0.036 (z -0.76). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：26/26 个成员。行权价集中度（中位数）：0.036（z -0.76）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 26,
@@ -49,8 +49,8 @@
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": false,
-        "note_en": "Basket PCR across 26/26 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal.",
-        "note_zh": "26/26 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal."
+        "note_en": "Coverage: 26/26 members. Put/call open-interest ratio: 0.92 (z -0.24). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：26/26 个成员。看跌/看涨持仓比：0.92（z -0.24）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 26,
@@ -59,15 +59,15 @@
         "value_z252": 0.419,
         "band": "normal",
         "stale": false,
-        "note_en": "Median IV-premium (IV/RV20-1) across 26/26 covered members. IV premium near historical norm.",
-        "note_zh": "26/26 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 26/26 members. Options priced vs recent actual swings (median): +13.7% (z +0.42). Options priced near their usual level.",
+        "note_zh": "覆盖：26/26 个成员。期权定价相对近期实际波动（中位数）：+13.7%（z +0.42）。期权定价接近正常水平。"
       }
     },
     "memory_storage": {
       "theme_id": "memory_storage",
       "name_en": "Memory, HBM & Storage",
       "name_zh": "存储与HBM",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 4,
       "leg_a_call_oi_hhi": {
         "coverage_count": 4,
@@ -76,8 +76,8 @@
         "value_z252": -1.076,
         "band": "normal",
         "stale": false,
-        "note_en": "Median call-OI HHI across 4/4 covered members. HHI=0.011 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "4/4 个成员覆盖的看涨OI HHI中位数。HHI=0.011 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 4/4 members. Strike concentration (median): 0.011 (z -1.08). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：4/4 个成员。行权价集中度（中位数）：0.011（z -1.08）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 4,
@@ -88,8 +88,8 @@
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": false,
-        "note_en": "Basket PCR across 4/4 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal.",
-        "note_zh": "4/4 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal."
+        "note_en": "Coverage: 4/4 members. Put/call open-interest ratio: 1.29 (z +1.13). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：4/4 个成员。看跌/看涨持仓比：1.29（z +1.13）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 4,
@@ -98,15 +98,15 @@
         "value_z252": -0.781,
         "band": "normal",
         "stale": false,
-        "note_en": "Median IV-premium (IV/RV20-1) across 4/4 covered members. IV premium near historical norm.",
-        "note_zh": "4/4 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 4/4 members. Options priced vs recent actual swings (median): -7.0% (z -0.78). Options priced near their usual level.",
+        "note_zh": "覆盖：4/4 个成员。期权定价相对近期实际波动（中位数）：-7.0%（z -0.78）。期权定价接近正常水平。"
       }
     },
     "semicap_equipment": {
       "theme_id": "semicap_equipment",
       "name_en": "Semiconductor Equipment (WFE)",
       "name_zh": "半导体设备（WFE）",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 16,
       "leg_a_call_oi_hhi": {
         "coverage_count": 16,
@@ -115,8 +115,8 @@
         "value_z252": -2.402,
         "band": "normal",
         "stale": true,
-        "note_en": "Median call-OI HHI across 16/16 covered members. HHI=0.075 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "16/16 个成员覆盖的看涨OI HHI中位数。HHI=0.075 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 16/16 members. Strike concentration (median): 0.075 (z -2.40). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：16/16 个成员。行权价集中度（中位数）：0.075（z -2.40）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 16,
@@ -127,8 +127,8 @@
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": true,
-        "note_en": "Basket PCR across 16/16 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal.",
-        "note_zh": "16/16 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal."
+        "note_en": "Coverage: 16/16 members. Put/call open-interest ratio: 1.06 (z +0.37). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：16/16 个成员。看跌/看涨持仓比：1.06（z +0.37）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 16,
@@ -137,15 +137,15 @@
         "value_z252": -1.671,
         "band": "compressed",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 16/16 covered members. IV premium compressed vs own history.",
-        "note_zh": "16/16 个成员的IV溢价中位数（IV/RV20-1）。相对自身历史，IV溢价受压。"
+        "note_en": "Coverage: 16/16 members. Options priced vs recent actual swings (median): -21.1% (z -1.67). Options priced low versus their own history.",
+        "note_zh": "覆盖：16/16 个成员。期权定价相对近期实际波动（中位数）：-21.1%（z -1.67）。期权定价低于自身历史水平。"
       }
     },
     "data_center_power": {
       "theme_id": "data_center_power",
       "name_en": "Data Center Power & Cooling",
       "name_zh": "数据中心电力与冷却",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 18,
       "leg_a_call_oi_hhi": {
         "coverage_count": 18,
@@ -154,8 +154,8 @@
         "value_z252": -0.242,
         "band": "normal",
         "stale": true,
-        "note_en": "Median call-OI HHI across 18/18 covered members. HHI=0.068 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "18/18 个成员覆盖的看涨OI HHI中位数。HHI=0.068 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 18/18 members. Strike concentration (median): 0.068 (z -0.24). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：18/18 个成员。行权价集中度（中位数）：0.068（z -0.24）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 18,
@@ -166,8 +166,8 @@
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": true,
-        "note_en": "Basket PCR across 18/18 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal.",
-        "note_zh": "18/18 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal."
+        "note_en": "Coverage: 18/18 members. Put/call open-interest ratio: 0.63 (z +1.14). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：18/18 个成员。看跌/看涨持仓比：0.63（z +1.14）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 18,
@@ -176,15 +176,15 @@
         "value_z252": 0.484,
         "band": "normal",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 18/18 covered members. IV premium near historical norm.",
-        "note_zh": "18/18 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 18/18 members. Options priced vs recent actual swings (median): +18.8% (z +0.48). Options priced near their usual level.",
+        "note_zh": "覆盖：18/18 个成员。期权定价相对近期实际波动（中位数）：+18.8%（z +0.48）。期权定价接近正常水平。"
       }
     },
     "nuclear_power": {
       "theme_id": "nuclear_power",
       "name_en": "Nuclear & SMR Power",
       "name_zh": "核能与小型模块堆",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 19,
       "leg_a_call_oi_hhi": {
         "coverage_count": 18,
@@ -193,8 +193,8 @@
         "value_z252": 0.138,
         "band": "normal",
         "stale": true,
-        "note_en": "Median call-OI HHI across 18/19 covered members. HHI=0.076 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "18/19 个成员覆盖的看涨OI HHI中位数。HHI=0.076 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 18/19 members. Strike concentration (median): 0.076 (z +0.14). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：18/19 个成员。行权价集中度（中位数）：0.076（z +0.14）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 18,
@@ -205,8 +205,8 @@
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": true,
-        "note_en": "Basket PCR across 18/19 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal.",
-        "note_zh": "18/19 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal."
+        "note_en": "Coverage: 18/19 members. Put/call open-interest ratio: 0.60 (z +0.70). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：18/19 个成员。看跌/看涨持仓比：0.60（z +0.70）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 18,
@@ -215,15 +215,15 @@
         "value_z252": -0.657,
         "band": "normal",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 18/19 covered members. IV premium near historical norm.",
-        "note_zh": "18/19 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 18/19 members. Options priced vs recent actual swings (median): +2.9% (z -0.66). Options priced near their usual level.",
+        "note_zh": "覆盖：18/19 个成员。期权定价相对近期实际波动（中位数）：+2.9%（z -0.66）。期权定价接近正常水平。"
       }
     },
     "grid_electrification": {
       "theme_id": "grid_electrification",
       "name_en": "Grid & Electrification",
       "name_zh": "电网与电气化",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 24,
       "leg_a_call_oi_hhi": {
         "coverage_count": 24,
@@ -232,8 +232,8 @@
         "value_z252": -0.313,
         "band": "normal",
         "stale": true,
-        "note_en": "Median call-OI HHI across 24/24 covered members. HHI=0.071 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "24/24 个成员覆盖的看涨OI HHI中位数。HHI=0.071 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 24/24 members. Strike concentration (median): 0.071 (z -0.31). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：24/24 个成员。行权价集中度（中位数）：0.071（z -0.31）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 24,
@@ -244,8 +244,8 @@
         "pcr_collapse_into_strength": false,
         "band": "declining",
         "stale": true,
-        "note_en": "Basket PCR across 24/24 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining.",
-        "note_zh": "24/24 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining."
+        "note_en": "Coverage: 24/24 members. Put/call open-interest ratio: 0.56 (z -1.11). Hedges coming off into strength: no. Positioning: put protection coming down.",
+        "note_zh": "覆盖：24/24 个成员。看跌/看涨持仓比：0.56（z -1.11）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 24,
@@ -254,15 +254,15 @@
         "value_z252": -0.291,
         "band": "normal",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 24/24 covered members. IV premium near historical norm.",
-        "note_zh": "24/24 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 24/24 members. Options priced vs recent actual swings (median): +7.6% (z -0.29). Options priced near their usual level.",
+        "note_zh": "覆盖：24/24 个成员。期权定价相对近期实际波动（中位数）：+7.6%（z -0.29）。期权定价接近正常水平。"
       }
     },
     "cybersecurity": {
       "theme_id": "cybersecurity",
       "name_en": "Cybersecurity",
       "name_zh": "网络安全",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 10,
       "leg_a_call_oi_hhi": {
         "coverage_count": 10,
@@ -271,8 +271,8 @@
         "value_z252": -0.901,
         "band": "normal",
         "stale": true,
-        "note_en": "Median call-OI HHI across 10/10 covered members. HHI=0.056 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "10/10 个成员覆盖的看涨OI HHI中位数。HHI=0.056 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 10/10 members. Strike concentration (median): 0.056 (z -0.90). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：10/10 个成员。行权价集中度（中位数）：0.056（z -0.90）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 10,
@@ -283,8 +283,8 @@
         "pcr_collapse_into_strength": false,
         "band": "declining",
         "stale": true,
-        "note_en": "Basket PCR across 10/10 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining.",
-        "note_zh": "10/10 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining."
+        "note_en": "Coverage: 10/10 members. Put/call open-interest ratio: 0.75 (z -0.59). Hedges coming off into strength: no. Positioning: put protection coming down.",
+        "note_zh": "覆盖：10/10 个成员。看跌/看涨持仓比：0.75（z -0.59）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 10,
@@ -293,15 +293,15 @@
         "value_z252": 0.28,
         "band": "normal",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 10/10 covered members. IV premium near historical norm.",
-        "note_zh": "10/10 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 10/10 members. Options priced vs recent actual swings (median): +24.6% (z +0.28). Options priced near their usual level.",
+        "note_zh": "覆盖：10/10 个成员。期权定价相对近期实际波动（中位数）：+24.6%（z +0.28）。期权定价接近正常水平。"
       }
     },
     "defense_aerospace": {
       "theme_id": "defense_aerospace",
       "name_en": "Defense & Aerospace",
       "name_zh": "国防与航空航天",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 21,
       "leg_a_call_oi_hhi": {
         "coverage_count": 21,
@@ -310,8 +310,8 @@
         "value_z252": 0.656,
         "band": "rising",
         "stale": true,
-        "note_en": "Median call-OI HHI across 21/21 covered members. HHI=0.098 — call OI moderately concentrated.",
-        "note_zh": "21/21 个成员覆盖的看涨OI HHI中位数。HHI=0.098 — 看涨OI集中度中等。"
+        "note_en": "Coverage: 21/21 members. Strike concentration (median): 0.098 (z +0.66). Call bets tilting toward fewer strikes.",
+        "note_zh": "覆盖：21/21 个成员。行权价集中度（中位数）：0.098（z +0.66）。看涨押注趋向集中于较少行权价。"
       },
       "leg_b_pcr": {
         "coverage_count": 21,
@@ -322,8 +322,8 @@
         "pcr_collapse_into_strength": false,
         "band": "declining",
         "stale": true,
-        "note_en": "Basket PCR across 21/21 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining.",
-        "note_zh": "21/21 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining."
+        "note_en": "Coverage: 21/21 members. Put/call open-interest ratio: 0.64 (z -1.43). Hedges coming off into strength: no. Positioning: put protection coming down.",
+        "note_zh": "覆盖：21/21 个成员。看跌/看涨持仓比：0.64（z -1.43）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 21,
@@ -332,15 +332,15 @@
         "value_z252": -1.129,
         "band": "compressed",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 21/21 covered members. IV premium compressed vs own history.",
-        "note_zh": "21/21 个成员的IV溢价中位数（IV/RV20-1）。相对自身历史，IV溢价受压。"
+        "note_en": "Coverage: 21/21 members. Options priced vs recent actual swings (median): -8.1% (z -1.13). Options priced low versus their own history.",
+        "note_zh": "覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：-8.1%（z -1.13）。期权定价低于自身历史水平。"
       }
     },
     "robotics_automation": {
       "theme_id": "robotics_automation",
       "name_en": "Robotics & Automation",
       "name_zh": "机器人与自动化",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 12,
       "leg_a_call_oi_hhi": {
         "coverage_count": 12,
@@ -349,8 +349,8 @@
         "value_z252": -1.45,
         "band": "normal",
         "stale": true,
-        "note_en": "Median call-OI HHI across 12/12 covered members. HHI=0.110 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "12/12 个成员覆盖的看涨OI HHI中位数。HHI=0.110 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 12/12 members. Strike concentration (median): 0.110 (z -1.45). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：12/12 个成员。行权价集中度（中位数）：0.110（z -1.45）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 12,
@@ -361,8 +361,8 @@
         "pcr_collapse_into_strength": false,
         "band": "declining",
         "stale": true,
-        "note_en": "Basket PCR across 12/12 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining.",
-        "note_zh": "12/12 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining."
+        "note_en": "Coverage: 12/12 members. Put/call open-interest ratio: 0.62 (z -1.13). Hedges coming off into strength: no. Positioning: put protection coming down.",
+        "note_zh": "覆盖：12/12 个成员。看跌/看涨持仓比：0.62（z -1.13）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 12,
@@ -371,15 +371,15 @@
         "value_z252": 0.178,
         "band": "normal",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 12/12 covered members. IV premium near historical norm.",
-        "note_zh": "12/12 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 12/12 members. Options priced vs recent actual swings (median): +18.2% (z +0.18). Options priced near their usual level.",
+        "note_zh": "覆盖：12/12 个成员。期权定价相对近期实际波动（中位数）：+18.2%（z +0.18）。期权定价接近正常水平。"
       }
     },
     "glp1_obesity": {
       "theme_id": "glp1_obesity",
       "name_en": "GLP-1 / Obesity",
       "name_zh": "GLP-1与肥胖",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 14,
       "leg_a_call_oi_hhi": {
         "coverage_count": 13,
@@ -388,8 +388,8 @@
         "value_z252": 0.951,
         "band": "rising",
         "stale": true,
-        "note_en": "Median call-OI HHI across 13/14 covered members. HHI=0.119 — call OI moderately concentrated.",
-        "note_zh": "13/14 个成员覆盖的看涨OI HHI中位数。HHI=0.119 — 看涨OI集中度中等。"
+        "note_en": "Coverage: 13/14 members. Strike concentration (median): 0.119 (z +0.95). Call bets tilting toward fewer strikes.",
+        "note_zh": "覆盖：13/14 个成员。行权价集中度（中位数）：0.119（z +0.95）。看涨押注趋向集中于较少行权价。"
       },
       "leg_b_pcr": {
         "coverage_count": 13,
@@ -400,8 +400,8 @@
         "pcr_collapse_into_strength": false,
         "band": "declining",
         "stale": true,
-        "note_en": "Basket PCR across 13/14 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining.",
-        "note_zh": "13/14 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining."
+        "note_en": "Coverage: 13/14 members. Put/call open-interest ratio: 0.72 (z -0.76). Hedges coming off into strength: no. Positioning: put protection coming down.",
+        "note_zh": "覆盖：13/14 个成员。看跌/看涨持仓比：0.72（z -0.76）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 13,
@@ -410,15 +410,15 @@
         "value_z252": -0.694,
         "band": "normal",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 13/14 covered members. IV premium near historical norm.",
-        "note_zh": "13/14 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 13/14 members. Options priced vs recent actual swings (median): +0.1% (z -0.69). Options priced near their usual level.",
+        "note_zh": "覆盖：13/14 个成员。期权定价相对近期实际波动（中位数）：+0.1%（z -0.69）。期权定价接近正常水平。"
       }
     },
     "fintech_payments": {
       "theme_id": "fintech_payments",
       "name_en": "Fintech & Payments",
       "name_zh": "金融科技与支付",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 21,
       "leg_a_call_oi_hhi": {
         "coverage_count": 21,
@@ -427,8 +427,8 @@
         "value_z252": 1.023,
         "band": "rising",
         "stale": false,
-        "note_en": "Median call-OI HHI across 21/21 covered members. HHI=0.085 — call OI moderately concentrated.",
-        "note_zh": "21/21 个成员覆盖的看涨OI HHI中位数。HHI=0.085 — 看涨OI集中度中等。"
+        "note_en": "Coverage: 21/21 members. Strike concentration (median): 0.085 (z +1.02). Call bets tilting toward fewer strikes.",
+        "note_zh": "覆盖：21/21 个成员。行权价集中度（中位数）：0.085（z +1.02）。看涨押注趋向集中于较少行权价。"
       },
       "leg_b_pcr": {
         "coverage_count": 21,
@@ -439,8 +439,8 @@
         "pcr_collapse_into_strength": false,
         "band": "complacency",
         "stale": false,
-        "note_en": "Basket PCR across 21/21 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: complacency.",
-        "note_zh": "21/21 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: complacency."
+        "note_en": "Coverage: 21/21 members. Put/call open-interest ratio: 0.51 (z -1.90). Hedges coming off into strength: no. Positioning: put protection unusually low — complacency hazard.",
+        "note_zh": "覆盖：21/21 个成员。看跌/看涨持仓比：0.51（z -1.90）。对冲盘在强势中撤离：否。仓位状态：看跌保护异常偏低——自满风险。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 21,
@@ -449,15 +449,15 @@
         "value_z252": 1.879,
         "band": "elevated",
         "stale": false,
-        "note_en": "Median IV-premium (IV/RV20-1) across 21/21 covered members. Elevated IV premium = options buyers crowded in (event-premium hazard).",
-        "note_zh": "21/21 个成员的IV溢价中位数（IV/RV20-1）。IV溢价偏高 = 期权买入者大量涌入（事件溢价风险）。"
+        "note_en": "Coverage: 21/21 members. Options priced vs recent actual swings (median): +63.2% (z +1.88). Options priced far above recent actual swings — event-premium hazard.",
+        "note_zh": "覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：+63.2%（z +1.88）。期权定价远高于近期实际波动——事件溢价风险。"
       }
     },
     "space_satellite": {
       "theme_id": "space_satellite",
       "name_en": "Space & Satellites",
       "name_zh": "太空与卫星",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 15,
       "leg_a_call_oi_hhi": {
         "coverage_count": 3,
@@ -466,8 +466,8 @@
         "value_z252": null,
         "band": null,
         "stale": false,
-        "note_en": "Suppressed: only 3/15 members have OI coverage (< 40% threshold).",
-        "note_zh": "已抑制：仅 3/15 个成员有OI覆盖 （低于 40% 阈值）。"
+        "note_en": "Not shown — only 3/15 members have options open-interest data (need at least 40%).",
+        "note_zh": "暂不显示——仅 3/15 个成员有期权持仓数据（至少需 40%）。"
       },
       "leg_b_pcr": {
         "coverage_count": 3,
@@ -478,8 +478,8 @@
         "pcr_collapse_into_strength": null,
         "band": null,
         "stale": false,
-        "note_en": "Suppressed: only 3/15 members have PCR coverage.",
-        "note_zh": "已抑制：仅 3/15 个成员有PCR覆盖。"
+        "note_en": "Not shown — only 3/15 members have put/call open-interest data.",
+        "note_zh": "暂不显示——仅 3/15 个成员有看跌/看涨持仓数据。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 3,
@@ -488,15 +488,15 @@
         "value_z252": null,
         "band": null,
         "stale": false,
-        "note_en": "Suppressed: only 3/15 members have IV coverage (greeks 2017+ required).",
-        "note_zh": "已抑制：仅 3/15 个成员有IV覆盖 （需要2017年以后的希腊参数数据）。"
+        "note_en": "Not shown — only 3/15 members have options-volatility data (needs history from 2017 on).",
+        "note_zh": "暂不显示——仅 3/15 个成员有期权波动率数据（需2017年以来的历史）。"
       }
     },
     "rare_earth_critical_min": {
       "theme_id": "rare_earth_critical_min",
       "name_en": "Rare Earth & Critical Minerals",
       "name_zh": "稀土与关键矿产",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 11,
       "leg_a_call_oi_hhi": {
         "coverage_count": 7,
@@ -505,8 +505,8 @@
         "value_z252": -0.224,
         "band": "normal",
         "stale": true,
-        "note_en": "Median call-OI HHI across 7/11 covered members. HHI=0.088 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "7/11 个成员覆盖的看涨OI HHI中位数。HHI=0.088 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 7/11 members. Strike concentration (median): 0.088 (z -0.22). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：7/11 个成员。行权价集中度（中位数）：0.088（z -0.22）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 7,
@@ -517,8 +517,8 @@
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": true,
-        "note_en": "Basket PCR across 7/11 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal.",
-        "note_zh": "7/11 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal."
+        "note_en": "Coverage: 7/11 members. Put/call open-interest ratio: 0.50 (z -0.47). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：7/11 个成员。看跌/看涨持仓比：0.50（z -0.47）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 7,
@@ -527,15 +527,15 @@
         "value_z252": 0.148,
         "band": "normal",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 7/11 covered members. IV premium near historical norm.",
-        "note_zh": "7/11 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 7/11 members. Options priced vs recent actual swings (median): +4.9% (z +0.15). Options priced near their usual level.",
+        "note_zh": "覆盖：7/11 个成员。期权定价相对近期实际波动（中位数）：+4.9%（z +0.15）。期权定价接近正常水平。"
       }
     },
     "copper_steel_electrify": {
       "theme_id": "copper_steel_electrify",
       "name_en": "Copper, Steel & Electrification",
       "name_zh": "铜、钢铁与电气化",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 16,
       "leg_a_call_oi_hhi": {
         "coverage_count": 16,
@@ -544,8 +544,8 @@
         "value_z252": -0.874,
         "band": "normal",
         "stale": true,
-        "note_en": "Median call-OI HHI across 16/16 covered members. HHI=0.108 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "16/16 个成员覆盖的看涨OI HHI中位数。HHI=0.108 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 16/16 members. Strike concentration (median): 0.108 (z -0.87). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：16/16 个成员。行权价集中度（中位数）：0.108（z -0.87）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 16,
@@ -556,8 +556,8 @@
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": true,
-        "note_en": "Basket PCR across 16/16 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal.",
-        "note_zh": "16/16 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal."
+        "note_en": "Coverage: 16/16 members. Put/call open-interest ratio: 0.82 (z +0.57). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：16/16 个成员。看跌/看涨持仓比：0.82（z +0.57）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 16,
@@ -566,8 +566,8 @@
         "value_z252": -1.426,
         "band": "compressed",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 16/16 covered members. IV premium compressed vs own history.",
-        "note_zh": "16/16 个成员的IV溢价中位数（IV/RV20-1）。相对自身历史，IV溢价受压。"
+        "note_en": "Coverage: 16/16 members. Options priced vs recent actual swings (median): -21.4% (z -1.43). Options priced low versus their own history.",
+        "note_zh": "覆盖：16/16 个成员。期权定价相对近期实际波动（中位数）：-21.4%（z -1.43）。期权定价低于自身历史水平。"
       }
     },
     "ag_fertilizer": {
@@ -613,7 +613,7 @@
       "theme_id": "medical_devices",
       "name_en": "Medical Devices",
       "name_zh": "医疗器械",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "n_members": 9,
       "leg_a_call_oi_hhi": {
         "coverage_count": 9,
@@ -622,8 +622,8 @@
         "value_z252": -0.961,
         "band": "normal",
         "stale": true,
-        "note_en": "Median call-OI HHI across 9/9 covered members. HHI=0.062 — call OI distributed across strikes (no concentration hazard).",
-        "note_zh": "9/9 个成员覆盖的看涨OI HHI中位数。HHI=0.062 — 看涨OI分布于多个行权价（无集中风险）。"
+        "note_en": "Coverage: 9/9 members. Strike concentration (median): 0.062 (z -0.96). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：9/9 个成员。行权价集中度（中位数）：0.062（z -0.96）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 9,
@@ -634,8 +634,8 @@
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": true,
-        "note_en": "Basket PCR across 9/9 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal.",
-        "note_zh": "9/9 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal."
+        "note_en": "Coverage: 9/9 members. Put/call open-interest ratio: 0.60 (z +1.22). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：9/9 个成员。看跌/看涨持仓比：0.60（z +1.22）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 9,
@@ -644,8 +644,8 @@
         "value_z252": -0.174,
         "band": "normal",
         "stale": true,
-        "note_en": "Median IV-premium (IV/RV20-1) across 9/9 covered members. IV premium near historical norm.",
-        "note_zh": "9/9 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。"
+        "note_en": "Coverage: 9/9 members. Options priced vs recent actual swings (median): +8.9% (z -0.17). Options priced near their usual level.",
+        "note_zh": "覆盖：9/9 个成员。期权定价相对近期实际波动（中位数）：+8.9%（z -0.17）。期权定价接近正常水平。"
       }
     },
     "diagnostics_lifesci": {
