@@ -6,9 +6,16 @@
      • window.MDXAuth.onChange    — auth events from theme.js shared session
      • window.getSupabaseClient() — shared Supabase client from theme.js
 
+   Also owns the watchlist sync UI (formerly auth.js):
+     • Bilingual sync pill (#wl_syncpill): synced/syncing/local/offline/finishing
+     • Sign-in button (#wl_signin) → MDXAuth.open('signin')
+     • Account row (#wl_account, #wl_who) with sign-out (#wl_signout)
+     • #wl_auth panel show/hide; langchange relabeling
+
    When there is no session (logged out, no config, SDK blocked):
      • All paths are dormant; localStorage-only behavior is unchanged.
      • window.WLCloud.push() is a no-op (safe: watchlist.js calls it unconditionally).
+     • On pages without the wl_* elements the UI helpers are all inert via el() guards.
 
    W1 scope: ticker sync only. Notes / order / settings remain localStorage-only
    (the relational schema has no columns for them). The blob carries them; we do not
@@ -28,6 +35,49 @@
 
   var SECTION = 'Watchlist';
   var LIST_NAME = 'Watchlist';
+
+  // ---- i18n (verbatim from auth.js) ------------------------------------------
+  function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
+  var T = {
+    en: { signin: 'Sign in to sync', signout: 'Sign out', synced: 'Synced', syncing: 'Syncing…',
+          local: 'Local only', offline: 'Offline — local only', finishing: 'Finishing sign-in…',
+          hello: 'Signed in as' },
+    zh: { signin: '登录以同步', signout: '退出登录', synced: '已同步', syncing: '同步中…',
+          local: '仅本地', offline: '离线——仅本地', finishing: '正在完成登录…',
+          hello: '已登录：' }
+  };
+  function L(k) { return (T[lang()] || T.en)[k]; }
+
+  // ---- DOM helpers -----------------------------------------------------------
+  function el(id) { return document.getElementById(id); }
+
+  function setPill(state) {
+    var p = el('wl_syncpill'); if (!p) return;
+    var map = { synced: L('synced'), syncing: L('syncing'), local: L('local'),
+                offline: L('offline'), finishing: L('finishing') };
+    p.textContent = map[state] || '';
+    p.className = 'wl-pill wl-pill-' + (state === 'finishing' ? 'syncing' : state);
+  }
+
+  function showAccount(email) {
+    if (el('wl_signin'))  el('wl_signin').style.display  = 'none';
+    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+    if (el('wl_account')) el('wl_account').style.display = 'flex';
+    if (el('wl_who'))     el('wl_who').textContent = L('hello') + ' ' + email;
+  }
+
+  function showSignedOut() {
+    if (el('wl_account')) el('wl_account').style.display = 'none';
+    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+    if (el('wl_signin'))  el('wl_signin').style.display  = 'inline-block';
+    setPill('local');
+  }
+
+  function relabel() {
+    if (el('wl_signin'))  el('wl_signin').textContent  = L('signin');
+    if (el('wl_signout')) el('wl_signout').textContent = L('signout');
+    if (user) showAccount(user.email || ''); else setPill('local');
+  }
 
   // ---- debounce --------------------------------------------------------------
   function debounce(fn, ms) {
@@ -85,6 +135,7 @@
     if (!user || !sb) return Promise.resolve();
     if (pullPending) return Promise.resolve();
     pullPending = true;
+    setPill('syncing');
 
     return resolvePrimaryList()
       .then(function (id) {
@@ -114,6 +165,7 @@
       .then(function () {
         pullDoneAt = Date.now();
         pullPending = false;
+        setPill('synced');
         // flush any push that arrived before pull finished
         if (queuedBlob) {
           var b = queuedBlob;
@@ -123,6 +175,7 @@
       })
       .catch(function (err) {
         pullPending = false;
+        setPill('offline');
         warnOnce('pull', 'pull failed: ' + (err && err.message || err));
       });
   }
@@ -228,7 +281,11 @@
 
     if (ops.length === 0) return;
 
-    Promise.all(ops).catch(function (err) {
+    setPill('syncing');
+    Promise.all(ops).then(function () {
+      setPill('synced');
+    }).catch(function (err) {
+      setPill('offline');
       warnOnce('push', 'push failed: ' + (err && err.message || err));
     });
   }
@@ -356,15 +413,18 @@
       pullDoneAt = 0;
       queuedBlob = null;
       portfolioOk = true;
+      showSignedOut();
       return;
     }
+    showAccount(user.email || '');
     // Resolve the shared Supabase client then kick off the initial pull
     var getClient = window.getSupabaseClient;
-    if (!getClient) { warnOnce('no-client', 'getSupabaseClient not found'); return; }
+    if (!getClient) { setPill('offline'); warnOnce('no-client', 'getSupabaseClient not found'); return; }
     getClient().then(function (c) {
       sb = c;
       pull();
     }).catch(function (err) {
+      setPill('offline');
       warnOnce('client', 'getSupabaseClient failed: ' + (err && err.message || err));
     });
   }
@@ -373,11 +433,47 @@
   function init() {
     var CFG = window.SUPABASE_CFG;
     var enabled = CFG && CFG.url && CFG.anonKey;
-    if (!enabled) return;   // no config baked -> dormant; localStorage-only
-    if (!window.MDXAuth || !window.MDXAuth.onChange) return;  // theme.js not ready
+    var box = el('wl_auth');
+
+    // Local-only unless BOTH the config is baked AND the shared client exists.
+    if (!enabled || !window.MDXAuth || !window.MDXAuth.onChange) {
+      if (box) box.style.display = 'none';
+      return;
+    }
+    if (!box) return;  // nothing to wire if the panel isn't on the page (e.g. committee.html)
+
+    box.style.display = 'flex';
+    relabel();
+
+    // Wire sign-in button -> global modal
+    var si = el('wl_signin');
+    if (si) si.addEventListener('click', function () {
+      if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
+    });
+
+    // Wire sign-out button
+    var so = el('wl_signout');
+    if (so) so.addEventListener('click', function () {
+      if (window.MDXAuth && window.MDXAuth.signOut) window.MDXAuth.signOut();
+      else showSignedOut();  // UI also updates via the mdx-auth event
+    });
+
+    // The legacy magic-link box is retired — sign-in goes through the global modal
+    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+
+    showSignedOut();
+
+    // Refetch on tab focus (already wired above for >60s gate)
+    document.addEventListener('langchange', relabel);
+
+    // If a session is already established before init (e.g. page reload while
+    // signed in), show 'finishing' until onChange fires with the real user.
+    if (window.MDXAuth.hasSession && window.MDXAuth.hasSession()) setPill('finishing');
 
     window.MDXAuth.onChange(function (u, evt) {
-      if (!u && evt === 'SDK_FAILED') return;  // SDK blocked (GFW/outage) -> stay dormant
+      // SDK blocked/failed to load (e.g. behind the GFW): settle to offline, not
+      // a forever "Finishing sign-in…" pill.
+      if (!u && evt === 'SDK_FAILED') { setPill('offline'); return; }
       onAuthUser(u);
     });
   }
