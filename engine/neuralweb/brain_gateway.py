@@ -1891,7 +1891,13 @@ def _dispatch_brain_tool(
     """
     if tool_name not in _BRAIN_TOOLS:
         log.warning("brain_gateway: REFUSED tool %r (not in allowlist)", tool_name)
-        return {"error": f"tool not allowed: {tool_name!r}"}
+        # Name the valid tools so the model self-corrects in ONE step instead of
+        # burning its tool budget guessing (observed live: DeepSeek invented
+        # 'read_stage_analysis' 3× when the right name was get_stage_peers).
+        return {
+            "error": f"tool not allowed: {tool_name!r}",
+            "available_tools": sorted(_BRAIN_TOOLS),
+        }
 
     if tool_name in _BRAIN_ONLY_TOOLS:
         if tool_name == "get_quote":
@@ -2757,6 +2763,28 @@ def _run_brain_loop(
         tool_call_count += 1
         if tool_results:
             messages.append({"role": "user", "content": tool_results})
+
+    # Synthesis pass (mirrors the stream loop's Phase 2): when the tool budget ran
+    # out with the model still mid-investigation (stop_reason == tool_use), the last
+    # text block is narration ("Let me also check…"), not an answer. Nudge ONE final
+    # no-more-tools synthesis turn so chat() returns a real answer.
+    if last_resp is not None and getattr(last_resp, "stop_reason", None) == "tool_use":
+        messages.append({"role": "user", "content": "Please synthesize your findings and answer my question."})
+        try:
+            resp, model = _create_failover(
+                _cands,
+                max_tokens=max_tokens,
+                system=system_prompt,
+                tools=tool_schemas,
+                messages=messages,
+            )
+            last_resp = resp
+            messages.append({"role": "assistant", "content": resp.content})
+            for block in resp.content:
+                if getattr(block, "type", "") == "text":
+                    answer_text = block.text
+        except Exception as exc:  # noqa: BLE001
+            log.warning("brain_gateway: synthesis pass failed (%s) — keeping last text", exc)
 
     # Extract usage from the final response (fix #1: never zeros)
     usage_dict: dict = {}
