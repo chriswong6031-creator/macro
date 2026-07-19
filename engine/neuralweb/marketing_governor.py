@@ -33,6 +33,7 @@ _STATE_PATH = Path("data") / "neuralweb" / "marketing_state.json"
 _LOBE_PATH = Path("site") / "neuralwebdata" / "marketing_lobe.json"
 # Unregistered — beside seed ledgers, no synapse pin/SIGNAL_BUS churn
 _CONTENT_PLAN_PATH = Path("data") / "marketing" / "content_plan.json"
+_SENTINEL_REPORT_PATH = Path("data") / "marketing" / "sentinel_report.json"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -165,6 +166,127 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
 
         # Build + write content plan FIRST (state.py reads it for the summary block)
         content_plan_obj = _build_content_plan(r, cfg)
+
+        # ── Sentinel gate (trust_office W1) ───────────────────────────────────
+        # Run AFTER content_plan is built, BEFORE state.build_state() so the
+        # annotated plan (with sentinel_ok flags) is what lands in the artifact
+        # and what state.py reads for its summary block.
+        #
+        # receipts_age_days: age of the newest signal in plans (None if unavailable)
+        # graded_window: derived from graded_receipts over the same plans+closes_loader
+        try:
+            from engine.marketing.sentinel import gate_plan as _sentinel_gate  # noqa: PLC0415
+            from engine.marketing.sentinel import _write_json_atomic as _sentinel_write_atomic  # noqa: PLC0415
+
+            # Compute receipts_age_days from newest _signal_date in plans
+            _receipts_age_days: int | None = None
+            try:
+                prophet_path = r / "site" / "prophet" / "index.json"
+                if prophet_path.exists():
+                    import json as _json2  # noqa: PLC0415
+                    _idx2 = _json2.loads(prophet_path.read_text(encoding="utf-8"))
+                    _plans2 = _idx2.get("plans", []) or []
+                    if _plans2:
+                        from datetime import datetime as _dt2, timezone as _tz2  # noqa: PLC0415
+                        _today_date = datetime.now(timezone.utc).date()
+                        _ages = []
+                        for _p in _plans2:
+                            _sd = str(_p.get("_signal_date") or "")[:10]
+                            if _sd:
+                                try:
+                                    _parts = _sd.split("-")
+                                    from datetime import date as _date2  # noqa: PLC0415
+                                    _d = _date2(int(_parts[0]), int(_parts[1]), int(_parts[2]))
+                                    _ages.append((_today_date - _d).days)
+                                except Exception:  # noqa: BLE001
+                                    pass
+                        if _ages:
+                            _receipts_age_days = min(_ages)
+            except Exception as _age_exc:  # noqa: BLE001
+                log.warning("marketing_governor: receipts_age_days computation failed: %s", _age_exc)
+
+            # Compute graded_window via receipt_source.graded_receipts
+            _graded_window: list[dict] | None = None
+            try:
+                from engine.marketing.receipt_source import graded_receipts as _graded_receipts  # noqa: PLC0415
+                from engine.marketing.chart_render import load_closes as _load_closes2  # noqa: PLC0415
+                prophet_path_gw = r / "site" / "prophet" / "index.json"
+                if prophet_path_gw.exists():
+                    import json as _json3  # noqa: PLC0415
+                    _idx3 = _json3.loads(prophet_path_gw.read_text(encoding="utf-8"))
+                    _plans3 = _idx3.get("plans", []) or []
+
+                    def _closes_loader_gw(ticker: str):  # type: ignore[return]
+                        return _load_closes2(ticker, r, n=90)
+
+                    _receipts_raw = _graded_receipts(
+                        _plans3,
+                        closes_loader=_closes_loader_gw,
+                        today=datetime.now(timezone.utc).date().isoformat(),
+                    )
+                    _graded_window = [
+                        {"ticker": _rc["ticker"], "outcome": _rc["kind"]}
+                        for _rc in _receipts_raw
+                    ]
+            except Exception as _gw_exc:  # noqa: BLE001
+                log.warning("marketing_governor: graded_window computation failed — sentinel will skip cherry-pick: %s", _gw_exc)
+
+            _sentinel_exceptions: dict = {}
+            try:
+                from engine.marketing.sentinel import _load_exceptions  # noqa: PLC0415
+                _sentinel_exceptions = _load_exceptions(r)
+            except Exception as _exc_exc:  # noqa: BLE001
+                log.warning("marketing_governor: sentinel exceptions load failed: %s", _exc_exc)
+
+            _annotated_plan, _sentinel_report = _sentinel_gate(
+                content_plan_obj,
+                cfg,
+                receipts_age_days=_receipts_age_days,
+                graded_window=_graded_window,
+                exceptions=_sentinel_exceptions,
+            )
+            # The annotated plan replaces the raw plan in all downstream writes
+            content_plan_obj = _annotated_plan
+
+            # Write sentinel report atomically
+            _sentinel_report_path = r / _SENTINEL_REPORT_PATH
+            _sentinel_write_atomic(_sentinel_report_path, _sentinel_report)
+            log.info("marketing_governor: sentinel gate: %s (passed=%s quarantined=%s)",
+                     _sentinel_report.get("plan_status"),
+                     _sentinel_report.get("counts", {}).get("passed", 0),
+                     _sentinel_report.get("counts", {}).get("quarantined", 0))
+            result["sentinel_report_path"] = str(_sentinel_report_path)
+
+        except Exception as _sentinel_exc:  # noqa: BLE001
+            log.warning("::warning::marketing sentinel failed: %s", _sentinel_exc)
+            # FAIL CLOSED: write a minimal error report so the nightly never
+            # silently publishes an ungated plan even if the gate itself crashed.
+            # Stamp all queue items sentinel_ok=False before writing raw plan (M4).
+            try:
+                from engine.marketing.sentinel import mark_all_unverified as _mark_unverified  # noqa: PLC0415
+                _mark_unverified(content_plan_obj)
+            except Exception:  # noqa: BLE001
+                pass
+            try:
+                _err_report = {
+                    "schema_version": 1,
+                    "produced_by": "sentinel",
+                    "produced_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "as_of": content_plan_obj.get("as_of", ""),
+                    "plan_status": "error",
+                    "publish_enabled": False,
+                    "auditor_strict": True,
+                    "counts": {"items": 0, "passed": 0, "quarantined": 0, "warnings": 0, "exceptions_applied": 0},
+                    "reasons_histogram": {},
+                    "quarantined": [],
+                    "checks": {},
+                    "notes": [f"sentinel gate raised: {_sentinel_exc}"],
+                }
+                _write_json_atomic(r / _SENTINEL_REPORT_PATH, _err_report)
+            except Exception:  # noqa: BLE001
+                pass
+
+        # Write annotated content plan
         content_plan_path = r / _CONTENT_PLAN_PATH
         _write_json_atomic(content_plan_path, content_plan_obj)
         result["content_plan_path"] = str(content_plan_path)
