@@ -4,7 +4,7 @@
  "index": "Russell-2000",
  "benchmark": "IWM",
  "benchmark_label": "Russell-2000 (IWM)",
- "as_of": "2026-07-18",
+ "as_of": "2026-07-19",
  "source": "finviz idx_rut (1889 names); sub-industry subsectors + sector amalgamations",
  "subsectors": {
   "advertising-agencies": {
@@ -1538,12 +1538,12 @@
      "name": "Cogent Biosciences Inc"
     },
     {
-     "ticker": "XENE",
-     "name": "Xenon Pharmaceuticals Inc"
-    },
-    {
      "ticker": "ERAS",
      "name": "Erasca Inc"
+    },
+    {
+     "ticker": "XENE",
+     "name": "Xenon Pharmaceuticals Inc"
     },
     {
      "ticker": "PTCT",
@@ -1658,12 +1658,12 @@
      "name": "Trevi Therapeutics Inc"
     },
     {
-     "ticker": "KOD",
-     "name": "Kodiak Sciences Inc"
-    },
-    {
      "ticker": "ATAI",
      "name": "AtaiBeckley Inc"
+    },
+    {
+     "ticker": "KOD",
+     "name": "Kodiak Sciences Inc"
     },
     {
      "ticker": "TARS",
@@ -2070,6 +2070,10 @@
      "name": "Verastem Inc"
     },
     {
+     "ticker": "CBIO",
+     "name": "Crescent Biopharma Inc"
+    },
+    {
      "ticker": "ZURA",
      "name": "Zura Bio Ltd"
     },
@@ -2140,10 +2144,6 @@
     {
      "ticker": "CCCC",
      "name": "C4 Therapeutics Inc"
-    },
-    {
-     "ticker": "CBIO",
-     "name": "Crescent Biopharma Inc"
     },
     {
      "ticker": "IPSC",
@@ -3468,11 +3468,11 @@
      "name": "Cinemark Holdings Inc"
     },
     {
-     "ticker": "BATRK",
+     "ticker": "BATRA",
      "name": "Atlanta Braves Holdings Inc"
     },
     {
-     "ticker": "BATRA",
+     "ticker": "BATRK",
      "name": "Atlanta Braves Holdings Inc"
     },
     {
@@ -5506,11 +5506,11 @@
      "name": "Marzetti Co"
     },
     {
-     "ticker": "CENTA",
+     "ticker": "CENT",
      "name": "Central Garden & Pet Co"
     },
     {
-     "ticker": "CENT",
+     "ticker": "CENTA",
      "name": "Central Garden & Pet Co"
     },
     {
@@ -6710,12 +6710,12 @@
      "name": "Bitdeer Technologies Group"
     },
     {
-     "ticker": "SPSC",
-     "name": "SPS Commerce Inc"
-    },
-    {
      "ticker": "PLUS",
      "name": "ePlus Inc"
+    },
+    {
+     "ticker": "SPSC",
+     "name": "SPS Commerce Inc"
     },
     {
      "ticker": "INTA",
@@ -7630,11 +7630,11 @@
      "name": "IDT Corp"
     },
     {
-     "ticker": "LILAK",
+     "ticker": "LILA",
      "name": "Liberty Latin America Ltd"
     },
     {
-     "ticker": "LILA",
+     "ticker": "LILAK",
      "name": "Liberty Latin America Ltd"
     },
     {
@@ -7972,12 +7972,12 @@
      "name": "Constellium SE"
     },
     {
-     "ticker": "CLMT",
-     "name": "Calumet Inc"
-    },
-    {
      "ticker": "USAR",
      "name": "USA Rare Earth Inc"
+    },
+    {
+     "ticker": "CLMT",
+     "name": "Calumet Inc"
     },
     {
      "ticker": "AVNT",
@@ -8306,11 +8306,11 @@
      "name": "Cinemark Holdings Inc"
     },
     {
-     "ticker": "BATRK",
+     "ticker": "BATRA",
      "name": "Atlanta Braves Holdings Inc"
     },
     {
-     "ticker": "BATRA",
+     "ticker": "BATRK",
      "name": "Atlanta Braves Holdings Inc"
     },
     {
@@ -8366,11 +8366,11 @@
      "name": "Playtika Holding Corp"
     },
     {
-     "ticker": "LILAK",
+     "ticker": "LILA",
      "name": "Liberty Latin America Ltd"
     },
     {
-     "ticker": "LILA",
+     "ticker": "LILAK",
      "name": "Liberty Latin America Ltd"
     },
     {
@@ -8624,12 +8624,12 @@
      "name": "Installed Building Products Inc"
     },
     {
-     "ticker": "GTX",
-     "name": "Garrett Motion Inc"
-    },
-    {
      "ticker": "RUSHA",
      "name": "Rush Enterprises Inc"
+    },
+    {
+     "ticker": "GTX",
+     "name": "Garrett Motion Inc"
     },
     {
      "ticker": "ZGN",
@@ -9386,12 +9386,12 @@
      "name": "United Natural Foods Inc"
     },
     {
-     "ticker": "MZTI",
-     "name": "Marzetti Co"
-    },
-    {
      "ticker": "TR",
      "name": "Tootsie Roll Industries Inc"
+    },
+    {
+     "ticker": "MZTI",
+     "name": "Marzetti Co"
     },
     {
      "ticker": "FIZZ",
@@ -9402,11 +9402,11 @@
      "name": "Andersons Inc"
     },
     {
-     "ticker": "CENTA",
+     "ticker": "CENT",
      "name": "Central Garden & Pet Co"
     },
     {
-     "ticker": "CENT",
+     "ticker": "CENTA",
      "name": "Central Garden & Pet Co"
     },
     {
@@ -10874,12 +10874,12 @@
      "name": "Peoples Financial Services Corp"
     },
     {
-     "ticker": "VEL",
-     "name": "Velocity Financial Inc"
-    },
-    {
      "ticker": "AROW",
      "name": "Arrow Financial Corp"
+    },
+    {
+     "ticker": "VEL",
+     "name": "Velocity Financial Inc"
     },
     {
      "ticker": "BCAL",
@@ -11532,12 +11532,12 @@
      "name": "Cogent Biosciences Inc"
     },
     {
-     "ticker": "XENE",
-     "name": "Xenon Pharmaceuticals Inc"
-    },
-    {
      "ticker": "ERAS",
      "name": "Erasca Inc"
+    },
+    {
+     "ticker": "XENE",
+     "name": "Xenon Pharmaceuticals Inc"
     },
     {
      "ticker": "PTCT",
@@ -11764,12 +11764,12 @@
      "name": "Trevi Therapeutics Inc"
     },
     {
-     "ticker": "KOD",
-     "name": "Kodiak Sciences Inc"
-    },
-    {
      "ticker": "ATAI",
      "name": "AtaiBeckley Inc"
+    },
+    {
+     "ticker": "KOD",
+     "name": "Kodiak Sciences Inc"
     },
     {
      "ticker": "GRDN",
@@ -11944,12 +11944,12 @@
      "name": "Damora Therapeutics Inc"
     },
     {
-     "ticker": "TSHA",
-     "name": "Taysha Gene Therapies Inc"
-    },
-    {
      "ticker": "SNDA",
      "name": "Sonida Senior Living Inc"
+    },
+    {
+     "ticker": "TSHA",
+     "name": "Taysha Gene Therapies Inc"
     },
     {
      "ticker": "TYRA",
@@ -12520,6 +12520,10 @@
      "name": "Verastem Inc"
     },
     {
+     "ticker": "CBIO",
+     "name": "Crescent Biopharma Inc"
+    },
+    {
      "ticker": "CTEV",
      "name": "Claritev Corp"
     },
@@ -12646,10 +12650,6 @@
     {
      "ticker": "CCCC",
      "name": "C4 Therapeutics Inc"
-    },
-    {
-     "ticker": "CBIO",
-     "name": "Crescent Biopharma Inc"
     },
     {
      "ticker": "IPSC",
@@ -13518,16 +13518,16 @@
      "name": "Preformed Line Products Co"
     },
     {
-     "ticker": "DSGR",
-     "name": "Distribution Solutions Group Inc"
-    },
-    {
      "ticker": "HLMN",
      "name": "Hillman Solutions Corp"
     },
     {
      "ticker": "GBX",
      "name": "Greenbrier Cos. Inc"
+    },
+    {
+     "ticker": "DSGR",
+     "name": "Distribution Solutions Group Inc"
     },
     {
      "ticker": "RYZ",
@@ -14802,6 +14802,10 @@
      "name": "Paymentus Holdings Inc"
     },
     {
+     "ticker": "ONDS",
+     "name": "Ondas Inc"
+    },
+    {
      "ticker": "OSIS",
      "name": "OSI Systems Inc"
     },
@@ -14812,10 +14816,6 @@
     {
      "ticker": "NSIT",
      "name": "Insight Enterprises Inc"
-    },
-    {
-     "ticker": "ONDS",
-     "name": "Ondas Inc"
     },
     {
      "ticker": "QTWO",
@@ -14842,12 +14842,12 @@
      "name": "Penguin Solutions Inc"
     },
     {
-     "ticker": "KN",
-     "name": "Knowles Corp"
-    },
-    {
      "ticker": "AGYS",
      "name": "Agilysys Inc"
+    },
+    {
+     "ticker": "KN",
+     "name": "Knowles Corp"
     },
     {
      "ticker": "AXTI",
@@ -14914,6 +14914,10 @@
      "name": "StoneCo Ltd"
     },
     {
+     "ticker": "AEHR",
+     "name": "Aehr Test Systems"
+    },
+    {
      "ticker": "ALRM",
      "name": "Alarm.com Holdings Inc"
     },
@@ -14926,16 +14930,16 @@
      "name": "A10 Networks Inc"
     },
     {
-     "ticker": "AEHR",
-     "name": "Aehr Test Systems"
-    },
-    {
      "ticker": "PAGS",
      "name": "PagSeguro Digital Ltd"
     },
     {
      "ticker": "CALX",
      "name": "Calix Inc"
+    },
+    {
+     "ticker": "PLUS",
+     "name": "ePlus Inc"
     },
     {
      "ticker": "COHU",
@@ -14964,10 +14968,6 @@
     {
      "ticker": "ROG",
      "name": "Rogers Corp"
-    },
-    {
-     "ticker": "PLUS",
-     "name": "ePlus Inc"
     },
     {
      "ticker": "BAND",

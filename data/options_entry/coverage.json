@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-18T14:51:24.785551+00:00",
-  "as_of": "2026-07-18",
+  "generated_at": "2026-07-19T00:29:16.559191+00:00",
+  "as_of": "2026-07-19",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 403,
@@ -454,26 +454,26 @@
         {
           "source": "options_entry/state.parquet",
           "latest_as_of": "2026-07-18",
-          "age_days_from_today": 0,
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
           "latest_as_of": "2026-07-18 03:18 UTC",
-          "age_days_from_today": 0,
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-07-09",
-          "age_days_from_today": 9,
+          "age_days_from_today": 10,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-18T14:51:24.744493+00:00",
+      "generated_at": "2026-07-19T00:29:16.516933+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -483,8 +483,8 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-18T14:51:24.785544+00:00",
-    "as_of": "2026-07-18",
+    "generated_at_utc": "2026-07-19T00:29:16.559184+00:00",
+    "as_of": "2026-07-19",
     "absent_stores": []
   }
 }
