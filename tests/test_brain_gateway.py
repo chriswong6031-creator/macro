@@ -567,7 +567,7 @@ def test_client_history_used_when_thread_store_absent(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -805,7 +805,7 @@ def test_1500_char_message_reaches_model_loop(tmp_path):
 
     loop_called = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
         loop_called.append(message)
         return "OK.", [], [], [], {}, [], []
 
@@ -837,7 +837,7 @@ def test_client_history_injection_filtered(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -880,7 +880,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
 
     captured_messages: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
         # We can't introspect user_content directly, so we return and check that
         # the loop was called (no crash, no injection)
         return "OK.", [], [], [], {}, [], []
@@ -889,7 +889,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
     original_loop = gw._run_brain_loop
     built_contents: list[str] = []
 
-    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
+    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
         # Re-run the actual loop with a mock client that ends immediately
         return _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode=mode)
 
@@ -1360,7 +1360,7 @@ def test_research_mode_raises_tool_budget(tmp_path):
     root = _make_temp_root()
     captured_tb: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat"):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
         captured_tb.append(tb)
         return "Research done.", [], [], [], {}, [], []
 
@@ -1796,3 +1796,145 @@ def test_title_from_truncates_on_word_boundary_with_ellipsis():
 def test_title_from_empty_is_empty():
     assert gw._title_from("") == ""
     assert gw._title_from("   ") == ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W6c-vision: image attachments (_image_blocks, _pick_vision_provider, routing)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# a 1x1 transparent PNG, base64
+_TINY_PNG_B64 = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgYGAAAAAEAAH2FzhVAAAAAElFTkSuQmCC"
+)
+_TINY_PNG_DATA_URI = "data:image/png;base64," + _TINY_PNG_B64
+
+
+def test_image_blocks_valid_data_uri():
+    blocks = gw._image_blocks([_TINY_PNG_DATA_URI])
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "image"
+    assert blocks[0]["source"]["type"] == "base64"
+    assert blocks[0]["source"]["media_type"] == "image/png"
+
+
+def test_image_blocks_none_and_empty():
+    assert gw._image_blocks(None) == []
+    assert gw._image_blocks([]) == []
+    assert gw._image_blocks(["", None, 123]) == []
+
+
+def test_image_blocks_rejects_bad_media_and_garbage():
+    assert gw._image_blocks(["data:image/svg+xml;base64," + _TINY_PNG_B64]) == []  # svg not allowed
+    assert gw._image_blocks(["data:text/plain;base64,AAAA"]) == []
+    assert gw._image_blocks(["not a data uri"]) == []
+
+
+def test_image_blocks_https_url_passthrough():
+    blocks = gw._image_blocks(["https://example.com/chart.png"])
+    assert len(blocks) == 1 and blocks[0]["source"]["type"] == "url"
+
+
+def test_image_blocks_caps_at_four():
+    assert len(gw._image_blocks([_TINY_PNG_DATA_URI] * 8)) == gw._VISION_MAX_IMAGES == 4
+
+
+def test_pick_vision_provider_fast_routes_to_claude():
+    providers = [{"model": "deepseek-chat", "client": "DS"}, {"model": "claude-haiku-4-5", "client": "H"}]
+    assert gw._pick_vision_provider(providers)["model"] == "claude-haiku-4-5"
+
+
+def test_pick_vision_provider_pro_is_opus():
+    providers = [{"model": "claude-opus-4-8", "client": "O"}, {"model": "claude-sonnet-4-6"}]
+    assert gw._pick_vision_provider(providers)["model"] == "claude-opus-4-8"
+
+
+def test_pick_vision_provider_none_when_text_only():
+    assert gw._pick_vision_provider([{"model": "deepseek-chat"}]) is None
+
+
+def test_chat_with_image_routes_fast_to_vision_provider(tmp_path):
+    """An image turn on Fast must be served by the claude (vision) provider, and the
+    validated image blocks must reach the loop."""
+    root = _make_temp_root()
+    captured = {}
+
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+        captured["model"] = model
+        captured["client"] = client
+        captured["image_blocks"] = image_blocks
+        return "Looks like a rising channel. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
+
+    mock_providers = [
+        {"client": "DEEPSEEK", "model": "deepseek-chat"},
+        {"client": "HAIKU", "model": "claude-haiku-4-5"},
+    ]
+    with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            gw.chat("what pattern is this?", "user_vis", lane="fast",
+                                    images=[_TINY_PNG_DATA_URI], root=root)
+
+    assert captured["model"] == "claude-haiku-4-5", "Fast image turn must route to Haiku (DeepSeek is text-only)"
+    assert captured["client"] == "HAIKU"
+    assert captured["image_blocks"] and captured["image_blocks"][0]["type"] == "image"
+
+
+def test_chat_no_image_stays_on_deepseek(tmp_path):
+    """No image → the Fast primary (DeepSeek) still serves the turn; image_blocks empty."""
+    root = _make_temp_root()
+    captured = {}
+
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+        captured["model"] = model
+        captured["image_blocks"] = image_blocks
+        return "OK. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
+
+    mock_providers = [
+        {"client": "DEEPSEEK", "model": "deepseek-chat"},
+        {"client": "HAIKU", "model": "claude-haiku-4-5"},
+    ]
+    with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            gw.chat("hello", "user_novis", lane="fast", root=root)
+
+    assert captured["model"] == "deepseek-chat"
+    assert not captured["image_blocks"]
+
+
+def test_chat_fast_image_borrows_pro_vision_when_no_in_lane_claude(tmp_path):
+    """When the Fast lane has ONLY DeepSeek (no Haiku key), an image turn borrows the
+    Pro lane's Opus (via OAuth) rather than silently dropping the image."""
+    root = _make_temp_root()
+    captured = {}
+
+    def _providers(lane, root_=None):
+        return {
+            "fast": [{"client": "DS", "model": "deepseek-chat"}],
+            "pro": [{"client": "OPUS", "model": "claude-opus-4-8"}],
+        }[lane]
+
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None):
+        captured["model"] = model
+        captured["client"] = client
+        captured["image_blocks"] = image_blocks
+        return "A candlestick chart. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
+
+    with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", side_effect=_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            gw.chat("what is this?", "user_fallback", lane="fast",
+                                    images=[_TINY_PNG_DATA_URI], root=root)
+
+    assert captured["model"] == "claude-opus-4-8", "Fast image turn must borrow Pro's Opus when no in-lane vision provider"
+    assert captured["client"] == "OPUS"
+    assert captured["image_blocks"]
