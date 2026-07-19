@@ -202,10 +202,32 @@
     background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));box-shadow:0 10px 28px -8px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
   @media(max-width:560px){#mmb-panel,#mmb-panel.max,#mmb-panel.mmb-top{right:0;left:0;bottom:0;top:auto;transform:translateY(20px);width:100vw;height:88vh;border-radius:20px 20px 0 0}
     #mmb-panel.open{transform:none} .mmb-cards,#mmb-panel.max .mmb-cards{grid-template-columns:1fr}}
+  /* follow-up suggestion chips (rendered under the latest reply) */
+  .mmb-sugg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
+  .mmb-sug{font:12.5px/1.35 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 78%,var(--mmb-muted));background:color-mix(in srgb,#fff 4%,transparent);border:1px solid var(--mmb-line);border-radius:12px;padding:7px 12px;text-align:left;cursor:pointer;max-width:100%;transition:border-color .13s,background .13s,color .13s}
+  .mmb-sug:hover{border-color:color-mix(in srgb,var(--mmb-info) 40%,transparent);background:color-mix(in srgb,var(--mmb-info) 8%,transparent);color:var(--mmb-text)}
+  .mmb-sug .g{color:var(--mmb-muted);margin-right:6px}
+  /* copy-answer affordance (top-right of each assistant bubble) */
+  .mmb-msg.assistant .mmb-bub{position:relative}
+  .mmb-copy{position:absolute;top:6px;right:6px;width:24px;height:24px;border:none;background:transparent;border-radius:7px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .13s,color .13s,background .13s}
+  .mmb-bub:hover .mmb-copy{opacity:.85;pointer-events:auto}
+  .mmb-copy:hover{opacity:1;color:var(--mmb-text);background:color-mix(in srgb,#fff 7%,transparent)}
+  .mmb-copy svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
+  /* "explain this panel" hover affordance on dashboard island cards */
+  .mmb-exp{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;cursor:pointer;padding:0;
+    background:color-mix(in srgb,var(--mmb-panel) 72%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    border:1px solid var(--mmb-line);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .15s,border-color .15s,box-shadow .15s;z-index:5}
+  .mmb-exp svg{width:12px;height:12px;fill:#fff;opacity:.9}
+  .sx:hover .mmb-exp{opacity:1;pointer-events:auto}
+  .mmb-exp:hover{border-color:color-mix(in srgb,var(--mmb-info) 45%,transparent);box-shadow:0 0 12px -4px var(--mmb-info)}
   `;
 
   /* ── glyphs ── */
   var ORB = '<svg viewBox="0 0 24 24"><path d="M12 2l2.3 6.1L20.5 10l-6.2 1.9L12 18l-1.7-6.1L4 10l6.2-1.9z"/></svg>';
+  /* solid star/orb path reused inside the explain-panel button (fill, no viewBox wrapper) */
+  var ORB_PATH = 'M12 2l2.3 6.1L20.5 10l-6.2 1.9L12 18l-1.7-6.1L4 10l6.2-1.9z';
+  var CLIP = '<svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
+  var CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4 4 10-10"/></svg>';
   function ic(p) { return '<svg viewBox="0 0 24 24">' + p + '</svg>'; }
 
   /* ── DOM ─────────────────────────────────────────────────────────────── */
@@ -272,6 +294,7 @@
   var lane = 'fast', researchMode = false, threadId = null, streaming = false,
       quotas = {}, authed = false, ctxSymbol = '', streamAbort = null, pendingImages = [], proEligible = false;
   var MAX_IMAGES = 4;
+  var explainPanel = null; /* set by MMBrain.explain(); attached once to the next send()'s context */
 
   function esc(s) { var d = DOC.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
   /* markdown-lite: paragraphs, bold, bullet lists — all HTML-escaped */
@@ -352,7 +375,25 @@
        text node, so replacing the text HTML on each delta never wipes an inline chart. */
     b.innerHTML = role === 'user' ? '<p>' + esc(content) + '</p>'
       : '<div class="mmb-charts"></div><div class="mmb-txt">' + renderMd(content) + '</div>';
+    if (role === 'assistant') addCopyBtn(b);
     d.appendChild(b); scroll.appendChild(d); stick(); return b;
+  }
+  /* copy-answer affordance — a small clipboard button pinned top-right inside the bubble.
+     Copies the rendered text (not charts) plus a short attribution line. */
+  function addCopyBtn(b) {
+    var cb = DOC.createElement('button'); cb.className = 'mmb-copy'; cb.title = 'Copy'; cb.innerHTML = CLIP;
+    cb.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var txt = (b.querySelector('.mmb-txt') || b).innerText || '';
+      var payload = txt.trim() + '\n\n— Mastermind Brain · mastermind-x.com';
+      try {
+        if (!(navigator.clipboard && navigator.clipboard.writeText)) return;
+        navigator.clipboard.writeText(payload).then(function () {
+          cb.innerHTML = CHECK; setTimeout(function () { cb.innerHTML = CLIP; }, 1200);
+        }).catch(function () {});
+      } catch (e2) {}
+    });
+    b.appendChild(cb);
   }
   function bubTxt(b) { return b.querySelector('.mmb-txt') || b; }
   function stick() { if (scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 90) scroll.scrollTop = scroll.scrollHeight; }
@@ -361,7 +402,7 @@
     ['M3 3v18h18|M7 14l4-4 3 3 5-6', L('What regime are we in and what’s driving it?', '现在是什么市场周期？由什么驱动？')],
     ['M4 20V10M10 20V4M16 20v-7M22 20H2', L('Which themes have the strongest momentum?', '哪些主题动量最强？')],
     ['M12 3a9 9 0 1 0 9 9|M12 7v5l3 2', L('What should I be watching this week?', '这周该关注什么？')],
-    ['M3 12h4l3 8 4-16 3 8h4', L('Show NVDA and mark support & resistance', '显示 NVDA 并标注支撑与阻力')]
+    ['M4 5h16M4 12h16M4 19h10', L('How is my watchlist doing?', '我的自选股表现如何？')]
   ];
   function renderEmpty() {
     var name = '';
@@ -385,6 +426,8 @@
     var imgs = pendingImages.slice();
     if ((!text && !imgs.length) || streaming) return;
     if (!authed && window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()) { window.MDXAuth.open('signin'); return; }
+    /* only the latest reply carries follow-up chips — clear any stale rows */
+    root.querySelectorAll('.mmb-sugg').forEach(function (el) { el.remove(); });
     var ub = appendMsg('user', text);
     if (imgs.length) { /* show the attached images at the top of the user bubble */
       var iw = DOC.createElement('div'); iw.className = 'mmb-imgs';
@@ -395,8 +438,10 @@
     ta.value = ''; autosize(); sendBtn.disabled = true; streaming = true; upgradeEl.style.display = 'none';
     var typing = DOC.createElement('div'); typing.className = 'mmb-msg assistant'; typing.innerHTML = '<div class="mmb-bub"><span class="mmb-typing"><span></span><span></span><span></span></span></div>';
     scroll.appendChild(typing); stick();
-    var bub = null, acc = '', steps = null;
+    var bub = null, acc = '', steps = null, suggestions = null;
     var ctx = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) ctx.symbol = ctxSymbol;
+    /* an "explain this panel" request carries the panel key once, then clears */
+    if (explainPanel) { ctx.panel = explainPanel; explainPanel = null; }
     var apiText = text || L('Please analyze the attached image.', '请分析所附图片。');
     var body = JSON.stringify({ message: apiText, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', thread_id: threadId || undefined, context: ctx, images: imgs.length ? imgs : undefined });
     if (streamAbort) streamAbort.abort();
@@ -420,7 +465,8 @@
             else if (j.type === 'tool') { ensureBub(); if (!steps) { steps = DOC.createElement('div'); steps.className = 'mmb-tool'; steps.textContent = L('Reading ', '正在读取 ') + (j.name || '') + '…'; bub.parentNode.insertBefore(steps, bub); } else steps.textContent = L('Reading ', '正在读取 ') + (j.name || '') + '…'; stick(); }
             else if (j.type === 'chart' && j.svg) { ensureBub(); var cw = DOC.createElement('div'); cw.className = 'mmb-chart'; cw.innerHTML = j.svg; (bub.querySelector('.mmb-charts') || bub).appendChild(cw); stick(); }
             else if (j.type === 'delta') { ensureBub(); if (steps) { steps.remove(); steps = null; } acc += j.text; bubTxt(bub).innerHTML = renderMd(acc); stick(); }
-            else if (j.type === 'done') { ensureBub(); if (steps) { steps.remove(); steps = null; } if (acc) bubTxt(bub).innerHTML = renderMd(acc); if (j.citations && j.citations.length) addCites(bub, j.citations); if (j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); } stick(); }
+            else if (j.type === 'suggest') { if (j.items && j.items.length) suggestions = j.items.slice(0, 3); }
+            else if (j.type === 'done') { ensureBub(); if (steps) { steps.remove(); steps = null; } if (acc) bubTxt(bub).innerHTML = renderMd(acc); if (j.citations && j.citations.length) addCites(bub, j.citations); if (suggestions && suggestions.length) addSuggest(bub, suggestions); if (j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); } stick(); }
             else if (j.type === 'error') { ensureBub(); acc += (acc ? '\n\n' : '') + '_' + (j.message || 'error') + '_'; bubTxt(bub).innerHTML = renderMd(acc); }
           });
           return pump();
@@ -429,6 +475,20 @@
       function finish() { streaming = false; syncSend(); loadThreads(); }
       return pump();
     }).catch(function () { typing.remove(); streaming = false; syncSend(); });
+  }
+  /* follow-up suggestion chips — up to 3, appended after the latest assistant bubble.
+     A click sends that question and removes the whole chip row (only the newest reply carries them). */
+  function addSuggest(bub, items) {
+    var wrap = DOC.createElement('div'); wrap.className = 'mmb-sugg';
+    items.slice(0, 3).forEach(function (q) {
+      if (!q) return;
+      var btn = DOC.createElement('button'); btn.className = 'mmb-sug';
+      var g = DOC.createElement('span'); g.className = 'g'; g.textContent = '↳ ';
+      btn.appendChild(g); btn.appendChild(DOC.createTextNode(String(q)));
+      btn.addEventListener('click', function () { wrap.remove(); send(String(q)); });
+      wrap.appendChild(btn);
+    });
+    if (wrap.childNodes.length) { bub.parentNode.appendChild(wrap); stick(); }
   }
   function addCites(bub, cites) {
     var wrap = DOC.createElement('div'); wrap.className = 'mmb-cites';
@@ -582,12 +642,47 @@
   }
   refreshCtx(); renderEmpty();
 
+  /* ── "explain this panel" — public entry + card affordance ── */
+  /* opens the widget compact (never forced to max) and asks the Brain to read the panel.
+     The panel key rides along once in the next send()'s context (ctx.panel). */
+  function explain(key, title) {
+    explainPanel = key;
+    if (!panel.classList.contains('open')) open();
+    panel.classList.remove('max');
+    var t = title || key;
+    send(L('Explain the "' + t + '" panel — what is it showing right now, and what should I do about it?',
+           '解释「' + t + '」面板 — 它现在显示什么？我该怎么做？'));
+  }
+  /* inject a hover "ask the Brain" orb into each dashboard island card face.
+     No-op on pages without .sx island cards (Terminal, plain pages). */
+  function initExplain() {
+    var faces = root.ownerDocument ? DOC.querySelectorAll('.sx[id^="sx-"] .mx5-card-face, .sx[id^="sx-"] .sxg-face') : [];
+    var seen = [];
+    [].forEach.call(faces, function (face) {
+      var host = face.closest('.sx[id^="sx-"]'); if (!host || seen.indexOf(host) >= 0) return; seen.push(host);
+      if (face.querySelector('.mmb-exp')) return; /* one per host */
+      var cs = (DOC.defaultView || window).getComputedStyle(face);
+      if (cs && cs.position === 'static') face.style.position = 'relative';
+      var btn = DOC.createElement('button'); btn.className = 'mmb-exp'; btn.type = 'button'; btn.title = 'Ask the Brain';
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg>';
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation(); e.preventDefault();
+        var key = host.id.replace(/^sx-/, '');
+        var tEl = host.querySelector('.mx5-card-title');
+        var title = (tEl && tEl.textContent.trim()) || key;
+        explain(key, title);
+      });
+      face.appendChild(btn);
+    });
+  }
+
   /* ── boot ── */
   function boot() {
     if (window.MDXAuth) { window.MDXAuth.onChange(onAuth); }
     else window.addEventListener('load', function () { if (window.MDXAuth) window.MDXAuth.onChange(onAuth); else { authed = true; showChat(true); } });
   }
   boot();
+  initExplain();
 
-  window.MMBrain = { open: open, close: close, toggle: toggle, expand: function () { panel.classList.contains('open') || open(); panel.classList.add('max'); }, mounted: true };
+  window.MMBrain = { open: open, close: close, toggle: toggle, explain: explain, expand: function () { panel.classList.contains('open') || open(); panel.classList.add('max'); }, mounted: true };
 })();

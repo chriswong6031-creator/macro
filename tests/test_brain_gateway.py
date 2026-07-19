@@ -567,7 +567,7 @@ def test_client_history_used_when_thread_store_absent(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -805,7 +805,7 @@ def test_1500_char_message_reaches_model_loop(tmp_path):
 
     loop_called = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         loop_called.append(message)
         return "OK.", [], [], [], {}, [], []
 
@@ -837,7 +837,7 @@ def test_client_history_injection_filtered(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -880,7 +880,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
 
     captured_messages: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         # We can't introspect user_content directly, so we return and check that
         # the loop was called (no crash, no injection)
         return "OK.", [], [], [], {}, [], []
@@ -889,7 +889,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
     original_loop = gw._run_brain_loop
     built_contents: list[str] = []
 
-    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         # Re-run the actual loop with a mock client that ends immediately
         return _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode=mode)
 
@@ -1360,7 +1360,7 @@ def test_research_mode_raises_tool_budget(tmp_path):
     root = _make_temp_root()
     captured_tb: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         captured_tb.append(tb)
         return "Research done.", [], [], [], {}, [], []
 
@@ -1858,7 +1858,7 @@ def test_chat_with_image_routes_fast_to_vision_provider(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -1888,7 +1888,7 @@ def test_chat_no_image_stays_on_deepseek(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         captured["model"] = model
         captured["image_blocks"] = image_blocks
         return "OK. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
@@ -1921,7 +1921,7 @@ def test_chat_fast_image_borrows_pro_vision_when_no_in_lane_claude(tmp_path):
             "pro": [{"client": "OPUS", "model": "claude-opus-4-8"}],
         }[lane]
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -2023,7 +2023,7 @@ def test_chat_free_tier_image_is_gated_text_only(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
         captured["image_blocks"] = image_blocks
         captured["model"] = model
         return "text answer. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
@@ -2048,3 +2048,446 @@ def test_chat_free_tier_image_is_gated_text_only(tmp_path):
 
     assert not captured["image_blocks"], "Free-tier image must be gated (dropped) — vision is Pro-only"
     assert captured["model"] == "deepseek-chat", "gated image turn stays on the Fast primary"
+
+
+# ===========================================================================
+# W6d — finance tool suite + [NEXT] suggestions + user_id threading
+# ===========================================================================
+
+def _pd_or_skip():
+    try:
+        import pandas as pd  # noqa: PLC0415
+        return pd
+    except Exception:  # pragma: no cover  # noqa: BLE001
+        pytest.skip("pandas unavailable")
+
+
+# --- missing-data paths: every tool degrades to available:False, no crash ----
+
+def test_finance_tools_missing_data_return_unavailable(tmp_path):
+    """On an empty root, every finance tool returns a dict (available:False or note) — never raises."""
+    empty = tmp_path / "empty_root"
+    empty.mkdir()
+    assert gw._tool_get_fundamentals({"symbol": "AAPL"}, empty).get("available") is False
+    assert gw._tool_get_earnings({"symbol": "AAPL"}, empty).get("available") is False
+    assert gw._tool_get_earnings({}, empty).get("available") is False
+    assert gw._tool_get_insider_activity({"symbol": "AAPL"}, empty).get("available") is False
+    assert gw._tool_get_congress_trades({"symbol": "AAPL"}, empty).get("available") is False
+    assert gw._tool_get_smart_money({"symbol": "AAPL"}, empty).get("available") is False
+    assert gw._tool_get_stage_peers({"symbol": "AAPL"}, empty).get("available") is False
+    assert gw._tool_get_movers({}, empty).get("available") is False
+    hv = gw._tool_get_house_view({}, empty)
+    assert hv.get("available") is False
+    # house_view still emits the mandatory honesty block even when the index is absent
+    assert "honesty" in hv and hv["honesty"]["closed_n"] == 0
+
+
+# --- get_fundamentals en/zh dict guard ----------------------------------------
+
+def test_get_fundamentals_en_zh_guard(tmp_path):
+    """A description shipped as {'en':..,'zh':..} is un-nested to the English string,
+    not left as a dict repr (the {en,zh}-blob trap)."""
+    sd = tmp_path / "site" / "stockdata"
+    sd.mkdir(parents=True)
+    blob = {
+        "ticker": "TST",
+        "name": "Test Co",
+        "asof": "2026-07-18",
+        "profile": {
+            "sector": {"en": "Technology", "zh": "科技"},
+            "mktcap_bn": 12.3,
+            "description": {"en": "x" * 500, "zh": "y" * 500},  # dict blob + overlength
+        },
+        "valuation": {"trailing_pe": {"v": 25.5, "med": 20.0, "cheap": 30.0}, "forward_pe": 18.0, "value_z": -0.5},
+        "financials": {"roe": 33.0, "multiyear": {"piotroski": {"score": 6, "of": 9}, "altman": {"z": 4.1, "zone": "safe"}}},
+        "accounting_quality": {"verdict": "clean", "headline": "Clean", "n_caution": 0},
+        "analyst": {"rating": None, "target": None, "tier": "shallow"},
+        "revisions": {"breadth": 0.6},
+    }
+    (sd / "TST.json").write_text(json.dumps(blob))
+
+    r = gw._tool_get_fundamentals({"symbol": "TST"}, tmp_path)
+    assert r["available"] is True
+    # en/zh guard: sector + description resolved to the English string
+    assert r["profile"]["sector"] == "Technology"
+    assert isinstance(r["profile"]["description"], str)
+    assert r["profile"]["description"] == "x" * 400  # truncated to 400, en-side only
+    assert "zh" not in json.dumps(r)  # no zh blob anywhere in the output
+    # valuation dict-scalar extraction
+    assert r["valuation"]["trailing_pe"] == 25.5
+    assert r["financials"]["piotroski"] == {"score": 6, "of": 9}
+    assert r["financials"]["altman"] == {"z": 4.1, "zone": "safe"}
+
+
+def test_get_fundamentals_missing_keys_no_keyerror(tmp_path):
+    """A sparse blob (only ticker+name) yields a result with None fields, never a KeyError."""
+    sd = tmp_path / "site" / "stockdata"
+    sd.mkdir(parents=True)
+    (sd / "SPARSE.json").write_text(json.dumps({"ticker": "SPARSE", "name": "Sparse Inc"}))
+    r = gw._tool_get_fundamentals({"symbol": "SPARSE"}, tmp_path)
+    assert r["available"] is True
+    assert r["profile"]["name"] == "Sparse Inc"
+    assert r["valuation"]["trailing_pe"] is None
+    assert r["financials"]["piotroski"] is None
+
+
+# --- _split_suggestions -------------------------------------------------------
+
+def test_split_suggestions_marker_present():
+    text = "The regime is risk-off.\n\n[NEXT]\nWhat's driving the risk-off call?\nWhich sectors are leading?\nShould I hedge?"
+    clean, sugg = gw._split_suggestions(text)
+    assert clean == "The regime is risk-off."
+    assert sugg == ["What's driving the risk-off call?", "Which sectors are leading?", "Should I hedge?"]
+
+
+def test_split_suggestions_marker_absent():
+    text = "No marker here at all."
+    clean, sugg = gw._split_suggestions(text)
+    assert clean == text
+    assert sugg == []
+
+
+def test_split_suggestions_strips_bullets_and_numbers():
+    text = "Answer.\n[NEXT]\n- First?\n2. Second?\n• Third?"
+    clean, sugg = gw._split_suggestions(text)
+    assert clean == "Answer."
+    assert sugg == ["First?", "Second?", "Third?"]
+
+
+def test_split_suggestions_caps_at_three():
+    text = "A.\n[NEXT]\nq1\nq2\nq3\nq4\nq5"
+    clean, sugg = gw._split_suggestions(text)
+    assert len(sugg) == 3
+    assert sugg == ["q1", "q2", "q3"]
+
+
+def test_split_suggestions_uses_last_marker():
+    """When [NEXT] appears mid-text, the LAST occurrence is the split point."""
+    text = "Intro mentioning [NEXT] steps.\n[NEXT]\nreal one?\nreal two?\nreal three?"
+    clean, sugg = gw._split_suggestions(text)
+    assert "Intro mentioning [NEXT] steps." in clean
+    assert sugg == ["real one?", "real two?", "real three?"]
+
+
+def test_split_suggestions_truncates_to_140():
+    long_q = "z" * 200
+    clean, sugg = gw._split_suggestions(f"A.\n[NEXT]\n{long_q}")
+    assert len(sugg[0]) == 140
+
+
+# --- suggestions stripped from persisted text + returned in chat() ------------
+
+def test_chat_splits_suggestions_from_reply(tmp_path):
+    """chat() strips the [NEXT] block from the reply/persisted text and returns
+    result['suggestions']."""
+    root = _make_temp_root()
+    reply_with_next = (
+        "Risk is elevated. is_context_only: true — display-tier pending FDR.\n"
+        "[NEXT]\nWhat's the buy board?\nWhich factors lead?\nShould I wait?"
+    )
+    persisted = {}
+
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+        return reply_with_next, [], [], [], {}, [], []
+
+    def _cap_append(tid, role, content, meta=None):
+        if role == "assistant":
+            persisted["assistant"] = content
+
+    mock_providers = [{"client": _MockClient([]), "model": "deepseek-chat"}]
+    with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value="tid-xyz"):
+                        with patch.object(gw, "_append_message", side_effect=_cap_append):
+                            with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                                with patch("lib.ai_costs.record_usage", return_value=True):
+                                    res = gw.chat("how risky?", "user_next", lane="fast", root=root)
+
+    assert "[NEXT]" not in res["reply"]
+    assert res["reply"].startswith("Risk is elevated.")
+    assert res.get("suggestions") == ["What's the buy board?", "Which factors lead?", "Should I wait?"]
+    # persisted assistant text is the CLEAN text (no [NEXT] block)
+    assert "[NEXT]" not in persisted.get("assistant", "")
+
+
+def test_chat_omits_suggestions_key_when_absent(tmp_path):
+    """No [NEXT] block → no 'suggestions' key in the result."""
+    root = _make_temp_root()
+
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+        return "Plain answer, no marker. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
+
+    mock_providers = [{"client": _MockClient([]), "model": "deepseek-chat"}]
+    with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_run_brain_loop", side_effect=_mock_loop):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            res = gw.chat("hi", "user_nonext", lane="fast", root=root)
+    assert "suggestions" not in res
+
+
+# --- get_watchlist: _sb_get None → unavailable; rows → symbols, no composite ---
+
+def test_get_watchlist_no_user_id():
+    """No user_id → available:False (no store query attempted)."""
+    r = gw._tool_get_watchlist({}, pathlib.Path("."), user_id="")
+    assert r["available"] is False
+
+
+def test_get_watchlist_store_unreachable(tmp_path):
+    """_sb_get returning None → available:False, 'unreachable' note."""
+    with patch.object(gw, "_sb_get", return_value=None):
+        r = gw._tool_get_watchlist({}, tmp_path, user_id="u1")
+    assert r["available"] is False
+    assert "unreachable" in r["note"]
+
+
+def test_get_watchlist_rows_return_symbols_no_composite(tmp_path):
+    """Patched _sb_get rows → symbols + positions; result carries NO fused/composite risk
+    numbers (PRD-R2: named states + lane counts only)."""
+    # us_standouts overlay so a symbol gets a NAMED board state (not a number)
+    fd = tmp_path / "site" / "factordata"
+    fd.mkdir(parents=True)
+    (fd / "us_standouts.json").write_text(json.dumps({
+        "buy": [{"ticker": "NVDA"}],
+        "watch": [{"ticker": "AMD"}],
+        "laggards": [],
+    }))
+
+    def _fake_sb_get(path: str):
+        if path.startswith("watchlists?"):
+            return [{"id": "list-1", "name": "Main", "position": 0}]
+        if path.startswith("watchlist_symbols?"):
+            return [{"symbol": "NVDA", "position": 0}, {"symbol": "AMD", "position": 1}]
+        if path.startswith("portfolio_positions?"):
+            return [{"ticker": "NVDA", "shares": 10, "entry_price": 100.0, "entry_date": "2026-01-01"}]
+        return None
+
+    with patch.object(gw, "_sb_get", side_effect=_fake_sb_get):
+        r = gw._tool_get_watchlist({}, tmp_path, user_id="u1")
+
+    assert r["available"] is True
+    assert r["symbols"] == ["NVDA", "AMD"]
+    assert r["counts"]["n_symbols"] == 2
+    assert r["counts"]["n_open_positions"] == 1
+    # named board states, not numbers
+    states = {row["symbol"]: row["board_state"] for row in r["watchlist"]}
+    assert states["NVDA"] == "on the buy board"
+    assert states["AMD"] == "on watch"
+    # PRD-R2: no fused/composite per-position risk number leaks into the payload
+    blob = json.dumps(r).lower()
+    assert "composite" not in blob
+    assert "risk_score" not in blob and "risk_number" not in blob
+
+
+# --- get_movers with only one artifact present (partial result ok) ------------
+
+def test_get_movers_partial_single_artifact(tmp_path):
+    """Only impulse.json present → get_movers returns the ignition section and stays
+    available (other sections simply absent)."""
+    fd = tmp_path / "site" / "factordata"
+    fd.mkdir(parents=True)
+    (fd / "impulse.json").write_text(json.dumps({
+        "as_of": "2026-07-18",
+        "buy": [{"ticker": "HOMB", "name": "Home BancShares", "impulse_score": 100, "state": "EARLY_IGNITION"}],
+    }))
+    r = gw._tool_get_movers({}, tmp_path)
+    assert r["available"] is True
+    assert "ignition" in r
+    assert "standouts" not in r and "mag7" not in r
+    assert r["ignition"]["buy"][0]["ticker"] == "HOMB"
+    assert r["source"] == ["site/factordata/impulse.json"]
+
+
+# --- registry: new tool names present in _BRAIN_TOOLS and schemas list --------
+
+_W6D_TOOLS = [
+    "get_fundamentals", "get_earnings", "get_insider_activity", "get_congress_trades",
+    "get_smart_money", "get_stage_peers", "get_movers", "get_house_view", "get_watchlist",
+]
+
+
+def test_w6d_tools_registered_in_allowlists():
+    for name in _W6D_TOOLS:
+        assert name in gw._BRAIN_TOOLS, f"{name} missing from _BRAIN_TOOLS"
+        assert name in gw._BRAIN_ONLY_TOOLS, f"{name} missing from _BRAIN_ONLY_TOOLS"
+
+
+def test_w6d_tools_have_schemas(tmp_path):
+    root = _make_temp_root()
+    schemas = gw._all_brain_tool_schemas(root)
+    names = {s["name"] for s in schemas}
+    for name in _W6D_TOOLS:
+        assert name in names, f"{name} missing from _all_brain_tool_schemas"
+    # every schema has a model-facing description + input_schema
+    by_name = {s["name"]: s for s in schemas}
+    for name in _W6D_TOOLS:
+        assert by_name[name].get("description")
+        assert by_name[name].get("input_schema", {}).get("type") == "object"
+
+
+def test_w6d_dispatch_reaches_tools(tmp_path):
+    """The dispatcher routes each new tool name (missing data → available:False, never refused)."""
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    for name in ("get_fundamentals", "get_earnings", "get_movers", "get_house_view"):
+        res = gw._dispatch_brain_tool(name, {"symbol": "AAPL"}, empty, empty, "http://x")
+        assert "error" not in res or "not allowed" not in str(res.get("error", "")), f"{name} was refused"
+
+
+def test_dispatch_threads_user_id_to_watchlist(tmp_path):
+    """_dispatch_brain_tool passes user_id through to get_watchlist."""
+    with patch.object(gw, "_sb_get", return_value=None):
+        res = gw._dispatch_brain_tool("get_watchlist", {}, tmp_path, tmp_path, "http://x", user_id="u42")
+    # user_id present → it tried the store (got None → unreachable), NOT the no-user path
+    assert res["available"] is False
+    assert "unreachable" in res["note"]
+
+
+# --- fixture-parquet tests: earnings / congress / insiders --------------------
+
+def test_get_earnings_with_fixture_parquet(tmp_path):
+    """A small earnings parquet: symbol mode parses surprises_json and returns next_date."""
+    pd = _pd_or_skip()
+    ed = tmp_path / "data" / "earnings"
+    ed.mkdir(parents=True)
+    df = pd.DataFrame(
+        {
+            "next_date": ["2026-07-30", "2026-08-05", "2026-12-01"],
+            "next_time": ["time-after-hours", "time-pre-market", "time-not-supplied"],
+            "eps_forecast": [1.5, 2.0, 0.5],
+            "surprises_json": ['[{"qtr": "Q1", "surprise_pct": 3.2}]', "[]", "not-json{"],
+            "as_of": ["2026-07-19", "2026-07-19", "2026-07-19"],
+        },
+        index=pd.Index(["AAA", "BBB", "CCC"], name="ticker"),
+    )
+    df.to_parquet(ed / "earnings.parquet")
+
+    r = gw._tool_get_earnings({"symbol": "AAA"}, tmp_path)
+    assert r["available"] is True
+    assert r["next_date"] == "2026-07-30"
+    assert r["surprises"] == [{"qtr": "Q1", "surprise_pct": 3.2}]
+
+    # malformed surprises_json is tolerated (skipped → empty list), never raises
+    r2 = gw._tool_get_earnings({"symbol": "CCC"}, tmp_path)
+    assert r2["available"] is True
+    assert r2["surprises"] == []
+
+
+def test_get_congress_with_fixture_parquet(tmp_path):
+    """A small congress parquet: symbol mode returns rows + buy/sell counts, no ExcessReturn."""
+    pd = _pd_or_skip()
+    qd = tmp_path / "data" / "quiver"
+    qd.mkdir(parents=True)
+    recent = (pd.Timestamp.now() - pd.Timedelta(days=5)).strftime("%Y-%m-%d")
+    df = pd.DataFrame({
+        "Representative": ["Rep A", "Rep B"],
+        "ReportDate": [recent, recent],
+        "TransactionDate": [recent, recent],
+        "Ticker": ["NVDA", "NVDA"],
+        "Transaction": ["Purchase", "Sale"],
+        "Range": ["$1K-$15K", "$15K-$50K"],
+        "House": ["Representatives", "Senate"],
+        "Party": ["R", "D"],
+        "ExcessReturn": [1.1, -2.2],
+        "PriceChange": [3.0, -1.0],
+    })
+    df.to_parquet(qd / "congress.parquet")
+
+    r = gw._tool_get_congress_trades({"symbol": "NVDA"}, tmp_path)
+    assert r["available"] is True
+    assert r["counts"] == {"n_buys": 1, "n_sells": 1}
+    # horizon-inconsistent fields never surface
+    blob = json.dumps(r)
+    assert "ExcessReturn" not in blob and "PriceChange" not in blob
+
+
+def test_get_insider_with_fixture_parquet(tmp_path):
+    """A small daily insiders parquet: buy/sell counts + USD sums, tolerating NaN price."""
+    pd = _pd_or_skip()
+    qd = tmp_path / "data" / "quiver"
+    qd.mkdir(parents=True)
+    recent = (pd.Timestamp.now() - pd.Timedelta(days=3)).strftime("%Y-%m-%dT00:00:00.000")
+    df = pd.DataFrame({
+        "Ticker": ["MSFT", "MSFT", "MSFT"],
+        "Date": [recent, recent, recent],
+        "Name": ["Alice", "Bob", "Carol"],
+        "TransactionCode": ["P", "S", "P"],
+        "Shares": [100.0, 50.0, 10.0],
+        "PricePerShare": [10.0, 20.0, float("nan")],  # NaN price → skipped in USD sum
+        "officerTitle": ["CEO", None, None],
+        "isDirector": [None, True, None],
+        "isTenPercentOwner": [None, None, None],
+    })
+    df.to_parquet(qd / "insiders.parquet")
+
+    r = gw._tool_get_insider_activity({"symbol": "MSFT"}, tmp_path)
+    assert r["available"] is True
+    daily = r["daily_feed"]
+    assert daily["n_buys"] == 2
+    assert daily["n_sells"] == 1
+    assert daily["buy_usd"] == 1000.0  # 100*10 only; the NaN-price buy is skipped
+    assert daily["sell_usd"] == 1000.0  # 50*20
+    # two lanes are never blended — the note says so
+    assert "never blended" in r["note"]
+
+
+def test_stream_emits_suggest_between_delta_and_done(tmp_path):
+    """SSE contract: a [NEXT] block in the answer yields a 'suggest' event AFTER delta
+    and BEFORE done; the delta text is CLEAN (no marker)."""
+    root = _make_temp_root()
+    text_response = _MockResponse(
+        [_MockBlock(
+            "text",
+            "The tape is risk-off. is_context_only: true — display-tier pending FDR.\n"
+            "[NEXT]\nWhat's leading?\nShould I hedge?\nWhen does this flip?",
+        )],
+        "end_turn",
+    )
+    mock_providers = [{"client": _MockClient([text_response]), "model": "deepseek-chat"}]
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "insider", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        events = list(gw.chat_stream("how risky?", "user_sse_next", lane="fast", root=root))
+
+    parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+    types_seq = [e.get("type") for e in parsed]
+    assert "delta" in types_seq and "suggest" in types_seq and "done" in types_seq
+    di, si, doi = types_seq.index("delta"), types_seq.index("suggest"), types_seq.index("done")
+    assert di < si < doi, f"order violated: {types_seq}"
+    # delta carries clean text; suggest carries the 3 items
+    delta = parsed[di]
+    assert "[NEXT]" not in delta["text"]
+    assert parsed[si]["items"] == ["What's leading?", "Should I hedge?", "When does this flip?"]
+
+
+def test_run_brain_loop_accepts_user_id_kwarg(tmp_path):
+    """_run_brain_loop accepts user_id kwarg and threads it to get_watchlist (regression:
+    the whole point of PART 3)."""
+    root = _make_temp_root()
+    # A model that calls get_watchlist once, then answers.
+    tool_resp = _MockResponse(
+        [_MockBlock("tool_use", name="get_watchlist", input_={}, id_="t1")],
+        "tool_use",
+    )
+    text_resp = _MockResponse([_MockBlock("text", "Here is your list.")], "end_turn")
+    client = _MockClient([tool_resp, text_resp])
+    seen = {}
+
+    def _spy_dispatch(name, params, root_, tdd, thu, user_id=""):
+        seen["user_id"] = user_id
+        return {"available": False, "note": "stub"}
+
+    with patch.object(gw, "_dispatch_brain_tool", side_effect=_spy_dispatch):
+        gw._run_brain_loop(
+            "show my watchlist", "fast", [], {}, root, tmp_path, "http://x",
+            client, "deepseek-chat", 2000, 5, user_id="user-77",
+        )
+    assert seen.get("user_id") == "user-77"
