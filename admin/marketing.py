@@ -436,3 +436,192 @@ def settings(root=None) -> dict:
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.settings failed: %s", exc)
         return {"ok": False, "error": str(exc)}
+
+
+# ---------------------------------------------------------------------------
+# Outbox panel (D02 W0, Lane B)
+# ---------------------------------------------------------------------------
+
+_OUTBOX_EMPTY_NOTE = (
+    "outbox empty — items accrue when the nightly governor runs "
+    "with MARKETING_OUTBOX_ENABLED=1."
+)
+
+_TERMINAL_STATUSES = frozenset({"posted", "failed", "quarantined"})
+_STATUS_KEYS = ("queued", "approved", "held", "posted", "failed", "quarantined")
+
+
+def _zero_counts() -> dict:
+    return {k: 0 for k in _STATUS_KEYS}
+
+
+def outbox(root=None) -> dict:
+    """Posting-queue panel.
+
+    Reads data/marketing/outbox/{items.jsonl,status_ledger.jsonl,decisions.jsonl}
+    via engine.marketing.outbox public API.  Fail-soft: ok:True on absent files,
+    ok:False only on unexpected exceptions.
+
+    Frozen payload contract: see D02 W0 Lane B spec.
+    """
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        from engine.marketing import outbox as _ob  # noqa: PLC0415
+
+        # Config for effective_cap
+        cfg = _read_yaml(repo / _CONFIG_REL)
+        cap = _ob.effective_cap(cfg)
+
+        # Read raw data (all fail-soft → [] on absence)
+        ob_root = repo  # outbox_dir resolves against repo root
+        items = _ob.read_items(ob_root)
+        statuses = _ob.current_statuses(ob_root)
+        decisions = _ob.latest_decisions(ob_root)
+        ledger = _ob.read_ledger(ob_root)
+
+        # Empty state
+        if not items:
+            return {
+                "ok": True,
+                "note": _OUTBOX_EMPTY_NOTE,
+                "as_of": None,
+                "cap": cap,
+                "summary": _zero_counts() | {"total": 0},
+                "accounts": [],
+                "history": [],
+            }
+
+        # Build last-ledger-row per item_id for last_transition_at and receipt
+        _last_ledger: dict[str, dict] = {}
+        for row in ledger:
+            item_id = row.get("id")
+            if item_id:
+                _last_ledger[item_id] = row
+
+        # Compute effective status per item (folded status + held overlay)
+        def _effective_status(item_id: str, folded: str, decision: str | None) -> str:
+            """Held = queued status AND latest decision is 'hold'."""
+            if folded == "queued" and decision == "hold":
+                return "held"
+            return folded
+
+        # Build item enriched dicts
+        enriched: list[dict] = []
+        for item in items:
+            item_id = item.get("id", "")
+            folded = statuses.get(item_id, item.get("status", "queued"))
+            dec_row = decisions.get(item_id)
+            dec_val = dec_row.get("decision") if dec_row else None
+            decided_at = dec_row.get("at") if dec_row else None
+            eff = _effective_status(item_id, folded, dec_val)
+            last_row = _last_ledger.get(item_id)
+            last_transition_at = last_row.get("at") if last_row else None
+            receipt = last_row.get("receipt") if last_row else None
+            enriched.append({
+                "id": item_id,
+                "as_of": item.get("as_of"),
+                "kind": item.get("kind"),
+                "text": item.get("text"),
+                "media": item.get("media") or [],
+                "scheduled_at": item.get("scheduled_at"),
+                "slot": item.get("slot"),
+                "priority": item.get("priority"),
+                "provenance": item.get("provenance"),
+                "status": folded,               # ledger-folded status (not held overlay)
+                "decision": dec_val,
+                "decided_at": decided_at,
+                "created_at": item.get("created_at"),
+                "last_transition_at": last_transition_at,
+                "receipt": receipt,
+                "_effective": eff,
+                "_account": item.get("account", ""),
+            })
+
+        # Max as_of across items
+        as_of_vals = [e["as_of"] for e in enriched if e.get("as_of")]
+        max_as_of = max(as_of_vals) if as_of_vals else None
+
+        # Summary counts
+        summary_counts = _zero_counts()
+        for e in enriched:
+            eff = e["_effective"]
+            if eff in summary_counts:
+                summary_counts[eff] += 1
+        summary = {"total": len(enriched)} | summary_counts
+
+        # Group by account, ordered by account id
+        acct_map: dict[str, list] = {}
+        for e in enriched:
+            acct = e["_account"]
+            acct_map.setdefault(acct, []).append(e)
+
+        accounts_out: list[dict] = []
+        for acct_id in sorted(acct_map.keys()):
+            acct_items = acct_map[acct_id]
+            # Sort by scheduled_at then id
+            acct_items.sort(key=lambda x: (x.get("scheduled_at") or "", x.get("id") or ""))
+            acct_counts = _zero_counts()
+            for e in acct_items:
+                eff = e["_effective"]
+                if eff in acct_counts:
+                    acct_counts[eff] += 1
+            # Build item dicts (drop internal keys)
+            items_out = [
+                {k: v for k, v in e.items() if not k.startswith("_")}
+                for e in acct_items
+            ]
+            accounts_out.append({
+                "id": acct_id,
+                "counts": acct_counts,
+                "items": items_out,
+            })
+
+        # History: terminal items, newest first by last_transition_at
+        terminal = [
+            e for e in enriched
+            if e["status"] in _TERMINAL_STATUSES
+        ]
+        terminal.sort(
+            key=lambda x: (x.get("last_transition_at") or ""),
+            reverse=True,
+        )
+        history_out = [
+            {
+                "id": e["id"],
+                "account": e["_account"],
+                "kind": e["kind"],
+                "text": e["text"],
+                "status": e["status"],
+                "at": e["last_transition_at"],
+                "receipt": e["receipt"],
+            }
+            for e in terminal[:50]
+        ]
+
+        return {
+            "ok": True,
+            "as_of": max_as_of,
+            "cap": cap,
+            "summary": summary,
+            "accounts": accounts_out,
+            "history": history_out,
+        }
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.outbox failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def decide_outbox(item_id: str, decision: str, note: str | None = None, root=None) -> bool:
+    """Thin wrapper: record an operator approve/hold decision via engine outbox API.
+
+    Returns True on success, False on unknown id or invalid decision.
+    Never raises.
+    """
+    try:
+        from engine.marketing import outbox as _ob  # noqa: PLC0415
+        repo = Path(root) if root is not None else _ROOT
+        return _ob.record_decision(item_id, decision, actor="admin", root=repo, note=note)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.decide_outbox failed: %s", exc)
+        return False

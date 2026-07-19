@@ -980,3 +980,228 @@ class TestLabPanelWaiting:
             assert isinstance(result, dict)
         except Exception as exc:  # noqa: BLE001
             pytest.fail(f"marketing.lab() raised on empty root: {exc}")
+
+
+# ---------------------------------------------------------------------------
+# Tests — outbox() panel (D02 W0, Lane B)
+# ---------------------------------------------------------------------------
+
+_FIXED_NOW_OB = __import__("datetime").datetime(2026, 7, 19, 12, 0, 0,
+                                                  tzinfo=__import__("datetime").timezone.utc)
+_AS_OF_OB = "2026-07-19"
+
+
+def _make_ob_item(
+    tmp_path,
+    *,
+    account: str = "flagship",
+    kind: str = "signal",
+    text: str = "Test post for outbox panel.",
+    as_of: str = _AS_OF_OB,
+    provenance: str = "content_studio",
+):
+    from engine.marketing.outbox import make_item
+    return make_item(
+        account=account,
+        kind=kind,
+        text=text,
+        as_of=as_of,
+        provenance=provenance,
+        now=_FIXED_NOW_OB,
+    )
+
+
+class TestOutboxPanel:
+    # ------------------------------------------------------------------
+    # Test 1: empty/temp root
+    # ------------------------------------------------------------------
+
+    def test_empty_root_ok_true(self, tmp_path):
+        r = marketing.outbox(tmp_path)
+        assert r["ok"] is True
+
+    def test_empty_root_has_note(self, tmp_path):
+        r = marketing.outbox(tmp_path)
+        assert r.get("note") is not None
+        assert "outbox empty" in r["note"].lower() or "accrue" in r["note"].lower()
+
+    def test_empty_root_summary_all_zeros(self, tmp_path):
+        r = marketing.outbox(tmp_path)
+        s = r["summary"]
+        assert s["total"] == 0
+        for k in ("queued", "approved", "held", "posted", "failed", "quarantined"):
+            assert s[k] == 0, f"summary[{k!r}] should be 0"
+
+    def test_empty_root_accounts_empty(self, tmp_path):
+        r = marketing.outbox(tmp_path)
+        assert r["accounts"] == []
+
+    def test_empty_root_history_empty(self, tmp_path):
+        r = marketing.outbox(tmp_path)
+        assert r["history"] == []
+
+    def test_empty_root_cap_is_8(self, tmp_path):
+        r = marketing.outbox(tmp_path)
+        assert r["cap"] == 8
+
+    def test_empty_root_as_of_null(self, tmp_path):
+        r = marketing.outbox(tmp_path)
+        assert r["as_of"] is None
+
+    # ------------------------------------------------------------------
+    # Test 2: seeded outbox — 3 items, 2 accounts, hold + posted
+    # ------------------------------------------------------------------
+
+    def _seed_outbox(self, tmp_path):
+        """Seed 3 items across 2 accounts; hold item2; approve+post item3 with receipt."""
+        from engine.marketing.outbox import enqueue, record_decision, transition
+
+        # item1: flagship, queued (no decision)
+        item1 = _make_ob_item(
+            tmp_path,
+            account="flagship",
+            text="Flagship queued item — no decision yet.",
+        )
+        enqueue(item1, root=tmp_path)
+
+        # item2: flagship, hold decision → counts as held
+        item2 = _make_ob_item(
+            tmp_path,
+            account="flagship",
+            text="Flagship held item — operator issued hold.",
+        )
+        enqueue(item2, root=tmp_path)
+        record_decision(item2["id"], "hold", actor="operator", root=tmp_path)
+
+        # item3: research_a, queued → approved → posted with a receipt
+        item3 = _make_ob_item(
+            tmp_path,
+            account="research_a",
+            kind="education",
+            text="Research post that was approved and posted.",
+        )
+        enqueue(item3, root=tmp_path)
+        record_decision(item3["id"], "approve", actor="operator", root=tmp_path)
+        transition(item3["id"], "approved", actor="actuator", root=tmp_path)
+        receipt = {"tweet_id": "1234567890", "url": "https://x.com/i/web/status/1234567890"}
+        transition(
+            item3["id"], "posted", actor="actuator", root=tmp_path,
+            receipt=receipt,
+        )
+
+        return item1["id"], item2["id"], item3["id"]
+
+    def test_seeded_summary_counts(self, tmp_path):
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        assert r["ok"] is True
+        s = r["summary"]
+        assert s["total"] == 3
+        assert s["queued"] == 1, f"Expected 1 queued, got {s['queued']}"
+        assert s["held"] == 1, f"Expected 1 held, got {s['held']}"
+        assert s["posted"] == 1, f"Expected 1 posted, got {s['posted']}"
+        assert s["approved"] == 0
+        assert s["failed"] == 0
+        assert s["quarantined"] == 0
+
+    def test_seeded_held_item_counts_as_held_not_queued(self, tmp_path):
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        s = r["summary"]
+        # held item must increment held, NOT queued
+        assert s["held"] == 1
+        assert s["queued"] == 1  # only item1 is truly queued
+
+    def test_seeded_held_item_decision_field(self, tmp_path):
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        flagship = next(a for a in r["accounts"] if a["id"] == "flagship")
+        held_item = next(i for i in flagship["items"] if i["id"] == id2)
+        assert held_item["decision"] == "hold"
+        assert held_item["decided_at"] is not None
+
+    def test_seeded_held_item_status_field_is_queued(self, tmp_path):
+        """status field on item stays ledger-folded (queued), NOT the overlay held."""
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        flagship = next(a for a in r["accounts"] if a["id"] == "flagship")
+        held_item = next(i for i in flagship["items"] if i["id"] == id2)
+        assert held_item["status"] == "queued"
+
+    def test_seeded_posted_item_in_history(self, tmp_path):
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        history_ids = {h["id"] for h in r["history"]}
+        assert id3 in history_ids
+
+    def test_seeded_posted_item_receipt_in_history(self, tmp_path):
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        posted_h = next(h for h in r["history"] if h["id"] == id3)
+        assert posted_h["receipt"] is not None
+        assert posted_h["receipt"].get("tweet_id") == "1234567890"
+
+    def test_seeded_accounts_grouped_and_ordered(self, tmp_path):
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        acct_ids = [a["id"] for a in r["accounts"]]
+        # Both accounts present
+        assert "flagship" in acct_ids
+        assert "research_a" in acct_ids
+        # Sorted alphabetically (flagship < research_a)
+        assert acct_ids == sorted(acct_ids)
+
+    def test_seeded_flagship_account_counts(self, tmp_path):
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        flagship = next(a for a in r["accounts"] if a["id"] == "flagship")
+        c = flagship["counts"]
+        assert c["queued"] == 1
+        assert c["held"] == 1
+        assert c["posted"] == 0
+
+    def test_seeded_cap_is_8(self, tmp_path):
+        self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        assert r["cap"] == 8
+
+    def test_seeded_as_of_set(self, tmp_path):
+        self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        assert r["as_of"] == _AS_OF_OB
+
+    # ------------------------------------------------------------------
+    # Test 3: decide_outbox wrapper validation
+    # ------------------------------------------------------------------
+
+    def test_decide_outbox_approve_success(self, tmp_path):
+        from engine.marketing.outbox import enqueue, read_decisions
+        item = _make_ob_item(tmp_path, text="Decision wrapper approve test.")
+        enqueue(item, root=tmp_path)
+
+        before = len(read_decisions(root=tmp_path))
+        result = marketing.decide_outbox(item["id"], "approve", root=tmp_path)
+        after = len(read_decisions(root=tmp_path))
+
+        assert result is True
+        assert after == before + 1
+
+    def test_decide_outbox_hold_success(self, tmp_path):
+        from engine.marketing.outbox import enqueue, read_decisions
+        item = _make_ob_item(tmp_path, text="Decision wrapper hold test.")
+        enqueue(item, root=tmp_path)
+
+        result = marketing.decide_outbox(item["id"], "hold", root=tmp_path)
+        assert result is True
+
+    def test_decide_outbox_unknown_id_returns_false(self, tmp_path):
+        result = marketing.decide_outbox("ob-2026-07-19-nonexistent", "approve", root=tmp_path)
+        assert result is False
+
+    def test_decide_outbox_bogus_decision_returns_false(self, tmp_path):
+        from engine.marketing.outbox import enqueue
+        item = _make_ob_item(tmp_path, text="Bogus decision string test.")
+        enqueue(item, root=tmp_path)
+
+        result = marketing.decide_outbox(item["id"], "publish", root=tmp_path)
+        assert result is False

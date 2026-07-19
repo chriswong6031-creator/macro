@@ -428,6 +428,31 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/marketing/department":
                 dept_id = (q.get("id") or [None])[0]
                 return self._json(marketing.department(dept_id=dept_id))
+            if path == "/api/marketing/outbox":
+                return self._json(marketing.outbox())
+            if path == "/api/marketing/outbox/media":
+                from .paths import ROOT as _REPO_ROOT  # noqa: PLC0415
+                req_path = (q.get("path") or [""])[0]
+                if not req_path:
+                    return self._json({"error": "path parameter required"}, 400)
+                media_root = (_REPO_ROOT / "data" / "marketing" / "outbox" / "media").resolve()
+                resolved = (_REPO_ROOT / req_path).resolve()
+                if not str(resolved).startswith(str(media_root) + "/") or not resolved.is_file():
+                    return self._json({"error": "not found"}, 404)
+                body = resolved.read_bytes()
+                ctype = "image/svg+xml" if resolved.suffix == ".svg" else "application/octet-stream"
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                # SVG opened directly is an active document (scripts execute);
+                # this CSP neutralizes that. <img> embedding is unaffected.
+                self.send_header("Content-Security-Policy",
+                                 "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)
@@ -632,6 +657,19 @@ class Handler(BaseHTTPRequestHandler):
                 if settings.deployed():
                     return self._json(github_config.set_int(dotted, value, lo, hi))
                 return self._json(config_store.set_int(dotted, value, lo, hi))
+
+            if path == "/api/marketing/outbox/decide":
+                item_id = b.get("id")
+                decision = b.get("decision")
+                note = b.get("note") or None
+                if not item_id:
+                    return self._json({"ok": False, "error": "id required"}, 400)
+                if decision not in ("approve", "hold"):
+                    return self._json({"ok": False, "error": "decision must be 'approve' or 'hold'"}, 400)
+                ok = marketing.decide_outbox(item_id, decision, note=note)
+                if not ok:
+                    return self._json({"ok": False, "error": "unknown item id or write failed"}, 400)
+                return self._json({"ok": True, "id": item_id, "decision": decision})
 
             if path == "/api/orchestrator/chat":
                 return self._json(orchestrator_chat.chat(b.get("message", ""),
