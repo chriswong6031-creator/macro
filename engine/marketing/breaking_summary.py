@@ -104,10 +104,21 @@ def _extract_number_tokens(text: str) -> list[str]:
     return _NUMBER_RE.findall(text)
 
 
+# Common abbreviations whose periods are NOT sentence boundaries — without
+# masking these, "U.S. inflation rose." counts as 2+ sentences and triggers
+# needless deterministic fallbacks on exactly the prints this lane targets.
+_ABBREV_RE = re.compile(
+    r"\b(?:U\.S\.A|U\.S|U\.K|U\.N|E\.U|D\.C|Inc|Corp|Ltd|Co|vs|No|Mr|Mrs|Ms|Dr"
+    r"|Jr|Sr|St|Sen|Rep|Gov|Gen|Adm|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct"
+    r"|Nov|Dec)\."
+)
+
+
 def _count_sentences(text: str) -> int:
-    """Approximate sentence count by terminal punctuation."""
+    """Approximate sentence count by terminal punctuation (abbreviation-safe)."""
+    masked = _ABBREV_RE.sub(lambda m: m.group(0).replace(".", ""), text.strip())
     # Split on . ! ? followed by whitespace or end-of-string
-    sentences = re.split(r"[.!?]+(?:\s|$)", text.strip())
+    sentences = re.split(r"[.!?]+(?:\s|$)", masked)
     return len([s for s in sentences if s.strip()])
 
 
@@ -160,9 +171,13 @@ def validate_summary(summary_text: str, item: dict) -> list[str]:
 
     # 2. Stance/interpretation vocab ban
     for word in _STANCE_BANNED:
-        if re.search(r"(?<!\w)" + re.escape(word) + r"(?!\w)", summary_lower, re.IGNORECASE):
-            # Allow if the word appears verbatim in the source (e.g. source says "rally")
-            if word not in source_corpus.lower():
+        word_pat = r"(?<!\w)" + re.escape(word) + r"(?!\w)"
+        if re.search(word_pat, summary_lower, re.IGNORECASE):
+            # Allow only when the source uses the word STANDALONE too (e.g.
+            # source itself says "rally"). Word-boundary here as well —
+            # substring presence must not whitelist ("buyback" ⊅ "buy",
+            # "sellers" ⊅ "sell").
+            if not re.search(word_pat, corpus_lower, re.IGNORECASE):
                 violations.append(f"stance/interpretation word '{word}' in summary")
 
     # 3. Length checks
@@ -178,7 +193,7 @@ def validate_summary(summary_text: str, item: dict) -> list[str]:
 
     # 4. Run copywriter.validate_copy on the summary text
     try:
-        from engine.marketing.copywriter import validate_copy, _extract_number_tokens as _cw_num  # noqa: PLC0415
+        from engine.marketing.copywriter import validate_copy  # noqa: PLC0415
         cw_violations = validate_copy(
             headline="",
             body=summary_text,
@@ -287,6 +302,41 @@ def _deterministic_summary(item: dict) -> str:
     return f"{headline} — {source_name}"
 
 
+_TICKER_STRIP_CAP = 4
+
+
+def _enrich_tickers(tickers: list[str], root: Path | str | None) -> list[dict]:
+    """Attach last close + 1-session % change from the committed close stores.
+
+    The card's related-ticker strip is only as good as its numbers — matched
+    tickers with no prices render as bare cashtags, so this pulls the last
+    two closes from data/stocks/<T>.parquet (nightly-committed; at poll time
+    that is the prior session — honest, not fabricated intraday).
+
+    Fail-soft per ticker: missing store/short history → price/pct None
+    (cashtag-only row). Never raises.
+    """
+    if not tickers:
+        return []
+    rows: list[dict] = []
+    for t in tickers[:_TICKER_STRIP_CAP]:
+        price = pct = None
+        if root is not None:
+            try:
+                from engine.marketing.chart_render import load_closes  # noqa: PLC0415
+                loaded = load_closes(t, root, n=2)
+                if loaded is not None:
+                    _dates, closes = loaded
+                    if closes:
+                        price = float(closes[-1])
+                    if len(closes) >= 2 and closes[-2]:
+                        pct = (closes[-1] / closes[-2] - 1.0) * 100.0
+            except Exception:  # noqa: BLE001
+                pass
+        rows.append({"ticker": t, "price": price, "pct": pct})
+    return rows
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Public summarize_item
 # ─────────────────────────────────────────────────────────────────────────────
@@ -392,16 +442,23 @@ def build_breaking_payload(
     card_svg = ""
     try:
         from engine.marketing.chart_render import render_breaking_card  # noqa: PLC0415
-        card_svg = render_breaking_card(
+        card_kwargs = dict(
             headline=item.get("headline", ""),
             source_name=item.get("source_name", item.get("source", "")),
             source_tier=item.get("source_tier", "aggregator"),
             published_at=item.get("published_at", ""),
-            tickers=[],  # price data not available at ingest time
+            tickers=_enrich_tickers(tickers, root),
             suppress_cta=bool(item.get("cta_suppress", False)),
             summary=summary_result["summary"],
             logo_root=root,
         )
+        try:
+            card_svg = render_breaking_card(
+                event_class=item.get("event_class"), **card_kwargs
+            )
+        except TypeError:
+            # Older renderer without the event_class kwarg — degrade cleanly.
+            card_svg = render_breaking_card(**card_kwargs)
     except Exception:  # noqa: BLE001
         card_svg = ""
 

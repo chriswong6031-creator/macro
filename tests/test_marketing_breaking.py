@@ -581,3 +581,253 @@ class TestReviewFixes:
         out = poll_source(src, root=tmp_path, session_state={})
         assert out == []
         assert "refusing non-http(s) url" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# Test 9: quality-upgrade regressions (main-loop Fable review, round 2)
+# ---------------------------------------------------------------------------
+
+class TestPubDateParsing:
+    """ENG-1: named-zone / offset RFC-2822 dates must parse, never fall to now()."""
+
+    def test_named_zone_est(self):
+        from engine.marketing.breaking_feed import _parse_pub_date
+        # BLS-style dateline: EST = UTC-5
+        assert _parse_pub_date("Mon, 12 Jan 2026 08:30:00 EST").startswith(
+            "2026-01-12T13:30:00"
+        )
+
+    def test_named_zone_edt(self):
+        from engine.marketing.breaking_feed import _parse_pub_date
+        # EDT = UTC-4
+        assert _parse_pub_date("Tue, 14 Jul 2026 08:30:00 EDT").startswith(
+            "2026-07-14T12:30:00"
+        )
+
+    def test_numeric_offset(self):
+        from engine.marketing.breaking_feed import _parse_pub_date
+        assert _parse_pub_date("Tue, 14 Jul 2026 18:00:00 +0530").startswith(
+            "2026-07-14T12:30:00"
+        )
+
+    def test_iso_with_offset(self):
+        from engine.marketing.breaking_feed import _parse_pub_date
+        assert _parse_pub_date("2026-07-14T09:00:00-04:00").startswith(
+            "2026-07-14T13:00:00"
+        )
+
+    def test_dc_date_fallback_in_rss(self):
+        # An RSS item carrying only dc:date must not be stamped with now().
+        rss = """<?xml version="1.0"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel><item>
+  <title>Policy statement released</title>
+  <link>https://example.gov/x</link>
+  <dc:date>2026-03-02T10:00:00Z</dc:date>
+</item></channel></rss>"""
+        items = parse_feed(rss, BLS_SOURCE_CFG)
+        assert len(items) == 1
+        assert items[0]["published_at"].startswith("2026-03-02T10:00:00")
+
+
+class TestAtomContentElement:
+    """ENG-2: text-only <content> (falsy Element!) must not be dropped."""
+
+    def test_text_only_content_no_summary(self):
+        atom = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>tag:x</id>
+    <title>Statement</title>
+    <link href="https://example.gov/y" rel="alternate"/>
+    <updated>2026-07-14T12:00:00Z</updated>
+    <content>The committee voted 9-2 to hold the target range unchanged.</content>
+  </entry>
+</feed>"""
+        items = parse_feed(atom, ATOM_SOURCE_CFG)
+        assert len(items) == 1
+        assert "voted 9-2" in items[0]["body_snippet"]
+
+
+class TestPollerBackoff:
+    """ENG-3/ENG-4: 304 is not an error; failures back off exponentially."""
+
+    @staticmethod
+    def _src():
+        return {"key": "t", "kind": "rss", "url": "https://example.gov/feed",
+                "source_name": "T", "tier": "official", "poll_interval_s": 300}
+
+    def test_http_304_resets_fail_count_quietly(self, tmp_path, monkeypatch, capsys):
+        import engine.marketing.breaking_feed as bf
+        from urllib.error import HTTPError
+
+        def _raise_304(req, timeout):  # noqa: ARG001
+            raise HTTPError("https://example.gov/feed", 304, "Not Modified", {}, None)
+
+        monkeypatch.setattr(bf, "urlopen", _raise_304)
+        state: dict = {"t": {"fail_count": 3, "etag": "x"}}
+        out = bf.poll_source(self._src(), root=tmp_path, session_state=state)
+        assert out == []
+        assert state["t"]["fail_count"] == 0
+        assert "error" not in capsys.readouterr().err.lower()
+
+    def test_failure_backoff_suppresses_retry(self, tmp_path, monkeypatch):
+        import time as _time
+        import engine.marketing.breaking_feed as bf
+        from urllib.error import URLError
+
+        def _raise(req, timeout):  # noqa: ARG001
+            raise URLError("dead")
+
+        monkeypatch.setattr(bf, "urlopen", _raise)
+        state: dict = {}
+        assert bf.poll_source(self._src(), root=tmp_path, session_state=state) == []
+        assert state["t"]["fail_count"] == 1
+        # Push last_poll past the BASE interval but inside the doubled window:
+        # the exponential backoff must still suppress the attempt.
+        state["t"]["last_poll_ts"] = _time.time() - 301
+        calls = {"n": 0}
+
+        def _count(req, timeout):  # noqa: ARG001
+            calls["n"] += 1
+            raise URLError("dead")
+
+        monkeypatch.setattr(bf, "urlopen", _count)
+        assert bf.poll_source(self._src(), root=tmp_path, session_state=state) == []
+        assert calls["n"] == 0  # suppressed — no network attempt
+
+    def test_retry_after_honored(self, tmp_path, monkeypatch):
+        import time as _time
+        import engine.marketing.breaking_feed as bf
+        from urllib.error import HTTPError
+        from email.message import Message
+
+        hdrs = Message()
+        hdrs["Retry-After"] = "600"
+
+        def _raise_429(req, timeout):  # noqa: ARG001
+            raise HTTPError("https://example.gov/feed", 429, "Too Many", hdrs, None)
+
+        monkeypatch.setattr(bf, "urlopen", _raise_429)
+        state: dict = {}
+        bf.poll_source(self._src(), root=tmp_path, session_state=state)
+        assert state["t"]["backoff_until"] >= _time.time() + 500
+
+
+class TestStanceSourceBoundary:
+    """ENG-5: substring source presence must not whitelist stance words."""
+
+    def test_buyback_does_not_whitelist_buy(self):
+        item = {
+            "headline": "Company announces $2 billion buyback", "body_snippet": "",
+            "source_name": "X", "source_tier": "wire", "url": "https://x",
+            "published_at": "2026-07-14T12:00:00Z",
+        }
+        violations = validate_summary(
+            "Company announces $2 billion buyback; traders buy the news.", item
+        )
+        assert any("'buy'" in v for v in violations)
+
+    def test_standalone_source_word_still_allowed(self):
+        item = {
+            "headline": "Stocks rally after the print", "body_snippet": "",
+            "source_name": "X", "source_tier": "wire", "url": "https://x",
+            "published_at": "2026-07-14T12:00:00Z",
+        }
+        assert validate_summary("Stocks rally after the print.", item) == []
+
+
+class TestAliasWordBoundary:
+    """ENG-6: name aliases are word-boundary matched."""
+
+    def test_metals_does_not_match_meta(self):
+        s = score_item({"headline": "Precious metals rallied on the data",
+                        "body_snippet": "", "source_tier": "wire"})
+        assert "META" not in s["matched"]["tickers"]
+
+    def test_visas_does_not_match_visa(self):
+        s = score_item({"headline": "New visas policy announced",
+                        "body_snippet": "", "source_tier": "official"})
+        assert "V" not in s["matched"]["tickers"]
+
+    def test_real_meta_still_matches(self):
+        s = score_item({"headline": "Meta reports quarterly results",
+                        "body_snippet": "", "source_tier": "wire"})
+        assert "META" in s["matched"]["tickers"]
+
+
+class TestSentenceCountAbbreviations:
+    """ENG-7: abbreviations must not inflate the sentence count."""
+
+    def test_us_abbreviation_one_sentence(self):
+        from engine.marketing.breaking_summary import _count_sentences
+        assert _count_sentences(
+            "U.S. inflation rose 0.3% in June, the Bureau said."
+        ) == 1
+
+    def test_two_sentences_with_abbreviations(self):
+        from engine.marketing.breaking_summary import _count_sentences
+        assert _count_sentences(
+            "U.S. payrolls rose. The U.K. print follows Dr. Smith's briefing."
+        ) == 2
+
+
+class TestGeoTaxonomyPrecision:
+    """ENG-8: labor strikes and price wars are not geopolitics."""
+
+    def test_labor_strike_not_geopolitical(self):
+        s = score_item({"headline": "Auto workers strike at three plants",
+                        "body_snippet": "", "source_tier": "wire"})
+        assert s["event_class"] != "geopolitical"
+
+    def test_bidding_war_not_geopolitical(self):
+        s = score_item({"headline": "Bidding war erupts over retail chain",
+                        "body_snippet": "", "source_tier": "wire"})
+        assert s["event_class"] != "geopolitical"
+
+    def test_missile_strike_still_geopolitical(self):
+        s = score_item({"headline": "Missile strike hits port city overnight",
+                        "body_snippet": "", "source_tier": "wire"})
+        assert s["event_class"] == "geopolitical"
+
+
+class TestUniverseCacheAndEnrichment:
+    """ENG-9 universe cache + ENG-10 ticker price enrichment."""
+
+    def test_universe_cached_by_mtime(self, tmp_path):
+        import pandas as pd
+        import engine.marketing.breaking_relevance as br
+        store = tmp_path / "data" / "earnings"
+        store.mkdir(parents=True)
+        pd.DataFrame({"eps_forecast": [1.0]}, index=["ZZZT"]).to_parquet(
+            store / "earnings.parquet"
+        )
+        first = br._load_universe(tmp_path)
+        assert "ZZZT" in first
+        second = br._load_universe(tmp_path)
+        assert second is first  # cache hit returns the same frozenset object
+
+    def test_enrich_tickers_from_close_store(self, tmp_path):
+        import pandas as pd
+        from engine.marketing.breaking_summary import _enrich_tickers
+        store = tmp_path / "data" / "stocks"
+        store.mkdir(parents=True)
+        pd.DataFrame(
+            {"close": [100.0, 102.0]},
+            index=pd.to_datetime(["2026-07-13", "2026-07-14"]),
+        ).to_parquet(store / "ZZZT.parquet")
+        rows = _enrich_tickers(["ZZZT", "NOPE"], tmp_path)
+        assert rows[0]["ticker"] == "ZZZT"
+        assert rows[0]["price"] == 102.0
+        assert abs(rows[0]["pct"] - 2.0) < 1e-9
+        assert rows[1] == {"ticker": "NOPE", "price": None, "pct": None}
+
+    def test_payload_card_carries_kicker(self):
+        # ENG-11: event_class flows into the rendered card as plain words.
+        items = parse_feed(_load_fixture("rss_mixed.xml"), BLS_SOURCE_CFG)
+        cpi = next(i for i in items if "Consumer Price Index" in i["headline"])
+        scored = score_item(cpi)
+        assert scored["event_class"] == "macro_print"
+        payload = build_breaking_payload(scored, {"breaking": {"llm": {"enabled": False}}})
+        assert "MACRO PRINT" in payload["card_svg"]
+        assert "macro_print" not in payload["card_svg"]  # raw key never shown

@@ -67,9 +67,13 @@ _POLICY_KEYWORDS: tuple[str, ...] = (
     "price control",
 )
 
+# NOTE: bare "strike"/"war" are deliberately ABSENT — they false-positive on
+# labor strikes and "price war"/"bidding war" headlines (labor actions belong
+# to company_news, not geopolitics). Only explicit military phrases qualify.
 _GEOPOLITICAL_KEYWORDS: tuple[str, ...] = (
-    "missile", "strike",
-    "war", "warfare",
+    "missile", "air strike", "airstrike", "airstrikes",
+    "drone strike", "military strike", "missile strike",
+    "warfare", "declares war", "declaration of war", "war breaks out", "at war",
     "ceasefire", "cease-fire",
     "invasion", "escalation",
     "troops", "military operation",
@@ -203,10 +207,23 @@ _NAME_TO_TICKER: dict[str, str] = {
     "marvell": "MRVL",
 }
 
+# Word-boundary-compiled alias patterns. Substring matching is a precision
+# trap: "meta" fires on "metals", "amd" on "Amdocs", "visa" on "visas"
+# (immigration headlines). Compiled once at import.
+_NAME_ALIAS_RES: tuple[tuple[re.Pattern, str], ...] = tuple(
+    (re.compile(r"(?<!\w)" + re.escape(name) + r"(?!\w)"), ticker)
+    for name, ticker in _NAME_TO_TICKER.items()
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Universe loader (fail-soft; falls back to static list)
 # ─────────────────────────────────────────────────────────────────────────────
+
+# (path, mtime)-keyed cache — score_item(root=...) callers must not re-read
+# the parquet per item; invalidates when the nightly rewrites the store.
+_UNIVERSE_CACHE: dict[str, tuple[float, frozenset[str]]] = {}
+
 
 def _load_universe(root: Path | str | None = None) -> frozenset[str]:
     """Load ticker universe from earnings.parquet index; fall back to static."""
@@ -216,10 +233,16 @@ def _load_universe(root: Path | str | None = None) -> frozenset[str]:
         path = Path(root) / "data" / "earnings" / "earnings.parquet"
         if not path.exists():
             return _STATIC_UNIVERSE
+        mtime = path.stat().st_mtime
+        cache_key = str(path)
+        hit = _UNIVERSE_CACHE.get(cache_key)
+        if hit is not None and hit[0] == mtime:
+            return hit[1]
         import pandas as pd  # noqa: PLC0415
         df = pd.read_parquet(path, columns=[])
-        tickers: frozenset[str] = frozenset(str(t).upper() for t in df.index.tolist())
-        return tickers | _STATIC_UNIVERSE
+        tickers = frozenset(str(t).upper() for t in df.index.tolist()) | _STATIC_UNIVERSE
+        _UNIVERSE_CACHE[cache_key] = (mtime, tickers)
+        return tickers
     except Exception as exc:  # noqa: BLE001
         print(f"[breaking_relevance] universe load error: {exc}", file=sys.stderr)
         return _STATIC_UNIVERSE
@@ -258,10 +281,10 @@ def _match_tickers(text: str, universe: frozenset[str]) -> list[str]:
     for t in cashtags:
         if t in universe:
             matched.add(t)
-    # Name alias match
+    # Name alias match (word-boundary — see _NAME_ALIAS_RES note)
     text_lower = text.lower()
-    for name, ticker in _NAME_TO_TICKER.items():
-        if name in text_lower:
+    for pattern, ticker in _NAME_ALIAS_RES:
+        if pattern.search(text_lower):
             matched.add(ticker)
     return sorted(matched)
 
