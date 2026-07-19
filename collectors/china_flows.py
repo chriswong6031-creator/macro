@@ -34,7 +34,8 @@ _UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
 _PUSH2EX = "https://push2ex.eastmoney.com/"
 _PUSH2HIS = "https://push2his.eastmoney.com/api/qt/stock/kline/get"
 _DC = "https://datacenter-web.eastmoney.com/api/data/v1/get"
-_ZT_UT = "7eea3edcaed734bea9cbfc24409ed989"
+# push2ex needs the ut token from Eastmoney's public page JS — read via
+# EASTMONEY_UT_TOKEN (env/.env), same class as the CXI credential tripwire
 
 
 class ChinaFlowsAdapter(Adapter):
@@ -86,8 +87,8 @@ class ChinaFlowsAdapter(Adapter):
         return pd.DataFrame({"hsahp": [level]}, index=[when])
 
     # -- limit-up / down / broken-board breadth --------------------------------
-    def _pool_count(self, pool: str, yyyymmdd: str) -> int | None:
-        params = {"ut": _ZT_UT, "dpt": "wz.ztzt", "Pageindex": 0, "pagesize": 5,
+    def _pool_count(self, pool: str, yyyymmdd: str, ut: str) -> int | None:
+        params = {"ut": ut, "dpt": "wz.ztzt", "Pageindex": 0, "pagesize": 5,
                   "sort": "fbt:asc", "date": yyyymmdd}
         try:
             r = self.http_get(_PUSH2EX + pool, params=params, retries=2,
@@ -100,6 +101,10 @@ class ChinaFlowsAdapter(Adapter):
         return None
 
     def _limit_breadth(self, full_history: bool) -> pd.DataFrame:
+        ut = config.secret("EASTMONEY_UT_TOKEN")
+        if not ut:
+            # every missed day is unrecoverable (~2wk retention) — fail the leg loudly
+            raise ValueError("limit_breadth: EASTMONEY_UT_TOKEN not set — leg skipped")
         # push2ex keeps ~2 weeks; seed a short backfill, then append daily
         ndays = 18 if full_history else 4
         rows = {}
@@ -108,11 +113,11 @@ class ChinaFlowsAdapter(Adapter):
             if d.weekday() >= 5:   # skip weekends (A-shares closed)
                 continue
             ymd = d.strftime("%Y%m%d")
-            zt = self._pool_count("getTopicZTPool", ymd)
+            zt = self._pool_count("getTopicZTPool", ymd, ut)
             if zt is None:   # non-trading day or out of retention window
                 continue
-            dt = self._pool_count("getTopicDTPool", ymd) or 0
-            zb = self._pool_count("getTopicZBPool", ymd) or 0
+            dt = self._pool_count("getTopicDTPool", ymd, ut) or 0
+            zb = self._pool_count("getTopicZBPool", ymd, ut) or 0
             seal = round(100 * zt / (zt + zb), 2) if (zt + zb) else None
             rows[pd.to_datetime(d)] = {"zt": zt, "dt": dt, "zb": zb, "seal_rate": seal}
         if not rows:

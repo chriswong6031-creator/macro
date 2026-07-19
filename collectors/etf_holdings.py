@@ -472,7 +472,11 @@ class EtfHoldingsAdapter(Adapter):
     def _fetch_amplify(self, ticker: str, spec: dict) -> pd.DataFrame:
         base = ("https://firestore.googleapis.com/v1/projects/amplify-etfs-data-feed/"
                 f"databases/(default)/documents/funds/{ticker}/holdings")
-        key = spec.get("api_key", "AIzaSyCibhGo4lu8ZALtBvf_ZT351BDMUPqOYjc")
+        # sponsor's public Firebase web key (visible in their fund-page JS) —
+        # kept out of source per CXI credential tripwire; env/.env or per-fund spec
+        key = spec.get("api_key") or config.secret("AMPLIFY_FIREBASE_KEY")
+        if not key:
+            raise ValueError(f"amplify {ticker}: AMPLIFY_FIREBASE_KEY not set — skipped")
         listing = self._ua_get(f"{base}?mask.fieldPaths=asOfDate&pageSize=400&key={key}",
                                timeout=45).json()
         dates = [d.get("name", "").rsplit("/", 1)[-1]

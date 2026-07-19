@@ -156,7 +156,10 @@ def backfill_amplify(days_back: int = 300) -> dict[str, int]:
         existing = {p.stem for p in d.glob("*.parquet")}
         base = ("https://firestore.googleapis.com/v1/projects/amplify-etfs-data-feed/"
                 f"databases/(default)/documents/funds/{ticker}/holdings")
-        key = universe[ticker].get("api_key", "AIzaSyCibhGo4lu8ZALtBvf_ZT351BDMUPqOYjc")
+        key = universe[ticker].get("api_key") or config.secret("AMPLIFY_FIREBASE_KEY")
+        if not key:
+            log.warning("amplify %s: AMPLIFY_FIREBASE_KEY not set — skipped", ticker)
+            continue
         try:
             listing = adapter._ua_get(
                 f"{base}?mask.fieldPaths=asOfDate&pageSize=400&key={key}", timeout=45).json()

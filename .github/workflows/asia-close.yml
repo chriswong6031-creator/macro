@@ -193,6 +193,8 @@ jobs:
       - name: collect China/HK data (graceful degradation — never fails on one source)
         env:
           TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}  # unfreezes the gated tushare plane (dead since 2026-06-21: collectors silently no-op without it — see CHINA_ENGINE_REASSESSMENT)
+          EASTMONEY_WEB_TOKEN: ${{ secrets.EASTMONEY_WEB_TOKEN }}  # legacy-datacenter web token (collectors/china_property.py cgb); absent -> series skips (was a source literal — CXI tripwire 2026-07-18)
+          EASTMONEY_UT_TOKEN: ${{ secrets.EASTMONEY_UT_TOKEN }}    # push2ex ut token (collectors/china_flows.py limit_breadth); absent -> leg skips and ~2wk-retention days are LOST — keep this secret set
         run: python -m scripts.collect --group asia
       - name: commit collected asia data
         run: |
